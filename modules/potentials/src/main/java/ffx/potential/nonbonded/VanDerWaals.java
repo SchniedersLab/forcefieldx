@@ -235,10 +235,15 @@ public class VanDerWaals implements MaskingInterface,
      * Waals energy of.
      * @param crystal The boundary conditions.
      * @param parallelTeam The parallel environment.
+     * @param repulsivePower
+     * @param dispersivePower
+     * @param delta
+     * @param gamma
      * @since 1.0
      */
     public VanDerWaals(MolecularAssembly molecularAssembly, Crystal crystal,
-            ParallelTeam parallelTeam) {
+            ParallelTeam parallelTeam,
+            double repulsivePower, double dispersivePower, double delta, double gamma) {
         this.molecularAssembly = molecularAssembly;
         this.atoms = molecularAssembly.getAtomArray();
         this.crystal = crystal;
@@ -247,11 +252,22 @@ public class VanDerWaals implements MaskingInterface,
         nAtoms = atoms.length;
         nSymm = crystal.spaceGroup.getNumberOfSymOps();
         /**
-         * Set up the Buffered-14-7 parameters.
+         * Configure van der Waals well shape parameters.
          */
+        this.repulsivePower = repulsivePower;
+        this.dispersivePower = dispersivePower;
+        repDispPower = repulsivePower - dispersivePower;
+        dispersivePower1 = dispersivePower - 1.0;
+        repDispPower1 = repDispPower - 1.0;
+        this.delta = delta;
+        delta1 = 1.0 + delta;
+        t1n = pow(delta1, dispersivePower);
+        this.gamma = gamma;
+        gamma1 = 1.0 + gamma;
+
         ForceField forceField = molecularAssembly.getForceField();
         Map<String, VDWType> map = forceField.getVDWTypes();
-        TreeMap<String, VDWType> vdwTypes = new TreeMap<String, VDWType>(map);
+        TreeMap<String, VDWType> vdwTypes = new TreeMap<>(map);
         maxClass = 0;
         for (VDWType vdwType : vdwTypes.values()) {
             if (vdwType.atomClass > maxClass) {
@@ -262,6 +278,7 @@ public class VanDerWaals implements MaskingInterface,
         /**
          * Atom Class numbering starts at 1.
          */
+        //double twosix=1.122462048309372981;
         for (VDWType vdwi : vdwTypes.values()) {
             int i = vdwi.atomClass;
             double ri = 0.5 * vdwi.radius;
@@ -280,10 +297,22 @@ public class VanDerWaals implements MaskingInterface,
                  * Cubic-mean.
                  */
                 double radmin = 2.0 * (ri3 + rj3) / (ri2 + rj2);
+
+                /**
+                 * Geometric
+                 */
+                //double radmin = 2.0 * ri * rj;
+
                 /**
                  * HHG
                  */
                 double eps = 4.0 * (e1 * e2) / ((se1 + se2) * (se1 + se2));
+
+                /**
+                 * Geometric
+                 */
+                //double eps = se1 * se2;
+
                 radEps[i][j * 2 + RADMIN] = radmin;
                 radEps[i][j * 2 + EPS] = eps;
                 radEps[j][i * 2 + RADMIN] = radmin;
@@ -312,7 +341,8 @@ public class VanDerWaals implements MaskingInterface,
             coordinates[i3 + ZZ] = xyz[ZZ];
             AtomType type = ai.getAtomType();
             if (type == null) {
-                logger.info(ai.toString());
+                logger.severe(ai.toString());
+                continue;
             }
             atomClass[i] = type.atomClass;
             VDWType vdwType = forceField.getVDWType(Integer.toString(atomClass[i]));
@@ -536,11 +566,11 @@ public class VanDerWaals implements MaskingInterface,
                     final double rho = r / rv;
                     final double rho3 = rho * rho * rho;
                     final double rho7 = rho3 * rho3 * rho;
-                    final double rhod = rho + ZERO_07;
+                    final double rhod = rho + delta;
                     final double rhod3 = rhod * rhod * rhod;
                     final double rhod7 = rhod3 * rhod3 * rhod;
                     final double t1 = t1n / rhod7;
-                    final double t2 = t2n / rho7 + ZERO_12;
+                    final double t2 = gamma1 / rho7 + gamma;
                     final double eij = ev * t1 * (t2 - 2.0);
                     /**
                      * Apply one minus the multiplicative switch if the
@@ -696,7 +726,7 @@ public class VanDerWaals implements MaskingInterface,
         logger.info(String.format("%s %6d-%s %6d-%s %10.4f  %10.4f  %10.4f",
                 "VDW", atoms[i].xyzIndex, atoms[i].getAtomType().name,
                 atoms[k].xyzIndex, atoms[k].getAtomType().name,
-                radEps[classi][classk * 2 + RADMIN] / ZERO_07, r, eij));
+                radEps[classi][classk * 2 + RADMIN] / delta, r, eij));
     }
 
     /**
@@ -771,6 +801,7 @@ public class VanDerWaals implements MaskingInterface,
 
     /**
      * {@inheritDoc}
+     *
      * @param lambdaGradient
      */
     @Override
@@ -1076,8 +1107,8 @@ public class VanDerWaals implements MaskingInterface,
 
                 if (symOps.size() != nSymm) {
                     logger.info(String.format(" Programming Error: nSymm %d != symOps.size %d", nSymm, symOps.size()));
-                    logger.info(" Replicates\n" + crystal.toString());
-                    logger.info(" Unit Cell\n" + crystal.getUnitCell().toString());
+                    logger.log(Level.INFO, " Replicates\n{0}", crystal.toString());
+                    logger.log(Level.INFO, " Unit Cell\n{0}", crystal.getUnitCell().toString());
                 }
 
                 double sp2 = crystal.getSpecialPositionCutoff();
@@ -1106,7 +1137,7 @@ public class VanDerWaals implements MaskingInterface,
                         double dz = in[2] - out[2];
                         double r2 = dx * dx + dy * dy + dz * dz;
                         if (r2 < sp2) {
-                            logger.warning(" Atom may be at a special position: " + atoms[i].toString());
+                            logger.log(Level.WARNING, " Atom may be at a special position: {0}", atoms[i].toString());
                         }
                     }
                 }
@@ -1261,18 +1292,16 @@ public class VanDerWaals implements MaskingInterface,
                             final double ev = radEpsi[a2 + EPS];
                             final double eps_lambda = ev * lambda5;
                             final double rho = r / rv;
-                            final double rho3 = rho * rho * rho;
-                            final double rho6 = rho3 * rho3;
-                            final double rho7 = rho6 * rho;
-                            final double rho_07 = rho + ZERO_07;
-                            final double rho_07_pow3 = rho_07 * rho_07 * rho_07;
-                            final double rho_07_pow7 = rho_07_pow3 * rho_07_pow3 * rho_07;
-                            final double a_rho_07_pow7 = alpha + rho_07_pow7;
-                            final double a_rho7_ZERO_12 = alpha + rho7 + ZERO_12;
-                            final double t1d = 1.0 / a_rho_07_pow7;
-                            final double t2d = 1.0 / a_rho7_ZERO_12;
+                            final double rhoDisp1 = pow(rho, dispersivePower1);
+                            final double rhoDisp = rhoDisp1 * rho;
+                            final double rhoDelta1 = pow(rho + delta, repDispPower1);
+                            final double rhoDelta = rhoDelta1 * (rho + delta);
+                            final double alphaRhoDelta = alpha + rhoDelta;
+                            final double alphaRhoDispGamma = alpha + rhoDisp + gamma;
+                            final double t1d = 1.0 / alphaRhoDelta;
+                            final double t2d = 1.0 / alphaRhoDispGamma;
                             final double t1 = t1n * t1d;
-                            final double t2a = t2n * t2d;
+                            final double t2a = gamma1 * t2d;
                             final double t2 = t2a - 2.0;
                             double eij = eps_lambda * t1 * t2;
                             /**
@@ -1295,10 +1324,9 @@ public class VanDerWaals implements MaskingInterface,
                             final int redk = reductionIndex[k];
                             final double red = reductionValue[k];
                             final double redkv = 1.0 - red;
-                            final double rho_07_pow6 = rho_07_pow3 * rho_07_pow3;
                             final double drho_dr = 1.0 / rv;
-                            final double dt1d_dr = 7.0 * rho_07_pow6 * drho_dr;
-                            final double dt2d_dr = 7.0 * rho6 * drho_dr;
+                            final double dt1d_dr = repDispPower * rhoDelta1 * drho_dr;
+                            final double dt2d_dr = dispersivePower * rhoDisp1 * drho_dr;
                             final double dt1_dr = t1 * dt1d_dr * t1d;
                             final double dt2_dr = t2a * dt2d_dr * t2d;
                             double dedr = -eps_lambda * (dt1_dr * t2 + t1 * dt2_dr);
@@ -1470,18 +1498,16 @@ public class VanDerWaals implements MaskingInterface,
                                 final double ev = radEpsi[a2 + EPS];
                                 final double eps_lambda = ev * lambda5;
                                 final double rho = r / rv;
-                                final double rho3 = rho * rho * rho;
-                                final double rho6 = rho3 * rho3;
-                                final double rho7 = rho6 * rho;
-                                final double rho_07 = rho + ZERO_07;
-                                final double rho_07_pow3 = rho_07 * rho_07 * rho_07;
-                                final double rho_07_pow7 = rho_07_pow3 * rho_07_pow3 * rho_07;
-                                final double a_rho_07_pow7 = alpha + rho_07_pow7;
-                                final double a_rho7_ZERO_12 = alpha + rho7 + ZERO_12;
-                                final double t1d = 1.0 / a_rho_07_pow7;
-                                final double t2d = 1.0 / a_rho7_ZERO_12;
+                                final double rhoDisp1 = pow(rho, dispersivePower1);
+                                final double rhoDisp = rhoDisp1 * rho;
+                                final double rhoDelta1 = pow(rho + delta, repDispPower1);
+                                final double rhoDelta = rhoDelta1 * (rho + delta);
+                                final double alphaRhoDelta = alpha + rhoDelta;
+                                final double alphaRhoDispGamma = alpha + rhoDisp + gamma;
+                                final double t1d = 1.0 / alphaRhoDelta;
+                                final double t2d = 1.0 / alphaRhoDispGamma;
                                 final double t1 = t1n * t1d;
-                                final double t2a = t2n * t2d;
+                                final double t2a = gamma1 * t2d;
                                 final double t2 = t2a - 2.0;
                                 double eij = eps_lambda * t1 * t2;
                                 /**
@@ -1504,10 +1530,9 @@ public class VanDerWaals implements MaskingInterface,
                                 final int redk = reductionIndex[k];
                                 final double red = reductionValue[k];
                                 final double redkv = 1.0 - red;
-                                final double rho_07_pow6 = rho_07_pow3 * rho_07_pow3;
                                 final double drho_dr = 1.0 / rv;
-                                final double dt1d_dr = 7.0 * rho_07_pow6 * drho_dr;
-                                final double dt2d_dr = 7.0 * rho6 * drho_dr;
+                                final double dt1d_dr = repDispPower * rhoDelta1 * drho_dr;
+                                final double dt2d_dr = dispersivePower * rhoDisp1 * drho_dr;
                                 final double dt1_dr = t1 * dt1d_dr * t1d;
                                 final double dt2_dr = t2a * dt2d_dr * t2d;
                                 double dedr = -eps_lambda * (dt1_dr * t2 + t1 * dt2_dr);
@@ -1721,12 +1746,18 @@ public class VanDerWaals implements MaskingInterface,
     /**
      * First constant suggested by Halgren for the Buffered-14-7 potential.
      */
-    private static final double ZERO_12 = 0.12;
-    private static final double t2n = 1.12;
+    private final double gamma;
+    private final double gamma1;
     /**
      * Second constant suggested by Halgren for the Buffered-14-7 potential.
      */
-    private static final double ZERO_07 = 0.07;
-    private static final double ONE_07 = 1.07;
-    private static final double t1n = pow(ONE_07, 7.0);
+    private final double delta;
+    private final double delta1;
+    private final double t1n;
+    private final double repulsivePower;
+    private final double dispersivePower;
+    private final double dispersivePower1;
+    private final double repDispPower;
+    private final double repDispPower1;
+
 }

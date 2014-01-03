@@ -103,9 +103,9 @@
         </plugins>
         <resources>
             <resource>
-                <directory>${basedir}/src/main/java/ffx/potential/parameters/amoeba
+                <directory>${basedir}/src/main/java/ffx/potential/parameters/ff
                 </directory>
-                <targetPath>ffx/potential/parameters/amoeba</targetPath>
+                <targetPath>ffx/potential/parameters/ff</targetPath>
                 <includes>
                     <include>*</include>
                 </includes>

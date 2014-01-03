@@ -4208,22 +4208,21 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     buried[i] = false;
                     area[i] = 0.0;
                     count[i] = 0;
-                    if (use[i]) {
-                        //skip.set(i, false);
-                        double xr = x[i];
-                        double yr = y[i];
-                        double zr = z[i];
-                        double rri = r[i];
-                        final int list[] = neighborLists[0][i];
-                        int npair = list.length;
-                        for (int l = 0; l < npair; l++) {
-                            int k = list[l];
-                            double rrik = rri + r[k];
-                            double dx = x[k] - xr;
-                            double dy = y[k] - yr;
-                            double dz = z[k] - zr;
-                            double ccsq = dx * dx + dy * dy + dz * dz;
-                            if (ccsq <= rrik * rrik) {
+                    double xr = x[i];
+                    double yr = y[i];
+                    double zr = z[i];
+                    double rri = r[i];
+                    final int list[] = neighborLists[0][i];
+                    int npair = list.length;
+                    for (int l = 0; l < npair; l++) {
+                        int k = list[l];
+                        double rrik = rri + r[k];
+                        double dx = x[k] - xr;
+                        double dy = y[k] - yr;
+                        double dz = z[k] - zr;
+                        double ccsq = dx * dx + dy * dy + dz * dz;
+                        if (ccsq <= rrik * rrik) {
+                            if (use[i] || use[k]) {
                                 skip.set(k, false);
                                 skip.set(i, false);
                             }
@@ -4253,11 +4252,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     int npair = list.length;
                     for (int l = 0; l < npair; l++) {
                         int k = list[l];
-                        if (k == i || !use[k]) {
+                        if (k == i) {
                             continue;
                         }
                         pair(i, k);
-                        pair(k, i);
+                        if (!skip.get(k)) {
+                            pair(k, i);
+                        }
                     }
                 }
             }
@@ -4275,6 +4276,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 if (abs(dx) >= rplus || abs(dy) >= rplus || abs(dz) >= rplus) {
                     return;
                 }
+
                 /**
                  * Check for overlap of spheres by testing center to center
                  * distance against sum and difference of radii.

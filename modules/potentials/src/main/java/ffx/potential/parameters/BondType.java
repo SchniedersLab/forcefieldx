@@ -35,6 +35,11 @@ import java.util.HashMap;
  */
 public final class BondType extends BaseType implements Comparator<String> {
 
+    public enum BondFunction {
+
+        HARMONIC, QUARTIC
+    }
+
     /**
      * Atom classes that form this bond stretch.
      */
@@ -48,18 +53,22 @@ public final class BondType extends BaseType implements Comparator<String> {
      */
     public final double distance;
 
+    public final BondFunction bondFunction;
+
     /**
      * BondType constructor.
      *
      * @param atomClasses int[]
      * @param forceConstant double
      * @param distance double
+     * @param bondFunction
      */
-    public BondType(int atomClasses[], double forceConstant, double distance) {
+    public BondType(int atomClasses[], double forceConstant, double distance, BondFunction bondFunction) {
         super(ForceField.ForceFieldType.BOND, sortKey(atomClasses));
         this.atomClasses = atomClasses;
         this.forceConstant = forceConstant;
         this.distance = distance;
+        this.bondFunction = bondFunction;
     }
 
     /**

@@ -227,7 +227,7 @@ public class Energy {
                 this.crystal = unitCell;
             }
 
-            vanderWaals = new VanDerWaals(molecularAssembly, crystal, parallelTeam);
+            vanderWaals = new VanDerWaals(molecularAssembly, crystal, parallelTeam,14.0, 7.0, 0.07, 0.12);
             pme2 = new PME_2(forceField, atoms, crystal, parallelTeam, vanderWaals.getNeighborLists(), key);
             pme2.propyze = true;
             pme2.init_prms();

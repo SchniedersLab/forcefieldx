@@ -26,7 +26,6 @@ import java.io.*;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -41,8 +40,10 @@ import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldInteger;
 import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.parameters.ForceField.ForceFieldType;
-import ffx.potential.parameters.ForceField.Force_Field;
+import ffx.potential.parameters.ForceField.ForceFieldName;
 import ffx.potential.parameters.*;
+import ffx.potential.parameters.AngleType.AngleFunction;
+import ffx.potential.parameters.BondType.BondFunction;
 
 /*
  * @author Gaurav Chattree and Michael J. Schnieders
@@ -58,7 +59,8 @@ public class ForceFieldFilter_2 {
     private File forceFieldFile;
 
     /**
-     * <p>Constructor for ForceFieldFilter_2.</p>
+     * <p>
+     * Constructor for ForceFieldFilter_2.</p>
      *
      * @param properties a
      * {@link org.apache.commons.configuration.CompositeConfiguration} object.
@@ -71,7 +73,8 @@ public class ForceFieldFilter_2 {
     }
 
     /**
-     * <p>parseParameterLocation</p>
+     * <p>
+     * parseParameterLocation</p>
      *
      * @param parameterLocation a {@link java.lang.String} object.
      * @param keyFile a {@link java.io.File} object.
@@ -98,7 +101,8 @@ public class ForceFieldFilter_2 {
     }
 
     /**
-     * <p>parse</p>
+     * <p>
+     * parse</p>
      *
      * @return a {@link ffx.potential.parameters.ForceField} object.
      */
@@ -116,11 +120,11 @@ public class ForceFieldFilter_2 {
                  */
             } else {
                 String forceFieldString = properties.getString("forcefield", "AMOEBA-BIO-2009");
-                Force_Field ff = null;
+                ForceFieldName ff = null;
                 try {
-                    ff = ForceField.Force_Field.valueOf(forceFieldString.toUpperCase().replace('-', '_'));
+                    ff = ForceField.ForceFieldName.valueOf(forceFieldString.toUpperCase().replace('-', '_'));
                 } catch (Exception e) {
-                    ff = ForceField.Force_Field.AMOEBA_BIO_2009;
+                    ff = ForceField.ForceFieldName.AMOEBA_BIO_2009;
                 }
                 URL url = ForceField.getForceFieldURL(ff);
                 if (url != null) {
@@ -380,7 +384,7 @@ public class ForceFieldFilter_2 {
             newBondAngle[j] = bondAngle[j];
         }
         AngleType angleType = new AngleType(atomClasses, forceConstant,
-                newBondAngle);
+                newBondAngle, AngleFunction.SEXTIC);
         forceField.addForceFieldType(angleType);
     }
 
@@ -495,7 +499,7 @@ public class ForceFieldFilter_2 {
             double forceConstant = Double.parseDouble(tokens[3]);
             double distance = Double.parseDouble(tokens[4]);
             BondType bondType = new BondType(atomClasses, forceConstant,
-                    distance);
+                    distance, BondFunction.QUARTIC);
             forceField.addForceFieldType(bondType);
         } catch (Exception e) {
             String message = "Exception parsing BOND type:\n" + input + "\n";
@@ -530,8 +534,8 @@ public class ForceFieldFilter_2 {
             for (int i = 0; i < numTypes; i++) {
                 atomTypes[i] = Integer.parseInt(tokens[i + 1]);
             }
-            MultipoleType.MultipoleFrameDefinition frameDefinition =
-                    MultipoleType.MultipoleFrameDefinition.ZTHENX;
+            MultipoleType.MultipoleFrameDefinition frameDefinition
+                    = MultipoleType.MultipoleFrameDefinition.ZTHENX;
             if (atomTypes.length == 3 && (atomTypes[1] < 0 || atomTypes[2] < 0)) {
                 frameDefinition = MultipoleType.MultipoleFrameDefinition.BISECTOR;
             } else if (atomTypes.length == 4 && atomTypes[2] < 0 && atomTypes[3] < 0) {

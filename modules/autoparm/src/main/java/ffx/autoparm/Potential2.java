@@ -49,7 +49,8 @@ import static ffx.numerics.VectorMath.diff;
 import static ffx.numerics.VectorMath.r;
 
 /**
- * <p>Potential2 class.</p>
+ * <p>
+ * Potential2 class.</p>
  *
  * @author Gaurav Chattree
  * @since 1.0
@@ -83,8 +84,7 @@ public class Potential2 implements OptimizationListener {
     public int nvars;
     private static final Logger logger = Logger.getLogger(Potential2.class.getName());
     /**
-     * Constant
-     * <code>BOHR=0.52917720859</code>
+     * Constant <code>BOHR=0.52917720859</code>
      */
     public static final double BOHR = 0.52917720859;
     public PME_2 pme = null;
@@ -173,7 +173,6 @@ public class Potential2 implements OptimizationListener {
 //		}
 //
 //		structure_prm = new File(oprmfname);
-
         molecularAssembly = new MolecularAssembly(name);
         molecularAssembly.setFile(structure_xyz);
         CompositeConfiguration properties = Keyword_poltype.loadProperties(structure_key);
@@ -191,7 +190,7 @@ public class Potential2 implements OptimizationListener {
         ParallelTeam parallelTeam = new ParallelTeam();
         crystal = create_crystal(forceField, atoms);
         nSymm = crystal.spaceGroup.getNumberOfSymOps();
-        VanDerWaals vanderWaals = new VanDerWaals(molecularAssembly, crystal, parallelTeam);
+        VanDerWaals vanderWaals = new VanDerWaals(molecularAssembly, crystal, parallelTeam, 14.0, 7.0, 0.07, 0.12);
         //RENAME
         //store_key_file(structure_prm);
         store_key_file(structure_key);
@@ -285,7 +284,8 @@ public class Potential2 implements OptimizationListener {
     }
 
     /**
-     * <p>output_keyfile</p>
+     * <p>
+     * output_keyfile</p>
      *
      * @param mpoles an array of double.
      * @param outfname a {@link java.lang.String} object.
@@ -348,7 +348,6 @@ public class Potential2 implements OptimizationListener {
             }
         }
 
-
         for (int i = 0; i < key.size(); i++) {
             if (!key.get(i).toUpperCase().contains("MULTIPOLE")) {
                 bw.write(key.get(i) + "\n");
@@ -385,7 +384,8 @@ public class Potential2 implements OptimizationListener {
     }
 
     /**
-     * <p>do_cube</p>
+     * <p>
+     * do_cube</p>
      *
      * @param cfname a {@link java.lang.String} object.
      * @throws java.io.IOException if any.
@@ -455,7 +455,8 @@ public class Potential2 implements OptimizationListener {
     }
 
     /**
-     * <p>create_crystal</p>
+     * <p>
+     * create_crystal</p>
      *
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
      * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
@@ -510,7 +511,8 @@ public class Potential2 implements OptimizationListener {
     }
 
     /**
-     * <p>gen_pot_grid</p>
+     * <p>
+     * gen_pot_grid</p>
      *
      * @param target_file a {@link java.io.File} object.
      * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
@@ -557,7 +559,8 @@ public class Potential2 implements OptimizationListener {
     }
 
     /**
-     * <p>read_target_file</p>
+     * <p>
+     * read_target_file</p>
      *
      * @param target_file a {@link java.io.File} object.
      * @param grid a {@link java.util.ArrayList} object.
@@ -676,7 +679,8 @@ public class Potential2 implements OptimizationListener {
     }
 
     /**
-     * <p>make_grid</p>
+     * <p>
+     * make_grid</p>
      *
      * @param grid a {@link java.util.ArrayList} object.
      * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
@@ -805,7 +809,8 @@ public class Potential2 implements OptimizationListener {
     }
 
     /**
-     * <p>sphere</p>
+     * <p>
+     * sphere</p>
      *
      * @param ndot a int.
      * @return an array of double.
@@ -837,7 +842,8 @@ public class Potential2 implements OptimizationListener {
     }
 
     /**
-     * <p>output_pgrid</p>
+     * <p>
+     * output_pgrid</p>
      *
      * @param outfpot a {@link java.io.File} object.
      * @param outfgrid a {@link java.io.File} object.
@@ -871,7 +877,8 @@ public class Potential2 implements OptimizationListener {
     }
 
     /**
-     * <p>output_stats</p>
+     * <p>
+     * output_stats</p>
      */
     public void output_stats() {
         ArrayList<Integer> natm = new ArrayList<Integer>();
@@ -942,7 +949,8 @@ public class Potential2 implements OptimizationListener {
     }
 
     /**
-     * <p>avgrms</p>
+     * <p>
+     * avgrms</p>
      *
      * @return a double.
      */
@@ -961,7 +969,8 @@ public class Potential2 implements OptimizationListener {
     }
 
     /**
-     * <p>store_key_file</p>
+     * <p>
+     * store_key_file</p>
      *
      * @param keyfile a {@link java.io.File} object.
      * @throws java.io.IOException if any.
@@ -1015,7 +1024,8 @@ public class Potential2 implements OptimizationListener {
     }
 
     /**
-     * <p>main</p>
+     * <p>
+     * main</p>
      *
      * @param args an array of {@link java.lang.String} objects.
      * @throws java.io.IOException if any.

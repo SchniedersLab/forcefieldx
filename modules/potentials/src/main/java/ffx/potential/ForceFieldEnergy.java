@@ -416,7 +416,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         logger.info("\n Non-Bonded Terms");
 
         if (vanderWaalsTerm) {
-            vanderWaals = new VanDerWaals(molecularAssembly, crystal, parallelTeam);
+            //vanderWaals = new VanDerWaals(molecularAssembly, crystal, parallelTeam, 12.0, 6.0, 0.0, 0.0);
+            vanderWaals = new VanDerWaals(molecularAssembly, crystal, parallelTeam, 14.0, 7.0, 0.07, 0.12);
         } else {
             vanderWaals = null;
         }
@@ -1181,7 +1182,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         restraintBondTerm = true;
         RestraintBond rb = new RestraintBond(a1, a2, crystal);
         int classes[] = {a1.getAtomType().atomClass, a2.getAtomType().atomClass};
-        rb.setBondType((new BondType(classes, forceConstant, distance)));
+        rb.setBondType((new BondType(classes, forceConstant, distance, BondType.BondFunction.HARMONIC)));
         nRestraintBonds = 1;
         restraintBonds = new RestraintBond[nRestraintBonds];
         restraintBonds[0] = rb;

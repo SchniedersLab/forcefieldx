@@ -22,6 +22,8 @@
  */
 package ffx.potential.parameters;
 
+import java.util.Comparator;
+
 /**
  * The ChargeType class defines a partial atomic charge type.
  *
@@ -29,7 +31,7 @@ package ffx.potential.parameters;
  * @since 1.0
  *
  */
-public final class ChargeType extends BaseType {
+public final class ChargeType extends BaseType implements Comparator<String> {
 
     /**
      * The atom type that uses this charge parameter.
@@ -70,5 +72,24 @@ public final class ChargeType extends BaseType {
     @Override
     public String toString() {
         return String.format("charge  %5d  % 7.5f", atomType, charge);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int compare(String s1, String s2) {
+        int t1 = Integer.parseInt(s1);
+        int t2 = Integer.parseInt(s2);
+
+        if (t1 < t2) {
+            return -1;
+        }
+        if (t1 > t2) {
+            return 1;
+        }
+
+        return 0;
+
     }
 }

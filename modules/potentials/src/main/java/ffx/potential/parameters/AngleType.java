@@ -38,6 +38,11 @@ import static java.lang.Math.pow;
  */
 public final class AngleType extends BaseType implements Comparator<String> {
 
+    public enum AngleFunction {
+
+        HARMONIC, SEXTIC
+    }
+
     /**
      * Atom classes that for this Angle type.
      */
@@ -52,6 +57,8 @@ public final class AngleType extends BaseType implements Comparator<String> {
      */
     public final double angle[];
 
+    public final AngleFunction angleFunction;
+
     /**
      * <p>
      * Constructor for AngleType.</p>
@@ -59,12 +66,14 @@ public final class AngleType extends BaseType implements Comparator<String> {
      * @param atomClasses an array of int.
      * @param forceConstant a double.
      * @param angle an array of double.
+     * @param angleFunction
      */
-    public AngleType(int atomClasses[], double forceConstant, double angle[]) {
+    public AngleType(int atomClasses[], double forceConstant, double angle[], AngleFunction angleFunction) {
         super(ForceField.ForceFieldType.ANGLE, sortKey(atomClasses));
         this.atomClasses = atomClasses;
         this.forceConstant = forceConstant;
         this.angle = angle;
+        this.angleFunction = angleFunction;
     }
 
     /**
@@ -161,7 +170,7 @@ public final class AngleType extends BaseType implements Comparator<String> {
     /**
      * Convert angle bending energy to kcal/mole.
      */
-    public static double units = 1.0 / pow(180.0 / PI, 2);
+    public static final double units = 1.0 / pow(180.0 / PI, 2.0);
 
     /**
      * {@inheritDoc}

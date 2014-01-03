@@ -93,7 +93,8 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
      */
     public static final float BUFF = 0.7f;
     public BondType bondType = null;
-    private double rigidScale = 1.0;
+    protected double rigidScale = 1.0;
+
     private static final float a0col[] = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
         0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
     private static final float f4a[] = {0.0f, 0.0f, 0.0f, 0.9f};
@@ -596,13 +597,9 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
      */
     protected static final double v10[] = new double[3];
     /**
-     * Gradient on Atom 0.
+     * Atom 0 gradient.
      */
     protected static final double g0[] = new double[3];
-    /**
-     * Gradient on Atom 1.
-     */
-    protected static final double g1[] = new double[3];
 
     /**
      * Evaluate this Bond energy.
@@ -611,21 +608,44 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
      * @return Returns the energy.
      */
     public double energy(boolean gradient) {
-        diff(atoms[0].getXYZ(), atoms[1].getXYZ(), v10);
+        Atom atom0 = atoms[0];
+        Atom atom1 = atoms[1];
+        diff(atom0.getXYZ(), atom1.getXYZ(), v10);
         value = r(v10);
         double dv = value - bondType.distance;
         double dv2 = dv * dv;
-        energy = units * rigidScale * bondType.forceConstant * dv2 * (1.0 + cubic * dv + quartic * dv2);
-        if (gradient) {
-            double deddt = 2.0 * units * rigidScale * bondType.forceConstant * dv * (1.0 + 1.5 * cubic * dv + 2.0 * quartic * dv2);
-            double de = 0.0;
-            if (value > 0.0) {
-                de = deddt / value;
+        double prefactor = units * rigidScale * bondType.forceConstant;
+
+        switch (bondType.bondFunction) {
+            case QUARTIC: {
+                energy = prefactor * dv2 * (1.0 + cubic * dv + quartic * dv2);
+                if (gradient) {
+                    double deddt = 2.0 * prefactor * dv * (1.0 + 1.5 * cubic * dv + 2.0 * quartic * dv2);
+                    double de = 0.0;
+                    if (value > 0.0) {
+                        de = deddt / value;
+                    }
+                    scalar(v10, de, g0);
+                    atom0.addToXYZGradient(g0[0], g0[1], g0[2]);
+                    atom1.addToXYZGradient(-g0[0], -g0[1], -g0[2]);
+                }
+                break;
             }
-            scalar(v10, de, g0);
-            scalar(v10, -de, g1);
-            atoms[0].addToXYZGradient(g0[0], g0[1], g0[2]);
-            atoms[1].addToXYZGradient(g1[0], g1[1], g1[2]);
+            case HARMONIC:
+            default: {
+                energy = prefactor * dv2;
+                if (gradient) {
+                    double deddt = 2.0 * prefactor * dv;
+                    double de = 0.0;
+                    if (value > 0.0) {
+                        de = deddt / value;
+                    }
+                    scalar(v10, de, g0);
+                    atom0.addToXYZGradient(g0[0], g0[1], g0[2]);
+                    atom1.addToXYZGradient(-g0[0], -g0[1], -g0[2]);
+                }
+                break;
+            }
         }
         value = dv;
         return energy;

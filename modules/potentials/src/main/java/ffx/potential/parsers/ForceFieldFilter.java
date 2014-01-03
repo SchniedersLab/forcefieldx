@@ -22,7 +22,13 @@
  */
 package ffx.potential.parsers;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -33,15 +39,29 @@ import static java.lang.Math.abs;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
+import ffx.potential.parameters.AngleType;
+import ffx.potential.parameters.AtomType;
+import ffx.potential.parameters.BioType;
+import ffx.potential.parameters.BondType;
+import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldBoolean;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldInteger;
+import ffx.potential.parameters.ForceField.ForceFieldName;
 import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.parameters.ForceField.ForceFieldType;
-import ffx.potential.parameters.ForceField.Force_Field;
-import ffx.potential.parameters.*;
+import ffx.potential.parameters.MultipoleType;
+import ffx.potential.parameters.OutOfPlaneBendType;
+import ffx.potential.parameters.PiTorsionType;
+import ffx.potential.parameters.PolarizeType;
+import ffx.potential.parameters.StretchBendType;
+import ffx.potential.parameters.TorsionTorsionType;
+import ffx.potential.parameters.TorsionType;
+import ffx.potential.parameters.UreyBradleyType;
+import ffx.potential.parameters.VDWType;
 import ffx.utilities.Keyword;
 
 /**
@@ -58,8 +78,8 @@ public class ForceFieldFilter {
 
     private static final Logger logger = Logger.getLogger(ForceFieldFilter.class.getName());
     private ForceField forceField = null;
-    private CompositeConfiguration properties;
-    private File forceFieldFile;
+    private final CompositeConfiguration properties;
+    private final File forceFieldFile;
 
     /**
      * <p>
@@ -126,10 +146,10 @@ public class ForceFieldFilter {
              */
             if (forceFieldFile != null) {
                 if (!forceFieldFile.exists()) {
-                    logger.info(" " + forceFieldFile + " does not exist.");
+                    logger.log(Level.INFO, " {0} does not exist.", forceFieldFile);
                     return null;
                 } else if (!forceFieldFile.canRead()) {
-                    logger.info(" " + forceFieldFile + " can not be read.");
+                    logger.log(Level.INFO, " {0} can not be read.", forceFieldFile);
                     return null;
                 }
                 parse(new FileInputStream(forceFieldFile));
@@ -139,18 +159,20 @@ public class ForceFieldFilter {
                  */
             } else {
                 String forceFieldString = properties.getString("forcefield", "AMOEBA-BIO-2009");
-                Force_Field ff = null;
+                ForceFieldName ff;
                 try {
-                    ff = ForceField.Force_Field.valueOf(forceFieldString.toUpperCase().replace('-', '_'));
+                    ff = ForceField.ForceFieldName.valueOf(forceFieldString.toUpperCase().replace('-', '_'));
                 } catch (Exception e) {
-                    ff = ForceField.Force_Field.AMOEBA_BIO_2009;
+                    ff = ForceField.ForceFieldName.AMOEBA_BIO_2009;
                 }
                 URL url = ForceField.getForceFieldURL(ff);
                 if (url != null) {
+                    logger.info(url.toString());
+                    forceField.forceFieldURL = url;
                     try {
                         PropertiesConfiguration config = new PropertiesConfiguration(url);
                         properties.addConfiguration(config);
-                    } catch (Exception e) {
+                    } catch (ConfigurationException e) {
                         logger.warning(e.toString());
                     }
                 }
@@ -163,10 +185,11 @@ public class ForceFieldFilter {
                 parse(properties);
             }
             forceField.checkPolarizationTypes();
-        } catch (Exception e) {
+        } catch (FileNotFoundException e) {
             String message = "Exception parsing force field.";
             logger.log(Level.WARNING, message, e);
         }
+
         return forceField;
     }
 
@@ -183,7 +206,7 @@ public class ForceFieldFilter {
                 Iterator i = config.getKeys();
                 while (i.hasNext()) {
                     String key = (String) i.next();
-                    ForceFieldType type = null;
+                    ForceFieldType type;
                     try {
                         type = ForceFieldType.valueOf(key.toUpperCase());
                     } catch (Exception e) {
@@ -243,7 +266,7 @@ public class ForceFieldFilter {
                                 parsePolarize(input, tokens);
                                 break;
                             default:
-                                logger.warning("ForceField type recognized, but not stored:" + type);
+                                logger.log(Level.WARNING, "ForceField type recognized, but not stored:{0}", type);
                         }
                     }
                 }
@@ -257,127 +280,126 @@ public class ForceFieldFilter {
 
     private void parse(InputStream stream) {
         try {
-            BufferedReader br = new BufferedReader(new InputStreamReader(stream));
-            while (br.ready()) {
-                String input = br.readLine();
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(stream))) {
+                while (br.ready()) {
+                    String input = br.readLine();
 
-                // Split the line on the pound symbol to remove comments.
-                input = input.split("#")[0];
+                    // Split the line on the pound symbol to remove comments.
+                    input = input.split("#")[0];
 
-                String tokens[] = input.trim().split(" +");
-                if (tokens != null) {
-                    String keyword = tokens[0].toUpperCase().replaceAll("-",
-                            "_");
-                    boolean parsed = true;
-                    try {
-                        // Parse Keywords with a String value.
-                        ForceFieldString ffString = ForceFieldString.valueOf(keyword);
-                        forceField.addForceFieldString(ffString, tokens[1]);
-                    } catch (Exception e) {
+                    String tokens[] = input.trim().split(" +");
+                    if (tokens != null) {
+                        String keyword = tokens[0].toUpperCase().replaceAll("-",
+                                "_");
+                        boolean parsed = true;
                         try {
-                            // Parse Keywords with a Double value.
-                            ForceFieldDouble ffDouble = ForceFieldDouble.valueOf(keyword);
-                            double value = Double.parseDouble(tokens[1]);
-                            forceField.addForceFieldDouble(ffDouble, value);
-                        } catch (Exception e2) {
+                            // Parse Keywords with a String value.
+                            ForceFieldString ffString = ForceFieldString.valueOf(keyword);
+                            forceField.addForceFieldString(ffString, tokens[1]);
+                        } catch (Exception e) {
                             try {
-                                // Parse Keywords with an Integer value.
-                                ForceFieldInteger ffInteger = ForceFieldInteger.valueOf(keyword);
-                                int value = Integer.parseInt(tokens[1]);
-                                forceField.addForceFieldInteger(ffInteger, value);
-                            } catch (Exception e3) {
+                                // Parse Keywords with a Double value.
+                                ForceFieldDouble ffDouble = ForceFieldDouble.valueOf(keyword);
+                                double value = Double.parseDouble(tokens[1]);
+                                forceField.addForceFieldDouble(ffDouble, value);
+                            } catch (NumberFormatException e2) {
                                 try {
                                     // Parse Keywords with an Integer value.
-                                    ForceFieldBoolean ffBoolean = ForceFieldBoolean.valueOf(keyword);
-                                    boolean value = true;
-                                    if (tokens.length > 1 && tokens[0].toUpperCase().endsWith("TERM")) {
-                                        /**
-                                         * Handle the token "ONLY" specially to
-                                         * shut off all other terms.
-                                         */
-                                        if (tokens[1].equalsIgnoreCase("ONLY")) {
-                                            for (ForceFieldBoolean term : ForceFieldBoolean.values()) {
-                                                if (term.toString().toUpperCase().endsWith("TERM")) {
-                                                    forceField.addForceFieldBoolean(term, false);
-                                                }
-                                            }
-                                        } else if (tokens[1].equalsIgnoreCase("NONE")) {
+                                    ForceFieldInteger ffInteger = ForceFieldInteger.valueOf(keyword);
+                                    int value = Integer.parseInt(tokens[1]);
+                                    forceField.addForceFieldInteger(ffInteger, value);
+                                } catch (NumberFormatException e3) {
+                                    try {
+                                        // Parse Keywords with an Integer value.
+                                        ForceFieldBoolean ffBoolean = ForceFieldBoolean.valueOf(keyword);
+                                        boolean value = true;
+                                        if (tokens.length > 1 && tokens[0].toUpperCase().endsWith("TERM")) {
                                             /**
-                                             * Legacy support for the "NONE"
-                                             * token.
+                                             * Handle the token "ONLY" specially
+                                             * to shut off all other terms.
                                              */
-                                            value = false;
-                                        } else {
-                                            value = Boolean.parseBoolean(tokens[1]);
+                                            if (tokens[1].equalsIgnoreCase("ONLY")) {
+                                                for (ForceFieldBoolean term : ForceFieldBoolean.values()) {
+                                                    if (term.toString().toUpperCase().endsWith("TERM")) {
+                                                        forceField.addForceFieldBoolean(term, false);
+                                                    }
+                                                }
+                                            } else if (tokens[1].equalsIgnoreCase("NONE")) {
+                                                /**
+                                                 * Legacy support for the "NONE"
+                                                 * token.
+                                                 */
+                                                value = false;
+                                            } else {
+                                                value = Boolean.parseBoolean(tokens[1]);
+                                            }
                                         }
+                                        forceField.addForceFieldBoolean(ffBoolean, value);
+                                        forceField.log(keyword);
+                                    } catch (Exception e4) {
+                                        parsed = false;
                                     }
-                                    forceField.addForceFieldBoolean(ffBoolean, value);
-                                    forceField.log(keyword);
-                                } catch (Exception e4) {
-                                    parsed = false;
                                 }
                             }
                         }
-                    }
-                    if (!parsed) {
-                        try {
-                            ForceFieldType type = ForceFieldType.valueOf(tokens[0].toUpperCase());
-                            switch (type) {
-                                case ATOM:
-                                    parseAtom(input, tokens);
-                                    break;
-                                case ANGLE:
-                                    parseAngle(input, tokens);
-                                    break;
-                                case BIOTYPE:
-                                    parseBioType(input, tokens);
-                                    break;
-                                case BOND:
-                                    parseBond(input, tokens);
-                                    break;
-                                case CHARGE:
-                                    parseCharge(input, tokens);
-                                    break;
-                                case MULTIPOLE:
-                                    parseMultipole(input, tokens, br);
-                                    break;
-                                case OPBEND:
-                                    parseOPBend(input, tokens);
-                                    break;
-                                case STRBND:
-                                    parseStrBnd(input, tokens);
-                                    break;
-                                case PITORS:
-                                    parsePiTorsion(input, tokens);
-                                    break;
-                                case TORSION:
-                                    parseTorsion(input, tokens);
-                                    break;
-                                case TORTORS:
-                                    parseTorsionTorsion(input, tokens, br);
-                                    break;
-                                case UREYBRAD:
-                                    parseUreyBradley(input, tokens);
-                                    break;
-                                case VDW:
-                                    parseVDW(input, tokens);
-                                    break;
-                                case POLARIZE:
-                                    parsePolarize(input, tokens);
-                                    break;
-                                default:
-                                    logger.warning("ForceField type recognized, but not stored:" + type);
+                        if (!parsed) {
+                            try {
+                                ForceFieldType type = ForceFieldType.valueOf(tokens[0].toUpperCase());
+                                switch (type) {
+                                    case ATOM:
+                                        parseAtom(input, tokens);
+                                        break;
+                                    case ANGLE:
+                                        parseAngle(input, tokens);
+                                        break;
+                                    case BIOTYPE:
+                                        parseBioType(input, tokens);
+                                        break;
+                                    case BOND:
+                                        parseBond(input, tokens);
+                                        break;
+                                    case CHARGE:
+                                        parseCharge(input, tokens);
+                                        break;
+                                    case MULTIPOLE:
+                                        parseMultipole(input, tokens, br);
+                                        break;
+                                    case OPBEND:
+                                        parseOPBend(input, tokens);
+                                        break;
+                                    case STRBND:
+                                        parseStrBnd(input, tokens);
+                                        break;
+                                    case PITORS:
+                                        parsePiTorsion(input, tokens);
+                                        break;
+                                    case TORSION:
+                                        parseTorsion(input, tokens);
+                                        break;
+                                    case TORTORS:
+                                        parseTorsionTorsion(input, tokens, br);
+                                        break;
+                                    case UREYBRAD:
+                                        parseUreyBradley(input, tokens);
+                                        break;
+                                    case VDW:
+                                        parseVDW(input, tokens);
+                                        break;
+                                    case POLARIZE:
+                                        parsePolarize(input, tokens);
+                                        break;
+                                    default:
+                                        logger.log(Level.WARNING, "ForceField type recognized, but not stored:{0}", type);
+                                }
+                            } catch (Exception e) {
+                                //String message = "Exception parsing force field parametesr.\n";
+                                //logger.log(Level.WARNING, message, e);
                             }
-                            continue;
-                        } catch (Exception e) {
-                            //String message = "Exception parsing force field parametesr.\n";
-                            //logger.log(Level.WARNING, message, e);
                         }
                     }
                 }
             }
-            br.close();
-        } catch (Exception e) {
+        } catch (IOException e) {
             String message = "Error parsing force field parameters.\n";
             logger.log(Level.SEVERE, message, e);
         }
@@ -385,7 +407,7 @@ public class ForceFieldFilter {
 
     private void parseAngle(String input, String tokens[]) {
         if (tokens.length < 6) {
-            logger.warning("Invalid ANGLE type:\n" + input);
+            logger.log(Level.WARNING, "Invalid ANGLE type:\n{0}", input);
             return;
         }
         int atomClasses[] = new int[3];
@@ -402,22 +424,28 @@ public class ForceFieldFilter {
             for (int i = 0; i < angles; i++) {
                 bondAngle[i] = Double.parseDouble(tokens[5 + i]);
             }
-        } catch (Exception e) {
+        } catch (NumberFormatException e) {
             String message = "Exception parsing ANGLE type:\n" + input + "\n";
             logger.log(Level.SEVERE, message, e);
         }
         double newBondAngle[] = new double[angles];
-        for (int j = 0; j < angles; j++) {
-            newBondAngle[j] = bondAngle[j];
+        System.arraycopy(bondAngle, 0, newBondAngle, 0, angles);
+
+        String forceFieldName = forceField.forceFieldURL.toString().toUpperCase();
+        AngleType angleType;
+        if (forceFieldName.contains("OPLS")) {
+            angleType = new AngleType(atomClasses, forceConstant,
+                    newBondAngle, AngleType.AngleFunction.HARMONIC);
+        } else {
+            angleType = new AngleType(atomClasses, forceConstant,
+                    newBondAngle, AngleType.AngleFunction.SEXTIC);
         }
-        AngleType angleType = new AngleType(atomClasses, forceConstant,
-                newBondAngle);
         forceField.addForceFieldType(angleType);
     }
 
     private void parseAtom(String input, String[] tokens) {
         if (tokens.length < 7) {
-            logger.warning("Invalid ATOM type:\n" + input);
+            logger.log(Level.WARNING, "Invalid ATOM type:\n{0}", input);
             return;
         }
         try {
@@ -425,7 +453,7 @@ public class ForceFieldFilter {
             // Atom Type
             int type = Integer.parseInt(tokens[index++]);
             // Atom Class
-            int atomClass = -1;
+            int atomClass;
             // The following try/catch is a nasty hack to check for one of the
             // the following two cases:
             //
@@ -439,7 +467,7 @@ public class ForceFieldFilter {
                 atomClass = Integer.parseInt(tokens[index]);
                 // If the parseInt succeeds, this force field has atom classes.
                 index++;
-            } catch (Exception e) {
+            } catch (NumberFormatException e) {
                 // Some force fields do not use atom classes.
                 atomClass = -1;
             }
@@ -451,7 +479,7 @@ public class ForceFieldFilter {
             int first = input.indexOf("\"");
             int last = input.lastIndexOf("\"");
             if (first >= last) {
-                logger.warning("Invalid ATOM type:\n" + input);
+                logger.log(Level.WARNING, "Invalid ATOM type:\n{0}", input);
                 return;
             }
             // Environment
@@ -469,7 +497,7 @@ public class ForceFieldFilter {
             AtomType atomType = new AtomType(type, atomClass, name,
                     environment, atomicNumber, mass, hybridization);
             forceField.addForceFieldType(atomType);
-        } catch (Exception e) {
+        } catch (NumberFormatException e) {
             String message = "Exception parsing CHARGE type:\n" + input + "\n";
             logger.log(Level.SEVERE, message, e);
         }
@@ -477,7 +505,7 @@ public class ForceFieldFilter {
 
     private void parseBioType(String input, String tokens[]) {
         if (tokens.length < 5) {
-            logger.warning("Invalid BIOTYPE type:\n" + input);
+            logger.log(Level.WARNING, "Invalid BIOTYPE type:\n{0}", input);
             return;
         }
         try {
@@ -489,7 +517,7 @@ public class ForceFieldFilter {
             int first = input.indexOf("\"");
             int last = input.lastIndexOf("\"");
             if (first >= last) {
-                logger.warning("Invalid BIOTYPE type:\n" + input);
+                logger.log(Level.WARNING, "Invalid BIOTYPE type:\n{0}", input);
                 return;
             }
             // Environment
@@ -508,7 +536,7 @@ public class ForceFieldFilter {
             }
             BioType bioType = new BioType(index, atomName, moleculeName, atomType, bonds);
             forceField.addForceFieldType(bioType);
-        } catch (Exception e) {
+        } catch (NumberFormatException e) {
             String message = "Exception parsing BIOTYPE type:\n" + input + "\n";
             logger.log(Level.SEVERE, message, e);
         }
@@ -516,7 +544,7 @@ public class ForceFieldFilter {
 
     private void parseBond(String input, String[] tokens) {
         if (tokens.length < 5) {
-            logger.warning("Invalid BOND type:\n" + input);
+            logger.log(Level.WARNING, "Invalid BOND type:\n{0}", input);
             return;
         }
         try {
@@ -525,26 +553,47 @@ public class ForceFieldFilter {
             atomClasses[1] = Integer.parseInt(tokens[2]);
             double forceConstant = Double.parseDouble(tokens[3]);
             double distance = Double.parseDouble(tokens[4]);
-            BondType bondType = new BondType(atomClasses, forceConstant,
-                    distance);
+            String forceFieldName = forceField.forceFieldURL.toString().toUpperCase();
+            BondType bondType;
+            if (forceFieldName.contains("OPLS")) {
+                bondType = new BondType(atomClasses, forceConstant,
+                        distance, BondType.BondFunction.HARMONIC);
+            } else {
+                bondType = new BondType(atomClasses, forceConstant,
+                        distance, BondType.BondFunction.QUARTIC);
+            }
             forceField.addForceFieldType(bondType);
-        } catch (Exception e) {
+        } catch (NumberFormatException e) {
             String message = "Exception parsing BOND type:\n" + input + "\n";
             logger.log(Level.SEVERE, message, e);
         }
     }
 
+    /**
+     * Map charge parameters to a Multipole instance.
+     *
+     * @param input
+     * @param tokens
+     */
     private void parseCharge(String input, String tokens[]) {
         if (tokens.length < 3) {
-            logger.warning("Invalid CHARGE type:\n" + input);
+            logger.log(Level.WARNING, "Invalid CHARGE type:\n{0}", input);
             return;
         }
         try {
-            int atomType = Integer.parseInt(tokens[1]);
+            int[] atomTypes = new int[3];
+            atomTypes[0] = Integer.parseInt(tokens[1]);
+            atomTypes[1] = 0;
+            atomTypes[2] = 0;
             double partialCharge = Double.parseDouble(tokens[2]);
-            ChargeType chargeType = new ChargeType(atomType, partialCharge);
-            forceField.addForceFieldType(chargeType);
-        } catch (Exception e) {
+            double[] dipole = new double[3];
+            double[][] quadrupole = new double[3][3];
+            MultipoleType.MultipoleFrameDefinition frameDefinition
+                    = MultipoleType.MultipoleFrameDefinition.ZTHENX;
+            MultipoleType multipoleType = new MultipoleType(partialCharge, dipole,
+                    quadrupole, atomTypes, frameDefinition);
+            forceField.addForceFieldType(multipoleType);
+        } catch (NumberFormatException e) {
             String message = "Exception parsing CHARGE type:\n" + input + "\n";
             logger.log(Level.SEVERE, message, e);
         }
@@ -552,7 +601,7 @@ public class ForceFieldFilter {
 
     private void parseMultipole(String input, String[] tokens, BufferedReader br) {
         if (tokens.length < 5) {
-            logger.warning("Invalid MULTIPOLE type:\n" + input);
+            logger.log(Level.WARNING, "Invalid MULTIPOLE type:\n{0}", input);
             return;
         }
         try {
@@ -579,7 +628,7 @@ public class ForceFieldFilter {
             input = br.readLine().split("#")[0];
             tokens = input.trim().split(" +");
             if (tokens.length != 3) {
-                logger.warning("Invalid MULTIPOLE type:\n" + input);
+                logger.log(Level.WARNING, "Invalid MULTIPOLE type:\n{0}", input);
                 return;
             }
             double dipole[] = new double[3];
@@ -589,7 +638,7 @@ public class ForceFieldFilter {
             input = br.readLine().split("#")[0];
             tokens = input.trim().split(" +");
             if (tokens.length != 1) {
-                logger.warning("Invalid MULTIPOLE type:\n" + input);
+                logger.log(Level.WARNING, "Invalid MULTIPOLE type:\n{0}", input);
                 return;
             }
             double quadrupole[][] = new double[3][3];
@@ -597,7 +646,7 @@ public class ForceFieldFilter {
             input = br.readLine().split("#")[0];
             tokens = input.trim().split(" +");
             if (tokens.length != 2) {
-                logger.warning("Invalid MULTIPOLE type:\n" + input);
+                logger.log(Level.WARNING, "Invalid MULTIPOLE type:\n{0}", input);
                 return;
             }
             quadrupole[1][0] = Double.parseDouble(tokens[0]);
@@ -605,7 +654,7 @@ public class ForceFieldFilter {
             input = br.readLine().split("#")[0];
             tokens = input.trim().split(" +");
             if (tokens.length != 3) {
-                logger.warning("Invalid MULTIPOLE type:\n" + input);
+                logger.log(Level.WARNING, "Invalid MULTIPOLE type:\n{0}", input);
                 return;
             }
             quadrupole[2][0] = Double.parseDouble(tokens[0]);
@@ -618,7 +667,7 @@ public class ForceFieldFilter {
             MultipoleType multipoleType = new MultipoleType(c, dipole,
                     quadrupole, atomTypes, frameDefinition);
             forceField.addForceFieldType(multipoleType);
-        } catch (Exception e) {
+        } catch (NumberFormatException | IOException e) {
             String message = "Exception parsing MULTIPOLE type:\n" + input + "\n";
             logger.log(Level.SEVERE, message, e);
         }
@@ -634,7 +683,7 @@ public class ForceFieldFilter {
      */
     private void parseMultipole(String input, String[] tokens) {
         if (tokens.length < 14) {
-            logger.warning("Invalid MULTIPOLE type:" + Arrays.toString(tokens));
+            logger.log(Level.WARNING, "Invalid MULTIPOLE type:{0}", Arrays.toString(tokens));
             return;
         }
         try {
@@ -675,7 +724,7 @@ public class ForceFieldFilter {
             MultipoleType multipoleType = new MultipoleType(c, dipole,
                     quadrupole, atomTypes, frameDefinition);
             forceField.addForceFieldType(multipoleType);
-        } catch (Exception e) {
+        } catch (NumberFormatException e) {
             String message = "Exception parsing MULTIPOLE type:\n" + input + "\n";
             logger.log(Level.SEVERE, message, e);
         }
@@ -683,7 +732,7 @@ public class ForceFieldFilter {
 
     private void parseOPBend(String input, String[] tokens) {
         if (tokens.length < 6) {
-            logger.warning("Invalid OPBEND type:\n" + input);
+            logger.log(Level.WARNING, "Invalid OPBEND type:\n{0}", input);
             return;
         }
         try {
@@ -696,7 +745,7 @@ public class ForceFieldFilter {
             OutOfPlaneBendType opbendType = new OutOfPlaneBendType(atomClasses,
                     forceConstant);
             forceField.addForceFieldType(opbendType);
-        } catch (Exception e) {
+        } catch (NumberFormatException e) {
             String message = "Exception parsing OPBEND type:\n" + input + "\n";
             logger.log(Level.SEVERE, message, e);
         }
@@ -704,7 +753,7 @@ public class ForceFieldFilter {
 
     private void parsePiTorsion(String input, String[] tokens) {
         if (tokens.length < 4) {
-            logger.warning("Invalid PITORS type:\n" + input);
+            logger.log(Level.WARNING, "Invalid PITORS type:\n{0}", input);
             return;
         }
         try {
@@ -715,7 +764,7 @@ public class ForceFieldFilter {
             PiTorsionType piTorsionType = new PiTorsionType(atomClasses,
                     forceConstant);
             forceField.addForceFieldType(piTorsionType);
-        } catch (Exception e) {
+        } catch (NumberFormatException e) {
             String message = "Exception parsing PITORS type:\n" + input + "\n";
             logger.log(Level.SEVERE, message, e);
         }
@@ -723,7 +772,7 @@ public class ForceFieldFilter {
 
     private void parsePolarize(String input, String tokens[]) {
         if (tokens.length < 4) {
-            logger.warning("Invalid POLARIZE type:\n" + input);
+            logger.log(Level.WARNING, "Invalid POLARIZE type:\n{0}", input);
         }
         try {
             int atomType = Integer.parseInt(tokens[1]);
@@ -741,7 +790,7 @@ public class ForceFieldFilter {
                     polarizability, thole, polarizationGroup);
             forceField.addForceFieldType(polarizeType);
             //polarizeType.log();
-        } catch (Exception e) {
+        } catch (NumberFormatException e) {
             String message = "Exception parsing POLARIZE type:\n" + input + "\n";
             logger.log(Level.SEVERE, message, e);
         }
@@ -749,7 +798,7 @@ public class ForceFieldFilter {
 
     private void parseStrBnd(String input, String[] tokens) {
         if (tokens.length < 6) {
-            logger.warning("Invalid STRBND type:\n" + input);
+            logger.log(Level.WARNING, "Invalid STRBND type:\n{0}", input);
             return;
         }
         try {
@@ -763,7 +812,7 @@ public class ForceFieldFilter {
             StretchBendType strbndType = new StretchBendType(atomClasses,
                     forceConstants);
             forceField.addForceFieldType(strbndType);
-        } catch (Exception e) {
+        } catch (NumberFormatException e) {
             String message = "Exception parsing STRBND type:\n" + input + "\n";
             logger.log(Level.SEVERE, message, e);
         }
@@ -771,7 +820,7 @@ public class ForceFieldFilter {
 
     private void parseTorsion(String input, String tokens[]) {
         if (tokens.length < 5) {
-            logger.warning("Invalid TORSION type:\n" + input);
+            logger.log(Level.WARNING, "Invalid TORSION type:\n{0}", input);
             return;
         }
         try {
@@ -793,7 +842,7 @@ public class ForceFieldFilter {
             TorsionType torsionType = new TorsionType(atomClasses, amplitude,
                     phase, periodicity);
             forceField.addForceFieldType(torsionType);
-        } catch (Exception e) {
+        } catch (NumberFormatException e) {
             String message = "Exception parsing TORSION type:\n" + input + "\n";
             logger.log(Level.SEVERE, message, e);
         }
@@ -802,7 +851,7 @@ public class ForceFieldFilter {
     private void parseTorsionTorsion(String input, String[] tokens,
             BufferedReader br) {
         if (tokens.length < 8) {
-            logger.warning("Invalid TORTORS type:\n" + input);
+            logger.log(Level.WARNING, "Invalid TORTORS type:\n{0}", input);
             return;
         }
         try {
@@ -821,7 +870,7 @@ public class ForceFieldFilter {
                 input = br.readLine();
                 tokens = input.trim().split(" +");
                 if (tokens.length != 3) {
-                    logger.warning("Invalid TORTORS type:\n" + input);
+                    logger.log(Level.WARNING, "Invalid TORTORS type:\n{0}", input);
                     return;
                 }
                 torsion1[i] = Double.parseDouble(tokens[0]);
@@ -831,7 +880,7 @@ public class ForceFieldFilter {
             TorsionTorsionType torsionTorsionType = new TorsionTorsionType(
                     atomClasses, gridPoints, torsion1, torsion2, energy);
             forceField.addForceFieldType(torsionTorsionType);
-        } catch (Exception e) {
+        } catch (NumberFormatException | IOException e) {
             String message = "Exception parsing TORTORS type:\n" + input + "\n";
             logger.log(Level.SEVERE, message, e);
         }
@@ -839,7 +888,7 @@ public class ForceFieldFilter {
 
     private void parseTorsionTorsion(String input, String[] tokens) {
         if (tokens.length < 8) {
-            logger.warning("Invalid TORTORS type:\n" + input);
+            logger.log(Level.WARNING, "Invalid TORTORS type:\n{0}", input);
             return;
         }
         try {
@@ -855,7 +904,7 @@ public class ForceFieldFilter {
 
             int numTokens = points * 3 + 8;
             if (tokens.length < numTokens) {
-                logger.warning("Invalid TORTORS type:\n" + input);
+                logger.log(Level.WARNING, "Invalid TORTORS type:\n{0}", input);
                 return;
             }
             double torsion1[] = new double[points];
@@ -870,7 +919,7 @@ public class ForceFieldFilter {
             TorsionTorsionType torsionTorsionType = new TorsionTorsionType(
                     atomClasses, gridPoints, torsion1, torsion2, energy);
             forceField.addForceFieldType(torsionTorsionType);
-        } catch (Exception e) {
+        } catch (NumberFormatException e) {
             String message = "Exception parsing TORTORS type:\n" + input + "\n";
             logger.log(Level.SEVERE, message, e);
         }
@@ -878,7 +927,7 @@ public class ForceFieldFilter {
 
     private void parseUreyBradley(String input, String[] tokens) {
         if (tokens.length < 5) {
-            logger.warning("Invalid UREYBRAD type:\n" + input);
+            logger.log(Level.WARNING, "Invalid UREYBRAD type:\n{0}", input);
             return;
         }
         try {
@@ -891,7 +940,7 @@ public class ForceFieldFilter {
             UreyBradleyType ureyType = new UreyBradleyType(atomClasses,
                     forceConstant, distance);
             forceField.addForceFieldType(ureyType);
-        } catch (Exception e) {
+        } catch (NumberFormatException e) {
             String message = "Exception parsing UREYBRAD type:\n" + input + "\n";
             logger.log(Level.SEVERE, message, e);
         }
@@ -899,7 +948,7 @@ public class ForceFieldFilter {
 
     private void parseVDW(String input, String[] tokens) {
         if (tokens.length < 4) {
-            logger.warning("Invalid VDW type:\n" + input);
+            logger.log(Level.WARNING, "Invalid VDW type:\n{0}", input);
             return;
         }
         try {
@@ -913,14 +962,14 @@ public class ForceFieldFilter {
             VDWType vdwType = new VDWType(atomType, radius, wellDepth,
                     reductionFactor);
             forceField.addForceFieldType(vdwType);
-        } catch (Exception e) {
+        } catch (NumberFormatException e) {
             String message = "Exception parsing VDW type:\n" + input + "\n";
             logger.log(Level.SEVERE, message, e);
         }
     }
 
     /**
-     * Parse a Force Field paramter file and echo the results with slashes.
+     * Parse a Force Field parameter file and echo the results with slashes.
      *
      * @param args an array of {@link java.lang.String} objects.
      * @throws java.lang.Exception if any.

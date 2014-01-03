@@ -5782,8 +5782,9 @@ public class ParticleMeshEwald implements LambdaInterface {
             String message = "No force field is defined.\n";
             logger.log(Level.SEVERE, message);
         }
-        if (forceField.getForceFieldTypeCount(ForceFieldType.MULTIPOLE) < 1) {
-            String message = "Force field has no multipole types.\n";
+        if (forceField.getForceFieldTypeCount(ForceFieldType.MULTIPOLE) < 1
+                && forceField.getForceFieldTypeCount(ForceFieldType.CHARGE) < 1) {
+            String message = "Force field has no permanent electrostatic types.\n";
             logger.log(Level.SEVERE, message);
             return;
         }
@@ -5832,18 +5833,26 @@ public class ParticleMeshEwald implements LambdaInterface {
         Atom atom = atoms[i];
         AtomType atomType = atoms[i].getAtomType();
         if (atomType == null) {
-            String message = "Fatal exception: Multipoles can only be assigned to atoms that have been typed.";
+            String message = " Multipoles can only be assigned to atoms that have been typed.";
             logger.severe(message);
+            return false;
         }
         PolarizeType polarizeType = forceField.getPolarizeType(atomType.getKey());
         if (polarizeType != null) {
             atom.setPolarizeType(polarizeType);
         } else {
-            String message = "Fatal Exception: No polarization type was found for " + atom.toString();
-            logger.severe(message);
+            String message = " No polarization type was found for " + atom.toString();
+            logger.fine(message);
+            double polarizability = 0.0;
+            double thole = 0.0;
+            int polarizationGroup[] = null;
+            polarizeType = new PolarizeType(atomType.type,
+                    polarizability, thole, polarizationGroup);
+            forceField.addForceFieldType(polarizeType);
+            atom.setPolarizeType(polarizeType);
         }
-        MultipoleType multipoleType = null;
-        String key = null;
+        MultipoleType multipoleType;
+        String key;
         // No reference atoms.
         key = atomType.getKey() + " 0 0";
         multipoleType = forceField.getMultipoleType(key);
@@ -5863,6 +5872,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             frame[i] = multipoleType.frameDefinition;
             return true;
         }
+
         // No bonds.
         List<Bond> bonds = atom.getBonds();
         if (bonds == null || bonds.size() < 1) {
@@ -6065,8 +6075,8 @@ public class ParticleMeshEwald implements LambdaInterface {
         /**
          * Find directly connected group members for each atom.
          */
-        List<Integer> group = new ArrayList<Integer>();
-        List<Integer> polarizationGroup = new ArrayList<Integer>();
+        List<Integer> group = new ArrayList<>();
+        List<Integer> polarizationGroup = new ArrayList<>();
         //int g11 = 0;
         for (Atom ai : atoms) {
             group.clear();
@@ -6108,8 +6118,8 @@ public class ParticleMeshEwald implements LambdaInterface {
          * Find 1-2 group relationships.
          */
         int mask[] = new int[nAtoms];
-        List<Integer> list = new ArrayList<Integer>();
-        List<Integer> keep = new ArrayList<Integer>();
+        List<Integer> list = new ArrayList<>();
+        List<Integer> keep = new ArrayList<>();
         for (int i = 0; i < nAtoms; i++) {
             mask[i] = -1;
         }

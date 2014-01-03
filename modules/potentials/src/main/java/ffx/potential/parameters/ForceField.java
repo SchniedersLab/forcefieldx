@@ -44,12 +44,13 @@ public class ForceField {
     private static final Logger logger = Logger.getLogger(ForceField.class.getName());
 
     /**
-     * Available force fields; currently limited to the AMOEBA family.
+     * Available force fields.
      */
-    public enum Force_Field {
+    public enum ForceFieldName {
 
         AMOEBA_WATER, AMOEBA_2004, AMOEBA_PROTEIN_2004, AMOEBA_PROTEIN_2004_U1,
-        AMOEBA_2009, AMOEBA_BIO_2009, AMOEBA_BIO_2009_ORIG, AMOEBA_PROTEIN_2013
+        AMOEBA_2009, AMOEBA_BIO_2009, AMOEBA_BIO_2009_ORIG, AMOEBA_PROTEIN_2013,
+        OPLS_AAL
     }
 
     public enum ForceFieldString {
@@ -97,12 +98,12 @@ public class ForceField {
     /**
      * A map between a Force_Field and its internal parameter file.
      */
-    private static final Map<Force_Field, URL> forceFields = new EnumMap<Force_Field, URL>(Force_Field.class);
+    private static final Map<ForceFieldName, URL> forceFields = new EnumMap<>(ForceFieldName.class);
 
     static {
         ClassLoader cl = ForceField.class.getClassLoader();
-        String prefix = "ffx/potential/parameters/amoeba/";
-        for (Force_Field ff : Force_Field.values()) {
+        String prefix = "ffx/potential/parameters/ff/";
+        for (ForceFieldName ff : ForceFieldName.values()) {
             forceFields.put(ff, cl.getResource(prefix + ff));
         }
     }
@@ -113,6 +114,7 @@ public class ForceField {
     private final Map<String, AtomType> atomTypes;
     private final Map<String, BioType> bioTypes;
     private final Map<String, BondType> bondTypes;
+    private final Map<String, ChargeType> chargeTypes;
     private final Map<String, MultipoleType> multipoleTypes;
     private final Map<String, OutOfPlaneBendType> outOfPlaneBendTypes;
     private final Map<String, PolarizeType> polarizeTypes;
@@ -129,10 +131,10 @@ public class ForceField {
      * Getter for the field <code>forceFieldURL</code>.</p>
      *
      * @param forceField a
-     * {@link ffx.potential.parameters.ForceField.Force_Field} object.
+     * {@link ffx.potential.parameters.ForceField.ForceFieldName} object.
      * @return a {@link java.net.URL} object.
      */
-    public static URL getForceFieldURL(Force_Field forceField) {
+    public static URL getForceFieldURL(ForceFieldName forceField) {
         if (forceField != null) {
             return forceFields.get(forceField);
         } else {
@@ -165,25 +167,27 @@ public class ForceField {
          * so that passing an "empty" instance of the "type" to its TreeMap
          * constructor will keep the types sorted.
          */
-        angleTypes = new TreeMap<String, AngleType>(new AngleType(new int[3], 0, new double[1]));
-        atomTypes = new TreeMap<String, AtomType>(new AtomType(0, 0, null, null, 0, 0, 0));
-        bioTypes = new TreeMap<String, BioType>(new BioType(0, null, null, 0, null));
-        bondTypes = new TreeMap<String, BondType>(new BondType(new int[2], 0, 0));
-        multipoleTypes = new TreeMap<String, MultipoleType>(new MultipoleType(0, new double[3], new double[3][3], null, null));
-        outOfPlaneBendTypes = new TreeMap<String, OutOfPlaneBendType>(new OutOfPlaneBendType(new int[4], 0));
-        piTorsionTypes = new TreeMap<String, PiTorsionType>(new PiTorsionType(new int[2], 0));
-        polarizeTypes = new TreeMap<String, PolarizeType>(new PolarizeType(0, 0, 0, new int[1]));
-        stretchBendTypes = new TreeMap<String, StretchBendType>(new StretchBendType(new int[3], new double[1]));
-        torsionTorsionTypes = new TreeMap<String, TorsionTorsionType>();
-        torsionTypes = new TreeMap<String, TorsionType>(new TorsionType(new int[4], new double[1], new double[1], new int[1]));
-        ureyBradleyTypes = new TreeMap<String, UreyBradleyType>(new UreyBradleyType(new int[3], 0, 0));
-        vanderWaalsTypes = new TreeMap<String, VDWType>(new VDWType(0, 0, 0, 0));
+        angleTypes = new TreeMap<>(new AngleType(new int[3], 0, new double[1], null));
+        atomTypes = new TreeMap<>(new AtomType(0, 0, null, null, 0, 0, 0));
+        bioTypes = new TreeMap<>(new BioType(0, null, null, 0, null));
+        bondTypes = new TreeMap<>(new BondType(new int[2], 0, 0, null));
+        chargeTypes = new TreeMap<>(new ChargeType(0,0));
+        multipoleTypes = new TreeMap<>(new MultipoleType(0, new double[3], new double[3][3], null, null));
+        outOfPlaneBendTypes = new TreeMap<>(new OutOfPlaneBendType(new int[4], 0));
+        piTorsionTypes = new TreeMap<>(new PiTorsionType(new int[2], 0));
+        polarizeTypes = new TreeMap<>(new PolarizeType(0, 0, 0, new int[1]));
+        stretchBendTypes = new TreeMap<>(new StretchBendType(new int[3], new double[1]));
+        torsionTorsionTypes = new TreeMap<>();
+        torsionTypes = new TreeMap<>(new TorsionType(new int[4], new double[1], new double[1], new int[1]));
+        ureyBradleyTypes = new TreeMap<>(new UreyBradleyType(new int[3], 0, 0));
+        vanderWaalsTypes = new TreeMap<>(new VDWType(0, 0, 0, 0));
 
-        forceFieldTypes = new EnumMap<ForceFieldType, Map>(ForceFieldType.class);
+        forceFieldTypes = new EnumMap<>(ForceFieldType.class);
         forceFieldTypes.put(ForceFieldType.ANGLE, angleTypes);
         forceFieldTypes.put(ForceFieldType.ATOM, atomTypes);
         forceFieldTypes.put(ForceFieldType.BOND, bondTypes);
         forceFieldTypes.put(ForceFieldType.BIOTYPE, bioTypes);
+        forceFieldTypes.put(ForceFieldType.CHARGE, chargeTypes);
         forceFieldTypes.put(ForceFieldType.OPBEND, outOfPlaneBendTypes);
         forceFieldTypes.put(ForceFieldType.MULTIPOLE, multipoleTypes);
         forceFieldTypes.put(ForceFieldType.PITORS, piTorsionTypes);
@@ -663,10 +667,12 @@ public class ForceField {
             logger.info(" Null force field type ignored.");
             return;
         }
+
         Map treeMap = forceFieldTypes.get(type.forceFieldType);
         if (treeMap == null) {
             logger.info(" Unrecognized force field type ignored " + type.forceFieldType);
             type.print();
+            return;
         }
         if (treeMap.containsKey(type.key)) {
             logger.warning(" A force field entry of type " + type.forceFieldType
@@ -727,7 +733,7 @@ public class ForceField {
      * @return a {@link java.util.HashMap} object.
      */
     public HashMap<String, AtomType> getAtomTypes(String moleculeName) {
-        HashMap<String, AtomType> types = new HashMap<String, AtomType>();
+        HashMap<String, AtomType> types = new HashMap<>();
         for (BioType bioType : bioTypes.values()) {
             if (bioType.moleculeName.equalsIgnoreCase(moleculeName)) {
                 String key = Integer.toString(bioType.atomType);
@@ -924,6 +930,7 @@ public class ForceField {
                 if (polarizeType2 == null) {
                     logger.severe(format("Polarize type %s references nonexistant polarize type %s.",
                             key, key2));
+                    continue;
                 }
                 int types2[] = polarizeType2.polarizationGroup;
                 if (types2 == null) {
