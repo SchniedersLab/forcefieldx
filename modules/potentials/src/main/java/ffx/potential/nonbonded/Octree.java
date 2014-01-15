@@ -41,6 +41,7 @@ public class Octree {
     
     private static final Logger logger = Logger.getLogger(Octree.class.getName());
     private static boolean warnedAboutSplit = false;
+    private static boolean leaveStraddlersInParent = false;
     
     private static int maxAtomsPerVolume = 20;
     private static int maxTreeDepth = 10;
@@ -138,11 +139,15 @@ public class Octree {
         maxTreeDepth = max;
     }
     
+    public void setLeaveStraddlersInParent(boolean set) {
+        leaveStraddlersInParent = set;
+    }
+    
     private void split() {
         double sel = edgeLength / 2;
-        double x = corner.getX();
-        double y = corner.getY();
-        double z = corner.getZ();
+        double x = corner.x;    // for Java3d 1.3 compatibility, use corner.getX() in 1.5+
+        double y = corner.y;
+        double z = corner.z;
         children = new Octree[8];
         children[0] = new Octree(depth+1,
                 new Point3d(x,y,z), sel);
@@ -164,9 +169,19 @@ public class Octree {
     
     private void addAtom(Atom atom) {
         if (children != null) {
-            int index = findAtomIndex(atom);
-            if (index != -1) {
-                children[index].addAtom(atom);
+            if (leaveStraddlersInParent) {
+                int index = findAtomIndex(atom);
+                if (index != -1) {
+                    children[index].addAtom(atom);
+                    return;
+                }
+            } else {
+                boolean indices[] = partitionAtom(atom);
+                for (int i = 0; i < 8; i++) {
+                    if (indices[i]) {
+                        children[i].addAtom(atom);
+                    }
+                }
                 return;
             }
         }
@@ -175,28 +190,65 @@ public class Octree {
         if (contents.size() > maxAtomsPerVolume && depth < maxTreeDepth) {
             if (children != null) {
                 if (!warnedAboutSplit) {
-                    logger.warning("Octree couldn't split: too many straddling atoms.");
+                    logger.warning("Octree couldn't split due to straddlers; maxAtomsPerVolume may be violated.");
                     warnedAboutSplit = true;
                 }
                 return;
             }
             split();
-            for (int i = 0; i < contents.size(); ) {
-                int index = findAtomIndex(contents.get(i));
-                if (index != -1) {
-                    children[index].addAtom(contents.remove(i));
+            for (int i = 0; i < contents.size(); ) {    // NOTE: intentional lack of auto-increment
+                if (leaveStraddlersInParent) {
+                    int index = findAtomIndex(contents.get(i));
+                    if (index != -1) {
+                        children[index].addAtom(contents.remove(i));
+                    } else {
+                        i++;
+                    }
                 } else {
-                    i++;
+                    boolean indices[] = partitionAtom(contents.get(i));
+                    Atom current = contents.remove(i);
+                    for (int j = 0; j < 8; j++) {
+                        if (indices[j]) {
+                            children[j].addAtom(current);
+                        }
+                    }
                 }
             }
         }
     }
     
+    /**
+     * Finds the index of the single child octree to which this atom belongs; returns -1 for straddlers.
+     * @param atom query atom
+     * @return index of children[] octree inside which this atom fits completely
+     */
     private int findAtomIndex(Atom atom) {
         int index = -1;
-        double midX = corner.getX() + (edgeLength / 2);
-        double midY = corner.getY() + (edgeLength / 2);
-        double midZ = corner.getZ() + (edgeLength / 2);
+        boolean b[] = partitionAtom(atom);
+        for (int i = 0; i < 8; i++) {
+            if (b[i]) {
+                if (index != -1) {
+                    return -1;
+                }
+                index = i;
+            }
+        }
+        return index;        
+    }
+    
+    /**
+     * Finds the indices of the children octrees to which this atom belongs (wholly or partially).
+     * @param atom query atom
+     * @return boolean array such that if (b[i] == true) then children[i] touches this atom
+     */
+    private boolean[] partitionAtom(Atom atom) {
+        boolean b[] = new boolean[8];
+        for (int i = 0; i < 8; i++) {
+            b[i] = true;
+        }
+        double midX = corner.x + (edgeLength / 2);  // for Java3d 1.3 compatibility, use corner.getX() in 1.5+
+        double midY = corner.y + (edgeLength / 2);
+        double midZ = corner.z + (edgeLength / 2);
         double vdwr = atom.getVDWR();
         double atomX = atom.getX();
         double atomY = atom.getY();
@@ -207,24 +259,22 @@ public class Octree {
         boolean botSide = (atomY - vdwr > midY);
         boolean frontSide = (atomZ + vdwr < midZ);
         boolean backSide = (atomZ - vdwr > midZ);
-        if (leftSide && topSide && frontSide) {
-            index = 0;
-        } else if (rightSide && topSide && frontSide) {
-            index = 1;
-        } else if (leftSide && botSide && frontSide) {
-            index = 2;
-        } else if (leftSide && topSide && backSide) {
-            index = 3;
-        } else if (rightSide && botSide && frontSide) {
-            index = 4;
-        } else if (rightSide && topSide && backSide) {
-            index = 5;
-        } else if (leftSide && botSide && backSide) {
-            index = 6;
-        } else if (rightSide && botSide && backSide) {
-            index = 7;
-        }        
-        return index;
+        if (leftSide) {
+            b[1] = false; b[4] = false; b[5] = false; b[7] = false;
+        } else if (rightSide) {
+            b[0] = false; b[2] = false; b[3] = false; b[6] = false;
+        }
+        if (topSide) {
+            b[2] = false; b[4] = false; b[6] = false; b[7] = false;
+        } else if (botSide) {
+            b[0] = false; b[1] = false; b[3] = false; b[5] = false;
+        }
+        if (frontSide) {
+            b[3] = false; b[5] = false; b[6] = false; b[7] = false;
+        } else if (backSide) {
+            b[0] = false; b[1] = false; b[2] = false; b[4] = false;
+        }
+        return b;
     }
     
     public int getDepth() { return depth; }

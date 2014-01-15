@@ -38,6 +38,7 @@ import javax.vecmath.Point3d
 int maxTreeDepth = 10;
 int maxAtomsPerVolume = 20;
 boolean writePartitionFile = false;
+boolean straddle = false;
 
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc biotype [options] <filename>');
@@ -45,6 +46,7 @@ cli.h(longOpt:'help', 'Print this help message.');
 cli.d(longOpt:'maxDepth', args:1, argName:'10', 'Maximum octree depth.');
 cli.m(longOpt:'maxOccupancy', args:1, argName:'20', 'Maximum number of atoms per sub-volume.');
 cli.w(longOpt:'partFile', args:0, 'Write atom partitioning file.');
+cli.l(longOpt:'straddle', args:0, 'Leave straddling atoms in parent cell.');
 
 def options = cli.parse(args);
 
@@ -61,6 +63,9 @@ if (options.m) {
 }
 if (options.w) {
     writePartitionFile = true;
+}
+if (options.l) {
+    straddle = true;
 }
 
 // Read in command line.
@@ -97,6 +102,7 @@ logger.info(String.format(" Total cube volume: %10.2g\n", Math.pow(edgeLength,3)
 Octree octree = new Octree(0, corner, edgeLength);
 octree.setMaxTreeDepth(maxTreeDepth);
 octree.setMaxAtomsPerVolume(maxAtomsPerVolume);
+octree.setLeaveStraddlersInParent(straddle);
 
 octree.addAtoms(atoms);
 octree.debugPrintStats(writePartitionFile, partFile);
