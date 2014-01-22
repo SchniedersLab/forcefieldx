@@ -302,13 +302,13 @@ public class ForceFieldFilter {
                                 ForceFieldDouble ffDouble = ForceFieldDouble.valueOf(keyword);
                                 double value = Double.parseDouble(tokens[1]);
                                 forceField.addForceFieldDouble(ffDouble, value);
-                            } catch (NumberFormatException e2) {
+                            } catch (Exception e2) {
                                 try {
                                     // Parse Keywords with an Integer value.
                                     ForceFieldInteger ffInteger = ForceFieldInteger.valueOf(keyword);
                                     int value = Integer.parseInt(tokens[1]);
                                     forceField.addForceFieldInteger(ffInteger, value);
-                                } catch (NumberFormatException e3) {
+                                } catch (Exception e3) {
                                     try {
                                         // Parse Keywords with an Integer value.
                                         ForceFieldBoolean ffBoolean = ForceFieldBoolean.valueOf(keyword);
@@ -392,6 +392,7 @@ public class ForceFieldFilter {
                                         logger.log(Level.WARNING, "ForceField type recognized, but not stored:{0}", type);
                                 }
                             } catch (Exception e) {
+                                // DANGER: this serves to skip blank lines in *.patch files but also hid an actual bug's exception
                                 //String message = "Exception parsing force field parametesr.\n";
                                 //logger.log(Level.WARNING, message, e);
                             }
@@ -431,7 +432,7 @@ public class ForceFieldFilter {
         double newBondAngle[] = new double[angles];
         System.arraycopy(bondAngle, 0, newBondAngle, 0, angles);
 
-        String forceFieldName = forceField.forceFieldURL.toString().toUpperCase();
+        String forceFieldName = forceField.toString().toUpperCase();
         AngleType angleType;
         if (forceFieldName.contains("OPLS")) {
             angleType = new AngleType(atomClasses, forceConstant,
@@ -553,7 +554,7 @@ public class ForceFieldFilter {
             atomClasses[1] = Integer.parseInt(tokens[2]);
             double forceConstant = Double.parseDouble(tokens[3]);
             double distance = Double.parseDouble(tokens[4]);
-            String forceFieldName = forceField.forceFieldURL.toString().toUpperCase();
+            String forceFieldName = forceField.toString().toUpperCase();
             BondType bondType;
             if (forceFieldName.contains("OPLS")) {
                 bondType = new BondType(atomClasses, forceConstant,
