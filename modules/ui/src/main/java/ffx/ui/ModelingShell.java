@@ -38,6 +38,7 @@ import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 import javax.swing.text.StyledDocument;
 
+import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.runtime.MethodClosure;
 
 import groovy.ui.Console;
@@ -64,7 +65,7 @@ import ffx.potential.bonded.RendererCache.ViewModel;
  * @author Michael J. Schnieders
  *
  */
-public class ModelingShell extends Console implements AlgorithmListener {
+public final class ModelingShell extends Console implements AlgorithmListener {
 
     /**
      * The logger for this class.
@@ -73,7 +74,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
     /**
      * A reference to the main application container.
      */
-    private MainPanel mainPanel;
+    private final MainPanel mainPanel;
     /**
      * The flag interrupted is true if a script is running and the user requests
      * it be canceled.
@@ -82,7 +83,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
     /**
      * The flag headless is true for the CLI and false for the GUI.
      */
-    private boolean headless;
+    private final boolean headless;
     /**
      * An algorithm that implements the Terminatable interface can be cleanly
      * terminated before completion. For example, after completion of an
@@ -256,7 +257,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
             before();
             getShell().evaluate(file);
             after();
-        } catch (Exception e) {
+        } catch (IOException | CompilationFailedException e) {
             String message = "Error evaluating script.";
             logger.log(Level.WARNING, message, e);
         }

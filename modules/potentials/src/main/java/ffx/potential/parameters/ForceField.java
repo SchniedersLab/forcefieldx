@@ -107,6 +107,7 @@ public class ForceField {
             forceFields.put(ff, cl.getResource(prefix + ff));
         }
     }
+
     public URL forceFieldURL;
     public File keywordFile;
     private final CompositeConfiguration properties;

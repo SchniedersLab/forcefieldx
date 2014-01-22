@@ -167,7 +167,7 @@ public class ForceFieldFilter {
                 }
                 URL url = ForceField.getForceFieldURL(ff);
                 if (url != null) {
-                    logger.info(url.toString());
+                    //logger.info(url.toString());
                     forceField.forceFieldURL = url;
                     try {
                         PropertiesConfiguration config = new PropertiesConfiguration(url);
