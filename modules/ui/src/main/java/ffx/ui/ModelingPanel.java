@@ -901,7 +901,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
             this.argList = argList;
             this.scriptFile = scriptFile;
         }
-        
+
         @Override
         public void run() {
             mainPanel.getModelingShell().setArgList(argList);
@@ -1517,7 +1517,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
             currentLog = activeSystem.getLogFile();
             fileName = currentLog.getName();
             logDir = currentLog.getParentFile();
-            systemDir = activeSystem.getFile().getParentFile();
+            systemDir = activeSystem.getFile().getAbsoluteFile().getParentFile();
         }
         File tempLog = null;
         File newLog = null;
