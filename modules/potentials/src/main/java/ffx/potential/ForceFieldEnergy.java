@@ -416,8 +416,12 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         logger.info("\n Non-Bonded Terms");
 
         if (vanderWaalsTerm) {
-            //vanderWaals = new VanDerWaals(molecularAssembly, crystal, parallelTeam, 12.0, 6.0, 0.0, 0.0);
-            vanderWaals = new VanDerWaals(molecularAssembly, crystal, parallelTeam, 14.0, 7.0, 0.07, 0.12);
+            String name = forceField.toString().toUpperCase();
+            if (name.contains("OPLS")) {
+                vanderWaals = new VanDerWaals(molecularAssembly, crystal, parallelTeam, 12.0, 6.0, 0.0, 0.0);
+            } else {
+                vanderWaals = new VanDerWaals(molecularAssembly, crystal, parallelTeam, 14.0, 7.0, 0.07, 0.12);
+            }
         } else {
             vanderWaals = null;
         }

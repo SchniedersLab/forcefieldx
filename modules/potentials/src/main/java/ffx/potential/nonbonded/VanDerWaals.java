@@ -278,7 +278,7 @@ public class VanDerWaals implements MaskingInterface,
         /**
          * Atom Class numbering starts at 1.
          */
-        //double twosix=1.122462048309372981;
+        double twosix=1.122462048309372981;
         for (VDWType vdwi : vdwTypes.values()) {
             int i = vdwi.atomClass;
             double ri = 0.5 * vdwi.radius;

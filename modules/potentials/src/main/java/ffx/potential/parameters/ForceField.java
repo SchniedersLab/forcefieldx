@@ -25,6 +25,7 @@ package ffx.potential.parameters;
 import java.io.File;
 import java.net.URL;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.lang.String.format;
@@ -136,11 +137,10 @@ public class ForceField {
      * @return a {@link java.net.URL} object.
      */
     public static URL getForceFieldURL(ForceFieldName forceField) {
-        if (forceField != null) {
-            return forceFields.get(forceField);
-        } else {
+        if (forceField == null) {
             return null;
         }
+        return forceFields.get(forceField);
     }
 
     /**
@@ -1018,6 +1018,17 @@ public class ForceField {
             return sb.toString();
         }
         return "";
+    }
+
+    @Override
+    public String toString() {
+        String forceFieldName;
+        try {
+            forceFieldName = getString(ForceFieldString.FORCEFIELD);
+        } catch (Exception ex) {
+            forceFieldName = "Unknown";
+        }
+        return forceFieldName;
     }
 
     /**
