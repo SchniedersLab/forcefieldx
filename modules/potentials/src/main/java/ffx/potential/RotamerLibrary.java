@@ -94,6 +94,10 @@ public class RotamerLibrary {
         }
     }
     
+    public static boolean getUsingOrigCoordsRotamer() {
+        return useOrigCoordsRotamer;
+    }
+    
     public static void setUseOrigCoordsRotamer(boolean set) {
         useOrigCoordsRotamer = set;
     }
