@@ -25,7 +25,6 @@ package ffx.potential.parameters;
 import java.io.File;
 import java.net.URL;
 import java.util.*;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.lang.String.format;
@@ -83,12 +82,12 @@ public class ForceField {
 
     public enum ForceFieldBoolean {
 
-        BONDTERM, ANGLETERM, STRBNDTERM, UREYTERM, OPBENDTERM,
+        BONDTERM, ANGLETERM, COORDRESTRAINTTERM, STRBNDTERM, UREYTERM, OPBENDTERM,
         TORSIONTERM, PITORSTERM, TORTORTERM, VDWLRTERM, VDWTERM,
         MPOLETERM, POLARIZETERM, GKTERM, SCFCACHE, APERIODIC, CUDAFFT,
         RIGID_HYDROGENS, LAMBDATERM, NCSTERM, USE_CHARGES, USE_DIPOLES, USE_QUADRUPOLES,
         ROTATE_MULTIPOLES, LIGAND_VAPOR_ELEC, NO_LIGAND_CONDENSED_SCF,
-        USE_SCF_PRECONDITIONER, INTERMOLECULAR_SOFTCORE
+        USE_SCF_PRECONDITIONER, INTERMOLECULAR_SOFTCORE,
     }
 
     public enum ForceFieldType {
