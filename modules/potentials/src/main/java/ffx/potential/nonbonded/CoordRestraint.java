@@ -36,10 +36,10 @@ public class CoordRestraint implements LambdaInterface {
     private final double a1[] = new double[3];
     private final double dx[] = new double[3];
     private double lambda = 1.0;
-    private final double lambdaExp = 2.0;
+    private final double lambdaExp = 1.0;
     private double lambdaPow = pow(lambda, lambdaExp);
     private double dLambdaPow = lambdaExp * pow(lambda, lambdaExp - 1.0);
-    private double d2LambdaPow = lambdaExp * (lambdaExp - 1.0) * pow(lambda, lambdaExp - 2.0);
+    private double d2LambdaPow = 0;
     private double dEdL = 0.0;
     private double d2EdL2 = 0.0;
     private final double lambdaGradient[];
@@ -98,33 +98,39 @@ public class CoordRestraint implements LambdaInterface {
             double r2 = crystal.image(dx);
             //logger.info(String.format(" %d %16.8f", j, Math.sqrt(r2)));
             residual += r2;
-            if (gradient || lambdaTerm) {
+            if (gradient) {
                 final double dedx = dx[0] * fx2;
                 final double dedy = dx[1] * fx2;
                 final double dedz = dx[2] * fx2;
+                atom1.addToXYZGradient(dedx, dedy, dedz);
+                /*
                 atom1.addToXYZGradient(lambdaPow * dedx, lambdaPow * dedy, lambdaPow * dedz);
                 if (lambdaTerm) {
                     int j3 = j * 3;
                     lambdaGradient[j3] += dLambdaPow * dedx;
                     lambdaGradient[j3 + 1] += dLambdaPow * dedy;
                     lambdaGradient[j3 + 2] += dLambdaPow * dedz;
-                }
+                } */
             }
         }
+        /*
         if (lambdaTerm) {
             dEdL = dLambdaPow * forceConstant * residual;
             d2EdL2 = d2LambdaPow * forceConstant * residual;
         }
+        logger.info(String.format(" Restraint %16.8f", forceConstant * residual * lambdaPow));
         return forceConstant * residual * lambdaPow;
+                */
+        return residual * forceConstant;
     }
 
     @Override
     public void setLambda(double lambda) {
         if (lambdaTerm) {
-            this.lambda = lambda;
-            lambdaPow = pow(lambda, lambdaExp);
-            dLambdaPow = lambdaExp * pow(lambda, lambdaExp - 1.0);
-            d2LambdaPow = lambdaExp * (lambdaExp - 1.0) * pow(lambda, lambdaExp - 2.0);
+            this.lambda = 1.0 - lambda;
+            lambdaPow = pow(this.lambda, lambdaExp);
+            dLambdaPow = -lambdaExp * pow(this.lambda, lambdaExp - 1.0);
+            d2LambdaPow = 0;
         } else {
             this.lambda = 1.0;
             lambdaPow = 1.0;
