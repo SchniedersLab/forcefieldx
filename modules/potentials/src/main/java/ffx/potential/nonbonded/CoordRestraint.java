@@ -40,6 +40,7 @@ public class CoordRestraint implements LambdaInterface {
     private double lambdaPow = pow(lambda, lambdaExp);
     private double dLambdaPow = lambdaExp * pow(lambda, lambdaExp - 1.0);
     private double d2LambdaPow = 0;
+    private final double lambdaWindow = 1.0;
     private double dEdL = 0.0;
     private double d2EdL2 = 0.0;
     private final double lambdaGradient[];
@@ -98,39 +99,57 @@ public class CoordRestraint implements LambdaInterface {
             double r2 = crystal.image(dx);
             //logger.info(String.format(" %d %16.8f", j, Math.sqrt(r2)));
             residual += r2;
-            if (gradient) {
+            if (gradient || lambdaTerm) {
                 final double dedx = dx[0] * fx2;
                 final double dedy = dx[1] * fx2;
                 final double dedz = dx[2] * fx2;
-                atom1.addToXYZGradient(dedx, dedy, dedz);
-                /*
-                atom1.addToXYZGradient(lambdaPow * dedx, lambdaPow * dedy, lambdaPow * dedz);
+                if (gradient) {
+                    atom1.addToXYZGradient(lambdaPow * dedx, lambdaPow * dedy, lambdaPow * dedz);
+                }
                 if (lambdaTerm) {
                     int j3 = j * 3;
-                    lambdaGradient[j3] += dLambdaPow * dedx;
-                    lambdaGradient[j3 + 1] += dLambdaPow * dedy;
-                    lambdaGradient[j3 + 2] += dLambdaPow * dedz;
-                } */
+                    lambdaGradient[j3] = dLambdaPow * dedx;
+                    lambdaGradient[j3 + 1] = dLambdaPow * dedy;
+                    lambdaGradient[j3 + 2] = dLambdaPow * dedz;
+                }
             }
         }
-        /*
         if (lambdaTerm) {
             dEdL = dLambdaPow * forceConstant * residual;
             d2EdL2 = d2LambdaPow * forceConstant * residual;
         }
-        logger.info(String.format(" Restraint %16.8f", forceConstant * residual * lambdaPow));
+        //logger.info(String.format(" Restraint %16.8f", forceConstant * residual * lambdaPow));
         return forceConstant * residual * lambdaPow;
-                */
-        return residual * forceConstant;
     }
 
     @Override
     public void setLambda(double lambda) {
         if (lambdaTerm) {
             this.lambda = 1.0 - lambda;
-            lambdaPow = pow(this.lambda, lambdaExp);
-            dLambdaPow = -lambdaExp * pow(this.lambda, lambdaExp - 1.0);
-            d2LambdaPow = 0;
+            if (this.lambda < lambdaWindow) {
+                double dldgl = 1.0 / lambdaWindow;
+                double l = dldgl * this.lambda;
+                double l2 = l * l;
+                double l3 = l2 * l;
+                double l4 = l2 * l2;
+                double l5 = l4 * l;
+                double c3 = 10.0;
+                double c4 = -15.0;
+                double c5 = 6.0;
+                double threeC3 = 3.0 * c3;
+                double sixC3 = 6.0 * c3;
+                double fourC4 = 4.0 * c4;
+                double twelveC4 = 12.0 * c4;
+                double fiveC5 = 5.0 * c5;
+                double twentyC5 = 20.0 * c5;
+                lambdaPow = c3 * l3 + c4 * l4 + c5 * l5;
+                dLambdaPow = -(threeC3 * l2 + fourC4 * l3 + fiveC5 * l4) * dldgl;
+                d2LambdaPow = (sixC3 * l + twelveC4 * l2 + twentyC5 * l3) * dldgl * dldgl;
+            } else {
+                lambdaPow = 1.0;
+                dLambdaPow = 0.0;
+                d2LambdaPow = 0.0;
+            }
         } else {
             this.lambda = 1.0;
             lambdaPow = 1.0;

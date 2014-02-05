@@ -654,7 +654,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             restraintBondTime = System.nanoTime() - restraintBondTime;
         }
 
-        if (lambdaBondedTerms && restrainTerm) {
+        if (restrainTerm && lambdaBondedTerms) {
             coordRestraintTime = -System.nanoTime();
             restrainEnergy = coordRestraint.residual(gradient, print);
             coordRestraintTime += System.nanoTime();
@@ -1140,24 +1140,26 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     @Override
     public double getdEdL() {
         double dEdLambda = 0.0;
-        if (vanderWaalsTerm) {
-            dEdLambda = vanderWaals.getdEdL();
-        }
-        if (multipoleTerm) {
-            dEdLambda += particleMeshEwald.getdEdL();
-        }
-        if (restraintBondTerm) {
-            for (int i = 0; i < nRestraintBonds; i++) {
-                dEdLambda += restraintBonds[i].getdEdL();
+        if (!lambdaBondedTerms) {
+            if (vanderWaalsTerm) {
+                dEdLambda = vanderWaals.getdEdL();
+            }
+            if (multipoleTerm) {
+                dEdLambda += particleMeshEwald.getdEdL();
+            }
+            if (restraintBondTerm) {
+                for (int i = 0; i < nRestraintBonds; i++) {
+                    dEdLambda += restraintBonds[i].getdEdL();
+                }
+            }
+            if (ncsTerm && ncsRestraint != null) {
+                dEdLambda += ncsRestraint.getdEdL();
+            }
+        } else {
+            if (restrainTerm && coordRestraint != null) {
+                dEdLambda += coordRestraint.getdEdL();
             }
         }
-        if (ncsTerm && ncsRestraint != null) {
-            dEdLambda += ncsRestraint.getdEdL();
-        }
-        /*
-         if (restrainTerm && coordRestraint != null) {
-         dEdLambda += coordRestraint.getdEdL();
-         } */
         return dEdLambda;
     }
 
@@ -1166,24 +1168,26 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
      */
     @Override
     public void getdEdXdL(double gradients[]) {
-        if (vanderWaalsTerm) {
-            vanderWaals.getdEdXdL(gradients);
-        }
-        if (multipoleTerm) {
-            particleMeshEwald.getdEdXdL(gradients);
-        }
-        if (restraintBondTerm) {
-            for (int i = 0; i < nRestraintBonds; i++) {
-                restraintBonds[i].getdEdXdL(gradients);
+        if (!lambdaBondedTerms) {
+            if (vanderWaalsTerm) {
+                vanderWaals.getdEdXdL(gradients);
+            }
+            if (multipoleTerm) {
+                particleMeshEwald.getdEdXdL(gradients);
+            }
+            if (restraintBondTerm) {
+                for (int i = 0; i < nRestraintBonds; i++) {
+                    restraintBonds[i].getdEdXdL(gradients);
+                }
+            }
+            if (ncsTerm && ncsRestraint != null) {
+                ncsRestraint.getdEdXdL(gradients);
+            }
+        } else {
+            if (restrainTerm && coordRestraint != null) {
+                coordRestraint.getdEdXdL(gradients);
             }
         }
-        if (ncsTerm && ncsRestraint != null) {
-            ncsRestraint.getdEdXdL(gradients);
-        }
-        /*
-         if (restrainTerm && coordRestraint != null) {
-         coordRestraint.getdEdXdL(gradients);
-         } */
     }
 
     /**
@@ -1200,24 +1204,26 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     @Override
     public double getd2EdL2() {
         double d2EdLambda2 = 0.0;
-        if (vanderWaalsTerm) {
-            d2EdLambda2 = vanderWaals.getd2EdL2();
-        }
-        if (multipoleTerm) {
-            d2EdLambda2 += particleMeshEwald.getd2EdL2();
-        }
-        if (restraintBondTerm) {
-            for (int i = 0; i < nRestraintBonds; i++) {
-                d2EdLambda2 += restraintBonds[i].getd2EdL2();
+        if (!lambdaBondedTerms) {
+            if (vanderWaalsTerm) {
+                d2EdLambda2 = vanderWaals.getd2EdL2();
+            }
+            if (multipoleTerm) {
+                d2EdLambda2 += particleMeshEwald.getd2EdL2();
+            }
+            if (restraintBondTerm) {
+                for (int i = 0; i < nRestraintBonds; i++) {
+                    d2EdLambda2 += restraintBonds[i].getd2EdL2();
+                }
+            }
+            if (ncsTerm && ncsRestraint != null) {
+                d2EdLambda2 += ncsRestraint.getd2EdL2();
+            }
+        } else {
+            if (restrainTerm && coordRestraint != null) {
+                d2EdLambda2 += coordRestraint.getd2EdL2();
             }
         }
-        if (ncsTerm && ncsRestraint != null) {
-            d2EdLambda2 += ncsRestraint.getd2EdL2();
-        }
-        /*
-         if (restrainTerm && coordRestraint != null) {
-         d2EdLambda2 += coordRestraint.getd2EdL2();
-         } */
         return d2EdLambda2;
     }
 
