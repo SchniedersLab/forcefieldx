@@ -237,12 +237,13 @@ lambda = 0.0;
 lambdaInterface.setLambda(lambda);
 potential.getCoordinates(x);
 double e0 = potential.energyAndGradient(x,gradient);
-logger.info(String.format(" E(0):      %20.8f.", e0));
 
 // Compute the Lambda = 1.0 energy.
 double lambda = 1.0;
 lambdaInterface.setLambda(lambda);
 double e1 = potential.energyAndGradient(x,gradient);
+
+logger.info(String.format(" E(0):      %20.8f.", e0));
 logger.info(String.format(" E(1):      %20.8f.", e1));
 logger.info(String.format(" E(1)-E(0): %20.8f.\n", e1-e0));
 

@@ -103,35 +103,35 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
     /**
      * dEdL of topology 1 (kcal/mol).
      */
-    private double dEdL1 = 0;
+    private double dEdL_1 = 0;
     /**
      * dEdL of topology 2 (kcal/mol).
      */
-    private double dEdL2 = 0;
+    private double dEdL_2 = 0;
     /**
      * End-state restraint dEdL of topology 1 (kcal/mol).
      */
-    private double restraintdEdL1 = 0;
+    private double restraintdEdL_1 = 0;
     /**
      * End-state restraint dEdL of topology 2 (kcal/mol).
      */
-    private double restraintdEdL2 = 0;
+    private double restraintdEdL_2 = 0;
     /**
      * d2EdL2 of topology 1 (kcal/mol).
      */
-    private double d2EdL21 = 0;
+    private double d2EdL2_1 = 0;
     /**
      * d2EdL2 of topology 2 (kcal/mol).
      */
-    private double d2EdL22 = 0;
+    private double d2EdL2_2 = 0;
     /**
      * End-state restraint d2EdL2 of topology 1 (kcal/mol).
      */
-    private double restraintd2EdL21 = 0;
+    private double restraintd2EdL2_1 = 0;
     /**
      * End-state restraint d2EdL2 of topology 2 (kcal/mol).
      */
-    private double restraintd2EdL22 = 0;
+    private double restraintd2EdL2_2 = 0;
 
     /**
      * Scale factor applied to the energy of Topology 1. One intended use is
@@ -450,24 +450,24 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
          * Compute the energy and gradient of topology 1.
          */
         energy1 = forceFieldEnergy1.energyAndGradient(x1, g1);
-        dEdL1 = forceFieldEnergy1.getdEdL();
-        d2EdL21 = forceFieldEnergy1.getd2EdL2();
+        dEdL_1 = forceFieldEnergy1.getdEdL();
+        d2EdL2_1 = forceFieldEnergy1.getd2EdL2();
         forceFieldEnergy1.getdEdXdL(gl1);
 
         if (doValenceRestraint1) {
             forceFieldEnergy1.setLambdaBondedTerms(true);
             restraintEnergy1 = forceFieldEnergy1.energyAndGradient(x1, rg1);
-            restraintdEdL1 = forceFieldEnergy1.getdEdL();
-            restraintd2EdL21 = forceFieldEnergy1.getd2EdL2();
+            restraintdEdL_1 = forceFieldEnergy1.getdEdL();
+            restraintd2EdL2_1 = forceFieldEnergy1.getd2EdL2();
             forceFieldEnergy1.getdEdXdL(rgl1);
             forceFieldEnergy1.setLambdaBondedTerms(false);
         } else {
             restraintEnergy1 = 0.0;
-            restraintdEdL1 = 0.0;
-            restraintd2EdL21 = 0.0;
+            restraintdEdL_1 = 0.0;
+            restraintd2EdL2_1 = 0.0;
         }
-        if (logger.isLoggable(Level.FINE)) {
-            logger.fine(String.format(" Topology 1 Energy & Restraints: %15.8f %15.8f\n",
+        if (logger.isLoggable(Level.INFO)) {
+            logger.info(String.format(" Topology 1 Energy & Restraints: %15.8f %15.8f\n",
                     scaleEnergy1 * lambdaPow * energy1, scaleEnergy1 * oneMinusLambdaPow * restraintEnergy1));
         }
 
@@ -475,24 +475,24 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
          * Compute the energy and gradient of topology 2.
          */
         energy2 = forceFieldEnergy2.energyAndGradient(x2, g2);
-        dEdL2 = -forceFieldEnergy2.getdEdL();
-        d2EdL22 = forceFieldEnergy2.getd2EdL2();
+        dEdL_2 = -forceFieldEnergy2.getdEdL();
+        d2EdL2_2 = forceFieldEnergy2.getd2EdL2();
         forceFieldEnergy2.getdEdXdL(gl2);
 
         if (doValenceRestraint2) {
             forceFieldEnergy2.setLambdaBondedTerms(true);
             restraintEnergy2 = forceFieldEnergy2.energyAndGradient(x2, rg2);
-            restraintdEdL2 = -forceFieldEnergy2.getdEdL();
-            restraintd2EdL22 = forceFieldEnergy2.getd2EdL2();
+            restraintdEdL_2 = -forceFieldEnergy2.getdEdL();
+            restraintd2EdL2_2 = forceFieldEnergy2.getd2EdL2();
             forceFieldEnergy2.getdEdXdL(rgl2);
             forceFieldEnergy2.setLambdaBondedTerms(false);
         } else {
             restraintEnergy2 = 0.0;
-            restraintdEdL2 = 0.0;
-            restraintd2EdL22 = 0.0;
+            restraintdEdL_2 = 0.0;
+            restraintd2EdL2_2 = 0.0;
         }
-        if (logger.isLoggable(Level.FINE)) {
-            logger.fine(String.format(" Topology 2 Energy & Restraints: %15.8f %15.8f\n",
+        if (logger.isLoggable(Level.INFO)) {
+            logger.info(String.format(" Topology 2 Energy & Restraints: %15.8f %15.8f\n",
                     scaleEnergy2 * oneMinusLambdaPow * energy2, scaleEnergy2 * lambdaPow * restraintEnergy2));
         }
 
@@ -714,21 +714,21 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
 
     @Override
     public double getdEdL() {
-        double e1 = scaleEnergy1 * (lambdaPow * dEdL1 + dLambdaPow * energy1
-                + oneMinusLambdaPow * restraintdEdL1 + dOneMinusLambdaPow * restraintEnergy1);
-        double e2 = scaleEnergy2 * (oneMinusLambdaPow * dEdL2 + dOneMinusLambdaPow * energy2
-                + lambdaPow * restraintdEdL2 + dLambdaPow * restraintEnergy2);
+        double e1 = scaleEnergy1 * (lambdaPow * dEdL_1 + dLambdaPow * energy1
+                + oneMinusLambdaPow * restraintdEdL_1 + dOneMinusLambdaPow * restraintEnergy1);
+        double e2 = scaleEnergy2 * (oneMinusLambdaPow * dEdL_2 + dOneMinusLambdaPow * energy2
+                + lambdaPow * restraintdEdL_2 + dLambdaPow * restraintEnergy2);
         return e1 + e2;
     }
 
     @Override
     public double getd2EdL2() {
-        double e1 = scaleEnergy1 * (lambdaPow * d2EdL21 + 2.0 * dLambdaPow * dEdL1 + d2LambdaPow * energy1
-                + oneMinusLambdaPow * restraintd2EdL21 + 2.0 * dOneMinusLambdaPow * restraintdEdL1
+        double e1 = scaleEnergy1 * (lambdaPow * d2EdL2_1 + 2.0 * dLambdaPow * dEdL_1 + d2LambdaPow * energy1
+                + oneMinusLambdaPow * restraintd2EdL2_1 + 2.0 * dOneMinusLambdaPow * restraintdEdL_1
                 + d2OneMinusLambdaPow * restraintEnergy1);
-        double e2 = scaleEnergy2 * (oneMinusLambdaPow * d2EdL22 + 2.0 * dOneMinusLambdaPow * dEdL2
+        double e2 = scaleEnergy2 * (oneMinusLambdaPow * d2EdL2_2 + 2.0 * dOneMinusLambdaPow * dEdL_2
                 + d2OneMinusLambdaPow * energy2
-                + lambdaPow * restraintd2EdL22 + 2.0 * dLambdaPow * restraintdEdL2 + d2LambdaPow * restraintEnergy2);
+                + lambdaPow * restraintd2EdL2_2 + 2.0 * dLambdaPow * restraintdEdL_2 + d2LambdaPow * restraintEnergy2);
         return e1 + e2;
     }
 

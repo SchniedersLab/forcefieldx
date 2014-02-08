@@ -715,7 +715,7 @@ public class NeighborList extends ParallelRegion {
         private int asymmetricIndex[];
         private double xyz[];
         private int pairs[];
-        private final byte mask[];
+        private final double mask[];
         private final IntegerSchedule schedule;
         // Extra padding to avert cache interference.
         private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
@@ -723,7 +723,7 @@ public class NeighborList extends ParallelRegion {
 
         public NeighborListLoop() {
             pairs = new int[len];
-            mask = new byte[nAtoms];
+            mask = new double[nAtoms];
             for (int i = 0; i < nAtoms; i++) {
                 mask[i] = 1;
             }

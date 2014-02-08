@@ -47,6 +47,7 @@ import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.bonded.Torsion;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
@@ -65,6 +66,12 @@ public class VanDerWaals implements MaskingInterface,
         LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(VanDerWaals.class.getName());
+
+    public enum VDW_FORM {
+
+        BUFFERED_14_7, LENNARD_JONES_6_12
+    };
+
     /**
      * MolecularAssembly
      */
@@ -158,6 +165,7 @@ public class VanDerWaals implements MaskingInterface,
     private final int reductionIndex[];
     private final int bondMask[][];
     private final int angleMask[][];
+    private final int torsionMask[][];
     /**
      * Each hydrogen vdW site is located a fraction of the way from the heavy
      * atom nucleus to the hydrogen nucleus (~0.9).
@@ -227,6 +235,7 @@ public class VanDerWaals implements MaskingInterface,
     private final long vdwTime[];
     private final long reductionTime[];
     private long initializationTotal, vdwTotal, reductionTotal;
+    private VDW_FORM vdwForm = VDW_FORM.BUFFERED_14_7;
 
     /**
      * The VanDerWaals class constructor.
@@ -242,27 +251,40 @@ public class VanDerWaals implements MaskingInterface,
      * @since 1.0
      */
     public VanDerWaals(MolecularAssembly molecularAssembly, Crystal crystal,
-            ParallelTeam parallelTeam,
-            double repulsivePower, double dispersivePower, double delta, double gamma) {
+            ParallelTeam parallelTeam, VDW_FORM vdwForm) {
         this.molecularAssembly = molecularAssembly;
         this.atoms = molecularAssembly.getAtomArray();
         this.crystal = crystal;
         this.parallelTeam = parallelTeam;
+        this.vdwForm = vdwForm;
 
         nAtoms = atoms.length;
         nSymm = crystal.spaceGroup.getNumberOfSymOps();
         /**
          * Configure van der Waals well shape parameters.
          */
-        this.repulsivePower = repulsivePower;
-        this.dispersivePower = dispersivePower;
+
+        switch (vdwForm) {
+            case LENNARD_JONES_6_12:
+                repulsivePower = 12.0;
+                dispersivePower = 6.0;
+                this.delta = 0.0;
+                this.gamma = 0.0;
+                break;
+            case BUFFERED_14_7:
+            default:
+                repulsivePower = 14.0;
+                dispersivePower = 7.0;
+                this.delta = 0.07;
+                this.gamma = 0.12;
+                break;
+        }
+
         repDispPower = repulsivePower - dispersivePower;
         dispersivePower1 = dispersivePower - 1.0;
         repDispPower1 = repDispPower - 1.0;
-        this.delta = delta;
         delta1 = 1.0 + delta;
         t1n = pow(delta1, dispersivePower);
-        this.gamma = gamma;
         gamma1 = 1.0 + gamma;
 
         ForceField forceField = molecularAssembly.getForceField();
@@ -278,7 +300,7 @@ public class VanDerWaals implements MaskingInterface,
         /**
          * Atom Class numbering starts at 1.
          */
-        double twosix=1.122462048309372981;
+        double twosix = 1.122462048309372981;
         for (VDWType vdwi : vdwTypes.values()) {
             int i = vdwi.atomClass;
             double ri = 0.5 * vdwi.radius;
@@ -293,25 +315,33 @@ public class VanDerWaals implements MaskingInterface,
                 double rj3 = rj * rj2;
                 double e2 = vdwj.wellDepth;
                 double se2 = sqrt(e2);
-                /**
-                 * Cubic-mean.
-                 */
-                double radmin = 2.0 * (ri3 + rj3) / (ri2 + rj2);
 
-                /**
-                 * Geometric
-                 */
-                //double radmin = 2.0 * ri * rj;
+                double radmin;
+                double eps;
 
-                /**
-                 * HHG
-                 */
-                double eps = 4.0 * (e1 * e2) / ((se1 + se2) * (se1 + se2));
-
-                /**
-                 * Geometric
-                 */
-                //double eps = se1 * se2;
+                switch (vdwForm) {
+                    case LENNARD_JONES_6_12:
+                        /**
+                         * Geometric
+                         */
+                        radmin = 2.0 * sqrt(ri * twosix) * sqrt(rj * twosix);
+                        /**
+                         * Geometric
+                         */
+                        eps = se1 * se2;
+                        break;
+                    default:
+                    case BUFFERED_14_7:
+                        /**
+                         * Cubic-mean.
+                         */
+                        radmin = 2.0 * (ri3 + rj3) / (ri2 + rj2);
+                        /**
+                         * HHG
+                         */
+                        eps = 4.0 * (e1 * e2) / ((se1 + se2) * (se1 + se2));
+                        break;
+                }
 
                 radEps[i][j * 2 + RADMIN] = radmin;
                 radEps[i][j * 2 + EPS] = eps;
@@ -331,6 +361,11 @@ public class VanDerWaals implements MaskingInterface,
         reductionValue = new double[nAtoms];
         bondMask = new int[nAtoms][];
         angleMask = new int[nAtoms][];
+        if (vdwForm == VDW_FORM.LENNARD_JONES_6_12) {
+            torsionMask = new int[nAtoms][];
+        } else {
+            torsionMask = null;
+        }
         for (int i = 0; i < nAtoms; i++) {
             Atom ai = atoms[i];
             assert (i == ai.xyzIndex - 1);
@@ -378,6 +413,25 @@ public class VanDerWaals implements MaskingInterface,
                 Atom ak = a.get1_3(ai);
                 if (ak != null) {
                     angleMask[i][j++] = ak.xyzIndex - 1;
+                }
+            }
+
+            if (vdwForm == VDW_FORM.LENNARD_JONES_6_12) {
+                ArrayList<Torsion> torsions = ai.getTorsions();
+                int numTorsions = 0;
+                for (Torsion t : torsions) {
+                    Atom ak = t.get1_4(ai);
+                    if (ak != null) {
+                        numTorsions++;
+                    }
+                }
+                torsionMask[i] = new int[numTorsions];
+                j = 0;
+                for (Torsion t : torsions) {
+                    Atom ak = t.get1_4(ai);
+                    if (ak != null) {
+                        torsionMask[i][j++] = ak.xyzIndex - 1;
+                    }
                 }
             }
         }
@@ -669,16 +723,23 @@ public class VanDerWaals implements MaskingInterface,
      * Apply masking rules for 1-2 and 1-3 interactions.
      */
     @Override
-    public void applyMask(final byte mask[], final int i) {
-        final int[] bondMaski = bondMask[i];
-        final int n12 = bondMaski.length;
-        for (int m = 0; m < n12; m++) {
-            mask[bondMaski[m]] = 0;
+    public void applyMask(final double mask[], final int i) {
+        if (vdwForm == VDW_FORM.LENNARD_JONES_6_12) {
+            final int[] torsionMaski = torsionMask[i];
+            final int n14 = torsionMaski.length;
+            for (int m = 0; m < n14; m++) {
+                mask[torsionMaski[m]] = 0.5;
+            }
         }
         final int[] angleMaski = angleMask[i];
         final int n13 = angleMaski.length;
         for (int m = 0; m < n13; m++) {
             mask[angleMaski[m]] = 0;
+        }
+        final int[] bondMaski = bondMask[i];
+        final int n12 = bondMaski.length;
+        for (int m = 0; m < n12; m++) {
+            mask[bondMaski[m]] = 0;
         }
     }
 
@@ -688,16 +749,23 @@ public class VanDerWaals implements MaskingInterface,
      * Remove the masking rules for 1-2 and 1-3 interactions.
      */
     @Override
-    public void removeMask(final byte mask[], final int i) {
-        final int[] bondMaski = bondMask[i];
-        final int n12 = bondMaski.length;
-        for (int m = 0; m < n12; m++) {
-            mask[bondMaski[m]] = 1;
+    public void removeMask(final double mask[], final int i) {
+        if (vdwForm == VDW_FORM.LENNARD_JONES_6_12) {
+            final int[] torsionMaski = torsionMask[i];
+            final int n14 = torsionMaski.length;
+            for (int m = 0; m < n14; m++) {
+                mask[torsionMaski[m]] = 1.0;
+            }
         }
         final int[] angleMaski = angleMask[i];
         final int n13 = angleMaski.length;
         for (int m = 0; m < n13; m++) {
-            mask[angleMaski[m]] = 1;
+            mask[angleMaski[m]] = 1.0;
+        }
+        final int[] bondMaski = bondMask[i];
+        final int n12 = bondMaski.length;
+        for (int m = 0; m < n12; m++) {
+            mask[bondMaski[m]] = 1.0;
         }
     }
 
@@ -726,7 +794,7 @@ public class VanDerWaals implements MaskingInterface,
         logger.info(String.format("%s %6d-%s %6d-%s %10.4f  %10.4f  %10.4f",
                 "VDW", atoms[i].xyzIndex, atoms[i].getAtomType().name,
                 atoms[k].xyzIndex, atoms[k].getAtomType().name,
-                radEps[classi][classk * 2 + RADMIN] / delta, r, eij));
+                radEps[classi][classk * 2 + RADMIN], r, eij));
     }
 
     /**
@@ -1166,17 +1234,17 @@ public class VanDerWaals implements MaskingInterface,
             private double lzi_local[];
             private final double dx_local[];
             private final double transOp[][];
-            private final byte mask[];
+            private final double mask[];
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
             public VanDerWaalsLoop() {
                 super();
-                mask = new byte[nAtoms];
+                mask = new double[nAtoms];
                 dx_local = new double[3];
                 transOp = new double[3][3];
-                fill(mask, (byte) 1);
+                fill(mask, 1.0);
             }
 
             @Override
@@ -1276,11 +1344,12 @@ public class VanDerWaals implements MaskingInterface,
                         dx_local[1] = yi - yk;
                         dx_local[2] = zi - zk;
                         final double r2 = crystal.image(dx_local);
-                        if (r2 <= off2 && mask[k] > 0) {
+                        int a2 = atomClass[k] * 2;
+                        final double rv = radEpsi[a2 + RADMIN];
+                        if (r2 <= off2 && mask[k] > 0 && rv > 0) {
                             final double r = sqrt(r2);
                             final double r3 = r2 * r;
                             final double r4 = r2 * r2;
-                            int a2 = atomClass[k] * 2;
                             double alpha = 0.0;
                             double lambda5 = 1.0;
                             boolean soft = softCorei[k] || (intermolecularSoftcore && (moleculei != molecule[k]));
@@ -1288,8 +1357,7 @@ public class VanDerWaals implements MaskingInterface,
                                 alpha = sc1;
                                 lambda5 = sc2;
                             }
-                            final double rv = radEpsi[a2 + RADMIN];
-                            final double ev = radEpsi[a2 + EPS];
+                            final double ev = mask[k] * radEpsi[a2 + EPS];
                             final double eps_lambda = ev * lambda5;
                             final double rho = r / rv;
                             final double rhoDisp1 = pow(rho, dispersivePower1);
@@ -1478,7 +1546,9 @@ public class VanDerWaals implements MaskingInterface,
                             dx_local[1] = yi - yk;
                             dx_local[2] = zi - zk;
                             final double r2 = crystal.image(dx_local);
-                            if (r2 <= off2) {
+                            int a2 = atomClass[k] * 2;
+                            final double rv = radEpsi[a2 + RADMIN];
+                            if (r2 <= off2 && rv > 0) {
                                 double selfScale = 1.0;
                                 if (i == k) {
                                     selfScale = 0.5;
@@ -1486,7 +1556,7 @@ public class VanDerWaals implements MaskingInterface,
                                 final double r = sqrt(r2);
                                 final double r3 = r2 * r;
                                 final double r4 = r2 * r2;
-                                int a2 = atomClass[k] * 2;
+
                                 double alpha = 0.0;
                                 double lambda5 = 1.0;
                                 boolean soft = (isSoft[i] || softCorei[k]);
@@ -1494,7 +1564,7 @@ public class VanDerWaals implements MaskingInterface,
                                     alpha = sc1;
                                     lambda5 = sc2;
                                 }
-                                final double rv = radEpsi[a2 + RADMIN];
+
                                 final double ev = radEpsi[a2 + EPS];
                                 final double eps_lambda = ev * lambda5;
                                 final double rho = r / rv;

@@ -45,7 +45,7 @@ public class NCSRestraint implements LambdaInterface {
     private double d2LambdaPow = lambdaExp * (lambdaExp - 1.0) * pow(lambda, lambdaExp - 2.0);
     private double dEdL = 0.0;
     private double d2EdL2 = 0.0;
-    private final double lambdaWindow = 0.5;
+    private final double lambdaWindow = 1.0;
     private final double lambdaGradient[];
     private boolean lambdaTerm = false;
 
@@ -155,10 +155,10 @@ public class NCSRestraint implements LambdaInterface {
     @Override
     public void setLambda(double lambda) {
         if (lambdaTerm) {
-            this.lambda = lambda;
-            if (lambda < lambdaWindow) {
+            this.lambda = 1 - lambda;
+            if (this.lambda < lambdaWindow) {
                 double dldgl = 1.0 / lambdaWindow;
-                double l = dldgl * lambda;
+                double l = dldgl * this.lambda;
                 double l2 = l * l;
                 double l3 = l2 * l;
                 double l4 = l2 * l2;
@@ -173,7 +173,7 @@ public class NCSRestraint implements LambdaInterface {
                 double fiveC5 = 5.0 * c5;
                 double twentyC5 = 20.0 * c5;
                 lambdaPow = c3 * l3 + c4 * l4 + c5 * l5;
-                dLambdaPow = (threeC3 * l2 + fourC4 * l3 + fiveC5 * l4) * dldgl;
+                dLambdaPow = -(threeC3 * l2 + fourC4 * l3 + fiveC5 * l4) * dldgl;
                 d2LambdaPow = (sixC3 * l + twelveC4 * l2 + twentyC5 * l3) * dldgl * dldgl;
             } else {
                 lambdaPow = 1.0;

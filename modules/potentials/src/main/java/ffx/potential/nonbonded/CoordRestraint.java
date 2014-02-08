@@ -55,7 +55,7 @@ public class CoordRestraint implements LambdaInterface {
      */
     public CoordRestraint(MolecularAssembly molecularAssembly, Crystal crystal) {
         this.molecularAssembly = molecularAssembly;
-        this.crystal = crystal;
+        this.crystal = crystal.getUnitCell();
         atoms = molecularAssembly.getAtomArray();
         nAtoms = atoms.length;
         ForceField forceField = molecularAssembly.getForceField();
@@ -73,7 +73,6 @@ public class CoordRestraint implements LambdaInterface {
             initialCoordinates[1][i] = a.getY();
             initialCoordinates[2][i] = a.getZ();
         }
-
         logger.info("\n Coordinate Restraint Activated");
     }
 
@@ -118,7 +117,8 @@ public class CoordRestraint implements LambdaInterface {
             dEdL = dLambdaPow * forceConstant * residual;
             d2EdL2 = d2LambdaPow * forceConstant * residual;
         }
-        //logger.info(String.format(" Restraint %16.8f", forceConstant * residual * lambdaPow));
+
+        //logger.info(String.format(" Restraint Energy %16.8f", forceConstant * residual * lambdaPow));
         return forceConstant * residual * lambdaPow;
     }
 
