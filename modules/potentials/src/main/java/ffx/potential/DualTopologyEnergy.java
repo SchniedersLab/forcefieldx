@@ -466,8 +466,8 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
             restraintdEdL_1 = 0.0;
             restraintd2EdL2_1 = 0.0;
         }
-        if (logger.isLoggable(Level.INFO)) {
-            logger.info(String.format(" Topology 1 Energy & Restraints: %15.8f %15.8f\n",
+        if (logger.isLoggable(Level.FINE)) {
+            logger.fine(String.format(" Topology 1 Energy & Restraints: %15.8f %15.8f\n",
                     scaleEnergy1 * lambdaPow * energy1, scaleEnergy1 * oneMinusLambdaPow * restraintEnergy1));
         }
 
@@ -491,8 +491,8 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
             restraintdEdL_2 = 0.0;
             restraintd2EdL2_2 = 0.0;
         }
-        if (logger.isLoggable(Level.INFO)) {
-            logger.info(String.format(" Topology 2 Energy & Restraints: %15.8f %15.8f\n",
+        if (logger.isLoggable(Level.FINE)) {
+            logger.fine(String.format(" Topology 2 Energy & Restraints: %15.8f %15.8f\n",
                     scaleEnergy2 * oneMinusLambdaPow * energy2, scaleEnergy2 * lambdaPow * restraintEnergy2));
         }
 
