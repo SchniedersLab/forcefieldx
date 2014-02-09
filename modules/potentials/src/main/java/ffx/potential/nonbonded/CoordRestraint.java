@@ -60,8 +60,8 @@ public class CoordRestraint implements LambdaInterface {
         nAtoms = atoms.length;
         ForceField forceField = molecularAssembly.getForceField();
 
-        lambdaTerm = false;
-        //lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
+        //lambdaTerm = false;
+        lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
 
         if (lambdaTerm) {
             lambdaGradient = new double[nAtoms * 3];
@@ -135,7 +135,7 @@ public class CoordRestraint implements LambdaInterface {
     @Override
     public void setLambda(double lambda) {
         if (lambdaTerm) {
-            this.lambda = 1.0 - lambda;
+            this.lambda = lambda;
             if (this.lambda < lambdaWindow) {
                 double dldgl = 1.0 / lambdaWindow;
                 double l = dldgl * this.lambda;
@@ -153,7 +153,7 @@ public class CoordRestraint implements LambdaInterface {
                 double fiveC5 = 5.0 * c5;
                 double twentyC5 = 20.0 * c5;
                 lambdaPow = c3 * l3 + c4 * l4 + c5 * l5;
-                dLambdaPow = -(threeC3 * l2 + fourC4 * l3 + fiveC5 * l4) * dldgl;
+                dLambdaPow = (threeC3 * l2 + fourC4 * l3 + fiveC5 * l4) * dldgl;
                 d2LambdaPow = (sixC3 * l + twelveC4 * l2 + twentyC5 * l3) * dldgl * dldgl;
             } else {
                 lambdaPow = 1.0;

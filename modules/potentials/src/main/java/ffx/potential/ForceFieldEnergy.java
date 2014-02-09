@@ -945,12 +945,12 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 }
             }
             /*
-            if (ncsTerm && ncsRestraint != null) {
-                ncsRestraint.setLambda(lambda);
-            }
-            if (restrainTerm && coordRestraint != null) {
-                coordRestraint.setLambda(lambda);
-            } */
+             if (ncsTerm && ncsRestraint != null) {
+             ncsRestraint.setLambda(lambda);
+             }
+             if (restrainTerm && coordRestraint != null) {
+             coordRestraint.setLambda(lambda);
+             } */
         } else {
             String message = String.format("Lambda value %8.3f is not in the range [0..1].", lambda);
             logger.warning(message);
@@ -1154,9 +1154,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     dEdLambda += restraintBonds[i].getdEdL();
                 }
             }
-        }
-        /*
-        else {
             if (ncsTerm && ncsRestraint != null) {
                 dEdLambda += ncsRestraint.getdEdL();
             }
@@ -1164,7 +1161,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 dEdLambda += coordRestraint.getdEdL();
             }
         }
-        */
+
         return dEdLambda;
     }
 
@@ -1185,15 +1182,13 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     restraintBonds[i].getdEdXdL(gradients);
                 }
             }
-        }
-        /* else {
             if (ncsTerm && ncsRestraint != null) {
                 ncsRestraint.getdEdXdL(gradients);
             }
             if (restrainTerm && coordRestraint != null) {
                 coordRestraint.getdEdXdL(gradients);
             }
-        } */
+        }
     }
 
     /**
@@ -1222,18 +1217,13 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     d2EdLambda2 += restraintBonds[i].getd2EdL2();
                 }
             }
-        }
-
-        /*
-        else {
             if (ncsTerm && ncsRestraint != null) {
                 d2EdLambda2 += ncsRestraint.getd2EdL2();
             }
             if (restrainTerm && coordRestraint != null) {
                 d2EdLambda2 += coordRestraint.getd2EdL2();
             }
-        } */
-        
+        }
         return d2EdLambda2;
     }
 
