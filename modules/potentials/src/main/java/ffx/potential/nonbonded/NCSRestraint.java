@@ -65,11 +65,16 @@ public class NCSRestraint implements LambdaInterface {
         nSymm = spaceGroup.getNumberOfSymOps();
         assert (nAtoms % nSymm == 0);
         ForceField forceField = molecularAssembly.getForceField();
-        lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
+        lambdaTerm = false;
+        //lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
         if (lambdaTerm) {
             lambdaGradient = new double[nAtoms * 3];
         } else {
             lambdaGradient = null;
+            this.lambda = 1.0;
+            lambdaPow = 1.0;
+            dLambdaPow = 0.0;
+            d2LambdaPow = 0.0;
         }
 
         logger.info(String.format("\n NCS Restraint%s", crystal.toString()));
@@ -155,7 +160,7 @@ public class NCSRestraint implements LambdaInterface {
     @Override
     public void setLambda(double lambda) {
         if (lambdaTerm) {
-            this.lambda = 1 - lambda;
+            this.lambda = 1.0 - lambda;
             if (this.lambda < lambdaWindow) {
                 double dldgl = 1.0 / lambdaWindow;
                 double l = dldgl * this.lambda;
@@ -195,19 +200,29 @@ public class NCSRestraint implements LambdaInterface {
 
     @Override
     public double getdEdL() {
-        return dEdL;
+        if (lambdaTerm) {
+            return dEdL;
+        } else {
+            return 0.0;
+        }
     }
 
     @Override
     public double getd2EdL2() {
-        return d2EdL2;
+        if (lambdaTerm) {
+            return d2EdL2;
+        } else {
+            return 0.0;
+        }
     }
 
     @Override
     public void getdEdXdL(double[] gradient) {
-        int n3 = nAtoms * 3;
-        for (int i = 0; i < n3; i++) {
-            gradient[i] += lambdaGradient[i];
+        if (lambdaTerm) {
+            int n3 = nAtoms * 3;
+            for (int i = 0; i < n3; i++) {
+                gradient[i] += lambdaGradient[i];
+            }
         }
     }
 }

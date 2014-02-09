@@ -655,19 +655,19 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             restraintBondTime = System.nanoTime() - restraintBondTime;
         }
 
-        if (restrainTerm && lambdaBondedTerms) {
-            coordRestraintTime = -System.nanoTime();
-            restrainEnergy = coordRestraint.residual(gradient, print);
-            coordRestraintTime += System.nanoTime();
-        }
-
-        if (ncsTerm && lambdaBondedTerms) {
-            ncsTime = -System.nanoTime();
-            ncsEnergy = ncsRestraint.residual(gradient, print);
-            ncsTime += System.nanoTime();
-        }
-
         if (!lambdaBondedTerms) {
+
+            if (ncsTerm) {
+                ncsTime = -System.nanoTime();
+                ncsEnergy = ncsRestraint.residual(gradient, print);
+                ncsTime += System.nanoTime();
+            }
+
+            if (restrainTerm) {
+                coordRestraintTime = -System.nanoTime();
+                restrainEnergy = coordRestraint.residual(gradient, print);
+                coordRestraintTime += System.nanoTime();
+            }
 
             if (vanderWaalsTerm) {
                 vanDerWaalsTime = System.nanoTime();
@@ -944,12 +944,13 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     restraintBonds[i].setLambda(lambda);
                 }
             }
+            /*
             if (ncsTerm && ncsRestraint != null) {
                 ncsRestraint.setLambda(lambda);
             }
             if (restrainTerm && coordRestraint != null) {
                 coordRestraint.setLambda(lambda);
-            }
+            } */
         } else {
             String message = String.format("Lambda value %8.3f is not in the range [0..1].", lambda);
             logger.warning(message);
@@ -1153,7 +1154,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     dEdLambda += restraintBonds[i].getdEdL();
                 }
             }
-        } else {
+        }
+        /*
+        else {
             if (ncsTerm && ncsRestraint != null) {
                 dEdLambda += ncsRestraint.getdEdL();
             }
@@ -1161,6 +1164,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 dEdLambda += coordRestraint.getdEdL();
             }
         }
+        */
         return dEdLambda;
     }
 
@@ -1181,14 +1185,15 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     restraintBonds[i].getdEdXdL(gradients);
                 }
             }
-        } else {
+        }
+        /* else {
             if (ncsTerm && ncsRestraint != null) {
                 ncsRestraint.getdEdXdL(gradients);
             }
             if (restrainTerm && coordRestraint != null) {
                 coordRestraint.getdEdXdL(gradients);
             }
-        }
+        } */
     }
 
     /**
@@ -1217,14 +1222,18 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     d2EdLambda2 += restraintBonds[i].getd2EdL2();
                 }
             }
-        } else {
+        }
+
+        /*
+        else {
             if (ncsTerm && ncsRestraint != null) {
                 d2EdLambda2 += ncsRestraint.getd2EdL2();
             }
             if (restrainTerm && coordRestraint != null) {
                 d2EdLambda2 += coordRestraint.getd2EdL2();
             }
-        }
+        } */
+        
         return d2EdLambda2;
     }
 

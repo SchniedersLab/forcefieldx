@@ -679,8 +679,7 @@ public class MolecularAssembly extends MSGroup {
      */
     public Atom[] getAtomArray() {
         ArrayList<Atom> atoms = getAtomList();
-        int n = atoms.size();
-        Atom[] atomArray = atoms.toArray(new Atom[n]);
+        Atom[] atomArray = atoms.toArray(new Atom[atoms.size()]);
         Arrays.sort(atomArray);
         return atomArray;
     }

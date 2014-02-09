@@ -59,12 +59,21 @@ public class CoordRestraint implements LambdaInterface {
         atoms = molecularAssembly.getAtomArray();
         nAtoms = atoms.length;
         ForceField forceField = molecularAssembly.getForceField();
-        lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
+
+        lambdaTerm = false;
+        //lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
+
         if (lambdaTerm) {
             lambdaGradient = new double[nAtoms * 3];
         } else {
             lambdaGradient = null;
+            this.lambda = 1.0;
+            lambdaPow = 1.0;
+            dLambdaPow = 0.0;
+            d2LambdaPow = 0.0;
         }
+
+        logger.info("\n Coordinate Restraint:");
 
         initialCoordinates = new double[3][nAtoms];
         for (int i = 0; i < nAtoms; i++) {
@@ -72,8 +81,9 @@ public class CoordRestraint implements LambdaInterface {
             initialCoordinates[0][i] = a.getX();
             initialCoordinates[1][i] = a.getY();
             initialCoordinates[2][i] = a.getZ();
+            a.print();
         }
-        logger.info("\n Coordinate Restraint Activated");
+
     }
 
     public double residual(boolean gradient, boolean print) {
@@ -86,14 +96,14 @@ public class CoordRestraint implements LambdaInterface {
 
         double residual = 0.0;
         double fx2 = forceConstant * 2.0;
-        for (int j = 0; j < nAtoms; j++) {
+        for (int i = 0; i < nAtoms; i++) {
             // Current atomic coordinates.
-            Atom atom1 = atoms[j];
-            atom1.getXYZ(a1);
+            Atom atom = atoms[i];
+            atom.getXYZ(a1);
             // Compute their separation.
-            dx[0] = a1[0] - initialCoordinates[0][j];
-            dx[1] = a1[1] - initialCoordinates[1][j];
-            dx[2] = a1[2] - initialCoordinates[2][j];
+            dx[0] = a1[0] - initialCoordinates[0][i];
+            dx[1] = a1[1] - initialCoordinates[1][i];
+            dx[2] = a1[2] - initialCoordinates[2][i];
             // Apply the minimum image convention.
             double r2 = crystal.image(dx);
             //logger.info(String.format(" %d %16.8f", j, Math.sqrt(r2)));
@@ -103,10 +113,10 @@ public class CoordRestraint implements LambdaInterface {
                 final double dedy = dx[1] * fx2;
                 final double dedz = dx[2] * fx2;
                 if (gradient) {
-                    atom1.addToXYZGradient(lambdaPow * dedx, lambdaPow * dedy, lambdaPow * dedz);
+                    atom.addToXYZGradient(lambdaPow * dedx, lambdaPow * dedy, lambdaPow * dedz);
                 }
                 if (lambdaTerm) {
-                    int j3 = j * 3;
+                    int j3 = i * 3;
                     lambdaGradient[j3] = dLambdaPow * dedx;
                     lambdaGradient[j3 + 1] = dLambdaPow * dedy;
                     lambdaGradient[j3 + 2] = dLambdaPow * dedz;
@@ -158,6 +168,11 @@ public class CoordRestraint implements LambdaInterface {
         }
     }
 
+    public void setLambdaTerm(boolean lambdaTerm) {
+        this.lambdaTerm = lambdaTerm;
+        setLambda(lambda);
+    }
+
     @Override
     public double getLambda() {
         return lambda;
@@ -165,19 +180,29 @@ public class CoordRestraint implements LambdaInterface {
 
     @Override
     public double getdEdL() {
-        return dEdL;
+        if (lambdaTerm) {
+            return dEdL;
+        } else {
+            return 0.0;
+        }
     }
 
     @Override
     public double getd2EdL2() {
-        return d2EdL2;
+        if (lambdaTerm) {
+            return d2EdL2;
+        } else {
+            return 0.0;
+        }
     }
 
     @Override
     public void getdEdXdL(double[] gradient) {
-        int n3 = nAtoms * 3;
-        for (int i = 0; i < n3; i++) {
-            gradient[i] += lambdaGradient[i];
+        if (lambdaTerm) {
+            int n3 = nAtoms * 3;
+            for (int i = 0; i < n3; i++) {
+                gradient[i] += lambdaGradient[i];
+            }
         }
     }
 }
