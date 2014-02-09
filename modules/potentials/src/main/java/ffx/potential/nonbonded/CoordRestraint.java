@@ -136,7 +136,7 @@ public class CoordRestraint implements LambdaInterface {
     public void setLambda(double lambda) {
         if (lambdaTerm) {
             this.lambda = lambda;
-            if (this.lambda < lambdaWindow) {
+            if (this.lambda <= lambdaWindow) {
                 double dldgl = 1.0 / lambdaWindow;
                 double l = dldgl * this.lambda;
                 double l2 = l * l;

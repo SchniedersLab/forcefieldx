@@ -944,13 +944,12 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     restraintBonds[i].setLambda(lambda);
                 }
             }
-            /*
-             if (ncsTerm && ncsRestraint != null) {
-             ncsRestraint.setLambda(lambda);
-             }
-             if (restrainTerm && coordRestraint != null) {
-             coordRestraint.setLambda(lambda);
-             } */
+            if (ncsTerm && ncsRestraint != null) {
+                ncsRestraint.setLambda(lambda);
+            }
+            if (restrainTerm && coordRestraint != null) {
+                coordRestraint.setLambda(lambda);
+            }
         } else {
             String message = String.format("Lambda value %8.3f is not in the range [0..1].", lambda);
             logger.warning(message);
