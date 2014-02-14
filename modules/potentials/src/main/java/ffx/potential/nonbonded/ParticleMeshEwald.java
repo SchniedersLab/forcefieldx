@@ -639,6 +639,7 @@ public class ParticleMeshEwald implements LambdaInterface {
      * MolecularAssembly.
      * @param crystal The boundary conditions.
      * @param neighborList The NeighborList for both van der Waals and PME.
+     * @param elecForm
      * @param parallelTeam A ParallelTeam that delegates parallelization.
      */
     public ParticleMeshEwald(MolecularAssembly molecularAssembly,
@@ -3844,11 +3845,8 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 logger.info(atoms[k].toString());
                                 logger.severe(String.format(" The permanent multipole energy between atoms %d and %d (%d) is %16.8f at %16.8f A.", i, k, iSymm, ei, r));
                             }
-                            if (!(ci == 0.0 || ck == 0.0 || scale == 0.0)) {
-                                permanentEnergy += ei;
-                                count++;
-                                //logger.info(String.format(" Atoms %d and %d (%d) is %16.8f at %16.8f A.", i, k, iSymm, ei, r));
-                            }
+                            permanentEnergy += ei;
+                            count++;
                         }
                         if (polarization != Polarization.NONE && doPolarization) {
                             /**
