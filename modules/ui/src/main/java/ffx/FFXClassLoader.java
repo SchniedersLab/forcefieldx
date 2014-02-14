@@ -76,58 +76,60 @@ public class FFXClassLoader extends ClassLoader {
     static final List<String> FFX_FILES;
     private static String gluegen = null;
     private static String jogl = null;
+    private static String jocl = null;
     private static String nativeExtension = null;
 
     static {
         FFX_FILES = new ArrayList<String>(Arrays.asList(new String[]{
-                    "edu.uiowa.eng.ffx/algorithms.jar",
-                    "edu.uiowa.eng.ffx/autoparm.jar",
-                    "edu.uiowa.eng.ffx/binding.jar",
-                    "edu.uiowa.eng.ffx/crystal.jar",
-                    "edu.uiowa.eng.ffx/numerics.jar",
-                    "edu.uiowa.eng.ffx/potentials.jar",
-                    "edu.uiowa.eng.ffx/ui.jar",
-                    "edu.uiowa.eng.ffx/utilities.jar",
-                    "edu.uiowa.eng.ffx/xray.jar",
-                    // Force Field X Extensions
-                    "edu.uiowa.eng.ffx/algorithms-ext.jar",
-                    "edu.uiowa.eng.ffx/xray-ext.jar",
-                    // Groovy
-                    "org.codehaus.groovy/groovy-all.jar",
-                    // CUDA
-                    "jcuda/jcuda-all.jar",
-                    // Parallel Java
-                    "edu.rit.pj/pj.jar",
-                    // Aparapi
-                    "com.amd.aparapi/aparapi.jar",
-                    // Java3D 1.6.1 (depends on JOGL v. 2.1.1)
-                    "java3d/j3dcore.jar",
-                    "java3d/j3dutils.jar",
-                    "java3d/j3dvrml.jar",
-                    "java3d/vecmath.jar",
-                    // JOGAMP GLUEGEN, JOGL and JOCL v. 2.1.1
-                    "org.jogamp.gluegen/gluegen-rt.jar",
-                    "org.jogamp.gluegen/gluegen-rt-main.jar",
-                    "org.jogamp.jogl/jogl-all.jar",
-                    "org.jogamp.jogl/jogl-all-main.jar",
-                    "org.jogamp.jocl/jocl.jar",
-                    // Apache Commons
-                    "commons-beanutils/commons-beanutils.jar",
-                    "commons-cli/commons-cli.jar",
-                    "commons-collections/commons-collections.jar",
-                    "commons-configuration/commons-configuration.jar",
-                    "commons-digester/commons-digester.jar",
-                    "commons-io/commons-io.jar",
-                    "commons-lang/commons-lang.jar",
-                    "commons-lang/commons-lang3.jar",
-                    "commons-logging/commons-logging.jar",
-                    "commons-math/commons-math.jar",
-                    "commons-math/commons-math3.jar",
-                    // Mac OS X Extensions
-                    "macosx/AppleJavaExtensions.jar",
-                    // Java Help
-                    "javax.help/javahelp.jar"
-                }));
+            "edu.uiowa.eng.ffx/algorithms.jar",
+            "edu.uiowa.eng.ffx/autoparm.jar",
+            "edu.uiowa.eng.ffx/binding.jar",
+            "edu.uiowa.eng.ffx/crystal.jar",
+            "edu.uiowa.eng.ffx/numerics.jar",
+            "edu.uiowa.eng.ffx/potentials.jar",
+            "edu.uiowa.eng.ffx/ui.jar",
+            "edu.uiowa.eng.ffx/utilities.jar",
+            "edu.uiowa.eng.ffx/xray.jar",
+            // Force Field X Extensions
+            "edu.uiowa.eng.ffx/algorithms-ext.jar",
+            "edu.uiowa.eng.ffx/xray-ext.jar",
+            // Groovy
+            "org.codehaus.groovy/groovy-all.jar",
+            // CUDA
+            "jcuda/jcuda-all.jar",
+            // Parallel Java
+            "edu.rit.pj/pj.jar",
+            // Aparapi
+            "com.amd.aparapi/aparapi.jar",
+            // Java3D 1.6.1 (depends on JOGL v. 2.1.4)
+            "java3d/j3dcore.jar",
+            "java3d/j3dutils.jar",
+            "java3d/j3dvrml.jar",
+            "java3d/vecmath.jar",
+            // JOGAMP GLUEGEN, JOGL and JOCL v. 2.1.4
+            "org.jogamp.gluegen/gluegen-rt.jar",
+            "org.jogamp.gluegen/gluegen-rt-main.jar",
+            "org.jogamp.jogl/jogl-all.jar",
+            "org.jogamp.jogl/jogl-all-main.jar",
+            "org.jogamp.jocl/jocl.jar",
+            "org.jogamp.jocl/jocl-main.jar",
+            // Apache Commons
+            "commons-beanutils/commons-beanutils.jar",
+            "commons-cli/commons-cli.jar",
+            "commons-collections/commons-collections.jar",
+            "commons-configuration/commons-configuration.jar",
+            "commons-digester/commons-digester.jar",
+            "commons-io/commons-io.jar",
+            "commons-lang/commons-lang.jar",
+            "commons-lang/commons-lang3.jar",
+            "commons-logging/commons-logging.jar",
+            "commons-math/commons-math.jar",
+            "commons-math/commons-math3.jar",
+            // Mac OS X Extensions
+            "macosx/AppleJavaExtensions.jar",
+            // Java Help
+            "javax.help/javahelp.jar"
+        }));
 
         String osName = System.getProperty("os.name").toUpperCase();
         String osArch = System.getProperty("sun.arch.data.model");
@@ -137,6 +139,8 @@ public class FFXClassLoader extends ClassLoader {
             FFX_FILES.add("org.jogamp.gluegen/gluegen-rt-natives-macosx-universal.jar");
             // JOGL Universal Binaries
             FFX_FILES.add("org.jogamp.jogl/jogl-all-natives-macosx-universal.jar");
+            // JOCL Universal Binaries
+            FFX_FILES.add("org.jogamp.jocl/jocl-natives-macosx-universal.jar");
             nativeExtension = "-natives-macosx-universal.jar";
             if (x8664) {
                 // JCUDA
@@ -198,8 +202,7 @@ public class FFXClassLoader extends ClassLoader {
     }
 
     /**
-     * Returns the file name of a temporary copy of
-     * <code>input</code> content.
+     * Returns the file name of a temporary copy of <code>input</code> content.
      *
      * @param input a {@link java.io.InputStream} object.
      * @param name a {@link java.lang.String} object.
@@ -214,6 +217,8 @@ public class FFXClassLoader extends ClassLoader {
             tmpFile = new File(gluegen + nativeExtension);
         } else if (name.contains("jogl-all") && name.contains("natives")) {
             tmpFile = new File(jogl + nativeExtension);
+        } else if (name.contains("jocl") && name.contains("natives")) {
+            tmpFile = new File(jocl + nativeExtension);
         } else {
             try {
                 name = "ffx." + name + ".";
@@ -258,7 +263,6 @@ public class FFXClassLoader extends ClassLoader {
          if (name.startsWith("com.jogamp")) {
          System.out.println(" Class requested:" + name);
          } */
-
         if (!extensionsLoaded) {
             loadExtensions();
         }
@@ -317,6 +321,7 @@ public class FFXClassLoader extends ClassLoader {
      * {@inheritDoc}
      *
      * Returns the library path of an extension DLL.
+     *
      * @return
      */
     @Override
@@ -330,7 +335,6 @@ public class FFXClassLoader extends ClassLoader {
          System.out.println(" Library requested:" + libname);
          }
          */
-
         return (String) this.extensionDlls.get(libname);
     }
 
@@ -339,6 +343,7 @@ public class FFXClassLoader extends ClassLoader {
      *
      * Returns the URL of the given resource searching first if it exists among
      * the extension JARs given in constructor.
+     *
      * @return
      */
     @Override
@@ -403,6 +408,7 @@ public class FFXClassLoader extends ClassLoader {
      *
      * Loads a class with this class loader if its package belongs to
      * <code>applicationPackages</code> given in constructor.
+     *
      * @return
      * @throws java.lang.ClassNotFoundException
      */
@@ -494,6 +500,8 @@ public class FFXClassLoader extends ClassLoader {
                             gluegen = extensionJar.substring(0, extensionJar.length() - 4);
                         } else if (name.equals("jogl-all")) {
                             jogl = extensionJar.substring(0, extensionJar.length() - 4);
+                        } else if (name.equals("jocl")) {
+                            jocl = extensionJar.substring(0, extensionJar.length() - 4);
                         }
                     } else if (extensionJarOrDll.endsWith(dllSuffix)) {
                         int start = lastSlashIndex + 1 + dllPrefix.length();

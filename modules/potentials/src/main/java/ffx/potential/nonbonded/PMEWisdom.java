@@ -36,6 +36,7 @@ import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.nonbonded.ParticleMeshEwald.ELEC_FORM;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldInteger;
@@ -176,7 +177,7 @@ public class PMEWisdom {
                 parallelTeam);
         neighborList.buildList(coordinates, neighborLists, null, true, true);
         ParticleMeshEwald particleMeshEwald = new ParticleMeshEwald(molecularAssembly,
-                crystal, neighborList, parallelTeam);
+                crystal, neighborList, ELEC_FORM.PAM, parallelTeam);
 
         /**
          * Time the high accuracy energy gradients.
@@ -244,7 +245,7 @@ public class PMEWisdom {
             forceField.addForceFieldDouble(ForceFieldDouble.PME_MESH_DENSITY, spacing);
             forceField.addForceFieldInteger(ForceFieldInteger.PME_ORDER, order);
             ParticleMeshEwald particleMeshEwald = new ParticleMeshEwald(
-                    molecularAssembly, crystal, neighborList, parallelTeam);
+                    molecularAssembly, crystal, neighborList, ELEC_FORM.PAM, parallelTeam);
 
             System.gc();
             particleMeshEwald.energy(true, false);
@@ -277,7 +278,7 @@ public class PMEWisdom {
         forceField.addForceFieldInteger(ForceField.ForceFieldInteger.PME_ORDER,
                 order);
         ParticleMeshEwald particleMeshEwald = new ParticleMeshEwald(
-                molecularAssembly, crystal, neighborList, parallelTeam);
+                molecularAssembly, crystal, neighborList, ELEC_FORM.PAM, parallelTeam);
         System.gc();
         long bestTime = System.nanoTime();
         particleMeshEwald.energy(true, false);

@@ -53,6 +53,7 @@ import ffx.potential.parameters.ForceField.ForceFieldInteger;
 import ffx.potential.parameters.ForceField.ForceFieldName;
 import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.parameters.ForceField.ForceFieldType;
+import ffx.potential.parameters.ImproperTorsionType;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.OutOfPlaneBendType;
 import ffx.potential.parameters.PiTorsionType;
@@ -250,6 +251,9 @@ public class ForceFieldFilter {
                             case PITORS:
                                 parsePiTorsion(input, tokens);
                                 break;
+                            case IMPTORS:
+                                parseImproper(input, tokens);
+                                break;
                             case TORSION:
                                 parseTorsion(input, tokens);
                                 break;
@@ -372,6 +376,9 @@ public class ForceFieldFilter {
                                         break;
                                     case PITORS:
                                         parsePiTorsion(input, tokens);
+                                        break;
+                                    case IMPTORS:
+                                        parseImproper(input, tokens);
                                         break;
                                     case TORSION:
                                         parseTorsion(input, tokens);
@@ -815,6 +822,29 @@ public class ForceFieldFilter {
             forceField.addForceFieldType(strbndType);
         } catch (NumberFormatException e) {
             String message = "Exception parsing STRBND type:\n" + input + "\n";
+            logger.log(Level.SEVERE, message, e);
+        }
+    }
+
+    private void parseImproper(String input, String[] tokens) {
+        if (tokens.length < 8) {
+            logger.log(Level.WARNING, "Invalid IMPTORS type:\n{0}", input);
+            return;
+        }
+        try {
+            int atomClasses[] = new int[4];
+            atomClasses[0] = Integer.parseInt(tokens[1]);
+            atomClasses[1] = Integer.parseInt(tokens[2]);
+            atomClasses[2] = Integer.parseInt(tokens[3]);
+            atomClasses[3] = Integer.parseInt(tokens[4]);
+            double k = Double.parseDouble(tokens[5]);
+            double phase = Double.parseDouble(tokens[6]);
+            int period = Integer.parseInt(tokens[7]);
+            ImproperTorsionType improperType = new ImproperTorsionType(atomClasses,
+                    k, phase, period);
+            forceField.addForceFieldType(improperType);
+        } catch (NumberFormatException e) {
+            String message = "Exception parsing IMPTORS type:\n" + input + "\n";
             logger.log(Level.SEVERE, message, e);
         }
     }

@@ -93,7 +93,7 @@ public class ForceField {
     public enum ForceFieldType {
 
         KEYWORD, ANGLE, ATOM, BIOTYPE, BOND, CHARGE, MULTIPOLE, OPBEND, PITORS,
-        POLARIZE, STRBND, TORSION, TORTORS, UREYBRAD, VDW
+        POLARIZE, STRBND, TORSION, TORTORS, UREYBRAD, VDW, IMPTORS
     }
     /**
      * A map between a Force_Field and its internal parameter file.
@@ -122,6 +122,7 @@ public class ForceField {
     private final Map<String, StretchBendType> stretchBendTypes;
     private final Map<String, PiTorsionType> piTorsionTypes;
     private final Map<String, TorsionType> torsionTypes;
+    private final Map<String, ImproperTorsionType> imptorsTypes;
     private final Map<String, TorsionTorsionType> torsionTorsionTypes;
     private final Map<String, UreyBradleyType> ureyBradleyTypes;
     private final Map<String, VDWType> vanderWaalsTypes;
@@ -171,7 +172,7 @@ public class ForceField {
         atomTypes = new TreeMap<>(new AtomType(0, 0, null, null, 0, 0, 0));
         bioTypes = new TreeMap<>(new BioType(0, null, null, 0, null));
         bondTypes = new TreeMap<>(new BondType(new int[2], 0, 0, null));
-        chargeTypes = new TreeMap<>(new ChargeType(0,0));
+        chargeTypes = new TreeMap<>(new ChargeType(0, 0));
         multipoleTypes = new TreeMap<>(new MultipoleType(0, new double[3], new double[3][3], null, null));
         outOfPlaneBendTypes = new TreeMap<>(new OutOfPlaneBendType(new int[4], 0));
         piTorsionTypes = new TreeMap<>(new PiTorsionType(new int[2], 0));
@@ -179,6 +180,7 @@ public class ForceField {
         stretchBendTypes = new TreeMap<>(new StretchBendType(new int[3], new double[1]));
         torsionTorsionTypes = new TreeMap<>();
         torsionTypes = new TreeMap<>(new TorsionType(new int[4], new double[1], new double[1], new int[1]));
+        imptorsTypes = new TreeMap<>(new ImproperTorsionType(new int[4], 0.0, 0.0, 0));
         ureyBradleyTypes = new TreeMap<>(new UreyBradleyType(new int[3], 0, 0));
         vanderWaalsTypes = new TreeMap<>(new VDWType(0, 0, 0, 0));
 
@@ -194,6 +196,7 @@ public class ForceField {
         forceFieldTypes.put(ForceFieldType.POLARIZE, polarizeTypes);
         forceFieldTypes.put(ForceFieldType.STRBND, stretchBendTypes);
         forceFieldTypes.put(ForceFieldType.TORSION, torsionTypes);
+        forceFieldTypes.put(ForceFieldType.IMPTORS, imptorsTypes);
         forceFieldTypes.put(ForceFieldType.TORTORS, torsionTorsionTypes);
         forceFieldTypes.put(ForceFieldType.UREYBRAD, ureyBradleyTypes);
         forceFieldTypes.put(ForceFieldType.VDW, vanderWaalsTypes);
@@ -309,6 +312,10 @@ public class ForceField {
             patchType.incrementClasses(classOffset);
         }
 
+        for (ImproperTorsionType patchType : imptorsTypes.values()) {
+            patchType.incrementClasses(classOffset);
+        }
+
         for (UreyBradleyType patchType : ureyBradleyTypes.values()) {
             patchType.incrementClasses(classOffset);
         }
@@ -382,6 +389,10 @@ public class ForceField {
 
         for (TorsionType patchType : patch.torsionTypes.values()) {
             torsionTypes.put(patchType.getKey(), patchType);
+        }
+
+        for (ImproperTorsionType patchType : patch.imptorsTypes.values()) {
+            imptorsTypes.put(patchType.getKey(), patchType);
         }
 
         for (UreyBradleyType patchType : patch.ureyBradleyTypes.values()) {
@@ -852,6 +863,17 @@ public class ForceField {
 
     /**
      * <p>
+     * getImproperType</p>
+     *
+     * @param key a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.parameters.TorsionType} object.
+     */
+    public ImproperTorsionType getImproperType(String key) {
+        return imptorsTypes.get(key);
+    }
+
+    /**
+     * <p>
      * getTorsionTorsionType</p>
      *
      * @param key a {@link java.lang.String} object.
@@ -1121,6 +1143,15 @@ public class ForceField {
             if (!torsionType.key.equals(currentKey)) {
                 torsionTypes.remove(currentKey);
                 addForceFieldType(torsionType);
+            }
+        }
+
+        for (ImproperTorsionType improperType : imptorsTypes.values().toArray(new ImproperTorsionType[imptorsTypes.size()])) {
+            String currentKey = improperType.key;
+            improperType.patchClasses(typeMap);
+            if (!improperType.key.equals(currentKey)) {
+                torsionTypes.remove(currentKey);
+                addForceFieldType(improperType);
             }
         }
 

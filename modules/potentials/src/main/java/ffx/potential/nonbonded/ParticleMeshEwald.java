@@ -118,6 +118,11 @@ public class ParticleMeshEwald implements LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(ParticleMeshEwald.class.getName());
 
+    public enum ELEC_FORM {
+
+        PAM, FIXED_CHARGE
+    }
+
     /**
      * Polarization modes include "direct", in which induced dipoles do not
      * interact, and "mutual" that converges the self-consistent field to a
@@ -620,6 +625,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     private final long realSpaceSCFTime[];
     private long realSpacePermTotal, realSpaceEnergyTotal, realSpaceSCFTotal;
     private long bornRadiiTotal, gkEnergyTotal;
+    private ELEC_FORM elecForm = ELEC_FORM.PAM;
     private static final double toSeconds = 1.0e-9;
     /**
      * The sqrt of PI.
@@ -636,13 +642,14 @@ public class ParticleMeshEwald implements LambdaInterface {
      * @param parallelTeam A ParallelTeam that delegates parallelization.
      */
     public ParticleMeshEwald(MolecularAssembly molecularAssembly,
-            Crystal crystal, NeighborList neighborList, ParallelTeam parallelTeam) {
+            Crystal crystal, NeighborList neighborList, ELEC_FORM elecForm, ParallelTeam parallelTeam) {
         this.molecularAssembly = molecularAssembly;
         this.forceField = molecularAssembly.getForceField();
         this.atoms = molecularAssembly.getAtomArray();
         this.crystal = crystal;
         this.parallelTeam = parallelTeam;
         this.neighborList = neighborList;
+        this.elecForm = elecForm;
 
         neighborLists = neighborList.getNeighborList();
         permanentSchedule = neighborList.getPairwiseSchedule();
@@ -664,10 +671,17 @@ public class ParticleMeshEwald implements LambdaInterface {
 
         polsor = forceField.getDouble(ForceFieldDouble.POLAR_SOR, 0.70);
         poleps = forceField.getDouble(ForceFieldDouble.POLAR_EPS, 1e-5);
-        m12scale = forceField.getDouble(ForceFieldDouble.MPOLE_12_SCALE, 0.0);
-        m13scale = forceField.getDouble(ForceFieldDouble.MPOLE_13_SCALE, 0.0);
-        m14scale = forceField.getDouble(ForceFieldDouble.MPOLE_14_SCALE, 0.4);
-        m15scale = forceField.getDouble(ForceFieldDouble.MPOLE_15_SCALE, 0.8);
+        if (elecForm == ELEC_FORM.PAM) {
+            m12scale = forceField.getDouble(ForceFieldDouble.MPOLE_12_SCALE, 0.0);
+            m13scale = forceField.getDouble(ForceFieldDouble.MPOLE_13_SCALE, 0.0);
+            m14scale = forceField.getDouble(ForceFieldDouble.MPOLE_14_SCALE, 0.4);
+            m15scale = forceField.getDouble(ForceFieldDouble.MPOLE_15_SCALE, 0.8);
+        } else {
+            m12scale = forceField.getDouble(ForceFieldDouble.MPOLE_12_SCALE, 0.0);
+            m13scale = forceField.getDouble(ForceFieldDouble.MPOLE_13_SCALE, 0.0);
+            m14scale = forceField.getDouble(ForceFieldDouble.MPOLE_14_SCALE, 0.5);
+            m15scale = forceField.getDouble(ForceFieldDouble.MPOLE_15_SCALE, 1.0);
+        }
         d11scale = forceField.getDouble(ForceFieldDouble.DIRECT_11_SCALE, 0.0);
         p12scale = forceField.getDouble(ForceFieldDouble.POLAR_12_SCALE, 0.0);
         p13scale = forceField.getDouble(ForceFieldDouble.POLAR_13_SCALE, 0.0);
@@ -819,6 +833,9 @@ public class ParticleMeshEwald implements LambdaInterface {
         }
 
         String polar = forceField.getString(ForceFieldString.POLARIZATION, "MUTUAL");
+        if (elecForm == ELEC_FORM.FIXED_CHARGE) {
+            polar = "NONE";
+        }
         boolean polarizationTerm = forceField.getBoolean(ForceFieldBoolean.POLARIZETERM, true);
         if (polarizationTerm == false || polar.equalsIgnoreCase("NONE")) {
             polarization = Polarization.NONE;
@@ -3684,6 +3701,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                             maskingd_local[j] = d11scale;
                         }
                     }
+
                     final double xi = x[i];
                     final double yi = y[i];
                     final double zi = z[i];
@@ -3826,8 +3844,11 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 logger.info(atoms[k].toString());
                                 logger.severe(String.format(" The permanent multipole energy between atoms %d and %d (%d) is %16.8f at %16.8f A.", i, k, iSymm, ei, r));
                             }
-                            permanentEnergy += ei;
-                            count++;
+                            if (!(ci == 0.0 || ck == 0.0 || scale == 0.0)) {
+                                permanentEnergy += ei;
+                                count++;
+                                //logger.info(String.format(" Atoms %d and %d (%d) is %16.8f at %16.8f A.", i, k, iSymm, ei, r));
+                            }
                         }
                         if (polarization != Polarization.NONE && doPolarization) {
                             /**

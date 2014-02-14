@@ -39,6 +39,7 @@ import ffx.numerics.Potential;
 import ffx.potential.bonded.*;
 import ffx.potential.nonbonded.CoordRestraint;
 import ffx.potential.nonbonded.ParticleMeshEwald;
+import ffx.potential.nonbonded.ParticleMeshEwald.ELEC_FORM;
 import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.nonbonded.VanDerWaals.VDW_FORM;
 import ffx.potential.parameters.BondType;
@@ -431,8 +432,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
         logger.info("\n Non-Bonded Terms");
 
+        String name = forceField.toString().toUpperCase();
         if (vanderWaalsTerm) {
-            String name = forceField.toString().toUpperCase();
             if (name.contains("OPLS")) {
                 vanderWaals = new VanDerWaals(molecularAssembly, crystal, parallelTeam, VDW_FORM.LENNARD_JONES_6_12);
             } else {
@@ -443,8 +444,13 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
 
         if (multipoleTerm) {
-            particleMeshEwald = new ParticleMeshEwald(molecularAssembly, crystal,
-                    vanderWaals.getNeighborList(), parallelTeam);
+            if (name.contains("OPLS")) {
+                particleMeshEwald = new ParticleMeshEwald(molecularAssembly, crystal,
+                        vanderWaals.getNeighborList(), ELEC_FORM.FIXED_CHARGE, parallelTeam);
+            } else {
+                                particleMeshEwald = new ParticleMeshEwald(molecularAssembly, crystal,
+                        vanderWaals.getNeighborList(), ELEC_FORM.PAM, parallelTeam);
+            }
         } else {
             particleMeshEwald = null;
         }
