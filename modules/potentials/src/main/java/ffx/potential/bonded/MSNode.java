@@ -22,9 +22,17 @@
  */
 package ffx.potential.bonded;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.ListIterator;
 
-import javax.media.j3d.*;
+import javax.media.j3d.BranchGroup;
+import javax.media.j3d.Canvas3D;
+import javax.media.j3d.J3DGraphics2D;
+import javax.media.j3d.Material;
+import javax.media.j3d.Node;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
 import javax.vecmath.Color3f;
@@ -96,12 +104,11 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      */
     public boolean canBeChild(Class c) {
         try {
-            int multiScaleLevel = c.getDeclaredField("MultiScaleLevel").getInt(
-                    null);
+            int multiScaleLevel = c.getDeclaredField("MultiScaleLevel").getInt(null);
             if (multiScaleLevel >= this.MultiScaleLevel) {
                 return false;
             }
-        } catch (Exception e) {
+        } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
             return true;
         }
         return true;
@@ -166,7 +173,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      * @return a {@link java.util.ArrayList} object.
      */
     public ArrayList<Atom> getAtomList() {
-        ArrayList<Atom> arrayList = new ArrayList<Atom>();
+        ArrayList<Atom> arrayList = new ArrayList<>();
         List<MSNode> list = Collections.list(depthFirstEnumeration());
         for (MSNode node : list) {
             if (node instanceof Atom) {
@@ -200,7 +207,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      * @return a {@link java.util.ArrayList} object.
      */
     public ArrayList<ROLS> getBondList() {
-        ArrayList<ROLS> arrayList = new ArrayList<ROLS>();
+        ArrayList<ROLS> arrayList = new ArrayList<>();
         return getList(Bond.class, arrayList);
     }
 
@@ -210,7 +217,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      * @return a {@link java.util.ArrayList} object.
      */
     public ArrayList<ROLS> getAngleList() {
-        ArrayList<ROLS> arrayList = new ArrayList<ROLS>();
+        ArrayList<ROLS> arrayList = new ArrayList<>();
         return getList(Angle.class, arrayList);
     }
 
@@ -220,7 +227,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      * @return a {@link java.util.ArrayList} object.
      */
     public ArrayList<ROLS> getStretchBendList() {
-        ArrayList<ROLS> arrayList = new ArrayList<ROLS>();
+        ArrayList<ROLS> arrayList = new ArrayList<>();
         return getList(StretchBend.class, arrayList);
     }
 
@@ -230,7 +237,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      * @return a {@link java.util.ArrayList} object.
      */
     public ArrayList<ROLS> getUreyBradleyList() {
-        ArrayList<ROLS> arrayList = new ArrayList<ROLS>();
+        ArrayList<ROLS> arrayList = new ArrayList<>();
         return getList(UreyBradley.class, arrayList);
     }
 
@@ -240,7 +247,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      * @return a {@link java.util.ArrayList} object.
      */
     public ArrayList<ROLS> getOutOfPlaneBendList() {
-        ArrayList<ROLS> arrayList = new ArrayList<ROLS>();
+        ArrayList<ROLS> arrayList = new ArrayList<>();
         return getList(OutOfPlaneBend.class, arrayList);
     }
 
@@ -250,7 +257,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      * @return a {@link java.util.ArrayList} object.
      */
     public ArrayList<ROLS> getTorsionList() {
-        ArrayList<ROLS> arrayList = new ArrayList<ROLS>();
+        ArrayList<ROLS> arrayList = new ArrayList<>();
         return getList(Torsion.class, arrayList);
     }
 
@@ -260,7 +267,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      * @return a {@link java.util.ArrayList} object.
      */
     public ArrayList<ROLS> getPiOrbitalTorsionList() {
-        ArrayList<ROLS> arrayList = new ArrayList<ROLS>();
+        ArrayList<ROLS> arrayList = new ArrayList<>();
         return getList(PiOrbitalTorsion.class, arrayList);
     }
 
@@ -270,7 +277,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      * @return a {@link java.util.ArrayList} object.
      */
     public ArrayList<ROLS> getTorsionTorsionList() {
-        ArrayList<ROLS> arrayList = new ArrayList<ROLS>();
+        ArrayList<ROLS> arrayList = new ArrayList<>();
         return getList(TorsionTorsion.class, arrayList);
     }
 
@@ -307,7 +314,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      * @return a {@link java.util.ArrayList} object.
      */
     public ArrayList<MSNode> getChildList() {
-        ArrayList<MSNode> l = new ArrayList<MSNode>();
+        ArrayList<MSNode> l = new ArrayList<>();
         Enumeration e = children();
         while (e.hasMoreElements()) {
             l.add((MSNode) e.nextElement());

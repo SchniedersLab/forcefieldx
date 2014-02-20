@@ -27,15 +27,12 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.logging.Logger;
 
-import static java.lang.String.format;
-
 import javax.media.j3d.BranchGroup;
 import javax.media.j3d.Material;
 import javax.vecmath.Color3f;
 
 import ffx.numerics.VectorMath;
-import ffx.potential.bonded.Angle.AngleMode;
-import ffx.potential.parameters.*;
+import ffx.potential.parameters.ForceField;
 
 /**
  * The MSGroup class has one subnode containing atoms, and one that contains
@@ -107,7 +104,7 @@ public abstract class MSGroup extends MSNode {
 
     /**
      * Default Constructor initializes a MultiScaleGroup and a few of its
-     * subnodes.
+     * sub-nodes.
      */
     public MSGroup() {
         super("", 2);
@@ -187,9 +184,9 @@ public abstract class MSGroup extends MSNode {
 
     /**
      * <p>
-     * collectValenceTerms</p>
+     * assignBondedTerms</p>
      */
-    public void collectValenceTerms() {
+    public void assignBondedTerms() {
         MSNode newBondNode = new MSNode("Bonds");
         MSNode newAngleNode = new MSNode("Angles");
         MSNode newStretchBendNode = new MSNode("Stretch-Bends");
@@ -198,12 +195,13 @@ public abstract class MSGroup extends MSNode {
         MSNode newTorsionNode = new MSNode("Torsions");
         MSNode newPiOrbitalTorsionNode = new MSNode("Pi-Orbital Torsions");
         MSNode newTorsionTorsionNode = new MSNode("Torsion-Torsions");
+
         MolecularAssembly molecularAssembly = (MolecularAssembly) getMSNode(MolecularAssembly.class);
         ForceField forceField = molecularAssembly.getForceField();
 
         // Collect all bonds for which both atoms are in this Group
         long time = System.nanoTime();
-        ArrayList<Bond> bonds = new ArrayList<Bond>();
+        ArrayList<Bond> bonds = new ArrayList<>();
         for (Atom atom : getAtomList()) {
             if (atom.getNumBonds() != 0) {
                 for (Bond bond : atom.getBonds()) {
@@ -222,8 +220,7 @@ public abstract class MSGroup extends MSNode {
          * Find intra-group angles.
          */
         time = System.nanoTime();
-        ArrayList<Angle> angles = new ArrayList<Angle>();
-        int c[] = new int[3];
+        ArrayList<Angle> angles = new ArrayList<>();
         for (Atom atom : getAtomList()) {
             if (atom.getNumBonds() != 0) {
                 int index = 0;
@@ -233,20 +230,7 @@ public abstract class MSGroup extends MSNode {
                         for (ListIterator<Bond> li = atom.getBonds().listIterator(index); li.hasNext();) {
                             Bond bond2 = li.next();
                             if (bond2.sameGroup()) {
-                                Angle newAngle = new Angle(bond, bond2);
-                                Atom ac = bond.getCommonAtom(bond2);
-                                Atom a1 = bond.get1_2(ac);
-                                Atom a3 = bond2.get1_2(ac);
-                                c[0] = a1.getAtomType().atomClass;
-                                c[1] = ac.getAtomType().atomClass;
-                                c[2] = a3.getAtomType().atomClass;
-                                String key = AngleType.sortKey(c);
-                                AngleType angleType = forceField.getAngleType(key);
-                                if (angleType == null) {
-                                    logger.severe("No AngleType for key: " + key);
-                                } else {
-                                    newAngle.setAngleType(angleType);
-                                }
+                                Angle newAngle = Angle.angleFactory(bond, bond2, forceField);
                                 newAngleNode.insert(newAngle, 0);
                                 angles.add(newAngle);
                             }
@@ -264,10 +248,8 @@ public abstract class MSGroup extends MSNode {
          */
         time = System.nanoTime();
         for (Angle angle : angles) {
-            StretchBendType stretchBendType = forceField.getStretchBendType(angle.getAngleType().getKey());
-            if (stretchBendType != null) {
-                StretchBend newStretchBend = new StretchBend(angle);
-                newStretchBend.setStretchBendType(stretchBendType);
+            StretchBend newStretchBend = StretchBend.stretchBendFactory(angle, forceField);
+            if (newStretchBend != null) {
                 newStretchBendNode.insert(newStretchBend, 0);
             }
         }
@@ -280,11 +262,8 @@ public abstract class MSGroup extends MSNode {
          */
         time = System.nanoTime();
         for (Angle angle : angles) {
-            String key = angle.angleType.getKey();
-            UreyBradleyType ureyBradleyType = forceField.getUreyBradleyType(key);
-            if (ureyBradleyType != null) {
-                UreyBradley newUreyBradley = new UreyBradley(angle);
-                newUreyBradley.ureyBradleyType = ureyBradleyType;
+            UreyBradley newUreyBradley = UreyBradley.ureyBradlyFactory(angle, forceField);
+            if (newUreyBradley != null) {
                 newUreyBradleyNode.insert(newUreyBradley, 0);
             }
         }
@@ -297,19 +276,9 @@ public abstract class MSGroup extends MSNode {
          */
         time = System.nanoTime();
         for (Angle angle : angles) {
-            Atom centralAtom = angle.atoms[1];
-            if (centralAtom.isTrigonal()) {
-                Atom atom4 = angle.getTrigonalAtom();
-                String key = atom4.getAtomType().atomClass + " " + centralAtom.getAtomType().atomClass
-                        + " 0 0";
-                OutOfPlaneBendType outOfPlaneBendType = forceField.getOutOfPlaneBendType(key);
-                if (outOfPlaneBendType != null) {
-                    angle.setAngleMode(AngleMode.IN_PLANE, atom4);
-                    OutOfPlaneBend newOutOfPlaneBend = new OutOfPlaneBend(
-                            angle, atom4);
-                    newOutOfPlaneBend.outOfPlaneBendType = outOfPlaneBendType;
-                    newOutOfPlaneBendNode.insert(newOutOfPlaneBend, 0);
-                }
+            OutOfPlaneBend opBend = OutOfPlaneBend.outOfPlaneBendFactory(angle, forceField);
+            if (opBend != null) {
+                newOutOfPlaneBendNode.insert(opBend, 0);
             }
         }
         newOutOfPlaneBendNode.setName("Out-of-Plane Bends (" + newOutOfPlaneBendNode.getChildCount() + ")");
@@ -317,12 +286,9 @@ public abstract class MSGroup extends MSNode {
         outOfPlaneBendTime += System.nanoTime() - time;
 
         /**
-         * Find intra-group torsions.
+         * Find Intra-Group Torsions.
          */
         time = System.nanoTime();
-        c = new int[4];
-        int c2[] = new int[2];
-        ArrayList<Torsion> torsions = new ArrayList<Torsion>();
         for (Bond middleBond : bonds) {
             Atom atom1 = middleBond.getAtom(0);
             Atom atom2 = middleBond.getAtom(1);
@@ -331,22 +297,9 @@ public abstract class MSGroup extends MSNode {
                     if (bond1 != middleBond) {
                         for (Bond bond3 : atom2.getBonds()) {
                             if (bond3 != middleBond) {
-                                c[0] = bond1.getOtherAtom(middleBond).getAtomType().atomClass;
-                                c[1] = atom1.getAtomType().atomClass;
-                                c[2] = atom2.getAtomType().atomClass;
-                                c[3] = bond3.getOtherAtom(middleBond).getAtomType().atomClass;
-                                String key = TorsionType.sortKey(c);
-                                TorsionType torsionType = forceField.getTorsionType(key);
-                                if (torsionType != null) {
-                                    Torsion torsion = new Torsion(bond1,
-                                            middleBond, bond3);
-                                    torsion.torsionType = torsionType;
+                                Torsion torsion = Torsion.torsionFactory(bond1, middleBond, bond3, forceField);
+                                if (torsion != null) {
                                     newTorsionNode.add(torsion);
-                                    torsions.add(torsion);
-                                } else {
-                                    logger.severe(format("No TorsionType for key: %s\n%s\n%s\n%s\n%s\n",
-                                            key, toString(), bond1.toString(),
-                                            middleBond.toString(), bond3.toString()));
                                 }
                             }
                         }
@@ -359,23 +312,13 @@ public abstract class MSGroup extends MSNode {
         torsionTime += System.nanoTime() - time;
 
         /**
-         * Find pi-orbital torsions.
+         * Find Pi-Orbital Torsions.
          */
         time = System.nanoTime();
-        for (Bond middleBond : bonds) {
-            Atom atom1 = middleBond.getAtom(0);
-            Atom atom2 = middleBond.getAtom(1);
-            if (atom1.isTrigonal() && atom2.isTrigonal()) {
-                c2[0] = atom1.getAtomType().atomClass;
-                c2[1] = atom2.getAtomType().atomClass;
-                String key = PiTorsionType.sortKey(c2);
-                PiTorsionType piTorsionType = forceField.getPiTorsionType(key);
-                if (piTorsionType != null) {
-                    PiOrbitalTorsion piOrbitalTorsion = new PiOrbitalTorsion(
-                            middleBond);
-                    piOrbitalTorsion.piTorsionType = piTorsionType;
-                    newPiOrbitalTorsionNode.add(piOrbitalTorsion);
-                }
+        for (Bond bond : bonds) {
+            PiOrbitalTorsion piOrbitalTorsion = PiOrbitalTorsion.piOrbitalTorsionFactory(bond, forceField);
+            if (piOrbitalTorsion != null) {
+                newPiOrbitalTorsionNode.add(piOrbitalTorsion);
             }
         }
         newPiOrbitalTorsionNode.setName("Pi-Orbital Torsions (" + newPiOrbitalTorsionNode.getChildCount() + ")");
@@ -386,55 +329,19 @@ public abstract class MSGroup extends MSNode {
          * Find Torsion-Torsions.
          */
         time = System.nanoTime();
-        int c5[] = new int[5];
-        Atom atoms[] = new Atom[5];
         for (Angle angle : angles) {
-            atoms[1] = angle.atoms[0];
-            atoms[2] = angle.atoms[1];
-            atoms[3] = angle.atoms[2];
-            c5[1] = atoms[1].getAtomType().atomClass;
-            c5[2] = atoms[2].getAtomType().atomClass;
-            c5[3] = atoms[3].getAtomType().atomClass;
-            for (Bond firstBond : atoms[1].getBonds()) {
-                atoms[0] = firstBond.get1_2(atoms[1]);
-                if (atoms[0] != atoms[2] && atoms[0] != atoms[3]) {
-                    c5[0] = atoms[0].getAtomType().atomClass;
-                    for (Bond lastBond : atoms[3].getBonds()) {
-                        atoms[4] = lastBond.get1_2(atoms[3]);
-                        if (atoms[4] != atoms[0] && atoms[4] != atoms[1] && atoms[4] != atoms[2]) {
-                            c5[4] = atoms[4].getAtomType().atomClass;
-                            String key = TorsionTorsionType.sortKey(c5);
-                            boolean reversed = false;
-                            TorsionTorsionType torsionTorsionType = forceField.getTorsionTorsionType(key);
-                            if (torsionTorsionType == null) {
-                                key = TorsionTorsionType.reverseKey(c5);
-                                torsionTorsionType = forceField.getTorsionTorsionType(key);
-                                reversed = true;
-                            }
-                            if (torsionTorsionType != null) {
-                                TorsionTorsion torsionTorsion = new TorsionTorsion(
-                                        firstBond, angle, lastBond, reversed);
-                                torsionTorsion.torsionTorsionType = torsionTorsionType;
-                                // Find the torsions
-                                for (Torsion t : torsions) {
-                                    if (!reversed) {
-                                        if (t.compare(atoms[0], atoms[1],
-                                                atoms[2], atoms[3])) {
-                                            torsionTorsion.torsions[0] = t;
-                                        } else if (t.compare(atoms[1],
-                                                atoms[2], atoms[3], atoms[4])) {
-                                            torsionTorsion.torsions[1] = t;
-                                        }
-                                    } else {
-                                        if (t.compare(atoms[4], atoms[3],
-                                                atoms[2], atoms[1])) {
-                                            torsionTorsion.torsions[0] = t;
-                                        } else if (t.compare(atoms[3],
-                                                atoms[2], atoms[1], atoms[0])) {
-                                            torsionTorsion.torsions[1] = t;
-                                        }
-                                    }
-                                }
+            Atom atom1 = angle.atoms[0];
+            Atom atom2 = angle.atoms[1];
+            Atom atom3 = angle.atoms[2];
+            for (Bond firstBond : atom1.getBonds()) {
+                Atom atom0 = firstBond.get1_2(atom1);
+                if (atom0 != atom2 && atom0 != atom3) {
+                    for (Bond lastBond : atom3.getBonds()) {
+                        Atom atom4 = lastBond.get1_2(atom3);
+                        if (atom4 != atom0 && atom4 != atom1 && atom4 != atom2) {
+                            TorsionTorsion torsionTorsion = TorsionTorsion.
+                                    torsionTorsionFactory(firstBond, angle, lastBond, forceField);
+                            if (torsionTorsion != null) {
                                 newTorsionTorsionNode.insert(torsionTorsion, 0);
                             }
                         }
@@ -442,12 +349,16 @@ public abstract class MSGroup extends MSNode {
                 }
             }
         }
-        newTorsionTorsionNode.setName("Torsion-Torsions (" + newTorsionTorsionNode.getChildCount() + ")");
+        newTorsionTorsionNode.setName(
+                "Torsion-Torsions (" + newTorsionTorsionNode.getChildCount() + ")");
         setTorsionTorsions(newTorsionTorsionNode);
         torsionTorsionTime += System.nanoTime() - time;
-
-        int numberOfValenceTerms = newBondNode.getChildCount() + newAngleNode.getChildCount() + newStretchBendNode.getChildCount() + newUreyBradleyNode.getChildCount() + newOutOfPlaneBendNode.getChildCount() + newTorsionNode.getChildCount() + newPiOrbitalTorsionNode.getChildCount() + newTorsionTorsionNode.getChildCount();
-        termNode.setName("Valence Terms (" + numberOfValenceTerms + ")");
+        int numberOfValenceTerms = newBondNode.getChildCount() + newAngleNode.getChildCount()
+                + newStretchBendNode.getChildCount() + newUreyBradleyNode.getChildCount()
+                + newOutOfPlaneBendNode.getChildCount() + newTorsionNode.getChildCount()
+                + newPiOrbitalTorsionNode.getChildCount() + newTorsionTorsionNode.getChildCount();
+        termNode.setName(
+                "Valence Terms (" + numberOfValenceTerms + ")");
     }
 
     /**
@@ -469,7 +380,7 @@ public abstract class MSGroup extends MSNode {
                 double d1 = VectorMath.dist(da, db);
                 double d2 = Bond.BUFF + a1.getVDWR() / 2 + a2.getVDWR() / 2;
                 if (d1 < d2) {
-                    ArrayList<Bond> adjunctBonds = new ArrayList<Bond>();
+                    ArrayList<Bond> adjunctBonds = new ArrayList<>();
                     if (a1.getNumBonds() > 0) {
                         adjunctBonds.addAll(a1.getBonds());
                     }
@@ -501,7 +412,7 @@ public abstract class MSGroup extends MSNode {
     }
 
     /**
-     * Joiner joins
+     * Create a joint between two chemical groups.
      *
      * @param bond Bond
      * @return Joint
@@ -518,198 +429,102 @@ public abstract class MSGroup extends MSNode {
         MSNode newPiOrbitalTorsionNode = new MSNode("Pi-Orbital Torsions");
         MSNode newTorsionTorsionNode = new MSNode("Torsion-Torsions");
         MolecularAssembly sys = (MolecularAssembly) getMSNode(MolecularAssembly.class);
-        ForceField ff = sys.getForceField();
+        ForceField forceField = sys.getForceField();
         newBondNode.add(bond);
         newBondNode.setName("Bonds (" + newBondNode.getChildCount() + ")");
+
         // Collect Angles that include the joining bond(s)
-        ArrayList<Angle> angles = new ArrayList<Angle>();
-        int c[] = new int[3];
-        // MultiScaleGroup #1
-        Atom a1 = bond.getAtom(0);
-        for (ROLS m2 : a1.getBonds()) {
-            Bond b2 = (Bond) m2;
-            if (bond == b2) {
-                continue;
-            }
-            if (bond.getOtherAtom(b2) != null) {
-                Angle an1 = new Angle(bond, b2);
-                Atom ac = bond.getCommonAtom(b2);
-                Atom a2 = bond.get1_2(ac);
-                Atom a3 = b2.get1_2(ac);
-                c[0] = a2.getAtomType().atomClass;
-                c[1] = ac.getAtomType().atomClass;
-                c[2] = a3.getAtomType().atomClass;
-                String key = AngleType.sortKey(c);
-                AngleType angleType = ff.getAngleType(key);
-                if (angleType == null) {
-                    logger.severe("No AngleType for key: " + key);
-                } else {
-                    an1.setAngleType(angleType);
+        ArrayList<Angle> angles = new ArrayList<>();
+        // Chemical Group #1
+        Atom atom1 = bond.getAtom(0);
+        for (Bond bond2 : atom1.getBonds()) {
+            if (bond != bond2 && bond.getOtherAtom(bond2) != null) {
+                Angle newAngle = Angle.angleFactory(bond, bond2, forceField);
+                if (newAngle != null) {
+                    newAngleNode.add(newAngle);
+                    angles.add(newAngle);
                 }
-                newAngleNode.add(an1);
-                angles.add(an1);
             }
         }
-        // MultiScaleGroup #2
-        Atom a2 = bond.getAtom(1);
-        for (ROLS m2 : a2.getBonds()) {
-            Bond b2 = (Bond) m2;
-            if (bond == b2) {
-                continue;
-            }
-            if (bond.getOtherAtom(b2) != null) {
-                Angle an1 = new Angle(bond, b2);
-                Atom ac = bond.getCommonAtom(b2);
-                a1 = bond.get1_2(ac);
-                Atom a3 = b2.get1_2(ac);
-                c[0] = a1.getAtomType().atomClass;
-                c[1] = ac.getAtomType().atomClass;
-                c[2] = a3.getAtomType().atomClass;
-                String key = AngleType.sortKey(c);
-                AngleType angleType = ff.getAngleType(key);
-                if (angleType == null) {
-                    logger.severe("No AngleType for key: " + key);
-                } else {
-                    an1.setAngleType(angleType);
+        // Chemical Group #2
+        Atom atom2 = bond.getAtom(1);
+        for (Bond bond2 : atom2.getBonds()) {
+            if (bond != bond2 && bond.getOtherAtom(bond2) != null) {
+                Angle newAngle = Angle.angleFactory(bond, bond2, forceField);
+                if (newAngle != null) {
+                    newAngleNode.add(newAngle);
+                    angles.add(newAngle);
                 }
-                newAngleNode.add(an1);
-                angles.add(an1);
             }
         }
         newAngleNode.setName("Angles (" + newAngleNode.getChildCount() + ")");
+
         for (Angle angle : angles) {
-            StretchBendType stretchBendType = ff.getStretchBendType(angle.getAngleType().getKey());
-            if (stretchBendType != null) {
-                StretchBend sb = new StretchBend(angle);
-                sb.setStretchBendType(stretchBendType);
-                newStretchBendNode.insert(sb, 0);
+            StretchBend stretchBend = StretchBend.stretchBendFactory(angle, forceField);
+            if (stretchBend != null) {
+                newStretchBendNode.insert(stretchBend, 0);
             }
-            String key = angle.getAngleType().getKey();
-            UreyBradleyType ureyBradleyType = ff.getUreyBradleyType(key);
-            if (ureyBradleyType != null) {
-                UreyBradley ureyBradley = new UreyBradley(angle);
-                ureyBradley.setUreyBradleyType(ureyBradleyType);
+            UreyBradley ureyBradley = UreyBradley.ureyBradlyFactory(angle, forceField);
+            if (ureyBradley != null) {
                 newUreyBradleyNode.insert(ureyBradley, 0);
             }
-            Atom centralAtom = angle.atoms[1];
-            if (centralAtom.isTrigonal()) {
-                Atom atom4 = angle.getTrigonalAtom();
-                key = atom4.getAtomType().atomClass + " " + centralAtom.getAtomType().atomClass + " 0 0";
-                OutOfPlaneBendType outOfPlaneBendType = ff.getOutOfPlaneBendType(key);
-                if (outOfPlaneBendType != null) {
-                    angle.setAngleMode(AngleMode.IN_PLANE, atom4);
-                    OutOfPlaneBend outOfPlaneBend = new OutOfPlaneBend(angle,
-                            atom4);
-                    outOfPlaneBend.outOfPlaneBendType = outOfPlaneBendType;
-                    newOutOfPlaneNode.insert(outOfPlaneBend, 0);
-                }
+            OutOfPlaneBend outOfPlaneBend = OutOfPlaneBend.outOfPlaneBendFactory(angle, forceField);
+            if (outOfPlaneBend != null) {
+                newOutOfPlaneNode.insert(outOfPlaneBend, 0);
             }
         }
-        newStretchBendNode.setName("Stretch-Bends (" + newStretchBendNode.getChildCount() + ")");
-        newUreyBradleyNode.setName("Urey-Bradleys (" + newUreyBradleyNode.getChildCount() + ")");
-        newOutOfPlaneNode.setName("Out-of-Plane Bends (" + newOutOfPlaneNode.getChildCount() + ")");
+        newStretchBendNode.setName(
+                "Stretch-Bends (" + newStretchBendNode.getChildCount() + ")");
+        newUreyBradleyNode.setName(
+                "Urey-Bradleys (" + newUreyBradleyNode.getChildCount() + ")");
+        newOutOfPlaneNode.setName(
+                "Out-of-Plane Bends (" + newOutOfPlaneNode.getChildCount() + ")");
         /**
          * Find torsions across the joint.
          */
-        ArrayList<Torsion> torsions = new ArrayList<Torsion>();
-        Atom atom1 = bond.getAtom(0);
-        Atom atom2 = bond.getAtom(1);
-        c = new int[4];
+        atom1 = bond.getAtom(0);
+        atom2 = bond.getAtom(1);
         if (atom1.getNumBonds() != 0 && atom2.getNumBonds() != 0) {
-            for (Bond bond1 : atom1.getBonds()) {
-                if (bond1 != bond) {
-                    for (Bond bond3 : atom2.getBonds()) {
-                        if (bond3 != bond) {
-                            c[0] = bond1.getOtherAtom(bond).getAtomType().atomClass;
-                            c[1] = atom1.getAtomType().atomClass;
-                            c[2] = atom2.getAtomType().atomClass;
-                            c[3] = bond3.getOtherAtom(bond).getAtomType().atomClass;
-                            String key = TorsionType.sortKey(c);
-                            TorsionType torsionType = ff.getTorsionType(key);
-                            if (torsionType != null) {
-                                Torsion torsion = new Torsion(bond1, bond,
-                                        bond3);
-                                torsion.torsionType = torsionType;
-                                torsions.add(torsion);
+            for (Bond firstBond : atom1.getBonds()) {
+                if (firstBond != bond) {
+                    for (Bond lastBond : atom2.getBonds()) {
+                        if (lastBond != bond) {
+                            Torsion torsion = Torsion.torsionFactory(firstBond, bond, lastBond, forceField);
+                            if (torsion != null) {
                                 newTorsionNode.add(torsion);
-                            } else {
-                                logger.severe(format("No TorsionType for key: %s\n%s\n%s\n%s\n%s\n",
-                                        key, toString(), bond1.toString(), bond1.toString(), bond3.toString()));
                             }
                         }
                     }
                 }
             }
         }
-        newTorsionNode.setName("Torsional Angles (" + newTorsionNode.getChildCount() + ")");
+        newTorsionNode.setName(
+                "Torsional Angles (" + newTorsionNode.getChildCount() + ")");
         /**
          * Find Pi-Orbital Torsions across the joint.
          */
-        int c2[] = new int[2];
-        if (atom1.isTrigonal() && atom2.isTrigonal()) {
-            c2[0] = atom1.getAtomType().atomClass;
-            c2[1] = atom2.getAtomType().atomClass;
-            String key = PiTorsionType.sortKey(c2);
-            PiTorsionType piTorsionType = ff.getPiTorsionType(key);
-            if (piTorsionType != null) {
-                PiOrbitalTorsion piOrbitalTorsion = new PiOrbitalTorsion(bond);
-                piOrbitalTorsion.piTorsionType = piTorsionType;
-                newPiOrbitalTorsionNode.add(piOrbitalTorsion);
-            }
+        PiOrbitalTorsion piOrbitalTorsion = PiOrbitalTorsion.piOrbitalTorsionFactory(bond, forceField);
+        if (piOrbitalTorsion != null) {
+            newPiOrbitalTorsionNode.add(piOrbitalTorsion);
         }
-        newPiOrbitalTorsionNode.setName("Pi-Orbital Torsions (" + newPiOrbitalTorsionNode.getChildCount() + ")");
+        newPiOrbitalTorsionNode.setName(
+                "Pi-Orbital Torsions (" + newPiOrbitalTorsionNode.getChildCount() + ")");
         /**
          * Find Torsion-Torsions across the joint.
          */
-        int c5[] = new int[5];
-        Atom atoms[] = new Atom[5];
         for (Angle angle : angles) {
-            atoms[1] = angle.atoms[0];
-            atoms[2] = angle.atoms[1];
-            atoms[3] = angle.atoms[2];
-            c5[1] = atoms[1].getAtomType().atomClass;
-            c5[2] = atoms[2].getAtomType().atomClass;
-            c5[3] = atoms[3].getAtomType().atomClass;
-            for (Bond firstBond : atoms[1].getBonds()) {
-                atoms[0] = firstBond.get1_2(atoms[1]);
-                if (atoms[0] != atoms[2] && atoms[0] != atoms[3]) {
-                    c5[0] = atoms[0].getAtomType().atomClass;
-                    for (Bond lastBond : atoms[3].getBonds()) {
-                        atoms[4] = lastBond.get1_2(atoms[3]);
-                        if (atoms[4] != atoms[0] && atoms[4] != atoms[1] && atoms[4] != atoms[2]) {
-                            c5[4] = atoms[4].getAtomType().atomClass;
-                            String key = TorsionTorsionType.sortKey(c5);
-                            boolean reversed = false;
-                            TorsionTorsionType torsionTorsionType = ff.getTorsionTorsionType(key);
-                            if (torsionTorsionType == null) {
-                                key = TorsionTorsionType.reverseKey(c5);
-                                torsionTorsionType = ff.getTorsionTorsionType(key);
-                                reversed = true;
-                            }
-                            if (torsionTorsionType != null) {
-                                TorsionTorsion torsionTorsion = new TorsionTorsion(
-                                        firstBond, angle, lastBond, reversed);
-                                torsionTorsion.torsionTorsionType = torsionTorsionType;
-                                // Find the torsions
-                                for (Torsion t : torsions) {
-                                    if (!reversed) {
-                                        if (t.compare(atoms[0], atoms[1],
-                                                atoms[2], atoms[3])) {
-                                            torsionTorsion.torsions[0] = t;
-                                        } else if (t.compare(atoms[1],
-                                                atoms[2], atoms[3], atoms[4])) {
-                                            torsionTorsion.torsions[1] = t;
-                                        }
-                                    } else {
-                                        if (t.compare(atoms[4], atoms[3],
-                                                atoms[2], atoms[1])) {
-                                            torsionTorsion.torsions[0] = t;
-                                        } else if (t.compare(atoms[3],
-                                                atoms[2], atoms[1], atoms[0])) {
-                                            torsionTorsion.torsions[1] = t;
-                                        }
-                                    }
-                                }
+            atom1 = angle.atoms[0];
+            atom2 = angle.atoms[1];
+            Atom atom3 = angle.atoms[2];
+            for (Bond firstBond : atom1.getBonds()) {
+                Atom atom0 = firstBond.get1_2(atom1);
+                if (atom0 != atom2 && atom0 != atom3) {
+                    for (Bond lastBond : atom3.getBonds()) {
+                        Atom atom4 = lastBond.get1_2(atom3);
+                        if (atom4 != atom0 && atom4 != atom1 && atom4 != atom2) {
+                            TorsionTorsion torsionTorsion = TorsionTorsion.
+                                    torsionTorsionFactory(firstBond, angle, lastBond, forceField);
+                            if (torsionTorsion != null) {
                                 newTorsionTorsionNode.insert(torsionTorsion, 0);
                             }
                         }
@@ -717,11 +532,13 @@ public abstract class MSGroup extends MSNode {
                 }
             }
         }
-        newTorsionTorsionNode.setName("Torsion-Torsions (" + newTorsionTorsionNode.getChildCount() + ")");
-        Joint j = new Joint(group1, group2, newBondNode, newAngleNode,
+
+        newTorsionTorsionNode.setName(
+                "Torsion-Torsions (" + newTorsionTorsionNode.getChildCount() + ")");
+        Joint newJoint = new Joint(group1, group2, newBondNode, newAngleNode,
                 newStretchBendNode, newUreyBradleyNode, newOutOfPlaneNode,
                 newTorsionNode, newPiOrbitalTorsionNode, newTorsionTorsionNode);
-        return j;
+        return newJoint;
     }
 
     /**

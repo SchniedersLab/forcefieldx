@@ -321,10 +321,7 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
      * @return a boolean.
      */
     public boolean sameGroup() {
-        if (atoms[0].getParent() == atoms[1].getParent()) {
-            return true;
-        }
-        return false;
+        return atoms[0].getParent() == atoms[1].getParent();
     }
 
     /**

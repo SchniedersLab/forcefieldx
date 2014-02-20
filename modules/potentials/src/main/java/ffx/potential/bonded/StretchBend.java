@@ -24,11 +24,20 @@ package ffx.potential.bonded;
 
 import java.util.logging.Logger;
 
-import static java.lang.Math.*;
+import static java.lang.Math.acos;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+import static java.lang.Math.toDegrees;
 
+import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.StretchBendType;
 
-import static ffx.numerics.VectorMath.*;
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
 import static ffx.potential.parameters.StretchBendType.units;
 
 /**
@@ -77,6 +86,24 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
             force0 = units * stretchBendType.forceConstants[1];
             force1 = units * stretchBendType.forceConstants[0];
         }
+    }
+
+    /**
+     * Attempt to create a new StretchBend if a StretchBendType exists for the
+     * specified Angle.
+     *
+     * @param angle
+     * @param forceField
+     * @return a new StretchBend, or null.
+     */
+    public static StretchBend stretchBendFactory(Angle angle, ForceField forceField) {
+        StretchBendType stretchBendType = forceField.getStretchBendType(angle.getAngleType().getKey());
+        if (stretchBendType == null) {
+            return null;
+        }
+        StretchBend stretchBend = new StretchBend(angle);
+        stretchBend.setStretchBendType(stretchBendType);
+        return stretchBend;
     }
 
     /**

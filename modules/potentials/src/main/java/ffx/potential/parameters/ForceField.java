@@ -92,8 +92,8 @@ public class ForceField {
 
     public enum ForceFieldType {
 
-        KEYWORD, ANGLE, ATOM, BIOTYPE, BOND, CHARGE, MULTIPOLE, OPBEND, PITORS,
-        POLARIZE, STRBND, TORSION, TORTORS, UREYBRAD, VDW, IMPTORS
+        KEYWORD, ANGLE, ATOM, BIOTYPE, BOND, CHARGE, IMPTORS, MULTIPOLE, OPBEND, PITORS,
+        POLARIZE, STRBND, TORSION, TORTORS, UREYBRAD, VDW
     }
     /**
      * A map between a Force_Field and its internal parameter file.
@@ -180,7 +180,7 @@ public class ForceField {
         stretchBendTypes = new TreeMap<>(new StretchBendType(new int[3], new double[1]));
         torsionTorsionTypes = new TreeMap<>();
         torsionTypes = new TreeMap<>(new TorsionType(new int[4], new double[1], new double[1], new int[1]));
-        imptorsTypes = new TreeMap<>(new ImproperTorsionType(new int[4], 0.0, 0.0, 0));
+        imptorsTypes = new TreeMap<>(new ImproperTorsionType(new int[4], 0.0, 0.0, 2));
         ureyBradleyTypes = new TreeMap<>(new UreyBradleyType(new int[3], 0, 0));
         vanderWaalsTypes = new TreeMap<>(new VDWType(0, 0, 0, 0));
 

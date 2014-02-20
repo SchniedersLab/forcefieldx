@@ -210,7 +210,7 @@ public class Molecule extends MSGroup {
         getAtomNode().setName("Atoms (" + getAtomList().size() + ")");
         if (finalizeGeometry) {
             //constructValenceTerms();
-            collectValenceTerms();
+            assignBondedTerms();
             removeLeaves();
         }
         // findDangelingAtoms();

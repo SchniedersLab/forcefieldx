@@ -24,10 +24,15 @@ package ffx.potential.bonded;
 
 import java.util.logging.Logger;
 
+import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.UreyBradleyType;
 
-import static ffx.numerics.VectorMath.*;
-import static ffx.potential.parameters.UreyBradleyType.*;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.potential.parameters.UreyBradleyType.cubic;
+import static ffx.potential.parameters.UreyBradleyType.quartic;
+import static ffx.potential.parameters.UreyBradleyType.units;
 
 /**
  * The UreyBradley class.
@@ -81,6 +86,26 @@ public class UreyBradley extends BondedTerm implements Comparable<UreyBradley> {
         bonds = a.bonds;
         atoms = a.atoms;
         setID_Key(false);
+    }
+
+    /**
+     * Attempt to create a new UreyBradley for the specified Angle.
+     *
+     * @param angle
+     * @param forceField
+     * @return a new UreyBradley, or null.
+     */
+    public static UreyBradley ureyBradlyFactory(Angle angle, ForceField forceField) {
+        if (angle == null) {
+            return null;
+        }
+        UreyBradleyType ureyBradleyType = forceField.getUreyBradleyType(angle.angleType.getKey());
+        if (ureyBradleyType == null) {
+            return null;
+        }
+        UreyBradley newUreyBradley = new UreyBradley(angle);
+        newUreyBradley.ureyBradleyType = ureyBradleyType;
+        return newUreyBradley;
     }
 
     /**

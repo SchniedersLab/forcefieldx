@@ -26,8 +26,14 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 
+import static java.lang.Math.cos;
+import static java.lang.Math.sin;
+import static java.lang.Math.toRadians;
+
+import ffx.potential.bonded.Atom;
+
 /**
- * The ImproperType class defines an improper torsion.
+ * The ImproperTorsionType class defines an improper torsion.
  *
  * @author Michael J. Schnieders
  * @since 1.0
@@ -36,21 +42,46 @@ import java.util.HashMap;
 public final class ImproperTorsionType extends BaseType implements Comparator<String> {
 
     /**
+     * Convert Torsional Angle energy to kcal/mole.
+     *
+     * @since 1.0
+     */
+    public static final double units = 0.5;
+
+    /**
+     * This method sorts the atom classes for the improper torsion.
+     *
+     * @param c atomClasses
+     * @return lookup key
+     * @since 1.0
+     */
+    public static String sortKey(int c[]) {
+        if (c == null || c.length != 4) {
+            return null;
+        }
+        String key = c[0] + " " + c[1] + " " + c[2] + " " + c[3];
+        return key;
+    }
+
+    /**
      * Atom classes that for this Improper Torsion angle.
      */
     public final int atomClasses[];
-    /**
-     * Phases in degrees.
-     */
-    public final double phase;
     /**
      * Force constant in kcal/mol.
      */
     public final double k;
     /**
+     * Phases in degrees.
+     */
+    public final double phase;
+    /**
      * Periodicity.
      */
     public final int periodicity;
+
+    public final double cos;
+    public final double sin;
 
     /**
      * TorsionType Constructor.
@@ -64,9 +95,75 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
             int periodicity) {
         super(ForceField.ForceFieldType.IMPTORS, sortKey(atomClasses));
         this.atomClasses = atomClasses;
-        this.k = k;
-        this.phase = phase;
+        double symm = 1.0;
+        if (atomClasses[0] == atomClasses[1] || atomClasses[0] == atomClasses[3] || atomClasses[1] == atomClasses[3]) {
+            symm = 2.0;
+        }
+        if (atomClasses[0] == atomClasses[1] && atomClasses[0] == atomClasses[3]) {
+            symm = 6.0;
+        }
         this.periodicity = periodicity;
+        this.k = k / symm;
+        this.phase = phase;
+        cos = cos(toRadians(phase));
+        sin = sin(toRadians(phase));
+
+        assert (periodicity == 2);
+    }
+
+    /**
+     * Returns true if the atoms can be assigned this improperTorsionType.
+     *
+     * @param atoms The atom array will be re-ordered if its member atoms match
+     * this ImproperTorsionType. The trigonal atom will not change position.
+     * @return true if this torsionType is assignable to the atom array.
+     */
+    public boolean assigned(Atom atoms[]) {
+        int c0 = atoms[0].getAtomType().atomClass;
+        int c1 = atoms[1].getAtomType().atomClass;
+        int c2 = atoms[2].getAtomType().atomClass;
+        int c3 = atoms[3].getAtomType().atomClass;
+
+        // Assign the trigonal atom.
+        if (c2 != atomClasses[2]) {
+            return false;
+        }
+
+        // Assign the first atom.
+        if (c0 == atomClasses[0]) {
+            // do nothing.
+        } else if (c1 == atomClasses[0]) {
+            Atom temp = atoms[0];
+            atoms[0] = atoms[1];
+            atoms[1] = temp;
+            c1 = c0;
+        } else if (c3 == atomClasses[0]) {
+            Atom temp = atoms[0];
+            atoms[0] = atoms[3];
+            atoms[3] = temp;
+            c3 = c0;
+        } else {
+            return false;
+        }
+
+        // Assign the second atom.
+        if (c1 == atomClasses[1]) {
+            // Do nothing.
+        } else if (c3 == atomClasses[1]) {
+            Atom temp = atoms[1];
+            atoms[1] = atoms[3];
+            atoms[3] = temp;
+            c3 = c1;
+        } else {
+            return false;
+        }
+
+        // Assign the final atom.
+        if (c3 == atomClasses[3]) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -119,7 +216,7 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
      */
     @Override
     public String toString() {
-        StringBuilder imptorsBuffer = new StringBuilder("torsion");
+        StringBuilder imptorsBuffer = new StringBuilder("imptors");
         for (int i : atomClasses) {
             imptorsBuffer.append(String.format(" %5d", i));
         }
@@ -128,48 +225,6 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
 
         return imptorsBuffer.toString();
     }
-
-    /**
-     * This method sorts the atom classes for the torsion.
-     *
-     * @param c atomClasses
-     * @return lookup key
-     * @since 1.0
-     */
-    public static String sortKey(int c[]) {
-        if (c == null || c.length != 4) {
-            return null;
-        }
-        if (c[1] < c[2]) {
-            // Do nothing.
-        } else if (c[2] < c[1]) {
-            // Reverse the order.
-            int temp = c[0];
-            c[0] = c[3];
-            c[3] = temp;
-            temp = c[1];
-            c[1] = c[2];
-            c[2] = temp;
-        } else if (c[0] <= c[3]) {
-            // Do nothing.
-        } else {
-            // Reverse the order.
-            int temp = c[0];
-            c[0] = c[3];
-            c[3] = temp;
-            temp = c[1];
-            c[1] = c[2];
-            c[2] = temp;
-        }
-        String key = c[0] + " " + c[1] + " " + c[2] + " " + c[3];
-        return key;
-    }
-    /**
-     * Convert Torsional Angle energy to kcal/mole.
-     *
-     * @since 1.0
-     */
-    public static final double units = 0.5;
 
     /**
      * {@inheritDoc}
@@ -190,17 +245,17 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
             c2[i] = Integer.parseInt(keys2[i]);
         }
 
-        if (c1[1] < c2[1]) {
-            return -1;
-        } else if (c1[1] > c2[1]) {
-            return 1;
-        } else if (c1[2] < c2[2]) {
+        if (c1[2] < c2[2]) {
             return -1;
         } else if (c1[2] > c2[2]) {
             return 1;
         } else if (c1[0] < c2[0]) {
             return -1;
         } else if (c1[0] > c2[0]) {
+            return 1;
+        } else if (c1[1] < c2[1]) {
+            return -1;
+        } else if (c1[1] > c2[1]) {
             return 1;
         } else if (c1[3] < c2[3]) {
             return -1;
@@ -226,9 +281,9 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
         if (other == null || !(other instanceof ImproperTorsionType)) {
             return false;
         }
-        ImproperTorsionType torsionType = (ImproperTorsionType) other;
-        for (int i = 0; i < 4; i++) {
-            if (torsionType.atomClasses[i] != atomClasses[i]) {
+        ImproperTorsionType improperTorsionType = (ImproperTorsionType) other;
+        for (int i = 0; i < atomClasses.length; i++) {
+            if (improperTorsionType.atomClasses[i] != atomClasses[i]) {
                 return false;
             }
         }

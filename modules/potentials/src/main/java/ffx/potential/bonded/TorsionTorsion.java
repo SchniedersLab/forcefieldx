@@ -25,11 +25,21 @@ package ffx.potential.bonded;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
-import static java.lang.Math.*;
+import static java.lang.Math.acos;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+import static java.lang.Math.sqrt;
+import static java.lang.Math.toDegrees;
 
+import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TorsionTorsionType;
 
-import static ffx.numerics.VectorMath.*;
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
 import static ffx.potential.parameters.TorsionTorsionType.units;
 
 /**
@@ -59,33 +69,70 @@ public class TorsionTorsion extends BondedTerm {
     public TorsionTorsion(Bond firstBond, Angle angle, Bond lastBond,
             boolean reversed) {
         super();
+        atoms = new Atom[5];
+        bonds = new Bond[4];
         if (!reversed) {
-            atoms = new Atom[5];
             atoms[1] = angle.atoms[0];
             atoms[2] = angle.atoms[1];
             atoms[3] = angle.atoms[2];
             atoms[0] = firstBond.get1_2(atoms[1]);
             atoms[4] = lastBond.get1_2(atoms[3]);
-            bonds = new Bond[4];
+
             bonds[0] = firstBond;
             bonds[1] = angle.bonds[0];
             bonds[2] = angle.bonds[1];
             bonds[3] = lastBond;
         } else {
-            atoms = new Atom[5];
             atoms[1] = angle.atoms[2];
             atoms[2] = angle.atoms[1];
             atoms[3] = angle.atoms[0];
             atoms[0] = lastBond.get1_2(atoms[1]);
             atoms[4] = firstBond.get1_2(atoms[3]);
-            bonds = new Bond[4];
             bonds[0] = lastBond;
             bonds[1] = angle.bonds[1];
             bonds[2] = angle.bonds[0];
             bonds[3] = firstBond;
         }
+        torsions[0] = atoms[0].getTorsion(atoms[1], atoms[2], atoms[3]);
+        torsions[1] = atoms[4].getTorsion(atoms[3], atoms[2], atoms[1]);
         this.reversed = reversed;
         setID_Key(false);
+    }
+
+    /**
+     *
+     * @param atoms
+     * @param firstBond
+     * @param angle
+     * @param lastBond
+     * @param forceField
+     * @return
+     */
+    public static TorsionTorsion torsionTorsionFactory(Bond firstBond,
+            Angle angle, Bond lastBond, ForceField forceField) {
+        int c5[] = new int[5];
+        Atom atom1 = angle.atoms[0];
+        Atom atom3 = angle.atoms[2];
+        c5[0] = firstBond.get1_2(atom1).getAtomType().atomClass;
+        c5[1] = atom1.getAtomType().atomClass;
+        c5[2] = angle.atoms[1].getAtomType().atomClass;
+        c5[3] = atom3.getAtomType().atomClass;
+        c5[4] = lastBond.get1_2(atom3).getAtomType().atomClass;
+        String key = TorsionTorsionType.sortKey(c5);
+        boolean reversed = false;
+        TorsionTorsionType torsionTorsionType = forceField.getTorsionTorsionType(key);
+        if (torsionTorsionType == null) {
+            key = TorsionTorsionType.reverseKey(c5);
+            torsionTorsionType = forceField.getTorsionTorsionType(key);
+            reversed = true;
+        }
+        if (torsionTorsionType == null) {
+            return null;
+        }
+        TorsionTorsion torsionTorsion = new TorsionTorsion(
+                firstBond, angle, lastBond, reversed);
+        torsionTorsion.torsionTorsionType = torsionTorsionType;
+        return torsionTorsion;
     }
 
     /**

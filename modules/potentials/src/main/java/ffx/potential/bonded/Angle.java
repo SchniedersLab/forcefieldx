@@ -28,6 +28,7 @@ import java.util.logging.Logger;
 import static java.lang.Math.*;
 
 import ffx.potential.parameters.AngleType;
+import ffx.potential.parameters.ForceField;
 
 import static ffx.numerics.VectorMath.*;
 import static ffx.potential.parameters.AngleType.*;
@@ -89,6 +90,26 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
         a3.setAngle(this);
         setID_Key(false);
     }
+
+    public static Angle angleFactory(Bond b1, Bond b2, ForceField forceField) {
+        Angle newAngle = new Angle(b1, b2);
+        Atom ac = b1.getCommonAtom(b2);
+        Atom a1 = b1.get1_2(ac);
+        Atom a3 = b2.get1_2(ac);
+        int c[] = new int[3];
+        c[0] = a1.getAtomType().atomClass;
+        c[1] = ac.getAtomType().atomClass;
+        c[2] = a3.getAtomType().atomClass;
+        String key = AngleType.sortKey(c);
+        AngleType angleType = forceField.getAngleType(key);
+        if (angleType == null) {
+            logger.severe("No AngleType for key: " + key);
+            return null;
+        }
+        newAngle.setAngleType(angleType);
+        return newAngle;
+    }
+
 
     /**
      * <p>
@@ -238,7 +259,7 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
      * Update recomputes <b>this</b> Angle's value and energy.
      */
     @Override
-    public void update() {
+        public void update() {
         energy(false);
     }
 
@@ -495,7 +516,7 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
      * Overidden toString Method returns the Term's id.
      */
     @Override
-    public String toString() {
+        public String toString() {
         return String.format("%s  (%7.1f,%7.2f)", id, value, energy);
     }
 
@@ -503,7 +524,7 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
      * {@inheritDoc}
      */
     @Override
-    public int compareTo(Angle a) {
+        public int compareTo(Angle a) {
         if (a == null) {
             throw new NullPointerException();
         }

@@ -56,6 +56,11 @@ public class ImproperTorsion extends BondedTerm implements
     public ImproperTorsionType improperType = null;
 
     /**
+     * The symmetry of the central atom.
+     */
+    private double symm;
+
+    /**
      * OutOfPlaneBend constructor.
      *
      * @param atom1
@@ -76,6 +81,7 @@ public class ImproperTorsion extends BondedTerm implements
          bonds[1] = angle.bonds[1];
          bonds[2] = atoms[1].getBond(atom);
          */
+
         setID_Key(false);
     }
 
@@ -117,74 +123,66 @@ public class ImproperTorsion extends BondedTerm implements
         double ru2 = dot(u, u);
         double rtru = sqrt(rt2 * ru2);
         if (rtru != 0.0) {
+
+            /* Set the improper torsional parameters for this angle */
+            //double v1 = 0.0;
+            //double c1 = 0.0;
+            //double s1 = 0.0;
+            double v2 = improperType.k;
+            double c2 = improperType.cos;
+            double s2 = improperType.sin;
+            //double v3 = 0.0;
+            // double c3 = 0.0;
+            // double s3 = 0.0;
+
+            /* compute the multiple angle trigonometry and the phase terms */
             double rcb = r(v21);
             double cosine = dot(t, u) / rtru;
             double sine = dot(v21, tu) / (rcb * rtru);
-
-            /* Set the improper torsional parameters for this angle */
-            double v1 = 0.0;
-            double c1 = 0.0;
-            double s1 = 0.0;
-            double v2 = 0.0;
-            double c2 = 0.0;
-            double s2 = 0.0;
-            double v3 = 0.0;
-            double c3 = 0.0;
-            double s3 = 0.0;
-
-            /* compute the multiple angle trigonometry and the phase terms */
             double cosine2 = cosine * cosine - sine * sine;
             double sine2 = 2.0 * cosine * sine;
-            double cosine3 = cosine * cosine2 - sine * sine2;
-            double sine3 = cosine * sine2 + sine * cosine2;
-            double phi1 = 1.0 + (cosine * c1 + sine * s1);
+            //double cosine3 = cosine * cosine2 - sine * sine2;
+            //double sine3 = cosine * sine2 + sine * cosine2;
+            //double phi1 = 1.0 + (cosine * c1 + sine * s1);
             double phi2 = 1.0 + (cosine2 * c2 + sine2 * s2);
-            double phi3 = 1.0 + (cosine3 * c3 + sine3 * s3);
-            double dphi1 = (cosine * s1 - sine * c1);
+            //double phi3 = 1.0 + (cosine3 * c3 + sine3 * s3);
+            //double dphi1 = (cosine * s1 - sine * c1);
             double dphi2 = 2.0 * (cosine2 * s2 - sine2 * c2);
-            double dphi3 = 3.0 * (cosine3 * s3 - sine3 * c3);
+            //double dphi3 = 3.0 * (cosine3 * s3 - sine3 * c3);
 
             /* calculate improper torsion energy and master chain rule term */
             value = phi2;
-            energy = ImproperTorsionType.units * (v1 * phi1 + v2 * phi2 + v3 * phi3);
-            double dedphi = ImproperTorsionType.units * (v1 * dphi1 + v2 * dphi2 + v3 * dphi3);
+            //energy = ImproperTorsionType.units * (v1 * phi1 + v2 * phi2 + v3 * phi3);
+            //double dedphi = ImproperTorsionType.units * (v1 * dphi1 + v2 * dphi2 + v3 * dphi3);
+            energy = ImproperTorsionType.units * (v2 * phi2);
+            double dedphi = ImproperTorsionType.units * (v2 * dphi2);
 
-            /* chain rule terms for first derivative components */
             if (gradient) {
+                /**
+                 * Chain rule terms for first derivative components.
+                 */
                 diff(atoms[2].getXYZ(), atoms[0].getXYZ(), v20);
                 diff(atoms[3].getXYZ(), atoms[1].getXYZ(), v31);
-                cross(t,v21,dedt);
-                cross(u,v21,dedu);
-                scalar(dedt,dedphi / (rt2 * rcb),dedt);
-                scalar(dedu,-dedphi / (ru2 * rcb),dedu);
+                cross(t, v21, dedt);
+                cross(u, v21, dedu);
+                scalar(dedt, dedphi / (rt2 * rcb), dedt);
+                scalar(dedu, -dedphi / (ru2 * rcb), dedu);
                 /**
                  * Compute first derivative components for this angle.
                  */
-                cross(v21,dedt,deda);
-                //cross(v20,dedt,dedb1);
-                //cross(v32,dedu,dedb2);
-                //scalar(dedb2, -1.0, dedb2);
-                //cross(v10,dedt,dedc1);
-                //cross(v31,dedu,dedc2);
-                //scalar(dedc2, -1.0, dedc2);
-                cross(v21,dedu,dedd);
-                /*
-                double dedxia = zcb * dedyt - ycb * dedzt;
-                double dedyia = xcb * dedzt - zcb * dedxt;
-                double dedzia = ycb * dedxt - xcb * dedyt;
-
-                double dedxib = yca * dedzt - zca * dedyt + zdc * dedyu - ydc * dedzu;
-                double dedyib = zca * dedxt - xca * dedzt + xdc * dedzu - zdc * dedxu;
-                double dedzib = xca * dedyt - yca * dedxt + ydc * dedxu - xdc * dedyu;
-
-                double dedxic = zba * dedyt - yba * dedzt + ydb * dedzu - zdb * dedyu;
-                double dedyic = xba * dedzt - zba * dedxt + zdb * dedxu - xdb * dedzu;
-                double dedzic = yba * dedxt - xba * dedyt + xdb * dedyu - ydb * dedxu;
-
-                double dedxid = zcb * dedyu - ycb * dedzu;
-                double dedyid = xcb * dedzu - zcb * dedxu;
-                double dedzid = ycb*dedxu - xcb*dedyu;
-                */
+                cross(v21, dedt, g0);
+                cross(v20, dedt, g1a);
+                cross(v32, dedu, g1);
+                scalar(g1, -1.0, g1);
+                sum(g1a, g1, g1);
+                cross(v10,dedt,g2a);
+                cross(v31,dedu,g2);
+                scalar(g2, -1.0, g2);
+                sum(g2a,g2,g2);
+                cross(v21, dedu, g3);
+                /**
+                 * Accumulate derivatives.
+                 */
                 atoms[0].addToXYZGradient(g0[0], g0[1], g0[2]);
                 atoms[1].addToXYZGradient(g1[0], g1[1], g1[2]);
                 atoms[2].addToXYZGradient(g2[0], g2[1], g2[2]);
@@ -253,14 +251,19 @@ public class ImproperTorsion extends BondedTerm implements
      * Vector from Atom 3 to Atom 2.
      */
     protected static final double v32[] = new double[3];
+    /**
+     * Vector from Atom 3 to Atom 1.
+     */
     protected static final double v31[] = new double[3];
+    /**
+     * Vector from Atom 2 to Atom 0.
+     */
     protected static final double v20[] = new double[3];
     protected static final double t[] = new double[3];
     protected static final double u[] = new double[3];
     protected static final double tu[] = new double[3];
     protected static final double dedu[] = new double[3];
     protected static final double dedt[] = new double[3];
-
     /**
      * Gradient on atom 0.
      */
@@ -280,33 +283,9 @@ public class ImproperTorsion extends BondedTerm implements
     /**
      * Work array.
      */
-    protected static final double sv30[] = new double[3];
+    protected static final double g1a[] = new double[3];
     /**
      * Work array.
      */
-    protected static final double sv32[] = new double[3];
-    /**
-     * Work array.
-     */
-    protected static final double dcda[] = new double[3];
-    /**
-     * Work array.
-     */
-    protected static final double dcdc[] = new double[3];
-    /**
-     * Work array.
-     */
-    protected static final double dcdd[] = new double[3];
-    /**
-     * Work array.
-     */
-    protected static final double deda[] = new double[3];
-    /**
-     * Work array.
-     */
-    protected static final double dedc[] = new double[3];
-    /**
-     * Work array.
-     */
-    protected static final double dedd[] = new double[3];
+    protected static final double g2a[] = new double[3];
 }

@@ -16,6 +16,8 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.parameters.ForceField;
 
+import static ffx.numerics.VectorMath.rsq;
+
 /**
  * Restrain atoms to their initial coordinates.
  *
@@ -105,7 +107,8 @@ public class CoordRestraint implements LambdaInterface {
             dx[1] = a1[1] - initialCoordinates[1][i];
             dx[2] = a1[2] - initialCoordinates[2][i];
             // Apply the minimum image convention.
-            double r2 = crystal.image(dx);
+            double r2 = rsq(dx);
+            // double r2 = crystal.image(dx);
             //logger.info(String.format(" %d %16.8f", j, Math.sqrt(r2)));
             residual += r2;
             if (gradient || lambdaTerm) {

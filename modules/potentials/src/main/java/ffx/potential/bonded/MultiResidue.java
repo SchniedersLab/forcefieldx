@@ -74,8 +74,8 @@ public class MultiResidue extends Residue {
     }
 
     @Override
-    public void collectValenceTerms() {
-        activeResidue.collectValenceTerms();
+    public void assignBondedTerms() {
+        activeResidue.assignBondedTerms();
     }
 
     @Override

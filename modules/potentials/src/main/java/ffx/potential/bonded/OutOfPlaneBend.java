@@ -26,6 +26,7 @@ import java.util.logging.Logger;
 
 import static java.lang.Math.*;
 
+import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.OutOfPlaneBendType;
 
 import static ffx.numerics.VectorMath.*;
@@ -65,6 +66,31 @@ public class OutOfPlaneBend extends BondedTerm implements
         bonds[1] = angle.bonds[1];
         bonds[2] = atoms[1].getBond(atom);
         setID_Key(false);
+    }
+
+    /**
+     * Attempt to create a new OutOfPlaneBend instance for a given Angle and Force Field.
+     *
+     * @param angle
+     * @param forceField
+     * @return a new OutOfPlaneBend if the central atom of the angle is trigonal and a force field type exists.
+     */
+    public static OutOfPlaneBend outOfPlaneBendFactory(Angle angle, ForceField forceField) {
+        Atom centralAtom = angle.atoms[1];
+        if (centralAtom.isTrigonal()) {
+            Atom atom4 = angle.getTrigonalAtom();
+            String key = atom4.getAtomType().atomClass + " " + centralAtom.getAtomType().atomClass
+                    + " 0 0";
+            OutOfPlaneBendType outOfPlaneBendType = forceField.getOutOfPlaneBendType(key);
+            if (outOfPlaneBendType != null) {
+                angle.setAngleMode(Angle.AngleMode.IN_PLANE, atom4);
+                OutOfPlaneBend newOutOfPlaneBend = new OutOfPlaneBend(
+                        angle, atom4);
+                newOutOfPlaneBend.outOfPlaneBendType = outOfPlaneBendType;
+                return newOutOfPlaneBend;
+            }
+        }
+        return null;
     }
 
     /**

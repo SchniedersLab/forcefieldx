@@ -1,5 +1,6 @@
-This "README" file contains literature references for the 2004 and 2009
-versions of AMOEBA water, small molecules, protein and nucleic acid force fields.
+This file contains literature references for the 2004 and 2009 versions of
+AMOEBA water, small molecules, protein and nucleic acid force fields.
+
 They were consolidated from comments in the original parameter files
 for convenience and given in the following sections:
 
@@ -44,13 +45,13 @@ J. W. Ponder and D. A. Case, "Force Fields for Protein Simulation",
 Adv. Prot. Chem., 66, 27-85 (2003)
 
 The 2004 AMOEBA Protein Force Field [AMOEBA_PROTEIN_2004_U1] is a
-modification of the TINKER v. 5.1 amoebapro04.prm [AMOEBA_PROTEIN_2004] 
+modification of the TINKER v. 5.1 amoebapro04.prm [AMOEBA_PROTEIN_2004]
 based on validation studies done in the Ren lab.
 
-The 2009 AMOEBA Protein Force Field [AMOEBA_BIO_2009] is based on a new 
+The 2009 AMOEBA Protein Force Field [AMOEBA_BIO_2009] is based on a new
 protocol for determining multipole parameters via distributed multipole
 analysis (DMA) of electronic structure wave functions followed by
-restrained optimization of the multipoles to the electric potential. 
+restrained optimization of the multipoles to the electric potential.
 
    ###############################################
    ##                                           ##
@@ -101,7 +102,7 @@ restrained optimization of the multipoles to the electric potential.
 
 4.) AMOEBA Nucleic Acid References
 
-AMOEBA nucleic acid parameters have been developed by Chuanjie Wu, 
+AMOEBA nucleic acid parameters have been developed by Chuanjie Wu,
 Ponder Lab, Washington University
 
 5.) Notes on the Force Field X implementation of AMOEBA
@@ -158,7 +159,7 @@ dielectric              1.0
 polarization            MUTUAL
 
 Only non-unity masking rules are respected for efficiency, but at the cost of
-reduced flexibility relative to the original TINKER code. The following scale 
+reduced flexibility relative to the original TINKER code. The following scale
 factors can be changed at the command line:
 
 mpole-12-scale          0.0

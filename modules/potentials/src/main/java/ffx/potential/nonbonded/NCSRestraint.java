@@ -18,6 +18,8 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.parameters.ForceField;
 
+import static ffx.numerics.VectorMath.rsq;
+
 /**
  * Given unit cell parameters and symmetry operators, NCS copies are restrained
  * to the asymmetric unit atoms.
@@ -121,7 +123,8 @@ public class NCSRestraint implements LambdaInterface {
                 dx[1] = a1[1] - a2[1];
                 dx[2] = a1[2] - a2[2];
                 // Apply the minimum image convention.
-                double r2 = ncsCrystal.image(dx);
+                double r2 = rsq(dx);
+                // double r2 = ncsCrystal.image(dx);
                 //logger.info(String.format(" %d %16.8f", j, Math.sqrt(r2)));
                 residual += r2;
                 if (gradient || lambdaTerm) {

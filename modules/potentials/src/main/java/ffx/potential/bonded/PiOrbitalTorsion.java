@@ -24,11 +24,21 @@ package ffx.potential.bonded;
 
 import java.util.logging.Logger;
 
-import static java.lang.Math.*;
+import static java.lang.Math.acos;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+import static java.lang.Math.sqrt;
+import static java.lang.Math.toDegrees;
 
+import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.PiTorsionType;
 
-import static ffx.numerics.VectorMath.*;
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
 import static ffx.potential.parameters.PiTorsionType.units;
 
 /**
@@ -73,6 +83,34 @@ public class PiOrbitalTorsion extends BondedTerm {
             }
         }
         setID_Key(false);
+    }
+
+    /**
+     * Attempt to create a new PiOrbitalTorsion based on the supplied bond and
+     * forceField.
+     *
+     * @param bond
+     * @param forceField
+     * @return a new PiOrbitalToersion, or null.
+     */
+    public static PiOrbitalTorsion piOrbitalTorsionFactory(Bond bond, ForceField forceField) {
+        Atom atom1 = bond.getAtom(0);
+        Atom atom2 = bond.getAtom(1);
+        int c[] = new int[2];
+        if (!atom1.isTrigonal() || !atom2.isTrigonal()) {
+            return null;
+        }
+        c[0] = atom1.getAtomType().atomClass;
+        c[1] = atom2.getAtomType().atomClass;
+        String key = PiTorsionType.sortKey(c);
+        PiTorsionType piTorsionType = forceField.getPiTorsionType(key);
+        if (piTorsionType == null) {
+            return null;
+        }
+        PiOrbitalTorsion piOrbitalTorsion = new PiOrbitalTorsion(
+                bond);
+        piOrbitalTorsion.piTorsionType = piTorsionType;
+        return piOrbitalTorsion;
     }
 
     /**

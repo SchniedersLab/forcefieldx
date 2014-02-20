@@ -24,11 +24,20 @@ package ffx.potential.bonded;
 
 import java.util.logging.Logger;
 
-import static java.lang.Math.*;
+import static java.lang.Math.acos;
+import static java.lang.Math.sqrt;
+import static java.lang.Math.toDegrees;
+import static java.lang.String.format;
 
+import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TorsionType;
 
-import static ffx.numerics.VectorMath.*;
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
 import static ffx.potential.parameters.TorsionType.units;
 
 /**
@@ -46,7 +55,7 @@ public class Torsion extends BondedTerm {
     public TorsionType torsionType = null;
 
     /**
-     * Torsion contructor
+     * Torsion constructor.
      *
      * @param an1 Angle that combines to form the Torsional Angle
      * @param an2 Angle that combines to form the Torsional Angle
@@ -57,7 +66,7 @@ public class Torsion extends BondedTerm {
         bonds[1] = an1.getCommonBond(an2);
         bonds[0] = an1.getOtherBond(bonds[1]);
         bonds[2] = an2.getOtherBond(bonds[1]);
-        Initialize();
+        initialize();
     }
 
     /**
@@ -82,7 +91,7 @@ public class Torsion extends BondedTerm {
     }
 
     /**
-     * Torsion contructor
+     * Torsion constructor.
      *
      * @param a Angle that has one Atom in common with Bond b
      * @param b Bond that has one Atom in common with Angle A
@@ -100,7 +109,7 @@ public class Torsion extends BondedTerm {
             bonds[1] = bonds[2];
             bonds[2] = temp;
         }
-        Initialize();
+        initialize();
     }
 
     /**
@@ -116,11 +125,11 @@ public class Torsion extends BondedTerm {
         bonds[0] = b1;
         bonds[1] = b2;
         bonds[2] = b3;
-        Initialize();
+        initialize();
     }
 
     /**
-     * Torsion Constructor
+     * Torsion Constructor.
      *
      * @param n Torsion id
      */
@@ -128,8 +137,10 @@ public class Torsion extends BondedTerm {
         super(n);
     }
 
-    // Initialization
-    private void Initialize() {
+    /**
+     * Initialization
+     */
+    private void initialize() {
         atoms = new Atom[4];
         atoms[1] = bonds[0].getCommonAtom(bonds[1]);
         atoms[0] = bonds[0].get1_2(atoms[1]);
@@ -140,6 +151,36 @@ public class Torsion extends BondedTerm {
         atoms[2].setTorsion(this);
         atoms[3].setTorsion(this);
         setID_Key(false);
+    }
+
+    /**
+     * Attempt to create a new Torsion based on the supplied bonds. There is no
+     * error checking to enforce that the bonds make up a linear series of 4 bonded atoms.
+     *
+     * @param bond1
+     * @param middleBond
+     * @param bond3
+     * @param forceField
+     * @return a new Torsion, or null.
+     */
+    public static Torsion torsionFactory(Bond bond1, Bond middleBond, Bond bond3, ForceField forceField) {
+        Atom atom1 = middleBond.getAtom(0);
+        Atom atom2 = middleBond.getAtom(1);
+        int c[] = new int[4];
+        c[0] = bond1.getOtherAtom(middleBond).getAtomType().atomClass;
+        c[1] = atom1.getAtomType().atomClass;
+        c[2] = atom2.getAtomType().atomClass;
+        c[3] = bond3.getOtherAtom(middleBond).getAtomType().atomClass;
+        String key = TorsionType.sortKey(c);
+        TorsionType torsionType = forceField.getTorsionType(key);
+        if (torsionType == null) {
+            logger.severe(format("No TorsionType for key: %s\n%s\n%s\n%s\n",
+                    key, bond1.toString(), middleBond.toString(), bond3.toString()));
+            return null;
+        }
+        Torsion torsion = new Torsion(bond1, middleBond, bond3);
+        torsion.torsionType = torsionType;
+        return torsion;
     }
 
     /**

@@ -46,10 +46,10 @@ public abstract class BondedTerm extends MSNode {
     /**
      * This method sets the Term's id and key by concatenating the respective id
      * and keys of the Atoms that are used in forming the term. Order can be
-     * reversed for help in finding corresponding Molecular Mechanics file
-     * entries for the Term.
+     * reversed for help in assigning force field parameters for the Term.
      */
     private static StringBuilder idtemp = new StringBuilder();
+
     protected String id;
     public Atom atoms[]; // Atoms that are used to form this term
     public Bond bonds[]; // Bonds that are used to form this term
@@ -117,8 +117,8 @@ public abstract class BondedTerm extends MSNode {
     /**
      * {@inheritDoc}
      *
-     * Overidden method that returns true if object is equals to this, is of the
-     * same Class and has the same id.
+     * Overridden method that returns true if object is equals to this, is of
+     * the same Class and has the same id.
      */
     @Override
     public final boolean equals(Object object) {
@@ -179,7 +179,7 @@ public abstract class BondedTerm extends MSNode {
      * @return a {@link java.lang.String} object.
      */
     public String getID() {
-        return new String(id);
+        return id;
     }
 
     /**
@@ -247,7 +247,7 @@ public abstract class BondedTerm extends MSNode {
      * @param i a {@link java.lang.String} object.
      */
     public void setID(String i) {
-        id = new String(i);
+        id = i;
     }
 
     /**
