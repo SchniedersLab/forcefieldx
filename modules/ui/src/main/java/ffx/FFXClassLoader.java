@@ -80,7 +80,7 @@ public class FFXClassLoader extends ClassLoader {
     private static String nativeExtension = null;
 
     static {
-        FFX_FILES = new ArrayList<String>(Arrays.asList(new String[]{
+        FFX_FILES = new ArrayList<>(Arrays.asList(new String[]{
             "edu.uiowa.eng.ffx/algorithms.jar",
             "edu.uiowa.eng.ffx/autoparm.jar",
             "edu.uiowa.eng.ffx/binding.jar",
@@ -154,6 +154,8 @@ public class FFXClassLoader extends ClassLoader {
                 FFX_FILES.add("org.jogamp.gluegen/gluegen-rt-natives-linux-amd64.jar");
                 // JOGL
                 FFX_FILES.add("org.jogamp.jogl/jogl-all-natives-linux-amd64.jar");
+                // JOCL
+                FFX_FILES.add("org.jogamp.jocl/jocl-natives-linux-amd64.jar");
                 nativeExtension = "-natives-linux-amd64.jar";
                 // JCUDA
                 FFX_FILES.add("64-bit/libJCudaDriver-linux-x86_64.so");
