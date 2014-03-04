@@ -101,13 +101,18 @@ public class CoordRestraint implements LambdaInterface {
         for (int i = 0; i < nAtoms; i++) {
             // Current atomic coordinates.
             Atom atom = atoms[i];
+
+            if (atom.isHydrogen()) {
+                continue;
+            }
+            
             atom.getXYZ(a1);
             // Compute their separation.
             dx[0] = a1[0] - initialCoordinates[0][i];
             dx[1] = a1[1] - initialCoordinates[1][i];
             dx[2] = a1[2] - initialCoordinates[2][i];
-            // Apply the minimum image convention.
             double r2 = rsq(dx);
+            // Apply the minimum image convention.
             // double r2 = crystal.image(dx);
             //logger.info(String.format(" %d %16.8f", j, Math.sqrt(r2)));
             residual += r2;

@@ -166,6 +166,8 @@ public class FFXClassLoader extends ClassLoader {
                 FFX_FILES.add("org.jogamp.gluegen/gluegen-rt-natives-linux-i586.jar");
                 // JOGL
                 FFX_FILES.add("org.jogamp.jogl/jogl-all-natives-linux-i586.jar");
+                // JOCL
+                FFX_FILES.add("org.jogamp.jocl/jocl-natives-linux-i586.jar");
                 nativeExtension = "-natives-linux-i586.jar";
             }
         } else if (osName.startsWith("WINDOWS")) {
@@ -174,6 +176,8 @@ public class FFXClassLoader extends ClassLoader {
                 FFX_FILES.add("org.jogamp.glugen/gluegen-rt-natives-windows-amd64.jar");
                 // JOGL
                 FFX_FILES.add("org.jogamp.jogl/jogl-all-natives-windows-amd64.jar");
+                // JOCL
+                FFX_FILES.add("org.jogamp.jocl/jocl-natives-windows-amd64.jar");
                 nativeExtension = "-natives-windows-amd64.jar";
                 // JCUDA
                 FFX_FILES.add("64-bit/JCudaDriver-linux-x86_64.dll");
@@ -184,6 +188,8 @@ public class FFXClassLoader extends ClassLoader {
                 FFX_FILES.add("org.jogamp.gluegen/gluegen-rt-natives-windows-i586.jar");
                 // JOGL
                 FFX_FILES.add("org.jogamp.jogl/jogl-all-natives-windows-i586.jar");
+                // JOCL
+                FFX_FILES.add("org.jogamp.jocl/jocl-natives-windows-i586.jar");
                 nativeExtension = "-natives-windows-i586.jar";
             }
         }

@@ -110,6 +110,11 @@ public class NCSRestraint implements LambdaInterface {
                 // Reference atom of the asymmetric unit
                 Atom atom1 = atoms[j];
                 atom1.getXYZ(a1);
+
+                if (atom1.isHydrogen()) {
+                    continue;
+                }
+
                 /**
                  * Apply the symmetry operator to superpose the reference atom
                  * with its symmetry mate.
