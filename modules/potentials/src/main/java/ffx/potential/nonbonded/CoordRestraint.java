@@ -34,7 +34,7 @@ public class CoordRestraint implements LambdaInterface {
     /**
      * Force constant in Kcal/mole/Angstrom.
      */
-    private final double forceConstant = 10.0;
+    private final double forceConstant;
     private final double a1[] = new double[3];
     private final double dx[] = new double[3];
     private double lambda = 1.0;
@@ -74,6 +74,8 @@ public class CoordRestraint implements LambdaInterface {
             dLambdaPow = 0.0;
             d2LambdaPow = 0.0;
         }
+        
+        forceConstant = forceField.getDouble(ForceField.ForceFieldDouble.RESTRAINT_K, 10.0);
 
         logger.info("\n Coordinate Restraint:");
 
