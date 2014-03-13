@@ -102,6 +102,7 @@ public final class PDBFilter extends SystemFilter {
     private int mutateResID = 0;
     private String mutateToResname = null;
     private Character mutateChainID = null;
+    private boolean print = true;
     /**
      * If true, output is directed into arrayOutput instead of the file.
      */
@@ -466,8 +467,20 @@ public final class PDBFilter extends SystemFilter {
                             d[0] = new Double(line.substring(30, 38).trim());
                             d[1] = new Double(line.substring(38, 46).trim());
                             d[2] = new Double(line.substring(46, 54).trim());
-                            double occupancy = new Double(line.substring(54, 60).trim());
-                            double tempFactor = new Double(line.substring(60, 66).trim());
+                            double occupancy = 1.0;
+                            double tempFactor = 1.0;
+                            try {
+                                occupancy = new Double(line.substring(54, 60).trim());
+                                tempFactor = new Double(line.substring(60, 66).trim());
+                            } catch (Exception e) {
+                                // Use default values.
+                                if (print) {
+                                    logger.warning(" No values for occupancy or b-factors; defaulting to 1.00 (further warnings suppressed).");
+                                    print = false;
+                                } else if (logger.isLoggable(Level.FINE)) {
+                                    logger.fine(" No values for occupancy or b-factors; defaulting to 1.00.");
+                                }
+                            }
                             Atom newAtom = new Atom(0, name, altLoc, d, resName, resSeq,
                                     chainID, occupancy, tempFactor, segID);
                             Atom returnedAtom = (Atom) activeMolecularAssembly.addMSNode(newAtom);
@@ -525,8 +538,20 @@ public final class PDBFilter extends SystemFilter {
                             d[0] = new Double(line.substring(30, 38).trim());
                             d[1] = new Double(line.substring(38, 46).trim());
                             d[2] = new Double(line.substring(46, 54).trim());
-                            occupancy = new Double(line.substring(54, 60).trim());
-                            tempFactor = new Double(line.substring(60, 66).trim());
+                            occupancy = 1.0;
+                            tempFactor = 1.0;
+                            try {
+                                occupancy = new Double(line.substring(54, 60).trim());
+                                tempFactor = new Double(line.substring(60, 66).trim());
+                            } catch (Exception e) {
+                                // Use default values.
+                                if (print) {
+                                    logger.warning(" No values for occupancy or b-factors; defaulting to 1.00 (further warnings suppressed).");
+                                    print = false;
+                                } else if (logger.isLoggable(Level.FINE)) {
+                                    logger.fine(" No values for occupancy or b-factors; defaulting to 1.00.");
+                                }
+                            }
                             newAtom = new Atom(0, name, altLoc, d, resName, resSeq, chainID,
                                     occupancy, tempFactor, segID);
                             newAtom.setHetero(true);
@@ -543,6 +568,7 @@ public final class PDBFilter extends SystemFilter {
                                 newAtom.setXYZIndex(xyzIndex++);
                             }
                             break;
+
                         case CRYST1:
 // =============================================================================
 // The CRYST1 record presents the unit cell parameters, space group, and Z
@@ -1414,29 +1440,28 @@ public final class PDBFilter extends SystemFilter {
                 //name = name.replace('D', 'H');
                 atom.setName(name);
             }
-            
+
             /**
              * Check if this is a 3' phosphate being listed as its own residue.
              */
             /*if (residue.getAtomList().size() == 1) {
-                Atom P3s = (Atom) residue.getAtomNode("P");
-                if (P3s != null) {
-                    Residue prevResidue = residue.getPreviousResidue();
-                    if (prevResidue != null) {
-                        Atom O2sPrev = (Atom) prevResidue.getAtomNode("O2\'");
-                        if (O2sPrev == null) {
-                            P3s = buildHeavy(prevResidue, "P3s", null, 1247);
-                        } else {
-                            P3s = buildHeavy(prevResidue, "P3s", null, 1235);
-                        }
-                    } else {
-                        return;
-                    }
-                } else {
-                    return;
-                }
-            }*/
-
+             Atom P3s = (Atom) residue.getAtomNode("P");
+             if (P3s != null) {
+             Residue prevResidue = residue.getPreviousResidue();
+             if (prevResidue != null) {
+             Atom O2sPrev = (Atom) prevResidue.getAtomNode("O2\'");
+             if (O2sPrev == null) {
+             P3s = buildHeavy(prevResidue, "P3s", null, 1247);
+             } else {
+             P3s = buildHeavy(prevResidue, "P3s", null, 1235);
+             }
+             } else {
+             return;
+             }
+             } else {
+             return;
+             }
+             }*/
             /**
              * Check if the sugar is deoxyribose and change the residue name if
              * necessary.

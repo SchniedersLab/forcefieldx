@@ -43,6 +43,10 @@ public class ForceField {
 
     private static final Logger logger = Logger.getLogger(ForceField.class.getName());
 
+    public boolean getBoolean(ForceFieldDouble forceFieldDouble, double d) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
     /**
      * Available force fields.
      */
@@ -71,7 +75,7 @@ public class ForceField {
         POLARIZATION_LAMBDA_START, POLARIZATION_LAMBDA_END,
         POLARIZATION_LAMBDA_EXPONENT, DUAL_TOPOLOGY_LAMBDA_EXPONENT,
         CG_PRECONDITIONER_CUTOFF, CG_PRECONDITIONER_EWALD,
-        CG_PRECONDITIONER_SOR
+        CG_PRECONDITIONER_SOR, RESTRAINT_K
     }
 
     public enum ForceFieldInteger {
