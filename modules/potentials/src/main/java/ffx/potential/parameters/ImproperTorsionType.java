@@ -96,12 +96,12 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
         super(ForceField.ForceFieldType.IMPTORS, sortKey(atomClasses));
         this.atomClasses = atomClasses;
         double symm = 1.0;
-        if (atomClasses[0] == atomClasses[1] || atomClasses[0] == atomClasses[3] || atomClasses[1] == atomClasses[3]) {
-            symm = 2.0;
-        }
+        /*
         if (atomClasses[0] == atomClasses[1] && atomClasses[0] == atomClasses[3]) {
             symm = 6.0;
-        }
+        } else if (atomClasses[0] == atomClasses[1] || atomClasses[0] == atomClasses[3] || atomClasses[1] == atomClasses[3]) {
+            symm = 2.0;
+        } */
         this.periodicity = periodicity;
         this.k = k / symm;
         this.phase = phase;
@@ -158,12 +158,7 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
             return false;
         }
 
-        // Assign the final atom.
-        if (c3 == atomClasses[3]) {
-            return true;
-        }
-
-        return false;
+        return c3 == atomClasses[3];
     }
 
     /**

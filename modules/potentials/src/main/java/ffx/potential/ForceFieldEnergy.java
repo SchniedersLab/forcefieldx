@@ -70,6 +70,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private final Torsion torsions[];
     private final PiOrbitalTorsion piOrbitalTorsions[];
     private final TorsionTorsion torsionTorsions[];
+    private final ImproperTorsion improperTorsions[];
     private RestraintBond restraintBonds[];
     private final VanDerWaals vanderWaals;
     private final ParticleMeshEwald particleMeshEwald;
@@ -84,6 +85,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     protected final int nTorsions;
     protected final int nPiOrbitalTorsions;
     protected final int nTorsionTorsions;
+    protected final int nImproperTorsions;
     protected int nRestraintBonds;
     protected int nVanDerWaals, nPME, nGK;
     protected boolean bondTerm;
@@ -94,6 +96,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     protected boolean torsionTerm;
     protected boolean piOrbitalTorsionTerm;
     protected boolean torsionTorsionTerm;
+    protected boolean improperTorsionTerm;
     protected boolean restraintBondTerm;
     protected boolean vanderWaalsTerm;
     protected boolean multipoleTerm;
@@ -110,6 +113,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     protected boolean torsionTermOrig;
     protected boolean piOrbitalTorsionTermOrig;
     protected boolean torsionTorsionTermOrig;
+    protected boolean improperTorsionTermOrig;
     protected boolean restraintBondTermOrig;
     protected boolean vanderWaalsTermOrig;
     protected boolean multipoleTermOrig;
@@ -125,6 +129,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     protected double torsionEnergy;
     protected double piOrbitalTorsionEnergy;
     protected double torsionTorsionEnergy;
+    protected double improperTorsionEnergy;
     protected double restraintBondEnergy;
     protected double totalBondedEnergy;
     protected double vanDerWaalsEnergy;
@@ -137,7 +142,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     protected double restrainEnergy;
     protected double totalEnergy;
     protected long bondTime, angleTime, stretchBendTime, ureyBradleyTime;
-    protected long outOfPlaneBendTime, torsionTime, piOrbitalTorsionTime;
+    protected long outOfPlaneBendTime, torsionTime, piOrbitalTorsionTime, improperTorsionTime;
     protected long torsionTorsionTime, vanDerWaalsTime, electrostaticTime;
     protected long restraintBondTime, ncsTime, coordRestraintTime;
     protected long totalTime;
@@ -178,6 +183,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         torsionTerm = forceField.getBoolean(ForceFieldBoolean.TORSIONTERM, true);
         piOrbitalTorsionTerm = forceField.getBoolean(ForceFieldBoolean.PITORSTERM, true);
         torsionTorsionTerm = forceField.getBoolean(ForceFieldBoolean.TORTORTERM, true);
+        improperTorsionTerm = forceField.getBoolean(ForceFieldBoolean.IMPROPERTERM, true);
         vanderWaalsTerm = forceField.getBoolean(ForceFieldBoolean.VDWTERM, true);
         if (vanderWaalsTerm) {
             multipoleTerm = forceField.getBoolean(ForceFieldBoolean.MPOLETERM, true);
@@ -430,6 +436,17 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             torsionTorsions = null;
         }
 
+        // Collect, count, pack and sort improper torsions.
+        if (improperTorsionTerm) {
+            ArrayList<ROLS> improperTorsion = molecularAssembly.getImproperTorsionList();
+            nImproperTorsions = improperTorsion.size();
+            improperTorsions = improperTorsion.toArray(new ImproperTorsion[nImproperTorsions]);
+            logger.info(format("  Improper Torsions:                 %10d", nImproperTorsions));
+        } else {
+            nImproperTorsions = 0;
+            improperTorsions = null;
+        }
+
         logger.info("\n Non-Bonded Terms");
 
         String name = forceField.toString().toUpperCase();
@@ -500,6 +517,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         torsionTime = 0;
         piOrbitalTorsionTime = 0;
         torsionTorsionTime = 0;
+        improperTorsionTime = 0;
         vanDerWaalsTime = 0;
         electrostaticTime = 0;
         restraintBondTime = 0;
@@ -516,6 +534,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         torsionEnergy = 0.0;
         piOrbitalTorsionEnergy = 0.0;
         torsionTorsionEnergy = 0.0;
+        improperTorsionEnergy = 0.0;
         totalBondedEnergy = 0.0;
 
         // Zero out potential energy of restraint terms
@@ -581,11 +600,11 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         if (stretchBendTerm) {
             stretchBendTime = System.nanoTime();
             for (int i = 0; i < nStretchBends; i++) {
-                StretchBend sb = stretchBends[i];
-                if (lambdaBondedTerms && !sb.applyLambda()) {
+                StretchBend stretchBend = stretchBends[i];
+                if (lambdaBondedTerms && !stretchBend.applyLambda()) {
                     continue;
                 }
-                stretchBendEnergy += sb.energy(gradient);
+                stretchBendEnergy += stretchBend.energy(gradient);
             }
             stretchBendTime = System.nanoTime() - stretchBendTime;
         }
@@ -593,11 +612,11 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         if (ureyBradleyTerm) {
             ureyBradleyTime = System.nanoTime();
             for (int i = 0; i < nUreyBradleys; i++) {
-                UreyBradley ub = ureyBradleys[i];
-                if (lambdaBondedTerms && !ub.applyLambda()) {
+                UreyBradley ureyBradley = ureyBradleys[i];
+                if (lambdaBondedTerms && !ureyBradley.applyLambda()) {
                     continue;
                 }
-                ureyBradleyEnergy += ub.energy(gradient);
+                ureyBradleyEnergy += ureyBradley.energy(gradient);
             }
             ureyBradleyTime = System.nanoTime() - ureyBradleyTime;
         }
@@ -605,11 +624,11 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         if (outOfPlaneBendTerm) {
             outOfPlaneBendTime = System.nanoTime();
             for (int i = 0; i < nOutOfPlaneBends; i++) {
-                OutOfPlaneBend ob = outOfPlaneBends[i];
-                if (lambdaBondedTerms && !ob.applyLambda()) {
+                OutOfPlaneBend outOfPlaneBend = outOfPlaneBends[i];
+                if (lambdaBondedTerms && !outOfPlaneBend.applyLambda()) {
                     continue;
                 }
-                outOfPlaneBendEnergy += ob.energy(gradient);
+                outOfPlaneBendEnergy += outOfPlaneBend.energy(gradient);
             }
             outOfPlaneBendTime = System.nanoTime() - outOfPlaneBendTime;
         }
@@ -617,11 +636,11 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         if (torsionTerm) {
             torsionTime = System.nanoTime();
             for (int i = 0; i < nTorsions; i++) {
-                Torsion t = torsions[i];
-                if (lambdaBondedTerms && !t.applyLambda()) {
+                Torsion torsion = torsions[i];
+                if (lambdaBondedTerms && !torsion.applyLambda()) {
                     continue;
                 }
-                torsionEnergy += t.energy(gradient);
+                torsionEnergy += torsion.energy(gradient);
             }
             torsionTime = System.nanoTime() - torsionTime;
         }
@@ -629,25 +648,37 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         if (piOrbitalTorsionTerm) {
             piOrbitalTorsionTime = System.nanoTime();
             for (int i = 0; i < nPiOrbitalTorsions; i++) {
-                PiOrbitalTorsion po = piOrbitalTorsions[i];
-                if (lambdaBondedTerms && !po.applyLambda()) {
+                PiOrbitalTorsion piOrbitalTorsion = piOrbitalTorsions[i];
+                if (lambdaBondedTerms && !piOrbitalTorsion.applyLambda()) {
                     continue;
                 }
-                piOrbitalTorsionEnergy += po.energy(gradient);
+                piOrbitalTorsionEnergy += piOrbitalTorsion.energy(gradient);
             }
             piOrbitalTorsionTime = System.nanoTime() - piOrbitalTorsionTime;
-            torsionTorsionTime = System.nanoTime();
         }
 
         if (torsionTorsionTerm) {
+            torsionTorsionTime = System.nanoTime();
             for (int i = 0; i < nTorsionTorsions; i++) {
-                TorsionTorsion tt = torsionTorsions[i];
-                if (lambdaBondedTerms && !tt.applyLambda()) {
+                TorsionTorsion torsionTorsion = torsionTorsions[i];
+                if (lambdaBondedTerms && !torsionTorsion.applyLambda()) {
                     continue;
                 }
-                torsionTorsionEnergy += torsionTorsions[i].energy(gradient);
+                torsionTorsionEnergy += torsionTorsion.energy(gradient);
             }
             torsionTorsionTime = System.nanoTime() - torsionTorsionTime;
+        }
+
+        if (improperTorsionTerm) {
+            improperTorsionTime = System.nanoTime();
+            for (int i = 0; i < nImproperTorsions; i++) {
+                ImproperTorsion improperTorsion = improperTorsions[i];
+                if (lambdaBondedTerms && !improperTorsion.applyLambda()) {
+                    continue;
+                }
+                improperTorsionEnergy += improperTorsion.energy(gradient);
+            }
+            improperTorsionTime = System.nanoTime() - improperTorsionTime;
         }
 
         if (restraintBondTerm) {
@@ -701,7 +732,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
         totalBondedEnergy = bondEnergy + restraintBondEnergy + angleEnergy
                 + stretchBendEnergy + ureyBradleyEnergy + outOfPlaneBendEnergy
-                + torsionEnergy + piOrbitalTorsionEnergy
+                + torsionEnergy + piOrbitalTorsionEnergy + improperTorsionEnergy
                 + torsionTorsionEnergy + ncsEnergy + restrainEnergy;
         totalNonBondedEnergy = vanDerWaalsEnergy + totalElectrostaticEnergy;
         totalEnergy = totalBondedEnergy + totalNonBondedEnergy + solvationEnergy;
@@ -739,43 +770,47 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         sb.append("REMARK   3  CALCULATED POTENTIAL ENERGY\n");
         if (bondTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                    "BOND STRETCHING            : ", bondEnergy, bonds.length));
+                    "BOND STRETCHING            : ", bondEnergy, nBonds));
             sb.append(String.format("REMARK   3   %s %g\n",
                     "BOND RMSD                  : ", bondRMSD));
         }
         if (angleTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                    "ANGLE BENDING              : ", angleEnergy, angles.length));
+                    "ANGLE BENDING              : ", angleEnergy, nAngles));
             sb.append(String.format("REMARK   3   %s %g\n",
                     "ANGLE RMSD                 : ", angleRMSD));
         }
         if (stretchBendTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                    "STRETCH-BEND               : ", stretchBendEnergy, stretchBends.length));
+                    "STRETCH-BEND               : ", stretchBendEnergy, nStretchBends));
         }
         if (ureyBradleyTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                    "UREY-BRADLEY               : ", ureyBradleyEnergy, ureyBradleys.length));
+                    "UREY-BRADLEY               : ", ureyBradleyEnergy, nUreyBradleys));
         }
         if (outOfPlaneBendTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                    "OUT-OF-PLANE BEND          : ", outOfPlaneBendEnergy, outOfPlaneBends.length));
+                    "OUT-OF-PLANE BEND          : ", outOfPlaneBendEnergy, nOutOfPlaneBends));
         }
         if (torsionTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                    "TORSIONAL ANGLE            : ", torsionEnergy, torsions.length));
+                    "TORSIONAL ANGLE            : ", torsionEnergy, nTorsions));
         }
         if (piOrbitalTorsionTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                    "PI-ORBITAL TORSION         : ", piOrbitalTorsionEnergy, piOrbitalTorsions.length));
+                    "PI-ORBITAL TORSION         : ", piOrbitalTorsionEnergy, nPiOrbitalTorsions));
         }
         if (torsionTorsionTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                    "TORSION-TORSION            : ", torsionTorsionEnergy, torsionTorsions.length));
+                    "TORSION-TORSION            : ", torsionTorsionEnergy, nTorsionTorsions));
+        }
+        if (improperTorsionTerm) {
+            sb.append(String.format("REMARK   3   %s %g (%d)\n",
+                    "IMPROPER TORSION           : ", improperTorsionEnergy, nImproperTorsions));
         }
         if (restraintBondTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                    "RESTRAINT BOND STRETCHING            : ", restraintBondEnergy, restraintBonds.length));
+                    "RESTRAINT BOND STRETCHING            : ", restraintBondEnergy, nRestraintBonds));
         }
 
         if (ncsTerm) {
@@ -862,6 +897,11 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             sb.append(String.format("  %s %16.8f %12d %12.3f\n",
                     "Torsion-Torsion   ", torsionTorsionEnergy,
                     nTorsionTorsions, torsionTorsionTime * toSeconds));
+        }
+        if (improperTorsionTerm && nImproperTorsions > 0) {
+            sb.append(String.format("  %s %16.8f %12d %12.3f\n",
+                    "Improper Torsion  ", improperTorsionEnergy,
+                    nImproperTorsions, improperTorsionTime * toSeconds));
         }
         if (restraintBondTerm && nRestraintBonds > 0) {
             sb.append(String.format("  %s %16.8f %12d %12.3f\n",
@@ -989,7 +1029,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         int n = getNumberOfVariables();
         VARIABLE_TYPE type[] = new VARIABLE_TYPE[n];
         int i = 0;
-        for (Atom a : atoms) {
+        for (int j = 0; j < nAtoms; j++) {
             type[i++] = VARIABLE_TYPE.X;
             type[i++] = VARIABLE_TYPE.Y;
             type[i++] = VARIABLE_TYPE.Z;
@@ -1271,6 +1311,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 torsionTerm = torsionTermOrig;
                 piOrbitalTorsionTerm = piOrbitalTorsionTermOrig;
                 torsionTorsionTerm = torsionTorsionTermOrig;
+                improperTorsionTerm = improperTorsionTermOrig;
                 restraintBondTerm = restraintBondTermOrig;
                 ncsTerm = ncsTermOrig;
                 restrainTerm = restrainTermOrig;
@@ -1293,6 +1334,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 torsionTerm = false;
                 piOrbitalTorsionTerm = false;
                 torsionTorsionTerm = false;
+                improperTorsionTerm = false;
                 restraintBondTerm = false;
                 ncsTerm = false;
                 restrainTerm = false;
@@ -1307,6 +1349,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 torsionTerm = torsionTermOrig;
                 piOrbitalTorsionTerm = piOrbitalTorsionTermOrig;
                 torsionTorsionTerm = torsionTorsionTermOrig;
+                improperTorsionTerm = improperTorsionTermOrig;
                 restraintBondTerm = restraintBondTermOrig;
                 ncsTerm = ncsTermOrig;
                 restrainTermOrig = restrainTerm;

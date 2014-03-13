@@ -22,16 +22,15 @@
  */
 package ffx.potential.bonded;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.logging.Logger;
 
-import static java.lang.Math.acos;
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-import static java.lang.Math.signum;
 import static java.lang.Math.sqrt;
-import static java.lang.Math.toDegrees;
 
+import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ImproperTorsionType;
+
 import static ffx.numerics.VectorMath.cross;
 import static ffx.numerics.VectorMath.diff;
 import static ffx.numerics.VectorMath.dot;
@@ -56,11 +55,6 @@ public class ImproperTorsion extends BondedTerm implements
     public ImproperTorsionType improperType = null;
 
     /**
-     * The symmetry of the central atom.
-     */
-    private double symm;
-
-    /**
      * OutOfPlaneBend constructor.
      *
      * @param atom1
@@ -83,6 +77,84 @@ public class ImproperTorsion extends BondedTerm implements
          */
 
         setID_Key(false);
+    }
+
+    /**
+     *
+     * @param atom
+     * @param forceField
+     * @return
+     */
+    public static ArrayList<ImproperTorsion> improperTorsionFactory(Atom atom, ForceField forceField) {
+
+        if (atom == null) {
+            return null;
+        }
+
+        Atom atoms[] = new Atom[4];
+        atoms[2] = atom;
+        ArrayList<Bond> bonds = atom.getBonds();
+        if (bonds == null || bonds.size() != 3) {
+            return null;
+        }
+
+        for (int i = 0; i < 3; i++) {
+            Bond bond = bonds.get(i);
+            Atom atom2 = bond.get1_2(atom);
+            if (i == 2) {
+                atoms[3] = atom2;
+            } else {
+                atoms[i] = atom2;
+            }
+        }
+
+        ArrayList<ImproperTorsion> improperTorsions = new ArrayList<>();
+        Collection<ImproperTorsionType> types = forceField.getImproperTypes();
+        for (ImproperTorsionType type : types) {
+            if (type.assigned(atoms)) {
+                ImproperTorsion improperTorsion = new ImproperTorsion(atoms[0], atoms[1], atoms[2], atoms[3]);
+                improperTorsion.setImproperType(type);
+                improperTorsions.add(improperTorsion);
+                int c0 = atoms[0].getAtomType().atomClass;
+                int c1 = atoms[1].getAtomType().atomClass;
+                int c3 = atoms[3].getAtomType().atomClass;
+                if (c0 == c1 && c1 == c3) {
+                    improperTorsion = new ImproperTorsion(atoms[0], atoms[3], atoms[2], atoms[1]);
+                    improperTorsion.setImproperType(type);
+                    improperTorsions.add(improperTorsion);
+                    improperTorsion = new ImproperTorsion(atoms[1], atoms[0], atoms[2], atoms[3]);
+                    improperTorsion.setImproperType(type);
+                    improperTorsions.add(improperTorsion);
+                    improperTorsion = new ImproperTorsion(atoms[1], atoms[3], atoms[2], atoms[0]);
+                    improperTorsion.setImproperType(type);
+                    improperTorsions.add(improperTorsion);
+                    improperTorsion = new ImproperTorsion(atoms[3], atoms[0], atoms[2], atoms[1]);
+                    improperTorsion.setImproperType(type);
+                    improperTorsions.add(improperTorsion);
+                    improperTorsion = new ImproperTorsion(atoms[3], atoms[1], atoms[2], atoms[0]);
+                    improperTorsion.setImproperType(type);
+                    improperTorsions.add(improperTorsion);
+                } else if (c0 == c1) {
+                    improperTorsion = new ImproperTorsion(atoms[1], atoms[0], atoms[2], atoms[3]);
+                    improperTorsion.setImproperType(type);
+                    improperTorsions.add(improperTorsion);
+                } else if (c0 == c3) {
+                    improperTorsion = new ImproperTorsion(atoms[3], atoms[1], atoms[2], atoms[0]);
+                    improperTorsion.setImproperType(type);
+                    improperTorsions.add(improperTorsion);
+                } else if (c1 == c3) {
+                    improperTorsion = new ImproperTorsion(atoms[0], atoms[3], atoms[2], atoms[1]);
+                    improperTorsion.setImproperType(type);
+                    improperTorsions.add(improperTorsion);
+                }
+            }
+        }
+
+        if (improperTorsions.isEmpty()) {
+            return null;
+        }
+
+        return improperTorsions;
     }
 
     /**
@@ -151,7 +223,7 @@ public class ImproperTorsion extends BondedTerm implements
             //double dphi3 = 3.0 * (cosine3 * s3 - sine3 * c3);
 
             /* calculate improper torsion energy and master chain rule term */
-            value = phi2;
+            value = Math.toDegrees(Math.acos(cosine));
             //energy = ImproperTorsionType.units * (v1 * phi1 + v2 * phi2 + v3 * phi3);
             //double dedphi = ImproperTorsionType.units * (v1 * dphi1 + v2 * dphi2 + v3 * dphi3);
             energy = ImproperTorsionType.units * (v2 * phi2);
@@ -170,16 +242,16 @@ public class ImproperTorsion extends BondedTerm implements
                 /**
                  * Compute first derivative components for this angle.
                  */
-                cross(v21, dedt, g0);
-                cross(v20, dedt, g1a);
-                cross(v32, dedu, g1);
-                scalar(g1, -1.0, g1);
+                cross(dedt, v21, g0);
+                cross(dedt, v20, g1a);
+                cross(dedu, v32, g1);
+                scalar(g1a, -1.0, g1a);
                 sum(g1a, g1, g1);
-                cross(v10,dedt,g2a);
-                cross(v31,dedu,g2);
+                cross(dedt, v10, g2a);
+                cross(dedu, v31, g2);
                 scalar(g2, -1.0, g2);
-                sum(g2a,g2,g2);
-                cross(v21, dedu, g3);
+                sum(g2a, g2, g2);
+                cross(dedu, v21, g3);
                 /**
                  * Accumulate derivatives.
                  */
@@ -189,6 +261,7 @@ public class ImproperTorsion extends BondedTerm implements
                 atoms[3].addToXYZGradient(g3[0], g3[1], g3[2]);
             }
         }
+
         return energy;
     }
 
@@ -196,8 +269,9 @@ public class ImproperTorsion extends BondedTerm implements
      * Log details for this Improper Torsion energy term.
      */
     public void log() {
-        logger.info(String.format(" %s %6d-%s %6d-%s %6.4f %10.4f",
-                "Improper Torsion", atoms[1].getXYZIndex(), atoms[1].getAtomType().name, atoms[3].getXYZIndex(), atoms[3].getAtomType().name, value, energy));
+        logger.info(String.format(" %s %6d-%s %6d-%s %6d-%s %6d-%s %6.4f %10.4f",
+                "Improper Torsion", atoms[0].getXYZIndex(), atoms[0].getAtomType().name, atoms[1].getXYZIndex(), atoms[1].getAtomType().name, atoms[2].getXYZIndex(), atoms[2].getAtomType().name, atoms[3].getXYZIndex(), atoms[3].getAtomType().name,
+                value, energy));
     }
 
     /**

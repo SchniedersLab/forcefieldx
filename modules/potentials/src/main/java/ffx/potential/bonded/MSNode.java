@@ -282,6 +282,16 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
     }
 
     /**
+     * Returns an ArrayList of all ImproperTorsions below the present MSNode.
+     *
+     * @return a {@link java.util.ArrayList} object.
+     */
+    public ArrayList<ROLS> getImproperTorsionList() {
+        ArrayList<ROLS> arrayList = new ArrayList<>();
+        return getList(ImproperTorsion.class, arrayList);
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override

@@ -83,7 +83,7 @@ public class ForceField {
     public enum ForceFieldBoolean {
 
         BONDTERM, ANGLETERM, RESTRAINTERM, STRBNDTERM, UREYTERM, OPBENDTERM,
-        TORSIONTERM, PITORSTERM, TORTORTERM, VDWLRTERM, VDWTERM,
+        TORSIONTERM, PITORSTERM, TORTORTERM, VDWLRTERM, VDWTERM, IMPROPERTERM,
         MPOLETERM, POLARIZETERM, GKTERM, SCFCACHE, APERIODIC, CUDAFFT,
         RIGID_HYDROGENS, LAMBDATERM, NCSTERM, USE_CHARGES, USE_DIPOLES, USE_QUADRUPOLES,
         ROTATE_MULTIPOLES, LIGAND_VAPOR_ELEC, NO_LIGAND_CONDENSED_SCF,
@@ -859,6 +859,18 @@ public class ForceField {
      */
     public TorsionType getTorsionType(String key) {
         return torsionTypes.get(key);
+    }
+
+
+        /**
+     * <p>
+     * getImproperType</p>
+     *
+     * @param key a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.parameters.TorsionType} object.
+     */
+    public Collection<ImproperTorsionType> getImproperTypes() {
+        return imptorsTypes.values();
     }
 
     /**
