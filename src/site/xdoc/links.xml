@@ -33,7 +33,7 @@
                             portability, and security that today’s applications require.
                         </td>
                         <td>
-                            1.6.0 or later.
+                            1.7.0 or later.
                         </td>
                     </tr>
                     <tr>
@@ -46,7 +46,7 @@
                             reporting and documentation from a central piece of information.
                         </td>
                         <td>
-                            3.0.4 or later.
+                            3.1.0 or later.
                         </td>
                     </tr>
                     <tr>
@@ -58,7 +58,7 @@
                             for Windows, Mac, Linux, and Solaris.
                         </td>
                         <td>
-                            7.3.0 or later.
+                            7.4.0 or later.
                         </td>
                     </tr>
                     <tr>
@@ -82,11 +82,6 @@
                     </tr -->
                 </tbody>
             </table>
-            <p>
-                <script type='text/javascript'
-                        src='https://www.ohloh.net/stacks/82318/widgets/stack_normal'>
-                </script>
-            </p>
         </section>
     </body>
 </document>

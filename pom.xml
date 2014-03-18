@@ -65,7 +65,88 @@
             <roles>
                 <role>Director of Force Field X</role>
             </roles>
-            <timezone>-7</timezone>
+            <timezone>-5</timezone>
+        </developer>
+        <developer>
+            <id>slucore</id>
+            <name>Stephen D. LuCore</name>
+            <email>stephen-lucore@uiowa.edu</email>
+            <organization>Graduate Student, Schnieders Lab, The U. of Iowa</organization>
+            <organizationUrl>http://www.uiowa.edu</organizationUrl>
+            <roles>
+                <role>
+                    Many-Body Dead-End Elimination for Protein Structure Prediction and Optimization
+                </role>
+                <role>
+                    Alchemical Free Energy Methods to Predict pKa and Mutational Thermodynamics
+                </role>
+            </roles>
+            <timezone>-5</timezone>
+        </developer>
+        <developer>
+            <id>jmlitman</id>
+            <name>Jacob M. Litman</name>
+            <email>jacob-litman@uiowa.edu</email>
+            <organization>Graduate Student, Schnieders Lab, The U. of Iowa</organization>
+            <organizationUrl>http://www.uiowa.edu</organizationUrl>
+            <roles>
+                <role>
+                    Many-Body Dead-End Elimination for Nucleic Acid Structure Prediction and Optimization
+                </role>
+            </roles>
+            <timezone>-5</timezone>
+        </developer>
+        <developer>
+            <id>jpark7</id>
+            <name>Jooyeon "Julia" Park</name>
+            <email>jooyeon-park@uiowa.edu</email>
+            <organization>Graduate Student, Schnieders Lab, The U. of Iowa</organization>
+            <organizationUrl>http://www.uiowa.edu</organizationUrl>
+            <roles>
+                <role>
+                    Drug Crystal Structure, Thermodynamics and Solubility
+                </role>
+            </roles>
+            <timezone>-5</timezone>
+        </developer>
+        <developer>
+            <id>avlynn</id>
+            <name>Ava Lynn</name>
+            <email>ava-lynn@uiowa.edu</email>
+            <organization>Undergraduate Student, Schnieders Lab, The U. of Iowa</organization>
+            <organizationUrl>http://www.uiowa.edu</organizationUrl>
+            <roles>
+                <role>
+                    Modeling of Missense Mutations Implicated in Inherited Eye Diseases
+                </role>
+            </roles>
+            <timezone>-5</timezone>
+        </developer>
+        <developer>
+            <id>wtollefson</id>
+            <name>William T. A. Tollefson</name>
+            <email>william-tollefson@uiowa.edu</email>
+            <organization>Undergraduate Student, Schnieders Lab, The U. of Iowa</organization>
+            <organizationUrl>http://www.uiowa.edu</organizationUrl>
+            <roles>
+                <role>
+                    Modeling of Missense Mutations Implicated in Inherited Deafness
+                </role>
+            </roles>
+            <timezone>-5</timezone>
+        </developer>
+        <developer>
+            <id>inessler</id>
+            <name>Ian J. Nessler</name>
+            <email>ian-nessler@uiowa.edu</email>
+            <organization>Undergraduate Student, Schnieders Lab, The U. of Iowa</organization>
+            <organizationUrl>http://www.uiowa.edu</organizationUrl>
+            <roles>
+                <role>
+                    Drug Crystal Structure, Thermodynamics and Solubility
+                </role>
+            </roles>
+            <timezone>-5</timezone>
         </developer>
         <developer>
             <id>fenn</id>
@@ -75,13 +156,12 @@
             <organizationUrl>http://www.merck.com</organizationUrl>
             <roles>
                 <role>Chief Crystallograper</role>
-                <role>Crystal Module</role>
-                <role>X-ray/Neutron Refinement Module</role>
             </roles>
             <timezone>-7</timezone>
         </developer>
-        <developer>
-            <id>prffx</id>
+    </developers>
+    <contributors>
+        <contributor>
             <name>Pengyu Ren</name>
             <email>pren@mail.utexas.edu</email>
             <organization>Associate Professor, The U. of Texas at Austin</organization>
@@ -90,51 +170,44 @@
                 <role>AMOEBA Force Field</role>
             </roles>
             <timezone>-5</timezone>
-        </developer>
-        <developer>
-            <id>ghli</id>
+        </contributor>
+        <contributor>
             <name>Guohui Li</name>
             <email>ghli@dicp.ac.cn</email>
             <organization>Dalian Institute of Chemical Physics, Chinese Academy of Sciences</organization>
             <organizationUrl>http://combio.dicp.ac.cn/</organizationUrl>
-            <roles>
-                <role>Coarse grained polarizable model</role>
-            </roles>
             <timezone>+8</timezone>
-        </developer>
-        <developer>
-            <id>ZhenXia</id>
+        </contributor>
+        <contributor>
             <name>Zhen Xia</name>
             <email>oversnow@gmail.com</email>
             <organization>Postdoc, Ren Lab, The U. of Texas at Austin</organization>
             <organizationUrl>http://biomol.bme.utexas.edu/lab/</organizationUrl>
             <roles>
-                <role>Coarse Grain Module</role>
+                <role>AMOEBA force field</role>
             </roles>
             <timezone>-5</timezone>
-        </developer>
-        <developer>
-            <id>wuch</id>
+        </contributor>
+        <contributor>
             <name>Johnny Wu</name>
             <email>jwu@mail.utexas.edu</email>
             <organization>Scientist at Genentech</organization>
-            <organizationUrl>http://biomol.bme.utexas.edu/lab/</organizationUrl>
+            <organizationUrl>http://www.gene.com</organizationUrl>
             <roles>
                 <role>Automatic AMOEBA Parameterization</role>
             </roles>
-            <timezone>-5</timezone>
-        </developer>
-        <developer>
-            <id>cjwu</id>
+            <timezone>-7</timezone>
+        </contributor>
+        <contributor>
             <name>Chuanjie Wu</name>
             <email>chuanjiewu@gmail.com</email>
             <organization>Scientist at Schrodinger</organization>
             <roles>
                 <role>AMOEBA force field</role>
             </roles>
-            <timezone>-5</timezone>
-        </developer>
-    </developers>
+            <timezone>-4</timezone>
+        </contributor>
+    </contributors>
     <licenses>
         <license>
             <name>GPL version 3</name>
@@ -143,7 +216,7 @@
         </license>
     </licenses>
     <scm>
-        <url>http://kenai.com/projects/ffx/sources/source/show</url>
+        <url>http://kenai.com/projects/ffx/sources/public-source/show</url>
         <connection>scm:git://kenai.com/ffx~public-source</connection>
         <developerConnection>scm:git:ssh://${kenai.user.name}@git.kenai.com/ffx~public-source</developerConnection>
     </scm>
@@ -167,7 +240,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-checkstyle-plugin</artifactId>
-                    <version>2.11</version>
+                    <version>2.12</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-clean-plugin</artifactId>
@@ -203,7 +276,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-pmd-plugin</artifactId>
-                    <version>3.0.1</version>
+                    <version>3.1</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-project-info-reports-plugin</artifactId>
@@ -223,11 +296,11 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>2.16</version>
+                    <version>2.17</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-surefire-report-plugin</artifactId>
-                    <version>2.16</version>
+                    <version>2.17</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-resources-plugin</artifactId>
@@ -277,6 +350,7 @@
                                 </reportSet>
                             </reportSets>
                             <configuration>
+                                <showAvatarImages>true</showAvatarImages>
                                 <dependencyDetailsEnabled>${dependencyDetails}</dependencyDetailsEnabled>
                                 <dependencyLocationsEnabled>${dependencyDetails}</dependencyLocationsEnabled>
                             </configuration>
@@ -581,9 +655,9 @@
     </properties>
     <modules>
         <module>modules/algorithms</module>
-        <module>modules/autoparm</module>
-        <module>modules/binding</module>
-        <module>modules/cg</module>
+        <!-- module>modules/autoparm</module -->
+        <!-- module>modules/binding</module -->
+        <!-- module>modules/cg</module -->
         <!-- module>modules/continuum</module -->
         <module>modules/crystal</module>
         <!-- module>modules/nucleic</module -->

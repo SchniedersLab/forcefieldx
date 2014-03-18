@@ -16,9 +16,9 @@
                     <th>Example</th>
                 </tr>
                 <tr>
-                    <td>Binding Affinity</td>
+                    <td>Algorithms</td>
                     <td>
-                        <a href="modules/binding/examples.html">
+                        <a href="modules/algorithms/examples.html">
                             Water Solvation Free Energy
                         </a>
                     </td>

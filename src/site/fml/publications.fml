@@ -4,14 +4,58 @@
       xsi:schemaLocation="http://maven.apache.org/FML/1.0.1 http://maven.apache.org/xsd/fml-1.0.1.xsd"
       title="Publications"
       toplink="true">
-    <part id="2013">
-        <title>2013</title>
-        <faq id="15">
+    <part id="2014">
+        <title>2014</title>
+        <faq id="17">
+            <question>
+                Park, J., Nessler, I., McClain, B., Macikenas D., Baltrusaitis, J. and M. Schnieders,
+                Absolute Organic Crystal Thermodynamics: Growth of the Asymmetric Unit into a Crystal via Alchemy.
+                <i>Journal of Chemical Theory and Computation</i>
+                <b>2014</b>
+                <i>submitted</i>
+                <!-- a href="http://dx.doi.org/">
+                    <img src="images/pdf.png" alt="PDF"/>
+                </a -->
+            </question>
+            <answer>
+                <p>
+                    The solubility of organic molecules is of critical importance to the pharmaceutical industry,
+                    however, robust computational methods to predict this quantity from first principles are lacking.
+                    Solubility can be computed from a thermodynamic cycle that decomposes standard state solubility into the
+                    sum of solid-vapor sublimation and vapor-liquid solvation free energies ΔG°
+                    <sub>solubility</sub> = ΔG°
+                    <sub>sub</sub> + ΔG°
+                    <sub>solv</sub>.
+                    Over the past few decades, alchemical simulation methods to compute solvation free energy using
+                    classical force fields have become widely used. However, analogous methods for determining the free
+                    energy of the sublimation/deposition phase transition are currently limited by the necessity of a
+                    priori knowledge of the atomic coordinates of the crystal. Here we describe progress toward an
+                    alternative scheme based on growth of the asymmetric unit into a crystal via alchemy (GAUCHE).
+                    GAUCHE computes deposition free energy ΔG°<sub>dep</sub>=-ΔG°<sub>sub</sub>=
+                    k<sub>B</sub>Tln(V<sub>AU</sub>⁄1  M) + ΔG°<sub>AU</sub> + ΔG°<sub>(AU→UC)</sub>
+                    as the sum of an entropic term to account for compressing a 1 M vapor into the molar volume of the crystal
+                    asymmetric unit (VAU), where kB is Boltzmann’s constant and T is temperature in degrees Kelvin, plus two
+                    simulation steps. In the first simulation step, the deposition free energy ΔG°<sub>AU</sub> for a system
+                    composed of only NAU asymmetric unit (AU) molecule(s) is computed beginning from an arbitrary conformation
+                    in vacuum. In the second simulation step, the change in free energy ΔG°<sub>(AU→UC)</sub> to expand the
+                    asymmetric unit degrees of freedom into a unit cell (UC) composed of NUC independent molecules is computed.
+                    This latter step accounts for the favorable free energy of removing the constraint that every symmetry mate
+                    of the asymmetric unit has an identical conformation and intermolecular interactions. The current work is
+                    based on NVT simulations, which requires knowledge of the crystal space group and unit cell parameters
+                    from experiment, but not a priori knowledge of crystalline atomic coordinates. GAUCHE was applied to 5
+                    organic molecules whose sublimation free energy has been measured experimentally, based on the polarizable
+                    atomic multipole AMOEBA force field and more than a microsecond of sampling per compound. The mean signed
+                    and unsigned errors were only -0.4 and 1.2 kcal/mol, respectively, which indicates that GAUCHE is capable
+                    of accurately predicts sublimation thermodynamics.
+                </p>
+            </answer>
+        </faq>
+        <faq id="16">
             <question>
                 Shi, Y., Schnieders, M. J., Piquemal, J.-P., and P. Ren,
-                Polarizable Force Fields for Biomolecular Modeling
+                Polarizable Force Fields for Biomolecular Modeling.
                 <i>Reviews in Computational Chemistry</i>
-                <b>2013</b> Edition: 28, Publisher: Springer, Editors: Kenny B. Lipkowitz
+                <b>2014</b> Edition: 28, Publisher: Springer, Editors: Kenny B. Lipkowitz
                 <a href="http://dx.doi.org/10.1002/SERIES6143">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
@@ -33,13 +77,45 @@
                 </p>
             </answer>
         </faq>
+        <faq id="15">
+            <question>
+                Lipparini, F., Lagardère, L., Stamm, B., Cancès, E., Schnieders, M., Ren P., Maday, Y. and J.-P. Piquemal,
+                Scalable Evaluation of Polarization Energy and Associated Forces in Polarizable Molecular Dynamics: I. Toward Massively Parallel Direct Space Computations.
+                <i>Journal of Chemical Theory and Computation</i>
+                <b>2014</b> Article ASAP.
+                <a href="http://dx.doi.org/10.1021/ct401096t">
+                    <img src="images/pdf.png" alt="PDF"/>
+                </a>
+            </question>
+            <answer>
+                <p>
+                    In this paper, we investigate various numerical strategies to compute the direct space polarization
+                    energy and associated forces in the context of the point dipole approximation (including damping)
+                    used in polarizable molecular dynamics. We present a careful mathematical analysis of the algorithms
+                    that have been implemented in popular production packages and applied to large test systems. We show
+                    that the classical Jacobi Over-Relaxation method (JOR) should not be used as its convergence requires
+                    a proper value of the relaxation parameter, whereas other strategies should be preferred. On a single
+                    node, Preconditioned Conjugate Gradient methods (PCG) and Jacobi algorithm coupled with the Direct
+                    Inversion in the Iterative Subspace (JI/DIIS) provide reliable stability/convergence and are roughly
+                    twice as fast as JOR. Moreover, both algorithms are suitable for massively parallel implementations.
+                    The lower requirements in terms of processes communications make JI/DIIS the method of choice for MPI
+                    and hybrid OpenMP/MPI paradigms for real life tests. Furthermore, using a predictor step as a guess
+                    along a molecular dynamics simulation provides another inexpensive, yet very effective, form of
+                    convergence acceleration. Overall, two to three orders of magnitude in time can be gained compared
+                    to the initial JOR single node approach to the final PGC or JI/DIIS parallel one combined with the
+                    predictors MD refinements. Such a speedup traces a new route for the high performance implementation
+                    of polarizable molecular dynamics and therefore extends the applicability of the technique as it will
+                    facilitate future multiscale QM/MM/continuum computations.
+                </p>
+            </answer>
+        </faq>
     </part>
     <part id="2012">
         <title>2012</title>
         <faq id="14">
             <question>
                 Ren, P., Chun, J., Thomas, D. G., Schnieders, M. J., Marucho, M., Zhang, J., and N. A. Baker,
-                Biomolecular electrostatics and solvation: a computational perspective
+                Biomolecular electrostatics and solvation: a computational perspective.
                 <i>Quarterly Reviews of Biophysics</i>
                 <b>2012</b> 45, (4), 427-91.
                 <a href="http://dx.doi.org/10.1017/S003358351200011X">
@@ -67,7 +143,7 @@
         <faq id="13">
             <question>
                 Schnieders, M. J., J. Baltrusaitis, Y. Shi, G. Chattree, L. Zheng, W. Yang and P. Ren
-                The Structure, Thermodynamics, and Solubility of Organic Crystals from Simulation with a Polarizable Force Field
+                The Structure, Thermodynamics, and Solubility of Organic Crystals from Simulation with a Polarizable Force Field.
                 <i>Journal of Chemical Theory and Computation</i>
                 <b>2012</b> 8, (5), 1721–36.
                 <a href="http://dx.doi.org/10.1021/ct300035u">
@@ -111,7 +187,7 @@
             <question>
                 Schnieders, M. J., T. S. Kaoud, C. Yan; K. N. Dalby and P. Ren
                 Computational Insights for the Discovery of
-                Non-ATP Competitive Inhibitors of MAP Kinases
+                Non-ATP Competitive Inhibitors of MAP Kinases.
                 <i>Current Pharmaceutical Design</i>
                 <b>2012</b> 18, (9), 1173-85.
                 <a href="http://dx.doi.org/10.2174/138920012799362873">
@@ -145,7 +221,7 @@
             <question>
                 Fenn, T. D. and M. J. Schnieders,
                 Polarizable atomic multipole X-ray refinement:
-                Weighting schemes for macromolecular diffraction
+                Weighting schemes for macromolecular diffraction.
                 <i>Acta Crystallographica Section D</i>
                 <b>2011</b> 67, (11), 957-65.
                 <a href="http://dx.doi.org/10.1107/S0907444911039060">

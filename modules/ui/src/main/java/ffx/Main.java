@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
  *
  * This file is part of Force Field X.
  *
@@ -73,9 +73,9 @@ public class Main extends JFrame {
      * Process any "-D" command line flags.
      */
     private static String[] processProperties(String args[]) {
-        List newArgs = new ArrayList<String>();
-        for (int i = 0; i < args.length; i++) {
-            String arg = args[i].trim();
+        List newArgs = new ArrayList<>();
+        for (String arg : args) {
+            arg = arg.trim();
             if (arg.startsWith("-D")) {
                 // Remove -D from the front of String.
                 arg = arg.substring(2);
@@ -324,7 +324,7 @@ public class Main extends JFrame {
         /**
          * Convert the args to a List<String>.
          */
-        List<String> argList = new ArrayList<String>(nArgs);
+        List<String> argList = new ArrayList<>(nArgs);
         if (nArgs > 1) {
             for (int i = 1; i < nArgs; i++) {
                 argList.add(args[i]);
