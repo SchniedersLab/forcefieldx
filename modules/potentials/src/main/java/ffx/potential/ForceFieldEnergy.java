@@ -314,7 +314,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             nBonds = bond.size();
             bonds = bond.toArray(new Bond[nBonds]);
             Arrays.sort(bonds);
-            logger.info(format("  Bonds:                             %10d", nBonds));
+            if (nBonds > 0) {
+                logger.info(format("  Bonds:                             %10d", nBonds));
+            }
         } else {
             nBonds = 0;
             bonds = null;
@@ -326,7 +328,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             nAngles = angle.size();
             angles = angle.toArray(new Angle[nAngles]);
             Arrays.sort(angles);
-            logger.info(format("  Angles:                            %10d", nAngles));
+            if (nAngles > 0) {
+                logger.info(format("  Angles:                            %10d", nAngles));
+            }
         } else {
             nAngles = 0;
             angles = null;
@@ -338,7 +342,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             nStretchBends = stretchBend.size();
             stretchBends = stretchBend.toArray(new StretchBend[nStretchBends]);
             Arrays.sort(stretchBends);
-            logger.info(format("  Stretch-Bends:                     %10d", nStretchBends));
+            if (nStretchBends > 0) {
+                logger.info(format("  Stretch-Bends:                     %10d", nStretchBends));
+            }
         } else {
             nStretchBends = 0;
             stretchBends = null;
@@ -350,7 +356,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             nUreyBradleys = ureyBradley.size();
             ureyBradleys = ureyBradley.toArray(new UreyBradley[nUreyBradleys]);
             Arrays.sort(ureyBradleys);
-            logger.info(format("  Urey-Bradleys:                     %10d", nUreyBradleys));
+            if (nUreyBradleys > 0) {
+                logger.info(format("  Urey-Bradleys:                     %10d", nUreyBradleys));
+            }
         } else {
             nUreyBradleys = 0;
             ureyBradleys = null;
@@ -397,7 +405,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             nOutOfPlaneBends = outOfPlaneBend.size();
             outOfPlaneBends = outOfPlaneBend.toArray(new OutOfPlaneBend[nOutOfPlaneBends]);
             Arrays.sort(outOfPlaneBends);
-            logger.info(format("  Out-of-Plane Bends:                %10d", nOutOfPlaneBends));
+            if (nOutOfPlaneBends > 0) {
+                logger.info(format("  Out-of-Plane Bends:                %10d", nOutOfPlaneBends));
+            }
         } else {
             nOutOfPlaneBends = 0;
             outOfPlaneBends = null;
@@ -408,7 +418,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             ArrayList<ROLS> torsion = molecularAssembly.getTorsionList();
             nTorsions = torsion.size();
             torsions = torsion.toArray(new Torsion[nTorsions]);
-            logger.info(format("  Torsions:                          %10d", nTorsions));
+            if (nTorsions > 0) {
+                logger.info(format("  Torsions:                          %10d", nTorsions));
+            }
         } else {
             nTorsions = 0;
             torsions = null;
@@ -419,7 +431,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             ArrayList<ROLS> piOrbitalTorsion = molecularAssembly.getPiOrbitalTorsionList();
             nPiOrbitalTorsions = piOrbitalTorsion.size();
             piOrbitalTorsions = piOrbitalTorsion.toArray(new PiOrbitalTorsion[nPiOrbitalTorsions]);
-            logger.info(format("  Pi-Orbital Torsions:               %10d", nPiOrbitalTorsions));
+            if (nPiOrbitalTorsions > 0) {
+                logger.info(format("  Pi-Orbital Torsions:               %10d", nPiOrbitalTorsions));
+            }
         } else {
             nPiOrbitalTorsions = 0;
             piOrbitalTorsions = null;
@@ -430,7 +444,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             ArrayList<ROLS> torsionTorsion = molecularAssembly.getTorsionTorsionList();
             nTorsionTorsions = torsionTorsion.size();
             torsionTorsions = torsionTorsion.toArray(new TorsionTorsion[nTorsionTorsions]);
-            logger.info(format("  Torsion-Torsions:                  %10d", nTorsionTorsions));
+            if (nTorsionTorsions > 0) {
+                logger.info(format("  Torsion-Torsions:                  %10d", nTorsionTorsions));
+            }
         } else {
             nTorsionTorsions = 0;
             torsionTorsions = null;
@@ -441,7 +457,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             ArrayList<ROLS> improperTorsion = molecularAssembly.getImproperTorsionList();
             nImproperTorsions = improperTorsion.size();
             improperTorsions = improperTorsion.toArray(new ImproperTorsion[nImproperTorsions]);
-            logger.info(format("  Improper Torsions:                 %10d", nImproperTorsions));
+            if (nImproperTorsions > 0) {
+                logger.info(format("  Improper Torsions:                 %10d", nImproperTorsions));
+            }
         } else {
             nImproperTorsions = 0;
             improperTorsions = null;

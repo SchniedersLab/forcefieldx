@@ -171,6 +171,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
     private double solvationEnergy = 0.0;
     private boolean lambdaTerm = false;
 
+    private long gkTime = 0;
+    private long pmfTime = 0;
+    private long dispersionTime = 0;
+    private long cavitationTime = 0;
+
     /**
      * <p>
      * Constructor for GeneralizedKirkwood.</p>
@@ -395,10 +400,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     public double solvationEnergy(boolean gradient, boolean print) {
 
-        /*
-         for (int j = 0; j < nAtoms; j++) {
-         use[j] = atoms[j].isActive();
-         } */
         /**
          * Initialize the gradient accumulation arrays.
          */
@@ -412,18 +413,26 @@ public class GeneralizedKirkwood implements LambdaInterface {
             /**
              * Find the GK energy.
              */
+            gkTime = -System.nanoTime();
             gkEnergyRegion.setGradient(gradient);
             parallelTeam.execute(gkEnergyRegion);
+            gkTime += System.nanoTime();
             /**
              * Find the nonpolar energy.
              */
             if (nonPolar == NonPolar.HYDROPHOBIC_PMF) {
+                pmfTime = -System.nanoTime();
                 hydrophobicPMFRegion.setGradient(gradient);
                 parallelTeam.execute(hydrophobicPMFRegion);
+                pmfTime += System.nanoTime();
             } else {
+                dispersionTime = -System.nanoTime();
                 dispersionRegion.setGradient(gradient);
                 parallelTeam.execute(dispersionRegion);
+                dispersionTime += System.nanoTime();
+                cavitationTime = -System.nanoTime();
                 parallelTeam.execute(cavitationRegion);
+                cavitationTime += System.nanoTime();
                 //parallelTeam.execute(volumeRegion);
             }
         } catch (Exception e) {
@@ -436,7 +445,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
          */
         if (gradient) {
             try {
+                gkTime -= System.nanoTime();
                 parallelTeam.execute(bornGradRegion);
+                gkTime += System.nanoTime();
             } catch (Exception e) {
                 String message = "Fatal exception computing Born radii chain rule term.";
                 logger.log(Level.SEVERE, message, e);
@@ -444,13 +455,16 @@ public class GeneralizedKirkwood implements LambdaInterface {
         }
 
         if (print) {
-            logger.info(String.format(" Generalized Kirkwood %16.8f",
-                    gkEnergyRegion.getEnergy()));
+            logger.info(String.format(" Generalized Kirkwood%16.8f %10.3f",
+                    gkEnergyRegion.getEnergy(), gkTime * 1e-9));
             if (nonPolar == NonPolar.HYDROPHOBIC_PMF) {
-                logger.info(String.format(" Hydrophibic PMF      %16.8f", hydrophobicPMFRegion.getEnergy()));
+                logger.info(String.format(" Hydrophibic PMF     %16.8f %10.3f",
+                        hydrophobicPMFRegion.getEnergy(), pmfTime * 1e-9));
             } else {
-                logger.info(String.format(" Dispersion           %16.8f", dispersionRegion.getEnergy()));
-                logger.info(String.format(" Cavitation           %16.8f", cavitationRegion.getEnergy()));
+                logger.info(String.format(" Dispersion          %16.8f %10.3f",
+                        dispersionRegion.getEnergy(), dispersionTime * 1e-9));
+                logger.info(String.format(" Cavitation          %16.8f %10.3f",
+                        cavitationRegion.getEnergy(), cavitationTime * 1e-9));
             }
         }
 
@@ -4111,6 +4125,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
         private final SharedBooleanArray skip;
         private final double area[];
         private final double r[];
+        private long initTime = 0;
+        private long overlapTime = 0;
+        private long cavTime = 0;
 
         public CavitationRegion(int nt) {
             atomOverlapLoop = new AtomOverlapLoop[nt];
@@ -4160,6 +4177,23 @@ public class GeneralizedKirkwood implements LambdaInterface {
         }
 
         @Override
+        public void finish() {
+            if (logger.isLoggable(Level.FINE)) {
+            int n = initLoop.length;
+            initTime = 0;
+            overlapTime = 0;
+            cavTime = 0;
+            for (int i = 0; i < n; i++) {
+                initTime = max(initLoop[i].time, initTime);
+                overlapTime = max(atomOverlapLoop[i].time, overlapTime);
+                cavTime = max(cavitationLoop[i].time, cavTime);
+            }
+            logger.fine(String.format(" Cavitation Init: %10.3f Overlap: %10.3f Cav:  %10.3f",
+                    initTime * 1e-9, overlapTime * 1e-9, cavTime * 1e-9));
+            }
+        }
+
+        @Override
         public void run() {
             try {
                 execute(0, nAtoms - 1, initLoop[getThreadIndex()]);
@@ -4202,6 +4236,18 @@ public class GeneralizedKirkwood implements LambdaInterface {
          */
         private class InitLoop extends IntegerForLoop {
 
+            public long time;
+
+            @Override
+            public void start() {
+                time = -System.nanoTime();
+            }
+
+            @Override
+            public void finish() {
+                time += System.nanoTime();
+            }
+
             @Override
             public void run(int lb, int ub) throws Exception {
                 for (int i = lb; i <= ub; i++) {
@@ -4238,6 +4284,18 @@ public class GeneralizedKirkwood implements LambdaInterface {
          * @since 1.0
          */
         private class AtomOverlapLoop extends IntegerForLoop {
+
+            public long time;
+
+            @Override
+            public void start() {
+                time = -System.nanoTime();
+            }
+
+            @Override
+            public void finish() {
+                time += System.nanoTime();
+            }
 
             @Override
             public void run(int lb, int ub) {
@@ -4296,7 +4354,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 /**
                  * Calculate overlap parameters between "i" and "ir" sphere.
                  */
-                synchronized (count[i]) {
+                synchronized (count) {
                     /**
                      * Check for a completely buried "ir" sphere.
                      */
@@ -4370,6 +4428,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             private final static double pid2 = PI / 2.0;
             private final static double eps = 1.0e-8;
             private final static double surfaceTension = 0.08;
+            public long time;
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
@@ -4408,6 +4467,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
             @Override
             public void start() {
+                time = -System.nanoTime();
                 int threadID = getThreadIndex();
                 dArea[0] = grad[threadID][0];
                 dArea[1] = grad[threadID][1];
@@ -4425,6 +4485,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             @Override
             public void finish() {
                 sharedCavitation.addAndGet(ecav);
+                time += System.nanoTime();
             }
 
             @Override
