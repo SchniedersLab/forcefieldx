@@ -37,8 +37,12 @@ import java.util.logging.Logger;
  * convention. This is ensured by increasing l, m and/or n until a sphere of
  * of necessary radius fits entirely inside the ReplicatedCrystal.
  * <br>
+ *
  * @author Michael J. Schnieders
+ *
  * @since 1.0
+ * 
+ * @see Crystal
  */
 public class ReplicatesCrystal extends Crystal {
     /**

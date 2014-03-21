@@ -37,7 +37,7 @@ import ffx.crystal.*;
 /**
  * <p>MTZWriter class.</p>
  *
- * @author Tim Fenn
+ * @author Timothy D. Fenn
  * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4
  * map format</a>
  *

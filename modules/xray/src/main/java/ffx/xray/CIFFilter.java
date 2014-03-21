@@ -36,7 +36,7 @@ import ffx.crystal.*;
 /**
  * CIF file reader
  *
- * @author Tim Fenn
+ * @author Timothy D. Fenn
  *
  */
 public class CIFFilter implements DiffractionFileFilter {

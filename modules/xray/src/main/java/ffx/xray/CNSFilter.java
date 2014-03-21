@@ -36,7 +36,7 @@ import ffx.crystal.*;
 /**
  * <p>CNSFilter class.</p>
  *
- * @author Tim Fenn
+ * @author Timothy D. Fenn
  *
  */
 public class CNSFilter implements DiffractionFileFilter {

@@ -24,13 +24,25 @@ package ffx.numerics.fft;
 
 /**
  * Compute the 3D FFT of complex, double precision input of arbitrary dimensions
- * via 1D Mixed Radix FFTs. <p> The location of the input point [i, j, k] within
- * the input array must be:<br> <br> double real = input[x*nextX + y*nextY +
- * z*nextZ]<br> double imag = input[x*nextX + y*nextY + z*nextZ + 1]<br> <br>
- * where<br> int nextX = 2<br> int nextY = 2*nX<br> int nextZ = 2*nX*nY<br> <p>
+ * via 1D Mixed Radix FFTs.
+ * <p>
+ * The location of the input point [i, j, k] within the input array must be:
+ * <br>
+ * double real = input[x*nextX + y*nextY + z*nextZ]
+ * <br>
+ * double imag = input[x*nextX + y*nextY + z*nextZ + 1]
+ * <br>
+ * where
+ * <br> int nextX = 2
+ * <br> int nextY = 2*nX
+ * <br> int nextZ = 2*nX*nY<br>
+ * <p>
  *
  * @author Michal J. Schnieders
  *
+ * @since 1.0
+ *
+ * @see Complex
  */
 public class Complex3D {
 
@@ -71,24 +83,22 @@ public class Complex3D {
      * @param input The input array must be of size 2 * nX * nY * nZ.
      */
     public void fft(final double input[]) {
-        int x, y, z, i, stride, offset;
-
-        for (z = 0; z < nZ; z++) {
-            for (offset = z * nextZ, stride = nextX, y = 0; y < nY; y++, offset += nextY) {
+        for (int z = 0; z < nZ; z++) {
+            for (int offset = z * nextZ, stride = nextX, y = 0; y < nY; y++, offset += nextY) {
                 fftX.fft(input, offset, stride);
             }
-            for (offset = z * nextZ, stride = nextY, x = 0; x < nX; x++, offset += nextX) {
+            for (int offset = z * nextZ, stride = nextY, x = 0; x < nX; x++, offset += nextX) {
                 fftY.fft(input, offset, stride);
             }
         }
-        for (x = 0, offset = 0; x < nX; x++) {
-            for (y = 0; y < nY; y++, offset += nextX) {
-                for (i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
+        for (int x = 0, offset = 0; x < nX; x++) {
+            for (int y = 0; y < nY; y++, offset += nextX) {
+                for (int i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
                     work[i] = input[z];
                     work[i + 1] = input[z + 1];
                 }
                 fftZ.fft(work, 0, 2);
-                for (i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
+                for (int i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
                     input[z] = work[i];
                     input[z + 1] = work[i + 1];
                 }
@@ -102,47 +112,43 @@ public class Complex3D {
      * @param input The input array must be of size 2 * nX * nY * nZ.
      */
     public void ifft(final double input[]) {
-        int x, y, z, i, stride, offset;
-        for (offset = 0, x = 0; x < nX; x++) {
-            for (y = 0; y < nY; y++, offset += nextX) {
-                for (i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
+        for (int offset = 0, x = 0; x < nX; x++) {
+            for (int y = 0; y < nY; y++, offset += nextX) {
+                for (int i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
                     work[i] = input[z];
                     work[i + 1] = input[z + 1];
                 }
                 fftZ.ifft(work, 0, 2);
-                for (i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
+                for (int i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
                     input[z] = work[i];
                     input[z + 1] = work[i + 1];
                 }
             }
         }
-        for (z = 0; z < nZ; z++) {
-            for (offset = z * nextZ, stride = nextY, x = 0; x < nX; x++, offset += nextX) {
+        for (int z = 0; z < nZ; z++) {
+            for (int offset = z * nextZ, stride = nextY, x = 0; x < nX; x++, offset += nextX) {
                 fftY.ifft(input, offset, stride);
             }
-            for (offset = z * nextZ, stride = nextX, y = 0; y < nY; y++, offset += nextY) {
+            for (int offset = z * nextZ, stride = nextX, y = 0; y < nY; y++, offset += nextY) {
                 fftX.ifft(input, offset, stride);
             }
         }
     }
 
     /**
-     * <p>Setter for the field
-     * <code>recip</code>.</p>
+     * <p>
+     * Setter for the field <code>recip</code>.</p>
      *
      * @param recip an array of double.
      */
     public void setRecip(double recip[]) {
-        int offset, y, x, z, i;
-
         /**
          * Reorder the reciprocal space data into the order it is needed by the
          * convolution routine.
          */
-        int index = 0;
-        for (offset = 0, y = 0; y < nY; y++) {
-            for (x = 0; x < nX; x++, offset += 1) {
-                for (i = 0, z = offset; i < nZ2; i += 2, z += nX * nY) {
+        for (int offset = 0, index = 0, y = 0; y < nY; y++) {
+            for (int x = 0; x < nX; x++, offset += 1) {
+                for (int i = 0, z = offset; i < nZ2; i += 2, z += nX * nY) {
                     this.recip[index++] = recip[z];
                 }
             }
@@ -150,52 +156,52 @@ public class Complex3D {
     }
 
     /**
-     * <p>convolution</p>
+     * <p>
+     * convolution</p>
      *
      * @param input an array of double.
      */
     public void convolution(final double input[]) {
-        int x, y, z, i, index, stride, offset;
-        for (z = 0; z < nZ; z++) {
-            for (offset = z * nextZ, stride = nextX, y = 0; y < nY; y++, offset += nextY) {
+        for (int z = 0; z < nZ; z++) {
+            for (int offset = z * nextZ, stride = nextX, y = 0; y < nY; y++, offset += nextY) {
                 fftX.fft(input, offset, stride);
             }
-            for (offset = z * nextZ, stride = nextY, x = 0; x < nX; x++, offset += nextX) {
+            for (int offset = z * nextZ, stride = nextY, x = 0; x < nX; x++, offset += nextX) {
                 fftY.fft(input, offset, stride);
             }
         }
-        index = 0;
-        for (offset = 0, y = 0; y < nY; y++) {
-            for (x = 0; x < nX; x++, offset += nextX) {
-                for (i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
+        for (int offset = 0, index = 0, y = 0; y < nY; y++) {
+            for (int x = 0; x < nX; x++, offset += nextX) {
+                for (int i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
                     work[i] = input[z];
                     work[i + 1] = input[z + 1];
                 }
                 fftZ.fft(work, 0, 2);
-                for (i = 0; i < nZ2; i += 2) {
+                for (int i = 0; i < nZ2; i += 2) {
                     double r = recip[index++];
                     work[i] *= r;
                     work[i + 1] *= r;
                 }
                 fftZ.ifft(work, 0, 2);
-                for (i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
+                for (int i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
                     input[z] = work[i];
                     input[z + 1] = work[i + 1];
                 }
             }
         }
-        for (z = 0; z < nZ; z++) {
-            for (offset = z * nextZ, stride = nextY, x = 0; x < nX; x++, offset += nextX) {
+        for (int z = 0; z < nZ; z++) {
+            for (int offset = z * nextZ, stride = nextY, x = 0; x < nX; x++, offset += nextX) {
                 fftY.ifft(input, offset, stride);
             }
-            for (offset = z * nextZ, stride = nextX, y = 0; y < nY; y++, offset += nextY) {
+            for (int offset = z * nextZ, stride = nextX, y = 0; y < nY; y++, offset += nextY) {
                 fftX.ifft(input, offset, stride);
             }
         }
     }
 
     /**
-     * <p>iComplex3D</p>
+     * <p>
+     * iComplex3D</p>
      *
      * @param i a int.
      * @param j a int.

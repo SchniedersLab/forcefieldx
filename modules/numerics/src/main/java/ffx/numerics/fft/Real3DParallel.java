@@ -33,11 +33,14 @@ import edu.rit.pj.ParallelTeam;
 
 /**
  * Compute the 3D FFT of real, double precision input of arbitrary dimensions in
- * parallel.<p>
+ * parallel.
+ * <p>
  *
  * @author Michal J. Schnieders
+ *
  * @since 1.0
  *
+ * @see Real
  */
 public class Real3DParallel {
 
@@ -166,22 +169,19 @@ public class Real3DParallel {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>recip</code>.</p>
+     * <p>
+     * Setter for the field <code>recip</code>.</p>
      *
      * @param recip The recip array must be of size [(nX/2 + 1) * nY * nZ].
      */
     public void setRecip(double recip[]) {
-        int offset, y, x, z, i;
-
         /**
          * Reorder the reciprocal space data into the order it is needed by the
          * convolution routine.
          */
-        int index = 0;
-        for (index = 0, offset = 0, y = 0; y < nY; y++) {
-            for (x = 0; x < nX1; x++, offset += 1) {
-                for (i = 0, z = offset; i < nZ; i++, z += nX1 * nY) {
+        for (int index = 0, offset = 0, y = 0; y < nY; y++) {
+            for (int x = 0; x < nX1; x++, offset += 1) {
+                for (int i = 0, z = offset; i < nZ; i++, z += nX1 * nY) {
                     this.recip[index++] = recip[z];
 
                 }
@@ -228,10 +228,14 @@ public class Real3DParallel {
 
         private class FFTXYLoop extends IntegerForLoop {
 
-            private int offset, stride, x, y, z;
             public double input[];
-            private final Real fftX = new Real(n);
-            private final Complex fftY = new Complex(nY);
+            private final Real fftX;
+            private final Complex fftY;
+
+            private FFTXYLoop() {
+                fftY = new Complex(nY);
+                fftX = new Real(n);
+            }
 
             @Override
             public IntegerSchedule schedule() {
@@ -240,11 +244,11 @@ public class Real3DParallel {
 
             @Override
             public void run(final int lb, final int ub) {
-                for (stride = nextY, z = lb; z <= ub; z++) {
-                    for (offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
+                for (int stride = nextY, z = lb; z <= ub; z++) {
+                    for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
                         fftX.fft(input, offset);
                     }
-                    for (offset = z * nextZ, x = 0; x < nX1; x++, offset += nextX) {
+                    for (int offset = z * nextZ, x = 0; x < nX1; x++, offset += nextX) {
                         fftY.fft(input, offset, stride);
                     }
                 }
@@ -253,10 +257,14 @@ public class Real3DParallel {
 
         private class FFTZLoop extends IntegerForLoop {
 
-            private int offset, x, y, z, i;
             public double input[];
-            private final double work[] = new double[nZ2];
-            private final Complex fft = new Complex(nZ);
+            private final double work[];
+            private final Complex fft;
+
+            private FFTZLoop() {
+                work = new double[nZ2];
+                fft = new Complex(nZ);
+            }
 
             @Override
             public IntegerSchedule schedule() {
@@ -265,14 +273,14 @@ public class Real3DParallel {
 
             @Override
             public void run(final int lb, final int ub) {
-                for (x = lb; x <= ub; x++) {
-                    for (offset = x * 2, y = 0; y < nY; y++, offset += nextY) {
-                        for (z = offset, i = 0; i < nZ2; i += 2, z += nextZ) {
+                for (int x = lb; x <= ub; x++) {
+                    for (int offset = x * 2, y = 0; y < nY; y++, offset += nextY) {
+                        for (int z = offset, i = 0; i < nZ2; i += 2, z += nextZ) {
                             work[i] = input[z];
                             work[i + 1] = input[z + 1];
                         }
                         fft.fft(work, 0, 2);
-                        for (z = offset, i = 0; i < nZ2; i += 2, z += nextZ) {
+                        for (int z = offset, i = 0; i < nZ2; i += 2, z += nextZ) {
                             input[z] = work[i];
                             input[z + 1] = work[i + 1];
                         }
@@ -316,16 +324,19 @@ public class Real3DParallel {
                 execute(0, nZm1, ifftXYLoop[threadIndex]);
             } catch (Exception e) {
                 logger.severe(e.toString());
-                e.printStackTrace();
             }
         }
 
         private class IFFTZLoop extends IntegerForLoop {
 
-            private int offset, x, y, z, i;
             public double input[];
-            private final double work[] = new double[nZ2];
-            private final Complex fft = new Complex(nZ);
+            private final double work[];
+            private final Complex fft;
+
+            private IFFTZLoop() {
+                fft = new Complex(nZ);
+                work = new double[nZ2];
+            }
 
             @Override
             public IntegerSchedule schedule() {
@@ -334,14 +345,14 @@ public class Real3DParallel {
 
             @Override
             public void run(final int lb, final int ub) {
-                for (x = lb; x <= ub; x++) {
-                    for (offset = x * 2, y = 0; y < nY; y++, offset += nextY) {
-                        for (z = offset, i = 0; i < nZ2; i += 2, z += nextZ) {
+                for (int x = lb; x <= ub; x++) {
+                    for (int offset = x * 2, y = 0; y < nY; y++, offset += nextY) {
+                        for (int z = offset, i = 0; i < nZ2; i += 2, z += nextZ) {
                             work[i] = input[z];
                             work[i + 1] = input[z + 1];
                         }
                         fft.ifft(work, 0, 2);
-                        for (z = offset, i = 0; i < nZ2; i += 2, z += nextZ) {
+                        for (int z = offset, i = 0; i < nZ2; i += 2, z += nextZ) {
                             input[z] = work[i];
                             input[z + 1] = work[i + 1];
                         }
@@ -352,10 +363,14 @@ public class Real3DParallel {
 
         private class IFFTXYLoop extends IntegerForLoop {
 
-            private int offset, stride, x, y, z;
             public double input[];
-            private final Real fftX = new Real(n);
-            private final Complex fftY = new Complex(nY);
+            private final Real fftX;
+            private final Complex fftY;
+
+            private IFFTXYLoop() {
+                fftX = new Real(n);
+                fftY = new Complex(nY);
+            }
 
             @Override
             public IntegerSchedule schedule() {
@@ -364,11 +379,11 @@ public class Real3DParallel {
 
             @Override
             public void run(final int lb, final int ub) {
-                for (stride = nextY, z = lb; z <= ub; z++) {
-                    for (offset = z * nextZ, x = 0; x < nX1; x++, offset += nextX) {
+                for (int stride = nextY, z = lb; z <= ub; z++) {
+                    for (int offset = z * nextZ, x = 0; x < nX1; x++, offset += nextX) {
                         fftY.ifft(input, offset, stride);
                     }
-                    for (offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
+                    for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
                         fftX.ifft(input, offset);
                     }
                 }
@@ -421,10 +436,14 @@ public class Real3DParallel {
 
         private class FFTXYLoop extends IntegerForLoop {
 
-            private int offset, stride, x, y, z;
             public double input[];
-            private final Real fftX = new Real(n);
-            private final Complex fftY = new Complex(nY);
+            private final Real fftX;
+            private final Complex fftY;
+
+            private FFTXYLoop() {
+                fftY = new Complex(nY);
+                fftX = new Real(n);
+            }
 
             @Override
             public IntegerSchedule schedule() {
@@ -433,11 +452,11 @@ public class Real3DParallel {
 
             @Override
             public void run(final int lb, final int ub) {
-                for (stride = nextY, z = lb; z <= ub; z++) {
-                    for (offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
+                for (int stride = nextY, z = lb; z <= ub; z++) {
+                    for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
                         fftX.fft(input, offset);
                     }
-                    for (offset = z * nextZ, x = 0; x < nX1; x++, offset += nextX) {
+                    for (int offset = z * nextZ, x = 0; x < nX1; x++, offset += nextX) {
                         fftY.fft(input, offset, stride);
                     }
                 }
@@ -446,10 +465,14 @@ public class Real3DParallel {
 
         private class FFTZ_Multiply_IFFTZLoop extends IntegerForLoop {
 
-            private int offset, x, y, z, i, j;
             public double input[];
-            private final double work[] = new double[nZ2];
-            private final Complex fft = new Complex(nZ);
+            private final double work[];
+            private final Complex fft;
+
+            private FFTZ_Multiply_IFFTZLoop() {
+                work = new double[nZ2];
+                fft = new Complex(nZ);
+            }
 
             @Override
             public IntegerSchedule schedule() {
@@ -459,20 +482,20 @@ public class Real3DParallel {
             @Override
             public void run(final int lb, final int ub) {
                 int index = lb * nX1nZ;
-                for (offset = lb * nextY, y = lb; y <= ub; y++) {
-                    for (x = 0; x < nX1; x++, offset += nextX) {
-                        for (z = offset, i = 0; i < nZ2; i += 2, z += nextZ) {
+                for (int offset = lb * nextY, y = lb; y <= ub; y++) {
+                    for (int x = 0; x < nX1; x++, offset += nextX) {
+                        for (int z = offset, i = 0; i < nZ2; i += 2, z += nextZ) {
                             work[i] = input[z];
                             work[i + 1] = input[z + 1];
                         }
                         fft.fft(work, 0, 2);
-                        for (i = 0; i < nZ2; i += 2) {
+                        for (int i = 0; i < nZ2; i += 2) {
                             double r = recip[index++];
                             work[i] *= r;
                             work[i + 1] *= r;
                         }
                         fft.ifft(work, 0, 2);
-                        for (z = offset, i = 0; i < nZ2; i += 2, z += nextZ) {
+                        for (int z = offset, i = 0; i < nZ2; i += 2, z += nextZ) {
                             input[z] = work[i];
                             input[z + 1] = work[i + 1];
                         }
@@ -483,10 +506,14 @@ public class Real3DParallel {
 
         private class IFFTXYLoop extends IntegerForLoop {
 
-            private int offset, stride, x, y, z;
             public double input[];
-            private final Real fftX = new Real(n);
-            private final Complex fftY = new Complex(nY);
+            private final Real fftX;
+            private final Complex fftY;
+
+            private IFFTXYLoop() {
+                fftY = new Complex(nY);
+                fftX = new Real(n);
+            }
 
             @Override
             public IntegerSchedule schedule() {
@@ -495,11 +522,11 @@ public class Real3DParallel {
 
             @Override
             public void run(final int lb, final int ub) {
-                for (stride = nextY, z = lb; z <= ub; z++) {
-                    for (offset = z * nextZ, x = 0; x < nX1; x++, offset += nextX) {
+                for (int stride = nextY, z = lb; z <= ub; z++) {
+                    for (int offset = z * nextZ, x = 0; x < nX1; x++, offset += nextX) {
                         fftY.ifft(input, offset, stride);
                     }
-                    for (offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
+                    for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
                         fftX.ifft(input, offset);
                     }
                 }

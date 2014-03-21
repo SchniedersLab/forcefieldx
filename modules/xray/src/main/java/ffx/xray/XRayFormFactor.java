@@ -42,7 +42,7 @@ import static ffx.numerics.VectorMath.*;
  * This implementation uses the coefficients from Su and Coppens and 3
  * coefficient parameters derived from CCTBX.
  *
- * @author Tim Fenn<br>
+ * @author Timothy D. Fenn<br>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0108767397004558" target="_blank">
  * Z. Su and P. Coppens, Acta Cryst. (1997). A53, 749-762</a>

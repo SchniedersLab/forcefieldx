@@ -38,7 +38,7 @@ import ffx.crystal.*;
 /**
  * This class parses CCP4 MTZ files.<br>
  *
- * @author Tim Fenn<br>
+ * @author Timothy D. Fenn<br>
  * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4
  * map format</a>
  *

@@ -23,24 +23,29 @@
 package ffx.numerics;
 
 /**
- * <p>Scalar class.</p>
+ * <p>
+ * Scalar class.</p>
  *
- * @author Tim Fenn
+ * @author Timothy D. Fenn
  *
+ * @since 1.0
  */
 public class Scalar {
 
-    private double xyz[] = new double[3];
+    private final double xyz[];
     private double scalar;
 
     /**
-     * <p>Constructor for Scalar.</p>
+     * <p>
+     * Constructor for Scalar.</p>
      */
     public Scalar() {
+        xyz = new double[3];
     }
 
     /**
-     * <p>Constructor for Scalar.</p>
+     * <p>
+     * Constructor for Scalar.</p>
      *
      * @param xyz an array of double.
      * @param scalar a double.
@@ -50,7 +55,8 @@ public class Scalar {
     }
 
     /**
-     * <p>Constructor for Scalar.</p>
+     * <p>
+     * Constructor for Scalar.</p>
      *
      * @param xyz an array of int.
      * @param scalar a double.
@@ -60,7 +66,8 @@ public class Scalar {
     }
 
     /**
-     * <p>Constructor for Scalar.</p>
+     * <p>
+     * Constructor for Scalar.</p>
      *
      * @param x a int.
      * @param y a int.
@@ -72,7 +79,8 @@ public class Scalar {
     }
 
     /**
-     * <p>Constructor for Scalar.</p>
+     * <p>
+     * Constructor for Scalar.</p>
      *
      * @param x a double.
      * @param y a double.
@@ -80,6 +88,7 @@ public class Scalar {
      * @param scalar a double.
      */
     public Scalar(double x, double y, double z, double scalar) {
+        this();
         this.xyz[0] = x;
         this.xyz[1] = y;
         this.xyz[2] = z;
@@ -87,7 +96,8 @@ public class Scalar {
     }
 
     /**
-     * <p>getXYZ</p>
+     * <p>
+     * getXYZ</p>
      *
      * @return an array of double.
      */
@@ -96,7 +106,8 @@ public class Scalar {
     }
 
     /**
-     * <p>setXYZ</p>
+     * <p>
+     * setXYZ</p>
      *
      * @param xyz an array of double.
      */
@@ -107,8 +118,8 @@ public class Scalar {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>scalar</code>.</p>
+     * <p>
+     * Getter for the field <code>scalar</code>.</p>
      *
      * @return a double.
      */
@@ -117,8 +128,8 @@ public class Scalar {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>scalar</code>.</p>
+     * <p>
+     * Setter for the field <code>scalar</code>.</p>
      *
      * @param scalar a double.
      */

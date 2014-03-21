@@ -25,48 +25,72 @@ package ffx.numerics;
 import static java.lang.Math.sqrt;
 
 /**
- * The TensorRecusion class compute derivates of 1/|<b>r</b>| via recursion to
+ * The TensorRecusion class compute derivatives of 1/|<b>r</b>| via recursion to
  * arbitrary order.
  *
  * @author Michael J. Schnieders
- * @since 1.0
  *
+ * @see
+ * <a href="http://www.worldscientific.com/worldscibooks/10.1142/3035" target="_blank">
+ * Matt Challacombe, Eric Schwegler and Jan Almlof, Modern developments in
+ * Hartree-Fock theory: Fast methods for computing the Coulomb matrix.
+ * Computational Chemistry: Review of Current Trends. pp. 53-107, Ed. J.
+ * Leczszynski, World Scientifc, 1996.
+ * </a>
+ *
+ * @since 1.0
  */
 public class TensorRecursion {
 
     /**
-     * The index is based on the idea of filling tetrahedron. <p> 1/r has an
-     * index of 0 <br> derivatives of x are first -> indeces from 1..o for
-     * d/dx..do/dox) <br> derivatives of x & y are second -> base triangle of
-     * size (o+1)(o+2)/2 <br> derivatives of x & y & z are last -> total size
-     * (o+1)*(o+2)*(o+3)/6 <br> <p> This function is useful to set up masking
-     * constants:<br> static int Tlmn = tensorIndex(l,m,n,order) <br> For
-     * example the (d/dy)^2 (1/R) storage location: <br> static int T020 =
-     * tensorIndex(0,2,0,order) <p>
+     * The index is based on the idea of filling tetrahedron.
+     * <p>
+     * 1/r has an index of 0
+     * <br>
+     * derivatives of x are first; indeces from 1..o for d/dx..do/dox)
+     * <br>
+     * derivatives of x and y are second; base triangle of size (o+1)(o+2)/2
+     * <br>
+     * derivatives of x, y and z are last; total size (o+1)*(o+2)*(o+3)/6
+     * <br>
+     * <p>
+     * This function is useful to set up masking constants:
+     * <br>
+     * static int Tlmn = tensorIndex(l,m,n,order)
+     * <br>
+     * For example the (d/dy)^2 (1/R) storage location: <br> static int T020 =
+     * tensorIndex(0,2,0,order)
+     * <p>
      *
      * @param dx int The number of d/dx operations.
      * @param dy int The number of d/dy operations.
      * @param dz int The number of d/dz operations.
-     * @param order int The maximum tensor order (0 <= dx + dy + dz <= order).
+     * @param order int The maximum tensor order (0 .LE. dx + dy + dz .LE.
+     * order).
+     *
      * @return int in the range (0..binomial(order + 3, 3) - 1)
-     * @since 1.0
      */
     public static int tensorIndex(int dx, int dy, int dz, int order) {
         int size = (order + 1) * (order + 2) * (order + 3) / 6;
-        // We only get to the top of the tetrahedron if dz = order,
-        // otherwise subtract off the top, including the level of the requested
-        // tensor index.
+        /**
+         * We only get to the top of the tetrahedron if dz = order, otherwise
+         * subtract off the top, including the level of the requested tensor
+         * index.
+         */
         int top = order + 1 - dz;
         top = top * (top + 1) * (top + 2) / 6;
         int zindex = size - top;
-        // Given the "dz level", dy can range from 0..order - dz)
-        // To get to the row for a specific value of dy,
-        // dy*(order + 1) - dy*(dy-1)/2 indeces are skipped.
-        // This is an operation that looks like the area of rectangle, minus
-        // the area of an empty triangle.
+        /**
+         * Given the "dz level", dy can range from 0..order - dz) To get to the
+         * row for a specific value of dy, dy*(order + 1) - dy*(dy-1)/2 indeces
+         * are skipped. This is an operation that looks like the area of
+         * rectangle, minus the area of an empty triangle.
+         */
         int yindex = dy * (order - dz) - (dy - 1) * (dy - 2) / 2 + 1;
-        // Given the dz level and dy row, dx can range from (0..order - dz - dy)
-        // The dx index is just walking down the dy row for "dx" steps.
+        /**
+         * Given the dz level and dy row, dx can range from (0..order - dz - dy)
+         * The dx index is just walking down the dy row for "dx" steps.
+         */
         int ret = dx + yindex + zindex;
         return ret;
     }
@@ -101,7 +125,8 @@ public class TensorRecursion {
     private final int in;
 
     /**
-     * <p>Constructor for TensorRecursion.</p>
+     * <p>
+     * Constructor for TensorRecursion.</p>
      *
      * @param order a int.
      */
@@ -114,8 +139,10 @@ public class TensorRecursion {
         work = new double[in * o1];
         t000j_Constants = new double[o1];
         for (int j = 0; j <= order; j++) {
-            // Math.pow(-1.0, j) returns positive for all j, with -1.0 as the
-            // arguement rather than -1. This is a bug.
+            /**
+             * Math.pow(-1.0, j) returns positive for all j, with -1.0 as the //
+             * arguement rather than -1. This is a bug?
+             */
             t000j_Constants[j] = Math.pow(-1, j) * VectorMath.doublefactorial(2 * j - 1);
         }
         this.order = order;
@@ -123,7 +150,7 @@ public class TensorRecursion {
     }
 
     /**
-     * This method is a driver to collect elements of the Cartesion multipole
+     * This method is a driver to collect elements of the Cartesian multipole
      * tensor given the recursion relationships implemented by the method
      * "Tlmnj", which can be called directly to get a single tensor element. It
      * does not store intermediate values of the recursion, causing it to scale
@@ -168,14 +195,18 @@ public class TensorRecursion {
     }
 
     /**
-     * This function is a driver to collect elements of the Cartesion multipole
+     * This function is a driver to collect elements of the Cartesian multipole
      * tensor. Collecting all tensors scales slightly better than O(order^4).
-     * <p> For a multipole expansion truncated at quadrupole order, for example,
-     * up to order 5 is needed for energy gradients. The number of terms this
-     * requires is binomial(5 + 3, 3) or 8! / (5! * 3!), which is 56. <p> The
-     * packing of the tensor elements for order = 1<br> tensor[0] = 1/|r| <br>
+     * <p>
+     * For a multipole expansion truncated at quadrupole order, for example, up
+     * to order 5 is needed for energy gradients. The number of terms this
+     * requires is binomial(5 + 3, 3) or 8! / (5! * 3!), which is 56.
+     * <p>
+     * The packing of the tensor elements for order = 1<br> tensor[0] = 1/|r|
+     * <br>
      * tensor[1] = -x/|r|^3 <br> tensor[2] = -y/|r|^3 <br> tensor[3] = -z/|r|^3
-     * <br> <p>
+     * <br>
+     * <p>
      *
      * @param r double[] vector between two sites.
      * @param tensor double[] length must be at least binomial(order + 3, 3).
@@ -296,27 +327,27 @@ public class TensorRecursion {
 
     /**
      * This routine implements the recurrence relations for computation of any
-     * Cartesion multipole tensor in ~O(L^8) time, where L is the total order l
-     * + m + n, given the auxillary elements T0000. <p> It implements the
-     * recursion relationships from the reference below in brute force fashion,
-     * without saving intermediate values. This is useful for finding a single
-     * tensor, rather than all binomial(L + 3, 3). <p> The specific recursion
-     * equations (41-43) and set of auxillary tensor elements from equation (40)
-     * can be found in: <p> Matt Challacombe, Eric Schwegler and Jan Almlof,
-     * Modern developments in Hartree-Fock theory: Fast methods for computing
-     * the Coulomb matrix. Computational Chemistry: Review of Current Trends pp.
-     * 53-107, Ed. J. Leczszynski, World Scientifc, 1996.
+     * Cartesian multipole tensor in ~O(L^8) time, where L is the total order l
+     * + m + n, given the auxiliary elements T0000.
+     * <br>
+     * It implements the recursion relationships in brute force fashion, without
+     * saving intermediate values. This is useful for finding a single tensor,
+     * rather than all binomial(L + 3, 3).
+     * <br>
+     * The specific recursion equations (41-43) and set of auxiliary tensor
+     * elements from equation (40) can be found in Challacombe et al.
      *
      * @param l int The number of (d/dx) operations.
      * @param m int The number of (d/dy) operations.
      * @param n int The number of (d/dz) operations.
-     * @param j int j = 0 is the Tlmn tensor, j > 0 is an intermediate.
+     * @param j int j = 0 is the Tlmn tensor, j .GT. 0 is an intermediate.
      * @param r double[] The {x,y,z} coordinates.
-     * @param T000 double[] Initial auxillary tensor elements from Eq. (40).
-     * @return double The requested Tensor element (intermediate if j > 0).
+     * @param T000 double[] Initial auxiliary tensor elements from Eq. (40).
+     * @return double The requested Tensor element (intermediate if j .GT. 0).
+     *
      * @since 1.0
      */
-    private static double Tlmnj(final int l, final int m, final int n,
+    public static double Tlmnj(final int l, final int m, final int n,
             final int j, final double[] r, final double[] T000) {
         if (m == 0 && n == 0) {
             if (l > 1) {

@@ -24,6 +24,7 @@ package ffx.potential;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.lang.Math.max;
@@ -59,33 +60,34 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(ForceFieldEnergy.class.getName());
     private static final double toSeconds = 0.000000001;
-    private final Atom[] atoms;
+    private final MolecularAssembly molecularAssembly;
+    private Atom[] atoms;
     private Crystal crystal;
     private final ParallelTeam parallelTeam;
-    private final Bond bonds[];
-    private final Angle angles[];
-    private final StretchBend stretchBends[];
-    private final UreyBradley ureyBradleys[];
-    private final OutOfPlaneBend outOfPlaneBends[];
-    private final Torsion torsions[];
-    private final PiOrbitalTorsion piOrbitalTorsions[];
-    private final TorsionTorsion torsionTorsions[];
-    private final ImproperTorsion improperTorsions[];
+    private Bond bonds[];
+    private Angle angles[];
+    private StretchBend stretchBends[];
+    private UreyBradley ureyBradleys[];
+    private OutOfPlaneBend outOfPlaneBends[];
+    private Torsion torsions[];
+    private PiOrbitalTorsion piOrbitalTorsions[];
+    private TorsionTorsion torsionTorsions[];
+    private ImproperTorsion improperTorsions[];
     private RestraintBond restraintBonds[];
-    private final VanDerWaals vanderWaals;
-    private final ParticleMeshEwald particleMeshEwald;
+    private VanDerWaals vanderWaals;
+    private ParticleMeshEwald particleMeshEwald;
     private final NCSRestraint ncsRestraint;
     private final CoordRestraint coordRestraint;
-    protected final int nAtoms;
-    protected final int nBonds;
-    protected final int nAngles;
-    protected final int nStretchBends;
-    protected final int nUreyBradleys;
-    protected final int nOutOfPlaneBends;
-    protected final int nTorsions;
-    protected final int nPiOrbitalTorsions;
-    protected final int nTorsionTorsions;
-    protected final int nImproperTorsions;
+    protected int nAtoms;
+    protected int nBonds;
+    protected int nAngles;
+    protected int nStretchBends;
+    protected int nUreyBradleys;
+    protected int nOutOfPlaneBends;
+    protected int nTorsions;
+    protected int nPiOrbitalTorsions;
+    protected int nTorsionTorsions;
+    protected int nImproperTorsions;
     protected int nRestraintBonds;
     protected int nVanDerWaals, nPME, nGK;
     protected boolean bondTerm;
@@ -105,6 +107,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     protected boolean ncsTerm;
     protected boolean restrainTerm;
     protected boolean lambdaBondedTerms = false;
+    protected boolean rigidHydrogens = false;
+    protected double rigidScale = 1.0;
     protected boolean bondTermOrig;
     protected boolean angleTermOrig;
     protected boolean stretchBendTermOrig;
@@ -164,6 +168,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         logger.info(format("\n SMP threads:                        %10d", parallelTeam.getThreadCount()));
 
         // Get a reference to the sorted atom array.
+        this.molecularAssembly = molecularAssembly;
         atoms = molecularAssembly.getAtomArray();
         nAtoms = atoms.length;
         xyz = new double[nAtoms * 3];
@@ -296,8 +301,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             ncsTermOrig = false;
         }
 
-        boolean rigidHydrogens = forceField.getBoolean(ForceFieldBoolean.RIGID_HYDROGENS, false);
-        double rigidScale = forceField.getDouble(ForceFieldDouble.RIGID_SCALE, 10.0);
+        rigidHydrogens = forceField.getBoolean(ForceFieldBoolean.RIGID_HYDROGENS, false);
+        rigidScale = forceField.getDouble(ForceFieldDouble.RIGID_SCALE, 10.0);
 
         if (rigidScale <= 1.0) {
             rigidScale = 1.0;
@@ -506,6 +511,242 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
 
         molecularAssembly.setPotential(this);
+    }
+
+    public void reInitForceFieldEnergy() {
+
+        atoms = molecularAssembly.getAtomArray();
+        nAtoms = atoms.length;
+
+        if (xyz.length < 3 * nAtoms) {
+            xyz = new double[nAtoms * 3];
+        }
+
+        // Check that atom ordering is correct.
+        for (int i = 0; i < nAtoms; i++) {
+            int index = atoms[i].xyzIndex - 1;
+            assert (i == index);
+        }
+
+        // Collect, count, pack and sort bonds.
+        if (bondTerm) {
+            ArrayList<ROLS> bond = molecularAssembly.getBondList();
+            nBonds = bond.size();
+            if (nBonds <= bonds.length) {
+                Arrays.fill(bonds, null);
+                bonds = bond.toArray(bonds);
+            } else {
+                bonds = bond.toArray(new Bond[nBonds]);
+            }
+            Arrays.sort(bonds);
+            if (nBonds > 0 && logger.isLoggable(Level.FINEST)) {
+                logger.finest(format("  Bonds:                             %10d", nBonds));
+            }
+        } else {
+            nBonds = 0;
+            bonds = null;
+        }
+
+        // Collect, count, pack and sort angles.
+        if (angleTerm) {
+            ArrayList<ROLS> angle = molecularAssembly.getAngleList();
+            nAngles = angle.size();
+            if (nAngles <= angles.length) {
+                Arrays.fill(angles, null);
+                angles = angle.toArray(angles);
+            } else {
+                angles = angle.toArray(new Angle[nAngles]);
+            }
+            Arrays.sort(angles);
+            if (nAngles > 0 && logger.isLoggable(Level.FINEST)) {
+                logger.finest(format("  Angles:                            %10d", nAngles));
+            }
+        } else {
+            nAngles = 0;
+            angles = null;
+        }
+
+        // Collect, count, pack and sort stretch-bends.
+        if (stretchBendTerm) {
+            ArrayList<ROLS> stretchBend = molecularAssembly.getStretchBendList();
+            nStretchBends = stretchBend.size();
+            if (nStretchBends <= stretchBends.length) {
+                Arrays.fill(stretchBends, null);
+                stretchBends = stretchBend.toArray(stretchBends);
+            } else {
+                stretchBends = stretchBend.toArray(new StretchBend[nStretchBends]);
+            }
+            Arrays.sort(stretchBends);
+            if (nStretchBends > 0 && logger.isLoggable(Level.FINEST)) {
+                logger.finest(format("  Stretch-Bends:                     %10d", nStretchBends));
+            }
+        } else {
+            nStretchBends = 0;
+            stretchBends = null;
+        }
+
+        // Collect, count, pack and sort Urey-Bradleys.
+        if (ureyBradleyTerm) {
+            ArrayList<ROLS> ureyBradley = molecularAssembly.getUreyBradleyList();
+            nUreyBradleys = ureyBradley.size();
+            if (nUreyBradleys <= ureyBradleys.length) {
+                Arrays.fill(ureyBradleys, null);
+                ureyBradleys = ureyBradley.toArray(ureyBradleys);
+            } else {
+                ureyBradleys = ureyBradley.toArray(new UreyBradley[nUreyBradleys]);
+            }
+            Arrays.sort(ureyBradleys);
+            if (nUreyBradleys > 0 && logger.isLoggable(Level.FINEST)) {
+                logger.finest(format("  Urey-Bradleys:                     %10d", nUreyBradleys));
+            }
+        } else {
+            nUreyBradleys = 0;
+            ureyBradleys = null;
+        }
+
+        /**
+         * Set a multiplier on the force constants of bonded terms containing
+         * hydrogens.
+         */
+        if (rigidHydrogens) {
+            if (bonds != null) {
+                for (Bond bond : bonds) {
+                    if (bond.containsHydrogen()) {
+                        bond.setRigidScale(rigidScale);
+                    }
+                }
+            }
+            if (angles != null) {
+                for (Angle angle : angles) {
+                    if (angle.containsHydrogen()) {
+                        angle.setRigidScale(rigidScale);
+                    }
+                }
+            }
+            if (stretchBends != null) {
+                for (StretchBend stretchBend : stretchBends) {
+                    if (stretchBend.containsHydrogen()) {
+                        stretchBend.setRigidScale(rigidScale);
+                    }
+                }
+            }
+            if (ureyBradleys != null) {
+                for (UreyBradley ureyBradley : ureyBradleys) {
+                    if (ureyBradley.containsHydrogen()) {
+                        ureyBradley.setRigidScale(rigidScale);
+                    }
+                }
+            }
+        }
+
+        // Collect, count, pack and sort out-of-plane bends.
+        if (outOfPlaneBendTerm) {
+            ArrayList<ROLS> outOfPlaneBend = molecularAssembly.getOutOfPlaneBendList();
+            nOutOfPlaneBends = outOfPlaneBend.size();
+            if (nOutOfPlaneBends <= outOfPlaneBends.length) {
+                Arrays.fill(outOfPlaneBends, null);
+                outOfPlaneBends = outOfPlaneBend.toArray(outOfPlaneBends);
+            } else {
+                outOfPlaneBends = outOfPlaneBend.toArray(new OutOfPlaneBend[nOutOfPlaneBends]);
+            }
+            Arrays.sort(outOfPlaneBends);
+            if (nOutOfPlaneBends > 0 && logger.isLoggable(Level.FINEST)) {
+                logger.finest(format("  Out-of-Plane Bends:                %10d", nOutOfPlaneBends));
+            }
+        } else {
+            nOutOfPlaneBends = 0;
+            outOfPlaneBends = null;
+        }
+
+        // Collect, count, pack and sort torsions.
+        if (torsionTerm) {
+            ArrayList<ROLS> torsion = molecularAssembly.getTorsionList();
+            nTorsions = torsion.size();
+            if (nTorsions <= torsions.length) {
+                Arrays.fill(torsions, null);
+                torsions = torsion.toArray(torsions);
+            } else {
+                torsions = torsion.toArray(new Torsion[nTorsions]);
+            }
+            Arrays.sort(torsions);
+            if (nTorsions > 0 && logger.isLoggable(Level.FINEST)) {
+                logger.finest(format("  Torsions:                          %10d", nTorsions));
+            }
+        } else {
+            nTorsions = 0;
+            torsions = null;
+        }
+
+        // Collect, count, pack and sort pi-orbital torsions.
+        if (piOrbitalTorsionTerm) {
+            ArrayList<ROLS> piOrbitalTorsion = molecularAssembly.getPiOrbitalTorsionList();
+            nPiOrbitalTorsions = piOrbitalTorsion.size();
+            if (nPiOrbitalTorsions <= piOrbitalTorsions.length) {
+                Arrays.fill(piOrbitalTorsions, null);
+                piOrbitalTorsions = piOrbitalTorsion.toArray(piOrbitalTorsions);
+            } else {
+                piOrbitalTorsions = piOrbitalTorsion.toArray(new PiOrbitalTorsion[nPiOrbitalTorsions]);
+            }
+            if (nPiOrbitalTorsions > 0 && logger.isLoggable(Level.FINEST)) {
+                logger.finest(format("  Pi-Orbital Torsions:               %10d", nPiOrbitalTorsions));
+            }
+        } else {
+            nPiOrbitalTorsions = 0;
+            piOrbitalTorsions = null;
+        }
+
+        // Collect, count, pack and sort torsion-torsions.
+        if (torsionTorsionTerm) {
+            ArrayList<ROLS> torsionTorsion = molecularAssembly.getTorsionTorsionList();
+            nTorsionTorsions = torsionTorsion.size();
+            if (nTorsionTorsions <= torsionTorsions.length) {
+                Arrays.fill(torsionTorsions, null);
+                torsionTorsions = torsionTorsion.toArray(torsionTorsions);
+            } else {
+                torsionTorsions = torsionTorsion.toArray(new TorsionTorsion[nTorsionTorsions]);
+            }
+            if (nTorsionTorsions > 0 && logger.isLoggable(Level.FINEST)) {
+                logger.finest(format("  Torsion-Torsions:                  %10d", nTorsionTorsions));
+            }
+        } else {
+            nTorsionTorsions = 0;
+            torsionTorsions = null;
+        }
+
+        // Collect, count, pack and sort improper torsions.
+        if (improperTorsionTerm) {
+            ArrayList<ROLS> improperTorsion = molecularAssembly.getImproperTorsionList();
+            nImproperTorsions = improperTorsion.size();
+            if (nImproperTorsions <= improperTorsions.length) {
+                Arrays.fill(improperTorsions, null);
+                improperTorsions = improperTorsion.toArray(improperTorsions);
+            } else {
+                improperTorsions = improperTorsion.toArray(new ImproperTorsion[nImproperTorsions]);
+            }
+            if (nImproperTorsions > 0 && logger.isLoggable(Level.FINEST)) {
+                logger.finest(format("  Improper Torsions:                 %10d", nImproperTorsions));
+            }
+        } else {
+            nImproperTorsions = 0;
+            improperTorsions = null;
+        }
+
+        if (vanderWaalsTerm) {
+            vanderWaals.setAtoms(atoms);
+        }
+
+        if (multipoleTerm) {
+            //particleMeshEwald.reInit(atoms);
+        }
+
+        if (ncsTerm) {
+            logger.severe(" NCS energy term cannot be used with variable systems sizes.");
+        }
+
+        if (restrainTerm) {
+            logger.severe(" Restrain energy term cannot be used with variable systems sizes.");
+        }
+
     }
 
     public void setLambdaBondedTerms(boolean lambdaBondedTerms) {

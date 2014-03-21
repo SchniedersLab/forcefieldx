@@ -27,7 +27,17 @@ import java.awt.Event;
 import java.awt.event.MouseEvent;
 import java.util.Enumeration;
 
-import javax.media.j3d.*;
+import javax.media.j3d.Behavior;
+import javax.media.j3d.Bounds;
+import javax.media.j3d.BranchGroup;
+import javax.media.j3d.Node;
+import javax.media.j3d.SceneGraphPath;
+import javax.media.j3d.Shape3D;
+import javax.media.j3d.TransformGroup;
+import javax.media.j3d.WakeupCriterion;
+import javax.media.j3d.WakeupOnAWTEvent;
+import javax.media.j3d.WakeupOnBehaviorPost;
+import javax.media.j3d.WakeupOr;
 import javax.vecmath.Point3d;
 
 import com.sun.j3d.utils.picking.PickCanvas;
@@ -45,7 +55,7 @@ import ffx.ui.behaviors.MouseZoom;
 
 /**
  * The GraphicsEvents class listens for mouse events over the Java3D
- * GraphicsCanvas, dispatching work to more specialized System Rotation &
+ * GraphicsCanvas, dispatching work to more specialized System Rotation and
  * Translation Behaviors or to the GlobalOrbitBehavior.
  *
  * @author Michael J. Schnieders
@@ -55,23 +65,19 @@ public class GraphicsEvents extends Behavior {
     // Behavior Post IDs
 
     /**
-     * Constant
-     * <code>ROTATEPOST=1</code>
+     * Constant <code>ROTATEPOST=1</code>
      */
     public static int ROTATEPOST = 1;
     /**
-     * Constant
-     * <code>TRANSLATEPOST=2</code>
+     * Constant <code>TRANSLATEPOST=2</code>
      */
     public static int TRANSLATEPOST = 2;
     /**
-     * Constant
-     * <code>ZOOMPOST=3</code>
+     * Constant <code>ZOOMPOST=3</code>
      */
     public static int ZOOMPOST = 3;
     /**
-     * Constant
-     * <code>BEHAVIORDONEPOST=4</code>
+     * Constant <code>BEHAVIORDONEPOST=4</code>
      */
     public static int BEHAVIORDONEPOST = 4;
     // GUI Panels
@@ -104,7 +110,8 @@ public class GraphicsEvents extends Behavior {
     private GlobalBehavior viewOrbitBehavior;
 
     /**
-     * <p>Constructor for GraphicsEvents.</p>
+     * <p>
+     * Constructor for GraphicsEvents.</p>
      *
      * @param f a {@link ffx.ui.MainPanel} object.
      * @param g a {@link ffx.ui.GraphicsCanvas} object.
@@ -156,7 +163,8 @@ public class GraphicsEvents extends Behavior {
     }
 
     /**
-     * <p>centerView</p>
+     * <p>
+     * centerView</p>
      *
      * @param resetRotation a boolean.
      * @param resetTranslation a boolean.
@@ -173,7 +181,8 @@ public class GraphicsEvents extends Behavior {
     }
 
     /**
-     * <p>initialize</p>
+     * <p>
+     * initialize</p>
      */
     public void initialize() {
         WakeupCriterion[] behaviorPost = new WakeupCriterion[3];
@@ -191,7 +200,8 @@ public class GraphicsEvents extends Behavior {
     }
 
     /**
-     * <p>processMouseEvent</p>
+     * <p>
+     * processMouseEvent</p>
      *
      * @param evt a {@link java.awt.event.MouseEvent} object.
      */
@@ -349,7 +359,8 @@ public class GraphicsEvents extends Behavior {
     }
 
     /**
-     * <p>setGlobalCenter</p>
+     * <p>
+     * setGlobalCenter</p>
      *
      * @param d an array of double.
      */

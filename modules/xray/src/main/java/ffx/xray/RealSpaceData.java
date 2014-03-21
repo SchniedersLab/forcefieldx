@@ -39,7 +39,7 @@ import ffx.xray.RefinementMinimize.RefinementMode;
 /**
  * <p>RealSpaceData class.</p>
  *
- * @author Tim Fenn
+ * @author Timothy D. Fenn
  *
  */
 public class RealSpaceData implements DataContainer {

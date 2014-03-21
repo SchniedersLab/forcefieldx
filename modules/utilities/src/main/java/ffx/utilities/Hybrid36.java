@@ -28,24 +28,28 @@ import java.util.logging.Logger;
  * Java port of the hy36encode() and hy36decode() functions in the hybrid_36.py
  * Python prototype/reference implementation.
  *
- * @author Michael J. Schnieders <br> Derived from code by: Ralf W.
- * Grosse-Kunstleve, Vincent B. Chen, Jeff J. Headd, Sep 2007.
- * @see <a href="http://cci.lbl.gov/hybrid_36/">LBL Hybrid36 Reference</a>
- * @since 1.0
+ * @author Michael J. Schnieders
+ * <br>
+ * Derived from code by: Ralf W. Grosse-Kunstleve, Vincent B. Chen, Jeff J.
+ * Headd, Sep 2007.
  *
+ * @see <a href="http://cci.lbl.gov/hybrid_36" target="_blank">LBL Hybrid36
+ * Reference</a>
+ *
+ * @since 1.0
  */
 public class Hybrid36 {
 
     private static final Logger logger = Logger.getLogger(Hybrid36.class.getName());
-    private static String digitsBase10 = "0123456789";
-    private static String digitsUpper = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    private static String digitsLower = "0123456789abcdefghijklmnopqrstuvwxyz";
+    private static final String digitsBase10 = "0123456789";
+    private static final String digitsUpper = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    private static final String digitsLower = "0123456789abcdefghijklmnopqrstuvwxyz";
     private static boolean firstCall = true;
-    private static String valueOutOfRange = "value out of range.";
-    private static String invalidNumberLiteral = "invalid number literal.";
-    private static String unsupportedWidth = "unsupported width.";
-    private static int[] digitsValuesUpper = new int[128];
-    private static int[] digitsValuesLower = new int[128];
+    private static final String valueOutOfRange = "value out of range.";
+    private static final String invalidNumberLiteral = "invalid number literal.";
+    private static final String unsupportedWidth = "unsupported width.";
+    private static final int[] digitsValuesUpper = new int[128];
+    private static final int[] digitsValuesLower = new int[128];
 
     private static String encodePure(String digits, int width, int value) {
         boolean neg = false;
@@ -96,7 +100,6 @@ public class Hybrid36 {
                 }
                 haveNonBlank = true;
                 haveMinus = true;
-                continue;
             } else {
                 haveNonBlank = true;
                 int dv = digits_values[si];

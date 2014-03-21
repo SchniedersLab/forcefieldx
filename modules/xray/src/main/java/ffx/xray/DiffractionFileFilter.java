@@ -32,7 +32,7 @@ import ffx.crystal.ReflectionList;
 /**
  * <p>DiffractionFileFilter interface.</p>
  *
- * @author Tim Fenn
+ * @author Timothy D. Fenn
  *
  */
 public interface DiffractionFileFilter {

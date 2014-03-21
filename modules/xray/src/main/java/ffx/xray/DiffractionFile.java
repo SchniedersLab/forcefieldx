@@ -32,7 +32,7 @@ import ffx.potential.bonded.MolecularAssembly;
 /**
  * <p>DiffractionFile class.</p>
  *
- * @author Tim Fenn
+ * @author Timothy D. Fenn
  *
  */
 public class DiffractionFile {

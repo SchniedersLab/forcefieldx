@@ -34,7 +34,7 @@ import static org.junit.Assert.*;
 
 /**
  *
- * @author Timothy Fenn
+ * @author Timothy D. Fenn
  */
 @RunWith(Parameterized.class)
 public class ReflectionListTest {

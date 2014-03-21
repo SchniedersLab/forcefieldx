@@ -50,7 +50,7 @@ import ffx.xray.RefinementMinimize.RefinementMode;
 /**
  * <p>DiffractionData class.</p>
  *
- * @author Tim Fenn
+ * @author Timothy D. Fenn
  *
  */
 public class DiffractionData implements DataContainer {

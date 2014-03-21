@@ -41,7 +41,7 @@ import ffx.numerics.OptimizationListener;
 /**
  * <p>SigmaAMinimize class.</p>
  *
- * @author Timothy Fenn
+ * @author Timothy D. Fenn
  *
  */
 public class SigmaAMinimize implements OptimizationListener, Terminatable {

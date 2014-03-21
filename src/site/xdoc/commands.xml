@@ -5,12 +5,34 @@
     xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
     http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
-        <title>Properties</title>
+        <title>Commands and Properties</title>
         <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
     </properties>
     <body>
-        <section name="Properties">
-            Properties are defined using the following precedence order:
+        <section name="Command Overview">
+            <p>Force Field X <b>commands</b> are launched using the following syntax:
+            </p>
+            <source>ffxc [-D&lt;property=value&gt;] &lt;command&gt; [-options] &lt;PDB|XYZ&gt;</source>
+            <p>
+                Force Field X supports a variety of internal commands that are listed below.
+                Information on the options available for a command is output if the help flag
+                is specified following the command.
+            </p>
+            <source>ffxc &lt;command&gt; -h</source>
+            <p>Custom modifications to a command, or the creation of a completely new command,
+                is possible by launching Force Field X with a script file.
+            </p>
+            <source>ffxc [-D&lt;property=value&gt;] &lt;path/to/script.groovy&gt; [-options] &lt;PDB|XYZ&gt;</source>
+            <p>
+                Example scripts are located in the ffx/scripts directory and are based on the Groovy
+                scripting langauge. Force Field X packages can be imported and used by following the
+                <a href="apidocs/index.html">FFX API documentation</a>.
+            </p>
+        </section>
+        <section name="Property Overview">
+            <p>
+                Force Field X <b>properties</b> are defined using the following precedence order:
+            </p>
             <ol>
                 <li>Highest precedence is given to the Java system properties mechanism:
                     <ul>
@@ -46,24 +68,202 @@
                     files that are stored internally by Force Field X.
                 </li>
             </ol>
-            For more information about available properties please follow the
-            links below:
-            <ul>
-                <li>
-                    <a href="#crystal">Unit Cell and Space Group</a>
-                </li>
-                <li>
-                    <a href="#amoeba">Polarizable AMOEBA Force Field</a>
-
-                </li>
-                <li>
-                    <a href="#pme">Particle-Mesh Ewald Electrostatics</a>
-                </li>
-                <li>
-                    <a href="#xray">X-ray, Neutron and Real Space Refinement</a>
-                </li>
-            </ul>
-            <a name="crystal"/>
+        </section>
+        <section name="Command Groups">
+            <subsection name="Energy, Optimization and Sampling">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Command</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <a href="modules/algorithms/scripts/anneal.groovy" >anneal</a>
+                            </td>
+                            <td>Run simulated annealing to optimize a structure.</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <a href="modules/potentials/scripts/energy.groovy" >energy</a>
+                            </td>
+                            <td>Calculate the AMOEBA potential energy.</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <a href="modules/algorithms/scripts/md.groovy" >md</a>
+                            </td>
+                            <td>Run NVE or NVT molecular dynamics.</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <a href="modules/algorithms/scripts/minimize.groovy" >minimize</a>
+                            </td>
+                            <td>Minimize a structure under the AMOEBA potential.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </subsection>
+            <subsection name="Reciprocal Space X-ray Crystallography Refinement">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Command</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <a href="modules/xray/scripts/xray/anneal.groovy" >xray.anneal</a>
+                            </td>
+                            <td>Apply simulated annealing using a reciprocal space objective function.</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <a href="modules/xray/scripts/xray/minimize.groovy" >xray.minimize</a>
+                            </td>
+                            <td>X-ray Refinement using a reciprocal space objective function.</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <a href="modules/xray/scripts/xray/scaleBulk.groovy" >xray.scaleBulk</a>
+                            </td>
+                            <td>Compute the bulk solvent contribution to the X-ray target.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </subsection>
+            <subsection name="Real Space X-ray Crystallography Refinement">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Command</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <a href="modules/xray/scripts/realSpace/anneal.groovy" >realSapce.anneal</a>
+                            </td>
+                            <td>Apply simulated annealing using a real space objective function.</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <a href="modules/xray/scripts/realSpace/minimize.groovy" >realSapce.minimize</a>
+                            </td>
+                            <td>Minimize using a real space objective function.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </subsection>
+            <subsection name="File Utilities">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Command</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <a href="modules/potentials/scripts/biotype.groovy" >biotype</a>
+                            </td>
+                            <td>Print out a lookup table from PDB atom names to force field atom types.</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <a href="modules/potentials/scripts/cart2frac.groovy" >cart2frac</a>
+                            </td>
+                            <td>Convert Cartesian coordinates to fractional coordinates.</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <a href="modules/xray/scripts/cif2mtz.groovy" >cif2mtz</a>
+                            </td>
+                            <td>Convert a cif reflection file to mtz format.</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <a href="modules/xray/scripts/deuterate.groovy" >deuterate</a>
+                            </td>
+                            <td>Convert exchangeble hydrogens to dueterium atoms.</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <a href="modules/potentials/scripts/frac2cart.groovy" >frac2cart</a>
+                            </td>
+                            <td>Convert fractional coordinates to Cartesian coordinates.</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <a href="modules/potentials/scripts/moveIntoUnitCell.groovy" >moveIntoUnitCell</a>
+                            </td>
+                            <td>Move the center of mass of each molecule into the unit cell.</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <a href="modules/xray/scripts/mtzInfo.groovy" >mtzInfo</a>
+                            </td>
+                            <td>Print out information on a binary mtz reflection file.</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <a href="modules/potentials/scripts/saveAsP1.groovy" >saveAsP1</a>
+                            </td>
+                            <td>Generate a P1 unit cell from an asymmetric unit.</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <a href="modules/potentials/scripts/saveAsPDB.groovy" >saveAsPDB</a>
+                            </td>
+                            <td>Convert input XYZ file to PDB format.</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <a href="modules/potentials/scripts/saveAsXYZ.groovy" >saveAsXYZ</a>
+                            </td>
+                            <td>Convert input PDB file to XYZ format.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </subsection>
+            <subsection name="Testing">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Command</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <a href="modules/potentials/scripts/testGradient.groovy" >testGradient</a>
+                            </td>
+                            <td>Test the analytic Cartesian coordinate energy gradient numerically.</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <a href="modules/potentials/scripts/testLambdaGradient.groovy" >testLambdaGradient</a>
+                            </td>
+                            <td>Test the analytic Lambda gradient numerically.</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <a href="modules/potentials/scripts/timer.groovy" >timer</a>
+                            </td>
+                            <td>Time the computation of the AMOEBA energy and gradient.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </subsection>
+        </section>
+        <section name="Property Groups">
             <subsection name="Unit Cell and Space Group">
                 <table>
                     <thead>
@@ -152,8 +352,7 @@
                     </tbody>
                 </table>
             </subsection>
-            <a name="amoeba"/>
-            <subsection name="Polarizable AMOEBA Force Field">
+            <subsection name="AMOEBA Force Field">
                 <table>
                     <thead>
                         <tr>
@@ -297,8 +496,7 @@
                     </tbody>
                 </table>
             </subsection>
-            <a name="pme"/>
-            <subsection name="Particle Mesh Ewald Electrostatics">
+            <subsection name="PME Electrostatics">
                 <table>
                     <thead>
                         <tr>
@@ -370,7 +568,6 @@
                     </tbody>
                 </table>
             </subsection>
-            <a name="xray"/>
             <subsection name="X-ray, Neutron and Real Space Refinement">
                 <table>
                     <thead>

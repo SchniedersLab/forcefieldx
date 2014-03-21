@@ -23,11 +23,14 @@
 package ffx.numerics.fft;
 
 /**
- * Compute the 3D FFT of real, double precision input of arbitrary
- * dimensions.<p>
+ * Compute the 3D FFT of real, double precision input of arbitrary dimensions.
+ * <p>
  *
  * @author Michal J. Schnieders
  *
+ * @since 1.0
+ *
+ * @see Real
  */
 public class Real3D {
 
@@ -69,23 +72,22 @@ public class Real3D {
      * @param input The input array must be of size (nX + 2) * nY * nZ.
      */
     public void fft(final double input[]) {
-        int i, x, y, z, offset, stride;
-        for (z = 0; z < nZ; z++) {
-            for (offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
+        for (int z = 0; z < nZ; z++) {
+            for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
                 fftX.fft(input, offset);
             }
-            for (offset = z * nextZ, stride = nextY, x = 0; x < nX1; x++, offset += nextX) {
+            for (int offset = z * nextZ, stride = nextY, x = 0; x < nX1; x++, offset += nextX) {
                 fftY.fft(input, offset, stride);
             }
         }
-        for (x = 0; x < nX1; x++) {
-            for (offset = x * 2, y = 0; y < nY; y++, offset += nextY) {
-                for (i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
+        for (int x = 0; x < nX1; x++) {
+            for (int offset = x * 2, y = 0; y < nY; y++, offset += nextY) {
+                for (int i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
                     work[i] = input[z];
                     work[i + 1] = input[z + 1];
                 }
                 fftZ.fft(work, 0, 2);
-                for (i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
+                for (int i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
                     input[z] = work[i];
                     input[z + 1] = work[i + 1];
                 }
@@ -94,52 +96,48 @@ public class Real3D {
     }
 
     /**
-     * Compute the inverese 3D FFT.
+     * Compute the inverse 3D FFT.
      *
      * @param input The input array must be of size (nX + 2) * nY * nZ.
      */
     public void ifft(final double input[]) {
-        int i, x, y, z, stride, offset;
-        for (x = 0; x < nX1; x++) {
-            for (offset = x * 2, y = 0; y < nY; y++, offset += nextY) {
-                for (i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
+        for (int x = 0; x < nX1; x++) {
+            for (int offset = x * 2, y = 0; y < nY; y++, offset += nextY) {
+                for (int i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
                     work[i] = input[z];
                     work[i + 1] = input[z + 1];
                 }
                 fftZ.ifft(work, 0, 2);
-                for (i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
+                for (int i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
                     input[z] = work[i];
                     input[z + 1] = work[i + 1];
                 }
             }
         }
-        for (z = 0; z < nZ; z++) {
-            for (stride = nextY, offset = z * nextZ, x = 0; x < nX1; x++, offset += nextX) {
+        for (int z = 0; z < nZ; z++) {
+            for (int stride = nextY, offset = z * nextZ, x = 0; x < nX1; x++, offset += nextX) {
                 fftY.ifft(input, offset, stride);
             }
-            for (offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
+            for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
                 fftX.ifft(input, offset);
             }
         }
     }
 
     /**
-     * <p>Setter for the field
-     * <code>recip</code>.</p>
+     * <p>
+     * Setter for the field <code>recip</code>.</p>
      *
      * @param recip an array of double.
      */
     public void setRecip(double recip[]) {
-        int offset, y, x, z, i;
-
         /**
          * Reorder the reciprocal space data into the order it is needed by the
          * convolution routine.
          */
-        int index = 0;
-        for (index = 0, offset = 0, y = 0; y < nY; y++) {
-            for (x = 0; x < nX1; x++, offset += 1) {
-                for (i = 0, z = offset; i < nZ; i++, z += nX1 * nY) {
+        for (int index = 0, offset = 0, y = 0; y < nY; y++) {
+            for (int x = 0; x < nX1; x++, offset += 1) {
+                for (int i = 0, z = offset; i < nZ; i++, z += nX1 * nY) {
                     this.recip[index++] = recip[z];
                 }
             }
@@ -147,51 +145,52 @@ public class Real3D {
     }
 
     /**
-     * <p>convolution</p>
+     * <p>
+     * convolution</p>
      *
      * @param input an array of double.
      */
     public void convolution(final double input[]) {
-        int i, j, x, y, z, index, offset, stride;
-        for (z = 0; z < nZ; z++) {
-            for (offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
+        for (int z = 0; z < nZ; z++) {
+            for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
                 fftX.fft(input, offset);
             }
-            for (offset = z * nextZ, stride = nextY, x = 0; x < nX1; x++, offset += nextX) {
+            for (int offset = z * nextZ, stride = nextY, x = 0; x < nX1; x++, offset += nextX) {
                 fftY.fft(input, offset, stride);
             }
         }
-        for (index = 0, offset = 0, y = 0; y < nY; y++) {
-            for (x = 0; x < nX1; x++, offset += nextX) {
-                for (i = 0, j = 0, z = offset; i < nZ2; i += 2, j++, z += nextZ) {
+        for (int index = 0, offset = 0, y = 0; y < nY; y++) {
+            for (int x = 0; x < nX1; x++, offset += nextX) {
+                for (int i = 0, j = 0, z = offset; i < nZ2; i += 2, j++, z += nextZ) {
                     work[i] = input[z];
                     work[i + 1] = input[z + 1];
                 }
                 fftZ.fft(work, 0, 2);
-                for (i = 0; i < nZ2; i += 2) {
+                for (int i = 0; i < nZ2; i += 2) {
                     double r = recip[index++];
                     work[i] *= r;
                     work[i + 1] *= r;
                 }
                 fftZ.ifft(work, 0, 2);
-                for (i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
+                for (int i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
                     input[z] = work[i];
                     input[z + 1] = work[i + 1];
                 }
             }
         }
-        for (z = 0; z < nZ; z++) {
-            for (stride = nextY, offset = z * nextZ, x = 0; x < nX1; x++, offset += nextX) {
+        for (int z = 0; z < nZ; z++) {
+            for (int stride = nextY, offset = z * nextZ, x = 0; x < nX1; x++, offset += nextX) {
                 fftY.ifft(input, offset, stride);
             }
-            for (offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
+            for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
                 fftX.ifft(input, offset);
             }
         }
     }
 
     /**
-     * <p>iReal3D</p>
+     * <p>
+     * iReal3D</p>
      *
      * @param i a int.
      * @param j a int.

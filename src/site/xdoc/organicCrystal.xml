@@ -10,25 +10,22 @@
     <body>
         <section name="Organic Crystal Depsotition">
             <subsection name="Prior to using the Osrw interface">
-                
                 <p>
                     In order to use the Osrw interface data depicting the atomic coordinates
                     and connectivity of the compound are necessary for proper usage. Currently accepted
                     data formats include:
                 </p>
-                
                 <ul>
                     <li>xyz format</li>
                     <li>pdb format</li>
                 </ul>
-                
-                <p> 
+                <p>
                     The difference between a xyz and a pdb format is the way the information is portrayed.
                     Both formats tell the script information on coordinates and atom type.
                     The following is an example a xyz file containing 26 atoms:
                 </p>
-                
-                <source> 
+
+                <source>
                     26
                     1   F1    -2.084296   -2.085891    1.047380   422    11
                     2   F2    -5.433312    0.822609   -0.282071   424    17
@@ -57,22 +54,22 @@
                     25  HO1    4.267560   -2.301023   -0.614855   425     3
                     26  HO2    3.601301    3.210050    0.540275   426     4
                 </source>
-                
-                <p> 
+
+                <p>
                     Each data file contains information on the xyz coordinates of each atom, the type
-                    of each atom, and the which atoms are bonded to each atom. This information is in a 
-                    crude form that osrw will not be able to interpret. The data filename that is listed serves as 
+                    of each atom, and the which atoms are bonded to each atom. This information is in a
+                    crude form that osrw will not be able to interpret. The data filename that is listed serves as
                     a marker to a property file with the same filename that holds information necessary for running the script.
                 </p>
-                
-                <p> 
-                    A property file provides general crystal information, the name of files used for patching, and/or force field options. 
+
+                <p>
+                    A property file provides general crystal information, the name of files used for patching, and/or force field options.
                     When using Osrw the property file has the extension filename.key. It is important
                     that the data file name and the properties file name are the same.
                     An example of a property file may look like this:
                 </p>
-                
-                <source> 
+
+                <source>
                     parameters Compound.patch
                     patch Compound.patch
 
@@ -88,15 +85,15 @@
                     polar-eps  0.01
                     polar-sor 0.65
 
-                    integrate stochastic   
+                    integrate stochastic
                 </source>
-                
+
                 <p> In the property file there should be a pointer to a patch file. The patch file provides
-                    in-depth information on the atom type, multipole effect, torsion angles, bond angles, 
-                    and biotype of each atom. This is a small section of the patch file detailing the 
+                    in-depth information on the atom type, multipole effect, torsion angles, bond angles,
+                    and biotype of each atom. This is a small section of the patch file detailing the
                     biotype for each atom.
                 </p>
-                
+
                 <source>
                     biotype   1   F1 "DIF" 422   C6
                     biotype   2   F2 "DIF" 424  C12
@@ -125,52 +122,52 @@
                     biotype  25  HO1 "DIF" 425   O1
                     biotype  26  HO2 "DIF" 426   O2
                 </source>
-                
-                <p> 
+
+                <p>
                     Once all this information is acquired in a file with the extension .patch along with
                     the property file and data file a trial can be run on Osrw.
-                </p>  
-                
+                </p>
+
             </subsection>
-                    
+
             <subsection name="Running Osrw">
-                
+
                 <p>
                     When the script is run it tries to acquire both the data file and the properties file.
                     If the properties file is not under the same filename as the data file then an error will
-                    occur while the program evaluates the script causing the program to shut down.  
+                    occur while the program evaluates the script causing the program to shut down.
                 </p>
-                            
-                <p> 
+
+                <p>
                     When running the script there are a couple of recommended flags that need user input on every trial.
                     These flags are:
                     <li>-s</li>
                     <li>-f</li>
                 </p>
-                            
-                <p> 
+
+                <p>
                     The -s and -f flag are used to relay information to the program depicting
                     which atoms will be allowed to move along the alchemical path. -s for the starting atom and -f for the final
                     atom to be moved.
                 </p>
-                <p> 
+                <p>
                     Though only two flags are necessary there are many more flags to provide a more specific output.
                     Using the command:
                 </p>
-                
+
                 <source> ffxc osrw -h</source>
-                
-                <p>  
+
+                <p>
                     Provides the user with a helpful interface detailing the many flags of Osrw. The help interface
                     looks like this:
                 </p>
-                
-                <source> 
+
+                <source>
                     Command line arguments:
                     [osrw, -h]
                     Process ID 22719 on helium-login-0-0.local.
                     Starting up the command line interface.
-                    usage:  ffxc osrw [options] &lt;filename&gt; [filename]    
+                    usage:  ffxc osrw [options] &lt;filename&gt; [filename]
                     -a,--async                    Walker communication is asynchronous.
                     -b,--thermostat &lt;Berendsen&gt;  Thermostat: [Adiabatic / Berendsen / Bussi]
                     -c,--count &lt;10&gt;              Time steps between OSRW counts.
@@ -194,35 +191,35 @@
                     -S2,--scale2 &lt;1&gt;              Energy scale factor for Topology 2
                     -t,--temperature &lt;298.15&gt;     Temperature in degrees Kelvin.
                     -w,--write &lt;100.0&gt;            Interval to write out coordinates (psec).
-                    -x,--friction &lt;1e-18&gt;         Lambda particle friction           
+                    -x,--friction &lt;1e-18&gt;         Lambda particle friction
                     Total script time:    0.541 (sec)
                 </source>
-                           
+
                 <p>
                     There are many variants of the script that can be used to tailor the way a trial is run.
-                    Many of these flags have a default value listed. There are some that need user input before the 
+                    Many of these flags have a default value listed. There are some that need user input before the
                     trial can run, for example, -f has a default value of &lt;-1&gt;. This value will cause the script
                     to crash and must be replaced before the script is run
                 </p>
-                           
-                            
-                <p> 
+
+
+                <p>
                     A simple job can be run with a command similiar to this:
                 </p>
-                
+
                 <source> ffxc osrw -s 1 -f 26 diflunisal.xyz </source>
-                           
+
             </subsection>
-            
+
             <subsection name="Analysis of Results">
                 <p>
-                    A job that is running may take several days to come to convergence. Depending on the 
-                    different flags used the time the script should run will vary. A simple way to 
+                    A job that is running may take several days to come to convergence. Depending on the
+                    different flags used the time the script should run will vary. A simple way to
                     tell when a program has converged is to analyze the histogram. Every job that
                     successfully runs will produce a histogram saved as filename.his. When the histogram
                     is opened it should look like this:
                 </p>
-                
+
                 <source>
                     [0] Count   Lambda Bins    F_Lambda Bins   &lt;F_L&gt;    dG        G
                     [0]    735  0.048 0.053    -183.0   -27.0   -120.573    -0.603   -1.905
@@ -247,22 +244,22 @@
                     [0]    789  0.143 0.148    -171.0   -85.0   -141.633    -0.708  -14.864
                     [0]    789  0.148 0.153    -171.0   -91.0   -141.851    -0.709  -15.574
                 </source>
-                
-                <p> 
+
+                <p>
                     This is only part of the histogram specifically from 0.048 lambda to .153 lambda. The whole histogram
                     is a representation of the results from 0.00-1.00 lambda. A smaller part of the histogram has
-                    been shown for convenience. To tell if this job has converged the dG or derivative of free energy 
-                    with respect to lambda column should not vary by more than 1. Due to Osrw's sampling methods there 
-                    may be a larger variance around the edges of the lambda parameter but as long as the vast majority 
+                    been shown for convenience. To tell if this job has converged the dG or derivative of free energy
+                    with respect to lambda column should not vary by more than 1. Due to Osrw's sampling methods there
+                    may be a larger variance around the edges of the lambda parameter but as long as the vast majority
                     of the dG values are within the allowable variance then the test has converged.
                 </p>
-                
+
                 <p>
-                    The deposition free energy of the organic crystal is listed in the histogram file 
+                    The deposition free energy of the organic crystal is listed in the histogram file
                     as:
                 </p>
-                
-                <source> 
+
+                <source>
                     [0] The free energy is    -129.0363 kcal/mol from 172543 counts.
                     [0] The free energy is    -129.0362 kcal/mol from 172544 counts.
                     [0] The free energy is    -129.0362 kcal/mol from 172544 counts.
@@ -273,12 +270,12 @@
                     [0] The free energy is    -129.0360 kcal/mol from 172549 counts.
                     [0] The free energy is    -129.0361 kcal/mol from 172552 counts.
                 </source>
-                
-                <p> 
-                    The final deposition free energy will vary slightly but this change is small enough 
+
+                <p>
+                    The final deposition free energy will vary slightly but this change is small enough
                     that the deposition free energy can be accurately portrayed.
                 </p>
-                
+
             </subsection>
         </section>
     </body>

@@ -32,9 +32,10 @@ import ffx.crystal.ReflectionList;
 import ffx.numerics.ComplexNumber;
 
 /**
- * <p>DiffractionRefinementData class.</p>
+ * <p>
+ * DiffractionRefinementData class.</p>
  *
- * @author Timothy Fenn
+ * @author Timothy D. Fenn
  *
  */
 public class DiffractionRefinementData {
@@ -198,7 +199,8 @@ public class DiffractionRefinementData {
     }
 
     /**
-     * <p>setCrystalReciprocalSpace_fc</p>
+     * <p>
+     * setCrystalReciprocalSpace_fc</p>
      *
      * @param crs a {@link ffx.xray.CrystalReciprocalSpace} object.
      */
@@ -207,7 +209,8 @@ public class DiffractionRefinementData {
     }
 
     /**
-     * <p>setCrystalReciprocalSpace_fs</p>
+     * <p>
+     * setCrystalReciprocalSpace_fs</p>
      *
      * @param crs a {@link ffx.xray.CrystalReciprocalSpace} object.
      */
@@ -282,7 +285,7 @@ public class DiffractionRefinementData {
     }
 
     /**
-     * generate amplitudes from intensities. Does NOT use French & Wilson
+     * generate amplitudes from intensities. Does NOT use French and Wilson
      * scaling, just simple square root.
      */
     public void intensities_to_amplitudes() {
@@ -306,10 +309,8 @@ public class DiffractionRefinementData {
 
         if (logger.isLoggable(Level.WARNING)) {
             StringBuilder sb = new StringBuilder();
-            sb.append("\ninternally converting intensities to amplitudes\n");
-            sb.append("  this does NOT use French & Wilson scaling\n");
-            sb.append("  and may not be what you want!\n");
-
+            sb.append("\n Internally converting intensities to amplitudes:\n");
+            sb.append("  This does NOT use French & Wilson scaling.\n");
             logger.warning(sb.toString());
         }
     }
@@ -325,7 +326,8 @@ public class DiffractionRefinementData {
     }
 
     /**
-     * <p>get_f</p>
+     * <p>
+     * get_f</p>
      *
      * @param i a int.
      * @return a double.
@@ -345,7 +347,8 @@ public class DiffractionRefinementData {
     }
 
     /**
-     * <p>get_sigf</p>
+     * <p>
+     * get_sigf</p>
      *
      * @param i a int.
      * @return a double.
@@ -367,7 +370,8 @@ public class DiffractionRefinementData {
     }
 
     /**
-     * <p>get_fsigf</p>
+     * <p>
+     * get_fsigf</p>
      *
      * @param i a int.
      * @return an array of double.
@@ -396,7 +400,8 @@ public class DiffractionRefinementData {
     }
 
     /**
-     * <p>get_freer</p>
+     * <p>
+     * get_freer</p>
      *
      * @param i a int.
      * @return a int.
@@ -406,7 +411,8 @@ public class DiffractionRefinementData {
     }
 
     /**
-     * <p>isfreer</p>
+     * <p>
+     * isfreer</p>
      *
      * @param i a int.
      * @param f a int.
@@ -417,7 +423,8 @@ public class DiffractionRefinementData {
     }
 
     /**
-     * <p>isfreer</p>
+     * <p>
+     * isfreer</p>
      *
      * @param i a int.
      * @return a boolean.
@@ -483,7 +490,8 @@ public class DiffractionRefinementData {
     }
 
     /**
-     * <p>set_fs</p>
+     * <p>
+     * set_fs</p>
      *
      * @param i a int.
      * @param c a {@link ffx.numerics.ComplexNumber} object.
@@ -494,7 +502,8 @@ public class DiffractionRefinementData {
     }
 
     /**
-     * <p>get_fs</p>
+     * <p>
+     * get_fs</p>
      *
      * @param i a int.
      * @return a {@link ffx.numerics.ComplexNumber} object.
@@ -504,7 +513,8 @@ public class DiffractionRefinementData {
     }
 
     /**
-     * <p>get_fs_ip</p>
+     * <p>
+     * get_fs_ip</p>
      *
      * @param i a int.
      * @param c a {@link ffx.numerics.ComplexNumber} object.
@@ -515,7 +525,8 @@ public class DiffractionRefinementData {
     }
 
     /**
-     * <p>fs_f</p>
+     * <p>
+     * fs_f</p>
      *
      * @param i a int.
      * @return a double.
@@ -527,7 +538,8 @@ public class DiffractionRefinementData {
     }
 
     /**
-     * <p>fs_phi</p>
+     * <p>
+     * fs_phi</p>
      *
      * @param i a int.
      * @return a double.
@@ -539,7 +551,8 @@ public class DiffractionRefinementData {
     }
 
     /**
-     * <p>set_fctot</p>
+     * <p>
+     * set_fctot</p>
      *
      * @param i a int.
      * @param c a {@link ffx.numerics.ComplexNumber} object.
@@ -550,7 +563,8 @@ public class DiffractionRefinementData {
     }
 
     /**
-     * <p>get_fctot</p>
+     * <p>
+     * get_fctot</p>
      *
      * @param i a int.
      * @return a {@link ffx.numerics.ComplexNumber} object.
@@ -560,7 +574,8 @@ public class DiffractionRefinementData {
     }
 
     /**
-     * <p>get_fctot_ip</p>
+     * <p>
+     * get_fctot_ip</p>
      *
      * @param i a int.
      * @param c a {@link ffx.numerics.ComplexNumber} object.
@@ -571,7 +586,8 @@ public class DiffractionRefinementData {
     }
 
     /**
-     * <p>fctot_f</p>
+     * <p>
+     * fctot_f</p>
      *
      * @param i a int.
      * @return a double.
@@ -583,7 +599,8 @@ public class DiffractionRefinementData {
     }
 
     /**
-     * <p>fctot_phi</p>
+     * <p>
+     * fctot_phi</p>
      *
      * @param i a int.
      * @return a double.
@@ -595,7 +612,8 @@ public class DiffractionRefinementData {
     }
 
     /**
-     * <p>set_fofc2</p>
+     * <p>
+     * set_fofc2</p>
      *
      * @param i a int.
      * @param c a {@link ffx.numerics.ComplexNumber} object.
@@ -606,7 +624,8 @@ public class DiffractionRefinementData {
     }
 
     /**
-     * <p>get_fofc2</p>
+     * <p>
+     * get_fofc2</p>
      *
      * @param i a int.
      * @return a {@link ffx.numerics.ComplexNumber} object.
@@ -616,7 +635,8 @@ public class DiffractionRefinementData {
     }
 
     /**
-     * <p>get_fofc2_ip</p>
+     * <p>
+     * get_fofc2_ip</p>
      *
      * @param i a int.
      * @param c a {@link ffx.numerics.ComplexNumber} object.
@@ -627,7 +647,8 @@ public class DiffractionRefinementData {
     }
 
     /**
-     * <p>fofc2_f</p>
+     * <p>
+     * fofc2_f</p>
      *
      * @param i a int.
      * @return a double.
@@ -639,7 +660,8 @@ public class DiffractionRefinementData {
     }
 
     /**
-     * <p>fofc2_phi</p>
+     * <p>
+     * fofc2_phi</p>
      *
      * @param i a int.
      * @return a double.
@@ -651,7 +673,8 @@ public class DiffractionRefinementData {
     }
 
     /**
-     * <p>set_fofc1</p>
+     * <p>
+     * set_fofc1</p>
      *
      * @param i a int.
      * @param c a {@link ffx.numerics.ComplexNumber} object.
@@ -662,7 +685,8 @@ public class DiffractionRefinementData {
     }
 
     /**
-     * <p>get_fofc1</p>
+     * <p>
+     * get_fofc1</p>
      *
      * @param i a int.
      * @return a {@link ffx.numerics.ComplexNumber} object.
@@ -672,7 +696,8 @@ public class DiffractionRefinementData {
     }
 
     /**
-     * <p>get_fofc1_ip</p>
+     * <p>
+     * get_fofc1_ip</p>
      *
      * @param i a int.
      * @param c a {@link ffx.numerics.ComplexNumber} object.
@@ -683,7 +708,8 @@ public class DiffractionRefinementData {
     }
 
     /**
-     * <p>fofc1_f</p>
+     * <p>
+     * fofc1_f</p>
      *
      * @param i a int.
      * @return a double.
@@ -695,7 +721,8 @@ public class DiffractionRefinementData {
     }
 
     /**
-     * <p>fofc1_phi</p>
+     * <p>
+     * fofc1_phi</p>
      *
      * @param i a int.
      * @return a double.

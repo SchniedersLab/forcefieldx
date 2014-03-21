@@ -27,7 +27,15 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.lang.Math.*;
+import static java.lang.Math.PI;
+import static java.lang.Math.abs;
+import static java.lang.Math.cos;
+import static java.lang.Math.floor;
+import static java.lang.Math.rint;
+import static java.lang.Math.signum;
+import static java.lang.Math.sin;
+import static java.lang.Math.sqrt;
+import static java.lang.Math.toRadians;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.math.linear.Array2DRowRealMatrix;
@@ -37,7 +45,9 @@ import org.apache.commons.math.util.MathUtils;
 
 import ffx.utilities.HashCodeUtil;
 
-import static ffx.numerics.VectorMath.*;
+import static ffx.numerics.VectorMath.mat3mat3;
+import static ffx.numerics.VectorMath.mat3symvec6;
+import static ffx.numerics.VectorMath.transpose3;
 
 /**
  * The Crystal class encapsulates the lattice parameters and space group that
@@ -45,7 +55,10 @@ import static ffx.numerics.VectorMath.*;
  * apply the minimum image convention and space group symmetry operators.
  *
  * @author Michael J. Schnieders
+ *
  * @since 1.0
+ * 
+ * @see ReplicatesCrystal
  */
 public class Crystal {
 
@@ -516,8 +529,8 @@ public class Crystal {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>specialPositionCutoff</code>.</p>
+     * <p>
+     * Setter for the field <code>specialPositionCutoff</code>.</p>
      *
      * @param cutoff a double.
      */
@@ -527,8 +540,8 @@ public class Crystal {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>specialPositionCutoff</code>.</p>
+     * <p>
+     * Getter for the field <code>specialPositionCutoff</code>.</p>
      *
      * @return a double.
      */
@@ -537,7 +550,8 @@ public class Crystal {
     }
 
     /**
-     * <p>checkProperties</p>
+     * <p>
+     * checkProperties</p>
      *
      * @param properties a
      * {@link org.apache.commons.configuration.CompositeConfiguration} object.
@@ -661,7 +675,8 @@ public class Crystal {
     }
 
     /**
-     * <p>aperiodic</p>
+     * <p>
+     * aperiodic</p>
      *
      * @return a boolean.
      */
@@ -722,7 +737,8 @@ public class Crystal {
     }
 
     /**
-     * <p>averageTensor</p>
+     * <p>
+     * averageTensor</p>
      *
      * @param m an array of double.
      * @param r an array of double.
@@ -748,7 +764,8 @@ public class Crystal {
     }
 
     /**
-     * <p>averageTensor</p>
+     * <p>
+     * averageTensor</p>
      *
      * @param v an array of double.
      * @param r an array of double.
@@ -1161,7 +1178,8 @@ public class Crystal {
     }
 
     /**
-     * <p>toFractionalCoordinates</p>
+     * <p>
+     * toFractionalCoordinates</p>
      *
      * @param n a int.
      * @param x an array of double.
@@ -1184,7 +1202,8 @@ public class Crystal {
     }
 
     /**
-     * <p>toFractionalCoordinates</p>
+     * <p>
+     * toFractionalCoordinates</p>
      *
      * @param n a int.
      * @param cart an array of double.
@@ -1208,7 +1227,8 @@ public class Crystal {
     }
 
     /**
-     * <p>toPrimaryCell</p>
+     * <p>
+     * toPrimaryCell</p>
      *
      * @param in an array of double.
      * @param out an array of double.
@@ -1222,7 +1242,8 @@ public class Crystal {
     }
 
     /**
-     * <p>toFractionalCoordinates</p>
+     * <p>
+     * toFractionalCoordinates</p>
      *
      * @param x an array of double.
      * @param xf an array of double.
@@ -1237,7 +1258,8 @@ public class Crystal {
     }
 
     /**
-     * <p>toCartesianCoordinates</p>
+     * <p>
+     * toCartesianCoordinates</p>
      *
      * @param n a int.
      * @param xf an array of double.
@@ -1260,7 +1282,8 @@ public class Crystal {
     }
 
     /**
-     * <p>toCartesianCoordinates</p>
+     * <p>
+     * toCartesianCoordinates</p>
      *
      * @param n a int.
      * @param frac an array of double.
@@ -1284,7 +1307,8 @@ public class Crystal {
     }
 
     /**
-     * <p>toCartesianCoordinates</p>
+     * <p>
+     * toCartesianCoordinates</p>
      *
      * @param xf an array of double.
      * @param x an array of double.
@@ -1299,7 +1323,8 @@ public class Crystal {
     }
 
     /**
-     * <p>toFractionalCoordinatesTINKER</p>
+     * <p>
+     * toFractionalCoordinatesTINKER</p>
      *
      * @param x an array of double.
      * @param xf an array of double.
@@ -1312,7 +1337,8 @@ public class Crystal {
     }
 
     /**
-     * <p>quad_form</p>
+     * <p>
+     * quad_form</p>
      *
      * @param v an array of double.
      * @param mat an array of double.
@@ -1325,7 +1351,8 @@ public class Crystal {
     }
 
     /**
-     * <p>quad_form</p>
+     * <p>
+     * quad_form</p>
      *
      * @param hkl a {@link ffx.crystal.HKL} object.
      * @param mat an array of double.
@@ -1338,7 +1365,8 @@ public class Crystal {
     }
 
     /**
-     * <p>invressq</p>
+     * <p>
+     * invressq</p>
      *
      * @param crystal a {@link ffx.crystal.Crystal} object.
      * @param hkl a {@link ffx.crystal.HKL} object.
@@ -1349,7 +1377,8 @@ public class Crystal {
     }
 
     /**
-     * <p>res</p>
+     * <p>
+     * res</p>
      *
      * @param crystal a {@link ffx.crystal.Crystal} object.
      * @param hkl a {@link ffx.crystal.HKL} object.
@@ -1360,7 +1389,8 @@ public class Crystal {
     }
 
     /**
-     * <p>sym_phase_shift</p>
+     * <p>
+     * sym_phase_shift</p>
      *
      * @param hkl an array of double.
      * @param symOp a {@link ffx.crystal.SymOp} object.
@@ -1374,7 +1404,8 @@ public class Crystal {
     }
 
     /**
-     * <p>sym_phase_shift</p>
+     * <p>
+     * sym_phase_shift</p>
      *
      * @param hkl a {@link ffx.crystal.HKL} object.
      * @param symOp a {@link ffx.crystal.SymOp} object.
@@ -1390,7 +1421,8 @@ public class Crystal {
     /**
      * This is an atypical mod function used by crystallography methods.
      *
-     * <p>mod</p>
+     * <p>
+     * mod</p>
      *
      * @param a a double.
      * @param b a double.
@@ -1407,7 +1439,8 @@ public class Crystal {
     /**
      * This is an atypical mod function used by crystallography methods.
      *
-     * <p>mod</p>
+     * <p>
+     * mod</p>
      *
      * @param a a int.
      * @param b a int.

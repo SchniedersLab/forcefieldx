@@ -37,7 +37,7 @@ import ffx.utilities.Keyword;
 
 /**
  *
- * @author Timothy Fenn
+ * @author Timothy D. Fenn
  */
 public class MTZFilterTest {
 

@@ -26,8 +26,58 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static ffx.crystal.SpaceGroup.CrystalSystem.*;
-import static ffx.crystal.SpaceGroup.LaueSystem.*;
+import static ffx.crystal.SpaceGroup.CrystalSystem.CUBIC;
+import static ffx.crystal.SpaceGroup.CrystalSystem.HEXAGONAL;
+import static ffx.crystal.SpaceGroup.CrystalSystem.MONOCLINIC;
+import static ffx.crystal.SpaceGroup.CrystalSystem.ORTHORHOMBIC;
+import static ffx.crystal.SpaceGroup.CrystalSystem.TETRAGONAL;
+import static ffx.crystal.SpaceGroup.CrystalSystem.TRICLINIC;
+import static ffx.crystal.SpaceGroup.CrystalSystem.TRIGONAL;
+import static ffx.crystal.SpaceGroup.LaueSystem.L111;
+import static ffx.crystal.SpaceGroup.LaueSystem.L112;
+import static ffx.crystal.SpaceGroup.LaueSystem.L113;
+import static ffx.crystal.SpaceGroup.LaueSystem.L114;
+import static ffx.crystal.SpaceGroup.LaueSystem.L11T;
+import static ffx.crystal.SpaceGroup.LaueSystem.L121;
+import static ffx.crystal.SpaceGroup.LaueSystem.L131;
+import static ffx.crystal.SpaceGroup.LaueSystem.L141;
+import static ffx.crystal.SpaceGroup.LaueSystem.L1T1;
+import static ffx.crystal.SpaceGroup.LaueSystem.L211;
+import static ffx.crystal.SpaceGroup.LaueSystem.L21U;
+import static ffx.crystal.SpaceGroup.LaueSystem.L21V;
+import static ffx.crystal.SpaceGroup.LaueSystem.L21W;
+import static ffx.crystal.SpaceGroup.LaueSystem.L21X;
+import static ffx.crystal.SpaceGroup.LaueSystem.L21Y;
+import static ffx.crystal.SpaceGroup.LaueSystem.L21Z;
+import static ffx.crystal.SpaceGroup.LaueSystem.L222;
+import static ffx.crystal.SpaceGroup.LaueSystem.L223;
+import static ffx.crystal.SpaceGroup.LaueSystem.L224;
+import static ffx.crystal.SpaceGroup.LaueSystem.L22U;
+import static ffx.crystal.SpaceGroup.LaueSystem.L22V;
+import static ffx.crystal.SpaceGroup.LaueSystem.L22W;
+import static ffx.crystal.SpaceGroup.LaueSystem.L232;
+import static ffx.crystal.SpaceGroup.LaueSystem.L242;
+import static ffx.crystal.SpaceGroup.LaueSystem.L311;
+import static ffx.crystal.SpaceGroup.LaueSystem.L31A;
+import static ffx.crystal.SpaceGroup.LaueSystem.L31B;
+import static ffx.crystal.SpaceGroup.LaueSystem.L31C;
+import static ffx.crystal.SpaceGroup.LaueSystem.L31D;
+import static ffx.crystal.SpaceGroup.LaueSystem.L322;
+import static ffx.crystal.SpaceGroup.LaueSystem.L32A;
+import static ffx.crystal.SpaceGroup.LaueSystem.L32B;
+import static ffx.crystal.SpaceGroup.LaueSystem.L32C;
+import static ffx.crystal.SpaceGroup.LaueSystem.L32D;
+import static ffx.crystal.SpaceGroup.LaueSystem.L32U;
+import static ffx.crystal.SpaceGroup.LaueSystem.L32V;
+import static ffx.crystal.SpaceGroup.LaueSystem.L32W;
+import static ffx.crystal.SpaceGroup.LaueSystem.L32X;
+import static ffx.crystal.SpaceGroup.LaueSystem.L32Y;
+import static ffx.crystal.SpaceGroup.LaueSystem.L32Z;
+import static ffx.crystal.SpaceGroup.LaueSystem.L411;
+import static ffx.crystal.SpaceGroup.LaueSystem.L422;
+import static ffx.crystal.SpaceGroup.LaueSystem.LM3B;
+import static ffx.crystal.SpaceGroup.LaueSystem.LM3M;
+import static ffx.crystal.SpaceGroup.LaueSystem.LT11;
 
 /**
  * The Spacegroup class defines the symmetry of a crystal. There are 230
@@ -35,13 +85,21 @@ import static ffx.crystal.SpaceGroup.LaueSystem.*;
  *
  * @author Michael J. Schnieders
  *
- * @see <a href="http://it.iucr.org/Ab/">International Tables for
- * Crystallography Volume A: Space-group symmetry</a>
- * @see <a href="http://www.ccp4.ac.uk/html/symlib.html">CCP4 symlib</a>
+ * @see
+ * <ul>
+ * <li>
+ * <a href="http://it.iucr.org/Ab/" target="_blank">
+ * International Tables for Crystallography Volume A: Space-group symmetry
+ * </a>
+ * </li>
+ * <li>
+ * <a href="http://www.ccp4.ac.uk/html/symlib.html" target="_blank">
+ * CCP4 Symlib
+ * </a>
+ * </li>
+ * </ul>
  *
  * @since 1.0
- *
- *
  */
 public class SpaceGroup {
 

@@ -29,7 +29,7 @@ import ffx.crystal.Crystal;
 /**
  * <p>RealSpaceFileFilter interface.</p>
  *
- * @author Tim Fenn
+ * @author Timothy D. Fenn
  *
  */
 public interface RealSpaceFileFilter {

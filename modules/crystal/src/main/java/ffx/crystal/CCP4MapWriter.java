@@ -33,20 +33,35 @@ import static java.lang.Math.pow;
 import static java.lang.Math.sqrt;
 
 /**
- * <p>CCP4MapWriter class.</p>
+ * <p>
+ * CCP4MapWriter class.</p>
  *
- * @author Tim Fenn
- * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4
- * map format</a>
+ * @author Timothy D. Fenn
  *
- * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html"
- * target="_blank">CCP4 library documentation</a>
- * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4
- * map format</a>
+ * @see
+ * <ul>
+ * <li>
+ * <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4 map
+ * format</a>
+ * </li>
+ * <li>
+ * <a href="http://www.ccp4.ac.uk/dist/html/library.html" target="_blank">CCP4
+ * library documentation
+ * </a>
+ * </li>
+ * <li>
+ * <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4 map
+ * format
+ * </a>
+ * </li>
+ * <li>
+ * <a href="http://www.ccp4.ac.uk/dist/html/library.html" target="_blank">CCP4
+ * library documentation
+ * </a>
+ * </li>
+ * </ul>
  *
- * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html"
- * target="_blank">CCP4 library documentation</a>
- *
+ * @since 1.0
  */
 public class CCP4MapWriter {
 
@@ -83,7 +98,8 @@ public class CCP4MapWriter {
     }
 
     /**
-     * <p>Constructor for CCP4MapWriter.</p>
+     * <p>
+     * Constructor for CCP4MapWriter.</p>
      *
      * @param orix a int.
      * @param oriy a int.

@@ -32,7 +32,7 @@ import ffx.potential.bonded.Residue;
 /**
  * <p>DataContainer interface.</p>
  *
- * @author Tim Fenn
+ * @author Timothy D. Fenn
  *
  */
 public interface DataContainer {

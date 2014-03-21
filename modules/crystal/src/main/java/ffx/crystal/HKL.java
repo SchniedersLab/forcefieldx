@@ -27,16 +27,19 @@ import static java.lang.Math.PI;
 import ffx.utilities.HashCodeUtil;
 
 /**
- * <p>HKL class.</p>
+ * <p>
+ * The HKL class represents a single reflection.</p>
  *
- * @author Timothy Fenn
+ * @author Timothy D. Fenn
  *
+ * @since 1.0
+ *
+ * @see ReflectionList
  */
 public class HKL {
 
     /**
-     * Constant
-     * <code>ndiv=12.0</code>
+     * Constant <code>ndiv=12.0</code>
      */
     public static final double ndiv = 12.0;
     protected int h;
@@ -50,13 +53,15 @@ public class HKL {
 
     // null constructor
     /**
-     * <p>Constructor for HKL.</p>
+     * <p>
+     * Constructor for HKL.</p>
      */
     public HKL() {
     }
 
     /**
-     * <p>Constructor for HKL.</p>
+     * <p>
+     * Constructor for HKL.</p>
      *
      * @param h a int.
      * @param k a int.
@@ -70,7 +75,8 @@ public class HKL {
     }
 
     /**
-     * <p>Constructor for HKL.</p>
+     * <p>
+     * Constructor for HKL.</p>
      *
      * @param h a int.
      * @param k a int.
@@ -130,7 +136,8 @@ public class HKL {
     }
 
     /**
-     * <p>h</p>
+     * <p>
+     * h</p>
      *
      * @return a int.
      */
@@ -139,7 +146,8 @@ public class HKL {
     }
 
     /**
-     * <p>h</p>
+     * <p>
+     * h</p>
      *
      * @param h a int.
      */
@@ -148,7 +156,8 @@ public class HKL {
     }
 
     /**
-     * <p>k</p>
+     * <p>
+     * k</p>
      *
      * @return a int.
      */
@@ -157,7 +166,8 @@ public class HKL {
     }
 
     /**
-     * <p>k</p>
+     * <p>
+     * k</p>
      *
      * @param k a int.
      */
@@ -166,7 +176,8 @@ public class HKL {
     }
 
     /**
-     * <p>l</p>
+     * <p>
+     * l</p>
      *
      * @return a int.
      */
@@ -175,7 +186,8 @@ public class HKL {
     }
 
     /**
-     * <p>l</p>
+     * <p>
+     * l</p>
      *
      * @param l a int.
      */
@@ -184,7 +196,8 @@ public class HKL {
     }
 
     /**
-     * <p>bin</p>
+     * <p>
+     * bin</p>
      *
      * @return a int.
      */
@@ -193,7 +206,8 @@ public class HKL {
     }
 
     /**
-     * <p>bin</p>
+     * <p>
+     * bin</p>
      *
      * @param bin a int.
      */
@@ -202,7 +216,8 @@ public class HKL {
     }
 
     /**
-     * <p>index</p>
+     * <p>
+     * index</p>
      *
      * @return a int.
      */
@@ -211,7 +226,8 @@ public class HKL {
     }
 
     /**
-     * <p>index</p>
+     * <p>
+     * index</p>
      *
      * @param index a int.
      */
@@ -220,7 +236,8 @@ public class HKL {
     }
 
     /**
-     * <p>neg</p>
+     * <p>
+     * neg</p>
      *
      * @param hkl a {@link ffx.crystal.HKL} object.
      * @return a {@link ffx.crystal.HKL} object.
@@ -230,7 +247,8 @@ public class HKL {
     }
 
     /**
-     * <p>epsilon</p>
+     * <p>
+     * epsilon</p>
      *
      * @return a int.
      */
@@ -239,7 +257,8 @@ public class HKL {
     }
 
     /**
-     * <p>epsilon</p>
+     * <p>
+     * epsilon</p>
      *
      * @param eps a int.
      */
@@ -248,7 +267,8 @@ public class HKL {
     }
 
     /**
-     * <p>epsilonc</p>
+     * <p>
+     * epsilonc</p>
      *
      * @return a int.
      */
@@ -261,7 +281,8 @@ public class HKL {
     }
 
     /**
-     * <p>allowed</p>
+     * <p>
+     * allowed</p>
      *
      * @return a double.
      */
@@ -270,7 +291,8 @@ public class HKL {
     }
 
     /**
-     * <p>allowed</p>
+     * <p>
+     * allowed</p>
      *
      * @param allowed a int.
      */
@@ -279,7 +301,8 @@ public class HKL {
     }
 
     /**
-     * <p>centric</p>
+     * <p>
+     * centric</p>
      *
      * @return a boolean.
      */
@@ -288,7 +311,8 @@ public class HKL {
     }
 
     /**
-     * <p>sys_abs</p>
+     * <p>
+     * sys_abs</p>
      *
      * @param hkl a {@link ffx.crystal.HKL} object.
      * @return a boolean.

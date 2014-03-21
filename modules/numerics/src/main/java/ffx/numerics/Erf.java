@@ -30,18 +30,31 @@ import static org.apache.commons.math.util.FastMath.exp;
 /**
  * Static methods to evaluate erf(x) and erfc(x) for a real argument x. Rational
  * functions are used that approximate erf(x) and erfc(x) to machine precision
- * (approximately 15 decimal digits). <p> Adapted from an original program
- * written by W. J. Cody, Mathematics and Computer Science Division, Argonne
- * National Laboratory, Argonne, IL 60439 <p>
+ * (approximately 15 decimal digits).
+ * <p>
+ * Adapted from an original program written by W. J. Cody, Mathematics and
+ * Computer Science Division, Argonne National Laboratory, Argonne, IL 60439
+ * <p>
  *
  * @author Michael J. Schnieders
- * @see <a href="http://www.jstor.org/stable/2004390" target="_blank"> W. J.
- * Cody, Mathematics of Computation 23 (107), 631 (1969).</a><br> <a
- * href="http://en.wikipedia.org/wiki/Error_function" target="_blank"> Error
- * function at Wikipedia</a><br> <a href="http://mathworld.wolfram.com/Erf.html"
- * target="_blank"> Error function at MathWorld</a>
- * @since 1.0
  *
+ * @see
+ * <ul>
+ * <li>
+ * <a href="http://www.jstor.org/stable/2004390" target="_blank"> W. J.
+ * Cody, Mathematics of Computation 23 (107), 631 (1969).</a>
+ * </li>
+ * <li>
+ * <a href="http://en.wikipedia.org/wiki/Error_function" target="_blank"> Error
+ * function at Wikipedia</a>
+ * </li>
+ * <li>
+ * <a href="http://mathworld.wolfram.com/Erf.html"
+ * target="_blank"> Error function at MathWorld</a>
+ * </li>
+ * </ul>
+ *
+ * @since 1.0
  */
 public class Erf {
 

@@ -58,7 +58,7 @@ public class MultiResidue extends Residue {
         pdbFilter = new PDBFilter(molecularAssembly.getFile(), molecularAssembly, molecularAssembly.getForceField(), null);
         activeResidue = residue;
         // Initialize consideredResidue list.
-        consideredResidues = new ArrayList<Residue>();
+        consideredResidues = new ArrayList<>();
         consideredResidues.add(residue);
         removeLeaves();
     }

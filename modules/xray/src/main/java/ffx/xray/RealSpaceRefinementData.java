@@ -29,7 +29,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 /**
  * <p>RealSpaceRefinementData class.</p>
  *
- * @author Tim Fenn
+ * @author Timothy D. Fenn
  *
  */
 public class RealSpaceRefinementData {

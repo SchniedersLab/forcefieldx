@@ -22,40 +22,47 @@
  */
 package ffx.crystal;
 
-import static java.lang.Math.*;
+import static java.lang.Math.floor;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
 
 /**
+ * The ReflectionSpline class represents a reflection spline basis.
  *
- * Spline basis function
+ * @author Timothy D. Fenn<br>
  *
- * @author Tim Fenn<br>
- * @see <a href="http://dx.doi.org/10.1107/S0021889802013420" target="_blank">
- * K. Cowtan, J. Appl. Cryst. (2002). 35, 655-663</a>
+ * @see
+ * <a href="http://dx.doi.org/10.1107/S0021889802013420" target="_blank">
+ * K. Cowtan, J. Appl. Cryst. (2002). 35, 655-663
+ * </a>
  *
+ * @since 1.0
  */
 public class ReflectionSpline {
 
-    private final ReflectionList reflectionlist;
+    private final ReflectionList reflectionList;
     private final Crystal crystal;
-    private final int nparams;
+    private final int nParams;
     private double f;
     private int i0, i1, i2;
     private double dfi0, dfi1, dfi2;
 
     /**
-     * <p>Constructor for ReflectionSpline.</p>
+     * <p>
+     * Constructor for ReflectionSpline.</p>
      *
-     * @param reflectionlist a {@link ffx.crystal.ReflectionList} object.
-     * @param nparams a int.
+     * @param reflectionList a {@link ffx.crystal.ReflectionList} object.
+     * @param nParams a int.
      */
-    public ReflectionSpline(ReflectionList reflectionlist, int nparams) {
-        this.reflectionlist = reflectionlist;
-        this.crystal = reflectionlist.crystal;
-        this.nparams = nparams;
+    public ReflectionSpline(ReflectionList reflectionList, int nParams) {
+        this.reflectionList = reflectionList;
+        this.crystal = reflectionList.crystal;
+        this.nParams = nParams;
     }
 
     /**
-     * <p>f</p>
+     * <p>
+     * f</p>
      *
      * @return a double.
      */
@@ -64,7 +71,8 @@ public class ReflectionSpline {
     }
 
     /**
-     * <p>i0</p>
+     * <p>
+     * i0</p>
      *
      * @return a int.
      */
@@ -73,7 +81,8 @@ public class ReflectionSpline {
     }
 
     /**
-     * <p>i1</p>
+     * <p>
+     * i1</p>
      *
      * @return a int.
      */
@@ -82,7 +91,8 @@ public class ReflectionSpline {
     }
 
     /**
-     * <p>i2</p>
+     * <p>
+     * i2</p>
      *
      * @return a int.
      */
@@ -91,7 +101,8 @@ public class ReflectionSpline {
     }
 
     /**
-     * <p>dfi0</p>
+     * <p>
+     * dfi0</p>
      *
      * @return a double.
      */
@@ -100,7 +111,8 @@ public class ReflectionSpline {
     }
 
     /**
-     * <p>dfi1</p>
+     * <p>
+     * dfi1</p>
      *
      * @return a double.
      */
@@ -109,7 +121,8 @@ public class ReflectionSpline {
     }
 
     /**
-     * <p>dfi2</p>
+     * <p>
+     * dfi2</p>
      *
      * @return a double.
      */
@@ -118,20 +131,20 @@ public class ReflectionSpline {
     }
 
     /**
-     * evaluate basis function and derivative at a given resolution (Eqns 24 and
-     * 25 in Cowtan paper)
+     * Evaluate basis function and derivative at a given resolution (Equations
+     * 24 and 25 in Cowtan et al.).
      *
      * @param invressq resolution of desired spline interpolation
      * @param params current spline parameters
      * @return value at invressq
      */
     public double f(double invressq, double params[]) {
-        double s = nparams * reflectionlist.ordinal(invressq);
+        double s = nParams * reflectionList.ordinal(invressq);
         int i = (int) floor(s);
         double ds = s - i - 0.5;
-        i0 = min(max(0, i - 1), nparams - 1);
-        i1 = min(max(0, i), nparams - 1);
-        i2 = min(max(0, i + 1), nparams - 1);
+        i0 = min(max(0, i - 1), nParams - 1);
+        i1 = min(max(0, i), nParams - 1);
+        i2 = min(max(0, i + 1), nParams - 1);
 
         f = params[i0] * 0.5 * (ds - 0.5) * (ds - 0.5)
                 + params[i1] * (0.75 - ds * ds)

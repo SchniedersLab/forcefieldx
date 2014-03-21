@@ -55,17 +55,15 @@ public final class VDWType extends BaseType implements Comparator<String> {
      */
     public final double wellDepth;
     /**
-     * Reduction factor for evaluating van der Waals pairs. Valid range: 0.0 >
-     * reduction <= 1.0 Usually only hydrogen atom have a reduction factor.
-     * Setting the reduction to < 0.0 indicates it is not being used.
+     * Reduction factor for evaluating van der Waals pairs. Valid range: 0.0
+     * .GT. reduction .LE. 1.0 Usually only hydrogen atom have a reduction
+     * factor. Setting the reduction to .LT. 0.0 indicates it is not being used.
      */
     public final double reductionFactor;
 
     /**
-     * van der Waals constructor. If the reduction factor is <= 0.0, no
+     * van der Waals constructor. If the reduction factor is .LE. 0.0, no
      * reduction is used for this atom type.
-     *
-     *
      *
      * @param atomClass int
      * @param radius double

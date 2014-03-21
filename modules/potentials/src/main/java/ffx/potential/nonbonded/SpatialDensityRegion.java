@@ -41,8 +41,8 @@ import ffx.potential.bonded.Atom;
  * into octants.
  *
  * @author Michael J. Schnieders
- * @since 1.0
  *
+ * @since 1.0
  */
 public class SpatialDensityRegion extends ParallelRegion {
 

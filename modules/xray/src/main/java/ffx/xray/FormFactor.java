@@ -27,7 +27,7 @@ import ffx.xray.RefinementMinimize.RefinementMode;
 /**
  * <p>FormFactor interface.</p>
  *
- * @author Tim Fenn
+ * @author Timothy D. Fenn
  *
  */
 public interface FormFactor {

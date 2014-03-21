@@ -27,8 +27,8 @@ package ffx.numerics;
  * dynamics.
  *
  * @author Michael J. Schnieders
- * @since 1.0
  *
+ * @since 1.0
  */
 public interface Potential {
 
@@ -83,7 +83,7 @@ public interface Potential {
      * returned.
      *
      * @param parameters Supplied array.
-     * 
+     *
      * @return The array filled with parameter values.
      */
     public abstract double[] getCoordinates(double[] parameters);

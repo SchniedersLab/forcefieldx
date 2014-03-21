@@ -37,7 +37,7 @@ import ffx.xray.CrystalReciprocalSpace.SolventModel;
 /**
  * Crystal statistics output/logger
  *
- * @author Tim Fenn
+ * @author Timothy D. Fenn
  *
  */
 public class CrystalStats {

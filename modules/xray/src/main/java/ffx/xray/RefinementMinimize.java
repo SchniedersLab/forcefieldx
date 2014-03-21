@@ -40,7 +40,7 @@ import ffx.potential.bonded.Residue;
  * Refinement minimization class using {@link OptimizationListener} interface,
  * constructs a {@link RefinementEnergy} object for this purpose
  *
- * @author Tim Fenn
+ * @author Timothy D. Fenn
  *
  */
 public class RefinementMinimize implements OptimizationListener, Terminatable {

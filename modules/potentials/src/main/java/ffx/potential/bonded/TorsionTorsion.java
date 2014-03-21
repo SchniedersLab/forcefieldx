@@ -100,8 +100,6 @@ public class TorsionTorsion extends BondedTerm {
     }
 
     /**
-     *
-     * @param atoms
      * @param firstBond
      * @param angle
      * @param lastBond

@@ -33,15 +33,28 @@ import edu.rit.pj.ParallelTeam;
 
 /**
  * Compute the 3D FFT of complex, double precision input of arbitrary dimensions
- * via 1D Mixed Radix FFTs in parallel. <p> The location of the input point [i,
- * j, k] within the input array must be:<br> <br> double real = input[x*nextX +
- * y*nextY + z*nextZ]<br> double imag = input[x*nextX + y*nextY + z*nextZ +
- * 1]<br> <br> where<br> int nextX = 2<br> int nextY = 2*nX<br> int nextZ =
- * 2*nX*nY<br> <p>
+ * via 1D Mixed Radix FFTs in parallel.
+ * <p>
+ * The location of the input point [i, j, k] within the input array must be:
+ * <br>
+ * double real = input[x*nextX + y*nextY + z*nextZ]
+ * <br>
+ * double imag = input[x*nextX + y*nextY + z*nextZ + 1]
+ * <br>
+ * where
+ * <br>
+ * int nextX = 2
+ * <br>
+ * int nextY = 2*nX
+ * <br>
+ * int nextZ = 2*nX*nY
+ * <br>
  *
  * @author Michal J. Schnieders
+ *
  * @since 1.0
  *
+ * @see Complex
  */
 public class Complex3DParallel {
 
@@ -181,8 +194,8 @@ public class Complex3DParallel {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>recip</code>.</p>
+     * <p>
+     * Setter for the field <code>recip</code>.</p>
      *
      * @param recip an array of double.
      */
@@ -239,8 +252,13 @@ public class Complex3DParallel {
 
             public double input[];
             private int x, y, z, offset, stride;
-            private final Complex fftX = new Complex(nX);
-            private final Complex fftY = new Complex(nY);
+            private final Complex fftX;
+            private final Complex fftY;
+
+            private FFTXYLoop() {
+                fftX = new Complex(nX);
+                fftY = new Complex(nY);
+            }
 
             @Override
             public IntegerSchedule schedule() {
@@ -263,9 +281,14 @@ public class Complex3DParallel {
         private class FFTZLoop extends IntegerForLoop {
 
             public double input[];
-            private double work[] = new double[nZ2];
+            private final double work[];
             private int i, x, y, z, offset;
-            private final Complex fft = new Complex(nZ);
+            private final Complex fft;
+
+            private FFTZLoop() {
+                fft = new Complex(nZ);
+                work = new double[nZ2];
+            }
 
             @Override
             public IntegerSchedule schedule() {
@@ -329,9 +352,14 @@ public class Complex3DParallel {
         private class IFFTZLoop extends IntegerForLoop {
 
             public double input[];
-            private double work[] = new double[nZ2];
+            private final double work[];
             private int i, x, y, z, offset;
-            private final Complex fft = new Complex(nZ);
+            private final Complex fft;
+
+            private IFFTZLoop() {
+                fft = new Complex(nZ);
+                work = new double[nZ2];
+            }
 
             @Override
             public IntegerSchedule schedule() {
@@ -360,8 +388,13 @@ public class Complex3DParallel {
 
             public double input[];
             private int x, y, z, offset, stride;
-            private final Complex fftX = new Complex(nX);
-            private final Complex fftY = new Complex(nY);
+            private final Complex fftX;
+            private final Complex fftY;
+
+            private IFFTXYLoop() {
+                fftY = new Complex(nY);
+                fftX = new Complex(nX);
+            }
 
             @Override
             public IntegerSchedule schedule() {
@@ -429,8 +462,13 @@ public class Complex3DParallel {
         private class FFTXYLoop extends IntegerForLoop {
 
             public double input[];
-            private final Complex fftX = new Complex(nX);
-            private final Complex fftY = new Complex(nY);
+            private final Complex fftX;
+            private final Complex fftY;
+
+            private FFTXYLoop() {
+                fftY = new Complex(nY);
+                fftX = new Complex(nX);
+            }
 
             @Override
             public IntegerSchedule schedule() {
@@ -454,8 +492,13 @@ public class Complex3DParallel {
         private class FFTZ_Multiply_IFFTZLoop extends IntegerForLoop {
 
             public double input[];
-            private double work[] = new double[nZ2];
-            private final Complex fft = new Complex(nZ);
+            private final double work[];
+            private final Complex fft;
+
+            private FFTZ_Multiply_IFFTZLoop() {
+                fft = new Complex(nZ);
+                work = new double[nZ2];
+            }
 
             @Override
             public IntegerSchedule schedule() {
@@ -491,8 +534,13 @@ public class Complex3DParallel {
         private class IFFTXYLoop extends IntegerForLoop {
 
             public double input[];
-            private final Complex fftY = new Complex(nY);
-            private final Complex fftX = new Complex(nX);
+            private final Complex fftY;
+            private final Complex fftX;
+
+            private IFFTXYLoop() {
+                fftX = new Complex(nX);
+                fftY = new Complex(nY);
+            }
 
             @Override
             public IntegerSchedule schedule() {

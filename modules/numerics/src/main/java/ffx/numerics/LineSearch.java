@@ -24,21 +24,37 @@ package ffx.numerics;
 
 import java.util.logging.Logger;
 
-import static java.lang.Math.*;
+import static java.lang.Math.abs;
+import static java.lang.Math.acos;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+import static java.lang.Math.sqrt;
+import static java.lang.Math.toDegrees;
 import static java.lang.System.arraycopy;
 
-import static ffx.numerics.LBFGS.*;
+import static ffx.numerics.LBFGS.XdotY;
+import static ffx.numerics.LBFGS.aXplusY;
+import static ffx.numerics.LBFGS.angMax;
+import static ffx.numerics.LBFGS.cappa;
+import static ffx.numerics.LBFGS.intMax;
+import static ffx.numerics.LBFGS.slopMax;
+import static ffx.numerics.LBFGS.stepMax;
+import static ffx.numerics.LBFGS.stepMin;
 
 /**
  * This class implements an algorithm for uni-dimensional line search. This file
  * is a translation of FORTRAN code written by Jay Ponder.<br>
  *
- * @author Michael J. Schnieders<br> Derived from Jay Ponder's FORTRAN code
- * (search.f).
- * @see <a href="http://dasher.wustl.edu/tinker" target="_blank"> Jay Ponder's
- * original FORTRAN code.</a>
- * @since 1.0
+ * @author Michael J. Schnieders
+ * <br>
+ * Derived from Jay Ponder's FORTRAN code (search.f).
  *
+ * @see
+ * <a href="http://dasher.wustl.edu/tinker" target="_blank"> Jay Ponder's
+ * original FORTRAN code.
+ * </a>
+ *
+ * @since 1.0
  */
 public class LineSearch {
 

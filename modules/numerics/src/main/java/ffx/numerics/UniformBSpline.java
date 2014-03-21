@@ -23,19 +23,35 @@
 package ffx.numerics;
 
 /**
- * Static methods to generate and differentiate uniform b-Splines. <p> C. de
- * Boor, A Practical Guide to Splines. (Springer, New York, 2001)
+ * Static methods to generate and differentiate uniform b-Splines.
  *
  * @author Michael J. Schnieders
- * @see <a href="http://www.wikipedia.org/wiki/B-spline"
- * target="_blank">b-Splines at Wikipedia</a><br> <a
- * href="http://mathworld.wolfram.com/B-Spline.html" target="_blank">b-Splines
- * at MathWorld</a><br>
- * @since 1.0
  *
+ * @see
+ * <ul>
+ * <li>
+ * <a href="http://www.springer.com/mathematics/analysis/book/978-0-387-95366-3"
+ * target="_blank">
+ * C. de Boor, A Practical Guide to Splines. (Springer, New York, 2001)
+ * </a>
+ * </li>
+ * <li>
+ * <a href="http://www.wikipedia.org/wiki/B-spline" target="_blank">b-Splines at
+ * Wikipedia</a>
+ * </li>
+ * <li>
+ * <a href="http://mathworld.wolfram.com/B-Spline.html"
+ * target="_blank">b-Splines at MathWorld</a>
+ * </li>
+ * </ul>
+ *
+ * @since 1.0
  */
 public class UniformBSpline {
 
+    /**
+     * Do not allow instantiation of UniformBSpline. All methods are static.
+     */
     private UniformBSpline() {
     }
 
@@ -88,12 +104,19 @@ public class UniformBSpline {
      *
      * @param x A double in the range [0.0, 1.0].
      * @param order b-Spline order (degree + 1).
-     * @param deriveOrder Derivative order.<br> 0 = no derivative.<br> 1 = 1rst
-     * derivative.<br> It must not be greater than the b-Spline degree (order -
-     * 1).<br> The method is currently limited to deriveOrder <= 5.<br>
+     * @param deriveOrder Derivative order.
+     * <br>
+     * 0 = no derivative.
+     * <br>
+     * 1 = 1rst derivative.
+     * <br> It must not be greater than the b-Spline degree (order - 1).
+     * <br>
+     * The method is currently limited to deriveOrder .LE. 5.
+     * <br>
      * @param coefficients The b-Spline coefficient array of size
      * [order][deriveOrder + 1].
      * @param work A work array of size [order][order].
+     *
      * @since 1.0
      */
     public static void bSplineDerivatives(final double x, final int order,

@@ -26,7 +26,9 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 
-import static java.lang.Math.*;
+import static java.lang.Math.cos;
+import static java.lang.Math.sin;
+import static java.lang.Math.toRadians;
 
 /**
  * The TorsionType class defines a torsional angle.
@@ -213,8 +215,6 @@ public final class TorsionType extends BaseType implements Comparator<String> {
 
     /**
      * {@inheritDoc}
-     *
-     * Implements the Comparator<String> interface.
      *
      * @since 1.0
      */

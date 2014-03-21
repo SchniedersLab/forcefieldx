@@ -33,7 +33,7 @@ import ffx.potential.bonded.MolecularAssembly;
 /**
  * <p>RealSpaceFile class.</p>
  *
- * @author Tim Fenn
+ * @author Timothy D. Fenn
  *
  */
 public class RealSpaceFile {

@@ -32,24 +32,53 @@ import static java.lang.String.format;
 
 import org.apache.commons.io.FileUtils;
 
-import edu.rit.pj.IntegerSchedule;
-import edu.rit.pj.ParallelTeam;
-
 import jcuda.LogLevel;
 import jcuda.Pointer;
 import jcuda.Sizeof;
-import jcuda.driver.*;
-import jcuda.jcufft.*;
+import jcuda.driver.CUcontext;
+import jcuda.driver.CUdevice;
+import jcuda.driver.CUdeviceptr;
+import jcuda.driver.CUdevprop;
+import jcuda.driver.CUfunction;
+import jcuda.driver.CUmodule;
+import jcuda.driver.JCudaDriver;
+import jcuda.jcufft.JCufft;
+import jcuda.jcufft.cufftCompatibility;
+import jcuda.jcufft.cufftHandle;
+import jcuda.jcufft.cufftResult;
+import jcuda.jcufft.cufftType;
 
-import static jcuda.driver.JCudaDriver.*;
-import static jcuda.jcufft.JCufft.*;
+import static jcuda.driver.JCudaDriver.align;
+import static jcuda.driver.JCudaDriver.cuCtxCreate;
+import static jcuda.driver.JCudaDriver.cuDeviceGet;
+import static jcuda.driver.JCudaDriver.cuDeviceGetProperties;
+import static jcuda.driver.JCudaDriver.cuFuncSetBlockShape;
+import static jcuda.driver.JCudaDriver.cuInit;
+import static jcuda.driver.JCudaDriver.cuLaunchGrid;
+import static jcuda.driver.JCudaDriver.cuMemAlloc;
+import static jcuda.driver.JCudaDriver.cuMemFree;
+import static jcuda.driver.JCudaDriver.cuMemcpyDtoH;
+import static jcuda.driver.JCudaDriver.cuMemcpyHtoD;
+import static jcuda.driver.JCudaDriver.cuModuleGetFunction;
+import static jcuda.driver.JCudaDriver.cuModuleLoad;
+import static jcuda.driver.JCudaDriver.cuParamSetSize;
+import static jcuda.driver.JCudaDriver.cuParamSeti;
+import static jcuda.driver.JCudaDriver.cuParamSetv;
+import static jcuda.jcufft.JCufft.cufftDestroy;
+import static jcuda.jcufft.JCufft.cufftExecC2R;
+import static jcuda.jcufft.JCufft.cufftExecR2C;
+import static jcuda.jcufft.JCufft.cufftPlan3d;
+import static jcuda.jcufft.JCufft.cufftSetCompatibilityMode;
+
+import edu.rit.pj.IntegerSchedule;
+import edu.rit.pj.ParallelTeam;
 
 /**
  * Compute a 3D Convolution using Java wrappers to the CUDA Driver API.
  *
  * @author Michal J. Schnieders
- * @since 1.0
  *
+ * @since 1.0
  */
 public class Real3DCuda implements Runnable {
 
@@ -274,7 +303,8 @@ public class Real3DCuda implements Runnable {
     }
 
     /**
-     * <p>main</p>
+     * <p>
+     * main</p>
      *
      * @param args an array of {@link java.lang.String} objects.
      * @throws java.lang.Exception if any.
@@ -344,9 +374,9 @@ public class Real3DCuda implements Runnable {
         }
 
         Real3D real3D = new Real3D(dim, dim, dim);
-        Real3DParallel real3DParallel =
-                new Real3DParallel(dim, dim, dim, new ParallelTeam(),
-                IntegerSchedule.fixed());
+        Real3DParallel real3DParallel
+                = new Real3DParallel(dim, dim, dim, new ParallelTeam(),
+                        IntegerSchedule.fixed());
         Real3DCuda real3DCUDA = new Real3DCuda(dim, dim, dim, dataf, recipf);
 
         Thread cudaThread = new Thread(real3DCUDA);

@@ -31,7 +31,7 @@ import ffx.potential.bonded.*;
 /**
  * <p>RefinementModel class.</p>
  *
- * @author Tim Fenn
+ * @author Timothy D. Fenn
  *
  */
 public class RefinementModel {

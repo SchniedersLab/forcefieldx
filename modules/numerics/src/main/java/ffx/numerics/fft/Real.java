@@ -22,24 +22,47 @@
  */
 package ffx.numerics.fft;
 
-import static java.lang.Math.*;
+import static java.lang.Math.PI;
+import static java.lang.Math.cos;
+import static java.lang.Math.sin;
 
 /**
  * Compute the FFT of real, double precision data of arbitrary length n using a
- * Complex transform. <p> "Henrik V. Sorenson, Douglas L. Jones, Michael T.
- * Heideman, and C. Sidney Burrus. Real-valued fast fourier fft algorithms. IEEE
- * Transactions on Acoustics, Speech, and Signal Processing, ASSP-35(6):849–863,
- * 1987." <p>
+ * Complex transform.
  *
- * @author Michal J. Schnieders<br> Derived from:<br> Bruce R. Miller
- * bruce.miller@nist.gov<br> Contribution of the National Institute of Standards
- * and Technology, not subject to copyright.<br> Derived from:<br> GSL (Gnu
- * Scientific Library) FFT Code by Brian Gough bjg@vvv.lanl.gov
- * @see <a href="http://www.jstor.org/stable/2003354" target="_blank">J. W.
- * Cooley and J. W. Tukey, Mathematics of Computation 19 (90), 297
- * (1965)</a><br> <a href="http://en.wikipedia.org/wiki/Fast_Fourier_transform"
- * target="_blank">FFT at Wikipedia</a><br>
+ * @author Michal J. Schnieders<br> Derived from:
+ * <br>
+ * Bruce R. Miller bruce.miller@nist.gov
+ * <br>
+ * Contribution of the National Institute of Standards and Technology, not
+ * subject to copyright.<br> Derived from:<br> GSL (Gnu Scientific Library) FFT
+ * Code by Brian Gough bjg@vvv.lanl.gov
  *
+ * @see
+ * <ul>
+ * <li>
+ * Complex
+ * </li>
+ * <li>
+ * <a href="http://dx.doi.org/10.1109/TASSP.1987.1165220" target="_blank">
+ * Henrik V. Sorenson, Douglas L. Jones, Michael T. Heideman, and C. Sidney
+ * Burrus. Real-valued fast fourier fft algorithms. IEEE Transactions on
+ * Acoustics, Speech, and Signal Processing, ASSP-35(6):849–863, 1987.
+ * </a>
+ * </li>
+ * <li>
+ * <a href="http://www.jstor.org/stable/2003354" target="_blank">J. W. Cooley
+ * and J. W. Tukey, Mathematics of Computation 19 (90), 297 (1965)
+ * </a>
+ * </li>
+ * <li>
+ * <a href="http://en.wikipedia.org/wiki/Fast_Fourier_transform"
+ * target="_blank">FFT at Wikipedia
+ * </a>
+ * </li>
+ * </ul>
+ *
+ * @since 1.0
  */
 public class Real {
 
@@ -68,7 +91,8 @@ public class Real {
     }
 
     /**
-     * <p>fft</p>
+     * <p>
+     * fft</p>
      *
      * @param data an array of double.
      * @param offset a int.
@@ -79,7 +103,8 @@ public class Real {
     }
 
     /**
-     * <p>ifft</p>
+     * <p>
+     * ifft</p>
      *
      * @param data an array of double.
      * @param offset a int.
@@ -105,7 +130,8 @@ public class Real {
     }
 
     /**
-     * <p>inverse</p>
+     * <p>
+     * inverse</p>
      *
      * @param data an array of double.
      * @param offset a int.

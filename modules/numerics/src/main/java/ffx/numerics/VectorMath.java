@@ -24,7 +24,11 @@ package ffx.numerics;
 
 import java.util.logging.Logger;
 
-import static java.lang.Math.*;
+import static java.lang.Math.abs;
+import static java.lang.Math.acos;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+import static java.lang.Math.sqrt;
 
 /**
  * The VectorMath class is a simple math library that operates on 3-coordinate
@@ -97,7 +101,7 @@ public final class VectorMath {
         norm(j, fb);
         x = dot(fa, fb);
         if (abs(x) > 1) {
-            logger.warning("angle: abs(dot) > 1 " + x);
+            logger.warning(String.format(" Angle: abs(dot) > 1 %10.6f", x));
             if (x > 0) {
                 x = 1;
             } else {
@@ -160,7 +164,7 @@ public final class VectorMath {
         norm(fb, fd);
         x = dot(fc, fd);
         if (abs(x) > 1) {
-            logger.warning("bondAngle: abs(dot) > 1 " + x);
+            logger.warning(String.format(" Bond Angle: abs(dot) > 1 %10.6f", x));
             if (x > 0) {
                 x = 1;
             } else {
@@ -331,7 +335,7 @@ public final class VectorMath {
         double dx = a[0] - b[0];
         double dy = a[1] - b[1];
         double dz = a[2] - b[2];
-        return dx*dx + dy*dy + dz*dz;
+        return dx * dx + dy * dy + dz * dz;
     }
 
     /**
@@ -356,7 +360,7 @@ public final class VectorMath {
         float dx = a[0] - b[0];
         float dy = a[1] - b[1];
         float dz = a[2] - b[2];
-        return dx*dx + dy*dy + dz*dz;
+        return dx * dx + dy * dy + dz * dz;
     }
 
     /**
@@ -393,7 +397,7 @@ public final class VectorMath {
     }
 
     /**
-     * Returns n!! Precondition: n >= -1 Returning 1 for -1 input is analogous
+     * Returns n!! Precondition: n .GE. -1 Returning 1 for -1 input is analogous
      * to Maple behavior.
      *
      * @param n long
@@ -410,11 +414,15 @@ public final class VectorMath {
     }
 
     /**
-     * Returns n! Precondition: n >= 0 and n <= 20 Max long =
-     * 9223372036854775807 20! = 2432902008176640000 is ok. 21! returns an
-     * overflow: -4249290049419214848
-     *
-     *
+     * Returns n!
+     * <br>
+     * Precondition: n .GE. 0 and n .LE. 20
+     * <br>
+     * Max long = 9223372036854775807
+     * <br>
+     * 20! = 2432902008176640000 is ok.
+     * <br>
+     * 21! returns an overflow: -4249290049419214848
      *
      * @param n long
      * @return long

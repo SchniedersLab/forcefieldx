@@ -42,7 +42,7 @@ import static ffx.numerics.VectorMath.*;
  * This implementation uses the coefficients from International Tables, Vol. C,
  * chapter 4.4.4.
  *
- * @author Tim Fenn<br>
+ * @author Timothy D. Fenn<br>
  * @see <a href="http://dx.doi.org/10.1107/97809553602060000594"
  * target="_blank"> V. F. Sears, Int. Tables Vol. C (2006). Table 4.4.4.1</a>
  *

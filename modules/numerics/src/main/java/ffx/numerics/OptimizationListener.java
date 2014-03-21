@@ -29,8 +29,8 @@ import ffx.numerics.LineSearch.LineSearchResult;
  * successful steps. Currently only one listener is supported.
  *
  * @author Michael J. Schnieders
- * @since 1.0
  *
+ * @since 1.0
  */
 public interface OptimizationListener {
 

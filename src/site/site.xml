@@ -5,10 +5,15 @@
     xsi:schemaLocation="http://maven.apache.org/DECORATION/1.4.0 http://maven.apache.org/xsd/decoration-1.4.0.xsd">
     <version position="right" />
     <publishDate position="right" format="MMM dd yyyy" />
-    <skin>
+    <!-- skin>
         <groupId>org.apache.commons</groupId>
         <artifactId>commons-skin</artifactId>
         <version>4</version>
+    </skin -->
+    <skin>
+        <groupId>lt.velykis.maven.skins</groupId>
+        <artifactId>reflow-maven-skin</artifactId>
+        <version>1.1.0</version>
     </skin>
     <!-- skin>
         <groupId>org.apache.maven.skins</groupId>
@@ -25,73 +30,113 @@
     </poweredBy>
     <googleAnalyticsAccountId>UA-12576019-1</googleAnalyticsAccountId>
     <bannerLeft>
-        <name>Biochemistry</name>
-        <src>/images/biochemistry.jpg</src>
-        <href>http://www.medicine.uiowa.edu/biochemistry</href>
+        <name>
+            <![CDATA[
+            Force Field<span style="color:yellow"> X</span>
+            ]]>
+        </name>
+        <href>http://ffx.eng.uiowa.edu</href>
     </bannerLeft>
-    <!-- bannerLeft>
+    <bannerRight>
         <name>The University of Iowa</name>
         <src>/images/UofI.png</src>
         <href>http://www.uiowa.edu</href>
         <width>120px</width>
         <height>120px</height>
-    </bannerLeft -->
+    </bannerRight>
     <body>
         <head>
             <script type="text/javascript"
                     src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
             </script>
         </head>
-        <links>
-            <item name="Biochemistry"  href="http://www.medicine.uiowa.edu/biochemistry"/>
+        <!-- links>
+            <item name="Biochemistry" href="http://www.medicine.uiowa.edu/biochemistry"/>
             <item name="Biomedical Engineering"  href="http://www.engineering.uiowa.edu/bme"/>
             <item name="CBCB" href="https://genome.uiowa.edu/home"/>
             <item name="IIHG" href="https://www.medicine.uiowa.edu/humangenetics"/>
             <item name="IVR"  href="http://ivr.uiowa.edu"/>
             <item name="HCCC" href="http://www.uihealthcare.org/holdencomprehensivecancercenter"/>
-        </links>
+        </links -->
         <breadcrumbs>
             <item name="Sitemap" href="/sitemap.html"/>
             <item name="Home" href="/index.html"/>
         </breadcrumbs>
-        <menu name="Force Field X" inherit="top">
+        <menu name="Overview" inherit="top">
             <item name="Welcome" href="/index.html"/>
+            <item name="Scope" href="/scope.html"/>
             <item name="Manual" href="/download.html"/>
+            <item name="Modules" href="/modules.html"/>
+            <item name="License" href="/license.html"/>
             <item name="Publications" href="/publications.html"/>
             <item name="FFX Team" href="/team-list.html"/>
         </menu>
         <menu name="Manual" inherit="top">
-            <item name="Download" href="/download.html"/>
-            <item name="Install" href="/install.html"/>
-            <item name="Commands" href="/scripts.html"/>
-            <item name="Properties" href="/properties.html"/>
-            <item name="Space Groups" href="/symmetry.html"/>
+            <item name="Download &amp; Install" href="/download.html"/>
+            <item name="Commands &amp; Properties" href="/commands.html"/>
             <item name="Examples" href="/examples.html"/>
+            <item name="Source Code" href="/source.html"/>
             <!-- item name="Launch Webstart" href="/webstart.html"/ -->
         </menu>
-        <menu name="FFX Commons" inherit="top">
-            <item name="Organization" href="/project.html"/>
-            <item name="Source Code" href="/source.html"/>
-            <item name="Project Modules" href="/modules.html" collapse="true">
-                <item name="Algorithms"  href="modules/algorithms/index.html"/>
-                <!-- item name="Automatic Parameterization"  href="modules/autoparm/index.html"/ -->
-                <!-- item name="Binding Affinity"  href="modules/binding/index.html"/ -->
-                <!-- item name="Coarse Grain" href="modules/cg/index.html"/ -->
-                <!-- item name="Continuum Electrostatics" href="modules/continuum/index.html"/ -->
-                <item name="Crystal" href="modules/crystal/index.html"/>
-                <!-- item name="Nucleic Acids" href="modules/nucleic/index.html"/ -->
-                <item name="Numerics" href="modules/numerics/index.html"/>
-                <item name="Potentials" href="modules/potentials/index.html"/>
-                <item name="User Interfaces" href="modules/ui/index.html"/>
-                <item name="Utilities" href="modules/utilities/index.html"/>
-                <item name="X-Ray Refinement" href="modules/xray/index.html"/>
-            </item>
-            <item name="Development Resources" href="/links.html"/>
+        <menu name="Modules" inherit="top">
+            <item name="Algorithms"  href="modules/algorithms/index.html"/>
+            <!--item name="Automatic Parameterization"  href="modules/autoparm/index.html"/ -->
+            <!-- item name="Binding Affinity"  href="modules/binding/index.html"/ -->
+            <!-- item name="Coarse Grain" href="modules/cg/index.html"/ -->
+            <!-- item name="Continuum Electrostatics" href="modules/continuum/index.html"/ -->
+            <item name="Crystal" href="modules/crystal/index.html"/>
+            <!-- item name="Nucleic Acids" href="modules/nucleic/index.html"/ -->
+            <item name="Numerics" href="modules/numerics/index.html"/>
+            <item name="Potentials" href="modules/potentials/index.html"/>
+            <item name="User Interfaces" href="modules/ui/index.html"/>
+            <item name="Utilities" href="modules/utilities/index.html"/>
+            <item name="X-Ray Refinement" href="modules/xray/index.html"/>
         </menu>
-        <menu ref="reports"/>
+        <menu name="Project Info" ref="reports"/>
     </body>
-    <!-- custom>
-        <fluidoSkin>
+    <custom>
+        <reflowSkin>
+            <skinAttribution>false</skinAttribution>
+            <!-- theme>bootswatch-flatly</theme -->
+            <theme>default</theme>
+            <highlightJs>true</highlightJs>
+            <imgLightbox>false</imgLightbox>
+            <!-- navbarInverse>true</navbarInverse -->
+            <brand>
+                <name>
+                        <![CDATA[
+                        Force Field<span style="color:yellow"> X</span>
+                        ]]>
+                </name>
+                <href>http://ffx.eng.uiowa.edu</href>
+            </brand>
+            <slogan position="bannerLeft">Accurate, Efficient, Open and Cross-Platform Tools for Molecular Biophysics</slogan>
+            <titleTemplate>%2$s</titleTemplate>
+            <toc>top</toc>
+            <topNav>Overview|Manual|Modules|Project Info|Algorithms|Crystal|Numerics|Potentials|User Interfaces|X-Ray Refinement</topNav>
+            <bottomNav>
+                <column>Overview</column>
+                <column>Manual</column>
+                <column>Modules</column>
+                <column>Algorithms|Crystal|Numerics|Potentials|User Interfaces|X-Ray Refinement</column>
+            </bottomNav>
+            <bottomDescription>
+                Force Field X is based on accurate polarizable atomic multipole force fields parallelized for clusters of many-core nodes with coprocessors using an open (GPL v. 3), modular and platform independent software architecture.
+            </bottomDescription>
+            <pages>
+                <index>
+                    <toc>false</toc>
+                    <titleTemplate>Force Field X</titleTemplate>
+                    <sections>
+                        <carousel />
+                    </sections>
+                </index>
+                <!-- developer-info>
+                    <toc>sidebar</toc>
+                </developer-info -->
+            </pages>
+        </reflowSkin>
+        <!-- fluidoSkin>
             <sideBarEnabled>false</sideBarEnabled>
             <topBarEnabled>true</topBarEnabled>
             <topBarContainerStyle>width: 90%;</topBarContainerStyle>
@@ -115,6 +160,6 @@
             <facebookLike/>
             <googlePlusOne/>
             <sourceLineNumbersEnabled>false</sourceLineNumbersEnabled>
-        </fluidoSkin>
-    </custom -->
+        </fluidoSkin -->
+    </custom>
 </project>

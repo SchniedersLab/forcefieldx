@@ -26,7 +26,14 @@ import java.nio.DoubleBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.lang.Math.*;
+import static java.lang.Math.PI;
+import static java.lang.Math.cos;
+import static java.lang.Math.exp;
+import static java.lang.Math.max;
+import static java.lang.Math.pow;
+import static java.lang.Math.round;
+import static java.lang.Math.sin;
+import static java.lang.Math.sqrt;
 import static java.lang.String.format;
 
 import edu.rit.pj.IntegerForLoop;
@@ -49,21 +56,43 @@ import static ffx.crystal.Crystal.mod;
 import static ffx.numerics.UniformBSpline.bSpline;
 import static ffx.numerics.UniformBSpline.bSplineDerivatives;
 import static ffx.numerics.fft.Complex3D.iComplex3D;
-import static ffx.potential.parameters.MultipoleType.*;
+import static ffx.potential.parameters.MultipoleType.t000;
+import static ffx.potential.parameters.MultipoleType.t001;
+import static ffx.potential.parameters.MultipoleType.t002;
+import static ffx.potential.parameters.MultipoleType.t003;
+import static ffx.potential.parameters.MultipoleType.t010;
+import static ffx.potential.parameters.MultipoleType.t011;
+import static ffx.potential.parameters.MultipoleType.t012;
+import static ffx.potential.parameters.MultipoleType.t020;
+import static ffx.potential.parameters.MultipoleType.t021;
+import static ffx.potential.parameters.MultipoleType.t030;
+import static ffx.potential.parameters.MultipoleType.t100;
+import static ffx.potential.parameters.MultipoleType.t101;
+import static ffx.potential.parameters.MultipoleType.t102;
+import static ffx.potential.parameters.MultipoleType.t110;
+import static ffx.potential.parameters.MultipoleType.t111;
+import static ffx.potential.parameters.MultipoleType.t120;
+import static ffx.potential.parameters.MultipoleType.t200;
+import static ffx.potential.parameters.MultipoleType.t201;
+import static ffx.potential.parameters.MultipoleType.t210;
+import static ffx.potential.parameters.MultipoleType.t300;
 
 /**
  * The Reciprocal Space class computes the reciprocal space contribution to
  * {@link ParticleMeshEwald} for the AMOEBA force field.
  *
- * <ol> <li> Assignment of polarizable multipole charge density to the 3D grid,
- * via b-Splines, is parallelized using a spatial decomposition. </li>
- * <p>
+ * <ol>
+ * <li>
+ * Assignment of polarizable multipole charge density to the 3D grid, via
+ * b-Splines, is parallelized using a spatial decomposition. </li>
  * <li>
  * The convolution depends on methods of the {@link Real3DParallel} and
- * {@link Complex3DParallel} classes. </li>
- * <p>
+ * {@link Complex3DParallel} classes.
+ * </li>
  * <li> Finally, the electric potential and its gradients are collected, in
- * parallel, off the grid using b-Splines. </li> </ol>
+ * parallel, off the grid using b-Splines.
+ * </li>
+ * </ol>
  *
  * @author Michael J. Schnieders
  * @since 1.0
