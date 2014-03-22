@@ -5,11 +5,6 @@
     xsi:schemaLocation="http://maven.apache.org/DECORATION/1.4.0 http://maven.apache.org/xsd/decoration-1.4.0.xsd">
     <version position="right" />
     <publishDate position="right" format="MMM dd yyyy" />
-    <!-- skin>
-        <groupId>org.apache.commons</groupId>
-        <artifactId>commons-skin</artifactId>
-        <version>4</version>
-    </skin -->
     <skin>
         <groupId>lt.velykis.maven.skins</groupId>
         <artifactId>reflow-maven-skin</artifactId>
@@ -44,6 +39,64 @@
         <width>120px</width>
         <height>120px</height>
     </bannerRight>
+    <custom>
+        <reflowSkin>
+            <localResources>true</localResources>
+            <skinAttribution>false</skinAttribution>
+            <!-- theme>bootswatch-flatly</theme -->
+            <theme>site</theme>
+            <highlightJs>true</highlightJs>
+            <imgLightbox>false</imgLightbox>
+            <!-- navbarInverse>true</navbarInverse -->
+            <brand>
+                <name>
+                        <![CDATA[
+                        Force Field<span style="color:yellow"> X</span>
+                        ]]>
+                </name>
+                <href>http://ffx.eng.uiowa.edu</href>
+            </brand>
+            <slogan position="bannerLeft">Accurate, Efficient, Open and Cross-Platform Tools for Molecular Biophysics</slogan>
+            <titleTemplate>%2$s</titleTemplate>
+            <toc>top</toc>
+            <topNav>Overview|Manual|Modules|Project Info|Algorithms|Crystal|Numerics|Potentials|User Interfaces|Utilities|X-Ray Refinement</topNav>
+            <bottomNav>
+                <column>Overview</column>
+                <column>Manual</column>
+                <column>Modules</column>
+                <column>Algorithms|Crystal|Numerics|Potentials|User Interfaces|Utilities|X-Ray Refinement</column>
+            </bottomNav>
+            <bottomDescription>
+                Force Field X is based on accurate polarizable atomic multipole force fields parallelized for clusters of many-core nodes with coprocessors using an open (GPL v. 3), modular and platform independent software architecture.
+            </bottomDescription>
+            <pages>
+                <index project="ffx">
+                    <toc>false</toc>
+                    <shortTitle>Force Field X</shortTitle>
+                    <sections>
+                        <carousel />
+                        <body />
+                    </sections>
+                </index>
+                <license>
+                    <toc>sidebar</toc>
+                </license>
+                <publications>
+                    <shortTitle>Publications</shortTitle>
+                    <toc>sidebar</toc>
+                    <sections>
+                        <body />
+                    </sections>
+                </publications>
+                <modules>
+                    <toc>none</toc>
+                </modules>
+                <team-list>
+                    <toc>none</toc>
+                </team-list>
+            </pages>
+        </reflowSkin>
+    </custom>
     <body>
         <head>
             <script type="text/javascript"
@@ -94,72 +147,29 @@
         </menu>
         <menu name="Project Info" ref="reports"/>
     </body>
-    <custom>
-        <reflowSkin>
-            <skinAttribution>false</skinAttribution>
-            <!-- theme>bootswatch-flatly</theme -->
-            <theme>default</theme>
-            <highlightJs>true</highlightJs>
-            <imgLightbox>false</imgLightbox>
-            <!-- navbarInverse>true</navbarInverse -->
-            <brand>
-                <name>
-                        <![CDATA[
-                        Force Field<span style="color:yellow"> X</span>
-                        ]]>
-                </name>
-                <href>http://ffx.eng.uiowa.edu</href>
-            </brand>
-            <slogan position="bannerLeft">Accurate, Efficient, Open and Cross-Platform Tools for Molecular Biophysics</slogan>
-            <titleTemplate>%2$s</titleTemplate>
-            <toc>top</toc>
-            <topNav>Overview|Manual|Modules|Project Info|Algorithms|Crystal|Numerics|Potentials|User Interfaces|X-Ray Refinement</topNav>
-            <bottomNav>
-                <column>Overview</column>
-                <column>Manual</column>
-                <column>Modules</column>
-                <column>Algorithms|Crystal|Numerics|Potentials|User Interfaces|X-Ray Refinement</column>
-            </bottomNav>
-            <bottomDescription>
-                Force Field X is based on accurate polarizable atomic multipole force fields parallelized for clusters of many-core nodes with coprocessors using an open (GPL v. 3), modular and platform independent software architecture.
-            </bottomDescription>
-            <pages>
-                <index>
-                    <toc>false</toc>
-                    <titleTemplate>Force Field X</titleTemplate>
-                    <sections>
-                        <carousel />
-                    </sections>
-                </index>
-                <!-- developer-info>
-                    <toc>sidebar</toc>
-                </developer-info -->
-            </pages>
-        </reflowSkin>
-        <!-- fluidoSkin>
-            <sideBarEnabled>false</sideBarEnabled>
-            <topBarEnabled>true</topBarEnabled>
-            <topBarContainerStyle>width: 90%;</topBarContainerStyle>
-            <topBarIcon>
-                <name>Force Field X Development</name>
-                <alt>Force Field X Development</alt>
-                <target>_blank</target>
-                <src>/images/icon90.png</src>
-                <href>http://kenai.com/projects/ffx</href>
-            </topBarIcon>
-            <navBarStyle>navbar-inverse</navBarStyle>
-            <leftColumnClass>span0</leftColumnClass>
-            <bodyColumnClass>span12</bodyColumnClass>
-            <googleSearch>
-                <sitesearch>true</sitesearch>
-            </googleSearch>
-            <ohloh>
-                <projectId>487436</projectId>
-                <widget>thin-badge</widget>
-            </ohloh>
-            <facebookLike/>
-            <googlePlusOne/>
-            <sourceLineNumbersEnabled>false</sourceLineNumbersEnabled>
-        </fluidoSkin -->
-    </custom>
+    <!-- fluidoSkin>
+        <sideBarEnabled>false</sideBarEnabled>
+        <topBarEnabled>true</topBarEnabled>
+        <topBarContainerStyle>width: 90%;</topBarContainerStyle>
+        <topBarIcon>
+            <name>Force Field X Development</name>
+            <alt>Force Field X Development</alt>
+            <target>_blank</target>
+            <src>/images/icon90.png</src>
+            <href>http://kenai.com/projects/ffx</href>
+        </topBarIcon>
+        <navBarStyle>navbar-inverse</navBarStyle>
+        <leftColumnClass>span0</leftColumnClass>
+        <bodyColumnClass>span12</bodyColumnClass>
+        <googleSearch>
+            <sitesearch>true</sitesearch>
+        </googleSearch>
+        <ohloh>
+            <projectId>487436</projectId>
+            <widget>thin-badge</widget>
+        </ohloh>
+        <facebookLike/>
+        <googlePlusOne/>
+        <sourceLineNumbersEnabled>false</sourceLineNumbersEnabled>
+    </fluidoSkin -->
 </project>
