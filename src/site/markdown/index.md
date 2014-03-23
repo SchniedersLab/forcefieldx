@@ -63,4 +63,4 @@ Fenn, T. D. and M. J. Schnieders, <i>Acta Crystallographica Section D</i>
   to <a href="source.html">GIT and build the code</a>. We also provide instructions for
   how to use its <a href="modules.html">modules</a> in your own programs.
 
-  <script type="text/javascript" src="http://www.ohloh.net/p/487436/widgets/project_factoids_stats.js"></script>
+  <script type="text/javascript" src="js/factoids.js"></script>

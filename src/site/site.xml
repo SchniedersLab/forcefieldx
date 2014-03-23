@@ -71,7 +71,7 @@
                 <column>Algorithms|Crystal|Numerics|Potentials|User Interfaces|Utilities|X-Ray Refinement</column>
             </bottomNav>
             <bottomDescription>
-                <script type="text/javascript" src="http://www.ohloh.net/p/487436/widgets/project_search_code.js"></script>
+                <script type="text/javascript" src="js/search.js"></script>
             </bottomDescription>
             <pages>
                 <index project="ffx">
