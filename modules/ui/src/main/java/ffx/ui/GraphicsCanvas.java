@@ -115,7 +115,7 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     /**
      * Constant <code>imageFormatHash</code>
      */
-    public static final HashMap<String, ImageFormat> imageFormatHash = new HashMap<String, ImageFormat>();
+    public static final HashMap<String, ImageFormat> imageFormatHash = new HashMap<>();
 
     static {
         ImageFormat values[] = ImageFormat.values();

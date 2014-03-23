@@ -1,0 +1,72 @@
+ ------
+ Usage
+ ------
+ Michael J. Schnieders
+ <michael-schnieders@uiowa.edu>
+ ------
+ 2014-03-22
+ ------
+
+Usage
+
+* FFX Commons Repository
+
+  Specify Force Field X Commons in the list of repositories in your pom.xml
+
++-----+
+<repositories>
+  <repository>
+    <name>Force Field X Commons</name>
+    <id>ffx.commons</id>
+    <url>https://kenai.com/projects/ffx/sources/ffx-commons/show/content</url>
+  </repository>
+</repositories>
++-----+
+
+* Numerics Dependency
+
+  Specify Numerics in the list of Dependencies in your pom.xml
+
++-----+
+<dependencies>
+  <dependency>
+    <groupId>edu.uiowa.eng.ffx</groupId>
+    <artifactId>numerics</artifactId>
+    <version>${project.version}</version>
+    <type>jar</type>
+  </dependency>
+</dependencies>
++-----+
+
+* Erf Example
+
+  Shown below is an example of using the ffx.numerics Erf class.
+
++-----+
+import static ffx.numerics.Erf.erf;
+...
+double x = 2.0;
+double erfx = erf(x);
++-----+
+
+* FFT Example
+
+  Shown below is an example of using the ffx.numerics.fft package Complex class.
+
++-----+
+import java.util.Random;
+import ffx.numerics.fft.Complex;
+...
+int n = 256;
+double data[] = new double[n * 2];
+Random r = new Random();
+for (int i = 0; i < n; i++) {
+    double d = r.nextDouble();
+    data[i * 2] = d;
+}
+int offset = 0;
+int stride = 2;
+Complex complex = new Complex(n);
+complex.fft(data, offset, stride);
+complex.inverse(data, offset, stride);
++-----+

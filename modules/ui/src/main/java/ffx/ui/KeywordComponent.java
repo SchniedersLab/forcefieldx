@@ -22,7 +22,13 @@
  */
 package ffx.ui;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -31,7 +37,14 @@ import java.util.ArrayList;
 import java.util.ListIterator;
 import java.util.logging.Logger;
 
-import javax.swing.*;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.JViewport;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -66,7 +79,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
     /**
      * Some static layout variables
      */
-    private static String spaces = new String("                             ");
+    private static String spaces = "                             ";
     private static Dimension labelDimension = null;
     private static Dimension entryDimension = null;
 
@@ -78,7 +91,8 @@ public final class KeywordComponent implements MouseListener, ActionListener,
     }
 
     /**
-     * <p>fillPanel</p>
+     * <p>
+     * fillPanel</p>
      *
      * @param p a {@link javax.swing.JPanel} object.
      * @param g a {@link java.awt.GridBagLayout} object.
@@ -96,7 +110,8 @@ public final class KeywordComponent implements MouseListener, ActionListener,
     }
 
     /**
-     * <p>isKeywordModified</p>
+     * <p>
+     * isKeywordModified</p>
      *
      * @return a boolean.
      */
@@ -105,7 +120,8 @@ public final class KeywordComponent implements MouseListener, ActionListener,
     }
 
     /**
-     * <p>setKeywordModified</p>
+     * <p>
+     * setKeywordModified</p>
      *
      * @param b a boolean.
      */
@@ -125,7 +141,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
      */
     private ArrayList<Component> keywordValues;
     private JPanel keywordGUI = null;
-    private FlowLayout flowLayout = new FlowLayout(FlowLayout.LEFT, 5, 5);
+    private final FlowLayout flowLayout;
     /**
      * The type of Swing Conponent used in representing this Keyword
      */
@@ -149,9 +165,10 @@ public final class KeywordComponent implements MouseListener, ActionListener,
      */
     public KeywordComponent(String k, String kg, SwingRepresentation s,
             String d, JTextArea jta) {
+        flowLayout = new FlowLayout(FlowLayout.LEFT, 5, 5);
         keyword = k;
         keywordGroup = kg;
-        keywordValues = new ArrayList<Component>();
+        keywordValues = new ArrayList<>();
         swingRepresentation = s;
         keywordDescription = d;
         output = jta;
@@ -161,7 +178,8 @@ public final class KeywordComponent implements MouseListener, ActionListener,
     }
 
     /**
-     * <p>Constructor for KeywordComponent.</p>
+     * <p>
+     * Constructor for KeywordComponent.</p>
      *
      * @param k a {@link java.lang.String} object.
      * @param kg a {@link java.lang.String} object.
@@ -249,7 +267,8 @@ public final class KeywordComponent implements MouseListener, ActionListener,
     }
 
     /**
-     * <p>clearKeywordComponent</p>
+     * <p>
+     * clearKeywordComponent</p>
      */
     public void clearKeywordComponent() {
         synchronized (this) {
@@ -339,8 +358,8 @@ public final class KeywordComponent implements MouseListener, ActionListener,
     }
 
     /**
-     * <p>Getter for the field
-     * <code>keyword</code>.</p>
+     * <p>
+     * Getter for the field <code>keyword</code>.</p>
      *
      * @return a {@link java.lang.String} object.
      */
@@ -349,7 +368,8 @@ public final class KeywordComponent implements MouseListener, ActionListener,
     }
 
     /**
-     * <p>getKeywordData</p>
+     * <p>
+     * getKeywordData</p>
      *
      * @param keywordData a {@link ffx.utilities.Keyword} object.
      */
@@ -395,8 +415,8 @@ public final class KeywordComponent implements MouseListener, ActionListener,
     }
 
     /**
-     * <p>Getter for the field
-     * <code>keywordDescription</code>.</p>
+     * <p>
+     * Getter for the field <code>keywordDescription</code>.</p>
      *
      * @return a {@link java.lang.String} object.
      */
@@ -405,8 +425,8 @@ public final class KeywordComponent implements MouseListener, ActionListener,
     }
 
     /**
-     * <p>Getter for the field
-     * <code>keywordGroup</code>.</p>
+     * <p>
+     * Getter for the field <code>keywordGroup</code>.</p>
      *
      * @return a {@link java.lang.String} object.
      */
@@ -473,7 +493,8 @@ public final class KeywordComponent implements MouseListener, ActionListener,
     }
 
     /**
-     * <p>isActive</p>
+     * <p>
+     * isActive</p>
      *
      * @return a boolean.
      */

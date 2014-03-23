@@ -45,10 +45,10 @@ import ffx.ui.properties.FFXLocale;
 public class MainMenu extends JMenuBar {
 
     private static final long serialVersionUID = 1L;
-    private static int keyMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
+    private static final int keyMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
     // Controller References
-    private MainPanel mainPanel;
-    private GraphicsCanvas graphics;
+    private final MainPanel mainPanel;
+    private final GraphicsCanvas graphics;
     // Locale and ClassLoader
     private FFXLocale locale;
     private ClassLoader loader;

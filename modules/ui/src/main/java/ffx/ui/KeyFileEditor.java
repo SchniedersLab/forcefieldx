@@ -25,11 +25,13 @@ package ffx.ui;
 import java.awt.Container;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
 /**
  * The KeyFileEditor class is a wrapper for the KeywordPanel to create a stand
@@ -44,7 +46,8 @@ public final class KeyFileEditor extends JFrame {
     private static final Logger logger = Logger.getLogger(KeyFileEditor.class.getName());
 
     /**
-     * <p>main</p>
+     * <p>
+     * main</p>
      *
      * @param args an array of {@link java.lang.String} objects.
      */
@@ -55,13 +58,14 @@ public final class KeyFileEditor extends JFrame {
     KeywordPanel tkp;
 
     /**
-     * <p>Constructor for KeyFileEditor.</p>
+     * <p>
+     * Constructor for KeyFileEditor.</p>
      */
     public KeyFileEditor() {
         try {
             UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-        } catch (Exception e) {
-            logger.warning("Can't set look and feel: " + e);
+        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | UnsupportedLookAndFeelException e) {
+            logger.log(Level.WARNING, " Can''t set look and feel: {0}", e);
         }
         tkp = new KeywordPanel(null);
         Container contentPane = getContentPane();
@@ -69,6 +73,7 @@ public final class KeyFileEditor extends JFrame {
         setTitle("Key File Editor");
         setSize(800, 800);
         addWindowListener(new WindowAdapter() {
+            @Override
             public void windowClosing(WindowEvent e) {
                 close();
                 System.exit(0);

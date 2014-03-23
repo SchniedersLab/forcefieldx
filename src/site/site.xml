@@ -47,16 +47,20 @@
             <theme>site</theme>
             <highlightJs>true</highlightJs>
             <imgLightbox>false</imgLightbox>
-            <!-- navbarInverse>true</navbarInverse -->
+            <navbarInverse>true</navbarInverse>
             <brand>
                 <name>
-                        <![CDATA[
-                        Force Field<span style="color:yellow"> X</span>
-                        ]]>
+                    <![CDATA[
+                    Force Field<span style="color:yellow"> X</span>
+                    ]]>
                 </name>
                 <href>http://ffx.eng.uiowa.edu</href>
             </brand>
-            <slogan position="bannerLeft">Accurate, Efficient, Open and Cross-Platform Tools for Molecular Biophysics</slogan>
+            <slogan position="bannerLeft">
+                <![CDATA[
+                <span style="color:yellow">Sustainable</span> Software for Molecular Biophysics
+                ]]>
+            </slogan>
             <titleTemplate>%2$s</titleTemplate>
             <toc>top</toc>
             <topNav>Overview|Manual|Modules|Project Info|Algorithms|Crystal|Numerics|Potentials|User Interfaces|Utilities|X-Ray Refinement</topNav>
@@ -67,7 +71,7 @@
                 <column>Algorithms|Crystal|Numerics|Potentials|User Interfaces|Utilities|X-Ray Refinement</column>
             </bottomNav>
             <bottomDescription>
-                Force Field X is based on accurate polarizable atomic multipole force fields parallelized for clusters of many-core nodes with coprocessors using an open (GPL v. 3), modular and platform independent software architecture.
+                <script type="text/javascript" src="http://www.ohloh.net/p/487436/widgets/project_search_code.js"></script>
             </bottomDescription>
             <pages>
                 <index project="ffx">
@@ -75,7 +79,7 @@
                     <shortTitle>Force Field X</shortTitle>
                     <sections>
                         <carousel />
-                        <body />
+                        <columns>3</columns>
                     </sections>
                 </index>
                 <license>
@@ -91,6 +95,9 @@
                 <modules>
                     <toc>none</toc>
                 </modules>
+                <project-info>
+                    <toc>none</toc>
+                </project-info>
                 <team-list>
                     <toc>none</toc>
                 </team-list>

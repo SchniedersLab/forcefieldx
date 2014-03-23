@@ -29,11 +29,38 @@ Fenn, T. D. and M. J. Schnieders, <i>Acta Crystallographica Section D</i>
 
 ---
 
-### Force Field X Algorithms
+### Overview
 
-* Polarizable AMOEBA force fields
-* Particle-mesh Ewald electrostatics
-* Generalized Kirkwood continuum electrostatics
-* X-ray and neutron crystallography refinement
-* Real space refinement for CryoEM
-* Methods for structure based drug design
+  Force Field<span style="color:yellow"> X</span>
+  is based on accurate polarizable atomic multipole force fields,
+  local and global optimization algorithms,
+  and rigorous statistical mechanics sampling.
+  The FFX code is parallelized for clusters of many-core nodes with coprocessors
+  using an open (GPL v. 3), modular and platform independent approach.
+
+  If you are new to molecular modeling, please see examples of the types of
+  systems studied <a href="scope.html">here</a>.
+
+### Molecular Modeling
+
+  Modeling algorithms include:
+
+  * Polarizable AMOEBA force fields
+  * Particle-mesh Ewald electrostatics
+  * Generalized Kirkwood continuum electrostatics
+  * X-ray and neutron crystallography refinement
+  * Real space refinement for CryoEM
+  * Methods for structure based drug design
+
+  See the Force Field<span style="color:yellow"> X</span>
+  online manual for instructions on how to <a href="download.html">download and install</a> the program.
+  The manual also describes available <a href="commands.html">modeling commands and properties</a>,
+  and provides a few <a href="examples.html">examples</a> with more on the way.
+
+### Development
+
+  Contribute to Force Field<span style="color:yellow"> X</span> by learning how
+  to <a href="source.html">GIT and build the code</a>. We also provide instructions for
+  how to use its <a href="modules.html">modules</a> in your own programs.
+
+  <script type="text/javascript" src="http://www.ohloh.net/p/487436/widgets/project_factoids_stats.js"></script>

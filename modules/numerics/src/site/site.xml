@@ -9,11 +9,19 @@
             <item
                 name="Introduction"
                 href="/index.html"
-                />
+            />
             <item
-                name="Usage Examples"
+                name="Usage"
                 href="/usage.html"
-                />
+            />
+            <item
+                name="Module Information"
+                href="/project-info.html"
+            />
+            <item
+                name="License"
+                href="/license.html"
+            />
         </menu>
     </body>
 </project>

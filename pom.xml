@@ -68,6 +68,17 @@
             <timezone>-5</timezone>
         </developer>
         <developer>
+            <id>fenn</id>
+            <name>Timothy D. Fenn</name>
+            <email>tim.fenn@gmail.com</email>
+            <organization>Scientist at Merck</organization>
+            <organizationUrl>http://www.merck.com</organizationUrl>
+            <roles>
+                <role>Chief Crystallograper</role>
+            </roles>
+            <timezone>-7</timezone>
+        </developer>
+        <developer>
             <id>slucore</id>
             <name>Stephen D. LuCore</name>
             <email>stephen-lucore@uiowa.edu</email>
@@ -87,7 +98,7 @@
             <id>jmlitman</id>
             <name>Jacob M. Litman</name>
             <email>jacob-litman@uiowa.edu</email>
-            <organization>Graduate Student, Schnieders Lab, The U. of Iowa</organization>
+            <organization>Biochemistry Graduate Student, Schnieders Lab, The U. of Iowa</organization>
             <organizationUrl>http://www.uiowa.edu</organizationUrl>
             <roles>
                 <role>
@@ -100,7 +111,7 @@
             <id>jpark7</id>
             <name>Jooyeon "Julia" Park</name>
             <email>jooyeon-park@uiowa.edu</email>
-            <organization>Graduate Student, Schnieders Lab, The U. of Iowa</organization>
+            <organization>BME BS/MS Fast Track Student, Schnieders Lab, The U. of Iowa</organization>
             <organizationUrl>http://www.uiowa.edu</organizationUrl>
             <roles>
                 <role>
@@ -110,27 +121,27 @@
             <timezone>-5</timezone>
         </developer>
         <developer>
+            <id>shibgao</id>
+            <name>Shibo "Hylia" Gao</name>
+            <email>gaosh01@luther.edu</email>
+            <organization>2013 BSURF Student, Biochemistry, The U. of Iowa</organization>
+            <organizationUrl>http://www.uiowa.edu</organizationUrl>
+            <roles>
+                <role>
+                    Many-Body Dead-End Elimination for Protein Structure Prediction and Optimization
+                </role>
+            </roles>
+            <timezone>-5</timezone>
+        </developer>
+        <developer>
             <id>avlynn</id>
-            <name>Ava Lynn</name>
+            <name>Ava M. Lynn</name>
             <email>ava-lynn@uiowa.edu</email>
             <organization>Undergraduate Student, Schnieders Lab, The U. of Iowa</organization>
             <organizationUrl>http://www.uiowa.edu</organizationUrl>
             <roles>
                 <role>
                     Modeling of Missense Mutations Implicated in Inherited Eye Diseases
-                </role>
-            </roles>
-            <timezone>-5</timezone>
-        </developer>
-        <developer>
-            <id>wtollefson</id>
-            <name>William T. A. Tollefson</name>
-            <email>william-tollefson@uiowa.edu</email>
-            <organization>Undergraduate Student, Schnieders Lab, The U. of Iowa</organization>
-            <organizationUrl>http://www.uiowa.edu</organizationUrl>
-            <roles>
-                <role>
-                    Modeling of Missense Mutations Implicated in Inherited Deafness
                 </role>
             </roles>
             <timezone>-5</timezone>
@@ -149,15 +160,17 @@
             <timezone>-5</timezone>
         </developer>
         <developer>
-            <id>fenn</id>
-            <name>Timothy D. Fenn</name>
-            <email>tim.fenn@gmail.com</email>
-            <organization>Scientist at Merck</organization>
-            <organizationUrl>http://www.merck.com</organizationUrl>
+            <id>wtollefson</id>
+            <name>William T. A. Tollefson</name>
+            <email>william-tollefson@uiowa.edu</email>
+            <organization>Undergraduate Student, Schnieders Lab, The U. of Iowa</organization>
+            <organizationUrl>http://www.uiowa.edu</organizationUrl>
             <roles>
-                <role>Chief Crystallograper</role>
+                <role>
+                    Modeling of Missense Mutations Implicated in Inherited Deafness
+                </role>
             </roles>
-            <timezone>-7</timezone>
+            <timezone>-5</timezone>
         </developer>
     </developers>
     <contributors>
