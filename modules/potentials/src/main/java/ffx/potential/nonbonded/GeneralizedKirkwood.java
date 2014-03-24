@@ -119,7 +119,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     private static final double epsh = 0.0135;
     private static final double rmino = 1.7025;
     private static final double rminh = 1.3275;
-    private static final double probe = 1.4;
+    private final double probe;
     private boolean use[] = null;
     private final Polarization polarization;
     private final Atom atoms[];
@@ -221,13 +221,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
         overlapScale = new double[nAtoms];
         rDisp = new double[nAtoms];
         born = new double[nAtoms];
-
         use = new boolean[nAtoms];
         Arrays.fill(use, true);
 
+        probe = forceField.getDouble(ForceField.ForceFieldDouble.PROBE_RADIUS, 1.4);
         cutoff = forceField.getDouble(ForceField.ForceFieldDouble.VDW_CUTOFF, 12.0);
         cut2 = cutoff * cutoff;
         lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
+
         /**
          * If polarization lambda exponent is set to 0.0, then we're running
          * Dual-Topology and the GK energy will be scaled with the overall
