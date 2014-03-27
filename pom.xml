@@ -679,7 +679,7 @@
     </properties>
     <modules>
         <module>modules/algorithms</module>
-        <!-- module>modules/autoparm</module -->
+        <module>modules/autoparm</module>
         <!-- module>modules/binding</module -->
         <!-- module>modules/cg</module -->
         <!-- module>modules/continuum</module -->

@@ -209,12 +209,12 @@
             <version>${project.version}</version>
             <type>jar</type>
         </dependency>
-        <dependency>
+        <!-- dependency>
             <groupId>edu.uiowa.eng.ffx</groupId>
             <artifactId>binding</artifactId>
             <version>${project.version}</version>
             <type>jar</type>
-        </dependency>
+        </dependency -->
         <dependency>
             <groupId>edu.uiowa.eng.ffx</groupId>
             <artifactId>potentials</artifactId>
