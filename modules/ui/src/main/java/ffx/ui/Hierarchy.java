@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
  *
  * This file is part of Force Field X.
  *
@@ -30,7 +30,12 @@ import javax.swing.JLabel;
 import javax.swing.JTree;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
-import javax.swing.tree.*;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeCellRenderer;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.DefaultTreeSelectionModel;
+import javax.swing.tree.RowMapper;
+import javax.swing.tree.TreePath;
 
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MSRoot;
@@ -51,20 +56,20 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
      *
      */
     private static final long serialVersionUID = 1L;
-    private MSRoot root;
-    private MainPanel mainPanel;
-    private DefaultTreeModel treeModel;
+    private final MSRoot root;
+    private final MainPanel mainPanel;
+    private DefaultTreeModel hierarchyModel;
     private DefaultTreeSelectionModel treeSelectionModel;
     private FFXSystem activeSystem = null; // Reference to the active FSystem
     private MSNode activeNode = null; // Reference to the last Selected Node
-    private ArrayList<MSNode> activeNodes = new ArrayList<MSNode>();
+    private final ArrayList<MSNode> activeNodes = new ArrayList<>();
     private JLabel status = null;
     private JLabel step = null;
     private JLabel energy = null;
-    ArrayList<TreePath> newPaths = new ArrayList<TreePath>();
-    ArrayList<TreePath> removedPaths = new ArrayList<TreePath>();
-    ArrayList<TreePath> prePaths = new ArrayList<TreePath>();
-    ArrayList<MSNode> picks = new ArrayList<MSNode>();
+    ArrayList<TreePath> newPaths = new ArrayList<>();
+    ArrayList<TreePath> removedPaths = new ArrayList<>();
+    ArrayList<TreePath> prePaths = new ArrayList<>();
+    ArrayList<MSNode> picks = new ArrayList<>();
     TreePath nullPath = null;
 
     /**
@@ -81,7 +86,8 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
     }
 
     /**
-     * <p>addSelection</p>
+     * <p>
+     * addSelection</p>
      *
      * @param f a {@link ffx.potential.bonded.MSNode} object.
      */
@@ -97,7 +103,8 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
     }
 
     /**
-     * <p>addSelections</p>
+     * <p>
+     * addSelections</p>
      *
      * @param a a {@link java.util.ArrayList} object.
      */
@@ -110,7 +117,8 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
     }
 
     /**
-     * <p>addSystemNode</p>
+     * <p>
+     * addSystemNode</p>
      *
      * @param newSystem a {@link ffx.ui.FFXSystem} object.
      */
@@ -119,7 +127,8 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
     }
 
     /**
-     * <p>addTreeNode</p>
+     * <p>
+     * addTreeNode</p>
      *
      * @param nodeToAdd a {@link ffx.potential.bonded.MSNode} object.
      * @param parent a {@link ffx.potential.bonded.MSNode} object.
@@ -138,13 +147,13 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
             if (ROLSP.GO_PARALLEL) {
                 ROLSP parallelNode = new ROLSP();
                 parallelNode.add(nodeToAdd);
-                treeModel.insertNodeInto(parallelNode, parent, index);
+                hierarchyModel.insertNodeInto(parallelNode, parent, index);
             } else {
-                treeModel.insertNodeInto(nodeToAdd, parent, index);
+                hierarchyModel.insertNodeInto(nodeToAdd, parent, index);
             }
             if (nodeToAdd instanceof FFXSystem) {
                 attach((FFXSystem) nodeToAdd);
-                treeModel.nodeStructureChanged(nodeToAdd);
+                hierarchyModel.nodeStructureChanged(nodeToAdd);
             }
             onlySelection(nodeToAdd);
             if (!isRootVisible()) {
@@ -161,7 +170,7 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
         GraphicsCanvas graphics = mainPanel.getGraphics3D();
         if (graphics != null) {
             graphics.attachModel(newModel);
-            if (newModel.getBondList().size() == 0) {
+            if (newModel.getBondList().isEmpty()) {
                 mainPanel.getGraphics3D().updateScene(newModel, false, true,
                         RendererCache.ViewModel.SPACEFILL, false, null);
             }
@@ -169,7 +178,8 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
     }
 
     /**
-     * <p>collapseAll</p>
+     * <p>
+     * collapseAll</p>
      */
     public void collapseAll() {
         int row = getRowCount() - 1;
@@ -189,8 +199,8 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>activeNode</code>.</p>
+     * <p>
+     * Getter for the field <code>activeNode</code>.</p>
      *
      * @return a {@link ffx.potential.bonded.MSNode} object.
      */
@@ -199,8 +209,8 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>activeNodes</code>.</p>
+     * <p>
+     * Getter for the field <code>activeNodes</code>.</p>
      *
      * @return a {@link java.util.ArrayList} object.
      */
@@ -209,7 +219,8 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
     }
 
     /**
-     * <p>getNonActiveSystems</p>
+     * <p>
+     * getNonActiveSystems</p>
      *
      * @return an array of {@link ffx.ui.FFXSystem} objects.
      */
@@ -232,7 +243,8 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
     }
 
     /**
-     * <p>getSystems</p>
+     * <p>
+     * getSystems</p>
      *
      * @return an array of {@link ffx.ui.FFXSystem} objects.
      */
@@ -252,7 +264,8 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
     }
 
     /**
-     * <p>groupSelection</p>
+     * <p>
+     * groupSelection</p>
      *
      * @param f1 a {@link ffx.potential.bonded.MSNode} object.
      * @param f2 a {@link ffx.potential.bonded.MSNode} object.
@@ -287,15 +300,16 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
         tcr.setBorderSelectionColor(Color.black);
         tcr.setTextSelectionColor(Color.black);
         setCellRenderer(tcr);
-        treeModel = new DefaultTreeModel(root);
+        hierarchyModel = new DefaultTreeModel(root);
         treeSelectionModel = new DefaultTreeSelectionModel();
-        setModel(treeModel);
+        setModel(hierarchyModel);
         setSelectionModel(treeSelectionModel);
         setRootVisible(false);
     }
 
     /**
-     * <p>onlySelection</p>
+     * <p>
+     * onlySelection</p>
      *
      * @param f a {@link ffx.potential.bonded.MSNode} object.
      */
@@ -315,7 +329,8 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
     }
 
     /**
-     * <p>removeSelection</p>
+     * <p>
+     * removeSelection</p>
      *
      * @param f a {@link ffx.potential.bonded.MSNode} object.
      */
@@ -335,7 +350,8 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
     }
 
     /**
-     * <p>removeSelections</p>
+     * <p>
+     * removeSelections</p>
      *
      * @param a a {@link java.util.ArrayList} object.
      */
@@ -348,7 +364,8 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
     }
 
     /**
-     * <p>removeTreeNode</p>
+     * <p>
+     * removeTreeNode</p>
      *
      * @param nodeToRemove a {@link ffx.potential.bonded.MSNode} object.
      */
@@ -360,7 +377,7 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
             if (root.getChildCount() <= 1) {
                 setRootVisible(false);
             }
-            treeModel.removeNodeFromParent(nodeToRemove);
+            hierarchyModel.removeNodeFromParent(nodeToRemove);
             if (getActive() == nodeToRemove && root.getChildCount() != 0) {
                 FFXSystem m = (FFXSystem) root.getChildAt(0);
                 setActive(m);
@@ -372,7 +389,8 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
     }
 
     /**
-     * <p>selectAll</p>
+     * <p>
+     * selectAll</p>
      */
     public void selectAll() {
         if (activeSystem == null) {
@@ -408,7 +426,8 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
     }
 
     /**
-     * <p>setActive</p>
+     * <p>
+     * setActive</p>
      *
      * @param i a int.
      */
@@ -423,7 +442,8 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
     }
 
     /**
-     * <p>setHighlighting</p>
+     * <p>
+     * setHighlighting</p>
      *
      * @param h a boolean.
      */
@@ -441,8 +461,8 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>status</code>.</p>
+     * <p>
+     * Setter for the field <code>status</code>.</p>
      *
      * @param s a {@link javax.swing.JLabel} object.
      * @param t a {@link javax.swing.JLabel} object.
@@ -455,7 +475,8 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
     }
 
     /**
-     * <p>toggleSelection</p>
+     * <p>
+     * toggleSelection</p>
      *
      * @param f a {@link ffx.potential.bonded.MSNode} object.
      */
@@ -474,7 +495,8 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
     }
 
     /**
-     * <p>toggleSelections</p>
+     * <p>
+     * toggleSelections</p>
      *
      * @param a a {@link java.util.ArrayList} object.
      */
@@ -495,7 +517,8 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
     }
 
     /**
-     * <p>updateStatus</p>
+     * <p>
+     * updateStatus</p>
      */
     public void updateStatus() {
         if (activeSystem == null) {
@@ -603,9 +626,8 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
             // Remove the RemovedPaths from the Existing List
             for (int i = 0; i < prePaths.size(); i++) {
                 pathi = prePaths.get(i);
-                for (int j = 0; j < removedPaths.size(); j++) {
-                    pathj = removedPaths.get(j);
-                    if (pathj.isDescendant(pathi)) {
+                for (TreePath removedPath : removedPaths) {
+                    if (removedPath.isDescendant(pathi)) {
                         prePaths.set(i, nullPath);
                         break;
                     }
@@ -646,8 +668,8 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
             }
             newPaths.addAll(prePaths);
             activeNodes.clear();
-            for (int i = 0; i < newPaths.size(); i++) {
-                pathi = newPaths.get(i);
+            for (TreePath newPath : newPaths) {
+                pathi = newPath;
                 activeNodes.add((MSNode) pathi.getLastPathComponent());
             }
             if (activeNode != null) {
@@ -658,7 +680,7 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
             }
             // We now have a non-redundant set of Active Paths; and a
             // non-redundant set of removed paths
-            picks = new ArrayList<MSNode>();
+            picks = new ArrayList<>();
             // Clear highlight of de-selected nodes
             for (TreePath r : removedPaths) {
                 boolean change = true;

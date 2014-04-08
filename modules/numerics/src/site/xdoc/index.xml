@@ -4,7 +4,7 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
-        <title>Home Page</title>
+        <title>Introduction</title>
         <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
     </properties>
     <body>
@@ -17,30 +17,30 @@
                 <li>Erf and Erfc</li>
                 <li>Tensor recursions</li>
             </ul>
-            <subsection name="Fast Fourier Transformation">
-                <p>The FFT classes implement:</p>
-                <ul>
-                    <li>1D Real to Complex</li>
-                    <li>1D Complex to Complex</li>
-                    <li>3D Real to Complex</li>
-                    <li>3D Complex to Complex</li>
-                    <li>3D Real to Complex Convolutions</li>
-                    <li>3D Complex to Complex Convolutions</li>
-                </ul>
-                <p>The 1D methods compute the FFT of real or complex, double precision data
-                    of arbitrary length n using a mixed radix method that has special methods to handle
-                    factors of [2, 3, 4, 5, 6, 7] and a general method for larger prime factors.
-                </p>
-                <p>The 3D methods are serial or SMP parallel. The convolutions are designed for the
-                    reciprocal space portion of Particle Mesh Ewald summation.
-                </p>
-            </subsection>
-            <subsection name="Limited Memory BFGS Optimization">
-                <p>The limited-memory Broyden-Fletcher-Goldfarb-Shanno (L-BFGS) algorithm is appropriate for
-                    large-scale multidimensional unconstrained optimization problems. It is derived from Robert
-                    Dodier's Java translation of orignal FORTRAN code by Jorge Nocedal.
-                </p>
-            </subsection>
+        </section>
+        <section name="Fast Fourier Transformation">
+            <p>The FFT classes implement:</p>
+            <ul>
+                <li>1D Real to Complex</li>
+                <li>1D Complex to Complex</li>
+                <li>3D Real to Complex</li>
+                <li>3D Complex to Complex</li>
+                <li>3D Real to Complex Convolutions</li>
+                <li>3D Complex to Complex Convolutions</li>
+            </ul>
+            <p>The 1D methods compute the FFT of real or complex, double precision data
+                of arbitrary length n using a mixed radix method that has special methods to handle
+                factors of [2, 3, 4, 5, 6, 7] and a general method for larger prime factors.
+            </p>
+            <p>The 3D methods are serial or SMP parallel. The convolutions are designed for the
+                reciprocal space portion of Particle Mesh Ewald summation.
+            </p>
+        </section>
+        <section name="L-BFGS Optimization">
+            <p>The limited-memory Broyden-Fletcher-Goldfarb-Shanno (L-BFGS) algorithm is appropriate for
+                large-scale multidimensional unconstrained optimization problems. It is derived from Robert
+                Dodier's Java translation of orignal FORTRAN code by Jorge Nocedal.
+            </p>
         </section>
     </body>
 </document>

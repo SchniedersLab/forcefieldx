@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
  *
  * This file is part of Force Field X.
  *
@@ -22,12 +22,11 @@
  */
 package ffx.potential.bonded;
 
-import ffx.potential.ResidueEnumerations.NucleicAcid3;
-import ffx.potential.Rotamer;
 import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.ListIterator;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.media.j3d.Canvas3D;
@@ -38,11 +37,13 @@ import javax.vecmath.Color3f;
 import javax.vecmath.Point2d;
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
+
+import ffx.potential.ResidueEnumerations.NucleicAcid3;
+import ffx.potential.Rotamer;
 import ffx.potential.RotamerLibrary;
 
 import static ffx.utilities.HashCodeUtil.SEED;
 import static ffx.utilities.HashCodeUtil.hash;
-import java.util.logging.Level;
 
 /**
  * The Residue class represents individual amino acids or nucleic acid bases.
@@ -59,47 +60,47 @@ public class Residue extends MSGroup {
     /**
      * Constant <code>NA1Set</code>
      */
-    public static EnumSet NA1Set = EnumSet.allOf(NA1.class);
+    public static final EnumSet NA1Set = EnumSet.allOf(NA1.class);
     /**
      * Constant <code>NA3Set</code>
      */
-    public static EnumSet NA3Set = EnumSet.allOf(NA3.class);
+    public static final EnumSet NA3Set = EnumSet.allOf(NA3.class);
     /**
      * Constant <code>NASet</code>
      */
-    public static EnumSet NASet = EnumSet.allOf(NA.class);
+    public static final EnumSet NASet = EnumSet.allOf(NA.class);
     /**
      * Constant <code>NA1toNA3</code>
      */
-    public static Hashtable<NA1, NA3> NA1toNA3 = new Hashtable<NA1, NA3>();
+    public static final HashMap<NA1, NA3> NA1toNA3 = new HashMap<>();
     /**
      * Constant <code>NA3Color</code>
      */
-    public static Hashtable<NA3, Color3f> NA3Color = new Hashtable<NA3, Color3f>();
+    public static final HashMap<NA3, Color3f> NA3Color = new HashMap<>();
     /**
      * Constant <code>AA1Set</code>
      */
-    public static EnumSet AA1Set = EnumSet.allOf(AA1.class);
+    public static final EnumSet AA1Set = EnumSet.allOf(AA1.class);
     /**
      * Constant <code>AA3Set</code>
      */
-    public static EnumSet AA3Set = EnumSet.allOf(AA3.class);
+    public static final EnumSet AA3Set = EnumSet.allOf(AA3.class);
     /**
      * Constant <code>AASet</code>
      */
-    public static EnumSet AASet = EnumSet.allOf(AA.class);
+    public static final EnumSet AASet = EnumSet.allOf(AA.class);
     /**
      * Constant <code>AA1toAA3</code>
      */
-    public static Hashtable<AA1, AA3> AA1toAA3 = new Hashtable<AA1, AA3>();
+    public static final HashMap<AA1, AA3> AA1toAA3 = new HashMap<>();
     /**
      * Constant <code>AA3Color</code>
      */
-    public static Hashtable<AA3, Color3f> AA3Color = new Hashtable<AA3, Color3f>();
+    public static final HashMap<AA3, Color3f> AA3Color = new HashMap<>();
     /**
      * Constant <code>SSTypeColor</code>
      */
-    public static Hashtable<SSType, Color3f> SSTypeColor = new Hashtable<SSType, Color3f>();
+    public static final HashMap<SSType, Color3f> SSTypeColor = new HashMap<>();
     /**
      * Constant <code>Ramachandran="new String[17]"</code>
      */
@@ -220,23 +221,16 @@ public class Residue extends MSGroup {
     /**
      * These arrays store default coordinates for certain atoms in nucleic acid
      * Residues. C1', O4', and C4' are the critical sugar atoms off which every
-     * other atom is drawn when applyRotamer is called; the backbone
-     * corrections, <<<<<<< HEAD however, move these atoms, so they must be
-     * reverted to original coordinates each time applyRotamer is called.
+     * other atom is drawn when applyRotamer is called. The backbone
+     * corrections, however, move these atoms, so they must be
+     * reverted to their original coordinates each time applyRotamer is called.
      *
-     * ======= however, move these atoms, so they must be reverted to original
-     * coordinates each time applyRotamer is called.
+     * O3' North and South coordinates are technically non-essential, as they
+     * could be derived from C1', O4', C4', and a given sugar pucker, however,
+     * it is much less computationally expensive to calculate them once and then
+     * store them.
      *
-     * >>>>>>> fcefa7e8f2a22b42ca11a7021b7f01ddba9a6e2f O3' North and South
-     * coordinates are technically non-essential, as they could be derived from
-     * C1', O4', C4', and a given sugar pucker, however, it is much less
-     * computationally expensive to calculate them once and then store them.
-     * <<<<<<< HEAD
-     *
-     * =======
-     *
-     * >>>>>>> fcefa7e8f2a22b42ca11a7021b7f01ddba9a6e2f TODO: Add O3'
-     * coordinates for the DNA C3'-exo configuration.
+     * TODO: Add O3' coordinates for the DNA C3'-exo configuration.
      */
     private double[] O3sNorthCoords = null;
     private double[] O3sSouthCoords = null;
@@ -327,12 +321,12 @@ public class Residue extends MSGroup {
     }
 
     /**
-     * Returns the Residue bonded to this Residue at this Residue's 3' or 
-     * C-terminal end.  Any use of this method to add Residues to a sliding
-     * window or similar MUST not add that residue if that residue has no 
-     * Rotamers, as several algorithms (such as the distance matrix) assume
-     * that all Residues being optimized have Rotamers.
-     * 
+     * Returns the Residue bonded to this Residue at this Residue's 3' or
+     * C-terminal end. Any use of this method to add Residues to a sliding
+     * window or similar MUST not add that residue if that residue has no
+     * Rotamers, as several algorithms (such as the distance matrix) assume that
+     * all Residues being optimized have Rotamers.
+     *
      * @return The next Residue.
      */
     public Residue getNextResidue() {
@@ -366,12 +360,12 @@ public class Residue extends MSGroup {
     }
 
     /**
-     * Returns the Residue bonded to this Residue at this Residue's 5' or 
-     * N-terminal end.  Any use of this method to add Residues to a sliding
-     * window or similar MUST not add that residue if that residue has no 
-     * Rotamers, as several algorithms (such as the distance matrix) assume
-     * that all Residues being optimized have Rotamers.
-     * 
+     * Returns the Residue bonded to this Residue at this Residue's 5' or
+     * N-terminal end. Any use of this method to add Residues to a sliding
+     * window or similar MUST not add that residue if that residue has no
+     * Rotamers, as several algorithms (such as the distance matrix) assume that
+     * all Residues being optimized have Rotamers.
+     *
      * @return The previous Residue.
      */
     public Residue getPreviousResidue() {
@@ -406,12 +400,12 @@ public class Residue extends MSGroup {
         return null;
         // Will generally indicate that you passed in a chain-starting residue.
     }
-    
+
     /**
-     * Returns a reference Atom for a Residue, primarily intended for rough 
+     * Returns a reference Atom for a Residue, primarily intended for rough
      * distance calculations. This atom should be roughly centrally located
      * within the residue, and be invariant.
-     * 
+     *
      * @return A reference Atom.
      */
     public Atom getReferenceAtom() {
@@ -421,7 +415,7 @@ public class Residue extends MSGroup {
                 atom = (Atom) this.getAtomNode("CA");
                 break;
             case NA:
-                // If pyrimidine, atom will be N1.  Else, if purine, 
+                // If pyrimidine, atom will be N1.  Else, if purine,
                 // N1 will return null, so grab N9.
                 atom = (Atom) this.getAtomNode("N1");
                 if (atom == null) {
@@ -494,7 +488,7 @@ public class Residue extends MSGroup {
     /**
      * Returns a list of side chain atoms; for our purposes, nucleic acid side
      * chain atoms are the sugar and the phosphate.
-     * 
+     *
      * @return ArrayList of side chain (or nucleobase) atoms.
      */
     public ArrayList<Atom> getSideChainAtoms() {

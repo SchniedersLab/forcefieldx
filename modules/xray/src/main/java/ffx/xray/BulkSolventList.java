@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
  *
  * This file is part of Force Field X.
  *
@@ -41,19 +41,21 @@ import ffx.potential.bonded.Atom;
 /**
  * The BulkSolventList class builds a list of atoms in symmetry mates that are
  * within a cutoff distance of an atom in the asymmetric unit. This is done in
- * parallel via a spatial decomposition. <ol> <li> The unit cell is partitioned
- * into
- * <code>nA * nB * nC</code> smaller axis-aligned cells, where nA, nB and nC are
- * chosen as large as possible subject to the criteria that the length of each
- * side of a sub-volume (rCellA, rCellB, rCellC) multiplied by (nEdgeA, nEdgeB,
- * nEdgeC), respectively, must be greater than the cutoff distance
- * <code>Rcut</code> plus a buffer distance
+ * parallel via a spatial decomposition.
+ * <ol>
+ * <li> The unit cell is partitioned into <code>nA * nB * nC</code> smaller
+ * axis-aligned cells, where nA, nB and nC are chosen as large as possible
+ * subject to the criteria that the length of each side of a sub-volume (rCellA,
+ * rCellB, rCellC) multiplied by (nEdgeA, nEdgeB, nEdgeC), respectively, must be
+ * greater than the cutoff distance <code>Rcut</code> plus a buffer distance
  * <code>delta</code>:
- * <center><code>rCellA * nEdgeA >= (Rcut + delta)</code></center>
- * <center><code>rCellB * nEdgeB >= (Rcut + delta)</code></center>
- * <center><code>rCellC * nEdgeC >= (Rcut + delta)</code></center> All neighbors
- * of an atom are in a block of (2*nEdgeA+1)(2*nEdgeB+1)(2*nEdgeC+1)
- * neighborCells. </li> </ol>
+ * <center><code>rCellA * nEdgeA .GE. (Rcut + delta)</code></center>
+ * <center><code>rCellB * nEdgeB .GE. (Rcut + delta)</code></center>
+ * <center><code>rCellC * nEdgeC .GE. (Rcut + delta)</code></center>
+ * All neighbors of an atom are in a block of
+ * (2*nEdgeA+1)(2*nEdgeB+1)(2*nEdgeC+1) neighborCells.
+ * </li>
+ * </ol>
  *
  * @author Michael J. Schnieders
  * @since 1.0
@@ -313,7 +315,6 @@ public class BulkSolventList extends ParallelRegion {
             // Convert to fractional coordinates.
             final double xyz[][] = coordinates[iSymm];
 
-
             crystal.toFractionalCoordinates(nAtoms, xyz[0], xyz[1], xyz[2], frac[0], frac[1], frac[2]);
 
             // Assign each atom to a cell using fractional coordinates.
@@ -542,7 +543,7 @@ public class BulkSolventList extends ParallelRegion {
          * periodic unit cell by adding nX. The Neighbor list algorithm never
          * requires multiple additions or subtractions of nX.
          *
-
+         *
          *
          * @param i The index along the a-axis.
          * @param j The index along the b-axis.

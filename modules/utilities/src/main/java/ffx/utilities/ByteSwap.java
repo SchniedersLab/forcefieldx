@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
  *
  * This file is part of Force Field X.
  *
@@ -23,12 +23,12 @@
 package ffx.utilities;
 
 /**
- * <p>ByteSwap class.</p>
+ * <p>
+ * ByteSwap class.</p>
  *
- * @author Tim Fenn
+ * @author Timothy D. Fenn
  *
  * @since 1.0
- *
  */
 public class ByteSwap {
 
@@ -42,7 +42,7 @@ public class ByteSwap {
         int b1 = value & 0xff;
         int b2 = (value >> 8) & 0xff;
 
-        return (short) (b1 << 8 | b2 << 0);
+        return (short) (b1 << 8 | b2);
     }
 
     /**

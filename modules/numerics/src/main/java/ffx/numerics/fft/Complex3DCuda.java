@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
  *
  * This file is part of Force Field X.
  *
@@ -35,22 +35,47 @@ import static java.lang.String.format;
 
 import org.apache.commons.io.FileUtils;
 
-import edu.rit.pj.IntegerSchedule;
-import edu.rit.pj.ParallelTeam;
-
 import jcuda.LogLevel;
 import jcuda.Pointer;
 import jcuda.Sizeof;
-import jcuda.driver.*;
-
+import jcuda.driver.CUcontext;
+import jcuda.driver.CUdevice;
+import jcuda.driver.CUdeviceptr;
+import jcuda.driver.CUdevprop;
+import jcuda.driver.CUfunction;
+import jcuda.driver.CUmodule;
+import jcuda.driver.JCudaDriver;
 import jcuda.jcufft.JCufft;
 import jcuda.jcufft.cufftHandle;
 import jcuda.jcufft.cufftType;
-import jcuda.utils.KernelLauncher;
 
-import static jcuda.runtime.JCuda.*;
-import static jcuda.driver.JCudaDriver.*;
-import static jcuda.jcufft.JCufft.*;
+import static jcuda.driver.JCudaDriver.align;
+import static jcuda.driver.JCudaDriver.cuCtxCreate;
+import static jcuda.driver.JCudaDriver.cuCtxSynchronize;
+import static jcuda.driver.JCudaDriver.cuDeviceGet;
+import static jcuda.driver.JCudaDriver.cuDeviceGetProperties;
+import static jcuda.driver.JCudaDriver.cuFuncSetBlockShape;
+import static jcuda.driver.JCudaDriver.cuInit;
+import static jcuda.driver.JCudaDriver.cuLaunchGrid;
+import static jcuda.driver.JCudaDriver.cuMemAlloc;
+import static jcuda.driver.JCudaDriver.cuMemFree;
+import static jcuda.driver.JCudaDriver.cuMemFreeHost;
+import static jcuda.driver.JCudaDriver.cuMemHostAlloc;
+import static jcuda.driver.JCudaDriver.cuMemcpyDtoH;
+import static jcuda.driver.JCudaDriver.cuMemcpyHtoD;
+import static jcuda.driver.JCudaDriver.cuModuleGetFunction;
+import static jcuda.driver.JCudaDriver.cuModuleLoad;
+import static jcuda.driver.JCudaDriver.cuParamSetSize;
+import static jcuda.driver.JCudaDriver.cuParamSeti;
+import static jcuda.driver.JCudaDriver.cuParamSetv;
+import static jcuda.jcufft.JCufft.CUFFT_FORWARD;
+import static jcuda.jcufft.JCufft.CUFFT_INVERSE;
+import static jcuda.jcufft.JCufft.cufftDestroy;
+import static jcuda.jcufft.JCufft.cufftExecZ2Z;
+import static jcuda.jcufft.JCufft.cufftPlan3d;
+
+import edu.rit.pj.IntegerSchedule;
+import edu.rit.pj.ParallelTeam;
 
 /**
  * Compute a 3D Convolution using Java wrappers to the CUDA Driver API.

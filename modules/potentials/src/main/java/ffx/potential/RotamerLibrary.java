@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
  *
  * This file is part of Force Field X.
  *
@@ -23,11 +23,11 @@
 package ffx.potential;
 
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import ffx.potential.ResidueEnumerations.AminoAcid3;
 import ffx.potential.ResidueEnumerations.NucleicAcid3;
@@ -41,9 +41,9 @@ import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.parsers.INTFilter;
 
-import static ffx.potential.parsers.INTFilter.intxyz;
 import static ffx.potential.bonded.Residue.ResidueType.AA;
 import static ffx.potential.bonded.Residue.ResidueType.NA;
+import static ffx.potential.parsers.INTFilter.intxyz;
 
 /**
  * The Rotamer Library Class manages a library of side-chain Rotamers for amino
@@ -80,7 +80,7 @@ public class RotamerLibrary {
     private static final Rotamer[][] nucleicAcidRotamerCache = new Rotamer[numberOfNucleicAcids][];
     private static ProteinLibrary proteinLibrary = ProteinLibrary.PonderAndRichards;
     private static boolean useOrigCoordsRotamer = false;
-    private static HashMap<Residue, Rotamer[]> origCoordsCache = new HashMap<Residue, Rotamer[]>();
+    private static final HashMap<Residue, Rotamer[]> origCoordsCache = new HashMap<>();
 
     /**
      * Set the protein rotamer library to use.
@@ -93,11 +93,11 @@ public class RotamerLibrary {
             aminoAcidRotamerCache[i] = null;
         }
     }
-    
+
     public static boolean getUsingOrigCoordsRotamer() {
         return useOrigCoordsRotamer;
     }
-    
+
     public static void setUseOrigCoordsRotamer(boolean set) {
         useOrigCoordsRotamer = set;
     }
@@ -201,11 +201,9 @@ public class RotamerLibrary {
     public static void initializeDefaultAtomicCoordinates(MolecularAssembly molecularAssembly) {
         // Loads default atomic coordinates for all nucleic acid residues.
         Polymer[] polymers = molecularAssembly.getChains();
-        for (int i = 0; i < polymers.length; i++) {
-            Polymer polymer = polymers[i];
+        for (Polymer polymer : polymers) {
             ArrayList<Residue> current = polymer.getResidues();
-            for (int j = 0; j < current.size(); j++) {
-                Residue residuej = current.get(j);
+            for (Residue residuej : current) {
                 switch (residuej.getResidueType()) {
                     case NA:
                         residuej.initializeDefaultAtomicCoordinates();
@@ -271,7 +269,7 @@ public class RotamerLibrary {
 //                rotamerCache[n][2] = new Rotamer(name, 63.5, 9.6);
                 break;
             /*
-             * TO-DO: Figure out proline rotamers.  I have dihedrals from
+             * TODO: Figure out proline rotamers.  I have dihedrals from
              * the Richardson lab/Kinemages website (downloaded PDB, used
              * the get_dihedral function to extract the dihedrals), and they
              * conflict with these rotamers.  Plus, this library only
@@ -1799,7 +1797,7 @@ public class RotamerLibrary {
      * @param residue Residue.
      * @param rotamer Rotamer to be applied to Residue.
      * @param correctionThreshold Maximum acceptable backbone correction.
-     * @throws NACorrectionTooLargeException If correction >
+     * @throws NACorrectionTooLargeException If correction .GT.
      * correctionThreshold.
      */
     public static void applyRotamer(Residue residue, Rotamer rotamer, double correctionThreshold) throws NACorrectionTooLargeException {
@@ -3198,7 +3196,7 @@ public class RotamerLibrary {
      * @param correctionThreshold Maximum acceptable backbone correction.
      * @param independent Whether to draw NA rotamer independent of chain
      * context.
-     * @throws NACorrectionTooLargeException If correction >
+     * @throws NACorrectionTooLargeException If correction .GT.
      * correctionThreshold.
      */
     private static void applyNARotamer(Residue residue, Rotamer rotamer, double correctionThreshold, boolean independent) throws NACorrectionTooLargeException {
@@ -3210,12 +3208,11 @@ public class RotamerLibrary {
         if (residue.getNextResidue() == null) {
             is3sTerminal = true;
         }
-        
+
         // Check if this is a 3' phosphate being listed as its own residue.
         /* if (residue.getAtomList().size() == 1) {
-            return;
-        } */
-
+         return;
+         } */
         boolean isDeoxy; // Could be specified by appplySugarPucker, but that
         // would be confusing.
         switch (na) {
@@ -3675,7 +3672,7 @@ public class RotamerLibrary {
      * @param prevSugarPucker Expected sugar pucker of prevResidue.
      * @param correctionThreshold Maximum allowable correction size (0 disables
      * threshold).
-     * @throws NACorrectionTooLargeException If correction magnitude >
+     * @throws NACorrectionTooLargeException If correction magnitude .GT.
      * correctionThreshold.
      */
     private static void applyNACorrections(Residue residue, Residue prevResidue, Rotamer rotamer,
@@ -3742,18 +3739,18 @@ public class RotamerLibrary {
         C1s.move(corrections[6]);
         C2s.move(corrections[6]);
     }
-    
+
     /**
      * Returns 1 if a North pucker, 2 if a South pucker, and eventually 3 if a
      * C3'-exo pucker (DNA only).
-     * 
+     *
      * @param delta Delta torsion to check
      * @return Pucker
      */
     public static int checkPucker(double delta) {
         /*
          * Midpoint between North, South is 115 degrees.
-         * 
+         *
          * 0-360: North is 0-115 or 295-360.
          * -180 to 180: North is -65 to 115.
          */
@@ -3782,7 +3779,8 @@ public class RotamerLibrary {
      * @param rotamer Rotamer to be checked for consistency with original XYZ.
      * @param correctionThreshold Maximum allowable distance from P or H5T of
      * rotamer's structure to P or H5T of original PDB file.
-     * @throws NACorrectionTooLargeException If distance > correctionThreshold.
+     * @throws NACorrectionTooLargeException If distance .GT.
+     * correctionThreshold.
      */
     private static void startingResidueConsistencyCheck(Residue residue, Rotamer rotamer, double correctionThreshold) throws NACorrectionTooLargeException {
         if (correctionThreshold > 0 && residue.getPreviousResidue() == null) {

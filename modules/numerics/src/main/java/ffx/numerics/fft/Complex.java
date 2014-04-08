@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
  *
  * This file is part of Force Field X.
  *
@@ -26,25 +26,45 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.lang.Math.*;
+import static java.lang.Math.PI;
+import static java.lang.Math.cos;
+import static java.lang.Math.sin;
+import static java.lang.Math.sqrt;
 
 /**
  * Compute the FFT of complex, double precision data of arbitrary length n. This
  * class uses a mixed radix method and has special methods to handle factors [2,
- * 3, 4, 5, 6, 7] and a general method for larger prime factors. <p> "Clive
- * Temperton. Self-sorting mixed-radix fast fourier transforms. Journal of
- * Computational Physics, 52(1):1-23, 1983." <p>
+ * 3, 4, 5, 6, 7] and a general method for larger prime factors.
  *
- * @author Michal J. Schnieders<br> Derived from:<br> Bruce R. Miller
- * (bruce.miller@nist.gov)<br> Contribution of the National Institute of
- * Standards and Technology, not subject to copyright.<br> Derived from:<br> GSL
- * (Gnu Scientific Library) FFT Code by Brian Gough (bjg@network-theory.co.uk)
- * @see <a href="http://www.jstor.org/stable/2003354" target="_blank">J. W.
- * Cooley and J. W. Tukey, Mathematics of Computation 19 (90), 297
- * (1965)</a><br> <a href="http://en.wikipedia.org/wiki/Fast_Fourier_transform"
- * target="_blank">FFT at Wikipedia</a><br>
+ * @author Michal J. Schnieders<br> Derived from:
+ * <br>
+ * Bruce R. Miller (bruce.miller@nist.gov)
+ * <br>
+ * Contribution of the National Institute of Standards and Technology, not
+ * subject to copyright.<br> Derived from:<br> GSL (Gnu Scientific Library) FFT
+ * Code by Brian Gough (bjg@network-theory.co.uk)
+ *
+ * @see
+ * <ul>
+ * <li>
+ * <a href="http://dx.doi.org/10.1016/0021-9991(83)90013-X" target="_blank">
+ * Clive Temperton. Self-sorting mixed-radix fast fourier transforms. Journal of
+ * Computational Physics, 52(1):1-23, 1983.
+ * </a>
+ * </li>
+ * <li>
+ * <a href="http://www.jstor.org/stable/2003354" target="_blank">
+ * J. W. Cooley and J. W. Tukey, Mathematics of Computation 19 (90), 297 (1965)
+ * </a>
+ * </li>
+ * <li>
+ * <a href="http://en.wikipedia.org/wiki/Fast_Fourier_transform"
+ * target="_blank">FFT at Wikipedia
+ * </a>
+ * </li>
+ * </ul>
+ *
  * @since 1.0
- *
  */
 public class Complex {
 
@@ -56,16 +76,16 @@ public class Complex {
     // TINKER v. 5.0 factors to achieve exact numerical agreement.
     private static final int availableFactors[] = {5, 4, 3, 2};
     private static final int firstUnavailablePrime = 7;
-
     //private static final int availableFactors[] = { 7, 6, 5, 4, 3, 2 };
     //private static final int firstUnavailablePrime = 11;
+
     /**
      * Construct a Complex instance for data of length n. Factorization of n is
      * designed to use special methods for small factors, and a general routine
      * for large odd prime factors. Scratch memory is created of length 2*n,
      * which is reused each time a tranform is computed.
      *
-     * @param n Number of complex numbers (n > 1).
+     * @param n Number of complex numbers (n .GT. 1).
      */
     public Complex(int n) {
         assert (n > 1);
@@ -77,7 +97,8 @@ public class Complex {
     }
 
     /**
-     * <p>preferredDimension</p>
+     * <p>
+     * preferredDimension</p>
      *
      * @param dim a int.
      * @return a boolean.
@@ -95,13 +116,7 @@ public class Complex {
                 dim /= factor;
             }
         }
-        /**
-         * If large, odd primes are needed the FFT will be slow.
-         */
-        if (dim > 1) {
-            return false;
-        }
-        return true;
+        return dim <= 1;
     }
 
     /**
@@ -115,7 +130,7 @@ public class Complex {
         if (n < 2) {
             return null;
         }
-        Vector<Integer> v = new Vector<Integer>();
+        Vector<Integer> v = new Vector<>();
         int ntest = n;
         int factor;
         /**
@@ -153,10 +168,13 @@ public class Complex {
             StringBuilder sb = new StringBuilder(
                     " FFT factorization failed for " + n + "\n");
             for (int i = 0; i < nf; i++) {
-                sb.append(" " + ret[i]);
+                sb.append(" ");
+                sb.append(ret[i]);
             }
             sb.append("\n");
-            sb.append(" Factor product = " + product + "\n");
+            sb.append(" Factor product = ");
+            sb.append(product);
+            sb.append("\n");
             logger.severe(sb.toString());
             System.exit(-1);
         } else {
@@ -164,7 +182,8 @@ public class Complex {
                 StringBuilder sb = new StringBuilder(" FFT factorization for "
                         + n + " = ");
                 for (int i = 0; i < nf - 1; i++) {
-                    sb.append(ret[i] + " * ");
+                    sb.append(ret[i]);
+                    sb.append(" * ");
                 }
                 sb.append(ret[nf - 1]);
                 logger.fine(sb.toString());
@@ -174,8 +193,8 @@ public class Complex {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>factors</code>.</p>
+     * <p>
+     * Getter for the field <code>factors</code>.</p>
      *
      * @return an array of int.
      */
@@ -429,8 +448,8 @@ public class Complex {
                 i += dataStride;
                 final double t1_r = z1_r + z2_r;
                 final double t1_i = z1_i + z2_i;
-                final double t2_r = z0_r - t1_r / 2.0;
-                final double t2_i = z0_i - t1_i / 2.0;
+                final double t2_r = z0_r - t1_r * 0.5;
+                final double t2_i = z0_i - t1_i * 0.5;
                 final double t3_r = tau * (z1_r - z2_r);
                 final double t3_i = tau * (z1_i - z2_i);
                 ret[j] = z0_r + t1_r;
@@ -596,8 +615,8 @@ public class Complex {
                 final double t5i = t1i + t2i;
                 final double t6r = tau * (t1r - t2r);
                 final double t6i = tau * (t1i - t2i);
-                final double t7r = z0r - t5r / 4.0;
-                final double t7i = z0i - t5i / 4.0;
+                final double t7r = z0r - t5r * 0.25;
+                final double t7i = z0i - t5i * 0.25;
                 final double t8r = t7r + t6r;
                 final double t8i = t7i + t6i;
                 final double t9r = t7r - t6r;
@@ -694,8 +713,8 @@ public class Complex {
                 i += dataStride;
                 final double ta1r = z2r + z4r;
                 final double ta1i = z2i + z4i;
-                final double ta2r = z0r - ta1r / 2;
-                final double ta2i = z0i - ta1i / 2;
+                final double ta2r = z0r - ta1r * 0.5;
+                final double ta2i = z0i - ta1i * 0.5;
                 final double ta3r = tau * (z2r - z4r);
                 final double ta3i = tau * (z2i - z4i);
                 final double a0r = z0r + ta1r;
@@ -706,8 +725,8 @@ public class Complex {
                 final double a2i = ta2i - ta3r;
                 final double tb1r = z5r + z1r;
                 final double tb1i = z5i + z1i;
-                final double tb2r = z3r - tb1r / 2;
-                final double tb2i = z3i - tb1i / 2;
+                final double tb2r = z3r - tb1r * 0.5;
+                final double tb2i = z3i - tb1i * 0.5;
                 final double tb3r = tau * (z5r - z1r);
                 final double tb3i = tau * (z5i - z1i);
                 final double b0r = z3r + tb1r;
@@ -837,20 +856,20 @@ public class Complex {
                 final double b0i = z0i + t6i + t4i;
                 final double b1r = (((c1 + c2 + c3) / 3.0 - 1.0) * (t6r + t4r));
                 final double b1i = (((c1 + c2 + c3) / 3.0 - 1.0) * (t6i + t4i));
-                final double b2r = (((2.0 * c1 - c2 - c3) / 3.0) * (t0r - t4r));
-                final double b2i = (((2.0 * c1 - c2 - c3) / 3.0) * (t0i - t4i));
-                final double b3r = (((c1 - 2.0 * c2 + c3) / 3.0) * (t4r - t2r));
-                final double b3i = (((c1 - 2.0 * c2 + c3) / 3.0) * (t4i - t2i));
-                final double b4r = (((c1 + c2 - 2.0 * c3) / 3.0) * (t2r - t0r));
-                final double b4i = (((c1 + c2 - 2.0 * c3) / 3.0) * (t2i - t0i));
+                final double b2r = (((2.0 * c1 - c2 - c3) * oneThird) * (t0r - t4r));
+                final double b2i = (((2.0 * c1 - c2 - c3) * oneThird) * (t0i - t4i));
+                final double b3r = (((c1 - 2.0 * c2 + c3) * oneThird) * (t4r - t2r));
+                final double b3i = (((c1 - 2.0 * c2 + c3) * oneThird) * (t4i - t2i));
+                final double b4r = (((c1 + c2 - 2.0 * c3) * oneThird) * (t2r - t0r));
+                final double b4i = (((c1 + c2 - 2.0 * c3) * oneThird) * (t2i - t0i));
                 final double b5r = ((s1 + s2 - s3) / 3.0) * (t7r + t1r);
                 final double b5i = ((s1 + s2 - s3) / 3.0) * (t7i + t1i);
-                final double b6r = ((2.0 * s1 - s2 + s3) / 3.0) * (t1r - t5r);
-                final double b6i = ((2.0 * s1 - s2 + s3) / 3.0) * (t1i - t5i);
-                final double b7r = ((s1 - 2.0 * s2 - s3) / 3.0) * (t5r - t3r);
-                final double b7i = ((s1 - 2.0 * s2 - s3) / 3.0) * (t5i - t3i);
-                final double b8r = ((s1 + s2 + 2.0 * s3) / 3.0) * (t3r - t1r);
-                final double b8i = ((s1 + s2 + 2.0 * s3) / 3.0) * (t3i - t1i);
+                final double b6r = ((2.0 * s1 - s2 + s3) * oneThird) * (t1r - t5r);
+                final double b6i = ((2.0 * s1 - s2 + s3) * oneThird) * (t1i - t5i);
+                final double b7r = ((s1 - 2.0 * s2 - s3) * oneThird) * (t5r - t3r);
+                final double b7i = ((s1 - 2.0 * s2 - s3) * oneThird) * (t5i - t3i);
+                final double b8r = ((s1 + s2 + 2.0 * s3) * oneThird) * (t3r - t1r);
+                final double b8i = ((s1 + s2 + 2.0 * s3) * oneThird) * (t3i - t1i);
                 final double u0r = b0r + b1r;
                 final double u0i = b0i + b1i;
                 final double u1r = b2r + b3r;
@@ -934,18 +953,17 @@ public class Complex {
             final int dataOffset, final int dataStride, final double ret[],
             final int retOffset, final int retStride, final int sign,
             final int factor, final int product) {
-        int i = 0, j = 0;
         final int m = n / factor;
         final int q = n / product;
         final int p_1 = product / factor;
         final int jump = (factor - 1) * p_1;
-        for (i = 0; i < m; i++) {
+        for (int i = 0; i < m; i++) {
             ret[retOffset + retStride * i] = data[dataOffset + dataStride * i];
             ret[retOffset + retStride * i + 1] = data[dataOffset + dataStride
                     * i + 1];
         }
         for (int e = 1; e < (factor - 1) / 2 + 1; e++) {
-            for (i = 0; i < m; i++) {
+            for (int i = 0; i < m; i++) {
                 int idx = i + e * m;
                 int idxc = i + (factor - e) * m;
                 ret[retOffset + retStride * idx] = data[dataOffset + dataStride
@@ -962,14 +980,13 @@ public class Complex {
                         - data[dataOffset + dataStride * idxc + 1];
             }
         }
-        /* e = 0 */
-        for (i = 0; i < m; i++) {
+        for (int i = 0; i < m; i++) {
             data[dataOffset + dataStride * i] = ret[retOffset + retStride * i];
             data[dataOffset + dataStride * i + 1] = ret[retOffset + retStride
                     * i + 1];
         }
         for (int e1 = 1; e1 < (factor - 1) / 2 + 1; e1++) {
-            for (i = 0; i < m; i++) {
+            for (int i = 0; i < m; i++) {
                 data[dataOffset + dataStride * i] += ret[retOffset + retStride
                         * (i + e1 * m)];
                 data[dataOffset + dataStride * i + 1] += ret[retOffset
@@ -982,7 +999,7 @@ public class Complex {
             double wr, wi;
             int em = e * m;
             int ecm = (factor - e) * m;
-            for (i = 0; i < m; i++) {
+            for (int i = 0; i < m; i++) {
                 data[dataOffset + dataStride * (i + em)] = ret[retOffset
                         + retStride * i];
                 data[dataOffset + dataStride * (i + em) + 1] = ret[retOffset
@@ -1000,7 +1017,7 @@ public class Complex {
                     wr = twiddl[2 * (idx - 1)];
                     wi = -sign * twiddl[2 * (idx - 1) + 1];
                 }
-                for (i = 0; i < m; i++) {
+                for (int i = 0; i < m; i++) {
                     double ap = wr * ret[retOffset + retStride * (i + e1 * m)];
                     double am = wi
                             * ret[retOffset + retStride
@@ -1019,8 +1036,6 @@ public class Complex {
                 idx %= factor;
             }
         }
-        i = 0;
-        j = 0;
         /* k = 0 */
         for (int k1 = 0; k1 < p_1; k1++) {
             ret[retOffset + retStride * k1] = data[dataOffset + dataStride * k1];
@@ -1035,8 +1050,8 @@ public class Complex {
                         + dataStride * (k1 + e1 * m) + 1];
             }
         }
-        i = p_1;
-        j = product;
+        int i = p_1;
+        int j = product;
         for (int k = 1; k < q; k++) {
             for (int k1 = 0; k1 < p_1; k1++) {
                 ret[retOffset + retStride * j] = data[dataOffset + dataStride
@@ -1107,6 +1122,7 @@ public class Complex {
         }
         return ret;
     }
+    private static final double oneThird = 1.0 / 3.0;
     private static final double sqrt3_2 = sqrt(3.0) / 2.0;
     private static final double sqrt5_4 = sqrt(5.0) / 4.0;
     private static final double sinPI_5 = sin(PI / 5.0);

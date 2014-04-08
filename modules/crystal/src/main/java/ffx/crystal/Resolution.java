@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
  *
  * This file is part of Force Field X.
  *
@@ -29,9 +29,9 @@ import org.apache.commons.math.util.MathUtils;
  * The Resolution class encapsulates the sampling limits and resolution limits
  * for a given crystal and/or data set.
  *
- * @author Timothy Fenn
- * @since 1.0
+ * @author Timothy D. Fenn
  *
+ * @since 1.0
  */
 public class Resolution {
 
@@ -40,7 +40,8 @@ public class Resolution {
     public final double invres;
 
     /**
-     * <p>Constructor for Resolution.</p>
+     * <p>
+     * Constructor for Resolution.</p>
      *
      * @param resolution a double.
      * @param sampling a double.
@@ -52,7 +53,8 @@ public class Resolution {
     }
 
     /**
-     * <p>Constructor for Resolution.</p>
+     * <p>
+     * Constructor for Resolution.</p>
      *
      * @param resolution a double.
      */
@@ -61,7 +63,8 @@ public class Resolution {
     }
 
     /**
-     * <p>checkProperties</p>
+     * <p>
+     * checkProperties</p>
      *
      * @param properties a
      * {@link org.apache.commons.configuration.CompositeConfiguration} object.
@@ -79,7 +82,8 @@ public class Resolution {
     }
 
     /**
-     * <p>res_limit</p>
+     * <p>
+     * res_limit</p>
      *
      * @return a double.
      */
@@ -88,7 +92,8 @@ public class Resolution {
     }
 
     /**
-     * <p>invressq_limit</p>
+     * <p>
+     * invressq_limit</p>
      *
      * @return a double.
      */
@@ -97,7 +102,8 @@ public class Resolution {
     }
 
     /**
-     * <p>sampling_limit</p>
+     * <p>
+     * sampling_limit</p>
      *
      * @return a double.
      */
@@ -106,7 +112,8 @@ public class Resolution {
     }
 
     /**
-     * <p>inResolutionRange</p>
+     * <p>
+     * inResolutionRange</p>
      *
      * @param res a double.
      * @return a boolean.
@@ -122,7 +129,8 @@ public class Resolution {
     }
 
     /**
-     * <p>inInvresolutionRange</p>
+     * <p>
+     * inInvresolutionRange</p>
      *
      * @param res a double.
      * @return a boolean.

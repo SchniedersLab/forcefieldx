@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
  *
  * This file is part of Force Field X.
  *
@@ -100,8 +100,6 @@ public class TorsionTorsion extends BondedTerm {
     }
 
     /**
-     *
-     * @param atoms
      * @param firstBond
      * @param angle
      * @param lastBond

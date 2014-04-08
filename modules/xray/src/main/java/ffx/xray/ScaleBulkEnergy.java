@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
  *
  * This file is part of Force Field X.
  *
@@ -42,7 +42,7 @@ import static ffx.numerics.VectorMath.*;
  * Fit bulk solvent and aniso B scaling terms to correct calculated structure
  * factors against data
  *
- * @author Tim Fenn<br>
+ * @author Timothy D. Fenn<br>
  * @see <a href="http://dx.doi.org/10.1107/S0907444905007894" target="_blank">
  * P. V. Afonine, R. W. Grosse-Kunstleve and P. D. Adams, Acta Cryst. (2005).
  * D61, 850-855</a>

@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
  *
  * This file is part of Force Field X.
  *
@@ -27,8 +27,8 @@ package ffx.numerics;
  * dynamics.
  *
  * @author Michael J. Schnieders
- * @since 1.0
  *
+ * @since 1.0
  */
 public interface Potential {
 
@@ -83,7 +83,7 @@ public interface Potential {
      * returned.
      *
      * @param parameters Supplied array.
-     * 
+     *
      * @return The array filled with parameter values.
      */
     public abstract double[] getCoordinates(double[] parameters);

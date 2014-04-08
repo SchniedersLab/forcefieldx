@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
  *
  * This file is part of Force Field X.
  *
@@ -38,7 +38,7 @@ import ffx.crystal.*;
 /**
  * This class parses CCP4 MTZ files.<br>
  *
- * @author Tim Fenn<br>
+ * @author Timothy D. Fenn<br>
  * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4
  * map format</a>
  *

@@ -1,69 +1,244 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <document
     xmlns="http://maven.apache.org/XDOC/2.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
+    http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
         <title>Source Code</title>
-        <author email="michael-schnieders@uiowa.edu">Michael Schnieders</author>
+        <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
     </properties>
     <body>
-        <section name="Source Code">
-            <subsection name="Git the Code">
-                <p>The Force Field X project is hosted at
-                    <a target="_blank" href="http://www.kenai.com/projects/ffx/">Kenai</a> with the source code in a GIT repository.
-                    "
-                    <a target="_blank" href="http://git-scm.com/">Git</a> is a free and open source, distributed version control system designed to handle everything from
-                    small to very large projects with speed and efficiency."
-                    To clone the Force Field X source using GIT:
-                    <source>git clone git://kenai.com/ffx~source ffx</source>
-                </p>
-                <p>In the future, your clone of Force Field X can be updated to the latest version using the command:
-                    <source>git pull origin master</source>
-                </p>
-            </subsection>
-            <subsection name="Building Force Field X">
-                <p>A Maven project file (pom.xml) is provided to build Force Field X on any platform. After cloing the Force Field X git repository, change
-                    directoies into the base project directory. Then execute:
-                    <source>mvn deploy</source>
-                    This requires Maven v. 3.0.2 or later to be installed with its bin directory included in your $PATH environment variable. The first time this command
-                    is executed, Maven will download build dependencies and Force Field X runtime dependecies. Future executions are quicker. Force Field X will self-test
-                    its modules and report failures. Only code that passes all testing should be uploaded to the Kenai repository, so if any test fails it may be
-                    due to a local configuration issue. To skip the tests:
-                    <source>mvn -DskipTests deploy</source>
-                </p>
-                <p>
-                    Once the build succeeds, Force Field X can be executed using platform dependent start-up scripts located in the bin.
-                    On Mac OS X or Linux:
-                    <source>bin/ffxc energy examples/alamet.xyz</source>
-                    On Windows:
-                    <source>bin/ffxc.bat energy examples/alamet.xyz</source>
-                    The ffx/bin directory should be appended to your $PATH environment variable. The "energy" command
-                    refers to an internal version of the energy.ffx script that can be found in the ffx/scripts
-                    directory. To embed your own script within FFX, place it into the scripts directory and
-                    rebuild FFX.
-                </p>
-            </subsection>
+
+        <section name="Introduction">
+            <p align="justify">
+                The Force Field X parent project provides:
+            </p>
+            <ul>
+                <li>
+                    <a href="project-info.html">Shared infrastructure</a> for the development of modules (like this website,
+                    mailing lists, forums, code repositories, etc.).
+                </li>
+                <li>
+                    <a href="project-reports.html">Aggregate documentaion</a> of the source code, API documentation,
+                    unit testing and known issues.
+                </li>
+                <li>
+                    A variety of
+                    <a href="modules/ui/index.html">user interfaces</a> that run on all platforms. This includes a GUI, command
+                    line version, scripting based on Groovy and even dissemination via
+                    <a href="webstart.html">Java Webstart</a>.
+                </li>
+            </ul>
         </section>
-        <section name="Developing Force Field X">
-            <subsection name="Maven Software Project Management">
-                <p>Maven is like "make", but exceptionally more powerful due to the platform independence of the Jave Runtime Environment.
-                    Maven is used to manage the dependencies of Force Field X, compile it, test it, document it and then put everything together into the website.
-                </p>
-                <p>The Force Field X web site facilitates technology transfer and further development of features. Available documentation includes:</p>
-                <ul>
-                    <li>Application Programming Interface (API) documentation for Force Field X packages is available as
-                        <a href="apidocs/index.html">Javadocs.</a>
-                    </li>
-                    <li>Force Field X source code is available
-                        <a href="xref/index.html">cross-referenced</a> with line numbers.
-                    </li>
-                    <li>The
-                        <a href="jdepend-report.html">JDepend Report</a> is used to avoid cyclic package dependencies.
-                    </li>
-                </ul>
-                <p>For more information on the layout of the Force Field X project visit the "Project Documentation" area of this website.</p>
-            </subsection>
+        <section name="Modules">
+            <p align="justify">
+                Force Field X modules are lead by PIs, postdocs or graduate students.
+                If you have an idea for a new Force Field X Module,
+                please contact an existing member of the
+                <a href="team-list.html">team</a>.
+            </p>
+            <table>
+                <tr>
+                    <th>Module</th>
+                    <th>Leader(s)</th>
+                    <th>Publications</th>
+                </tr>
+                <tr>
+                    <td>
+                        <a href="modules/algorithms/index.html">Algorithms</a> for optimization and sampling
+                    </td>
+                    <td>Stephen D. LuCore and Jooyeon Park</td>
+                    <td></td>
+                </tr>
+                <!-- tr>
+                    <td>
+                        <a href="modules/binding/index.html">Binding Affinity</a> for computing binding affinities
+                    </td>
+                    <td>Lab of Prof. Pengyu Ren</td>
+                    <td>
+                        <a href="modules/binding/publications.html">Publications</a>
+                    </td>
+                </tr -->
+                <tr>
+                    <td>
+                        <a href="modules/crystal/index.html">Crystal</a> for space group symmetry operations
+                    </td>
+                    <td>Michael J. Schnieders and Timothy D. Fenn</td>
+                    <td></td>
+                </tr>
+                <!-- tr>
+                    <td>
+                        <a href="modules/nucleic/index.html">Nucleic Acid</a> simulations
+                    </td>
+                    <td>Dr. Chuanjie Wu</td>
+                    <td></td>
+                </tr -->
+                <tr>
+                    <td>
+                        <a href="modules/numerics/index.html">Numerics</a> for numerical methods
+                    </td>
+                    <td>Jacob Litman</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>
+                        <a href="modules/potentials/index.html">Potentials</a> for molecular biophyiscs with support for space group symmetry
+                    </td>
+                    <td>Michael J. Schnieders</td>
+                    <td>
+                        <a href="modules/potentials/publications.html">Publications</a>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <a href="modules/ui/index.html">User Interfaces</a> for command line and GUI versions
+                    </td>
+                    <td>Ava Lynn, Ian Nessler and William Tollefson</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>
+                        <a href="modules/utilities/index.html">Utilities</a> for support functions needed by many modules
+                    </td>
+                    <td>Community</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>
+                        <a href="modules/xray/index.html">X-Ray Refinement</a> for refinement of X-ray diffraction data sets
+                    </td>
+                    <td>Timothy D. Fenn</td>
+                    <td>
+                        <a href="modules/xray/publications.html">Publications</a>
+                    </td>
+                </tr>
+            </table>
+        </section>
+        <section name="GIT the Code">
+            <p>The Force Field X project is hosted at
+                <a target="_blank" href="http://www.kenai.com/projects/ffx/">Kenai</a> with the source code in a GIT repository.
+                "
+                <a target="_blank" href="http://git-scm.com/">Git</a> is a free and open source, distributed version control system designed to handle everything from
+                small to very large projects with speed and efficiency."
+                To clone the Force Field X source using GIT:
+                <source>git clone git://kenai.com/ffx~source ffx</source>
+            </p>
+            <p>In the future, your clone of Force Field X can be updated to the latest version using the command:
+                <source>git pull origin master</source>
+            </p>
+        </section>
+        <section name="Build FFX">
+            <p>A Maven project file (pom.xml) is provided to build Force Field X on any platform. After cloing the Force Field X git repository, change
+                directoies into the base project directory. Then execute:
+                <source>mvn deploy</source>
+                This requires Maven v. 3.2 or later to be installed with its bin directory included in your $PATH environment variable. The first time this command
+                is executed, Maven will download build dependencies and Force Field X runtime dependecies. Future executions are quicker. Force Field X will self-test
+                its modules and report failures. Only code that passes all testing should be uploaded to the Kenai repository, so if any test fails it may be
+                due to a local configuration issue. To skip the tests:
+                <source>mvn -DskipTests deploy</source>
+            </p>
+            <p>
+                Once the build succeeds, Force Field X can be executed using platform dependent start-up scripts located in the bin.
+                On Mac OS X or Linux:
+                <source>bin/ffxc energy examples/alamet.xyz</source>
+                On Windows:
+                <source>bin/ffxc.bat energy examples/alamet.xyz</source>
+                The ffx/bin directory should be appended to your $PATH environment variable. The "energy" command
+                refers to an internal version of the energy.ffx script that can be found in the ffx/scripts
+                directory. To embed your own script within FFX, place it into the scripts directory and
+                rebuild FFX.
+            </p>
+        </section>
+        <section name="Contribute">
+            <p>Maven is like "make", but more powerful due to the platform independence of the Jave Runtime Environment. Maven is used to manage the dependencies of Force Field X, compile it, test it, document it and then put everything together into the website.
+            </p>
+            <p>The Force Field X web site facilitates technology transfer and further development of features. Available documentation includes:
+            </p>
+            <ul>
+                <li>Application Programming Interface (API) documentation for Force Field X packages is available as
+                    <a href="apidocs/index.html">Javadocs.</a>
+                </li>
+                <li>Force Field X source code is available
+                    <a href="xref/index.html">cross-referenced</a> with line numbers.
+                </li>
+                <li>The
+                    <a href="jdepend-report.html">JDepend Report</a> is used to avoid cyclic package dependencies.
+                </li>
+            </ul>
+            <p>For more information on the layout of the Force Field X project visit the "Project Documentation" area of this website.</p>
+        </section>
+        <section name="Development Tools">
+            <p>Below are links to tools and dependencies relied upon for development.</p>
+            <table>
+                <tbody>
+                    <tr>
+                        <th>Link</th>
+                        <th>Description</th>
+                        <th>Version</th>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="http://www.oracle.com/technetwork/java/javase/downloads">
+                                Java SE Development Kit (JDK)
+                            </a>
+                        </td>
+                        <td>
+                            Java Platform, Standard Edition (Java SE) lets you develop and deploy Java
+                            applications on desktops and servers, as well as in today's demanding embedded
+                            environments. Java offers the rich user interface, performance, versatility,
+                            portability, and security that today’s applications require.
+                        </td>
+                        <td>
+                            1.8.0 or later.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="http://maven.apache.org">Maven</a>
+                        </td>
+                        <td>
+                            Apache Maven is a software project management and comprehension tool. Based on
+                            the concept of a project object model (POM), Maven can manage a project's build,
+                            reporting and documentation from a central piece of information.
+                        </td>
+                        <td>
+                            3.2.1 or later.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="http://netbeans.org">NetBeans IDE</a>
+                        </td>
+                        <td>
+                            The NetBeans IDE is an award-winning integrated development environment available
+                            for Windows, Mac, Linux, and Solaris.
+                        </td>
+                        <td>
+                            8.0 or later.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="http://git-scm.com">GIT Version Control</a>
+                        </td>
+                        <td>
+                            Git is a free and open source, distributed version control system designed to handle
+                            everything from small to very large projects with speed and efficiency.
+                        </td>
+                        <td>
+                            1.8.5 or later.
+                        </td>
+                    </tr>
+                    <!-- tr>
+                        <td>
+                            <a href="http://java3d.dev.java.net/">Java3D</a>
+                        </td>
+                        <td>Java3D and VecMath APIs.</td>
+                        <td>1.5.2</td>
+                    </tr -->
+                </tbody>
+            </table>
         </section>
     </body>
 </document>

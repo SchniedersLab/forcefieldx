@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
  *
  * This file is part of Force Field X.
  *
@@ -63,6 +63,8 @@ public abstract class MSGroup extends MSNode {
     private MSNode torsionNode = new MSNode("Torsions");
     private MSNode piOrbitalTorsionNode = new MSNode("Pi-Orbital Torsions");
     private MSNode torsionTorsionNode = new MSNode("Torsion-Torsions");
+    private MSNode improperTorsionNode = new MSNode("Improper Torsions");
+
     // Whether the terms are current
     private boolean finalized;
     // Center of the MultiScaleGroup
@@ -101,6 +103,10 @@ public abstract class MSGroup extends MSNode {
      * Constant <code>torsionTorsionTime=0</code>
      */
     protected static long torsionTorsionTime = 0;
+    /**
+     * Constant <code>torsionTorsionTime=0</code>
+     */
+    protected static long improperTorsionTime = 0;
 
     /**
      * Default Constructor initializes a MultiScaleGroup and a few of its
@@ -117,6 +123,7 @@ public abstract class MSGroup extends MSNode {
         termNode.add(torsionNode);
         termNode.add(piOrbitalTorsionNode);
         termNode.add(torsionTorsionNode);
+        termNode.add(improperTorsionNode);
         add(atomNode);
         add(termNode);
     }
@@ -195,6 +202,7 @@ public abstract class MSGroup extends MSNode {
         MSNode newTorsionNode = new MSNode("Torsions");
         MSNode newPiOrbitalTorsionNode = new MSNode("Pi-Orbital Torsions");
         MSNode newTorsionTorsionNode = new MSNode("Torsion-Torsions");
+        MSNode newImproperTorsionNode = new MSNode("Improper Torsions");
 
         MolecularAssembly molecularAssembly = (MolecularAssembly) getMSNode(MolecularAssembly.class);
         ForceField forceField = molecularAssembly.getForceField();
@@ -326,6 +334,25 @@ public abstract class MSGroup extends MSNode {
         piOrbitalTorsionTime += System.nanoTime() - time;
 
         /**
+         * Find Improper-Torsions.
+         */
+        time = System.nanoTime();
+        ArrayList<Atom> atoms = getAtomList();
+        for (Atom atom : atoms) {
+            if (atom.isTrigonal()) {
+                ArrayList<ImproperTorsion> improperTorsions = ImproperTorsion.improperTorsionFactory(atom, forceField);
+                if (improperTorsions != null) {
+                    for (ImproperTorsion improperTorsion : improperTorsions) {
+                        newImproperTorsionNode.add(improperTorsion);
+                    }
+                }
+            }
+        }
+        newImproperTorsionNode.setName("Improper Torsions (" + newImproperTorsionNode.getChildCount() + ")");
+        setImproperTorsions(newImproperTorsionNode);
+        improperTorsionTime += System.nanoTime() - time;
+
+        /**
          * Find Torsion-Torsions.
          */
         time = System.nanoTime();
@@ -356,7 +383,8 @@ public abstract class MSGroup extends MSNode {
         int numberOfValenceTerms = newBondNode.getChildCount() + newAngleNode.getChildCount()
                 + newStretchBendNode.getChildCount() + newUreyBradleyNode.getChildCount()
                 + newOutOfPlaneBendNode.getChildCount() + newTorsionNode.getChildCount()
-                + newPiOrbitalTorsionNode.getChildCount() + newTorsionTorsionNode.getChildCount();
+                + newPiOrbitalTorsionNode.getChildCount() + newTorsionTorsionNode.getChildCount()
+                + newImproperTorsionNode.getChildCount();
         termNode.setName(
                 "Valence Terms (" + numberOfValenceTerms + ")");
     }
@@ -428,6 +456,7 @@ public abstract class MSGroup extends MSNode {
         MSNode newTorsionNode = new MSNode("Torsions");
         MSNode newPiOrbitalTorsionNode = new MSNode("Pi-Orbital Torsions");
         MSNode newTorsionTorsionNode = new MSNode("Torsion-Torsions");
+        //MSNode newImproperTorsionNode = new MSNode("Torsion-Torsions");
         MolecularAssembly sys = (MolecularAssembly) getMSNode(MolecularAssembly.class);
         ForceField forceField = sys.getForceField();
         newBondNode.add(bond);
@@ -583,7 +612,7 @@ public abstract class MSGroup extends MSNode {
      * (ie They can except more bonds)
      */
     public void findDangelingAtoms() {
-        ArrayList<Atom> d = new ArrayList<Atom>();
+        ArrayList<Atom> d = new ArrayList<>();
         for (Atom a : getAtomList()) {
             if (a.isDangeling()) {
                 d.add(a);
@@ -678,11 +707,6 @@ public abstract class MSGroup extends MSNode {
         return bondNode;
     }
 
-    /*
-     public boolean getBondsKnown() {
-     return bondsKnown;
-     }
-     */
     /**
      * Returns the MultiScaleGroup's center as a double[3].
      *
@@ -817,6 +841,9 @@ public abstract class MSGroup extends MSNode {
         if (torsionTorsionNode.getChildCount() == 0 && !(torsionTorsionNode.getParent() == null)) {
             termNode.remove(torsionTorsionNode);
         }
+        if (improperTorsionNode.getChildCount() == 0 && !(improperTorsionNode.getParent() == null)) {
+            termNode.remove(improperTorsionNode);
+        }
         if (termNode.getChildCount() == 0) {
             remove(termNode);
         }
@@ -834,6 +861,17 @@ public abstract class MSGroup extends MSNode {
         termNode.remove(angleNode);
         angleNode = t;
         termNode.add(angleNode);
+    }
+
+    /**
+     * Sets the ImproperTorsion node to t.
+     *
+     * @param t a {@link ffx.potential.bonded.MSNode} object.
+     */
+    public void setImproperTorsions(MSNode t) {
+        termNode.remove(improperTorsionNode);
+        improperTorsionNode = t;
+        termNode.add(improperTorsionNode);
     }
 
     /**

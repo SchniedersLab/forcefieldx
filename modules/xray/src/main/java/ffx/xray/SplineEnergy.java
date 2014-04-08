@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
  *
  * This file is part of Force Field X.
  *
@@ -37,7 +37,7 @@ import ffx.numerics.Potential;
  *
  * Fit structure factors using spline coefficients
  *
- * @author Tim Fenn<br>
+ * @author Timothy D. Fenn<br>
  * @see <a href="http://dx.doi.org/10.1107/S0021889802013420" target="_blank">
  * K. Cowtan, J. Appl. Cryst. (2002). 35, 655-663</a>
  *

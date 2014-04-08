@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
  *
  * This file is part of Force Field X.
  *
@@ -23,13 +23,16 @@
 package ffx.potential.nonbonded;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.lang.Math.*;
+import static java.lang.Math.PI;
+import static java.lang.Math.pow;
+import static java.lang.Math.sqrt;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
@@ -83,7 +86,7 @@ public class VanDerWaals implements MaskingInterface,
     /**
      * An array of all atoms in the system.
      */
-    private final Atom[] atoms;
+    private Atom[] atoms;
     /**
      * An array of whether each atom in the system should be used in the
      * calculations.
@@ -92,7 +95,7 @@ public class VanDerWaals implements MaskingInterface,
     /**
      * A local convenience variable equal to atoms.length.
      */
-    private final int nAtoms;
+    private int nAtoms;
     /**
      * A local convenience variable equal to the number of crystal symmetry
      * operators.
@@ -103,7 +106,7 @@ public class VanDerWaals implements MaskingInterface,
      * Lambda variables.
      */
     private boolean lambdaTerm;
-    private final boolean isSoft[];
+    private boolean isSoft[];
     /**
      * There are 2 softCore arrays of length nAtoms.
      *
@@ -113,7 +116,7 @@ public class VanDerWaals implements MaskingInterface,
      * The second is used for atoms in the outer loop that are soft. This mask
      * equals: true for inner loop hard atoms false for inner loop soft atoms
      */
-    private final boolean softCore[][];
+    private boolean softCore[][];
     private boolean softCoreInit;
     private static final byte HARD = 0;
     private static final byte SOFT = 1;
@@ -136,7 +139,7 @@ public class VanDerWaals implements MaskingInterface,
      * A local copy of atomic coordinates, including reductions on the hydrogen
      * atoms.
      */
-    private final double coordinates[];
+    private double coordinates[];
     /**
      * Reduced coordinates of size: [nSymm][nAtoms * 3]
      */
@@ -156,21 +159,21 @@ public class VanDerWaals implements MaskingInterface,
     /**
      * A local reference to the atom class of each atom in the system.
      */
-    private final int atomClass[];
+    private int atomClass[];
     /**
      * Hydrogen atom vdW sites are located toward their heavy atom relative to
      * their nucleus. This is a look-up that gives the heavy atom index for each
      * hydrogen.
      */
-    private final int reductionIndex[];
-    private final int bondMask[][];
-    private final int angleMask[][];
-    private final int torsionMask[][];
+    private int reductionIndex[];
+    private int bondMask[][];
+    private int angleMask[][];
+    private int torsionMask[][];
     /**
      * Each hydrogen vdW site is located a fraction of the way from the heavy
      * atom nucleus to the hydrogen nucleus (~0.9).
      */
-    private final double reductionValue[];
+    private double reductionValue[];
     private final double radEps[][];
     private double longRangeCorrection;
     private final boolean doLongRangeCorrection;
@@ -193,32 +196,32 @@ public class VanDerWaals implements MaskingInterface,
      * X-component of the Cartesian coordinate gradient. Size:
      * [threadCount][nAtoms]
      */
-    private final double gradX[][];
+    private double gradX[][];
     /**
      * Y-component of the Cartesian coordinate gradient. Size:
      * [threadCount][nAtoms]
      */
-    private final double gradY[][];
+    private double gradY[][];
     /**
      * Z-component of the Cartesian coordinate gradient. Size:
      * [threadCount][nAtoms]
      */
-    private final double gradZ[][];
+    private double gradZ[][];
     /**
      * X-component of the lambda derivative of the Cartesian coordinate
      * gradient. Size: [threadCount][nAtoms]
      */
-    private final double lambdaGradX[][];
+    private double lambdaGradX[][];
     /**
      * Y-component of the lambda derivative of the Cartesian coordinate
      * gradient. Size: [threadCount][nAtoms]
      */
-    private final double lambdaGradY[][];
+    private double lambdaGradY[][];
     /**
      * Z-component of the lambda derivative of the Cartesian coordinate
      * gradient. Size: [threadCount][nAtoms]
      */
-    private final double lambdaGradZ[][];
+    private double lambdaGradZ[][];
     /**
      * The neighbor-list includes 1-2 and 1-3 interactions, which are masked out
      * in the van der Waals energy code. The AMOEBA force field includes 1-4
@@ -244,10 +247,7 @@ public class VanDerWaals implements MaskingInterface,
      * Waals energy of.
      * @param crystal The boundary conditions.
      * @param parallelTeam The parallel environment.
-     * @param repulsivePower
-     * @param dispersivePower
-     * @param delta
-     * @param gamma
+     * @param vdwForm
      * @since 1.0
      */
     public VanDerWaals(MolecularAssembly molecularAssembly, Crystal crystal,
@@ -260,10 +260,10 @@ public class VanDerWaals implements MaskingInterface,
 
         nAtoms = atoms.length;
         nSymm = crystal.spaceGroup.getNumberOfSymOps();
+
         /**
          * Configure van der Waals well shape parameters.
          */
-
         switch (vdwForm) {
             case LENNARD_JONES_6_12:
                 repulsivePower = 12.0;
@@ -351,90 +351,29 @@ public class VanDerWaals implements MaskingInterface,
         }
 
         /**
+         * Parallel constructs.
+         */
+        threadCount = parallelTeam.getThreadCount();
+        sharedInteractions = new SharedInteger();
+        sharedEnergy = new SharedDouble();
+        lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
+        if (lambdaTerm) {
+            shareddEdL = new SharedDouble();
+            sharedd2EdL2 = new SharedDouble();
+        } else {
+            shareddEdL = null;
+            sharedd2EdL2 = null;
+        }
+        doLongRangeCorrection = forceField.getBoolean(ForceField.ForceFieldBoolean.VDWLRTERM, false);
+        vanDerWaalsRegion = new VanDerWaalsRegion();
+        initializationTime = new long[threadCount];
+        vdwTime = new long[threadCount];
+        reductionTime = new long[threadCount];
+
+        /**
          * Allocate coordinate arrays and set up reduction indices and values.
          */
-        coordinates = new double[nAtoms * 3];
-        reduced = new double[nSymm][nAtoms * 3];
-        reducedXYZ = reduced[0];
-        atomClass = new int[nAtoms];
-        reductionIndex = new int[nAtoms];
-        reductionValue = new double[nAtoms];
-        bondMask = new int[nAtoms][];
-        angleMask = new int[nAtoms][];
-        if (vdwForm == VDW_FORM.LENNARD_JONES_6_12) {
-            torsionMask = new int[nAtoms][];
-        } else {
-            torsionMask = null;
-        }
-        for (int i = 0; i < nAtoms; i++) {
-            Atom ai = atoms[i];
-            assert (i == ai.xyzIndex - 1);
-            double xyz[] = ai.getXYZ();
-            int i3 = i * 3;
-            coordinates[i3 + XX] = xyz[XX];
-            coordinates[i3 + YY] = xyz[YY];
-            coordinates[i3 + ZZ] = xyz[ZZ];
-            AtomType type = ai.getAtomType();
-            if (type == null) {
-                logger.severe(ai.toString());
-                continue;
-            }
-            atomClass[i] = type.atomClass;
-            VDWType vdwType = forceField.getVDWType(Integer.toString(atomClass[i]));
-            ai.setVDWType(vdwType);
-            ArrayList<Bond> bonds = ai.getBonds();
-            int numBonds = bonds.size();
-            if (vdwType.reductionFactor > 0.0 && numBonds == 1) {
-                Bond bond = bonds.get(0);
-                Atom heavyAtom = bond.get1_2(ai);
-                // Atom indexes start at 1
-                reductionIndex[i] = heavyAtom.xyzIndex - 1;
-                reductionValue[i] = vdwType.reductionFactor;
-            } else {
-                reductionIndex[i] = i;
-                reductionValue[i] = 0.0;
-            }
-            bondMask[i] = new int[numBonds];
-            for (int j = 0; j < numBonds; j++) {
-                Bond b = bonds.get(j);
-                bondMask[i][j] = b.get1_2(ai).xyzIndex - 1;
-            }
-            ArrayList<Angle> angles = ai.getAngles();
-            int numAngles = 0;
-            for (Angle a : angles) {
-                Atom ak = a.get1_3(ai);
-                if (ak != null) {
-                    numAngles++;
-                }
-            }
-            angleMask[i] = new int[numAngles];
-            int j = 0;
-            for (Angle a : angles) {
-                Atom ak = a.get1_3(ai);
-                if (ak != null) {
-                    angleMask[i][j++] = ak.xyzIndex - 1;
-                }
-            }
-
-            if (vdwForm == VDW_FORM.LENNARD_JONES_6_12) {
-                ArrayList<Torsion> torsions = ai.getTorsions();
-                int numTorsions = 0;
-                for (Torsion t : torsions) {
-                    Atom ak = t.get1_4(ai);
-                    if (ak != null) {
-                        numTorsions++;
-                    }
-                }
-                torsionMask[i] = new int[numTorsions];
-                j = 0;
-                for (Torsion t : torsions) {
-                    Atom ak = t.get1_4(ai);
-                    if (ak != null) {
-                        torsionMask[i][j++] = ak.xyzIndex - 1;
-                    }
-                }
-            }
-        }
+        initAtomArrays();
 
         /**
          * Set up the cutoff and polynomial switch.
@@ -463,20 +402,7 @@ public class VanDerWaals implements MaskingInterface,
         fourC4 = 4.0 * c4;
         fiveC5 = 5.0 * c5;
 
-        /**
-         * Initialize the soft core lambda masks.
-         */
-        isSoft = new boolean[nAtoms];
-        softCore = new boolean[2][nAtoms];
-        for (int i = 0; i < nAtoms; i++) {
-            isSoft[i] = false;
-            softCore[HARD][i] = false;
-            softCore[SOFT][i] = false;
-        }
-        softCoreInit = false;
-        molecule = molecularAssembly.getMoleculeNumbers();
-
-        lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
+       
         if (lambdaTerm) {
             vdwLambdaAlpha = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_ALPHA, 0.05);
             vdwLambdaExponent = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_EXPONENT, 1.0);
@@ -489,42 +415,6 @@ public class VanDerWaals implements MaskingInterface,
             intermolecularSoftcore = forceField.getBoolean(
                     ForceField.ForceFieldBoolean.INTERMOLECULAR_SOFTCORE, false);
         }
-
-        /**
-         * Initialize all atoms to be used in the energy.
-         */
-        use = new boolean[nAtoms];
-        for (int i = 0; i < nAtoms; i++) {
-            use[i] = true;
-        }
-
-        /**
-         * Parallel constructs.
-         */
-        threadCount = parallelTeam.getThreadCount();
-        sharedInteractions = new SharedInteger();
-        sharedEnergy = new SharedDouble();
-        gradX = new double[threadCount][];
-        gradY = new double[threadCount][];
-        gradZ = new double[threadCount][];
-        if (lambdaTerm) {
-            shareddEdL = new SharedDouble();
-            sharedd2EdL2 = new SharedDouble();
-            lambdaGradX = new double[threadCount][];
-            lambdaGradY = new double[threadCount][];
-            lambdaGradZ = new double[threadCount][];
-        } else {
-            shareddEdL = null;
-            sharedd2EdL2 = null;
-            lambdaGradX = null;
-            lambdaGradY = null;
-            lambdaGradZ = null;
-        }
-        doLongRangeCorrection = forceField.getBoolean(ForceField.ForceFieldBoolean.VDWLRTERM, false);
-        vanDerWaalsRegion = new VanDerWaalsRegion();
-        initializationTime = new long[threadCount];
-        vdwTime = new long[threadCount];
-        reductionTime = new long[threadCount];
 
         /**
          * Parallel neighbor list builder.
@@ -553,6 +443,143 @@ public class VanDerWaals implements MaskingInterface,
             logger.info("  Lambda Parameters");
             logger.info(format("   Softcore Alpha:                        %5.3f", vdwLambdaAlpha));
             logger.info(format("   Lambda Exponent:                       %5.3f", vdwLambdaExponent));
+        }
+    }
+
+    /**
+     * Allocate coordinate arrays and set up reduction indices and values.
+     */
+    private void initAtomArrays() {
+        if (atomClass == null || nAtoms > atomClass.length) {
+            atomClass = new int[nAtoms];
+            coordinates = new double[nAtoms * 3];
+            reduced = new double[nSymm][nAtoms * 3];
+            reducedXYZ = reduced[0];
+            reductionIndex = new int[nAtoms];
+            reductionValue = new double[nAtoms];
+            bondMask = new int[nAtoms][];
+            angleMask = new int[nAtoms][];
+            if (vdwForm == VDW_FORM.LENNARD_JONES_6_12) {
+                torsionMask = new int[nAtoms][];
+            } else {
+                torsionMask = null;
+            }
+            use = new boolean[nAtoms];
+            isSoft = new boolean[nAtoms];
+            softCore = new boolean[2][nAtoms];
+            gradX = new double[threadCount][];
+            gradY = new double[threadCount][];
+            gradZ = new double[threadCount][];
+            if (lambdaTerm) {
+                lambdaGradX = new double[threadCount][];
+                lambdaGradY = new double[threadCount][];
+                lambdaGradZ = new double[threadCount][];
+            } else {
+                lambdaGradX = null;
+                lambdaGradY = null;
+                lambdaGradZ = null;
+            }
+        }
+
+        /**
+         * Initialize all atoms to be used in the energy.
+         */
+        Arrays.fill(use, true);
+
+        for (int i = 0; i < nAtoms; i++) {
+            Atom ai = atoms[i];
+            assert (i == ai.xyzIndex - 1);
+            double xyz[] = ai.getXYZ();
+            int i3 = i * 3;
+            coordinates[i3 + XX] = xyz[XX];
+            coordinates[i3 + YY] = xyz[YY];
+            coordinates[i3 + ZZ] = xyz[ZZ];
+            AtomType type = ai.getAtomType();
+            if (type == null) {
+                logger.severe(ai.toString());
+                continue;
+            }
+            atomClass[i] = type.atomClass;
+            ForceField forceField = molecularAssembly.getForceField();
+            VDWType vdwType = forceField.getVDWType(Integer.toString(atomClass[i]));
+            ai.setVDWType(vdwType);
+            ArrayList<Bond> bonds = ai.getBonds();
+            int numBonds = bonds.size();
+            if (vdwType.reductionFactor > 0.0 && numBonds == 1) {
+                Bond bond = bonds.get(0);
+                Atom heavyAtom = bond.get1_2(ai);
+                // Atom indexes start at 1
+                reductionIndex[i] = heavyAtom.xyzIndex - 1;
+                reductionValue[i] = vdwType.reductionFactor;
+            } else {
+                reductionIndex[i] = i;
+                reductionValue[i] = 0.0;
+            }
+            bondMask[i] = new int[numBonds];
+            for (int j = 0; j < numBonds; j++) {
+                Bond bond = bonds.get(j);
+                bondMask[i][j] = bond.get1_2(ai).xyzIndex - 1;
+            }
+            ArrayList<Angle> angles = ai.getAngles();
+            int numAngles = 0;
+            for (Angle angle : angles) {
+                Atom ak = angle.get1_3(ai);
+                if (ak != null) {
+                    numAngles++;
+                }
+            }
+            angleMask[i] = new int[numAngles];
+            int j = 0;
+            for (Angle angle : angles) {
+                Atom ak = angle.get1_3(ai);
+                if (ak != null) {
+                    angleMask[i][j++] = ak.xyzIndex - 1;
+                }
+            }
+            if (vdwForm == VDW_FORM.LENNARD_JONES_6_12) {
+                ArrayList<Torsion> torsions = ai.getTorsions();
+                int numTorsions = 0;
+                for (Torsion torsion : torsions) {
+                    Atom ak = torsion.get1_4(ai);
+                    if (ak != null) {
+                        numTorsions++;
+                    }
+                }
+                torsionMask[i] = new int[numTorsions];
+                j = 0;
+                for (Torsion torsion : torsions) {
+                    Atom ak = torsion.get1_4(ai);
+                    if (ak != null) {
+                        torsionMask[i][j++] = ak.xyzIndex - 1;
+                    }
+                }
+            }
+        }
+
+        Arrays.fill(isSoft, false);
+        Arrays.fill(softCore[HARD], false);
+        Arrays.fill(softCore[SOFT], false);
+        softCoreInit = false;
+        molecule = molecularAssembly.getMoleculeNumbers();
+        setLambda(lambda);
+    }
+
+    public void setAtoms(Atom atoms[]) {
+        this.atoms = atoms;
+        this.nAtoms = atoms.length;
+        initAtomArrays();
+
+        /**
+         * Rebuild the NeighborList.
+         */
+        neighborList.setAtoms(atoms);
+        neighborListOnly = true;
+        print = false;
+        try {
+            parallelTeam.execute(vanDerWaalsRegion);
+        } catch (Exception e) {
+            String message = " Fatal exception expanding coordinates.\n";
+            logger.log(Level.SEVERE, message, e);
         }
     }
 
@@ -1097,7 +1124,7 @@ public class VanDerWaals implements MaskingInterface,
                 int threadIndex = getThreadIndex();
 
                 if (gradient) {
-                    if (gradX[threadIndex] == null) {
+                    if (gradX[threadIndex] == null || gradX[threadIndex].length < nAtoms) {
                         gradX[threadIndex] = new double[nAtoms];
                         gradY[threadIndex] = new double[nAtoms];
                         gradZ[threadIndex] = new double[nAtoms];
@@ -1109,7 +1136,7 @@ public class VanDerWaals implements MaskingInterface,
                 }
 
                 if (lambdaTerm) {
-                    if (lambdaGradX[threadIndex] == null) {
+                    if (lambdaGradX[threadIndex] == null || lambdaGradX[threadIndex].length < nAtoms) {
                         lambdaGradX[threadIndex] = new double[nAtoms];
                         lambdaGradY[threadIndex] = new double[nAtoms];
                         lambdaGradZ[threadIndex] = new double[nAtoms];

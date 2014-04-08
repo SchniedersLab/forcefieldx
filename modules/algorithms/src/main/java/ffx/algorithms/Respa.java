@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
  *
  * This file is part of Force Field X.
  *
@@ -134,7 +134,7 @@ public class Respa extends Integrator {
     /**
      * Set outer Respa time step. The inner time step is fixed at 0.25 fsec.
      *
-     * @param dt Outer time step (dt must be >= 0.5 fsec).
+     * @param dt Outer time step (dt must be .GE. 0.5 fsec).
      */
     @Override
     public void setTimeStep(double dt) {

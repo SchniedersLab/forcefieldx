@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
  *
  * This file is part of Force Field X.
  *
@@ -40,7 +40,7 @@ import ffx.potential.bonded.Residue;
  * Refinement minimization class using {@link OptimizationListener} interface,
  * constructs a {@link RefinementEnergy} object for this purpose
  *
- * @author Tim Fenn
+ * @author Timothy D. Fenn
  *
  */
 public class RefinementMinimize implements OptimizationListener, Terminatable {

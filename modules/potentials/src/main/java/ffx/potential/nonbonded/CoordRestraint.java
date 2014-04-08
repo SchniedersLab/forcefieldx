@@ -34,7 +34,7 @@ public class CoordRestraint implements LambdaInterface {
     /**
      * Force constant in Kcal/mole/Angstrom.
      */
-    private final double forceConstant = 10.0;
+    private final double forceConstant;
     private final double a1[] = new double[3];
     private final double dx[] = new double[3];
     private double lambda = 1.0;
@@ -74,6 +74,8 @@ public class CoordRestraint implements LambdaInterface {
             dLambdaPow = 0.0;
             d2LambdaPow = 0.0;
         }
+        
+        forceConstant = forceField.getDouble(ForceField.ForceFieldDouble.RESTRAINT_K, 10.0);
 
         logger.info("\n Coordinate Restraint:");
 
@@ -101,13 +103,18 @@ public class CoordRestraint implements LambdaInterface {
         for (int i = 0; i < nAtoms; i++) {
             // Current atomic coordinates.
             Atom atom = atoms[i];
+
+            if (atom.isHydrogen()) {
+                continue;
+            }
+            
             atom.getXYZ(a1);
             // Compute their separation.
             dx[0] = a1[0] - initialCoordinates[0][i];
             dx[1] = a1[1] - initialCoordinates[1][i];
             dx[2] = a1[2] - initialCoordinates[2][i];
-            // Apply the minimum image convention.
             double r2 = rsq(dx);
+            // Apply the minimum image convention.
             // double r2 = crystal.image(dx);
             //logger.info(String.format(" %d %16.8f", j, Math.sqrt(r2)));
             residual += r2;

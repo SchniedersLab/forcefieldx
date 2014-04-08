@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
  *
  * This file is part of Force Field X.
  *
@@ -37,8 +37,12 @@ import java.util.logging.Logger;
  * convention. This is ensured by increasing l, m and/or n until a sphere of
  * of necessary radius fits entirely inside the ReplicatedCrystal.
  * <br>
+ *
  * @author Michael J. Schnieders
+ *
  * @since 1.0
+ * 
+ * @see Crystal
  */
 public class ReplicatesCrystal extends Crystal {
     /**

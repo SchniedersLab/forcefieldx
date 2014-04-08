@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
  *
  * This file is part of Force Field X.
  *
@@ -23,28 +23,31 @@
 package ffx.numerics;
 
 /**
- * <p>TriCubicSpline class.</p>
+ * <p>
+ * TriCubicSpline class.</p>
  *
- * @author Tim Fenn
+ * @author Timothy D. Fenn
+ *
  * @see <a
  * href="http://www.cs.cmu.edu/~fp/courses/graphics/asst5/catmullRom.pdf"
- * target="_blank"> Catmull-Rom splines</a>
+ * target="_blank">Catmull-Rom splines</a>
  *
+ * @since 1.0
  */
 public class TriCubicSpline {
 
-    private double p[] = new double[4];
-    private double q[] = new double[4];
-    private double r[] = new double[4];
-    private double u[] = new double[4];
-    private double v[] = new double[4];
-    private double w[] = new double[4];
-    private double dp[] = new double[4];
-    private double dq[] = new double[4];
-    private double dr[] = new double[4];
-    private double du[] = new double[4];
-    private double dv[] = new double[4];
-    private double dw[] = new double[4];
+    private final double p[];
+    private final double q[];
+    private final double r[];
+    private final double u[];
+    private final double v[];
+    private final double w[];
+    private final double dp[];
+    private final double dq[];
+    private final double dr[];
+    private final double du[];
+    private final double dv[];
+    private final double dw[];
     /**
      * smoothing matrix: Catmull-Rom spline with tau=0.25
      */
@@ -60,6 +63,18 @@ public class TriCubicSpline {
      * initialize Spline function
      */
     public TriCubicSpline() {
+        dw = new double[4];
+        dv = new double[4];
+        du = new double[4];
+        dr = new double[4];
+        dq = new double[4];
+        dp = new double[4];
+        w = new double[4];
+        v = new double[4];
+        u = new double[4];
+        r = new double[4];
+        q = new double[4];
+        p = new double[4];
     }
 
     /**

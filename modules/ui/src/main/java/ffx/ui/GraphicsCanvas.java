@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
  *
  * This file is part of Force Field X.
  *
@@ -22,7 +22,12 @@
  */
 package ffx.ui;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsEnvironment;
+import java.awt.Rectangle;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
@@ -35,9 +40,33 @@ import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 
 import javax.imageio.ImageIO;
-import javax.media.j3d.*;
-import javax.swing.*;
-import javax.vecmath.*;
+import javax.media.j3d.AmbientLight;
+import javax.media.j3d.Background;
+import javax.media.j3d.BoundingSphere;
+import javax.media.j3d.Bounds;
+import javax.media.j3d.BranchGroup;
+import javax.media.j3d.Canvas3D;
+import javax.media.j3d.DirectionalLight;
+import javax.media.j3d.GraphicsConfigTemplate3D;
+import javax.media.j3d.GraphicsContext3D;
+import javax.media.j3d.ImageComponent;
+import javax.media.j3d.ImageComponent2D;
+import javax.media.j3d.J3DGraphics2D;
+import javax.media.j3d.Raster;
+import javax.media.j3d.Transform3D;
+import javax.media.j3d.TransformGroup;
+import javax.media.j3d.View;
+import javax.swing.JButton;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JColorChooser;
+import javax.swing.JFileChooser;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.vecmath.Color3f;
+import javax.vecmath.Point3d;
+import javax.vecmath.Point3f;
+import javax.vecmath.Vector3d;
+import javax.vecmath.Vector3f;
 
 import com.sun.j3d.utils.universe.SimpleUniverse;
 
@@ -49,8 +78,8 @@ import ffx.potential.bonded.RendererCache.ViewModel;
 
 /**
  * The GraphicsCanvas class provides a Canvas on which to render 3D Graphics.
- * The following display types are currently supported: Wireframe, Ball & Stick,
- * Spacefill/CPK, RMIN and Tube.
+ * The following display types are currently supported: Wireframe, Ball and
+ * Stick, Spacefill/CPK, RMIN and Tube.
  *
  * @author Michael J. Schnieders
  *
@@ -84,10 +113,9 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
         ROTATE, TRANSLATE, ZOOM;
     }
     /**
-     * Constant
-     * <code>imageFormatHash</code>
+     * Constant <code>imageFormatHash</code>
      */
-    public static final HashMap<String, ImageFormat> imageFormatHash = new HashMap<String, ImageFormat>();
+    public static final HashMap<String, ImageFormat> imageFormatHash = new HashMap<>();
 
     static {
         ImageFormat values[] = ImageFormat.values();
@@ -131,7 +159,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>Constructor for GraphicsCanvas.</p>
+     * <p>
+     * Constructor for GraphicsCanvas.</p>
      *
      * @param mainlPanel a {@link ffx.ui.MainPanel} object.
      */
@@ -274,7 +303,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>fullScreen</p>
+     * <p>
+     * fullScreen</p>
      */
     public void fullScreen() {
         if (fullScreenWindow == null) {
@@ -285,8 +315,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>mouseMode</code>.</p>
+     * <p>
+     * Getter for the field <code>mouseMode</code>.</p>
      *
      * @return a {@link ffx.ui.GraphicsCanvas.MouseMode} object.
      */
@@ -295,8 +325,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>leftButtonMode</code>.</p>
+     * <p>
+     * Getter for the field <code>leftButtonMode</code>.</p>
      *
      * @return a {@link ffx.ui.GraphicsCanvas.LeftButtonMode} object.
      */
@@ -305,7 +335,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>getNavigation</p>
+     * <p>
+     * getNavigation</p>
      *
      * @return a {@link ffx.ui.GraphicsAxis} object.
      */
@@ -314,7 +345,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>getStatusBar</p>
+     * <p>
+     * getStatusBar</p>
      *
      * @return a {@link javax.swing.JLabel} object.
      */
@@ -323,7 +355,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>graphicsPicking</p>
+     * <p>
+     * graphicsPicking</p>
      *
      * @param evt a {@link java.awt.event.ActionEvent} object.
      */
@@ -431,7 +464,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     // logger.info("MouseEvent: " + event.toString());
     // }
     /**
-     * <p>isCacheFull</p>
+     * <p>
+     * isCacheFull</p>
      *
      * @return a boolean.
      */
@@ -440,7 +474,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>isSceneRendering</p>
+     * <p>
+     * isSceneRendering</p>
      *
      * @return a boolean.
      */
@@ -449,7 +484,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>labelSelectedAtoms</p>
+     * <p>
+     * labelSelectedAtoms</p>
      */
     public void labelSelectedAtoms() {
         if (RendererCache.labelAtoms == true) {
@@ -605,7 +641,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>preferences</p>
+     * <p>
+     * preferences</p>
      */
     public void preferences() {
         if (graphics3DPrefs == null) {
@@ -617,14 +654,16 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>resetGlobalRotation</p>
+     * <p>
+     * resetGlobalRotation</p>
      */
     public void resetGlobalRotation() {
         graphicsEvents.centerView(true, false, false);
     }
 
     /**
-     * <p>resetGlobalTranslation</p>
+     * <p>
+     * resetGlobalTranslation</p>
      */
     public void resetGlobalTranslation() {
         graphicsEvents.centerView(false, true, false);
@@ -642,7 +681,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>resetGlobalZoom</p>
+     * <p>
+     * resetGlobalZoom</p>
      */
     public void resetGlobalZoom() {
         double radius = mainPanel.getDataRoot().getExtent();
@@ -663,7 +703,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>resetRotationAndTranslation</p>
+     * <p>
+     * resetRotationAndTranslation</p>
      */
     public void resetRotationAndTranslation() {
         MolecularAssembly sys = mainPanel.getHierarchy().getActive();
@@ -673,7 +714,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>resetTranslation</p>
+     * <p>
+     * resetTranslation</p>
      */
     public void resetTranslation() {
         MolecularAssembly sys = mainPanel.getHierarchy().getActive();
@@ -683,7 +725,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>rotateAboutCenter</p>
+     * <p>
+     * rotateAboutCenter</p>
      */
     public void rotateAboutCenter() {
         MolecularAssembly sys = mainPanel.getHierarchy().getActive();
@@ -692,7 +735,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>rotateAboutPick</p>
+     * <p>
+     * rotateAboutPick</p>
      */
     public void rotateAboutPick() {
         MSNode node = rendererPicking.getPick();
@@ -712,7 +756,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     private static final Preferences prefs = Preferences.userNodeForPackage(GraphicsCanvas.class);
 
     /**
-     * <p>savePrefs</p>
+     * <p>
+     * savePrefs</p>
      */
     public void savePrefs() {
         String c = GraphicsCanvas.class.getName();
@@ -742,7 +787,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>selected</p>
+     * <p>
+     * selected</p>
      */
     public void selected() {
         validate();
@@ -750,7 +796,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>setAxisShowing</p>
+     * <p>
+     * setAxisShowing</p>
      *
      * @param b a boolean.
      */
@@ -764,7 +811,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>setBackgroundColor</p>
+     * <p>
+     * setBackgroundColor</p>
      */
     public void setBackgroundColor() {
         Color3f col = new Color3f();
@@ -777,7 +825,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>setCaptures</p>
+     * <p>
+     * setCaptures</p>
      *
      * @param c a boolean.
      */
@@ -786,7 +835,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>setColor</p>
+     * <p>
+     * setColor</p>
      *
      * @param model a {@link java.lang.String} object.
      */
@@ -833,7 +883,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>setGraphicsPickingColor</p>
+     * <p>
+     * setGraphicsPickingColor</p>
      */
     public void setGraphicsPickingColor() {
         Color3f col = new Color3f();
@@ -863,7 +914,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>setLabelFontColor</p>
+     * <p>
+     * setLabelFontColor</p>
      */
     public void setLabelFontColor() {
         Color color = getGraphics2D().getColor();
@@ -882,7 +934,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>setLabelFontSize</p>
+     * <p>
+     * setLabelFontSize</p>
      */
     public void setLabelFontSize() {
         Font currentFont = getGraphics2D().getFont();
@@ -953,14 +1006,16 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>setPosition</p>
+     * <p>
+     * setPosition</p>
      */
     public void setPosition() {
         setPosition(mainPanel.getHierarchy().getActive());
     }
 
     /**
-     * <p>setPosition</p>
+     * <p>
+     * setPosition</p>
      *
      * @param node a {@link ffx.potential.bonded.MSNode} object.
      */
@@ -969,7 +1024,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>setSelectionColor</p>
+     * <p>
+     * setSelectionColor</p>
      */
     public void setSelectionColor() {
         Color3f col = new Color3f();
@@ -986,7 +1042,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>setUserColor</p>
+     * <p>
+     * setUserColor</p>
      */
     public void setUserColor() {
         Color3f col = new Color3f();
@@ -1056,7 +1113,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>updateScene</p>
+     * <p>
+     * updateScene</p>
      *
      * @param n a {@link java.util.ArrayList} object.
      * @param t a boolean.
@@ -1076,7 +1134,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>updateScene</p>
+     * <p>
+     * updateScene</p>
      *
      * @param n a {@link ffx.potential.bonded.MSNode} object.
      * @param t a boolean.
@@ -1096,7 +1155,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>updateSceneWait</p>
+     * <p>
+     * updateSceneWait</p>
      *
      * @param n a {@link java.util.ArrayList} object.
      * @param t a boolean.
@@ -1125,7 +1185,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>viewWait</p>
+     * <p>
+     * viewWait</p>
      *
      * @param viewModel a {@link ffx.potential.bonded.RendererCache.ViewModel}
      * object.
@@ -1144,7 +1205,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>viewWait</p>
+     * <p>
+     * viewWait</p>
      *
      * @param viewMode a {@link java.lang.String} object.
      */
@@ -1162,7 +1224,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>colorWait</p>
+     * <p>
+     * colorWait</p>
      *
      * @param colorMode a {@link java.lang.String} object.
      */
@@ -1181,7 +1244,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>colorWait</p>
+     * <p>
+     * colorWait</p>
      *
      * @param colorModel a {@link ffx.potential.bonded.RendererCache.ColorModel}
      * object.
@@ -1200,7 +1264,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>updateSceneWait</p>
+     * <p>
+     * updateSceneWait</p>
      *
      * @param n a {@link ffx.potential.bonded.MSNode} object.
      * @param t a boolean.
@@ -1230,7 +1295,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>zoomIn</p>
+     * <p>
+     * zoomIn</p>
      */
     public void zoomIn() {
         baseTransformGroup.getTransform(baseTransform3D);
@@ -1240,7 +1306,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>zoomOut</p>
+     * <p>
+     * zoomOut</p>
      */
     public void zoomOut() {
         baseTransformGroup.getTransform(baseTransform3D);

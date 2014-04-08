@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
  *
  * This file is part of Force Field X.
  *
@@ -279,6 +279,16 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
     public ArrayList<ROLS> getTorsionTorsionList() {
         ArrayList<ROLS> arrayList = new ArrayList<>();
         return getList(TorsionTorsion.class, arrayList);
+    }
+
+    /**
+     * Returns an ArrayList of all ImproperTorsions below the present MSNode.
+     *
+     * @return a {@link java.util.ArrayList} object.
+     */
+    public ArrayList<ROLS> getImproperTorsionList() {
+        ArrayList<ROLS> arrayList = new ArrayList<>();
+        return getList(ImproperTorsion.class, arrayList);
     }
 
     /**

@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
  *
  * This file is part of Force Field X.
  *
@@ -44,58 +44,6 @@ public class ForceField {
     private static final Logger logger = Logger.getLogger(ForceField.class.getName());
 
     /**
-     * Available force fields.
-     */
-    public enum ForceFieldName {
-
-        AMOEBA_WATER, AMOEBA_2004, AMOEBA_PROTEIN_2004, AMOEBA_PROTEIN_2004_U1,
-        AMOEBA_2009, AMOEBA_BIO_2009, AMOEBA_BIO_2009_ORIG, AMOEBA_PROTEIN_2013,
-        OPLS_AAL
-    }
-
-    public enum ForceFieldString {
-
-        SPACEGROUP, NCSGROUP, FORCEFIELD, POLARIZATION, VDW_SCHEDULE, REAL_SCHEDULE,
-        RECIP_SCHEDULE, SCF_PREDICTOR, SCF_ALGORITHM
-    }
-
-    public enum ForceFieldDouble {
-
-        A_AXIS, B_AXIS, C_AXIS, ALPHA, BETA, GAMMA, POLAR_DAMP, POLAR_SOR,
-        POLAR_EPS, POLAR_EPS_PRECISE, EWALD_CUTOFF, EWALD_ALPHA, EWALD_PRECISION,
-        PME_MESH_DENSITY,
-        VDW_CUTOFF, MPOLE_11_SCALE, MPOLE_12_SCALE, MPOLE_13_SCALE,
-        MPOLE_14_SCALE, MPOLE_15_SCALE, POLAR_12_SCALE, POLAR_13_SCALE,
-        DIRECT_11_SCALE, RIGID_SCALE, VDW_LAMBDA_EXPONENT, VDW_LAMBDA_ALPHA,
-        PERMANENT_LAMBDA_EXPONENT, PERMANENT_LAMBDA_ALPHA,
-        POLARIZATION_LAMBDA_START, POLARIZATION_LAMBDA_END,
-        POLARIZATION_LAMBDA_EXPONENT, DUAL_TOPOLOGY_LAMBDA_EXPONENT,
-        CG_PRECONDITIONER_CUTOFF, CG_PRECONDITIONER_EWALD,
-        CG_PRECONDITIONER_SOR
-    }
-
-    public enum ForceFieldInteger {
-
-        PME_ORDER, PME_REAL_THREADS, PME_GRID_X, PME_GRID_Y, PME_GRID_Z,
-        LIGAND_START, LIGAND_STOP, SCF_CYCLES, SCF_PREDICTOR_ORDER
-    }
-
-    public enum ForceFieldBoolean {
-
-        BONDTERM, ANGLETERM, RESTRAINTERM, STRBNDTERM, UREYTERM, OPBENDTERM,
-        TORSIONTERM, PITORSTERM, TORTORTERM, VDWLRTERM, VDWTERM,
-        MPOLETERM, POLARIZETERM, GKTERM, SCFCACHE, APERIODIC, CUDAFFT,
-        RIGID_HYDROGENS, LAMBDATERM, NCSTERM, USE_CHARGES, USE_DIPOLES, USE_QUADRUPOLES,
-        ROTATE_MULTIPOLES, LIGAND_VAPOR_ELEC, NO_LIGAND_CONDENSED_SCF,
-        USE_SCF_PRECONDITIONER, INTERMOLECULAR_SOFTCORE, LAMBDA_VALENCE_RESTRAINTS
-    }
-
-    public enum ForceFieldType {
-
-        KEYWORD, ANGLE, ATOM, BIOTYPE, BOND, CHARGE, IMPTORS, MULTIPOLE, OPBEND, PITORS,
-        POLARIZE, STRBND, TORSION, TORTORS, UREYBRAD, VDW
-    }
-    /**
      * A map between a Force_Field and its internal parameter file.
      */
     private static final Map<ForceFieldName, URL> forceFields = new EnumMap<>(ForceFieldName.class);
@@ -106,6 +54,21 @@ public class ForceField {
         for (ForceFieldName ff : ForceFieldName.values()) {
             forceFields.put(ff, cl.getResource(prefix + ff));
         }
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>forceFieldURL</code>.</p>
+     *
+     * @param forceField a
+     * {@link ffx.potential.parameters.ForceField.ForceFieldName} object.
+     * @return a {@link java.net.URL} object.
+     */
+    public static URL getForceFieldURL(ForceFieldName forceField) {
+        if (forceField == null) {
+            return null;
+        }
+        return forceFields.get(forceField);
     }
 
     public URL forceFieldURL;
@@ -127,21 +90,6 @@ public class ForceField {
     private final Map<String, UreyBradleyType> ureyBradleyTypes;
     private final Map<String, VDWType> vanderWaalsTypes;
     private final Map<ForceFieldType, Map> forceFieldTypes;
-
-    /**
-     * <p>
-     * Getter for the field <code>forceFieldURL</code>.</p>
-     *
-     * @param forceField a
-     * {@link ffx.potential.parameters.ForceField.ForceFieldName} object.
-     * @return a {@link java.net.URL} object.
-     */
-    public static URL getForceFieldURL(ForceFieldName forceField) {
-        if (forceField == null) {
-            return null;
-        }
-        return forceFields.get(forceField);
-    }
 
     /**
      * ForceField Constructor.
@@ -200,6 +148,10 @@ public class ForceField {
         forceFieldTypes.put(ForceFieldType.TORTORS, torsionTorsionTypes);
         forceFieldTypes.put(ForceFieldType.UREYBRAD, ureyBradleyTypes);
         forceFieldTypes.put(ForceFieldType.VDW, vanderWaalsTypes);
+    }
+
+    public boolean getBoolean(ForceFieldDouble forceFieldDouble, double d) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     public int minClass() {
@@ -865,6 +817,16 @@ public class ForceField {
      * <p>
      * getImproperType</p>
      *
+     * @return a {@link ffx.potential.parameters.TorsionType} object.
+     */
+    public Collection<ImproperTorsionType> getImproperTypes() {
+        return imptorsTypes.values();
+    }
+
+    /**
+     * <p>
+     * getImproperType</p>
+     *
      * @param key a {@link java.lang.String} object.
      * @return a {@link ffx.potential.parameters.TorsionType} object.
      */
@@ -1181,5 +1143,39 @@ public class ForceField {
                 addForceFieldType(polarizeType);
             }
         }
+    }
+
+    /**
+     * Available force fields.
+     */
+    public enum ForceFieldName {
+
+        AMOEBA_WATER, AMOEBA_2004, AMOEBA_PROTEIN_2004, AMOEBA_PROTEIN_2004_U1, AMOEBA_2009, AMOEBA_BIO_2009, AMOEBA_BIO_2009_ORIG, AMOEBA_PROTEIN_2013, OPLS_AAL
+    }
+
+    public enum ForceFieldString {
+
+        SPACEGROUP, NCSGROUP, FORCEFIELD, POLARIZATION, VDW_SCHEDULE, REAL_SCHEDULE, RECIP_SCHEDULE, SCF_PREDICTOR, SCF_ALGORITHM
+    }
+
+    public enum ForceFieldDouble {
+
+        A_AXIS, B_AXIS, C_AXIS, ALPHA, BETA, GAMMA, POLAR_DAMP, POLAR_SOR, POLAR_EPS, POLAR_EPS_PRECISE, EWALD_CUTOFF, EWALD_ALPHA, EWALD_PRECISION, PME_MESH_DENSITY, VDW_CUTOFF, MPOLE_11_SCALE, MPOLE_12_SCALE, MPOLE_13_SCALE, MPOLE_14_SCALE, MPOLE_15_SCALE, POLAR_12_SCALE, POLAR_13_SCALE, DIRECT_11_SCALE, RIGID_SCALE, VDW_LAMBDA_EXPONENT, VDW_LAMBDA_ALPHA, PERMANENT_LAMBDA_EXPONENT, PERMANENT_LAMBDA_ALPHA, POLARIZATION_LAMBDA_START, POLARIZATION_LAMBDA_END, POLARIZATION_LAMBDA_EXPONENT, DUAL_TOPOLOGY_LAMBDA_EXPONENT, CG_PRECONDITIONER_CUTOFF, CG_PRECONDITIONER_EWALD, CG_PRECONDITIONER_SOR,
+        RESTRAINT_K, PROBE_RADIUS
+    }
+
+    public enum ForceFieldInteger {
+
+        PME_ORDER, PME_REAL_THREADS, PME_GRID_X, PME_GRID_Y, PME_GRID_Z, LIGAND_START, LIGAND_STOP, SCF_CYCLES, SCF_PREDICTOR_ORDER
+    }
+
+    public enum ForceFieldBoolean {
+
+        BONDTERM, ANGLETERM, RESTRAINTERM, STRBNDTERM, UREYTERM, OPBENDTERM, TORSIONTERM, PITORSTERM, TORTORTERM, VDWLRTERM, VDWTERM, IMPROPERTERM, MPOLETERM, POLARIZETERM, GKTERM, SCFCACHE, APERIODIC, CUDAFFT, RIGID_HYDROGENS, LAMBDATERM, NCSTERM, USE_CHARGES, USE_DIPOLES, USE_QUADRUPOLES, ROTATE_MULTIPOLES, LIGAND_VAPOR_ELEC, NO_LIGAND_CONDENSED_SCF, USE_SCF_PRECONDITIONER, INTERMOLECULAR_SOFTCORE, LAMBDA_VALENCE_RESTRAINTS
+    }
+
+    public enum ForceFieldType {
+
+        KEYWORD, ANGLE, ATOM, BIOTYPE, BOND, CHARGE, IMPTORS, MULTIPOLE, OPBEND, PITORS, POLARIZE, STRBND, TORSION, TORTORS, UREYBRAD, VDW
     }
 }

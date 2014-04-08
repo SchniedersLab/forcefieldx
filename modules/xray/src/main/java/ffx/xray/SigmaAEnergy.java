@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
  *
  * This file is part of Force Field X.
  *
@@ -45,7 +45,7 @@ import static ffx.numerics.VectorMath.*;
  *
  * this target can also be used for structure refinement
  *
- * @author Tim Fenn<br>
+ * @author Timothy D. Fenn<br>
  * @see <a href="http://dx.doi.org/10.1107/S0021889804031474" target="_blank">
  * K. Cowtan, J. Appl. Cryst. (2005). 38, 193-198</a>
  *

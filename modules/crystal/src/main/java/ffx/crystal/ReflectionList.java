@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
  *
  * This file is part of Force Field X.
  *
@@ -24,25 +24,34 @@ package ffx.crystal;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
-import static java.lang.Math.*;
+import static java.lang.Math.PI;
+import static java.lang.Math.cos;
+import static java.lang.Math.floor;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+import static java.lang.Math.rint;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 
 /**
- * Uses some methods from: Cowtan, K. 2002. Generic representation and
- * evaluation of properties as a function of position in reciprocal space. J.
- * Appl. Cryst. 35:655-663.
+ * Class to represent a reflection list.
  *
- * @author Timothy Fenn
+ * @author Timothy D. Fenn
  *
+ * @see
+ * <a href="http://dx.doi.org/10.1107/S0021889802013420" target="_blank">
+ * Cowtan, K. 2002. Generic representation and evaluation of properties as a
+ * function of position in reciprocal space. J. Appl. Cryst. 35:655-663.
+ * </a>
+ *
+ * @since 1.0
  */
 public class ReflectionList {
 
-    public final HashMap<String, HKL> hklmap = new HashMap<String, HKL>();
-    public final ArrayList<HKL> hkllist = new ArrayList<HKL>();
+    public final HashMap<String, HKL> hklmap = new HashMap<>();
+    public final ArrayList<HKL> hkllist = new ArrayList<>();
     public final Crystal crystal;
     public final SpaceGroup spaceGroup;
     private final SpaceGroup.CrystalSystem crystalSystem;
@@ -54,7 +63,8 @@ public class ReflectionList {
     public double minres, maxres;
 
     /**
-     * <p>Constructor for ReflectionList.</p>
+     * <p>
+     * Constructor for ReflectionList.</p>
      *
      * @param crystal a {@link ffx.crystal.Crystal} object.
      * @param resolution a {@link ffx.crystal.Resolution} object.
@@ -64,7 +74,8 @@ public class ReflectionList {
     }
 
     /**
-     * <p>Constructor for ReflectionList.</p>
+     * <p>
+     * Constructor for ReflectionList.</p>
      *
      * @param crystal a {@link ffx.crystal.Crystal} object.
      * @param resolution a {@link ffx.crystal.Resolution} object.
@@ -111,8 +122,7 @@ public class ReflectionList {
         }
 
         n = 0;
-        for (Iterator i = hklmap.entrySet().iterator(); i.hasNext();) {
-            Map.Entry ei = (Map.Entry) i.next();
+        for (Map.Entry ei : hklmap.entrySet()) {
             Object key = ei.getKey();
             HKL ih = (HKL) ei.getValue();
 
@@ -144,7 +154,8 @@ public class ReflectionList {
     }
 
     /**
-     * <p>Constructor for ReflectionList.</p>
+     * <p>
+     * Constructor for ReflectionList.</p>
      *
      * @param a a double.
      * @param b a double.
@@ -167,13 +178,14 @@ public class ReflectionList {
      */
     @Override
     public String toString() {
-        return "reflection list with " + this.hkllist.size()
+        return " Reflection list with " + this.hkllist.size()
                 + " reflections, spacegroup " + this.spaceGroup.shortName
                 + " resolution limit: " + resolution.res_limit();
     }
 
     /**
-     * <p>findSymHKL</p>
+     * <p>
+     * findSymHKL</p>
      *
      * @param hkl a {@link ffx.crystal.HKL} object.
      * @param mate a {@link ffx.crystal.HKL} object.
@@ -184,7 +196,8 @@ public class ReflectionList {
     }
 
     /**
-     * <p>findSymHKL</p>
+     * <p>
+     * findSymHKL</p>
      *
      * @param h a int.
      * @param k a int.
@@ -197,7 +210,8 @@ public class ReflectionList {
     }
 
     /**
-     * <p>findSymHKL</p>
+     * <p>
+     * findSymHKL</p>
      *
      * @param h a int.
      * @param k a int.
@@ -211,7 +225,8 @@ public class ReflectionList {
     }
 
     /**
-     * <p>findSymHKL</p>
+     * <p>
+     * findSymHKL</p>
      *
      * @param hkl a {@link ffx.crystal.HKL} object.
      * @param mate a {@link ffx.crystal.HKL} object.
@@ -247,7 +262,8 @@ public class ReflectionList {
     }
 
     /**
-     * <p>getHKL</p>
+     * <p>
+     * getHKL</p>
      *
      * @param h a int.
      * @param k a int.
@@ -260,7 +276,8 @@ public class ReflectionList {
     }
 
     /**
-     * <p>getHKL</p>
+     * <p>
+     * getHKL</p>
      *
      * @param hkl a {@link ffx.crystal.HKL} object.
      * @return a {@link ffx.crystal.HKL} object.
@@ -270,7 +287,8 @@ public class ReflectionList {
     }
 
     /**
-     * <p>hasHKL</p>
+     * <p>
+     * hasHKL</p>
      *
      * @param h a int.
      * @param k a int.
@@ -279,15 +297,12 @@ public class ReflectionList {
      */
     public boolean hasHKL(int h, int k, int l) {
         String s = ("" + h + "_" + k + "_" + l);
-        if (hklmap.containsKey(s)) {
-            return true;
-        } else {
-            return false;
-        }
+        return hklmap.containsKey(s);
     }
 
     /**
-     * <p>hasHKL</p>
+     * <p>
+     * hasHKL</p>
      *
      * @param hkl a {@link ffx.crystal.HKL} object.
      * @return a boolean.
@@ -328,7 +343,8 @@ public class ReflectionList {
     }
 
     /**
-     * <p>ordinal</p>
+     * <p>
+     * ordinal</p>
      *
      * @param s a double.
      * @return a double.

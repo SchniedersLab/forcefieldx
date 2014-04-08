@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
  *
  * This file is part of Force Field X.
  *
@@ -55,7 +55,7 @@ import static ffx.numerics.VectorMath.b2u;
 
 /**
  *
- * @author Timothy Fenn
+ * @author Timothy D. Fenn
  */
 @RunWith(Parameterized.class)
 public class FiniteDifferenceTest {

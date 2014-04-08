@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
  *
  * This file is part of Force Field X.
  *
@@ -23,6 +23,7 @@
 package ffx.potential.nonbonded;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
@@ -30,6 +31,7 @@ import java.util.logging.Logger;
 
 import static java.lang.Math.*;
 import static java.lang.String.format;
+import static java.util.Arrays.fill;
 import static java.util.Arrays.fill;
 
 import org.apache.commons.math3.analysis.DifferentiableMultivariateVectorFunction;
@@ -206,11 +208,11 @@ public class ParticleMeshEwald implements LambdaInterface {
     /**
      * An ordered array of atoms in the system.
      */
-    private final Atom atoms[];
+    private Atom atoms[];
     /**
      * The number of atoms in the system.
      */
-    private final int nAtoms;
+    private int nAtoms;
     /**
      * Dimensions of [nsymm][3][nAtoms].
      */
@@ -345,7 +347,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     /**
      * Flag for ligand atoms.
      */
-    private final boolean isSoft[];
+    private boolean isSoft[];
     /**
      * Flag indicating if softcore variables have been initalized.
      */
@@ -382,14 +384,14 @@ public class ParticleMeshEwald implements LambdaInterface {
     /**
      * Permanent multipoles in their local frame.
      */
-    private final double localMultipole[][];
-    private final MultipoleType.MultipoleFrameDefinition frame[];
-    private final int axisAtom[][];
+    private double localMultipole[][];
+    private MultipoleType.MultipoleFrameDefinition frame[];
+    private int axisAtom[][];
     /**
      * Dimensions of [nsymm][nAtoms][10]
      */
     protected double globalMultipole[][][];
-    private final double cartMultipolePhi[][];
+    private double cartMultipolePhi[][];
     /**
      * The interaction energy between 1-2 multipoles is scaled by m12scale.
      */
@@ -427,9 +429,9 @@ public class ParticleMeshEwald implements LambdaInterface {
      * that are 1-3 is scaled by p13scale.
      */
     private final double p13scale;
-    private final double pdamp[];
-    private final double thole[];
-    private final double polarizability[];
+    private double pdamp[];
+    private double thole[];
+    private double polarizability[];
     /**
      * Dimensions of [nsymm][nAtoms][3]
      */
@@ -487,16 +489,16 @@ public class ParticleMeshEwald implements LambdaInterface {
     /**
      * Direct induced dipoles.
      */
-    private final double directDipole[][];
-    private final double directDipoleCR[][];
-    private final double cartesianDipolePhi[][];
-    private final double cartesianDipolePhiCR[][];
+    private double directDipole[][];
+    private double directDipoleCR[][];
+    private double cartesianDipolePhi[][];
+    private double cartesianDipolePhiCR[][];
     /**
      * Dimensions of [nsymm][nAtoms][3]
      */
-    private final int ip11[][];
-    private final int ip12[][];
-    private final int ip13[][];
+    private int ip11[][];
+    private int ip12[][];
+    private int ip13[][];
     /**
      * *************************************************************************
      * Mutable Particle Mesh Ewald constants.
@@ -540,29 +542,29 @@ public class ParticleMeshEwald implements LambdaInterface {
     /**
      * Gradient array for each thread. [threadID][X/Y/Z][atomID]
      */
-    private final double grad[][][];
+    private double grad[][][];
     /**
      * Torque array for each thread. [threadID][X/Y/Z][atomID]
      */
-    private final double torque[][][];
+    private double torque[][][];
     /**
      * Field array for each thread. [threadID][X/Y/Z][atomID]
      */
-    private final double field[][][];
+    private double field[][][];
     /**
      * Chain rule field array for each thread. [threadID][X/Y/Z][atomID]
      */
-    private final double fieldCR[][][];
+    private double fieldCR[][][];
     /**
      * Partial derivative of the gradient with respect to Lambda.
      * [threadID][X/Y/Z][atomID]
      */
-    private final double lambdaGrad[][][];
+    private double lambdaGrad[][][];
     /**
      * Partial derivative of the torque with respect to Lambda.
      * [threadID][X/Y/Z][atomID]
      */
-    private final double lambdaTorque[][][];
+    private double lambdaTorque[][][];
     /**
      * Partial derivative with respect to Lambda.
      */
@@ -651,24 +653,11 @@ public class ParticleMeshEwald implements LambdaInterface {
         this.parallelTeam = parallelTeam;
         this.neighborList = neighborList;
         this.elecForm = elecForm;
-
         neighborLists = neighborList.getNeighborList();
         permanentSchedule = neighborList.getPairwiseSchedule();
-
         nAtoms = atoms.length;
         nSymm = crystal.spaceGroup.getNumberOfSymOps();
         maxThreads = parallelTeam.getThreadCount();
-
-        coordinates = new double[nSymm][3][nAtoms];
-        inducedDipole = new double[nSymm][nAtoms][3];
-        inducedDipoleCR = new double[nSymm][nAtoms][3];
-
-        /**
-         * The size of reduced neighbor list depends on the size of the real
-         * space cutoff.
-         */
-        realSpaceLists = new int[nSymm][nAtoms][];
-        realSpaceCounts = new int[nSymm][nAtoms];
 
         polsor = forceField.getDouble(ForceFieldDouble.POLAR_SOR, 0.70);
         poleps = forceField.getDouble(ForceFieldDouble.POLAR_EPS, 1e-5);
@@ -706,7 +695,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             predictor = predictor.replaceAll("-", "_").toUpperCase();
             scfPredictor = SCFPredictor.valueOf(predictor);
         } catch (Exception e) {
-            scfPredictor = SCFPredictor.ASPC;
+            scfPredictor = SCFPredictor.NONE;
         }
 
         if (scfPredictor != SCFPredictor.NONE) {
@@ -721,13 +710,6 @@ public class ParticleMeshEwald implements LambdaInterface {
                 predictorOrder = 6;
             }
             predictorStartIndex = 0;
-            if (lambdaTerm) {
-                predictorInducedDipole = new double[3][predictorOrder][nAtoms][3];
-                predictorInducedDipoleCR = new double[3][predictorOrder][nAtoms][3];
-            } else {
-                predictorInducedDipole = new double[1][predictorOrder][nAtoms][3];
-                predictorInducedDipoleCR = new double[1][predictorOrder][nAtoms][3];
-            }
         }
 
         String algorithm = forceField.getString(ForceFieldString.SCF_ALGORITHM, "CG");
@@ -742,16 +724,11 @@ public class ParticleMeshEwald implements LambdaInterface {
          * The size of the preconditioner neighbor list depends on the size of
          * the preconditioner cutoff.
          */
-        preconditionerLists = new int[nSymm][nAtoms][preconditionerListSize];
-        preconditionerCounts = new int[nSymm][nAtoms];
-
         if (scfAlgorithm == SCFAlgorithm.CG) {
             conjugateGradient = new ConjugateGradient(1000, poleps, false);
             conjugateGradientListener = new ConjugateGradientListener();
             conjugateGradient.getIterationManager().addIterationListener(conjugateGradientListener);
             a = new A();
-            b = new ArrayRealVector(3 * 2 * nAtoms);
-            x0 = new ArrayRealVector(3 * 2 * nAtoms);
             minv = null;
             boolean preconditioner = forceField.getBoolean(ForceFieldBoolean.USE_SCF_PRECONDITIONER, true);
             if (preconditioner) {
@@ -848,57 +825,9 @@ public class ParticleMeshEwald implements LambdaInterface {
 
         cudaFFT = forceField.getBoolean(ForceField.ForceFieldBoolean.CUDAFFT, false);
 
-        localMultipole = new double[nAtoms][10];
-        frame = new MultipoleType.MultipoleFrameDefinition[nAtoms];
-        axisAtom = new int[nAtoms][];
-        assignMultipoles();
-        globalMultipole = new double[nSymm][nAtoms][10];
-        cartMultipolePhi = new double[nAtoms][tensorCount];
-        directDipole = new double[nAtoms][3];
-        directDipoleCR = new double[nAtoms][3];
-        cartesianDipolePhi = new double[nAtoms][tensorCount];
-        cartesianDipolePhiCR = new double[nAtoms][tensorCount];
-        ip11 = new int[nAtoms][];
-        ip12 = new int[nAtoms][];
-        ip13 = new int[nAtoms][];
-        assignPolarizationGroups();
-        thole = new double[nAtoms];
-        pdamp = new double[nAtoms];
-        polarizability = new double[nAtoms];
-        for (Atom ai : atoms) {
-            PolarizeType polarizeType = ai.getPolarizeType();
-            int index = ai.xyzIndex - 1;
-            thole[index] = polarizeType.thole;
-            pdamp[index] = polarizeType.pdamp;
-            polarizability[index] = polarizeType.polarizability;
-        }
-
-        /**
-         * Initialize per-thread memory for collecting the gradient, torque,
-         * field and chain-rule field.
-         */
-        grad = new double[maxThreads][3][nAtoms];
-        torque = new double[maxThreads][3][nAtoms];
-        field = new double[maxThreads][3][nAtoms];
-        fieldCR = new double[maxThreads][3][nAtoms];
-
-        /**
-         * Initialize the soft core lambda mask to false for all atoms.
-         * Initialize the use mask to true for all atoms.
-         */
-        isSoft = new boolean[nAtoms];
-        use = new boolean[nAtoms];
-        for (int i = 0; i < nAtoms; i++) {
-            isSoft[i] = false;
-            use[i] = true;
-        }
-        molecule = molecularAssembly.getMoleculeNumbers();
-
         if (lambdaTerm) {
             shareddEdLambda = new SharedDouble();
             sharedd2EdLambda2 = new SharedDouble();
-            lambdaGrad = new double[maxThreads][3][nAtoms];
-            lambdaTorque = new double[maxThreads][3][nAtoms];
         } else {
             shareddEdLambda = null;
             sharedd2EdLambda2 = null;
@@ -975,14 +904,11 @@ public class ParticleMeshEwald implements LambdaInterface {
                 fftTeam = parallelTeam;
             }
         }
+
         realSpaceRanges = new Range[maxThreads];
-        /**
-         * The Ewald schedule just includes interactions within the real space
-         * cutoff.
-         */
-        realSpaceSchedule = new PairwiseSchedule(maxThreads, nAtoms, realSpaceRanges);
         initializationRegion = new InitializationRegion(maxThreads);
         expandInducedDipolesRegion = new ExpandInducedDipolesRegion(maxThreads);
+        initAtomArrays();
 
         /**
          * Note that we always pass on the unit cell crystal to ReciprocalSpace
@@ -1034,12 +960,92 @@ public class ParticleMeshEwald implements LambdaInterface {
         }
     }
 
+    private void initAtomArrays() {
+        if (localMultipole == null || localMultipole.length < nAtoms) {
+            localMultipole = new double[nAtoms][10];
+            frame = new MultipoleType.MultipoleFrameDefinition[nAtoms];
+            axisAtom = new int[nAtoms][];
+            cartMultipolePhi = new double[nAtoms][tensorCount];
+            directDipole = new double[nAtoms][3];
+            directDipoleCR = new double[nAtoms][3];
+            cartesianDipolePhi = new double[nAtoms][tensorCount];
+            cartesianDipolePhiCR = new double[nAtoms][tensorCount];
+            ip11 = new int[nAtoms][];
+            ip12 = new int[nAtoms][];
+            ip13 = new int[nAtoms][];
+            thole = new double[nAtoms];
+            pdamp = new double[nAtoms];
+            polarizability = new double[nAtoms];
+            realSpaceSchedule = new PairwiseSchedule(maxThreads, nAtoms, realSpaceRanges);
+            if (scfAlgorithm == SCFAlgorithm.CG) {
+                /**
+                 * The size of the preconditioner neighbor list depends on the
+                 * the preconditioner cutoff.
+                 */
+                b = new ArrayRealVector(3 * 2 * nAtoms);
+                x0 = new ArrayRealVector(3 * 2 * nAtoms);
+            }
+            if (scfPredictor != SCFPredictor.NONE) {
+                if (lambdaTerm) {
+                    predictorInducedDipole = new double[3][predictorOrder][nAtoms][3];
+                    predictorInducedDipoleCR = new double[3][predictorOrder][nAtoms][3];
+                } else {
+                    predictorInducedDipole = new double[1][predictorOrder][nAtoms][3];
+                    predictorInducedDipoleCR = new double[1][predictorOrder][nAtoms][3];
+                }
+            }
+            /**
+             * Initialize per-thread memory for collecting the gradient, torque,
+             * field and chain-rule field.
+             */
+            grad = new double[maxThreads][3][nAtoms];
+            torque = new double[maxThreads][3][nAtoms];
+            field = new double[maxThreads][3][nAtoms];
+            fieldCR = new double[maxThreads][3][nAtoms];
+            if (lambdaTerm) {
+                lambdaGrad = new double[maxThreads][3][nAtoms];
+                lambdaTorque = new double[maxThreads][3][nAtoms];
+            }
+            isSoft = new boolean[nAtoms];
+            use = new boolean[nAtoms];
+
+            coordinates = new double[nSymm][3][nAtoms];
+            globalMultipole = new double[nSymm][nAtoms][10];
+            inducedDipole = new double[nSymm][nAtoms][3];
+            inducedDipoleCR = new double[nSymm][nAtoms][3];
+            /**
+             * The size of reduced neighbor list depends on the size of the real
+             * space cutoff.
+             */
+            realSpaceLists = new int[nSymm][nAtoms][];
+            realSpaceCounts = new int[nSymm][nAtoms];
+            preconditionerLists = new int[nSymm][nAtoms][preconditionerListSize];
+            preconditionerCounts = new int[nSymm][nAtoms];
+        }
+
+        /**
+         * Initialize the soft core lambda mask to false for all atoms.
+         * Initialize the use mask to true for all atoms.
+         */
+        Arrays.fill(isSoft, false);
+        Arrays.fill(use, true);
+        assignMultipoles();
+        assignPolarizationGroups();
+        for (Atom ai : atoms) {
+            PolarizeType polarizeType = ai.getPolarizeType();
+            int index = ai.xyzIndex - 1;
+            thole[index] = polarizeType.thole;
+            pdamp[index] = polarizeType.pdamp;
+            polarizability[index] = polarizeType.polarizability;
+        }
+        molecule = molecularAssembly.getMoleculeNumbers();
+    }
+
     /**
      * Initialize a boolean array of soft atoms and, if requested, ligand vapor
      * electrostatics.
      */
-    private void softCoreInit() {
-
+    private void softCoreInit(boolean print) {
         if (softCoreInit) {
             return;
         }
@@ -1053,11 +1059,13 @@ public class ParticleMeshEwald implements LambdaInterface {
             Atom ai = atoms[i];
             if (ai.applyLambda()) {
                 isSoft[i] = true;
-                sb.append(ai.toString() + "\n");
+                if (print) {
+                    sb.append(ai.toString() + "\n");
+                }
                 count++;
             }
         }
-        if (count > 0) {
+        if (count > 0 && print) {
             logger.info(sb.toString());
         }
 
@@ -1118,22 +1126,31 @@ public class ParticleMeshEwald implements LambdaInterface {
         softCoreInit = true;
     }
 
+    public void setAtoms(Atom atoms[]) {
+        if (lambdaTerm) {
+            logger.severe(" Changing the number of atoms is not compatible with use of Lambda.");
+        }
+        nAtoms = atoms.length;
+        this.atoms = atoms;
+        initAtomArrays();
+    }
+
     public void setCrystal(Crystal crystal) {
         /**
          * Check if memory allocation is required.
          */
-        int newNSymm = crystal.spaceGroup.getNumberOfSymOps();
-        if (nSymm < newNSymm) {
-            coordinates = new double[newNSymm][3][nAtoms];
-            realSpaceLists = new int[newNSymm][nAtoms][];
-            realSpaceCounts = new int[newNSymm][nAtoms];
-            preconditionerLists = new int[newNSymm][nAtoms][preconditionerListSize];
-            preconditionerCounts = new int[newNSymm][nAtoms];
-            globalMultipole = new double[newNSymm][nAtoms][10];
-            inducedDipole = new double[newNSymm][nAtoms][3];
-            inducedDipoleCR = new double[newNSymm][nAtoms][3];
+        int nSymmNew = crystal.spaceGroup.getNumberOfSymOps();
+        if (nSymm < nSymmNew) {
+            coordinates = new double[nSymmNew][3][nAtoms];
+            realSpaceLists = new int[nSymmNew][nAtoms][];
+            realSpaceCounts = new int[nSymmNew][nAtoms];
+            preconditionerLists = new int[nSymmNew][nAtoms][preconditionerListSize];
+            preconditionerCounts = new int[nSymmNew][nAtoms];
+            globalMultipole = new double[nSymmNew][nAtoms][10];
+            inducedDipole = new double[nSymmNew][nAtoms][3];
+            inducedDipoleCR = new double[nSymmNew][nAtoms][3];
         }
-        nSymm = newNSymm;
+        nSymm = nSymmNew;
         neighborLists = neighborList.getNeighborList();
         this.crystal = crystal;
         /**
@@ -4548,18 +4565,16 @@ public class ParticleMeshEwald implements LambdaInterface {
         private final double aewald3 = -2.0 / 3.0 * ELECTRIC * aewald * aewald * aewald / sqrtPi;
         private final double aewald4 = -2.0 * aewald3;
         private final double twoThirds = 2.0 / 3.0;
-        private double nfftX = reciprocalSpace.getXDim();
-        private double nfftY = reciprocalSpace.getYDim();
-        private double nfftZ = reciprocalSpace.getZDim();
-        private final double multipole[][] = globalMultipole[0];
-        private final double ind[][] = inducedDipole[0];
-        private final double indCR[][] = inducedDipoleCR[0];
-        private final double fracMultipoles[][] = reciprocalSpace.getFracMultipoles();
-        private final double fracInd[][] = reciprocalSpace.getFracInducedDipoles();
-        private final double fracIndCR[][] = reciprocalSpace.getFracInducedDipolesCR();
-        private final double fracMultipolePhi[][] = reciprocalSpace.getFracMultipolePhi();
-        private final double fracInducedDipolePhi[][] = reciprocalSpace.getFracInducedDipolePhi();
-        private final double fracInducedDipoleCRPhi[][] = reciprocalSpace.getFracInducedDipoleCRPhi();
+        private double nfftX, nfftY, nfftZ;
+        private double multipole[][];
+        private double ind[][];
+        private double indCR[][];
+        private double fracMultipoles[][];
+        private double fracInd[][];
+        private double fracIndCR[][];
+        private double fracMultipolePhi[][];
+        private double fracInducedDipolePhi[][];
+        private double fracInducedDipoleCRPhi[][];
         private double permanentSelfEnergy;
         private double permanentReciprocalEnergy;
         private final SharedDouble inducedDipoleSelfEnergy;
@@ -4592,6 +4607,15 @@ public class ParticleMeshEwald implements LambdaInterface {
 
         @Override
         public void start() {
+            multipole = globalMultipole[0];
+            ind = inducedDipole[0];
+            indCR = inducedDipoleCR[0];
+            fracMultipoles = reciprocalSpace.getFracMultipoles();
+            fracInd = reciprocalSpace.getFracInducedDipoles();
+            fracIndCR = reciprocalSpace.getFracInducedDipolesCR();
+            fracMultipolePhi = reciprocalSpace.getFracMultipolePhi();
+            fracInducedDipolePhi = reciprocalSpace.getFracInducedDipolePhi();
+            fracInducedDipoleCRPhi = reciprocalSpace.getFracInducedDipoleCRPhi();
             inducedDipoleSelfEnergy.set(0.0);
             inducedDipoleRecipEnergy.set(0.0);
             nfftX = reciprocalSpace.getXDim();
@@ -6453,7 +6477,7 @@ public class ParticleMeshEwald implements LambdaInterface {
         this.lambda = lambda;
 
         if (!softCoreInit) {
-            softCoreInit();
+            softCoreInit(true);
         }
 
         /**

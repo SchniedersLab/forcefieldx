@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
  *
  * This file is part of Force Field X.
  *
@@ -32,11 +32,15 @@ import static java.lang.Math.pow;
 import static java.lang.Math.sqrt;
 
 /**
- * assumptions: - output map covers unit cell (NOT ASU!) - map is set up for
- * passage into FFTs (so X axis has +2 offset)
+ * The CNSMapWriter class writes an output map that covers the unit cell (not
+ * the asymmetric unit). The map is set up for passage into FFTs (the x-axis has
+ * +2 offset).
  *
- * @author Timothy Fenn
+ * @author Timothy D. Fenn
  *
+ * @since 1.0
+ *
+ * @see CCP4MapWriter
  */
 public class CNSMapWriter {
 
@@ -46,7 +50,8 @@ public class CNSMapWriter {
     private final int nx, ny, nz;
 
     /**
-     * <p>Constructor for CNSMapWriter.</p>
+     * <p>
+     * Constructor for CNSMapWriter.</p>
      *
      * @param nx a int.
      * @param ny a int.
@@ -64,7 +69,8 @@ public class CNSMapWriter {
     }
 
     /**
-     * <p>write</p>
+     * <p>
+     * write</p>
      *
      * @param data an array of double.
      */

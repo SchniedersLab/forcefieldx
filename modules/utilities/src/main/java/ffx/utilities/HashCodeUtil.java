@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
  *
  * This file is part of Force Field X.
  *
@@ -25,8 +25,7 @@ package ffx.utilities;
 import java.lang.reflect.Array;
 
 /**
- * Collected methods which allow easy implementation of
- * <code>hashCode</code>.
+ * Collected methods which allow easy implementation of <code>hashCode</code>.
  *
  * Example use case:
  * <pre>
@@ -40,16 +39,16 @@ import java.lang.reflect.Array;
  *  }
  * </pre>
  *
- * @author Timothy D. Fenn and Michael J. Schnieders
+ * @author Timothy D. Fenn
+ * @author Michael J. Schnieders
  *
  * @since 1.0
  */
 public final class HashCodeUtil {
 
     /**
-     * An initial value for a
-     * <code>hashCode</code>, to which is added contributions from fields. Using
-     * a non-zero value decreases collisions of
+     * An initial value for a <code>hashCode</code>, to which is added
+     * contributions from fields. Using a non-zero value decreases collisions of
      * <code>hashCode</code> values.
      */
     public static final int SEED = 23;
@@ -129,9 +128,8 @@ public final class HashCodeUtil {
      * <code>aObject</code> is a possibly-null object field, and possibly an
      * array.
      *
-     * If
-     * <code>aObject</code> is an array, then each element may be a primitive or
-     * a possibly-null object.
+     * If <code>aObject</code> is an array, then each element may be a primitive
+     * or a possibly-null object.
      *
      * @param aSeed a int.
      * @param aObject a {@link java.lang.Object} object.

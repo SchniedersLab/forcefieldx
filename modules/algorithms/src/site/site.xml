@@ -11,8 +11,8 @@
                 href="/index.html"
                 />
             <item
-                name="Usage Examples"
-                href="/usage.html"
+                name="Examples"
+                href="/examples.html"
                 />
         </menu>
         <menu ref="parentProject"/>

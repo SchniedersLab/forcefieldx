@@ -16,9 +16,9 @@
                     <th>Example</th>
                 </tr>
                 <tr>
-                    <td>Binding Affinity</td>
+                    <td>Algorithms</td>
                     <td>
-                        <a href="modules/binding/examples.html">
+                        <a href="modules/algorithms/examples.html">
                             Water Solvation Free Energy
                         </a>
                     </td>
@@ -49,6 +49,261 @@
                     </td>
                 </tr>
             </table>
+        </section>
+        <section name="Space Group Symmetry">
+            <p>
+                Force Field X implements state-of-the-art features for crystals.
+            </p>
+            <table>
+                <tr>
+                    <th>Chaperonin Unit Cell</th>
+                    <th>Chaperonin Asymmetric Unit</th>
+                </tr>
+                <tr>
+                    <td bgcolor="white" align="center">
+                        <img align="middle" src="images/mmcpn.P1.png" alt="P1"/>
+                    </td>
+                    <td bgcolor="white" align="center">
+                        <img align="middle" src="images/mmcpn.C2.png" alt="C2"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <p>Force Field X can be used to simulate the unit cell of this chaperonin crystal,
+                            which contains 4 copies of the asymmetric unit.
+                        </p>
+                        <p>Advantages include:</p>
+                        <ul>
+                            <li>Fluctuations of each asymmetric unit are correlated, but not strictly symmetric.</li>
+                            <li>For thermodynamic averages, each sample contains 4 observations of any asymmetric unit property.</li>
+                        </ul>
+                    </td>
+                    <td>
+                        <p>Rather than apply molecular physics to the entire unit cell (P1),
+                            Force Field X is also capable of using the native space group of a crystal
+                            (C2 in this case).
+                        </p>
+                        <p>Advantages include:</p>
+                        <ul>
+                            <li>Crystal space group symmetry is strictly enforced.</li>
+                            <li>Evaluation of the potential energy and gradients is significantly faster.</li>
+                            <li>Memory requirements are significantly reduced.</li>
+                        </ul>
+                    </td>
+                </tr>
+            </table>
+        </section>
+        <section name="Ewald X-Ray Refinement">
+            <table>
+                <tbody>
+                    <tr>
+                        <td>
+                            <font color="blue">Original (1YI4, No Electrostatics)</font>
+                        </td>
+                        <td>
+                            <font color="blue">Ewald Refinement of the Binding Pocket</font>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td bgcolor="white">
+                            <p align="center">
+                                <img src="images/actsite_init_small.png" alt="No Electrostatics" />
+                            </p>
+                        </td>
+                        <td bgcolor="white">
+                            <p align="left">
+                                <img src="images/actsite_ffx_small.png" alt="AMOEBA PME Electrostatics" />
+                            </p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <p>In collaboration with scientists at Vertex Pharmacueticals, we are using the
+                polarizable AMOEBA force field evaluated using Ewald summation to re-refine
+                protein-drug structures in the context of the original diffraction data (ie. using
+                an X-ray likelihood target) in order to provide the most precise atomic
+                resolution models possible.
+            </p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Model</th>
+                        <th>R/R
+                            <sub>free</sub>
+                        </th>
+                        <th>Clash Score/%</th>
+                        <th>Poor Rotamer</th>
+                        <th>Rama. Favored</th>
+                        <th>MolProbity Score/%</th>
+                        <th>Res. (A)</th>
+                        <th>Structure</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <font color="blue">Original Refinements</font>
+                        </td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>PIM-1 Bound to Adenosine</td>
+                        <td>20.22/23.49</td>
+                        <td>24.91/46
+                            <sup>th</sup>
+                        </td>
+                        <td> 7.56%</td>
+                        <td>93.92%</td>
+                        <td> 2.96/33
+                            <sup>rd</sup>
+                        </td>
+                        <td>2.4</td>
+                        <td>
+                            <a href="http://www.rcsb.org/pdb/explore/explore.do?structureId=1YI4">1YI4</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Staphylococcus Aureus Gyrase B with Inhibitor</td>
+                        <td>23.09/32.49</td>
+                        <td>33.93/20
+                            <sup>th</sup>
+                        </td>
+                        <td> 5.45%</td>
+                        <td>94.78%</td>
+                        <td> 2.93/28
+                            <sup>th</sup>
+                        </td>
+                        <td>2.3</td>
+                        <td>
+                            <a href="http://www.rcsb.org/pdb/explore/explore.do?structureId=3G75">3G75</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Janus Kinase Bound to Inhibitor</td>
+                        <td>22.07/28.60</td>
+                        <td>18.87/54
+                            <sup>th</sup>
+                        </td>
+                        <td> 5.75%</td>
+                        <td>96.80%</td>
+                        <td> 2.55/47
+                            <sup>th</sup>
+                        </td>
+                        <td>2.2</td>
+                        <td>
+                            <a href="http://www.rcsb.org/pdb/explore/explore.do?structureId=3KCK">3KCK</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Extracellular Signal-Regulated Kinase (ERK2) with Inhibitor</td>
+                        <td>20.60/24.54</td>
+                        <td>11.41/94
+                            <sup>th</sup>
+                        </td>
+                        <td> 3.65%</td>
+                        <td>97.26%</td>
+                        <td>2.14/92
+                            <sup>nd</sup>
+                        </td>
+                        <td>2.5</td>
+                        <td>
+                            <a href="http://www.rcsb.org/pdb/explore/explore.do?structureId=3I60">3I60</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <font color="blue">Ewald Refinements</font>
+                        </td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>PIM-1 Bound to Adenosine</td>
+                        <td>17.76/22.37</td>
+                        <td> 3.42/99
+                            <sup>th</sup>
+                        </td>
+                        <td> 7.08%</td>
+                        <td>95.85%</td>
+                        <td> 2.07/91
+                            <sup>st</sup>
+                        </td>
+                        <td>2.4</td>
+                        <td>
+                            <a href="structures/3YI4_Ewald.pdb">1YI4_Ewald.pdb</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Staphylococcus Aureus Gyrase B with Inhibitor</td>
+                        <td>20.64/30.48</td>
+                        <td> 3.74/99
+                            <sup>th</sup>
+                        </td>
+                        <td> 5.13%</td>
+                        <td>93.68%</td>
+                        <td> 2.12/85
+                            <sup>th</sup>
+                        </td>
+                        <td>2.3</td>
+                        <td>
+                            <a href="sructures/3G75_Ewald.pdb">3G75_Ewald.pdb</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Janus Kinase Bound to Inhibitor</td>
+                        <td>20.83/28.13</td>
+                        <td>1.67/99
+                            <sup>th</sup>
+                        </td>
+                        <td> 4.56%</td>
+                        <td>97.17%</td>
+                        <td>1.57/93
+                            <sup>rd</sup>
+                        </td>
+                        <td>2.2</td>
+                        <td>
+                            <a href="structures/3KCK_Ewald.pdb">3KCK_Ewald.pdb</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Extracellular Signal-Regulated Kinase (ERK2) with Inhibitor</td>
+                        <td>18.55/26.66</td>
+                        <td>3.41/99
+                            <sup>th</sup>
+                        </td>
+                        <td> 4.32%</td>
+                        <td>96.96%</td>
+                        <td>1.79/98
+                            <sup>th</sup>
+                        </td>
+                        <td>2.5</td>
+                        <td>
+                            <a href="structures/3I60_Ewald.pdb">3I60_Ewald.pdb</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <p>Compared to the original models, the Ewald refinements exhibit:</p>
+            <ol>
+                <li>Improved agreement with the data (lower R
+                    <sub>free</sub> values)
+                </li>
+                <li>Fewer van der Waals clashes</li>
+                <li>A greater percentage of favorable Ramachandran backbone conformations</li>
+                <li>Overall improvement of MolProbity score</li>
+                <li>Refinement of the hydrogen-bonding network within the binding pocket</li>
+            </ol>
         </section>
     </body>
 </document>

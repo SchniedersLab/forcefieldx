@@ -58,12 +58,6 @@ boolean noElec2 = false;
 // Initial lambda value.
 double initialLambda = 0.5;
 
-// Scale Energy 1
-double scale1 = 1.0;
-
-// Scale Energy 2
-double scale2 = 1.0;
-
 // Print out the energy for each step.
 boolean print = false;
 
@@ -81,8 +75,6 @@ cli.e(longOpt:'elec', args:0, 'No electrostatics on the ligand atoms.');
 cli.e2(longOpt:'elec2', args:0, 'No electrostatics on ligand atoms for the 2nd topology.');
 cli.l(longOpt:'lambda', args:1, argName:'0.5', 'Lambda value to test.');
 cli.v(longOpt:'verbose', 'Print out the energy for each step.');
-cli.x1(longOpt:'scale1', args:1, argName:'1', 'Energy scale factor for Topology 1');
-cli.x2(longOpt:'scale2', args:1, argName:'1', 'Energy scale factor for Topology 2');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -131,16 +123,6 @@ if (options.l) {
 // Print the energy for each step.
 if (options.v) {
     print = true;
-}
-
-// Scale factor 1
-if (options.x1) {
-    scale1 = Double.parseDouble(options.x1);
-}
-
-// Scale factor 2
-if (options.x2) {
-    scale2 = Double.parseDouble(options.x2);
 }
 
 if (arguments.size() == 1) {
@@ -215,8 +197,6 @@ if (arguments.size() > 1) {
     forceFieldEnergy.setNoSoftCoreElectrostatics(noElec2);
 
     DualTopologyEnergy dualTopologyEnergy = new DualTopologyEnergy(topology1, active);
-    dualTopologyEnergy.setScaleEnergy1(scale1);
-    dualTopologyEnergy.setScaleEnergy2(scale2);
     potential = dualTopologyEnergy;
     lambdaInterface = dualTopologyEnergy;
 }

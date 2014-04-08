@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
  *
  * This file is part of Force Field X.
  *
@@ -50,7 +50,7 @@ import ffx.xray.RefinementMinimize.RefinementMode;
 /**
  * <p>DiffractionData class.</p>
  *
- * @author Tim Fenn
+ * @author Timothy D. Fenn
  *
  */
 public class DiffractionData implements DataContainer {

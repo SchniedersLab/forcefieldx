@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
  *
  * This file is part of Force Field X.
  *
@@ -22,13 +22,18 @@
  */
 package ffx.numerics;
 
-import static java.lang.Math.*;
+import static java.lang.Math.atan2;
+import static java.lang.Math.cosh;
+import static java.lang.Math.hypot;
+import static java.lang.Math.sinh;
 
 /**
- * <p>ComplexNumber class.</p>
+ * <p>
+ * ComplexNumber class.</p>
  *
- * @author Timothy Fenn
+ * @author Timothy D. Fenn
  *
+ * @since 1.0
  */
 public class ComplexNumber {
 
@@ -36,13 +41,15 @@ public class ComplexNumber {
     private double im;
 
     /**
-     * <p>Constructor for ComplexNumber.</p>
+     * <p>
+     * Constructor for ComplexNumber.</p>
      */
     public ComplexNumber() {
     }
 
     /**
-     * <p>Constructor for ComplexNumber.</p>
+     * <p>
+     * Constructor for ComplexNumber.</p>
      *
      * @param real a double.
      * @param imag a double.
@@ -70,7 +77,8 @@ public class ComplexNumber {
     }
 
     /**
-     * <p>re</p>
+     * <p>
+     * re</p>
      *
      * @return a double.
      */
@@ -79,7 +87,8 @@ public class ComplexNumber {
     }
 
     /**
-     * <p>re</p>
+     * <p>
+     * re</p>
      *
      * @param re a double.
      */
@@ -88,7 +97,8 @@ public class ComplexNumber {
     }
 
     /**
-     * <p>im</p>
+     * <p>
+     * im</p>
      *
      * @return a double.
      */
@@ -97,7 +107,8 @@ public class ComplexNumber {
     }
 
     /**
-     * <p>im</p>
+     * <p>
+     * im</p>
      *
      * @param im a double.
      */
@@ -106,7 +117,8 @@ public class ComplexNumber {
     }
 
     /**
-     * <p>copy</p>
+     * <p>
+     * copy</p>
      *
      * @param b a {@link ffx.numerics.ComplexNumber} object.
      */
@@ -117,7 +129,8 @@ public class ComplexNumber {
     }
 
     /**
-     * <p>abs</p>
+     * <p>
+     * abs</p>
      *
      * @return a double.
      */
@@ -126,7 +139,8 @@ public class ComplexNumber {
     }
 
     /**
-     * <p>phase</p>
+     * <p>
+     * phase</p>
      *
      * @return a double.
      */
@@ -135,7 +149,8 @@ public class ComplexNumber {
     }
 
     /**
-     * <p>phase_shift</p>
+     * <p>
+     * phase_shift</p>
      *
      * @param s a double.
      * @return a {@link ffx.numerics.ComplexNumber} object.
@@ -146,7 +161,8 @@ public class ComplexNumber {
     }
 
     /**
-     * <p>phase_shift_ip</p>
+     * <p>
+     * phase_shift_ip</p>
      *
      * @param s a double.
      */
@@ -162,7 +178,8 @@ public class ComplexNumber {
 
     // static version of phase_shift
     /**
-     * <p>phase_shift</p>
+     * <p>
+     * phase_shift</p>
      *
      * @param a a {@link ffx.numerics.ComplexNumber} object.
      * @param s a double.
@@ -175,7 +192,8 @@ public class ComplexNumber {
 
     // return a new Complex object whose value is (this + b)
     /**
-     * <p>plus</p>
+     * <p>
+     * plus</p>
      *
      * @param b a {@link ffx.numerics.ComplexNumber} object.
      * @return a {@link ffx.numerics.ComplexNumber} object.
@@ -188,7 +206,8 @@ public class ComplexNumber {
     }
 
     /**
-     * <p>plus_ip</p>
+     * <p>
+     * plus_ip</p>
      *
      * @param b a {@link ffx.numerics.ComplexNumber} object.
      */
@@ -200,7 +219,8 @@ public class ComplexNumber {
 
     // return a new Complex object whose value is (this - b)
     /**
-     * <p>minus</p>
+     * <p>
+     * minus</p>
      *
      * @param b a {@link ffx.numerics.ComplexNumber} object.
      * @return a {@link ffx.numerics.ComplexNumber} object.
@@ -213,7 +233,8 @@ public class ComplexNumber {
     }
 
     /**
-     * <p>minus_ip</p>
+     * <p>
+     * minus_ip</p>
      *
      * @param b a {@link ffx.numerics.ComplexNumber} object.
      */
@@ -225,7 +246,8 @@ public class ComplexNumber {
 
     // return a new Complex object whose value is (this * b)
     /**
-     * <p>times</p>
+     * <p>
+     * times</p>
      *
      * @param b a {@link ffx.numerics.ComplexNumber} object.
      * @return a {@link ffx.numerics.ComplexNumber} object.
@@ -238,7 +260,8 @@ public class ComplexNumber {
     }
 
     /**
-     * <p>times_ip</p>
+     * <p>
+     * times_ip</p>
      *
      * @param b a {@link ffx.numerics.ComplexNumber} object.
      */
@@ -252,7 +275,8 @@ public class ComplexNumber {
 
     // return a new object whose value is (this * alpha)
     /**
-     * <p>times</p>
+     * <p>
+     * times</p>
      *
      * @param alpha a double.
      * @return a {@link ffx.numerics.ComplexNumber} object.
@@ -262,7 +286,8 @@ public class ComplexNumber {
     }
 
     /**
-     * <p>times_ip</p>
+     * <p>
+     * times_ip</p>
      *
      * @param alpha a double.
      */
@@ -274,7 +299,8 @@ public class ComplexNumber {
 
     // return a new Complex object whose value is the conjugate of this
     /**
-     * <p>conjugate</p>
+     * <p>
+     * conjugate</p>
      *
      * @return a {@link ffx.numerics.ComplexNumber} object.
      */
@@ -283,7 +309,8 @@ public class ComplexNumber {
     }
 
     /**
-     * <p>conjugate_ip</p>
+     * <p>
+     * conjugate_ip</p>
      */
     public void conjugate_ip() {
         this.im = -this.im;
@@ -291,7 +318,8 @@ public class ComplexNumber {
 
     // return a new Complex object whose value is the reciprocal of this
     /**
-     * <p>reciprocal</p>
+     * <p>
+     * reciprocal</p>
      *
      * @return a {@link ffx.numerics.ComplexNumber} object.
      */
@@ -301,7 +329,8 @@ public class ComplexNumber {
     }
 
     /**
-     * <p>reciprocal_ip</p>
+     * <p>
+     * reciprocal_ip</p>
      */
     public void reciprocal_ip() {
         ComplexNumber a = this;
@@ -312,7 +341,8 @@ public class ComplexNumber {
 
     // return a / b
     /**
-     * <p>divides</p>
+     * <p>
+     * divides</p>
      *
      * @param b a {@link ffx.numerics.ComplexNumber} object.
      * @return a {@link ffx.numerics.ComplexNumber} object.
@@ -324,7 +354,8 @@ public class ComplexNumber {
 
     // return a new Complex object whose value is the complex exponential of this
     /**
-     * <p>exp</p>
+     * <p>
+     * exp</p>
      *
      * @return a {@link ffx.numerics.ComplexNumber} object.
      */
@@ -334,7 +365,8 @@ public class ComplexNumber {
 
     // return a new Complex object whose value is the complex sine of this
     /**
-     * <p>sin</p>
+     * <p>
+     * sin</p>
      *
      * @return a {@link ffx.numerics.ComplexNumber} object.
      */
@@ -344,7 +376,8 @@ public class ComplexNumber {
 
     // return a new Complex object whose value is the complex cosine of this
     /**
-     * <p>cos</p>
+     * <p>
+     * cos</p>
      *
      * @return a {@link ffx.numerics.ComplexNumber} object.
      */
@@ -354,7 +387,8 @@ public class ComplexNumber {
 
     // return a new Complex object whose value is the complex tangent of this
     /**
-     * <p>tan</p>
+     * <p>
+     * tan</p>
      *
      * @return a {@link ffx.numerics.ComplexNumber} object.
      */
