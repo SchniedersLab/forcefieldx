@@ -29,9 +29,10 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.lang.Math.*;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+import static java.lang.Math.sqrt;
 import static java.lang.String.format;
-import static java.util.Arrays.fill;
 import static java.util.Arrays.fill;
 
 import org.apache.commons.math3.analysis.DifferentiableMultivariateVectorFunction;
@@ -40,7 +41,14 @@ import org.apache.commons.math3.exception.DimensionMismatchException;
 import org.apache.commons.math3.exception.MaxCountExceededException;
 import org.apache.commons.math3.exception.NullArgumentException;
 import org.apache.commons.math3.exception.util.ExceptionContext;
-import org.apache.commons.math3.linear.*;
+import org.apache.commons.math3.linear.ArrayRealVector;
+import org.apache.commons.math3.linear.DefaultIterativeLinearSolverEvent;
+import org.apache.commons.math3.linear.IterativeLinearSolverEvent;
+import org.apache.commons.math3.linear.NonPositiveDefiniteOperatorException;
+import org.apache.commons.math3.linear.NonSquareOperatorException;
+import org.apache.commons.math3.linear.PreconditionedIterativeLinearSolver;
+import org.apache.commons.math3.linear.RealLinearOperator;
+import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.optimization.PointVectorValuePair;
 import org.apache.commons.math3.optimization.SimpleVectorValueChecker;
 import org.apache.commons.math3.optimization.general.LevenbergMarquardtOptimizer;
@@ -51,7 +59,12 @@ import org.apache.commons.math3.util.IterationManager;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.pow;
 
-import edu.rit.pj.*;
+import edu.rit.pj.IntegerForLoop;
+import edu.rit.pj.IntegerSchedule;
+import edu.rit.pj.ParallelForLoop;
+import edu.rit.pj.ParallelRegion;
+import edu.rit.pj.ParallelSection;
+import edu.rit.pj.ParallelTeam;
 import edu.rit.pj.reduction.SharedDouble;
 import edu.rit.pj.reduction.SharedDoubleArray;
 import edu.rit.pj.reduction.SharedInteger;
@@ -78,8 +91,34 @@ import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.PolarizeType;
 
 import static ffx.numerics.Erf.erfc;
-import static ffx.numerics.VectorMath.*;
-import static ffx.potential.parameters.MultipoleType.*;
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.potential.parameters.MultipoleType.ELECTRIC;
+import static ffx.potential.parameters.MultipoleType.t000;
+import static ffx.potential.parameters.MultipoleType.t001;
+import static ffx.potential.parameters.MultipoleType.t002;
+import static ffx.potential.parameters.MultipoleType.t003;
+import static ffx.potential.parameters.MultipoleType.t010;
+import static ffx.potential.parameters.MultipoleType.t011;
+import static ffx.potential.parameters.MultipoleType.t012;
+import static ffx.potential.parameters.MultipoleType.t020;
+import static ffx.potential.parameters.MultipoleType.t021;
+import static ffx.potential.parameters.MultipoleType.t030;
+import static ffx.potential.parameters.MultipoleType.t100;
+import static ffx.potential.parameters.MultipoleType.t101;
+import static ffx.potential.parameters.MultipoleType.t102;
+import static ffx.potential.parameters.MultipoleType.t110;
+import static ffx.potential.parameters.MultipoleType.t111;
+import static ffx.potential.parameters.MultipoleType.t120;
+import static ffx.potential.parameters.MultipoleType.t200;
+import static ffx.potential.parameters.MultipoleType.t201;
+import static ffx.potential.parameters.MultipoleType.t210;
+import static ffx.potential.parameters.MultipoleType.t300;
 
 /**
  * This Particle Mesh Ewald class implements PME for the AMOEBA polarizable
@@ -351,7 +390,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     /**
      * Flag indicating if softcore variables have been initalized.
      */
-    private boolean softCoreInit = false;
+    private boolean initSoftCore = false;
     /**
      * When computing the polarization energy at Lambda there are 3 pieces.
      *
@@ -1045,8 +1084,8 @@ public class ParticleMeshEwald implements LambdaInterface {
      * Initialize a boolean array of soft atoms and, if requested, ligand vapor
      * electrostatics.
      */
-    private void softCoreInit(boolean print) {
-        if (softCoreInit) {
+    private void initSoftCoreInit(boolean print) {
+        if (initSoftCore) {
             return;
         }
 
@@ -1060,7 +1099,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             if (ai.applyLambda()) {
                 isSoft[i] = true;
                 if (print) {
-                    sb.append(ai.toString() + "\n");
+                    sb.append(ai.toString()).append("\n");
                 }
                 count++;
             }
@@ -1109,6 +1148,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             }
 
             vacuumNeighborList.buildList(coords, vaporLists, isSoft, true, true);
+
             vaporPermanentSchedule = vacuumNeighborList.getPairwiseSchedule();
             vaporEwaldSchedule = vaporPermanentSchedule;
             vacuumRanges = new Range[maxThreads];
@@ -1123,7 +1163,7 @@ public class ParticleMeshEwald implements LambdaInterface {
         /**
          * Set this flag to true to avoid re-initialization.
          */
-        softCoreInit = true;
+        initSoftCore = true;
     }
 
     public void setAtoms(Atom atoms[]) {
@@ -6476,8 +6516,8 @@ public class ParticleMeshEwald implements LambdaInterface {
         assert (lambda >= 0.0 && lambda <= 1.0);
         this.lambda = lambda;
 
-        if (!softCoreInit) {
-            softCoreInit(true);
+        if (!initSoftCore) {
+            initSoftCoreInit(true);
         }
 
         /**

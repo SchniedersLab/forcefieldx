@@ -452,6 +452,12 @@ public class NeighborList extends ParallelRegion {
         initNeighborList(false);
     }
 
+        /**
+     * The NeighborList will be re-configured, if necessary, for the supplied
+     * atom list.
+     *
+     * @param atoms A new list of atoms to operate on.
+     */
     public void setAtoms(Atom atoms[]) {
         this.atoms = atoms;
         this.nAtoms = atoms.length;
@@ -752,7 +758,7 @@ public class NeighborList extends ParallelRegion {
 
         public final void init() {
             mask = new double[nAtoms];
-            Arrays.fill(mask, 1);
+            Arrays.fill(mask, 1.0);
         }
 
         @Override
@@ -779,6 +785,7 @@ public class NeighborList extends ParallelRegion {
                 // Loop over all atoms.
                 for (atomIndex = lb; atomIndex <= ub; atomIndex++) {
                     n = 0;
+
                     if (iSymm == 0) {
                         listCount[atomIndex] = 0;
                     }
@@ -937,7 +944,7 @@ public class NeighborList extends ParallelRegion {
                 if (use != null && !use[aj]) {
                     continue;
                 }
-                if (!intermolecular && (molecules[atomIndex] == molecules[aj])) {
+                if (!intermolecular && (molecules[atomIndex] != molecules[aj])) {
                     continue;
                 }
                 if (mask[aj] > 0 && (iSymm == 0 || aj >= atomIndex)) {
