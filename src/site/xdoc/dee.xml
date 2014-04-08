@@ -17,9 +17,13 @@
             </p>
         </section>
         <section name="Application to Mutation S163R in C1QTN5">
-            <p>The following example demonstrates global optimization with mutation V630A in TIMP3 (PDB <a href="http://www.pdb.org/pdb/explore/explore.do?structureId=4f3j">4F3J</a>). 
-                The general protocol is as follows:&#xD &#009 1) Refine/optimize the wild-type model using all-versus-all global optimization. If the protein is large, use the sliding window method.&#xD &#009 2) Perform the mutation.&#xD &#009 3) Perform a local optimization around the mutated region using a distance cutoff.
+            <p>The following example demonstrates global optimization with mutation S163R in C1QTN5 (PDB <a href="http://www.pdb.org/pdb/explore/explore.do?structureId=4f3j">4F3J</a>). The general protocol is as follows:
             </p>
+            <ol>
+                <li>Refine/optimize the wild-type model using all-versus-all global optimization. If the protein is large, use the sliding window method.</li>
+                <li>Perform the mutation.</li>
+                <li>Perform a local optimization around the mutated region using a distance cutoff.</li>
+            </ol>
             <subsection name="Using DEE to Globally Optimize the Wild-Type PDB File">
                 <p>To perform an all-versus-all global optimization using DEE for all residues, use the following command: 
                     <source>ffxc rotamer -a 2 -c A -l 1 -x 1 -g false 4F3J.pdb</source>
