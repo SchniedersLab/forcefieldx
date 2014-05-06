@@ -300,6 +300,13 @@ public class OSRW implements Potential {
      * walkers.
      */
     private final ReceiveThread receiveThread;
+    /**
+     * Running average and standard deviation
+     */
+    private double totalAverage = 0;
+    private double totalSquare = 0;
+    private int periodCount = 0;
+    private int window = 1000;
 
     /**
      * OSRW Asynchronous MultiWalker Constructor.
@@ -592,6 +599,21 @@ public class OSRW implements Potential {
                 fLambdaUpdates++;
                 boolean printFLambda = fLambdaUpdates % fLambdaPrintInterval == 0;
                 totalFreeEnergy = updateFLambda(printFLambda);
+                /**
+                 * Calculating Moving Average & Standard Deviation
+                 */
+                totalAverage += totalFreeEnergy;
+                totalSquare += Math.pow(totalFreeEnergy, 2);
+                periodCount++;
+                if (periodCount == window - 1) {
+                    double average = totalAverage / window;
+                    double stdev = Math.sqrt((totalSquare - Math.pow(totalAverage, 2) / window) / window);
+                    logger.info(String.format(" The running average is %12.4f kcal/mol and the stdev is %8.4f kcal/mol.",
+                            average, stdev));
+                    totalAverage = 0;
+                    totalSquare = 0;
+                    periodCount = 0;
+                }
             }
             if (energyCount % saveFrequency == 0) {
                 if (algorithmListener != null) {
@@ -905,6 +927,7 @@ public class OSRW implements Potential {
 
     /**
      * Eq. 7 from the Xtal Thermodynamics paper.
+     *
      * @param print
      * @return
      */
@@ -1030,7 +1053,7 @@ public class OSRW implements Potential {
         StringBuffer sb = new StringBuffer();
         for (int lambdaBin = 0; lambdaBin < lambdaBins; lambdaBin++) {
             for (int fLambdaBin = 0; fLambdaBin < FLambdaBins; fLambdaBin++) {
-                sb.append(String.format(" %16.8f",evaluateKernel(lambdaBin, fLambdaBin)));
+                sb.append(String.format(" %16.8f", evaluateKernel(lambdaBin, fLambdaBin)));
             }
             sb.append("\n");
         }
