@@ -54,6 +54,8 @@ public class Rotamer {
     public final AminoAcid3 name;
     public final NucleicAcid3 nucleicName;
     public final int length;
+    public final double atomicCoordinates[][];
+    public final boolean isCoordinates;
 
     public Rotamer(AminoAcid3 name, double... values) {
         length = values.length / 2;
@@ -71,6 +73,8 @@ public class Rotamer {
         chi4 = angles[3];
         chi5 = chi6 = chi7 = 0;
         nucleicName = null;
+        atomicCoordinates = null;
+        isCoordinates = false;
     }
 
     public Rotamer(NucleicAcid3 name, double... values) {
@@ -91,6 +95,58 @@ public class Rotamer {
         chi5 = angles[4];
         chi6 = angles[5];
         chi7 = angles[6];
+        atomicCoordinates = null;
+        isCoordinates = false;
+    }
+    
+    public Rotamer(AminoAcid3 name, double[][] origCoordinates, double... values) {
+        length = values.length / 2;
+        angles = new double[max(length, 4)];
+        sigmas = new double[max(length, 4)];
+        for (int i = 0; i < length; i++) {
+            int ii = 2 * i;
+            angles[i] = values[ii];
+            sigmas[i] = values[ii + 1];
+        }
+        this.name = name;
+        chi1 = angles[0];
+        chi2 = angles[1];
+        chi3 = angles[2];
+        chi4 = angles[3];
+        chi5 = chi6 = chi7 = 0;
+        nucleicName = null;
+        atomicCoordinates = new double [origCoordinates.length][];
+        for (int i = 0; i < origCoordinates.length; i++) {
+            atomicCoordinates[i] = new double[origCoordinates[i].length];
+            System.arraycopy(origCoordinates[i], 0, atomicCoordinates[i], 0, origCoordinates[i].length);
+        }
+        isCoordinates = true;
+    }
+
+    public Rotamer(NucleicAcid3 name, double[][] origCoordinates, double... values) {
+        length = values.length / 2;
+        angles = new double[max(length, 7)];
+        sigmas = new double[max(length, 7)];
+        nucleicName = name;
+        this.name = null;
+        for (int i = 0; i < length; i++) {
+            int ii = 2 * i;
+            angles[i] = values[ii];
+            sigmas[i] = values[ii + 1];
+        }
+        chi1 = angles[0];
+        chi2 = angles[1];
+        chi3 = angles[2];
+        chi4 = angles[3];
+        chi5 = angles[4];
+        chi6 = angles[5];
+        chi7 = angles[6];
+        atomicCoordinates = new double [origCoordinates.length][];
+        for (int i = 0; i < origCoordinates.length; i++) {
+            atomicCoordinates[i] = new double[origCoordinates[i].length];
+            System.arraycopy(origCoordinates[i], 0, atomicCoordinates[i], 0, origCoordinates[i].length);
+        }
+        isCoordinates = true;
     }
 
     @Override
