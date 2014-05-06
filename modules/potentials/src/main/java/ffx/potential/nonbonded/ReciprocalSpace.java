@@ -112,11 +112,11 @@ public class ReciprocalSpace {
     /**
      * Array of atoms in the asymmetric unit.
      */
-    private final Atom atoms[];
+    private Atom atoms[];
     /**
      * Number of atoms in the asymmetric unit.
      */
-    private final int nAtoms;
+    private int nAtoms;
     /**
      * Number of unit cell symmetry operators.
      */
@@ -172,27 +172,27 @@ public class ReciprocalSpace {
     /**
      * Fractional multipole array.
      */
-    private final double fracMultipole[][][];
+    private double fracMultipole[][][];
     /**
      * Fractional induced dipole array.
      */
-    private final double fracInducedDipole[][][];
+    private double fracInducedDipole[][][];
     /**
      * Fractional induced dipole chain rule array.
      */
-    private final double fracInducedDipoleCR[][][];
+    private double fracInducedDipoleCR[][][];
     /**
      * Fractional multipole potential and its derivatives.
      */
-    private final double fracMultipolePhi[][];
+    private double fracMultipolePhi[][];
     /**
      * Fractional induced dipole potential and its derivatives.
      */
-    private final double fracInducedDipolePhi[][];
+    private double fracInducedDipolePhi[][];
     /**
      * Fractional induced dipole chain rule potential and its derivatives.
      */
-    private final double fracInducedDipolePhiCR[][];
+    private double fracInducedDipolePhiCR[][];
     /**
      * Parallel team instance.
      */
@@ -291,18 +291,7 @@ public class ReciprocalSpace {
             logger.info(sb.toString());
         }
 
-        /**
-         * Allocate memory for fractional multipoles and induced dipoles.
-         */
-        fracMultipole = new double[nSymm][nAtoms][10];
-        fracInducedDipole = new double[nSymm][nAtoms][3];
-        fracInducedDipoleCR = new double[nSymm][nAtoms][3];
-        /**
-         * Allocate memory for fractional permanent Phi and induced Phi.
-         */
-        fracMultipolePhi = new double[nAtoms][tensorCount];
-        fracInducedDipolePhi = new double[nAtoms][tensorCount];
-        fracInducedDipolePhiCR = new double[nAtoms][tensorCount];
+        initAtomArrays();
 
         /**
          * Construct the parallel BSplineRegion, DensityLoops and Phi objects.
@@ -326,6 +315,29 @@ public class ReciprocalSpace {
         splineCount = new int[threadCount];
         permanentPhiTime = new long[threadCount];
         inducedPhiTime = new long[threadCount];
+    }
+
+    public void setAtoms(Atom atoms[]) {
+        this.atoms = atoms;
+        nAtoms = atoms.length;
+        initAtomArrays();
+    }
+
+    private void initAtomArrays() {
+        if (fracMultipolePhi == null || fracMultipolePhi.length < nAtoms) {
+            /**
+             * Allocate memory for fractional multipoles and induced dipoles.
+             */
+            fracMultipole = new double[nSymm][nAtoms][10];
+            fracInducedDipole = new double[nSymm][nAtoms][3];
+            fracInducedDipoleCR = new double[nSymm][nAtoms][3];
+            /**
+             * Allocate memory for fractional permanent Phi and induced Phi.
+             */
+            fracMultipolePhi = new double[nAtoms][tensorCount];
+            fracInducedDipolePhi = new double[nAtoms][tensorCount];
+            fracInducedDipolePhiCR = new double[nAtoms][tensorCount];
+        }
     }
 
     public void setCrystal(Crystal crystal) {
@@ -779,17 +791,13 @@ public class ReciprocalSpace {
         private double r21;
         private double r22;
         private final BSplineFillLoop bSplineFillLoop[];
-        public final double splineX[][][][];
-        public final double splineY[][][][];
-        public final double splineZ[][][][];
-        public final int initGrid[][][];
+        public double splineX[][][][];
+        public double splineY[][][][];
+        public double splineZ[][][][];
+        public int initGrid[][][];
 
         public BSplineRegion() {
             bSplineFillLoop = new BSplineFillLoop[threadCount];
-            initGrid = new int[nSymm][nAtoms][];
-            splineX = new double[nSymm][nAtoms][][];
-            splineY = new double[nSymm][nAtoms][][];
-            splineZ = new double[nSymm][nAtoms][][];
         }
 
         @Override
@@ -803,6 +811,12 @@ public class ReciprocalSpace {
             r20 = crystal.A[2][0];
             r21 = crystal.A[2][1];
             r22 = crystal.A[2][2];
+            if (splineX == null || splineX[0].length < nAtoms) {
+                initGrid = new int[nSymm][nAtoms][];
+                splineX = new double[nSymm][nAtoms][][];
+                splineY = new double[nSymm][nAtoms][][];
+                splineZ = new double[nSymm][nAtoms][][];
+            }
         }
 
         @Override

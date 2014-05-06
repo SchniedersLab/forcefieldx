@@ -157,6 +157,7 @@ open(filename);
 // Select ligand atoms
 Atom[] atoms = active.getAtomArray();
 int n = atoms.length;
+
 // Apply ligand atom selection
 for (int i = ligandStart; i <= ligandStop; i++) {
     Atom ai = atoms[i - 1];

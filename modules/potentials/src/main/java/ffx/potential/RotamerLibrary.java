@@ -3251,7 +3251,7 @@ public class RotamerLibrary {
         applySugarPucker(residue, sugarPucker, isDeoxy, true);
         applyNABackbone(residue, rotamer, prevResidue);
         if (prevResidue != null && !independent) {
-            applyNACorrections(residue, prevResidue, rotamer, prevSugarPucker, correctionThreshold);
+            applyNACorrections(residue, prevResidue, rotamer, prevSugarPucker, correctionThreshold, isDeoxy, is3sTerminal);
         } /* else if (!independent) {
          startingResidueConsistencyCheck(residue, rotamer, correctionThreshold);
          } */
@@ -3676,7 +3676,8 @@ public class RotamerLibrary {
      * correctionThreshold.
      */
     private static void applyNACorrections(Residue residue, Residue prevResidue, Rotamer rotamer,
-            int prevSugarPucker, double correctionThreshold) throws NACorrectionTooLargeException {
+            int prevSugarPucker, double correctionThreshold, boolean isDeoxy, boolean is3sTerminal)
+            throws NACorrectionTooLargeException {
         // Backbone atoms of this residue to be adjusted
         Atom C3s = (Atom) residue.getAtomNode("C3\'");
         Atom O4s = (Atom) residue.getAtomNode("O4\'");
@@ -3718,18 +3719,12 @@ public class RotamerLibrary {
             corrections[4][i] = (5.0 / 6.0) * corrections[5][i];
             corrections[6][i] = (1.0 / 12.0) * corrections[5][i];
         }
-        if (correctionThreshold != 0) {
-            double correctionMagnitude = ((corrections[5][0] * corrections[5][0])
-                    + (corrections[5][1] * corrections[5][1])
-                    + (corrections[5][2] * corrections[5][2]));
-            if (correctionMagnitude > (correctionThreshold * correctionThreshold)) {
-                correctionMagnitude = Math.sqrt(correctionMagnitude);
-                throw new NACorrectionTooLargeException(correctionThreshold, correctionMagnitude, residue, rotamer);
-            }
-        }
 
-        // Shift backbone atoms in this residue by an appropriate fraction of
-        // the correction vector.
+        /* 
+         * Move backbone atoms by an appropriate fraction of the correction 
+         * vector. Do this before checking the threshold, so that atoms are moved
+         * in case that is needed before the exception gets thrown.
+        */
         O4s.move(corrections[0]);
         C3s.move(corrections[0]);
         C4s.move(corrections[1]);
@@ -3738,6 +3733,17 @@ public class RotamerLibrary {
         P.move(corrections[4]);
         C1s.move(corrections[6]);
         C2s.move(corrections[6]);
+        
+        if (correctionThreshold != 0) {
+            double correctionMagnitude = ((corrections[5][0] * corrections[5][0])
+                    + (corrections[5][1] * corrections[5][1])
+                    + (corrections[5][2] * corrections[5][2]));
+            if (correctionMagnitude > (correctionThreshold * correctionThreshold)) {
+                correctionMagnitude = Math.sqrt(correctionMagnitude);
+                applyNASideAtoms(residue, rotamer, prevResidue, isDeoxy, is3sTerminal, prevSugarPucker);
+                throw new NACorrectionTooLargeException(correctionThreshold, correctionMagnitude, residue, rotamer);
+            }
+        }
     }
 
     /**

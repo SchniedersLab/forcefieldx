@@ -351,19 +351,33 @@ public class VanDerWaals implements MaskingInterface,
         }
 
         /**
+         * Lambda parameters.
+         */
+        lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
+        if (lambdaTerm) {
+            shareddEdL = new SharedDouble();
+            sharedd2EdL2 = new SharedDouble();
+            vdwLambdaAlpha = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_ALPHA, 0.05);
+            vdwLambdaExponent = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_EXPONENT, 1.0);
+            if (vdwLambdaAlpha < 0.0) {
+                vdwLambdaAlpha = 0.05;
+            }
+            if (vdwLambdaExponent < 1.0) {
+                vdwLambdaExponent = 1.0;
+            }
+            intermolecularSoftcore = forceField.getBoolean(
+                    ForceField.ForceFieldBoolean.INTERMOLECULAR_SOFTCORE, false);
+        } else {
+            shareddEdL = null;
+            sharedd2EdL2 = null;
+        }
+
+        /**
          * Parallel constructs.
          */
         threadCount = parallelTeam.getThreadCount();
         sharedInteractions = new SharedInteger();
         sharedEnergy = new SharedDouble();
-        lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
-        if (lambdaTerm) {
-            shareddEdL = new SharedDouble();
-            sharedd2EdL2 = new SharedDouble();
-        } else {
-            shareddEdL = null;
-            sharedd2EdL2 = null;
-        }
         doLongRangeCorrection = forceField.getBoolean(ForceField.ForceFieldBoolean.VDWLRTERM, false);
         vanDerWaalsRegion = new VanDerWaalsRegion();
         initializationTime = new long[threadCount];
@@ -401,20 +415,6 @@ public class VanDerWaals implements MaskingInterface,
         threeC3 = 3.0 * c3;
         fourC4 = 4.0 * c4;
         fiveC5 = 5.0 * c5;
-
-       
-        if (lambdaTerm) {
-            vdwLambdaAlpha = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_ALPHA, 0.05);
-            vdwLambdaExponent = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_EXPONENT, 1.0);
-            if (vdwLambdaAlpha < 0.0) {
-                vdwLambdaAlpha = 0.05;
-            }
-            if (vdwLambdaExponent < 1.0) {
-                vdwLambdaExponent = 1.0;
-            }
-            intermolecularSoftcore = forceField.getBoolean(
-                    ForceField.ForceFieldBoolean.INTERMOLECULAR_SOFTCORE, false);
-        }
 
         /**
          * Parallel neighbor list builder.
@@ -485,6 +485,11 @@ public class VanDerWaals implements MaskingInterface,
          * Initialize all atoms to be used in the energy.
          */
         Arrays.fill(use, true);
+        Arrays.fill(isSoft, false);
+        Arrays.fill(softCore[HARD], false);
+        Arrays.fill(softCore[SOFT], false);
+        softCoreInit = false;
+        molecule = molecularAssembly.getMoleculeNumbers();
 
         for (int i = 0; i < nAtoms; i++) {
             Atom ai = atoms[i];
@@ -555,13 +560,6 @@ public class VanDerWaals implements MaskingInterface,
                 }
             }
         }
-
-        Arrays.fill(isSoft, false);
-        Arrays.fill(softCore[HARD], false);
-        Arrays.fill(softCore[SOFT], false);
-        softCoreInit = false;
-        molecule = molecularAssembly.getMoleculeNumbers();
-        setLambda(lambda);
     }
 
     public void setAtoms(Atom atoms[]) {
@@ -861,7 +859,6 @@ public class VanDerWaals implements MaskingInterface,
                 }
             }
             softCoreInit = true;
-
         }
 
         // Redo the long range correction.
