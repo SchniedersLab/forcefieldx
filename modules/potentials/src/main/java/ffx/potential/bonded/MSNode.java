@@ -170,7 +170,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
     /**
      * Returns an ArrayList of all Atoms below the present MSNode.
      *
-     * @return a {@link java.util.ArrayList} object.
+     * @return a new {@link java.util.ArrayList} object.
      */
     public ArrayList<Atom> getAtomList() {
         ArrayList<Atom> arrayList = new ArrayList<>();

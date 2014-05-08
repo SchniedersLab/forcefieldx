@@ -266,7 +266,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     maxr = max(r, maxr);
                 }
             }
-
+            
             /**
              * Turn off reciprocal space calculations.
              */
