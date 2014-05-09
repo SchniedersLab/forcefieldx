@@ -33,6 +33,14 @@
                     </td>
                 </tr>
                 <tr>
+                    <td>Rotamer Optimization via Many-Body Dead-End Elimination</td>
+                    <td>
+                        <a href="dee.html">
+                            Application to C1QTN5
+                        </a>
+                    </td>
+                </tr>
+                <tr>
                     <td>X-ray Refinement</td>
                     <td>
                         <a href="modules/xray/examples.html">
