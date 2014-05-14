@@ -35,7 +35,8 @@ import java.util.logging.Logger;
 import ffx.crystal.*;
 
 /**
- * <p>MTZWriter class.</p>
+ * <p>
+ * MTZWriter class.</p>
  *
  * @author Timothy D. Fenn
  * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4
@@ -52,6 +53,26 @@ import ffx.crystal.*;
  */
 public class MTZWriter {
 
+    /**
+     * The possible output "styles"
+     */
+    public static interface MTZType {
+
+        /**
+         * output unscaled data only
+         */
+        public static final int DATAONLY = 1;
+        /**
+         * output unscaled Fcs only (still requires data to be read in)
+         */
+        public static final int FCONLY = 2;
+        /**
+         * everything, including fitted/scaled coefficients (e.g. sigmaA, map
+         * coefficients)
+         */
+        public static final int ALL = 3;
+    }
+
     private static final Logger logger = Logger.getLogger(MTZWriter.class.getName());
     private final String filename;
     private final ReflectionList reflectionlist;
@@ -61,10 +82,11 @@ public class MTZWriter {
     private final ReflectionSpline spline;
     private final int n;
     private final int ncol;
-    private final boolean dataonly;
+    private final int mtzType;
 
     /**
-     * <p>Constructor for MTZWriter.</p>
+     * <p>
+     * Constructor for MTZWriter.</p>
      *
      * @param reflectionlist a {@link ffx.crystal.ReflectionList} object.
      * @param refinementdata a {@link ffx.xray.DiffractionRefinementData}
@@ -73,20 +95,21 @@ public class MTZWriter {
      */
     public MTZWriter(ReflectionList reflectionlist,
             DiffractionRefinementData refinementdata, String filename) {
-        this(reflectionlist, refinementdata, filename, false);
+        this(reflectionlist, refinementdata, filename, MTZType.ALL);
     }
 
     /**
-     * <p>Constructor for MTZWriter.</p>
+     * <p>
+     * Constructor for MTZWriter.</p>
      *
      * @param reflectionlist a {@link ffx.crystal.ReflectionList} object.
      * @param refinementdata a {@link ffx.xray.DiffractionRefinementData}
      * object.
      * @param filename a {@link java.lang.String} object.
-     * @param dataonly a boolean.
+     * @param mtzType see MTZType interface types
      */
     public MTZWriter(ReflectionList reflectionlist,
-            DiffractionRefinementData refinementdata, String filename, boolean dataonly) {
+            DiffractionRefinementData refinementdata, String filename, int mtzType) {
         this.reflectionlist = reflectionlist;
         this.refinementdata = refinementdata;
         this.crystal = reflectionlist.crystal;
@@ -96,16 +119,26 @@ public class MTZWriter {
         this.filename = filename;
         // ignore 0 0 0 reflection
         this.n = refinementdata.n - 1;
-        this.dataonly = dataonly;
-        if (dataonly) {
-            this.ncol = 6;
-        } else {
-            this.ncol = 18;
+        this.mtzType = mtzType;
+        switch (mtzType) {
+            case MTZType.DATAONLY:
+                this.ncol = 6;
+                break;
+            case MTZType.FCONLY:
+                this.ncol = 7;
+                break;
+            case MTZType.ALL:
+                this.ncol = 18;
+                break;
+            default:
+                this.ncol = 18;
+                break;
         }
     }
 
     /**
-     * <p>write</p>
+     * <p>
+     * write</p>
      */
     public void write() {
         ByteOrder b = ByteOrder.nativeOrder();
@@ -125,6 +158,7 @@ public class MTZWriter {
 
             byte bytes[] = new byte[80];
             int offset = 0;
+            int writelen = 0;
 
             int imapdata;
             float fmapdata;
@@ -168,46 +202,63 @@ public class MTZWriter {
             }
             ReflectionSpline sigmaaspline = new ReflectionSpline(reflectionlist,
                     refinementdata.sigmaa.length);
+            int col = 0;
+
             colname.add("H");
-            coltype[0] = 'H';
+            coltype[col++] = 'H';
             colname.add("K");
-            coltype[1] = 'H';
+            coltype[col++] = 'H';
             colname.add("L");
-            coltype[2] = 'H';
-            colname.add("FO");
-            coltype[3] = 'F';
-            colname.add("SIGFO");
-            coltype[4] = 'Q';
-            colname.add("FreeR");
-            coltype[5] = 'I';
-            if (!dataonly) {
+            coltype[col++] = 'H';
+            writelen += 12;
+
+            if (mtzType != MTZType.FCONLY) {
+                colname.add("FO");
+                coltype[col++] = 'F';
+                colname.add("SIGFO");
+                coltype[col++] = 'Q';
+                colname.add("FreeR");
+                coltype[col++] = 'I';
+
+                writelen += 12;
+            }
+
+            if (mtzType != MTZType.DATAONLY) {
                 colname.add("Fs");
-                coltype[6] = 'F';
+                coltype[col++] = 'F';
                 colname.add("PHIFs");
-                coltype[7] = 'P';
+                coltype[col++] = 'P';
                 colname.add("Fc");
-                coltype[8] = 'F';
+                coltype[col++] = 'F';
                 colname.add("PHIFc");
-                coltype[9] = 'P';
+                coltype[col++] = 'P';
+
+                writelen += 16;
+            }
+
+            if (mtzType == MTZType.ALL) {
                 colname.add("FOM");
-                coltype[10] = 'W';
+                coltype[col++] = 'W';
                 colname.add("PHIW");
-                coltype[11] = 'P';
+                coltype[col++] = 'P';
                 colname.add("SigmaAs");
-                coltype[12] = 'F';
+                coltype[col++] = 'F';
                 colname.add("SigmaAw");
-                coltype[13] = 'Q';
+                coltype[col++] = 'Q';
                 colname.add("FWT");
-                coltype[14] = 'F';
+                coltype[col++] = 'F';
                 colname.add("PHWT");
-                coltype[15] = 'P';
+                coltype[col++] = 'P';
                 colname.add("DELFWT");
-                coltype[16] = 'F';
+                coltype[col++] = 'F';
                 colname.add("PHDELWT");
-                coltype[17] = 'P';
+                coltype[col++] = 'P';
+
+                writelen += 32;
             }
 
             for (HKL ih : reflectionlist.hkllist) {
+                col = 0;
                 int i = ih.index();
 
                 // skip the 0 0 0 reflection
@@ -217,132 +268,180 @@ public class MTZWriter {
                     continue;
                 }
 
-                // spline setup
                 double ss = Crystal.invressq(crystal, ih);
-                double fh = spline.f(ss, refinementdata.spline);
-                double sa = sigmaaspline.f(ss, refinementdata.sigmaa);
-                double wa = sigmaaspline.f(ss, refinementdata.sigmaw);
+                double sa = Double.NaN;
+                double wa = Double.NaN;
                 res[0] = Math.min(ss, res[0]);
                 res[1] = Math.max(ss, res[1]);
 
                 // HKL first (3)
                 fmapdata = ih.h();
-                colminmax[0][0] = Math.min(fmapdata, colminmax[0][0]);
-                colminmax[0][1] = Math.max(fmapdata, colminmax[0][1]);
+                colminmax[col][0] = Math.min(fmapdata, colminmax[0][0]);
+                colminmax[col][1] = Math.max(fmapdata, colminmax[0][1]);
                 bb.rewind();
                 bb.order(b).putFloat(fmapdata);
+                col++;
 
                 fmapdata = ih.k();
-                colminmax[1][0] = Math.min(fmapdata, colminmax[1][0]);
-                colminmax[1][1] = Math.max(fmapdata, colminmax[1][1]);
+                colminmax[col][0] = Math.min(fmapdata, colminmax[1][0]);
+                colminmax[col][1] = Math.max(fmapdata, colminmax[1][1]);
                 bb.order(b).putFloat(fmapdata);
+                col++;
 
                 fmapdata = ih.l();
-                colminmax[2][0] = Math.min(fmapdata, colminmax[2][0]);
-                colminmax[2][1] = Math.max(fmapdata, colminmax[2][1]);
+                colminmax[col][0] = Math.min(fmapdata, colminmax[2][0]);
+                colminmax[col][1] = Math.max(fmapdata, colminmax[2][1]);
                 bb.order(b).putFloat(fmapdata);
+                col++;
 
-                // F/sigF (2)
-                // FIXME: this should be user definable!
-                fmapdata = (float) refinementdata.get_f(i);
-                if (!Double.isNaN(fmapdata)) {
-                    colminmax[3][0] = Math.min(fmapdata, colminmax[3][0]);
-                    colminmax[3][1] = Math.max(fmapdata, colminmax[3][1]);
-                } else {
-                    sa = Double.NaN;
-                    wa = Double.NaN;
-                }
-                bb.order(b).putFloat(fmapdata);
-                fmapdata = (float) refinementdata.get_sigf(i);
-                if (!Double.isNaN(fmapdata)) {
-                    colminmax[4][0] = Math.min(fmapdata, colminmax[4][0]);
-                    colminmax[4][1] = Math.max(fmapdata, colminmax[4][1]);
-                }
-                bb.order(b).putFloat(fmapdata);
+                if (mtzType != MTZType.FCONLY) {
+                    // F/sigF (2)
+                    fmapdata = (float) refinementdata.get_f(i);
+                    if (!Double.isNaN(fmapdata)) {
+                        colminmax[col][0] = Math.min(fmapdata, colminmax[col][0]);
+                        colminmax[col][1] = Math.max(fmapdata, colminmax[col][1]);
+                    } else {
+                        sa = Double.NaN;
+                        wa = Double.NaN;
+                    }
+                    bb.order(b).putFloat(fmapdata);
+                    col++;
+                    fmapdata = (float) refinementdata.get_sigf(i);
+                    if (!Double.isNaN(fmapdata)) {
+                        colminmax[col][0] = Math.min(fmapdata, colminmax[col][0]);
+                        colminmax[col][1] = Math.max(fmapdata, colminmax[col][1]);
+                    }
+                    bb.order(b).putFloat(fmapdata);
+                    col++;
 
-                // free R (1)
-                fmapdata = (float) refinementdata.get_freer(i);
-                if (!Double.isNaN(fmapdata)) {
-                    colminmax[5][0] = Math.min(fmapdata, colminmax[5][0]);
-                    colminmax[5][1] = Math.max(fmapdata, colminmax[5][1]);
-                }
-                bb.order(b).putFloat(fmapdata);
-
-                // if we're only writing out the data, stop here
-                if (dataonly) {
-                    dos.write(bytes, offset, 24);
-                    continue;
+                    // free R (1)
+                    fmapdata = (float) refinementdata.get_freer(i);
+                    if (!Double.isNaN(fmapdata)) {
+                        colminmax[col][0] = Math.min(fmapdata, colminmax[col][0]);
+                        colminmax[col][1] = Math.max(fmapdata, colminmax[col][1]);
+                    }
+                    bb.order(b).putFloat(fmapdata);
+                    col++;
                 }
 
-                // Fs (2)
-                fmapdata = (float) refinementdata.fs_f(i);
-                colminmax[6][0] = Math.min(fmapdata, colminmax[6][0]);
-                colminmax[6][1] = Math.max(fmapdata, colminmax[6][1]);
-                bb.order(b).putFloat(fmapdata);
-                fmapdata = (float) Math.toDegrees(refinementdata.fs_phi(i));
-                colminmax[7][0] = Math.min(fmapdata, colminmax[7][0]);
-                colminmax[7][1] = Math.max(fmapdata, colminmax[7][1]);
-                bb.order(b).putFloat(fmapdata);
+                if (mtzType == MTZType.FCONLY) {
+                    // Fs (2)
+                    fmapdata = (float) refinementdata.fs_f(i);
+                    colminmax[col][0] = Math.min(fmapdata, colminmax[col][0]);
+                    colminmax[col][1] = Math.max(fmapdata, colminmax[col][1]);
+                    bb.order(b).putFloat(fmapdata);
+                    col++;
+                    fmapdata = (float) Math.toDegrees(refinementdata.fs_phi(i));
+                    colminmax[col][0] = Math.min(fmapdata, colminmax[col][0]);
+                    colminmax[col][1] = Math.max(fmapdata, colminmax[col][1]);
+                    bb.order(b).putFloat(fmapdata);
+                    col++;
 
-                // Fctot (2)
-                fmapdata = (float) refinementdata.fctot_f(i);
-                if (!Double.isNaN(fmapdata)) {
-                    colminmax[8][0] = Math.min(fmapdata, colminmax[8][0]);
-                    colminmax[8][1] = Math.max(fmapdata, colminmax[8][1]);
+                    // Fc (unscaled!) (2)
+                    fmapdata = (float) refinementdata.fc_f(i);
+                    if (!Double.isNaN(fmapdata)) {
+                        colminmax[col][0] = Math.min(fmapdata, colminmax[col][0]);
+                        colminmax[col][1] = Math.max(fmapdata, colminmax[col][1]);
+                    }
+                    bb.order(b).putFloat(fmapdata);
+                    col++;
+                    fmapdata = (float) Math.toDegrees(refinementdata.fc_phi(i));
+                    if (!Double.isNaN(fmapdata)) {
+                        colminmax[col][0] = Math.min(fmapdata, colminmax[col][0]);
+                        colminmax[col][1] = Math.max(fmapdata, colminmax[col][1]);
+                    }
+                    bb.order(b).putFloat(fmapdata);
+                    col++;
                 }
-                bb.order(b).putFloat(fmapdata);
-                fmapdata = (float) Math.toDegrees(refinementdata.fctot_phi(i));
-                if (!Double.isNaN(fmapdata)) {
-                    colminmax[9][0] = Math.min(fmapdata, colminmax[9][0]);
-                    colminmax[9][1] = Math.max(fmapdata, colminmax[9][1]);
-                }
-                bb.order(b).putFloat(fmapdata);
 
-                // FOM/phase (2)
-                fmapdata = (float) refinementdata.fomphi[i][0];
-                if (!Double.isNaN(fmapdata)) {
-                    colminmax[10][0] = Math.min(fmapdata, colminmax[10][0]);
-                    colminmax[10][1] = Math.max(fmapdata, colminmax[10][1]);
-                }
-                bb.order(b).putFloat(fmapdata);
-                fmapdata = (float) Math.toDegrees(refinementdata.fomphi[i][1]);
-                colminmax[11][0] = Math.min(fmapdata, colminmax[11][0]);
-                colminmax[11][1] = Math.max(fmapdata, colminmax[11][1]);
-                bb.order(b).putFloat(fmapdata);
+                if (mtzType == MTZType.ALL) {
+                    // Fs (2)
+                    fmapdata = (float) refinementdata.fs_f(i);
+                    colminmax[col][0] = Math.min(fmapdata, colminmax[col][0]);
+                    colminmax[col][1] = Math.max(fmapdata, colminmax[col][1]);
+                    bb.order(b).putFloat(fmapdata);
+                    col++;
+                    fmapdata = (float) Math.toDegrees(refinementdata.fs_phi(i));
+                    colminmax[col][0] = Math.min(fmapdata, colminmax[col][0]);
+                    colminmax[col][1] = Math.max(fmapdata, colminmax[col][1]);
+                    bb.order(b).putFloat(fmapdata);
+                    col++;
 
-                // sigmaA/w (2)
-                fmapdata = (float) sa;
-                if (!Double.isNaN(fmapdata)) {
-                    colminmax[12][0] = Math.min(fmapdata, colminmax[12][0]);
-                    colminmax[12][1] = Math.max(fmapdata, colminmax[12][1]);
-                }
-                bb.order(b).putFloat(fmapdata);
-                fmapdata = (float) wa;
-                if (!Double.isNaN(fmapdata)) {
-                    colminmax[13][0] = Math.min(fmapdata, colminmax[13][0]);
-                    colminmax[13][1] = Math.max(fmapdata, colminmax[13][1]);
-                }
-                bb.order(b).putFloat(fmapdata);
+                    // Fctot (2)
+                    fmapdata = (float) refinementdata.fctot_f(i);
+                    if (!Double.isNaN(fmapdata)) {
+                        colminmax[col][0] = Math.min(fmapdata, colminmax[col][0]);
+                        colminmax[col][1] = Math.max(fmapdata, colminmax[col][1]);
+                    }
+                    bb.order(b).putFloat(fmapdata);
+                    col++;
+                    fmapdata = (float) Math.toDegrees(refinementdata.fctot_phi(i));
+                    if (!Double.isNaN(fmapdata)) {
+                        colminmax[col][0] = Math.min(fmapdata, colminmax[col][0]);
+                        colminmax[col][1] = Math.max(fmapdata, colminmax[col][1]);
+                    }
+                    bb.order(b).putFloat(fmapdata);
+                    col++;
 
-                // map coeffs (4)
-                fmapdata = (float) refinementdata.fofc2_f(i);
-                colminmax[14][0] = Math.min(fmapdata, colminmax[14][0]);
-                colminmax[14][1] = Math.max(fmapdata, colminmax[14][1]);
-                bb.order(b).putFloat(fmapdata);
-                fmapdata = (float) Math.toDegrees(refinementdata.fofc2_phi(i));
-                colminmax[15][0] = Math.min(fmapdata, colminmax[15][0]);
-                colminmax[15][1] = Math.max(fmapdata, colminmax[15][1]);
-                bb.order(b).putFloat(fmapdata);
-                fmapdata = (float) refinementdata.fofc1_f(i);
-                colminmax[16][0] = Math.min(fmapdata, colminmax[16][0]);
-                colminmax[16][1] = Math.max(fmapdata, colminmax[16][1]);
-                bb.order(b).putFloat(fmapdata);
-                fmapdata = (float) Math.toDegrees(refinementdata.fofc1_phi(i));
-                colminmax[17][0] = Math.min(fmapdata, colminmax[17][0]);
-                colminmax[17][1] = Math.max(fmapdata, colminmax[17][1]);
-                bb.order(b).putFloat(fmapdata);
+                    // FOM/phase (2)
+                    fmapdata = (float) refinementdata.fomphi[i][0];
+                    if (!Double.isNaN(fmapdata)) {
+                        colminmax[col][0] = Math.min(fmapdata, colminmax[col][0]);
+                        colminmax[col][1] = Math.max(fmapdata, colminmax[col][1]);
+                    }
+                    bb.order(b).putFloat(fmapdata);
+                    col++;
+                    fmapdata = (float) Math.toDegrees(refinementdata.fomphi[i][1]);
+                    colminmax[col][0] = Math.min(fmapdata, colminmax[col][0]);
+                    colminmax[col][1] = Math.max(fmapdata, colminmax[col][1]);
+                    bb.order(b).putFloat(fmapdata);
+                    col++;
 
-                dos.write(bytes, offset, 72);
+                    // spline setup
+                    double fh = spline.f(ss, refinementdata.spline);
+                    sa = sigmaaspline.f(ss, refinementdata.sigmaa);
+                    wa = sigmaaspline.f(ss, refinementdata.sigmaw);
+
+                    // sigmaA/w (2)
+                    fmapdata = (float) sa;
+                    if (!Double.isNaN(fmapdata)) {
+                        colminmax[col][0] = Math.min(fmapdata, colminmax[col][0]);
+                        colminmax[col][1] = Math.max(fmapdata, colminmax[col][1]);
+                    }
+                    bb.order(b).putFloat(fmapdata);
+                    col++;
+                    fmapdata = (float) wa;
+                    if (!Double.isNaN(fmapdata)) {
+                        colminmax[col][0] = Math.min(fmapdata, colminmax[col][0]);
+                        colminmax[col][1] = Math.max(fmapdata, colminmax[col][1]);
+                    }
+                    bb.order(b).putFloat(fmapdata);
+                    col++;
+
+                    // map coeffs (4)
+                    fmapdata = (float) refinementdata.fofc2_f(i);
+                    colminmax[col][0] = Math.min(fmapdata, colminmax[col][0]);
+                    colminmax[col][1] = Math.max(fmapdata, colminmax[col][1]);
+                    bb.order(b).putFloat(fmapdata);
+                    col++;
+                    fmapdata = (float) Math.toDegrees(refinementdata.fofc2_phi(i));
+                    colminmax[col][0] = Math.min(fmapdata, colminmax[col][0]);
+                    colminmax[col][1] = Math.max(fmapdata, colminmax[col][1]);
+                    bb.order(b).putFloat(fmapdata);
+                    col++;
+                    fmapdata = (float) refinementdata.fofc1_f(i);
+                    colminmax[col][0] = Math.min(fmapdata, colminmax[col][0]);
+                    colminmax[col][1] = Math.max(fmapdata, colminmax[col][1]);
+                    bb.order(b).putFloat(fmapdata);
+                    col++;
+                    fmapdata = (float) Math.toDegrees(refinementdata.fofc1_phi(i));
+                    colminmax[col][0] = Math.min(fmapdata, colminmax[col][0]);
+                    colminmax[col][1] = Math.max(fmapdata, colminmax[col][1]);
+                    bb.order(b).putFloat(fmapdata);
+                    col++;
+                }
+
+                dos.write(bytes, offset, writelen);
             }
 
             // header

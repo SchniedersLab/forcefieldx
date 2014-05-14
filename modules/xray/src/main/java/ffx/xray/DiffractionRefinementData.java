@@ -159,8 +159,13 @@ public class DiffractionRefinementData {
     public DiffractionRefinementData(CompositeConfiguration properties,
             ReflectionList reflectionlist) {
 
-        int rflag = properties.getInt("rfreeflag", -1);
-        fsigfcutoff = properties.getDouble("fsigfcutoff", -1.0);
+        int rflag = -1;
+        if (properties != null) {
+            rflag = properties.getInt("rfreeflag", -1);
+            fsigfcutoff = properties.getDouble("fsigfcutoff", -1.0);
+        } else {
+            fsigfcutoff = -1.0;
+        }
 
         this.n = reflectionlist.hkllist.size();
         this.scale_n = reflectionlist.crystal.scale_n;

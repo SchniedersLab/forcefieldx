@@ -22,6 +22,10 @@
  */
 package ffx.xray;
 
+
+import ffx.crystal.*;
+import ffx.numerics.ComplexNumber;
+import ffx.xray.MTZWriter.MTZType;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -29,11 +33,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.lang3.StringUtils;
-
-import ffx.crystal.*;
 
 /**
  * This class parses CCP4 MTZ files.<br>
@@ -92,6 +93,7 @@ public class MTZFilter implements DiffractionFileFilter {
     private String foString, sigfoString, rfreeString;
     private int h, k, l, fo, sigfo, rfree;
     private int fplus, sigfplus, fminus, sigfminus, rfreeplus, rfreeminus;
+    private int fc, phic, fs, phis;
     private int dsetoffset = 1;
     public int nColumns;
     public int nReflections;
@@ -102,7 +104,8 @@ public class MTZFilter implements DiffractionFileFilter {
     public double resHigh;
 
     /**
-     * <p>Constructor for MTZFilter.</p>
+     * <p>
+     * Constructor for MTZFilter.</p>
      */
     public MTZFilter() {
     }
@@ -183,10 +186,12 @@ public class MTZFilter implements DiffractionFileFilter {
         }
         h = k = l = fo = sigfo = rfree = -1;
         fplus = sigfplus = fminus = sigfminus = rfreeplus = rfreeminus = -1;
+        fc = phic = -1;
         boolean print = false;
         parseColumns(print);
+        parseFcColumns(print);
 
-        if (fo < 0 && fplus < 0 && sigfo < 0 && sigfplus < 0) {
+        if (fo < 0 && fplus < 0 && sigfo < 0 && sigfplus < 0 && fc < 0 && phic < 0) {
             logger.info(" The MTZ header contains insufficient information to generate the reflection list.\n For non-default column labels set fostring/sigfostring in the properties file.");
             return null;
         }
@@ -194,8 +199,10 @@ public class MTZFilter implements DiffractionFileFilter {
         Column c;
         if (fo > 0) {
             c = (Column) columns.get(fo);
-        } else {
+        } else if (fplus > 0) {
             c = (Column) columns.get(fplus);
+        } else {
+            c = (Column) columns.get(fc);
         }
         Dataset d = (Dataset) datasets.get(c.id - dsetoffset);
 
@@ -496,6 +503,179 @@ public class MTZFilter implements DiffractionFileFilter {
             }
         } catch (EOFException eof) {
             System.out.println("EOF reached ");
+            return false;
+        } catch (IOException ioe) {
+            System.out.println("IO Exception: " + ioe.getMessage());
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     * @param mtzFile1 file 1 (which will be overwritten and become the new average)
+     * @param mtzFile2 second MTZ file
+     * @param reflectionlist list of HKLs
+     * @param iter the iteration in the running average 
+     * @param properties
+     */
+    public void averageFcs(File mtzFile1, File mtzFile2, ReflectionList reflectionlist,
+            int iter, CompositeConfiguration properties) {
+
+        DiffractionRefinementData fcdata1 = new DiffractionRefinementData(properties, reflectionlist);
+        DiffractionRefinementData fcdata2 = new DiffractionRefinementData(properties, reflectionlist);
+        
+        readFcs(mtzFile1, reflectionlist, fcdata1, properties);
+        readFcs(mtzFile2, reflectionlist, fcdata2, properties);
+
+        // compute running average using mtzFile1 as current average
+        System.out.println("iteration for averaging: " + iter);
+        for (int i = 0; i < reflectionlist.hkllist.size(); i++) {
+            fcdata1.fc[i][0] += (fcdata2.fc[i][0] - fcdata1.fc[i][0]) / iter;
+            fcdata1.fc[i][1] += (fcdata2.fc[i][1] - fcdata1.fc[i][1]) / iter;
+
+            fcdata1.fs[i][0] += (fcdata2.fs[i][0] - fcdata1.fs[i][0]) / iter;
+            fcdata1.fs[i][1] += (fcdata2.fs[i][1] - fcdata1.fs[i][1]) / iter;
+        }
+        
+        // overwrite original MTZ
+        MTZWriter mtzout = new MTZWriter(reflectionlist, fcdata1,
+                mtzFile1.getName(), MTZType.FCONLY);
+        mtzout.write();
+    }
+
+    public boolean readFcs(File mtzFile, ReflectionList reflectionlist,
+            DiffractionRefinementData fcdata, CompositeConfiguration properties) {
+        int nread, nignore, nres, nfriedel, ncut;
+        ByteOrder b = ByteOrder.nativeOrder();
+        FileInputStream fis;
+        DataInputStream dis;
+
+        StringBuilder sb = new StringBuilder();
+        try {
+            fis = new FileInputStream(mtzFile);
+            dis = new DataInputStream(fis);
+
+            byte headeroffset[] = new byte[4];
+            byte bytes[] = new byte[80];
+            int offset = 0;
+
+            // eat "MTZ" title
+            dis.read(bytes, offset, 4);
+            String mtzstr = new String(bytes);
+
+            // header offset
+            dis.read(headeroffset, offset, 4);
+
+            // machine stamp
+            dis.read(bytes, offset, 4);
+            ByteBuffer bb = ByteBuffer.wrap(bytes);
+            int stamp = bb.order(ByteOrder.BIG_ENDIAN).getInt();
+            String stampstr = Integer.toHexString(stamp);
+            switch (stampstr.charAt(0)) {
+                case '1':
+                case '3':
+                    if (b.equals(ByteOrder.LITTLE_ENDIAN)) {
+                        b = ByteOrder.BIG_ENDIAN;
+                    }
+                    break;
+                case '4':
+                    if (b.equals(ByteOrder.BIG_ENDIAN)) {
+                        b = ByteOrder.LITTLE_ENDIAN;
+                    }
+                    break;
+            }
+
+            bb = ByteBuffer.wrap(headeroffset);
+            int headeroffseti = bb.order(b).getInt();
+
+            // skip to header and parse
+            dis.skipBytes((headeroffseti - 4) * 4);
+
+            for (Boolean parsing = true; parsing; dis.read(bytes, offset, 80)) {
+                mtzstr = new String(bytes);
+                parsing = parseHeader(mtzstr);
+            }
+
+            // column identifiers
+            fc = phic = fs = phis = -1;
+            boolean print = true;
+            parseFcColumns(print);
+
+            if (h < 0 || k < 0 || l < 0) {
+                String message = "Fatal error in MTZ file - no H K L indexes?\n";
+                logger.log(Level.SEVERE, message);
+                return false;
+            }
+
+            // reopen to start at beginning
+            fis = new FileInputStream(mtzFile);
+            dis = new DataInputStream(fis);
+
+            // skip initial header
+            dis.skipBytes(80);
+
+            float data[] = new float[nColumns];
+            HKL mate = new HKL();
+
+            // read in data
+            ComplexNumber c = new ComplexNumber();
+            nread = nignore = nres = nfriedel = ncut = 0;
+            for (int i = 0; i < nReflections; i++) {
+                for (int j = 0; j < nColumns; j++) {
+                    dis.read(bytes, offset, 4);
+                    bb = ByteBuffer.wrap(bytes);
+                    data[j] = bb.order(b).getFloat();
+                }
+                int ih = (int) data[h];
+                int ik = (int) data[k];
+                int il = (int) data[l];
+                boolean friedel = reflectionlist.findSymHKL(ih, ik, il, mate, false);
+                HKL hkl = reflectionlist.getHKL(mate);
+
+                if (hkl != null) {
+                    if (fc > 0 && phic > 0) {
+                        c.re(data[fc] * Math.cos(Math.toRadians(data[phic])));
+                        c.im(data[fc] * Math.sin(Math.toRadians(data[phic])));
+                        fcdata.set_fc(hkl.index(), c);
+                    }
+                    if (fs > 0 && phis > 0) {
+                        c.re(data[fs] * Math.cos(Math.toRadians(data[phis])));
+                        c.im(data[fs] * Math.sin(Math.toRadians(data[phis])));
+                        fcdata.set_fs(hkl.index(), c);
+                    }
+                    nread++;
+                } else {
+                    HKL tmp = new HKL(ih, ik, il);
+                    if (!reflectionlist.resolution.inInvresolutionRange(Crystal.invressq(reflectionlist.crystal, tmp))) {
+                        nres++;
+                    } else {
+                        nignore++;
+                    }
+                }
+            }
+
+            sb.append(String.format(" MTZ file type (machine stamp): %s\n",
+                    stampstr));
+            sb.append(String.format(" Fc HKL read in:                             %d\n",
+                    nread));
+            sb.append(String.format(" Fc HKL read as friedel mates:               %d\n",
+                    nfriedel));
+            sb.append(String.format(" Fc HKL NOT read in (too high resolution):   %d\n",
+                    nres));
+            sb.append(String.format(" Fc HKL NOT read in (not in internal list?): %d\n",
+                    nignore));
+            sb.append(String.format(" Fc HKL NOT read in (F/sigF cutoff):         %d\n",
+                    ncut));
+            sb.append(String.format(" HKL in internal list:                       %d\n",
+                    reflectionlist.hkllist.size()));
+            if (logger.isLoggable(Level.INFO)) {
+                logger.info(sb.toString());
+            }
+        } catch (EOFException eof) {
+            System.out.println("EOF reached ");
+            return false;
         } catch (IOException ioe) {
             System.out.println("IO Exception: " + ioe.getMessage());
             return false;
@@ -746,8 +926,53 @@ public class MTZFilter implements DiffractionFileFilter {
         }
     }
 
+    private void parseFcColumns(boolean print) {
+
+        int nc = 0;
+        StringBuilder sb = new StringBuilder();
+        for (Iterator i = columns.iterator(); i.hasNext(); nc++) {
+            Column c = (Column) i.next();
+            String label = c.label.trim();
+            if (label.equalsIgnoreCase("H") && c.type == 'H') {
+                h = nc;
+            } else if (label.equalsIgnoreCase("K") && c.type == 'H') {
+                k = nc;
+            } else if (label.equalsIgnoreCase("L") && c.type == 'H') {
+                l = nc;
+            } else if ((label.equalsIgnoreCase("fc")
+                    || label.equalsIgnoreCase("fcalc"))
+                    && c.type == 'F') {
+                sb.append(String.format(" Reading Fc column: \"%s\"\n", c.label));
+                fc = nc;
+            } else if ((label.equalsIgnoreCase("phic")
+                    || label.equalsIgnoreCase("phifc")
+                    || label.equalsIgnoreCase("phicalc")
+                    || label.equalsIgnoreCase("phifcalc"))
+                    && c.type == 'P') {
+                sb.append(String.format(" Reading phiFc column: \"%s\"\n", c.label));
+                phic = nc;
+            } else if ((label.equalsIgnoreCase("fs")
+                    || label.equalsIgnoreCase("fscalc"))
+                    && c.type == 'F') {
+                sb.append(String.format(" Reading Fs column: \"%s\"\n", c.label));
+                fs = nc;
+            } else if ((label.equalsIgnoreCase("phis")
+                    || label.equalsIgnoreCase("phifs")
+                    || label.equalsIgnoreCase("phiscalc")
+                    || label.equalsIgnoreCase("phifscalc"))
+                    && c.type == 'P') {
+                sb.append(String.format(" Reading phiFs column: \"%s\"\n", c.label));
+                phis = nc;
+            }
+        }
+        if (logger.isLoggable(Level.INFO) && print) {
+            logger.info(sb.toString());
+        }
+    }
+
     /**
-     * <p>printHeader</p>
+     * <p>
+     * printHeader</p>
      */
     public void printHeader() {
         StringBuilder sb = new StringBuilder();

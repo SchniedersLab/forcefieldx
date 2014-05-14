@@ -22,6 +22,17 @@
  */
 package ffx.xray;
 
+import edu.rit.pj.ParallelTeam;
+
+import ffx.crystal.*;
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.bonded.Molecule;
+import ffx.potential.bonded.Residue;
+import ffx.potential.parsers.PDBFilter;
+import ffx.xray.CrystalReciprocalSpace.SolventModel;
+import ffx.xray.MTZWriter.MTZType;
+import ffx.xray.RefinementMinimize.RefinementMode;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -32,20 +43,8 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
-
-import edu.rit.pj.ParallelTeam;
-
-import ffx.crystal.*;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.MolecularAssembly;
-import ffx.potential.bonded.Molecule;
-import ffx.potential.bonded.Residue;
-import ffx.potential.parsers.PDBFilter;
-import ffx.xray.CrystalReciprocalSpace.SolventModel;
-import ffx.xray.RefinementMinimize.RefinementMode;
 
 /**
  * <p>DiffractionData class.</p>
@@ -516,7 +515,9 @@ public class DiffractionData implements DataContainer {
     public void computeAtomicDensity() {
         for (int i = 0; i < n; i++) {
             crs_fc[i].computeDensity(refinementdata[i].fc);
-            crs_fs[i].computeDensity(refinementdata[i].fs);
+            if (solventmodel != SolventModel.NONE) {
+                crs_fs[i].computeDensity(refinementdata[i].fs);
+            }
         }
     }
 
@@ -858,7 +859,7 @@ public class DiffractionData implements DataContainer {
         if (scaled[i]) {
             mtzwriter = new MTZWriter(reflectionlist[i], refinementdata[i], filename);
         } else {
-            mtzwriter = new MTZWriter(reflectionlist[i], refinementdata[i], filename, true);
+            mtzwriter = new MTZWriter(reflectionlist[i], refinementdata[i], filename, MTZType.DATAONLY);
         }
         mtzwriter.write();
     }

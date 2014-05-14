@@ -34,6 +34,7 @@ import ffx.crystal.Resolution;
 import ffx.xray.CIFFilter;
 import ffx.xray.DiffractionRefinementData;
 import ffx.xray.MTZWriter;
+import ffx.xray.MTZWriter.MTZType;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
@@ -75,5 +76,5 @@ if (reflectionlist == null) {
 DiffractionRefinementData refinementdata = new DiffractionRefinementData(systems[0].getProperties(), reflectionlist);
 ciffilter.readFile(new File(datafilename), reflectionlist, refinementdata, systems[0].getProperties());
 
-MTZWriter mtzwriter = new MTZWriter(reflectionlist, refinementdata, FilenameUtils.removeExtension(datafilename) + "_cif.mtz", true);
+MTZWriter mtzwriter = new MTZWriter(reflectionlist, refinementdata, FilenameUtils.removeExtension(datafilename) + "_cif.mtz", MTZType.DATAONLY);
 mtzwriter.write();
