@@ -1137,6 +1137,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             vaporCrystal = new Crystal(3 * vacuumOff, 3 * vacuumOff, 3 * vacuumOff, 90.0, 90.0, 90.0, "P1");
             vaporCrystal.setAperiodic(true);
             NeighborList vacuumNeighborList = new NeighborList(null, vaporCrystal, atoms, vacuumOff, 2.0, parallelTeam);
+
             vacuumNeighborList.setIntermolecular(false, molecularAssembly);
 
             vaporLists = new int[1][nAtoms][];
@@ -1146,8 +1147,20 @@ public class ParticleMeshEwald implements LambdaInterface {
                 coords[0][i * 3 + 1] = atoms[i].getY();
                 coords[0][i * 3 + 2] = atoms[i].getZ();
             }
-
             vacuumNeighborList.buildList(coords, vaporLists, isSoft, true, true);
+
+            /*
+            sb = new StringBuilder();
+            for (int i=0; i<nAtoms; i++) {
+                int list[] = vaporLists[0][i];
+                sb.append(String.format(" Atom %d:", i+1));
+                for (int j=0; j<list.length; j++) {
+                    sb.append(String.format(" %d", list[j]+1));
+                }
+                sb.append("\n");
+            }
+            logger.info(sb.toString());
+            */
 
             vaporPermanentSchedule = vacuumNeighborList.getPairwiseSchedule();
             vaporEwaldSchedule = vaporPermanentSchedule;
@@ -1369,7 +1382,10 @@ public class ParticleMeshEwald implements LambdaInterface {
         doPermanentRealSpace = true;
         permanentScale = lPowPerm;
         dEdLSign = 1.0;
-        return computeEnergy(false);
+
+        double energy = computeEnergy(false);
+
+        return energy;
     }
 
     /**
@@ -1427,7 +1443,7 @@ public class ParticleMeshEwald implements LambdaInterface {
          */
         double energy;
         if (skip) {
-            energy = 0.0;
+            energy = permanentMultipoleEnergy + polarizationEnergy + generalizedKirkwoodEnergy;
         } else {
             energy = computeEnergy(false);
             for (int i = 0; i < nAtoms; i++) {
@@ -1479,7 +1495,7 @@ public class ParticleMeshEwald implements LambdaInterface {
         }
 
         /**
-         * Save the current real space parameters.
+         * Save the current real space PME parameters.
          */
         double offBack = off;
         double aewaldBack = aewald;
@@ -1498,7 +1514,7 @@ public class ParticleMeshEwald implements LambdaInterface {
         realSpaceRanges = vacuumRanges;
 
         /**
-         * Use vacuum crystal / neighborLists.
+         * Use vacuum crystal / vacuum neighborLists.
          */
         Crystal crystalBack = crystal;
         int nSymmBack = nSymm;
@@ -1532,9 +1548,7 @@ public class ParticleMeshEwald implements LambdaInterface {
         d2lAlpha = d2lAlphaBack;
         generalizedKirkwoodTerm = gkBack;
 
-        for (int i = 0; i < nAtoms; i++) {
-            use[i] = true;
-        }
+        Arrays.fill(use, true);
 
         return energy;
     }
@@ -3896,6 +3910,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                         }
                         if (doPermanentRealSpace) {
                             double ei = permanentPair();
+                            //log(i,k,r,ei);
                             if (Double.isNaN(ei) || Double.isInfinite(ei)) {
                                 logger.info(crystal.getUnitCell().toString());
                                 logger.info(atoms[i].toString());

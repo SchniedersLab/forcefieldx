@@ -162,14 +162,17 @@ public class FileOpener
 
     private void stopTimer(FFXSystem ffxSystem) {
         time += System.nanoTime();
-        logger.info("Opened " + ffxSystem.toString() + " with " + ffxSystem.getAtomList().size() + " atoms.\n" + "File Op Time  (msec): " + time * 1.0e-9);
+        logger.info(" Opened " + ffxSystem.toString() + " with " + ffxSystem.getAtomList().size() + " atoms.\n" + "File Op Time  (msec): " + time * 1.0e-9);
         Runtime runtime = Runtime.getRuntime();
         if (gc) {
             runtime.runFinalization();
             runtime.gc();
             long moleculeMemory = (runtime.totalMemory() - runtime.freeMemory()) - occupiedMemory;
-            logger.info("File Op Memory  (Kb): " + moleculeMemory / KB);
+            logger.info(" System Memory  (Kb): " + moleculeMemory / KB);
         }
         occupiedMemory = runtime.totalMemory() - runtime.freeMemory();
+        if (gc) {
+            logger.info(" Memory In Use  (Kb): " + occupiedMemory / KB);
+        }
     }
 }

@@ -26,12 +26,15 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,6 +44,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import org.apache.commons.io.FileUtils;
 
 /**
  * Class loader able to load classes and DLLs with a higher priority from a
@@ -50,7 +57,7 @@ import java.util.jar.JarFile;
  * @author Michael J. Schnieders; derived from work by Emmanuel Puybaret
  *
  */
-public class FFXClassLoader extends ClassLoader {
+public class FFXClassLoader extends URLClassLoader {
 
     private final ProtectionDomain protectionDomain;
     private final Map extensionDlls = new HashMap();
@@ -128,20 +135,25 @@ public class FFXClassLoader extends ClassLoader {
             // Mac OS X Extensions
             "macosx/AppleJavaExtensions.jar",
             // Java Help
-            "javax.help/javahelp.jar"
+            "javax.help/javahelp.jar",
+            // JFluid Profiler
+            "jfluid/jfluid-server.jar",
+            "jfluid/jfluid-server-15.jar",
+            "jfluid/jfluid-server-cvm.jar"
         }));
 
         String osName = System.getProperty("os.name").toUpperCase();
         String osArch = System.getProperty("sun.arch.data.model");
         final boolean x8664 = "64".equals(osArch);
+
         if ("MAC OS X".equals(osName)) {
+            nativeExtension = "-natives-macosx-universal.jar";
             // Gluegen Runtime Universal Binaries
             FFX_FILES.add("org.jogamp.gluegen/gluegen-rt-natives-macosx-universal.jar");
             // JOGL Universal Binaries
             FFX_FILES.add("org.jogamp.jogl/jogl-all-natives-macosx-universal.jar");
             // JOCL Universal Binaries
             FFX_FILES.add("org.jogamp.jocl/jocl-natives-macosx-universal.jar");
-            nativeExtension = "-natives-macosx-universal.jar";
             if (x8664) {
                 // JCUDA
                 FFX_FILES.add("64-bit/libJCudaDriver-apple-x86_64.jnilib");
@@ -150,47 +162,48 @@ public class FFXClassLoader extends ClassLoader {
             }
         } else if ("LINUX".equals(osName)) {
             if (x8664) {
+                nativeExtension = "-natives-linux-amd64.jar";
+                FFX_FILES.add("64-bit/libJCufft-linux-x86_64.so");
                 // Gluegen Runtime
                 FFX_FILES.add("org.jogamp.gluegen/gluegen-rt-natives-linux-amd64.jar");
                 // JOGL
                 FFX_FILES.add("org.jogamp.jogl/jogl-all-natives-linux-amd64.jar");
                 // JOCL
                 FFX_FILES.add("org.jogamp.jocl/jocl-natives-linux-amd64.jar");
-                nativeExtension = "-natives-linux-amd64.jar";
                 // JCUDA
                 FFX_FILES.add("64-bit/libJCudaDriver-linux-x86_64.so");
                 FFX_FILES.add("64-bit/libJCudaRuntime-linux-x86_64.so");
-                FFX_FILES.add("64-bit/libJCufft-linux-x86_64.so");
             } else {
+                nativeExtension = "-natives-linux-i586.jar";
                 // Gluegen Runtime
                 FFX_FILES.add("org.jogamp.gluegen/gluegen-rt-natives-linux-i586.jar");
                 // JOGL
                 FFX_FILES.add("org.jogamp.jogl/jogl-all-natives-linux-i586.jar");
                 // JOCL
                 FFX_FILES.add("org.jogamp.jocl/jocl-natives-linux-i586.jar");
-                nativeExtension = "-natives-linux-i586.jar";
             }
-        } else if (osName.startsWith("WINDOWS")) {
+        } else if (osName.startsWith(
+                "WINDOWS")) {
             if (x8664) {
+                nativeExtension = "-natives-windows-amd64.jar";
                 // Gluegen Runtime
                 FFX_FILES.add("org.jogamp.glugen/gluegen-rt-natives-windows-amd64.jar");
                 // JOGL
                 FFX_FILES.add("org.jogamp.jogl/jogl-all-natives-windows-amd64.jar");
                 // JOCL
                 FFX_FILES.add("org.jogamp.jocl/jocl-natives-windows-amd64.jar");
-                nativeExtension = "-natives-windows-amd64.jar";
                 // JCUDA
                 FFX_FILES.add("64-bit/JCudaDriver-linux-x86_64.dll");
                 FFX_FILES.add("64-bit/JCudaRuntime-linux-x86_64.dll");
                 FFX_FILES.add("64-bit/JCufft-linux-x86_64.dll");
             } else {
+                nativeExtension = "-natives-windows-i586.jar";
                 // Gluegen Runtime
                 FFX_FILES.add("org.jogamp.gluegen/gluegen-rt-natives-windows-i586.jar");
                 // JOGL
                 FFX_FILES.add("org.jogamp.jogl/jogl-all-natives-windows-i586.jar");
                 // JOCL
                 FFX_FILES.add("org.jogamp.jocl/jocl-natives-windows-i586.jar");
-                nativeExtension = "-natives-windows-i586.jar";
             }
         }
     }
@@ -205,8 +218,55 @@ public class FFXClassLoader extends ClassLoader {
      * @param parent a {@link java.lang.ClassLoader} object.
      */
     public FFXClassLoader(final ClassLoader parent) {
-        super(parent);
-        protectionDomain = FFXClassLoader.class.getProtectionDomain();
+        super(new URL[0], parent);
+        protectionDomain
+                = FFXClassLoader.class
+                .getProtectionDomain();
+    }
+
+    /**
+     * Implementation of this method is to allow use of the NetBeans JFluid profiler.
+     * @param value
+     */
+    private void appendToClassPathForInstrumentation(String value) {
+        String tempDir = System.getProperty("java.io.tmpdir");
+        File toDir = new File(tempDir + "deployed");
+        toDir.mkdir();
+        toDir = new File(tempDir + "deployed/jdk16");
+        toDir.mkdir();
+        toDir = new File(tempDir + "deployed/jdk16/mac");
+        toDir.mkdir();
+
+        String prof = tempDir + "deployed/jdk16/mac/libprofilerinterface.jnilib";
+        File toFile = new File(prof);
+        prof = "/Applications/NetBeans/NetBeans 8.0.app/Contents/Resources/NetBeans/profiler/lib/deployed/jdk16/mac/libprofilerinterface.jnilib";
+        File fromFile = new File(prof);
+
+        InputStream input = null;
+        OutputStream output = null;
+        try {
+            input = new FileInputStream(fromFile);
+            output = new BufferedOutputStream(new FileOutputStream(toFile));
+            byte[] buffer = new byte[8192];
+            int size;
+            while ((size = input.read(buffer)) != -1) {
+                output.write(buffer, 0, size);
+            }
+        } catch (Exception ex) {
+            System.out.println(ex.toString());
+        } finally {
+            try {
+                if (input != null) {
+                    input.close();
+                }
+                if (output != null) {
+                    output.close();
+                }
+            } catch (Exception e) {
+                System.out.println(e.toString());
+            }
+        }
+        toFile.deleteOnExit();
     }
 
     /**
@@ -221,6 +281,7 @@ public class FFXClassLoader extends ClassLoader {
     public static String copyInputStreamToTmpFile(final InputStream input,
             String name, final String suffix) throws IOException {
         File tmpFile = null;
+
         if (name.contains("gluegen-rt") && name.contains("natives")) {
             tmpFile = new File(gluegen + nativeExtension);
         } else if (name.contains("jogl-all") && name.contains("natives")) {
@@ -237,6 +298,7 @@ public class FFXClassLoader extends ClassLoader {
                 System.exit(-1);
             }
         }
+
         tmpFile.deleteOnExit();
         OutputStream output = null;
         try {
@@ -278,8 +340,8 @@ public class FFXClassLoader extends ClassLoader {
         // Build class file from its name
         String classFile = name.replace('.', '/') + ".class";
         InputStream classInputStream = null;
-        if (this.extensionJars != null) {
-            for (JarFile extensionJar : this.extensionJars) {
+        if (extensionJars != null) {
+            for (JarFile extensionJar : extensionJars) {
                 JarEntry jarEntry = extensionJar.getJarEntry(classFile);
                 if (jarEntry != null) {
                     try {
@@ -336,12 +398,15 @@ public class FFXClassLoader extends ClassLoader {
             loadExtensions();
         }
 
-        /*
-         if (libname.startsWith("gluegen")) {
-         System.out.println(" Library requested:" + libname);
-         }
-         */
-        return (String) this.extensionDlls.get(libname);
+        System.out.println(" Library requested:" + libname);
+
+        String path = (String) this.extensionDlls.get(libname);
+
+        if (path == null) {
+            path = super.findLibrary(libname);
+        }
+
+        return path;
     }
 
     /**
@@ -353,7 +418,7 @@ public class FFXClassLoader extends ClassLoader {
      * @return
      */
     @Override
-    protected URL findResource(String name) {
+    public URL findResource(String name) {
         if (!extensionsLoaded) {
             loadExtensions();
         }
@@ -361,6 +426,7 @@ public class FFXClassLoader extends ClassLoader {
         if (name.equals("List all scripts")) {
             listScripts();
         }
+
         if (extensionJars != null) {
             for (JarFile extensionJar : extensionJars) {
                 JarEntry jarEntry = extensionJar.getJarEntry(name);
@@ -374,6 +440,7 @@ public class FFXClassLoader extends ClassLoader {
                 }
             }
         }
+
         return super.findResource(name);
     }
 
@@ -421,14 +488,15 @@ public class FFXClassLoader extends ClassLoader {
         }
 
         // If no extension jars were found use the super.loadClass method.
-        if (this.extensionJars == null) {
+        if (extensionJars == null) {
             return super.loadClass(name, resolve);
         }
+
         // Check if the class has already been loaded
         Class loadedClass = findLoadedClass(name);
         if (loadedClass == null) {
             try {
-                for (String applicationPackage : this.applicationPackages) {
+                for (String applicationPackage : applicationPackages) {
                     int applicationPackageLength = applicationPackage.length();
                     if ((applicationPackageLength == 0
                             && name.indexOf('.') == 0)
@@ -451,6 +519,7 @@ public class FFXClassLoader extends ClassLoader {
         }
         return loadedClass;
     }
+
     private boolean extensionsLoaded = false;
 
     private void loadExtensions() {

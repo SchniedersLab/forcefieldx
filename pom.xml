@@ -552,9 +552,9 @@
                         <argument>ffx.Main</argument>
                         <argument>timer</argument>
                         <argument>-n</argument>
-                        <argument>100</argument>
+                        <argument>100000</argument>
                         <argument>-c</argument>
-                        <argument>4</argument>
+                        <argument>1</argument>
                         <argument>examples/ubiquitin.xyz</argument>
                     </arguments>
                 </configuration>
@@ -629,6 +629,13 @@
             <version>4.11</version>
             <type>jar</type>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>jfluid</groupId>
+            <artifactId>jfluid-server</artifactId>
+            <version>8.0</version>
+            <type>jar</type>
+            <!-- scope>test</scope -->
         </dependency>
     </dependencies>
     <distributionManagement>

@@ -738,7 +738,7 @@ public class VanDerWaals implements MaskingInterface,
             String message = " Fatal exception expanding coordinates.\n";
             logger.log(Level.SEVERE, message, e);
         }
-
+        
         return sharedEnergy.get();
     }
 

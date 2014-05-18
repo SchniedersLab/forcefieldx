@@ -57,7 +57,7 @@ import static ffx.numerics.VectorMath.transpose3;
  * @author Michael J. Schnieders
  *
  * @since 1.0
- * 
+ *
  * @see ReplicatesCrystal
  */
 public class Crystal {
@@ -472,7 +472,7 @@ public class Crystal {
         List<SymOp> symOps = spaceGroup.symOps;
         int nSymm = symOps.size();
         if (symOpsCartesian == null) {
-            symOpsCartesian = new ArrayList<SymOp>(nSymm);
+            symOpsCartesian = new ArrayList<>(nSymm);
         } else {
             symOpsCartesian.clear();
         }
