@@ -22,6 +22,17 @@
  */
 package ffx.xray;
 
+import edu.rit.pj.ParallelTeam;
+
+import ffx.crystal.*;
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.bonded.Molecule;
+import ffx.potential.bonded.Residue;
+import ffx.potential.parsers.PDBFilter;
+import ffx.xray.CrystalReciprocalSpace.SolventModel;
+import ffx.xray.MTZWriter.MTZType;
+import ffx.xray.RefinementMinimize.RefinementMode;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -32,20 +43,8 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
-
-import edu.rit.pj.ParallelTeam;
-
-import ffx.crystal.*;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.MolecularAssembly;
-import ffx.potential.bonded.Molecule;
-import ffx.potential.bonded.Residue;
-import ffx.potential.parsers.PDBFilter;
-import ffx.xray.CrystalReciprocalSpace.SolventModel;
-import ffx.xray.RefinementMinimize.RefinementMode;
 
 /**
  * <p>DiffractionData class.</p>
@@ -382,6 +381,95 @@ public class DiffractionData implements DataContainer {
             scaled[i] = false;
         }
     }
+    
+    /**
+     * read in a different assembly to average in structure factors
+     *
+     * @param assembly the
+     * {@link ffx.potential.bonded.MolecularAssembly molecular assembly} object
+     * array (typically containing alternate conformer assemblies), used as the
+     * atomic model to average in with previous assembly
+     * @param index the current data index (for cumulative average purposes)
+     */
+    public void AverageFc(MolecularAssembly assembly[], int index) {
+        RefinementModel tmprefinementmodel = new RefinementModel(assembly, refinemolocc);
+
+        // initialize atomic form factors
+        for (Atom a : tmprefinementmodel.atomarray) {
+            a.setFormFactorIndex(-1);
+            XRayFormFactor atomff =
+                    new XRayFormFactor(a, use_3g, 2.0);
+            a.setFormFactorIndex(atomff.ffindex);
+
+            if (a.getOccupancy() == 0.0) {
+                a.setFormFactorWidth(1.0);
+                continue;
+            }
+
+            double arad = 2.4;
+            // double arad = 2.0;
+            double xyz[] = new double[3];
+            xyz[0] = a.getX() + arad;
+            xyz[1] = a.getY();
+            xyz[2] = a.getZ();
+            while (true) {
+                double rho = atomff.rho(0.0, 1.0, xyz);
+                if (rho > 0.1) {
+                    arad += 0.5;
+                } else if (rho > 0.001) {
+                    arad += 0.1;
+                } else {
+                    arad += aradbuff;
+                    a.setFormFactorWidth(arad);
+                    break;
+                }
+                xyz[0] = a.getX() + arad;
+            }
+        }
+
+        // set up FFT and run it
+        ParallelTeam parallelTeam = new ParallelTeam();
+        for (int i = 0; i < n; i++) {
+            crs_fc[i] = new CrystalReciprocalSpace(reflectionlist[i],
+                    tmprefinementmodel.atomarray, parallelTeam, parallelTeam,
+                    false, dataname[i].neutron);
+            refinementdata[i].setCrystalReciprocalSpace_fc(crs_fc[i]);
+            crs_fs[i] = new CrystalReciprocalSpace(reflectionlist[i],
+                    tmprefinementmodel.atomarray, parallelTeam, parallelTeam,
+                    true, dataname[i].neutron, solventmodel);
+            refinementdata[i].setCrystalReciprocalSpace_fs(crs_fs[i]);
+        }
+
+        int nhkl = refinementdata[0].n;
+        double fc[][] = new double[nhkl][2];
+        double fs[][] = new double[nhkl][2];
+        
+        // run FFTs
+        for (int i = 0; i < n; i++) {
+            crs_fc[i].computeDensity(fc);
+            if (solventmodel != SolventModel.NONE) {
+                crs_fs[i].computeDensity(fs);
+            }
+
+            // average in with current data
+            for (int j = 0; j < refinementdata[i].n; j++) {
+                refinementdata[i].fc[j][0] += (fc[j][0] - refinementdata[i].fc[j][0]) / index;
+                refinementdata[i].fc[j][1] += (fc[j][1] - refinementdata[i].fc[j][1]) / index;
+
+                refinementdata[i].fs[j][0] += (fs[j][0] - refinementdata[i].fs[j][0]) / index;
+                refinementdata[i].fs[j][1] += (fs[j][1] - refinementdata[i].fs[j][1]) / index;
+            }
+            refinementdata[i].setCrystalReciprocalSpace_fc(null);
+            refinementdata[i].setCrystalReciprocalSpace_fs(null);
+            crs_fc[i] = null;
+            crs_fs[i] = null;
+        }
+        
+        tmprefinementmodel = null;
+        parallelTeam = null;
+        fc = null;
+        fs = null;
+    }
 
     /**
      * move the atomic coordinates for the FFT calculation - this is independent
@@ -427,7 +515,9 @@ public class DiffractionData implements DataContainer {
     public void computeAtomicDensity() {
         for (int i = 0; i < n; i++) {
             crs_fc[i].computeDensity(refinementdata[i].fc);
-            crs_fs[i].computeDensity(refinementdata[i].fs);
+            if (solventmodel != SolventModel.NONE) {
+                crs_fs[i].computeDensity(refinementdata[i].fs);
+            }
         }
     }
 
@@ -769,7 +859,7 @@ public class DiffractionData implements DataContainer {
         if (scaled[i]) {
             mtzwriter = new MTZWriter(reflectionlist[i], refinementdata[i], filename);
         } else {
-            mtzwriter = new MTZWriter(reflectionlist[i], refinementdata[i], filename, true);
+            mtzwriter = new MTZWriter(reflectionlist[i], refinementdata[i], filename, MTZType.DATAONLY);
         }
         mtzwriter.write();
     }

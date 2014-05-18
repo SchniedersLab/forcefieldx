@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document
+    xmlns="http://maven.apache.org/XDOC/2.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
+    http://maven.apache.org/xsd/xdoc-2.0.xsd">
+    <properties>
+        <title>Many-Body DEE</title>
+        <author email="ava-lynn@uiowa.edu">Ava Lynn</author>
+    </properties>
+    <body>
+        <section name="Introduction to Rotamer Optimization Using Many-Body Dead-End Elimination">
+            <p>Discrete rotamer libraries of optimal side-chain conformations have been developed to find the global minimum energy conformation of a protein.
+                However, implementation of rotamer libraries using brute force is computationally expensive, as there exists large number of permutations.
+                Through rigorous inequalities eliminating high-energy rotamers, rotamer pairs, and rotamer trimers, the Dead-End Elimination (DEE)
+                algorithm eliminates many permutations, finding optimal side-chain positions in a reasonable amount of time.
+            </p>
+        </section>
+        <section name="Application to Mutation S163R in C1QTN5">
+            <p>The following example demonstrates global optimization with mutation S163R in C1QTN5 (PDB <a href="http://www.pdb.org/pdb/explore/explore.do?structureId=4f3j">4F3J</a>). The general protocol is as follows:
+            </p>
+            <ol>
+                <li>Refine/optimize the wild-type model using all-versus-all global optimization. If the protein is large, use the sliding window method.</li>
+                <li>Perform the mutation.</li>
+                <li>Perform a local optimization around the mutated region using a distance cutoff.</li>
+            </ol>
+            <subsection name="Using DEE to Globally Optimize the Wild-Type PDB File">
+                <p>To perform an all-versus-all global optimization using DEE for all residues, use the following command: 
+                    <source>ffxc rotamer -a 2 -c A -l 1 -x 1 -g false 4F3J.pdb</source>
+                </p>
+                <p>The resulting PDB file is automatically saved as 4F3J.pdb_2. Rename the PDB file 4F3J_rotOpt.pdb to remove the "_2" from the extension.
+                </p>
+            </subsection>
+            <subsection name="Mutating Residue 163 from Serine to Arginine">
+                <p>To mutate residue 163 in chain A from serine to arginine, use the following command:
+                    <source>ffxc mutatePDB -c A -n ARG -r 163 4F3J_rotOpt.pdb</source>
+                </p>
+                <p>The PDB file with the mutation is saved as 4F3J_rotOpt.pdb_2. Rename the pdb file 4F3J_rotOpt_S163R.pdb to remove the "_2" from the extension.
+                </p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Command</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>-c A</td>
+                            <td>Chain 'A'</td>
+                        </tr>
+                        <tr>
+                            <td>-n ARG</td>
+                            <td>Three-letter abbreviation of mutated amino acid</td>
+                        </tr>
+                        <tr>
+                            <td>-r 163</td>
+                            <td>Residue 163 is mutated</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </subsection>
+            <subsection name="Using DEE to Optimize the Mutated Region">
+                <p>To perform an all-versus-all global optimization using DEE for all residues, use the following command: 
+                    <source>ffxc rotamer -a 2 -c A -l 1 -x 1 -g false 4F3J_rotOpt_S163R.pdb</source>
+                </p>
+                <p>To perform a global optimization using DEE within the residue range 130-190, use the following command: 
+                    <source>ffxc rotamer -a 2 -c A -s 130 -f 190 -g false -l 1 4F3J_rotOpt_S163R.pdb</source>
+                </p>
+                <p>To perform a global optimization using DEE within a distance cutoff of 9 Angstroms from mutated residue 163, use the following command: 
+                    <source>ffxc rotamer -a 4 -c A -l 1 -s 163 -f 163 -w 1 -r 9.0 -g false 4F3J_rotOpt_S163R.pdb</source>
+                </p>
+                <p>A description of all of the flags used in the optimization commands is found below:
+                </p>   
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Command</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>-a 2</td>
+                            <td>Algorithm using DEE</td>
+                        </tr>
+                        <tr>
+                            <td>-a 4</td>
+                            <td>Algorithm using sliding window method</td>
+                        </tr>
+                        <tr>
+                            <td>-c A</td>
+                            <td>Chain 'A'</td>
+                        </tr>
+                        <tr>
+                            <td>-f 190</td>
+                            <td>Final residue 190</td>
+                        </tr>
+                        <tr>
+                            <td>-g false</td>
+                            <td>Goldstein criteria not used</td>
+                        </tr>
+                        <tr>
+                            <td>-l 1</td>
+                            <td>Ponder and Richards' rotamer library</td>
+                        </tr>
+                        <tr>
+                            <td>-r 9.0</td>
+                            <td>Distance cutoff of 9.0 Angstroms</td>
+                        </tr>
+                        <tr>
+                            <td>-s 130</td>
+                            <td>Starting residue 130</td>
+                        </tr>
+                        <tr>
+                            <td>-t false</td>
+                            <td>Three-body interactions not used in elimination criteria</td>
+                        </tr>
+                        <tr>
+                            <td>-w 1</td>
+                            <td>Sliding window size of 1 residue</td>
+                        </tr>
+                        <tr>
+                            <td>-x 1</td>
+                            <td>Optimization of all residues</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </subsection>    
+        </section>
+    </body>
+</document>

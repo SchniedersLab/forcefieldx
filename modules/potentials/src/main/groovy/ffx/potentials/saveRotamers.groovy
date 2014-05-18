@@ -146,19 +146,24 @@ Residue prevResidue;
 // (residue is nucleic acid with an upstream partner), and set isDeoxy.
 // If it is invalid, set upstreamPucker false.
 if (upstreamPucker) {
-    if (residue.getResidueType() == NA) {
-        prevResidue = (Residue) residue.getPreviousResidue();
-        // If no previous residue, set upstream pucker false.
-        // The method used will ensure prevResidue is a nucleic acid.
-        if (prevResidue == null) {
-            upstreamPucker = false;
-        } else {
-            Atom HOs = (Atom) prevResidue.getAtomNode("HO\'");
-            if (HOs == null) {
-                isDeoxy = true;
+    // Exception gets thrown if it's an amino acid, since "NA" is undefined.
+    try {
+        if (residue.getResidueType() == NA) {
+            prevResidue = (Residue) residue.getPreviousResidue();
+            // If no previous residue, set upstream pucker false.
+            // The method used will ensure prevResidue is a nucleic acid.
+            if (prevResidue == null) {
+                upstreamPucker = false;
+            } else {
+                Atom HOs = (Atom) prevResidue.getAtomNode("HO\'");
+                if (HOs == null) {
+                    isDeoxy = true;
+                }
             }
+        }  else {
+            upstreamPucker = false;
         }
-    } else {
+    } catch (Exception e) {
         upstreamPucker = false;
     }
 }

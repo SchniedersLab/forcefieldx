@@ -572,6 +572,20 @@ public class NeighborList extends ParallelRegion {
                 double yu = frac[i3 + YY];
                 double zu = frac[i3 + ZZ];
                 // Move the atom into the range 0.0 <= x < 1.0
+                /*
+                 * Format for potential replacement code.
+                if (xu < 0.0) {
+                    int belowZero = (int) (xu / 1.0);
+                    belowZero = 1 + (-1 * belowZero);
+                    xu = xu + belowZero;
+                } else {
+                    xu = xu % 1.0;
+                }
+                OR
+                xu = moveBetweenZeroAndOne(xu);
+                yu = moveBetweenZeroAndOne(yu);
+                zu = moveBetweenZeroAndOne(zu);
+                */
                 while (xu < 0.0) {
                     xu += 1.0;
                 }
@@ -985,6 +999,36 @@ public class NeighborList extends ParallelRegion {
                 maskingRules.removeMask(mask, atomIndex);
             }
         }
+    }
+    /**
+     * Moves an array of doubles to be within 0.0 and 1.0 by addition or 
+     * subtraction of a multiple of 1.0. Typical use is moving an atom placed
+     * outside crystal boundaries from the symmetry mate back into the crystal.
+     * 
+     * @param valuesToMove Doubles to be moved between 0 and 1.
+     */
+    public static void moveValuesBetweenZeroAndOne(double[] valuesToMove) {
+        for (int i = 0; i < valuesToMove.length; i++) {
+           valuesToMove[i] = moveBetweenZeroAndOne(valuesToMove[i]);
+        }
+    }
+    /**
+     * Moves a double to be within 0.0 and 1.0 by addition or subtraction of a
+     * multiple of 1.0. Typical use is moving an atom place outside crystal 
+     * boundaries from the symmetry mate back into the crystal.
+     * 
+     * @param value Double to be moved between 0 and 1.
+     * @return Shifted double.
+     */
+    public static double moveBetweenZeroAndOne(double value) {
+        if (value < 0.0) {
+            int belowZero = (int) (value / 1.0);
+            belowZero = 1 + (-1 * belowZero);
+            value = value + belowZero;
+        } else {
+            value = value % 1.0;
+        }
+        return value;
     }
     private final static int XX = 0;
     private final static int YY = 1;

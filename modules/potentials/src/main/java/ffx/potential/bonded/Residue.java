@@ -237,7 +237,7 @@ public class Residue extends MSGroup {
     private double[] C1sCoords = null;
     private double[] O4sCoords = null;
     private double[] C4sCoords = null;
-
+    
     /**
      * Default Constructor where num is this Residue's position in the Polymer.
      *
