@@ -121,5 +121,10 @@
             <artifactId>jocl-main</artifactId>
             <version>2.1.4</version>
         </dependency>
+        <dependency>
+            <groupId>jclfft</groupId>
+            <artifactId>jclfft</artifactId>
+            <version>1.0</version>
+        </dependency>
     </dependencies>
 </project>

@@ -8,10 +8,10 @@ modules/*/target/
 lib/
 modules/*/catalog.xml
 modules/*/src/site/resources/scripts/
-website/
 modules/*/.classpath
 modules/*/.settings
 modules/*/.project
+module/*/.DS_Store
 catalog.xml
 .classpath
 .project
@@ -21,3 +21,5 @@ release/
 nb-configuration.xml
 conf/*.jar
 bin/scheduler.log
+.DS_Store
+website/
