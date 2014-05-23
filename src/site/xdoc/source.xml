@@ -122,7 +122,7 @@
                 <a target="_blank" href="http://git-scm.com/">Git</a> is a free and open source, distributed version control system designed to handle everything from
                 small to very large projects with speed and efficiency."
                 To clone the Force Field X source using GIT:
-                <source>git clone git://kenai.com/ffx~source ffx</source>
+                <source>git clone git://kenai.com/ffx~public-source ffx</source>
             </p>
             <p>In the future, your clone of Force Field X can be updated to the latest version using the command:
                 <source>git pull origin master</source>
