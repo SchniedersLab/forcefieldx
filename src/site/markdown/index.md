@@ -5,7 +5,7 @@
 </p>
 Park, J., Nessler, I., McClain, B., Macikenas D., Baltrusaitis, J. and M. Schnieders
 <i>Journal of Chemical Theory and Computation</i>
-<b>2014</b> <i>(submitted)</i>
+<b>2014</b> <i>(accepted)</i>
 
 #### [Polarizable Force Fields for Biomolecular Modeling][amoeba]
 
