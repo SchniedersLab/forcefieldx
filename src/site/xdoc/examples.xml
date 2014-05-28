@@ -21,6 +21,9 @@
                         <a href="modules/algorithms/examples.html">
                             Water Solvation Free Energy
                         </a>
+                        <a href="modules/algorithms/gauche.html">
+                            Organic Crystal Deposition/Sublimation Free Energy
+                        </a>
                     </td>
                 </tr>
                 <tr>
@@ -241,7 +244,7 @@
                         </td>
                         <td>2.4</td>
                         <td>
-                            <a href="structures/3YI4_Ewald.pdb">1YI4_Ewald.pdb</a>
+                            <a href="structures/1YI4_Ewald.pdb">1YI4_Ewald.pdb</a>
                         </td>
                     </tr>
                     <tr>
@@ -257,7 +260,7 @@
                         </td>
                         <td>2.3</td>
                         <td>
-                            <a href="sructures/3G75_Ewald.pdb">3G75_Ewald.pdb</a>
+                            <a href="structures/3G75_Ewald.pdb">3G75_Ewald.pdb</a>
                         </td>
                     </tr>
                     <tr>
