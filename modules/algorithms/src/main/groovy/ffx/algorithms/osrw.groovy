@@ -34,7 +34,7 @@ import groovy.util.CliBuilder;
 import edu.rit.pj.Comm;
 
 // Force Field X Imports
-import ffx.algorithms.Barostat;
+//import ffx.algorithms.Barostat;
 import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.OSRW;
 import ffx.algorithms.Integrator.Integrators;
@@ -150,16 +150,16 @@ cli.l(longOpt:'lambda', args:1, argName:'0.0', 'Initial lambda value (> 1.0 dist
 cli.c(longOpt:'count', args:1, argName:'10', 'Time steps between OSRW counts.');
 cli.g(longOpt:'bias', args:1, argName:'0.001', 'Gaussian bias magnitude (kcal/mol).');
 cli.m(longOpt:'mass', args:1, argName:'1e-18', 'Lambda particle mass.');
-cli.p(longOpt:'npt', args:0, 'Constant pressure MD (1 atm).');
+//cli.p(longOpt:'npt', args:0, 'Constant pressure MD (1 atm).');
 cli.e(longOpt:'elec', args:0, 'No electrostatics on ligand 1.');
 cli.e2(longOpt:'elec2', args:0, 'No electrostatics on ligand 2.');
 cli.x(longOpt:'friction', args:1, argName:'1e-18', 'Lambda particle friction.');
 cli.W(longOpt:'notraversals', args:0, 'Don\'t write out lambda-traversal snapshots.');
-cli.ld(longOpt:'minDensity', args:1, argName:'0.5', 'Minimum density allowed by the barostat.');
-cli.hd(longOpt:'maxDensity', args:1, argName:'1.5', 'Maximum density allowed by the barostat.');
-cli.sm(longOpt:'maxSideMove', args:1, argName:'0.25', 'Maximum side move allowed by the barostat.');
-cli.am(longOpt:'maxAngleMove', args:1, argName:'1.0', 'Maximum angle move allowed by the barostat.');
-cli.mi(longOpt:'meanInterval', args:1, argName:'10', 'Mean number of MD steps between applications of the barostat.');
+//cli.ld(longOpt:'minDensity', args:1, argName:'0.5', 'Minimum density allowed by the barostat.');
+//cli.hd(longOpt:'maxDensity', args:1, argName:'1.5', 'Maximum density allowed by the barostat.');
+//cli.sm(longOpt:'maxSideMove', args:1, argName:'0.25', 'Maximum side move allowed by the barostat.');
+//cli.am(longOpt:'maxAngleMove', args:1, argName:'1.0', 'Maximum angle move allowed by the barostat.');
+//cli.mi(longOpt:'meanInterval', args:1, argName:'10', 'Mean number of MD steps between applications of the barostat.');
 cli.rt(longOpt:'reset', args:0, 'Reset OSRW histogram once, when lambda reaches 0.99.');
 
 def options = cli.parse(args);
@@ -401,19 +401,19 @@ topology1 = active;
 if (arguments.size() == 1) {
     // Check for constant pressure
     if (NPT) {
-        // Create a barostat.
-        Barostat barostat = new Barostat(active);
-        barostat.setMaxdUdL(1000.0);
-        barostat.setMaxDensity(maxDensity);
-        barostat.setMinDensity(minDensity);
-        barostat.setMaxSideMove(maxSideMove);
-        barostat.setMaxAngleMove(maxAngleMove);
-        barostat.setMeanBarostatInterval(meanInterval);
-
-        // Create the OSRW instance.
-        osrw = new OSRW(energy, barostat, lambdaRestart, histogramRestart, active.getProperties(),
-            temperature, timeStep, printInterval, saveInterval, asynchronous, sh);
-        osrw.setResetStatistics(resetStatistics);
+//        // Create a barostat.
+//        Barostat barostat = new Barostat(active);
+//        barostat.setMaxdUdL(1000.0);
+//        barostat.setMaxDensity(maxDensity);
+//        barostat.setMinDensity(minDensity);
+//        barostat.setMaxSideMove(maxSideMove);
+//        barostat.setMaxAngleMove(maxAngleMove);
+//        barostat.setMeanBarostatInterval(meanInterval);
+//
+//        // Create the OSRW instance.
+//        osrw = new OSRW(energy, barostat, lambdaRestart, histogramRestart, active.getProperties(),
+//            temperature, timeStep, printInterval, saveInterval, asynchronous, sh);
+//        osrw.setResetStatistics(resetStatistics);
         if (writeTraversals) {
             osrw.setTraversalOutput(lambdaOneFile, topology1, lambdaZeroFile, topology1);
         }
