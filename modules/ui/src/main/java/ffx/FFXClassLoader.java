@@ -135,11 +135,11 @@ public class FFXClassLoader extends URLClassLoader {
             // Mac OS X Extensions
             "macosx/AppleJavaExtensions.jar",
             // Java Help
-            "javax.help/javahelp.jar",
+            "javax.help/javahelp.jar"
             // JFluid Profiler
-            "jfluid/jfluid-server.jar",
-            "jfluid/jfluid-server-15.jar",
-            "jfluid/jfluid-server-cvm.jar"
+            //"jfluid/jfluid-server.jar",
+            //"jfluid/jfluid-server-15.jar",
+            //"jfluid/jfluid-server-cvm.jar"
         }));
 
         String osName = System.getProperty("os.name").toUpperCase();
@@ -592,6 +592,7 @@ public class FFXClassLoader extends URLClassLoader {
                     }
                 }
             } catch (IOException ex) {
+                System.out.println(extensionJarOrDll);
                 throw new RuntimeException(" Couldn't extract extension jar.\n", ex);
             }
         }
