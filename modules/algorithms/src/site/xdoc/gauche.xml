@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<document
+    xmlns="http://maven.apache.org/XDOC/2.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+    <properties>
+        <title>Crystal Thermodynamics Examples</title>
+        <author email="jooyeon-park@uiowa.edu">Julia Park</author>
+    </properties>
+    <body>
+        <section name="Organic Crystal Deposition/Sublimation Free Energy">
+            <subsection name="Growth of the Asymmetric Unit into a Crystal via Alchemy (GAUCHE)">
+                <p>The general procedure for calculating the organic crystal deposition/sublimation
+                    free energy using GAUCHE method is as follows:
+                </p>
+                <ol>
+                    <li>Calculate the deposition free energy of the asymmetric unit.</li>
+                    <li>Find the energy minimized crystal structure by optimizing the snapshots of the initial deposition simulation.</li>
+                    <li>Calculate the free energy to add a harmonic restraint to each atom of
+                        the asymmetric unit between its current simulation coordinates and those of the energy minimized crystal.</li>
+                    <li>Calculate the free energy change to transfer the restrained asymmetric unit molecules into vapor by alchemical annihilation.</li>
+                    <li>Repeat the third and fourth steps using the unit cell instead of the asymmetric unit.</li>
+                </ol>
+                <p>To do the deposition/sublimation free energy calculation, we need an input coordinate file in TINKER XYZ (or PDB) format.
+                    In this example, we are using acetanilide (ACANIL).</p>
+                <source>
+                    19  ACANIL.xyz
+                    1    C   -1.62567502    4.09801640    2.43458664   401       2      11      12      13
+                    2    C   -0.21564232    4.56925851    2.09474698   402       1       3       4
+                    3    O    0.18378795    5.64372837    2.46911645   409       2
+                    4    N    0.54676489    3.70436855    1.35104344   403       2       5      14
+                    5    C    1.87236284    3.80268207    0.80739919   405       4       6      10
+                    6    C    2.36589527    2.78623691   -0.02894495   404       5       7      15
+                    7    C    3.66232337    2.84237728   -0.53485617   406       6       8      16
+                    8    C    4.51553157    3.88888100   -0.21210739   407       7       9      17
+                    9    C    4.02180870    4.91434631    0.58187883   406       8      10      18
+                    10   C    2.71900496    4.89224328    1.07367960   404       5       9      19
+                    11   H   -2.06287504    3.50784974    1.63545511   408       1
+                    12   H   -2.29053235    4.93747119    2.60633250   408       1
+                    13   H   -1.61366036    3.49096299    3.33493674   408       1
+                    14   H    0.21515865    2.76325126    1.34137220   411       4
+                    15   H    1.73971134    1.95334763   -0.27147787   410       6
+                    16   H    4.00461342    2.04830814   -1.17749156   412       7
+                    17   H    5.52996679    3.90951933   -0.56800284   413       8
+                    18   H    4.65698146    5.74431910    0.83904803   412       9
+                    19   H    2.38670936    5.70593100    1.68161589   410      10
+                </source>
+                <p>The property file (like a TINKER keyword file) specifies the crystal information. Note
+                    that for most of the small organic molecules, AMOEBA parameters are not published thus
+                    need to be parameterized for each molecule (PolType Program developed by Pengyu Ren Research
+                    Group can be used for this purpose). Van der Waals cutoff is specified here, and the
+                    parameters and patch specifications point to acetanilide AMOEBA parameters <a href="https://ffx.kenai.com/parameters/ACANIL.patch">ACANIL.patch</a>.
+                </p>
+                <source>
+                    spacegroup Pbca
+
+                    a-axis    19.640
+                    b-axis    9.483
+                    c-axis    7.979
+                    alpha     90.00
+                    beta      90.00
+                    gamma     90.00
+
+                    vdw-cutoff  12.0
+
+                    parameters ACANIL.patch
+                    patch      ACANIL.patch
+                </source>
+                <p>The command to calculate the deposition free energy of the asymmetric unit is as follows:
+                </p>
+                <source>ffxc osrw -c 100 -a -l 0.0 -i stochastic -n 25000000 -t 298.15 -r 1.0 -s 1 -f 19 ACANIL.xyz</source>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Flag</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>-c 100</td>
+                            <td>Number of MD steps between OSRW counts</td>
+                        </tr>
+                        <tr>
+                            <td>-a</td>
+                            <td>Asynchronous walker communication</td>
+                        </tr>
+                        <tr>
+                            <td>-l 0.0</td>
+                            <td>Initial lambda value of 0.0 (vapor)</td>
+                        </tr>
+                        <tr>
+                            <td>-i stochastic</td>
+                            <td>Stochastic integrator specifying stochastic dynamics</td>
+                        </tr>
+                        <tr>
+                            <td>-n 25000000</td>
+                            <td>Number of MD steps</td>
+                        </tr>
+                        <tr>
+                            <td>-t 298.15</td>
+                            <td>Temperature</td>
+                        </tr>
+                        <tr>
+                            <td>-r 1.0</td>
+                            <td>Interval to report thermodynamics (psec)</td>
+                        </tr>
+                        <tr>
+                            <td>-s 1</td>
+                            <td>Softcore start atom</td>
+                        </tr>
+                        <tr>
+                            <td>-f 19</td>
+                            <td>Softcore final atom</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p>If experimental crystal structure is available, optimize the experimental structure to use
+                    for the remaining GAUCHE steps. Specify the RMS gradient convergence criteria using -e flag.
+                    Rename the output, i.e. energy minimized structure, as min.SG.xyz, or any naming convention
+                    that indicates that the coordinate file contains energy optimized asymmetric unit.
+                </p>
+                <source>ffxc minimize -e 1e-4 ACANIL.xyz</source>
+                <p>To do the expansion of the asymmetric unit into a unit cell, some modifications to the properties
+                    files are necessary. For restrained crystal and restrained vapor, add "restrainterm true". For
+                    restrained vapor, also add "vdwterm false".
+                </p>
+                <source>ffxc osrw -c 100 -a -l 2.0 -i stochastic -n 5000000 -t 298.15 -r 1.0 rminv.SG.xyz rmin.SG.xyz </source>
+                <p>The command to calculate the free energy of adding a harmonic restraint to the asymmetric unit is as follows:
+                </p>
+                <source>ffxc osrw -c 100 -a -l 2.0 -i stochastic -n 5000000 -t 298.15 -r 1.0 rmin.SG.xyz min.SG.xyz </source>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Flag</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>-l 2.0</td>
+                            <td>Lambda value greater than 1.0 distributes lambda across walkers</td>
+                        </tr>
+                        <tr>
+                            <td>rmin.SG.xyz</td>
+                            <td>refers to the restrained energy minimized asymmetric unit</td>
+                        </tr>
+                        <tr>
+                            <td>min.SG.xyz</td>
+                            <td>refers to the energy minimized asymmetric unit</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p>The command to calculate the free energy change to transfer the restrained asymmetric
+                    unit molecules into vapor by alchemical annihilation is as follows:
+                </p>
+                <source>ffxc osrw -c 100 -a -l 2.0 -i stochastic -n 5000000 -t 298.15 -r 1.0 rminv.SG.xyz rmin.SG.xyz </source>
+                <p>rminv.SG.xyz refers to the restrained vapor state of the asymmetric unit, and
+                    the rest of the commands are the same as the previous step.
+                </p>
+                <p>Unit cell calculations are the same as the previous two steps. However, the coordinate
+                    file includes multiple copies of the molecule according to the number of symmetry operators
+                    for the spacegroup. The property file should also indicate the spacegroup of the molecule as P1.
+                    FFX command to generate a unit cell coordinate file is:
+                </p>
+                <source>ffxc saveAsP1 min.SG.xyz
+                </source>
+            </subsection>
+        </section>
+    </body>
+</document>
