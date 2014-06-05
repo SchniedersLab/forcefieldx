@@ -37,6 +37,8 @@ import edu.rit.pj.Comm;
 import ffx.algorithms.OSRW;
 import ffx.potential.ForceFieldEnergy;
 
+// Printing out PMF information.
+boolean pmf = false;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
@@ -44,6 +46,7 @@ import ffx.potential.ForceFieldEnergy;
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc osrwHistogram [options] <filename>');
 cli.h(longOpt:'help', 'Print this help message.');
+cli.p(longOpt:'PMF', args:0, 'Print out potential of mean force information.');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -53,6 +56,11 @@ if (options.h || arguments == null || arguments.size() != 1) {
 
 // Read in command line file.
 String filename = arguments.get(0);
+
+// PMF?
+if (options.a) {
+    pmf = true;
+}
 
 println("\n Evaluating OSRW Histogram for " + filename);
 
@@ -104,5 +112,7 @@ double temperature = 298.15;
 OSRW osrw = new OSRW(energy, energy, lambdaRestart, histogramRestart, active.getProperties(),
     temperature, timeStep, printInterval, saveInterval, asynchronous, sh);
 
-osrw.evaluatePMF();
+if (pmf){
+    osrw.evaluatePMF();
+}
 

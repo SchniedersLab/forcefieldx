@@ -148,7 +148,7 @@ cli.f(longOpt:'final', args:1, argName:'-1', 'Final ligand atom.');
 cli.f2(longOpt:'final2', args:1, argName:'-1', 'Final ligand atom for the 2nd topology.');
 cli.l(longOpt:'lambda', args:1, argName:'0.0', 'Initial lambda value (> 1.0 distributes lambda across walkers)');
 cli.c(longOpt:'count', args:1, argName:'10', 'Time steps between OSRW counts.');
-cli.g(longOpt:'bias', args:1, argName:'0.001', 'Gaussian bias magnitude (kcal/mol).');
+cli.g(longOpt:'bias', args:1, argName:'0.002', 'Gaussian bias magnitude (kcal/mol).');
 cli.m(longOpt:'mass', args:1, argName:'1e-18', 'Lambda particle mass.');
 //cli.p(longOpt:'npt', args:0, 'Constant pressure MD (1 atm).');
 cli.e(longOpt:'elec', args:0, 'No electrostatics on ligand 1.');

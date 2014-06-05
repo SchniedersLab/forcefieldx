@@ -179,7 +179,7 @@ public class OSRW implements Potential {
      */
     private double d2EdLambda2;
     private double dUdXdL[] = null;
-    private double biasMag = 0.001;
+    private double biasMag = 0.002;
     private final double FLambda[];
     /**
      * Gas constant (in Kcal/mole/Kelvin).
@@ -295,6 +295,14 @@ public class OSRW implements Potential {
      * self-consistent fields to interpolate polarization.
      */
     private final boolean asynchronous;
+//    /**
+//     * Flag to indicate whether to use Well-Tempered Metadynamics Method
+//     */
+//    private final boolean wellTempered;
+//    /**
+//     * An energy-value positive scalar parameter in the units of temperature
+//     */
+//    private final double dT;
     /**
      * The ReceiveThread accumulates OSRW statistics from multiple asynchronous
      * walkers.
@@ -360,7 +368,7 @@ public class OSRW implements Potential {
         }
 
         biasCutoff = properties.getInt("lambda-bias-cutoff", 5);
-        biasMag = properties.getDouble("bias-gaussian-mag", 0.005);
+        biasMag = properties.getDouble("bias-gaussian-mag", 0.002);
         dL = properties.getDouble("lambda-bin-width", 0.005);
         dFL = properties.getDouble("flambda-bin-width", 2.0);
 
@@ -571,6 +579,10 @@ public class OSRW implements Potential {
                 double bias = weight * biasMag
                         * exp(-deltaL2 / (2.0 * ls2))
                         * exp(-deltaFL2 / (2.0 * FLs2));
+//                //JP: for WTMetaD, multiply the above bias function by the exp(-V(sn+1)/(R*deltaT)) V(sn+1) is current free energy?
+//                if (wellTempered) {
+//                    bias = bias * exp(currentFreeEnergy()/(R*dT));
+//                }
                 biasEnergy += bias;
                 dGdLambda -= deltaL / ls2 * bias;
                 dGdFLambda -= deltaFL / FLs2 * bias;
