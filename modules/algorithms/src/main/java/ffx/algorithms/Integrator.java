@@ -45,10 +45,10 @@ public abstract class Integrator {
     /**
      * Integrator halfStep operation.
      */
-    abstract public void halfStep(Potential potential);
+    abstract public void preForce(Potential potential);
 
     /**
      * Integrator fullStep operation.
      */
-    abstract public void fullStep(double gradient[]);
+    abstract public void postForce(double gradient[]);
 }

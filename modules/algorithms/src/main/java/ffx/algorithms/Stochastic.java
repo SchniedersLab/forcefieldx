@@ -122,7 +122,7 @@ public class Stochastic extends Integrator {
      * Verlet recursion.
      */
     @Override
-    public void halfStep(Potential potential) {
+    public void preForce(Potential potential) {
         for (int i = 0; i < numberOfVariables; i++) {
             double m = mass[i];
             double pfric;
@@ -215,7 +215,7 @@ public class Stochastic extends Integrator {
      * full-step velocities using the Verlet recursion.
      */
     @Override
-    public void fullStep(double[] gradient) {
+    public void postForce(double[] gradient) {
         for (int i = 0; i < numberOfVariables; i++) {
             a[i] = -Thermostat.convert * gradient[i] / mass[i];
             v[i] += (0.5 * a[i] * vfric[i] + vrand[i]);
