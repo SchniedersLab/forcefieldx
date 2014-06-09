@@ -37,7 +37,7 @@ String suffix = "_split";
 boolean addHeader = false;
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc splitEnsemble [options] <filename>');
+def cli = new CliBuilder(usage:' ffxc utilities.splitEnsemble [options] <filename>');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.x(longOpt:'all', args:1, argName:'1', 'Split out all PDB files starting from this model (over-rides other options.');
 cli.s(longOpt:'start', args:1, argName:'-1', 'Starting model to split into separate PDB file.');
@@ -45,6 +45,7 @@ cli.f(longOpt:'finish', args:1, argName:'-1', 'Finishing model to split into sep
 cli.X(longOpt:'suffix', args:1, argName: '_split', 'output suffix');
 cli.d(longOpt:'header', args:1, argName: 'false', 'Whether to attach header lines to each PDB file.');
 cli.dF(longOpt:'headerFileSource', args:1, argName: 'file', 'May use this file as source of header lines instead of ensemble file.');
+cli.l(longOpt: 'listFiles', args:1, argName: 'true', 'Additionally output text file with the names of all produced PDB files as _suffix_modelList.txt');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -101,7 +102,8 @@ try {
         boolean headerRead = false;
         while (!headerRead) {
             String nextLine = headReader.readLine();
-            if (nextLine == null || nextLine.startsWith("CRYST1") || nextLine.startsWith("ATOM    ") || nextLine.contains("END OF HEADER")) {
+            if (nextLine == null || nextLine.startsWith("CRYST1") || nextLine.startsWith("ATOM    ")
+                || nextLine.contains("END OF HEADER") || nextLine.startsWith("MODEL  ")) {
                 headerRead = true;
             } else {
                 headBw.write(nextLine);
@@ -110,6 +112,7 @@ try {
             }
         }
         headBw.close();
+        headReader.close();
         logger.info(" Header read successfully.");
     } else if (addHeader) {
         headerFile = new File(targetName + "_head.tmp.txt");
@@ -143,8 +146,14 @@ try {
     }
     // get to appropriate model # (not coded)
     // While still in the range for writing sub-files:
+    File listOfFiles = new File (targetName + "_modelList.txt");
+    logger.info(String.format(" Creating file list (with the names of all created files): %s", targetName + "_modelList.txt"));
+    BufferedWriter listWriter = new BufferedWriter(new FileWriter(listOfFiles, false));
     while (counter <= endModel && !finished) {
         File newModel = new File(targetName + "_" + counter + ".pdb");
+        listWriter.write(targetName + "_" + counter + ".pdb");
+        listWriter.newLine();
+        listWriter.flush();
         BufferedWriter bw;
         if (addHeader) {
             FileUtils.copyFile(headerFile, newModel);
@@ -180,6 +189,7 @@ try {
         }
         //fileReader.reset();
     }
+    listWriter.close();
     fileReader.close();
 } catch (IOException ex) {
     logger.severe(String.format(" Exception writing to files: %s", ex.toString()));
