@@ -594,7 +594,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
             /**
              * Do the half-step integration operation.
              */
-            integrator.halfStep(potential);
+            integrator.preForce(potential);
 
             /**
              * Compute the potential energy and gradients.
@@ -612,7 +612,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
             /**
              * Do the full-step integration operation.
              */
-            integrator.fullStep(grad);
+            integrator.postForce(grad);
 
             /**
              * Compute the full-step kinetic energy.

@@ -94,7 +94,7 @@ public class Respa extends Integrator {
      * @param potential
      */
     @Override
-    public void halfStep(Potential potential) {
+    public void preForce(Potential potential) {
         double gradient[] = new double[nVariables];
         for (int i = 0; i < nVariables; i++) {
             v[i] += a[i] * dt_2;
@@ -124,7 +124,7 @@ public class Respa extends Integrator {
      * @param gradient
      */
     @Override
-    public void fullStep(double[] gradient) {
+    public void postForce(double[] gradient) {
         for (int i = 0; i < nVariables; i++) {
             a[i] = -Thermostat.convert * gradient[i] / mass[i];
             v[i] += a[i] * dt_2;

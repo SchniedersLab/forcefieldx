@@ -25,14 +25,14 @@ package ffx.algorithms;
 import ffx.numerics.Potential;
 
 /**
- * Integrate Newton's equations of motion using a Beeman multistep recursion
- * formula; the actual coefficients are Brooks' "Better Beeman" values.
+ * Integrate Newton's equations of motion using a Velocity Verlet multistep recursion
+ * formula.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  *
  */
-public class BetterBeeman extends Integrator {
+public class VelocityVerlet extends Integrator {
 
     private double x[];
     private double v[];
@@ -41,63 +41,61 @@ public class BetterBeeman extends Integrator {
     private double mass[];
     private int nVariables;
     private double dt;
-    private double dt2_8;
-    private double dt_8;
+    private double dt_2;
 
     /**
-     * Constructor for BetterBeeman.
+     * Constructor for VelocityVerlet.
      *
      * @param nVariables number of Variables.
      * @param x Cartesian coordinates (Angstroms).
      * @param v Velocities.
      * @param a Accelerations.
-     * @param aPrevious Previous Accelerations.
+     * @param aPrevious Previous Accelerations. This is not necessary for VV 
+     * but should be kept because it will be provided?
      * @param mass Mass.
      */
-    public BetterBeeman(int nVariables, double x[], double v[], double a[],
-            double aPrevious[], double mass[]) {
+    public VelocityVerlet(int nVariables, double x[], double v[], double a[],
+            double aPrevious[], double mass[]) { 
         this.nVariables = nVariables;
         this.x = x;
         this.v = v;
         this.a = a;
-        this.aPrevious = aPrevious;
+        this.aPrevious = aPrevious; 
         this.mass = mass;
 
         dt = 1.0;
-        dt_8 = 0.125 * dt;
-        dt2_8 = dt * dt_8;
+        dt_2 = dt*.5;
     }
 
     /**
-     * Store the current atom positions, then find new atom positions and
-     * half-step velocities via Beeman recursion.
+     * Find pre-gradient velocities using  and pre-gradient positions
      */
     @Override
     public void preForce(Potential potential) {
         for (int i = 0; i < nVariables; i++) {
-            double temp = 5.0 * a[i] - aPrevious[i];
-            x[i] += v[i] * dt + temp * dt2_8;
-            v[i] += temp * dt_8;
+            v[i]=v[i]+a[i]*dt_2;
+        }
+        for (int i = 0; i< nVariables; i++) {
+            x[i]=x[i]+v[i]*dt;
         }
     }
 
     /**
-     * Use Newton's second law to get the next acceleration and find the
-     * full-step velocities using the Beeman recusion.
+     * Use Newton's second law to find acceleration from full-step positions
+     * and find the full-step velocities using the new acceleration.
      */
     @Override
     public void postForce(double gradient[]) {
+        
         for (int i = 0; i < nVariables; i++) {
-            aPrevious[i] = a[i];
             a[i] = -Thermostat.convert * gradient[i] / mass[i];
-            v[i] += (3.0 * a[i] + aPrevious[i]) * dt_8;
+            v[i] = v[i]+a[i]*dt_2;
         }
     }
 
     @Override
     public void setTimeStep(double dt) {
         this.dt = dt;
-        dt_8 = 0.125 * dt;
-        dt2_8 = dt * dt_8;
+        dt_2=dt * .5;
     }
 }
