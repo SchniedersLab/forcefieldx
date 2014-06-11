@@ -398,8 +398,6 @@ public class FFXClassLoader extends URLClassLoader {
             loadExtensions();
         }
 
-        System.out.println(" Library requested:" + libname);
-
         String path = (String) this.extensionDlls.get(libname);
 
         if (path == null) {

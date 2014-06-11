@@ -79,7 +79,7 @@ public final class PDBFilter extends SystemFilter {
     /**
      * List of altLoc characters seen in the PDB file.
      */
-    private List<Character> altLocs = new ArrayList<Character>();
+    private List<Character> altLocs = new ArrayList<>();
     /**
      * The current altLoc - ie. the one we are defining a chemical system for.
      */
@@ -95,7 +95,7 @@ public final class PDBFilter extends SystemFilter {
      * series chainID == segID. Then, for second A-Z,0-9 series, the segID =
      * 1A-1Z,10-19, and for the third series segID = 2A-2Z,20-29, and so on.
      */
-    private List<String> segIDs = new ArrayList<String>();
+    private List<String> segIDs = new ArrayList<>();
     private Character currentChainID = null;
     private String currentSegID = null;
     private boolean mutate = false;
@@ -107,7 +107,7 @@ public final class PDBFilter extends SystemFilter {
      * If true, output is directed into arrayOutput instead of the file.
      */
     private boolean listMode = false;
-    private ArrayList<String> listOutput = new ArrayList<String>();
+    private ArrayList<String> listOutput = new ArrayList<>();
 
     /**
      * Mutate a residue at the PDB file is being parsed.
@@ -194,7 +194,7 @@ public final class PDBFilter extends SystemFilter {
      * Keep track of ATOM record serial numbers to match them with ANISOU
      * records.
      */
-    private HashMap<Integer, Atom> atoms = new HashMap<Integer, Atom>();
+    private HashMap<Integer, Atom> atoms = new HashMap<>();
 
     /**
      * <p>
@@ -281,8 +281,7 @@ public final class PDBFilter extends SystemFilter {
      * @param molecularAssembly The MolecularAssembly to populate.
      * @param altLoc The alternate location to use.
      */
-    public void setAltID(MolecularAssembly molecularAssembly,
-            Character altLoc) {
+    public void setAltID(MolecularAssembly molecularAssembly, Character altLoc) {
         setMolecularSystem(molecularAssembly);
         currentAltLoc = altLoc;
     }
@@ -927,7 +926,7 @@ public final class PDBFilter extends SystemFilter {
         /**
          * Create a new List to store bonds determined based on PDB atom names.
          */
-        bondList = new ArrayList<Bond>();
+        bondList = new ArrayList<>();
 
         /**
          * To Do: Look for cyclic peptides and disulfides.
@@ -1047,7 +1046,6 @@ public final class PDBFilter extends SystemFilter {
                     } catch (MissingAtomTypeException missingAtomTypeException) {
                         logger.severe(missingAtomTypeException.toString());
                     }
-                    continue;
                 }
             }
         }
@@ -2091,6 +2089,118 @@ public final class PDBFilter extends SystemFilter {
     }
 
     /**
+     * Only the first nitrogen should have H1, H2 and H3 atoms, unless it's an
+     * NME cap.
+     *
+     * @param aminoAcid
+     * @param residue
+     */
+    private void removeH1_H2_H3(AminoAcid3 aminoAcid, Residue residue) {
+        if (aminoAcid != AminoAcid3.NME) {
+            Atom H1 = (Atom) residue.getAtomNode("H1");
+            if (H1 != null) {
+                residue.deleteAtom(H1);
+            }
+            Atom H2 = (Atom) residue.getAtomNode("H2");
+            if (H2 != null) {
+                residue.deleteAtom(H2);
+            }
+            Atom H3 = (Atom) residue.getAtomNode("H3");
+            if (H3 != null) {
+                residue.deleteAtom(H3);
+            }
+        }
+    }
+
+    /**
+     * Only the last residue in a chain should have an OXT/OT2 atom.
+     *
+     * @param residue
+     */
+    private void removeOXT_OT2(Residue residue) {
+        Atom OXT = (Atom) residue.getAtomNode("OXT");
+        if (OXT != null) {
+            residue.deleteAtom(OXT);
+        }
+        Atom OT2 = (Atom) residue.getAtomNode("OT2");
+        if (OT2 != null) {
+            residue.deleteAtom(OT2);
+        }
+    }
+
+    private AminoAcid3 getAminoAcid(String residueName) {
+        for (AminoAcid3 aminoAcid : aminoAcidList) {
+            if (aminoAcid.toString().equalsIgnoreCase(residueName)) {
+                return aminoAcid;
+            }
+        }
+        return AminoAcid3.UNK;
+    }
+
+    private int getAminoAcidNumber(String residueName) {
+        int aminoAcidNumber = -1;
+        for (AminoAcid3 aminoAcid : aminoAcidList) {
+            aminoAcidNumber++;
+            if (aminoAcid.toString().equalsIgnoreCase(residueName)) {
+                break;
+            }
+        }
+        return aminoAcidNumber;
+    }
+
+    /**
+     * Check for missing heavy atoms. This check ignores special terminating
+     * groups like FOR, NH2, etc.
+     *
+     * @param aminoAcidNumber
+     * @param aminoAcid
+     * @param position
+     * @param residue
+     * @throws ffx.potential.parsers.PDBFilter.MissingHeavyAtomException
+     */
+    private void checkForMissingHeavyAtoms(int aminoAcidNumber, AminoAcid3 aminoAcid,
+            ResiduePosition position, Residue residue) throws MissingHeavyAtomException {
+        int expected = aminoAcidHeavyAtoms[aminoAcidNumber];
+        if (aminoAcid != AminoAcid3.GLY && expected >= 4) {
+            int actual = 0;
+            List<Atom> resAtoms = residue.getAtomList();
+            for (Atom atom : resAtoms) {
+                String label = atom.getName().toUpperCase();
+                if (!(label.equalsIgnoreCase("OXT") || label.equalsIgnoreCase("OT2"))) {
+                    if (!label.startsWith("H") && !label.startsWith("D")) {
+                        actual++;
+                    }
+                }
+            }
+            if (actual != expected) {
+                Atom N = (Atom) residue.getAtomNode("N");
+                if (N == null) {
+                    MissingHeavyAtomException e = new MissingHeavyAtomException("N", null, null);
+                    throw e;
+                }
+                Atom CA = (Atom) residue.getAtomNode("CA");
+                if (CA == null) {
+                    MissingHeavyAtomException e = new MissingHeavyAtomException("CA", null, null);
+                    throw e;
+                }
+                Atom C = (Atom) residue.getAtomNode("C");
+                if (C == null) {
+                    MissingHeavyAtomException e = new MissingHeavyAtomException("C", null, null);
+                    throw e;
+                }
+                Atom O = (Atom) residue.getAtomNode("O");
+                if (O == null && position == LAST_RESIDUE) {
+                    O = (Atom) residue.getAtomNode("OT1");
+                }
+                if (O == null) {
+                    MissingHeavyAtomException e = new MissingHeavyAtomException("O", null, null);
+                    throw e;
+                }
+            }
+        }
+    }
+
+    /**
      * Assign atom types to an amino acid polymer.
      *
      * @param residues The residues to assign atom types to.
@@ -2101,342 +2211,256 @@ public final class PDBFilter extends SystemFilter {
      */
     private void assignAminoAcidAtomTypes(List<Residue> residues)
             throws MissingHeavyAtomException, MissingAtomTypeException {
-        Atom pC = null;
-        Atom pCA = null;
         /**
          * Loop over amino acid residues.
          */
         int numberOfResidues = residues.size();
-        for (int residueNumber = 0; residueNumber
-                < numberOfResidues; residueNumber++) {
+        for (int residueNumber = 0; residueNumber < numberOfResidues; residueNumber++) {
             Residue residue = residues.get(residueNumber);
-            String residueName = residue.getName().toUpperCase();
-            int j = 1;
-            ResiduePosition position = MIDDLE_RESIDUE;
-            if (residueNumber == 0) {
-                j = 0;
-                position = FIRST_RESIDUE;
-            } else if (residueNumber == numberOfResidues - 1) {
-                j = 2;
-                position = LAST_RESIDUE;
-                /**
-                 * If the last residue only contains a nitrogen turn it into an
-                 * NH2 group.
-                 */
-                Atom N = (Atom) residue.getAtomNode("N");
-                if (residue.getAtomNodeList().size() == 1 && N != null) {
-                    residueName = "NH2".intern();
-                    residue.setName(residueName);
-                }
+            Residue previousResidue = null;
+            Residue nextResidue = null;
+            if (residueNumber > 0) {
+                previousResidue = residues.get(residueNumber - 1);
             }
+            if (residueNumber < numberOfResidues - 1) {
+                nextResidue = residues.get(residueNumber + 1);
+            }
+            assignAminoAcidAtomTypes(residue, previousResidue, nextResidue);
+        }
+    }
+
+    private void assignAminoAcidAtomTypes(Residue residue, Residue previousResidue, Residue nextResidue)
+            throws MissingHeavyAtomException, MissingAtomTypeException {
+
+        String residueName = residue.getName().toUpperCase();
+
+        int j = 1;
+        ResiduePosition position = MIDDLE_RESIDUE;
+        if (previousResidue == null) {
+            j = 0;
+            position = FIRST_RESIDUE;
+        } else if (nextResidue == null) {
+            j = 2;
+            position = LAST_RESIDUE;
             /**
-             * Only the last residue in a chain should have an OXT/OT2 atom.
-             */
-            if (position != LAST_RESIDUE && numberOfResidues > 1) {
-                Atom OXT = (Atom) residue.getAtomNode("OXT");
-                if (OXT != null) {
-                    residue.deleteAtom(OXT);
-                }
-                Atom OT2 = (Atom) residue.getAtomNode("OT2");
-                if (OT2 != null) {
-                    residue.deleteAtom(OT2);
-                }
-            }
-
-            AminoAcid3 aminoAcid = AminoAcid3.UNK;
-            int aminoAcidNumber = -1;
-            for (AminoAcid3 amino : aminoAcidList) {
-                aminoAcidNumber++;
-                if (amino.toString().equalsIgnoreCase(residueName)) {
-                    aminoAcid = amino;
-                    break;
-                }
-            }
-
-            /**
-             * Only the first nitrogen should have H1, H2 and H3 atoms, unless
-             * it's an NME cap.
-             */
-            if (position != FIRST_RESIDUE && numberOfResidues > 1 && aminoAcid != AminoAcid3.NME) {
-                Atom H1 = (Atom) residue.getAtomNode("H1");
-                if (H1 != null) {
-                    residue.deleteAtom(H1);
-                }
-                Atom H2 = (Atom) residue.getAtomNode("H2");
-                if (H2 != null) {
-                    residue.deleteAtom(H2);
-                }
-                Atom H3 = (Atom) residue.getAtomNode("H3");
-                if (H3 != null) {
-                    residue.deleteAtom(H3);
-                }
-            }
-
-            /**
-             * Non-standard Amino Acid; use ALA backbone types.
-             */
-            boolean nonStandard = false;
-            if (aminoAcid == AminoAcid3.UNK) {
-                residueName = "ALA";
-                aminoAcidNumber = -1;
-                nonStandard = true;
-                for (AminoAcid3 amino : aminoAcidList) {
-                    aminoAcidNumber++;
-                    if (amino.toString().equalsIgnoreCase(residueName)) {
-                        break;
-                    }
-                }
-                residueName = residue.getName().toUpperCase();
-            }
-
-            /**
-             * Check for missing heavy atoms. This check ignores special
-             * terminating groups like FOR, NH2, etc.
-             */
-            int expected = aminoAcidHeavyAtoms[aminoAcidNumber];
-            if (aminoAcid != AminoAcid3.GLY && expected >= 4 && !nonStandard) {
-                int actual = 0;
-                List<Atom> resAtoms = residue.getAtomList();
-                for (Atom atom : resAtoms) {
-                    String label = atom.getName().toUpperCase();
-                    if (!(label.equalsIgnoreCase("OXT") || label.equalsIgnoreCase("OT2"))) {
-                        if (!label.startsWith("H") && !label.startsWith("D")) {
-                            actual++;
-                        }
-                    }
-                }
-                if (actual != expected) {
-                    Atom N = (Atom) residue.getAtomNode("N");
-                    if (N == null) {
-                        MissingHeavyAtomException e = new MissingHeavyAtomException("N", null, null);
-                        throw e;
-                    }
-                    Atom CA = (Atom) residue.getAtomNode("CA");
-                    if (CA == null) {
-                        MissingHeavyAtomException e = new MissingHeavyAtomException("CA", null, null);
-                        throw e;
-                    }
-                    Atom C = (Atom) residue.getAtomNode("C");
-                    if (C == null) {
-                        MissingHeavyAtomException e = new MissingHeavyAtomException("C", null, null);
-                        throw e;
-                    }
-                    Atom O = (Atom) residue.getAtomNode("O");
-                    if (O == null && position == LAST_RESIDUE) {
-                        O = (Atom) residue.getAtomNode("OT1");
-                    }
-                    if (O == null) {
-                        MissingHeavyAtomException e = new MissingHeavyAtomException("O", null, null);
-                        throw e;
-                    }
-                    /**
-                     * if (aminoAcid == AminoAcid3.ALA && actual == 4) {
-                     * residueName = "GLY".intern();
-                     * residue.setName(residueName); } else if (actual == 5) {
-                     * residueName = "ALA".intern();
-                     * residue.setName(residueName); }
-                     */
-                }
-            }
-
-            aminoAcid = AminoAcid3.UNK;
-            aminoAcidNumber = -1;
-            for (AminoAcid3 amino : aminoAcidList) {
-                aminoAcidNumber++;
-                if (amino.toString().equalsIgnoreCase(residueName)) {
-                    aminoAcid = amino;
-                    break;
-                }
-            }
-
-            /**
-             * Non-standard Amino Acid; use ALA backbone types.
-             */
-            if (aminoAcid == AminoAcid3.UNK) {
-                residueName = "ALA";
-                aminoAcidNumber = -1;
-                for (AminoAcid3 amino : aminoAcidList) {
-                    aminoAcidNumber++;
-                    if (amino.toString().equalsIgnoreCase(residueName)) {
-                        break;
-                    }
-                }
-                residueName = residue.getName().toUpperCase();
-            }
-
-            /**
-             * Backbone heavy atoms.
+             * If the last residue only contains a nitrogen turn it into an NH2
+             * group.
              */
             Atom N = (Atom) residue.getAtomNode("N");
-            if (N != null) {
-                N.setAtomType(findAtomType(nType[j][aminoAcidNumber]));
-                if (position != FIRST_RESIDUE) {
-                    buildBond(pC, N);
-                }
+            if (residue.getAtomNodeList().size() == 1 && N != null) {
+                residueName = "NH2".intern();
+                residue.setName(residueName);
             }
+        }
 
-            Atom CA = null;
-            Atom C = null;
-            Atom O = null;
-            if (!(position == LAST_RESIDUE && aminoAcid == AminoAcid3.NH2)) {
-                if (aminoAcid == AminoAcid3.ACE || aminoAcid == AminoAcid3.NME) {
-                    CA = buildHeavy(residue, "CH3", N, caType[j][aminoAcidNumber]);
-                } else {
-                    CA = buildHeavy(residue, "CA", N, caType[j][aminoAcidNumber]);
-                }
-                if (!(position == LAST_RESIDUE && aminoAcid == AminoAcid3.NME)) {
-                    C = buildHeavy(residue, "C", CA, cType[j][aminoAcidNumber]);
-                    O = (Atom) residue.getAtomNode("O");
-                    if (O == null) {
-                        O = (Atom) residue.getAtomNode("OT1");
-                    }
-                    AtomType atomType = findAtomType(oType[j][aminoAcidNumber]);
-                    if (O == null) {
-                        MissingHeavyAtomException missingHeavyAtom = new MissingHeavyAtomException("O", atomType, C);
-                        throw missingHeavyAtom;
-                    }
-                    O.setAtomType(atomType);
-                    buildBond(C, O);
-                }
-            }
-            /**
-             * Nitrogen hydrogen atoms.
-             */
-            AtomType atomType = findAtomType(hnType[j][aminoAcidNumber]);
-            switch (position) {
-                case FIRST_RESIDUE:
-                    switch (aminoAcid) {
-                        case PRO:
-                            buildHydrogenAtom(residue, "H2", N, 1.02, CA, 109.5, C, 0.0, 0, atomType);
-                            buildHydrogenAtom(residue, "H3", N, 1.02, CA, 109.5, C, -120.0, 0, atomType);
-                            break;
-                        case PCA:
-                            buildHydrogenAtom(residue, "H", N, 1.02, CA, 109.5, C, -60.0, 0, atomType);
-                            break;
-                        case ACE:
-                            break;
-                        default:
-                            buildHydrogenAtom(residue, "H1", N, 1.02, CA, 109.5, C, 180.0, 0, atomType);
-                            buildHydrogenAtom(residue, "H2", N, 1.02, CA, 109.5, C, 60.0, 0, atomType);
-                            buildHydrogenAtom(residue, "H3", N, 1.02, CA, 109.5, C, -60.0, 0, atomType);
-                    }
-                    break;
-                case LAST_RESIDUE:
-                    switch (aminoAcid) {
-                        case NH2:
-                            buildHydrogenAtom(residue, "H1", N, 1.02, pC, 119.0, pCA, 0.0, 0, atomType);
-                            buildHydrogenAtom(residue, "H2", N, 1.02, pC, 119.0, pCA, 180.0, 0, atomType);
-                            break;
-                        case NME:
-                            buildHydrogenAtom(residue, "H", N, 1.02, pC, 118.0, CA, 121.0, 1, atomType);
-                            break;
-                        default:
-                            buildHydrogenAtom(residue, "H", N, 1.02, pC, 119.0, CA, 119.0, 1, atomType);
-                    }
-                    break;
-                default:
-                    // Mid-chain nitrogen hydrogen.
-                    buildHydrogenAtom(residue, "H", N, 1.02, pC, 119.0, CA, 119.0, 1, atomType);
-            }
-            /**
-             * C-alpha hydrogen atoms.
-             */
-            String haName = "HA";
-            if (aminoAcid == AminoAcid3.GLY) {
-                haName = "HA2";
-            }
-            atomType = findAtomType(haType[j][aminoAcidNumber]);
-            switch (position) {
-                case FIRST_RESIDUE:
-                    switch (aminoAcid) {
-                        case FOR:
-                            buildHydrogenAtom(residue, "H", C, 1.12, O, 0.0, null, 0.0, 0, atomType);
-                            break;
-                        case ACE:
-                            buildHydrogenAtom(residue, "H1", CA, 1.10, C, 109.5, O, 180.0, 0, atomType);
-                            buildHydrogenAtom(residue, "H2", CA, 1.10, C, 109.5, O, 60.0, 0, atomType);
-                            buildHydrogenAtom(residue, "H3", CA, 1.10, C, 109.5, O, -60.0, 0, atomType);
-                            break;
-                        default:
-                            buildHydrogenAtom(residue, haName, CA, 1.10, N, 109.5, C, 109.5, -1, atomType);
-                            break;
-                    }
-                    break;
-                case LAST_RESIDUE:
-                    switch (aminoAcid) {
-                        case NME:
-                            buildHydrogenAtom(residue, "H1", CA, 1.10, N, 109.5, pC, 180.0, 0, atomType);
-                            buildHydrogenAtom(residue, "H2", CA, 1.10, N, 109.5, pC, 60.0, 0, atomType);
-                            buildHydrogenAtom(residue, "H3", CA, 1.10, N, 109.5, pC, -60.0, 0, atomType);
-                            break;
-                        default:
-                            buildHydrogenAtom(residue, haName, CA, 1.10, N, 109.5, C, 109.5, -1, atomType);
-                    }
-                    break;
-                default:
-                    buildHydrogenAtom(residue, haName, CA, 1.10, N, 109.5, C, 109.0, -1, atomType);
-            }
-            /**
-             * Build the amino acid side chain.
-             */
-            assignAminoAcidSideChain(position, aminoAcid, residue, CA, N, C);
+        AminoAcid3 aminoAcid = getAminoAcid(residueName);
+        int aminoAcidNumber = getAminoAcidNumber(residueName);
+        /**
+         * Non-standard Amino Acid; use ALA backbone types.
+         */
+        boolean nonStandard = false;
+        if (aminoAcid == AminoAcid3.UNK) {
+            aminoAcidNumber = getAminoAcidNumber("ALA");
+            nonStandard = true;
+        }
 
-            /**
-             * Build the terminal oxygen if the residue is not NH2 or NME.
-             */
-            if (position == LAST_RESIDUE && !(aminoAcid == AminoAcid3.NH2 || aminoAcid == AminoAcid3.NME)) {
-                atomType = findAtomType(oType[2][aminoAcidNumber]);
-                Atom OXT = (Atom) residue.getAtomNode("OXT");
-                if (OXT == null) {
-                    OXT = (Atom) residue.getAtomNode("OT2");
-                    if (OXT != null) {
-                        OXT.setName("OXT");
-                    }
-                }
-                if (OXT == null) {
-                    String resName = C.getResidueName();
-                    int resSeq = C.getResidueNumber();
-                    Character chainID = C.getChainID();
-                    Character altLoc = C.getAltLoc();
-                    String segID = C.getSegID();
-                    double occupancy = C.getOccupancy();
-                    double tempFactor = C.getTempFactor();
-                    OXT = new Atom(0, "OXT", altLoc, new double[3], resName, resSeq, chainID,
-                            occupancy, tempFactor, segID);
-                    OXT.setAtomType(atomType);
-                    residue.addMSNode(OXT);
-                    intxyz(OXT, C, 1.25, CA, 117.0, O, 126.0, 1);
-                } else {
-                    OXT.setAtomType(atomType);
-                }
-                buildBond(C, OXT);
+        /**
+         * Only the last residue in a chain should have an OXT/OT2 atom.
+         */
+        if (nextResidue != null) {
+            removeOXT_OT2(residue);
+        }
+
+        /**
+         * Only the first nitrogen should have H1, H2 and H3 atoms, unless it's
+         * an NME cap.
+         */
+        if (previousResidue != null) {
+            removeH1_H2_H3(aminoAcid, residue);
+        }
+
+        /**
+         * Check for missing heavy atoms. This check ignores special terminating
+         * groups like FOR, NH2, etc.
+         */
+        if (!nonStandard) {
+            checkForMissingHeavyAtoms(aminoAcidNumber, aminoAcid, position, residue);
+        }
+
+        Atom pC = null;
+        Atom pCA = null;
+        if (previousResidue != null) {
+            pC = (Atom) previousResidue.getAtomNode("C");
+            pCA = (Atom) previousResidue.getAtomNode("CA");
+        }
+
+        /**
+         * Backbone heavy atoms.
+         */
+        Atom N = (Atom) residue.getAtomNode("N");
+        if (N != null) {
+            N.setAtomType(findAtomType(nType[j][aminoAcidNumber]));
+            if (position != FIRST_RESIDUE) {
+                buildBond(pC, N);
             }
-            /**
-             * Do some checks on the current residue to make sure all atoms have
-             * been assigned an atom type.
-             */
-            List<Atom> resAtoms = residue.getAtomList();
-            for (Atom atom : resAtoms) {
-                atomType = atom.getAtomType();
-                if (atomType == null) {
-                    MissingAtomTypeException missingAtomTypeException = new MissingAtomTypeException(residue, atom);
-                    throw missingAtomTypeException;
+        }
+
+        Atom CA = null;
+        Atom C = null;
+        Atom O = null;
+        if (!(position == LAST_RESIDUE && aminoAcid == AminoAcid3.NH2)) {
+            if (aminoAcid == AminoAcid3.ACE || aminoAcid == AminoAcid3.NME) {
+                CA = buildHeavy(residue, "CH3", N, caType[j][aminoAcidNumber]);
+            } else {
+                CA = buildHeavy(residue, "CA", N, caType[j][aminoAcidNumber]);
+            }
+            if (!(position == LAST_RESIDUE && aminoAcid == AminoAcid3.NME)) {
+                C = buildHeavy(residue, "C", CA, cType[j][aminoAcidNumber]);
+                O = (Atom) residue.getAtomNode("O");
+                if (O == null) {
+                    O = (Atom) residue.getAtomNode("OT1");
                 }
-                int numberOfBonds = atom.getNumBonds();
-                if (numberOfBonds != atomType.valence) {
-                    if (atom == C && numberOfBonds == atomType.valence - 1 && position != LAST_RESIDUE) {
-                        continue;
-                    }
-                    logger.warning(format(" An atom for residue %s has the wrong number of bonds:\n %s", residueName, atom.toString()));
-                    logger.warning(format(" Expected: %d Actual: %d.", atomType.valence, numberOfBonds));
+                AtomType atomType = findAtomType(oType[j][aminoAcidNumber]);
+                if (O == null) {
+                    MissingHeavyAtomException missingHeavyAtom = new MissingHeavyAtomException("O", atomType, C);
+                    throw missingHeavyAtom;
+                }
+                O.setAtomType(atomType);
+                buildBond(C, O);
+            }
+        }
+        /**
+         * Nitrogen hydrogen atoms.
+         */
+        AtomType atomType = findAtomType(hnType[j][aminoAcidNumber]);
+        switch (position) {
+            case FIRST_RESIDUE:
+                switch (aminoAcid) {
+                    case PRO:
+                        buildHydrogenAtom(residue, "H2", N, 1.02, CA, 109.5, C, 0.0, 0, atomType);
+                        buildHydrogenAtom(residue, "H3", N, 1.02, CA, 109.5, C, -120.0, 0, atomType);
+                        break;
+                    case PCA:
+                        buildHydrogenAtom(residue, "H", N, 1.02, CA, 109.5, C, -60.0, 0, atomType);
+                        break;
+                    case ACE:
+                        break;
+                    default:
+                        buildHydrogenAtom(residue, "H1", N, 1.02, CA, 109.5, C, 180.0, 0, atomType);
+                        buildHydrogenAtom(residue, "H2", N, 1.02, CA, 109.5, C, 60.0, 0, atomType);
+                        buildHydrogenAtom(residue, "H3", N, 1.02, CA, 109.5, C, -60.0, 0, atomType);
+                }
+                break;
+            case LAST_RESIDUE:
+                switch (aminoAcid) {
+                    case NH2:
+                        buildHydrogenAtom(residue, "H1", N, 1.02, pC, 119.0, pCA, 0.0, 0, atomType);
+                        buildHydrogenAtom(residue, "H2", N, 1.02, pC, 119.0, pCA, 180.0, 0, atomType);
+                        break;
+                    case NME:
+                        buildHydrogenAtom(residue, "H", N, 1.02, pC, 118.0, CA, 121.0, 1, atomType);
+                        break;
+                    default:
+                        buildHydrogenAtom(residue, "H", N, 1.02, pC, 119.0, CA, 119.0, 1, atomType);
+                }
+                break;
+            default:
+                // Mid-chain nitrogen hydrogen.
+                buildHydrogenAtom(residue, "H", N, 1.02, pC, 119.0, CA, 119.0, 1, atomType);
+        }
+        /**
+         * C-alpha hydrogen atoms.
+         */
+        String haName = "HA";
+        if (aminoAcid == AminoAcid3.GLY) {
+            haName = "HA2";
+        }
+        atomType = findAtomType(haType[j][aminoAcidNumber]);
+        switch (position) {
+            case FIRST_RESIDUE:
+                switch (aminoAcid) {
+                    case FOR:
+                        buildHydrogenAtom(residue, "H", C, 1.12, O, 0.0, null, 0.0, 0, atomType);
+                        break;
+                    case ACE:
+                        buildHydrogenAtom(residue, "H1", CA, 1.10, C, 109.5, O, 180.0, 0, atomType);
+                        buildHydrogenAtom(residue, "H2", CA, 1.10, C, 109.5, O, 60.0, 0, atomType);
+                        buildHydrogenAtom(residue, "H3", CA, 1.10, C, 109.5, O, -60.0, 0, atomType);
+                        break;
+                    default:
+                        buildHydrogenAtom(residue, haName, CA, 1.10, N, 109.5, C, 109.5, -1, atomType);
+                        break;
+                }
+                break;
+            case LAST_RESIDUE:
+                switch (aminoAcid) {
+                    case NME:
+                        buildHydrogenAtom(residue, "H1", CA, 1.10, N, 109.5, pC, 180.0, 0, atomType);
+                        buildHydrogenAtom(residue, "H2", CA, 1.10, N, 109.5, pC, 60.0, 0, atomType);
+                        buildHydrogenAtom(residue, "H3", CA, 1.10, N, 109.5, pC, -60.0, 0, atomType);
+                        break;
+                    default:
+                        buildHydrogenAtom(residue, haName, CA, 1.10, N, 109.5, C, 109.5, -1, atomType);
+                }
+                break;
+            default:
+                buildHydrogenAtom(residue, haName, CA, 1.10, N, 109.5, C, 109.0, -1, atomType);
+        }
+        /**
+         * Build the amino acid side chain.
+         */
+        assignAminoAcidSideChain(position, aminoAcid, residue, CA, N, C);
+
+        /**
+         * Build the terminal oxygen if the residue is not NH2 or NME.
+         */
+        if (position == LAST_RESIDUE && !(aminoAcid == AminoAcid3.NH2 || aminoAcid == AminoAcid3.NME)) {
+            atomType = findAtomType(oType[2][aminoAcidNumber]);
+            Atom OXT = (Atom) residue.getAtomNode("OXT");
+            if (OXT == null) {
+                OXT = (Atom) residue.getAtomNode("OT2");
+                if (OXT != null) {
+                    OXT.setName("OXT");
                 }
             }
-            /**
-             * Remember the current C-alpha and carbonyl C atoms for use with
-             * the next residue.
-             */
-            pCA = CA;
-            pC = C;
+            if (OXT == null) {
+                String resName = C.getResidueName();
+                int resSeq = C.getResidueNumber();
+                Character chainID = C.getChainID();
+                Character altLoc = C.getAltLoc();
+                String segID = C.getSegID();
+                double occupancy = C.getOccupancy();
+                double tempFactor = C.getTempFactor();
+                OXT = new Atom(0, "OXT", altLoc, new double[3], resName, resSeq, chainID,
+                        occupancy, tempFactor, segID);
+                OXT.setAtomType(atomType);
+                residue.addMSNode(OXT);
+                intxyz(OXT, C, 1.25, CA, 117.0, O, 126.0, 1);
+            } else {
+                OXT.setAtomType(atomType);
+            }
+            buildBond(C, OXT);
+        }
+        /**
+         * Do some checks on the current residue to make sure all atoms have
+         * been assigned an atom type.
+         */
+        List<Atom> resAtoms = residue.getAtomList();
+        for (Atom atom : resAtoms) {
+            atomType = atom.getAtomType();
+            if (atomType == null) {
+                MissingAtomTypeException missingAtomTypeException = new MissingAtomTypeException(residue, atom);
+                throw missingAtomTypeException;
+            }
+            int numberOfBonds = atom.getNumBonds();
+            if (numberOfBonds != atomType.valence) {
+                if (atom == C && numberOfBonds == atomType.valence - 1 && position != LAST_RESIDUE) {
+                    continue;
+                }
+                logger.warning(format(" An atom for residue %s has the wrong number of bonds:\n %s",
+                        residueName, atom.toString()));
+                logger.warning(format(" Expected: %d Actual: %d.", atomType.valence, numberOfBonds));
+            }
         }
     }
 
@@ -3375,7 +3399,7 @@ public final class PDBFilter extends SystemFilter {
 
     public void setListMode(boolean set) {
         listMode = set;
-        listOutput = new ArrayList<String>();
+        listOutput = new ArrayList<>();
     }
 
     public ArrayList<String> getListOutput() {

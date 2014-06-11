@@ -312,8 +312,8 @@ public class MultiResidue extends Residue {
         int number = residue.getResidueNumber();
         ResiduePosition position = pdbFilter.getResiduePosition(number);
         AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
-        // Create copies of CA, N, C
 
+        // Get references to the backbone atoms
         Atom CA = (Atom) activeResidue.getAtomNode("CA");
         Atom HA = (Atom) activeResidue.getAtomNode("HA");
         Atom C = (Atom) activeResidue.getAtomNode("C");
