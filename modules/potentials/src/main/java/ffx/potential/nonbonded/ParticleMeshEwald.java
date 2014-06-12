@@ -778,7 +778,11 @@ public class ParticleMeshEwald implements LambdaInterface {
                         ForceFieldDouble.CG_PRECONDITIONER_EWALD, (aewald == 0.0) ? 0.54 : aewald);
                 preconditionerSOR = forceField.getDouble(
                         ForceFieldDouble.CG_PRECONDITIONER_SOR, 1.0);
+            } else {
+                preconditionerCutoff = 0.0;
             }
+        } else {
+            preconditionerCutoff = 0.0;
         }
 
         if (lambdaTerm) {
