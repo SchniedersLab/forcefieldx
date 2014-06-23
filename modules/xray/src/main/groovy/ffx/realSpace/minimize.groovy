@@ -95,7 +95,7 @@ if (options.p) {
     System.setProperty("polarization", options.p);
 }
 
-logger.info("\n Running x-ray minimize on " + modelFilename);
+logger.info("\n Running real-space minimize on " + modelFilename);
 systems = open(modelFilename);
 if (mapFiles.size() == 0) {
     RealSpaceFile realspacefile = new RealSpaceFile(systems);

@@ -41,6 +41,7 @@ import ffx.potential.ResidueEnumerations.NucleicAcid3;
 import ffx.potential.bonded.*;
 import ffx.potential.bonded.Utilities.FileType;
 import ffx.potential.parameters.*;
+import static ffx.potential.parsers.PDBFilter.PDBFileStandard.*;
 import ffx.potential.parsers.PDBFilter.ResiduePosition;
 import ffx.utilities.Hybrid36;
 
@@ -103,6 +104,7 @@ public final class PDBFilter extends SystemFilter {
     private String mutateToResname = null;
     private Character mutateChainID = null;
     private boolean print = true;
+    private PDBFileStandard fileStandard = VERSION3_3; // Assume current standard.
     /**
      * If true, output is directed into arrayOutput instead of the file.
      */
@@ -437,6 +439,9 @@ public final class PDBFilter extends SystemFilter {
 // =============================================================================
                             serial = new Integer(Hybrid36.decode(5, line.substring(6, 11)));
                             String name = line.substring(12, 16).trim();
+                            if (name.toUpperCase().contains("1H") || name.toUpperCase().contains("2H") || name.toUpperCase().contains("3H")) {
+                                fileStandard = VERSION3_2; // VERSION3_2 is presently just a placeholder for "anything non-standard".
+                            }
                             altLoc = new Character(line.substring(16, 17).toUpperCase().charAt(0));
                             if (!altLocs.contains(altLoc)) {
                                 altLocs.add(altLoc);
@@ -952,6 +957,7 @@ public final class PDBFilter extends SystemFilter {
                     for (AminoAcid3 amino : aminoAcidList) {
                         if (amino.toString().equalsIgnoreCase(name)) {
                             aa = true;
+                            renameNonstandardHydrogens(residue);
                             break;
                         }
                     }
@@ -4099,6 +4105,788 @@ public final class PDBFilter extends SystemFilter {
         Atom HG3 = buildHydrogen(residue, "HG3", CG, 1.11, CB, 109.4, CD, 109.4, -1, k + 3);
         return residue;
     }
+    
+    private void renameGlycineAlphaHydrogens(Residue residue, List<Atom> resAtoms) {
+        Atom HA2 = (Atom) residue.getAtomNode("HA2");
+        Atom HA3 = (Atom) residue.getAtomNode("HA3");
+        if (HA2 != null) {
+            resAtoms.remove(HA2);
+        }
+        if (HA3 != null) {
+            resAtoms.remove(HA3);
+        }
+        if (HA2 == null && !resAtoms.isEmpty()) {
+            resAtoms.get(0).setName("HA2");
+            resAtoms.remove(0);
+        }
+        if (HA3 == null && !resAtoms.isEmpty()) {
+            resAtoms.get(0).setName("HA3");
+        }
+    }
+    
+    private void renameHydrogenType(Residue residue, List<Atom> resAtoms, int indices, String hydrogenType) {
+        // Planned to replace rename<Beta/Gamma/...>Hydrogens methods.
+    }
+    
+    private void renameBetaHydrogens(Residue residue, List<Atom> resAtoms, int indexes) {
+        Atom[] HBn = new Atom[3];
+        switch (indexes) {
+            case 12:
+                HBn[0] = (Atom) residue.getAtomNode("HB1");
+                HBn[1] = (Atom) residue.getAtomNode("HB2");
+                break;
+            case 13:
+                HBn[0] = (Atom) residue.getAtomNode("HB1");
+                HBn[2] = (Atom) residue.getAtomNode("HB3");
+                break;
+            case 23:
+                HBn[1] = (Atom) residue.getAtomNode("HB2");
+                HBn[2] = (Atom) residue.getAtomNode("HB3");
+                break;
+            default:
+                return;
+        }
+        for (Atom HBatom : HBn) {
+            if (resAtoms.contains(HBatom)) {
+                resAtoms.remove(HBatom);
+            }
+        }
+        if (!resAtoms.isEmpty() && HBn[0] == null && (indexes == 12 || indexes == 13)) {
+            resAtoms.get(0).setName("HB1");
+            resAtoms.remove(0);
+        }
+        if (!resAtoms.isEmpty() && HBn[1] == null && (indexes == 12 || indexes == 23)) {
+            resAtoms.get(0).setName("HB2");
+            resAtoms.remove(0);
+        }
+        if (!resAtoms.isEmpty() && HBn[2] == null && (indexes == 13 || indexes == 23)) {
+            resAtoms.get(0).setName("HB3");
+            resAtoms.remove(0);
+        }
+    }
+    
+    private void renameGammaHydrogens(Residue residue, List<Atom> resAtoms, int indexes) {
+        Atom[] HGn = new Atom[3];
+        switch (indexes) {
+            case 12:
+                HGn[0] = (Atom) residue.getAtomNode("HG1");
+                HGn[1] = (Atom) residue.getAtomNode("HG2");
+                break;
+            case 13:
+                HGn[0] = (Atom) residue.getAtomNode("HG1");
+                HGn[2] = (Atom) residue.getAtomNode("HG3");
+                break;
+            case 23:
+                HGn[1] = (Atom) residue.getAtomNode("HG2");
+                HGn[2] = (Atom) residue.getAtomNode("HG3");
+                break;
+            default:
+                return;
+        }
+        for (Atom HGatom : HGn) {
+            if (resAtoms.contains(HGatom)) {
+                resAtoms.remove(HGatom);
+            }
+        }
+        if (!resAtoms.isEmpty() && HGn[0] == null && (indexes == 12 || indexes == 13)) {
+            resAtoms.get(0).setName("HG1");
+            resAtoms.remove(0);
+        }
+        if (!resAtoms.isEmpty() && HGn[1] == null && (indexes == 12 || indexes == 23)) {
+            resAtoms.get(0).setName("HG2");
+            resAtoms.remove(0);
+        }
+        if (!resAtoms.isEmpty() && HGn[2] == null && (indexes == 13 || indexes == 23)) {
+            resAtoms.get(0).setName("HG3");
+            resAtoms.remove(0);
+        }
+    }
+    
+    private void renameDeltaHydrogens(Residue residue, List<Atom> resAtoms, int indexes) {
+        Atom[] HDn = new Atom[3];
+        switch (indexes) {
+            case 12:
+                HDn[0] = (Atom) residue.getAtomNode("HD1");
+                HDn[1] = (Atom) residue.getAtomNode("HD2");
+                break;
+            case 13:
+                HDn[0] = (Atom) residue.getAtomNode("HD1");
+                HDn[2] = (Atom) residue.getAtomNode("HD3");
+                break;
+            case 23:
+                HDn[1] = (Atom) residue.getAtomNode("HD2");
+                HDn[2] = (Atom) residue.getAtomNode("HD3");
+                break;
+            default:
+                return;
+        }
+        for (Atom HDatom : HDn) {
+            if (resAtoms.contains(HDatom)) {
+                resAtoms.remove(HDatom);
+            }
+        }
+        if (!resAtoms.isEmpty() && HDn[0] == null && (indexes == 12 || indexes == 13)) {
+            resAtoms.get(0).setName("HD1");
+            resAtoms.remove(0);
+        }
+        if (!resAtoms.isEmpty() && HDn[1] == null && (indexes == 12 || indexes == 23)) {
+            resAtoms.get(0).setName("HD2");
+            resAtoms.remove(0);
+        }
+        if (!resAtoms.isEmpty() && HDn[2] == null && (indexes == 13 || indexes == 23)) {
+            resAtoms.get(0).setName("HD3");
+            resAtoms.remove(0);
+        }
+    }
+    
+    private void renameEpsilonHydrogens(Residue residue, List<Atom> resAtoms, int indexes) {
+        Atom[] HEn = new Atom[3];
+        switch (indexes) {
+            case 12:
+                HEn[0] = (Atom) residue.getAtomNode("HE1");
+                HEn[1] = (Atom) residue.getAtomNode("HE2");
+                break;
+            case 13:
+                HEn[0] = (Atom) residue.getAtomNode("HE1");
+                HEn[2] = (Atom) residue.getAtomNode("HE3");
+                break;
+            case 23:
+                HEn[1] = (Atom) residue.getAtomNode("HE2");
+                HEn[2] = (Atom) residue.getAtomNode("HE3");
+                break;
+            default:
+                return;
+        }
+        for (Atom HEatom : HEn) {
+            if (resAtoms.contains(HEatom)) {
+                resAtoms.remove(HEatom);
+            }
+        }
+        if (!resAtoms.isEmpty() && HEn[0] == null && (indexes == 12 || indexes == 13)) {
+            resAtoms.get(0).setName("HE1");
+            resAtoms.remove(0);
+        }
+        if (!resAtoms.isEmpty() && HEn[1] == null && (indexes == 12 || indexes == 23)) {
+            resAtoms.get(0).setName("HE2");
+            resAtoms.remove(0);
+        }
+        if (!resAtoms.isEmpty() && HEn[2] == null && (indexes == 13 || indexes == 23)) {
+            resAtoms.get(0).setName("HE3");
+            resAtoms.remove(0);
+        }
+    }
+    
+        private void renameZetaHydrogens(Residue residue, List<Atom> resAtoms, int indexes) {
+        Atom[] HZn = new Atom[3];
+        switch (indexes) {
+            case 12:
+                HZn[0] = (Atom) residue.getAtomNode("HZ1");
+                HZn[1] = (Atom) residue.getAtomNode("HZ2");
+                break;
+            case 13:
+                HZn[0] = (Atom) residue.getAtomNode("HZ1");
+                HZn[2] = (Atom) residue.getAtomNode("HZ3");
+                break;
+            case 23:
+                HZn[1] = (Atom) residue.getAtomNode("HZ2");
+                HZn[2] = (Atom) residue.getAtomNode("HZ3");
+                break;
+            default:
+                return;
+        }
+        for (Atom HZatom : HZn) {
+            if (resAtoms.contains(HZatom)) {
+                resAtoms.remove(HZatom);
+            }
+        }
+        if (!resAtoms.isEmpty() && HZn[0] == null && (indexes == 12 || indexes == 13)) {
+            resAtoms.get(0).setName("HZ1");
+            resAtoms.remove(0);
+        }
+        if (!resAtoms.isEmpty() && HZn[1] == null && (indexes == 12 || indexes == 23)) {
+            resAtoms.get(0).setName("HZ2");
+            resAtoms.remove(0);
+        }
+        if (!resAtoms.isEmpty() && HZn[2] == null && (indexes == 13 || indexes == 23)) {
+            resAtoms.get(0).setName("HZ3");
+            resAtoms.remove(0);
+        }
+    }
+    
+    private void renameIsoleucineHydrogens(Residue residue, List<Atom> resAtoms) {
+        Atom HG12 = (Atom) residue.getAtomNode("HG12");
+        Atom HG13 = (Atom) residue.getAtomNode("HG13");
+        if (HG12 != null) {
+            resAtoms.remove(HG12);
+        }
+        if (HG13 != null) {
+            resAtoms.remove(HG13);
+        }
+        if (HG12 == null && !resAtoms.isEmpty()) {
+            resAtoms.get(0).setName("HG12");
+            resAtoms.remove(0);
+        }
+        if (HG13 == null && !resAtoms.isEmpty()) {
+            resAtoms.get(0).setName("HG13");
+        }
+    }
+    
+    private void renameAsparagineHydrogens(Residue residue, List<Atom> resAtoms) {
+        Atom HD21 = (Atom) residue.getAtomNode("HD21");
+        Atom HD22 = (Atom) residue.getAtomNode("HD22");
+        if (HD21 != null) {
+            resAtoms.remove(HD21);
+        }
+        if (HD22 != null) {
+            resAtoms.remove(HD22);
+        }
+        if (!resAtoms.isEmpty() && HD21 == null) {
+            resAtoms.get(0).setName("HD21");
+            resAtoms.remove(0);
+        }
+        if (!resAtoms.isEmpty() && HD22 == null) {
+            resAtoms.get(0).setName("HD21");
+        }
+    }
+    
+    private void renameGlutamineHydrogens(Residue residue, List<Atom> resAtoms) {
+        Atom HE21 = (Atom) residue.getAtomNode("HE21");
+        Atom HE22 = (Atom) residue.getAtomNode("HE22");
+        if (HE21 != null) {
+            resAtoms.remove(HE21);
+        }
+        if (HE22 != null) {
+            resAtoms.remove(HE22);
+        }
+        if (!resAtoms.isEmpty() && HE21 == null) {
+            resAtoms.get(0).setName("HE21");
+            resAtoms.remove(0);
+        }
+        if (!resAtoms.isEmpty() && HE22 == null) {
+            resAtoms.get(0).setName("HE21");
+        }
+    }
+    
+    private void renameArginineHydrogens(Residue residue, List<Atom> resAtoms) {
+        Atom HH11 = (Atom) residue.getAtomNode("HH11");
+        Atom HH12 = (Atom) residue.getAtomNode("HH12");
+        Atom HH21 = (Atom) residue.getAtomNode("HH21");
+        Atom HH22 = (Atom) residue.getAtomNode("HH22");
+        if (HH11 != null) {
+            resAtoms.remove(HH11);
+        }
+        if (HH12 != null) {
+            resAtoms.remove(HH12);
+        }
+        if (HH21 != null) {
+            resAtoms.remove(HH21);
+        }
+        if (HH22 != null) {
+            resAtoms.remove(HH22);
+        }
+        if (!resAtoms.isEmpty() && HH11 == null) {
+            resAtoms.get(0).setName("HH11");
+            resAtoms.remove(0);
+        }
+        if (!resAtoms.isEmpty() && HH12 == null) {
+            resAtoms.get(0).setName("HH12");
+            resAtoms.remove(0);
+        }
+        if (!resAtoms.isEmpty() && HH21 == null) {
+            resAtoms.get(0).setName("HH21");
+            resAtoms.remove(0);
+        }
+        if (!resAtoms.isEmpty() && HH22 == null) {
+            resAtoms.get(0).setName("HH22");
+            resAtoms.remove(0);
+        }
+    }
+    
+    /**
+     * Ensures proper naming of hydrogens according to latest PDB format. 
+     * Presently mostly guesses at which hydrogens to re-assign, which may cause
+     * chirality errors for prochiral hydrogens. If necessary, we will implement
+     * more specific mapping.
+     * @param residue 
+     */
+    private void renameNonstandardHydrogens(Residue residue) {
+        switch(fileStandard) {
+            case VERSION3_3:
+                return;
+            case VERSION3_2:
+            default:
+                break;
+        }
+        // May have to get position.
+        String residueType = residue.getName().toUpperCase();
+        ArrayList<Atom> resAtoms = residue.getAtomList();
+        for (Atom atom : resAtoms) {
+            if (atom == null) {
+                continue;
+            }
+            String atomName = atom.getName().toUpperCase();
+            // Handles situations such as 1H where it should be H1, etc.
+            if (atomName.contains("H")) {
+                try {
+                    String firstChar = atomName.substring(0, 1);
+                    Integer.parseInt(firstChar);
+                    atomName = atomName.substring(1);
+                    atomName = atomName.concat(firstChar);
+                    atom.setName(atomName);
+                } catch (NumberFormatException e) {
+                    // Do nothing.
+                }
+            }
+        }
+        // Ensures proper hydrogen assignment; for example, Gln should have HB2, 
+        // HB3 instead of HB1, HB2.
+        ArrayList<Atom> betas;
+        ArrayList<Atom> gammas;
+        ArrayList<Atom> deltas;
+        ArrayList<Atom> epsilons;
+        ArrayList<Atom> zetas;
+        String atomName;
+        Atom OH;
+        Atom HH;
+        Atom HG;
+        Atom HD2;
+        switch (getAminoAcid(residueType)) {
+            case GLY:
+                ArrayList<Atom> alphas = new ArrayList<>();
+                for (Atom atom : resAtoms) {
+                    if (atom.getName().toUpperCase().contains("HA")) {
+                        alphas.add(atom);
+                    }
+                }
+                renameGlycineAlphaHydrogens(residue, alphas);
+                break;
+            case ALA:
+                // No known errors with alanine
+                break;
+            case VAL:
+                // No known errors with valine
+                break;
+            case LEU:
+                betas = new ArrayList<>();
+                for (Atom atom : resAtoms) {
+                    if (atom.getName().toUpperCase().contains("HB")) {
+                        betas.add(atom);
+                    }
+                }
+                renameBetaHydrogens(residue, betas, 23);
+                break;
+            case ILE:
+                ArrayList<Atom> ileAtoms = new ArrayList<>();
+                for (Atom atom : resAtoms) {
+                    if (atom.getName().toUpperCase().contains("HG1")) {
+                        ileAtoms.add(atom);
+                    }
+                }
+                renameIsoleucineHydrogens(residue, ileAtoms);
+                break;
+            case SER:
+                betas = new ArrayList<>();
+                for (Atom atom : resAtoms) {
+                    if (atom.getName().toUpperCase().contains("HB")) {
+                        betas.add(atom);
+                    }
+                }
+                renameBetaHydrogens(residue, betas, 23);
+                break;
+            case THR:
+                Atom HG1 = (Atom) residue.getAtomNode("HG1");
+                if (HG1 == null) {
+                    for (Atom atom : resAtoms) {
+                        atomName = atom.getName().toUpperCase();
+                        // Gets first HG-containing name of length < 4
+                        // Length < 4 avoids bringing in HG21, HG22, or HG23.
+                        if (atomName.length() < 4 && atomName.contains("HG")) {
+                            atom.setName("HG1");
+                            break;
+                        }
+                    }
+                }
+                break;
+            case CYS:
+                betas = new ArrayList<>();
+                HG = (Atom) residue.getAtomNode("HG");
+                for (Atom atom : resAtoms) {
+                    atomName = atom.getName().toUpperCase();
+                    if (atomName.contains("HB")) {
+                        betas.add(atom);
+                    } else if (HG == null && atomName.contains("HG")) {
+                        HG = atom;
+                        HG.setName("HG");
+                    }
+                }
+                renameBetaHydrogens(residue, betas, 23);
+                break;
+            case CYX:
+                // I pray this is never important, because I don't have an example CYX to work from.
+                break;
+            case CYD:
+                betas = new ArrayList<>();
+                for (Atom atom : resAtoms) {
+                    if (atom.getName().toUpperCase().contains("HB")) {
+                        betas.add(atom);
+                    }
+                }
+                renameBetaHydrogens(residue, betas, 23);
+                break;
+            case PRO:
+                betas = new ArrayList<>();
+                gammas = new ArrayList<>();
+                deltas = new ArrayList<>();
+                for (Atom atom : resAtoms) {
+                    atomName = atom.getName().toUpperCase();
+                    if (atomName.contains("HB")) {
+                        betas.add(atom);
+                    } else if (atomName.contains("HG")) {
+                        gammas.add(atom);
+                    } else if (atomName.contains("HD")) {
+                        deltas.add(atom);
+                    }
+                }
+                renameBetaHydrogens(residue, betas, 23);
+                renameGammaHydrogens(residue, gammas, 23);
+                renameDeltaHydrogens(residue, deltas, 23);
+                break;
+            case PHE:
+                betas = new ArrayList<>();
+                deltas = new ArrayList<>();
+                epsilons = new ArrayList<>();
+                Atom HZ = (Atom) residue.getAtomNode("HZ");
+                for (Atom atom : resAtoms) {
+                    atomName = atom.getName().toUpperCase();
+                    if (atomName.contains("HB")) {
+                        betas.add(atom);
+                    } else if (atomName.contains("HD")) {
+                        deltas.add(atom);
+                    } else if (atomName.contains("HE")) {
+                        epsilons.add(atom);
+                    } else if (HZ == null && atomName.contains("HZ")) {
+                        HZ = atom;
+                        HZ.setName("HZ");
+                    }
+                }
+                renameBetaHydrogens(residue, betas, 23);
+                renameDeltaHydrogens(residue, deltas, 12);
+                renameEpsilonHydrogens(residue, epsilons, 12);
+                break;
+            case TYR:
+                betas = new ArrayList<>();
+                deltas = new ArrayList<>();
+                epsilons = new ArrayList<>();
+                HH = (Atom) residue.getAtomNode("HH");
+                OH = (Atom) residue.getAtomNode("OH");
+                for (Atom atom : resAtoms) {
+                    atomName = atom.getName().toUpperCase();
+                    if (atomName.contains("HB")) {
+                        betas.add(atom);
+                    } else if (atomName.contains("HD")) {
+                        deltas.add(atom);
+                    } else if (atomName.contains("HE")) {
+                        epsilons.add(atom);
+                    } else if (HH == null && atomName.contains("HH")) {
+                        HH = atom;
+                        HH.setName("HH");
+                    } else if (OH == null && atomName.contains("O") && atomName.contains("H")) {
+                        OH = atom;
+                        OH.setName("OH");
+                    }
+                }
+                renameBetaHydrogens(residue, betas, 23);
+                renameDeltaHydrogens(residue, deltas, 12);
+                renameEpsilonHydrogens(residue, epsilons, 12);
+                break;
+            case TYD:
+                betas = new ArrayList<>();
+                deltas = new ArrayList<>();
+                epsilons = new ArrayList<>();
+                OH = (Atom) residue.getAtomNode("OH");
+                for (Atom atom : resAtoms) {
+                    atomName = atom.getName().toUpperCase();
+                    if (atomName.contains("HB")) {
+                        betas.add(atom);
+                    } else if (atomName.contains("HD")) {
+                        deltas.add(atom);
+                    } else if (atomName.contains("HE")) {
+                        epsilons.add(atom);
+                    } else if (OH == null && atomName.contains("O") && atomName.contains("H")) {
+                        OH = atom;
+                        OH.setName("OH");
+                    }
+                }
+                renameBetaHydrogens(residue, betas, 23);
+                renameDeltaHydrogens(residue, deltas, 12);
+                renameEpsilonHydrogens(residue, epsilons, 12);
+                break;
+            case TRP:
+                betas = new ArrayList<>();
+                epsilons = new ArrayList<>();
+                zetas = new ArrayList<>();
+                Atom HD1 = (Atom) residue.getAtomNode("HD1");
+                Atom HH2 = (Atom) residue.getAtomNode("HH2");
+                for (Atom atom : resAtoms) {
+                    atomName = atom.getName().toUpperCase();
+                    if (atomName.contains("HB")) {
+                        betas.add(atom);
+                    } else if (atomName.contains("HE")) {
+                        epsilons.add(atom);
+                    } else if (atomName.contains("HZ")) {
+                        zetas.add(atom);
+                    } else if (HD1 == null && atomName.contains("HD")) {
+                        HD1 = atom;
+                        HD1.setName("HD1");
+                    } else if (HH2 == null && atomName.contains("HH")) {
+                        HH2 = atom;
+                        HH2.setName("HH2");
+                    }
+                }
+                renameBetaHydrogens(residue, betas, 23);
+                renameEpsilonHydrogens(residue, epsilons, 13);
+                renameZetaHydrogens(residue, zetas, 23);
+                break;
+            case HIS:
+                betas = new ArrayList<>();
+                deltas = new ArrayList<>();
+                epsilons = new ArrayList<>();
+                for (Atom atom : resAtoms) {
+                    atomName = atom.getName().toUpperCase();
+                    if (atomName.contains("HB")) {
+                        betas.add(atom);
+                    } else if (atomName.contains("HD")) {
+                        deltas.add(atom);
+                    } else if (atomName.contains("HE")) {
+                        epsilons.add(atom);
+                    }
+                }
+                renameBetaHydrogens(residue, betas, 23);
+                renameDeltaHydrogens(residue, deltas, 12);
+                renameEpsilonHydrogens(residue, epsilons, 12);
+                break;
+            case HID:
+                betas = new ArrayList<>();
+                deltas = new ArrayList<>();
+                Atom HE1 = (Atom) residue.getAtomNode("HE1");
+                for (Atom atom : resAtoms) {
+                    atomName = atom.getName().toUpperCase();
+                    if (atomName.contains("HB")) {
+                        betas.add(atom);
+                    } else if (atomName.contains("HD")) {
+                        deltas.add(atom);
+                    } else if (HE1 == null && atomName.contains("HE")) {
+                        HE1 = atom;
+                        HE1.setName("HE1");
+                    }
+                }
+                renameBetaHydrogens(residue, betas, 23);
+                renameDeltaHydrogens(residue, deltas, 12);
+                break;
+            case HIE:
+                betas = new ArrayList<>();
+                epsilons = new ArrayList<>();
+                HD2 = (Atom) residue.getAtomNode("HD2");
+                for (Atom atom : resAtoms) {
+                    atomName = atom.getName().toUpperCase();
+                    if (atomName.contains("HB")) {
+                        betas.add(atom);
+                    } else if (atomName.contains("HE")) {
+                        epsilons.add(atom);
+                    } else if (HD2 == null && atomName.contains("HD")) {
+                        HD2 = atom;
+                        HD2.setName("HD2");
+                    }
+                }
+                renameBetaHydrogens(residue, betas, 23);
+                renameEpsilonHydrogens(residue, epsilons, 12);
+                break;
+            case ASP:
+                betas = new ArrayList<>();
+                for (Atom atom : resAtoms) {
+                    if (atom.getName().toUpperCase().contains("HB")) {
+                        betas.add(atom);
+                    }
+                }
+                renameBetaHydrogens(residue, betas, 23);
+                break;
+            case ASH:
+                betas = new ArrayList<>();
+                HD2 = (Atom) residue.getAtomNode("HD2");
+                for (Atom atom : resAtoms) {
+                    atomName = atom.getName().toUpperCase();
+                    if (atomName.contains("HB")) {
+                        betas.add(atom);
+                    } else if (HD2 == null && atomName.contains("HD")) {
+                        HD2 = atom;
+                        HD2.setName("HD2");
+                    }
+                }
+                renameBetaHydrogens(residue, betas, 23);
+                break;
+            case ASN:
+                betas = new ArrayList<>();
+                ArrayList<Atom> HD2s = new ArrayList<>();
+                for (Atom atom : resAtoms) {
+                    atomName = atom.getName().toUpperCase();
+                    if (atomName.contains("HB")) {
+                        betas.add(atom);
+                    } else if (atomName.contains("HD")) {
+                        HD2s.add(atom);
+                    }
+                }
+                renameBetaHydrogens(residue, betas, 23);
+                renameAsparagineHydrogens(residue, HD2s);
+                break;
+            case GLU:
+                betas = new ArrayList<>();
+                gammas = new ArrayList<>();
+                for (Atom atom : resAtoms) {
+                    atomName = atom.getName().toUpperCase();
+                    if (atomName.contains("HB")) {
+                        betas.add(atom);
+                    } else if (atomName.contains("HG")) {
+                        gammas.add(atom);
+                    }
+                }
+                renameBetaHydrogens(residue, betas, 23);
+                renameGammaHydrogens(residue, gammas, 23);
+                break;
+            case GLH:
+                betas = new ArrayList<>();
+                gammas = new ArrayList<>();
+                Atom HE2 = (Atom) residue.getAtomNode("HE2");
+                for (Atom atom : resAtoms) {
+                    atomName = atom.getName().toUpperCase();
+                    if (atomName.contains("HB")) {
+                        betas.add(atom);
+                    } else if (atomName.contains("HG")) {
+                        gammas.add(atom);
+                    } else if (HE2 == null && atomName.contains("HE")) {
+                        HE2 = atom;
+                        HE2.setName("HE2");
+                    }
+                }
+                renameBetaHydrogens(residue, betas, 23);
+                renameGammaHydrogens(residue, gammas, 23);
+                break;
+            case GLN:
+                betas = new ArrayList<>();
+                gammas = new ArrayList<>();
+                epsilons = new ArrayList<>();
+                for (Atom atom : resAtoms) {
+                    atomName = atom.getName().toUpperCase();
+                    if (atomName.contains("HB")) {
+                        betas.add(atom);
+                    } else if (atomName.contains("HG")) {
+                        gammas.add(atom);
+                    } else if (atomName.contains("HE")) {
+                        epsilons.add(atom);
+                    }
+                }
+                renameBetaHydrogens(residue, betas, 23);
+                renameGammaHydrogens(residue, gammas, 23);
+                renameGlutamineHydrogens(residue, epsilons);
+                break;
+            case MET:
+                betas = new ArrayList<>();
+                gammas = new ArrayList<>();
+                // Epsilons should not break, as they are 1-3.
+                for (Atom atom : resAtoms) {
+                    atomName = atom.getName().toUpperCase();
+                    if (atomName.contains("HB")) {
+                        betas.add(atom);
+                    } else if (atomName.contains("HG")) {
+                        gammas.add(atom);
+                    }
+                }
+                renameBetaHydrogens(residue, betas, 23);
+                renameGammaHydrogens(residue, gammas, 23);
+                break;
+            case LYS:
+                betas = new ArrayList<>();
+                gammas = new ArrayList<>();
+                deltas = new ArrayList<>();
+                epsilons = new ArrayList<>();
+                // Zetas are 1-3, should not break.
+                for (Atom atom : resAtoms) {
+                    atomName = atom.getName().toUpperCase();
+                    if (atomName.contains("HB")) {
+                        betas.add(atom);
+                    } else if (atomName.contains("HG")) {
+                        gammas.add(atom);
+                    } else if (atomName.contains("HD")) {
+                        deltas.add(atom);
+                    } else if (atomName.contains("HE")) {
+                        epsilons.add(atom);
+                    }
+                }
+                renameBetaHydrogens(residue, betas, 23);
+                renameGammaHydrogens(residue, gammas, 23);
+                renameDeltaHydrogens(residue, deltas, 23);
+                renameEpsilonHydrogens(residue, epsilons, 23);
+                break;
+            case LYD:
+                betas = new ArrayList<>();
+                gammas = new ArrayList<>();
+                deltas = new ArrayList<>();
+                epsilons = new ArrayList<>();
+                zetas = new ArrayList<>();
+                for (Atom atom : resAtoms) {
+                    atomName = atom.getName().toUpperCase();
+                    if (atomName.contains("HB")) {
+                        betas.add(atom);
+                    } else if (atomName.contains("HG")) {
+                        gammas.add(atom);
+                    } else if (atomName.contains("HD")) {
+                        deltas.add(atom);
+                    } else if (atomName.contains("HE")) {
+                        epsilons.add(atom);
+                    } else if (atomName.contains("HZ")) {
+                        zetas.add(atom);
+                    }
+                }
+                renameBetaHydrogens(residue, betas, 23);
+                renameGammaHydrogens(residue, gammas, 23);
+                renameDeltaHydrogens(residue, deltas, 23);
+                renameEpsilonHydrogens(residue, epsilons, 23);
+                renameZetaHydrogens(residue, zetas, 12);
+                break;
+            case ARG:
+                betas = new ArrayList<>();
+                gammas = new ArrayList<>();
+                deltas = new ArrayList<>();
+                Atom HE = (Atom) residue.getAtomNode("HE");
+                ArrayList<Atom> HHn = new ArrayList<>();
+                for (Atom atom : resAtoms) {
+                    atomName = atom.getName().toUpperCase();
+                    if (atomName.contains("HB")) {
+                        betas.add(atom);
+                    } else if (atomName.contains("HG")) {
+                        gammas.add(atom);
+                    } else if (atomName.contains("HD")) {
+                        deltas.add(atom);
+                    } else if (HE == null && atomName.contains("HE")) {
+                        HE = atom;
+                        HE.setName("HE");
+                    } else if (atomName.contains("HH")) {
+                        HHn.add(atom);
+                    }
+                }
+                renameBetaHydrogens(residue, betas, 23);
+                renameGammaHydrogens(residue, gammas, 23);
+                renameDeltaHydrogens(residue, deltas, 23);
+                renameArginineHydrogens(residue, HHn);
+                break;
+            case ORN:
+            case AIB:
+            case PCA:
+            case UNK:
+            default:
+                // Pray, for I have no examples to work from.
+                break;
+        }
+    }
 
     private Atom buildHeavy(MSGroup residue, String atomName, Atom bondedTo, int key)
             throws MissingHeavyAtomException {
@@ -4196,5 +4984,10 @@ public final class PDBFilter extends SystemFilter {
         }
         bondList.add(bond);
         return bond;
+    }
+
+    // Presently, VERSION3_3 is default, and VERSION3_2 is anything non-standard.
+    public enum PDBFileStandard {
+        VERSION3_3, VERSION3_2, VERSION3_1, VERSION3_0, VERSION2_3;
     }
 }

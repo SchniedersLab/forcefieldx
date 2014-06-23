@@ -65,6 +65,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
     public final int MultiScaleLevel;
     private String name;
     protected boolean selected = false;
+    private double totalMass;
 
     /**
      * Default MSNode Constructor
@@ -430,6 +431,71 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
             weight += li.next().getMass();
         }
         return weight;
+    }
+    
+    /**
+     * Returns the total mass of all atoms in the MolecularAssembly, calculating
+     * the mass if it has not already been done, defaulting to simple addition.
+     * @return Total mass of atoms in system.
+     */
+    public double getTotalMass() {
+        if (totalMass == 0.0) {
+            return getTotalMass(true, false);
+        }
+        return totalMass;
+    }
+    
+    /**
+     * Calculates the total mass of all atoms in the MolecularAssembly, using
+     * either a simple addition or the Kahan summation algorithm. The 
+     * simple algorithm is a standard loop to add up the masses.
+     * @param recalculate Force recalculation
+     * @param useKahan Use Kahan or simple addition algorithms
+     * @return Total mass of all atoms in system.
+     */
+    public double getTotalMass(boolean recalculate, boolean useKahan) {
+        if (recalculate) {
+            ArrayList<Atom> atoms = getAtomList();
+            if (atoms.isEmpty()) {
+                totalMass = 0.0;
+            } else if (useKahan) {
+                totalMass = kahanSumMasses(atoms);
+            } else {
+                totalMass = sumMasses(atoms);
+            }
+        }
+        return totalMass;
+    }
+    
+    /**
+     * Iterative summation of atomic masses.
+     * @param atoms
+     * @return Mass of atoms.
+     */
+    private double sumMasses(List<Atom> atoms) {
+        double sumMasses = 0.0;
+        for (Atom atom : atoms) {
+            sumMasses += atom.getMass();
+        }
+        return sumMasses;
+    }
+    
+    /**
+     * Implements the Kahan algorithm to very accurately sum the masses of all
+     * the atoms provided, minimizing rounding error.
+     * @param atoms Atoms to sum the mass of.
+     * @return Total mass.
+     */
+    public double kahanSumMasses(List<Atom> atoms) {
+        double sum = 0.0;
+        double comp = 0.0; // Running compensation
+        for (Atom atom : atoms) {
+            double atomMass = atom.getMass() - comp;
+            double temp = sum + atomMass;
+            comp = (temp - sum) - atomMass;
+            sum = temp;
+        }
+        return sum;
     }
 
     /**
