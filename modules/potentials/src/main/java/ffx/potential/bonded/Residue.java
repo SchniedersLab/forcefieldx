@@ -237,7 +237,6 @@ public class Residue extends MSGroup {
     private double[] C1sCoords = null;
     private double[] O4sCoords = null;
     private double[] C4sCoords = null;
-    private int residueIndex;
     
     /**
      * Default Constructor where num is this Residue's position in the Polymer.
@@ -865,18 +864,6 @@ public class Residue extends MSGroup {
      */
     public void setNumber(int n) {
         resNumber = n;
-    }
-    
-    /**
-     * Meant to hold a Residue's index in allResiduesList/Array in rotamer optimization.
-     * @param index Residue index.
-     */
-    public void setResidueIndex(int index) {
-        this.residueIndex = index;
-    }
-    
-    public int getResidueIndex() {
-        return this.residueIndex;
     }
 
     /**

@@ -57,7 +57,7 @@ public final class ARCFileFilter extends FileFilter {
         String ext = FilenameUtils.getExtension(file.getName());
         return ext.toUpperCase().startsWith("ARC");
     }
-
+    
     /**
      * {@inheritDoc}
      *

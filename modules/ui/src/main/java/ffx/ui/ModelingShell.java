@@ -201,6 +201,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
         }
 
         // Algorithms
+        setVariable("returnEnergy", new MethodClosure(this, "returnEnergy"));
         setVariable("energy", new MethodClosure(this, "energy"));
         setVariable("analyze", new MethodClosure(this, "analyze"));
         setVariable("minimize", new MethodClosure(this, "minimize"));
@@ -318,6 +319,35 @@ public final class ModelingShell extends Console implements AlgorithmListener {
             return energy;
         }
         return null;
+    }
+    
+    /**
+     * <p>
+     * returnEnergy</p>
+     *
+     * @return Current system energy (a double).
+     */
+    public double returnEnergy() {
+        if (interrupted) {
+            logger.info(" Algorithm interrupted - skipping energy.");
+            return 0.0;
+        }
+        if (terminatableAlgorithm != null) {
+            logger.info(" Algorithm already running - skipping energy.");
+            return 0.0;
+        }
+
+        MolecularAssembly active = mainPanel.getHierarchy().getActive();
+        if (active != null) {
+            ForceFieldEnergy energy = active.getPotentialEnergy();
+            if (energy == null) {
+                energy = new ForceFieldEnergy(active);
+                active.setPotential(energy);
+            }
+            return energy.energy(false, true);
+        }
+        logger.warning(" Energy could not be calculated");
+        return 0.0;
     }
 
     /**

@@ -22,7 +22,10 @@
  */
 package ffx.potential.parsers;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 
 import javax.swing.filechooser.FileFilter;
 
@@ -56,6 +59,66 @@ public final class PDBFileFilter extends FileFilter {
         }
         String ext = FilenameUtils.getExtension(file.getName());
         return ext.toUpperCase().startsWith("PDB");
+    }
+    
+    /**
+     * <p>
+     * acceptDeep</p> Accepts a PDB file if it finds at least one parseable ATOM
+     * line and one parseable TER line.
+     *
+     * @param file a {@link java.io.File} object.
+     * @return Whether a valid PDB file.
+     */
+    public boolean acceptDeep(File file) {
+        try {
+            if (file == null || file.isDirectory() || !file.canRead()) {
+                return false;
+            }
+            try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+                if (!br.ready()) {
+                    return false;
+                }
+                String line = br.readLine();
+                if (line != null) {
+                    line = line.trim();
+                } else {
+                    return false;
+                }
+                boolean validAtomLine = false;
+                boolean validTerLine = false;
+                while (line != null) {
+                    line = line.trim();
+                    if (!validAtomLine && line.startsWith("ATOM  ")) {
+                        try {
+                            Integer.parseInt(line.substring(6, 11).trim());
+                            Integer.parseInt(line.substring(22, 26).trim());
+                            String coordOccTempVals[] = line.substring(30, 66).trim().split(" +");
+                            for (String value : coordOccTempVals) {
+                                Double.parseDouble(value);
+                            }
+                            validAtomLine = true;
+                        } catch (NumberFormatException ex) {
+                            // Do nothing.
+                        }
+                    } else if (line.startsWith("TER")) {
+                        try {
+                            Integer.parseInt(line.substring(6, 11).trim());
+                            Integer.parseInt(line.substring(22, 26).trim());
+                            validTerLine = true;
+                        } catch (NumberFormatException ex) {
+                            //Do nothing.
+                        }
+                    }
+                    if (validAtomLine && validTerLine) {
+                        return true;
+                    }
+                    line = br.readLine();
+                }
+            }
+        } catch (IOException e) {
+            return false;
+        }
+        return false;
     }
 
     /**
