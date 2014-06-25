@@ -87,9 +87,16 @@ public class COMRestraint implements LambdaInterface {
         boolean computedcomdx = false;
         computeCOM(initialCOM, computedcomdx);
 
-    }
+        logger.info("\n COM Restraint:");
 
-    public double residual(boolean gradient, boolean print) {
+//        initialCOM[0] = a.getX();
+//        initialCOM[1] = a.getY();
+//        initialCOM[2] = a.getZ();
+//        a.print();
+
+}
+
+public double residual(boolean gradient, boolean print) {
 
         if (lambdaTerm) {
             dEdL = 0.0;
@@ -150,9 +157,6 @@ public class COMRestraint implements LambdaInterface {
             com[1] = a.getY() * mass;
             com[2] = a.getZ() * mass;
             totalMass += mass;
-            if (derivative) {
-                dcomdx[i] = mass;
-            }
         }
         com[0] /= totalMass;
         com[1] /= totalMass;
@@ -190,7 +194,7 @@ public class COMRestraint implements LambdaInterface {
 //    }
 
     @Override
-    public void setLambda(double lambda) {
+        public void setLambda(double lambda) {
         if (lambdaTerm) {
             this.lambda = lambda;
             if (this.lambda <= lambdaWindow) {
@@ -231,12 +235,12 @@ public class COMRestraint implements LambdaInterface {
     }
 
     @Override
-    public double getLambda() {
+        public double getLambda() {
         return lambda;
     }
 
     @Override
-    public double getdEdL() {
+        public double getdEdL() {
         if (lambdaTerm) {
             return dEdL;
         } else {
@@ -245,7 +249,7 @@ public class COMRestraint implements LambdaInterface {
     }
 
     @Override
-    public double getd2EdL2() {
+        public double getd2EdL2() {
         if (lambdaTerm) {
             return d2EdL2;
         } else {
@@ -254,7 +258,7 @@ public class COMRestraint implements LambdaInterface {
     }
 
     @Override
-    public void getdEdXdL(double[] gradient) {
+        public void getdEdXdL(double[] gradient) {
         if (lambdaTerm) {
             int n3 = nAtoms * 3;
             for (int i = 0; i < n3; i++) {
