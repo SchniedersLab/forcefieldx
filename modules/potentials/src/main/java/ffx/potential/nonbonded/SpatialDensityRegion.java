@@ -51,6 +51,14 @@ public class SpatialDensityRegion extends ParallelRegion {
      */
     protected static final Logger logger = Logger.getLogger(SpatialDensityRegion.class.getName());
     /**
+     * Basis size.
+     */
+    int basisSize;
+    /**
+     * Minimum amount of work.
+     */
+    int minWork;
+    /**
      * The number of divisions along the A-axis.
      */
     protected int nA;
@@ -69,11 +77,11 @@ public class SpatialDensityRegion extends ParallelRegion {
     /**
      * The number of cells (nDivisions^3).
      */
-    private final int nCells;
+    private int nCells;
     /**
      * Number of octant work cells.
      */
-    private final int nWork;
+    private int nWork;
     /**
      * Number of octant work cells with at least one atom (actualWork is less
      * than or equal to nWork).
@@ -84,58 +92,58 @@ public class SpatialDensityRegion extends ParallelRegion {
      * A temporary array that holds the index of the cell each atom is assigned
      * to.
      */
-    private final int cellIndex[][];
+    private int cellIndex[][];
     /**
      * The A index of each octant (0..nA - 1) that may not have any atoms.
      */
-    protected final int workA[];
+    protected int workA[];
     /**
      * The B index of each octant (0..nB - 1) that may not have any atoms.
      */
-    protected final int workB[];
+    protected int workB[];
     /**
      * The C index of each octant (0..nC - 1) that may not have any atoms.
      */
-    protected final int workC[];
+    protected int workC[];
     /**
      * The A index of each octant (0..nA - 1) that has atoms.
      */
-    protected final int actualA[];
+    protected int actualA[];
     /**
      * The B index of each octant (0..nB - 1) that has atoms.
      */
-    protected final int actualB[];
+    protected int actualB[];
     /**
      * The C index of each octant (0..nC - 1) that has atoms.
      */
-    protected final int actualC[];
+    protected int actualC[];
     /**
      * The list of atoms in each cell. [nsymm][natom] = atom index
      */
-    protected final int cellList[][];
+    protected int cellList[][];
     /**
      * The offset of each atom from the start of the cell. The first atom atom
      * in the cell has 0 offset. [nsymm][natom] = offset of the atom
      */
-    protected final int cellOffset[][];
+    protected int cellOffset[][];
     /**
      * The number of atoms in each cell. [nsymm][ncell]
      */
-    protected final int cellCount[][];
+    protected int cellCount[][];
     /**
      * The index of the first atom in each cell. [nsymm][ncell]
      */
-    protected final int cellStart[][];
+    protected int cellStart[][];
     protected final int nSymm;
-    protected final double coordinates[][][];
-    protected final boolean select[][];
-    private final double xf[];
-    private final double yf[];
-    private final double zf[];
-    protected final Crystal crystal;
-    public final int nAtoms;
+    protected double coordinates[][][];
+    protected boolean select[][];
+    private double xf[];
+    private double yf[];
+    private double zf[];
+    protected Crystal crystal;
+    public int nAtoms;
     public final int nThreads;
-    private final int gridSize;
+    private int gridSize;
     private double grid[] = null;
     private DoubleBuffer gridBuffer;
     private double initValue = 0.0;
@@ -179,107 +187,16 @@ public class SpatialDensityRegion extends ParallelRegion {
          * needing the same grid point. First, we partition the X-axis, then the
          * Y-axis, and finally the Z-axis if necessary.
          */
-        this.crystal = crystal;
+        this.crystal = crystal.getUnitCell();
         this.coordinates = coordinates;
         this.nSymm = nSymm;
         this.nAtoms = atoms.length;
         this.nThreads = threadCount;
+        this.basisSize = basisSize;
+        this.minWork = minWork;
 
         gridInitLoop = new GridInitLoop();
-        gridSize = gX * gY * gZ * 2;
-
-        xf = new double[nAtoms];
-        yf = new double[nAtoms];
-        zf = new double[nAtoms];
-
-        int nX = gX / basisSize;
-        int nY = gY / basisSize;
-        int nZ = gZ / basisSize;
-        if (threadCount > 1 && nZ > 1) {
-            if (nZ % 2 != 0) {
-                nZ--;
-            }
-            nC = nZ;
-            int div = 2;
-            int currentWork = nC / div / threadCount;
-            // If we have enough work per thread, stop dividing the domain.
-            if (currentWork >= minWork || nY < 2) {
-                nA = 1;
-                nB = 1;
-                // Reduce the number of divisions along the Z-axis if possible
-                while (currentWork >= 2 * minWork) {
-                    nC -= 2;
-                    currentWork = nC / div / threadCount;
-                }
-
-            } else {
-                if (nY % 2 != 0) {
-                    nY--;
-                }
-                nB = nY;
-                div = 4;
-                currentWork = nB * nC / div / threadCount;
-                // If we have 4 * threadCount * minWork chunks, stop dividing the domain.
-                if (currentWork >= minWork || nX < 2) {
-                    nA = 1;
-                    while (currentWork >= 2 * minWork) {
-                        nB -= 2;
-                        currentWork = nB * nC / div / threadCount;
-                    }
-                } else {
-                    if (nX % 2 != 0) {
-                        nX--;
-                    }
-                    nA = nX;
-                    div = 8;
-                    currentWork = nA * nB * nC / div / threadCount;
-                    while (currentWork >= 2 * minWork) {
-                        nA -= 2;
-                        currentWork = nA * nB * nC / div / threadCount;
-                    }
-                }
-            }
-            nAB = nA * nB;
-            nCells = nAB * nC;
-            nWork = nCells / div;
-        } else {
-            nA = 1;
-            nB = 1;
-            nC = 1;
-            nAB = 1;
-            nCells = 1;
-            nWork = 1;
-        }
-
-        logger.fine(String.format("   Spatial cells:                 (%3d,%3d,%3d)", nA, nB, nC));
-        logger.fine(String.format("   Spatial work:                           %4d", nWork));
-
-        workA = new int[nWork];
-        workB = new int[nWork];
-        workC = new int[nWork];
-        actualA = new int[nWork];
-        actualB = new int[nWork];
-        actualC = new int[nWork];
-        actualCount = new int[nWork];
-        int index = 0;
-        for (int h = 0; h < nA; h += 2) {
-            for (int k = 0; k < nB; k += 2) {
-                for (int l = 0; l < nC; l += 2) {
-                    workA[index] = h;
-                    workB[index] = k;
-                    workC[index++] = l;
-                }
-            }
-        }
-        select = new boolean[nSymm][nAtoms];
-        for (int i = 0; i < nSymm; i++) {
-            Arrays.fill(select[i], true);
-        }
-        cellList = new int[nSymm][nAtoms];
-        cellIndex = new int[nSymm][nAtoms];
-        cellOffset = new int[nSymm][nAtoms];
-        cellStart = new int[nSymm][nCells];
-        cellCount = new int[nSymm][nCells];
+        setCrystal(this.crystal, gX, gY, gZ);
     }
 
     /**
@@ -304,6 +221,110 @@ public class SpatialDensityRegion extends ParallelRegion {
      */
     public int getNsymm() {
         return nSymm;
+    }
+
+    public final void setCrystal(Crystal crystal, int gX, int gY, int gZ) {
+        this.crystal = crystal.getUnitCell();
+        assert(this.crystal.spaceGroup.getNumberOfSymOps() == nSymm);
+
+        gridSize = gX * gY * gZ * 2;
+        xf = new double[nAtoms];
+        yf = new double[nAtoms];
+        zf = new double[nAtoms];
+        int nX = gX / basisSize;
+        int nY = gY / basisSize;
+        int nZ = gZ / basisSize;
+        if (nThreads > 1 && nZ > 1) {
+            if (nZ % 2 != 0) {
+                nZ--;
+            }
+            nC = nZ;
+            int div = 2;
+            int currentWork = nC / div / nThreads;
+            // If we have enough work per thread, stop dividing the domain.
+            if (currentWork >= minWork || nY < 2) {
+                nA = 1;
+                nB = 1;
+                // Reduce the number of divisions along the Z-axis if possible
+                while (currentWork >= 2 * minWork) {
+                    nC -= 2;
+                    currentWork = nC / div / nThreads;
+                }
+
+            } else {
+                if (nY % 2 != 0) {
+                    nY--;
+                }
+                nB = nY;
+                div = 4;
+                currentWork = nB * nC / div / nThreads;
+                // If we have 4 * threadCount * minWork chunks, stop dividing the domain.
+                if (currentWork >= minWork || nX < 2) {
+                    nA = 1;
+                    while (currentWork >= 2 * minWork) {
+                        nB -= 2;
+                        currentWork = nB * nC / div / nThreads;
+                    }
+                } else {
+                    if (nX % 2 != 0) {
+                        nX--;
+                    }
+                    nA = nX;
+                    div = 8;
+                    currentWork = nA * nB * nC / div / nThreads;
+                    while (currentWork >= 2 * minWork) {
+                        nA -= 2;
+                        currentWork = nA * nB * nC / div / nThreads;
+                    }
+                }
+            }
+            nAB = nA * nB;
+            nCells = nAB * nC;
+            nWork = nCells / div;
+        } else {
+            nA = 1;
+            nB = 1;
+            nC = 1;
+            nAB = 1;
+            nCells = 1;
+            nWork = 1;
+        }
+
+        logger.fine(String.format("   Spatial cells:                 (%3d,%3d,%3d)", nA, nB, nC));
+        logger.fine(String.format("   Spatial work:                           %4d", nWork));
+
+        if (workA == null || workA.length < nWork) {
+            workA = new int[nWork];
+            workB = new int[nWork];
+            workC = new int[nWork];
+            actualA = new int[nWork];
+            actualB = new int[nWork];
+            actualC = new int[nWork];
+            actualCount = new int[nWork];
+            int index = 0;
+            for (int h = 0; h < nA; h += 2) {
+                for (int k = 0; k < nB; k += 2) {
+                    for (int l = 0; l < nC; l += 2) {
+                        workA[index] = h;
+                        workB[index] = k;
+                        workC[index++] = l;
+                    }
+                }
+            }
+        }
+        if (select == null || select.length < nSymm || select[0].length < nAtoms) {
+            select = new boolean[nSymm][nAtoms];
+            for (int i = 0; i < nSymm; i++) {
+                Arrays.fill(select[i], true);
+            }
+            cellList = new int[nSymm][nAtoms];
+            cellIndex = new int[nSymm][nAtoms];
+            cellOffset = new int[nSymm][nAtoms];
+        }
+        if (cellStart == null || cellStart.length < nSymm || cellStart[0].length < nCells) {
+            cellStart = new int[nSymm][nCells];
+            cellCount = new int[nSymm][nCells];
+        }
     }
 
     /**

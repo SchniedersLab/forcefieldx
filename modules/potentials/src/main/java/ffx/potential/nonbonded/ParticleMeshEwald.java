@@ -4758,7 +4758,8 @@ public class ParticleMeshEwald implements LambdaInterface {
                         double in[] = globalMultipole[0][i];
                         double cii = in[t000] * in[t000];
                         double dii = in[t100] * in[t100] + in[t010] * in[t010] + in[t001] * in[t001];
-                        double qii = in[t200] * in[t200] + in[t020] * in[t020] + in[t002] * in[t002] + 2.0 * (in[t110] * in[t110] + in[t101] * in[t101] + in[t011] * in[t011]);
+                        double qii = in[t200] * in[t200] + in[t020] * in[t020] + in[t002] * in[t002]
+                                + 2.0 * (in[t110] * in[t110] + in[t101] * in[t101] + in[t011] * in[t011]);
                         eSelf += aewald1 * (cii + aewald2 * (dii / 3.0 + 2.0 * aewald2 * qii / 45.0));
                     }
                 }
@@ -4769,6 +4770,15 @@ public class ParticleMeshEwald implements LambdaInterface {
                 /**
                  * Permanent multipole reciprocal space energy and gradient.
                  */
+                final double recip[][] = crystal.getUnitCell().A;
+
+                /*
+                if (getThreadIndex() == 0) {
+                    logger.info(String.format(" %16.8f %16.8f %16.8f", recip[0][0], recip[0][1], recip[0][2]));
+                    logger.info(String.format(" %16.8f %16.8f %16.8f", recip[1][0], recip[1][1], recip[1][2]));
+                    logger.info(String.format(" %16.8f %16.8f %16.8f", recip[2][0], recip[2][1], recip[2][2]));
+                } */
+
                 double dUdL = 0.0;
                 double d2UdL2 = 0.0;
                 for (int i = lb; i <= ub; i++) {
@@ -4776,6 +4786,14 @@ public class ParticleMeshEwald implements LambdaInterface {
                         final double phi[] = cartMultipolePhi[i];
                         final double mpole[] = multipole[i];
                         final double fmpole[] = fracMultipoles[i];
+
+                        /*
+                        if (i == 0) {
+                            logger.info(String.format(" %16.8f %16.8f %16.8f", phi[0], phi[1], phi[2]));
+                            logger.info(String.format(" %16.8f %16.8f %16.8f", mpole[0], mpole[1], mpole[2]));
+                            logger.info(String.format(" %16.8f %16.8f %16.8f", fmpole[0], fmpole[1], fmpole[2]));
+                        } */
+
                         double e = mpole[t000] * phi[t000] + mpole[t100] * phi[t100]
                                 + mpole[t010] * phi[t010] + mpole[t001] * phi[t001]
                                 + oneThird * (mpole[t200] * phi[t200]
@@ -4803,7 +4821,6 @@ public class ParticleMeshEwald implements LambdaInterface {
                             gx *= nfftX;
                             gy *= nfftY;
                             gz *= nfftZ;
-                            final double recip[][] = crystal.getUnitCell().A;
                             final double dfx = recip[0][0] * gx + recip[0][1] * gy + recip[0][2] * gz;
                             final double dfy = recip[1][0] * gx + recip[1][1] * gy + recip[1][2] * gz;
                             final double dfz = recip[2][0] * gx + recip[2][1] * gy + recip[2][2] * gz;
