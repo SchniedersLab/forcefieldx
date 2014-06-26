@@ -295,14 +295,14 @@ public class OSRW implements Potential {
      * self-consistent fields to interpolate polarization.
      */
     private final boolean asynchronous;
-//    /**
-//     * Flag to indicate whether to use Well-Tempered Metadynamics Method
-//     */
-//    private final boolean wellTempered;
-//    /**
-//     * An energy-value positive scalar parameter in the units of temperature
-//     */
-//    private final double dT;
+    /**
+     * Flag to indicate whether to use Well-Tempered Metadynamics Method
+     */
+    private final boolean wellTempered;
+    /**
+     * An energy-value positive scalar parameter in the units of temperature
+     */
+    private final double dT = 1;
     /**
      * The ReceiveThread accumulates OSRW statistics from multiple asynchronous
      * walkers.
@@ -335,7 +335,7 @@ public class OSRW implements Potential {
             File lambdaFile, File histogramFile, CompositeConfiguration properties,
             double temperature, double dt, double printInterval,
             double saveInterval, boolean asynchronous,
-            AlgorithmListener algorithmListener) {
+            AlgorithmListener algorithmListener, boolean wellTempered) {
         this.lambdaInterface = lambdaInterface;
         this.potential = potential;
         this.lambdaFile = lambdaFile;
@@ -343,6 +343,7 @@ public class OSRW implements Potential {
         this.temperature = temperature;
         this.asynchronous = asynchronous;
         this.algorithmListener = algorithmListener;
+        this.wellTempered = wellTempered;
 
         nVariables = potential.getNumberOfVariables();
 
@@ -579,10 +580,10 @@ public class OSRW implements Potential {
                 double bias = weight * biasMag
                         * exp(-deltaL2 / (2.0 * ls2))
                         * exp(-deltaFL2 / (2.0 * FLs2));
-//                //JP: for WTMetaD, multiply the above bias function by the exp(-V(sn+1)/(R*deltaT)) V(sn+1) is current free energy?
-//                if (wellTempered) {
-//                    bias = bias * exp(currentFreeEnergy()/(R*dT));
-//                }
+                //JP: for WTMetaD, multiply the above bias function by the exp(-V(sn+1)/(R*deltaT)) V(sn+1) is current free energy?
+                if (wellTempered) {
+                    bias = bias * exp(currentFreeEnergy()/(R*dT));
+                }
                 biasEnergy += bias;
                 dGdLambda -= deltaL / ls2 * bias;
                 dGdFLambda -= deltaFL / FLs2 * bias;

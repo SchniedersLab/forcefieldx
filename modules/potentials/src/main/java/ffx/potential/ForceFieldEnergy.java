@@ -39,6 +39,7 @@ import ffx.crystal.ReplicatesCrystal;
 import ffx.numerics.Potential;
 import ffx.potential.bonded.*;
 import ffx.potential.nonbonded.CoordRestraint;
+import ffx.potential.nonbonded.COMRestraint;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.ELEC_FORM;
 import ffx.potential.nonbonded.VanDerWaals;
@@ -78,6 +79,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private ParticleMeshEwald particleMeshEwald;
     private final NCSRestraint ncsRestraint;
     private final CoordRestraint coordRestraint;
+    private final COMRestraint comRestraint;
     protected int nAtoms;
     protected int nBonds;
     protected int nAngles;
@@ -106,6 +108,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     protected boolean generalizedKirkwoodTerm;
     protected boolean ncsTerm;
     protected boolean restrainTerm;
+    protected boolean comTerm;
     protected boolean lambdaBondedTerms = false;
     protected boolean rigidHydrogens = false;
     protected double rigidScale = 1.0;
@@ -125,6 +128,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     protected boolean generalizedKirkwoodTermOrig;
     protected boolean ncsTermOrig;
     protected boolean restrainTermOrig;
+    protected boolean comTermOrig;
     protected double bondEnergy, bondRMSD;
     protected double angleEnergy, angleRMSD;
     protected double stretchBendEnergy;
@@ -144,11 +148,12 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     protected double solvationEnergy;
     protected double ncsEnergy;
     protected double restrainEnergy;
+    protected double comRestrainEnergy;
     protected double totalEnergy;
     protected long bondTime, angleTime, stretchBendTime, ureyBradleyTime;
     protected long outOfPlaneBendTime, torsionTime, piOrbitalTorsionTime, improperTorsionTime;
     protected long torsionTorsionTime, vanDerWaalsTime, electrostaticTime;
-    protected long restraintBondTime, ncsTime, coordRestraintTime;
+    protected long restraintBondTime, ncsTime, coordRestraintTime, comRestrainTime;
     protected long totalTime;
     protected double lambda = 1.0;
     protected double[] optimizationScaling = null;
@@ -213,6 +218,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
         restraintBondTerm = false;
         restrainTerm = forceField.getBoolean(ForceFieldBoolean.RESTRAINTERM, false);
+        comTerm = forceField.getBoolean(ForceFieldBoolean.COMRESTRAINTERM, false);
 
         //For respa
         bondTermOrig = bondTerm;
@@ -230,6 +236,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         generalizedKirkwoodTermOrig = generalizedKirkwoodTerm;
         ncsTermOrig = ncsTerm;
         restrainTermOrig = restrainTerm;
+        comTermOrig = comTerm;
 
         // Define the cutoff lengths.
         double vdwOff = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 9.0);
@@ -509,7 +516,12 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         } else {
             coordRestraint = null;
         }
-
+        
+        if (comTerm) {
+            this.comRestraint = new COMRestraint(molecularAssembly, crystal);
+        } else {
+            comRestraint = null;
+        }
         molecularAssembly.setPotential(this);
     }
 
@@ -746,6 +758,10 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         if (restrainTerm) {
             logger.severe(" Restrain energy term cannot be used with variable systems sizes.");
         }
+        
+        if (comTerm) {
+            logger.severe(" COM restrain energy term cannot be used with variable systems sizes.");
+        }
 
     }
 
@@ -965,6 +981,12 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 restrainEnergy = coordRestraint.residual(gradient, print);
                 coordRestraintTime += System.nanoTime();
             }
+            
+            if (comTerm) {
+                comRestrainTime = -System.nanoTime();
+                comRestrainEnergy = comRestraint.residual(gradient, print);
+                comRestrainTime += System.nanoTime();
+            }
 
             if (vanderWaalsTerm) {
                 vanDerWaalsTime = System.nanoTime();
@@ -1081,6 +1103,11 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
                     "COORDINATE RESRAINT        : ", restrainEnergy, nAtoms));
         }
+        
+        if (comTerm) {
+            sb.append(String.format("REMARK   3   %s %g (%d)\n",
+                    "COORDINATE RESRAINT        : ", comRestrainEnergy, nAtoms));
+        }
 
         if (vanderWaalsTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
@@ -1177,6 +1204,11 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     "Coord. Restraint  ", restrainEnergy, nAtoms,
                     coordRestraintTime * toSeconds));
         }
+        if (comTerm) {
+            sb.append(String.format("  %s %16.8f %12d %12.3f\n",
+                    "COM Restraint  ", comRestrainEnergy, nAtoms,
+                    comRestrainTime * toSeconds));
+        }
         if (vanderWaalsTerm && nVanDerWaals > 0) {
             sb.append(String.format("  %s %16.8f %12d %12.3f\n",
                     "Van der Waals     ", vanDerWaalsEnergy,
@@ -1255,6 +1287,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             }
             if (restrainTerm && coordRestraint != null) {
                 coordRestraint.setLambda(lambda);
+            }
+            if (comTerm && comRestraint != null) {
+                comRestraint.setLambda(lambda);
             }
         } else {
             String message = String.format("Lambda value %8.3f is not in the range [0..1].", lambda);
@@ -1465,6 +1500,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             if (restrainTerm && coordRestraint != null) {
                 dEdLambda += coordRestraint.getdEdL();
             }
+            if (comTerm && comRestraint != null) {
+                dEdLambda += comRestraint.getdEdL();
+            }
         }
 
         return dEdLambda;
@@ -1492,6 +1530,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             }
             if (restrainTerm && coordRestraint != null) {
                 coordRestraint.getdEdXdL(gradients);
+            }
+            if (comTerm && comRestraint != null) {
+                comRestraint.getdEdXdL(gradients);
             }
         }
     }
@@ -1527,6 +1568,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             }
             if (restrainTerm && coordRestraint != null) {
                 d2EdLambda2 += coordRestraint.getd2EdL2();
+            }
+            if (comTerm && comRestraint != null) {
+                d2EdLambda2 += comRestraint.getd2EdL2();
             }
         }
         return d2EdLambda2;
@@ -1574,6 +1618,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 restraintBondTerm = restraintBondTermOrig;
                 ncsTerm = ncsTermOrig;
                 restrainTerm = restrainTermOrig;
+                comTerm = comTermOrig;
                 vanderWaalsTerm = false;
                 multipoleTerm = false;
                 polarizationTerm = false;
@@ -1597,6 +1642,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 restraintBondTerm = false;
                 ncsTerm = false;
                 restrainTerm = false;
+                comTerm = false;
                 break;
 
             default:
@@ -1612,6 +1658,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 restraintBondTerm = restraintBondTermOrig;
                 ncsTerm = ncsTermOrig;
                 restrainTermOrig = restrainTerm;
+                comTermOrig = comTerm;
                 vanderWaalsTerm = vanderWaalsTermOrig;
                 multipoleTerm = multipoleTermOrig;
                 polarizationTerm = polarizationTermOrig;
