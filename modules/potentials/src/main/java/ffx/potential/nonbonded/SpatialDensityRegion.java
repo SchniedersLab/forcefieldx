@@ -194,9 +194,8 @@ public class SpatialDensityRegion extends ParallelRegion {
         this.nThreads = threadCount;
         this.basisSize = basisSize;
         this.minWork = minWork;
-
         gridInitLoop = new GridInitLoop();
-        setCrystal(this.crystal, gX, gY, gZ);
+        setCrystal(crystal.getUnitCell(), gX, gY, gZ);
     }
 
     /**
@@ -225,7 +224,7 @@ public class SpatialDensityRegion extends ParallelRegion {
 
     public final void setCrystal(Crystal crystal, int gX, int gY, int gZ) {
         this.crystal = crystal.getUnitCell();
-        assert(this.crystal.spaceGroup.getNumberOfSymOps() == nSymm);
+        //assert(this.crystal.spaceGroup.getNumberOfSymOps() == nSymm);
 
         gridSize = gX * gY * gZ * 2;
         xf = new double[nAtoms];
