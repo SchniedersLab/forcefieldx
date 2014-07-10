@@ -437,75 +437,90 @@ public final class PDBFilter extends SystemFilter {
 // 77 - 78        LString(2)    element      Element symbol, right-justified.
 // 79 - 80        LString(2)    charge       Charge  on the atom.
 // =============================================================================
-                            serial = new Integer(Hybrid36.decode(5, line.substring(6, 11)));
-                            String name = line.substring(12, 16).trim();
-                            if (name.toUpperCase().contains("1H") || name.toUpperCase().contains("2H") || name.toUpperCase().contains("3H")) {
-                                fileStandard = VERSION3_2; // VERSION3_2 is presently just a placeholder for "anything non-standard".
-                            }
-                            altLoc = new Character(line.substring(16, 17).toUpperCase().charAt(0));
-                            if (!altLocs.contains(altLoc)) {
-                                altLocs.add(altLoc);
-                            }
-                            if (!altLoc.equals(' ') && !altLoc.equals('A')
-                                    && !altLoc.equals(currentAltLoc)) {
-                                break;
-                            }
-                            String resName = line.substring(17, 20).trim();
-                            Character chainID = line.substring(21, 22).charAt(0);
-                            String segID = getSegID(chainID);
-                            int resSeq = new Integer(Hybrid36.decode(4, line.substring(22, 26)));
-                            boolean printAtom = false;
-                            if (mutate && chainID.equals(mutateChainID) && mutateResID == resSeq) {
-                                String atomName = name.toUpperCase();
-                                if (atomName.equals("N") || atomName.equals("C")
-                                        || atomName.equals("O") || atomName.equals("CA")) {
-                                    printAtom = true;
-                                    resName = mutateToResname;
-                                } else {
-                                    logger.info(String.format(" Deleting atom %s of %s %d",
-                                            atomName, resName, resSeq));
+                            String name;
+                            String resName;
+                            Character chainID;
+                            String segID;
+                            int resSeq;
+                            boolean printAtom;
+                            double d[];
+                            double occupancy;
+                            double tempFactor;
+                            Atom newAtom;
+                            Atom returnedAtom;
+                            
+                            // If it's a misnamed water, it will fall through to HETATM.
+                            if (!line.substring(17, 20).trim().equals("HOH")) {
+                                serial = new Integer(Hybrid36.decode(5, line.substring(6, 11)));
+                                name = line.substring(12, 16).trim();
+                                if (name.toUpperCase().contains("1H") || name.toUpperCase().contains("2H") || name.toUpperCase().contains("3H")) {
+                                    fileStandard = VERSION3_2; // VERSION3_2 is presently just a placeholder for "anything non-standard".
+                                }
+                                altLoc = new Character(line.substring(16, 17).toUpperCase().charAt(0));
+                                if (!altLocs.contains(altLoc)) {
+                                    altLocs.add(altLoc);
+                                }
+                                if (!altLoc.equals(' ') && !altLoc.equals('A')
+                                        && !altLoc.equals(currentAltLoc)) {
                                     break;
                                 }
+                                resName = line.substring(17, 20).trim();
+                                chainID = line.substring(21, 22).charAt(0);
+                                segID = getSegID(chainID);
+                                resSeq = new Integer(Hybrid36.decode(4, line.substring(22, 26)));
+                                printAtom = false;
+                                if (mutate && chainID.equals(mutateChainID) && mutateResID == resSeq) {
+                                    String atomName = name.toUpperCase();
+                                    if (atomName.equals("N") || atomName.equals("C")
+                                            || atomName.equals("O") || atomName.equals("CA")) {
+                                        printAtom = true;
+                                        resName = mutateToResname;
+                                    } else {
+                                        logger.info(String.format(" Deleting atom %s of %s %d",
+                                                atomName, resName, resSeq));
+                                        break;
+                                    }
+                                }
+                                d = new double[3];
+                                d[0] = new Double(line.substring(30, 38).trim());
+                                d[1] = new Double(line.substring(38, 46).trim());
+                                d[2] = new Double(line.substring(46, 54).trim());
+                                occupancy = 1.0;
+                                tempFactor = 1.0;
+                                try {
+                                    occupancy = new Double(line.substring(54, 60).trim());
+                                    tempFactor = new Double(line.substring(60, 66).trim());
+                                } catch (Exception e) {
+                                    // Use default values.
+                                    if (print) {
+                                        logger.warning(" No values for occupancy or b-factors; defaulting to 1.00 (further warnings suppressed).");
+                                        print = false;
+                                    } else if (logger.isLoggable(Level.FINE)) {
+                                        logger.fine(" No values for occupancy or b-factors; defaulting to 1.00.");
+                                    }
+                                }
+                                newAtom = new Atom(0, name, altLoc, d, resName, resSeq,
+                                        chainID, occupancy, tempFactor, segID);
+                                returnedAtom = (Atom) activeMolecularAssembly.addMSNode(newAtom);
+                                if (returnedAtom != newAtom) {
+                                    // A previously added atom has been retained.
+                                    atoms.put(serial, returnedAtom);
+                                    if (logger.isLoggable(Level.FINE)) {
+                                        logger.fine(returnedAtom + " has been retained over\n" + newAtom);
+                                    }
+                                } else {
+                                    // The new atom has been added.
+                                    atoms.put(serial, newAtom);
+                                    // Check if the newAtom took the xyzIndex of a previous alternate conformer.
+                                    if (newAtom.xyzIndex == 0) {
+                                        newAtom.setXYZIndex(xyzIndex++);
+                                    }
+                                    if (printAtom) {
+                                        logger.info(newAtom.toString());
+                                    }
+                                }
+                                break;
                             }
-                            double d[] = new double[3];
-                            d[0] = new Double(line.substring(30, 38).trim());
-                            d[1] = new Double(line.substring(38, 46).trim());
-                            d[2] = new Double(line.substring(46, 54).trim());
-                            double occupancy = 1.0;
-                            double tempFactor = 1.0;
-                            try {
-                                occupancy = new Double(line.substring(54, 60).trim());
-                                tempFactor = new Double(line.substring(60, 66).trim());
-                            } catch (Exception e) {
-                                // Use default values.
-                                if (print) {
-                                    logger.warning(" No values for occupancy or b-factors; defaulting to 1.00 (further warnings suppressed).");
-                                    print = false;
-                                } else if (logger.isLoggable(Level.FINE)) {
-                                    logger.fine(" No values for occupancy or b-factors; defaulting to 1.00.");
-                                }
-                            }
-                            Atom newAtom = new Atom(0, name, altLoc, d, resName, resSeq,
-                                    chainID, occupancy, tempFactor, segID);
-                            Atom returnedAtom = (Atom) activeMolecularAssembly.addMSNode(newAtom);
-                            if (returnedAtom != newAtom) {
-                                // A previously added atom has been retained.
-                                atoms.put(serial, returnedAtom);
-                                if (logger.isLoggable(Level.FINE)) {
-                                    logger.fine(returnedAtom + " has been retained over\n" + newAtom);
-                                }
-                            } else {
-                                // The new atom has been added.
-                                atoms.put(serial, newAtom);
-                                // Check if the newAtom took the xyzIndex of a previous alternate conformer.
-                                if (newAtom.xyzIndex == 0) {
-                                    newAtom.setXYZIndex(xyzIndex++);
-                                }
-                                if (printAtom) {
-                                    logger.info(newAtom.toString());
-                                }
-                            }
-                            break;
                         case HETATM:
 // =============================================================================
 //  1 - 6        Record name    "HETATM"
@@ -950,6 +965,9 @@ public final class PDBFilter extends SystemFilter {
                  * Check if all residues are known amino acids.
                  */
                 boolean isProtein = true;
+                if (!residues.isEmpty()) {
+                    //renameNTerminusHydrogens(residues.get(0)); Not safe to use until it distinguishes between true N-termini and N-terminal residues in general.
+                }
                 for (int residueNumber = 0; residueNumber < numberOfResidues; residueNumber++) {
                     Residue residue = residues.get(residueNumber);
                     String name = residue.getName().toUpperCase();
@@ -4399,6 +4417,50 @@ public final class PDBFilter extends SystemFilter {
         if (!resAtoms.isEmpty() && HH22 == null) {
             resAtoms.get(0).setName("HH22");
             resAtoms.remove(0);
+        }
+    }
+    
+    private void renameNTerminusHydrogens(Residue residue) {
+        Atom[] h = new Atom[3];
+        h[0] = (Atom) residue.getAtomNode("H1");
+        h[1] = (Atom) residue.getAtomNode("H2");
+        h[2] = (Atom) residue.getAtomNode("H3");
+        int numAtoms = 0;
+        for (Atom atom : h) {
+            numAtoms += (atom == null ? 0 : 1);
+        }
+        if (numAtoms == 3) {
+            return;
+        }
+        List<Atom> resAtoms = residue.getAtomList();
+        for (Atom resAtom : resAtoms) {
+            // Check if already contained in h[].
+            boolean doContinue = false;
+            for (Atom hAtom : h) {
+                if (resAtom.equals(hAtom)) {
+                    doContinue = true;
+                    break;
+                }
+            }
+            if (doContinue) {
+                continue;
+            }
+            
+            // If the hydrogen matches H or H[1-3], assign to first null h entity.
+            String atomName = resAtom.getName().toUpperCase();
+            if (atomName.equals("H") || atomName.matches("H[1-3]") || atomName.matches("[1-3]H")) {
+                ++numAtoms;
+                for (int i = 0; i < h.length; i++) {
+                    if (h[i] == null) {
+                        resAtom.setName("H" + (i+1));
+                        h[i] = resAtom;
+                        break;
+                    }
+                }
+                if (numAtoms == 3) {
+                    return;
+                }
+            }
         }
     }
     
