@@ -47,6 +47,9 @@ import ffx.potential.bonded.MolecularAssembly;
 // Asychronous communication between walkers.
 boolean asynchronous = false;
 
+// Well-Tempered Metadynamics.
+boolean wellTempered = false;
+
 // First atom of the ligand.
 int ligandStart = 1;
 
@@ -134,6 +137,7 @@ boolean writeTraversals = true;
 def cli = new CliBuilder(usage:' ffxc osrw [options] <filename> [filename]');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.a(longOpt:'async', args:0, 'Walker communication is asynchronous.');
+cli.wt(longOpt:'wellTempered', args:0, 'Use Well-Tempered Metadynamics.');
 cli.n(longOpt:'steps', args:1, argName:'10000000', 'Number of molecular dynamics steps.');
 cli.q(longOpt:'equilibrate', args:1, argName:'1000', 'Equilibration steps prior to OSRW counts.');
 cli.d(longOpt:'dt', args:1, argName:'1.0', 'Time discretization step (fsec).');
@@ -174,6 +178,11 @@ String filename = arguments.get(0);
 // Asynchronous?
 if (options.a) {
     asynchronous = true;
+}
+
+// Well-Tempered?
+if (options.wt) {
+    wellTempered = true;
 }
 
 // Constant Pressue?
@@ -412,7 +421,7 @@ if (arguments.size() == 1) {
 //
 //        // Create the OSRW instance.
 //        osrw = new OSRW(energy, barostat, lambdaRestart, histogramRestart, active.getProperties(),
-//            temperature, timeStep, printInterval, saveInterval, asynchronous, sh);
+//            temperature, timeStep, printInterval, saveInterval, asynchronous, sh, wellTempered);
 //        osrw.setResetStatistics(resetStatistics);
         if (writeTraversals) {
             osrw.setTraversalOutput(lambdaOneFile, topology1, lambdaZeroFile, topology1);
@@ -420,7 +429,7 @@ if (arguments.size() == 1) {
     } else {
         // Wrap the single topology ForceFieldEnergy inside an OSRW instance.
         osrw = new OSRW(energy, energy, lambdaRestart, histogramRestart, active.getProperties(),
-            temperature, timeStep, printInterval, saveInterval, asynchronous, sh);
+            temperature, timeStep, printInterval, saveInterval, asynchronous, sh, wellTempered);
         osrw.setResetStatistics(resetStatistics);
         if (writeTraversals) {
             osrw.setTraversalOutput(lambdaOneFile, topology1, lambdaZeroFile, topology1);
@@ -452,7 +461,7 @@ if (arguments.size() == 1) {
     DualTopologyEnergy dualTopologyEnergy = new DualTopologyEnergy(topology1, active);
     // Wrap the DualTopology potential energy inside an OSRW instance.
     osrw = new OSRW(dualTopologyEnergy, dualTopologyEnergy, lambdaRestart, histogramRestart, active.getProperties(),
-        temperature, timeStep, printInterval, saveInterval, asynchronous, sh);
+        temperature, timeStep, printInterval, saveInterval, asynchronous, sh, wellTempered);
     osrw.setResetStatistics(resetStatistics);
     if (writeTraversals) {
         osrw.setTraversalOutput(lambdaOneFile, topology1, lambdaZeroFile, topology2);

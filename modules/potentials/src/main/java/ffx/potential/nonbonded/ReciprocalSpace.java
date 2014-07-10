@@ -424,12 +424,12 @@ public class ReciprocalSpace {
         if (!cudaFFT) {
             if (complexFFT3D == null || dimChanged) {
                 complexFFT3D = new Complex3DParallel(fftX, fftY, fftZ, fftTeam, recipSchedule);
-                complexFFT3D.setRecip(generalizedInfluenceFunction());
                 if (splineGrid == null || splineGrid.length < fftSpace) {
                     splineGrid = new double[fftSpace];
                 }
                 splineBuffer = DoubleBuffer.wrap(splineGrid);
             }
+            complexFFT3D.setRecip(generalizedInfluenceFunction());
             cudaFFT3D = null;
             cudaThread = null;
         } else {
@@ -441,9 +441,9 @@ public class ReciprocalSpace {
                 cudaThread = new Thread(cudaFFT3D);
                 cudaThread.setPriority(Thread.MAX_PRIORITY);
                 cudaThread.start();
-                cudaFFT3D.setRecip(generalizedInfluenceFunction());
                 splineBuffer = cudaFFT3D.getDoubleBuffer();
             }
+            cudaFFT3D.setRecip(generalizedInfluenceFunction());
             complexFFT3D = null;
         }
 
@@ -453,6 +453,9 @@ public class ReciprocalSpace {
             if (cudaFFT) {
                 spatialDensityRegion.setGridBuffer(splineBuffer);
             }
+        } else {
+            spatialDensityRegion.setCrystal(crystal, fftX, fftY, fftZ);
+            spatialDensityRegion.coordinates = coordinates;
         }
 
         return density;
@@ -536,6 +539,7 @@ public class ReciprocalSpace {
      */
     public void splinePermanentMultipoles(double globalMultipoles[][][], boolean use[]) {
         splinePermanentTotal -= System.nanoTime();
+        spatialDensityRegion.setCrystal(crystal.getUnitCell(), fftX, fftY, fftZ);
         spatialDensityRegion.assignAtomsToCells();
         spatialDensityRegion.setDensityLoop(splinePermanentLoops);
         for (int i = 0; i < threadCount; i++) {
@@ -1057,6 +1061,10 @@ public class ReciprocalSpace {
                         final double add = splxi[0] * term0 + splxi[1] * term1 + splxi[2] * term2;
                         final double current = splineBuffer.get(ii);
                         splineBuffer.put(ii, current + add);
+                        /*
+                        if (n == 0) {
+                            logger.info(String.format(" %d %16.8f", ii, current + add));
+                        } */
                         //splineGrid[ii] += add;
                     }
                 }

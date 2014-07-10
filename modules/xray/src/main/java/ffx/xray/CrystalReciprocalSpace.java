@@ -385,10 +385,8 @@ public class CrystalReciprocalSpace {
                     fftX, fftY, fftZ));
             logger.info(sb.toString());
         }
-
         if (solvent) {
             int minWork = nSymm;
-
             if (solventmodel != SolventModel.NONE) {
                 spatialDensityRegion
                         = new SpatialDensityRegion(fftX, fftY, fftZ,
