@@ -32,7 +32,7 @@ import groovy.util.CliBuilder;
 
 // Force Field X Imports
 import ffx.potential.parsers.PDBFileMatcher;
-import ffx.potential.parsers.PDBFileFilter
+import ffx.potential.parsers.PDBFileFilter;
 
 File sourceFileSource; // The "good" structures: for our purposes, FFX structures.
 File matchFileSource; // The structures to back-correlate and fix: MSMBuilder structures.
@@ -69,6 +69,8 @@ List<String> arguments = options.arguments();
 if (options.h || arguments == null || arguments.size() != 2) {
     return cli.usage();
 }
+
+logger.severe(" Script not functional: FFX closing down.");
 
 if (options.d) {
     parseDeep = Boolean.parseBoolean(options.d);
@@ -116,6 +118,7 @@ if (!matchFileSource.exists()) {
     return cli.usage();
 }
 
+sourceStructures = new ArrayList<>();
 if (sourceFileSource.isDirectory()) {
     if (parseDeep) {
         PDBFileFilter filter = new PDBFileFilter();
@@ -154,9 +157,9 @@ if (sourceFileSource.isDirectory()) {
     }
     bw.close();
 }
-File[] sourceFileArray = new File[sourceStructures.size()];
-sourceFileArray = sourceStructures.toArray(sourceFileArray);
+File[] sourceFileArray = sourceStructures.toArray(new File[sourceStructures.size()]);
 
+matchStructures = new ArrayList<>();
 if (matchFileSource.isDirectory()) {
     if (parseDeep) {
         PDBFileFilter filter = new PDBFileFilter();
@@ -195,8 +198,7 @@ if (matchFileSource.isDirectory()) {
     }
     br.close();
 }
-File[] matchFileArray = new File[matchStructures.size()];
-matchFileArray = matchStructures.toArray(matchFileArray);
+File[] matchFileArray = matchStructures.toArray(new File[matchStructures.size()]);
 
 fileMatcher = new PDBFileMatcher(sourceFileArray, matchFileArray);
 fileMatcher.setVerbose(verbose);

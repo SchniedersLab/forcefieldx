@@ -49,16 +49,21 @@ package ffx.potential.parsers;
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
+
+// Java Imports
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+// Commons IO
 import org.apache.commons.io.FilenameUtils;
+
+// BioJava imports
 import org.biojava.bio.structure.Atom;
 import org.biojava.bio.structure.Chain;
 import org.biojava.bio.structure.Group;
@@ -68,7 +73,6 @@ import org.biojava.bio.structure.SSBond;
 import org.biojava.bio.structure.Structure;
 import org.biojava.bio.structure.StructureException;
 import org.biojava.bio.structure.StructureTools;
-import org.biojava.bio.structure.align.StrucAligParameters;
 import org.biojava.bio.structure.align.StructurePairAligner;
 import org.biojava.bio.structure.align.pairwise.AlternativeAlignment;
 import org.biojava.bio.structure.io.PDBFileReader;
@@ -148,27 +152,31 @@ public class PDBFileMatcher {
      * flags are set, calls fixFiles to edit the match files.
      */
     public void match() {
-        if (parallel) {
-            parallelTeam = new ParallelTeam();
-            try {
-                parallelTeam.execute(new MatchingRegion());
-            } catch (Exception ex) {
-                logger.severe(String.format(" Exception matching files in parallel: %s", ex.toString()));
+        try {
+            if (parallel) {
+                parallelTeam = new ParallelTeam();
+                try {
+                    parallelTeam.execute(new MatchingRegion());
+                } catch (Exception ex) {
+                    logger.severe(String.format(" Exception matching files in parallel: %s", ex.toString()));
+                }
+                for (int i = 0; i < iterationTimes.length; i++) {
+                    logger.info(String.format(" Iteration %d time: %12.9f sec", i, 1.0E-9 * iterationTimes[i]));
+                }
+            } else {
+                sequentialFileMatch();
             }
-            for (int i = 0; i < iterationTimes.length; i++) {
-                logger.info(String.format(" Iteration %d time: %12.9f sec", i, 1.0E-9 * iterationTimes[i]));
+            if (fixSSBonds || fixBFactors || headerLink) {
+                if (fixSSBonds || fixBFactors) {
+                    fixAtoms = true;
+                }
+                fixFiles();
             }
-        } else {
-            sequentialFileMatch();
-        }
-        if (fixSSBonds || fixBFactors || headerLink) {
-            if (fixSSBonds || fixBFactors) {
-                fixAtoms = true;
-            }
-            fixFiles();
+        } catch (Exception ex) {
+            logger.severe(String.format(" Error in matching: %s", ex.toString()));
         }
     }
-    
+
     /**
      * Second major class method: uses information from source files to fix match
      * files.
