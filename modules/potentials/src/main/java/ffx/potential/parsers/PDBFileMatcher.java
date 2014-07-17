@@ -49,8 +49,6 @@ package ffx.potential.parsers;
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
-
-// Java Imports
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -59,15 +57,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-// Commons IO
 import org.apache.commons.io.FilenameUtils;
-
-// BioJava imports
 import org.biojava.bio.structure.Atom;
 import org.biojava.bio.structure.Chain;
 import org.biojava.bio.structure.Group;
 import org.biojava.bio.structure.GroupType;
+import org.biojava.bio.structure.PDBCrystallographicInfo;
 import org.biojava.bio.structure.ResidueNumber;
 import org.biojava.bio.structure.SSBond;
 import org.biojava.bio.structure.Structure;
@@ -101,6 +96,8 @@ public class PDBFileMatcher {
     private long[] iterationTimes;
     private long[] fixTimes;
     private boolean robustMatch = false;
+    private boolean fixCryst = false;
+    private boolean fixModel = false;
     
     public PDBFileMatcher(File[] sourceFiles, File[] matchFiles) {
         this.sourceFiles = sourceFiles;
@@ -146,6 +143,9 @@ public class PDBFileMatcher {
     public void setRobustMatch(boolean robustMatch) {
         this.robustMatch = robustMatch;
     }
+    public void setFixCryst(boolean fixCryst) {
+        this.fixCryst = fixCryst;
+    }
     
     /**
      * Primary class method: matches match files to source files, and if any fixer
@@ -166,10 +166,9 @@ public class PDBFileMatcher {
             } else {
                 sequentialFileMatch();
             }
-            if (fixSSBonds || fixBFactors || headerLink) {
-                if (fixSSBonds || fixBFactors) {
-                    fixAtoms = true;
-                }
+            fixAtoms = fixSSBonds || fixBFactors;
+            fixModel = fixAtoms || headerLink || fixCryst;
+            if (fixModel) {
                 fixFiles();
             }
         } catch (Exception ex) {
@@ -556,17 +555,18 @@ public class PDBFileMatcher {
                 }
             }
             if (retFile.exists()) {
-                String exSt = "Versioning failed: all filenames from " + filename 
+                String exSt = "Versioning failed: all filenames from " + filename
                         + " to " + filename + "_999 already exist.";
                 throw new IOException(exSt);
             }
         }
         return retFile;
     }
-    
+
     /**
      * Compares two SSBonds based on chain IDs, insertion codes, and residue
      * numbers; not order-sensitive.
+     *
      * @param bond1
      * @param bond2
      * @return If bond1 and bond2 are equivalent.
@@ -583,7 +583,7 @@ public class PDBFileMatcher {
                 return false;
             }
         }
-        
+
         List<String> bond1InsCodes = new ArrayList<>(2);
         bond1InsCodes.add(bond1.getInsCode1());
         bond1InsCodes.add(bond1.getInsCode2());
@@ -595,7 +595,7 @@ public class PDBFileMatcher {
                 return false;
             }
         }
-        
+
         List<String> bond1ResNums = new ArrayList<>(2);
         bond1ResNums.add(bond1.getResnum1());
         bond1ResNums.add(bond1.getResnum2());
@@ -610,27 +610,163 @@ public class PDBFileMatcher {
         return true;
     }
     
-    private void sequentialFileMatch () {
-        PDBFileReader fileReader = new PDBFileReader();
-        StructurePairAligner aligner = new StructurePairAligner();
+    /**
+     * Creates a duplicate PDBCrystallographicInfo object.
+     * @param sourceInfo
+     * @return duplicate of sourceInfo
+     * @throws IllegalArgumentException if sourceInfo not crystallographic.
+     */
+    private PDBCrystallographicInfo cloneCrystalInfo(PDBCrystallographicInfo sourceInfo)
+            throws IllegalArgumentException {
+        if (!sourceInfo.isCrystallographic()) {
+            throw new IllegalArgumentException(" Source structure has no meaningful "
+                    + "crystallographic information.");
+        }
+        
+        PDBCrystallographicInfo retInfo = new PDBCrystallographicInfo();
+        retInfo.setSpaceGroup(sourceInfo.getSpaceGroup());
+        
+        // Newer versions of BioJava can use the CrystalCell object.
+        retInfo.setA(sourceInfo.getA());
+        retInfo.setAlpha(sourceInfo.getAlpha());
+        retInfo.setB(sourceInfo.getB());
+        retInfo.setBeta(sourceInfo.getBeta());
+        retInfo.setC(sourceInfo.getC());
+        retInfo.setGamma(sourceInfo.getGamma());
+        retInfo.setZ(sourceInfo.getZ());
+        
+        return retInfo;
+    }
+
+    /**
+     * Interior code of file matching loop: intended to ensure consistency
+     * between sequential and parallel versions of code.
+     *
+     * @param currentFilePair
+     * @param filereader
+     * @param aligner
+     * @throws IOException
+     */
+    private void matchFile(FileFilePair currentFilePair, PDBFileReader filereader,
+            StructurePairAligner aligner) throws IOException {
+        Structure currentStructure = filereader.getStructure(currentFilePair.getMatchedFile());
+        currentFilePair.setStructure(currentStructure);
         int numSources = sourceFiles.length;
+        for (int j = 0; j < numSources; j++) {
+            File currentSource = sourceFiles[j];
+            Structure sourceStructure = filereader.getStructure(currentSource);
+            try {
+                double rmsd = calculateRMSD(currentFilePair, sourceStructure, aligner);
+                currentFilePair.attemptReplace(currentSource, rmsd);
+            } catch (StructureException ex) {
+                logger.warning(String.format(" Error in calculating RMSD for match %s and source %s : %s",
+                        currentFilePair.getMatchedFile().getName(), currentSource.getName(), ex.toString()));
+            }
+        }
+    }
+
+    private void fixFile(FileFilePair currentPair, PDBFileReader filereader) throws IOException {
+        File matchFile = currentPair.getMatchedFile();
+        Structure matchStructure = currentPair.getStructure();
+        if (matchStructure == null) {
+            matchStructure = filereader.getStructure(matchFile);
+        }
+
+        File sourceFile = currentPair.getSourceFile();
+        if (sourceFile == null) {
+            throw new IOException(String.format("No source file was matched to file %s", matchFile.toString()));
+        }
+        
+        Structure sourceStructure = null;
+        if (fixAtoms) {
+            sourceStructure = filereader.getStructure(sourceFile);
+            Atom[] matchAtoms = StructureTools.getAllAtomArray(matchStructure);
+            for (Atom matchAtom : matchAtoms) {
+                Atom sourceAtom = getMatchingAtom(matchAtom, sourceStructure, robustMatch);
+                if (fixBFactors) {
+                    matchAtom.setTempFactor(sourceAtom.getTempFactor());
+                }
+            }
+            // Other methods can go here.
+        }
+        if (fixSSBonds) {
+            if (sourceStructure == null) {
+                sourceStructure = filereader.getStructure(sourceFile);
+            }
+            List<SSBond> sourceBonds = sourceStructure.getSSBonds();
+            List<SSBond> matchBonds = matchStructure.getSSBonds();
+            for (SSBond sourceBond : sourceBonds) {
+                boolean isContained = false;
+                for (SSBond matchBond : matchBonds) {
+                    if (compareSSBonds(matchBond, sourceBond)) {
+                        isContained = true;
+                        break;
+                    }
+                }
+                if (!isContained) {
+                    matchStructure.addSSBond(sourceBond.clone());
+                }
+            }
+        }
+        if (fixCryst) {
+            if (sourceStructure == null) {
+                sourceStructure = filereader.getStructure(sourceFile);
+            }
+            PDBCrystallographicInfo crystalInfo = sourceStructure.getCrystallographicInfo();
+            try {
+                PDBCrystallographicInfo duplicateInfo = cloneCrystalInfo(crystalInfo);
+                matchStructure.setCrystallographicInfo(duplicateInfo);
+            } catch (IllegalArgumentException ex) {
+                logger.warning(String.format(" No crystal information for source structure "
+                        + "%s: nothing attached to file %s", sourceFile.toString(), matchFile.toString()));
+            }
+        }
+        String pdb = matchStructure.toPDB();
+        if (headerLink) {
+            StringBuilder pdbBuilder = new StringBuilder(pdb);
+            int position = pdbBuilder.lastIndexOf("REMARK ");
+            int remarkNumber = 4;
+            if (position >= 0) {
+                String nextLine = pdbBuilder.substring(position, position + 1000);
+                int offset = nextLine.indexOf("%n");
+                if (offset < 0) {
+                    nextLine = pdbBuilder.substring(position);
+                    offset = nextLine.indexOf("%n");
+                }
+                position += offset;
+                String[] tok = nextLine.split(" +", 3);
+                try {
+                    remarkNumber = Integer.parseInt(tok[1]) + 1;
+                } catch (NumberFormatException ex) {
+                    // Silent.
+                }
+            }
+            
+            String toInsert = String.format("REMARK%4d SOURCE FILE: %s", remarkNumber, sourceFile.getName());
+            toInsert = toInsert.concat(String.format("REMARK%4d RMSD:%11.6f ANGSTROMS", remarkNumber, currentPair.getRMSD()));
+            pdbBuilder.insert(position, toInsert);
+            pdb = pdbBuilder.toString();
+        }
+
+        File newFile = createVersionedCopy(matchFile);
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(newFile))) {
+            try {
+                bw.write(pdb);
+            } catch (IOException ex) {
+                logger.warning(String.format(" Error writing to file %s", newFile.getName()));
+            }
+        }
+    }
+    
+    private void sequentialFileMatch () {
+        PDBFileReader filereader = new PDBFileReader();
+        StructurePairAligner aligner = new StructurePairAligner();
+        //int numSources = sourceFiles.length;
         try {
             for (int i = 0; i < matchFilePairs.length; i++) {
                 Long iterTime = -System.nanoTime();
                 FileFilePair currentFilePair = matchFilePairs[i];
-                Structure currentStructure = fileReader.getStructure(currentFilePair.getMatchedFile());
-                currentFilePair.setStructure(currentStructure);
-                for (int j = 0; j < numSources; j++) {
-                    File currentSource = sourceFiles[j];
-                    Structure sourceStructure = fileReader.getStructure(currentSource);
-                    try {
-                        double rmsd = calculateRMSD(currentFilePair, sourceStructure, aligner);
-                        currentFilePair.attemptReplace(currentSource, rmsd);
-                    } catch (StructureException ex) {
-                        logger.warning(String.format(" Error in calculating RMSD for match %s and source %s : %s",
-                                currentFilePair.getMatchedFile().getName(), currentSource.getName(), ex.toString()));
-                    }
-                }
+                matchFile(currentFilePair, filereader, aligner);
                 iterationTimes[i] = iterTime + System.nanoTime();
             }
         } catch (IOException ex) {
@@ -639,9 +775,17 @@ public class PDBFileMatcher {
     }
     
     private void sequentialFixer() {
-        PDBFileReader fileReader = new PDBFileReader();
+        PDBFileReader filereader = new PDBFileReader();
         for (int i = 0; i < matchFilePairs.length; i++) {
-            // Want to finish parallel fixer first.
+            Long fixTime = -System.nanoTime();
+            FileFilePair currentPair = matchFilePairs[i];
+            try {
+                fixFile(currentPair, filereader);
+            } catch (IOException ex) {
+                
+            }
+            fixTime += System.nanoTime();
+            fixTimes[i] += fixTime;
         }
     }
     
@@ -662,26 +806,12 @@ public class PDBFileMatcher {
         public void run(int lb, int ub) throws IOException {
             PDBFileReader filereader = new PDBFileReader();
             StructurePairAligner aligner = new StructurePairAligner();
-            int numSources = sourceFiles.length;
             for (int i = lb; i <= ub; i++) {
                 Long iterTime = -System.nanoTime();
                 FileFilePair currentFilePair = matchFilePairs[i];
-                Structure currentStructure = filereader.getStructure(currentFilePair.getMatchedFile());
-                currentFilePair.setStructure(currentStructure);
-                for (int j = 0; j < numSources; j++) {
-                    File currentSource = sourceFiles[j];
-                    Structure sourceStructure = filereader.getStructure(currentSource);
-                    try {
-                        double rmsd = calculateRMSD(currentFilePair, sourceStructure, aligner);
-                        currentFilePair.attemptReplace(currentSource, rmsd);
-                    } catch (StructureException ex) {
-                        logger.warning(String.format(" Error in calculating RMSD for match %s and source %s : %s",
-                                currentFilePair.getMatchedFile().getName(), currentSource.getName(), ex.toString()));
-                    }
-                }
+                matchFile(currentFilePair, filereader, aligner);
                 iterTime += System.nanoTime();
                 iterationTimes[i] = iterTime;
-                //logger.info(String.format(" Iteration time: %12.9f", 1.0E-9 * iterTime));
             }
         }
     }
@@ -704,86 +834,10 @@ public class PDBFileMatcher {
             PDBFileReader filereader = new PDBFileReader();
             for (int i = lb; i <= ub; i++) {
                 Long fixTime = -System.nanoTime();
-                
                 FileFilePair currentPair = matchFilePairs[i];
-                File matchFile = matchFilePairs[i].getMatchedFile();
-                Structure matchStructure = currentPair.getStructure();
-                if (matchStructure == null) {
-                    matchStructure = filereader.getStructure(matchFile);
-                }
-                
-                File sourceFile = currentPair.getSourceFile();
-                if (sourceFile == null) {
-                    throw new IOException(String.format("No source file was matched to file %d", i));
-                }
-                
-                Structure sourceStructure = null;
-                if (fixAtoms) {
-                    sourceStructure = filereader.getStructure(sourceFile);
-                    Atom[] matchAtoms = StructureTools.getAllAtomArray(matchStructure);
-                    for (Atom matchAtom : matchAtoms) {
-                        Atom sourceAtom = getMatchingAtom(matchAtom, sourceStructure, robustMatch);
-                        if (fixBFactors) {
-                            matchAtom.setTempFactor(sourceAtom.getTempFactor());
-                        }
-                    }
-                    // Other methods can go here.
-                }
-                if (fixSSBonds) {
-                    if (sourceStructure == null) {
-                        sourceStructure = filereader.getStructure(sourceFile);
-                    }
-                    List<SSBond> sourceBonds = sourceStructure.getSSBonds();
-                    List<SSBond> matchBonds = matchStructure.getSSBonds();
-                    for (SSBond sourceBond : sourceBonds) {
-                        boolean isContained = false;
-                        for (SSBond matchBond : matchBonds) {
-                            if (compareSSBonds(matchBond, sourceBond)) {
-                                isContained = true;
-                                break;
-                            }
-                        }
-                        if (!isContained) {
-                            matchStructure.addSSBond(sourceBond.clone());
-                        }
-                    }
-                }
-                String pdb = matchStructure.toPDB();
-                if (headerLink) {
-                    StringBuilder pdbBuilder = new StringBuilder(pdb);
-                    int position = pdbBuilder.lastIndexOf("REMARK ");
-                    int remarkNumber = 4;
-                    if (position >= 0) {
-                        String nextLine = pdbBuilder.substring(position, position + 1000);
-                        int offset = nextLine.indexOf("%n");
-                        if (offset < 0) {
-                            nextLine = pdbBuilder.substring(position);
-                            offset = nextLine.indexOf("%n");
-                        }
-                        position += offset;
-                        String[] tok = nextLine.split(" +", 3);
-                        try {
-                            remarkNumber = Integer.parseInt(tok[1]) + 1;
-                        } catch (NumberFormatException ex) {
-                            // Silent.
-                        }
-                    }
-
-                    String toInsert = String.format("REMARK%4d SOURCE FILE: %s", remarkNumber, sourceFile.getName());
-                    pdbBuilder.insert(position, toInsert);
-                    pdb = pdbBuilder.toString();
-                }
-                
-                if (fixAtoms || headerLink) {
-                    File newFile = createVersionedCopy(matchFile);
-                    try (BufferedWriter bw = new BufferedWriter(new FileWriter(newFile))) {
-                        try {
-                            bw.write(pdb);
-                        } catch (IOException ex) {
-                            logger.warning(String.format(" Error writing to file %s", newFile.getName()));
-                        }
-                    }
-                }
+                fixFile(currentPair, filereader);
+                fixTime += System.nanoTime();
+                fixTimes[i] = fixTime;
             }
         }
     }
