@@ -459,10 +459,10 @@ public class DiffractionData implements DataContainer {
                 refinementdata[i].fs[j][0] += (fs[j][0] - refinementdata[i].fs[j][0]) / index;
                 refinementdata[i].fs[j][1] += (fs[j][1] - refinementdata[i].fs[j][1]) / index;
             }
-            refinementdata[i].setCrystalReciprocalSpace_fc(null);
-            refinementdata[i].setCrystalReciprocalSpace_fs(null);
-            crs_fc[i] = null;
-            crs_fs[i] = null;
+            //refinementdata[i].setCrystalReciprocalSpace_fc(null);
+            //refinementdata[i].setCrystalReciprocalSpace_fs(null);
+            //crs_fc[i] = null;
+            //crs_fs[i] = null;
         }
         
         tmprefinementmodel = null;
