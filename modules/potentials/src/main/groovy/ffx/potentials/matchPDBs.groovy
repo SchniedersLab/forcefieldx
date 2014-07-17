@@ -32,6 +32,7 @@ import groovy.util.CliBuilder;
 
 // Force Field X Imports
 import ffx.potential.parsers.PDBFileMatcher;
+import ffx.potential.parsers.SimplePDBMatcher
 import ffx.potential.parsers.PDBFileFilter;
 
 File sourceFileSource; // The "good" structures: for our purposes, FFX structures.
@@ -47,6 +48,8 @@ boolean bFactors = false;
 boolean ssBonds = false;
 boolean superpose = true;
 boolean robustMatch = false;
+boolean fixCryst = false;
+boolean simple = false;
 int atomsUsed = 1;
 PDBFileMatcher fileMatcher;
 
@@ -63,14 +66,14 @@ cli.a(longOpt:'atomsUsed', args:1, argName:'1', 'Over-ridden by superpose. Will 
 cli.p(longOpt:'parallel', args:1, argName:'true', 'Will parallelize comparisons');
 cli.x(longOpt:'suffix', args:1, argName:'_match', 'Suffix for modified copies of matched files.');
 cli.r(longOpt:'robustAtomMatch', args:1, argName:'false', 'If true, if an atom\'s counterpart from another file cannot be easily found, will scan over atoms to find the counterpart.');
+cli.c(longOpt:'crystRecord', args:1, argName:'false', 'If true, uses source CRYST1 record if available to replace or add to matched file.');
+cli.sm(longOpt:'simple', 'Set to use a simple match (ignores all flags except parallel, simply prints output of RMSD matching)');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
 if (options.h || arguments == null || arguments.size() != 2) {
     return cli.usage();
 }
-
-logger.severe(" Script not functional: FFX closing down.");
 
 if (options.d) {
     parseDeep = Boolean.parseBoolean(options.d);
@@ -105,6 +108,10 @@ if (options.x) {
 }
 if (options.r) {
     robustMatch = Boolean.parseBoolean(options.r);
+}
+
+if (options.c) {
+    fixCryst = Boolean.parseBoolean(options.c);
 }
 
 sourceFileSource = new File(arguments.get(0));
@@ -200,14 +207,24 @@ if (matchFileSource.isDirectory()) {
 }
 File[] matchFileArray = matchStructures.toArray(new File[matchStructures.size()]);
 
-fileMatcher = new PDBFileMatcher(sourceFileArray, matchFileArray);
-fileMatcher.setVerbose(verbose);
-fileMatcher.setParallel(parallel);
-fileMatcher.setHeaderLink(headerLink);
-fileMatcher.setFixBFactors(bFactors);
-fileMatcher.setFixSSBonds(ssBonds);
-fileMatcher.setSuperpose(superpose);
-fileMatcher.setAtomsUsed(atomsUsed);
-fileMatcher.setSuffix(suffix);
-fileMatcher.setRobustMatch(robustMatch);
-fileMatcher.match();
+if (options.sm) {
+    SimplePDBMatcher simpleMatcher = new SimplePDBMatcher(matchFileArray, sourceFileArray);
+    if (parallel) {
+        simpleMatcher.matchParallel();
+    } else {
+        simpleMatcher.match();
+    }
+} else {
+    fileMatcher = new PDBFileMatcher(sourceFileArray, matchFileArray);
+    fileMatcher.setVerbose(verbose);
+    fileMatcher.setParallel(parallel);
+    fileMatcher.setHeaderLink(headerLink);
+    fileMatcher.setFixBFactors(bFactors);
+    fileMatcher.setFixSSBonds(ssBonds);
+    fileMatcher.setSuperpose(superpose);
+    fileMatcher.setAtomsUsed(atomsUsed);
+    fileMatcher.setSuffix(suffix);
+    fileMatcher.setRobustMatch(robustMatch);
+    fileMatcher.setFixCryst(fixCryst);
+    fileMatcher.match();
+}
