@@ -448,7 +448,7 @@ public final class PDBFilter extends SystemFilter {
                             double tempFactor;
                             Atom newAtom;
                             Atom returnedAtom;
-                            
+
                             // If it's a misnamed water, it will fall through to HETATM.
                             if (!line.substring(17, 20).trim().equals("HOH")) {
                                 serial = new Integer(Hybrid36.decode(5, line.substring(6, 11)));
@@ -1651,9 +1651,8 @@ public final class PDBFilter extends SystemFilter {
             buildHydrogen(residue, "H1\'", C1s, 1.09e0, O4s, 109.5e0, C2s, 109.5e0, -1, h1Typ[naNumber]);
             if (position == LAST_RESIDUE || numberOfResidues == 1) {
                 Atom H3T = (Atom) residue.getAtomNode("H3T");
-                if (H3T == null) {
+                if (H3T != null) {
                     buildHydrogen(residue, "H3T", O3s, 1.00e0, C3s, 109.5e0, C4s, 180.0e0, 0, h3tTyp[naNumber]);
-                    logger.info(residue.getAtomNode("H3T").toString());
                 }
                 // Else, if it is terminated by a 3' phosphate cap:
                 // Will need to see how PDB would label a 3' phosphate cap.
@@ -2308,7 +2307,12 @@ public final class PDBFilter extends SystemFilter {
          * groups like FOR, NH2, etc.
          */
         if (!nonStandard) {
-            checkForMissingHeavyAtoms(aminoAcidNumber, aminoAcid, position, residue);
+            try {
+                checkForMissingHeavyAtoms(aminoAcidNumber, aminoAcid, position, residue);
+            } catch (MissingHeavyAtomException e) {
+                logger.info(" " + residue.toString() + " could not be parsed.");
+                throw e;
+            }
         }
 
         Atom pC = null;
@@ -4123,7 +4127,7 @@ public final class PDBFilter extends SystemFilter {
         Atom HG3 = buildHydrogen(residue, "HG3", CG, 1.11, CB, 109.4, CD, 109.4, -1, k + 3);
         return residue;
     }
-    
+
     private void renameGlycineAlphaHydrogens(Residue residue, List<Atom> resAtoms) {
         Atom HA2 = (Atom) residue.getAtomNode("HA2");
         Atom HA3 = (Atom) residue.getAtomNode("HA3");
@@ -4141,11 +4145,11 @@ public final class PDBFilter extends SystemFilter {
             resAtoms.get(0).setName("HA3");
         }
     }
-    
+
     private void renameHydrogenType(Residue residue, List<Atom> resAtoms, int indices, String hydrogenType) {
         // Planned to replace rename<Beta/Gamma/...>Hydrogens methods.
     }
-    
+
     private void renameBetaHydrogens(Residue residue, List<Atom> resAtoms, int indexes) {
         Atom[] HBn = new Atom[3];
         switch (indexes) {
@@ -4182,7 +4186,7 @@ public final class PDBFilter extends SystemFilter {
             resAtoms.remove(0);
         }
     }
-    
+
     private void renameGammaHydrogens(Residue residue, List<Atom> resAtoms, int indexes) {
         Atom[] HGn = new Atom[3];
         switch (indexes) {
@@ -4219,7 +4223,7 @@ public final class PDBFilter extends SystemFilter {
             resAtoms.remove(0);
         }
     }
-    
+
     private void renameDeltaHydrogens(Residue residue, List<Atom> resAtoms, int indexes) {
         Atom[] HDn = new Atom[3];
         switch (indexes) {
@@ -4256,7 +4260,7 @@ public final class PDBFilter extends SystemFilter {
             resAtoms.remove(0);
         }
     }
-    
+
     private void renameEpsilonHydrogens(Residue residue, List<Atom> resAtoms, int indexes) {
         Atom[] HEn = new Atom[3];
         switch (indexes) {
@@ -4293,7 +4297,7 @@ public final class PDBFilter extends SystemFilter {
             resAtoms.remove(0);
         }
     }
-    
+
         private void renameZetaHydrogens(Residue residue, List<Atom> resAtoms, int indexes) {
         Atom[] HZn = new Atom[3];
         switch (indexes) {
@@ -4330,7 +4334,7 @@ public final class PDBFilter extends SystemFilter {
             resAtoms.remove(0);
         }
     }
-    
+
     private void renameIsoleucineHydrogens(Residue residue, List<Atom> resAtoms) {
         Atom HG12 = (Atom) residue.getAtomNode("HG12");
         Atom HG13 = (Atom) residue.getAtomNode("HG13");
@@ -4348,7 +4352,7 @@ public final class PDBFilter extends SystemFilter {
             resAtoms.get(0).setName("HG13");
         }
     }
-    
+
     private void renameAsparagineHydrogens(Residue residue, List<Atom> resAtoms) {
         Atom HD21 = (Atom) residue.getAtomNode("HD21");
         Atom HD22 = (Atom) residue.getAtomNode("HD22");
@@ -4366,7 +4370,7 @@ public final class PDBFilter extends SystemFilter {
             resAtoms.get(0).setName("HD21");
         }
     }
-    
+
     private void renameGlutamineHydrogens(Residue residue, List<Atom> resAtoms) {
         Atom HE21 = (Atom) residue.getAtomNode("HE21");
         Atom HE22 = (Atom) residue.getAtomNode("HE22");
@@ -4384,7 +4388,7 @@ public final class PDBFilter extends SystemFilter {
             resAtoms.get(0).setName("HE21");
         }
     }
-    
+
     private void renameArginineHydrogens(Residue residue, List<Atom> resAtoms) {
         Atom HH11 = (Atom) residue.getAtomNode("HH11");
         Atom HH12 = (Atom) residue.getAtomNode("HH12");
@@ -4419,7 +4423,7 @@ public final class PDBFilter extends SystemFilter {
             resAtoms.remove(0);
         }
     }
-    
+
     private void renameNTerminusHydrogens(Residue residue) {
         Atom[] h = new Atom[3];
         h[0] = (Atom) residue.getAtomNode("H1");
@@ -4445,7 +4449,7 @@ public final class PDBFilter extends SystemFilter {
             if (doContinue) {
                 continue;
             }
-            
+
             // If the hydrogen matches H or H[1-3], assign to first null h entity.
             String atomName = resAtom.getName().toUpperCase();
             if (atomName.equals("H") || atomName.matches("H[1-3]") || atomName.matches("[1-3]H")) {
@@ -4463,13 +4467,13 @@ public final class PDBFilter extends SystemFilter {
             }
         }
     }
-    
+
     /**
-     * Ensures proper naming of hydrogens according to latest PDB format. 
+     * Ensures proper naming of hydrogens according to latest PDB format.
      * Presently mostly guesses at which hydrogens to re-assign, which may cause
      * chirality errors for prochiral hydrogens. If necessary, we will implement
      * more specific mapping.
-     * @param residue 
+     * @param residue
      */
     private void renameNonstandardHydrogens(Residue residue) {
         switch(fileStandard) {
@@ -4500,7 +4504,7 @@ public final class PDBFilter extends SystemFilter {
                 }
             }
         }
-        // Ensures proper hydrogen assignment; for example, Gln should have HB2, 
+        // Ensures proper hydrogen assignment; for example, Gln should have HB2,
         // HB3 instead of HB1, HB2.
         ArrayList<Atom> betas;
         ArrayList<Atom> gammas;
