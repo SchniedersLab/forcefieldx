@@ -87,6 +87,7 @@ public final class Complex3DOpenCL implements Runnable {
             return;
         }
         DoubleBuffer doubleBuffer = dataBuffer.getBuffer();
+        doubleBuffer.rewind();
         doubleBuffer.put(data);
         mode = MODE.FFT;
         execute();
@@ -98,6 +99,7 @@ public final class Complex3DOpenCL implements Runnable {
             return;
         }
         DoubleBuffer doubleBuffer = dataBuffer.getBuffer();
+        doubleBuffer.rewind();
         doubleBuffer.put(data);
         mode = MODE.IFFT;
         execute();
@@ -109,6 +111,7 @@ public final class Complex3DOpenCL implements Runnable {
             return;
         }
         DoubleBuffer doubleBuffer = dataBuffer.getBuffer();
+        doubleBuffer.rewind();
         doubleBuffer.put(data);
         mode = MODE.CONVOLUTION;
         execute();
@@ -120,6 +123,7 @@ public final class Complex3DOpenCL implements Runnable {
             return;
         }
         DoubleBuffer doubleBuffer = recipBuffer.getBuffer();
+        doubleBuffer.rewind();
         doubleBuffer.put(recip);
         mode = MODE.RECIP;
         execute();
