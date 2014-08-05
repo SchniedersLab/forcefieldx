@@ -5,13 +5,6 @@
  */
 package ffx.numerics.fft;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.nio.DoubleBuffer;
-import java.util.Random;
-import java.util.logging.Logger;
-
 import com.jogamp.opencl.CLBuffer;
 import com.jogamp.opencl.CLCommandQueue;
 import com.jogamp.opencl.CLContext;
@@ -20,6 +13,13 @@ import com.jogamp.opencl.CLKernel;
 import com.jogamp.opencl.CLMemory;
 import com.jogamp.opencl.CLPlatform;
 import com.jogamp.opencl.CLProgram;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.DoubleBuffer;
+import java.util.Arrays;
+import java.util.Random;
+import java.util.logging.Logger;
 
 /**
  * This class implements a Java wrapper for calling clMath functions.
@@ -396,7 +396,8 @@ public final class Complex3DOpenCL implements Runnable {
         int z = 160;
         int length = x * y * z * 2;
         double data[] = new double[length];
-
+        double recipArray[] = new double[length/2];
+        
         // Create a Complex, 3D instance of FFT/Convolution operations, backed by an OpenCL implementation.
         Complex3DOpenCL complex3DOpenCL = new Complex3DOpenCL(x, y, z);
 
@@ -406,7 +407,8 @@ public final class Complex3DOpenCL implements Runnable {
         thread.start();
 
         fillBuffer(data, 12345);
-
+        Arrays.fill(recipArray,1.0);
+        
         System.out.format(" Original Data:------- \n");
         for (int i = 0; i < 10; i++) {
             System.out.format("\t%f\n", data[i]);
@@ -432,6 +434,7 @@ public final class Complex3DOpenCL implements Runnable {
             System.out.format("\t%f\n", data[i]);
         }
 
+        complex3DOpenCL.setRecip(recipArray);
         complex3DOpenCL.convolution(data);
         doubleBuffer.rewind();
         doubleBuffer.get(data);
