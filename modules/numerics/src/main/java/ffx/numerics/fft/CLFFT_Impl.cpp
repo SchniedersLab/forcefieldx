@@ -6,9 +6,9 @@
 #include <jni.h>
 #include "clFFT.h"
 #include "CL/cl.h"
-#include "ffx_numerics_fft_CLFFT.h"
+#include "ffx_numerics_fft_Complex3DOpenCL.h"
 
-JNIEXPORT jlong JNICALL Java_ffx_numerics_fft_CLFFT_clfftSetupNative
+JNIEXPORT jlong JNICALL Java_ffx_numerics_fft_Complex3DOpenCL_setupNative
 (JNIEnv *env, jclass object) {
     clfftStatus_ err;
     clfftSetupData fftSetup;
@@ -21,7 +21,7 @@ JNIEXPORT jlong JNICALL Java_ffx_numerics_fft_CLFFT_clfftSetupNative
     return ((jlong) fftSetupPtr);
 }
 
-JNIEXPORT jlong JNICALL Java_ffx_numerics_fft_CLFFT_clfftCreateDefaultPlanNative
+JNIEXPORT jlong JNICALL Java_ffx_numerics_fft_Complex3DOpenCL_createDefaultPlanNative
 (JNIEnv *env, jclass object, jlong jContext, jint dimension, jint dimX, jint dimY, jint dimZ) {
     clfftStatus_ err;
     clfftDim dim;
@@ -31,19 +31,19 @@ JNIEXPORT jlong JNICALL Java_ffx_numerics_fft_CLFFT_clfftCreateDefaultPlanNative
 
     switch ((int) dimension) {
         case 3:
-            dim = CLFFT_3D;
+            dim = Complex3DOpenC_3D;
             clLengths[0] = (size_t) dimX;
             clLengths[1] = (size_t) dimY;
             clLengths[2] = (size_t) dimZ;
             break;
         case 2:
-            dim = CLFFT_2D;
+            dim = Complex3DOpenC_2D;
             clLengths[0] = (size_t) dimX;
             clLengths[1] = (size_t) dimY;
             break;
         case 1:
         default:
-            dim = CLFFT_1D;
+            dim = Complex3DOpenC_1D;
             clLengths[0] = (size_t) dimX;
             break;
     }
@@ -53,7 +53,7 @@ JNIEXPORT jlong JNICALL Java_ffx_numerics_fft_CLFFT_clfftCreateDefaultPlanNative
     return ((jlong) planHandle);
 }
 
-JNIEXPORT jint JNICALL Java_ffx_numerics_fft_CLFFT_clfftSetPlanPrecisionNative
+JNIEXPORT jint JNICALL Java_ffx_numerics_fft_Complex3DOpenCL_setPlanPrecisionNative
 (JNIEnv *env, jclass object, jlong jPlanHandle, jint precisionType) {
     clfftStatus_ err;
     clfftPlanHandle planHandle = (clfftPlanHandle) jPlanHandle;
@@ -61,11 +61,11 @@ JNIEXPORT jint JNICALL Java_ffx_numerics_fft_CLFFT_clfftSetPlanPrecisionNative
 
     switch ((int) precisionType) {
         case 0:
-            precision = CLFFT_SINGLE;
+            precision = Complex3DOpenCL_SINGLE;
             break;
         default:
         case 1:
-            precision = CLFFT_DOUBLE;
+            precision = Complex3DOpenCL_DOUBLE;
             break;
     }
 
@@ -74,7 +74,7 @@ JNIEXPORT jint JNICALL Java_ffx_numerics_fft_CLFFT_clfftSetPlanPrecisionNative
     return (int) err;
 }
 
-JNIEXPORT jint JNICALL Java_ffx_numerics_fft_CLFFT_clfftSetLayoutNative
+JNIEXPORT jint JNICALL Java_ffx_numerics_fft_Complex3DOpenCL_setLayoutNative
 (JNIEnv *env, jclass object, jlong jPlanHandle, jint inLayoutType, jint outLayoutType) {
     clfftStatus_ err;
     clfftPlanHandle planHandle = (clfftPlanHandle) jPlanHandle;
@@ -84,25 +84,25 @@ JNIEXPORT jint JNICALL Java_ffx_numerics_fft_CLFFT_clfftSetLayoutNative
     switch ((int) inLayoutType) {
         default:
         case 0:
-            inLayout = CLFFT_COMPLEX_INTERLEAVED;
+            inLayout = Complex3DOpenCL_COMPLEX_INTERLEAVED;
             break;
         case 1:
-            inLayout = CLFFT_COMPLEX_PLANAR;
+            inLayout = Complex3DOpenCL_COMPLEX_PLANAR;
             break;
         case 2:
-            inLayout = CLFFT_REAL;
+            inLayout = Complex3DOpenCL_REAL;
             break;
     }
     switch ((int) outLayoutType) {
         default:
         case 0:
-            outLayout = CLFFT_COMPLEX_INTERLEAVED;
+            outLayout = Complex3DOpenCL_COMPLEX_INTERLEAVED;
             break;
         case 1:
-            outLayout = CLFFT_COMPLEX_PLANAR;
+            outLayout = Complex3DOpenCL_COMPLEX_PLANAR;
             break;
         case 2:
-            outLayout = CLFFT_REAL;
+            outLayout = Complex3DOpenCL_REAL;
             break;
     }
     err = clfftSetLayout(planHandle, inLayout, outLayout);
@@ -110,7 +110,7 @@ JNIEXPORT jint JNICALL Java_ffx_numerics_fft_CLFFT_clfftSetLayoutNative
     return (int) err;
 }
 
-JNIEXPORT jint JNICALL Java_ffx_numerics_fft_CLFFT_clfftExecuteTransformNative
+JNIEXPORT jint JNICALL Java_ffx_numerics_fft_Complex3DOpenCL_executeTransformNative
 (JNIEnv *env, jclass object, jlong jPlanHandle, int direction, jlong jQueue, jlong jrBuffer, jlong jcBuffer) {
     clfftStatus_ err;
     int status;
@@ -124,10 +124,10 @@ JNIEXPORT jint JNICALL Java_ffx_numerics_fft_CLFFT_clfftExecuteTransformNative
     switch ((int) direction) {
         default:
         case 1:
-            dir = CLFFT_FORWARD;
+            dir = Complex3DOpenCL_FORWARD;
             break;
         case -1:
-            dir = CLFFT_BACKWARD;
+            dir = Complex3DOpenCL_BACKWARD;
             break;
     }
     err = clfftBakePlan(planHandle, 1, &queue, NULL, NULL);
@@ -139,7 +139,7 @@ JNIEXPORT jint JNICALL Java_ffx_numerics_fft_CLFFT_clfftExecuteTransformNative
     return (int) err;
 }
 
-JNIEXPORT jint JNICALL Java_ffx_numerics_fft_CLFFT_clfftDestroyPlanNative
+JNIEXPORT jint JNICALL Java_ffx_numerics_fft_Complex3DOpenCL_destroyPlanNative
 (JNIEnv *env, jclass object, jlong jPlanHandle) {
     clfftStatus_ err;
     clfftPlanHandle planHandle = (clfftPlanHandle) jPlanHandle;
@@ -148,8 +148,7 @@ JNIEXPORT jint JNICALL Java_ffx_numerics_fft_CLFFT_clfftDestroyPlanNative
     return (int) err;
 }
 
-JNIEXPORT void JNICALL Java_ffx_numerics_fft_CLFFT_clfftTeardownNative
+JNIEXPORT void JNICALL Java_ffx_numerics_fft_Complex3DOpenCL_teardownNative
 (JNIEnv *env, jclass object) {
     clfftTeardown();
 }
-
