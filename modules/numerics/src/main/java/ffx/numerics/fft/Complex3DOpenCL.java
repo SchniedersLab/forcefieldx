@@ -38,10 +38,11 @@ public final class Complex3DOpenCL implements Runnable {
     boolean free;
     boolean dead;
 
-    //private CLCommandQueue queue;
-    public CLBuffer<DoubleBuffer> dataBuffer;
-    public CLBuffer<DoubleBuffer> recipBuffer;
-    private PlanHandle planHandle;
+    private final CLContext context;
+    private final CLCommandQueue queue;
+    public final CLBuffer<DoubleBuffer> dataBuffer;
+    public final CLBuffer<DoubleBuffer> recipBuffer;
+    private final PlanHandle planHandle;
 
     /**
      * Constructor.
@@ -58,6 +59,26 @@ public final class Complex3DOpenCL implements Runnable {
         mode = null;
         free = false;
         dead = false;
+
+        // Initialize the OpenCL Context
+        context = CLContext.create();
+        CLDevice device = context.getMaxFlopsDevice();
+        logger.info(String.format(" Using device: %s\n", device));
+        CLPlatform platform = device.getPlatform();
+        queue = device.createCommandQueue();
+
+        // Allocate memory on the device.
+        int bufferSize = len * 2;
+        int dims[] = {nX, nY, nZ};
+        dataBuffer = context.createDoubleBuffer(bufferSize, CLMemory.Mem.READ_WRITE);
+        recipBuffer = context.createDoubleBuffer(len, CLMemory.Mem.WRITE_ONLY);
+
+        // Initialize the OpenCL FFT library.
+        setup();
+        planHandle = createDefaultPlan(context, Complex3DOpenCL_DIMENSION.Complex3DOpenCL_3D, dims);
+        setPlanPrecision(Complex3DOpenCL_PRECISION.DOUBLE);
+        setLayout(Complex3DOpenCL_LAYOUT.Complex3DOpenCL_COMPLEX_INTERLEAVED,
+                Complex3DOpenCL_LAYOUT.Complex3DOpenCL_COMPLEX_INTERLEAVED);
     }
 
     public void fft(final double data[]) {
@@ -148,25 +169,6 @@ public final class Complex3DOpenCL implements Runnable {
 
     @Override
     public void run() {
-        // Initialize the OpenCL Context
-        CLContext context = CLContext.create();
-        CLDevice device = context.getMaxFlopsDevice();
-        CLPlatform platform = device.getPlatform();
-        CLCommandQueue queue = device.createCommandQueue();
-        logger.info(String.format(" Using device: %s\n", device));
-
-        // Allocate memory on the device.
-        int bufferSize = len * 2;
-        int dims[] = {nX, nY, nZ};
-        dataBuffer = context.createDoubleBuffer(bufferSize, CLMemory.Mem.READ_WRITE);
-        recipBuffer = context.createDoubleBuffer(len, CLMemory.Mem.WRITE_ONLY);
-
-        // Initialize the OpenCL FFT library.
-        setup();
-        planHandle = createDefaultPlan(context, CLFFT_DIMENSION.CLFFT_3D, dims);
-        setPlanPrecision(CLFFT_PRECISION.DOUBLE);
-        setLayout(CLFFT_LAYOUT.CLFFT_COMPLEX_INTERLEAVED, CLFFT_LAYOUT.CLFFT_COMPLEX_INTERLEAVED);
-
         synchronized (this) {
             while (!free) {
                 if (mode != null) {
@@ -176,19 +178,19 @@ public final class Complex3DOpenCL implements Runnable {
                             break;
                         case FFT:
                             queue.putWriteBuffer(dataBuffer, true);
-                            executeTransform(CLFFT_DIRECTION.FORWARD, queue, dataBuffer, dataBuffer);
+                            executeTransform(Complex3DOpenCL_DIRECTION.FORWARD, queue, dataBuffer, dataBuffer);
                             queue.putReadBuffer(dataBuffer, true);
                             break;
                         case CONVOLUTION:
                             queue.putWriteBuffer(dataBuffer, true);
-                            executeTransform(CLFFT_DIRECTION.FORWARD, queue, dataBuffer, dataBuffer);
+                            executeTransform(Complex3DOpenCL_DIRECTION.FORWARD, queue, dataBuffer, dataBuffer);
                             // Reciprocal Space Multiply Needed...
-                            executeTransform(CLFFT_DIRECTION.BACKWARD, queue, dataBuffer, dataBuffer);
+                            executeTransform(Complex3DOpenCL_DIRECTION.BACKWARD, queue, dataBuffer, dataBuffer);
                             queue.putReadBuffer(dataBuffer, true);
                             break;
                         case IFFT:
                             queue.putWriteBuffer(dataBuffer, true);
-                            executeTransform(CLFFT_DIRECTION.BACKWARD, queue, dataBuffer, dataBuffer);
+                            executeTransform(Complex3DOpenCL_DIRECTION.BACKWARD, queue, dataBuffer, dataBuffer);
                             queue.putReadBuffer(dataBuffer, true);
                             break;
                     }
@@ -227,46 +229,46 @@ public final class Complex3DOpenCL implements Runnable {
 
     }
 
-    private enum CLFFT_DIMENSION {
+    private enum Complex3DOpenCL_DIMENSION {
 
-        CLFFT_1D(1), CLFFT_2D(2), CLFFT_3D(3);
+        Complex3DOpenCL_1D(1), Complex3DOpenCL_2D(2), Complex3DOpenCL_3D(3);
 
         public int ID;
 
-        CLFFT_DIMENSION(int ID) {
+        Complex3DOpenCL_DIMENSION(int ID) {
             this.ID = ID;
         }
     }
 
-    private enum CLFFT_LAYOUT {
+    private enum Complex3DOpenCL_LAYOUT {
 
-        CLFFT_COMPLEX_INTERLEAVED(0), CLFFT_COMPLEX_PLANAR(1), CLFFT_REAL(2);
+        Complex3DOpenCL_COMPLEX_INTERLEAVED(0), Complex3DOpenCL_COMPLEX_PLANAR(1), Complex3DOpenCL_REAL(2);
 
         public int ID;
 
-        CLFFT_LAYOUT(int ID) {
+        Complex3DOpenCL_LAYOUT(int ID) {
             this.ID = ID;
         }
     }
 
-    private enum CLFFT_PRECISION {
+    private enum Complex3DOpenCL_PRECISION {
 
         SINGLE(0), DOUBLE(1);
 
         public int ID;
 
-        CLFFT_PRECISION(int ID) {
+        Complex3DOpenCL_PRECISION(int ID) {
             this.ID = ID;
         }
     }
 
-    private enum CLFFT_DIRECTION {
+    private enum Complex3DOpenCL_DIRECTION {
 
         FORWARD(1), BACKWARD(-1);
 
         public int ID;
 
-        CLFFT_DIRECTION(int ID) {
+        Complex3DOpenCL_DIRECTION(int ID) {
             this.ID = ID;
         }
     }
@@ -308,7 +310,7 @@ public final class Complex3DOpenCL implements Runnable {
         return (setupNative());
     }
 
-    private PlanHandle createDefaultPlan(CLContext context, CLFFT_DIMENSION dimension, int dimLengths[]) {
+    private PlanHandle createDefaultPlan(CLContext context, Complex3DOpenCL_DIMENSION dimension, int dimLengths[]) {
         int dimX = 0, dimY = 0, dimZ = 0;
         switch (dimLengths.length) {
             case 3:
@@ -322,15 +324,15 @@ public final class Complex3DOpenCL implements Runnable {
         return new PlanHandle(createDefaultPlanNative(context.ID, dimension.ID, dimX, dimY, dimZ));
     }
 
-    private int setPlanPrecision(CLFFT_PRECISION precision) {
+    private int setPlanPrecision(Complex3DOpenCL_PRECISION precision) {
         return (setPlanPrecisionNative(planHandle.ID, precision.ID));
     }
 
-    private int setLayout(CLFFT_LAYOUT inLayout, CLFFT_LAYOUT outLayout) {
+    private int setLayout(Complex3DOpenCL_LAYOUT inLayout, Complex3DOpenCL_LAYOUT outLayout) {
         return (setLayoutNative(planHandle.ID, inLayout.ID, outLayout.ID));
     }
 
-    private int executeTransform(CLFFT_DIRECTION direction, CLCommandQueue queue,
+    private int executeTransform(Complex3DOpenCL_DIRECTION direction, CLCommandQueue queue,
             CLBuffer<DoubleBuffer> rBuffer, CLBuffer<DoubleBuffer> cBuffer) {
         return (executeTransformNative(planHandle.ID, direction.ID, queue.ID, rBuffer.ID, cBuffer.ID));
     }
