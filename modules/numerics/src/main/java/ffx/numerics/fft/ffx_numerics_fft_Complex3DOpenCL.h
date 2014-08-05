@@ -58,9 +58,9 @@ JNIEXPORT jint JNICALL Java_ffx_numerics_fft_Complex3DOpenCL_destroyPlanNative
 /*
  * Class:     ffx_numerics_fft_Complex3DOpenCL
  * Method:    teardownNative
- * Signature: ()
+ * Signature: ()I
  */
-JNIEXPORT void JNICALL Java_ffx_numerics_fft_Complex3DOpenCL_teardownNative
+JNIEXPORT jint JNICALL Java_ffx_numerics_fft_Complex3DOpenCL_teardownNative
   (JNIEnv *, jclass);
 
 #ifdef __cplusplus
