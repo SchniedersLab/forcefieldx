@@ -40,6 +40,8 @@ public final class CLFFT {
 
     public static native int clfftDestroyPlanNative(long planHandle);
 
+    public static native int clfftTeardownNative();
+
     private PlanHandle planHandle = null;
 
     /**
@@ -87,6 +89,10 @@ public final class CLFFT {
 
     public int clfftDestroyPlan() {
         return (clfftDestroyPlanNative(planHandle.ID));
+    }
+
+    public int clfftTeardown() {
+        return (clfftTeardownNative());
     }
 
     public class PlanHandle {
@@ -149,15 +155,16 @@ public final class CLFFT {
         CLPlatform platform = device.getPlatform();
         CLCommandQueue queue = device.createCommandQueue();
         System.out.format(" Using device: %s\n", device);
-        int elementCount = 64;     // must be power of 2,3,5
-        int localWorkSize = Math.min(device.getMaxWorkGroupSize(), 32);  // Local work size dimensions
-        int globalWorkSize = roundUp(localWorkSize, elementCount);   // rounded up to the nearest multiple of the localWorkSize
-        CLBuffer<DoubleBuffer> rBuffer = context.createDoubleBuffer(globalWorkSize, CLMemory.Mem.READ_WRITE);
-        CLBuffer<DoubleBuffer> cBuffer = context.createDoubleBuffer(globalWorkSize, CLMemory.Mem.READ_WRITE);
+        int elementCount = 160;     // must be power of 2,3,5
+        //int localWorkSize = Math.min(device.getMaxWorkGroupSize(), 32);  // Local work size dimensions
+        //int globalWorkSize = roundUp(localWorkSize, elementCount);   // rounded up to the nearest multiple of the localWorkSize
+        int bufferSize = elementCount * elementCount * elementCount * 2; 
+        CLBuffer<DoubleBuffer> rBuffer = context.createDoubleBuffer(bufferSize, CLMemory.Mem.READ_WRITE);
+        CLBuffer<DoubleBuffer> cBuffer = context.createDoubleBuffer(bufferSize, CLMemory.Mem.READ_WRITE);
         fillBuffer(rBuffer.getBuffer(), 12345);
         zeroBuffer(cBuffer.getBuffer());
         queue.putWriteBuffer(rBuffer, true);
-        queue.putWriteBuffer(rBuffer, true);
+        queue.putWriteBuffer(cBuffer, true);
 
         System.out.format(" Original Data:------- \n");
         System.out.format(" Real:");
@@ -205,6 +212,7 @@ public final class CLFFT {
         clFFT.clfftSetLayout(CLFFT_LAYOUT.CLFFT_COMPLEX_PLANAR, CLFFT_LAYOUT.CLFFT_COMPLEX_PLANAR);
         clFFT.clfftExecuteTransform(CLFFT_DIRECTION.BACKWARD, queue, rBuffer, cBuffer);
         clFFT.clfftDestroyPlan();
+        clFFT.clfftTeardown();
         queue.putReadBuffer(rBuffer, true);
         queue.putReadBuffer(cBuffer, true);
 

@@ -55,6 +55,14 @@ JNIEXPORT jint JNICALL Java_ffx_numerics_fft_CLFFT_clfftExecuteTransformNative
 JNIEXPORT jint JNICALL Java_ffx_numerics_fft_CLFFT_clfftDestroyPlanNative
   (JNIEnv *, jclass, jlong);
 
+/*
+ * Class:     ffx_numerics_fft_CLFFT
+ * Method:    clfftTeardownNative
+ * Signature: () 
+ */
+JNIEXPORT void JNICALL Java_ffx_numerics_fft_CLFFT_clfftTeardownNative
+  (JNIEnv *, jclass);
+
 #ifdef __cplusplus
 }
 #endif
