@@ -5,8 +5,10 @@
  */
 package ffx.numerics.fft;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
 import java.util.Random;
 import java.util.logging.Logger;
 
@@ -14,8 +16,10 @@ import com.jogamp.opencl.CLBuffer;
 import com.jogamp.opencl.CLCommandQueue;
 import com.jogamp.opencl.CLContext;
 import com.jogamp.opencl.CLDevice;
+import com.jogamp.opencl.CLKernel;
 import com.jogamp.opencl.CLMemory;
 import com.jogamp.opencl.CLPlatform;
+import com.jogamp.opencl.CLProgram;
 
 /**
  * This class implements a Java wrapper for calling clMath functions.
@@ -34,6 +38,8 @@ public final class Complex3DOpenCL implements Runnable {
     private final int nY;
     private final int nZ;
     private final int len;
+    private double data[];
+    private double recip[];
     MODE mode;
     boolean free;
     boolean dead;
@@ -64,9 +70,7 @@ public final class Complex3DOpenCL implements Runnable {
         if (dead || mode != null) {
             return;
         }
-        DoubleBuffer doubleBuffer = dataBuffer.getBuffer();
-        doubleBuffer.rewind();
-        doubleBuffer.put(data);
+        this.data = data;
         mode = MODE.FFT;
         execute();
     }
@@ -76,9 +80,7 @@ public final class Complex3DOpenCL implements Runnable {
         if (dead || mode != null) {
             return;
         }
-        DoubleBuffer doubleBuffer = dataBuffer.getBuffer();
-        doubleBuffer.rewind();
-        doubleBuffer.put(data);
+        this.data = data;
         mode = MODE.IFFT;
         execute();
     }
@@ -88,9 +90,7 @@ public final class Complex3DOpenCL implements Runnable {
         if (dead || mode != null) {
             return;
         }
-        DoubleBuffer doubleBuffer = dataBuffer.getBuffer();
-        doubleBuffer.rewind();
-        doubleBuffer.put(data);
+        this.data = data;
         mode = MODE.CONVOLUTION;
         execute();
     }
@@ -100,9 +100,7 @@ public final class Complex3DOpenCL implements Runnable {
         if (dead || mode != null) {
             return;
         }
-        DoubleBuffer doubleBuffer = recipBuffer.getBuffer();
-        doubleBuffer.rewind();
-        doubleBuffer.put(recip);
+        this.recip = recip;
         mode = MODE.RECIP;
         execute();
     }
@@ -151,67 +149,114 @@ public final class Complex3DOpenCL implements Runnable {
 
     @Override
     public void run() {
-        // Initialize the OpenCL Context
-        CLContext context = CLContext.create();
-        CLDevice device = context.getMaxFlopsDevice();
-        logger.info(String.format(" Using device: %s\n", device));
-        CLPlatform platform = device.getPlatform();
-        CLCommandQueue queue = device.createCommandQueue();
+        CLContext context = null;
+        try {
+            // Initialize the OpenCL Context
+            context = CLContext.create();
+            CLDevice device = context.getMaxFlopsDevice();
+            logger.info(String.format(" Using device: %s\n", device));
+            CLPlatform platform = device.getPlatform();
+            CLCommandQueue queue = device.createCommandQueue();
 
-        // Allocate memory on the device.
-        int bufferSize = len * 2;
-        int dims[] = {nX, nY, nZ};
-        dataBuffer = context.createDoubleBuffer(bufferSize, CLMemory.Mem.READ_WRITE);
-        recipBuffer = context.createDoubleBuffer(len, CLMemory.Mem.WRITE_ONLY);
+            // Allocate memory on the device.
+            int bufferSize = len * 2;
+            int dims[] = {nX, nY, nZ};
+            dataBuffer = context.createDoubleBuffer(bufferSize, CLMemory.Mem.READ_WRITE);
+            DoubleBuffer doubleBuffer = dataBuffer.getBuffer();
+            int MB = 1024 * 1024;
+            logger.info(String.format(" FFT data buffer        [direct: %b, write: %b, size: %d MB]",
+                    doubleBuffer.isDirect(), !doubleBuffer.isReadOnly(), dataBuffer.getCLSize() / MB));
+            recipBuffer = context.createDoubleBuffer(len, CLMemory.Mem.READ_WRITE);
+            doubleBuffer = recipBuffer.getBuffer();
+            logger.info(String.format(" Reciprocal data buffer [direct: %b, write: %b, size: %d MB]",
+                    doubleBuffer.isDirect(), !doubleBuffer.isReadOnly(), recipBuffer.getCLSize() / MB));
 
-        // Initialize the OpenCL FFT library.
-        setup();
-        planHandle = createDefaultPlan(context, Complex3DOpenCL_DIMENSION.Complex3DOpenCL_3D, dims);
-        setPlanPrecision(Complex3DOpenCL_PRECISION.DOUBLE);
-        setLayout(Complex3DOpenCL_LAYOUT.Complex3DOpenCL_COMPLEX_INTERLEAVED,
-                Complex3DOpenCL_LAYOUT.Complex3DOpenCL_COMPLEX_INTERLEAVED);
+            // Initialize the OpenCL FFT library.
+            setup();
+            planHandle = createDefaultPlan(context, Complex3DOpenCL_DIMENSION.Complex3DOpenCL_3D, dims);
+            setPlanPrecision(Complex3DOpenCL_PRECISION.DOUBLE);
+            setLayout(Complex3DOpenCL_LAYOUT.Complex3DOpenCL_COMPLEX_INTERLEAVED,
+                    Complex3DOpenCL_LAYOUT.Complex3DOpenCL_COMPLEX_INTERLEAVED);
 
-        synchronized (this) {
-            while (!free) {
-                if (mode != null) {
-                    switch (mode) {
-                        case RECIP:
-                            queue.putWriteBuffer(recipBuffer, true);
-                            break;
-                        case FFT:
-                            queue.putWriteBuffer(dataBuffer, true);
-                            executeTransform(Complex3DOpenCL_DIRECTION.FORWARD, queue, dataBuffer, dataBuffer);
-                            queue.putReadBuffer(dataBuffer, true);
-                            break;
-                        case CONVOLUTION:
-                            queue.putWriteBuffer(dataBuffer, true);
-                            executeTransform(Complex3DOpenCL_DIRECTION.FORWARD, queue, dataBuffer, dataBuffer);
-                            // Reciprocal Space Multiply Needed...
-                            executeTransform(Complex3DOpenCL_DIRECTION.BACKWARD, queue, dataBuffer, dataBuffer);
-                            queue.putReadBuffer(dataBuffer, true);
-                            break;
-                        case IFFT:
-                            queue.putWriteBuffer(dataBuffer, true);
-                            executeTransform(Complex3DOpenCL_DIRECTION.BACKWARD, queue, dataBuffer, dataBuffer);
-                            queue.putReadBuffer(dataBuffer, true);
-                            break;
+            // Initialize the Reciprocal Space Multitply Kernal
+            URL source = getClass().getClassLoader().getResource("ffx/numerics/fft/VectorMultiply.cl");
+            InputStream input = source.openStream();
+            CLProgram program = context.createProgram(input).build();
+
+            // Get a reference to the kernel function with the name 'VectorMultiply'
+            CLKernel kernel = program.createCLKernel("VectorMultiply");
+            int localWorkSize = Math.min(device.getMaxWorkGroupSize(), 256);
+            int globalWorkSize = roundUp(localWorkSize, len);
+
+            synchronized (this) {
+                while (!free) {
+                    if (mode != null) {
+                        switch (mode) {
+                            case RECIP:
+                                doubleBuffer = recipBuffer.getBuffer();
+                                doubleBuffer.rewind();
+                                doubleBuffer.put(recip);
+                                doubleBuffer.rewind();
+                                queue.putWriteBuffer(recipBuffer, true);
+                                break;
+                            case FFT:
+                                doubleBuffer = dataBuffer.getBuffer();
+                                doubleBuffer.rewind();
+                                doubleBuffer.put(data);
+                                doubleBuffer.rewind();
+                                queue.putWriteBuffer(dataBuffer, true);
+                                executeTransform(Complex3DOpenCL_DIRECTION.FORWARD, queue, dataBuffer, dataBuffer);
+                                queue.putReadBuffer(dataBuffer, true);
+                                break;
+                            case CONVOLUTION:
+                                doubleBuffer = dataBuffer.getBuffer();
+                                doubleBuffer.rewind();
+                                doubleBuffer.put(data);
+                                doubleBuffer.rewind();
+                                queue.putWriteBuffer(dataBuffer, true);
+                                // Forward FFT
+                                executeTransform(Complex3DOpenCL_DIRECTION.FORWARD, queue, dataBuffer, dataBuffer);
+                                queue.putBarrier();
+                                // Reciprocal Space Multiply
+                                kernel.putArgs(dataBuffer, recipBuffer).putArg(len);
+                                queue.put1DRangeKernel(kernel, 0, globalWorkSize, localWorkSize);
+                                queue.putBarrier();
+                                // Backward FFT
+                                executeTransform(Complex3DOpenCL_DIRECTION.BACKWARD, queue, dataBuffer, dataBuffer);
+                                queue.putReadBuffer(dataBuffer, true);
+                                break;
+                            case IFFT:
+                                doubleBuffer = dataBuffer.getBuffer();
+                                doubleBuffer.rewind();
+                                doubleBuffer.put(data);
+                                doubleBuffer.rewind();
+                                queue.putWriteBuffer(dataBuffer, true);
+                                executeTransform(Complex3DOpenCL_DIRECTION.BACKWARD, queue, dataBuffer, dataBuffer);
+                                queue.putReadBuffer(dataBuffer, true);
+                                break;
+                        }
+                        // Reset the mode to null and notify the calling thread.
+                        mode = null;
+                        notify();
                     }
-                    // Reset the mode to null and notify the calling thread.
-                    mode = null;
-                    notify();
+                    // The OpenCL thread will wait until it's notified again.
+                    try {
+                        wait();
+                    } catch (InterruptedException e) {
+                        logger.severe(e.toString());
+                    }
                 }
-                // The OpenCL thread will wait until it's notified again.
-                try {
-                    wait();
-                } catch (InterruptedException e) {
-                    logger.severe(e.toString());
-                }
+                destroyPlan();
+                teardown();
+                dead = true;
+                notify();
             }
-            destroyPlan();
-            teardown();
-            context.release();
-            dead = true;
-            notify();
+        } catch (IOException e) {
+            logger.warning(e.toString());
+        } finally {
+            if (context != null) {
+                context.release();
+            }
         }
         logger.info(" OpenCL FFT/Convolution Thread Done!");
     }
@@ -277,7 +322,7 @@ public final class Complex3DOpenCL implements Runnable {
 
     private static void fillBuffer(double buffer[], int seed) {
         Random rnd = new Random(seed);
-        for (int i=0; i<buffer.length; i++) {
+        for (int i = 0; i < buffer.length; i++) {
             buffer[i] = rnd.nextDouble() * 100;
         }
     }
@@ -357,6 +402,7 @@ public final class Complex3DOpenCL implements Runnable {
 
         // Run the operations in a thread.
         Thread thread = new Thread(complex3DOpenCL);
+        thread.setPriority(Thread.MAX_PRIORITY);
         thread.start();
 
         fillBuffer(data, 12345);
@@ -368,7 +414,9 @@ public final class Complex3DOpenCL implements Runnable {
 
         complex3DOpenCL.fft(data);
         CLBuffer<DoubleBuffer> buffer = complex3DOpenCL.dataBuffer;
-        buffer.getBuffer().get(data);
+        DoubleBuffer doubleBuffer = buffer.getBuffer();
+        doubleBuffer.rewind();
+        doubleBuffer.get(data);
 
         System.out.format(" Results from Forward Transform: \n");
         for (int i = 0; i < 10; i++) {
@@ -376,7 +424,8 @@ public final class Complex3DOpenCL implements Runnable {
         }
 
         complex3DOpenCL.ifft(data);
-        buffer.getBuffer().get(data);
+        doubleBuffer.rewind();
+        doubleBuffer.get(data);
 
         System.out.format(" Results from Backward Transform: \n");
         for (int i = 0; i < 10; i++) {
@@ -384,7 +433,8 @@ public final class Complex3DOpenCL implements Runnable {
         }
 
         complex3DOpenCL.convolution(data);
-        buffer.getBuffer().get(data);
+        doubleBuffer.rewind();
+        doubleBuffer.get(data);
 
         System.out.format(" Results from Convolution: \n");
         for (int i = 0; i < 10; i++) {
