@@ -22,47 +22,43 @@ import com.jogamp.opencl.CLPlatform;
  * @author Michael J. Schnieders
  * @author Stephen LuCore
  */
-public class CLFFT {
+public final class CLFFT {
 
     static {
         System.loadLibrary("JclFFT");
     }
 
+    public static native long clfftSetupNative();
+
+    public static native long clfftCreateDefaultPlanNative(long context, int dim, int dimX, int dimY, int dimZ);
+
+    public static native int clfftSetPlanPrecisionNative(long planHandle, int precision);
+
+    public static native int clfftSetLayoutNative(long planHandle, int inLayout, int outLayout);
+
+    public static native int clfftExecuteTransformNative(long planHandle, int direction, long queue, long rBuffer, long cBuffer);
+
+    public static native int clfftDestroyPlanNative(long planHandle);
+
     private PlanHandle planHandle = null;
 
     /**
-     * Empty constructor.
+     * Constructor.
+     *
+     * @param context
+     * @param dimension
+     * @param dims
      */
-    public CLFFT() {
-        planHandle = new PlanHandle(0);
+    public CLFFT(CLContext context, CLFFT_DIMENSION dimension, int dims[]) {
+        clfftSetup();
+        clfftCreateDefaultPlan(context, CLFFT_DIMENSION.CLFFT_3D, dims);
     }
 
-    public void setPlanHandle(long handle) {
-        planHandle = new PlanHandle(handle);
+    private long clfftSetup() {
+        return (clfftSetupNative());
     }
 
-    public PlanHandle getPlanHandle() {
-        return planHandle;
-    }
-
-    public static native long do_clfftSetup();
-
-    public static native long do_clfftCreateDefaultPlan(long planHandle, long context, int dim, int dimX, int dimY, int dimZ);
-
-    public static native int do_clfftSetPlanPrecision(long planHandle, int precision);
-
-    public static native int do_clfftSetLayout(long planHandle, int inLayout, int outLayout);
-
-    public static native int do_clfftExecuteTransform(long planHandle, int direction, long queue, long rBuffer, long cBuffer);
-
-    public static native int do_clfftDestroyPlan(long planHandle);
-
-    public static long clfftSetup() {
-        return (do_clfftSetup());
-    }
-
-    public static long clfftCreateDefaultPlan(PlanHandle planHandle, CLContext context,
-            CLFFT_DIMENSION dimension, int dimLengths[]) {
+    private void clfftCreateDefaultPlan(CLContext context, CLFFT_DIMENSION dimension, int dimLengths[]) {
         int dimX = 0, dimY = 0, dimZ = 0;
         switch (dimLengths.length) {
             case 3:
@@ -73,23 +69,24 @@ public class CLFFT {
                 dimX = dimLengths[0];
             default:
         }
-        return (do_clfftCreateDefaultPlan(planHandle.ID, context.ID, dimension.ID, dimX, dimY, dimZ));
+        planHandle = new PlanHandle(clfftCreateDefaultPlanNative(context.ID, dimension.ID, dimX, dimY, dimZ));
     }
 
-    public static int clfftSetPlanPrecision(PlanHandle planHandle, CLFFT_PRECISION precision) {
-        return (do_clfftSetPlanPrecision(planHandle.ID, precision.ID));
+    public int clfftSetPlanPrecision(CLFFT_PRECISION precision) {
+        return (clfftSetPlanPrecisionNative(planHandle.ID, precision.ID));
     }
 
-    public static int clfftSetLayout(PlanHandle planHandle, CLFFT_LAYOUT inLayout, CLFFT_LAYOUT outLayout) {
-        return (do_clfftSetLayout(planHandle.ID, inLayout.ID, outLayout.ID));
+    public int clfftSetLayout(CLFFT_LAYOUT inLayout, CLFFT_LAYOUT outLayout) {
+        return (clfftSetLayoutNative(planHandle.ID, inLayout.ID, outLayout.ID));
     }
 
-    public static int clfftExecuteTransform(PlanHandle planHandle, CLFFT_DIRECTION direction, CLCommandQueue queue, CLBuffer<DoubleBuffer> rBuffer, CLBuffer<DoubleBuffer> cBuffer) {
-        return (do_clfftExecuteTransform(planHandle.ID, direction.ID, queue.ID, rBuffer.ID, cBuffer.ID));
+    public int clfftExecuteTransform(CLFFT_DIRECTION direction, CLCommandQueue queue,
+            CLBuffer<DoubleBuffer> rBuffer, CLBuffer<DoubleBuffer> cBuffer) {
+        return (clfftExecuteTransformNative(planHandle.ID, direction.ID, queue.ID, rBuffer.ID, cBuffer.ID));
     }
 
-    public static int clfftDestroyPlan(PlanHandle planHandle) {
-        return (do_clfftDestroyPlan(planHandle.ID));
+    public int clfftDestroyPlan() {
+        return (clfftDestroyPlanNative(planHandle.ID));
     }
 
     public class PlanHandle {
@@ -171,7 +168,6 @@ public class CLFFT {
         for (int i = 0; i < 10; i++) {
             System.out.format("\t%f\n", cBuffer.getBuffer().get(i));
         }
-
         rBuffer.getBuffer().position(0);
         cBuffer.getBuffer().position(0);
 
@@ -181,15 +177,11 @@ public class CLFFT {
         int dimZ = elementCount;
         int dims[] = {dimX, dimY, dimZ};
 
-        CLFFT clFFT = new CLFFT();
-        clfftSetup();
-        clFFT.setPlanHandle(clfftCreateDefaultPlan(
-                clFFT.getPlanHandle(), context, CLFFT_DIMENSION.CLFFT_3D, dims));
-        clfftSetPlanPrecision(clFFT.getPlanHandle(), CLFFT_PRECISION.DOUBLE);
-        clfftSetLayout(clFFT.getPlanHandle(), CLFFT_LAYOUT.CLFFT_COMPLEX_PLANAR, CLFFT_LAYOUT.CLFFT_COMPLEX_PLANAR);
-        clfftExecuteTransform(clFFT.getPlanHandle(), CLFFT_DIRECTION.FORWARD, queue, rBuffer, cBuffer);
-        clfftDestroyPlan(clFFT.getPlanHandle());
-
+        CLFFT clFFT = new CLFFT(context, CLFFT_DIMENSION.CLFFT_3D, dims);
+        clFFT.clfftSetPlanPrecision(CLFFT_PRECISION.DOUBLE);
+        clFFT.clfftSetLayout(CLFFT_LAYOUT.CLFFT_COMPLEX_PLANAR, CLFFT_LAYOUT.CLFFT_COMPLEX_PLANAR);
+        clFFT.clfftExecuteTransform(CLFFT_DIRECTION.FORWARD, queue, rBuffer, cBuffer);
+        clFFT.clfftDestroyPlan();
         queue.putReadBuffer(rBuffer, true);
         queue.putReadBuffer(cBuffer, true);
 
@@ -202,20 +194,17 @@ public class CLFFT {
         for (int i = 0; i < 10; i++) {
             System.out.format("\t%f\n", cBuffer.getBuffer().get(i));
         }
-
         rBuffer.getBuffer().position(0);
         cBuffer.getBuffer().position(0);
-
         queue.putWriteBuffer(rBuffer, true);
         queue.putWriteBuffer(cBuffer, true);
 
         // reverse 1D-FFT
-        clFFT.setPlanHandle(clfftCreateDefaultPlan(clFFT.getPlanHandle(), context, CLFFT_DIMENSION.CLFFT_3D, dims));
-        clfftSetPlanPrecision(clFFT.getPlanHandle(), CLFFT_PRECISION.DOUBLE);
-        clfftSetLayout(clFFT.getPlanHandle(), CLFFT_LAYOUT.CLFFT_COMPLEX_PLANAR, CLFFT_LAYOUT.CLFFT_COMPLEX_PLANAR);
-        clfftExecuteTransform(clFFT.getPlanHandle(), CLFFT_DIRECTION.BACKWARD, queue, rBuffer, cBuffer);
-        clfftDestroyPlan(clFFT.getPlanHandle());
-
+        clFFT.clfftCreateDefaultPlan(context, CLFFT_DIMENSION.CLFFT_3D, dims);
+        clFFT.clfftSetPlanPrecision(CLFFT_PRECISION.DOUBLE);
+        clFFT.clfftSetLayout(CLFFT_LAYOUT.CLFFT_COMPLEX_PLANAR, CLFFT_LAYOUT.CLFFT_COMPLEX_PLANAR);
+        clFFT.clfftExecuteTransform(CLFFT_DIRECTION.BACKWARD, queue, rBuffer, cBuffer);
+        clFFT.clfftDestroyPlan();
         queue.putReadBuffer(rBuffer, true);
         queue.putReadBuffer(cBuffer, true);
 
@@ -228,10 +217,8 @@ public class CLFFT {
         for (int i = 0; i < 10; i++) {
             System.out.format("\t%f\n", cBuffer.getBuffer().get(i));
         }
-
         rBuffer.getBuffer().position(0);
         cBuffer.getBuffer().position(0);
-
     }
 
     private static void fillBuffer(FloatBuffer buffer, int seed) {

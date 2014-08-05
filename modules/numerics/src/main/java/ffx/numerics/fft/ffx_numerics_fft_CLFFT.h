@@ -9,50 +9,50 @@ extern "C" {
 #endif
 /*
  * Class:     ffx_numerics_fft_CLFFT
- * Method:    do_clfftSetup
+ * Method:    clfftSetupNative
  * Signature: ()J
  */
-JNIEXPORT jlong JNICALL Java_ffx_numerics_fft_CLFFT_do_1clfftSetup
+JNIEXPORT jlong JNICALL Java_ffx_numerics_fft_CLFFT_clfftSetupNative
   (JNIEnv *, jclass);
 
 /*
  * Class:     ffx_numerics_fft_CLFFT
- * Method:    do_clfftCreateDefaultPlan
- * Signature: (JJIIII)J
+ * Method:    clfftCreateDefaultPlanNative
+ * Signature: (JIIII)J
  */
-JNIEXPORT jlong JNICALL Java_ffx_numerics_fft_CLFFT_do_1clfftCreateDefaultPlan
-  (JNIEnv *, jclass, jlong, jlong, jint, jint, jint, jint);
+JNIEXPORT jlong JNICALL Java_ffx_numerics_fft_CLFFT_clfftCreateDefaultPlanNative
+  (JNIEnv *, jclass, jlong, jint, jint, jint, jint);
 
 /*
  * Class:     ffx_numerics_fft_CLFFT
- * Method:    do_clfftSetPlanPrecision
+ * Method:    clfftSetPlanPrecisionNative
  * Signature: (JI)I
  */
-JNIEXPORT jint JNICALL Java_ffx_numerics_fft_CLFFT_do_1clfftSetPlanPrecision
+JNIEXPORT jint JNICALL Java_ffx_numerics_fft_CLFFT_clfftSetPlanPrecisionNative
   (JNIEnv *, jclass, jlong, jint);
 
 /*
  * Class:     ffx_numerics_fft_CLFFT
- * Method:    do_clfftSetLayout
+ * Method:    clfftSetLayoutNative
  * Signature: (JII)I
  */
-JNIEXPORT jint JNICALL Java_ffx_numerics_fft_CLFFT_do_1clfftSetLayout
+JNIEXPORT jint JNICALL Java_ffx_numerics_fft_CLFFT_clfftSetLayoutNative
   (JNIEnv *, jclass, jlong, jint, jint);
 
 /*
  * Class:     ffx_numerics_fft_CLFFT
- * Method:    do_clfftExecuteTransform
+ * Method:    clfftExecuteTransformNative
  * Signature: (JIJJJ)I
  */
-JNIEXPORT jint JNICALL Java_ffx_numerics_fft_CLFFT_do_1clfftExecuteTransform
+JNIEXPORT jint JNICALL Java_ffx_numerics_fft_CLFFT_clfftExecuteTransformNative
   (JNIEnv *, jclass, jlong, jint, jlong, jlong, jlong);
 
 /*
  * Class:     ffx_numerics_fft_CLFFT
- * Method:    do_clfftDestroyPlan
+ * Method:    clfftDestroyPlanNative
  * Signature: (J)I
  */
-JNIEXPORT jint JNICALL Java_ffx_numerics_fft_CLFFT_do_1clfftDestroyPlan
+JNIEXPORT jint JNICALL Java_ffx_numerics_fft_CLFFT_clfftDestroyPlanNative
   (JNIEnv *, jclass, jlong);
 
 #ifdef __cplusplus

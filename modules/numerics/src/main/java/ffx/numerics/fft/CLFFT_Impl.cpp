@@ -8,11 +8,8 @@
 #include "CL/cl.h"
 #include "ffx_numerics_fft_CLFFT.h"
 
-clfftPlanHandle planHandle;
-clfftPlanHandle* planHandlePtr;
-
-JNIEXPORT jlong JNICALL Java_ffx_numerics_fft_CLFFT_do_1clfftSetup
-  (JNIEnv *env, jclass object) {
+JNIEXPORT jlong JNICALL Java_ffx_numerics_fft_CLFFT_clfftSetupNative
+(JNIEnv *env, jclass object) {
     clfftSetupData fftSetup;
     clfftSetupData* fftSetupPtr;
     clfftInitSetupData(&fftSetup);
@@ -21,12 +18,15 @@ JNIEXPORT jlong JNICALL Java_ffx_numerics_fft_CLFFT_do_1clfftSetup
     return ((jlong) fftSetupPtr);
 }
 
-JNIEXPORT jlong JNICALL Java_ffx_numerics_fft_CLFFT_do_1clfftCreateDefaultPlan
-  (JNIEnv *env, jclass object, jlong jPlanHandle, jlong jContext, jint dimension, jint dimX, jint dimY, jint dimZ) {
+JNIEXPORT jlong JNICALL Java_ffx_numerics_fft_CLFFT_clfftCreateDefaultPlanNative
+(JNIEnv *env, jclass object, jlong jContext, jint dimension, jint dimX, jint dimY, jint dimZ) {
     int err = 0;
-    cl_context context = (cl_context) jContext;
     clfftDim dim;
+    clfftPlanHandle planHandle;
+    clfftPlanHandle* planHandlePtr;
     size_t clLengths[(int) dimension];
+    cl_context context = (cl_context) jContext;
+
     switch ((int) dimension) {
         case 3:
             dim = CLFFT_3D;
@@ -45,16 +45,18 @@ JNIEXPORT jlong JNICALL Java_ffx_numerics_fft_CLFFT_do_1clfftCreateDefaultPlan
             clLengths[0] = (size_t) dimX;
             break;
     }
+
     err = clfftCreateDefaultPlan(&planHandle, context, dim, clLengths);
     planHandlePtr = &planHandle;
     return ((jlong) planHandlePtr);
 }
 
-JNIEXPORT jint JNICALL Java_ffx_numerics_fft_CLFFT_do_1clfftSetPlanPrecision
-    (JNIEnv *env, jclass object, jlong jPlanHandle, jint precisionType) {
-    planHandlePtr = (clfftPlanHandle*) jPlanHandle;
-    planHandle = *planHandlePtr;
+JNIEXPORT jint JNICALL Java_ffx_numerics_fft_CLFFT_clfftSetPlanPrecisionNative
+(JNIEnv *env, jclass object, jlong jPlanHandle, jint precisionType) {
+    clfftPlanHandle* planHandlePtr = (clfftPlanHandle*) jPlanHandle;
+    clfftPlanHanlde planHandle = *planHandlePtr;
     clfftPrecision precision;
+
     switch ((int) precisionType) {
         case 0:
             precision = CLFFT_SINGLE;
@@ -67,10 +69,10 @@ JNIEXPORT jint JNICALL Java_ffx_numerics_fft_CLFFT_do_1clfftSetPlanPrecision
     return clfftSetPlanPrecision(planHandle, precision);
 }
 
-JNIEXPORT jint JNICALL Java_ffx_numerics_fft_CLFFT_do_1clfftSetLayout
-  (JNIEnv *env, jclass object, jlong jPlanHandle, jint inLayoutType, jint outLayoutType) {
-    planHandlePtr = (clfftPlanHandle*) jPlanHandle;
-    planHandle = *planHandlePtr;
+JNIEXPORT jint JNICALL Java_ffx_numerics_fft_CLFFT_clfftSetLayoutNative
+(JNIEnv *env, jclass object, jlong jPlanHandle, jint inLayoutType, jint outLayoutType) {
+    clfftPlanHandle* planHandlePtr = (clfftPlanHandle*) jPlanHandle;
+    clfftPlanHanlde planHandle = *planHandlePtr;
     clfftLayout inLayout;
     clfftLayout outLayout;
     switch ((int) inLayoutType) {
@@ -100,10 +102,10 @@ JNIEXPORT jint JNICALL Java_ffx_numerics_fft_CLFFT_do_1clfftSetLayout
     return clfftSetLayout(planHandle, inLayout, outLayout);
 }
 
-JNIEXPORT jint JNICALL Java_ffx_numerics_fft_CLFFT_do_1clfftExecuteTransform
-    (JNIEnv *env, jclass object, jlong jPlanHandle, int direction, jlong jQueue, jlong jrBuffer, jlong jcBuffer) {
-    planHandlePtr = (clfftPlanHandle*) jPlanHandle;
-    planHandle = *planHandlePtr;
+JNIEXPORT jint JNICALL Java_ffx_numerics_fft_CLFFT_clfftExecuteTransformNative
+(JNIEnv *env, jclass object, jlong jPlanHandle, int direction, jlong jQueue, jlong jrBuffer, jlong jcBuffer) {
+    clfftPlanHandle* planHandlePtr = (clfftPlanHandle*) jPlanHandle;
+    clfftPlanHanlde planHandle = *planHandlePtr;
     cl_command_queue queue = (cl_command_queue) jQueue;
     cl_mem rBuffer = (cl_mem) jrBuffer;
     cl_mem cBuffer = (cl_mem) jcBuffer;
@@ -124,14 +126,14 @@ JNIEXPORT jint JNICALL Java_ffx_numerics_fft_CLFFT_do_1clfftExecuteTransform
     return ret;
 }
 
-JNIEXPORT jint JNICALL Java_ffx_numerics_fft_CLFFT_do_1clfftDestroyPlan
-    (JNIEnv *env, jclass object, jlong jPlanHandle) {
-    planHandlePtr = (clfftPlanHandle*) jPlanHandle;
-    planHandle = *planHandlePtr;
+JNIEXPORT jint JNICALL Java_ffx_numerics_fft_CLFFT_clfftDestroyPlanNative
+(JNIEnv *env, jclass object, jlong jPlanHandle) {
+    clfftPlanHandle* planHandlePtr = (clfftPlanHandle*) jPlanHandle;
+    clfftPlanHanlde planHandle = *planHandlePtr;
     return clfftDestroyPlan(&planHandle);
 }
 
-JNIEXPORT void JNICALL Java_ffx_numerics_fft_CLFFT_do_1clfftTeardown
-    (JNIEnv *env, jclass object) {
+JNIEXPORT void JNICALL Java_ffx_numerics_fft_CLFFT_clfftTeardownNative
+(JNIEnv *env, jclass object) {
     clfftTeardown();
 }
