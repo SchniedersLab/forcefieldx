@@ -34,6 +34,7 @@ public class CLFFT {
      * Empty constructor.
      */
     public CLFFT() {
+        planHandle = new PlanHandle(0);
     }
 
     public void setPlanHandle(long handle) {
