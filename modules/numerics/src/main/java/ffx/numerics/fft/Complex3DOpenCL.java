@@ -13,6 +13,7 @@ import com.jogamp.opencl.CLKernel;
 import com.jogamp.opencl.CLMemory;
 import com.jogamp.opencl.CLPlatform;
 import com.jogamp.opencl.CLProgram;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -20,6 +21,9 @@ import java.nio.DoubleBuffer;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.logging.Logger;
+
+import edu.rit.pj.IntegerSchedule;
+import edu.rit.pj.ParallelTeam;
 
 /**
  * This class implements a Java wrapper for calling clMath functions.
@@ -207,6 +211,8 @@ public final class Complex3DOpenCL implements Runnable {
                                 queue.putWriteBuffer(dataBuffer, true);
                                 executeTransform(Complex3DOpenCL_DIRECTION.FORWARD, queue, dataBuffer, dataBuffer);
                                 queue.putReadBuffer(dataBuffer, true);
+                                doubleBuffer.rewind();
+                                doubleBuffer.get(data);
                                 break;
                             case CONVOLUTION:
                                 doubleBuffer = dataBuffer.getBuffer();
@@ -224,6 +230,8 @@ public final class Complex3DOpenCL implements Runnable {
                                 // Backward FFT
                                 executeTransform(Complex3DOpenCL_DIRECTION.BACKWARD, queue, dataBuffer, dataBuffer);
                                 queue.putReadBuffer(dataBuffer, true);
+                                doubleBuffer.rewind();
+                                doubleBuffer.get(data);
                                 break;
                             case IFFT:
                                 doubleBuffer = dataBuffer.getBuffer();
@@ -233,6 +241,8 @@ public final class Complex3DOpenCL implements Runnable {
                                 queue.putWriteBuffer(dataBuffer, true);
                                 executeTransform(Complex3DOpenCL_DIRECTION.BACKWARD, queue, dataBuffer, dataBuffer);
                                 queue.putReadBuffer(dataBuffer, true);
+                                doubleBuffer.rewind();
+                                doubleBuffer.get(data);
                                 break;
                         }
                         // Reset the mode to null and notify the calling thread.
@@ -258,7 +268,7 @@ public final class Complex3DOpenCL implements Runnable {
                 context.release();
             }
         }
-        logger.info(" OpenCL FFT/Convolution Thread Done!");
+        logger.info(" OpenCL FFT/convolution thread is done.");
     }
 
     private enum MODE {
@@ -389,62 +399,164 @@ public final class Complex3DOpenCL implements Runnable {
 
     private static native int teardownNative();
 
-    public static void main(String[] args) {
+    /**
+     * <p>main</p>
+     *
+     * @param args an array of {@link java.lang.String} objects.
+     * @throws java.lang.Exception if any.
+     */
+    public static void main(String[] args) throws Exception {
+        int dimNotFinal = 64;
+        int reps = 10;
+        if (args != null) {
+            try {
+                dimNotFinal = Integer.parseInt(args[0]);
+                if (dimNotFinal < 1) {
+                    dimNotFinal = 64;
+                }
+                reps = Integer.parseInt(args[2]);
+                if (reps < 1) {
+                    reps = 5;
+                }
+            } catch (Exception e) {
+            }
+        }
+        final int dim = dimNotFinal;
 
-        int x = 160;
-        int y = 160;
-        int z = 160;
-        int length = x * y * z * 2;
-        double data[] = new double[length];
-        double recipArray[] = new double[length/2];
-        
-        // Create a Complex, 3D instance of FFT/Convolution operations, backed by an OpenCL implementation.
-        Complex3DOpenCL complex3DOpenCL = new Complex3DOpenCL(x, y, z);
+        System.out.println(String.format(
+                " Initializing a %d cubed grid.\n"
+                + " The best timing out of %d repititions will be used.",
+                dim, reps));
 
-        // Run the operations in a thread.
-        Thread thread = new Thread(complex3DOpenCL);
-        thread.setPriority(Thread.MAX_PRIORITY);
-        thread.start();
+        final int dimCubed = dim * dim * dim;
 
-        fillBuffer(data, 12345);
-        Arrays.fill(recipArray,1.0);
-        
-        System.out.format(" Original Data:------- \n");
-        for (int i = 0; i < 10; i++) {
-            System.out.format("\t%f\n", data[i]);
+
+        /**
+         * Create an array to save the initial input and result.
+         */
+        double orig[] = new double[dimCubed];
+        double answer[] = new double[dimCubed];
+        double data[] = new double[dimCubed * 2];
+        double recip[] = new double[dimCubed];
+
+        Random random = new Random(1);
+        int index = 0;
+        for (int k = 0; k < dim; k++) {
+            for (int j = 0; j < dim; j++) {
+                for (int i = 0; i < dim; i++) {
+                    orig[index] = random.nextDouble();
+                    //recip[index] = orig[index];
+                    recip[index] = 1.0;
+                    index++;
+                }
+            }
         }
 
-        complex3DOpenCL.fft(data);
-        CLBuffer<DoubleBuffer> buffer = complex3DOpenCL.dataBuffer;
-        DoubleBuffer doubleBuffer = buffer.getBuffer();
-        doubleBuffer.rewind();
-        doubleBuffer.get(data);
+        Complex3D complex3D = new Complex3D(dim, dim, dim);
+        Complex3DParallel complex3DParallel =
+                new Complex3DParallel(dim, dim, dim, new ParallelTeam(), IntegerSchedule.fixed());
+        complex3DParallel.setRecip(recip);
 
-        System.out.format(" Results from Forward Transform: \n");
-        for (int i = 0; i < 10; i++) {
-            System.out.format("\t%f\n", data[i]);
+        Complex3DOpenCL complex3DOpenCL = new Complex3DOpenCL(dim, dim, dim);
+        Thread openCLThread = new Thread(complex3DOpenCL);
+        openCLThread.setPriority(Thread.MAX_PRIORITY);
+        openCLThread.start();
+        complex3DOpenCL.setRecip(recip);
+
+        double toSeconds = 0.000000001;
+        long parTime = Long.MAX_VALUE;
+        long seqTime = Long.MAX_VALUE;
+        long clTime = Long.MAX_VALUE;
+
+        complex3D.setRecip(recip);
+        for (int i = 0; i < reps; i++) {
+            for (int j = 0; j < dimCubed; j++) {
+                data[j * 2] = orig[j];
+                data[j * 2 + 1] = 0.0;
+            }
+            long time = System.nanoTime();
+            complex3D.convolution(data);
+            time = (System.nanoTime() - time);
+            System.out.println(String.format(" %2d Sequential: %8.3f", i + 1, toSeconds * time));
+            if (time < seqTime) {
+                seqTime = time;
+            }
         }
 
-        complex3DOpenCL.ifft(data);
-        doubleBuffer.rewind();
-        doubleBuffer.get(data);
-
-        System.out.format(" Results from Backward Transform: \n");
-        for (int i = 0; i < 10; i++) {
-            System.out.format("\t%f\n", data[i]);
+        for (int j = 0; j < dimCubed; j++) {
+            answer[j] = data[j * 2];
         }
 
-        complex3DOpenCL.setRecip(recipArray);
-        complex3DOpenCL.convolution(data);
-        doubleBuffer.rewind();
-        doubleBuffer.get(data);
-
-        System.out.format(" Results from Convolution: \n");
-        for (int i = 0; i < 10; i++) {
-            System.out.format("\t%f\n", data[i]);
+        for (int i = 0; i < reps; i++) {
+            for (int j = 0; j < dimCubed; j++) {
+                data[j * 2] = orig[j];
+                data[j * 2 + 1] = 0.0;
+            }
+            long time = System.nanoTime();
+            complex3DParallel.convolution(data);
+            time = (System.nanoTime() - time);
+            System.out.println(String.format(" %2d Parallel:   %8.3f", i + 1, toSeconds * time));
+            if (time < parTime) {
+                parTime = time;
+            }
         }
+
+        double maxError = Double.MIN_VALUE;
+        double rmse = 0.0;
+        for (int i = 0; i < dimCubed; i++) {
+            double error = Math.abs(answer[i] - data[2 * i]);
+            if (error > maxError) {
+                maxError = error;
+            }
+            rmse += error * error;
+        }
+        rmse /= dimCubed;
+        rmse = Math.sqrt(rmse);
+        logger.info(String.format(" Parallel RMSE:   %12.10f, Max: %12.10f", rmse, maxError));
+
+        for (int i = 0; i < reps; i++) {
+            for (int j = 0; j < dimCubed; j++) {
+                data[j * 2] = orig[j];
+                data[j * 2 + 1] = 0.0;
+            }
+            long time = System.nanoTime();
+            complex3DOpenCL.convolution(data);
+            time = (System.nanoTime() - time);
+            System.out.println(String.format(" %2d OpenCL:     %8.3f", i + 1, toSeconds * time));
+            if (time < clTime) {
+                clTime = time;
+            }
+        }
+
+        maxError = Double.MIN_VALUE;
+        double avg = 0.0;
+        rmse = 0.0;
+        for (int i = 0; i < dimCubed; i++) {
+            double error = Math.abs(answer[i] / dimCubed - data[2 * i]);
+            avg += error;
+            if (error > maxError) {
+                maxError = error;
+            }
+            rmse += error * error;
+        }
+        rmse /= dimCubed;
+        avg /= dimCubed;
+        rmse = Math.sqrt(rmse);
+        logger.info(String.format(" OpenCL RMSE:   %12.10f, Max: %12.10f, Avg: %12.10f", rmse, maxError, avg));
 
         complex3DOpenCL.free();
+        complex3DOpenCL = null;
+
+        System.out.println(String.format(" Best Sequential Time:  %8.3f",
+                toSeconds * seqTime));
+        System.out.println(String.format(" Best Parallel Time:    %8.3f",
+                toSeconds * parTime));
+        System.out.println(String.format(" Best OpenCL Time:      %8.3f",
+                toSeconds * clTime));
+        System.out.println(String.format(" Parallel Speedup: %15.5f", (double) seqTime
+                / parTime));
+        System.out.println(String.format(" OpenCL Speedup:   %15.5f", (double) seqTime
+                / clTime));
     }
 
 }
