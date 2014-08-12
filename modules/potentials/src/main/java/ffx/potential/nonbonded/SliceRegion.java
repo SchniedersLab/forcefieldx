@@ -72,10 +72,21 @@ public class SliceRegion extends ParallelRegion {
         gridSize = gX * gY * gZ * 2;
     }
 
+    public int getNatoms() {
+        return nAtoms;
+    }
     public void setGridBuffer(DoubleBuffer grid) {
         gridBuffer = grid;
     }
-
+    
+    public int getNsymm() {
+        return nSymm;
+    }
+    
+    public double[] getGrid() {
+        return grid;
+    }
+    
     public void setLoops(SliceLoop sliceLoops[]) {
         this.sliceLoop = sliceLoops;
     }
@@ -102,6 +113,10 @@ public class SliceRegion extends ParallelRegion {
         this.initValue = initValue;
     }
 
+    public void setDensityLoop(SliceLoop loops[]) {
+        sliceLoop = loops;
+    }
+    
     private class GridInitLoop extends IntegerForLoop {
 
         private final IntegerSchedule schedule = IntegerSchedule.fixed();
