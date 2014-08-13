@@ -55,5 +55,5 @@ public abstract class SliceLoop extends IntegerForLoop {
      * @param lb
      * @param ub
      */
-    abstract void gridDensity(int atom, int iSymm, int lb, int ub);
+    public abstract void gridDensity(int atom, int iSymm, int lb, int ub);
 }
