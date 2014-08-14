@@ -47,8 +47,8 @@ public abstract class SliceLoop extends IntegerForLoop {
     }
 
     /**
-     * Apply electron density "as normal", but check that the z index is lb <= z
-     * <= ub.
+     * Apply electron density "as normal", but check that the z index is greater than or equal to lb and
+     *  less than or equal to ub.
      *
      * @param atom
      * @param iSymm
