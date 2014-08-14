@@ -220,7 +220,7 @@ public class ScaleBulkMinimizeTest {
         scalebulkminimize.minimize(6, 1e-4);
 
         SigmaAMinimize sigmaaminimize = new SigmaAMinimize(reflectionlist,
-                refinementdata);
+                refinementdata, parallelTeam);
         sigmaaminimize.minimize(7, 1e-1);
 
         SplineMinimize splineminimize = new SplineMinimize(reflectionlist,

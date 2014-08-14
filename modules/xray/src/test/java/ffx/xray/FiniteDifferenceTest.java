@@ -63,13 +63,13 @@ public class FiniteDifferenceTest {
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-                    {false,
-                        "ala met anisou",
-                        SolventModel.NONE,
-                        new int[]{91, 105, 119},
-                        "ffx/xray/structures/alamet.pdb",
-                        "ffx/xray/structures/alamet.mtz"}
-                });
+            {false,
+                "ala met anisou",
+                SolventModel.NONE,
+                new int[]{91, 105, 119},
+                "ffx/xray/structures/alamet.pdb",
+                "ffx/xray/structures/alamet.mtz"}
+        });
     }
     private final String info;
     private final int solventmodel;
@@ -134,7 +134,7 @@ public class FiniteDifferenceTest {
                 reflectionlist);
         assertTrue(info + " mtz file should be read in without errors",
                 mtzfilter.readFile(mtzfile, reflectionlist, refinementdata,
-                properties));
+                        properties));
 
         ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties);
         ForceField forceField = forceFieldFilter.parse();
@@ -154,8 +154,8 @@ public class FiniteDifferenceTest {
 
         // initialize atomic form factors
         for (int i = 0; i < atomarray.length; i++) {
-            XRayFormFactor atomff =
-                    new XRayFormFactor(atomarray[i], use_3g, 2.0);
+            XRayFormFactor atomff
+                    = new XRayFormFactor(atomarray[i], use_3g, 2.0);
             atomarray[i].setFormFactorIndex(atomff.ffindex);
 
             if (atomarray[i].getOccupancy() == 0.0) {
@@ -194,12 +194,12 @@ public class FiniteDifferenceTest {
         crs.computeDensity(refinementdata.fs);
         refinementdata.setCrystalReciprocalSpace_fs(crs);
 
-        ScaleBulkMinimize scalebulkminimize =
-                new ScaleBulkMinimize(reflectionlist, refinementdata, crs);
+        ScaleBulkMinimize scalebulkminimize
+                = new ScaleBulkMinimize(reflectionlist, refinementdata, crs);
         scalebulkminimize.minimize(6, 1e-4);
 
         sigmaaminimize = new SigmaAMinimize(reflectionlist,
-                refinementdata);
+                refinementdata, parallelTeam);
         sigmaaminimize.minimize(7, 1.0);
 
         SplineMinimize splineminimize = new SplineMinimize(reflectionlist,

@@ -22,17 +22,6 @@
  */
 package ffx.xray;
 
-import edu.rit.pj.ParallelTeam;
-
-import ffx.crystal.*;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.MolecularAssembly;
-import ffx.potential.bonded.Molecule;
-import ffx.potential.bonded.Residue;
-import ffx.potential.parsers.PDBFilter;
-import ffx.xray.CrystalReciprocalSpace.SolventModel;
-import ffx.xray.MTZWriter.MTZType;
-import ffx.xray.RefinementMinimize.RefinementMode;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -43,11 +32,29 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
+import edu.rit.pj.ParallelTeam;
+
+import ffx.crystal.CCP4MapWriter;
+import ffx.crystal.Crystal;
+import ffx.crystal.HKL;
+import ffx.crystal.ReflectionList;
+import ffx.crystal.Resolution;
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.bonded.Molecule;
+import ffx.potential.bonded.Residue;
+import ffx.potential.parsers.PDBFilter;
+import ffx.xray.CrystalReciprocalSpace.SolventModel;
+import ffx.xray.MTZWriter.MTZType;
+import ffx.xray.RefinementMinimize.RefinementMode;
+
 /**
- * <p>DiffractionData class.</p>
+ * <p>
+ * DiffractionData class.</p>
  *
  * @author Timothy D. Fenn
  *
@@ -71,6 +78,7 @@ public class DiffractionData implements DataContainer {
     protected SigmaAMinimize sigmaaminimize[];
     protected SplineMinimize splineminimize[];
     protected CrystalStats crystalstats[];
+    protected ParallelTeam parallelTeam;
     protected boolean scaled[];
     // settings
     public int rfreeflag;
@@ -322,8 +330,8 @@ public class DiffractionData implements DataContainer {
         // initialize atomic form factors
         for (Atom a : refinementmodel.atomarray) {
             a.setFormFactorIndex(-1);
-            XRayFormFactor atomff =
-                    new XRayFormFactor(a, use_3g, 2.0);
+            XRayFormFactor atomff
+                    = new XRayFormFactor(a, use_3g, 2.0);
             a.setFormFactorIndex(atomff.ffindex);
 
             if (a.getOccupancy() == 0.0) {
@@ -355,7 +363,7 @@ public class DiffractionData implements DataContainer {
         // set up FFT and run it
         crs_fc = new CrystalReciprocalSpace[n];
         crs_fs = new CrystalReciprocalSpace[n];
-        ParallelTeam parallelTeam = new ParallelTeam();
+        parallelTeam = new ParallelTeam();
         for (int i = 0; i < n; i++) {
             crs_fc[i] = new CrystalReciprocalSpace(reflectionlist[i],
                     refinementmodel.atomarray, parallelTeam, parallelTeam,
@@ -381,7 +389,7 @@ public class DiffractionData implements DataContainer {
             scaled[i] = false;
         }
     }
-    
+
     /**
      * read in a different assembly to average in structure factors
      *
@@ -397,8 +405,8 @@ public class DiffractionData implements DataContainer {
         // initialize atomic form factors
         for (Atom a : tmprefinementmodel.atomarray) {
             a.setFormFactorIndex(-1);
-            XRayFormFactor atomff =
-                    new XRayFormFactor(a, use_3g, 2.0);
+            XRayFormFactor atomff
+                    = new XRayFormFactor(a, use_3g, 2.0);
             a.setFormFactorIndex(atomff.ffindex);
 
             if (a.getOccupancy() == 0.0) {
@@ -428,7 +436,6 @@ public class DiffractionData implements DataContainer {
         }
 
         // set up FFT and run it
-        ParallelTeam parallelTeam = new ParallelTeam();
         for (int i = 0; i < n; i++) {
             crs_fc[i] = new CrystalReciprocalSpace(reflectionlist[i],
                     tmprefinementmodel.atomarray, parallelTeam, parallelTeam,
@@ -443,7 +450,7 @@ public class DiffractionData implements DataContainer {
         int nhkl = refinementdata[0].n;
         double fc[][] = new double[nhkl][2];
         double fs[][] = new double[nhkl][2];
-        
+
         // run FFTs
         for (int i = 0; i < n; i++) {
             crs_fc[i].computeDensity(fc);
@@ -464,9 +471,8 @@ public class DiffractionData implements DataContainer {
             //crs_fc[i] = null;
             //crs_fs[i] = null;
         }
-        
+
         tmprefinementmodel = null;
-        parallelTeam = null;
         fc = null;
         fs = null;
     }
@@ -737,7 +743,7 @@ public class DiffractionData implements DataContainer {
         scalebulkminimize[i].minimize(6, xrayscaletol);
 
         // sigmaA / LLK calculation
-        sigmaaminimize[i] = new SigmaAMinimize(reflectionlist[i], refinementdata[i]);
+        sigmaaminimize[i] = new SigmaAMinimize(reflectionlist[i], refinementdata[i], parallelTeam);
         sigmaaminimize[i].minimize(7, sigmaatol);
 
         if (splinefit) {

@@ -76,7 +76,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         this.crystal = reflectionlist.crystal;
         this.crs = crs;
 
-        if (crs.solventmodel == SolventModel.NONE) {
+        if (crs.solventModel == SolventModel.NONE) {
             solvent_n = 1;
         } else {
             solvent_n = 3;
@@ -177,15 +177,15 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         }
 
         double min = Double.POSITIVE_INFINITY;
-        double a = crs.solvent_a;
-        double b = crs.solvent_b;
+        double a = crs.solventA;
+        double b = crs.solventB;
         double amin = a - 1.0;
         double amax = (a + 1.0) / 0.9999;
         double astep = 0.25;
         double bmin = b - 0.2;
         double bmax = (b + 0.2) / 0.9999;
         double bstep = 0.05;
-        if (crs.solventmodel == SolventModel.BINARY) {
+        if (crs.solventModel == SolventModel.BINARY) {
             amin = a - 0.2;
             amax = (a + 0.2) / 0.9999;
             astep = 0.05;
@@ -263,8 +263,8 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
             refinementData.solvent_ueq = x[2] / scaling[2];
 
             if (crs != null) {
-                refinementData.solvent_a = crs.solvent_a;
-                refinementData.solvent_b = crs.solvent_b;
+                refinementData.solvent_a = crs.solventA;
+                refinementData.solvent_b = crs.solventB;
             }
         }
         for (int i = 0; i < 6; i++) {
