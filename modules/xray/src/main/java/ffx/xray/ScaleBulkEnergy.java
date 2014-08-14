@@ -24,7 +24,9 @@ package ffx.xray;
 
 import java.util.logging.Logger;
 
-import static java.lang.Math.*;
+import static java.lang.Math.PI;
+import static java.lang.Math.abs;
+import static java.lang.Math.pow;
 
 import static org.apache.commons.math.util.FastMath.exp;
 
@@ -35,7 +37,11 @@ import ffx.numerics.ComplexNumber;
 import ffx.numerics.Potential;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 
-import static ffx.numerics.VectorMath.*;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.mat3mat3;
+import static ffx.numerics.VectorMath.mat3symvec6;
+import static ffx.numerics.VectorMath.transpose3;
+import static ffx.numerics.VectorMath.vec3mat3;
 
 /**
  *
@@ -62,7 +68,6 @@ public class ScaleBulkEnergy implements Potential {
 
     private static final Logger logger = Logger.getLogger(ScaleBulkEnergy.class.getName());
     private static final double twopi2 = 2.0 * PI * PI;
-    private static final double eightpi2 = 8.0 * PI * PI;
     private static final double u11[][] = {{1.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
     private static final double u22[][] = {{0.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 0.0}};
     private static final double u33[][] = {{0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 1.0}};
@@ -73,10 +78,8 @@ public class ScaleBulkEnergy implements Potential {
     private final Crystal crystal;
     private final DiffractionRefinementData refinementdata;
     private final double fc[][];
-    private final double fs[][];
     private final double fctot[][];
     private final double fo[][];
-    private final int freer[];
     private final int n;
     private final int solvent_n;
     protected double[] optimizationScaling = null;
@@ -87,20 +90,21 @@ public class ScaleBulkEnergy implements Potential {
     private final double j12[][];
     private final double j13[][];
     private final double j23[][];
-    private double resm[][] = new double[3][3];
-    private double resv[] = new double[3];
-    private double ihc[] = new double[3];
-    private double model_b[] = new double[6];
-    private double ustar[][] = new double[3][3];
-    private ComplexNumber resc = new ComplexNumber();
-    private ComplexNumber fcc = new ComplexNumber();
-    private ComplexNumber fsc = new ComplexNumber();
-    private ComplexNumber fct = new ComplexNumber();
-    private ComplexNumber kfct = new ComplexNumber();
+    private final double resm[][] = new double[3][3];
+    private final double resv[] = new double[3];
+    private final double ihc[] = new double[3];
+    private final double model_b[] = new double[6];
+    private final double ustar[][] = new double[3][3];
+    private final ComplexNumber resc = new ComplexNumber();
+    private final ComplexNumber fcc = new ComplexNumber();
+    private final ComplexNumber fsc = new ComplexNumber();
+    private final ComplexNumber fct = new ComplexNumber();
+    private final ComplexNumber kfct = new ComplexNumber();
     private double totalEnergy;
 
     /**
-     * <p>Constructor for ScaleBulkEnergy.</p>
+     * <p>
+     * Constructor for ScaleBulkEnergy.</p>
      *
      * @param reflectionlist a {@link ffx.crystal.ReflectionList} object.
      * @param refinementdata a {@link ffx.xray.DiffractionRefinementData}
@@ -112,10 +116,8 @@ public class ScaleBulkEnergy implements Potential {
         this.crystal = reflectionlist.crystal;
         this.refinementdata = refinementdata;
         this.fc = refinementdata.fc;
-        this.fs = refinementdata.fs;
         this.fctot = refinementdata.fctot;
         this.fo = refinementdata.fsigf;
-        this.freer = refinementdata.freer;
         this.n = n;
         this.solvent_n = n - refinementdata.scale_n;
 
@@ -129,7 +131,8 @@ public class ScaleBulkEnergy implements Potential {
     }
 
     /**
-     * <p>target</p>
+     * <p>
+     * target</p>
      *
      * @param x an array of double.
      * @param g an array of double.
@@ -189,7 +192,7 @@ public class ScaleBulkEnergy implements Potential {
             refinementdata.get_fc_ip(i, fcc);
             refinementdata.get_fs_ip(i, fsc);
             fct.copy(fcc);
-            if (refinementdata.crs_fs.solventmodel != SolventModel.NONE) {
+            if (refinementdata.crs_fs.solventModel != SolventModel.NONE) {
                 resc.copy(fsc);
                 resc.times_ip(ksebs);
                 fct.plus_ip(resc);
