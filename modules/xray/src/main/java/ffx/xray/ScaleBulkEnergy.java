@@ -428,7 +428,6 @@ public class ScaleBulkEnergy implements Potential {
             }
         }
 
-        print = true;
         if (print) {
             StringBuilder sb = new StringBuilder("\n");
             sb.append("Bulk solvent and scale fit\n");
