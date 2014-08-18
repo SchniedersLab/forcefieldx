@@ -208,8 +208,10 @@ public final class Complex3DOpenCL implements Runnable {
                                 doubleBuffer.rewind();
                                 doubleBuffer.put(data);
                                 doubleBuffer.rewind();
-                                queue.putWriteBuffer(dataBuffer, true);
+                                queue.putWriteBuffer(dataBuffer, false);
+                                queue.putBarrier();
                                 executeTransform(Complex3DOpenCL_DIRECTION.FORWARD, queue, dataBuffer, dataBuffer);
+                                queue.finish();
                                 queue.putReadBuffer(dataBuffer, true);
                                 doubleBuffer.rewind();
                                 doubleBuffer.get(data);
@@ -219,16 +221,18 @@ public final class Complex3DOpenCL implements Runnable {
                                 doubleBuffer.rewind();
                                 doubleBuffer.put(data);
                                 doubleBuffer.rewind();
-                                queue.putWriteBuffer(dataBuffer, true);
+                                queue.putWriteBuffer(dataBuffer, false);
+                                queue.putBarrier();
                                 // Forward FFT
                                 executeTransform(Complex3DOpenCL_DIRECTION.FORWARD, queue, dataBuffer, dataBuffer);
                                 queue.putBarrier();
                                 // Reciprocal Space Multiply
-                                kernel.putArgs(dataBuffer, recipBuffer).putArg(len);
+                                kernel.rewind().putArgs(dataBuffer, recipBuffer).putArg(len);
                                 queue.put1DRangeKernel(kernel, 0, globalWorkSize, localWorkSize);
                                 queue.putBarrier();
                                 // Backward FFT
                                 executeTransform(Complex3DOpenCL_DIRECTION.BACKWARD, queue, dataBuffer, dataBuffer);
+                                queue.finish();
                                 queue.putReadBuffer(dataBuffer, true);
                                 doubleBuffer.rewind();
                                 doubleBuffer.get(data);
@@ -240,6 +244,7 @@ public final class Complex3DOpenCL implements Runnable {
                                 doubleBuffer.rewind();
                                 queue.putWriteBuffer(dataBuffer, true);
                                 executeTransform(Complex3DOpenCL_DIRECTION.BACKWARD, queue, dataBuffer, dataBuffer);
+                                queue.finish();
                                 queue.putReadBuffer(dataBuffer, true);
                                 doubleBuffer.rewind();
                                 doubleBuffer.get(data);
@@ -461,7 +466,6 @@ public final class Complex3DOpenCL implements Runnable {
         Thread openCLThread = new Thread(complex3DOpenCL);
         openCLThread.setPriority(Thread.MAX_PRIORITY);
         openCLThread.start();
-        complex3DOpenCL.setRecip(recip);
 
         double toSeconds = 0.000000001;
         long parTime = Long.MAX_VALUE;
@@ -514,6 +518,7 @@ public final class Complex3DOpenCL implements Runnable {
         rmse = Math.sqrt(rmse);
         logger.info(String.format(" Parallel RMSE:   %12.10f, Max: %12.10f", rmse, maxError));
 
+        complex3DOpenCL.setRecip(recip);
         for (int i = 0; i < reps; i++) {
             for (int j = 0; j < dimCubed; j++) {
                 data[j * 2] = orig[j];
@@ -521,6 +526,7 @@ public final class Complex3DOpenCL implements Runnable {
             }
             long time = System.nanoTime();
             complex3DOpenCL.convolution(data);
+            //complex3DOpenCL.fft(data);
             time = (System.nanoTime() - time);
             System.out.println(String.format(" %2d OpenCL:     %8.3f", i + 1, toSeconds * time));
             if (time < clTime) {

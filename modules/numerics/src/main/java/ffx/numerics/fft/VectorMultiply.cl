@@ -1,3 +1,5 @@
+    
+    #pragma OPENCL EXTENSION cl_khr_fp64: enable
     // OpenCL Kernel Function for element by element vector multiply
     kernel void VectorMultiply(global double* data, global const double* recip, int numElements) {
 
