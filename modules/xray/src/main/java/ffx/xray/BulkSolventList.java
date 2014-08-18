@@ -22,6 +22,7 @@
  */
 package ffx.xray;
 
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -397,6 +398,7 @@ public class BulkSolventList extends ParallelRegion {
             logger.log(Level.SEVERE, message, e);
         }
         nSelected = 0;
+        Arrays.fill(selected[0], false);
         for (int iSymm = 1; iSymm < nSymm; iSymm++) {
             boolean select[] = selected[iSymm];
             SharedBooleanArray shared = sharedSelect[iSymm];
@@ -448,7 +450,7 @@ public class BulkSolventList extends ParallelRegion {
     @Override
     public void finish() {
         if (logger.isLoggable(Level.FINE)) {
-            logger.fine(String.format("Parallel Neighbor List: %10.3f seconds",
+            logger.fine(format("Parallel Neighbor List: %10.3f seconds",
                     (System.nanoTime() - time) * 1e-9));
         }
     }
@@ -597,7 +599,4 @@ public class BulkSolventList extends ParallelRegion {
             }
         }
     }
-    private final static int XX = 0;
-    private final static int YY = 1;
-    private final static int ZZ = 2;
 }

@@ -146,9 +146,9 @@ public class CrystalStats {
                 refinementdata.model_b[2]));
         sb.append("REMARK   3\n");
 
-        if (refinementdata.crs_fs.solventmodel != SolventModel.NONE) {
+        if (refinementdata.crs_fs.solventModel != SolventModel.NONE) {
             sb.append("REMARK   3  BULK SOLVENT MODELLING\n");
-            switch (refinementdata.crs_fs.solventmodel) {
+            switch (refinementdata.crs_fs.solventModel) {
                 case (SolventModel.BINARY):
                     sb.append("REMARK   3   METHOD USED: BINARY MASK\n");
                     sb.append(String.format("REMARK   3    PROBE RADIUS  : %g\n",
@@ -633,8 +633,8 @@ public class CrystalStats {
                 refinementdata.model_b[4],
                 refinementdata.model_b[5],
                 refinementdata.model_b[2]));
-        if (refinementdata.crs_fs.solventmodel != SolventModel.NONE) {
-            switch (refinementdata.crs_fs.solventmodel) {
+        if (refinementdata.crs_fs.solventModel != SolventModel.NONE) {
+            switch (refinementdata.crs_fs.solventModel) {
                 case (SolventModel.BINARY):
                     sb.append(" Bulk solvent model: Binary mask\n");
                     sb.append(String.format("  Probe radius: %8.3f\n  Shrink radius: %8.3f\n",

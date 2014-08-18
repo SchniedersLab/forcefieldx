@@ -220,5 +220,22 @@
             <type>jar</type>
             <version>1.6.1</version>
         </dependency>
+        <dependency>
+            <groupId>org.biojava</groupId>
+            <artifactId>biojava3-core</artifactId>
+            <type>jar</type>
+            <version>3.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.biojava</groupId>
+            <artifactId>core</artifactId>
+            <type>jar</type>
+            <version>1.9.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.biojava</groupId>
+            <artifactId>biojava3-structure</artifactId>
+            <version>3.0.8</version>
+        </dependency>
     </dependencies>
 </project>

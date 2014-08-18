@@ -44,7 +44,7 @@ public class ForceField {
     private static final Logger logger = Logger.getLogger(ForceField.class.getName());
 
     /**
-     * A map between a Force_Field and its internal parameter file.
+     * A map between a force field name and its internal parameter file.
      */
     private static final Map<ForceFieldName, URL> forceFields = new EnumMap<>(ForceFieldName.class);
 
@@ -58,7 +58,7 @@ public class ForceField {
 
     /**
      * <p>
-     * Getter for the field <code>forceFieldURL</code>.</p>
+     * Get for the URL for the named force field.</p>
      *
      * @param forceField a
      * {@link ffx.potential.parameters.ForceField.ForceFieldName} object.
@@ -148,10 +148,6 @@ public class ForceField {
         forceFieldTypes.put(ForceFieldType.TORTORS, torsionTorsionTypes);
         forceFieldTypes.put(ForceFieldType.UREYBRAD, ureyBradleyTypes);
         forceFieldTypes.put(ForceFieldType.VDW, vanderWaalsTypes);
-    }
-
-    public boolean getBoolean(ForceFieldDouble forceFieldDouble, double d) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     public int minClass() {

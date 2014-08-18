@@ -97,16 +97,18 @@ public final class PDBFileFilter extends FileFilter {
                                 Double.parseDouble(value);
                             }
                             validAtomLine = true;
-                        } catch (NumberFormatException ex) {
+                        } catch (NumberFormatException | StringIndexOutOfBoundsException ex) {
                             // Do nothing.
                         }
                     } else if (line.startsWith("TER")) {
                         try {
+                            /* In a perfect world, every PDB file which claims to be at the 3.3 standard
+                             * will actually be at the 3.3 standard.
                             Integer.parseInt(line.substring(6, 11).trim());
-                            Integer.parseInt(line.substring(22, 26).trim());
+                            Integer.parseInt(line.substring(22, 26).trim());*/
                             validTerLine = true;
-                        } catch (NumberFormatException ex) {
-                            //Do nothing.
+                        } catch (NumberFormatException | StringIndexOutOfBoundsException ex) {
+                            // Do nothing.
                         }
                     }
                     if (validAtomLine && validTerLine) {
