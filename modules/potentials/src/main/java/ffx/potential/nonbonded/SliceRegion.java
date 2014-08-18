@@ -23,6 +23,7 @@
 package ffx.potential.nonbonded;
 
 import java.nio.DoubleBuffer;
+import java.util.Arrays;
 import java.util.logging.Level;
 
 import edu.rit.pj.IntegerForLoop;
@@ -42,18 +43,20 @@ public class SliceRegion extends ParallelRegion {
     // A list of atoms.
     Atom atoms[];
     int nAtoms;
+    int nSymm;
     int gX, gY, gZ;
     int basisSize;
-    int nSymm;
     int threadCount;
-    double coordinates[][][];
-    SliceLoop sliceLoop[];
     DoubleBuffer gridBuffer;
     GridInitLoop gridInitLoop[];
     Crystal crystal;
     double initValue = 0.0;
     int gridSize;
     double grid[];
+
+    protected SliceLoop sliceLoop[];
+    protected double coordinates[][][];
+    protected boolean select[][];
 
     // Constructor
     public SliceRegion(int gX, int gY, int gZ, double grid[],
@@ -79,7 +82,10 @@ public class SliceRegion extends ParallelRegion {
         for (int i = 0; i < threadCount; i++) {
             gridInitLoop[i] = new GridInitLoop();
         }
-
+        select = new boolean[nSymm][nAtoms];
+        for (int i = 0; i < nSymm; i++) {
+            Arrays.fill(select[i], true);
+        }
     }
 
     public final void setCrystal(Crystal crystal, int gX, int gY, int gZ) {
@@ -94,28 +100,36 @@ public class SliceRegion extends ParallelRegion {
     public int getNatoms() {
         return nAtoms;
     }
+
     public void setGridBuffer(DoubleBuffer grid) {
         gridBuffer = grid;
     }
-    
+
     public int getNsymm() {
         return nSymm;
     }
-    
+
     public double[] getGrid() {
         return grid;
     }
-    
-    public void setLoops(SliceLoop sliceLoops[]) {
-        this.sliceLoop = sliceLoops;
+
+    @Override
+    public void start() {
+        selectAtoms();
     }
 
     @Override
     public void run() throws Exception {
         int threadIndex = getThreadIndex();
+        SliceLoop loop = sliceLoop[threadIndex];
+        /**
+         * This lets the same SpatialDensityLoops be used with different
+         * SpatialDensityRegions.
+         */
+        loop.setNsymm(nSymm);
         try {
             execute(0, gridSize - 1, gridInitLoop[threadIndex]);
-            execute(0, gZ - 1, sliceLoop[threadIndex]);
+            execute(0, gZ - 1, loop);
         } catch (Exception e) {
             String message = " Exception in SliceRegion.";
             logger.log(Level.SEVERE, message, e);
@@ -135,7 +149,18 @@ public class SliceRegion extends ParallelRegion {
     public void setDensityLoop(SliceLoop loops[]) {
         sliceLoop = loops;
     }
-    
+
+    /**
+     * Select atoms that should be included. The default is to include all
+     * atoms, which is set up in the constructor. This function should be
+     * over-ridden by subclasses that want finer control.
+     */
+    public void selectAtoms() {
+        for (int i = 0; i < nSymm; i++) {
+            Arrays.fill(select[i], true);
+        }
+    }
+
     private class GridInitLoop extends IntegerForLoop {
 
         private final IntegerSchedule schedule = IntegerSchedule.fixed();

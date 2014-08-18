@@ -618,7 +618,7 @@ public class ReciprocalSpace {
             case SLICE:
             default:
                 sliceRegion.setCrystal(crystal.getUnitCell(), fftX, fftY, fftZ);
-                sliceRegion.setLoops(slicePermanentLoops);
+                sliceRegion.setDensityLoop(slicePermanentLoops);
                 for (int i = 0; i < threadCount; i++) {
                     slicePermanentLoops[i].setPermanent(globalMultipoles);
                     slicePermanentLoops[i].setUse(use);
@@ -699,7 +699,7 @@ public class ReciprocalSpace {
                 break;
             case SLICE:
             default:
-                sliceRegion.setLoops(sliceInducedLoops);
+                sliceRegion.setDensityLoop(sliceInducedLoops);
                 for (int i = 0; i < threadCount; i++) {
                     sliceInducedLoops[i].setInducedDipoles(inducedDipole, inducedDipoleCR);
                     sliceInducedLoops[i].setUse(use);
@@ -1299,7 +1299,7 @@ public class ReciprocalSpace {
         private final BSplineRegion bSplines;
 
         public SlicePermanentLoop(SliceRegion region, BSplineRegion splines) {
-            super(region.nAtoms, region.nSymm);
+            super(region.nAtoms, region.nSymm, region);
             this.bSplines = splines;
         }
 
@@ -1326,9 +1326,9 @@ public class ReciprocalSpace {
         }
 
         @Override
-        public void gridDensity(int iSymm, int n, int lb, int ub) {
+        public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
             boolean atomContributes = false;
-            int k0 = bSplines.initGrid[iSymm][n][2];
+            int k0 = bSplines.initGrid[iSymm][iAtom][2];
             for (int ith3 = 0; ith3 < bSplineOrder; ith3++) {
                 final int k = mod(++k0, fftZ);
                 if (lb <= k && k <= ub) {
@@ -1344,14 +1344,14 @@ public class ReciprocalSpace {
 
             // Add atom n to the list for the current symmOp and thread.
             int index = gridAtomCount[iSymm][threadIndex];
-            gridAtomList[iSymm][threadIndex][index] = n;
+            gridAtomList[iSymm][threadIndex][index] = iAtom;
             gridAtomCount[iSymm][threadIndex]++;
 
             /**
              * Convert Cartesian multipoles in the global frame to fractional
              * multipoles.
              */
-            final double gm[] = globalMultipoles[iSymm][n];
+            final double gm[] = globalMultipoles[iSymm][iAtom];
             final double fm[] = fracMPole;
             /**
              * Charge
@@ -1385,22 +1385,22 @@ public class ReciprocalSpace {
             }
 
             for (int i = 0; i < 10; i++) {
-                fracMultipole[iSymm][n][i] = fm[i];
+                fracMultipole[iSymm][iAtom][i] = fm[i];
             }
 
             /**
              * Some atoms are not used during Lambda dynamics.
              */
-            if (use != null && !use[n]) {
+            if (use != null && !use[iAtom]) {
                 return;
             }
 
-            final double[][] splx = bSplines.splineX[iSymm][n];
-            final double[][] sply = bSplines.splineY[iSymm][n];
-            final double[][] splz = bSplines.splineZ[iSymm][n];
-            final int igrd0 = bSplines.initGrid[iSymm][n][0];
-            final int jgrd0 = bSplines.initGrid[iSymm][n][1];
-            k0 = bSplines.initGrid[iSymm][n][2];
+            final double[][] splx = bSplines.splineX[iSymm][iAtom];
+            final double[][] sply = bSplines.splineY[iSymm][iAtom];
+            final double[][] splz = bSplines.splineZ[iSymm][iAtom];
+            final int igrd0 = bSplines.initGrid[iSymm][iAtom][0];
+            final int jgrd0 = bSplines.initGrid[iSymm][iAtom][1];
+            k0 = bSplines.initGrid[iSymm][iAtom][2];
             final double c = fm[t000];
             final double dx = fm[t100];
             final double dy = fm[t010];
@@ -1472,7 +1472,7 @@ public class ReciprocalSpace {
         private double a20, a21, a22;
 
         public SliceInducedLoop(SliceRegion region, BSplineRegion splines) {
-            super(region.nAtoms, region.nSymm);
+            super(region.nAtoms, region.nSymm, region);
             this.bSplineRegion = splines;
         }
 
@@ -1519,25 +1519,25 @@ public class ReciprocalSpace {
                 int list[] = gridAtomList[iSymm][ti];
                 int n = gridAtomCount[iSymm][ti];
                 for (int i = 0; i < n; i++) {
-                    int atomIndex = list[i];
-                    gridDensity(iSymm, atomIndex, lb, ub);
+                    int iAtom = list[i];
+                    gridDensity(iSymm, iAtom, lb, ub);
                 }
             }
         }
 
         @Override
-        public void gridDensity(int iSymm, int n, int lb, int ub) {
+        public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
             /**
              * Convert Cartesian induced dipole to fractional induced dipole.
              */
-            double ind[] = inducedDipole[iSymm][n];
+            double ind[] = inducedDipole[iSymm][iAtom];
             double dx = ind[0];
             double dy = ind[1];
             double dz = ind[2];
             final double ux = a00 * dx + a01 * dy + a02 * dz;
             final double uy = a10 * dx + a11 * dy + a12 * dz;
             final double uz = a20 * dx + a21 * dy + a22 * dz;
-            final double find[] = fracInducedDipole[iSymm][n];
+            final double find[] = fracInducedDipole[iSymm][iAtom];
             find[0] = ux;
             find[1] = uy;
             find[2] = uz;
@@ -1545,26 +1545,26 @@ public class ReciprocalSpace {
              * Convert Cartesian induced dipole CR term to fractional induced
              * dipole CR term.
              */
-            double indCR[] = inducedDipoleCR[iSymm][n];
+            double indCR[] = inducedDipoleCR[iSymm][iAtom];
             dx = indCR[0];
             dy = indCR[1];
             dz = indCR[2];
             final double px = a00 * dx + a01 * dy + a02 * dz;
             final double py = a10 * dx + a11 * dy + a12 * dz;
             final double pz = a20 * dx + a21 * dy + a22 * dz;
-            final double findCR[] = fracInducedDipoleCR[iSymm][n];
+            final double findCR[] = fracInducedDipoleCR[iSymm][iAtom];
             findCR[0] = px;
             findCR[1] = py;
             findCR[2] = pz;
-            if (use != null && !use[n]) {
+            if (use != null && !use[iAtom]) {
                 return;
             }
-            final double[][] splx = bSplineRegion.splineX[iSymm][n];
-            final double[][] sply = bSplineRegion.splineY[iSymm][n];
-            final double[][] splz = bSplineRegion.splineZ[iSymm][n];
-            final int igrd0 = bSplineRegion.initGrid[iSymm][n][0];
-            final int jgrd0 = bSplineRegion.initGrid[iSymm][n][1];
-            int k0 = bSplineRegion.initGrid[iSymm][n][2];
+            final double[][] splx = bSplineRegion.splineX[iSymm][iAtom];
+            final double[][] sply = bSplineRegion.splineY[iSymm][iAtom];
+            final double[][] splz = bSplineRegion.splineZ[iSymm][iAtom];
+            final int igrd0 = bSplineRegion.initGrid[iSymm][iAtom][0];
+            final int jgrd0 = bSplineRegion.initGrid[iSymm][iAtom][1];
+            int k0 = bSplineRegion.initGrid[iSymm][iAtom][2];
             for (int ith3 = 0; ith3 < bSplineOrder; ith3++) {
                 final double splzi[] = splz[ith3];
                 final double v0 = splzi[0];

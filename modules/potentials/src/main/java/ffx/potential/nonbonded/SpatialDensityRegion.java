@@ -226,10 +226,13 @@ public class SpatialDensityRegion extends ParallelRegion {
         this.crystal = crystal.getUnitCell();
         //assert(this.crystal.spaceGroup.getNumberOfSymOps() == nSymm);
 
+        if (xf == null || xf.length < nAtoms) {
+            xf = new double[nAtoms];
+            yf = new double[nAtoms];
+            zf = new double[nAtoms];
+        }
+
         gridSize = gX * gY * gZ * 2;
-        xf = new double[nAtoms];
-        yf = new double[nAtoms];
-        zf = new double[nAtoms];
         int nX = gX / basisSize;
         int nY = gY / basisSize;
         int nZ = gZ / basisSize;

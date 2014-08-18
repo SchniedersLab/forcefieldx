@@ -22,6 +22,8 @@
  */
 package ffx.potential.nonbonded;
 
+import java.util.logging.Logger;
+
 import edu.rit.pj.IntegerForLoop;
 
 /**
@@ -29,31 +31,52 @@ import edu.rit.pj.IntegerForLoop;
  */
 public abstract class SliceLoop extends IntegerForLoop {
 
+    /**
+     * Constant <code>logger</code>
+     */
+    private static final Logger logger = Logger.getLogger(SliceLoop.class.getName());
+
     int nAtoms;
     int nSymm;
+    SliceRegion sliceRegion;
 
-    public SliceLoop(int nAtoms, int nSymm) {
+    public SliceLoop(int nAtoms, int nSymm, SliceRegion sliceRegion) {
         this.nAtoms = nAtoms;
         this.nSymm = nSymm;
+        this.sliceRegion = sliceRegion;
+    }
+
+    /**
+     * <p>
+     * setNsymm</p>
+     *
+     * @param nSymm a int.
+     */
+    public void setNsymm(int nSymm) {
+        this.nSymm = nSymm;
+        assert (nSymm <= sliceRegion.nSymm);
     }
 
     @Override
     public void run(int lb, int ub) throws Exception {
-        for (int n = 0; n < nSymm; n++) {
-            for (int i = 0; i < nAtoms; i++) {
-                gridDensity(n, i, lb, ub);
+        for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+            for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
+                if (sliceRegion.select[iSymm][iAtom]) {
+                    //logger.info(String.format(" SymOp %d Atom %d", n, i));
+                    gridDensity(iSymm, iAtom, lb, ub);
+                }
             }
         }
     }
 
     /**
-     * Apply electron density "as normal", but check that the z index is greater than or equal to lb and
-     *  less than or equal to ub.
+     * Apply electron density "as normal", but check that the z index is greater
+     * than or equal to lb and less than or equal to ub.
      *
-     * @param atom
      * @param iSymm
+     * @param iAtom
      * @param lb
      * @param ub
      */
-    public abstract void gridDensity(int atom, int iSymm, int lb, int ub);
+    public abstract void gridDensity(int iSymm, int iAtom, int lb, int ub);
 }
