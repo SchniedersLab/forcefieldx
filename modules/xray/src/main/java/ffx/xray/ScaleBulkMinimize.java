@@ -22,9 +22,7 @@
  */
 package ffx.xray;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
+import edu.rit.pj.ParallelTeam;
 import ffx.algorithms.Terminatable;
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
@@ -33,6 +31,8 @@ import ffx.numerics.LBFGS;
 import ffx.numerics.LineSearch.LineSearchResult;
 import ffx.numerics.OptimizationListener;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * <p>ScaleBulkMinimize class.</p>
@@ -70,7 +70,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
      * @param crs a {@link ffx.xray.CrystalReciprocalSpace} object.
      */
     public ScaleBulkMinimize(ReflectionList reflectionlist,
-            DiffractionRefinementData refinementdata, CrystalReciprocalSpace crs) {
+            DiffractionRefinementData refinementdata, CrystalReciprocalSpace crs, ParallelTeam parallelTeam) {
         this.reflectionlist = reflectionlist;
         this.refinementData = refinementdata;
         this.crystal = reflectionlist.crystal;
@@ -82,7 +82,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
             solvent_n = 3;
         }
         n = solvent_n + refinementdata.scale_n;
-        bulkSolventEnergy = new ScaleBulkEnergy(reflectionlist, refinementdata, n);
+        bulkSolventEnergy = new ScaleBulkEnergy(reflectionlist, refinementdata, n, parallelTeam);
 
         x = new double[n];
         grad = new double[n];

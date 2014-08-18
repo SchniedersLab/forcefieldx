@@ -210,7 +210,7 @@ public class ScaleBulkMinimizeTest {
          */
 
         ScaleBulkMinimize scalebulkminimize =
-                new ScaleBulkMinimize(reflectionlist, refinementdata, crs);
+                new ScaleBulkMinimize(reflectionlist, refinementdata, crs, parallelTeam);
         /*
          if (refinementdata.solvent_n > 1) {
          scalebulkminimize.minimize(7, 1e-2);

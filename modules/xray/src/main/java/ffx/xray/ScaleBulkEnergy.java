@@ -22,26 +22,29 @@
  */
 package ffx.xray;
 
-import java.util.logging.Logger;
-
-import static java.lang.Math.PI;
-import static java.lang.Math.abs;
-import static java.lang.Math.pow;
-
-import static org.apache.commons.math.util.FastMath.exp;
-
+import edu.rit.pj.IntegerForLoop;
+import edu.rit.pj.ParallelRegion;
+import edu.rit.pj.ParallelTeam;
+import edu.rit.pj.reduction.SharedDouble;
+import edu.rit.pj.reduction.SharedDoubleArray;
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.numerics.ComplexNumber;
 import ffx.numerics.Potential;
-import ffx.xray.CrystalReciprocalSpace.SolventModel;
-
 import static ffx.numerics.VectorMath.dot;
 import static ffx.numerics.VectorMath.mat3mat3;
 import static ffx.numerics.VectorMath.mat3symvec6;
 import static ffx.numerics.VectorMath.transpose3;
 import static ffx.numerics.VectorMath.vec3mat3;
+
+import ffx.xray.CrystalReciprocalSpace.SolventModel;
+import static java.lang.Math.PI;
+import static java.lang.Math.abs;
+import static java.lang.Math.pow;
+import java.util.Arrays;
+import java.util.logging.Logger;
+import static org.apache.commons.math.util.FastMath.exp;
 
 /**
  *
@@ -74,6 +77,14 @@ public class ScaleBulkEnergy implements Potential {
     private static final double u12[][] = {{0.0, 1.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
     private static final double u13[][] = {{0.0, 0.0, 1.0}, {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}};
     private static final double u23[][] = {{0.0, 0.0, 0.0}, {0.0, 0.0, 1.0}, {0.0, 1.0, 0.0}};
+    private final double recipt[][];
+    private final double j11[][];
+    private final double j22[][];
+    private final double j33[][];
+    private final double j12[][];
+    private final double j13[][];
+    private final double j23[][];
+
     private final ReflectionList reflectionlist;
     private final Crystal crystal;
     private final DiffractionRefinementData refinementdata;
@@ -83,24 +94,10 @@ public class ScaleBulkEnergy implements Potential {
     private final int n;
     private final int solvent_n;
     protected double[] optimizationScaling = null;
-    private final double recipt[][];
-    private final double j11[][];
-    private final double j22[][];
-    private final double j33[][];
-    private final double j12[][];
-    private final double j13[][];
-    private final double j23[][];
-    private final double resm[][] = new double[3][3];
-    private final double resv[] = new double[3];
-    private final double ihc[] = new double[3];
-    private final double model_b[] = new double[6];
-    private final double ustar[][] = new double[3][3];
-    private final ComplexNumber resc = new ComplexNumber();
-    private final ComplexNumber fcc = new ComplexNumber();
-    private final ComplexNumber fsc = new ComplexNumber();
-    private final ComplexNumber fct = new ComplexNumber();
-    private final ComplexNumber kfct = new ComplexNumber();
-    private double totalEnergy;
+    private final ParallelTeam parallelTeam;
+    private final ScaleBulkEnergyRegion scaleBulkEnergyRegion;
+    double totalEnergy;
+    private final int threadCount;
 
     /**
      * <p>
@@ -110,8 +107,9 @@ public class ScaleBulkEnergy implements Potential {
      * @param refinementdata a {@link ffx.xray.DiffractionRefinementData}
      * object.
      * @param n a int.
+     * @param parallelTeam
      */
-    public ScaleBulkEnergy(ReflectionList reflectionlist, DiffractionRefinementData refinementdata, int n) {
+    public ScaleBulkEnergy(ReflectionList reflectionlist, DiffractionRefinementData refinementdata, int n, ParallelTeam parallelTeam) {
         this.reflectionlist = reflectionlist;
         this.crystal = reflectionlist.crystal;
         this.refinementdata = refinementdata;
@@ -120,6 +118,7 @@ public class ScaleBulkEnergy implements Potential {
         this.fo = refinementdata.fsigf;
         this.n = n;
         this.solvent_n = n - refinementdata.scale_n;
+        threadCount = parallelTeam.getThreadCount();
 
         recipt = transpose3(crystal.A);
         j11 = mat3mat3(mat3mat3(crystal.A, u11), recipt);
@@ -128,6 +127,272 @@ public class ScaleBulkEnergy implements Potential {
         j12 = mat3mat3(mat3mat3(crystal.A, u12), recipt);
         j13 = mat3mat3(mat3mat3(crystal.A, u13), recipt);
         j23 = mat3mat3(mat3mat3(crystal.A, u23), recipt);
+        this.parallelTeam = parallelTeam;
+        scaleBulkEnergyRegion = new ScaleBulkEnergyRegion(threadCount);
+    }
+
+    private class ScaleBulkEnergyRegion extends ParallelRegion {
+
+        boolean gradient = true;
+        double x[];
+        double g[];
+        private final double model_b[] = new double[6];
+        private final double ustar[][] = new double[3][3];
+        private final double resm[][] = new double[3][3];
+        SharedDouble r;
+        SharedDouble rf;
+        SharedDouble rfree;
+        SharedDouble rfreef;
+        SharedDouble sum;
+        SharedDouble sumfo;
+        SharedDoubleArray grad;
+        double solvent_k;
+        double model_k;
+        double solvent_ueq;
+        ScaleBulkEnergyLoop scaleBulkEnergyLoop[];
+
+        public ScaleBulkEnergyRegion(int nThreads) {
+            scaleBulkEnergyLoop = new ScaleBulkEnergyLoop[nThreads];
+            r = new SharedDouble();
+            rf = new SharedDouble();
+            rfree = new SharedDouble();
+            rfreef = new SharedDouble();
+            sum = new SharedDouble();
+            sumfo = new SharedDouble();
+        }
+
+        public void init(double x[], double g[], boolean gradient) {
+            this.x = x;
+            this.g = g;
+            this.gradient = gradient;
+        }
+
+        @Override
+        public void start() {
+            r.set(0.0);
+            rf.set(0.0);
+            rfree.set(0.0);
+            rfreef.set(0.0);
+            sum.set(0.0);
+            sumfo.set(0.0);
+
+            for (int i = 0; i < 6; i++) {
+                if (crystal.scale_b[i] >= 0) {
+                    model_b[i] = x[solvent_n + crystal.scale_b[i]];
+                }
+            }
+
+            model_k = x[0];
+            solvent_k = refinementdata.solvent_k;
+            solvent_ueq = refinementdata.solvent_ueq;
+            if (solvent_n > 1) {
+                solvent_k = x[1];
+                solvent_ueq = x[2];
+            }
+
+            // generate Ustar
+            mat3symvec6(crystal.A, model_b, resm);
+            mat3mat3(resm, recipt, ustar);
+
+            if (gradient) {
+                if (grad == null) {
+                    grad = new SharedDoubleArray(g.length);
+                }
+                for (int i = 0; i < g.length; i++) {
+                    grad.set(i, 0.0);
+                }
+            }
+        }
+
+        @Override
+        public void run() throws Exception {
+            int ti = getThreadIndex();
+            if (scaleBulkEnergyLoop[ti] == null) {
+                scaleBulkEnergyLoop[ti] = new ScaleBulkEnergyLoop();
+            }
+
+            try {
+                execute(0, reflectionlist.hkllist.size() - 1, scaleBulkEnergyLoop[ti]);
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.info(e.toString());
+            }
+        }
+
+        @Override
+        public void finish() {
+            if (gradient) {
+                for (int i = 0; i < g.length; i++) {
+                    g[i] = grad.get(i);
+                }
+            }
+        }
+
+        private class ScaleBulkEnergyLoop extends IntegerForLoop {
+
+            private final double resv[] = new double[3];
+            private final double ihc[] = new double[3];
+            private final ComplexNumber resc = new ComplexNumber();
+            private final ComplexNumber fcc = new ComplexNumber();
+            private final ComplexNumber fsc = new ComplexNumber();
+            private final ComplexNumber fct = new ComplexNumber();
+            private final ComplexNumber kfct = new ComplexNumber();
+            private final double lgrad[];
+            private double lr;
+            private double lrf;
+            private double lrfree;
+            private double lrfreef;
+            private double lsum;
+            private double lsumfo;
+
+            public ScaleBulkEnergyLoop() {
+                lgrad = new double[g.length];
+            }
+
+            @Override
+            public void start() {
+                lr = 0.0;
+                lrf = 0.0;
+                lrfree = 0.0;
+                lrfreef = 0.0;
+                lsum = 0.0;
+                lsumfo = 0.0;
+                Arrays.fill(lgrad, 0.0);
+            }
+
+            @Override
+            public void run(int lb, int ub) throws Exception {
+
+                for (int j = lb; j <= ub; j++) {
+                    HKL ih = reflectionlist.hkllist.get(j);
+                    int i = ih.index();
+                    if (Double.isNaN(fc[i][0])
+                            || Double.isNaN(fo[i][0])
+                            || fo[i][1] <= 0.0) {
+                        continue;
+                    }
+
+                    //  constants
+                    double s = Crystal.invressq(crystal, ih);
+                    ihc[0] = ih.h();
+                    ihc[1] = ih.k();
+                    ihc[2] = ih.l();
+                    vec3mat3(ihc, ustar, resv);
+                    double u = model_k - dot(resv, ihc);
+                    double ebs = exp(-twopi2 * solvent_ueq * s);
+                    double ksebs = solvent_k * ebs;
+                    double kmebm = exp(0.25 * u);
+
+                    // structure factors
+                    refinementdata.get_fc_ip(i, fcc);
+                    refinementdata.get_fs_ip(i, fsc);
+                    fct.copy(fcc);
+                    if (refinementdata.crs_fs.solventModel != SolventModel.NONE) {
+                        resc.copy(fsc);
+                        resc.times_ip(ksebs);
+                        fct.plus_ip(resc);
+                    }
+                    kfct.copy(fct);
+                    kfct.times_ip(kmebm);
+
+                    // total structure factor (for refinement)
+                    fctot[i][0] = kfct.re();
+                    fctot[i][1] = kfct.im();
+
+                    // target
+                    double f1 = refinementdata.get_f(i);
+                    double f2 = kfct.abs();
+                    double d = f1 - f2;
+                    double d2 = d * d;
+                    double dr = -2.0 * d;
+
+                    lsum += d2;
+                    lsumfo += f1 * f1;
+
+                    if (refinementdata.isfreer(i)) {
+                        lrfree += abs(abs(f1) - abs(kfct.abs()));
+                        lrfreef += abs(f1);
+                    } else {
+                        lr += abs(abs(f1) - abs(kfct.abs()));
+                        lrf += abs(f1);
+                    }
+
+                    if (gradient) {
+                        // model_k/model_b - common derivative element
+                        double dfm = 0.25 * kfct.abs() * dr;
+                        // bulk solvent - common derivative element
+                        double dfb = ebs * (fcc.re() * fsc.re()
+                                + fcc.im() * fsc.im()
+                                + ksebs * pow(fsc.abs(), 2.0));
+
+                        // model_k derivative
+                        lgrad[0] += dfm;
+                        if (solvent_n > 1) {
+                            // solvent_k derivative
+                            lgrad[1] += kmebm * dfb * dr / fct.abs();
+                            // solvent_ueq derivative
+                            lgrad[2] += kmebm * -twopi2 * s * solvent_k * dfb * dr / fct.abs();
+                        }
+
+                        for (int jj = 0; jj < 6; jj++) {
+                            if (crystal.scale_b[jj] >= 0) {
+                                switch (jj) {
+                                    case (0):
+                                        // B11
+                                        vec3mat3(ihc, j11, resv);
+                                        lgrad[solvent_n + crystal.scale_b[jj]] += -dfm
+                                                * dot(resv, ihc);
+                                        break;
+                                    case (1):
+                                        // B22
+                                        vec3mat3(ihc, j22, resv);
+                                        lgrad[solvent_n + crystal.scale_b[jj]] += -dfm
+                                                * dot(resv, ihc);
+                                        break;
+                                    case (2):
+                                        // B33
+                                        vec3mat3(ihc, j33, resv);
+                                        lgrad[solvent_n + crystal.scale_b[jj]] += -dfm
+                                                * dot(resv, ihc);
+                                        break;
+                                    case (3):
+                                        // B12
+                                        vec3mat3(ihc, j12, resv);
+                                        lgrad[solvent_n + crystal.scale_b[jj]] += -dfm
+                                                * dot(resv, ihc);
+                                        break;
+                                    case (4):
+                                        // B13
+                                        vec3mat3(ihc, j13, resv);
+                                        lgrad[solvent_n + crystal.scale_b[jj]] += -dfm
+                                                * dot(resv, ihc);
+                                        break;
+                                    case (5):
+                                        // B23
+                                        // lgrad[solvent_n + crystal.scale_b[j]] += 0.25 * kfct.abs() * -2.0 * ihf[1] * ihf[2] * dr;
+                                        vec3mat3(ihc, j23, resv);
+                                        lgrad[solvent_n + crystal.scale_b[jj]] += -dfm
+                                                * dot(resv, ihc);
+                                        break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            @Override
+            public void finish() {
+                r.addAndGet(lr);
+                rf.addAndGet(lrf);
+                rfree.addAndGet(lrfree);
+                rfreef.addAndGet(lrfreef);
+                sum.addAndGet(lsum);
+                sumfo.addAndGet(lsumfo);
+                for (int i = 0; i < lgrad.length; i++) {
+                    grad.getAndAdd(i, lgrad[i]);
+                }
+            }
+        }
     }
 
     /**
@@ -142,148 +407,20 @@ public class ScaleBulkEnergy implements Potential {
      */
     public double target(double x[], double g[],
             boolean gradient, boolean print) {
-        double r, rf, rfree, rfreef, sum, sumfo;
 
-        // zero out the gradient
-        if (gradient) {
-            for (int i = 0; i < g.length; i++) {
-                g[i] = 0.0;
-            }
+        try {
+            scaleBulkEnergyRegion.init(x, g, gradient);
+            parallelTeam.execute(scaleBulkEnergyRegion);
+        } catch (Exception e) {
+            logger.info(e.toString());
         }
 
-        int scale_n = crystal.scale_n;
-        double model_k = x[0];
-        double solvent_k = refinementdata.solvent_k;
-        double solvent_ueq = refinementdata.solvent_ueq;
-        if (solvent_n > 1) {
-            solvent_k = x[1];
-            solvent_ueq = x[2];
-        }
-        for (int i = 0; i < 6; i++) {
-            if (crystal.scale_b[i] >= 0) {
-                model_b[i] = x[solvent_n + crystal.scale_b[i]];
-            }
-        }
-        // generate Ustar
-        mat3symvec6(crystal.A, model_b, resm);
-        mat3mat3(resm, recipt, ustar);
-
-        r = rf = rfree = rfreef = sum = sumfo = 0.0;
-        for (HKL ih : reflectionlist.hkllist) {
-            int i = ih.index();
-            if (Double.isNaN(fc[i][0])
-                    || Double.isNaN(fo[i][0])
-                    || fo[i][1] <= 0.0) {
-                continue;
-            }
-
-            //  constants
-            double s = Crystal.invressq(crystal, ih);
-            ihc[0] = ih.h();
-            ihc[1] = ih.k();
-            ihc[2] = ih.l();
-            vec3mat3(ihc, ustar, resv);
-            double u = model_k - dot(resv, ihc);
-            double ebs = exp(-twopi2 * solvent_ueq * s);
-            double ksebs = solvent_k * ebs;
-            double kmebm = exp(0.25 * u);
-
-            // structure factors
-            refinementdata.get_fc_ip(i, fcc);
-            refinementdata.get_fs_ip(i, fsc);
-            fct.copy(fcc);
-            if (refinementdata.crs_fs.solventModel != SolventModel.NONE) {
-                resc.copy(fsc);
-                resc.times_ip(ksebs);
-                fct.plus_ip(resc);
-            }
-            kfct.copy(fct);
-            kfct.times_ip(kmebm);
-
-            // total structure factor (for refinement)
-            fctot[i][0] = kfct.re();
-            fctot[i][1] = kfct.im();
-
-            // target
-            double f1 = refinementdata.get_f(i);
-            double f2 = kfct.abs();
-            double d = f1 - f2;
-            double d2 = d * d;
-            double dr = -2.0 * d;
-
-            sum += d2;
-            sumfo += f1 * f1;
-
-            if (refinementdata.isfreer(i)) {
-                rfree += abs(abs(f1) - abs(kfct.abs()));
-                rfreef += abs(f1);
-            } else {
-                r += abs(abs(f1) - abs(kfct.abs()));
-                rf += abs(f1);
-            }
-
-            if (gradient) {
-                // model_k/model_b - common derivative element
-                double dfm = 0.25 * kfct.abs() * dr;
-                // bulk solvent - common derivative element
-                double dfb = ebs * (fcc.re() * fsc.re()
-                        + fcc.im() * fsc.im()
-                        + ksebs * pow(fsc.abs(), 2.0));
-
-                // model_k derivative
-                g[0] += dfm;
-                if (solvent_n > 1) {
-                    // solvent_k derivative
-                    g[1] += kmebm * dfb * dr / fct.abs();
-                    // solvent_ueq derivative
-                    g[2] += kmebm * -twopi2 * s * solvent_k * dfb * dr / fct.abs();
-                }
-
-                for (int j = 0; j < 6; j++) {
-                    if (crystal.scale_b[j] >= 0) {
-                        switch (j) {
-                            case (0):
-                                // B11
-                                vec3mat3(ihc, j11, resv);
-                                g[solvent_n + crystal.scale_b[j]] += -dfm
-                                        * dot(resv, ihc);
-                                break;
-                            case (1):
-                                // B22
-                                vec3mat3(ihc, j22, resv);
-                                g[solvent_n + crystal.scale_b[j]] += -dfm
-                                        * dot(resv, ihc);
-                                break;
-                            case (2):
-                                // B33
-                                vec3mat3(ihc, j33, resv);
-                                g[solvent_n + crystal.scale_b[j]] += -dfm
-                                        * dot(resv, ihc);
-                                break;
-                            case (3):
-                                // B12
-                                vec3mat3(ihc, j12, resv);
-                                g[solvent_n + crystal.scale_b[j]] += -dfm
-                                        * dot(resv, ihc);
-                                break;
-                            case (4):
-                                // B13
-                                vec3mat3(ihc, j13, resv);
-                                g[solvent_n + crystal.scale_b[j]] += -dfm
-                                        * dot(resv, ihc);
-                                break;
-                            case (5):
-                                // B23
-                                // g[solvent_n + crystal.scale_b[j]] += 0.25 * kfct.abs() * -2.0 * ihf[1] * ihf[2] * dr;
-                                vec3mat3(ihc, j23, resv);
-                                g[solvent_n + crystal.scale_b[j]] += -dfm
-                                        * dot(resv, ihc);
-                                break;
-                        }
-                    }
-                }
-            }
-        }
+        double sum = scaleBulkEnergyRegion.sum.get();
+        double sumfo = scaleBulkEnergyRegion.sumfo.get();
+        double r = scaleBulkEnergyRegion.r.get();
+        double rf = scaleBulkEnergyRegion.rf.get();
+        double rfree = scaleBulkEnergyRegion.rfree.get();
+        double rfreef = scaleBulkEnergyRegion.rfreef.get();
 
         if (gradient) {
             for (int i = 0; i < g.length; i++) {
@@ -291,9 +428,10 @@ public class ScaleBulkEnergy implements Potential {
             }
         }
 
+        print = true;
         if (print) {
             StringBuilder sb = new StringBuilder("\n");
-            sb.append(" Bulk solvent and scale fit\n");
+            sb.append("Bulk solvent and scale fit\n");
             sb.append(String.format("   residual:  %8.3f\n", sum / sumfo));
             sb.append(String.format("   R:  %8.3f  Rfree:  %8.3f\n",
                     (r / rf) * 100.0, (rfree / rfreef) * 100.0));
@@ -308,7 +446,6 @@ public class ScaleBulkEnergy implements Potential {
             sb.append("\n");
             logger.info(sb.toString());
         }
-
         totalEnergy = sum / sumfo;
         return sum / sumfo;
     }
@@ -333,7 +470,6 @@ public class ScaleBulkEnergy implements Potential {
                 x[i] *= optimizationScaling[i];
             }
         }
-
         return sum;
     }
 
@@ -358,7 +494,6 @@ public class ScaleBulkEnergy implements Potential {
                 g[i] /= optimizationScaling[i];
             }
         }
-
         return sum;
     }
 
@@ -420,11 +555,11 @@ public class ScaleBulkEnergy implements Potential {
      * @return the type of each variable.
      */
     @Override
-    public VARIABLE_TYPE[] getVariableTypes() {
+    public Potential.VARIABLE_TYPE[] getVariableTypes() {
         return null;
     }
 
     @Override
-    public void setEnergyTermState(STATE state) {
+    public void setEnergyTermState(Potential.STATE state) {
     }
 }

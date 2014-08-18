@@ -195,7 +195,7 @@ public class FiniteDifferenceTest {
         refinementdata.setCrystalReciprocalSpace_fs(crs);
 
         ScaleBulkMinimize scalebulkminimize
-                = new ScaleBulkMinimize(reflectionlist, refinementdata, crs);
+                = new ScaleBulkMinimize(reflectionlist, refinementdata, crs, parallelTeam);
         scalebulkminimize.minimize(6, 1e-4);
 
         sigmaaminimize = new SigmaAMinimize(reflectionlist,

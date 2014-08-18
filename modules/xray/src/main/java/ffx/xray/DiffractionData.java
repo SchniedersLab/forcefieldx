@@ -730,7 +730,7 @@ public class DiffractionData implements DataContainer {
 
         // initialize minimizers
         scalebulkminimize[i] = new ScaleBulkMinimize(reflectionlist[i],
-                refinementdata[i], crs_fs[i]);
+                refinementdata[i], crs_fs[i], parallelTeam);
         splineminimize[i] = new SplineMinimize(reflectionlist[i],
                 refinementdata[i], refinementdata[i].spline,
                 SplineEnergy.Type.FOFC);

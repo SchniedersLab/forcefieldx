@@ -57,6 +57,7 @@ import static ffx.numerics.VectorMath.mat3mat3;
 import static ffx.numerics.VectorMath.mat3symvec6;
 import static ffx.numerics.VectorMath.transpose3;
 import static ffx.numerics.VectorMath.vec3mat3;
+import java.util.Arrays;
 
 /**
  *
@@ -295,6 +296,11 @@ public class SigmaAEnergy implements Potential {
             /**
              * Thread local work variables.
              */
+            private double lsum;
+            private double lsumr;
+            private int lnsum;
+            private int lnsumr;
+            private final double lgrad[];
             private final double resv[] = new double[3];
             private final double ihc[] = new double[3];
             private final ComplexNumber resc = new ComplexNumber();
@@ -310,6 +316,30 @@ public class SigmaAEnergy implements Potential {
             private final ComplexNumber mfo2 = new ComplexNumber();
             private final ComplexNumber dfcc = new ComplexNumber();
             private final ReflectionSpline spline = new ReflectionSpline(reflectionList, n);
+            
+            public SigmaALoop() {
+                lgrad = new double[2*n];                 
+            }
+            
+            @Override
+            public void start() {
+                lsum = 0.0;
+                lsumr = 0.0;
+                lnsum = 0;
+                lnsumr = 0;
+                Arrays.fill(lgrad, 0.0);
+            }
+            
+            @Override
+            public void finish() {
+                sum.addAndGet(lsum);
+                sumr.addAndGet(lsumr);
+                nsum.addAndGet(lnsum);
+                nsumr.addAndGet(lnsumr);
+                for (int i=0; i< lgrad.length; i++) {
+                    grad.getAndAdd(i, lgrad[i]);
+                }
+            }
 
             @Override
             public void run(int lb, int ub) throws Exception {
@@ -444,11 +474,11 @@ public class SigmaAEnergy implements Potential {
 
                     // Only use freeR flagged reflections in overall sum
                     if (refinementData.isfreer(i)) {
-                        sum.addAndGet(llk);
-                        nsum.incrementAndGet();
+                        lsum += llk;
+                        lnsum++;
                     } else {
-                        sumr.addAndGet(llk);
-                        nsumr.incrementAndGet();
+                        lsumr += llk;
+                        lnsumr++;
                         dfsa = dfwa = 0.0;
                     }
 
@@ -460,13 +490,14 @@ public class SigmaAEnergy implements Potential {
                         double g1 = spline.dfi1();
                         double g2 = spline.dfi2();
                         // s derivative
-                        grad.addAndGet(i0, dfsa * g0);
-                        grad.addAndGet(i1, dfsa * g1);
-                        grad.addAndGet(i2, dfsa * g2);
+                        lgrad[i0] += dfsa * g0;
+                        lgrad[i1] += dfsa * g1;
+                        lgrad[i2] += dfsa * g2;
                         // w derivative
-                        grad.addAndGet(n + i0, dfwa * g0);
-                        grad.addAndGet(n + i1, dfwa * g1);
-                        grad.addAndGet(n + i2, dfwa * g2);
+                        lgrad[n + i0] += dfwa * g0;
+                        lgrad[n + i1] += dfwa * g1;
+                        lgrad[n + i2] += dfwa * g2;
+          
                     }
                 }
             }

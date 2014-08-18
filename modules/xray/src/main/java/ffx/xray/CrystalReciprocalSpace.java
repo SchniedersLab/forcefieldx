@@ -167,6 +167,7 @@ public class CrystalReciprocalSpace {
     private final AtomicGradientRegion atomicGradientRegion;
 
     private final BabinetRegion babinetRegion;
+    private final SolventGridRegion solventGridRegion;
     private final SolventScaleRegion solventScaleRegion;
     private final SolventGradientRegion solventGradientRegion;
 
@@ -554,6 +555,7 @@ public class CrystalReciprocalSpace {
 
         extractRegion = new ExtractRegion(threadCount);
         babinetRegion = new BabinetRegion(threadCount);
+        solventGridRegion = new SolventGridRegion(threadCount);
         initRegion = new InitRegion(threadCount);
         solventScaleRegion = new SolventScaleRegion(threadCount);
         atomicScaleRegion = new AtomicScaleRegion(threadCount);
@@ -938,7 +940,6 @@ public class CrystalReciprocalSpace {
 
         // CCP4MapWriter mapout = new CCP4MapWriter(fftX, fftY, fftZ, crystal, "/tmp/foo.map");
         // mapout.write(densityGrid);
-
         /**
          * Compute model structure factors via an FFT of the electron density.
          */
@@ -1065,6 +1066,7 @@ public class CrystalReciprocalSpace {
                     }
                 }
             }
+
             // Copy the completed solvent grid back.
             System.arraycopy(solventGrid, 0, densityGrid, 0, nmap);
         }
@@ -1127,13 +1129,11 @@ public class CrystalReciprocalSpace {
 
         long solventExpTime = -System.nanoTime();
         if (solventModel == SolventModel.GAUSSIAN) {
-            for (int k = 0; k < fftZ; k++) {
-                for (int j = 0; j < fftY; j++) {
-                    for (int i = 0; i < fftX; i++) {
-                        final int ii = iComplex3D(i, j, k, fftX, fftY);
-                        solventGrid[ii] = exp(-solventA * solventGrid[ii]);
-                    }
-                }
+            try {
+                parallelTeam.execute(solventGridRegion);
+            } catch (Exception e) {
+                String message = "Fatal exception solvent grid region.";
+                logger.log(Level.SEVERE, message, e);
             }
         }
         solventExpTime += System.nanoTime();
@@ -1757,6 +1757,47 @@ public class CrystalReciprocalSpace {
                         }
                         break;
                     default:
+                }
+            }
+        }
+    }
+
+    private class SolventGridRegion extends ParallelRegion {
+
+        SolventGridLoop solventGridLoops[];
+
+        public SolventGridRegion(int nThreads) {
+            solventGridLoops = new SolventGridLoop[nThreads];
+
+        }
+
+        @Override
+        public void run() throws Exception {
+            int ti = getThreadIndex();
+
+            if (solventGridLoops[ti] == null) {
+                solventGridLoops[ti] = new SolventGridLoop();
+            }
+
+            try {
+                execute(0, fftZ - 1, solventGridLoops[ti]);
+            } catch (Exception e) {
+                logger.info(e.toString());
+            }
+        }
+
+        private class SolventGridLoop extends IntegerForLoop {
+
+            @Override
+            public void run(int lb, int ub) throws Exception {
+                // case GAUSSIAN:
+                for (int k = lb; k <= ub; k++) {
+                    for (int j = 0; j < fftY; j++) {
+                        for (int i = 0; i < fftX; i++) {
+                            final int ii = iComplex3D(i, j, k, fftX, fftY);
+                            solventGrid[ii] = exp(-solventA * solventGrid[ii]);
+                        }
+                    }
                 }
             }
         }
