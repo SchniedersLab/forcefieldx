@@ -113,7 +113,7 @@ public class CrystalReciprocalSpace {
         public static final int POLYNOMIAL = 4;
     }
 
-    private enum GridMethod {
+    public enum GridMethod {
 
         SPATIAL, SLICE
     }
@@ -150,7 +150,7 @@ public class CrystalReciprocalSpace {
     private final ReflectionList reflectionList;
     private final FormFactor atomFormFactors[][];
     private final FormFactor solventFormFactors[][];
-    private final GridMethod gridMethod = GridMethod.SLICE;
+    private final GridMethod gridMethod;
 
     private final SpatialDensityRegion atomicDensityRegion;
     private final AtomicDensityLoop atomicDensityLoops[];
@@ -424,6 +424,17 @@ public class CrystalReciprocalSpace {
                     fftX, fftY, fftZ));
             logger.info(sb.toString());
         }
+
+        String gridString = System.getProperty("grid-method", "SLICE").toUpperCase();
+        GridMethod tempGrid;
+        try {
+            tempGrid = GridMethod.valueOf(gridString);
+        } catch (Exception e) {
+            tempGrid = GridMethod.SLICE;
+        }
+        gridMethod = tempGrid;
+
+        logger.log( Level.INFO, " X-ray Refinement Parallelization Method: {0}", gridMethod.toString());
 
         if (solvent) {
             int minWork = nSymm;
