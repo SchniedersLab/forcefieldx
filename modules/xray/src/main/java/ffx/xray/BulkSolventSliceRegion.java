@@ -23,13 +23,14 @@
 package ffx.xray;
 
 import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import edu.rit.pj.ParallelTeam;
 
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
-import ffx.potential.nonbonded.SpatialDensityLoop;
-import ffx.potential.nonbonded.SpatialDensityRegion;
+import ffx.potential.nonbonded.SliceRegion;
 
 /**
  * This class implements a spatial decomposition based on partitioning a grid
@@ -40,9 +41,15 @@ import ffx.potential.nonbonded.SpatialDensityRegion;
  * @since 1.0
  *
  */
-public class BulkSolventDensityRegion extends SpatialDensityRegion {
+public class BulkSolventSliceRegion extends SliceRegion {
+
+    /**
+     * Constant <code>logger</code>
+     */
+    protected static final Logger logger = Logger.getLogger(BulkSolventSliceRegion.class.getName());
 
     private final BulkSolventList bulkSolventList;
+    private final int gZ;
 
     /**
      * <p>
@@ -54,7 +61,6 @@ public class BulkSolventDensityRegion extends SpatialDensityRegion {
      * @param grid an array of double.
      * @param basisSize a int.
      * @param nSymm a int.
-     * @param minWork a int.
      * @param threadCount a int.
      * @param crystal a {@link ffx.crystal.Crystal} object.
      * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
@@ -62,13 +68,15 @@ public class BulkSolventDensityRegion extends SpatialDensityRegion {
      * @param cutoff a double.
      * @param parallelTeam a {@link edu.rit.pj.ParallelTeam} object.
      */
-    public BulkSolventDensityRegion(int gX, int gY, int gZ, double grid[],
-            int basisSize, int nSymm, int minWork,
-            int threadCount, Crystal crystal,
+    public BulkSolventSliceRegion(int gX, int gY, int gZ, double grid[],
+            int basisSize, int nSymm, int threadCount, Crystal crystal,
             Atom atoms[], double coordinates[][][],
             double cutoff, ParallelTeam parallelTeam) {
-        super(gX, gY, gZ, grid, basisSize, nSymm, minWork,
+        super(gX, gY, gZ, grid, basisSize, nSymm,
                 threadCount, crystal, atoms, coordinates);
+
+        this.gZ = gZ;
+
         // Asymmetric unit atoms never selected by this class.
         Arrays.fill(select[0], false);
         bulkSolventList = new BulkSolventList(crystal, atoms, cutoff, parallelTeam);
@@ -79,29 +87,11 @@ public class BulkSolventDensityRegion extends SpatialDensityRegion {
      */
     @Override
     public void run() {
-        int ti = getThreadIndex();
-        int actualWork1 = actualWork - 1;
-        SpatialDensityLoop loop = spatialDensityLoop[ti];
         try {
-            execute(0, actualWork1, loop.setOctant(0));
-            // Fractional chunks along the C-axis.
-            if (nC > 1) {
-                execute(0, actualWork1, loop.setOctant(1));
-                // Fractional chunks along the B-axis.
-                if (nB > 1) {
-                    execute(0, actualWork1, loop.setOctant(2));
-                    execute(0, actualWork1, loop.setOctant(3));
-                    // Fractional chunks along the A-axis.
-                    if (nA > 1) {
-                        execute(0, actualWork1, loop.setOctant(4));
-                        execute(0, actualWork1, loop.setOctant(5));
-                        execute(0, actualWork1, loop.setOctant(6));
-                        execute(0, actualWork1, loop.setOctant(7));
-                    }
-                }
-            }
+            execute(0, gZ - 1, sliceLoop[getThreadIndex()]);
         } catch (Exception e) {
-            logger.severe(e.toString());
+            String message = " Exception in BulkSolventSliceRegion.";
+            logger.log(Level.SEVERE, message, e);
         }
     }
 
