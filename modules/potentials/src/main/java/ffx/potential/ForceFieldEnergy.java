@@ -1106,7 +1106,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         
         if (comTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                    "COORDINATE RESRAINT        : ", comRestrainEnergy, nAtoms));
+                    "COM RESRAINT               : ", comRestrainEnergy, nAtoms));
         }
 
         if (vanderWaalsTerm) {
@@ -1206,7 +1206,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
         if (comTerm) {
             sb.append(String.format("  %s %16.8f %12d %12.3f\n",
-                    "COM Restraint  ", comRestrainEnergy, nAtoms,
+                    "COM Restraint     ", comRestrainEnergy, nAtoms,
                     comRestrainTime * toSeconds));
         }
         if (vanderWaalsTerm && nVanDerWaals > 0) {

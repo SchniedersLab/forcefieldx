@@ -87,7 +87,7 @@ public class COMRestraint implements LambdaInterface {
         boolean computedcomdx = false;
         computeCOM(initialCOM, computedcomdx);
 
-        logger.info("\n COM Restraint:");
+        logger.info("\n COM Restraint");
 
 //        initialCOM[0] = a.getX();
 //        initialCOM[1] = a.getY();
