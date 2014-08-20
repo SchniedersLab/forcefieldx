@@ -51,7 +51,8 @@ import static org.apache.commons.math.util.FastMath.exp;
  * Fit bulk solvent and aniso B scaling terms to correct calculated structure
  * factors against data
  *
- * @author Timothy D. Fenn<br>
+ * @author Timothy D. Fenn
+ *
  * @see <a href="http://dx.doi.org/10.1107/S0907444905007894" target="_blank">
  * P. V. Afonine, R. W. Grosse-Kunstleve and P. D. Adams, Acta Cryst. (2005).
  * D61, 850-855</a>
@@ -87,7 +88,7 @@ public class ScaleBulkEnergy implements Potential {
 
     private final ReflectionList reflectionlist;
     private final Crystal crystal;
-    private final DiffractionRefinementData refinementdata;
+    private final DiffractionRefinementData refinementData;
     private final double fc[][];
     private final double fctot[][];
     private final double fo[][];
@@ -112,7 +113,7 @@ public class ScaleBulkEnergy implements Potential {
     public ScaleBulkEnergy(ReflectionList reflectionlist, DiffractionRefinementData refinementdata, int n, ParallelTeam parallelTeam) {
         this.reflectionlist = reflectionlist;
         this.crystal = reflectionlist.crystal;
-        this.refinementdata = refinementdata;
+        this.refinementData = refinementdata;
         this.fc = refinementdata.fc;
         this.fctot = refinementdata.fctot;
         this.fo = refinementdata.fsigf;
@@ -136,6 +137,9 @@ public class ScaleBulkEnergy implements Potential {
         boolean gradient = true;
         double x[];
         double g[];
+        double solvent_k;
+        double model_k;
+        double solvent_ueq;
         private final double model_b[] = new double[6];
         private final double ustar[][] = new double[3][3];
         private final double resm[][] = new double[3][3];
@@ -146,9 +150,6 @@ public class ScaleBulkEnergy implements Potential {
         SharedDouble sum;
         SharedDouble sumfo;
         SharedDoubleArray grad;
-        double solvent_k;
-        double model_k;
-        double solvent_ueq;
         ScaleBulkEnergyLoop scaleBulkEnergyLoop[];
 
         public ScaleBulkEnergyRegion(int nThreads) {
@@ -183,14 +184,16 @@ public class ScaleBulkEnergy implements Potential {
             }
 
             model_k = x[0];
-            solvent_k = refinementdata.solvent_k;
-            solvent_ueq = refinementdata.solvent_ueq;
+            solvent_k = refinementData.solvent_k;
+            solvent_ueq = refinementData.solvent_ueq;
             if (solvent_n > 1) {
                 solvent_k = x[1];
                 solvent_ueq = x[2];
             }
 
-            // generate Ustar
+            /**
+             * Generate Ustar
+             */
             mat3symvec6(crystal.A, model_b, resm);
             mat3mat3(resm, recipt, ustar);
 
@@ -214,7 +217,6 @@ public class ScaleBulkEnergy implements Potential {
             try {
                 execute(0, reflectionlist.hkllist.size() - 1, scaleBulkEnergyLoop[ti]);
             } catch (Exception e) {
-                e.printStackTrace();
                 logger.info(e.toString());
             }
         }
@@ -272,35 +274,43 @@ public class ScaleBulkEnergy implements Potential {
                         continue;
                     }
 
-                    //  constants
+                    /**
+                     * Constants
+                     */
                     double s = Crystal.invressq(crystal, ih);
                     ihc[0] = ih.h();
                     ihc[1] = ih.k();
                     ihc[2] = ih.l();
                     vec3mat3(ihc, ustar, resv);
                     double u = model_k - dot(resv, ihc);
-                    double ebs = exp(-twopi2 * solvent_ueq * s);
-                    double ksebs = solvent_k * ebs;
-                    double kmebm = exp(0.25 * u);
+                    double expBS = exp(-twopi2 * solvent_ueq * s);
+                    double ksExpBS = solvent_k * expBS;
+                    double expU = exp(0.25 * u);
 
-                    // structure factors
-                    refinementdata.get_fc_ip(i, fcc);
-                    refinementdata.get_fs_ip(i, fsc);
+                    /**
+                     * Structure Factors
+                     */
+                    refinementData.get_fc_ip(i, fcc);
+                    refinementData.get_fs_ip(i, fsc);
                     fct.copy(fcc);
-                    if (refinementdata.crs_fs.solventModel != SolventModel.NONE) {
+                    if (refinementData.crs_fs.solventModel != SolventModel.NONE) {
                         resc.copy(fsc);
-                        resc.times_ip(ksebs);
+                        resc.times_ip(ksExpBS);
                         fct.plus_ip(resc);
                     }
                     kfct.copy(fct);
-                    kfct.times_ip(kmebm);
+                    kfct.times_ip(expU);
 
-                    // total structure factor (for refinement)
+                    /**
+                     * Total structure factor (for refinement)
+                     */
                     fctot[i][0] = kfct.re();
                     fctot[i][1] = kfct.im();
 
-                    // target
-                    double f1 = refinementdata.get_f(i);
+                    /**
+                     * Target
+                     */
+                    double f1 = refinementData.get_f(i);
                     double f2 = kfct.abs();
                     double d = f1 - f2;
                     double d2 = d * d;
@@ -309,7 +319,7 @@ public class ScaleBulkEnergy implements Potential {
                     lsum += d2;
                     lsumfo += f1 * f1;
 
-                    if (refinementdata.isfreer(i)) {
+                    if (refinementData.isfreer(i)) {
                         lrfree += abs(abs(f1) - abs(kfct.abs()));
                         lrfreef += abs(f1);
                     } else {
@@ -318,20 +328,26 @@ public class ScaleBulkEnergy implements Potential {
                     }
 
                     if (gradient) {
-                        // model_k/model_b - common derivative element
+                        /**
+                         * model_k/model_b - common derivative element
+                         */
                         double dfm = 0.25 * kfct.abs() * dr;
-                        // bulk solvent - common derivative element
-                        double dfb = ebs * (fcc.re() * fsc.re()
+                        /**
+                         * bulk solvent - common derivative element
+                         */
+                        double dfb = expBS * (fcc.re() * fsc.re()
                                 + fcc.im() * fsc.im()
-                                + ksebs * pow(fsc.abs(), 2.0));
+                                + ksExpBS * pow(fsc.abs(), 2.0));
 
-                        // model_k derivative
+                        /**
+                         * model_k derivative
+                         */
                         lgrad[0] += dfm;
                         if (solvent_n > 1) {
                             // solvent_k derivative
-                            lgrad[1] += kmebm * dfb * dr / fct.abs();
+                            lgrad[1] += expU * dfb * dr / fct.abs();
                             // solvent_ueq derivative
-                            lgrad[2] += kmebm * -twopi2 * s * solvent_k * dfb * dr / fct.abs();
+                            lgrad[2] += expU * -twopi2 * s * solvent_k * dfb * dr / fct.abs();
                         }
 
                         for (int jj = 0; jj < 6; jj++) {
@@ -380,6 +396,7 @@ public class ScaleBulkEnergy implements Potential {
                     }
                 }
             }
+
             @Override
             public void finish() {
                 r.addAndGet(lr);
