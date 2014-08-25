@@ -1,23 +1,39 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
+ *
+ * This file is part of Force Field X.
+ *
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
+ *
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.nonbonded;
 
+import java.util.Arrays;
+import java.util.logging.Logger;
+
+import static java.lang.Math.pow;
+
 import ffx.crystal.Crystal;
-import static ffx.numerics.VectorMath.rsq;
 import ffx.potential.LambdaInterface;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MolecularAssembly;
-import ffx.potential.bonded.Molecule;
-import ffx.potential.bonded.Polymer;
 import ffx.potential.parameters.ForceField;
-import static java.lang.Math.pow;
-import java.util.Arrays;
-import java.util.List;
-import java.util.logging.Logger;
+
+import static ffx.numerics.VectorMath.rsq;
 
 /**
  * Restrain molecules to their center of mass.
@@ -26,22 +42,18 @@ import java.util.logging.Logger;
  */
 public class COMRestraint implements LambdaInterface {
 
-    private static final Logger logger = Logger.getLogger(CoordRestraint.class.getName());
-    private MolecularAssembly molecularAssembly = null;
-    private Crystal crystal = null;
+    private static final Logger logger = Logger.getLogger(COMRestraint.class.getName());
     private final Atom atoms[];
-    //private final double initialCoordinates[][];
-    private final double initialCOM[] = new double[3];
-    private double currentCOM[];
-    private double dcomdx[];
-    //private int nMolecules = 0;
     private int nAtoms = 0;
     /**
      * Force constant in Kcal/mole/Angstrom.
      */
     private final double forceConstant;
-    private final double a1[] = new double[3];
+    private final double initialCOM[] = new double[3];
+    private final double currentCOM[] = new double[3];
     private final double dx[] = new double[3];
+    private final double dcomdx[];
+
     private double lambda = 1.0;
     private final double lambdaExp = 1.0;
     private double lambdaPow = pow(lambda, lambdaExp);
@@ -61,56 +73,38 @@ public class COMRestraint implements LambdaInterface {
      * @param crystal
      */
     public COMRestraint(MolecularAssembly molecularAssembly, Crystal crystal) {
-        this.molecularAssembly = molecularAssembly;
-        this.crystal = crystal.getUnitCell();
         ForceField forceField = molecularAssembly.getForceField();
         atoms = molecularAssembly.getAtomArray();
         nAtoms = atoms.length;
-
-        //nMolecules = countMolecules();
-
-        //lambdaTerm = false;
         lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
 
         if (lambdaTerm) {
             lambdaGradient = new double[nAtoms * 3];
         } else {
             lambdaGradient = null;
-            this.lambda = 1.0;
+            lambda = 1.0;
             lambdaPow = 1.0;
             dLambdaPow = 0.0;
             d2LambdaPow = 0.0;
         }
-
+        dcomdx = new double[nAtoms];
         forceConstant = forceField.getDouble(ForceField.ForceFieldDouble.RESTRAINT_K, 10.0);
+        boolean gradient = false;
+        computeCOM(initialCOM, gradient);
+        logger.info("\n COM restraint initialized");
+    }
 
-        boolean computedcomdx = false;
-        computeCOM(initialCOM, computedcomdx);
-
-        logger.info("\n COM Restraint");
-
-//        initialCOM[0] = a.getX();
-//        initialCOM[1] = a.getY();
-//        initialCOM[2] = a.getZ();
-//        a.print();
-
-}
-
-public double residual(boolean gradient, boolean print) {
-
+    public double residual(boolean gradient, boolean print) {
         if (lambdaTerm) {
             dEdL = 0.0;
             d2EdL2 = 0.0;
             Arrays.fill(lambdaGradient, 0.0);
         }
-
         double residual = 0.0;
         double fx2 = forceConstant * 2.0;
         boolean computedcomdx = true;
-
-        currentCOM = new double[3];
+        Arrays.fill(currentCOM, 0.0);
         computeCOM(currentCOM, computedcomdx);
-
         dx[0] = currentCOM[0] - initialCOM[0];
         dx[1] = currentCOM[1] - initialCOM[1];
         dx[2] = currentCOM[2] - initialCOM[2];
@@ -121,7 +115,6 @@ public double residual(boolean gradient, boolean print) {
                 final double dedx = dx[0] * fx2 * dcomdx[i];
                 final double dedy = dx[1] * fx2 * dcomdx[i];
                 final double dedz = dx[2] * fx2 * dcomdx[i];
-
                 // Current atomic coordinates.
                 Atom atom = atoms[i];
                 if (gradient) {
@@ -133,26 +126,20 @@ public double residual(boolean gradient, boolean print) {
                     lambdaGradient[j3 + 1] = dLambdaPow * dedy;
                     lambdaGradient[j3 + 2] = dLambdaPow * dedz;
                 }
-
             }
         }
         if (lambdaTerm) {
             dEdL = dLambdaPow * forceConstant * residual;
             d2EdL2 = d2LambdaPow * forceConstant * residual;
         }
-
-        //logger.info(String.format(" Restraint Energy %16.8f", forceConstant * residual * lambdaPow));
         return forceConstant * residual * lambdaPow;
     }
 
     private void computeCOM(double[] com, boolean derivative) {
-        //nAtoms = atoms.length;
-        double mass = 0.0;
         double totalMass = 0.0;
-
         for (int i = 0; i < nAtoms; i++) {
             Atom a = atoms[i];
-            mass = a.getMass();
+            double mass = a.getMass();
             com[0] = a.getX() * mass;
             com[1] = a.getY() * mass;
             com[2] = a.getZ() * mass;
@@ -161,9 +148,7 @@ public double residual(boolean gradient, boolean print) {
         com[0] /= totalMass;
         com[1] /= totalMass;
         com[2] /= totalMass;
-
         if (derivative) {
-            dcomdx = new double[nAtoms];
             for (int i = 0; i < nAtoms; i++) {
                 Atom a = atoms[i];
                 dcomdx[i] = a.getMass() / totalMass;
@@ -192,9 +177,8 @@ public double residual(boolean gradient, boolean print) {
 //        }
 //        return count;
 //    }
-
     @Override
-        public void setLambda(double lambda) {
+    public void setLambda(double lambda) {
         if (lambdaTerm) {
             this.lambda = lambda;
             if (this.lambda <= lambdaWindow) {
@@ -235,12 +219,12 @@ public double residual(boolean gradient, boolean print) {
     }
 
     @Override
-        public double getLambda() {
+    public double getLambda() {
         return lambda;
     }
 
     @Override
-        public double getdEdL() {
+    public double getdEdL() {
         if (lambdaTerm) {
             return dEdL;
         } else {
@@ -249,7 +233,7 @@ public double residual(boolean gradient, boolean print) {
     }
 
     @Override
-        public double getd2EdL2() {
+    public double getd2EdL2() {
         if (lambdaTerm) {
             return d2EdL2;
         } else {
@@ -258,7 +242,7 @@ public double residual(boolean gradient, boolean print) {
     }
 
     @Override
-        public void getdEdXdL(double[] gradient) {
+    public void getdEdXdL(double[] gradient) {
         if (lambdaTerm) {
             int n3 = nAtoms * 3;
             for (int i = 0; i < n3; i++) {
