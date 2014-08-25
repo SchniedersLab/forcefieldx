@@ -22,6 +22,7 @@
  */
 package ffx.ui;
 
+import java.text.MessageFormat;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
@@ -72,6 +73,8 @@ public class LogFormatter extends SimpleFormatter {
             message = super.format(record);
         } else {
             message = record.getMessage();
+            Object objects[] = record.getParameters();
+            message = MessageFormat.format(message, objects);
         }
 
         try {

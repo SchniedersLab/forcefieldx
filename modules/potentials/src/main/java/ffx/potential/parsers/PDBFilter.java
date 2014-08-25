@@ -3050,6 +3050,7 @@ public final class PDBFilter extends SystemFilter {
             }
             activeMolecularAssembly.setFile(newFile);
             activeMolecularAssembly.setName(newFile.getName());
+            logger.log(Level.INFO, " Saving {0}", newFile.getName());
             fw = new FileWriter(newFile, append);
             bw = new BufferedWriter(fw);
 // =============================================================================

@@ -38,8 +38,10 @@ import java.awt.event.ActionListener;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -70,6 +72,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.WindowConstants;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
@@ -83,6 +86,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.SystemUtils;
 
+import ffx.FFXClassLoader;
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
@@ -433,7 +437,18 @@ public final class MainPanel extends JPanel implements ActionListener,
         } else if (arg.equals("Exit")) {
             exit();
         } else {
-            System.err.println("MainPanel - Menu command not found: " + arg.toString());
+            try {
+                ClassLoader cl = MainPanel.class.getClassLoader();
+                URL url = cl.getResource(arg);
+                logger.info(url.toString());
+                File structureFile = new File(url.getFile());
+                logger.info(structureFile.toString());
+                String tempFile = FFXClassLoader.copyInputStreamToTmpFile(url.openStream(), structureFile.getName(), "pdb");
+                open(tempFile);
+            } catch (Exception e) {
+                System.err.println("MainPanel - Menu command not found: " + arg);
+            }
+
         }
     }
 
@@ -506,11 +521,15 @@ public final class MainPanel extends JPanel implements ActionListener,
      */
     public synchronized void closeWait() {
         FFXSystem active = hierarchy.getActive();
+        if (active == null) {
+            logger.log(Level.INFO, " No active system to close.");
+            return;
+        }
         Thread thread = close(active);
         while (thread != null && thread.isAlive()) {
             try {
                 wait(1);
-            } catch (Exception e) {
+            } catch (InterruptedException e) {
                 String message = "Exception waiting for " + active + " to close.";
                 logger.log(Level.WARNING, message, e);
             }
@@ -1345,7 +1364,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         while (thread != null && thread.isAlive()) {
             try {
                 wait(1);
-            } catch (Exception e) {
+            } catch (InterruptedException e) {
                 String message = "Exception waiting for " + file + " to open.";
                 logger.log(Level.WARNING, message, e);
                 return null;
@@ -1380,7 +1399,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         while (thread != null && thread.isAlive()) {
             try {
                 wait(1);
-            } catch (Exception e) {
+            } catch (InterruptedException e) {
                 String message = "Exception waiting for " + files[0] + " to open.";
                 logger.log(Level.WARNING, message, e);
                 return null;
@@ -1412,7 +1431,7 @@ public final class MainPanel extends JPanel implements ActionListener,
     public Thread open(String name) {
         File file = resolveName(name);
         if (file == null) {
-            logger.warning(name + ": could not be found.");
+            logger.log(Level.WARNING, "{0}: could not be found.", name);
             return null;
         }
         return open(file, null);
@@ -1468,7 +1487,7 @@ public final class MainPanel extends JPanel implements ActionListener,
             return null;
         }
         int n = names.length;
-        List<File> files = new ArrayList<File>();
+        List<File> files = new ArrayList<>();
         // Resolve all file names.
         for (int i = 0; i < n; i++) {
             File file = resolveName(names[i]);
@@ -1536,7 +1555,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         URL fromURL = null;
         try {
             fromURL = new URL(fromString);
-        } catch (Exception e) {
+        } catch (MalformedURLException e) {
             String message = String.format(" URL incorrectly formatted %s.", fromString);
             logger.log(Level.INFO, message, e);
             return null;
@@ -1551,7 +1570,7 @@ public final class MainPanel extends JPanel implements ActionListener,
             FileUtils.copyURLToFile(fromURL, toFile, 1000, 1000);
             logger.info(String.format(" Saved to %s\n", toFile.getPath()));
             return toFile;
-        } catch (Exception ex) {
+        } catch (IOException ex) {
             logger.log(Level.INFO, " Failed to read URL " + fromURL.getPath(), ex);
             return null;
         }
@@ -1673,8 +1692,9 @@ public final class MainPanel extends JPanel implements ActionListener,
                 UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
             }
             SwingUtilities.updateComponentTreeUI(SwingUtilities.getRoot(this));
-        } catch (Exception e) {
-            logger.warning("Can't set look and feel: " + e);
+        } catch (ClassNotFoundException | InstantiationException |
+                IllegalAccessException | UnsupportedLookAndFeelException e) {
+            logger.log(Level.WARNING, "Can''t set look and feel: {0}", e);
         }
     }
 
@@ -1832,27 +1852,38 @@ public final class MainPanel extends JPanel implements ActionListener,
      */
     public void saveAsPDB(File file) {
         FFXSystem system = hierarchy.getActive();
-        if (system != null && !system.isClosing()) {
-            File saveFile = file;
-            if (saveFile == null) {
-                resetFileChooser();
-                fileChooser.setCurrentDirectory(pwd);
-                fileChooser.setFileFilter(pdbFileFilter);
-                fileChooser.setAcceptAllFileFilterUsed(false);
-                int result = fileChooser.showSaveDialog(this);
-                if (result == JFileChooser.APPROVE_OPTION) {
-                    saveFile = fileChooser.getSelectedFile();
-                    pwd = saveFile.getParentFile();
-                }
-            }
-            if (saveFile != null) {
-                PDBFilter pdbFilter = new PDBFilter(saveFile, system, null, null);
-                if (pdbFilter.writeFile(saveFile, false)) {
-                    // Refresh Panels with the new System name
-                    hierarchy.setActive(system);
-                }
+        if (system == null) {
+            logger.log(Level.INFO, " No active system to save.");
+            return;
+        }
+        if (system.isClosing()) {
+            logger.log(Level.INFO, " {0} is being closed and can no longer be saved.", system);
+            return;
+        }
+        File saveFile = file;
+        if (saveFile == null) {
+            resetFileChooser();
+            fileChooser.setCurrentDirectory(pwd);
+            fileChooser.setFileFilter(pdbFileFilter);
+            fileChooser.setAcceptAllFileFilterUsed(false);
+            int result = fileChooser.showSaveDialog(this);
+            if (result == JFileChooser.APPROVE_OPTION) {
+                saveFile = fileChooser.getSelectedFile();
+                pwd = saveFile.getParentFile();
             }
         }
+        if (saveFile == null) {
+            logger.log(Level.INFO, " No filename is defined for {0}.", system);
+            return;
+        }
+        PDBFilter pdbFilter = new PDBFilter(saveFile, system, null, null);
+        if (pdbFilter.writeFile(saveFile, false)) {
+            // Refresh Panels with the new System name
+            hierarchy.setActive(system);
+        } else {
+            logger.log(Level.INFO, " Save failed for: {0}", system);
+        }
+
     }
 
     /**

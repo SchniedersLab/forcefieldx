@@ -34,8 +34,8 @@ import java.util.logging.Logger;
  * <br>
  * The replicates integers l, m and n are chosen large enough for the
  * ReplicatesCrystal to allow consistent application of the minimum image
- * convention. This is ensured by increasing l, m and/or n until a sphere of
- * of necessary radius fits entirely inside the ReplicatedCrystal.
+ * convention. This is ensured by increasing l, m and/or n until a sphere of of
+ * necessary radius fits entirely inside the ReplicatedCrystal.
  * <br>
  *
  * @author Michael J. Schnieders
@@ -45,6 +45,7 @@ import java.util.logging.Logger;
  * @see Crystal
  */
 public class ReplicatesCrystal extends Crystal {
+
     /**
      * The logger.
      */
@@ -247,12 +248,12 @@ public class ReplicatesCrystal extends Crystal {
 
         sb.append("\n\n Replicates Cell\n");
         sb.append(String.format("  Dimension:                    (%3d x%3d x%3d)\n", l, m, n));
-        sb.append(String.format("  A-axis:                              %11.6f\n", a));
-        sb.append(String.format("  B-axis:                              %11.6f\n", b));
-        sb.append(String.format("  C-axis:                              %11.6f\n", c));
-        sb.append(String.format("  Alpha:                               %11.6f\n", alpha));
-        sb.append(String.format("  Beta:                                %11.6f\n", beta));
-        sb.append(String.format("  Gamma:                               %11.6f\n", gamma));
+        sb.append(String.format("  A-axis:                              %8.3f\n", a));
+        sb.append(String.format("  B-axis:                              %8.3f\n", b));
+        sb.append(String.format("  C-axis:                              %8.3f\n", c));
+        sb.append(String.format("  Alpha:                               %8.3f\n", alpha));
+        sb.append(String.format("  Beta:                                %8.3f\n", beta));
+        sb.append(String.format("  Gamma:                               %8.3f\n", gamma));
         sb.append(String.format("  Total Symmetry Operators:            %8d", spaceGroup.getNumberOfSymOps()));
         return sb.toString();
     }

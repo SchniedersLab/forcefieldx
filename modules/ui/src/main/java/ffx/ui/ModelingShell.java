@@ -22,7 +22,14 @@
  */
 package ffx.ui;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.EventQueue;
+import java.awt.Menu;
+import java.awt.MenuBar;
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -32,7 +39,14 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 
-import javax.swing.*;
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
+import javax.swing.JTextPane;
+import javax.swing.JViewport;
+import javax.swing.SwingUtilities;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
@@ -49,7 +63,11 @@ import ffx.algorithms.Minimize;
 import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.Terminatable;
 import ffx.algorithms.Thermostat.Thermostats;
-import ffx.autoparm.*;
+import ffx.autoparm.Energy;
+import ffx.autoparm.Minimize_2;
+import ffx.autoparm.Poledit;
+import ffx.autoparm.Potential2;
+import ffx.autoparm.Superpose;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.MSNode;
@@ -320,7 +338,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
         }
         return null;
     }
-    
+
     /**
      * <p>
      * returnEnergy</p>
@@ -821,7 +839,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
              * self-consistent coordinate sets are displayed.
              */
             //if (SwingUtilities.isEventDispatchThread()) {
-                graphics.updateSceneWait(active, true, false, null, false, null);
+            graphics.updateSceneWait(active, true, false, null, false, null);
             //}
         }
 

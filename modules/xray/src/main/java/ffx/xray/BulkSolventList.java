@@ -196,7 +196,8 @@ public class BulkSolventList extends ParallelRegion {
         this.crystal = crystal;
         this.atoms = atoms;
         this.cutoff = cutoff;
-        this.parallelTeam = parallelTeam;
+        //this.parallelTeam = parallelTeam;
+        this.parallelTeam = new ParallelTeam(parallelTeam.getThreadCount());
         nAtoms = atoms.length;
         nSymm = crystal.spaceGroup.symOps.size();
 
@@ -432,12 +433,7 @@ public class BulkSolventList extends ParallelRegion {
      */
     @Override
     public void run() {
-        try {
-            execute(0, nAtoms - 1, selectionListLoop[getThreadIndex()]);
-        } catch (Exception e) {
-            String message = "Fatal exception building neighbor list in thread: " + getThreadIndex() + "\n";
-            logger.log(Level.SEVERE, message, e);
-        }
+
     }
 
     /**

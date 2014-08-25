@@ -31,6 +31,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.lang.Math.PI;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
 import static java.lang.Math.pow;
 import static java.lang.Math.sqrt;
 import static java.lang.String.format;
@@ -738,7 +740,7 @@ public class VanDerWaals implements MaskingInterface,
             String message = " Fatal exception expanding coordinates.\n";
             logger.log(Level.SEVERE, message, e);
         }
-        
+
         return sharedEnergy.get();
     }
 
@@ -1083,11 +1085,46 @@ public class VanDerWaals implements MaskingInterface,
                 double total = (initializationTotal + vdwTotal + reductionTotal) * 1e-9;
 
                 logger.info(String.format("\n van der Waals: %7.4f (sec)", total));
-                logger.info(" Thread    Init    Energy  Reduce");
+                logger.info(" Thread    Init    Energy  Reduce  Total     Counts");
+                long initMax = 0;
+                long vdwMax = 0;
+                long reductionMax = 0;
+                long initMin = Long.MAX_VALUE;
+                long vdwMin = Long.MAX_VALUE;
+                long reductionMin = Long.MAX_VALUE;
+                int countMin = Integer.MAX_VALUE;
+                int countMax = 0;
                 for (int i = 0; i < threadCount; i++) {
-                    logger.info(String.format("    %3d   %7.4f %7.4f %7.4f", i, initializationTime[i] * 1e-9, vdwTime[i] * 1e-9, reductionTime[i] * 1e-9));
+                    int count = vanDerWaalsLoop[i].getCount();
+                    long totalTime = initializationTime[i] + vdwTime[i] + reductionTime[i];
+                    logger.info(String.format("    %3d   %7.4f %7.4f %7.4f %7.4f %10d",
+                            i, initializationTime[i] * 1e-9, vdwTime[i] * 1e-9,
+                            reductionTime[i] * 1e-9, totalTime * 1e-9, count));
+                    initMax = max(initializationTime[i], initMax);
+                    vdwMax = max(vdwTime[i], vdwMax);
+                    reductionMax = max(reductionTime[i], reductionMax);
+                    countMax = max(countMax, count);
+                    initMin = min(initializationTime[i], initMin);
+                    vdwMin = min(vdwTime[i], vdwMin);
+                    reductionMin = min(reductionTime[i], reductionMin);
+                    countMin = min(countMin, count);
                 }
-                logger.info(String.format(" Actual   %7.4f %7.4f %7.4f", initializationTotal * 1e-9, vdwTotal * 1e-9, reductionTotal * 1e-9));
+                long totalMin = initMin + vdwMin + reductionMin;
+                long totalMax = initMax + vdwMax + reductionMax;
+                long totalActual = initializationTotal + vdwTotal + reductionTotal;
+                logger.info(String.format(" Min      %7.4f %7.4f %7.4f %7.4f %10d",
+                        initMin * 1e-9, vdwMin * 1e-9,
+                        reductionMin * 1e-9, totalMin * 1e-9, countMin));
+                logger.info(String.format(" Max      %7.4f %7.4f %7.4f %7.4f %10d",
+                        initMax * 1e-9, vdwMax * 1e-9,
+                        reductionMax * 1e-9, totalMax * 1e-9, countMax));
+                logger.info(String.format(" Delta    %7.4f %7.4f %7.4f %7.4f %10d",
+                        (initMax - initMin) * 1e-9, (vdwMax - vdwMin) * 1e-9,
+                        (reductionMax - reductionMin) * 1e-9, (totalMax - totalMin) * 1e-9,
+                        (countMax - countMin)));
+                logger.info(String.format(" Actual   %7.4f %7.4f %7.4f %7.4f %10d\n",
+                        initializationTotal * 1e-9, vdwTotal * 1e-9,
+                        reductionTotal * 1e-9, totalActual * 1e-9, sharedInteractions.get()));
             }
         }
 
@@ -1271,6 +1308,10 @@ public class VanDerWaals implements MaskingInterface,
                 fill(mask, 1.0);
             }
 
+            public int getCount() {
+                return count;
+            }
+
             @Override
             public IntegerSchedule schedule() {
                 return pairwiseSchedule;
@@ -1295,7 +1336,7 @@ public class VanDerWaals implements MaskingInterface,
                     lyi_local = null;
                     lzi_local = null;
                 }
-                vdwTime[getThreadIndex()] = -System.nanoTime();
+                vdwTime[threadId] = -System.nanoTime();
             }
 
             @Override
@@ -1395,7 +1436,7 @@ public class VanDerWaals implements MaskingInterface,
                             final double t1 = t1n * t1d;
                             final double t2a = gamma1 * t2d;
                             final double t2 = t2a - 2.0;
-                            double eij = eps_lambda * t1 * t2;
+                            final double eij = eps_lambda * t1 * t2;
                             /**
                              * Apply a multiplicative switch if the interaction
                              * distance is greater than the beginning of the
@@ -1421,16 +1462,16 @@ public class VanDerWaals implements MaskingInterface,
                             final double dt2d_dr = dispersivePower * rhoDisp1 * drho_dr;
                             final double dt1_dr = t1 * dt1d_dr * t1d;
                             final double dt2_dr = t2a * dt2d_dr * t2d;
-                            double dedr = -eps_lambda * (dt1_dr * t2 + t1 * dt2_dr);
-                            double ir = 1.0 / r;
-                            double drdx = dx_local[0] * ir;
-                            double drdy = dx_local[1] * ir;
-                            double drdz = dx_local[2] * ir;
-                            dedr = (eij * dtaper + dedr * taper);
+                            final double dedr = -eps_lambda * (dt1_dr * t2 + t1 * dt2_dr);
+                            final double ir = 1.0 / r;
+                            final double drdx = dx_local[0] * ir;
+                            final double drdy = dx_local[1] * ir;
+                            final double drdz = dx_local[2] * ir;
                             if (gradient) {
-                                double dedx = dedr * drdx;
-                                double dedy = dedr * drdy;
-                                double dedz = dedr * drdz;
+                                final double dswitch = (eij * dtaper + dedr * taper);
+                                final double dedx = dswitch * drdx;
+                                final double dedy = dswitch * drdy;
+                                final double dedz = dswitch * drdz;
                                 gxi += dedx * redv;
                                 gyi += dedy * redv;
                                 gzi += dedz * redv;
@@ -1445,43 +1486,33 @@ public class VanDerWaals implements MaskingInterface,
                                 gzi_local[redk] -= redkv * dedz;
                             }
                             if (lambdaTerm && soft) {
-                                double dt1 = -t1 * t1d * dsc1dL;
-                                double dt2 = -t2a * t2d * dsc1dL;
-                                double f1 = dsc2dL * t1 * t2;
-                                double f2 = sc2 * dt1 * t2;
-                                double f3 = sc2 * t1 * dt2;
-                                double dedl = ev * (f1 + f2 + f3);
+                                final double dt1 = -t1 * t1d * dsc1dL;
+                                final double dt2 = -t2a * t2d * dsc1dL;
+                                final double f1 = dsc2dL * t1 * t2;
+                                final double f2 = sc2 * dt1 * t2;
+                                final double f3 = sc2 * t1 * dt2;
+                                final double dedl = ev * (f1 + f2 + f3);
                                 dEdL += dedl * taper;
-                                double t1d2 = -dsc1dL * t1d * t1d;
-                                double t2d2 = -dsc1dL * t2d * t2d;
-                                double d2t1 = -dt1 * t1d * dsc1dL
-                                        - t1 * t1d * d2sc1dL2
-                                        - t1 * t1d2 * dsc1dL;
-                                double d2t2 = -dt2 * t2d * dsc1dL
-                                        - t2a * t2d * d2sc1dL2
-                                        - t2a * t2d2 * dsc1dL;
-                                double df1 = d2sc2dL2 * t1 * t2
-                                        + dsc2dL * dt1 * t2
-                                        + dsc2dL * t1 * dt2;
-                                double df2 = dsc2dL * dt1 * t2
-                                        + sc2 * d2t1 * t2
-                                        + sc2 * dt1 * dt2;
-                                double df3 = dsc2dL * t1 * dt2
-                                        + sc2 * dt1 * dt2
-                                        + sc2 * t1 * d2t2;
-                                double de2dl2 = ev * (df1 + df2 + df3);
+                                final double t1d2 = -dsc1dL * t1d * t1d;
+                                final double t2d2 = -dsc1dL * t2d * t2d;
+                                final double d2t1 = -dt1 * t1d * dsc1dL - t1 * t1d * d2sc1dL2 - t1 * t1d2 * dsc1dL;
+                                final double d2t2 = -dt2 * t2d * dsc1dL - t2a * t2d * d2sc1dL2 - t2a * t2d2 * dsc1dL;
+                                final double df1 = d2sc2dL2 * t1 * t2 + dsc2dL * dt1 * t2 + dsc2dL * t1 * dt2;
+                                final double df2 = dsc2dL * dt1 * t2 + sc2 * d2t1 * t2 + sc2 * dt1 * dt2;
+                                final double df3 = dsc2dL * t1 * dt2 + sc2 * dt1 * dt2 + sc2 * t1 * d2t2;
+                                final double de2dl2 = ev * (df1 + df2 + df3);
                                 d2EdL2 += de2dl2 * taper;
-                                double t11 = -dsc2dL * t2 * dt1_dr;
-                                double t12 = -sc2 * dt2 * dt1_dr;
-                                double t13 = 2.0 * sc2 * t2 * dt1_dr * dsc1dL * t1d;
-                                double t21 = -dsc2dL * t1 * dt2_dr;
-                                double t22 = -sc2 * dt1 * dt2_dr;
-                                double t23 = 2.0 * sc2 * t1 * dt2_dr * dsc1dL * t2d;
-                                double dedldr = ev * (t11 + t12 + t13 + t21 + t22 + t23);
-                                dedldr = dedl * dtaper + dedldr * taper;
-                                double dedldx = dedldr * drdx;
-                                double dedldy = dedldr * drdy;
-                                double dedldz = dedldr * drdz;
+                                final double t11 = -dsc2dL * t2 * dt1_dr;
+                                final double t21 = -dsc2dL * t1 * dt2_dr;
+                                final double t13 = 2.0 * sc2 * t2 * dt1_dr * dsc1dL * t1d;
+                                final double t23 = 2.0 * sc2 * t1 * dt2_dr * dsc1dL * t2d;
+                                final double t12 = -sc2 * dt2 * dt1_dr;
+                                final double t22 = -sc2 * dt1 * dt2_dr;
+                                final double dedldr = ev * (t11 + t12 + t13 + t21 + t22 + t23);
+                                final double dswitch = dedl * dtaper + dedldr * taper;
+                                final double dedldx = dswitch * drdx;
+                                final double dedldy = dswitch * drdy;
+                                final double dedldz = dswitch * drdz;
                                 lxi += dedldx * redv;
                                 lyi += dedldy * redv;
                                 lzi += dedldz * redv;
@@ -1580,7 +1611,6 @@ public class VanDerWaals implements MaskingInterface,
                                 final double r = sqrt(r2);
                                 final double r3 = r2 * r;
                                 final double r4 = r2 * r2;
-
                                 double alpha = 0.0;
                                 double lambda5 = 1.0;
                                 boolean soft = (isSoft[i] || softCorei[k]);
@@ -1630,7 +1660,7 @@ public class VanDerWaals implements MaskingInterface,
                                 final double dt1_dr = t1 * dt1d_dr * t1d;
                                 final double dt2_dr = t2a * dt2d_dr * t2d;
                                 double dedr = -eps_lambda * (dt1_dr * t2 + t1 * dt2_dr);
-                                double ir = 1.0 / r;
+                                final double ir = 1.0 / r;
                                 double drdx = dx_local[0] * ir;
                                 double drdy = dx_local[1] * ir;
                                 double drdz = dx_local[2] * ir;

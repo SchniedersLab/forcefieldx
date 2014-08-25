@@ -1468,12 +1468,12 @@ public class Crystal {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("\n Unit Cell\n");
-        sb.append(String.format("  A-axis:                              %11.6f\n", a));
-        sb.append(String.format("  B-axis:                              %11.6f\n", b));
-        sb.append(String.format("  C-axis:                              %11.6f\n", c));
-        sb.append(String.format("  Alpha:                               %11.6f\n", alpha));
-        sb.append(String.format("  Beta:                                %11.6f\n", beta));
-        sb.append(String.format("  Gamma:                               %11.6f\n", gamma));
+        sb.append(String.format("  A-axis:                              %8.3f\n", a));
+        sb.append(String.format("  B-axis:                              %8.3f\n", b));
+        sb.append(String.format("  C-axis:                              %8.3f\n", c));
+        sb.append(String.format("  Alpha:                               %8.3f\n", alpha));
+        sb.append(String.format("  Beta:                                %8.3f\n", beta));
+        sb.append(String.format("  Gamma:                               %8.3f\n", gamma));
         sb.append(String.format("  Space group\n"));
         sb.append(String.format("   Number:                                  %3d\n", spaceGroup.number));
         sb.append(String.format("   Symbol:                             %8s\n", spaceGroup.shortName));

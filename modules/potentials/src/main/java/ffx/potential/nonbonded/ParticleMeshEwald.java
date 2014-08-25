@@ -1154,18 +1154,17 @@ public class ParticleMeshEwald implements LambdaInterface {
             vacuumNeighborList.buildList(coords, vaporLists, isSoft, true, true);
 
             /*
-            sb = new StringBuilder();
-            for (int i=0; i<nAtoms; i++) {
-                int list[] = vaporLists[0][i];
-                sb.append(String.format(" Atom %d:", i+1));
-                for (int j=0; j<list.length; j++) {
-                    sb.append(String.format(" %d", list[j]+1));
-                }
-                sb.append("\n");
-            }
-            logger.info(sb.toString());
-            */
-
+             sb = new StringBuilder();
+             for (int i=0; i<nAtoms; i++) {
+             int list[] = vaporLists[0][i];
+             sb.append(String.format(" Atom %d:", i+1));
+             for (int j=0; j<list.length; j++) {
+             sb.append(String.format(" %d", list[j]+1));
+             }
+             sb.append("\n");
+             }
+             logger.info(sb.toString());
+             */
             vaporPermanentSchedule = vacuumNeighborList.getPairwiseSchedule();
             vaporEwaldSchedule = vaporPermanentSchedule;
             vacuumRanges = new Range[maxThreads];
@@ -1352,13 +1351,42 @@ public class ParticleMeshEwald implements LambdaInterface {
 
         logger.info(String.format("\n Real Space: %7.4f (sec)", total));
         logger.info("           Electric Field");
-        logger.info(" Thread    Direct  SCF     Energy");
+        logger.info(" Thread    Direct  SCF     Energy     Counts");
+        long minPerm = Long.MAX_VALUE;
+        long maxPerm = 0;
+        long minSCF = Long.MAX_VALUE;
+        long maxSCF = 0;
+        long minEnergy = Long.MAX_VALUE;
+        long maxEnergy = 0;
+        int minCount = Integer.MAX_VALUE;
+        int maxCount = Integer.MIN_VALUE;
+
         for (int i = 0; i < maxThreads; i++) {
-            logger.info(String.format("    %3d   %7.4f %7.4f %7.4f", i,
-                    realSpacePermTime[i] * toSeconds, realSpaceSCFTime[i] * toSeconds, realSpaceEnergyTime[i] * toSeconds));
+            int count = realSpaceEnergyRegion.realSpaceEnergyLoop[i].getCount();
+            logger.info(String.format("    %3d   %7.4f %7.4f %7.4f %10d", i,
+                    realSpacePermTime[i] * toSeconds, realSpaceSCFTime[i] * toSeconds,
+                    realSpaceEnergyTime[i] * toSeconds, count));
+            minPerm = min(realSpacePermTime[i], minPerm);
+            maxPerm = max(realSpacePermTime[i], maxPerm);
+            minSCF = min(realSpaceSCFTime[i], minSCF);
+            maxSCF = max(realSpaceSCFTime[i], maxSCF);
+            minEnergy = min(realSpaceEnergyTime[i], minEnergy);
+            maxEnergy = max(realSpaceEnergyTime[i], maxEnergy);
+            minCount = min(count, minCount);
+            maxCount = max(count, maxCount);
         }
-        logger.info(String.format(" Actual   %7.4f %7.4f %7.4f",
-                realSpacePermTotal * toSeconds, realSpaceSCFTotal * toSeconds, realSpaceEnergyTotal * toSeconds));
+        logger.info(String.format(" Min      %7.4f %7.4f %7.4f %10d",
+                minPerm * toSeconds, minSCF * toSeconds,
+                minEnergy * toSeconds, minCount));
+        logger.info(String.format(" Max      %7.4f %7.4f %7.4f %10d",
+                maxPerm * toSeconds, maxSCF * toSeconds,
+                maxEnergy * toSeconds, maxCount));
+        logger.info(String.format(" Delta    %7.4f %7.4f %7.4f %10d",
+                (maxPerm - minPerm) * toSeconds, (maxSCF - minSCF) * toSeconds,
+                (maxEnergy - minEnergy) * toSeconds, (maxCount - minCount)));
+        logger.info(String.format(" Actual   %7.4f %7.4f %7.4f %10d",
+                realSpacePermTotal * toSeconds, realSpaceSCFTotal * toSeconds,
+                realSpaceEnergyTotal * toSeconds, realSpaceEnergyRegion.getInteractions()));
     }
 
     /**
@@ -3707,6 +3735,10 @@ public class ParticleMeshEwald implements LambdaInterface {
                 }
             }
 
+            public int getCount() {
+                return count;
+            }
+
             @Override
             public void finish() {
                 sharedInteractions.addAndGet(count);
@@ -4773,12 +4805,11 @@ public class ParticleMeshEwald implements LambdaInterface {
                 final double recip[][] = crystal.getUnitCell().A;
 
                 /*
-                if (getThreadIndex() == 0) {
-                    logger.info(String.format(" %16.8f %16.8f %16.8f", recip[0][0], recip[0][1], recip[0][2]));
-                    logger.info(String.format(" %16.8f %16.8f %16.8f", recip[1][0], recip[1][1], recip[1][2]));
-                    logger.info(String.format(" %16.8f %16.8f %16.8f", recip[2][0], recip[2][1], recip[2][2]));
-                } */
-
+                 if (getThreadIndex() == 0) {
+                 logger.info(String.format(" %16.8f %16.8f %16.8f", recip[0][0], recip[0][1], recip[0][2]));
+                 logger.info(String.format(" %16.8f %16.8f %16.8f", recip[1][0], recip[1][1], recip[1][2]));
+                 logger.info(String.format(" %16.8f %16.8f %16.8f", recip[2][0], recip[2][1], recip[2][2]));
+                 } */
                 double dUdL = 0.0;
                 double d2UdL2 = 0.0;
                 for (int i = lb; i <= ub; i++) {
@@ -4788,12 +4819,11 @@ public class ParticleMeshEwald implements LambdaInterface {
                         final double fmpole[] = fracMultipoles[i];
 
                         /*
-                        if (i == 0) {
-                            logger.info(String.format(" %16.8f %16.8f %16.8f", phi[0], phi[1], phi[2]));
-                            logger.info(String.format(" %16.8f %16.8f %16.8f", mpole[0], mpole[1], mpole[2]));
-                            logger.info(String.format(" %16.8f %16.8f %16.8f", fmpole[0], fmpole[1], fmpole[2]));
-                        } */
-
+                         if (i == 0) {
+                         logger.info(String.format(" %16.8f %16.8f %16.8f", phi[0], phi[1], phi[2]));
+                         logger.info(String.format(" %16.8f %16.8f %16.8f", mpole[0], mpole[1], mpole[2]));
+                         logger.info(String.format(" %16.8f %16.8f %16.8f", fmpole[0], fmpole[1], fmpole[2]));
+                         } */
                         double e = mpole[t000] * phi[t000] + mpole[t100] * phi[t100]
                                 + mpole[t010] * phi[t010] + mpole[t001] * phi[t001]
                                 + oneThird * (mpole[t200] * phi[t200]

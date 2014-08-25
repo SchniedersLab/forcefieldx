@@ -24,6 +24,7 @@ package ffx.ui;
 
 import java.awt.Cursor;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.lang.String.format;
@@ -37,11 +38,10 @@ import ffx.potential.parsers.SystemFilter;
 
 /**
  * The FileOpener class opens a file into Force Field X using a filter from the
- * ffe.parsers package. The OpenFile class implements the Runnable interface so
- * that opening a file does not freeze FFX.
+ * ffx.potential.parsers package. The OpenFile class implements the Runnable
+ * interface so that opening a file does not freeze the FFX GUI.
  *
  * @author Michael J. Schnieders
- *
  */
 public class FileOpener
         implements Runnable {
@@ -57,7 +57,8 @@ public class FileOpener
     private long time;
 
     /**
-     * <p>Constructor for FileOpener.</p>
+     * <p>
+     * Constructor for FileOpener.</p>
      *
      * @param systemFilter a {@link ffx.potential.parsers.SystemFilter} object.
      * @param mainPanel a {@link ffx.ui.MainPanel} object.
@@ -162,17 +163,18 @@ public class FileOpener
 
     private void stopTimer(FFXSystem ffxSystem) {
         time += System.nanoTime();
-        logger.info(" Opened " + ffxSystem.toString() + " with " + ffxSystem.getAtomList().size() + " atoms.\n" + "File Op Time  (msec): " + time * 1.0e-9);
+        logger.log(Level.INFO, " Opened {0} with {1} atoms.\n File Op Time  (msec): {2}",
+                new Object[]{ffxSystem.toString(), ffxSystem.getAtomList().size(), time * 1.0e-9});
         Runtime runtime = Runtime.getRuntime();
         if (gc) {
             runtime.runFinalization();
             runtime.gc();
             long moleculeMemory = (runtime.totalMemory() - runtime.freeMemory()) - occupiedMemory;
-            logger.info(" System Memory  (Kb): " + moleculeMemory / KB);
+            logger.log(Level.INFO, " System Memory  (Kb): {0}", moleculeMemory / KB);
         }
         occupiedMemory = runtime.totalMemory() - runtime.freeMemory();
         if (gc) {
-            logger.info(" Memory In Use  (Kb): " + occupiedMemory / KB);
+            logger.log(Level.INFO, " Memory In Use  (Kb): {0}", occupiedMemory / KB);
         }
     }
 }

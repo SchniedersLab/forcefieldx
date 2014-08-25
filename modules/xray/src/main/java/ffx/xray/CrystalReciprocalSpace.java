@@ -1134,11 +1134,11 @@ public class CrystalReciprocalSpace {
             switch (gridMethod) {
                 case SPATIAL:
                     solventDensityRegion.assignAtomsToCells();
-                    //parallelTeam.execute(solventDensityRegion);
+                    parallelTeam.execute(solventDensityRegion);
                     break;
                 case SLICE:
                 default:
-                //parallelTeam.execute(solventSliceRegion);
+                    parallelTeam.execute(solventSliceRegion);
             }
         } catch (Exception e) {
             String message = "Fatal exception evaluating solvent electron density.";
