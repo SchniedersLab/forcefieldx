@@ -37,7 +37,7 @@ public abstract class Integrator {
 
     public enum Integrators {
 
-        BEEMAN, RESPA, STOCHASTIC
+        BEEMAN, RESPA, STOCHASTIC, VELOCITYVERLET
     };
 
     abstract public void setTimeStep(double dt);

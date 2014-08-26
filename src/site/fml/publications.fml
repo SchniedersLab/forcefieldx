@@ -9,14 +9,13 @@
         <title>2014</title>
         <faq id="17">
             <question>
-                Park, J., Nessler, I., McClain, B., Macikenas D., Baltrusaitis, J. and M. Schnieders,
+                Park, J., Nessler, I., McClain, B., Macikenas D., Baltrusaitis, J. and M. J. Schnieders,
                 Absolute Organic Crystal Thermodynamics: Growth of the Asymmetric Unit into a Crystal via Alchemy.
                 <i>Journal of Chemical Theory and Computation</i>
-                <b>2014</b>
-                <i>accepted</i>
-                <!-- a href="http://dx.doi.org/">
+                <b>2014</b> 10, (7), 2781-2791.
+                <a href="http://dx.doi.org/10.1021/ct500180m">
                     <img src="images/pdf.png" alt="PDF"/>
-                </a -->
+                </a>
             </question>
             <answer>
                 <p>
@@ -80,10 +79,10 @@
         </faq>
         <faq id="15">
             <question>
-                Lipparini, F., Lagardère, L., Stamm, B., Cancès, E., Schnieders, M., Ren P., Maday, Y. and J.-P. Piquemal,
+                Lipparini, F., Lagardère, L., Stamm, B., Cancès, E., Schnieders, M. J., Ren P., Maday, Y. and J.-P. Piquemal,
                 Scalable Evaluation of Polarization Energy and Associated Forces in Polarizable Molecular Dynamics: I. Toward Massively Parallel Direct Space Computations.
                 <i>Journal of Chemical Theory and Computation</i>
-                <b>2014</b> Article ASAP.
+                <b>2014</b> 10 (4), 1638-1651.
                 <a href="http://dx.doi.org/10.1021/ct401096t">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>

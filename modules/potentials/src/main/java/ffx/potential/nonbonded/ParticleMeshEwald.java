@@ -2334,6 +2334,9 @@ public class ParticleMeshEwald implements LambdaInterface {
                 private double fX[], fY[], fZ[];
                 private double fXCR[], fYCR[], fZCR[];
                 private int count;
+                // Extra padding to avert cache interference.
+                private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
+                private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
                 public PermanentRealSpaceFieldLoop() {
                     super();
@@ -3219,15 +3222,15 @@ public class ParticleMeshEwald implements LambdaInterface {
 
         public DirectRegion(int nt) {
             directLoop = new DirectLoop[nt];
-            for (int i = 0; i < nt; i++) {
-                directLoop[i] = new DirectLoop();
-            }
         }
 
         @Override
         public void run() throws Exception {
+            int ti = getThreadIndex();
+            if (directLoop[ti] == null) {
+                directLoop[ti] = new DirectLoop();
+            }
             try {
-                int ti = getThreadIndex();
                 execute(0, nAtoms - 1, directLoop[ti]);
             } catch (Exception e) {
                 String message = "Fatal exception computing the direct induced dipoles in thread " + getThreadIndex() + "\n";
@@ -3702,8 +3705,10 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 work[10], work[11], work[12], work[13], work[14]);
                         // Rotate symmetry mate gradients
                         if (iSymm != 0) {
-                            crystal.applyTransSymRot(nAtoms, gxk_local, gyk_local, gzk_local,
-                                    gxk_local, gyk_local, gzk_local, symOp, rot_local);
+                            crystal.applyTransSymRot(nAtoms,
+                                    gxk_local, gyk_local, gzk_local,
+                                    gxk_local, gyk_local, gzk_local,
+                                    symOp, rot_local);
                         }
                         // Sum symmetry mate gradients into asymmetric unit gradients
                         for (int j = 0; j < nAtoms; j++) {
@@ -3809,7 +3814,6 @@ public class ParticleMeshEwald implements LambdaInterface {
                             maskingd_local[j] = d11scale;
                         }
                     }
-
                     final double xi = x[i];
                     final double yi = y[i];
                     final double zi = z[i];

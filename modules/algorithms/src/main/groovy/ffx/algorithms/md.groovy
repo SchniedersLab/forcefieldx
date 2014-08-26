@@ -52,7 +52,7 @@ double temperature = 298.15;
 // Thermostats [ ADIABATIC, BERENDSEN, BUSSI ]
 Thermostats thermostat = null;
 
-// Integrators [ BEEMAN, RESPA, STOCHASTIC]
+// Integrators [ BEEMAN, RESPA, STOCHASTIC, VELOCITYVERLET]
 Integrators integrator = null;
 
 // Reset velocities (ignored if a restart file is given)
@@ -72,7 +72,7 @@ def cli = new CliBuilder(usage:' ffxc md [options] <filename>');
 cli.h(longOpt:'help', 'Print this message.');
 cli.b(longOpt:'thermostat', args:1, argName:'Berendsen', 'Thermostat: [Adiabatic / Berendsen / Bussi]');
 cli.d(longOpt:'dt', args:1, argName:'1.0', 'Time discretization (fsec).');
-cli.i(longOpt:'integrate', args:1, argName:'Beeman', 'Integrator: [Beeman / RESPA / Stochastic]');
+cli.i(longOpt:'integrate', args:1, argName:'Beeman', 'Integrator: [Beeman / RESPA / Stochastic / VELOCITYVERLET]');
 cli.l(longOpt:'log', args:1, argName:'0.01', 'Interval to log thermodyanamics (psec).');
 cli.n(longOpt:'steps', args:1, argName:'1000000', 'Number of molecular dynamics steps.');
 cli.p(longOpt:'polarization', args:1, argName:'Mutual', 'Polarization: [None / Direct / Mutual]');
