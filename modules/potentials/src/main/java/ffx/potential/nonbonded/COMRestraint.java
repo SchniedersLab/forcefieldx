@@ -120,9 +120,8 @@ public class COMRestraint implements LambdaInterface {
             dx[0] = currentCOM[0][i] - initialCOM[0][i];
             dx[1] = currentCOM[1][i] - initialCOM[1][i];
             dx[2] = currentCOM[2][i] - initialCOM[2][i];
-            logger.info(String.format(" Diff in COM %12.8f,%12.8f,%12.8f",dx[0], dx[1], dx[2]));
+
             double r2 = rsq(dx);
-            logger.info(String.format(" r2 %12.8f", r2));
             residual += r2;
             for (int j = 0; j < nAtoms; j++) {
                 if (gradient || lambdaTerm) {
@@ -147,8 +146,6 @@ public class COMRestraint implements LambdaInterface {
             dEdL = dLambdaPow * forceConstant * residual;
             d2EdL2 = d2LambdaPow * forceConstant * residual;
         }
-        logger.info(String.format(" Restraint Energy %16.8f", forceConstant * residual * lambdaPow));
-        logger.info(String.format(" Restraint E terms %12.8f,%12.8f,%12.8f", forceConstant, residual, lambdaPow));
         return forceConstant * residual * lambdaPow;
     }
 
@@ -367,7 +364,6 @@ public class COMRestraint implements LambdaInterface {
                 lambdaPow = c3 * l3 + c4 * l4 + c5 * l5;
                 dLambdaPow = (threeC3 * l2 + fourC4 * l3 + fiveC5 * l4) * dldgl;
                 d2LambdaPow = (sixC3 * l + twelveC4 * l2 + twentyC5 * l3) * dldgl * dldgl;
-                logger.info(String.format(" lambda %12.8f, lambdaPow %12.8f", lambda, lambdaPow));
             } else {
                 lambdaPow = 1.0;
                 dLambdaPow = 0.0;
