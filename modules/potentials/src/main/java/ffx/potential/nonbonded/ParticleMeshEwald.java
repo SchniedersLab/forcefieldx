@@ -1154,18 +1154,17 @@ public class ParticleMeshEwald implements LambdaInterface {
             vacuumNeighborList.buildList(coords, vaporLists, isSoft, true, true);
 
             /*
-            sb = new StringBuilder();
-            for (int i=0; i<nAtoms; i++) {
-                int list[] = vaporLists[0][i];
-                sb.append(String.format(" Atom %d:", i+1));
-                for (int j=0; j<list.length; j++) {
-                    sb.append(String.format(" %d", list[j]+1));
-                }
-                sb.append("\n");
-            }
-            logger.info(sb.toString());
-            */
-
+             sb = new StringBuilder();
+             for (int i=0; i<nAtoms; i++) {
+             int list[] = vaporLists[0][i];
+             sb.append(String.format(" Atom %d:", i+1));
+             for (int j=0; j<list.length; j++) {
+             sb.append(String.format(" %d", list[j]+1));
+             }
+             sb.append("\n");
+             }
+             logger.info(sb.toString());
+             */
             vaporPermanentSchedule = vacuumNeighborList.getPairwiseSchedule();
             vaporEwaldSchedule = vaporPermanentSchedule;
             vacuumRanges = new Range[maxThreads];
@@ -1352,13 +1351,42 @@ public class ParticleMeshEwald implements LambdaInterface {
 
         logger.info(String.format("\n Real Space: %7.4f (sec)", total));
         logger.info("           Electric Field");
-        logger.info(" Thread    Direct  SCF     Energy");
+        logger.info(" Thread    Direct  SCF     Energy     Counts");
+        long minPerm = Long.MAX_VALUE;
+        long maxPerm = 0;
+        long minSCF = Long.MAX_VALUE;
+        long maxSCF = 0;
+        long minEnergy = Long.MAX_VALUE;
+        long maxEnergy = 0;
+        int minCount = Integer.MAX_VALUE;
+        int maxCount = Integer.MIN_VALUE;
+
         for (int i = 0; i < maxThreads; i++) {
-            logger.info(String.format("    %3d   %7.4f %7.4f %7.4f", i,
-                    realSpacePermTime[i] * toSeconds, realSpaceSCFTime[i] * toSeconds, realSpaceEnergyTime[i] * toSeconds));
+            int count = realSpaceEnergyRegion.realSpaceEnergyLoop[i].getCount();
+            logger.info(String.format("    %3d   %7.4f %7.4f %7.4f %10d", i,
+                    realSpacePermTime[i] * toSeconds, realSpaceSCFTime[i] * toSeconds,
+                    realSpaceEnergyTime[i] * toSeconds, count));
+            minPerm = min(realSpacePermTime[i], minPerm);
+            maxPerm = max(realSpacePermTime[i], maxPerm);
+            minSCF = min(realSpaceSCFTime[i], minSCF);
+            maxSCF = max(realSpaceSCFTime[i], maxSCF);
+            minEnergy = min(realSpaceEnergyTime[i], minEnergy);
+            maxEnergy = max(realSpaceEnergyTime[i], maxEnergy);
+            minCount = min(count, minCount);
+            maxCount = max(count, maxCount);
         }
-        logger.info(String.format(" Actual   %7.4f %7.4f %7.4f",
-                realSpacePermTotal * toSeconds, realSpaceSCFTotal * toSeconds, realSpaceEnergyTotal * toSeconds));
+        logger.info(String.format(" Min      %7.4f %7.4f %7.4f %10d",
+                minPerm * toSeconds, minSCF * toSeconds,
+                minEnergy * toSeconds, minCount));
+        logger.info(String.format(" Max      %7.4f %7.4f %7.4f %10d",
+                maxPerm * toSeconds, maxSCF * toSeconds,
+                maxEnergy * toSeconds, maxCount));
+        logger.info(String.format(" Delta    %7.4f %7.4f %7.4f %10d",
+                (maxPerm - minPerm) * toSeconds, (maxSCF - minSCF) * toSeconds,
+                (maxEnergy - minEnergy) * toSeconds, (maxCount - minCount)));
+        logger.info(String.format(" Actual   %7.4f %7.4f %7.4f %10d",
+                realSpacePermTotal * toSeconds, realSpaceSCFTotal * toSeconds,
+                realSpaceEnergyTotal * toSeconds, realSpaceEnergyRegion.getInteractions()));
     }
 
     /**
@@ -2306,6 +2334,9 @@ public class ParticleMeshEwald implements LambdaInterface {
                 private double fX[], fY[], fZ[];
                 private double fXCR[], fYCR[], fZCR[];
                 private int count;
+                // Extra padding to avert cache interference.
+                private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
+                private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
                 public PermanentRealSpaceFieldLoop() {
                     super();
@@ -3191,15 +3222,15 @@ public class ParticleMeshEwald implements LambdaInterface {
 
         public DirectRegion(int nt) {
             directLoop = new DirectLoop[nt];
-            for (int i = 0; i < nt; i++) {
-                directLoop[i] = new DirectLoop();
-            }
         }
 
         @Override
         public void run() throws Exception {
+            int ti = getThreadIndex();
+            if (directLoop[ti] == null) {
+                directLoop[ti] = new DirectLoop();
+            }
             try {
-                int ti = getThreadIndex();
                 execute(0, nAtoms - 1, directLoop[ti]);
             } catch (Exception e) {
                 String message = "Fatal exception computing the direct induced dipoles in thread " + getThreadIndex() + "\n";
@@ -3674,8 +3705,10 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 work[10], work[11], work[12], work[13], work[14]);
                         // Rotate symmetry mate gradients
                         if (iSymm != 0) {
-                            crystal.applyTransSymRot(nAtoms, gxk_local, gyk_local, gzk_local,
-                                    gxk_local, gyk_local, gzk_local, symOp, rot_local);
+                            crystal.applyTransSymRot(nAtoms,
+                                    gxk_local, gyk_local, gzk_local,
+                                    gxk_local, gyk_local, gzk_local,
+                                    symOp, rot_local);
                         }
                         // Sum symmetry mate gradients into asymmetric unit gradients
                         for (int j = 0; j < nAtoms; j++) {
@@ -3705,6 +3738,10 @@ public class ParticleMeshEwald implements LambdaInterface {
                     }
 
                 }
+            }
+
+            public int getCount() {
+                return count;
             }
 
             @Override
@@ -3777,7 +3814,6 @@ public class ParticleMeshEwald implements LambdaInterface {
                             maskingd_local[j] = d11scale;
                         }
                     }
-
                     final double xi = x[i];
                     final double yi = y[i];
                     final double zi = z[i];
@@ -4758,7 +4794,8 @@ public class ParticleMeshEwald implements LambdaInterface {
                         double in[] = globalMultipole[0][i];
                         double cii = in[t000] * in[t000];
                         double dii = in[t100] * in[t100] + in[t010] * in[t010] + in[t001] * in[t001];
-                        double qii = in[t200] * in[t200] + in[t020] * in[t020] + in[t002] * in[t002] + 2.0 * (in[t110] * in[t110] + in[t101] * in[t101] + in[t011] * in[t011]);
+                        double qii = in[t200] * in[t200] + in[t020] * in[t020] + in[t002] * in[t002]
+                                + 2.0 * (in[t110] * in[t110] + in[t101] * in[t101] + in[t011] * in[t011]);
                         eSelf += aewald1 * (cii + aewald2 * (dii / 3.0 + 2.0 * aewald2 * qii / 45.0));
                     }
                 }
@@ -4769,6 +4806,14 @@ public class ParticleMeshEwald implements LambdaInterface {
                 /**
                  * Permanent multipole reciprocal space energy and gradient.
                  */
+                final double recip[][] = crystal.getUnitCell().A;
+
+                /*
+                 if (getThreadIndex() == 0) {
+                 logger.info(String.format(" %16.8f %16.8f %16.8f", recip[0][0], recip[0][1], recip[0][2]));
+                 logger.info(String.format(" %16.8f %16.8f %16.8f", recip[1][0], recip[1][1], recip[1][2]));
+                 logger.info(String.format(" %16.8f %16.8f %16.8f", recip[2][0], recip[2][1], recip[2][2]));
+                 } */
                 double dUdL = 0.0;
                 double d2UdL2 = 0.0;
                 for (int i = lb; i <= ub; i++) {
@@ -4776,6 +4821,13 @@ public class ParticleMeshEwald implements LambdaInterface {
                         final double phi[] = cartMultipolePhi[i];
                         final double mpole[] = multipole[i];
                         final double fmpole[] = fracMultipoles[i];
+
+                        /*
+                         if (i == 0) {
+                         logger.info(String.format(" %16.8f %16.8f %16.8f", phi[0], phi[1], phi[2]));
+                         logger.info(String.format(" %16.8f %16.8f %16.8f", mpole[0], mpole[1], mpole[2]));
+                         logger.info(String.format(" %16.8f %16.8f %16.8f", fmpole[0], fmpole[1], fmpole[2]));
+                         } */
                         double e = mpole[t000] * phi[t000] + mpole[t100] * phi[t100]
                                 + mpole[t010] * phi[t010] + mpole[t001] * phi[t001]
                                 + oneThird * (mpole[t200] * phi[t200]
@@ -4803,7 +4855,6 @@ public class ParticleMeshEwald implements LambdaInterface {
                             gx *= nfftX;
                             gy *= nfftY;
                             gz *= nfftZ;
-                            final double recip[][] = crystal.getUnitCell().A;
                             final double dfx = recip[0][0] * gx + recip[0][1] * gy + recip[0][2] * gz;
                             final double dfy = recip[1][0] * gx + recip[1][1] * gy + recip[1][2] * gz;
                             final double dfz = recip[2][0] * gx + recip[2][1] * gy + recip[2][2] * gz;

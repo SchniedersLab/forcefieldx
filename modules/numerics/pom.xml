@@ -27,6 +27,7 @@
                 <targetPath>ffx/numerics/fft</targetPath>
                 <includes>
                     <include>*.cu*</include>
+                    <include>*.cl</include>
                 </includes>
             </resource>
         </resources>

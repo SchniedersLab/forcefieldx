@@ -179,7 +179,7 @@
                     </tr>
                     <tr>
                         <td>
-                            <a href="http://www.oracle.com/technetwork/java/javase/downloads">
+                            <a target="_blank" href="http://www.oracle.com/technetwork/java/javase/downloads">
                                 Java SE Development Kit (JDK)
                             </a>
                         </td>
@@ -195,7 +195,7 @@
                     </tr>
                     <tr>
                         <td>
-                            <a href="http://maven.apache.org">Maven</a>
+                            <a target="_blank" href="http://maven.apache.org">Maven</a>
                         </td>
                         <td>
                             Apache Maven is a software project management and comprehension tool. Based on
@@ -208,7 +208,22 @@
                     </tr>
                     <tr>
                         <td>
-                            <a href="http://netbeans.org">NetBeans IDE</a>
+                            <a target="_blank" href="http://www.yourkit.com/java/profiler/index.jsp">
+                                <img src="images/yklogo.png" alt="YourKit Java Profiler"/>
+                            </a>
+                        </td>
+                        <td>
+                            YourKit supports the Force Field X open source project with its full-featured Java Profiler.
+                            YourKit, LLC is the creator of innovative and intelligent tools for profiling
+                            Java and .NET applications.
+                        </td>
+                        <td>
+                            2014
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a target="_blank" href="http://netbeans.org">NetBeans IDE</a>
                         </td>
                         <td>
                             The NetBeans IDE is an award-winning integrated development environment available
@@ -220,7 +235,7 @@
                     </tr>
                     <tr>
                         <td>
-                            <a href="http://git-scm.com">GIT Version Control</a>
+                            <a target="_blank" href="http://git-scm.com">GIT Version Control</a>
                         </td>
                         <td>
                             Git is a free and open source, distributed version control system designed to handle

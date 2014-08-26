@@ -505,12 +505,18 @@ public class SpaceGroup {
      * @since 1.0
      */
     public static SpaceGroup spaceGroupFactory(int number) {
-        if (number > 0 && number <= 100) {
+        if (number > 0 && number <= 50) {
             return getSpaceGroup1(number);
-        } else if (number > 100 && number <= 200) {
+        } else if (number > 50 && number <= 100) {
             return getSpaceGroup2(number);
-        } else if (number > 200 && number <= 230) {
+        } else if (number > 100 && number <= 150) {
             return getSpaceGroup3(number);
+        } else if (number > 150 && number <= 200) {
+            return getSpaceGroup4(number);
+        } else if (number > 200 && number <= 215) {
+            return getSpaceGroup5(number);
+        } else if (number > 215 && number <= 230) {
+            return getSpaceGroup6(number);
         }
         return null;
     }
@@ -1140,6 +1146,14 @@ public class SpaceGroup {
                         new SymOp(SymOp.Rot_X_mY_Z, SymOp.Tr_12_12_0),
                         new SymOp(SymOp.Rot_mX_Y_Z, SymOp.Tr_12_12_0));
                 break;
+            default:
+        }
+        return spaceGroup;
+    }
+
+    private static SpaceGroup getSpaceGroup2(int num) {
+        SpaceGroup spaceGroup = null;
+        switch (num) {
             case 51:
                 spaceGroup = new SpaceGroup(51, 8, 8, "Pmma", "PGmmm", "P 21/m 2/m 2/a",
                         ORTHORHOMBIC, L222,
@@ -1985,7 +1999,7 @@ public class SpaceGroup {
         return spaceGroup;
     }
 
-    private static SpaceGroup getSpaceGroup2(int num) {
+    private static SpaceGroup getSpaceGroup3(int num) {
         SpaceGroup spaceGroup = null;
         switch (num) {
             case 101:
@@ -2966,6 +2980,14 @@ public class SpaceGroup {
                         new SymOp(SymOp.Rot_XmY_mY_mZ, SymOp.Tr_0_0_0),
                         new SymOp(SymOp.Rot_mX_mXY_mZ, SymOp.Tr_0_0_0));
                 break;
+            default:
+        }
+        return spaceGroup;
+    }
+
+    private static SpaceGroup getSpaceGroup4(int num) {
+        SpaceGroup spaceGroup = null;
+        switch (num) {
             case 151:
                 spaceGroup = new SpaceGroup(151, 6, 6, "P3112", "PG312", "P 31 1 2",
                         TRIGONAL, L223,
@@ -3967,7 +3989,7 @@ public class SpaceGroup {
         return spaceGroup;
     }
 
-    private static SpaceGroup getSpaceGroup3(int num) {
+    private static SpaceGroup getSpaceGroup5(int num) {
         SpaceGroup spaceGroup = null;
         switch (num) {
             case 201:
@@ -4804,6 +4826,14 @@ public class SpaceGroup {
                         new SymOp(SymOp.Rot_mZ_Y_mX, SymOp.Tr_0_0_0),
                         new SymOp(SymOp.Rot_mZ_mY_X, SymOp.Tr_0_0_0));
                 break;
+            default:
+        }
+        return spaceGroup;
+    }
+
+    private static SpaceGroup getSpaceGroup6(int num) {
+        SpaceGroup spaceGroup = null;
+        switch (num) {
             case 216:
                 spaceGroup = new SpaceGroup(216, 96, 24, "F-43m", "PG4bar3m", "F -4 3 m",
                         CUBIC, LM3M,

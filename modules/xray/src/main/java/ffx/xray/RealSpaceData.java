@@ -109,9 +109,9 @@ public class RealSpaceData implements DataContainer {
         }
 
         // get Fo-Fc difference density
-        diffractiondata.crs_fc[0].computeAtomicGradients(diffractiondata.refinementdata[0].fofc1,
-                diffractiondata.refinementdata[0].freer,
-                diffractiondata.refinementdata[0].rfreeflag,
+        diffractiondata.crs_fc[0].computeAtomicGradients(diffractiondata.refinementData[0].fofc1,
+                diffractiondata.refinementData[0].freer,
+                diffractiondata.refinementData[0].rfreeflag,
                 RefinementMode.COORDINATES);
 
         refinementdata[0].ori[0] = 0;

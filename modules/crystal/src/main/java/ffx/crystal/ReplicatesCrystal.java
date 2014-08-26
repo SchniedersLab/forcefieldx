@@ -34,17 +34,18 @@ import java.util.logging.Logger;
  * <br>
  * The replicates integers l, m and n are chosen large enough for the
  * ReplicatesCrystal to allow consistent application of the minimum image
- * convention. This is ensured by increasing l, m and/or n until a sphere of
- * of necessary radius fits entirely inside the ReplicatedCrystal.
+ * convention. This is ensured by increasing l, m and/or n until a sphere of of
+ * necessary radius fits entirely inside the ReplicatedCrystal.
  * <br>
  *
  * @author Michael J. Schnieders
  *
  * @since 1.0
- * 
+ *
  * @see Crystal
  */
 public class ReplicatesCrystal extends Crystal {
+
     /**
      * The logger.
      */

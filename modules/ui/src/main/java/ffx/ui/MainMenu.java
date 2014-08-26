@@ -27,10 +27,31 @@ import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.io.File;
+import java.net.URL;
+import java.util.logging.Logger;
 
-import javax.swing.*;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.ButtonGroup;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JRadioButtonMenuItem;
+import javax.swing.JToolBar;
+import javax.swing.KeyStroke;
 
-import static javax.swing.Action.*;
+import static javax.swing.Action.ACCELERATOR_KEY;
+import static javax.swing.Action.ACTION_COMMAND_KEY;
+import static javax.swing.Action.LARGE_ICON_KEY;
+import static javax.swing.Action.LONG_DESCRIPTION;
+import static javax.swing.Action.MNEMONIC_KEY;
+import static javax.swing.Action.NAME;
+import static javax.swing.Action.SHORT_DESCRIPTION;
+import static javax.swing.Action.SMALL_ICON;
 
 import org.apache.commons.lang3.SystemUtils;
 
@@ -44,6 +65,7 @@ import ffx.ui.properties.FFXLocale;
  */
 public class MainMenu extends JMenuBar {
 
+    private static final Logger logger = Logger.getLogger(MainMenu.class.getName());
     private static final long serialVersionUID = 1L;
     private static final int keyMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
     // Controller References
@@ -56,6 +78,9 @@ public class MainMenu extends JMenuBar {
     private JToolBar toolBar;
     private Insets insets;
     private ImageIcon blankIcon;
+    // Structure Menu
+    private boolean includeStructureMenu = false;
+
     // Selection Menu
     private JCheckBoxMenuItem highlightCBMI;
     private JCheckBoxMenuItem labelResiduesMI;
@@ -99,7 +124,8 @@ public class MainMenu extends JMenuBar {
      * @param f Main application controller.
      */
     /**
-     * <p>Constructor for MainMenu.</p>
+     * <p>
+     * Constructor for MainMenu.</p>
      *
      * @param f a {@link ffx.ui.MainPanel} object.
      */
@@ -119,11 +145,22 @@ public class MainMenu extends JMenuBar {
         loader = getClass().getClassLoader();
         blankIcon = new ImageIcon(loader.getResource(icons + "blank.gif"));
 
+        String value = System.getProperty("structures", "false").trim();
+        try {
+            includeStructureMenu = Boolean.parseBoolean(value);
+        } catch (Exception e) {
+            includeStructureMenu = false;
+        }
+
         /**
          * Main Menubar
          */
         JMenu fileMenu = addMenu("File", 'F');
         JMenu selectionMenu = addMenu("Selection", 'E');
+        JMenu structureMenu = null;
+        if (includeStructureMenu) {
+            structureMenu = addMenu("Structure", 'S');
+        }
         JMenu displayMenu = addMenu("Display", 'D');
         JMenu colorMenu = addMenu("Color", 'C');
         JMenu optionsMenu = addMenu("Options", 'O');
@@ -170,6 +207,15 @@ public class MainMenu extends JMenuBar {
         labelAtomsMI.setSelected(false);
         labelResiduesMI.setSelected(false);
         toolBar.addSeparator();
+
+        /**
+         * Structure Menu - Events Handled by the MainPanel.
+         */
+        if (includeStructureMenu) {
+            // Locate a jar file that has PDB Structures.
+            String file = "ffx/xray/structures/1N7S.pdb";
+            addMenuItem(structureMenu, "BLANK", file, '.', -1, mainPanel);
+        }
 
         /**
          * Display Menu - Events handled by the GraphicsCanvas.
@@ -396,7 +442,12 @@ public class MainMenu extends JMenuBar {
 
     private void configureAction(Action a, String icon, String actionCommand,
             int mnemonic, int accelerator) {
-        String name = locale.getValue(actionCommand);
+        String name;
+        try {
+            name = locale.getValue(actionCommand);
+        } catch (Exception e) {
+            name = actionCommand;
+        }
         ImageIcon imageIcon = getIcon(icon);
         KeyStroke keyStroke = KeyStroke.getKeyStroke(accelerator, keyMask);
         a.putValue(ACCELERATOR_KEY, keyStroke);
@@ -433,7 +484,8 @@ public class MainMenu extends JMenuBar {
     }
 
     /**
-     * <p>getHighlighting</p>
+     * <p>
+     * getHighlighting</p>
      *
      * @return a boolean.
      */
@@ -442,7 +494,8 @@ public class MainMenu extends JMenuBar {
     }
 
     /**
-     * <p>getMouseMode</p>
+     * <p>
+     * getMouseMode</p>
      *
      * @return a {@link ffx.ui.GraphicsCanvas.MouseMode} object.
      */
@@ -454,7 +507,8 @@ public class MainMenu extends JMenuBar {
     }
 
     /**
-     * <p>getPicking</p>
+     * <p>
+     * getPicking</p>
      *
      * @return a boolean.
      */
@@ -472,7 +526,8 @@ public class MainMenu extends JMenuBar {
     }
 
     /**
-     * <p>isAxisShowing</p>
+     * <p>
+     * isAxisShowing</p>
      *
      * @return a boolean.
      */
@@ -481,7 +536,8 @@ public class MainMenu extends JMenuBar {
     }
 
     /**
-     * <p>isMenuShowing</p>
+     * <p>
+     * isMenuShowing</p>
      *
      * @return a boolean.
      */
@@ -490,7 +546,8 @@ public class MainMenu extends JMenuBar {
     }
 
     /**
-     * <p>isPickingActive</p>
+     * <p>
+     * isPickingActive</p>
      *
      * @return a boolean.
      */
@@ -499,14 +556,16 @@ public class MainMenu extends JMenuBar {
     }
 
     /**
-     * <p>toggleSystemShowing</p>
+     * <p>
+     * toggleSystemShowing</p>
      */
     public void toggleSystemShowing() {
         systemsCBMI.doClick();
     }
 
     /**
-     * <p>isSystemShowing</p>
+     * <p>
+     * isSystemShowing</p>
      *
      * @return a boolean.
      */
@@ -515,14 +574,16 @@ public class MainMenu extends JMenuBar {
     }
 
     /**
-     * <p>toggleToolBarShowing</p>
+     * <p>
+     * toggleToolBarShowing</p>
      */
     public void toggleToolBarShowing() {
         toolBarCBMI.doClick();
     }
 
     /**
-     * <p>setAtomLabels</p>
+     * <p>
+     * setAtomLabels</p>
      *
      * @param b a boolean.
      */
@@ -531,7 +592,8 @@ public class MainMenu extends JMenuBar {
     }
 
     /**
-     * <p>setAxisShowing</p>
+     * <p>
+     * setAxisShowing</p>
      *
      * @param b a boolean.
      */
@@ -551,7 +613,8 @@ public class MainMenu extends JMenuBar {
     }
 
     /**
-     * <p>setHighlighting</p>
+     * <p>
+     * setHighlighting</p>
      *
      * @param h a boolean.
      */
@@ -560,7 +623,8 @@ public class MainMenu extends JMenuBar {
     }
 
     /**
-     * <p>setMenuShowing</p>
+     * <p>
+     * setMenuShowing</p>
      *
      * @param b a boolean.
      */
@@ -569,7 +633,8 @@ public class MainMenu extends JMenuBar {
     }
 
     /**
-     * <p>setMouseMode</p>
+     * <p>
+     * setMouseMode</p>
      *
      * @param m a {@link ffx.ui.GraphicsCanvas.MouseMode} object.
      */
@@ -582,7 +647,8 @@ public class MainMenu extends JMenuBar {
     }
 
     /**
-     * <p>setPickBehavior</p>
+     * <p>
+     * setPickBehavior</p>
      *
      * @param pick a boolean.
      */
@@ -591,7 +657,8 @@ public class MainMenu extends JMenuBar {
     }
 
     /**
-     * <p>setPickLevel</p>
+     * <p>
+     * setPickLevel</p>
      *
      * @param arg a {@link java.lang.String} object.
      */
@@ -622,7 +689,8 @@ public class MainMenu extends JMenuBar {
     }
 
     /**
-     * <p>setResidueLabels</p>
+     * <p>
+     * setResidueLabels</p>
      *
      * @param b a boolean.
      */
@@ -631,7 +699,8 @@ public class MainMenu extends JMenuBar {
     }
 
     /**
-     * <p>setSystemShowing</p>
+     * <p>
+     * setSystemShowing</p>
      *
      * @param b a boolean.
      */
@@ -640,7 +709,8 @@ public class MainMenu extends JMenuBar {
     }
 
     /**
-     * <p>systemClick</p>
+     * <p>
+     * systemClick</p>
      */
     public void systemClick() {
         systemsCBMI.doClick();

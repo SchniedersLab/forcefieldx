@@ -219,7 +219,8 @@ public final class NeutronFormFactor implements FormFactor {
     private double resm[][] = new double[3][3];
 
     /**
-     * <p>Constructor for NeutronFormFactor.</p>
+     * <p>
+     * Constructor for NeutronFormFactor.</p>
      *
      * @param atom a {@link ffx.potential.bonded.Atom} object.
      */
@@ -228,7 +229,8 @@ public final class NeutronFormFactor implements FormFactor {
     }
 
     /**
-     * <p>Constructor for NeutronFormFactor.</p>
+     * <p>
+     * Constructor for NeutronFormFactor.</p>
      *
      * @param atom a {@link ffx.potential.bonded.Atom} object.
      * @param badd a double.
@@ -238,7 +240,8 @@ public final class NeutronFormFactor implements FormFactor {
     }
 
     /**
-     * <p>Constructor for NeutronFormFactor.</p>
+     * <p>
+     * Constructor for NeutronFormFactor.</p>
      *
      * @param atom a {@link ffx.potential.bonded.Atom} object.
      * @param badd a double.
@@ -280,7 +283,8 @@ public final class NeutronFormFactor implements FormFactor {
     }
 
     /**
-     * <p>getFormFactorIndex</p>
+     * <p>
+     * getFormFactorIndex</p>
      *
      * @param atom a {@link java.lang.String} object.
      * @return a int.
@@ -297,7 +301,8 @@ public final class NeutronFormFactor implements FormFactor {
     }
 
     /**
-     * <p>getFormFactorA</p>
+     * <p>
+     * getFormFactorA</p>
      *
      * @param atom a {@link java.lang.String} object.
      * @return an array of double.
@@ -314,7 +319,8 @@ public final class NeutronFormFactor implements FormFactor {
     }
 
     /**
-     * <p>getFormFactor</p>
+     * <p>
+     * getFormFactor</p>
      *
      * @param atom a {@link java.lang.String} object.
      * @return an array of double.
@@ -334,7 +340,8 @@ public final class NeutronFormFactor implements FormFactor {
     }
 
     /**
-     * <p>f</p>
+     * <p>
+     * f</p>
      *
      * @param hkl a {@link ffx.crystal.HKL} object.
      * @return a double.
@@ -349,12 +356,12 @@ public final class NeutronFormFactor implements FormFactor {
      */
     @Override
     public double rho(double f, double lambda, double xyz[]) {
-        diff(this.xyz, xyz, dxyz);
-        double r = VectorMath.r(dxyz);
+        diff(this.xyz, xyz, xyz);
+        double r = r(xyz);
         if (r > atom.getFormFactorWidth()) {
             return f;
         }
-        double sum = ainv[0] * exp(-0.5 * Crystal.quad_form(dxyz, uinv[0]));
+        double sum = ainv[0] * exp(-0.5 * Crystal.quad_form(xyz, uinv[0]));
         return f + (lambda * occ * twopi32 * sum);
     }
 
@@ -364,10 +371,8 @@ public final class NeutronFormFactor implements FormFactor {
     @Override
     public void rho_grad(double xyz[], double dfc, RefinementMode refinementmode) {
         diff(this.xyz, xyz, dxyz);
-        double r = VectorMath.r(dxyz);
+        double r = r(dxyz);
         double r2 = r * r;
-        double aex;
-        double rho;
         Arrays.fill(gradp, 0.0);
         Arrays.fill(gradu, 0.0);
 
@@ -401,7 +406,7 @@ public final class NeutronFormFactor implements FormFactor {
             refineocc = true;
         }
 
-        aex = ainv[0] * exp(-0.5 * Crystal.quad_form(dxyz, uinv[0]));
+        double aex = ainv[0] * exp(-0.5 * Crystal.quad_form(dxyz, uinv[0]));
 
         if (refinexyz) {
             vec3mat3(dxyz, uinv[0], resv);
@@ -439,7 +444,8 @@ public final class NeutronFormFactor implements FormFactor {
                 gradu[5] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[5]) - uinv[0][1][2] * 2.0);
             }
         }
-        rho = occ * twopi32 * gradp[3];
+
+        // double rho = occ * twopi32 * gradp[3];
 
         // x, y, z
         if (refinexyz) {

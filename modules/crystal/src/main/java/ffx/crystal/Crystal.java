@@ -274,7 +274,6 @@ public class Crystal {
                 for (int i = 1; i < spaceGroup.symOps.size(); i++) {
                     symop = spaceGroup.symOps.get(i);
                     rot = symop.rot;
-
                     index = 0;
                     if ((rot[1][1] * rot[1][2] == -1)
                             || (rot[2][1] * rot[2][2] == -1)

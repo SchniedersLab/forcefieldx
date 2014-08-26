@@ -225,6 +225,10 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
             gChemical[i] = new double[len];
         }
     }
+    
+    public Potential getDataEnergy() {
+        return dataEnergy;
+    }
 
     @Override
     public double energy(double[] x) {

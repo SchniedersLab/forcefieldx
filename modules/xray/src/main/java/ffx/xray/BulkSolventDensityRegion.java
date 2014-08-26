@@ -45,7 +45,8 @@ public class BulkSolventDensityRegion extends SpatialDensityRegion {
     private final BulkSolventList bulkSolventList;
 
     /**
-     * <p>Constructor for BulkSolventDensityRegion.</p>
+     * <p>
+     * Constructor for BulkSolventDensityRegion.</p>
      *
      * @param gX a int.
      * @param gY a int.

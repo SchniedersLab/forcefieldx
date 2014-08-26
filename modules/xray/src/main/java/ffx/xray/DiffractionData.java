@@ -22,17 +22,6 @@
  */
 package ffx.xray;
 
-import edu.rit.pj.ParallelTeam;
-
-import ffx.crystal.*;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.MolecularAssembly;
-import ffx.potential.bonded.Molecule;
-import ffx.potential.bonded.Residue;
-import ffx.potential.parsers.PDBFilter;
-import ffx.xray.CrystalReciprocalSpace.SolventModel;
-import ffx.xray.MTZWriter.MTZType;
-import ffx.xray.RefinementMinimize.RefinementMode;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -43,11 +32,29 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
+import edu.rit.pj.ParallelTeam;
+
+import ffx.crystal.CCP4MapWriter;
+import ffx.crystal.Crystal;
+import ffx.crystal.HKL;
+import ffx.crystal.ReflectionList;
+import ffx.crystal.Resolution;
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.bonded.Molecule;
+import ffx.potential.bonded.Residue;
+import ffx.potential.parsers.PDBFilter;
+import ffx.xray.CrystalReciprocalSpace.SolventModel;
+import ffx.xray.MTZWriter.MTZType;
+import ffx.xray.RefinementMinimize.RefinementMode;
+
 /**
- * <p>DiffractionData class.</p>
+ * <p>
+ * DiffractionData class.</p>
  *
  * @author Timothy D. Fenn
  *
@@ -56,30 +63,31 @@ public class DiffractionData implements DataContainer {
 
     private static final Logger logger = Logger.getLogger(DiffractionData.class.getName());
     protected final MolecularAssembly assembly[];
-    protected final String modelname;
-    protected final DiffractionFile dataname[];
+    protected final String modelName;
+    protected final DiffractionFile[] dataFiles;
     protected final int n;
     protected final Crystal crystal[];
     protected final Resolution resolution[];
-    protected final ReflectionList reflectionlist[];
-    protected final DiffractionRefinementData refinementdata[];
+    protected final ReflectionList[] reflectionList;
+    protected final DiffractionRefinementData[] refinementData;
     protected final CrystalReciprocalSpace crs_fc[];
     protected final CrystalReciprocalSpace crs_fs[];
-    public final int solventmodel;
-    protected final RefinementModel refinementmodel;
-    protected ScaleBulkMinimize scalebulkminimize[];
-    protected SigmaAMinimize sigmaaminimize[];
-    protected SplineMinimize splineminimize[];
-    protected CrystalStats crystalstats[];
+    public final int solventModel;
+    protected final RefinementModel refinementModel;
+    protected ScaleBulkMinimize[] scaleBulkMinimize;
+    protected SigmaAMinimize[] sigmaAMinimize;
+    protected SplineMinimize[] splineMinimize;
+    protected CrystalStats[] crystalStats;
+    protected ParallelTeam parallelTeam;
     protected boolean scaled[];
     // settings
-    public int rfreeflag;
-    public final double fsigfcutoff;
+    public int rFreeFlag;
+    public final double fsigfCutoff;
     public final boolean use_3g;
-    public final double aradbuff;
-    public final double xrayscaletol;
-    public final double sigmaatol;
-    public double xweight;
+    public final double aRadBuff;
+    public final double xrayScaleTol;
+    public final double sigmaATol;
+    public double xWeight;
     public final double bsimweight;
     public final double bnonzeroweight;
     public final double bmass;
@@ -211,21 +219,21 @@ public class DiffractionData implements DataContainer {
             DiffractionFile... datafile) {
 
         this.assembly = assembly;
-        this.solventmodel = solventmodel;
-        this.modelname = assembly[0].getFile().getName();
-        this.dataname = datafile;
+        this.solventModel = solventmodel;
+        this.modelName = assembly[0].getFile().getName();
+        this.dataFiles = datafile;
         this.n = datafile.length;
 
         int rflag = properties.getInt("rfreeflag", -1);
-        fsigfcutoff = properties.getDouble("fsigfcutoff", -1.0);
+        fsigfCutoff = properties.getDouble("fsigfcutoff", -1.0);
         gridsearch = properties.getBoolean("gridsearch", false);
         splinefit = properties.getBoolean("splinefit", true);
         use_3g = properties.getBoolean("use_3g", true);
-        aradbuff = properties.getDouble("aradbuff", 0.75);
+        aRadBuff = properties.getDouble("aradbuff", 0.75);
         double sampling = properties.getDouble("sampling", 0.6);
-        xrayscaletol = properties.getDouble("xrayscaletol", 1e-4);
-        sigmaatol = properties.getDouble("sigmaatol", 1.0);
-        xweight = properties.getDouble("xweight", 1.0);
+        xrayScaleTol = properties.getDouble("xrayscaletol", 1e-4);
+        sigmaATol = properties.getDouble("sigmaatol", 1.0);
+        xWeight = properties.getDouble("xweight", 1.0);
         bsimweight = properties.getDouble("bsimweight", 1.0);
         bnonzeroweight = properties.getDouble("bnonzeroweight", 1.0);
         bmass = properties.getDouble("bmass", 5.0);
@@ -238,12 +246,12 @@ public class DiffractionData implements DataContainer {
 
         crystal = new Crystal[n];
         resolution = new Resolution[n];
-        reflectionlist = new ReflectionList[n];
-        refinementdata = new DiffractionRefinementData[n];
-        scalebulkminimize = new ScaleBulkMinimize[n];
-        sigmaaminimize = new SigmaAMinimize[n];
-        splineminimize = new SplineMinimize[n];
-        crystalstats = new CrystalStats[n];
+        reflectionList = new ReflectionList[n];
+        refinementData = new DiffractionRefinementData[n];
+        scaleBulkMinimize = new ScaleBulkMinimize[n];
+        sigmaAMinimize = new SigmaAMinimize[n];
+        splineMinimize = new SplineMinimize[n];
+        crystalStats = new CrystalStats[n];
 
         // read in Fo/sigFo/FreeR
         File tmp;
@@ -252,9 +260,9 @@ public class DiffractionData implements DataContainer {
         if (crystalinit == null || resolutioninit == null) {
             for (int i = 0; i < n; i++) {
                 tmp = new File(datafile[i].filename);
-                reflectionlist[i] = datafile[i].diffractionfilter.getReflectionList(tmp, properties);
+                reflectionList[i] = datafile[i].diffractionfilter.getReflectionList(tmp, properties);
 
-                if (reflectionlist[i] == null) {
+                if (reflectionList[i] == null) {
                     logger.info(" Crystal information from the PDB or property file will be used.");
                     crystalinit = assembly[i].getCrystal().getUnitCell();
                     double res = datafile[i].diffractionfilter.getResolution(tmp, crystalinit);
@@ -262,24 +270,24 @@ public class DiffractionData implements DataContainer {
                         logger.severe("MTZ/CIF/CNS file does not contain full crystal information!");
                     } else {
                         resolutioninit = new Resolution(res, sampling);
-                        reflectionlist[i] = new ReflectionList(crystalinit, resolutioninit, properties);
+                        reflectionList[i] = new ReflectionList(crystalinit, resolutioninit, properties);
                     }
                 }
             }
         } else {
             for (int i = 0; i < n; i++) {
-                reflectionlist[i] = new ReflectionList(crystalinit, resolutioninit,
+                reflectionList[i] = new ReflectionList(crystalinit, resolutioninit,
                         properties);
             }
         }
 
         for (int i = 0; i < n; i++) {
-            crystal[i] = reflectionlist[i].crystal;
-            resolution[i] = reflectionlist[i].resolution;
-            refinementdata[i] = new DiffractionRefinementData(properties, reflectionlist[i]);
+            crystal[i] = reflectionList[i].crystal;
+            resolution[i] = reflectionList[i].resolution;
+            refinementData[i] = new DiffractionRefinementData(properties, reflectionList[i]);
             tmp = new File(datafile[i].filename);
-            datafile[i].diffractionfilter.readFile(tmp, reflectionlist[i],
-                    refinementdata[i], properties);
+            datafile[i].diffractionfilter.readFile(tmp, reflectionList[i],
+                    refinementData[i], properties);
         }
 
         if (!crystal[0].equals(assembly[0].getCrystal().getUnitCell())) {
@@ -290,18 +298,18 @@ public class DiffractionData implements DataContainer {
             StringBuilder sb = new StringBuilder();
             sb.append(" Refinement Settings\n\n");
             sb.append("  Target Function\n");
-            sb.append("  X-ray refinement weight (xweight): " + xweight + "\n");
+            sb.append("  X-ray refinement weight (xweight): " + xWeight + "\n");
             sb.append("  Use cctbx 3 Gaussians (use_3g): " + use_3g + "\n");
-            sb.append("  Atomic form factor radius buffer (aradbuff): " + aradbuff + "\n");
+            sb.append("  Atomic form factor radius buffer (aradbuff): " + aRadBuff + "\n");
             sb.append("  Reciprocal space sampling rate (sampling): " + sampling + "\n");
             sb.append("  Resolution dependent spline scale (splinefit): " + splinefit + "\n");
             sb.append("  Solvent grid search (gridsearch): " + gridsearch + "\n");
-            sb.append("  X-ray scale fit tolerance (xrayscaletol): " + xrayscaletol + "\n");
-            sb.append("  Sigma A fit tolerance (sigmaatol): " + sigmaatol + "\n\n");
+            sb.append("  X-ray scale fit tolerance (xrayscaletol): " + xrayScaleTol + "\n");
+            sb.append("  Sigma A fit tolerance (sigmaatol): " + sigmaATol + "\n\n");
             sb.append("  Reflections\n");
-            sb.append("  F/sigF cutoff (fsigfcutoff): " + fsigfcutoff + "\n");
+            sb.append("  F/sigF cutoff (fsigfcutoff): " + fsigfCutoff + "\n");
             sb.append("  R Free flag (rfreeflag) (if -1, value will be updated when data is read in): " + rflag + "\n");
-            sb.append("  Number of bins (nbins): " + reflectionlist[0].nbins + "\n\n");
+            sb.append("  Number of bins (nbins): " + reflectionList[0].nbins + "\n\n");
             sb.append("  B-Factors\n");
             sb.append("  Similarity weight (bsimweight): " + bsimweight + "\n");
             sb.append("  Non-zero weight (bnonzeroweight): " + bnonzeroweight + "\n");
@@ -317,13 +325,13 @@ public class DiffractionData implements DataContainer {
         }
 
         // now set up the refinement model
-        refinementmodel = new RefinementModel(assembly, refinemolocc);
+        refinementModel = new RefinementModel(assembly, refinemolocc);
 
         // initialize atomic form factors
-        for (Atom a : refinementmodel.atomarray) {
+        for (Atom a : refinementModel.atomarray) {
             a.setFormFactorIndex(-1);
-            XRayFormFactor atomff =
-                    new XRayFormFactor(a, use_3g, 2.0);
+            XRayFormFactor atomff
+                    = new XRayFormFactor(a, use_3g, 2.0);
             a.setFormFactorIndex(atomff.ffindex);
 
             if (a.getOccupancy() == 0.0) {
@@ -344,7 +352,7 @@ public class DiffractionData implements DataContainer {
                 } else if (rho > 0.001) {
                     arad += 0.1;
                 } else {
-                    arad += aradbuff;
+                    arad += aRadBuff;
                     a.setFormFactorWidth(arad);
                     break;
                 }
@@ -355,33 +363,31 @@ public class DiffractionData implements DataContainer {
         // set up FFT and run it
         crs_fc = new CrystalReciprocalSpace[n];
         crs_fs = new CrystalReciprocalSpace[n];
-        ParallelTeam parallelTeam = new ParallelTeam();
+        parallelTeam = new ParallelTeam();
         for (int i = 0; i < n; i++) {
-            crs_fc[i] = new CrystalReciprocalSpace(reflectionlist[i],
-                    refinementmodel.atomarray, parallelTeam, parallelTeam,
-                    false, dataname[i].neutron);
-            refinementdata[i].setCrystalReciprocalSpace_fc(crs_fc[i]);
+            crs_fc[i] = new CrystalReciprocalSpace(reflectionList[i],
+                    refinementModel.atomarray, parallelTeam, parallelTeam,
+                    false, dataFiles[i].neutron);
+            refinementData[i].setCrystalReciprocalSpace_fc(crs_fc[i]);
             crs_fc[i].setUse3G(use_3g);
-            crs_fc[i].setWeight(dataname[i].weight);
+            crs_fc[i].setWeight(dataFiles[i].weight);
             crs_fc[i].lambdaTerm = lambdaTerm;
-            crs_fs[i] = new CrystalReciprocalSpace(reflectionlist[i],
-                    refinementmodel.atomarray, parallelTeam, parallelTeam,
-                    true, dataname[i].neutron, solventmodel);
-            refinementdata[i].setCrystalReciprocalSpace_fs(crs_fs[i]);
+            crs_fs[i] = new CrystalReciprocalSpace(reflectionList[i],
+                    refinementModel.atomarray, parallelTeam, parallelTeam,
+                    true, dataFiles[i].neutron, solventmodel);
+            refinementData[i].setCrystalReciprocalSpace_fs(crs_fs[i]);
             crs_fs[i].setUse3G(use_3g);
-            crs_fs[i].setWeight(dataname[i].weight);
+            crs_fs[i].setWeight(dataFiles[i].weight);
             crs_fs[i].lambdaTerm = lambdaTerm;
 
-            crystalstats[i] = new CrystalStats(reflectionlist[i],
-                    refinementdata[i]);
+            crystalStats[i] = new CrystalStats(reflectionList[i],
+                    refinementData[i]);
         }
 
         scaled = new boolean[n];
-        for (int i = 0; i < n; i++) {
-            scaled[i] = false;
-        }
+        Arrays.fill(scaled, false);
     }
-    
+
     /**
      * read in a different assembly to average in structure factors
      *
@@ -397,8 +403,8 @@ public class DiffractionData implements DataContainer {
         // initialize atomic form factors
         for (Atom a : tmprefinementmodel.atomarray) {
             a.setFormFactorIndex(-1);
-            XRayFormFactor atomff =
-                    new XRayFormFactor(a, use_3g, 2.0);
+            XRayFormFactor atomff
+                    = new XRayFormFactor(a, use_3g, 2.0);
             a.setFormFactorIndex(atomff.ffindex);
 
             if (a.getOccupancy() == 0.0) {
@@ -419,7 +425,7 @@ public class DiffractionData implements DataContainer {
                 } else if (rho > 0.001) {
                     arad += 0.1;
                 } else {
-                    arad += aradbuff;
+                    arad += aRadBuff;
                     a.setFormFactorWidth(arad);
                     break;
                 }
@@ -428,45 +434,43 @@ public class DiffractionData implements DataContainer {
         }
 
         // set up FFT and run it
-        ParallelTeam parallelTeam = new ParallelTeam();
         for (int i = 0; i < n; i++) {
-            crs_fc[i] = new CrystalReciprocalSpace(reflectionlist[i],
+            crs_fc[i] = new CrystalReciprocalSpace(reflectionList[i],
                     tmprefinementmodel.atomarray, parallelTeam, parallelTeam,
-                    false, dataname[i].neutron);
-            refinementdata[i].setCrystalReciprocalSpace_fc(crs_fc[i]);
-            crs_fs[i] = new CrystalReciprocalSpace(reflectionlist[i],
+                    false, dataFiles[i].neutron);
+            refinementData[i].setCrystalReciprocalSpace_fc(crs_fc[i]);
+            crs_fs[i] = new CrystalReciprocalSpace(reflectionList[i],
                     tmprefinementmodel.atomarray, parallelTeam, parallelTeam,
-                    true, dataname[i].neutron, solventmodel);
-            refinementdata[i].setCrystalReciprocalSpace_fs(crs_fs[i]);
+                    true, dataFiles[i].neutron, solventModel);
+            refinementData[i].setCrystalReciprocalSpace_fs(crs_fs[i]);
         }
 
-        int nhkl = refinementdata[0].n;
+        int nhkl = refinementData[0].n;
         double fc[][] = new double[nhkl][2];
         double fs[][] = new double[nhkl][2];
-        
+
         // run FFTs
         for (int i = 0; i < n; i++) {
             crs_fc[i].computeDensity(fc);
-            if (solventmodel != SolventModel.NONE) {
+            if (solventModel != SolventModel.NONE) {
                 crs_fs[i].computeDensity(fs);
             }
 
             // average in with current data
-            for (int j = 0; j < refinementdata[i].n; j++) {
-                refinementdata[i].fc[j][0] += (fc[j][0] - refinementdata[i].fc[j][0]) / index;
-                refinementdata[i].fc[j][1] += (fc[j][1] - refinementdata[i].fc[j][1]) / index;
+            for (int j = 0; j < refinementData[i].n; j++) {
+                refinementData[i].fc[j][0] += (fc[j][0] - refinementData[i].fc[j][0]) / index;
+                refinementData[i].fc[j][1] += (fc[j][1] - refinementData[i].fc[j][1]) / index;
 
-                refinementdata[i].fs[j][0] += (fs[j][0] - refinementdata[i].fs[j][0]) / index;
-                refinementdata[i].fs[j][1] += (fs[j][1] - refinementdata[i].fs[j][1]) / index;
+                refinementData[i].fs[j][0] += (fs[j][0] - refinementData[i].fs[j][0]) / index;
+                refinementData[i].fs[j][1] += (fs[j][1] - refinementData[i].fs[j][1]) / index;
             }
-            refinementdata[i].setCrystalReciprocalSpace_fc(null);
-            refinementdata[i].setCrystalReciprocalSpace_fs(null);
-            crs_fc[i] = null;
-            crs_fs[i] = null;
+            //refinementdata[i].setCrystalReciprocalSpace_fc(null);
+            //refinementdata[i].setCrystalReciprocalSpace_fs(null);
+            //crs_fc[i] = null;
+            //crs_fs[i] = null;
         }
-        
+
         tmprefinementmodel = null;
-        parallelTeam = null;
         fc = null;
         fs = null;
     }
@@ -497,11 +501,11 @@ public class DiffractionData implements DataContainer {
      */
     public void computeAtomicGradients(RefinementMode refinementMode) {
         for (int i = 0; i < n; i++) {
-            crs_fc[i].computeAtomicGradients(refinementdata[i].dfc,
-                    refinementdata[i].freer, refinementdata[i].rfreeflag,
+            crs_fc[i].computeAtomicGradients(refinementData[i].dfc,
+                    refinementData[i].freer, refinementData[i].rfreeflag,
                     refinementMode);
-            crs_fs[i].computeAtomicGradients(refinementdata[i].dfs,
-                    refinementdata[i].freer, refinementdata[i].rfreeflag,
+            crs_fs[i].computeAtomicGradients(refinementData[i].dfs,
+                    refinementData[i].freer, refinementData[i].rfreeflag,
                     refinementMode);
         }
     }
@@ -514,9 +518,9 @@ public class DiffractionData implements DataContainer {
      */
     public void computeAtomicDensity() {
         for (int i = 0; i < n; i++) {
-            crs_fc[i].computeDensity(refinementdata[i].fc);
-            if (solventmodel != SolventModel.NONE) {
-                crs_fs[i].computeDensity(refinementdata[i].fs);
+            crs_fc[i].computeDensity(refinementData[i].fc);
+            if (solventModel != SolventModel.NONE) {
+                crs_fs[i].computeDensity(refinementData[i].fs);
             }
         }
     }
@@ -530,7 +534,7 @@ public class DiffractionData implements DataContainer {
     public double computeLikelihood() {
         double e = 0.0;
         for (int i = 0; i < n; i++) {
-            e += dataname[i].weight * sigmaaminimize[i].calculateLikelihood();
+            e += dataFiles[i].weight * sigmaAMinimize[i].calculateLikelihood();
         }
         return e;
     }
@@ -542,7 +546,7 @@ public class DiffractionData implements DataContainer {
      */
     @Override
     public Atom[] getAtomArray() {
-        return refinementmodel.atomarray;
+        return refinementModel.atomarray;
     }
 
     /**
@@ -550,7 +554,7 @@ public class DiffractionData implements DataContainer {
      */
     @Override
     public ArrayList<ArrayList<Residue>> getAltResidues() {
-        return refinementmodel.altresidues;
+        return refinementModel.altresidues;
     }
 
     /**
@@ -558,7 +562,7 @@ public class DiffractionData implements DataContainer {
      */
     @Override
     public ArrayList<ArrayList<Molecule>> getAltMolecules() {
-        return refinementmodel.altmolecules;
+        return refinementModel.altmolecules;
     }
 
     /**
@@ -574,7 +578,7 @@ public class DiffractionData implements DataContainer {
      */
     @Override
     public RefinementModel getRefinementModel() {
-        return refinementmodel;
+        return refinementModel;
     }
 
     /**
@@ -582,7 +586,7 @@ public class DiffractionData implements DataContainer {
      */
     @Override
     public double getWeight() {
-        return xweight;
+        return xWeight;
     }
 
     /**
@@ -590,7 +594,7 @@ public class DiffractionData implements DataContainer {
      */
     @Override
     public void setWeight(double weight) {
-        this.xweight = weight;
+        this.xWeight = weight;
     }
 
     /**
@@ -609,8 +613,8 @@ public class DiffractionData implements DataContainer {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < n; i++) {
             sb.append(String.format("%6.2f %6.2f ",
-                    crystalstats[i].getR(),
-                    crystalstats[i].getRFree()));
+                    crystalStats[i].getR(),
+                    crystalStats[i].getRFree()));
         }
 
         return sb.toString();
@@ -625,12 +629,12 @@ public class DiffractionData implements DataContainer {
         for (int i = 0; i < n; i++) {
             sb.append(String.format("     dataset %d (weight: %5.1f): R: %6.2f Rfree: %6.2f chemical energy: %8.2f likelihood: %8.2f free likelihood: %8.2f\n",
                     i + 1,
-                    dataname[i].weight,
-                    crystalstats[i].getR(),
-                    crystalstats[i].getRFree(),
+                    dataFiles[i].weight,
+                    crystalStats[i].getR(),
+                    crystalStats[i].getRFree(),
                     assembly[0].getPotentialEnergy().getTotalEnergy(),
-                    dataname[i].weight * sigmaaminimize[i].calculateLikelihood(),
-                    dataname[i].weight * refinementdata[i].llkf));
+                    dataFiles[i].weight * sigmaAMinimize[i].calculateLikelihood(),
+                    dataFiles[i].weight * refinementData[i].llkf));
         }
 
         return sb.toString();
@@ -644,8 +648,8 @@ public class DiffractionData implements DataContainer {
             if (!scaled[i]) {
                 scaleBulkFit(i);
             }
-            crystalstats[i].printScaleStats();
-            crystalstats[i].printRStats();
+            crystalStats[i].printScaleStats();
+            crystalStats[i].printRStats();
         }
     }
 
@@ -655,7 +659,7 @@ public class DiffractionData implements DataContainer {
     public void printStats() {
         int nat = 0;
         int nnonh = 0;
-        for (Atom a : refinementmodel.atomlist) {
+        for (Atom a : refinementModel.atomlist) {
             if (a.getOccupancy() == 0.0) {
                 continue;
             }
@@ -675,15 +679,15 @@ public class DiffractionData implements DataContainer {
             sb.append(String.format(" Statistics for Data Set %d of %d\n\n"
                     + "  Weight:     %6.2f\n  Neutron data: %4s\n"
                     + "  Model:        %s\n  Data file:    %s\n",
-                    i + 1, n, dataname[i].weight, dataname[i].neutron,
-                    modelname, dataname[i].filename));
+                    i + 1, n, dataFiles[i].weight, dataFiles[i].neutron,
+                    modelName, dataFiles[i].filename));
             logger.info(sb.toString());
 
-            crystalstats[i].printScaleStats();
-            crystalstats[i].printDPIStats(nnonh, nat);
-            crystalstats[i].printHKLStats();
-            crystalstats[i].printSNStats();
-            crystalstats[i].printRStats();
+            crystalStats[i].printScaleStats();
+            crystalStats[i].printDPIStats(nnonh, nat);
+            crystalStats[i].printHKLStats();
+            crystalStats[i].printSNStats();
+            crystalStats[i].printRStats();
         }
     }
 
@@ -704,44 +708,44 @@ public class DiffractionData implements DataContainer {
     public void scaleBulkFit(int i) {
         StringBuilder sb = new StringBuilder();
         sb.append(String.format(" Scaling Data Set %d of %d\n\n  Weight: %6.2f\n  Neutron data: %s\n  Model: %s\n  Data file: %s",
-                i + 1, n, dataname[i].weight, dataname[i].neutron,
-                modelname, dataname[i].filename));
+                i + 1, n, dataFiles[i].weight, dataFiles[i].neutron,
+                modelName, dataFiles[i].filename));
         logger.info(sb.toString());
 
         // reset some values
-        refinementdata[i].solvent_k = 0.33;
-        refinementdata[i].solvent_ueq = 50.0 / (8.0 * Math.PI * Math.PI);
-        refinementdata[i].model_k = 0.0;
+        refinementData[i].solvent_k = 0.33;
+        refinementData[i].solvent_ueq = 50.0 / (8.0 * Math.PI * Math.PI);
+        refinementData[i].model_k = 0.0;
         for (int j = 0; j < 6; j++) {
-            refinementdata[i].model_b[j] = 0.0;
+            refinementData[i].model_b[j] = 0.0;
         }
 
         // run FFTs
-        crs_fc[i].computeDensity(refinementdata[i].fc);
-        if (solventmodel != SolventModel.NONE) {
-            crs_fs[i].computeDensity(refinementdata[i].fs);
+        crs_fc[i].computeDensity(refinementData[i].fc);
+        if (solventModel != SolventModel.NONE) {
+            crs_fs[i].computeDensity(refinementData[i].fs);
         }
 
         // initialize minimizers
-        scalebulkminimize[i] = new ScaleBulkMinimize(reflectionlist[i],
-                refinementdata[i], crs_fs[i]);
-        splineminimize[i] = new SplineMinimize(reflectionlist[i],
-                refinementdata[i], refinementdata[i].spline,
+        scaleBulkMinimize[i] = new ScaleBulkMinimize(reflectionList[i],
+                refinementData[i], crs_fs[i], parallelTeam);
+        splineMinimize[i] = new SplineMinimize(reflectionList[i],
+                refinementData[i], refinementData[i].spline,
                 SplineEnergy.Type.FOFC);
 
         // minimize
-        if (solventmodel != SolventModel.NONE && gridsearch) {
-            scalebulkminimize[i].minimize(6, 1e-2);
-            scalebulkminimize[i].GridOptimize();
+        if (solventModel != SolventModel.NONE && gridsearch) {
+            scaleBulkMinimize[i].minimize(6, 1e-2);
+            scaleBulkMinimize[i].GridOptimize();
         }
-        scalebulkminimize[i].minimize(6, xrayscaletol);
+        scaleBulkMinimize[i].minimize(6, xrayScaleTol);
 
         // sigmaA / LLK calculation
-        sigmaaminimize[i] = new SigmaAMinimize(reflectionlist[i], refinementdata[i]);
-        sigmaaminimize[i].minimize(7, sigmaatol);
+        sigmaAMinimize[i] = new SigmaAMinimize(reflectionList[i], refinementData[i], parallelTeam);
+        sigmaAMinimize[i].minimize(7, sigmaATol);
 
         if (splinefit) {
-            splineminimize[i].minimize(7, 1e-5);
+            splineMinimize[i].minimize(7, 1e-5);
         }
 
         scaled[i] = true;
@@ -768,9 +772,9 @@ public class DiffractionData implements DataContainer {
      */
     public void setSolventAB(double a, double b) {
         for (int i = 0; i < n; i++) {
-            if (solventmodel != SolventModel.NONE) {
-                refinementdata[i].solvent_a = a;
-                refinementdata[i].solvent_b = b;
+            if (solventModel != SolventModel.NONE) {
+                refinementData[i].solvent_a = a;
+                refinementData[i].solvent_b = b;
                 crs_fs[i].setSolventAB(a, b);
             }
         }
@@ -783,13 +787,13 @@ public class DiffractionData implements DataContainer {
         logger.info("performing 10 Fc calculations for timing...");
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < 10; j++) {
-                crs_fc[i].computeDensity(refinementdata[i].fc, true);
-                crs_fs[i].computeDensity(refinementdata[i].fs, true);
-                crs_fc[i].computeAtomicGradients(refinementdata[i].dfc,
-                        refinementdata[i].freer, refinementdata[i].rfreeflag,
+                crs_fc[i].computeDensity(refinementData[i].fc, true);
+                crs_fs[i].computeDensity(refinementData[i].fs, true);
+                crs_fc[i].computeAtomicGradients(refinementData[i].dfc,
+                        refinementData[i].freer, refinementData[i].rfreeflag,
                         RefinementMode.COORDINATES, true);
-                crs_fs[i].computeAtomicGradients(refinementdata[i].dfs,
-                        refinementdata[i].freer, refinementdata[i].rfreeflag,
+                crs_fs[i].computeAtomicGradients(refinementData[i].dfs,
+                        refinementData[i].freer, refinementData[i].rfreeflag,
                         RefinementMode.COORDINATES, true);
             }
         }
@@ -815,14 +819,14 @@ public class DiffractionData implements DataContainer {
         remark.append("REMARK   3\n");
         for (int i = 0; i < n; i++) {
             remark.append("REMARK   3  DATA SET " + (i + 1) + "\n");
-            if (dataname[i].isNeutron()) {
+            if (dataFiles[i].isNeutron()) {
                 remark.append("REMARK   3   DATA SET TYPE   : NEUTRON\n");
             } else {
                 remark.append("REMARK   3   DATA SET TYPE   : X-RAY\n");
             }
-            remark.append("REMARK   3   DATA SET WEIGHT : " + dataname[i].getWeight() + "\n");
+            remark.append("REMARK   3   DATA SET WEIGHT : " + dataFiles[i].getWeight() + "\n");
             remark.append("REMARK   3\n");
-            remark.append(crystalstats[i].getPDBHeaderString());
+            remark.append(crystalStats[i].getPDBHeaderString());
         }
         for (int i = 0; i < assembly.length; i++) {
             remark.append("REMARK   3  CHEMICAL SYSTEM " + (i + 1) + "\n");
@@ -857,9 +861,9 @@ public class DiffractionData implements DataContainer {
     public void writeData(String filename, int i) {
         MTZWriter mtzwriter;
         if (scaled[i]) {
-            mtzwriter = new MTZWriter(reflectionlist[i], refinementdata[i], filename);
+            mtzwriter = new MTZWriter(reflectionList[i], refinementData[i], filename);
         } else {
-            mtzwriter = new MTZWriter(reflectionlist[i], refinementdata[i], filename, MTZType.DATAONLY);
+            mtzwriter = new MTZWriter(reflectionList[i], refinementData[i], filename, MTZType.DATAONLY);
         }
         mtzwriter.write();
     }
@@ -891,8 +895,8 @@ public class DiffractionData implements DataContainer {
         }
 
         // Fo-Fc
-        crs_fc[i].computeAtomicGradients(refinementdata[i].fofc1,
-                refinementdata[i].freer, refinementdata[i].rfreeflag,
+        crs_fc[i].computeAtomicGradients(refinementData[i].fofc1,
+                refinementData[i].freer, refinementData[i].rfreeflag,
                 RefinementMode.COORDINATES);
         double[] densityGrid = crs_fc[i].densityGrid;
         int extx = (int) crs_fc[i].getXDim();
@@ -904,8 +908,8 @@ public class DiffractionData implements DataContainer {
         mapwriter.write(densityGrid);
 
         // 2Fo-Fc
-        crs_fc[i].computeAtomicGradients(refinementdata[i].fofc2,
-                refinementdata[i].freer, refinementdata[i].rfreeflag,
+        crs_fc[i].computeAtomicGradients(refinementData[i].fofc2,
+                refinementData[i].freer, refinementData[i].rfreeflag,
                 RefinementMode.COORDINATES);
         densityGrid = crs_fc[i].densityGrid;
         extx = (int) crs_fc[i].getXDim();
@@ -940,17 +944,17 @@ public class DiffractionData implements DataContainer {
      * @param i dataset to write out
      */
     public void writeSolventMaskCNS(String filename, int i) {
-        if (solventmodel != SolventModel.NONE) {
+        if (solventModel != SolventModel.NONE) {
             try {
                 PrintWriter cnsfile = new PrintWriter(new BufferedWriter(new FileWriter(filename)));
                 cnsfile.println(" ANOMalous=FALSE");
                 cnsfile.println(" DECLare NAME=FS DOMAin=RECIprocal TYPE=COMP END");
-                for (HKL ih : reflectionlist[i].hkllist) {
+                for (HKL ih : reflectionList[i].hkllist) {
                     int j = ih.index();
                     cnsfile.printf(" INDE %d %d %d FS= %.4f %.4f\n",
                             ih.h(), ih.k(), ih.l(),
-                            refinementdata[i].fs_f(j),
-                            Math.toDegrees(refinementdata[i].fs_phi(j)));
+                            refinementData[i].fs_f(j),
+                            Math.toDegrees(refinementData[i].fs_phi(j)));
                 }
                 cnsfile.close();
             } catch (Exception e) {
@@ -986,7 +990,7 @@ public class DiffractionData implements DataContainer {
      * @see CCP4MapWriter#write(double[], boolean)
      */
     public void writeSolventMask(String filename, int i) {
-        if (solventmodel != SolventModel.NONE) {
+        if (solventModel != SolventModel.NONE) {
             CCP4MapWriter mapwriter = new CCP4MapWriter((int) crs_fs[i].getXDim(),
                     (int) crs_fs[i].getYDim(), (int) crs_fs[i].getZDim(),
                     crystal[i], filename);

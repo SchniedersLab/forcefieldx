@@ -28,6 +28,8 @@ import java.util.logging.Logger;
 import static java.lang.Math.pow;
 import static java.lang.Math.sqrt;
 
+import edu.rit.pj.ParallelTeam;
+
 import ffx.algorithms.Terminatable;
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
@@ -39,7 +41,8 @@ import ffx.numerics.LineSearch.LineSearchResult;
 import ffx.numerics.OptimizationListener;
 
 /**
- * <p>SigmaAMinimize class.</p>
+ * <p>
+ * SigmaAMinimize class.</p>
  *
  * @author Timothy D. Fenn
  *
@@ -47,7 +50,7 @@ import ffx.numerics.OptimizationListener;
 public class SigmaAMinimize implements OptimizationListener, Terminatable {
 
     private static final Logger logger = Logger.getLogger(SplineEnergy.class.getName());
-    private static double toSeconds = 1.0e-9;
+    private static final double toSeconds = 1.0e-9;
     private final ReflectionList reflectionlist;
     protected final DiffractionRefinementData refinementdata;
     private final Crystal crystal;
@@ -63,20 +66,22 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
     private int nSteps;
 
     /**
-     * <p>Constructor for SigmaAMinimize.</p>
+     * <p>
+     * Constructor for SigmaAMinimize.</p>
      *
      * @param reflectionlist a {@link ffx.crystal.ReflectionList} object.
      * @param refinementdata a {@link ffx.xray.DiffractionRefinementData}
      * object.
+     * @param parallelTeam
      */
     public SigmaAMinimize(ReflectionList reflectionlist,
-            DiffractionRefinementData refinementdata) {
+            DiffractionRefinementData refinementdata, ParallelTeam parallelTeam) {
         this.reflectionlist = reflectionlist;
         this.refinementdata = refinementdata;
         this.crystal = reflectionlist.crystal;
 
         n = refinementdata.nbins * 2;
-        sigmaAEnergy = new SigmaAEnergy(reflectionlist, refinementdata);
+        sigmaAEnergy = new SigmaAEnergy(reflectionlist, refinementdata, parallelTeam);
         x = new double[n];
         grad = new double[n];
         scaling = new double[n];
@@ -149,7 +154,8 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
     }
 
     /**
-     * <p>calculateLikelihood</p>
+     * <p>
+     * calculateLikelihood</p>
      *
      * @return a double.
      */
@@ -159,7 +165,8 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
     }
 
     /**
-     * <p>calculateLikelihoodFree</p>
+     * <p>
+     * calculateLikelihoodFree</p>
      *
      * @return a double.
      */
@@ -168,7 +175,8 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
     }
 
     /**
-     * <p>minimize</p>
+     * <p>
+     * minimize</p>
      *
      * @return a {@link ffx.xray.SigmaAEnergy} object.
      */
@@ -177,7 +185,8 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
     }
 
     /**
-     * <p>minimize</p>
+     * <p>
+     * minimize</p>
      *
      * @param eps a double.
      * @return a {@link ffx.xray.SigmaAEnergy} object.
@@ -187,7 +196,8 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
     }
 
     /**
-     * <p>minimize</p>
+     * <p>
+     * minimize</p>
      *
      * @param m a int.
      * @param eps a double.

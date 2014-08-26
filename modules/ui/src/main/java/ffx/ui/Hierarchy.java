@@ -25,6 +25,7 @@ package ffx.ui;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.logging.Logger;
 
 import javax.swing.JLabel;
 import javax.swing.JTree;
@@ -52,15 +53,13 @@ import ffx.potential.bonded.RendererCache;
  */
 public final class Hierarchy extends JTree implements TreeSelectionListener {
 
-    /**
-     *
-     */
+    private static final Logger logger = Logger.getLogger(Hierarchy.class.getName());
     private static final long serialVersionUID = 1L;
     private final MSRoot root;
     private final MainPanel mainPanel;
     private DefaultTreeModel hierarchyModel;
     private DefaultTreeSelectionModel treeSelectionModel;
-    private FFXSystem activeSystem = null; // Reference to the active FSystem
+    private FFXSystem activeSystem = null; // Reference to the active FFXSystem
     private MSNode activeNode = null; // Reference to the last Selected Node
     private final ArrayList<MSNode> activeNodes = new ArrayList<>();
     private JLabel status = null;
@@ -135,14 +134,24 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
      * @param index a int.
      */
     public void addTreeNode(MSNode nodeToAdd, MSNode parent, int index) {
-        if (nodeToAdd == null || nodeToAdd.getParent() != null) {
-            return;
-        }
         synchronized (this) {
+            if (nodeToAdd == null || nodeToAdd.getParent() != null) {
+                return;
+            }
             int childCount = parent.getChildCount();
             if (index < 0 || index > childCount) {
                 index = parent.getChildCount();
             }
+
+            String name = nodeToAdd.getName();
+
+            for (int i = 0; i < parent.getChildCount(); i++) {
+                MSNode node = (MSNode) parent.getChildAt(i);
+                if (node.getName().equals(name)) {
+                    logger.warning(" Parent already has a node with the name " + name);
+                }
+            }
+
             // Add a parallel node if the ffe.lang.parallel flag was set
             if (ROLSP.GO_PARALLEL) {
                 ROLSP parallelNode = new ROLSP();
@@ -335,10 +344,10 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
      * @param f a {@link ffx.potential.bonded.MSNode} object.
      */
     public void removeSelection(MSNode f) {
-        if (f == null) {
-            return;
-        }
         synchronized (this) {
+            if (f == null) {
+                return;
+            }
             TreePath path = new TreePath(f.getPath());
             for (Enumeration e = getExpandedDescendants(path); e.hasMoreElements();) {
                 TreePath treePath = new TreePath((DefaultMutableTreeNode) e.nextElement());
@@ -370,14 +379,17 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
      * @param nodeToRemove a {@link ffx.potential.bonded.MSNode} object.
      */
     public void removeTreeNode(MSNode nodeToRemove) {
-        if (nodeToRemove == null) {
-            return;
-        }
         synchronized (this) {
+            if (nodeToRemove == null) {
+                return;
+            }
+
             if (root.getChildCount() <= 1) {
                 setRootVisible(false);
             }
+
             hierarchyModel.removeNodeFromParent(nodeToRemove);
+
             if (getActive() == nodeToRemove && root.getChildCount() != 0) {
                 FFXSystem m = (FFXSystem) root.getChildAt(0);
                 setActive(m);
@@ -393,10 +405,10 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
      * selectAll</p>
      */
     public void selectAll() {
-        if (activeSystem == null) {
-            return;
-        }
         synchronized (this) {
+            if (activeSystem == null) {
+                return;
+            }
             onlySelection(root);
         }
     }
@@ -407,10 +419,29 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
      * @param ffxSystem a {@link ffx.ui.FFXSystem} object.
      */
     public void setActive(FFXSystem ffxSystem) {
-        if (ffxSystem == activeSystem) {
-            return;
-        }
         synchronized (this) {
+            if (ffxSystem == activeSystem) {
+                return;
+            }
+            if (ffxSystem != null) {
+                /**
+                 * A closed (closing) system cannot be set active.
+                 */
+                if (ffxSystem.isClosing()) {
+                    /**
+                     * Set the most recently opened system to be active.
+                     */
+                    for (int i = root.getChildCount() - 1; i >= 0; i--) {
+                        FFXSystem child = (FFXSystem) root.getChildAt(i);
+                        if (!child.isClosing()) {
+                            setActive(child);
+                            return;
+                        }
+                    }
+                    setActive(null);
+                    return;
+                }
+            }
             activeSystem = ffxSystem;
             updateStatus();
             if (mainPanel.getKeywordPanel() != null) {
@@ -481,10 +512,10 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
      * @param f a {@link ffx.potential.bonded.MSNode} object.
      */
     public void toggleSelection(MSNode f) {
-        if (f == null) {
-            return;
-        }
         synchronized (this) {
+            if (f == null) {
+                return;
+            }
             TreePath path = new TreePath(f.getPath());
             if (isPathSelected(path)) {
                 removeSelectionPath(path);

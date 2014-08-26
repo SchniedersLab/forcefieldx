@@ -35,6 +35,7 @@ int endModel = -1;
 boolean finished = false;
 String suffix = "_split";
 boolean addHeader = false;
+boolean addListFile = true;
 
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc utilities.splitEnsemble [options] <filename>');
@@ -146,14 +147,23 @@ try {
     }
     // get to appropriate model # (not coded)
     // While still in the range for writing sub-files:
-    File listOfFiles = new File (targetName + "_modelList.txt");
-    logger.info(String.format(" Creating file list (with the names of all created files): %s", targetName + "_modelList.txt"));
-    BufferedWriter listWriter = new BufferedWriter(new FileWriter(listOfFiles, false));
+    if (options.l) {
+        addListFile = Boolean.parseBoolean(options.l);
+    }
+    File listOfFiles;
+    BufferedWriter listWriter;
+    if (addListFile) {
+        listOfFiles = new File (targetName + "_modelList.txt");
+        logger.info(String.format(" Creating file list (with the names of all created files): %s", targetName + "_modelList.txt"));
+        listWriter = new BufferedWriter(new FileWriter(listOfFiles, false));
+    }
     while (counter <= endModel && !finished) {
         File newModel = new File(targetName + "_" + counter + ".pdb");
-        listWriter.write(targetName + "_" + counter + ".pdb");
-        listWriter.newLine();
-        listWriter.flush();
+        if (addListFile) {
+            listWriter.write(targetName + "_" + counter + ".pdb");
+            listWriter.newLine();
+            listWriter.flush();
+        }
         BufferedWriter bw;
         if (addHeader) {
             FileUtils.copyFile(headerFile, newModel);

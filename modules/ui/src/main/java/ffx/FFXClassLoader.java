@@ -27,7 +27,6 @@ import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -44,11 +43,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import org.apache.commons.io.FileUtils;
-
 /**
  * Class loader able to load classes and DLLs with a higher priority from a
  * given set of JARs. Its bytecode is Java 1.1 compatible to be loadable by old
@@ -135,11 +129,17 @@ public class FFXClassLoader extends URLClassLoader {
             // Mac OS X Extensions
             "macosx/AppleJavaExtensions.jar",
             // Java Help
-            "javax.help/javahelp.jar"
+            "javax.help/javahelp.jar",
             // JFluid Profiler
             //"jfluid/jfluid-server.jar",
             //"jfluid/jfluid-server-15.jar",
             //"jfluid/jfluid-server-cvm.jar"
+            "org.biojava/biojava3-core.jar",
+            "org.biojava/core.jar",
+            "org.biojava/bytecode.jar",
+            "org.biojava/biojava3-structure.jar",
+            "org.biojava/biojava3-alignment.jar",
+            "org.biojava/biojava3-phylo.jar"
         }));
 
         String osName = System.getProperty("os.name").toUpperCase();
