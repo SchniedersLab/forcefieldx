@@ -37,7 +37,6 @@ public class VelocityVerlet extends Integrator {
     private double x[];
     private double v[];
     private double a[];
-    private double aPrevious[];
     private double mass[];
     private int nVariables;
     private double dt;
@@ -50,19 +49,15 @@ public class VelocityVerlet extends Integrator {
      * @param x Cartesian coordinates (Angstroms).
      * @param v Velocities.
      * @param a Accelerations.
-     * @param aPrevious Previous Accelerations. This is not necessary for VV 
-     * but should be kept because it will be provided?
      * @param mass Mass.
      */
     public VelocityVerlet(int nVariables, double x[], double v[], double a[],
-            double aPrevious[], double mass[]) { 
+           double mass[]) { 
         this.nVariables = nVariables;
         this.x = x;
         this.v = v;
         this.a = a;
-        this.aPrevious = aPrevious; 
         this.mass = mass;
-
         dt = 1.0;
         dt_2 = dt*.5;
     }
