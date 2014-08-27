@@ -5,7 +5,7 @@
 </p>
 Park, J., Nessler, I., McClain, B., Macikenas D., Baltrusaitis, J. and M. Schnieders
 <i>Journal of Chemical Theory and Computation</i>
-<b>2014</b> <i>(accepted)</i>
+<b>2014</b> 10, (7), 2781-2791.
 
 #### [Polarizable Force Fields for Biomolecular Modeling][amoeba]
 
@@ -23,7 +23,7 @@ Shi, Y., Schnieders, M. J., Piquemal, J.-P., and P. Ren, <i>Reviews in Computati
 Fenn, T. D. and M. J. Schnieders, <i>Acta Crystallographica Section D</i>
 <b>2011</b> 67, (11), 957-65.
 
-[xtaltherm]: http://pubs.acs.org/journal/jctcce
+[xtaltherm]: http://dx.doi.org/10.1021/ct500180m
 [amoeba]: http://dx.doi.org/10.1002/SERIES6143
 [refine]: http://dx.doi.org/10.1107/S0907444911039060
 
