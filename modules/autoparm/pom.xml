@@ -125,7 +125,7 @@
         <dependency>
             <groupId>edu.uiowa.eng.ffx</groupId>
             <artifactId>potentials</artifactId>
-            <version>1.0.0-beta</version>
+            <version>${project.version}</version>
             <type>jar</type>
         </dependency>
         <dependency>
@@ -144,7 +144,7 @@
             <groupId>commons-math</groupId>
             <artifactId>commons-math3</artifactId>
             <type>jar</type>
-            <version>3.0</version>
+            <version>${commons-math3.version}</version>
         </dependency>
     </dependencies>
 </project>

@@ -691,6 +691,18 @@
         <pmd.skip>true</pmd.skip>
         <skipSurefireReport>true</skipSurefireReport>
         <skipTests>true</skipTests>
+        <!-- Specify versions of Dependencies to Use -->
+        <apple-java-extensions.version>1.6</apple-java-extensions.version>
+        <commons-configuration.version>1.10</commons-configuration.version>
+        <commons-io.version>2.4</commons-io.version>
+        <commons-lang3.version>3.3.2</commons-lang3.version>
+        <commons-math3.version>3.3</commons-math3.version>
+        <groovy-all.version>2.3.6</groovy-all.version>
+        <javahelp.version>2.0.05</javahelp.version>
+        <java3d.version>1.6.2</java3d.version>
+        <jcuda.version>5.0.0</jcuda.version>
+        <jocl.version>2.2.0</jocl.version>
+        <parallel-java.version>1.7</parallel-java.version>
     </properties>
     <modules>
         <module>modules/algorithms</module>

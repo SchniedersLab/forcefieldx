@@ -182,43 +182,43 @@
             <groupId>commons-math</groupId>
             <artifactId>commons-math3</artifactId>
             <type>jar</type>
-            <version>3.0</version>
+            <version>${commons-math3.version}</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <type>jar</type>
-            <version>2.4</version>
+            <version>${commons-io.version}</version>
         </dependency>
         <dependency>
             <groupId>commons-configuration</groupId>
             <artifactId>commons-configuration</artifactId>
             <type>jar</type>
-            <version>1.10</version>
+            <version>${commons-configuration.version}</version>
         </dependency>
         <dependency>
             <groupId>edu.rit.pj</groupId>
             <artifactId>pj</artifactId>
             <type>jar</type>
-            <version>1.7</version>
+            <version>${parallel-java.version}</version>
         </dependency>
         <dependency>
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy-all</artifactId>
             <type>jar</type>
-            <version>2.3.6</version>
+            <version>${groovy-all.version}</version>
         </dependency>
         <dependency>
             <groupId>java3d</groupId>
             <artifactId>j3dcore</artifactId>
             <type>jar</type>
-            <version>1.6.1</version>
+            <version>${java3d.version}</version>
         </dependency>
         <dependency>
             <groupId>java3d</groupId>
             <artifactId>j3dvrml</artifactId>
             <type>jar</type>
-            <version>1.6.1</version>
+            <version>${java3d.version}</version>
         </dependency>
         <dependency>
             <groupId>org.biojava</groupId>

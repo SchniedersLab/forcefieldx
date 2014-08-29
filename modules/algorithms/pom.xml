@@ -130,13 +130,13 @@
             <groupId>commons-math</groupId>
             <artifactId>commons-math3</artifactId>
             <type>jar</type>
-            <version>3.0</version>
+            <version>${commons-math3.version}</version>
         </dependency>
         <dependency>
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy-all</artifactId>
             <type>jar</type>
-            <version>2.3.6</version>
+            <version>${groovy-all.version}</version>
         </dependency>
     </dependencies>
 </project>

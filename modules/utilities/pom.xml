@@ -72,24 +72,18 @@
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <type>jar</type>
-            <version>2.4</version>
+            <version>${commons-io.version}</version>
         </dependency>
         <dependency>
             <groupId>commons-configuration</groupId>
             <artifactId>commons-configuration</artifactId>
             <type>jar</type>
-            <version>1.10</version>
-        </dependency>
-        <dependency>
-            <groupId>commons-lang</groupId>
-            <artifactId>commons-lang</artifactId>
-            <type>jar</type>
-            <version>2.6</version>
+            <version>${commons-configuration.version}</version>
         </dependency>
         <dependency>
             <artifactId>groovy-all</artifactId>
             <groupId>org.codehaus.groovy</groupId>
-            <version>2.3.6</version>
+            <version>${groovy-all.version}</version>
         </dependency>
     </dependencies>
     <profiles>

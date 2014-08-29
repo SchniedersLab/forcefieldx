@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+
 /**
  * Class loader able to load classes and DLLs with a higher priority from a
  * given set of JARs. Its bytecode is Java 1.1 compatible to be loadable by old
@@ -68,7 +69,6 @@ public class FFXClassLoader extends URLClassLoader {
         "org.apache.commons.io",
         "org.apache.commons.lang",
         "org.apache.commons.lang3",
-        "org.apache.commons.math",
         "org.apache.commons.math3",
         "org.jogamp",
         "edu.rit.pj",
@@ -124,7 +124,6 @@ public class FFXClassLoader extends URLClassLoader {
             "commons-lang/commons-lang.jar",
             "commons-lang/commons-lang3.jar",
             "commons-logging/commons-logging.jar",
-            "commons-math/commons-math.jar",
             "commons-math/commons-math3.jar",
             // Mac OS X Extensions
             "macosx/AppleJavaExtensions.jar",
@@ -225,7 +224,9 @@ public class FFXClassLoader extends URLClassLoader {
     }
 
     /**
-     * Implementation of this method is to allow use of the NetBeans JFluid profiler.
+     * Implementation of this method is to allow use of the NetBeans JFluid
+     * profiler.
+     *
      * @param value
      */
     private void appendToClassPathForInstrumentation(String value) {
