@@ -23,6 +23,9 @@
 package ffx.xray;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.logging.Logger;
 
 import static org.apache.commons.io.FilenameUtils.*;
@@ -203,8 +206,16 @@ public class DiffractionFile {
                 }
             }
         }
-
-        this.filename = tmp.getName();
+        String filenameHolder; // Compiler complains if I set this.filename directly.
+        try {
+            Path filepath = Paths.get(tmp.getCanonicalPath());
+            Path pwdPath = Paths.get(new File("").getCanonicalPath());
+            filenameHolder = pwdPath.relativize(filepath).toString();
+        } catch (IOException ex) {
+            logger.warning(" Relative path to provided data file could not be resolved: using data file name instead.");
+            filenameHolder = tmp.getName();
+        }
+        this.filename = filenameHolder;
         this.weight = weight;
         this.neutron = neutron;
     }
