@@ -22,19 +22,11 @@
  */
 package ffx.xray;
 
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import static java.lang.Math.floor;
-import static java.lang.Math.min;
-
-import static org.apache.commons.math.util.FastMath.exp;
-
 import edu.rit.pj.IntegerForLoop;
+import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
-
+import edu.rit.pj.reduction.SharedIntegerArray;
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
@@ -42,18 +34,26 @@ import ffx.crystal.Resolution;
 import ffx.crystal.SymOp;
 import ffx.numerics.ComplexNumber;
 import ffx.numerics.fft.Complex;
+import static ffx.numerics.fft.Complex3D.iComplex3D;
 import ffx.numerics.fft.Complex3DParallel;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.SliceLoop;
 import ffx.potential.nonbonded.SliceRegion;
 import ffx.potential.nonbonded.SpatialDensityLoop;
 import ffx.potential.nonbonded.SpatialDensityRegion;
-import ffx.xray.RefinementMinimize.RefinementMode;
-
-import static ffx.numerics.fft.Complex3D.iComplex3D;
 import static ffx.xray.CrystalReciprocalSpace.SolventModel.BINARY;
 import static ffx.xray.CrystalReciprocalSpace.SolventModel.GAUSSIAN;
 import static ffx.xray.CrystalReciprocalSpace.SolventModel.POLYNOMIAL;
+import ffx.xray.RefinementMinimize.RefinementMode;
+import static java.lang.Math.floor;
+import static java.lang.Math.min;
+import java.lang.reflect.Array;
+import java.util.Arrays;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.IntStream;
+import static org.apache.commons.math.util.FastMath.exp;
 
 /**
  * Structure factor calculation (including bulk solvent structure factors)
@@ -143,6 +143,10 @@ public class CrystalReciprocalSpace {
     private final int halfFFTX, halfFFTY, halfFFTZ;
     private final int complexFFT3DSpace;
     private final int threadCount;
+    private final SharedIntegerArray optWeight;
+    private final int previousOptWeight[];
+    private final int previousOptWeightSolvent[];
+    private final SliceSchedule sliceSchedule;
     private final ParallelTeam parallelTeam;
     private final Atom atoms[];
     private final Crystal crystal;
@@ -298,6 +302,11 @@ public class CrystalReciprocalSpace {
         complexFFT3DSpace = fftX * fftY * fftZ * 2;
         densityGrid = new double[complexFFT3DSpace];
 
+        optWeight = new SharedIntegerArray(fftZ);
+        previousOptWeight = new int[fftZ];
+        previousOptWeightSolvent = new int[fftZ];
+        sliceSchedule = new SliceSchedule(threadCount, fftZ);
+
         String solventName = "none";
         if (solvent) {
             bAdd = 0.0;
@@ -435,7 +444,7 @@ public class CrystalReciprocalSpace {
         }
         gridMethod = tempGrid;
 
-        logger.log( Level.INFO, " X-ray Refinement Parallelization Method: {0}", gridMethod.toString());
+        logger.log(Level.INFO, " X-ray Refinement Parallelization Method: {0}", gridMethod.toString());
 
         if (solvent) {
             int minWork = nSymm;
@@ -951,7 +960,14 @@ public class CrystalReciprocalSpace {
                     break;
                 case SLICE:
                 default:
+                    for (int i = 0; i < fftZ; i++) {
+                        optWeight.set(i, 0);
+                    }
+                    sliceSchedule.updateWeights(previousOptWeight);
                     parallelTeam.execute(atomicSliceRegion);
+                    for (int i = 0; i < fftZ; i++) {
+                        previousOptWeight[i] = optWeight.get(i);
+                    }
             }
         } catch (Exception e) {
             String message = "Fatal exception evaluating atomic electron density.";
@@ -1035,7 +1051,14 @@ public class CrystalReciprocalSpace {
                     break;
                 case SLICE:
                 default:
+                    for (int i = 0; i < fftZ; i++) {
+                        optWeight.set(i, 0);
+                    }
+                    sliceSchedule.updateWeights(previousOptWeight);
                     parallelTeam.execute(atomicSliceRegion);
+                    for (int i = 0; i < fftZ; i++) {
+                        previousOptWeight[i] = optWeight.get(i);
+                    }
             }
         } catch (Exception e) {
             String message = "Fatal exception evaluating solvent electron density.";
@@ -1138,7 +1161,14 @@ public class CrystalReciprocalSpace {
                     break;
                 case SLICE:
                 default:
+                    for (int i = 0; i < fftZ; i++) {
+                        optWeight.set(i, 0);
+                    }
+                    sliceSchedule.updateWeights(previousOptWeightSolvent);
                     parallelTeam.execute(solventSliceRegion);
+                    for (int i = 0; i < fftZ; i++) {
+                        previousOptWeightSolvent[i] = optWeight.get(i);
+                    }
             }
         } catch (Exception e) {
             String message = "Fatal exception evaluating solvent electron density.";
@@ -1392,10 +1422,29 @@ public class CrystalReciprocalSpace {
         final double xc[] = new double[3];
         final double xf[] = new double[3];
         final double grid[];
+        final int optLocal[];
 
         public AtomicSliceLoop(SliceRegion region) {
             super(region.getNatoms(), region.getNsymm(), region);
             grid = region.getGrid();
+            optLocal = new int[fftZ];
+        }
+
+        @Override
+        public IntegerSchedule schedule() {
+            return sliceSchedule;
+        }
+
+        @Override
+        public void start() {
+            Arrays.fill(optLocal, 0);
+        }
+
+        @Override
+        public void finish() {
+            for (int i = 0; i < fftZ; i++) {
+                optWeight.addAndGet(i, optLocal[i]);
+            }
         }
 
         @Override
@@ -1437,6 +1486,7 @@ public class CrystalReciprocalSpace {
                             int gix = Crystal.mod(ix, fftX);
                             xf[0] = ix / (double) fftX;
                             crystal.toCartesianCoordinates(xf, xc);
+                            optLocal[giz]++;
                             final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
                             grid[ii] = atomff.rho(grid[ii], lambdai, xc);
                         }
@@ -1453,10 +1503,29 @@ public class CrystalReciprocalSpace {
         final double xc[] = new double[3];
         final double xf[] = new double[3];
         final double grid[];
+        final int optLocal[];
 
         public SolventSliceLoop(SliceRegion region) {
             super(region.getNatoms(), region.getNsymm(), region);
             grid = region.getGrid();
+            optLocal = new int[fftZ];
+        }
+
+        @Override
+        public IntegerSchedule schedule() {
+            return sliceSchedule;
+        }
+
+        @Override
+        public void start() {
+            Arrays.fill(optLocal, 0);
+        }
+
+        @Override
+        public void finish() {
+            for (int i = 0; i < fftZ; i++) {
+                optWeight.addAndGet(i, optLocal[i]);
+            }
         }
 
         @Override
@@ -1510,6 +1579,7 @@ public class CrystalReciprocalSpace {
                         int gix = Crystal.mod(ix, fftX);
                         xf[0] = ix / (double) fftX;
                         crystal.toCartesianCoordinates(xf, xc);
+                        optLocal[giz]++;
                         final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
                         grid[ii] = formFactor.rho(grid[ii], lambdai, xc);
                     }
@@ -1599,7 +1669,6 @@ public class CrystalReciprocalSpace {
                                 int giz = Crystal.mod(iz, fftZ);
                                 xf[2] = iz / (double) fftZ;
                                 crystal.toCartesianCoordinates(xf, xc);
-
                                 final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
                                 atomff.rho_grad(xc, weight * densityGrid[ii], refinementmode);
                             }
