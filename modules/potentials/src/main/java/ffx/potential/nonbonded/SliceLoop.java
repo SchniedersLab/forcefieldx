@@ -40,6 +40,7 @@ public abstract class SliceLoop extends IntegerForLoop {
     SliceRegion sliceRegion;
     double sliceLoopTime;
 
+
     public SliceLoop(int nAtoms, int nSymm, SliceRegion sliceRegion) {
         this.nAtoms = nAtoms;
         this.nSymm = nSymm;
@@ -77,7 +78,9 @@ public abstract class SliceLoop extends IntegerForLoop {
     @Override
     public void finish(){
         sliceLoopTime += System.nanoTime();
-       // logger.info(String.format("Slice Loop Time: %7.4f (sec)",sliceLoopTime * toSeconds));
+
+//        logger.info(String.format("Slice Loop Time: %7.4f (sec)",sliceLoopTime * toSeconds));
+
     }
     /**
      * Apply electron density "as normal", but check that the z index is greater
