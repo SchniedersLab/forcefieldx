@@ -22,17 +22,18 @@
  */
 package ffx.potential.nonbonded;
 
-import java.util.Arrays;
-import java.util.logging.Logger;
-
-import static java.lang.Math.pow;
-
 import ffx.crystal.Crystal;
 import ffx.potential.LambdaInterface;
 import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.bonded.Molecule;
+import ffx.potential.bonded.Polymer;
 import ffx.potential.parameters.ForceField;
-
+import static java.lang.Math.pow;
+import java.util.Arrays;
+import java.util.List;
+import java.util.logging.Logger;
 import static ffx.numerics.VectorMath.rsq;
 
 /**
@@ -44,15 +45,18 @@ public class COMRestraint implements LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(COMRestraint.class.getName());
     private final Atom atoms[];
-    private int nAtoms = 0;
+    private final int nAtoms;
+    private MolecularAssembly molecularAssembly = null;
+    private Crystal crystal = null;
+    private final int nMolecules;
     /**
      * Force constant in Kcal/mole/Angstrom.
      */
     private final double forceConstant;
-    private final double initialCOM[] = new double[3];
-    private final double currentCOM[] = new double[3];
-    private final double dx[] = new double[3];
-    private final double dcomdx[];
+    private final double initialCOM[][];
+    private double currentCOM[][];
+    private double dx[] = new double[3];
+    private double dcomdx[];
 
     private double lambda = 1.0;
     private final double lambdaExp = 1.0;
@@ -73,11 +77,16 @@ public class COMRestraint implements LambdaInterface {
      * @param crystal
      */
     public COMRestraint(MolecularAssembly molecularAssembly, Crystal crystal) {
-        ForceField forceField = molecularAssembly.getForceField();
+        this.molecularAssembly = molecularAssembly;
+        this.crystal = crystal.getUnitCell();
         atoms = molecularAssembly.getAtomArray();
         nAtoms = atoms.length;
-        lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
+        nMolecules = countMolecules();
+        initialCOM = new double[3][nMolecules];
+        currentCOM = new double[3][nMolecules];
+        ForceField forceField = molecularAssembly.getForceField();
 
+        lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
         if (lambdaTerm) {
             lambdaGradient = new double[nAtoms * 3];
         } else {
@@ -89,8 +98,9 @@ public class COMRestraint implements LambdaInterface {
         }
         dcomdx = new double[nAtoms];
         forceConstant = forceField.getDouble(ForceField.ForceFieldDouble.RESTRAINT_K, 10.0);
-        boolean gradient = false;
-        computeCOM(initialCOM, gradient);
+
+        computeCOM(initialCOM, nMolecules);
+
         logger.info("\n COM restraint initialized");
     }
 
@@ -102,29 +112,33 @@ public class COMRestraint implements LambdaInterface {
         }
         double residual = 0.0;
         double fx2 = forceConstant * 2.0;
-        boolean computedcomdx = true;
-        Arrays.fill(currentCOM, 0.0);
-        computeCOM(currentCOM, computedcomdx);
-        dx[0] = currentCOM[0] - initialCOM[0];
-        dx[1] = currentCOM[1] - initialCOM[1];
-        dx[2] = currentCOM[2] - initialCOM[2];
-        double r2 = rsq(dx);
-        residual = r2;
-        for (int i = 0; i < nAtoms; i++) {
-            if (gradient || lambdaTerm) {
-                final double dedx = dx[0] * fx2 * dcomdx[i];
-                final double dedy = dx[1] * fx2 * dcomdx[i];
-                final double dedz = dx[2] * fx2 * dcomdx[i];
-                // Current atomic coordinates.
-                Atom atom = atoms[i];
-                if (gradient) {
-                    atom.addToXYZGradient(lambdaPow * dedx, lambdaPow * dedy, lambdaPow * dedz);
-                }
-                if (lambdaTerm) {
-                    int j3 = i * 3;
-                    lambdaGradient[j3] = dLambdaPow * dedx;
-                    lambdaGradient[j3 + 1] = dLambdaPow * dedy;
-                    lambdaGradient[j3 + 2] = dLambdaPow * dedz;
+        //boolean computedcomdx = true;
+        //Arrays.fill(currentCOM, 0.0);
+        computeCOM(currentCOM, nMolecules);
+        computedcomdx();
+        for (int i = 0; i < nMolecules; i++) {
+            dx[0] = currentCOM[0][i] - initialCOM[0][i];
+            dx[1] = currentCOM[1][i] - initialCOM[1][i];
+            dx[2] = currentCOM[2][i] - initialCOM[2][i];
+
+            double r2 = rsq(dx);
+            residual += r2;
+            for (int j = 0; j < nAtoms; j++) {
+                if (gradient || lambdaTerm) {
+                    final double dedx = dx[0] * fx2 * dcomdx[j];
+                    final double dedy = dx[1] * fx2 * dcomdx[j];
+                    final double dedz = dx[2] * fx2 * dcomdx[j];
+                    // Current atomic coordinates.
+                    Atom atom = atoms[j];
+                    if (gradient) {
+                        atom.addToXYZGradient(lambdaPow * dedx, lambdaPow * dedy, lambdaPow * dedz);
+                    }
+                    if (lambdaTerm) {
+                        int j3 = i * 3;
+                        lambdaGradient[j3] = dLambdaPow * dedx;
+                        lambdaGradient[j3 + 1] = dLambdaPow * dedy;
+                        lambdaGradient[j3 + 2] = dLambdaPow * dedz;
+                    }
                 }
             }
         }
@@ -135,48 +149,198 @@ public class COMRestraint implements LambdaInterface {
         return forceConstant * residual * lambdaPow;
     }
 
-    private void computeCOM(double[] com, boolean derivative) {
-        double totalMass = 0.0;
-        for (int i = 0; i < nAtoms; i++) {
-            Atom a = atoms[i];
-            double mass = a.getMass();
-            com[0] = a.getX() * mass;
-            com[1] = a.getY() * mass;
-            com[2] = a.getZ() * mass;
-            totalMass += mass;
-        }
-        com[0] /= totalMass;
-        com[1] /= totalMass;
-        com[2] /= totalMass;
-        if (derivative) {
-            for (int i = 0; i < nAtoms; i++) {
-                Atom a = atoms[i];
-                dcomdx[i] = a.getMass() / totalMass;
+    private void computeCOM(double[][] com, int nMolecules) {
+        int i = 0;
+        while (i < nMolecules) {
+            Polymer polymers[] = molecularAssembly.getChains();
+            if (polymers != null && polymers.length > 0) {
+                // Find the center of mass
+                for (Polymer polymer : polymers) {
+                    List<Atom> list = polymer.getAtomList();
+                    com[0][i] = 0.0;
+                    com[1][i] = 0.0;
+                    com[2][i] = 0.0;
+                    double totalMass = 0.0;
+                    for (Atom atom : list) {
+                        double m = atom.getMass();
+                        com[0][i] += atom.getX() * m;
+                        com[1][i] += atom.getY() * m;
+                        com[2][i] += atom.getZ() * m;
+                        totalMass += m;
+                    }
+                    com[0][i] /= totalMass;
+                    com[1][i] /= totalMass;
+                    com[2][i] /= totalMass;
+                    i++;
+                }
+            }
+
+            // Loop over each molecule
+            List<Molecule> molecules = molecularAssembly.getMolecules();
+            for (MSNode molecule : molecules) {
+                List<Atom> list = molecule.getAtomList();
+                // Find the center of mass
+                com[0][i] = 0.0;
+                com[1][i] = 0.0;
+                com[2][i] = 0.0;
+                double totalMass = 0.0;
+                for (Atom atom : list) {
+                    double m = atom.getMass();
+                    com[0][i] += atom.getX() * m;
+                    com[1][i] += atom.getY() * m;
+                    com[2][i] += atom.getZ() * m;
+                    totalMass += m;
+                }
+                com[0][i] /= totalMass;
+                com[1][i] /= totalMass;
+                com[2][i] /= totalMass;
+                i++;
+            }
+
+            // Loop over each water
+            List<MSNode> waters = molecularAssembly.getWaters();
+            for (MSNode water : waters) {
+                List<Atom> list = water.getAtomList();
+                // Find the center of mass
+                com[0][i] = 0.0;
+                com[1][i] = 0.0;
+                com[2][i] = 0.0;
+                double totalMass = 0.0;
+                for (Atom atom : list) {
+                    double m = atom.getMass();
+                    com[0][i] += atom.getX() * m;
+                    com[1][i] += atom.getY() * m;
+                    com[2][i] += atom.getZ() * m;
+                    totalMass += m;
+                }
+                com[0][i] /= totalMass;
+                com[1][i] /= totalMass;
+                com[2][i] /= totalMass;
+                i++;
+            }
+
+            // Loop over each ion
+            List<MSNode> ions = molecularAssembly.getIons();
+            for (MSNode ion : ions) {
+                List<Atom> list = ion.getAtomList();
+                // Find the center of mass
+                com[0][i] = 0.0;
+                com[1][i] = 0.0;
+                com[2][i] = 0.0;
+                double totalMass = 0.0;
+                for (Atom atom : list) {
+                    double m = atom.getMass();
+                    com[0][i] += atom.getX() * m;
+                    com[1][i] += atom.getY() * m;
+                    com[2][i] += atom.getZ() * m;
+                    totalMass += m;
+                }
+                com[0][i] /= totalMass;
+                com[1][i] /= totalMass;
+                com[2][i] /= totalMass;
+                i++;
             }
         }
     }
 
-//    private int countMolecules() {
-//        int count = 0;
-//        // Move polymers togethers.
-//        Polymer polymers[] = molecularAssembly.getChains();
-//        if (polymers != null && polymers.length > 0) {
-//            count++;
+    private void computedcomdx() {
+//        double totalMass = 0.0;
+        int i = 0;
+        while (i < nAtoms) {
+            Polymer polymers[] = molecularAssembly.getChains();
+            if (polymers != null && polymers.length > 0) {
+                for (Polymer polymer : polymers) {
+                    List<Atom> list = polymer.getAtomList();
+                    double totalMass = 0.0;
+                    for (Atom atom : list) {
+                        double m = atom.getMass();
+                        totalMass += m;
+                    }
+                    for (Atom atom : list) {
+                        dcomdx[i] = atom.getMass();
+                        dcomdx[i] /= totalMass;
+                        i++;
+                    }
+                }
+            }
+
+            // Loop over each molecule
+            List<Molecule> molecules = molecularAssembly.getMolecules();
+            for (MSNode molecule : molecules) {
+                List<Atom> list = molecule.getAtomList();
+                double totalMass = 0.0;
+                for (Atom atom : list) {
+                    double m = atom.getMass();
+                    totalMass += m;
+                }
+                for (Atom atom : list) {
+                    dcomdx[i] = atom.getMass();
+                    dcomdx[i] /= totalMass;
+                    i++;
+                }
+            }
+
+            // Loop over each water
+            List<MSNode> waters = molecularAssembly.getWaters();
+            for (MSNode water : waters) {
+                List<Atom> list = water.getAtomList();
+                double totalMass = 0.0;
+                for (Atom atom : list) {
+                    double m = atom.getMass();
+                    totalMass += m;
+                }
+                for (Atom atom : list) {
+                    dcomdx[i] = atom.getMass();
+                    dcomdx[i] /= totalMass;
+                    i++;
+                }
+            }
+
+            // Loop over each ion
+            List<MSNode> ions = molecularAssembly.getIons();
+            for (MSNode ion : ions) {
+                List<Atom> list = ion.getAtomList();
+                double totalMass = 0.0;
+                for (Atom atom : list) {
+                    double m = atom.getMass();
+                    totalMass += m;
+                }
+                for (Atom atom : list) {
+                    dcomdx[i] = atom.getMass();
+                    dcomdx[i] /= totalMass;
+                    i++;
+                }
+            }
+        }
+//        for (int i = 0; i < nAtoms; i++) {
+//            Atom a = atoms[i];
+//            dcomdx[j] = a.getMass() / totalMass;
 //        }
-//        List<Molecule> molecules = molecularAssembly.getMolecules();
-//        if (molecules != null) {
-//            count += molecules.size();
-//        }
-//        List<MSNode> waters = molecularAssembly.getWaters();
-//        if (waters != null) {
-//            count += waters.size();
-//        }
-//        List<MSNode> ions = molecularAssembly.getIons();
-//        if (ions != null) {
-//            count += ions.size();
-//        }
-//        return count;
-//    }
+
+    }
+
+    private int countMolecules() {
+        int count = 0;
+        // Move polymers togethers.
+        Polymer polymers[] = molecularAssembly.getChains();
+        if (polymers != null && polymers.length > 0) {
+            count += polymers.length;
+        }
+        List<Molecule> molecules = molecularAssembly.getMolecules();
+        if (molecules != null) {
+            count += molecules.size();
+        }
+        List<MSNode> waters = molecularAssembly.getWaters();
+        if (waters != null) {
+            count += waters.size();
+        }
+        List<MSNode> ions = molecularAssembly.getIons();
+        if (ions != null) {
+            count += ions.size();
+        }
+        return count;
+    }
+
     @Override
     public void setLambda(double lambda) {
         if (lambdaTerm) {

@@ -78,7 +78,9 @@ public abstract class SliceLoop extends IntegerForLoop {
     @Override
     public void finish(){
         sliceLoopTime += System.nanoTime();
+
 //        logger.info(String.format("Slice Loop Time: %7.4f (sec)",sliceLoopTime * toSeconds));
+
     }
     /**
      * Apply electron density "as normal", but check that the z index is greater
