@@ -28,9 +28,9 @@ import java.util.logging.Logger;
 
 import static java.lang.Math.sqrt;
 
-import org.apache.commons.math.linear.Array2DRowRealMatrix;
-import org.apache.commons.math.linear.LUDecompositionImpl;
-import org.apache.commons.math.linear.RealMatrix;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.LUDecomposition;
+import org.apache.commons.math3.linear.RealMatrix;
 
 import ffx.numerics.Potential.VARIABLE_TYPE;
 
@@ -359,7 +359,7 @@ public abstract class Thermostat {
         inertia.setEntry(0, 2, -xz);
         inertia.setEntry(1, 2, -yz);
         inertia.setEntry(2, 2, xx + yy);
-        inertia = new LUDecompositionImpl(inertia).getSolver().getInverse();
+        inertia = new LUDecomposition(inertia).getSolver().getInverse();
         xx = inertia.getEntry(0, 0);
         yy = inertia.getEntry(1, 1);
         zz = inertia.getEntry(2, 2);

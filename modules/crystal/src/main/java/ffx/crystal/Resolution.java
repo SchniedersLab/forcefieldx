@@ -22,8 +22,9 @@
  */
 package ffx.crystal;
 
+import static java.lang.Math.abs;
+
 import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.math.util.MathUtils;
 
 /**
  * The Resolution class encapsulates the sampling limits and resolution limits
@@ -119,7 +120,7 @@ public class Resolution {
      * @return a boolean.
      */
     public boolean inResolutionRange(double res) {
-        if (MathUtils.equals(res, this.resolution, 1e-8)) {
+        if (abs(res - this.resolution) < 1e-8) {
             return true;
         } else if (res > this.resolution) {
             return true;
@@ -136,7 +137,7 @@ public class Resolution {
      * @return a boolean.
      */
     public boolean inInvresolutionRange(double res) {
-        if (MathUtils.equals(res, this.invres, 1e-8)) {
+        if (abs(res - this.invres) < 1e-8) {
             return true;
         } else if (res < this.invres) {
             return true;

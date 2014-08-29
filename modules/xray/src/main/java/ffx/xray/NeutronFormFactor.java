@@ -26,17 +26,27 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
-import static java.lang.Math.*;
+import static java.lang.Math.PI;
+import static java.lang.Math.pow;
+import static java.lang.Math.sqrt;
 
-import static org.apache.commons.math.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.exp;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
-import ffx.numerics.VectorMath;
 import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
-import static ffx.numerics.VectorMath.*;
+import static ffx.numerics.VectorMath.b2u;
+import static ffx.numerics.VectorMath.determinant3;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.mat3inverse;
+import static ffx.numerics.VectorMath.mat3mat3;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalarmat3mat3;
+import static ffx.numerics.VectorMath.u2b;
+import static ffx.numerics.VectorMath.vec3mat3;
 
 /**
  * This implementation uses the coefficients from International Tables, Vol. C,
@@ -446,7 +456,6 @@ public final class NeutronFormFactor implements FormFactor {
         }
 
         // double rho = occ * twopi32 * gradp[3];
-
         // x, y, z
         if (refinexyz) {
             atom.addToXYZGradient(

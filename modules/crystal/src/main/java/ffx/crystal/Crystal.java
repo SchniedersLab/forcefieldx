@@ -38,10 +38,9 @@ import static java.lang.Math.sqrt;
 import static java.lang.Math.toRadians;
 
 import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.math.linear.Array2DRowRealMatrix;
-import org.apache.commons.math.linear.LUDecompositionImpl;
-import org.apache.commons.math.linear.RealMatrix;
-import org.apache.commons.math.util.MathUtils;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.LUDecomposition;
+import org.apache.commons.math3.linear.RealMatrix;
 
 import ffx.utilities.HashCodeUtil;
 
@@ -415,7 +414,7 @@ public class Crystal {
 
         // Invert A^-1 to get A
         RealMatrix m = new Array2DRowRealMatrix(Ai, true);
-        m = new LUDecompositionImpl(m).getSolver().getInverse();
+        m = new LUDecomposition(m).getSolver().getInverse();
         A = m.getData();
 
         // The columns of A are the reciprocal basis vectors
@@ -465,7 +464,7 @@ public class Crystal {
 
         // invert G to yield Gstar
         m = new Array2DRowRealMatrix(G, true);
-        m = new LUDecompositionImpl(m).getSolver().getInverse();
+        m = new LUDecomposition(m).getSolver().getInverse();
         Gstar = m.getData();
 
         List<SymOp> symOps = spaceGroup.symOps;
@@ -605,12 +604,12 @@ public class Crystal {
 
         Crystal other = (Crystal) obj;
 
-        return (MathUtils.equals(a, other.a, 0.01)
-                && MathUtils.equals(b, other.b, 0.01)
-                && MathUtils.equals(c, other.c, 0.01)
-                && MathUtils.equals(alpha, other.alpha, 0.01)
-                && MathUtils.equals(beta, other.beta, 0.01)
-                && MathUtils.equals(gamma, other.gamma, 0.01)
+        return (abs(a - other.a) < 0.01
+                && abs(b - other.b) < 0.01
+                && abs(c - other.c) < 0.01
+                && abs(alpha - other.alpha) < 0.01
+                && abs(beta - other.beta) < 0.01
+                && abs(gamma - other.gamma) < 0.01
                 && spaceGroup.number == other.spaceGroup.number);
     }
 

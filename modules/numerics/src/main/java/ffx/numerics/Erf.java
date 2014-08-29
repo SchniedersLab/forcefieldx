@@ -25,7 +25,7 @@ package ffx.numerics;
 import static java.lang.Math.abs;
 import static java.lang.Math.floor;
 
-import static org.apache.commons.math.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.exp;
 
 /**
  * Static methods to evaluate erf(x) and erfc(x) for a real argument x. Rational

@@ -22,29 +22,33 @@
  */
 package ffx.xray;
 
+import java.util.Arrays;
+import java.util.logging.Logger;
+
+import static java.lang.Math.PI;
+import static java.lang.Math.abs;
+import static java.lang.Math.pow;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
 import edu.rit.pj.reduction.SharedDouble;
 import edu.rit.pj.reduction.SharedDoubleArray;
+
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.numerics.ComplexNumber;
 import ffx.numerics.Potential;
+import ffx.xray.CrystalReciprocalSpace.SolventModel;
+
 import static ffx.numerics.VectorMath.dot;
 import static ffx.numerics.VectorMath.mat3mat3;
 import static ffx.numerics.VectorMath.mat3symvec6;
 import static ffx.numerics.VectorMath.transpose3;
 import static ffx.numerics.VectorMath.vec3mat3;
-
-import ffx.xray.CrystalReciprocalSpace.SolventModel;
-import static java.lang.Math.PI;
-import static java.lang.Math.abs;
-import static java.lang.Math.pow;
-import java.util.Arrays;
-import java.util.logging.Logger;
-import static org.apache.commons.math.util.FastMath.exp;
 
 /**
  *

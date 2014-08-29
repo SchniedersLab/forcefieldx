@@ -34,9 +34,9 @@ import static java.lang.Math.max;
 import static java.lang.String.format;
 
 import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.math.linear.Array2DRowRealMatrix;
-import org.apache.commons.math.linear.EigenDecompositionImpl;
-import org.apache.commons.math.linear.RealMatrix;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.EigenDecomposition;
+import org.apache.commons.math3.linear.RealMatrix;
 
 import edu.rit.pj.ParallelTeam;
 
@@ -354,7 +354,7 @@ public class Energy {
 
         RealMatrix a = new Array2DRowRealMatrix(new double[][]{{xxqdp, xyqdp, xzqdp}, {yxqdp, yyqdp, yzqdp}, {zxqdp, zyqdp, zzqdp}});
 
-        EigenDecompositionImpl e = new EigenDecompositionImpl(a, 1);
+        EigenDecomposition e = new EigenDecomposition(a, 1);
         a = e.getD();
         double[] netqdp = {a.getColumn(0)[0], a.getColumn(1)[1], a.getColumn(2)[2]};
 

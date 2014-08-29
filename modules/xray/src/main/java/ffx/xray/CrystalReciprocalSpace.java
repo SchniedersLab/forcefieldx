@@ -29,7 +29,7 @@ import java.util.logging.Logger;
 import static java.lang.Math.floor;
 import static java.lang.Math.min;
 
-import static org.apache.commons.math.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.exp;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
@@ -435,7 +435,7 @@ public class CrystalReciprocalSpace {
         }
         gridMethod = tempGrid;
 
-        logger.log( Level.INFO, " X-ray Refinement Parallelization Method: {0}", gridMethod.toString());
+        logger.log(Level.INFO, " X-ray Refinement Parallelization Method: {0}", gridMethod.toString());
 
         if (solvent) {
             int minWork = nSymm;

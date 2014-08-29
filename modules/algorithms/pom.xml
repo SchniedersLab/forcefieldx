@@ -128,15 +128,15 @@
         </dependency>
         <dependency>
             <groupId>commons-math</groupId>
-            <artifactId>commons-math</artifactId>
+            <artifactId>commons-math3</artifactId>
             <type>jar</type>
-            <version>2.2</version>
+            <version>3.0</version>
         </dependency>
         <dependency>
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy-all</artifactId>
             <type>jar</type>
-            <version>2.2.0</version>
+            <version>2.3.6</version>
         </dependency>
     </dependencies>
 </project>

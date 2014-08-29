@@ -22,6 +22,7 @@
  */
 package ffx.xray;
 
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 import static java.lang.Math.PI;
@@ -35,7 +36,7 @@ import static java.lang.Math.sin;
 import static java.lang.Math.sqrt;
 import static java.lang.Math.tanh;
 
-import static org.apache.commons.math.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.exp;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
@@ -57,7 +58,6 @@ import static ffx.numerics.VectorMath.mat3mat3;
 import static ffx.numerics.VectorMath.mat3symvec6;
 import static ffx.numerics.VectorMath.transpose3;
 import static ffx.numerics.VectorMath.vec3mat3;
-import java.util.Arrays;
 
 /**
  *
@@ -317,11 +317,11 @@ public class SigmaAEnergy implements Potential {
             private final ComplexNumber mfo2 = new ComplexNumber();
             private final ComplexNumber dfcc = new ComplexNumber();
             private final ReflectionSpline spline = new ReflectionSpline(reflectionList, n);
-            
+
             public SigmaALoop() {
-                lgrad = new double[2*n];                 
+                lgrad = new double[2 * n];
             }
-            
+
             @Override
             public void start() {
                 lsum = 0.0;
@@ -330,14 +330,14 @@ public class SigmaAEnergy implements Potential {
                 lnsumr = 0;
                 Arrays.fill(lgrad, 0.0);
             }
-            
+
             @Override
             public void finish() {
                 sum.addAndGet(lsum);
                 sumr.addAndGet(lsumr);
                 nsum.addAndGet(lnsum);
                 nsumr.addAndGet(lnsumr);
-                for (int i=0; i< lgrad.length; i++) {
+                for (int i = 0; i < lgrad.length; i++) {
                     grad.getAndAdd(i, lgrad[i]);
                 }
             }
@@ -498,7 +498,7 @@ public class SigmaAEnergy implements Potential {
                         lgrad[n + i0] += dfwa * g0;
                         lgrad[n + i1] += dfwa * g1;
                         lgrad[n + i2] += dfwa * g2;
-          
+
                     }
                 }
             }
