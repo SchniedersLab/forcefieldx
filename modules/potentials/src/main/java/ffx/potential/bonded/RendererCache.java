@@ -44,6 +44,7 @@ import javax.vecmath.Vector3d;
  *
  */
 public class RendererCache {
+
     // Scene Attributes
     /**
      * Constant <code>lineAttributes</code>

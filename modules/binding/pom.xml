@@ -14,7 +14,7 @@
     <artifactId>binding</artifactId>
     <packaging>jar</packaging>
     <name>Binding Affinity</name>
-    <description>The Binding Affinity module will contain methods for 
+    <description>The Binding Affinity module will contain methods for
         computing binding affinities.
     </description>
     <inceptionYear>2012</inceptionYear>
@@ -25,59 +25,6 @@
         <url>http://biomol.bme.utexas.edu/lab</url>
     </organization>
     <build>
-        <plugins>
-            <plugin>
-                <artifactId>maven-clean-plugin</artifactId>
-                <version>2.5</version>
-                <inherited>false</inherited>
-                <configuration>
-                    <filesets>
-                        <fileset>
-                            <directory>${basedir}/src/site/resources/scripts</directory>
-                        </fileset>
-                    </filesets>
-                </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>2.6</version>
-                <inherited>false</inherited>
-                <executions>
-                    <execution>
-                        <id>website-scripts</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <resources>
-                                <resource>
-                                    <directory>${basedir}/src/main/groovy/ffx/binding</directory>
-                                </resource>
-                            </resources>
-                            <outputDirectory>${basedir}/src/site/resources/scripts</outputDirectory>
-                            <overwrite>true</overwrite>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>distro-scripts</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <resources>
-                                <resource>
-                                    <directory>${basedir}/src/main/groovy/ffx/binding</directory>
-                                </resource>
-                            </resources>
-                            <outputDirectory>${basedir}/../../scripts</outputDirectory>
-                            <overwrite>true</overwrite>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
         <resources>
             <resource>
                 <directory>${basedir}/src/main/groovy/ffx/binding</directory>

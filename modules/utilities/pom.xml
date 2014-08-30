@@ -19,50 +19,9 @@
         and Hybrid36.
     </description>
     <build>
-        <plugins>
-            <plugin>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>2.6</version>
-                <inherited>false</inherited>
-                <executions>
-                    <execution>
-                        <id>website-scripts</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <resources>
-                                <resource>
-                                    <directory>${basedir}/src/main/groovy/ffx</directory>
-                                </resource>
-                            </resources>
-                            <outputDirectory>${basedir}/src/site/resources/scripts</outputDirectory>
-                            <overwrite>true</overwrite>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>distro-scripts</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <resources>
-                                <resource>
-                                    <directory>${basedir}/src/main/groovy/ffx</directory>
-                                </resource>
-                            </resources>
-                            <outputDirectory>${basedir}/../../scripts</outputDirectory>
-                            <overwrite>true</overwrite>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
         <resources>
             <resource>
-                <directory>${basedir}/src/main/groovy/ffx</directory>
+                <directory>${basedir}/src/main/groovy/ffx/utilities</directory>
                 <targetPath>ffx/scripts</targetPath>
             </resource>
         </resources>

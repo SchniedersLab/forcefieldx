@@ -26,7 +26,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 
-import static java.lang.Math.PI;
+import static org.apache.commons.math3.util.FastMath.PI;
 
 /**
  * The StretchBendType class defines one out-of-plane angle bending energy type.

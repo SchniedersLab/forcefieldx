@@ -26,7 +26,7 @@ import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.lang.Math.sqrt;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.LUDecomposition;
@@ -83,7 +83,8 @@ public abstract class Thermostat {
     protected Thermostats name;
 
     /**
-     * <p>Constructor for Thermostat.</p>
+     * <p>
+     * Constructor for Thermostat.</p>
      *
      * @param nVariables a int.
      * @param x an array of double.
@@ -136,7 +137,8 @@ public abstract class Thermostat {
     }
 
     /**
-     * <p>The setRandomSeed method is used to initialize the Random number
+     * <p>
+     * The setRandomSeed method is used to initialize the Random number
      * generator to the same starting state, such that separate runs produce the
      * same Maxwell-Boltzmann initial velocities. same </p>
      *
@@ -147,8 +149,9 @@ public abstract class Thermostat {
     }
 
     /**
-     * <p>Log the target temperature and current number of kT per degree of
-     * freedom (should be 0.5 kT at equilibrium).</p>
+     * <p>
+     * Log the target temperature and current number of kT per degree of freedom
+     * (should be 0.5 kT at equilibrium).</p>
      *
      * @param level a {@link java.util.logging.Level} object.
      */
@@ -164,7 +167,8 @@ public abstract class Thermostat {
     }
 
     /**
-     * <p>getCurrentTemperature</p>
+     * <p>
+     * getCurrentTemperature</p>
      *
      * @return a double.
      */
@@ -173,8 +177,8 @@ public abstract class Thermostat {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>kineticEnergy</code>.</p>
+     * <p>
+     * Getter for the field <code>kineticEnergy</code>.</p>
      *
      * @return a double.
      */
@@ -183,8 +187,8 @@ public abstract class Thermostat {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>targetTemperature</code>.</p>
+     * <p>
+     * Getter for the field <code>targetTemperature</code>.</p>
      *
      * @return a double.
      */
@@ -254,7 +258,8 @@ public abstract class Thermostat {
     }
 
     /**
-     * <p>centerOfMassMotion</p>
+     * <p>
+     * centerOfMassMotion</p>
      *
      * @param remove a boolean.
      * @param print a boolean.
@@ -427,14 +432,16 @@ public abstract class Thermostat {
     }
 
     /**
-     * <p>halfStep</p>
+     * <p>
+     * halfStep</p>
      *
      * @param dt a double.
      */
     public abstract void halfStep(double dt);
 
     /**
-     * <p>fullStep</p>
+     * <p>
+     * fullStep</p>
      *
      * @param dt a double.
      */

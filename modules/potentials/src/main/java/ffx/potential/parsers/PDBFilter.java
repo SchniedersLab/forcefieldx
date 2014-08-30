@@ -324,6 +324,7 @@ public final class PDBFilter extends SystemFilter {
      * {@inheritDoc}
      *
      * Parse the PDB File
+     *
      * @return true if the file is read successfully.
      */
     @Override

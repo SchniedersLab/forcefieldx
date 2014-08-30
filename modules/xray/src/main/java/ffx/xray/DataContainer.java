@@ -30,7 +30,8 @@ import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Residue;
 
 /**
- * <p>DataContainer interface.</p>
+ * <p>
+ * DataContainer interface.</p>
  *
  * @author Timothy D. Fenn
  *
@@ -38,28 +39,32 @@ import ffx.potential.bonded.Residue;
 public interface DataContainer {
 
     /**
-     * <p>getAtomArray</p>
+     * <p>
+     * getAtomArray</p>
      *
      * @return an array of {@link ffx.potential.bonded.Atom} objects.
      */
     public Atom[] getAtomArray();
 
     /**
-     * <p>getAltResidues</p>
+     * <p>
+     * getAltResidues</p>
      *
      * @return a {@link java.util.ArrayList} object.
      */
     public ArrayList<ArrayList<Residue>> getAltResidues();
 
     /**
-     * <p>getAltMolecules</p>
+     * <p>
+     * getAltMolecules</p>
      *
      * @return a {@link java.util.ArrayList} object.
      */
     public ArrayList<ArrayList<Molecule>> getAltMolecules();
 
     /**
-     * <p>getMolecularAssembly</p>
+     * <p>
+     * getMolecularAssembly</p>
      *
      * @return an array of {@link ffx.potential.bonded.MolecularAssembly}
      * objects.
@@ -67,42 +72,48 @@ public interface DataContainer {
     public MolecularAssembly[] getMolecularAssembly();
 
     /**
-     * <p>getRefinementModel</p>
+     * <p>
+     * getRefinementModel</p>
      *
      * @return a {@link ffx.xray.RefinementModel} object.
      */
     public RefinementModel getRefinementModel();
 
     /**
-     * <p>getWeight</p>
+     * <p>
+     * getWeight</p>
      *
      * @return the current data weight.
      */
     public double getWeight();
 
     /**
-     * <p>setWeight</p>
+     * <p>
+     * setWeight</p>
      *
      * set the overall weight of the data.
      */
     public void setWeight(double weight);
 
     /**
-     * <p>printOptimizationHeader</p>
+     * <p>
+     * printOptimizationHeader</p>
      *
      * @return a {@link java.lang.String} object.
      */
     public String printOptimizationHeader();
 
     /**
-     * <p>printOptimizationUpdate</p>
+     * <p>
+     * printOptimizationUpdate</p>
      *
      * @return a {@link java.lang.String} object.
      */
     public String printOptimizationUpdate();
 
     /**
-     * <p>printEnergyUpdate</p>
+     * <p>
+     * printEnergyUpdate</p>
      *
      * @return a {@link java.lang.String} object.
      */

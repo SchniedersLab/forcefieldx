@@ -33,7 +33,8 @@ public final class FileCloser implements Runnable {
     FFXSystem ffxSystem;
 
     /**
-     * <p>Constructor for FileCloser.</p>
+     * <p>
+     * Constructor for FileCloser.</p>
      *
      * @param sys a {@link ffx.ui.FFXSystem} object.
      */

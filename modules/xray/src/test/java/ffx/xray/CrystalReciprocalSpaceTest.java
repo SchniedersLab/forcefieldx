@@ -111,9 +111,9 @@ public class CrystalReciprocalSpaceTest {
 
         // set up FFT and run it
         ParallelTeam parallelTeam = new ParallelTeam();
-        CrystalReciprocalSpace crs =
-                new CrystalReciprocalSpace(reflectionlist, atomarray,
-                parallelTeam, parallelTeam);
+        CrystalReciprocalSpace crs
+                = new CrystalReciprocalSpace(reflectionlist, atomarray,
+                        parallelTeam, parallelTeam);
         crs.computeAtomicDensity(refinementdata.fc);
 
         // tests
@@ -125,7 +125,7 @@ public class CrystalReciprocalSpaceTest {
                 + a.divides(b).toString());
 
         assertEquals("1 1 4 reflection should be correct",
-                 -752.025705, a.re(), 0.001);
+                -752.025705, a.re(), 0.001);
         assertEquals("1 1 4 reflection should be correct",
                 -1013.271597, a.im(), 0.001);
 
@@ -138,7 +138,7 @@ public class CrystalReciprocalSpaceTest {
                 + a.divides(b).toString());
 
         assertEquals("2 1 10 reflection should be correct",
-                 -74.069038, a.re(), 0.001);
+                -74.069038, a.re(), 0.001);
         assertEquals("2 1 10 reflection should be correct",
                 -404.835186, a.im(), 0.001);
     }
@@ -179,9 +179,9 @@ public class CrystalReciprocalSpaceTest {
 
         // set up FFT and run it
         ParallelTeam parallelTeam = new ParallelTeam();
-        CrystalReciprocalSpace crs =
-                new CrystalReciprocalSpace(reflectionlist, atomarray,
-                parallelTeam, parallelTeam);
+        CrystalReciprocalSpace crs
+                = new CrystalReciprocalSpace(reflectionlist, atomarray,
+                        parallelTeam, parallelTeam);
         crs.computeAtomicDensity(refinementdata.fc);
 
         // tests
@@ -195,7 +195,7 @@ public class CrystalReciprocalSpaceTest {
         assertEquals("1 9 4 reflection should be correct",
                 -493.129421, a.re(), 0.001);
         assertEquals("1 9 4 reflection should be correct",
-                 456.322582, a.im(), 0.001);
+                456.322582, a.im(), 0.001);
 
         b.re(-129.767);
         b.im(-76.9812);
@@ -208,6 +208,6 @@ public class CrystalReciprocalSpaceTest {
         assertEquals("5 26 8 reflection should be correct",
                 -122.554584, a.re(), 0.001);
         assertEquals("5 26 8 reflection should be correct",
-                 -79.168709, a.im(), 0.001);
+                -79.168709, a.im(), 0.001);
     }
 }

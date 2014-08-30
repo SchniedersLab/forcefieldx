@@ -59,7 +59,8 @@ public class TinkerServer implements Runnable {
     private TinkerUpdate update = null;
 
     /**
-     * <p>Constructor for TinkerServer.</p>
+     * <p>
+     * Constructor for TinkerServer.</p>
      *
      * @param s a {@link ffx.ui.commands.TinkerSystem} object.
      */
@@ -151,7 +152,8 @@ public class TinkerServer implements Runnable {
     }
 
     /**
-     * <p>isAlive</p>
+     * <p>
+     * isAlive</p>
      *
      * @return a boolean.
      */
@@ -195,7 +197,8 @@ public class TinkerServer implements Runnable {
     }
 
     /**
-     * <p>loadUpdate</p>
+     * <p>
+     * loadUpdate</p>
      *
      * @param u a {@link ffx.ui.commands.TinkerUpdate} object.
      */
@@ -204,7 +207,8 @@ public class TinkerServer implements Runnable {
     }
 
     /**
-     * <p>needUpdate</p>
+     * <p>
+     * needUpdate</p>
      *
      * @return a boolean.
      */
@@ -221,7 +225,8 @@ public class TinkerServer implements Runnable {
     }
 
     /**
-     * <p>run</p>
+     * <p>
+     * run</p>
      */
     public void run() {
         startServer();
@@ -262,7 +267,7 @@ public class TinkerServer implements Runnable {
         ListIterator<Socket> lclient;
         Vector<Socket> closed = new Vector<Socket>();
         for (lout = outputs.listIterator(), lin = inputs.listIterator(), lclient = clients
-                        .listIterator(); lout.hasNext();) {
+                .listIterator(); lout.hasNext();) {
             oout = lout.next();
             oin = lin.next();
             client = lclient.next();
@@ -316,14 +321,16 @@ public class TinkerServer implements Runnable {
     }
 
     /**
-     * <p>setUpdated</p>
+     * <p>
+     * setUpdated</p>
      */
     public void setUpdated() {
         request = false;
     }
 
     /**
-     * <p>start</p>
+     * <p>
+     * start</p>
      */
     public void start() {
         if (thread == null || !thread.isAlive()) {
@@ -357,7 +364,8 @@ public class TinkerServer implements Runnable {
     }
 
     /**
-     * <p>stop</p>
+     * <p>
+     * stop</p>
      */
     public void stop() {
         shutdown = true;

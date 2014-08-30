@@ -40,7 +40,8 @@ public class GraphicsPanel extends JPanel {
     private JPanel canvasPanel;
 
     /**
-     * <p>Constructor for GraphicsPanel.</p>
+     * <p>
+     * Constructor for GraphicsPanel.</p>
      *
      * @param graphicsCanvas a {@link ffx.ui.GraphicsCanvas} object.
      * @param statusPanel a {@link javax.swing.JPanel} object.

@@ -27,8 +27,8 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.lang.Math.floor;
-import static java.lang.Math.min;
+import static org.apache.commons.math3.util.FastMath.floor;
+import static org.apache.commons.math3.util.FastMath.min;
 
 import static org.apache.commons.math3.util.FastMath.exp;
 

@@ -246,7 +246,8 @@ public class RowMajorComplex3DCuda implements Runnable {
     }
 
     /**
-     * <p>main</p>
+     * <p>
+     * main</p>
      *
      * @param args an array of {@link java.lang.String} objects.
      * @throws java.lang.Exception if any.
@@ -276,7 +277,6 @@ public class RowMajorComplex3DCuda implements Runnable {
 
         final int dimCubed = dim * dim * dim;
 
-
         /**
          * Create an array to save the initial input and result.
          */
@@ -298,8 +298,8 @@ public class RowMajorComplex3DCuda implements Runnable {
         }
 
         RowMajorComplex3D complex3D = new RowMajorComplex3D(dim, dim, dim);
-        RowMajorComplex3DParallel complex3DParallel =
-                new RowMajorComplex3DParallel(dim, dim, dim, new ParallelTeam(), IntegerSchedule.fixed());
+        RowMajorComplex3DParallel complex3DParallel
+                = new RowMajorComplex3DParallel(dim, dim, dim, new ParallelTeam(), IntegerSchedule.fixed());
         RowMajorComplex3DCuda complex3DCUDA = new RowMajorComplex3DCuda(dim, dim, dim, data, recip);
         Thread cudaThread = new Thread(complex3DCUDA);
 

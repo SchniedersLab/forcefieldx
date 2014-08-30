@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.lang.Math.*;
+import static org.apache.commons.math3.util.FastMath.*;
 import static java.lang.String.format;
 
 import edu.rit.pj.*;
@@ -81,13 +81,11 @@ import static ffx.potential.parameters.MultipoleType.*;
 public class PME_2 implements Potential {
 
     /**
-     * Constant
-     * <code>pedit=false</code>
+     * Constant <code>pedit=false</code>
      */
     public static boolean pedit = false;
     /**
-     * Constant
-     * <code>propyze=false</code>
+     * Constant <code>propyze=false</code>
      */
     public static boolean propyze = false;
     private Boolean use_pme = false;
@@ -97,8 +95,7 @@ public class PME_2 implements Potential {
     public boolean fitmpl = true, fitdpl = true, fitqdpl = true;
     private int nvars;
     /**
-     * Constant
-     * <code>logger</code>
+     * Constant <code>logger</code>
      */
     public static final Logger logger = Logger.getLogger(PME_2.class.getName());
     private double totalEnergy;
@@ -121,8 +118,7 @@ public class PME_2 implements Potential {
     private double multipoleEnergy;
     private double polarizationEnergy;
     /**
-     * Constant
-     * <code>lambda=1.0</code>
+     * Constant <code>lambda=1.0</code>
      */
     public static double lambda = 1.0;
     /**
@@ -150,8 +146,7 @@ public class PME_2 implements Potential {
      */
     public static double coordinates[][][];
     /**
-     * Constant
-     * <code>neighborLists=</code>
+     * Constant <code>neighborLists=</code>
      */
     public static int neighborLists[][][];
     private final int[][][] ewaldLists;
@@ -165,18 +160,15 @@ public class PME_2 implements Potential {
      */
     public static double localMultipole[][];
     /**
-     * Constant
-     * <code>frame</code>
+     * Constant <code>frame</code>
      */
     public static MultipoleType.MultipoleFrameDefinition frame[];
     /**
-     * Constant
-     * <code>axisAtom=</code>
+     * Constant <code>axisAtom=</code>
      */
     public static int axisAtom[][];
     /**
-     * Constant
-     * <code>lol=</code>
+     * Constant <code>lol=</code>
      */
     public static int lol[];
     /**
@@ -209,13 +201,11 @@ public class PME_2 implements Potential {
      */
     public static Polarization polarization;
     /**
-     * Constant
-     * <code>polsor=</code>
+     * Constant <code>polsor=</code>
      */
     public static double polsor;
     /**
-     * Constant
-     * <code>poleps=</code>
+     * Constant <code>poleps=</code>
      */
     public static double poleps;
     /**
@@ -234,18 +224,15 @@ public class PME_2 implements Potential {
      */
     public static double p13scale;
     /**
-     * Constant
-     * <code>pdamp=</code>
+     * Constant <code>pdamp=</code>
      */
     public static double pdamp[];
     /**
-     * Constant
-     * <code>thole=</code>
+     * Constant <code>thole=</code>
      */
     public static double thole[];
     /**
-     * Constant
-     * <code>polarizability=</code>
+     * Constant <code>polarizability=</code>
      */
     public static double polarizability[];
     /**
@@ -253,18 +240,15 @@ public class PME_2 implements Potential {
      */
     public static double inducedDipole[][][];
     /**
-     * Constant
-     * <code>inducedDipolep=</code>
+     * Constant <code>inducedDipolep=</code>
      */
     public static double inducedDipolep[][][];
     /**
-     * Constant
-     * <code>directDipole=</code>
+     * Constant <code>directDipole=</code>
      */
     public static double directDipole[][];
     /**
-     * Constant
-     * <code>directDipolep=</code>
+     * Constant <code>directDipolep=</code>
      */
     public static double directDipolep[][];
     private final double cartesianDipolePhi[][];
@@ -274,28 +258,23 @@ public class PME_2 implements Potential {
      */
     public static double field1[][];
     /**
-     * Constant
-     * <code>field2=</code>
+     * Constant <code>field2=</code>
      */
     public static double field2[][];
     /**
-     * Constant
-     * <code>ip11=</code>
+     * Constant <code>ip11=</code>
      */
     public static int ip11[][];
     /**
-     * Constant
-     * <code>ip12=</code>
+     * Constant <code>ip12=</code>
      */
     public static int ip12[][];
     /**
-     * Constant
-     * <code>ip13=</code>
+     * Constant <code>ip13=</code>
      */
     public static int ip13[][];
     /**
-     * Constant
-     * <code>ip14=</code>
+     * Constant <code>ip14=</code>
      */
     public static int ip14[][]; //added by gchattree
     /**
@@ -308,8 +287,7 @@ public class PME_2 implements Potential {
     private double aewald3;
     private double off;
     /**
-     * Constant
-     * <code>off2=</code>
+     * Constant <code>off2=</code>
      */
     public static double off2;
     private double permanentSelfEnergy;
@@ -374,14 +352,12 @@ public class PME_2 implements Potential {
      */
     private final int fftThreads;
     /**
-     * Constant
-     * <code>rotateMultipolesRegion</code>
+     * Constant <code>rotateMultipolesRegion</code>
      */
     public static RotateMultipolesRegion rotateMultipolesRegion;
     private final ExpandCoordinatesRegion expandCoordinatesRegion;
     /**
-     * Constant
-     * <code>expandInducedDipolesRegion</code>
+     * Constant <code>expandInducedDipolesRegion</code>
      */
     public static ExpandInducedDipolesRegion expandInducedDipolesRegion;
     //private ReciprocalSpace reciprocalSpace;
@@ -390,8 +366,7 @@ public class PME_2 implements Potential {
     private RealSpaceEnergyRegion realSpaceEnergyRegion;
     private TorqueRegion torqueRegion;
     /**
-     * Constant
-     * <code>pairWiseSchedule</code>
+     * Constant <code>pairWiseSchedule</code>
      */
     public static IntegerSchedule pairWiseSchedule;
     private final SharedDoubleArray sharedGrad[];
@@ -401,8 +376,7 @@ public class PME_2 implements Potential {
     //private long reciprocalSpaceTime;
     //private long bsplineTime, densityTime, realAndFFTTime, phiTime;
     /**
-     * Constant
-     * <code>toSeconds=1.0e-9</code>
+     * Constant <code>toSeconds=1.0e-9</code>
      */
     public static double toSeconds = 1.0e-9;
     /**
@@ -416,7 +390,8 @@ public class PME_2 implements Potential {
     //private ArrayList<Double> put;
 
     /**
-     * <p>Constructor for PME_2.</p>
+     * <p>
+     * Constructor for PME_2.</p>
      *
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
      * @param crystal a {@link ffx.crystal.Crystal} object.
@@ -608,7 +583,6 @@ public class PME_2 implements Potential {
 //        	torqueRegion = new TorqueRegion(maxThreads);
 //        }
 
-
         Boolean gradient = true;
 //        if(use_pme){
 //        	multipoleEnergy = 0.0;
@@ -737,7 +711,8 @@ public class PME_2 implements Potential {
 //        throw new UnsupportedOperationException("Not supported yet.");
 //    }
     /**
-     * <p>set_target_grid</p>
+     * <p>
+     * set_target_grid</p>
      *
      * @param target_grid an array of double.
      */
@@ -746,7 +721,8 @@ public class PME_2 implements Potential {
     }
 
     /**
-     * <p>varprm</p>
+     * <p>
+     * varprm</p>
      *
      * @param x an array of double.
      * @param ivar a int.
@@ -824,7 +800,8 @@ public class PME_2 implements Potential {
 
     /*Methods needed to implement Potential interface*/
     /**
-     * <p>energyAndGradient</p>
+     * <p>
+     * energyAndGradient</p>
      *
      * @param x an array of double.
      * @param g an array of double.
@@ -945,8 +922,8 @@ public class PME_2 implements Potential {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>scaling</code>.</p>
+     * <p>
+     * Setter for the field <code>scaling</code>.</p>
      *
      * @param scaling an array of double.
      */
@@ -955,8 +932,8 @@ public class PME_2 implements Potential {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>scaling</code>.</p>
+     * <p>
+     * Getter for the field <code>scaling</code>.</p>
      *
      * @return an array of double.
      */
@@ -965,8 +942,8 @@ public class PME_2 implements Potential {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>coordinates</code>.</p>
+     * <p>
+     * Getter for the field <code>coordinates</code>.</p>
      *
      * @param parameters an array of double.
      * @return an array of double.
@@ -1029,7 +1006,8 @@ public class PME_2 implements Potential {
     }
 
     /**
-     * <p>getallmpoles</p>
+     * <p>
+     * getallmpoles</p>
      *
      * @param x an array of double.
      * @return an array of double.
@@ -1164,8 +1142,8 @@ public class PME_2 implements Potential {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>key</code>.</p>
+     * <p>
+     * Setter for the field <code>key</code>.</p>
      *
      * @param key a {@link java.util.ArrayList} object.
      */
@@ -1175,7 +1153,8 @@ public class PME_2 implements Potential {
 
     //added by gchattree
     /**
-     * <p>polargrp</p>
+     * <p>
+     * polargrp</p>
      */
     public static void polargrp() {
         int index;
@@ -1192,7 +1171,6 @@ public class PME_2 implements Potential {
         ArrayList<Integer> keep = new ArrayList<Integer>();
         //int nkeep = 0;
         ArrayList<Integer> mask = new ArrayList<Integer>();
-
 
         ArrayList<Integer> jg;
         ArrayList<Integer> ig;
@@ -1454,7 +1432,8 @@ public class PME_2 implements Potential {
     }
 
     /**
-     * <p>induce_pedit</p>
+     * <p>
+     * induce_pedit</p>
      */
     public static void induce_pedit() {
         double d12scale = 1;
@@ -1657,7 +1636,8 @@ public class PME_2 implements Potential {
 
     //added by gchattree
     /**
-     * <p>induce0a</p>
+     * <p>
+     * induce0a</p>
      */
     public static void induce0a() {
         double d12scale = 1;
@@ -2013,7 +1993,8 @@ public class PME_2 implements Potential {
     }
 
     /**
-     * <p>setDipoleMoments</p>
+     * <p>
+     * setDipoleMoments</p>
      *
      * @param print a boolean.
      */
@@ -2078,7 +2059,8 @@ public class PME_2 implements Potential {
     }
 
     /**
-     * <p>calcMutualDipoleMoments</p>
+     * <p>
+     * calcMutualDipoleMoments</p>
      *
      * @param print a boolean.
      * @param startTime a long.
@@ -2439,7 +2421,8 @@ public class PME_2 implements Potential {
     }
 
     /**
-     * <p>init_prms</p>
+     * <p>
+     * init_prms</p>
      */
     public void init_prms() {
         if (propyze) {
@@ -2459,7 +2442,8 @@ public class PME_2 implements Potential {
     }
 
     /**
-     * <p>dividempoles3</p>
+     * <p>
+     * dividempoles3</p>
      */
     public void dividempoles3() {
         for (int i = 0; i < nAtoms; i++) {
@@ -2471,7 +2455,8 @@ public class PME_2 implements Potential {
 
     //added by gchattree
     /**
-     * <p>potpoint</p>
+     * <p>
+     * potpoint</p>
      *
      * @param xyz an array of {@link java.lang.Double} objects.
      * @return a double.
@@ -2939,7 +2924,8 @@ public class PME_2 implements Potential {
     }
 
     /**
-     * <p>getPermanentEnergy</p>
+     * <p>
+     * getPermanentEnergy</p>
      *
      * @return a double.
      */
@@ -2948,8 +2934,8 @@ public class PME_2 implements Potential {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>polarizationEnergy</code>.</p>
+     * <p>
+     * Getter for the field <code>polarizationEnergy</code>.</p>
      *
      * @return a double.
      */
@@ -2958,7 +2944,8 @@ public class PME_2 implements Potential {
     }
 
     /**
-     * <p>getGradients</p>
+     * <p>
+     * getGradients</p>
      *
      * @param grad an array of double.
      */
@@ -6103,7 +6090,8 @@ public class PME_2 implements Potential {
     }
 
     /**
-     * <p>ewaldCutoff</p>
+     * <p>
+     * ewaldCutoff</p>
      *
      * @param coeff a double.
      * @param maxCutoff a double.

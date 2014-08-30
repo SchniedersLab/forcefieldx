@@ -22,7 +22,7 @@
  */
 package ffx.numerics;
 
-import static java.lang.Math.sqrt;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * The TensorRecusion class compute derivatives of 1/|<b>r</b>| via recursion to
@@ -31,7 +31,8 @@ import static java.lang.Math.sqrt;
  * @author Michael J. Schnieders
  *
  * @see
- * <a href="http://www.worldscientific.com/worldscibooks/10.1142/3035" target="_blank">
+ * <a href="http://www.worldscientific.com/worldscibooks/10.1142/3035"
+ * target="_blank">
  * Matt Challacombe, Eric Schwegler and Jan Almlof, Modern developments in
  * Hartree-Fock theory: Fast methods for computing the Coulomb matrix.
  * Computational Chemistry: Review of Current Trends. pp. 53-107, Ed. J.

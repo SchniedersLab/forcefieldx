@@ -30,7 +30,8 @@ import ffx.crystal.Crystal;
 import ffx.crystal.ReflectionList;
 
 /**
- * <p>DiffractionFileFilter interface.</p>
+ * <p>
+ * DiffractionFileFilter interface.</p>
  *
  * @author Timothy D. Fenn
  *
@@ -45,7 +46,8 @@ public interface DiffractionFileFilter {
      *         information present in the reflection file
      */
     /**
-     * <p>getReflectionList</p>
+     * <p>
+     * getReflectionList</p>
      *
      * @param file a {@link java.io.File} object.
      * @return a {@link ffx.crystal.ReflectionList} object.
@@ -61,7 +63,8 @@ public interface DiffractionFileFilter {
      *         information present in the reflection file
      */
     /**
-     * <p>getReflectionList</p>
+     * <p>
+     * getReflectionList</p>
      *
      * @param file a {@link java.io.File} object.
      * @param properties a
@@ -80,7 +83,8 @@ public interface DiffractionFileFilter {
      * @return true if read in properly
      */
     /**
-     * <p>readFile</p>
+     * <p>
+     * readFile</p>
      *
      * @param file a {@link java.io.File} object.
      * @param reflectionlist a {@link ffx.crystal.ReflectionList} object.
@@ -100,7 +104,8 @@ public interface DiffractionFileFilter {
      * @param crystal crystal system to determine resolution information from
      */
     /**
-     * <p>getResolution</p>
+     * <p>
+     * getResolution</p>
      *
      * @param file a {@link java.io.File} object.
      * @param crystal a {@link ffx.crystal.Crystal} object.

@@ -290,7 +290,6 @@ public class Main extends JFrame {
         /**
          * Run the pKa input GUI if requested. Halts execution until GUI exits.
          */
-
         /**
          * if (System.getProperty("pKaCalc") != null) { if
          * (System.getProperty("pKaCalc").equals("true")) { ffx.pka.pKaRun
@@ -302,7 +301,6 @@ public class Main extends JFrame {
          * 1); if (temp.startsWith("-s") || temp.startsWith("-f")) {
          * currentArg--; } } else { currentArg++; } } args = newArgs; } }
          */
-
         // Print the header.
         // Moved this here so I could see the args being supplied by pKaRun.
         header(args);
@@ -403,7 +401,7 @@ public class Main extends JFrame {
                 try {
                     commandLineFile = new File(
                             FFXClassLoader.copyInputStreamToTmpFile(
-                            embeddedScript.openStream(), commandLineFile.getName(), ".ffx"));
+                                    embeddedScript.openStream(), commandLineFile.getName(), ".ffx"));
                 } catch (Exception e) {
                     logger.info(String.format(" The embedded script %s could not be extracted.", embeddedScript));
                 }
@@ -446,8 +444,7 @@ public class Main extends JFrame {
         return toStringBuilder.toString();
     }
     /**
-     * Constant
-     * <code>stopWatch</code>
+     * Constant <code>stopWatch</code>
      */
     public static StopWatch stopWatch = new StopWatch();
     /**

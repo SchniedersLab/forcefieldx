@@ -46,8 +46,7 @@ public class FFXSystem extends MolecularAssembly {
     private static final Logger logger = Logger.getLogger(FFXSystem.class.getName());
     private static final long serialVersionUID = 50L;
     /**
-     * Constant
-     * <code>MultiScaleLevel=4</code>
+     * Constant <code>MultiScaleLevel=4</code>
      */
     public static final int MultiScaleLevel = 4;
     // Log file being used for modeling commands
@@ -78,8 +77,8 @@ public class FFXSystem extends MolecularAssembly {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>properties</code>.</p>
+     * <p>
+     * Getter for the field <code>properties</code>.</p>
      *
      * @return a {@link org.apache.commons.configuration.CompositeConfiguration}
      * object.
@@ -89,7 +88,8 @@ public class FFXSystem extends MolecularAssembly {
     }
 
     /**
-     * <p>addKeyword</p>
+     * <p>
+     * addKeyword</p>
      *
      * @param k a {@link ffx.utilities.Keyword} object.
      */
@@ -110,8 +110,8 @@ public class FFXSystem extends MolecularAssembly {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>keyFile</code>.</p>
+     * <p>
+     * Getter for the field <code>keyFile</code>.</p>
      *
      * @return a {@link java.io.File} object.
      */
@@ -120,7 +120,8 @@ public class FFXSystem extends MolecularAssembly {
     }
 
     /**
-     * <p>getKeyword</p>
+     * <p>
+     * getKeyword</p>
      *
      * @param k a {@link java.lang.String} object.
      * @return a {@link ffx.utilities.Keyword} object.
@@ -130,8 +131,8 @@ public class FFXSystem extends MolecularAssembly {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>keywords</code>.</p>
+     * <p>
+     * Getter for the field <code>keywords</code>.</p>
      *
      * @return a {@link java.util.Hashtable} object.
      */
@@ -140,8 +141,8 @@ public class FFXSystem extends MolecularAssembly {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>logFile</code>.</p>
+     * <p>
+     * Getter for the field <code>logFile</code>.</p>
      *
      * @return a {@link java.io.File} object.
      */
@@ -159,8 +160,8 @@ public class FFXSystem extends MolecularAssembly {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>trajectory</code>.</p>
+     * <p>
+     * Getter for the field <code>trajectory</code>.</p>
      *
      * @return a {@link ffx.ui.Trajectory} object.
      */
@@ -169,7 +170,8 @@ public class FFXSystem extends MolecularAssembly {
     }
 
     /**
-     * <p>isClosing</p>
+     * <p>
+     * isClosing</p>
      *
      * @return a boolean.
      */
@@ -178,7 +180,8 @@ public class FFXSystem extends MolecularAssembly {
     }
 
     /**
-     * <p>isStale</p>
+     * <p>
+     * isStale</p>
      *
      * @return a boolean.
      */
@@ -192,7 +195,8 @@ public class FFXSystem extends MolecularAssembly {
     }
 
     /**
-     * <p>removeKeyword</p>
+     * <p>
+     * removeKeyword</p>
      *
      * @param kd a {@link ffx.utilities.Keyword} object.
      */
@@ -203,8 +207,8 @@ public class FFXSystem extends MolecularAssembly {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>closing</code>.</p>
+     * <p>
+     * Setter for the field <code>closing</code>.</p>
      *
      * @param b a boolean.
      */
@@ -213,8 +217,8 @@ public class FFXSystem extends MolecularAssembly {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>commandDescription</code>.</p>
+     * <p>
+     * Setter for the field <code>commandDescription</code>.</p>
      *
      * @param command a {@link java.lang.String} object.
      */
@@ -223,8 +227,8 @@ public class FFXSystem extends MolecularAssembly {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>keyFile</code>.</p>
+     * <p>
+     * Setter for the field <code>keyFile</code>.</p>
      *
      * @param f a {@link java.io.File} object.
      */
@@ -233,8 +237,8 @@ public class FFXSystem extends MolecularAssembly {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>keywords</code>.</p>
+     * <p>
+     * Setter for the field <code>keywords</code>.</p>
      *
      * @param k a {@link java.util.Hashtable} object.
      */
@@ -243,8 +247,8 @@ public class FFXSystem extends MolecularAssembly {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>logFile</code>.</p>
+     * <p>
+     * Setter for the field <code>logFile</code>.</p>
      *
      * @param f a {@link java.io.File} object.
      */
@@ -253,8 +257,8 @@ public class FFXSystem extends MolecularAssembly {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>trajectory</code>.</p>
+     * <p>
+     * Setter for the field <code>trajectory</code>.</p>
      *
      * @param t a {@link ffx.ui.Trajectory} object.
      */
@@ -263,7 +267,8 @@ public class FFXSystem extends MolecularAssembly {
     }
 
     /**
-     * <p>toFFString</p>
+     * <p>
+     * toFFString</p>
      *
      * @return a {@link java.lang.String} object.
      */
@@ -282,7 +287,8 @@ public class FFXSystem extends MolecularAssembly {
     }
 
     /**
-     * <p>toFileString</p>
+     * <p>
+     * toFileString</p>
      *
      * @return a {@link java.lang.String} object.
      */

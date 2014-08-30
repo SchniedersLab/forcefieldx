@@ -40,7 +40,8 @@ public class PickPropertiesBehavior extends PickMouseBehavior implements
     private TransformGroup currentTG;
 
     /**
-     * <p>Constructor for PickPropertiesBehavior.</p>
+     * <p>
+     * Constructor for PickPropertiesBehavior.</p>
      *
      * @param root a {@link javax.media.j3d.BranchGroup} object.
      * @param canvas a {@link javax.media.j3d.Canvas3D} object.
@@ -60,7 +61,8 @@ public class PickPropertiesBehavior extends PickMouseBehavior implements
     }
 
     /**
-     * <p>getPickMode</p>
+     * <p>
+     * getPickMode</p>
      *
      * @return a int.
      */
@@ -69,7 +71,8 @@ public class PickPropertiesBehavior extends PickMouseBehavior implements
     }
 
     /**
-     * <p>setPickMode</p>
+     * <p>
+     * setPickMode</p>
      *
      * @param pickMode a int.
      */
@@ -82,7 +85,8 @@ public class PickPropertiesBehavior extends PickMouseBehavior implements
      * object moves
      */
     /**
-     * <p>setupCallback</p>
+     * <p>
+     * setupCallback</p>
      *
      * @param c a {@link ffx.ui.behaviors.PickingCallback} object.
      */

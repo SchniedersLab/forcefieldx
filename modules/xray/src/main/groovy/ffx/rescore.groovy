@@ -111,7 +111,7 @@ if (options.h || arguments == null || arguments.size() < 1) {
     return cli.usage();
 }
 /*if (options.dt) {
-    matchDataFiles = Boolean.parseBoolean(options.dt);
+matchDataFiles = Boolean.parseBoolean(options.dt);
 }*/
 if (options.m) {
     refineMode = Integer.parseInt(options.m);
@@ -123,8 +123,8 @@ if (options.m) {
             return cli.usage();
         }
         /*if (matchDataFiles) {
-            logger.warning(String.format(" dataType argument invalid for refine modes 0 or 1."));
-            return cli.usage();
+        logger.warning(String.format(" dataType argument invalid for refine modes 0 or 1."));
+        return cli.usage();
         }*/
         break;
     case 2:
@@ -248,7 +248,7 @@ if (/*!matchDataFiles && */options.rd) {
     case 1:
         logger.warning(" Data file is only used for X-ray and real-space refinements.");
         break;
-    case 2: 
+    case 2:
         logger.warning("The realspaceData flag is only for use with realspace refinement.");
         break;
     case 3:
@@ -325,7 +325,7 @@ if (options.dr) {
 }
 
 /*if (matchDataFiles) {
-    
+
 }*/
 
 int totalFiles = modelFiles.size();
@@ -348,13 +348,13 @@ for (int i = 0; i < totalFiles; i++) {
             logger.info("\n Running minimize on " + filename);
             logger.info(" RMS gradient convergence criteria: " + eps);
             energy();
-            
+
             // Do the minimization
             minimize(eps);
-            
+
             String ext = FilenameUtils.getExtension(filename);
             ext = ".".concat(ext);
-            
+
             if (useDirectory) {
                 filename = FilenameUtils.getBaseName(filename);
                 filename = FilenameUtils.concat(directoryPath.toString(), filename);
@@ -372,18 +372,18 @@ for (int i = 0; i < totalFiles; i++) {
             break;
         case 2:
             logger.info("\n Running x-ray minimize on " + filename);
-            
+
             DiffractionFile diffractionfile = null;
             if (diffractionfiles.size() == 0) {
                 diffractionfile = new DiffractionFile(systems, 1.0, false);
                 diffractionfiles.add(diffractionfile);
             }
             DiffractionData diffractiondata = new DiffractionData(systems, systems[0].getProperties(), SolventModel.POLYNOMIAL, diffractionfiles.toArray(new DiffractionFile[diffractionfiles.size()]));
-            
+
             diffractiondata.scaleBulkFit();
             diffractiondata.printStats();
             energy();
-        
+
             RefinementMinimize refinementMinimize = new RefinementMinimize(diffractiondata, refinementmode);
             if (eps < 0.0) {
                 eps = refinementMinimize.getEps();
@@ -392,10 +392,10 @@ for (int i = 0; i < totalFiles; i++) {
             refinementMinimize.minimize(eps, maxiter);
             diffractiondata.scaleBulkFit();
             diffractiondata.printStats();
-            
+
             String ext = FilenameUtils.getExtension(filename);
             ext = ".".concat(ext);
-        
+
             if (useDirectory) {
                 filename = FilenameUtils.getBaseName(filename);
                 filename = FilenameUtils.concat(directoryPath.toString(), filename);
@@ -422,7 +422,7 @@ for (int i = 0; i < totalFiles; i++) {
             break;
         case 3:
             logger.info("\n Running real-space minimize on " + filename);
-            
+
             RealSpaceFile realspacefile = null;
             if (mapFiles.size() == 0) {
                 realspacefile = new RealSpaceFile(systems);
@@ -430,18 +430,18 @@ for (int i = 0; i < totalFiles; i++) {
             }
             RealSpaceData realspacedata = new RealSpaceData(systems, systems[0].getProperties(), mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
             energy();
-            
+
             RefinementMinimize refinementMinimize = new RefinementMinimize(realspacedata, RefinementMode.COORDINATES);
-            
+
             if (eps < 0.0) {
                 eps = 1.0;
             }
             logger.info("\n RMS gradient convergence criteria: " + eps + " max number of iterations: " + maxiter);
             refinementMinimize.minimize(eps, maxiter);
-            
+
             String ext = FilenameUtils.getExtension(filename);
             ext = ".".concat(ext);
-            
+
             if (useDirectory) {
                 filename = FilenameUtils.getBaseName(filename);
                 filename = FilenameUtils.concat(directoryPath.toString(), filename);
@@ -456,7 +456,7 @@ for (int i = 0; i < totalFiles; i++) {
             } else {
                 saveAsPDB(systems, rescoredFiles[i]);
             }
-            
+
             if (realspacefile != null) {
                 try {
                     mapFiles.remove(realspacefile);
@@ -479,22 +479,22 @@ for (int i = 0; i < totalFiles; i++) {
 ArrayList<Integer> acceptedFileIndices = new ArrayList<>();
 
 if (acceptThreshold > 0.0) {
-    int numAccepted = totalFiles; // Default condition: all accepted.
-    for (int i = 0; i < totalFiles; i++) {
-        DoubleIndexPair currentPair = energies.get(i);
-        double e = currentPair.getDoubleValue();
-        if (e - minEnergy > acceptThreshold) {
-            numAccepted = i; // I am pretty sure this is the correct indexing for the first non-accepted pair.
-            break;
-        } else {
-            acceptedFileIndices.add(currentPair.getIndex());
-        }
-    }
+int numAccepted = totalFiles; // Default condition: all accepted.
+for (int i = 0; i < totalFiles; i++) {
+DoubleIndexPair currentPair = energies.get(i);
+double e = currentPair.getDoubleValue();
+if (e - minEnergy > acceptThreshold) {
+numAccepted = i; // I am pretty sure this is the correct indexing for the first non-accepted pair.
+break;
+} else {
+acceptedFileIndices.add(currentPair.getIndex());
+}
+}
 } else if (numToAccept > 0) {
-    numToAccept = Math.min(numToAccept, totalFiles);
-    for (int i = 0; i < numToAccept; i++) {
-        acceptedFileIndices.add(energies.get(i).getIndex());
-    }
+numToAccept = Math.min(numToAccept, totalFiles);
+for (int i = 0; i < numToAccept; i++) {
+acceptedFileIndices.add(energies.get(i).getIndex());
+}
 }*/
 
 Arrays.sort(energies);
@@ -514,16 +514,16 @@ if (acceptThreshold > 0.0) {
 }
 
 /*for (int i = 0; i < numAccepted; i++) {
-    File filei = rescoredFiles[energies[i].getIndex()];
-    Path pathi = Paths.get(filei.getCanonicalPath());
-    String relPath = pwdPath.relativize(pathi).toString();
-    logger.info(String.format(" Accepted: %s at %f kcal/mol", relPath, energies[i].getDoubleValue()));
+File filei = rescoredFiles[energies[i].getIndex()];
+Path pathi = Paths.get(filei.getCanonicalPath());
+String relPath = pwdPath.relativize(pathi).toString();
+logger.info(String.format(" Accepted: %s at %f kcal/mol", relPath, energies[i].getDoubleValue()));
 }
 for (int i = numAccepted; i < totalFiles; i++) { // Rejected files
-    File filei = rescoredFiles[energies[i].getIndex()];
-    Path pathi = Paths.get(filei.getCanonicalPath());
-    String relPath = pwdPath.relativize(pathi).toString();
-    logger.info(String.format(" Rejected: %s at %f kcal/mol", relPath, energies[i].getDoubleValue()));
+File filei = rescoredFiles[energies[i].getIndex()];
+Path pathi = Paths.get(filei.getCanonicalPath());
+String relPath = pwdPath.relativize(pathi).toString();
+logger.info(String.format(" Rejected: %s at %f kcal/mol", relPath, energies[i].getDoubleValue()));
 }*/
 
 BufferedWriter bw;
@@ -531,9 +531,9 @@ try {
     bw = new BufferedWriter(new FileWriter(resultsFile, true));
     Path rscFilePath = Paths.get(resultsFile.getCanonicalPath());
     String rscFileName = pwdPath.relativize(rscFilePath).toString();
-    
+
     logger.info(String.format(" Printing accepted files to rescore file %s", rscFileName));
-    
+
     if (acceptThreshold > 0.0) {
         String message = String.format("Minimum potential energy: %f, threshold = %6.4f", minEnergy, acceptThreshold);
         bw.write(message);
@@ -558,7 +558,7 @@ try {
         Path pointedPath = Paths.get(pointedFile.getCanonicalPath());
         String relPath = pwdPath.relativize(pointedPath).toString();
         double thisEnergy = energies[i].getDoubleValue();
-        
+
         logger.info(String.format(" Accepted file %d energy %9.3f < %9.3f kcal/mol", (i+1), thisEnergy, minEnergy + acceptThreshold));
         logger.info(String.format(" %s", relPath));
         try {
@@ -583,7 +583,7 @@ try {
             logger.info(String.format(" Exception printing rescore file for file %s", relPath));
         }
     }
-    
+
     logger.info(String.format("\n Number of files not accepted: %d", totalFiles - numAccepted));
     bw.newLine();
     bw.write(String.format("Number of files not accepted: %d", totalFiles - numAccepted));
@@ -595,9 +595,9 @@ try {
             Path pointedPath = Paths.get(pointedFile.getCanonicalPath());
             String relPath = pwdPath.relativize(pointedPath).toString();
             double thisEnergy = energies[i].getDoubleValue();
-            
+
             logger.info(String.format(" Non-accepted file %d energy %9.3f > %9.3f kcal/mol", (i+1), thisEnergy, minEnergy + acceptThreshold));
-        logger.info(String.format(" %s", relPath));
+            logger.info(String.format(" %s", relPath));
             try {
                 bw.write(String.format("Non-accepted file: %s rank %d energy %f", relPath, (i+1), thisEnergy));
                 bw.newLine();

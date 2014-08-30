@@ -48,7 +48,8 @@ public class Trajectory implements ActionListener {
     private boolean oscillate = false;
 
     /**
-     * <p>Constructor for Trajectory.</p>
+     * <p>
+     * Constructor for Trajectory.</p>
      *
      * @param mol a {@link ffx.potential.bonded.MolecularAssembly} object.
      * @param f a {@link ffx.ui.MainPanel} object.
@@ -97,21 +98,24 @@ public class Trajectory implements ActionListener {
     }
 
     /**
-     * <p>back</p>
+     * <p>
+     * back</p>
      */
     public void back() {
         setFrame(getFrame() - 1);
     }
 
     /**
-     * <p>forward</p>
+     * <p>
+     * forward</p>
      */
     public void forward() {
         setFrame(getFrame() + 1);
     }
 
     /**
-     * <p>getFrame</p>
+     * <p>
+     * getFrame</p>
      *
      * @return a int.
      */
@@ -120,7 +124,8 @@ public class Trajectory implements ActionListener {
     }
 
     /**
-     * <p>getFSystem</p>
+     * <p>
+     * getFSystem</p>
      *
      * @return a {@link ffx.potential.bonded.MolecularAssembly} object.
      */
@@ -129,8 +134,8 @@ public class Trajectory implements ActionListener {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>oscillate</code>.</p>
+     * <p>
+     * Getter for the field <code>oscillate</code>.</p>
      *
      * @return a boolean.
      */
@@ -139,7 +144,8 @@ public class Trajectory implements ActionListener {
     }
 
     /**
-     * <p>getRate</p>
+     * <p>
+     * getRate</p>
      *
      * @return a int.
      */
@@ -148,8 +154,8 @@ public class Trajectory implements ActionListener {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>skip</code>.</p>
+     * <p>
+     * Getter for the field <code>skip</code>.</p>
      *
      * @return a int.
      */
@@ -158,14 +164,16 @@ public class Trajectory implements ActionListener {
     }
 
     /**
-     * <p>rewind</p>
+     * <p>
+     * rewind</p>
      */
     public void rewind() {
         setFrame(1);
     }
 
     /**
-     * <p>setFrame</p>
+     * <p>
+     * setFrame</p>
      *
      * @param f a int.
      */
@@ -179,8 +187,8 @@ public class Trajectory implements ActionListener {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>oscillate</code>.</p>
+     * <p>
+     * Setter for the field <code>oscillate</code>.</p>
      *
      * @param o a boolean.
      */
@@ -189,7 +197,8 @@ public class Trajectory implements ActionListener {
     }
 
     /**
-     * <p>setRate</p>
+     * <p>
+     * setRate</p>
      *
      * @param s a int.
      */
@@ -202,8 +211,8 @@ public class Trajectory implements ActionListener {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>skip</code>.</p>
+     * <p>
+     * Setter for the field <code>skip</code>.</p>
      *
      * @param s a int.
      */
@@ -215,14 +224,16 @@ public class Trajectory implements ActionListener {
     }
 
     /**
-     * <p>start</p>
+     * <p>
+     * start</p>
      */
     public void start() {
         timer.start();
     }
 
     /**
-     * <p>stop</p>
+     * <p>
+     * stop</p>
      */
     public void stop() {
         timer.stop();

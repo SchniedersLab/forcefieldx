@@ -1827,7 +1827,7 @@ public class RotamerLibrary {
                     break;
             }
         }
-        
+
     }
 
     /**
@@ -1857,12 +1857,12 @@ public class RotamerLibrary {
             }
         }
     }
-    
+
     /**
-     * Applies a coordinates-based Rotamer (defined by Cartesian coordinates instead
-     * of by a set of torsion angles); intended for use with original coordinates
-     * Rotamers and possibly other future cases.
-     * 
+     * Applies a coordinates-based Rotamer (defined by Cartesian coordinates
+     * instead of by a set of torsion angles); intended for use with original
+     * coordinates Rotamers and possibly other future cases.
+     *
      * @param residue Residue to apply Rotamer for
      * @param rotamer Coordinates-based Rotamer
      */
@@ -3782,8 +3782,8 @@ public class RotamerLibrary {
             corrections[6][i] = (1.0 / 12.0) * corrections[5][i];
         }
 
-        /* 
-         * Move backbone atoms by an appropriate fraction of the correction 
+        /*
+         * Move backbone atoms by an appropriate fraction of the correction
          * vector. Do this before checking the threshold, so that atoms are moved
          * in case that is needed before the exception gets thrown.
          */

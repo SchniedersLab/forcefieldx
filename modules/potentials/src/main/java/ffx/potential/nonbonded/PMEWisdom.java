@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.lang.Math.min;
+import static org.apache.commons.math3.util.FastMath.min;
 
 import edu.rit.pj.ParallelTeam;
 

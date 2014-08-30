@@ -60,14 +60,16 @@ public class FFXClient {
     private boolean closed = false;
 
     /**
-     * <p>Constructor for FFXClient.</p>
+     * <p>
+     * Constructor for FFXClient.</p>
      */
     public FFXClient() {
         address = new InetSocketAddress(2000);
     }
 
     /**
-     * <p>Constructor for FFXClient.</p>
+     * <p>
+     * Constructor for FFXClient.</p>
      *
      * @param a a {@link java.net.InetSocketAddress} object.
      */
@@ -76,7 +78,8 @@ public class FFXClient {
     }
 
     /**
-     * <p>Constructor for FFXClient.</p>
+     * <p>
+     * Constructor for FFXClient.</p>
      *
      * @param port a int.
      */
@@ -113,8 +116,8 @@ public class FFXClient {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>system</code>.</p>
+     * <p>
+     * Getter for the field <code>system</code>.</p>
      *
      * @return a {@link ffx.ui.commands.TinkerSystem} object.
      */
@@ -124,8 +127,8 @@ public class FFXClient {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>update</code>.</p>
+     * <p>
+     * Getter for the field <code>update</code>.</p>
      *
      * @return a {@link ffx.ui.commands.TinkerUpdate} object.
      */
@@ -135,7 +138,8 @@ public class FFXClient {
     }
 
     /**
-     * <p>isClosed</p>
+     * <p>
+     * isClosed</p>
      *
      * @return a boolean.
      */
@@ -144,7 +148,8 @@ public class FFXClient {
     }
 
     /**
-     * <p>isConnected</p>
+     * <p>
+     * isConnected</p>
      *
      * @return a boolean.
      */
@@ -156,7 +161,8 @@ public class FFXClient {
     }
 
     /**
-     * <p>readSocket</p>
+     * <p>
+     * readSocket</p>
      */
     public void readSocket() {
         try {
@@ -203,7 +209,8 @@ public class FFXClient {
     }
 
     /**
-     * <p>release</p>
+     * <p>
+     * release</p>
      */
     public void release() {
         if (client == null) {

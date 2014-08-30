@@ -22,7 +22,6 @@
  */
 package ffx.xray;
 
-
 import ffx.crystal.*;
 import ffx.numerics.ComplexNumber;
 import ffx.xray.MTZWriter.MTZType;
@@ -514,10 +513,12 @@ public class MTZFilter implements DiffractionFileFilter {
 
     /**
      * {@inheritDoc}
-     * @param mtzFile1 file 1 (which will be overwritten and become the new average)
+     *
+     * @param mtzFile1 file 1 (which will be overwritten and become the new
+     * average)
      * @param mtzFile2 second MTZ file
      * @param reflectionlist list of HKLs
-     * @param iter the iteration in the running average 
+     * @param iter the iteration in the running average
      * @param properties
      */
     public void averageFcs(File mtzFile1, File mtzFile2, ReflectionList reflectionlist,
@@ -525,7 +526,7 @@ public class MTZFilter implements DiffractionFileFilter {
 
         DiffractionRefinementData fcdata1 = new DiffractionRefinementData(properties, reflectionlist);
         DiffractionRefinementData fcdata2 = new DiffractionRefinementData(properties, reflectionlist);
-        
+
         readFcs(mtzFile1, reflectionlist, fcdata1, properties);
         readFcs(mtzFile2, reflectionlist, fcdata2, properties);
 
@@ -538,7 +539,7 @@ public class MTZFilter implements DiffractionFileFilter {
             fcdata1.fs[i][0] += (fcdata2.fs[i][0] - fcdata1.fs[i][0]) / iter;
             fcdata1.fs[i][1] += (fcdata2.fs[i][1] - fcdata1.fs[i][1]) / iter;
         }
-        
+
         // overwrite original MTZ
         MTZWriter mtzout = new MTZWriter(reflectionlist, fcdata1,
                 mtzFile1.getName(), MTZType.FCONLY);

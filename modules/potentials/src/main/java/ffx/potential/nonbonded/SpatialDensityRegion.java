@@ -27,7 +27,7 @@ import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.lang.Math.floor;
+import static org.apache.commons.math3.util.FastMath.floor;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;

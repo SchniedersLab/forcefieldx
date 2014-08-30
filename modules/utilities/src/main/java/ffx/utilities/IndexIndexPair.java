@@ -32,44 +32,45 @@ package ffx.utilities;
  */
 public class IndexIndexPair implements Comparable {
 
-        private final int sortedIndex;
-        private final int referenceIndex;
+    private final int sortedIndex;
+    private final int referenceIndex;
 
-        /**
-         * Pass in an int to be sorted on, then an int referring to some original
-         * list. Enables sorting based on one integer value while remembering 
-         * where it was in the original list.
-         * @param sortedIndex Value to be sorted upon
-         * @param referenceIndex Original index
-         */
-        public IndexIndexPair(int sortedIndex, int referenceIndex) {
-            this.sortedIndex = sortedIndex;
-            this.referenceIndex = referenceIndex;
+    /**
+     * Pass in an int to be sorted on, then an int referring to some original
+     * list. Enables sorting based on one integer value while remembering where
+     * it was in the original list.
+     *
+     * @param sortedIndex Value to be sorted upon
+     * @param referenceIndex Original index
+     */
+    public IndexIndexPair(int sortedIndex, int referenceIndex) {
+        this.sortedIndex = sortedIndex;
+        this.referenceIndex = referenceIndex;
+    }
+
+    public int getSortedIndex() {
+        return sortedIndex;
+    }
+
+    public int getReferenceIndex() {
+        return referenceIndex;
+    }
+
+    @Override
+    public int compareTo(Object o) {
+        if (o == null) {
+            return 0;
         }
-
-        public int getSortedIndex() {
-            return sortedIndex;
+        if (!(o instanceof IndexIndexPair)) {
+            return 0;
         }
-
-        public int getReferenceIndex() {
-            return referenceIndex;
-        }
-
-        @Override
-        public int compareTo(Object o) {
-            if (o == null) {
-                return 0;
-            }
-            if (!(o instanceof IndexIndexPair)) {
-                return 0;
-            }
-            IndexIndexPair other = (IndexIndexPair) o;
-            if (sortedIndex < other.sortedIndex) {
-                return -1;
-            } else if (sortedIndex > other.sortedIndex) {
-                return 1;
-            } else {
-                return 0;
-            }
+        IndexIndexPair other = (IndexIndexPair) o;
+        if (sortedIndex < other.sortedIndex) {
+            return -1;
+        } else if (sortedIndex > other.sortedIndex) {
+            return 1;
+        } else {
+            return 0;
         }
     }
+}

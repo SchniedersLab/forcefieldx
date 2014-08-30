@@ -128,7 +128,8 @@ public class Poledit {
     }
 
     /**
-     * <p>posinarray</p>
+     * <p>
+     * posinarray</p>
      *
      * @param find a {@link java.lang.String} object.
      * @param ln a {@link java.lang.String} object.
@@ -148,7 +149,8 @@ public class Poledit {
     }
 
     /**
-     * <p>readGDMA</p>
+     * <p>
+     * readGDMA</p>
      *
      * @param gdmaoutfname a {@link java.lang.String} object.
      */
@@ -215,9 +217,6 @@ public class Poledit {
                             int x = posinarray("Q22s", line);
                             mp[8] = Double.parseDouble(line.split(" +")[x + 2]); //Q22s
                         }
-
-
-
 
 //                        if(line.contains("Q00")){
 //                            mp[0] = Double.parseDouble(line.split(" +")[3]); //Q00
@@ -295,7 +294,6 @@ public class Poledit {
 //                        else if(!line.contains("Q22c") && line.contains("Q22s")){
 //                            mp[8] = Double.parseDouble(line.split(" +")[3]); //Q22s
 //                        }
-
                         double radius[] = {0};
                         double polart[] = {0};
                         double pd[] = {0};
@@ -549,7 +547,6 @@ public class Poledit {
             }
         }
 
-
         File outf = new File(name + ".xyz");
         try {
             BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outf)));
@@ -732,7 +729,8 @@ public class Poledit {
     }
 
     /**
-     * <p>setframe</p>
+     * <p>
+     * setframe</p>
      *
      * @param peditinfname a {@link java.lang.String} object.
      */
@@ -838,7 +836,8 @@ public class Poledit {
     }
 
     /**
-     * <p>isInteger</p>
+     * <p>
+     * isInteger</p>
      *
      * @param string a {@link java.lang.String} object.
      * @return a boolean.
@@ -853,7 +852,8 @@ public class Poledit {
     }
 
     /**
-     * <p>priority</p>
+     * <p>
+     * priority</p>
      *
      * @param o a {@link ffx.potential.bonded.Atom} object.
      * @param a a {@link ffx.potential.bonded.Atom} object.
@@ -901,7 +901,8 @@ public class Poledit {
     }
 
     /**
-     * <p>printlocalmpoles</p>
+     * <p>
+     * printlocalmpoles</p>
      */
     public void printlocalmpoles() {
         for (int i = 0; i < nAtoms; i++) {
@@ -916,7 +917,8 @@ public class Poledit {
     }
 
     /**
-     * <p>printglobalmpoles</p>
+     * <p>
+     * printglobalmpoles</p>
      */
     public void printglobalmpoles() {
         for (int i = 0; i < nAtoms; i++) {
@@ -931,7 +933,8 @@ public class Poledit {
     }
 
     /**
-     * <p>fixpolar</p>
+     * <p>
+     * fixpolar</p>
      */
     public void fixpolar() {
         if (remove_symmetry) {
@@ -985,7 +988,6 @@ public class Poledit {
         }
 
         //maintain traceless quadrupole at each multipole site
-
         for (int i = 0; i < nAtoms; i++) {
             sum = localMultipole[i][4] + localMultipole[i][8] + localMultipole[i][12];
             big = Math.max(localMultipole[i][4], Math.max(localMultipole[i][8], localMultipole[i][12]));
@@ -1005,7 +1007,8 @@ public class Poledit {
     }
 
     /**
-     * <p>removeInducedFromGlobal</p>
+     * <p>
+     * removeInducedFromGlobal</p>
      */
     public void removeInducedFromGlobal() {
         for (int i = 0; i < nAtoms; i++) {
@@ -1016,7 +1019,8 @@ public class Poledit {
     }
 
     /**
-     * <p>prtpolar</p>
+     * <p>
+     * prtpolar</p>
      *
      * @param name a {@link java.lang.String} object.
      */
@@ -1093,7 +1097,8 @@ public class Poledit {
     }
 
     /**
-     * <p>main</p>
+     * <p>
+     * main</p>
      *
      * @param args an array of {@link java.lang.String} objects.
      */

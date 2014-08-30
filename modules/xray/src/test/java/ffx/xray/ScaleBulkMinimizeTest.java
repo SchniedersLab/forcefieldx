@@ -59,25 +59,25 @@ public class ScaleBulkMinimizeTest {
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-                    {false,
-                        "NSF D2 domain test",
-                        "ffx/xray/structures/1NSF.pdb",
-                        "ffx/xray/structures/1NSF.mtz",
-                        null,
-                        25.19,
-                        25.41,
-                        0.8922,
-                        0.1524},
-                    {false,
-                        "SNARE complex",
-                        "ffx/xray/structures/1N7S.pdb",
-                        "ffx/xray/structures/1N7S.mtz",
-                        null,
-                        19.45,
-                        21.55,
-                        0.9310,
-                        0.1363}
-                });
+            {false,
+                "NSF D2 domain test",
+                "ffx/xray/structures/1NSF.pdb",
+                "ffx/xray/structures/1NSF.mtz",
+                null,
+                25.19,
+                25.41,
+                0.8922,
+                0.1524},
+            {false,
+                "SNARE complex",
+                "ffx/xray/structures/1N7S.pdb",
+                "ffx/xray/structures/1N7S.mtz",
+                null,
+                19.45,
+                21.55,
+                0.9310,
+                0.1363}
+        });
     }
     private final String info;
     private final String pdbname;
@@ -153,11 +153,11 @@ public class ScaleBulkMinimizeTest {
         if (mtzname != null) {
             assertTrue(info + " mtz file should be read in without errors",
                     mtzfilter.readFile(mtzfile, reflectionlist, refinementdata,
-                    properties));
+                            properties));
         } else {
             assertTrue(info + " cif file should be read in without errors",
                     ciffilter.readFile(ciffile, reflectionlist, refinementdata,
-                    properties));
+                            properties));
         }
 
         ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties);
@@ -208,9 +208,8 @@ public class ScaleBulkMinimizeTest {
          System.out.println("error: " + e.getMessage());
          }
          */
-
-        ScaleBulkMinimize scalebulkminimize =
-                new ScaleBulkMinimize(reflectionlist, refinementdata, crs, parallelTeam);
+        ScaleBulkMinimize scalebulkminimize
+                = new ScaleBulkMinimize(reflectionlist, refinementdata, crs, parallelTeam);
         /*
          if (refinementdata.solvent_n > 1) {
          scalebulkminimize.minimize(7, 1e-2);

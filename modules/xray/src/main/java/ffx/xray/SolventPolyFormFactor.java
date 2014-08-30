@@ -27,7 +27,8 @@ import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
 /**
- * <p>SolventPolyFormFactor class.</p>
+ * <p>
+ * SolventPolyFormFactor class.</p>
  *
  * @author fenn
  *
@@ -41,7 +42,8 @@ public final class SolventPolyFormFactor implements FormFactor {
     private double arad, w;
 
     /**
-     * <p>Constructor for SolventPolyFormFactor.</p>
+     * <p>
+     * Constructor for SolventPolyFormFactor.</p>
      *
      * @param atom a {@link ffx.potential.bonded.Atom} object.
      * @param arad a double.
@@ -52,7 +54,8 @@ public final class SolventPolyFormFactor implements FormFactor {
     }
 
     /**
-     * <p>Constructor for SolventPolyFormFactor.</p>
+     * <p>
+     * Constructor for SolventPolyFormFactor.</p>
      *
      * @param atom a {@link ffx.potential.bonded.Atom} object.
      * @param arad a double.
@@ -77,7 +80,8 @@ public final class SolventPolyFormFactor implements FormFactor {
     }
 
     /**
-     * <p>rho</p>
+     * <p>
+     * rho</p>
      *
      * @param f a double.
      * @param lambda a double.

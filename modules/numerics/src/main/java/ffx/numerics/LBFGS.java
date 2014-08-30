@@ -25,9 +25,9 @@ package ffx.numerics;
 import java.util.Arrays;
 import java.util.logging.Logger;
 
-import static java.lang.Math.abs;
-import static java.lang.Math.min;
-import static java.lang.Math.sqrt;
+import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;

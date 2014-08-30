@@ -225,7 +225,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
             gChemical[i] = new double[len];
         }
     }
-    
+
     public Potential getDataEnergy() {
         return dataEnergy;
     }
@@ -362,7 +362,6 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
                  * normchem + " xray: " + normxray + " weight wa: " + normchem /
                  * normxray);
                  */
-
                 // Add the chemical and X-ray gradients.
                 for (int i = 0; i < nxyz; i++) {
                     g[i] += weight * gXray[i];
@@ -555,8 +554,8 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
 
     // this should probably be part of the potential class
     /**
-     * <p>Setter for the field
-     * <code>thermostat</code>.</p>
+     * <p>
+     * Setter for the field <code>thermostat</code>.</p>
      *
      * @param thermostat a {@link ffx.algorithms.Thermostat} object.
      */
@@ -566,8 +565,8 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
 
     // this should probably be part of the potential class
     /**
-     * <p>Getter for the field
-     * <code>thermostat</code>.</p>
+     * <p>
+     * Getter for the field <code>thermostat</code>.</p>
      *
      * @return a {@link ffx.algorithms.Thermostat} object.
      */

@@ -42,31 +42,31 @@ public class ReflectionListTest {
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-                    {false,
-                        "P6 test",
-                        115.996, 115.996, 44.13, 90.0, 90.0, 120.0, "P6",
-                        1.89631,
-                        27200,
-                        new HKL(0, 0, 4),
-                        new HKL(-1, 0, 0),
-                        6, 0},
-                    {true,
-                        "I222 test",
-                        86.031, 92.854, 98.312, 90.0, 90.0, 90.0, "I222",
-                        1.0,
-                        210663,
-                        new HKL(0, 0, 4),
-                        new HKL(0, 0, 3),
-                        8, 0},
-                    {true,
-                        "P1 test",
-                        25.015, 29.415, 52.761, 89.54, 86.1, 82.39, "P1",
-                        1.0,
-                        80373,
-                        new HKL(-24, -10, 1),
-                        new HKL(-24, -10, 8),
-                        1, 0}
-                });
+            {false,
+                "P6 test",
+                115.996, 115.996, 44.13, 90.0, 90.0, 120.0, "P6",
+                1.89631,
+                27200,
+                new HKL(0, 0, 4),
+                new HKL(-1, 0, 0),
+                6, 0},
+            {true,
+                "I222 test",
+                86.031, 92.854, 98.312, 90.0, 90.0, 90.0, "I222",
+                1.0,
+                210663,
+                new HKL(0, 0, 4),
+                new HKL(0, 0, 3),
+                8, 0},
+            {true,
+                "P1 test",
+                25.015, 29.415, 52.761, 89.54, 86.1, 82.39, "P1",
+                1.0,
+                80373,
+                new HKL(-24, -10, 1),
+                new HKL(-24, -10, 8),
+                1, 0}
+        });
     }
     private final String info;
     private final int size;

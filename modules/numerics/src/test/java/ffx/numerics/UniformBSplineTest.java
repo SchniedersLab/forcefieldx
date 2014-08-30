@@ -54,10 +54,10 @@ public class UniformBSplineTest {
         double d3[] = {-0.0208333e0, -0.4583333e0, 0.0000000e0, 0.4583333e0, 0.0208333e0};
 
         return Arrays.asList(new Object[][]{
-                    {"Order 5, x = 0.00", 5, 0.00e0, c1, d1},
-                    {"Order 5, x = 0.25", 5, 0.25e0, c2, d2},
-                    {"Order 5, x = 0.50", 5, 0.50e0, c3, d3}
-                });
+            {"Order 5, x = 0.00", 5, 0.00e0, c1, d1},
+            {"Order 5, x = 0.25", 5, 0.25e0, c2, d2},
+            {"Order 5, x = 0.50", 5, 0.50e0, c3, d3}
+        });
     }
     private static double tolerance = 1.0e-6;
     private final String info;

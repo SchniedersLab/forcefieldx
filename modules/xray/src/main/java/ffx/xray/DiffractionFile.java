@@ -33,7 +33,8 @@ import static org.apache.commons.io.FilenameUtils.*;
 import ffx.potential.bonded.MolecularAssembly;
 
 /**
- * <p>DiffractionFile class.</p>
+ * <p>
+ * DiffractionFile class.</p>
  *
  * @author Timothy D. Fenn
  *
@@ -109,7 +110,8 @@ public class DiffractionFile {
     }
 
     /**
-     * <p>Constructor for DiffractionFile.</p>
+     * <p>
+     * Constructor for DiffractionFile.</p>
      *
      * @param assembly an array of
      * {@link ffx.potential.bonded.MolecularAssembly} objects.
@@ -120,7 +122,8 @@ public class DiffractionFile {
     }
 
     /**
-     * <p>Constructor for DiffractionFile.</p>
+     * <p>
+     * Constructor for DiffractionFile.</p>
      *
      * @param assembly an array of
      * {@link ffx.potential.bonded.MolecularAssembly} objects.

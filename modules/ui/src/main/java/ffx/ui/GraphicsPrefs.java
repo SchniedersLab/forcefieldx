@@ -148,7 +148,8 @@ public class GraphicsPrefs extends JDialog implements ActionListener {
     }
 
     /**
-     * <p>addSlider</p>
+     * <p>
+     * addSlider</p>
      *
      * @param s a {@link javax.swing.JSlider} object.
      * @param description a {@link java.lang.String} object.

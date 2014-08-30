@@ -111,9 +111,8 @@ public class XtalEnergy implements Potential {
         setCoordinates(x);
 
         totalEnergy = forceFieldEnergy.energy(false, false);
-        
-        //logger.info(String.format(" Energy %16.8f", totalEnergy));
 
+        //logger.info(String.format(" Energy %16.8f", totalEnergy));
         /**
          * Scale coordinates if applicable.
          */
@@ -152,9 +151,8 @@ public class XtalEnergy implements Potential {
          * Calculate system energy and Cartesian coordinate gradient.
          */
         double e = forceFieldEnergy.energyAndGradient(xyz, gr);
-        
-        //logger.info(String.format("getCoordinate %16.8f", x[1]));
 
+        //logger.info(String.format("getCoordinate %16.8f", x[1]));
         /**
          * Fractionalize Cartesian coordinate gradient from "gr" into g.
          *
@@ -175,7 +173,7 @@ public class XtalEnergy implements Potential {
     }
 
     private void unitCellParameterDerivatives(double x[], double g[]) {
-        
+
         double eps = 1.0e-5;
         double deps = Math.toDegrees(eps);
 
@@ -185,7 +183,7 @@ public class XtalEnergy implements Potential {
         double alpha = unitCell.alpha;
         double beta = unitCell.beta;
         double gamma = unitCell.gamma;
-        
+
         int index = 3 * nAtoms;
         switch (crystal.spaceGroup.crystalSystem) {
             case TRICLINIC:
@@ -231,7 +229,7 @@ public class XtalEnergy implements Potential {
                 break;
             case TETRAGONAL:
                 // a == b && alpha == beta == gamma == 90.0
-                g[index] = finiteDifference2(x, index, index+1, eps);
+                g[index] = finiteDifference2(x, index, index + 1, eps);
                 index++;
                 g[index] = g[index - 1];
                 index++;
@@ -321,9 +319,9 @@ public class XtalEnergy implements Potential {
             g[index] /= scaling[index];
         }
         /*index = 3 * nAtoms;
-        logger.info(String.format("getGradient %16.8f %16.8f %16.8f %16.8f %16.8f %16.8f",
-                g[index], g[index+1], g[index+2], g[index+3], g[index+4], g[index+5]));
-                * */
+         logger.info(String.format("getGradient %16.8f %16.8f %16.8f %16.8f %16.8f %16.8f",
+         g[index], g[index+1], g[index+2], g[index+3], g[index+4], g[index+5]));
+         * */
 
     }
 
@@ -444,7 +442,7 @@ public class XtalEnergy implements Potential {
         double gamma = coords[index + 5];
         /*
          * logger.info(String.format("getOptimizedUCParams %16.8f %16.8f %16.8f %16.8f %16.8f %16.8f",
-                a, b, c, alpha, beta, gamma));*/
+         a, b, c, alpha, beta, gamma));*/
         switch (crystal.spaceGroup.crystalSystem) {
             case TRICLINIC:
                 break;
@@ -570,9 +568,9 @@ public class XtalEnergy implements Potential {
         index++;
         x[index] = unitCell.gamma;
         /*
-        logger.info(String.format("getUCParams %16.8f %16.8f %16.8f %16.8f %16.8f %16.8f",
-                unitCell.a, unitCell.b, unitCell.c, unitCell.alpha, unitCell.beta, unitCell.gamma));
-        logger.info(String.format("getCoordinate %16.8f", x[1])); */
+         logger.info(String.format("getUCParams %16.8f %16.8f %16.8f %16.8f %16.8f %16.8f",
+         unitCell.a, unitCell.b, unitCell.c, unitCell.alpha, unitCell.beta, unitCell.gamma));
+         logger.info(String.format("getCoordinate %16.8f", x[1])); */
         return x;
     }
 

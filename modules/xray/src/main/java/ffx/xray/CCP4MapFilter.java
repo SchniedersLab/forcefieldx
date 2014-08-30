@@ -35,7 +35,8 @@ import ffx.crystal.Crystal;
 import ffx.crystal.SpaceGroup;
 
 /**
- * <p>CCP4MapFilter class.</p>
+ * <p>
+ * CCP4MapFilter class.</p>
  *
  * @author Timothy D. Fenn
  * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4
@@ -293,7 +294,6 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
              System.out.println("a: " + cella + " b: " + cellb + " c: " + cellc
              + " alpha: " + cellalpha + " beta: " + cellbeta + " gamma: " + cellgamma);
              */
-
             if (logger.isLoggable(Level.INFO)) {
                 StringBuilder sb = new StringBuilder();
                 sb.append(String.format("  column origin: %d extent: %d\n",

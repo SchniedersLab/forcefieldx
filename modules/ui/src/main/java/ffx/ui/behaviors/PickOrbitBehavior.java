@@ -40,7 +40,8 @@ public class PickOrbitBehavior extends PickMouseBehavior implements
     private TransformGroup currentTG;
 
     /**
-     * <p>Constructor for PickOrbitBehavior.</p>
+     * <p>
+     * Constructor for PickOrbitBehavior.</p>
      *
      * @param root a {@link javax.media.j3d.BranchGroup} object.
      * @param canvas a {@link javax.media.j3d.Canvas3D} object.
@@ -63,7 +64,8 @@ public class PickOrbitBehavior extends PickMouseBehavior implements
      * Return the pickMode component of this PickTranslateBehavior.
      */
     /**
-     * <p>getPickMode</p>
+     * <p>
+     * getPickMode</p>
      *
      * @return a int.
      */
@@ -76,7 +78,8 @@ public class PickOrbitBehavior extends PickMouseBehavior implements
      * the passed pickMode. @param pickMode the pickMode to be copied.
      */
     /**
-     * <p>setPickMode</p>
+     * <p>
+     * setPickMode</p>
      *
      * @param pickMode a int.
      */
@@ -85,7 +88,8 @@ public class PickOrbitBehavior extends PickMouseBehavior implements
     }
 
     /**
-     * <p>setTransformGroups</p>
+     * <p>
+     * setTransformGroups</p>
      *
      * @param StarTG a {@link javax.media.j3d.TransformGroup} object.
      * @param VPTG a {@link javax.media.j3d.TransformGroup} object.
@@ -99,7 +103,8 @@ public class PickOrbitBehavior extends PickMouseBehavior implements
      * object moves
      */
     /**
-     * <p>setupCallback</p>
+     * <p>
+     * setupCallback</p>
      *
      * @param c a {@link ffx.ui.behaviors.PickingCallback} object.
      */

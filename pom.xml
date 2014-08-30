@@ -259,18 +259,46 @@
                 <plugin>
                     <artifactId>maven-clean-plugin</artifactId>
                     <version>2.5</version>
+                    <inherited>true</inherited>
+                    <configuration>
+                        <filesets>
+                            <fileset>
+                                <directory>${basedir}/src/site/resources/scripts</directory>
+                            </fileset>
+                        </filesets>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.1</version>
+                    <inherited>true</inherited>
+                    <configuration>
+                        <debug>true</debug>
+                        <optimize>true</optimize>
+                        <verbose>false</verbose>
+                        <source>${compileVersion}</source>
+                        <target>${targetVersion}</target>
+                        <compilerArgs>
+                            <arg>-Xlint</arg>
+                        </compilerArgs>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <artifactId>maven-deploy-plugin</artifactId>
                     <version>2.8.1</version>
+                    <inherited>true</inherited>
+                    <configuration>
+                        <deployAtEnd>true</deployAtEnd>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <artifactId>maven-install-plugin</artifactId>
                     <version>2.5.1</version>
+                    <inherited>true</inherited>
+                    <configuration>
+                        <installAtEnd>true</installAtEnd>
+                        <createChecksum>true</createChecksum>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <artifactId>maven-jar-plugin</artifactId>
@@ -324,6 +352,43 @@
                 <plugin>
                     <artifactId>maven-resources-plugin</artifactId>
                     <version>2.6</version>
+                    <inherited>true</inherited>
+                    <executions>
+                        <execution>
+                            <id>website-scripts</id>
+                            <phase>process-resources</phase>
+                            <goals>
+                                <goal>copy-resources</goal>
+                            </goals>
+                            <configuration>
+                                <encoding>UTF-8</encoding>
+                                <resources>
+                                    <resource>
+                                        <directory>${basedir}/src/main/groovy/ffx/${project.artifactId}</directory>
+                                    </resource>
+                                </resources>
+                                <outputDirectory>${basedir}/src/site/resources/scripts</outputDirectory>
+                                <overwrite>true</overwrite>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>distro-scripts</id>
+                            <phase>process-resources</phase>
+                            <goals>
+                                <goal>copy-resources</goal>
+                            </goals>
+                            <configuration>
+                                <encoding>UTF-8</encoding>
+                                <resources>
+                                    <resource>
+                                        <directory>${basedir}/src/main/groovy/ffx/${project.artifactId}</directory>
+                                    </resource>
+                                </resources>
+                                <outputDirectory>${basedir}/../../scripts</outputDirectory>
+                                <overwrite>true</overwrite>
+                            </configuration>
+                        </execution>
+                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
@@ -529,12 +594,6 @@
                 </executions>
             </plugin>
             <plugin>
-                <artifactId>maven-install-plugin</artifactId>
-                <configuration>
-                    <createChecksum>true</createChecksum>
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <inherited>false</inherited>
@@ -707,16 +766,16 @@
     <modules>
         <module>modules/algorithms</module>
         <module>modules/autoparm</module>
-        <!-- module>modules/binding</module -->
-        <!-- module>modules/cg</module -->
-        <!-- module>modules/continuum</module -->
         <module>modules/crystal</module>
-        <!-- module>modules/nucleic</module -->
         <module>modules/numerics</module>
         <module>modules/potentials</module>
         <module>modules/ui</module>
         <module>modules/utilities</module>
         <module>modules/xray</module>
+        <!-- module>modules/binding</module -->
+        <!-- module>modules/cg</module -->
+        <!-- module>modules/continuum</module -->
+        <!-- module>modules/nucleic</module -->
     </modules>
     <reporting>
         <plugins>

@@ -45,7 +45,8 @@ public class MouseSelection extends MouseBehavior {
     private MouseBehaviorCallback callback = null;
 
     /**
-     * <p>Constructor for MouseSelection.</p>
+     * <p>
+     * Constructor for MouseSelection.</p>
      *
      * @param flags a int.
      * @param VPTG a {@link javax.media.j3d.TransformGroup} object.
@@ -58,7 +59,8 @@ public class MouseSelection extends MouseBehavior {
      * Return the x-axis movement multipler.
      */
     /**
-     * <p>getXFactor</p>
+     * <p>
+     * getXFactor</p>
      *
      * @return a double.
      */
@@ -70,7 +72,8 @@ public class MouseSelection extends MouseBehavior {
      * Return the y-axis movement multipler.
      */
     /**
-     * <p>getYFactor</p>
+     * <p>
+     * getYFactor</p>
      *
      * @return a double.
      */
@@ -79,7 +82,8 @@ public class MouseSelection extends MouseBehavior {
     }
 
     /**
-     * <p>initialize</p>
+     * <p>
+     * initialize</p>
      */
     public void initialize() {
         super.initialize();
@@ -137,7 +141,8 @@ public class MouseSelection extends MouseBehavior {
      * Set the x-axis amd y-axis movement multipler with factor.
      */
     /**
-     * <p>setFactor</p>
+     * <p>
+     * setFactor</p>
      *
      * @param factor a double.
      */
@@ -150,7 +155,8 @@ public class MouseSelection extends MouseBehavior {
      * respectively.
      */
     /**
-     * <p>setFactor</p>
+     * <p>
+     * setFactor</p>
      *
      * @param xFactor a double.
      * @param yFactor a double.
@@ -165,7 +171,8 @@ public class MouseSelection extends MouseBehavior {
      * time the transform is updated
      */
     /**
-     * <p>setupCallback</p>
+     * <p>
+     * setupCallback</p>
      *
      * @param c a {@link ffx.ui.behaviors.MouseBehaviorCallback} object.
      */
@@ -174,7 +181,8 @@ public class MouseSelection extends MouseBehavior {
     }
 
     /**
-     * <p>transformChanged</p>
+     * <p>
+     * transformChanged</p>
      *
      * @param transform a {@link javax.media.j3d.Transform3D} object.
      */

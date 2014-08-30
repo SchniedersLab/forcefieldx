@@ -34,7 +34,8 @@ import ffx.numerics.Potential.VARIABLE_TYPE;
 public class Adiabatic extends Thermostat {
 
     /**
-     * <p>Constructor for Adiabatic.</p>
+     * <p>
+     * Constructor for Adiabatic.</p>
      *
      * @param n a int.
      * @param x an array of double.

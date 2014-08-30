@@ -30,7 +30,7 @@ import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.parameters.ForceField;
-import static java.lang.Math.pow;
+import static org.apache.commons.math3.util.FastMath.pow;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;

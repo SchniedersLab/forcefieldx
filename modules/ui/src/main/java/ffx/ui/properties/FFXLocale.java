@@ -40,7 +40,8 @@ public class FFXLocale {
     private Hashtable<String, String> reverseLookUp = new Hashtable<String, String>();
 
     /**
-     * <p>Constructor for FFXLocale.</p>
+     * <p>
+     * Constructor for FFXLocale.</p>
      */
     public FFXLocale() {
         currentLocale = Locale.getDefault();
@@ -50,7 +51,8 @@ public class FFXLocale {
     }
 
     /**
-     * <p>Constructor for FFXLocale.</p>
+     * <p>
+     * Constructor for FFXLocale.</p>
      *
      * @param language a {@link java.lang.String} object.
      * @param country a {@link java.lang.String} object.
@@ -60,7 +62,8 @@ public class FFXLocale {
     }
 
     /**
-     * <p>getKey</p>
+     * <p>
+     * getKey</p>
      *
      * @param string a {@link java.lang.String} object.
      * @return a {@link java.lang.String} object.
@@ -70,7 +73,8 @@ public class FFXLocale {
     }
 
     /**
-     * <p>getValue</p>
+     * <p>
+     * getValue</p>
      *
      * @param key a {@link java.lang.String} object.
      * @return a {@link java.lang.String} object.
@@ -80,7 +84,8 @@ public class FFXLocale {
     }
 
     /**
-     * <p>list</p>
+     * <p>
+     * list</p>
      */
     public void list() {
         for (String value : reverseLookUp.keySet()) {
@@ -100,7 +105,8 @@ public class FFXLocale {
     }
 
     /**
-     * <p>setLocale</p>
+     * <p>
+     * setLocale</p>
      *
      * @param language a {@link java.lang.String} object.
      * @param country a {@link java.lang.String} object.

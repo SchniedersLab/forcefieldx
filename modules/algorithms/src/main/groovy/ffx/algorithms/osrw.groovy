@@ -410,19 +410,19 @@ topology1 = active;
 if (arguments.size() == 1) {
     // Check for constant pressure
     if (NPT) {
-//        // Create a barostat.
-//        Barostat barostat = new Barostat(active);
-//        barostat.setMaxdUdL(1000.0);
-//        barostat.setMaxDensity(maxDensity);
-//        barostat.setMinDensity(minDensity);
-//        barostat.setMaxSideMove(maxSideMove);
-//        barostat.setMaxAngleMove(maxAngleMove);
-//        barostat.setMeanBarostatInterval(meanInterval);
-//
-//        // Create the OSRW instance.
-//        osrw = new OSRW(energy, barostat, lambdaRestart, histogramRestart, active.getProperties(),
-//            temperature, timeStep, printInterval, saveInterval, asynchronous, sh, wellTempered);
-//        osrw.setResetStatistics(resetStatistics);
+        //        // Create a barostat.
+        //        Barostat barostat = new Barostat(active);
+        //        barostat.setMaxdUdL(1000.0);
+        //        barostat.setMaxDensity(maxDensity);
+        //        barostat.setMinDensity(minDensity);
+        //        barostat.setMaxSideMove(maxSideMove);
+        //        barostat.setMaxAngleMove(maxAngleMove);
+        //        barostat.setMeanBarostatInterval(meanInterval);
+        //
+        //        // Create the OSRW instance.
+        //        osrw = new OSRW(energy, barostat, lambdaRestart, histogramRestart, active.getProperties(),
+        //            temperature, timeStep, printInterval, saveInterval, asynchronous, sh, wellTempered);
+        //        osrw.setResetStatistics(resetStatistics);
         if (writeTraversals) {
             osrw.setTraversalOutput(lambdaOneFile, topology1, lambdaZeroFile, topology1);
         }

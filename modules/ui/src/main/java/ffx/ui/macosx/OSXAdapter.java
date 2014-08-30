@@ -52,7 +52,8 @@ public class OSXAdapter extends ApplicationAdapter {
     private static final Logger logger = Logger.getLogger(OSXAdapter.class.getName());
 
     /**
-     * <p>registerMacOSXApplication</p>
+     * <p>
+     * registerMacOSXApplication</p>
      *
      * @param m a {@link ffx.ui.MainPanel} object.
      */
@@ -71,7 +72,8 @@ public class OSXAdapter extends ApplicationAdapter {
     }
 
     /**
-     * <p>macOSXRegistration</p>
+     * <p>
+     * macOSXRegistration</p>
      *
      * @param m a {@link ffx.ui.MainPanel} object.
      */

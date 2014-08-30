@@ -37,7 +37,8 @@ import ffx.potential.bonded.MSNode;
 public class Selection {
 
     /**
-     * <p>select</p>
+     * <p>
+     * select</p>
      *
      * @param m a {@link ffx.potential.bonded.MSNode} object.
      * @param scale a {@link java.lang.Class} object.
@@ -51,7 +52,8 @@ public class Selection {
     }
 
     /**
-     * <p>select</p>
+     * <p>
+     * select</p>
      *
      * @param m a {@link ffx.potential.bonded.MSNode} object.
      * @param scale a {@link java.lang.String} object.
@@ -87,7 +89,8 @@ public class Selection {
     }
 
     /**
-     * <p>and</p>
+     * <p>
+     * and</p>
      *
      * @param scale a {@link java.lang.Class} object.
      * @param criteria a {@link java.lang.String} object.
@@ -111,7 +114,8 @@ public class Selection {
     }
 
     /**
-     * <p>or</p>
+     * <p>
+     * or</p>
      *
      * @param scale a {@link java.lang.Class} object.
      * @param criteria a {@link java.lang.String} object.

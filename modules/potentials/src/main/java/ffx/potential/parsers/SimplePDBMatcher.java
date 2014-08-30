@@ -3,7 +3,6 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package ffx.potential.parsers;
 
 import edu.rit.pj.IntegerForLoop;
@@ -23,16 +22,18 @@ import org.biojava.bio.structure.io.PDBFileReader;
  * @author JacobLitman
  */
 public class SimplePDBMatcher {
+
     private static final Logger logger = Logger.getLogger(PDBFileMatcher.class.getName());
     private final File[] matchFiles;
     private final File[] sourceFiles;
     private FileDoublePair[] matchedSources;
+
     public SimplePDBMatcher(File[] matchFiles, File[] sourceFiles) {
         this.matchFiles = matchFiles;
         this.sourceFiles = sourceFiles;
         matchedSources = new FileDoublePair[matchFiles.length];
     }
-    
+
     public void match() {
         PDBFileReader reader = new PDBFileReader();
         StructurePairAligner aligner = new StructurePairAligner();
@@ -47,17 +48,17 @@ public class SimplePDBMatcher {
             }
         }
         for (int i = 0; i < matchFiles.length; i++) {
-            logger.info(String.format(" Match file %s best source: %s at %11.7f A", 
+            logger.info(String.format(" Match file %s best source: %s at %11.7f A",
                     matchFiles[i].getName(), matchedSources[i].file.getName(), matchedSources[i].rmsd));
         }
     }
-    
+
     public void matchParallel() {
         try {
             new ParallelTeam().execute(new ParallelRegion() {
                 @Override
                 public void run() throws Exception {
-                    execute(0, sourceFiles.length, new IntegerForLoop(){
+                    execute(0, sourceFiles.length, new IntegerForLoop() {
                         @Override
                         public void run(int lb, int ub) {
                             PDBFileReader reader = new PDBFileReader();
@@ -80,11 +81,11 @@ public class SimplePDBMatcher {
             logger.severe(" Matching in parallel failed.");
         }
         for (int i = 0; i < matchFiles.length; i++) {
-            logger.info(String.format(" Match file %s best source: %s at %11.7f A", 
+            logger.info(String.format(" Match file %s best source: %s at %11.7f A",
                     matchFiles[i].getName(), matchedSources[i].file.getName(), matchedSources[i].rmsd));
         }
     }
-    
+
     private FileDoublePair loopOverSources(PDBFileReader reader, StructurePairAligner aligner, Structure matchStructure, String matchName) {
         File bestMatch = sourceFiles[0];
         double rmsd = Double.MAX_VALUE;
@@ -104,7 +105,7 @@ public class SimplePDBMatcher {
         logger.info(String.format(" Minimum RMSD for file %s: $11.7f to file %s", matchName, rmsd, bestMatch.getName()));
         return new FileDoublePair(bestMatch, rmsd);
     }
-    
+
     private double checkRMSD(Structure matchStructure, Structure sourceStructure, StructurePairAligner aligner, String matchName, String sourceName) {
         double bestRMSD = Double.MAX_VALUE;
         try {
@@ -120,10 +121,12 @@ public class SimplePDBMatcher {
         }
         return bestRMSD;
     }
-    
+
     private class FileDoublePair {
+
         public final File file;
         public final double rmsd;
+
         public FileDoublePair(File file, double rmsd) {
             this.file = file;
             this.rmsd = rmsd;

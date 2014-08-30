@@ -26,15 +26,15 @@ import java.nio.DoubleBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.lang.Math.PI;
-import static java.lang.Math.cos;
-import static java.lang.Math.exp;
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-import static java.lang.Math.pow;
-import static java.lang.Math.round;
-import static java.lang.Math.sin;
-import static java.lang.Math.sqrt;
+import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.cos;
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+import static org.apache.commons.math3.util.FastMath.round;
+import static org.apache.commons.math3.util.FastMath.sin;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 import static java.lang.String.format;
 
 import edu.rit.pj.IntegerForLoop;
@@ -552,20 +552,20 @@ public class ReciprocalSpace {
                             bSplineTime[i] * toSeconds, convTime[i] * toSeconds, splinePermanentTime[i] * toSeconds,
                             permanentPhiTime[i] * toSeconds, splineInducedTime[i] * toSeconds,
                             inducedPhiTime[i] * toSeconds, splineCount[i]));
-                    minBSpline = min(bSplineTime[i],minBSpline);
-                    maxBSpline = max(bSplineTime[i],maxBSpline);
-                    minConv = min(convTime[i],minConv);
-                    maxConv = max(convTime[i],maxConv);
-                    minBSPerm = min(splinePermanentTime[i],minBSPerm);
-                    maxBSPerm = max(splinePermanentTime[i],maxBSPerm);
-                    minPhiPerm = min(permanentPhiTime[i],minPhiPerm);
-                    maxPhiPerm = max(permanentPhiTime[i],maxPhiPerm);
-                    minBSInduced = min(splineInducedTime[i],minBSInduced);
-                    maxBSInduced = max(splineInducedTime[i],maxBSInduced);
-                    minPhiInduced = min(inducedPhiTime[i],minPhiInduced);
-                    maxPhiInduced = max(inducedPhiTime[i],maxPhiInduced);
-                    minCount = min(splineCount[i],minCount);
-                    maxCount = max(splineCount[i],maxCount);
+                    minBSpline = min(bSplineTime[i], minBSpline);
+                    maxBSpline = max(bSplineTime[i], maxBSpline);
+                    minConv = min(convTime[i], minConv);
+                    maxConv = max(convTime[i], maxConv);
+                    minBSPerm = min(splinePermanentTime[i], minBSPerm);
+                    maxBSPerm = max(splinePermanentTime[i], maxBSPerm);
+                    minPhiPerm = min(permanentPhiTime[i], minPhiPerm);
+                    maxPhiPerm = max(permanentPhiTime[i], maxPhiPerm);
+                    minBSInduced = min(splineInducedTime[i], minBSInduced);
+                    maxBSInduced = max(splineInducedTime[i], maxBSInduced);
+                    minPhiInduced = min(inducedPhiTime[i], minPhiInduced);
+                    maxPhiInduced = max(inducedPhiTime[i], maxPhiInduced);
+                    minCount = min(splineCount[i], minCount);
+                    maxCount = max(splineCount[i], maxCount);
                 }
                 logger.fine(String.format(" Min      %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f  %6d",
                         minBSpline * toSeconds, minConv * toSeconds, minBSPerm * toSeconds,
@@ -576,10 +576,10 @@ public class ReciprocalSpace {
                         maxPhiPerm * toSeconds, maxBSInduced * toSeconds,
                         maxPhiInduced * toSeconds, maxCount));
                 logger.fine(String.format(" Delta    %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f  %6d",
-                        (maxBSpline-minBSpline) * toSeconds, (maxConv-minConv) * toSeconds,
-                        (maxBSPerm-minBSPerm) * toSeconds, (maxPhiPerm-minPhiPerm) * toSeconds,
-                        (maxBSInduced-minBSInduced) * toSeconds, (maxPhiInduced-minPhiInduced) * toSeconds,
-                        (maxCount-minCount)));
+                        (maxBSpline - minBSpline) * toSeconds, (maxConv - minConv) * toSeconds,
+                        (maxBSPerm - minBSPerm) * toSeconds, (maxPhiPerm - minPhiPerm) * toSeconds,
+                        (maxBSInduced - minBSInduced) * toSeconds, (maxPhiInduced - minPhiInduced) * toSeconds,
+                        (maxCount - minCount)));
                 logger.fine(String.format(" Actual   %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f  %6d",
                         bSplineTotal * toSeconds, convTotal * toSeconds, splinePermanentTotal * toSeconds,
                         permanentPhiTotal * toSeconds, splineInducedTotal * toSeconds,

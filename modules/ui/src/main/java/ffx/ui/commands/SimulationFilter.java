@@ -35,7 +35,8 @@ import ffx.potential.parameters.AtomType;
 import ffx.potential.parsers.SystemFilter;
 
 /**
- * The SimulationFilter class parses system data sent by TINKER to Force Field X.
+ * The SimulationFilter class parses system data sent by TINKER to Force Field
+ * X.
  *
  * @author Michael J. Schnieders
  *
@@ -46,7 +47,8 @@ public final class SimulationFilter extends SystemFilter {
     Hashtable<Integer, AtomType> atomTypes = new Hashtable<Integer, AtomType>();
 
     /**
-     * <p>Constructor for SimulationFilter.</p>
+     * <p>
+     * Constructor for SimulationFilter.</p>
      *
      * @param sys a {@link ffx.ui.commands.TinkerSystem} object.
      * @param m a {@link ffx.potential.bonded.MolecularAssembly} object.

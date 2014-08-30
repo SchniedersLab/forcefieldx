@@ -34,7 +34,8 @@ import static org.apache.commons.io.FilenameUtils.removeExtension;
 import ffx.potential.bonded.MolecularAssembly;
 
 /**
- * <p>RealSpaceFile class.</p>
+ * <p>
+ * RealSpaceFile class.</p>
  *
  * @author Timothy D. Fenn
  *

@@ -22,10 +22,10 @@
  */
 package ffx.numerics;
 
-import static java.lang.Math.atan2;
-import static java.lang.Math.cosh;
-import static java.lang.Math.hypot;
-import static java.lang.Math.sinh;
+import static org.apache.commons.math3.util.FastMath.atan2;
+import static org.apache.commons.math3.util.FastMath.cosh;
+import static org.apache.commons.math3.util.FastMath.hypot;
+import static org.apache.commons.math3.util.FastMath.sinh;
 
 /**
  * <p>

@@ -77,6 +77,6 @@ diffractiondata.computeAtomicDensity();
 
 // output Fcs
 MTZWriter mtzwriter = new MTZWriter(diffractiondata.reflectionlist[0], diffractiondata.refinementdata[0],
-  FilenameUtils.getBaseName(modelfilename) + "_fc.mtz", MTZType.FCONLY);
+    FilenameUtils.getBaseName(modelfilename) + "_fc.mtz", MTZType.FCONLY);
 
 mtzwriter.write();

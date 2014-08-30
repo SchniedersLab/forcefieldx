@@ -33,11 +33,13 @@ import edu.rit.pj.ParallelTeam;
 
 /**
  * Compute the 3D FFT of complex, double precision input of arbitrary dimensions
- * via 1D Mixed Radix FFTs in parallel. <p> The location of the input point [i,
- * j, k] within the input array must be:<br> <br> double real = input[x*nextX +
- * y*nextY + z*nextZ]<br> double imag = input[x*nextX + y*nextY + z*nextZ +
- * 1]<br> <br> where<br> int nextX = 2<br> int nextY = 2*nX<br> int nextZ =
- * 2*nX*nY<br> <p>
+ * via 1D Mixed Radix FFTs in parallel.
+ * <p>
+ * The location of the input point [i, j, k] within the input array must be:<br>
+ * <br> double real = input[x*nextX + y*nextY + z*nextZ]<br> double imag =
+ * input[x*nextX + y*nextY + z*nextZ + 1]<br> <br> where<br> int nextX = 2<br>
+ * int nextY = 2*nX<br> int nextZ = 2*nX*nY<br>
+ * <p>
  *
  * @author Michal J. Schnieders
  * @since 1.0
@@ -155,8 +157,8 @@ public class RowMajorComplex3DParallel {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>recip</code>.</p>
+     * <p>
+     * Setter for the field <code>recip</code>.</p>
      *
      * @param recip an array of double.
      */

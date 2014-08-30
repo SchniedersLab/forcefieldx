@@ -24,8 +24,8 @@ package ffx.xray;
 
 import java.util.logging.Logger;
 
-import static java.lang.Math.abs;
-import static java.lang.Math.exp;
+import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.exp;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
@@ -85,7 +85,8 @@ public class CrystalStats {
     }
 
     /**
-     * <p>getPDBHeaderString</p>
+     * <p>
+     * getPDBHeaderString</p>
      *
      * @return a {@link java.lang.String} object.
      */
@@ -557,7 +558,7 @@ public class CrystalStats {
 
         StringBuilder sb = new StringBuilder(
                 String.format("\n %15s | %7s | %7s | %7s | %7s | %7s | %7s\n",
-                "Res. Range", "  R", "Rfree", "s", "w(E)", "w(F)", "FOM"));
+                        "Res. Range", "  R", "Rfree", "s", "w(E)", "w(F)", "FOM"));
         for (int i = 0; i < n; i++) {
             sb.append(String.format(" %7.3f %7.3f | ", res[i][0], res[i][1]));
             sb.append(String.format("%7.2f | %7.2f | %7.4f | %7.4f | %7.2f | %7.4f\n",
@@ -615,7 +616,7 @@ public class CrystalStats {
 
         StringBuilder sb = new StringBuilder(
                 String.format(" Fc to Fo scale: %4.2f\n",
-                exp(0.25 * refinementdata.model_k)));
+                        exp(0.25 * refinementdata.model_k)));
         sb.append(" Fc to Fo spline scale: ");
         for (int i = 0; i < n; i++) {
             sb.append(String.format("%4.2f ", scale[i]));

@@ -266,8 +266,8 @@ public class XRayEnergy implements LambdaInterface, Potential {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>refinementMode</code>.</p>
+     * <p>
+     * Getter for the field <code>refinementMode</code>.</p>
      *
      * @return a {@link ffx.xray.RefinementMinimize.RefinementMode} object.
      */
@@ -276,8 +276,8 @@ public class XRayEnergy implements LambdaInterface, Potential {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>refinementMode</code>.</p>
+     * <p>
+     * Setter for the field <code>refinementMode</code>.</p>
      *
      * @param refinementmode a
      * {@link ffx.xray.RefinementMinimize.RefinementMode} object.

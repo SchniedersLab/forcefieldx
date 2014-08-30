@@ -37,7 +37,8 @@ import ffx.potential.bonded.Residue;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
 /**
- * <p>RealSpaceData class.</p>
+ * <p>
+ * RealSpaceData class.</p>
  *
  * @author Timothy D. Fenn
  *

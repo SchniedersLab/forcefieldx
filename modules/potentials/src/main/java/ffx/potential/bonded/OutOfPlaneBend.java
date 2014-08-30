@@ -24,7 +24,7 @@ package ffx.potential.bonded;
 
 import java.util.logging.Logger;
 
-import static java.lang.Math.*;
+import static org.apache.commons.math3.util.FastMath.*;
 
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.OutOfPlaneBendType;
@@ -69,11 +69,13 @@ public class OutOfPlaneBend extends BondedTerm implements
     }
 
     /**
-     * Attempt to create a new OutOfPlaneBend instance for a given Angle and Force Field.
+     * Attempt to create a new OutOfPlaneBend instance for a given Angle and
+     * Force Field.
      *
      * @param angle
      * @param forceField
-     * @return a new OutOfPlaneBend if the central atom of the angle is trigonal and a force field type exists.
+     * @return a new OutOfPlaneBend if the central atom of the angle is trigonal
+     * and a force field type exists.
      */
     public static OutOfPlaneBend outOfPlaneBendFactory(Angle angle, ForceField forceField) {
         Atom centralAtom = angle.atoms[1];

@@ -25,8 +25,8 @@ package ffx.xray;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.lang.Math.pow;
-import static java.lang.Math.sqrt;
+import static org.apache.commons.math3.util.FastMath.pow;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.pj.ParallelTeam;
 

@@ -1,7 +1,10 @@
 /**
- * <p>Title: Force Field X</p> <p>Description: Force Field X is a Molecular
- * Biophysics Environment</p> <p>Copyright: Copyright (c) Michael J. Schnieders
- * 2002-2009</p>
+ * <p>
+ * Title: Force Field X</p>
+ * <p>
+ * Description: Force Field X is a Molecular Biophysics Environment</p>
+ * <p>
+ * Copyright: Copyright (c) Michael J. Schnieders 2002-2009</p>
  *
  * @author Michael J. Schnieders
  * @version 0.1
@@ -60,7 +63,8 @@ public final class GraphicsAxis extends Group implements MouseBehaviorCallback {
     public Matrix3d matrix = new Matrix3d();
 
     /**
-     * <p>Constructor for GraphicsAxis.</p>
+     * <p>
+     * Constructor for GraphicsAxis.</p>
      *
      * @param v a {@link com.sun.j3d.utils.universe.ViewingPlatform} object.
      * @param c a {@link javax.media.j3d.Canvas3D} object.
@@ -88,7 +92,8 @@ public final class GraphicsAxis extends Group implements MouseBehaviorCallback {
     }
 
     /**
-     * <p>center</p>
+     * <p>
+     * center</p>
      */
     public void center() {
         axisTransform3D.setIdentity();
@@ -98,7 +103,8 @@ public final class GraphicsAxis extends Group implements MouseBehaviorCallback {
     }
 
     /**
-     * <p>createAxis</p>
+     * <p>
+     * createAxis</p>
      */
     public void createAxis() {
         Appearance ap = new Appearance();
@@ -205,8 +211,8 @@ public final class GraphicsAxis extends Group implements MouseBehaviorCallback {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>axisTransformGroup</code>.</p>
+     * <p>
+     * Getter for the field <code>axisTransformGroup</code>.</p>
      *
      * @return a {@link javax.media.j3d.TransformGroup} object.
      */
@@ -234,7 +240,8 @@ public final class GraphicsAxis extends Group implements MouseBehaviorCallback {
     }
 
     /**
-     * <p>showAxis</p>
+     * <p>
+     * showAxis</p>
      *
      * @param b a boolean.
      */

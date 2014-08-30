@@ -25,9 +25,9 @@ package ffx.xray;
 import java.util.Arrays;
 import java.util.logging.Logger;
 
-import static java.lang.Math.PI;
-import static java.lang.Math.abs;
-import static java.lang.Math.pow;
+import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.pow;
 
 import static org.apache.commons.math3.util.FastMath.exp;
 

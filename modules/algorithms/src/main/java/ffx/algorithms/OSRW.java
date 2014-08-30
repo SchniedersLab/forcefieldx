@@ -28,7 +28,7 @@ import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.lang.Math.*;
+import static org.apache.commons.math3.util.FastMath.*;
 import static java.util.Arrays.fill;
 
 import org.apache.commons.configuration.CompositeConfiguration;
@@ -582,7 +582,7 @@ public class OSRW implements Potential {
                         * exp(-deltaFL2 / (2.0 * FLs2));
                 //JP: for WTMetaD, multiply the above bias function by the exp(-V(sn+1)/(R*deltaT)) V(sn+1) is current free energy?
                 if (wellTempered) {
-                    bias = bias * exp(currentFreeEnergy()/(R*dT));
+                    bias = bias * exp(currentFreeEnergy() / (R * dT));
                 }
                 biasEnergy += bias;
                 dGdLambda -= deltaL / ls2 * bias;

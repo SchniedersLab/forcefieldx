@@ -75,7 +75,8 @@ public class Minimize_2 implements OptimizationListener, Terminatable {
     private ForceField forceField;
 
     /**
-     * <p>Constructor for Minimize_2.</p>
+     * <p>
+     * Constructor for Minimize_2.</p>
      *
      * @param xyz_filename a {@link java.lang.String} object.
      * @param keyfname a {@link java.lang.String} object.
@@ -173,7 +174,8 @@ public class Minimize_2 implements OptimizationListener, Terminatable {
     }
 
     /**
-     * <p>minimize</p>
+     * <p>
+     * minimize</p>
      *
      * @return a {@link ffx.numerics.Potential} object.
      */
@@ -182,7 +184,8 @@ public class Minimize_2 implements OptimizationListener, Terminatable {
     }
 
     /**
-     * <p>minimize</p>
+     * <p>
+     * minimize</p>
      *
      * @param eps a double.
      * @return a {@link ffx.numerics.Potential} object.
@@ -192,7 +195,8 @@ public class Minimize_2 implements OptimizationListener, Terminatable {
     }
 
     /**
-     * <p>minimize</p>
+     * <p>
+     * minimize</p>
      *
      * @param m a int.
      * @param eps a double.
@@ -231,7 +235,8 @@ public class Minimize_2 implements OptimizationListener, Terminatable {
     }
 
     /**
-     * <p>print</p>
+     * <p>
+     * print</p>
      */
     public void print() {
 //    	for(int i = 0; i < x.length; i+=3){
@@ -345,7 +350,8 @@ public class Minimize_2 implements OptimizationListener, Terminatable {
     }
 
     /**
-     * <p>main</p>
+     * <p>
+     * main</p>
      *
      * @param args an array of {@link java.lang.String} objects.
      */

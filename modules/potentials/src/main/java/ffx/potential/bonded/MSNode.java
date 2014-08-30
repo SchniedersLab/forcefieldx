@@ -432,10 +432,11 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
         }
         return weight;
     }
-    
+
     /**
      * Returns the total mass of all atoms in the MolecularAssembly, calculating
      * the mass if it has not already been done, defaulting to simple addition.
+     *
      * @return Total mass of atoms in system.
      */
     public double getTotalMass() {
@@ -444,11 +445,12 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
         }
         return totalMass;
     }
-    
+
     /**
      * Calculates the total mass of all atoms in the MolecularAssembly, using
-     * either a simple addition or the Kahan summation algorithm. The 
-     * simple algorithm is a standard loop to add up the masses.
+     * either a simple addition or the Kahan summation algorithm. The simple
+     * algorithm is a standard loop to add up the masses.
+     *
      * @param recalculate Force recalculation
      * @param useKahan Use Kahan or simple addition algorithms
      * @return Total mass of all atoms in system.
@@ -466,9 +468,10 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
         }
         return totalMass;
     }
-    
+
     /**
      * Iterative summation of atomic masses.
+     *
      * @param atoms
      * @return Mass of atoms.
      */
@@ -479,10 +482,11 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
         }
         return sumMasses;
     }
-    
+
     /**
      * Implements the Kahan algorithm to very accurately sum the masses of all
      * the atoms provided, minimizing rounding error.
+     *
      * @param atoms Atoms to sum the mass of.
      * @return Total mass.
      */

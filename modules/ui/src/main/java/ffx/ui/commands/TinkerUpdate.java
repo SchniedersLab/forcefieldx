@@ -35,18 +35,15 @@ public class TinkerUpdate implements Serializable {
 
     private static final long serialVersionUID = 1L;
     /**
-     * Constant
-     * <code>NONE=0</code>
+     * Constant <code>NONE=0</code>
      */
     public static int NONE = 0;
     /**
-     * Constant
-     * <code>SIMULATION=1</code>
+     * Constant <code>SIMULATION=1</code>
      */
     public static int SIMULATION = 1;
     /**
-     * Constant
-     * <code>OPTIMIZATION=2</code>
+     * Constant <code>OPTIMIZATION=2</code>
      */
     public static int OPTIMIZATION = 2;
     public boolean read = true;
@@ -74,7 +71,8 @@ public class TinkerUpdate implements Serializable {
     public double[][] induced = null;
 
     /**
-     * <p>Constructor for TinkerUpdate.</p>
+     * <p>
+     * Constructor for TinkerUpdate.</p>
      *
      * @param n a int.
      * @param t a int.
@@ -97,7 +95,8 @@ public class TinkerUpdate implements Serializable {
     }
 
     /**
-     * <p>isNewer</p>
+     * <p>
+     * isNewer</p>
      *
      * @param message a {@link ffx.ui.commands.FFXMessage} object.
      * @return a boolean.
@@ -113,7 +112,8 @@ public class TinkerUpdate implements Serializable {
     }
 
     /**
-     * <p>print</p>
+     * <p>
+     * print</p>
      */
     public void print() {
         if (type == TinkerUpdate.SIMULATION) {

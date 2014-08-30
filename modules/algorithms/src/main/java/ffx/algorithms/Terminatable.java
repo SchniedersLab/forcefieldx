@@ -34,9 +34,9 @@ public interface Terminatable {
 
     /**
      * This should be implemented as a blocking interrupt; when the method
-     * returns the
-     * <code>Terminatable</code> algorithm has reached a clean termination
-     * point. For example, between minimize or molecular dynamics steps.
+     * returns the <code>Terminatable</code> algorithm has reached a clean
+     * termination point. For example, between minimize or molecular dynamics
+     * steps.
      */
     public abstract void terminate();
 }

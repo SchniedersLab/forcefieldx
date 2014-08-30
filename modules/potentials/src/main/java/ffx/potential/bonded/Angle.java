@@ -25,7 +25,7 @@ package ffx.potential.bonded;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
-import static java.lang.Math.*;
+import static org.apache.commons.math3.util.FastMath.*;
 
 import ffx.potential.parameters.AngleType;
 import ffx.potential.parameters.ForceField;
@@ -109,7 +109,6 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
         newAngle.setAngleType(angleType);
         return newAngle;
     }
-
 
     /**
      * <p>
@@ -259,7 +258,7 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
      * Update recomputes <b>this</b> Angle's value and energy.
      */
     @Override
-        public void update() {
+    public void update() {
         energy(false);
     }
 
@@ -516,7 +515,7 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
      * Overidden toString Method returns the Term's id.
      */
     @Override
-        public String toString() {
+    public String toString() {
         return String.format("%s  (%7.1f,%7.2f)", id, value, energy);
     }
 
@@ -524,7 +523,7 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
      * {@inheritDoc}
      */
     @Override
-        public int compareTo(Angle a) {
+    public int compareTo(Angle a) {
         if (a == null) {
             throw new NullPointerException();
         }

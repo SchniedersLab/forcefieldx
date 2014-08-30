@@ -10,8 +10,8 @@ import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
 
-import static java.lang.Math.exp;
-import static java.lang.Math.random;
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.random;
 
 import java.util.ArrayList;
 import java.util.Random;

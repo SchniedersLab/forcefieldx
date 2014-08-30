@@ -22,7 +22,7 @@
  */
 package ffx.algorithms;
 
-import static java.lang.Math.sqrt;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.numerics.Potential.VARIABLE_TYPE;
 
@@ -43,7 +43,8 @@ public class Berendsen extends Thermostat {
     private double tau;
 
     /**
-     * <p>Constructor for Berendsen.</p>
+     * <p>
+     * Constructor for Berendsen.</p>
      *
      * @param n a int.
      * @param x an array of double.
@@ -60,7 +61,8 @@ public class Berendsen extends Thermostat {
     }
 
     /**
-     * <p>Constructor for Berendsen.</p>
+     * <p>
+     * Constructor for Berendsen.</p>
      *
      * @param n a int.
      * @param x an array of double.
@@ -74,8 +76,8 @@ public class Berendsen extends Thermostat {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>tau</code>.</p>
+     * <p>
+     * Setter for the field <code>tau</code>.</p>
      *
      * @param tau a double.
      */
@@ -84,8 +86,8 @@ public class Berendsen extends Thermostat {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>tau</code>.</p>
+     * <p>
+     * Getter for the field <code>tau</code>.</p>
      *
      * @return a double.
      */

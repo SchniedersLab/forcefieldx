@@ -57,7 +57,8 @@ public class Minimize implements OptimizationListener, Terminatable {
     private int nSteps;
 
     /**
-     * <p>Constructor for Minimize.</p>
+     * <p>
+     * Constructor for Minimize.</p>
      *
      * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
      * object.
@@ -82,7 +83,8 @@ public class Minimize implements OptimizationListener, Terminatable {
     }
 
     /**
-     * <p>Constructor for Minimize.</p>
+     * <p>
+     * Constructor for Minimize.</p>
      *
      * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
      * object.
@@ -125,7 +127,8 @@ public class Minimize implements OptimizationListener, Terminatable {
     }
 
     /**
-     * <p>minimize</p>
+     * <p>
+     * minimize</p>
      *
      * @return a {@link ffx.numerics.Potential} object.
      */
@@ -134,7 +137,8 @@ public class Minimize implements OptimizationListener, Terminatable {
     }
 
     /**
-     * <p>minimize</p>
+     * <p>
+     * minimize</p>
      *
      * @param eps a double.
      * @return a {@link ffx.numerics.Potential} object.
@@ -144,7 +148,8 @@ public class Minimize implements OptimizationListener, Terminatable {
     }
 
     /**
-     * <p>minimize</p>
+     * <p>
+     * minimize</p>
      *
      * @param m a int.
      * @param eps a double.

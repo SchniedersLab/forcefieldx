@@ -59,7 +59,8 @@ public final class MTZFileFilter extends FileFilter {
     }
 
     /**
-     * <p>acceptDeep</p>
+     * <p>
+     * acceptDeep</p>
      *
      * @param file a {@link java.io.File} object.
      * @return a boolean.

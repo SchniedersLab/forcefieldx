@@ -163,7 +163,8 @@ public final class Simulation {
     private final Logger logger = Logger.getLogger("ffx");
 
     /**
-     * <p>Constructor for Simulation.</p>
+     * <p>
+     * Constructor for Simulation.</p>
      *
      * @param atoms a {@link java.util.List} object.
      */

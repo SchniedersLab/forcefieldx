@@ -25,7 +25,7 @@ package ffx.potential.nonbonded;
 import java.util.Arrays;
 import java.util.logging.Logger;
 
-import static java.lang.Math.pow;
+import static org.apache.commons.math3.util.FastMath.pow;
 
 import ffx.crystal.Crystal;
 import ffx.potential.LambdaInterface;

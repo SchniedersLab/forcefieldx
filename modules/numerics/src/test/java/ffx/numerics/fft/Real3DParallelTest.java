@@ -46,10 +46,10 @@ public class Real3DParallelTest {
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{{"Test nx=32, ny=32, nz=32, nCPUs=1}", 32, 32, 32, 1},
-                    {"Test nx=32, ny=32, nz=32, nCPUs=2}", 32, 32, 32, 2},
-                    {"Test nx=32, ny=45, nz=21, nCPUs=1}", 32, 45, 21, 1},
-                    {"Test nx=32, ny=45, nz=21, nCPUs=2}", 32, 45, 21, 2}
-                });
+        {"Test nx=32, ny=32, nz=32, nCPUs=2}", 32, 32, 32, 2},
+        {"Test nx=32, ny=45, nz=21, nCPUs=1}", 32, 45, 21, 1},
+        {"Test nx=32, ny=45, nz=21, nCPUs=2}", 32, 45, 21, 2}
+        });
     }
     private final String info;
     private final int nx;

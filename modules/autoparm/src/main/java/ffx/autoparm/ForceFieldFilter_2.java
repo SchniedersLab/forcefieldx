@@ -29,7 +29,7 @@ import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.lang.Math.abs;
+import static org.apache.commons.math3.util.FastMath.abs;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;

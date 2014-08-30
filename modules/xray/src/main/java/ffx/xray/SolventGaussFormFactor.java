@@ -27,7 +27,8 @@ import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
 /**
- * <p>SolventGaussFormFactor class.</p>
+ * <p>
+ * SolventGaussFormFactor class.</p>
  *
  * @author fenn
  *
@@ -41,7 +42,8 @@ public final class SolventGaussFormFactor implements FormFactor {
     private double sd;
 
     /**
-     * <p>Constructor for SolventGaussFormFactor.</p>
+     * <p>
+     * Constructor for SolventGaussFormFactor.</p>
      *
      * @param atom a {@link ffx.potential.bonded.Atom} object.
      * @param sd a double.
@@ -51,7 +53,8 @@ public final class SolventGaussFormFactor implements FormFactor {
     }
 
     /**
-     * <p>Constructor for SolventGaussFormFactor.</p>
+     * <p>
+     * Constructor for SolventGaussFormFactor.</p>
      *
      * @param atom a {@link ffx.potential.bonded.Atom} object.
      * @param sd a double.
@@ -74,7 +77,8 @@ public final class SolventGaussFormFactor implements FormFactor {
     }
 
     /**
-     * <p>rho</p>
+     * <p>
+     * rho</p>
      *
      * @param f a double.
      * @param lambda a double.

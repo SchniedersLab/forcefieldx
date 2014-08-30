@@ -27,7 +27,8 @@ import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
 /**
- * <p>SolventBinaryFormFactor class.</p>
+ * <p>
+ * SolventBinaryFormFactor class.</p>
  *
  * @author fenn
  *
@@ -40,7 +41,8 @@ public final class SolventBinaryFormFactor implements FormFactor {
     private double proberad;
 
     /**
-     * <p>Constructor for SolventBinaryFormFactor.</p>
+     * <p>
+     * Constructor for SolventBinaryFormFactor.</p>
      *
      * @param atom a {@link ffx.potential.bonded.Atom} object.
      * @param proberad a double.
@@ -50,7 +52,8 @@ public final class SolventBinaryFormFactor implements FormFactor {
     }
 
     /**
-     * <p>Constructor for SolventBinaryFormFactor.</p>
+     * <p>
+     * Constructor for SolventBinaryFormFactor.</p>
      *
      * @param atom a {@link ffx.potential.bonded.Atom} object.
      * @param proberad a double.
@@ -73,7 +76,8 @@ public final class SolventBinaryFormFactor implements FormFactor {
     }
 
     /**
-     * <p>rho</p>
+     * <p>
+     * rho</p>
      *
      * @param f a double.
      * @param lambda a double.

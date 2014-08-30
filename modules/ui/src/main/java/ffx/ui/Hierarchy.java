@@ -387,12 +387,10 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
             hierarchyModel.removeNodeFromParent(nodeToRemove);
 
             /**
-             * The DefaultTreeModel and DefaultTreeSelectionModel classes
-             * retain references to removed nodes. To work around this, we
-             * create new instances of these classes whenever an FFXSystem
-             * is removed.
+             * The DefaultTreeModel and DefaultTreeSelectionModel classes retain
+             * references to removed nodes. To work around this, we create new
+             * instances of these classes whenever an FFXSystem is removed.
              */
-
             if (nodeToRemove instanceof FFXSystem) {
                 hierarchyModel = new DefaultTreeModel(root);
                 treeSelectionModel = new DefaultTreeSelectionModel();
@@ -401,8 +399,8 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
             }
 
             /**
-             * Whenever a node is removed, clear and reset activeNodes and
-             * path instances.
+             * Whenever a node is removed, clear and reset activeNodes and path
+             * instances.
              */
             activeNodes.clear();
             previousPaths.clear();

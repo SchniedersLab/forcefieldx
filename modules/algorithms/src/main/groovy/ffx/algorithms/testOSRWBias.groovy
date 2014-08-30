@@ -122,7 +122,7 @@ if (options.e2) {
 
 // Starting lambda value.
 if (options.l) {
-   initialLambda = Double.parseDouble(options.l);
+    initialLambda = Double.parseDouble(options.l);
 }
 
 println("\n Testing Orthogonal Space Random Walk on " + filename);

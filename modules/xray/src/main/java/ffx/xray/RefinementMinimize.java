@@ -256,8 +256,8 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>eps</code>.</p>
+     * <p>
+     * Getter for the field <code>eps</code>.</p>
      *
      * @return a {@link java.lang.Double} object.
      */

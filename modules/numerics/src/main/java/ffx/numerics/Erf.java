@@ -22,8 +22,8 @@
  */
 package ffx.numerics;
 
-import static java.lang.Math.abs;
-import static java.lang.Math.floor;
+import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.floor;
 
 import static org.apache.commons.math3.util.FastMath.exp;
 
@@ -41,16 +41,16 @@ import static org.apache.commons.math3.util.FastMath.exp;
  * @see
  * <ul>
  * <li>
- * <a href="http://www.jstor.org/stable/2004390" target="_blank"> W. J.
- * Cody, Mathematics of Computation 23 (107), 631 (1969).</a>
+ * <a href="http://www.jstor.org/stable/2004390" target="_blank"> W. J. Cody,
+ * Mathematics of Computation 23 (107), 631 (1969).</a>
  * </li>
  * <li>
  * <a href="http://en.wikipedia.org/wiki/Error_function" target="_blank"> Error
  * function at Wikipedia</a>
  * </li>
  * <li>
- * <a href="http://mathworld.wolfram.com/Erf.html"
- * target="_blank"> Error function at MathWorld</a>
+ * <a href="http://mathworld.wolfram.com/Erf.html" target="_blank"> Error
+ * function at MathWorld</a>
  * </li>
  * </ul>
  *

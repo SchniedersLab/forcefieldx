@@ -35,23 +35,19 @@ public class FFXMessage implements Serializable {
 
     private static final long serialVersionUID = 1L;
     /**
-     * Constant
-     * <code>SYSTEM=0</code>
+     * Constant <code>SYSTEM=0</code>
      */
     public static int SYSTEM = 0;
     /**
-     * Constant
-     * <code>UPDATE=1</code>
+     * Constant <code>UPDATE=1</code>
      */
     public static int UPDATE = 1;
     /**
-     * Constant
-     * <code>CLOSING=2</code>
+     * Constant <code>CLOSING=2</code>
      */
     public static int CLOSING = 2;
     /**
-     * Constant
-     * <code>OK=3</code>
+     * Constant <code>OK=3</code>
      */
     public static int OK = 3;
     private int message = 0;
@@ -60,7 +56,8 @@ public class FFXMessage implements Serializable {
     private int type = 0;
 
     /**
-     * <p>Constructor for FFXMessage.</p>
+     * <p>
+     * Constructor for FFXMessage.</p>
      *
      * @param m a int.
      */
@@ -69,8 +66,8 @@ public class FFXMessage implements Serializable {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>message</code>.</p>
+     * <p>
+     * Getter for the field <code>message</code>.</p>
      *
      * @return a int.
      */
@@ -79,8 +76,8 @@ public class FFXMessage implements Serializable {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>step</code>.</p>
+     * <p>
+     * Getter for the field <code>step</code>.</p>
      *
      * @return a int.
      */
@@ -89,8 +86,8 @@ public class FFXMessage implements Serializable {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>time</code>.</p>
+     * <p>
+     * Getter for the field <code>time</code>.</p>
      *
      * @return a double.
      */
@@ -99,8 +96,8 @@ public class FFXMessage implements Serializable {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>type</code>.</p>
+     * <p>
+     * Getter for the field <code>type</code>.</p>
      *
      * @return a int.
      */
@@ -109,15 +106,16 @@ public class FFXMessage implements Serializable {
     }
 
     /**
-     * <p>print</p>
+     * <p>
+     * print</p>
      */
     public void print() {
         System.out.println(toString());
     }
 
     /**
-     * <p>Setter for the field
-     * <code>message</code>.</p>
+     * <p>
+     * Setter for the field <code>message</code>.</p>
      *
      * @param m a int.
      */
@@ -126,8 +124,8 @@ public class FFXMessage implements Serializable {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>step</code>.</p>
+     * <p>
+     * Setter for the field <code>step</code>.</p>
      *
      * @param s a int.
      */
@@ -136,8 +134,8 @@ public class FFXMessage implements Serializable {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>time</code>.</p>
+     * <p>
+     * Setter for the field <code>time</code>.</p>
      *
      * @param t a double.
      */
@@ -146,8 +144,8 @@ public class FFXMessage implements Serializable {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>type</code>.</p>
+     * <p>
+     * Setter for the field <code>type</code>.</p>
      *
      * @param t a int.
      */
@@ -156,7 +154,8 @@ public class FFXMessage implements Serializable {
     }
 
     /**
-     * <p>toString</p>
+     * <p>
+     * toString</p>
      *
      * @return a {@link java.lang.String} object.
      */

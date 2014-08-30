@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import static java.lang.Math.*;
+import static org.apache.commons.math3.util.FastMath.*;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 

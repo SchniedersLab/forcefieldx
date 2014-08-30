@@ -22,7 +22,7 @@
  */
 package ffx.crystal;
 
-import static java.lang.Math.PI;
+import static org.apache.commons.math3.util.FastMath.PI;
 
 import ffx.utilities.HashCodeUtil;
 

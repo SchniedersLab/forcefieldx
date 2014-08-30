@@ -27,8 +27,8 @@ import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.lang.Math.max;
-import static java.lang.Math.sqrt;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 import static java.lang.String.format;
 
 import edu.rit.pj.ParallelTeam;
@@ -273,7 +273,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     maxr = max(r, maxr);
                 }
             }
-            
+
             /**
              * Turn off reciprocal space calculations.
              */
@@ -516,7 +516,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         } else {
             coordRestraint = null;
         }
-        
+
         if (comTerm) {
             this.comRestraint = new COMRestraint(molecularAssembly, crystal);
         } else {
@@ -758,7 +758,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         if (restrainTerm) {
             logger.severe(" Restrain energy term cannot be used with variable systems sizes.");
         }
-        
+
         if (comTerm) {
             logger.severe(" COM restrain energy term cannot be used with variable systems sizes.");
         }
@@ -981,7 +981,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 restrainEnergy = coordRestraint.residual(gradient, print);
                 coordRestraintTime += System.nanoTime();
             }
-            
+
             if (comTerm) {
                 comRestrainTime = -System.nanoTime();
                 comRestrainEnergy = comRestraint.residual(gradient, print);
@@ -1103,7 +1103,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
                     "COORDINATE RESRAINT        : ", restrainEnergy, nAtoms));
         }
-        
+
         if (comTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
                     "COM RESRAINT               : ", comRestrainEnergy, nAtoms));

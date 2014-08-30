@@ -24,11 +24,11 @@ package ffx.numerics;
 
 import java.util.logging.Logger;
 
-import static java.lang.Math.abs;
-import static java.lang.Math.acos;
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-import static java.lang.Math.sqrt;
+import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.acos;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * The VectorMath class is a simple math library that operates on 3-coordinate

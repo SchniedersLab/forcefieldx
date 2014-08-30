@@ -46,14 +46,16 @@ public class GlobalBehavior extends OrbitBehavior {
     private boolean first = false;
 
     /**
-     * <p>Constructor for GlobalBehavior.</p>
+     * <p>
+     * Constructor for GlobalBehavior.</p>
      */
     public GlobalBehavior() {
         super();
     }
 
     /**
-     * <p>Constructor for GlobalBehavior.</p>
+     * <p>
+     * Constructor for GlobalBehavior.</p>
      *
      * @param canvas a {@link javax.media.j3d.Canvas3D} object.
      */
@@ -70,7 +72,8 @@ public class GlobalBehavior extends OrbitBehavior {
     }
 
     /**
-     * <p>centerView</p>
+     * <p>
+     * centerView</p>
      *
      * @param resetRotation a boolean.
      * @param resetTranslation a boolean.
@@ -96,7 +99,8 @@ public class GlobalBehavior extends OrbitBehavior {
     }
 
     /**
-     * <p>integrateTransforms</p>
+     * <p>
+     * integrateTransforms</p>
      */
     public void integrateTransforms() {
         // The "first" flag allows the mouse motion to be reset
@@ -124,7 +128,8 @@ public class GlobalBehavior extends OrbitBehavior {
     }
 
     /**
-     * <p>setUpCallback</p>
+     * <p>
+     * setUpCallback</p>
      *
      * @param m a {@link ffx.ui.behaviors.MouseBehaviorCallback} object.
      */

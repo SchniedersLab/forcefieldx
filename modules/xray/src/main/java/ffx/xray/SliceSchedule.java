@@ -93,16 +93,16 @@ public class SliceSchedule extends IntegerSchedule {
             /**
              * Check if final slices remain to be assigned.
              */
-              if (j < fftZ - 1) {
-            intervals[nThreads] = fftZ - 1;
-              }
+            if (j < fftZ - 1) {
+                intervals[nThreads] = fftZ - 1;
+            }
 
             for (int i = 0; i < nThreads - 1; i++) {
                 ranges[i] = new Range(intervals[i], intervals[i + 1] - 1);
-           //     logger.info(String.format("Range for thread %d %s %d.", i, ranges[i], fftZ));
+                //     logger.info(String.format("Range for thread %d %s %d.", i, ranges[i], fftZ));
             }
             ranges[nThreads - 1] = new Range(intervals[nThreads - 1], intervals[nThreads]);
-         //   logger.info(String.format("Range for thread %d %s %d.", nThreads-1, ranges[nThreads - 1], fftZ));
+            //   logger.info(String.format("Range for thread %d %s %d.", nThreads-1, ranges[nThreads - 1], fftZ));
         } else {
             Range temp = new Range(0, fftZ - 1);
             ranges = temp.subranges(nThreads);

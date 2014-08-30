@@ -50,25 +50,25 @@
             description="Numbers of the First and Last File to Analyze"
             gui="TEXTFIELD"
             default="1 100"
-		/>
+        />
         <Option
             name="Lambda"
             description="Lambda Increment for Free Energy Perturbation"
             gui="TEXTFIELD"
             default="0.5"
-		/>
+        />
         <Option
             name="Temperature"
             description="System Temperature (K)"
             gui="TEXTFIELD"
             default="300"
-		/>
+        />
         <Option
             name="Blocks"
             description="Number of Blocks for Sub-Averages"
             gui="TEXTFIELD"
             default="1"
-		/>
+        />
         <Option
             name="Intermolecular"
             description="Consider only Intermolecular Perturbation Energy"
@@ -119,7 +119,7 @@
                 value="A"
                 description="List Atoms for which Output is Desired [blank for all atoms]"
                 gui="TERMINATEDTEXTFIELD"
-			/>
+            />
         </Option>
     </Command>
     <Command
@@ -142,19 +142,19 @@
             description="Initial and Final Temperatures in Degrees Kelvin"
             gui="TEXTFIELD"
             default="1000, 0"
-		/>
+        />
         <Option
             name="Steps"
             description="Number of Equilibration Steps"
             gui="TEXTFIELD"
             default="0"
-		/>
+        />
         <Option
             name="Cooling"
             description="Number of Cooling Protocol Steps"
             gui="TEXTFIELD"
             default="2000"
-		/>
+        />
         <Option
             name="Protocol"
             description="Use Linear, Sigmoidal or Exponential Cooling Protocol"
@@ -170,19 +170,19 @@
             description="Time Step Length in Femtoseconds"
             gui="TEXTFIELD"
             default="1.0"
-		/>
+        />
         <Option
             name="Dumps"
             description="Time Between Dumps in Picoseconds"
             gui="TEXTFIELD"
             default="0.1"
-		/>
+        />
         <Option
             name="Atomic Weight"
             description="Increase Atomic Weights by a Factor of 10^x"
             gui="TEXTFIELD"
             default="0.0"
-		/>
+        />
     </Command>
     <Command
         name="Archive"
@@ -219,7 +219,7 @@
             description="Numbers of First and Last File and Step Increment"
             gui="TEXTFIELD"
             default="1 100 1"
-		/>
+        />
     </Command>
     <Command
         name="Diffuse"
@@ -237,18 +237,18 @@
             description="Numbers of the First and Last Frame and Step Increment"
             gui="TEXTFIELD"
             default="1 100 1"
-		/>
+        />
         <Option
             name="Time Increment"
             description="Time Inrement in Picoseconds"
             gui="TEXTFIELD"
             default="1.0"
-		/>
+        />
         <Option
             name="Unit Cell"
             description="Unit Cell Axis Lengths"
             gui="TEXTFIELD"
-		/>
+        />
     </Command>
     <Command
         name="Dynamic"
@@ -273,19 +273,19 @@
             description="Number of Dynamic Steps to be taken"
             gui="TEXTFIELD"
             default="10000"
-		/>
+        />
         <Option
             name="Time Step"
             description="Time Step Length in Femtoseconds "
             gui="TEXTFIELD"
             default="1.0"
-		/>
+        />
         <Option
             name="Dump"
             description="Time between Dumps in Picoseconds "
             gui="TEXTFIELD"
             default="0.1"
-		/>
+        />
         <Option
             name="Ensemble"
             description="Ensemble used for periodic boundry conditions&#10;
@@ -303,14 +303,14 @@
             <Conditional
                 name="KEYWORD"
                 value="A-AXIS B-AXIS C-AXIS"
-			/>
+            />
         </Option>
         <Option
             name="Temperature"
             description="Desired Temperature in Degrees Kelvin "
             gui="TEXTFIELD"
             default="300"
-		/>
+        />
         <Option
             name="Pressure"
             description="Desired Pressure in Atmospheres"
@@ -320,7 +320,7 @@
             <Conditional
                 name="OPTION - ENSEMBLE"
                 value="3 4"
-			/>
+            />
         </Option>
     </Command>
     <Command
@@ -329,7 +329,7 @@
         action="LOADXYZ"
         description="A program to convert a TINKER .int internal coordinates formatted file into a TINKER
 .xyz Cartesian coordinates formatted file."
-	/>
+    />
     <Command
         name="Minimize"
         fileType="XYZ"
@@ -351,7 +351,7 @@
             description="RMS Gradient per Atom Criterion"
             gui="TEXTFIELD"
             default="0.01"
-		/>
+        />
     </Command>
     <Command
         name="Minrigid"
@@ -366,7 +366,7 @@
             description="RMS Gradient per Rigid Body Criterion"
             gui="TEXTFIELD"
             default="0.01"
-		/>
+        />
     </Command>
     <Command
         name="Minirot"
@@ -396,14 +396,14 @@
                 description="Enter Atoms in Rotatable Bond(s)"
                 gui="TERMINATEDTEXTFIELD"
                 postProcess="ATOMPAIRS"
-			/>
+            />
         </Option>
         <Option
             name="Convergence Criteria"
             description="Enter RMS Gradient per Torsion Criterion:"
             gui="TEXTFIELD"
             default="0.01"
-		/>
+        />
     </Command>
     <Command
         name="Monte"
@@ -421,7 +421,7 @@
             description="Number of Monte Carlo Steps"
             gui="TEXTFIELD"
             default="1000"
-		/>
+        />
         <Option
             name="Move"
             description="Use Cartesian (C) or Torsional (T 0) Moves"
@@ -436,19 +436,19 @@
             description="Maximum Step in Angstroms (Cartesian) or Degrees (Torsional)"
             gui="TEXTFIELD"
             default="3.0"
-		/>
+        />
         <Option
             name="Temperature"
             description="Temperature in Degrees Kelvin"
             gui="TEXTFIELD"
             default="298"
-		/>
+        />
         <Option
             name="RMSG"
             description="RMS Gradient Criterion"
             gui="TEXTFIELD"
             default="0.01"
-		/>
+        />
     </Command>
     <Command
         name="Newton"
@@ -498,7 +498,7 @@
             description="RMS Gradient per Atom Criterion"
             gui="TEXTFIELD"
             default="0.01"
-		/>
+        />
     </Command>
     <Command
         name="Newtrot"
@@ -529,7 +529,7 @@
                 description="Enter Atoms in Rotatable Bond(s)"
                 gui="TERMINATEDTEXTFIELD"
                 postProcess="ATOMPAIRS"
-			/>
+            />
         </Option>
         <Option
             name="Method"
@@ -560,7 +560,7 @@
             description="RMS Gradient per Atom Criterion"
             gui="TEXTFIELD"
             default="0.01"
-		/>
+        />
     </Command>
     <Command
         name="Nucleic"
@@ -577,13 +577,13 @@
             description="Specify name to be used for output files"
             gui="TEXTFIELD"
             default="nucleic"
-		/>
+        />
         <Option
             name="Title"
             description="Enter title"
             gui="TEXTFIELD"
             default="Nucleic Acid built with TINKER/Force Field Xplorer"
-		/>
+        />
         <Option
             name="Helix Type"
             description="A-, B- or Z-Form Helix for the Structure"
@@ -599,7 +599,7 @@
             description="One Nucleotide per entry is specified, 5' to 3'. Each 3 letter code may be
  followed by backbone torsions (6F) and a glycosidic torsion (1F). Choosing MOL begins a new strand."
             gui="NUCLEIC"
-		/>
+        />
         <Option
             name="Double Helix"
             description="Build a Double Helix using Complimentary Bases"
@@ -630,7 +630,7 @@
             description="RMS Gradient per Atom Criterion"
             gui="TEXTFIELD"
             default="0.01"
-		/>
+        />
     </Command>
     <Command
         name="Optrigid"
@@ -646,7 +646,7 @@
             description="RMS Gradient per Rigid Body Criterion"
             gui="TEXTFIELD"
             default="0.01"
-		/>
+        />
     </Command>
     <Command
         name="Optirot"
@@ -677,14 +677,14 @@
                 description="Enter Atoms in Rotatable Bond(s)"
                 gui="TERMINATEDTEXTFIELD"
                 postProcess="ATOMPAIRS"
-			/>
+            />
         </Option>
         <Option
             name="Convergence Criteria"
             description="Enter RMS Gradient per Torsion Criterion:"
             gui="TEXTFIELD"
             default="0.01"
-		/>
+        />
     </Command>
     <Command
         name="Path"
@@ -702,19 +702,19 @@
             description="Second structural minima"
             gui="SYSTEMS"
             default="XYZ"
-		/>
+        />
         <Option
             name="Reaction Points"
             description="Number of reaction points to generate"
             gui="TEXTFIELD"
             default="9"
-		/>
+        />
         <Option
             name="Convergence Criteria"
             description="Enter the RMS Gradient per Atom Criterion"
             gui="TEXTFIELD"
             default="0.1"
-		/>
+        />
     </Command>
     <Command
         name="PDBXYZ"
@@ -736,7 +736,7 @@
                 name="REFLECTION"
                 value="AltLoc"
                 description="Specify which Alternate Locaton to use "
-			/>
+            />
         </Option>
         <Option
             name="Chain Names"
@@ -749,7 +749,7 @@
                 name="REFLECTION"
                 value="Chains"
                 description="Specify which Chain(s) to use"
-			/>
+            />
         </Option>
     </Command>
     <Command
@@ -768,13 +768,13 @@
             description="Enter name to be used for output file"
             gui="TEXTFIELD"
             default="protein"
-		/>
+        />
         <Option
             name="Title"
             description="Enter title"
             gui="TEXTFIELD"
             default="Protein built with TINKER/Force Field Xplorer"
-		/>
+        />
         <Option
             name="N-CAP"
             description="The allowed N-Cap Residues are Acetyl=ACE or Formyl=FOR"
@@ -790,7 +790,7 @@
             description="3 Letter Code, Phi/Psi/Omega (3F), Chi Angles (4F),
  Disulfide Partner if a CYS (I), and D/L Chirality as desired (A1)"
             gui="PROTEIN"
-		/>
+        />
         <Option
             name="C-CAP"
             description="Possible C-Cap Residues are N-MethylAmide=NME or Amide=NH2"
@@ -831,7 +831,7 @@
             description="Number of Steps for Smoothing Schedule "
             gui="TEXTFIELD"
             default="100"
-		/>
+        />
         <Option
             name="Forward Smoothing"
             description="Perform Forward Smoothing from Input Structure"
@@ -864,7 +864,7 @@
             description="RMS Gradient per Atom Criterion"
             gui="TEXTFIELD"
             default="0.0001"
-		/>
+        />
     </Command>
     <Command
         name="PSSRigid"
@@ -880,13 +880,13 @@
             description="Potential Surface Smoothing Parameter"
             gui="TEXTFIELD"
             default="0.0"
-		/>
+        />
         <Option
             name="Steps"
             description="Number of Steps for the PSS Schedule"
             gui="TEXTFIELD"
             default="100"
-		/>
+        />
         <Option
             name="Local Search"
             description="Use Local Search to Explore Each Smoothing Level"
@@ -901,7 +901,7 @@
             description="RMS Gradient per Atom Rigid Body Criterion"
             gui="TEXTFIELD"
             default="0.0001"
-		/>
+        />
     </Command>
     <Command
         name="Polarize"
@@ -911,7 +911,7 @@
  polarizability. A damped interaction model due to Thole is optionally via keyfile settings. A
  TINKER .xyz file is required as input. The output consists of the overall polarizability
  tensor in the global coordinates and its eigenvalues."
-	/>
+    />
     <Command
         name="Saddle"
         fileType="XYZ"
@@ -931,13 +931,13 @@
             name="Second Structure"
             description="Second structural minima"
             gui="SYSTEMS"
-		/>
+        />
         <Option
             name="RMS Gradient"
             description="Enter RMS Gradient per Atom Criterion"
             gui="TEXTFIELD"
             default="0.1"
-		/>
+        />
         <Option
             name="Synchronous"
             description="Perform Synchronous Transit Pathway Scans"
@@ -979,26 +979,26 @@
                 description="Enter Atoms in Rotatable Bond(s)"
                 gui="TERMINATEDTEXTFIELD"
                 postProcess="ATOMPAIRS"
-			/>
+            />
         </Option>
         <Option
             name="Search Directions"
             description="Number Search Directions for Local Search"
             gui="TEXTFIELD"
             default="5"
-		/>
+        />
         <Option
             name="Threshold"
             description="Energy Threshold for Local Minima"
             gui="TEXTFIELD"
             default="100"
-		/>
+        />
         <Option
             name="RMS Gradient"
             description="RMS Gradient per Atom Criterion"
             gui="TEXTFIELD"
             default="0.0001"
-		/>
+        />
     </Command>
     <Command
         name="Sniffer"
@@ -1018,19 +1018,19 @@
             description="Number of Steps in the Initial Set"
             gui="TEXTFIELD"
             default="100"
-		/>
+        />
         <Option
             name="Target Energy"
             description="Target Energy for the Global Minimum"
             gui="TEXTFIELD"
             default="0.0"
-		/>
+        />
         <Option
             name="RMS Gradient"
             description="RMS Gradient per Atom Criterion"
             gui="TEXTFIELD"
             default="1.0"
-		/>
+        />
     </Command>
     <Command
         name="Spacefill"
@@ -1062,7 +1062,7 @@
             name="Probe Radius"
             description="Probe Radius in Angstroms (Leave blank for van der Waals Area and Volume)"
             gui="TEXTFIELD"
-		/>
+        />
         <Option
             name="Hydrogens"
             description="Include hydrogen atoms in the computation"
@@ -1088,7 +1088,7 @@
             name="Second Structure"
             description="System to Superpose on the selected structure"
             gui="SYSTEMS"
-		/>
+        />
         <Option
             name="Atom Specification"
             description="Specification of individual atom pairs is only available from the command line"
@@ -1107,7 +1107,7 @@
             lowerLimit="1"
             upperLimit="ATOMS"
             postProcess="APPEND"
-		/>
+        />
         <Option
             name="Last Atom"
             description="Fit First Atom through Last Atom from structure 1 to the corresponding atoms of structure 2."
@@ -1116,7 +1116,7 @@
             blank="ATOMS"
             lowerLimit="1"
             upperLimit="ATOMS"
-		/>
+        />
         <Option
             name="Hydrogens"
             description="Include Hydrogen Atoms in the Fitting"
@@ -1152,7 +1152,7 @@
             blank="0.0"
             lowerLimit="0.0"
             upperLimit="NONE"
-		/>
+        />
     </Command>
     <Command
         name="Testgrad"
@@ -1186,7 +1186,7 @@
             description="Enter a Numerical Stepsize in Angstroms"
             gui="TEXTFIELD"
             default="0.1D-04"
-		/>
+        />
         <Option
             name="Output"
             description="Output Breakdown by Gradient Component"
@@ -1238,7 +1238,7 @@
             description="Enter a Numerical Stepsize in Angstroms"
             gui="TEXTFIELD"
             default="0.1D-04"
-		/>
+        />
     </Command>
     <Command
         name="Testrot"
@@ -1269,14 +1269,14 @@
                 description="Enter Atoms in Rotatable Bond(s)"
                 gui="TERMINATEDTEXTFIELD"
                 postProcess="ATOMPAIRS"
-			/>
+            />
         </Option>
         <Option
             name="Stepsize"
             description="Enter a Numerical Stepsize in Angstroms"
             gui="TEXTFIELD"
             default="0.1D-04"
-		/>
+        />
     </Command>
     <Command
         name="Timer"
@@ -1292,7 +1292,7 @@
             description="Enter Desired Number of Repetitions"
             gui="TEXTFIELD"
             default="1"
-		/>
+        />
         <Option
             name="Hessian"
             description="Include Timing for Hessian Evaluations"
@@ -1331,14 +1331,14 @@
                 description="Enter Atoms in Rotatable Bond(s)"
                 gui="TERMINATEDTEXTFIELD"
                 postProcess="ATOMPAIRS"
-			/>
+            />
         </Option>
         <Option
             name="Repetitions"
             description="Enter Desired Number of Repetitions"
             gui="TEXTFIELD"
             default="1"
-		/>
+        />
         <Option
             name="Hessian"
             description="Include Timing for Hessian Evaluations"
@@ -1365,7 +1365,7 @@
             default="7 8 9"
             gui="TEXTFIELD"
             postProcess="SPLIT"
-		/>
+        />
     </Command>
     <Command
         name="Vibrot"
@@ -1397,7 +1397,7 @@
                 description="Enter Atoms in Rotatable Bond(s)"
                 gui="TERMINATEDTEXTFIELD"
                 postProcess="ATOMPAIRS"
-			/>
+            />
         </Option>
     </Command>
     <Command
@@ -1425,5 +1425,5 @@
         action="LOADPDB"
         description="A program for converting a TINKER .xyz Cartesian coordinate file into a Brookhaven
  Protein Data Bank file (a PDB file)."
-	/>
+    />
 </TinkerCommands>
