@@ -22,29 +22,24 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj;
 
 /**
  * Class Version defines version information for the Parallel Java Library.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 20-Jun-2012
  */
-public class Version
-	{
+public class Version {
 
 // Prevent construction.
-
-	private Version()
-		{
-		}
+    private Version() {
+    }
 
 // Exported constants.
+    /**
+     * The Parallel Java Library version.
+     */
+    public static final String PJ_VERSION = "Parallel Java v20120620";
 
-	/**
-	 * The Parallel Java Library version.
-	 */
-	public static final String PJ_VERSION = "Parallel Java v20120620";
-
-	}
+}

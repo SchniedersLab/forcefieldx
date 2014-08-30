@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj;
 
 import edu.rit.mp.ObjectBuf;
@@ -165,9 +164,8 @@ import java.io.IOException;
  *             . . .
  *             }
  *         }
- * </PRE>
- * with the loop indexes running from <TT>first</TT> to <TT>last</TT> inclusive
- * and increasing by <TT>stride</TT> on each iteration.
+ * </PRE> with the loop indexes running from <TT>first</TT> to <TT>last</TT>
+ * inclusive and increasing by <TT>stride</TT> on each iteration.
  * <P>
  * The <TT>finish()</TT> method is intended for performing per-thread
  * finalization after finishing the loop iterations. If no such finalization is
@@ -179,462 +177,395 @@ import java.io.IOException;
  * region's <TT>execute()</TT> method throws that same exception in that thread.
  * However, the other worker threads in the worker team continue to execute.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 27-Jan-2010
  */
 public abstract class WorkerIntegerStrideForLoop
-	extends WorkerForLoop
-	{
+        extends WorkerForLoop {
 
 // Exported constructors.
-
-	/**
-	 * Construct a new worker for loop.
-	 */
-	public WorkerIntegerStrideForLoop()
-		{
-		super();
-		}
+    /**
+     * Construct a new worker for loop.
+     */
+    public WorkerIntegerStrideForLoop() {
+        super();
+    }
 
 // Exported operations.
+    /**
+     * Determine this worker for loop's schedule. Called by the master and
+     * worker threads. The schedule determines how the loop iterations are
+     * apportioned among the worker team threads. For further information, see
+     * class {@linkplain IntegerSchedule}.
+     * <P>
+     * The <TT>schedule()</TT> method may be overridden in a subclass to return
+     * the desired schedule. If not overridden, the default is a runtime
+     * schedule (see {@link IntegerSchedule#runtime()}).
+     *
+     * @return Schedule for this worker for loop.
+     */
+    public IntegerSchedule schedule() {
+        return IntegerSchedule.runtime();
+    }
 
-	/**
-	 * Determine this worker for loop's schedule. Called by the master and
-	 * worker threads. The schedule determines how the loop iterations are
-	 * apportioned among the worker team threads. For further information, see
-	 * class {@linkplain IntegerSchedule}.
-	 * <P>
-	 * The <TT>schedule()</TT> method may be overridden in a subclass to return
-	 * the desired schedule. If not overridden, the default is a runtime
-	 * schedule (see {@link IntegerSchedule#runtime()}).
-	 *
-	 * @return  Schedule for this worker for loop.
-	 */
-	public IntegerSchedule schedule()
-		{
-		return IntegerSchedule.runtime();
-		}
+    /**
+     * Perform per-thread initialization actions before starting the loop
+     * iterations. Called by a worker thread.
+     * <P>
+     * The <TT>start()</TT> method may be overridden in a subclass. If not
+     * overridden, the <TT>start()</TT> method does nothing.
+     *
+     * @exception Exception The <TT>start()</TT> method may throw any exception.
+     */
+    public void start()
+            throws Exception {
+    }
 
-	/**
-	 * Perform per-thread initialization actions before starting the loop
-	 * iterations. Called by a worker thread.
-	 * <P>
-	 * The <TT>start()</TT> method may be overridden in a subclass. If not
-	 * overridden, the <TT>start()</TT> method does nothing.
-	 *
-	 * @exception  Exception
-	 *     The <TT>start()</TT> method may throw any exception.
-	 */
-	public void start()
-		throws Exception
-		{
-		}
+    /**
+     * Send additional input data associated with a task. Called by the master
+     * thread. The task is denoted by the given chunk of loop iterations. The
+     * input data must be sent using the given communicator, to the given worker
+     * process rank, with the given message tag.
+     * <P>
+     * The <TT>sendTaskInput()</TT> method may be overridden in a subclass. If
+     * not overridden, the <TT>sendTaskInput()</TT> method does nothing.
+     *
+     * @param range Chunk of loop iterations.
+     * @param comm Communicator.
+     * @param wRank Worker process rank.
+     * @param tag Message tag.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void sendTaskInput(Range range,
+            Comm comm,
+            int wRank,
+            int tag)
+            throws IOException {
+    }
 
-	/**
-	 * Send additional input data associated with a task. Called by the master
-	 * thread. The task is denoted by the given chunk of loop iterations. The
-	 * input data must be sent using the given communicator, to the given worker
-	 * process rank, with the given message tag.
-	 * <P>
-	 * The <TT>sendTaskInput()</TT> method may be overridden in a subclass. If
-	 * not overridden, the <TT>sendTaskInput()</TT> method does nothing.
-	 *
-	 * @param  range  Chunk of loop iterations.
-	 * @param  comm   Communicator.
-	 * @param  wRank  Worker process rank.
-	 * @param  tag    Message tag.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void sendTaskInput
-		(Range range,
-		 Comm comm,
-		 int wRank,
-		 int tag)
-		throws IOException
-		{
-		}
+    /**
+     * Receive additional input data associated with a task. Called by a worker
+     * thread. The task is denoted by the given chunk of loop iterations. The
+     * input data must be received using the given communicator, from the given
+     * master process rank, with the given message tag.
+     * <P>
+     * The <TT>receiveTaskInput()</TT> method may be overridden in a subclass.
+     * If not overridden, the <TT>receiveTaskInput()</TT> method does nothing.
+     *
+     * @param range Chunk of loop iterations.
+     * @param comm Communicator.
+     * @param mRank Master process rank.
+     * @param tag Message tag.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void receiveTaskInput(Range range,
+            Comm comm,
+            int mRank,
+            int tag)
+            throws IOException {
+    }
 
-	/**
-	 * Receive additional input data associated with a task. Called by a worker
-	 * thread. The task is denoted by the given chunk of loop iterations. The
-	 * input data must be received using the given communicator, from the given
-	 * master process rank, with the given message tag.
-	 * <P>
-	 * The <TT>receiveTaskInput()</TT> method may be overridden in a subclass.
-	 * If not overridden, the <TT>receiveTaskInput()</TT> method does nothing.
-	 *
-	 * @param  range  Chunk of loop iterations.
-	 * @param  comm   Communicator.
-	 * @param  mRank  Master process rank.
-	 * @param  tag    Message tag.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void receiveTaskInput
-		(Range range,
-		 Comm comm,
-		 int mRank,
-		 int tag)
-		throws IOException
-		{
-		}
+    /**
+     * Execute one chunk of iterations of this worker for loop. Called by a
+     * worker thread. The <TT>run()</TT> method must perform the loop body for
+     * indexes <TT>first</TT> through <TT>last</TT> inclusive, increasing the
+     * loop index by <TT>stride</TT> after each iteration.
+     * <P>
+     * The <TT>run()</TT> method must be overridden in a subclass.
+     *
+     * @param first First loop index.
+     * @param last Last loop index.
+     * @param stride Loop index stride, always positive.
+     *
+     * @exception Exception The <TT>run()</TT> method may throw any exception.
+     */
+    public abstract void run(int first,
+            int last,
+            int stride)
+            throws Exception;
 
-	/**
-	 * Execute one chunk of iterations of this worker for loop. Called by a
-	 * worker thread. The <TT>run()</TT> method must perform the loop body for
-	 * indexes <TT>first</TT> through <TT>last</TT> inclusive, increasing the
-	 * loop index by <TT>stride</TT> after each iteration.
-	 * <P>
-	 * The <TT>run()</TT> method must be overridden in a subclass.
-	 *
-	 * @param  first   First loop index.
-	 * @param  last    Last loop index.
-	 * @param  stride  Loop index stride, always positive.
-	 *
-	 * @exception  Exception
-	 *     The <TT>run()</TT> method may throw any exception.
-	 */
-	public abstract void run
-		(int first,
-		 int last,
-		 int stride)
-		throws Exception;
+    /**
+     * Send additional output data associated with a task. Called by a worker
+     * thread. The task is denoted by the given chunk of loop iterations. The
+     * output data must be sent using the given communicator, to the given
+     * master process rank, with the given message tag.
+     * <P>
+     * The <TT>sendTaskOutput()</TT> method may be overridden in a subclass. If
+     * not overridden, the <TT>sendTaskOutput()</TT> method does nothing.
+     *
+     * @param range Chunk of loop iterations.
+     * @param comm Communicator.
+     * @param mRank Master process rank.
+     * @param tag Message tag.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void sendTaskOutput(Range range,
+            Comm comm,
+            int mRank,
+            int tag)
+            throws IOException {
+    }
 
-	/**
-	 * Send additional output data associated with a task. Called by a worker
-	 * thread. The task is denoted by the given chunk of loop iterations. The
-	 * output data must be sent using the given communicator, to the given
-	 * master process rank, with the given message tag.
-	 * <P>
-	 * The <TT>sendTaskOutput()</TT> method may be overridden in a subclass. If
-	 * not overridden, the <TT>sendTaskOutput()</TT> method does nothing.
-	 *
-	 * @param  range  Chunk of loop iterations.
-	 * @param  comm   Communicator.
-	 * @param  mRank  Master process rank.
-	 * @param  tag    Message tag.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void sendTaskOutput
-		(Range range,
-		 Comm comm,
-		 int mRank,
-		 int tag)
-		throws IOException
-		{
-		}
+    /**
+     * Receive additional output data associated with a task. Called by the
+     * master thread. The task is denoted by the given chunk of loop iterations.
+     * The output data must be received using the given communicator, from the
+     * given worker process rank, with the given message tag.
+     * <P>
+     * The <TT>receiveTaskOutput()</TT> method may be overridden in a subclass.
+     * If not overridden, the <TT>receiveTaskOutput()</TT> method does nothing.
+     *
+     * @param range Chunk of loop iterations.
+     * @param comm Communicator.
+     * @param wRank Worker process rank.
+     * @param tag Message tag.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void receiveTaskOutput(Range range,
+            Comm comm,
+            int wRank,
+            int tag)
+            throws IOException {
+    }
 
-	/**
-	 * Receive additional output data associated with a task. Called by the
-	 * master thread. The task is denoted by the given chunk of loop iterations.
-	 * The output data must be received using the given communicator, from the
-	 * given worker process rank, with the given message tag.
-	 * <P>
-	 * The <TT>receiveTaskOutput()</TT> method may be overridden in a subclass.
-	 * If not overridden, the <TT>receiveTaskOutput()</TT> method does nothing.
-	 *
-	 * @param  range  Chunk of loop iterations.
-	 * @param  comm   Communicator.
-	 * @param  wRank  Worker process rank.
-	 * @param  tag    Message tag.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void receiveTaskOutput
-		(Range range,
-		 Comm comm,
-		 int wRank,
-		 int tag)
-		throws IOException
-		{
-		}
+    /**
+     * Perform per-thread finalization actions after finishing the loop
+     * iterations. Called by a worker thread.
+     * <P>
+     * The <TT>finish()</TT> method may be overridden in a subclass. If not
+     * overridden, the <TT>finish()</TT> method does nothing.
+     *
+     * @exception Exception The <TT>finish()</TT> method may throw any
+     * exception.
+     */
+    public void finish()
+            throws Exception {
+    }
 
-	/**
-	 * Perform per-thread finalization actions after finishing the loop
-	 * iterations. Called by a worker thread.
-	 * <P>
-	 * The <TT>finish()</TT> method may be overridden in a subclass. If not
-	 * overridden, the <TT>finish()</TT> method does nothing.
-	 *
-	 * @exception  Exception
-	 *     The <TT>finish()</TT> method may throw any exception.
-	 */
-	public void finish()
-		throws Exception
-		{
-		}
-
-	/**
-	 * Returns the tag offset for this worker for loop. Each message between the
-	 * master and worker threads is sent with a message tag equal to
-	 * <I>W</I>+<I>T</I>, where <I>W</I> is the worker index and <I>T</I> is the
-	 * tag offset.
-	 * <P>
-	 * The <TT>tagOffset()</TT> method may be overridden in a subclass. If not
-	 * overridden, the <TT>tagOffset()</TT> returns a default tag offset of
-	 * <TT>Integer.MIN_VALUE</TT>.
-	 *
-	 * @return  Tag offset.
-	 */
-	public int tagOffset()
-		{
-		return Integer.MIN_VALUE;
-		}
+    /**
+     * Returns the tag offset for this worker for loop. Each message between the
+     * master and worker threads is sent with a message tag equal to
+     * <I>W</I>+<I>T</I>, where <I>W</I> is the worker index and <I>T</I> is the
+     * tag offset.
+     * <P>
+     * The <TT>tagOffset()</TT> method may be overridden in a subclass. If not
+     * overridden, the <TT>tagOffset()</TT> returns a default tag offset of
+     * <TT>Integer.MIN_VALUE</TT>.
+     *
+     * @return Tag offset.
+     */
+    public int tagOffset() {
+        return Integer.MIN_VALUE;
+    }
 
 // Hidden operations.
+    /**
+     * Execute this worker for loop in the master thread.
+     *
+     * @param range Loop index range.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    void masterExecute(Range range)
+            throws IOException {
+        IntegerSchedule sch = schedule();
+        if (sch.isFixedSchedule()) {
+            masterExecuteFixed(range, sch);
+        } else {
+            masterExecuteNonFixed(range, sch);
+        }
+    }
 
-	/**
-	 * Execute this worker for loop in the master thread.
-	 *
-	 * @param  range  Loop index range.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	void masterExecute
-		(Range range)
-		throws IOException
-		{
-		IntegerSchedule sch = schedule();
-		if (sch.isFixedSchedule())
-			{
-			masterExecuteFixed (range, sch);
-			}
-		else
-			{
-			masterExecuteNonFixed (range, sch);
-			}
-		}
+    /**
+     * Execute this worker for loop in the master thread with a fixed schedule.
+     *
+     * @param range Loop index range.
+     * @param sch Schedule.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    void masterExecuteFixed(Range range,
+            IntegerSchedule sch)
+            throws IOException {
+        int count = myTeam.count;
+        Comm comm = myTeam.comm;
 
-	/**
-	 * Execute this worker for loop in the master thread with a fixed schedule.
-	 *
-	 * @param  range  Loop index range.
-	 * @param  sch    Schedule.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	void masterExecuteFixed
-		(Range range,
-		 IntegerSchedule sch)
-		throws IOException
-		{
-		int count = myTeam.count;
-		Comm comm = myTeam.comm;
+        // Send additional task input to each worker.
+        sch.start(count, range);
+        for (int w = 0; w < count; ++w) {
+            Range chunk = sch.next(w);
+            if (chunk != null) {
+                sendTaskInput(chunk, comm, myTeam.workerRank(w), tagFor(w));
+            }
+        }
 
-		// Send additional task input to each worker.
-		sch.start (count, range);
-		for (int w = 0; w < count; ++ w)
-			{
-			Range chunk = sch.next (w);
-			if (chunk != null)
-				{
-				sendTaskInput
-					(chunk, comm, myTeam.workerRank (w), tagFor (w));
-				}
-			}
+        // Receive additional task output from each worker.
+        sch.start(count, range);
+        for (int w = 0; w < count; ++w) {
+            Range chunk = sch.next(w);
+            if (chunk != null) {
+                receiveTaskOutput(chunk, comm, myTeam.workerRank(w), tagFor(w));
+            }
+        }
+    }
 
-		// Receive additional task output from each worker.
-		sch.start (count, range);
-		for (int w = 0; w < count; ++ w)
-			{
-			Range chunk = sch.next (w);
-			if (chunk != null)
-				{
-				receiveTaskOutput
-					(chunk, comm, myTeam.workerRank (w), tagFor (w));
-				}
-			}
-		}
+    /**
+     * Execute this worker for loop in the master thread with a non-fixed
+     * schedule.
+     *
+     * @param range Loop index range.
+     * @param sch Schedule.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    void masterExecuteNonFixed(Range range,
+            IntegerSchedule sch)
+            throws IOException {
+        int count = myTeam.count;
+        sch.start(count, range);
+        int remaining = count;
+        ObjectItemBuf<Range> buf = ObjectBuf.buffer();
+        Range tagRange = new Range(tagFor(0), tagFor(count - 1));
+        Comm comm = myTeam.comm;
 
-	/**
-	 * Execute this worker for loop in the master thread with a non-fixed
-	 * schedule.
-	 *
-	 * @param  range  Loop index range.
-	 * @param  sch    Schedule.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	void masterExecuteNonFixed
-		(Range range,
-		 IntegerSchedule sch)
-		throws IOException
-		{
-		int count = myTeam.count;
-		sch.start (count, range);
-		int remaining = count;
-		ObjectItemBuf<Range> buf = ObjectBuf.buffer();
-		Range tagRange = new Range (tagFor (0), tagFor (count - 1));
-		Comm comm = myTeam.comm;
+        // Send initial task to each worker.
+        for (int w = 0; w < count; ++w) {
+            Range chunk = sch.next(w);
+            buf.item = chunk;
+            buf.reset();
+            int r = myTeam.workerRank(w);
+            int tag = tagFor(w);
+            comm.send(r, tag, buf);
+            if (chunk == null) {
+                --remaining;
+            } else {
+                sendTaskInput(chunk, comm, r, tag);
+            }
+        }
 
-		// Send initial task to each worker.
-		for (int w = 0; w < count; ++ w)
-			{
-			Range chunk = sch.next (w);
-			buf.item = chunk;
-			buf.reset();
-			int r = myTeam.workerRank (w);
-			int tag = tagFor (w);
-			comm.send (r, tag, buf);
-			if (chunk == null)
-				{
-				-- remaining;
-				}
-			else
-				{
-				sendTaskInput (chunk, comm, r, tag);
-				}
-			}
+        // Repeatedly receive a response from a worker and send next task to
+        // that worker.
+        while (remaining > 0) {
+            CommStatus status = comm.receive(null, tagRange, buf);
+            Range chunk = buf.item;
+            int r = status.fromRank;
+            int tag = status.tag;
+            int w = workerFor(tag);
+            receiveTaskOutput(chunk, comm, r, tag);
+            chunk = sch.next(w);
+            buf.item = chunk;
+            buf.reset();
+            comm.send(r, tag, buf);
+            if (chunk == null) {
+                --remaining;
+            } else {
+                sendTaskInput(chunk, comm, r, tag);
+            }
+        }
+    }
 
-		// Repeatedly receive a response from a worker and send next task to
-		// that worker.
-		while (remaining > 0)
-			{
-			CommStatus status = comm.receive (null, tagRange, buf);
-			Range chunk = buf.item;
-			int r = status.fromRank;
-			int tag = status.tag;
-			int w = workerFor (tag);
-			receiveTaskOutput (chunk, comm, r, tag);
-			chunk = sch.next (w);
-			buf.item = chunk;
-			buf.reset();
-			comm.send (r, tag, buf);
-			if (chunk == null)
-				{
-				-- remaining;
-				}
-			else
-				{
-				sendTaskInput (chunk, comm, r, tag);
-				}
-			}
-		}
+    /**
+     * Execute this worker for loop in a worker thread.
+     *
+     * @param tag Worker tag.
+     * @param range Loop index range.
+     *
+     * @exception Exception This method may throw any exception.
+     */
+    void workerExecute(int tag,
+            Range range)
+            throws Exception {
+        IntegerSchedule sch = schedule();
+        if (sch.isFixedSchedule()) {
+            sch.start(myTeam.count, range);
+            workerExecuteFixed(sch.next(tag), tag);
+        } else {
+            workerExecuteNonFixed(tag);
+        }
+    }
 
-	/**
-	 * Execute this worker for loop in a worker thread.
-	 *
-	 * @param  tag    Worker tag.
-	 * @param  range  Loop index range.
-	 *
-	 * @exception  Exception
-	 *     This method may throw any exception.
-	 */
-	void workerExecute
-		(int tag,
-		 Range range)
-		throws Exception
-		{
-		IntegerSchedule sch = schedule();
-		if (sch.isFixedSchedule())
-			{
-			sch.start (myTeam.count, range);
-			workerExecuteFixed (sch.next (tag), tag);
-			}
-		else
-			{
-			workerExecuteNonFixed (tag);
-			}
-		}
+    /**
+     * Execute this worker for loop in a worker thread using a fixed schedule.
+     *
+     * @param range Chunk of loop iterations.
+     * @param w Worker index.
+     *
+     * @exception Exception This method may throw any exception.
+     */
+    void workerExecuteFixed(Range range,
+            int w)
+            throws Exception {
+        start();
+        if (range != null) {
+            Comm comm = myTeam.comm;
+            int r = myTeam.masterRank();
+            int tag = tagFor(w);
+            receiveTaskInput(range, comm, r, tag);
+            run(range.lb(), range.ub(), range.stride());
+            sendTaskOutput(range, comm, r, tag);
+        }
+        finish();
+    }
 
-	/**
-	 * Execute this worker for loop in a worker thread using a fixed schedule.
-	 *
-	 * @param  range  Chunk of loop iterations.
-	 * @param  w      Worker index.
-	 *
-	 * @exception  Exception
-	 *     This method may throw any exception.
-	 */
-	void workerExecuteFixed
-		(Range range,
-		 int w)
-		throws Exception
-		{
-		start();
-		if (range != null)
-			{
-			Comm comm = myTeam.comm;
-			int r = myTeam.masterRank();
-			int tag = tagFor (w);
-			receiveTaskInput (range, comm, r, tag);
-			run (range.lb(), range.ub(), range.stride());
-			sendTaskOutput (range, comm, r, tag);
-			}
-		finish();
-		}
+    /**
+     * Execute this worker for loop in a worker thread using a non-fixed
+     * schedule.
+     *
+     * @param w Worker index.
+     *
+     * @exception Exception This method may throw any exception.
+     */
+    void workerExecuteNonFixed(int w)
+            throws Exception {
+        Comm comm = myTeam.comm;
+        int r = myTeam.masterRank();
+        int tag = tagFor(w);
+        start();
+        ObjectItemBuf<Range> buf = ObjectBuf.buffer();
+        for (;;) {
+            comm.receive(r, tag, buf);
+            Range range = buf.item;
+            if (range == null) {
+                break;
+            }
+            receiveTaskInput(range, comm, r, tag);
+            run(range.lb(), range.ub(), range.stride());
 
-	/**
-	 * Execute this worker for loop in a worker thread using a non-fixed
-	 * schedule.
-	 *
-	 * @param  w    Worker index.
-	 *
-	 * @exception  Exception
-	 *     This method may throw any exception.
-	 */
-	void workerExecuteNonFixed
-		(int w)
-		throws Exception
-		{
-		Comm comm = myTeam.comm;
-		int r = myTeam.masterRank();
-		int tag = tagFor (w);
-		start();
-		ObjectItemBuf<Range> buf = ObjectBuf.buffer();
-		for (;;)
-			{
-			comm.receive (r, tag, buf);
-			Range range = buf.item;
-			if (range == null) break;
-			receiveTaskInput (range, comm, r, tag);
-			run (range.lb(), range.ub(), range.stride());
+            // The next two statements constitute a critical section; other
+            // workers in this team must not send messages in between these two
+            // messages, or the master can deadlock.
+            synchronized (myTeam) {
+                comm.send(r, tag, buf);
+                sendTaskOutput(range, comm, r, tag);
+            }
+        }
+        finish();
+    }
 
-			// The next two statements constitute a critical section; other
-			// workers in this team must not send messages in between these two
-			// messages, or the master can deadlock.
-			synchronized (myTeam)
-				{
-				comm.send (r, tag, buf);
-				sendTaskOutput (range, comm, r, tag);
-				}
-			}
-		finish();
-		}
+    /**
+     * Returns the message tag for the given worker index.
+     *
+     * @param w Worker index.
+     *
+     * @return Message tag.
+     */
+    private int tagFor(int w) {
+        return w + tagOffset();
+    }
 
-	/**
-	 * Returns the message tag for the given worker index.
-	 *
-	 * @param  w  Worker index.
-	 *
-	 * @return  Message tag.
-	 */
-	private int tagFor
-		(int w)
-		{
-		return w + tagOffset();
-		}
+    /**
+     * Returns the worker index for the given message tag.
+     *
+     * @param tag Message tag.
+     *
+     * @return Worker index.
+     */
+    private int workerFor(int tag) {
+        return tag - tagOffset();
+    }
 
-	/**
-	 * Returns the worker index for the given message tag.
-	 *
-	 * @param  tag  Message tag.
-	 *
-	 * @return  Worker index.
-	 */
-	private int workerFor
-		(int tag)
-		{
-		return tag - tagOffset();
-		}
-
-	}
+}

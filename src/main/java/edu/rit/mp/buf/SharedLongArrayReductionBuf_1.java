@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.mp.buf;
 
 import edu.rit.mp.Buf;
@@ -37,112 +36,96 @@ import edu.rit.util.Range;
 import java.nio.ByteBuffer;
 
 /**
- * Class SharedLongArrayReductionBuf_1 provides a reduction buffer for
- * class {@linkplain SharedLongArrayBuf_1}.
+ * Class SharedLongArrayReductionBuf_1 provides a reduction buffer for class
+ * {@linkplain SharedLongArrayBuf_1}.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 26-Oct-2007
  */
 class SharedLongArrayReductionBuf_1
-	extends SharedLongArrayBuf_1
-	{
+        extends SharedLongArrayBuf_1 {
 
 // Hidden data members.
-
-	LongOp myOp;
+    LongOp myOp;
 
 // Exported constructors.
-
-	/**
-	 * Construct a new shared long array reduction buffer.
-	 *
-	 * @param  theArray  Shared array.
-	 * @param  theRange  Range of array elements to include in the buffer. The
-	 *                   stride is assumed to be 1.
-	 * @param  op        Binary operation.
-	 *
-	 * @exception  NullPointerException
-	 *     (unchecked exception) Thrown if <TT>op</TT> is null.
-	 */
-	public SharedLongArrayReductionBuf_1
-		(SharedLongArray theArray,
-		 Range theRange,
-		 LongOp op)
-		{
-		super (theArray, theRange);
-		if (op == null)
-			{
-			throw new NullPointerException
-				("SharedLongArrayReductionBuf_1(): op is null");
-			}
-		myOp = op;
-		}
+    /**
+     * Construct a new shared long array reduction buffer.
+     *
+     * @param theArray Shared array.
+     * @param theRange Range of array elements to include in the buffer. The
+     * stride is assumed to be 1.
+     * @param op Binary operation.
+     *
+     * @exception NullPointerException (unchecked exception) Thrown if
+     * <TT>op</TT> is null.
+     */
+    public SharedLongArrayReductionBuf_1(SharedLongArray theArray,
+            Range theRange,
+            LongOp op) {
+        super(theArray, theRange);
+        if (op == null) {
+            throw new NullPointerException("SharedLongArrayReductionBuf_1(): op is null");
+        }
+        myOp = op;
+    }
 
 // Exported operations.
+    /**
+     * Store the given item in this buffer.
+     * <P>
+     * The <TT>put()</TT> method must not block the calling thread; if it does,
+     * all message I/O in MP will be blocked.
+     *
+     * @param i Item index in the range 0 .. <TT>length()</TT>-1.
+     * @param item Item to be stored at index <TT>i</TT>.
+     */
+    public void put(int i,
+            long item) {
+        myArray.reduce(myArrayOffset + i, item, myOp);
+    }
 
-	/**
-	 * Store the given item in this buffer.
-	 * <P>
-	 * The <TT>put()</TT> method must not block the calling thread; if it does,
-	 * all message I/O in MP will be blocked.
-	 *
-	 * @param  i     Item index in the range 0 .. <TT>length()</TT>-1.
-	 * @param  item  Item to be stored at index <TT>i</TT>.
-	 */
-	public void put
-		(int i,
-		 long item)
-		{
-		myArray.reduce (myArrayOffset+i, item, myOp);
-		}
-
-	/**
-	 * Create a buffer for performing parallel reduction using the given binary
-	 * operation. The results of the reduction are placed into this buffer.
-	 *
-	 * @param  op  Binary operation.
-	 *
-	 * @exception  ClassCastException
-	 *     (unchecked exception) Thrown if this buffer's element data type and
-	 *     the given binary operation's argument data type are not the same.
-	 */
-	public Buf getReductionBuf
-		(Op op)
-		{
-		throw new UnsupportedOperationException();
-		}
+    /**
+     * Create a buffer for performing parallel reduction using the given binary
+     * operation. The results of the reduction are placed into this buffer.
+     *
+     * @param op Binary operation.
+     *
+     * @exception ClassCastException (unchecked exception) Thrown if this
+     * buffer's element data type and the given binary operation's argument data
+     * type are not the same.
+     */
+    public Buf getReductionBuf(Op op) {
+        throw new UnsupportedOperationException();
+    }
 
 // Hidden operations.
+    /**
+     * Receive as many items as possible from the given byte buffer to this
+     * buffer.
+     * <P>
+     * The <TT>receiveItems()</TT> method must not block the calling thread; if
+     * it does, all message I/O in MP will be blocked.
+     *
+     * @param i Index of first item to receive, in the range 0 ..
+     * <TT>length</TT>-1.
+     * @param num Maximum number of items to receive.
+     * @param buffer Byte buffer.
+     *
+     * @return Number of items received.
+     */
+    protected int receiveItems(int i,
+            int num,
+            ByteBuffer buffer) {
+        int index = i;
+        int off = myArrayOffset + i;
+        int max = Math.min(i + num, myLength);
+        while (index < max && buffer.remaining() >= 8) {
+            myArray.reduce(off, buffer.getLong(), myOp);
+            ++index;
+            ++off;
+        }
+        return index - i;
+    }
 
-	/**
-	 * Receive as many items as possible from the given byte buffer to this
-	 * buffer.
-	 * <P>
-	 * The <TT>receiveItems()</TT> method must not block the calling thread; if
-	 * it does, all message I/O in MP will be blocked.
-	 *
-	 * @param  i       Index of first item to receive, in the range 0 ..
-	 *                 <TT>length</TT>-1.
-	 * @param  num     Maximum number of items to receive.
-	 * @param  buffer  Byte buffer.
-	 *
-	 * @return  Number of items received.
-	 */
-	protected int receiveItems
-		(int i,
-		 int num,
-		 ByteBuffer buffer)
-		{
-		int index = i;
-		int off = myArrayOffset + i;
-		int max = Math.min (i + num, myLength);
-		while (index < max && buffer.remaining() >= 8)
-			{
-			myArray.reduce (off, buffer.getLong(), myOp);
-			++ index;
-			++ off;
-			}
-		return index - i;
-		}
-
-	}
+}

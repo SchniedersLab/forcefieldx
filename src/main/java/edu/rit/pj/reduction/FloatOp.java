@@ -22,101 +22,82 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj.reduction;
 
 /**
  * Class FloatOp is the abstract base class for a binary operation on float
  * values, used to do reduction in a parallel program.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 05-Jun-2007
  */
 public abstract class FloatOp
-	extends Op
-	{
+        extends Op {
 
 // Hidden constructors.
-
-	/**
-	 * Construct a new float binary operation.
-	 */
-	protected FloatOp()
-		{
-		super();
-		}
+    /**
+     * Construct a new float binary operation.
+     */
+    protected FloatOp() {
+        super();
+    }
 
 // Exported operations.
-
-	/**
-	 * Perform this binary operation.
-	 *
-	 * @param  x  First argument.
-	 * @param  y  Second argument.
-	 *
-	 * @return  (<TT>x</TT> <I>op</I> <TT>y</TT>), where <I>op</I> stands for
-	 *          this binary operation.
-	 */
-	public abstract float op
-		(float x,
-		 float y);
+    /**
+     * Perform this binary operation.
+     *
+     * @param x First argument.
+     * @param y Second argument.
+     *
+     * @return (<TT>x</TT> <I>op</I> <TT>y</TT>), where <I>op</I> stands for
+     * this binary operation.
+     */
+    public abstract float op(float x,
+            float y);
 
 // Exported constants.
+    /**
+     * The float sum binary operation.
+     */
+    public static final FloatOp SUM
+            = new FloatOp() {
+                public float op(float x,
+                        float y) {
+                    return x + y;
+                }
+            };
 
-	/**
-	 * The float sum binary operation.
-	 */
-	public static final FloatOp SUM =
-		new FloatOp()
-			{
-			public float op
-				(float x,
-				 float y)
-				{
-				return x + y;
-				}
-			};
+    /**
+     * The float product binary operation.
+     */
+    public static final FloatOp PRODUCT
+            = new FloatOp() {
+                public float op(float x,
+                        float y) {
+                    return x * y;
+                }
+            };
 
-	/**
-	 * The float product binary operation.
-	 */
-	public static final FloatOp PRODUCT =
-		new FloatOp()
-			{
-			public float op
-				(float x,
-				 float y)
-				{
-				return x * y;
-				}
-			};
+    /**
+     * The float minimum binary operation.
+     */
+    public static final FloatOp MINIMUM
+            = new FloatOp() {
+                public float op(float x,
+                        float y) {
+                    return Math.min(x, y);
+                }
+            };
 
-	/**
-	 * The float minimum binary operation.
-	 */
-	public static final FloatOp MINIMUM =
-		new FloatOp()
-			{
-			public float op
-				(float x,
-				 float y)
-				{
-				return Math.min (x, y);
-				}
-			};
+    /**
+     * The float maximum binary operation.
+     */
+    public static final FloatOp MAXIMUM
+            = new FloatOp() {
+                public float op(float x,
+                        float y) {
+                    return Math.max(x, y);
+                }
+            };
 
-	/**
-	 * The float maximum binary operation.
-	 */
-	public static final FloatOp MAXIMUM =
-		new FloatOp()
-			{
-			public float op
-				(float x,
-				 float y)
-				{
-				return Math.max (x, y);
-				}
-			};
-
-	}
+}

@@ -22,143 +22,115 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj.reduction;
 
 /**
  * Class ShortOp is the abstract base class for a binary operation on short
  * values, used to do reduction in a parallel program.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 24-Nov-2009
  */
 public abstract class ShortOp
-	extends Op
-	{
+        extends Op {
 
 // Hidden constructors.
-
-	/**
-	 * Construct a new short binary operation.
-	 */
-	protected ShortOp()
-		{
-		super();
-		}
+    /**
+     * Construct a new short binary operation.
+     */
+    protected ShortOp() {
+        super();
+    }
 
 // Exported operations.
-
-	/**
-	 * Perform this binary operation.
-	 *
-	 * @param  x  First argument.
-	 * @param  y  Second argument.
-	 *
-	 * @return  (<TT>x</TT> <I>op</I> <TT>y</TT>), where <I>op</I> stands for
-	 *          this binary operation.
-	 */
-	public abstract short op
-		(short x,
-		 short y);
+    /**
+     * Perform this binary operation.
+     *
+     * @param x First argument.
+     * @param y Second argument.
+     *
+     * @return (<TT>x</TT> <I>op</I> <TT>y</TT>), where <I>op</I> stands for
+     * this binary operation.
+     */
+    public abstract short op(short x,
+            short y);
 
 // Exported constants.
+    /**
+     * The short sum binary operation.
+     */
+    public static final ShortOp SUM
+            = new ShortOp() {
+                public short op(short x,
+                        short y) {
+                    return (short) (x + y);
+                }
+            };
 
-	/**
-	 * The short sum binary operation.
-	 */
-	public static final ShortOp SUM =
-		new ShortOp()
-			{
-			public short op
-				(short x,
-				 short y)
-				{
-				return (short) (x + y);
-				}
-			};
+    /**
+     * The short product binary operation.
+     */
+    public static final ShortOp PRODUCT
+            = new ShortOp() {
+                public short op(short x,
+                        short y) {
+                    return (short) (x * y);
+                }
+            };
 
-	/**
-	 * The short product binary operation.
-	 */
-	public static final ShortOp PRODUCT =
-		new ShortOp()
-			{
-			public short op
-				(short x,
-				 short y)
-				{
-				return (short) (x * y);
-				}
-			};
+    /**
+     * The short minimum binary operation.
+     */
+    public static final ShortOp MINIMUM
+            = new ShortOp() {
+                public short op(short x,
+                        short y) {
+                    return (short) Math.min(x, y);
+                }
+            };
 
-	/**
-	 * The short minimum binary operation.
-	 */
-	public static final ShortOp MINIMUM =
-		new ShortOp()
-			{
-			public short op
-				(short x,
-				 short y)
-				{
-				return (short) Math.min (x, y);
-				}
-			};
+    /**
+     * The short maximum binary operation.
+     */
+    public static final ShortOp MAXIMUM
+            = new ShortOp() {
+                public short op(short x,
+                        short y) {
+                    return (short) Math.max(x, y);
+                }
+            };
 
-	/**
-	 * The short maximum binary operation.
-	 */
-	public static final ShortOp MAXIMUM =
-		new ShortOp()
-			{
-			public short op
-				(short x,
-				 short y)
-				{
-				return (short) Math.max (x, y);
-				}
-			};
+    /**
+     * The short bitwise "and" binary operation.
+     */
+    public static final ShortOp AND
+            = new ShortOp() {
+                public short op(short x,
+                        short y) {
+                    return (short) (x & y);
+                }
+            };
 
-	/**
-	 * The short bitwise "and" binary operation.
-	 */
-	public static final ShortOp AND =
-		new ShortOp()
-			{
-			public short op
-				(short x,
-				 short y)
-				{
-				return (short)(x & y);
-				}
-			};
+    /**
+     * The short bitwise "or" binary operation.
+     */
+    public static final ShortOp OR
+            = new ShortOp() {
+                public short op(short x,
+                        short y) {
+                    return (short) (x | y);
+                }
+            };
 
-	/**
-	 * The short bitwise "or" binary operation.
-	 */
-	public static final ShortOp OR =
-		new ShortOp()
-			{
-			public short op
-				(short x,
-				 short y)
-				{
-				return (short)(x | y);
-				}
-			};
+    /**
+     * The short bitwise "exclusive or" binary operation.
+     */
+    public static final ShortOp XOR
+            = new ShortOp() {
+                public short op(short x,
+                        short y) {
+                    return (short) (x ^ y);
+                }
+            };
 
-	/**
-	 * The short bitwise "exclusive or" binary operation.
-	 */
-	public static final ShortOp XOR =
-		new ShortOp()
-			{
-			public short op
-				(short x,
-				 short y)
-				{
-				return (short)(x ^ y);
-				}
-			};
-
-	}
+}

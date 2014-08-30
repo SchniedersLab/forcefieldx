@@ -22,39 +22,34 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj.job;
 
 /**
  * Enum Stderr enumerates how the standard error stream of a {@linkplain Job} is
  * redirected.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 07-Oct-2010
  */
-enum Stderr
-	{
+enum Stderr {
 
-	/**
-	 * The standard error is not redirected.
-	 */
-	NONE,
+    /**
+     * The standard error is not redirected.
+     */
+    NONE,
+    /**
+     * The standard error is stored in a file. The file is created if it does
+     * not exist. The file is overwritten if it does exist.
+     */
+    FILE,
+    /**
+     * The standard error is added to the end of a file. The file is created if
+     * it does not exist.
+     */
+    FILE_APPEND,
+    /**
+     * The standard error goes to the same place as the standard output.
+     */
+    STDOUT,
 
-	/**
-	 * The standard error is stored in a file. The file is created if it does
-	 * not exist. The file is overwritten if it does exist.
-	 */
-	FILE,
-
-	/**
-	 * The standard error is added to the end of a file. The file is created if
-	 * it does not exist.
-	 */
-	FILE_APPEND,
-
-	/**
-	 * The standard error goes to the same place as the standard output.
-	 */
-	STDOUT,
-
-	}
+}

@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.mp.buf;
 
 import edu.rit.mp.Buf;
@@ -35,87 +34,75 @@ import edu.rit.pj.reduction.SharedObjectArray;
 import edu.rit.util.Range;
 
 /**
- * Class SharedObjectArrayReductionBuf_1 provides a reduction buffer for
- * class {@linkplain SharedObjectArrayBuf_1}.
+ * Class SharedObjectArrayReductionBuf_1 provides a reduction buffer for class
+ * {@linkplain SharedObjectArrayBuf_1}.
  *
- * @param  <T>  Data type of the objects in the buffer.
+ * @param <T> Data type of the objects in the buffer.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 01-Apr-2012
  */
 class SharedObjectArrayReductionBuf_1<T>
-	extends SharedObjectArrayBuf_1<T>
-	{
+        extends SharedObjectArrayBuf_1<T> {
 
 // Hidden data members.
-
-	ObjectOp<T> myOp;
-	SharedObjectArrayBuf<T> myBuf;
+    ObjectOp<T> myOp;
+    SharedObjectArrayBuf<T> myBuf;
 
 // Exported constructors.
-
-	/**
-	 * Construct a new shared object array reduction buffer.
-	 *
-	 * @param  theArray  Shared array.
-	 * @param  theRange  Range of array elements to include in the buffer. The
-	 *                   stride is assumed to be 1.
-	 * @param  op        Binary operation.
-	 * @param  theBuf    Underlying shared object array buffer.
-	 *
-	 * @exception  NullPointerException
-	 *     (unchecked exception) Thrown if <TT>op</TT> is null.
-	 */
-	public SharedObjectArrayReductionBuf_1
-		(SharedObjectArray<T> theArray,
-		 Range theRange,
-		 ObjectOp<T> op,
-		 SharedObjectArrayBuf<T> theBuf)
-		{
-		super (theArray, theRange);
-		if (op == null)
-			{
-			throw new NullPointerException
-				("SharedObjectArrayReductionBuf_1(): op is null");
-			}
-		myOp = op;
-		myBuf = theBuf;
-		}
+    /**
+     * Construct a new shared object array reduction buffer.
+     *
+     * @param theArray Shared array.
+     * @param theRange Range of array elements to include in the buffer. The
+     * stride is assumed to be 1.
+     * @param op Binary operation.
+     * @param theBuf Underlying shared object array buffer.
+     *
+     * @exception NullPointerException (unchecked exception) Thrown if
+     * <TT>op</TT> is null.
+     */
+    public SharedObjectArrayReductionBuf_1(SharedObjectArray<T> theArray,
+            Range theRange,
+            ObjectOp<T> op,
+            SharedObjectArrayBuf<T> theBuf) {
+        super(theArray, theRange);
+        if (op == null) {
+            throw new NullPointerException("SharedObjectArrayReductionBuf_1(): op is null");
+        }
+        myOp = op;
+        myBuf = theBuf;
+    }
 
 // Exported operations.
+    /**
+     * Store the given item in this buffer.
+     * <P>
+     * The <TT>put()</TT> method must not block the calling thread; if it does,
+     * all message I/O in MP will be blocked.
+     *
+     * @param i Item index in the range 0 .. <TT>length()</TT>-1.
+     * @param item Item to be stored at index <TT>i</TT>.
+     */
+    public void put(int i,
+            T item) {
+        myArray.reduce(myArrayOffset + i, item, myOp);
+        reset();
+        myBuf.reset();
+    }
 
-	/**
-	 * Store the given item in this buffer.
-	 * <P>
-	 * The <TT>put()</TT> method must not block the calling thread; if it does,
-	 * all message I/O in MP will be blocked.
-	 *
-	 * @param  i     Item index in the range 0 .. <TT>length()</TT>-1.
-	 * @param  item  Item to be stored at index <TT>i</TT>.
-	 */
-	public void put
-		(int i,
-		 T item)
-		{
-		myArray.reduce (myArrayOffset+i, item, myOp);
-		reset();
-		myBuf.reset();
-		}
+    /**
+     * Create a buffer for performing parallel reduction using the given binary
+     * operation. The results of the reduction are placed into this buffer.
+     *
+     * @param op Binary operation.
+     *
+     * @exception ClassCastException (unchecked exception) Thrown if this
+     * buffer's element data type and the given binary operation's argument data
+     * type are not the same.
+     */
+    public Buf getReductionBuf(Op op) {
+        throw new UnsupportedOperationException();
+    }
 
-	/**
-	 * Create a buffer for performing parallel reduction using the given binary
-	 * operation. The results of the reduction are placed into this buffer.
-	 *
-	 * @param  op  Binary operation.
-	 *
-	 * @exception  ClassCastException
-	 *     (unchecked exception) Thrown if this buffer's element data type and
-	 *     the given binary operation's argument data type are not the same.
-	 */
-	public Buf getReductionBuf
-		(Op op)
-		{
-		throw new UnsupportedOperationException();
-		}
-
-	}
+}

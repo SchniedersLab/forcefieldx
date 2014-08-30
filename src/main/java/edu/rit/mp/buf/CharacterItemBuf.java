@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.mp.buf;
 
 import edu.rit.mp.Buf;
@@ -40,150 +39,125 @@ import java.nio.ByteBuffer;
  * method in class {@linkplain edu.rit.mp.CharacterBuf CharacterBuf}. See that
  * class for further information.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 25-Oct-2007
  */
 public class CharacterItemBuf
-	extends CharacterBuf
-	{
+        extends CharacterBuf {
 
 // Exported data members.
-
-	/**
-	 * Character item to be sent or received.
-	 */
-	public char item;
+    /**
+     * Character item to be sent or received.
+     */
+    public char item;
 
 // Exported constructors.
+    /**
+     * Construct a new character item buffer.
+     */
+    public CharacterItemBuf() {
+        super(1);
+    }
 
-	/**
-	 * Construct a new character item buffer.
-	 */
-	public CharacterItemBuf()
-		{
-		super (1);
-		}
-
-	/**
-	 * Construct a new character item buffer with the given initial value.
-	 *
-	 * @param  item  Initial value of the {@link #item} field.
-	 */
-	public CharacterItemBuf
-		(char item)
-		{
-		super (1);
-		this.item = item;
-		}
+    /**
+     * Construct a new character item buffer with the given initial value.
+     *
+     * @param item Initial value of the {@link #item} field.
+     */
+    public CharacterItemBuf(char item) {
+        super(1);
+        this.item = item;
+    }
 
 // Exported operations.
+    /**
+     * Obtain the given item from this buffer.
+     * <P>
+     * The <TT>get()</TT> method must not block the calling thread; if it does,
+     * all message I/O in MP will be blocked.
+     *
+     * @param i Item index in the range 0 .. <TT>length()</TT>-1.
+     *
+     * @return Item at index <TT>i</TT>.
+     */
+    public char get(int i) {
+        return this.item;
+    }
 
-	/**
-	 * Obtain the given item from this buffer.
-	 * <P>
-	 * The <TT>get()</TT> method must not block the calling thread; if it does,
-	 * all message I/O in MP will be blocked.
-	 *
-	 * @param  i  Item index in the range 0 .. <TT>length()</TT>-1.
-	 *
-	 * @return  Item at index <TT>i</TT>.
-	 */
-	public char get
-		(int i)
-		{
-		return this.item;
-		}
+    /**
+     * Store the given item in this buffer.
+     * <P>
+     * The <TT>put()</TT> method must not block the calling thread; if it does,
+     * all message I/O in MP will be blocked.
+     *
+     * @param i Item index in the range 0 .. <TT>length()</TT>-1.
+     * @param item Item to be stored at index <TT>i</TT>.
+     */
+    public void put(int i,
+            char item) {
+        this.item = item;
+    }
 
-	/**
-	 * Store the given item in this buffer.
-	 * <P>
-	 * The <TT>put()</TT> method must not block the calling thread; if it does,
-	 * all message I/O in MP will be blocked.
-	 *
-	 * @param  i     Item index in the range 0 .. <TT>length()</TT>-1.
-	 * @param  item  Item to be stored at index <TT>i</TT>.
-	 */
-	public void put
-		(int i,
-		 char item)
-		{
-		this.item = item;
-		}
-
-	/**
-	 * Create a buffer for performing parallel reduction using the given binary
-	 * operation. The results of the reduction are placed into this buffer.
-	 *
-	 * @param  op  Binary operation.
-	 *
-	 * @exception  ClassCastException
-	 *     (unchecked exception) Thrown if this buffer's element data type and
-	 *     the given binary operation's argument data type are not the same.
-	 */
-	public Buf getReductionBuf
-		(Op op)
-		{
-		return new CharacterItemReductionBuf (this, (CharacterOp) op);
-		}
+    /**
+     * Create a buffer for performing parallel reduction using the given binary
+     * operation. The results of the reduction are placed into this buffer.
+     *
+     * @param op Binary operation.
+     *
+     * @exception ClassCastException (unchecked exception) Thrown if this
+     * buffer's element data type and the given binary operation's argument data
+     * type are not the same.
+     */
+    public Buf getReductionBuf(Op op) {
+        return new CharacterItemReductionBuf(this, (CharacterOp) op);
+    }
 
 // Hidden operations.
+    /**
+     * Send as many items as possible from this buffer to the given byte buffer.
+     * <P>
+     * The <TT>sendItems()</TT> method must not block the calling thread; if it
+     * does, all message I/O in MP will be blocked.
+     *
+     * @param i Index of first item to send, in the range 0 ..
+     * <TT>length</TT>-1.
+     * @param buffer Byte buffer.
+     *
+     * @return Number of items sent.
+     */
+    protected int sendItems(int i,
+            ByteBuffer buffer) {
+        if (buffer.remaining() >= 2) {
+            buffer.putChar(this.item);
+            return 1;
+        } else {
+            return 0;
+        }
+    }
 
-	/**
-	 * Send as many items as possible from this buffer to the given byte
-	 * buffer.
-	 * <P>
-	 * The <TT>sendItems()</TT> method must not block the calling thread; if it
-	 * does, all message I/O in MP will be blocked.
-	 *
-	 * @param  i       Index of first item to send, in the range 0 ..
-	 *                 <TT>length</TT>-1.
-	 * @param  buffer  Byte buffer.
-	 *
-	 * @return  Number of items sent.
-	 */
-	protected int sendItems
-		(int i,
-		 ByteBuffer buffer)
-		{
-		if (buffer.remaining() >= 2)
-			{
-			buffer.putChar (this.item);
-			return 1;
-			}
-		else
-			{
-			return 0;
-			}
-		}
+    /**
+     * Receive as many items as possible from the given byte buffer to this
+     * buffer.
+     * <P>
+     * The <TT>receiveItems()</TT> method must not block the calling thread; if
+     * it does, all message I/O in MP will be blocked.
+     *
+     * @param i Index of first item to receive, in the range 0 ..
+     * <TT>length</TT>-1.
+     * @param num Maximum number of items to receive.
+     * @param buffer Byte buffer.
+     *
+     * @return Number of items received.
+     */
+    protected int receiveItems(int i,
+            int num,
+            ByteBuffer buffer) {
+        if (num >= 1 && buffer.remaining() >= 2) {
+            this.item = buffer.getChar();
+            return 1;
+        } else {
+            return 0;
+        }
+    }
 
-	/**
-	 * Receive as many items as possible from the given byte buffer to this
-	 * buffer.
-	 * <P>
-	 * The <TT>receiveItems()</TT> method must not block the calling thread; if
-	 * it does, all message I/O in MP will be blocked.
-	 *
-	 * @param  i       Index of first item to receive, in the range 0 ..
-	 *                 <TT>length</TT>-1.
-	 * @param  num     Maximum number of items to receive.
-	 * @param  buffer  Byte buffer.
-	 *
-	 * @return  Number of items received.
-	 */
-	protected int receiveItems
-		(int i,
-		 int num,
-		 ByteBuffer buffer)
-		{
-		if (num >= 1 && buffer.remaining() >= 2)
-			{
-			this.item = buffer.getChar();
-			return 1;
-			}
-		else
-			{
-			return 0;
-			}
-		}
-
-	}
+}

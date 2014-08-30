@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.io;
 
 import java.io.InputStream;
@@ -32,135 +31,111 @@ import java.io.PrintStream;
  * Class Stdio provides standard I/O streams that can be redirected on a
  * per-thread basis.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 08-Oct-2010
  */
-public class Stdio
-	{
+public class Stdio {
 
 // Prevent construction.
-
-	private Stdio()
-		{
-		}
+    private Stdio() {
+    }
 
 // Hidden data members.
+    private static ThreadLocal<InputStream> in
+            = new ThreadLocal<InputStream>() {
+                protected InputStream initialValue() {
+                    return System.in;
+                }
+            };
 
-	private static ThreadLocal<InputStream> in =
-		new ThreadLocal<InputStream>()
-			{
-			protected InputStream initialValue()
-				{
-				return System.in;
-				}
-			};
+    private static ThreadLocal<PrintStream> out
+            = new ThreadLocal<PrintStream>() {
+                protected PrintStream initialValue() {
+                    return System.out;
+                }
+            };
 
-	private static ThreadLocal<PrintStream> out =
-		new ThreadLocal<PrintStream>()
-			{
-			protected PrintStream initialValue()
-				{
-				return System.out;
-				}
-			};
-
-	private static ThreadLocal<PrintStream> err =
-		new ThreadLocal<PrintStream>()
-			{
-			protected PrintStream initialValue()
-				{
-				return System.err;
-				}
-			};
-
+    private static ThreadLocal<PrintStream> err
+            = new ThreadLocal<PrintStream>() {
+                protected PrintStream initialValue() {
+                    return System.err;
+                }
+            };
 
 // Exported operations.
+    /**
+     * Get the standard input stream for the calling thread.
+     *
+     * @return Standard input stream.
+     */
+    public static InputStream in() {
+        return in.get();
+    }
 
-	/**
-	 * Get the standard input stream for the calling thread.
-	 *
-	 * @return  Standard input stream.
-	 */
-	public static InputStream in()
-		{
-		return in.get();
-		}
+    /**
+     * Get the standard output stream for the calling thread.
+     *
+     * @return Standard output stream.
+     */
+    public static PrintStream out() {
+        return out.get();
+    }
 
-	/**
-	 * Get the standard output stream for the calling thread.
-	 *
-	 * @return  Standard output stream.
-	 */
-	public static PrintStream out()
-		{
-		return out.get();
-		}
+    /**
+     * Get the standard error stream for the calling thread.
+     *
+     * @return Standard error stream.
+     */
+    public static PrintStream err() {
+        return err.get();
+    }
 
-	/**
-	 * Get the standard error stream for the calling thread.
-	 *
-	 * @return  Standard error stream.
-	 */
-	public static PrintStream err()
-		{
-		return err.get();
-		}
+    /**
+     * Set the standard input stream for the calling thread. If not set, the
+     * default is <TT>System.in</TT>.
+     *
+     * @param stream Standard input stream.
+     *
+     * @exception NullPointerException (unchecked exception) Thrown if
+     * <TT>stream</TT> is null.
+     */
+    public static void in(InputStream stream) {
+        if (stream == null) {
+            throw new NullPointerException("Stdio.in(): stream is null");
+        }
+        in.set(stream);
+    }
 
-	/**
-	 * Set the standard input stream for the calling thread. If not set, the
-	 * default is <TT>System.in</TT>.
-	 *
-	 * @param  stream  Standard input stream.
-	 *
-	 * @exception  NullPointerException
-	 *     (unchecked exception) Thrown if <TT>stream</TT> is null.
-	 */
-	public static void in
-		(InputStream stream)
-		{
-		if (stream == null)
-			{
-			throw new NullPointerException ("Stdio.in(): stream is null");
-			}
-		in.set (stream);
-		}
+    /**
+     * Set the standard output stream for the calling thread. If not set, the
+     * default is <TT>System.out</TT>.
+     *
+     * @param stream Standard output stream.
+     *
+     * @exception NullPointerException (unchecked exception) Thrown if
+     * <TT>stream</TT> is null.
+     */
+    public static void out(PrintStream stream) {
+        if (stream == null) {
+            throw new NullPointerException("Stdio.out(): stream is null");
+        }
+        out.set(stream);
+    }
 
-	/**
-	 * Set the standard output stream for the calling thread. If not set, the
-	 * default is <TT>System.out</TT>.
-	 *
-	 * @param  stream  Standard output stream.
-	 *
-	 * @exception  NullPointerException
-	 *     (unchecked exception) Thrown if <TT>stream</TT> is null.
-	 */
-	public static void out
-		(PrintStream stream)
-		{
-		if (stream == null)
-			{
-			throw new NullPointerException ("Stdio.out(): stream is null");
-			}
-		out.set (stream);
-		}
+    /**
+     * Set the standard error stream for the calling thread. If not set, the
+     * default is <TT>System.err</TT>.
+     *
+     * @param stream Standard error stream.
+     *
+     * @exception NullPointerException (unchecked exception) Thrown if
+     * <TT>stream</TT> is null.
+     */
+    public static void err(PrintStream stream) {
+        if (stream == null) {
+            throw new NullPointerException("Stdio.err(): stream is null");
+        }
+        err.set(stream);
+    }
 
-	/**
-	 * Set the standard error stream for the calling thread. If not set, the
-	 * default is <TT>System.err</TT>.
-	 *
-	 * @param  stream  Standard error stream.
-	 *
-	 * @exception  NullPointerException
-	 *     (unchecked exception) Thrown if <TT>stream</TT> is null.
-	 */
-	public static void err
-		(PrintStream stream)
-		{
-		if (stream == null)
-			{
-			throw new NullPointerException ("Stdio.err(): stream is null");
-			}
-		err.set (stream);
-		}
-
-	}
+}

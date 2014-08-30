@@ -22,26 +22,22 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj.reduction;
 
 /**
  * Class Op is the abstract base class for a binary operation used to do
  * reduction in a parallel program.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 05-Jun-2007
  */
-public abstract class Op
-	{
+public abstract class Op {
 
 // Hidden constructors.
+    /**
+     * Construct a new binary operation.
+     */
+    Op() {
+    }
 
-	/**
-	 * Construct a new binary operation.
-	 */
-	Op()
-		{
-		}
-
-	}
+}

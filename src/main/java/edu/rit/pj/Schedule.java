@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj;
 
 /**
@@ -44,28 +43,24 @@ package edu.rit.pj;
  * <LI><TT>LongSchedule.parse()</TT>
  * </UL>
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 20-Dec-2007
  */
-public abstract class Schedule
-	{
+public abstract class Schedule {
 
 // Hidden data members.
+    // 128 bytes of extra padding to avert cache interference.
+    private long p0, p1, p2, p3, p4, p5, p6, p7;
+    private long p8, p9, pa, pb, pc, pd, pe, pf;
 
-	// 128 bytes of extra padding to avert cache interference.
-	private long p0, p1, p2, p3, p4, p5, p6, p7;
-	private long p8, p9, pa, pb, pc, pd, pe, pf;
-
-	// True to break out of the parallel for loop.
-	boolean myBreak;
+    // True to break out of the parallel for loop.
+    boolean myBreak;
 
 // Hidden constructors.
+    /**
+     * Construct a new schedule object.
+     */
+    Schedule() {
+    }
 
-	/**
-	 * Construct a new schedule object.
-	 */
-	Schedule()
-		{
-		}
-
-	}
+}

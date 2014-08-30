@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj;
 
 import java.util.concurrent.Semaphore;
@@ -31,372 +30,316 @@ import java.util.concurrent.Semaphore;
  * Class ParallelTeamThread provides one thread in a {@linkplain ParallelTeam}
  * of threads for executing a {@linkplain ParallelRegion} in parallel.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 20-Dec-2007
  */
 class ParallelTeamThread
-	extends Thread
-	{
+        extends Thread {
 
 // Hidden data members.
+    // Reference to the parallel team.
+    ParallelTeam myTeam;
 
-	// Reference to the parallel team.
-	ParallelTeam myTeam;
+    // Index of this thread within the parallel team.
+    int myIndex;
 
-	// Index of this thread within the parallel team.
-	int myIndex;
+    // Semaphore for synchronizing threads at the beginning of a parallel
+    // region.
+    Semaphore myRegionBeginSemaphore = new Semaphore(0);
 
-	// Semaphore for synchronizing threads at the beginning of a parallel
-	// region.
-	Semaphore myRegionBeginSemaphore = new Semaphore (0);
+    // Thread barrier flag. Used by the ParallelRegion.barrier() method.
+    volatile int myBarrierFlag;
 
-	// Thread barrier flag. Used by the ParallelRegion.barrier() method.
-	volatile int myBarrierFlag;
+    // Parallel construct counter. Counts how many times this thread has arrived
+    // at the top of a parallel construct.
+    volatile int myConstructCount;
 
-	// Parallel construct counter. Counts how many times this thread has arrived
-	// at the top of a parallel construct.
-	volatile int myConstructCount;
+    // IntegerSchedule object for a parallel for loop.
+    volatile IntegerSchedule myIntegerSchedule;
 
-	// IntegerSchedule object for a parallel for loop.
-	volatile IntegerSchedule myIntegerSchedule;
+    // LongSchedule object for a parallel for loop.
+    volatile LongSchedule myLongSchedule;
 
-	// LongSchedule object for a parallel for loop.
-	volatile LongSchedule myLongSchedule;
+    // Item generator object for a parallel iteration.
+    volatile ItemGenerator<?> myItemGenerator;
 
-	// Item generator object for a parallel iteration.
-	volatile ItemGenerator<?> myItemGenerator;
+    // Exception thrown while setting up a parallel construct, or null if none.
+    volatile Throwable myConstructException;
 
-	// Exception thrown while setting up a parallel construct, or null if none.
-	volatile Throwable myConstructException;
-
-	// 128 bytes of extra padding to avert cache interference.
-	private long p0, p1, p2, p3, p4, p5, p6, p7;
-	private long p8, p9, pa, pb, pc, pd, pe, pf;
+    // 128 bytes of extra padding to avert cache interference.
+    private long p0, p1, p2, p3, p4, p5, p6, p7;
+    private long p8, p9, pa, pb, pc, pd, pe, pf;
 
 // Exported constructors.
-
-	/**
-	 * Construct a new parallel team thread.
-	 *
-	 * @param  theTeam   Parallel team to which this thread belongs.
-	 * @param  theIndex  Index of this thread within the team.
-	 */
-	public ParallelTeamThread
-		(ParallelTeam theTeam,
-		 int theIndex)
-		{
-		myTeam = theTeam;
-		myIndex = theIndex;
-		setDaemon (true);
-		start();
-		}
+    /**
+     * Construct a new parallel team thread.
+     *
+     * @param theTeam Parallel team to which this thread belongs.
+     * @param theIndex Index of this thread within the team.
+     */
+    public ParallelTeamThread(ParallelTeam theTeam,
+            int theIndex) {
+        myTeam = theTeam;
+        myIndex = theIndex;
+        setDaemon(true);
+        start();
+    }
 
 // Exported operations.
+    /**
+     * Run this parallel team thread.
+     */
+    public void run() {
+        for (;;) {
+            // Wait until released by the main thread.
+            myRegionBeginSemaphore.acquireUninterruptibly();
 
-	/**
-	 * Run this parallel team thread.
-	 */
-	public void run()
-		{
-		for (;;)
-			{
-			// Wait until released by the main thread.
-			myRegionBeginSemaphore.acquireUninterruptibly();
+            // Call the parallel region's run() method. Save any
+            // exception for later.
+            try {
+                myTeam.myRegion.run();
+            } catch (Throwable exc) {
+                synchronized (System.err) {
+                    System.err.println("Parallel team thread " + myIndex
+                            + ": ParallelRegion.run() threw an exception");
+                    exc.printStackTrace(System.err);
+                }
+                myTeam.myExceptionMap.put(myIndex, exc);
+            }
 
-			// Call the parallel region's run() method. Save any
-			// exception for later.
-			try
-				{
-				myTeam.myRegion.run();
-				}
-			catch (Throwable exc)
-				{
-				synchronized (System.err)
-					{
-					System.err.println
-						("Parallel team thread " + myIndex +
-						 ": ParallelRegion.run() threw an exception");
-					exc.printStackTrace (System.err);
-					}
-				myTeam.myExceptionMap.put (myIndex, exc);
-				}
-
-			// Tell the main thread we're done.
-			myTeam.myRegionEndSemaphore.release();
-			}
-		}
+            // Tell the main thread we're done.
+            myTeam.myRegionEndSemaphore.release();
+        }
+    }
 
 // Hidden operations.
+    /**
+     * Do this thread's portion of a barrier with no barrier action. This method
+     * is called by thread 1 through thread K-1 of the parallel team.
+     */
+    void barrier() {
+        // Get the new team barrier flag.
+        int newBarrierFlag = myTeam.myBarrierFlag ^ 1;
 
-	/**
-	 * Do this thread's portion of a barrier with no barrier action. This method
-	 * is called by thread 1 through thread K-1 of the parallel team.
-	 */
-	void barrier()
-		{
-		// Get the new team barrier flag.
-		int newBarrierFlag = myTeam.myBarrierFlag ^ 1;
+        // Switch this thread to the new barrier flag.
+        myBarrierFlag = newBarrierFlag;
 
-		// Switch this thread to the new barrier flag.
-		myBarrierFlag = newBarrierFlag;
+        // Wait until thread 0 has switched to the new team barrier flag.
+        if (myTeam.myBarrierFlag != newBarrierFlag) {
+            Spinner spinner = new Spinner();
+            while (myTeam.myBarrierFlag != newBarrierFlag) {
+                spinner.spin();
+            }
+        }
+    }
 
-		// Wait until thread 0 has switched to the new team barrier flag.
-		if (myTeam.myBarrierFlag != newBarrierFlag)
-			{
-			Spinner spinner = new Spinner();
-			while (myTeam.myBarrierFlag != newBarrierFlag)
-				{
-				spinner.spin();
-				}
-			}
-		}
+    /**
+     * Do this thread's portion of a barrier with a barrier action. This method
+     * is called by thread 1 through thread K-1 of the parallel team.
+     *
+     * @param action Barrier action.
+     *
+     * @exception Exception Thrown if the <TT>action</TT>'s <TT>run()</TT>
+     * method throws an exception.
+     */
+    void barrier(BarrierAction action)
+            throws Exception {
+        barrier();
+    }
 
-	/**
-	 * Do this thread's portion of a barrier with a barrier action. This method
-	 * is called by thread 1 through thread K-1 of the parallel team.
-	 *
-	 * @param  action  Barrier action.
-	 *
-	 * @exception  Exception
-	 *     Thrown if the <TT>action</TT>'s <TT>run()</TT> method throws an
-	 *     exception.
-	 */
-	void barrier
-		(BarrierAction action)
-		throws Exception
-		{
-		barrier();
-		}
+    /**
+     * Do processing when this thread arrives at the top of a parallel
+     * construct.
+     *
+     * @return True if this thread is the first to arrive, false otherwise.
+     */
+    boolean arriveAtParallelConstruct() {
+        // Wait until every thread's construct count is greater than or equal to
+        // this thread's construct count.
+        int K = myTeam.K;
+        for (int i = 0; i < K; ++i) {
+            ParallelTeamThread thread_i = myTeam.myThread[i];
+            if (thread_i.myConstructCount < this.myConstructCount) {
+                Spinner spinner = new Spinner();
+                while (thread_i.myConstructCount < this.myConstructCount) {
+                    spinner.spin();
+                }
+            }
+        }
 
-	/**
-	 * Do processing when this thread arrives at the top of a parallel
-	 * construct.
-	 *
-	 * @return  True if this thread is the first to arrive, false otherwise.
-	 */
-	boolean arriveAtParallelConstruct()
-		{
-		// Wait until every thread's construct count is greater than or equal to
-		// this thread's construct count.
-		int K = myTeam.K;
-		for (int i = 0; i < K; ++ i)
-			{
-			ParallelTeamThread thread_i = myTeam.myThread[i];
-			if (thread_i.myConstructCount < this.myConstructCount)
-				{
-				Spinner spinner = new Spinner();
-				while (thread_i.myConstructCount < this.myConstructCount)
-					{
-					spinner.spin();
-					}
-				}
-			}
+        // Determine if this thread is the first to arrive.
+        for (;;) {
+            int oldConstructCount = myTeam.myConstructCount.get();
+            if (oldConstructCount != myConstructCount) {
+                // This thread is not the first to arrive.
+                myConstructCount = oldConstructCount;
+                return false;
+            }
+            // This thread may be the first to arrive.
+            if (myTeam.myConstructCount.compareAndSet(oldConstructCount, oldConstructCount + 1)) {
+                // This thread is the first to arrive.
+                myConstructCount = oldConstructCount + 1;
+                return true;
+            }
+        }
+    }
 
-		// Determine if this thread is the first to arrive.
-		for (;;)
-			{
-			int oldConstructCount = myTeam.myConstructCount.get();
-			if (oldConstructCount != myConstructCount)
-				{
-				// This thread is not the first to arrive.
-				myConstructCount = oldConstructCount;
-				return false;
-				}
-			// This thread may be the first to arrive.
-			if (myTeam.myConstructCount.compareAndSet
-						(oldConstructCount, oldConstructCount + 1))
-				{
-				// This thread is the first to arrive.
-				myConstructCount = oldConstructCount + 1;
-				return true;
-				}
-			}
-		}
+    /**
+     * Set this thread's IntegerSchedule.
+     *
+     * @param theSchedule Integer schedule.
+     */
+    void setIntegerSchedule(IntegerSchedule theSchedule) {
+        // Wait until myIntegerSchedule is null.
+        if (myIntegerSchedule != null) {
+            Spinner spinner = new Spinner();
+            while (myIntegerSchedule != null) {
+                spinner.spin();
+            }
+        }
 
-	/**
-	 * Set this thread's IntegerSchedule.
-	 *
-	 * @param  theSchedule  Integer schedule.
-	 */
-	void setIntegerSchedule
-		(IntegerSchedule theSchedule)
-		{
-		// Wait until myIntegerSchedule is null.
-		if (myIntegerSchedule != null)
-			{
-			Spinner spinner = new Spinner();
-			while (myIntegerSchedule != null)
-				{
-				spinner.spin();
-				}
-			}
+        myIntegerSchedule = theSchedule;
+    }
 
-		myIntegerSchedule = theSchedule;
-		}
+    /**
+     * Get this thread's IntegerSchedule.
+     *
+     * @return IntegerSchedule.
+     *
+     * @exception Exception This method can throw any exception.
+     */
+    IntegerSchedule getIntegerSchedule()
+            throws Exception {
+        // Wait until myIntegerSchedule or myConstructException is set to a
+        // non-null value.
+        if (myIntegerSchedule == null && myConstructException == null) {
+            Spinner spinner = new Spinner();
+            while (myIntegerSchedule == null && myConstructException == null) {
+                spinner.spin();
+            }
+        }
 
-	/**
-	 * Get this thread's IntegerSchedule.
-	 *
-	 * @return  IntegerSchedule.
-	 *
-	 * @exception  Exception
-	 *     This method can throw any exception.
-	 */
-	IntegerSchedule getIntegerSchedule()
-		throws Exception
-		{
-		// Wait until myIntegerSchedule or myConstructException is set to a
-		// non-null value.
-		if (myIntegerSchedule == null && myConstructException == null)
-			{
-			Spinner spinner = new Spinner();
-			while (myIntegerSchedule == null && myConstructException == null)
-				{
-				spinner.spin();
-				}
-			}
+        // Make temporary copies and null out originals.
+        IntegerSchedule schedule = myIntegerSchedule;
+        myIntegerSchedule = null;
+        Throwable exc = myConstructException;
+        myConstructException = null;
 
-		// Make temporary copies and null out originals.
-		IntegerSchedule schedule = myIntegerSchedule;
-		myIntegerSchedule = null;
-		Throwable exc = myConstructException;
-		myConstructException = null;
+        // Re-throw exception if necessary.
+        ParallelTeam.rethrow(exc);
 
-		// Re-throw exception if necessary.
-		ParallelTeam.rethrow (exc);
+        return schedule;
+    }
 
-		return schedule;
-		}
+    /**
+     * Set this thread's LongSchedule.
+     *
+     * @param theSchedule Long schedule.
+     */
+    void setLongSchedule(LongSchedule theSchedule) {
+        // Wait until myLongSchedule is null.
+        if (myLongSchedule != null) {
+            Spinner spinner = new Spinner();
+            while (myLongSchedule != null) {
+                spinner.spin();
+            }
+        }
 
-	/**
-	 * Set this thread's LongSchedule.
-	 *
-	 * @param  theSchedule  Long schedule.
-	 */
-	void setLongSchedule
-		(LongSchedule theSchedule)
-		{
-		// Wait until myLongSchedule is null.
-		if (myLongSchedule != null)
-			{
-			Spinner spinner = new Spinner();
-			while (myLongSchedule != null)
-				{
-				spinner.spin();
-				}
-			}
+        myLongSchedule = theSchedule;
+    }
 
-		myLongSchedule = theSchedule;
-		}
+    /**
+     * Get this thread's LongSchedule.
+     *
+     * @return LongSchedule.
+     *
+     * @exception Exception This method can throw any exception.
+     */
+    LongSchedule getLongSchedule()
+            throws Exception {
+        // Wait until myLongSchedule or myConstructException is set to a
+        // non-null value.
+        if (myLongSchedule == null && myConstructException == null) {
+            Spinner spinner = new Spinner();
+            while (myLongSchedule == null && myConstructException == null) {
+                spinner.spin();
+            }
+        }
 
-	/**
-	 * Get this thread's LongSchedule.
-	 *
-	 * @return  LongSchedule.
-	 *
-	 * @exception  Exception
-	 *     This method can throw any exception.
-	 */
-	LongSchedule getLongSchedule()
-		throws Exception
-		{
-		// Wait until myLongSchedule or myConstructException is set to a
-		// non-null value.
-		if (myLongSchedule == null && myConstructException == null)
-			{
-			Spinner spinner = new Spinner();
-			while (myLongSchedule == null && myConstructException == null)
-				{
-				spinner.spin();
-				}
-			}
+        // Make temporary copies and null out originals.
+        LongSchedule schedule = myLongSchedule;
+        myLongSchedule = null;
+        Throwable exc = myConstructException;
+        myConstructException = null;
 
-		// Make temporary copies and null out originals.
-		LongSchedule schedule = myLongSchedule;
-		myLongSchedule = null;
-		Throwable exc = myConstructException;
-		myConstructException = null;
+        // Re-throw exception if necessary.
+        ParallelTeam.rethrow(exc);
 
-		// Re-throw exception if necessary.
-		ParallelTeam.rethrow (exc);
+        return schedule;
+    }
 
-		return schedule;
-		}
+    /**
+     * Set this thread's ItemGenerator.
+     *
+     * @param theItemGenerator Item generator.
+     */
+    void setItemGenerator(ItemGenerator<?> theItemGenerator) {
+        // Wait until myItemGenerator is null.
+        if (myItemGenerator != null) {
+            Spinner spinner = new Spinner();
+            while (myItemGenerator != null) {
+                spinner.spin();
+            }
+        }
 
-	/**
-	 * Set this thread's ItemGenerator.
-	 *
-	 * @param  theItemGenerator  Item generator.
-	 */
-	void setItemGenerator
-		(ItemGenerator<?> theItemGenerator)
-		{
-		// Wait until myItemGenerator is null.
-		if (myItemGenerator != null)
-			{
-			Spinner spinner = new Spinner();
-			while (myItemGenerator != null)
-				{
-				spinner.spin();
-				}
-			}
+        myItemGenerator = theItemGenerator;
+    }
 
-		myItemGenerator = theItemGenerator;
-		}
+    /**
+     * Get this thread's ItemGenerator.
+     *
+     * @return Item generator.
+     *
+     * @exception Exception This method can throw any exception.
+     */
+    ItemGenerator<?> getItemGenerator()
+            throws Exception {
+        // Wait until myItemGenerator or myConstructException is set to a
+        // non-null value.
+        if (myItemGenerator == null && myConstructException == null) {
+            Spinner spinner = new Spinner();
+            while (myItemGenerator == null && myConstructException == null) {
+                spinner.spin();
+            }
+        }
 
-	/**
-	 * Get this thread's ItemGenerator.
-	 *
-	 * @return  Item generator.
-	 *
-	 * @exception  Exception
-	 *     This method can throw any exception.
-	 */
-	ItemGenerator<?> getItemGenerator()
-		throws Exception
-		{
-		// Wait until myItemGenerator or myConstructException is set to a
-		// non-null value.
-		if (myItemGenerator == null && myConstructException == null)
-			{
-			Spinner spinner = new Spinner();
-			while (myItemGenerator == null && myConstructException == null)
-				{
-				spinner.spin();
-				}
-			}
+        // Make temporary copies and null out originals.
+        ItemGenerator<?> generator = myItemGenerator;
+        myItemGenerator = null;
+        Throwable exc = myConstructException;
+        myConstructException = null;
 
-		// Make temporary copies and null out originals.
-		ItemGenerator<?> generator = myItemGenerator;
-		myItemGenerator = null;
-		Throwable exc = myConstructException;
-		myConstructException = null;
+        // Re-throw exception if necessary.
+        ParallelTeam.rethrow(exc);
 
-		// Re-throw exception if necessary.
-		ParallelTeam.rethrow (exc);
+        return generator;
+    }
 
-		return generator;
-		}
+    /**
+     * Set this thread's construct exception.
+     *
+     * @param theException Construct exception.
+     */
+    void setConstructException(Throwable theException) {
+        // Wait until myConstructException is null.
+        if (myConstructException != null) {
+            Spinner spinner = new Spinner();
+            while (myConstructException != null) {
+                spinner.spin();
+            }
+        }
 
-	/**
-	 * Set this thread's construct exception.
-	 *
-	 * @param  theException  Construct exception.
-	 */
-	void setConstructException
-		(Throwable theException)
-		{
-		// Wait until myConstructException is null.
-		if (myConstructException != null)
-			{
-			Spinner spinner = new Spinner();
-			while (myConstructException != null)
-				{
-				spinner.spin();
-				}
-			}
+        myConstructException = theException;
+    }
 
-		myConstructException = theException;
-		}
-
-	}
+}

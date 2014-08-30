@@ -22,101 +22,82 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj.reduction;
 
 /**
  * Class DoubleOp is the abstract base class for a binary operation on double
  * values, used to do reduction in a parallel program.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 05-Jun-2007
  */
 public abstract class DoubleOp
-	extends Op
-	{
+        extends Op {
 
 // Hidden constructors.
-
-	/**
-	 * Construct a new double binary operation.
-	 */
-	protected DoubleOp()
-		{
-		super();
-		}
+    /**
+     * Construct a new double binary operation.
+     */
+    protected DoubleOp() {
+        super();
+    }
 
 // Exported operations.
-
-	/**
-	 * Perform this binary operation.
-	 *
-	 * @param  x  First argument.
-	 * @param  y  Second argument.
-	 *
-	 * @return  (<TT>x</TT> <I>op</I> <TT>y</TT>), where <I>op</I> stands for
-	 *          this binary operation.
-	 */
-	public abstract double op
-		(double x,
-		 double y);
+    /**
+     * Perform this binary operation.
+     *
+     * @param x First argument.
+     * @param y Second argument.
+     *
+     * @return (<TT>x</TT> <I>op</I> <TT>y</TT>), where <I>op</I> stands for
+     * this binary operation.
+     */
+    public abstract double op(double x,
+            double y);
 
 // Exported constants.
+    /**
+     * The double sum binary operation.
+     */
+    public static final DoubleOp SUM
+            = new DoubleOp() {
+                public double op(double x,
+                        double y) {
+                    return x + y;
+                }
+            };
 
-	/**
-	 * The double sum binary operation.
-	 */
-	public static final DoubleOp SUM =
-		new DoubleOp()
-			{
-			public double op
-				(double x,
-				 double y)
-				{
-				return x + y;
-				}
-			};
+    /**
+     * The double product binary operation.
+     */
+    public static final DoubleOp PRODUCT
+            = new DoubleOp() {
+                public double op(double x,
+                        double y) {
+                    return x * y;
+                }
+            };
 
-	/**
-	 * The double product binary operation.
-	 */
-	public static final DoubleOp PRODUCT =
-		new DoubleOp()
-			{
-			public double op
-				(double x,
-				 double y)
-				{
-				return x * y;
-				}
-			};
+    /**
+     * The double minimum binary operation.
+     */
+    public static final DoubleOp MINIMUM
+            = new DoubleOp() {
+                public double op(double x,
+                        double y) {
+                    return Math.min(x, y);
+                }
+            };
 
-	/**
-	 * The double minimum binary operation.
-	 */
-	public static final DoubleOp MINIMUM =
-		new DoubleOp()
-			{
-			public double op
-				(double x,
-				 double y)
-				{
-				return Math.min (x, y);
-				}
-			};
+    /**
+     * The double maximum binary operation.
+     */
+    public static final DoubleOp MAXIMUM
+            = new DoubleOp() {
+                public double op(double x,
+                        double y) {
+                    return Math.max(x, y);
+                }
+            };
 
-	/**
-	 * The double maximum binary operation.
-	 */
-	public static final DoubleOp MAXIMUM =
-		new DoubleOp()
-			{
-			public double op
-				(double x,
-				 double y)
-				{
-				return Math.max (x, y);
-				}
-			};
-
-	}
+}

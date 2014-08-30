@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj.cluster;
 
 import java.io.IOException;
@@ -34,81 +33,72 @@ import java.io.ObjectOutput;
  * Class Message is the abstract base class for a message sent to a process in
  * the PJ cluster middleware.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 20-Nov-2006
  */
 public abstract class Message
-	implements Externalizable
-	{
+        implements Externalizable {
 
 // Exported constants.
+    /**
+     * The message tag for a message from a job backend process.
+     */
+    public static final int FROM_JOB_BACKEND = 1;
 
-	/**
-	 * The message tag for a message from a job backend process.
-	 */
-	public static final int FROM_JOB_BACKEND = 1;
+    /**
+     * The message tag for a message from a job frontend process.
+     */
+    public static final int FROM_JOB_FRONTEND = 2;
 
-	/**
-	 * The message tag for a message from a job frontend process.
-	 */
-	public static final int FROM_JOB_FRONTEND = 2;
+    /**
+     * The message tag for a message from a job launcher process.
+     */
+    public static final int FROM_JOB_LAUNCHER = 3;
 
-	/**
-	 * The message tag for a message from a job launcher process.
-	 */
-	public static final int FROM_JOB_LAUNCHER = 3;
+    /**
+     * The message tag for a message from a job scheduler process.
+     */
+    public static final int FROM_JOB_SCHEDULER = 4;
 
-	/**
-	 * The message tag for a message from a job scheduler process.
-	 */
-	public static final int FROM_JOB_SCHEDULER = 4;
+    /**
+     * The message tag for a message containing data to write to a file.
+     */
+    public static final int FILE_WRITE_DATA = 5;
 
-	/**
-	 * The message tag for a message containing data to write to a file.
-	 */
-	public static final int FILE_WRITE_DATA = 5;
-
-	/**
-	 * The message tag for a message containing data read from a file.
-	 */
-	public static final int FILE_READ_DATA = 6;
+    /**
+     * The message tag for a message containing data read from a file.
+     */
+    public static final int FILE_READ_DATA = 6;
 
 // Hidden data members.
+    private static final long serialVersionUID = -3891573184096499571L;
 
-	private static final long serialVersionUID = -3891573184096499571L;
-
-	private int myTag;
+    private int myTag;
 
 // Exported constructors.
+    /**
+     * Construct a new message.
+     */
+    public Message() {
+    }
 
-	/**
-	 * Construct a new message.
-	 */
-	public Message()
-		{
-		}
-
-	/**
-	 * Construct a new message with the given message tag.
-	 *
-	 * @param  theTag  Message tag to use when sending this message.
-	 */
-	public Message
-		(int theTag)
-		{
-		myTag = theTag;
-		}
+    /**
+     * Construct a new message with the given message tag.
+     *
+     * @param theTag Message tag to use when sending this message.
+     */
+    public Message(int theTag) {
+        myTag = theTag;
+    }
 
 // Exported operations.
+    /**
+     * Get the message tag to use when sending this message.
+     *
+     * @return Message tag.
+     */
+    public int getTag() {
+        return myTag;
+    }
 
-	/**
-	 * Get the message tag to use when sending this message.
-	 *
-	 * @return  Message tag.
-	 */
-	public int getTag()
-		{
-		return myTag;
-		}
-
-	}
+}

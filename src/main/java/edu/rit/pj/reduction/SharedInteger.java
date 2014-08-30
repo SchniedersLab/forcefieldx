@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj.reduction;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -37,249 +36,218 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <I>Note:</I> Class SharedInteger is implemented using class
  * java.util.concurrent.atomic.AtomicInteger.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 06-Jun-2007
  */
 public class SharedInteger
-	extends Number
-	{
+        extends Number {
 
 // Hidden data members.
-
-	private AtomicInteger myValue;
+    private AtomicInteger myValue;
 
 // Exported constructors.
+    /**
+     * Construct a new integer reduction variable with the initial value 0.
+     */
+    public SharedInteger() {
+        myValue = new AtomicInteger();
+    }
 
-	/**
-	 * Construct a new integer reduction variable with the initial value 0.
-	 */
-	public SharedInteger()
-		{
-		myValue = new AtomicInteger();
-		}
-
-	/**
-	 * Construct a new integer reduction variable with the given initial
-	 * value.
-	 *
-	 * @param  initialValue  Initial value.
-	 */
-	public SharedInteger
-		(int initialValue)
-		{
-		myValue = new AtomicInteger (initialValue);
-		}
+    /**
+     * Construct a new integer reduction variable with the given initial value.
+     *
+     * @param initialValue Initial value.
+     */
+    public SharedInteger(int initialValue) {
+        myValue = new AtomicInteger(initialValue);
+    }
 
 // Exported operations.
+    /**
+     * Returns this reduction variable's current value.
+     *
+     * @return Current value.
+     */
+    public int get() {
+        return myValue.get();
+    }
 
-	/**
-	 * Returns this reduction variable's current value.
-	 *
-	 * @return  Current value.
-	 */
-	public int get()
-		{
-		return myValue.get();
-		}
+    /**
+     * Set this reduction variable to the given value.
+     *
+     * @param value New value.
+     */
+    public void set(int value) {
+        myValue.set(value);
+    }
 
-	/**
-	 * Set this reduction variable to the given value.
-	 *
-	 * @param  value  New value.
-	 */
-	public void set
-		(int value)
-		{
-		myValue.set (value);
-		}
+    /**
+     * Set this reduction variable to the given value and return the previous
+     * value.
+     *
+     * @param value New value.
+     *
+     * @return Previous value.
+     */
+    public int getAndSet(int value) {
+        return myValue.getAndSet(value);
+    }
 
-	/**
-	 * Set this reduction variable to the given value and return the previous
-	 * value.
-	 *
-	 * @param  value  New value.
-	 *
-	 * @return  Previous value.
-	 */
-	public int getAndSet
-		(int value)
-		{
-		return myValue.getAndSet (value);
-		}
+    /**
+     * Atomically set this reduction variable to the given updated value if the
+     * current value equals the expected value.
+     *
+     * @param expect Expected value.
+     * @param update Updated value.
+     *
+     * @return True if the update happened, false otherwise.
+     */
+    public boolean compareAndSet(int expect,
+            int update) {
+        return myValue.compareAndSet(expect, update);
+    }
 
-	/**
-	 * Atomically set this reduction variable to the given updated value if the
-	 * current value equals the expected value.
-	 *
-	 * @param  expect  Expected value.
-	 * @param  update  Updated value.
-	 *
-	 * @return  True if the update happened, false otherwise.
-	 */
-	public boolean compareAndSet
-		(int expect,
-		 int update)
-		{
-		return myValue.compareAndSet (expect, update);
-		}
+    /**
+     * Atomically set this reduction variable to the given updated value if the
+     * current value equals the expected value. May fail spuriously.
+     *
+     * @param expect Expected value.
+     * @param update Updated value.
+     *
+     * @return True if the update happened, false otherwise.
+     */
+    public boolean weakCompareAndSet(int expect,
+            int update) {
+        return myValue.weakCompareAndSet(expect, update);
+    }
 
-	/**
-	 * Atomically set this reduction variable to the given updated value if the
-	 * current value equals the expected value. May fail spuriously.
-	 *
-	 * @param  expect  Expected value.
-	 * @param  update  Updated value.
-	 *
-	 * @return  True if the update happened, false otherwise.
-	 */
-	public boolean weakCompareAndSet
-		(int expect,
-		 int update)
-		{
-		return myValue.weakCompareAndSet (expect, update);
-		}
+    /**
+     * Add one to this reduction variable and return the previous value.
+     *
+     * @return Previous value.
+     */
+    public int getAndIncrement() {
+        return myValue.getAndIncrement();
+    }
 
-	/**
-	 * Add one to this reduction variable and return the previous value.
-	 *
-	 * @return  Previous value.
-	 */
-	public int getAndIncrement()
-		{
-		return myValue.getAndIncrement();
-		}
+    /**
+     * Subtract one from this reduction variable and return the previous value.
+     *
+     * @return Previous value.
+     */
+    public int getAndDecrement() {
+        return myValue.getAndDecrement();
+    }
 
-	/**
-	 * Subtract one from this reduction variable and return the previous value.
-	 *
-	 * @return  Previous value.
-	 */
-	public int getAndDecrement()
-		{
-		return myValue.getAndDecrement();
-		}
+    /**
+     * Add the given value to this reduction variable and return the previous
+     * value.
+     *
+     * @param value Value to add.
+     *
+     * @return Previous value.
+     */
+    public int getAndAdd(int value) {
+        return myValue.getAndAdd(value);
+    }
 
-	/**
-	 * Add the given value to this reduction variable and return the previous
-	 * value.
-	 *
-	 * @param  value  Value to add.
-	 *
-	 * @return  Previous value.
-	 */
-	public int getAndAdd
-		(int value)
-		{
-		return myValue.getAndAdd (value);
-		}
+    /**
+     * Add one to this reduction variable and return the new value.
+     *
+     * @return New value.
+     */
+    public int incrementAndGet() {
+        return myValue.incrementAndGet();
+    }
 
-	/**
-	 * Add one to this reduction variable and return the new value.
-	 *
-	 * @return  New value.
-	 */
-	public int incrementAndGet()
-		{
-		return myValue.incrementAndGet();
-		}
+    /**
+     * Subtract one from this reduction variable and return the new value.
+     *
+     * @return New value.
+     */
+    public int decrementAndGet() {
+        return myValue.decrementAndGet();
+    }
 
-	/**
-	 * Subtract one from this reduction variable and return the new value.
-	 *
-	 * @return  New value.
-	 */
-	public int decrementAndGet()
-		{
-		return myValue.decrementAndGet();
-		}
+    /**
+     * Add the given value to this reduction variable and return the new value.
+     *
+     * @param value Value to add.
+     *
+     * @return New value.
+     */
+    public int addAndGet(int value) {
+        return myValue.addAndGet(value);
+    }
 
-	/**
-	 * Add the given value to this reduction variable and return the new value.
-	 *
-	 * @param  value  Value to add.
-	 *
-	 * @return  New value.
-	 */
-	public int addAndGet
-		(int value)
-		{
-		return myValue.addAndGet (value);
-		}
+    /**
+     * Combine this reduction variable with the given value using the given
+     * operation. The result is stored back into this reduction variable and is
+     * returned.
+     *
+     * @param value Value.
+     * @param op Binary operation.
+     *
+     * @return (This variable) <I>op</I> (<TT>value</TT>).
+     */
+    public int reduce(int value,
+            IntegerOp op) {
+        for (;;) {
+            int oldvalue = myValue.get();
+            int newvalue = op.op(oldvalue, value);
+            if (myValue.compareAndSet(oldvalue, newvalue)) {
+                return newvalue;
+            }
+        }
+    }
 
-	/**
-	 * Combine this reduction variable with the given value using the given
-	 * operation. The result is stored back into this reduction variable and is
-	 * returned.
-	 *
-	 * @param  value  Value.
-	 * @param  op     Binary operation.
-	 *
-	 * @return  (This variable) <I>op</I> (<TT>value</TT>).
-	 */
-	public int reduce
-		(int value,
-		 IntegerOp op)
-		{
-		for (;;)
-			{
-			int oldvalue = myValue.get();
-			int newvalue = op.op (oldvalue, value);
-			if (myValue.compareAndSet (oldvalue, newvalue)) return newvalue;
-			}
-		}
+    /**
+     * Returns a string version of this reduction variable.
+     *
+     * @return String version.
+     */
+    public String toString() {
+        return Integer.toString(get());
+    }
 
-	/**
-	 * Returns a string version of this reduction variable.
-	 *
-	 * @return  String version.
-	 */
-	public String toString()
-		{
-		return Integer.toString (get());
-		}
+    /**
+     * Returns this reduction variable's current value converted to type
+     * <TT>int</TT>.
+     *
+     * @return Current value.
+     */
+    public int intValue() {
+        return (int) get();
+    }
 
-	/**
-	 * Returns this reduction variable's current value converted to type
-	 * <TT>int</TT>.
-	 *
-	 * @return  Current value.
-	 */
-	public int intValue()
-		{
-		return (int) get();
-		}
+    /**
+     * Returns this reduction variable's current value converted to type
+     * <TT>long</TT>.
+     *
+     * @return Current value.
+     */
+    public long longValue() {
+        return (long) get();
+    }
 
-	/**
-	 * Returns this reduction variable's current value converted to type
-	 * <TT>long</TT>.
-	 *
-	 * @return  Current value.
-	 */
-	public long longValue()
-		{
-		return (long) get();
-		}
+    /**
+     * Returns this reduction variable's current value converted to type
+     * <TT>float</TT>.
+     *
+     * @return Current value.
+     */
+    public float floatValue() {
+        return (float) get();
+    }
 
-	/**
-	 * Returns this reduction variable's current value converted to type
-	 * <TT>float</TT>.
-	 *
-	 * @return  Current value.
-	 */
-	public float floatValue()
-		{
-		return (float) get();
-		}
+    /**
+     * Returns this reduction variable's current value converted to type
+     * <TT>double</TT>.
+     *
+     * @return Current value.
+     */
+    public double doubleValue() {
+        return (double) get();
+    }
 
-	/**
-	 * Returns this reduction variable's current value converted to type
-	 * <TT>double</TT>.
-	 *
-	 * @return  Current value.
-	 */
-	public double doubleValue()
-		{
-		return (double) get();
-		}
-
-	}
+}

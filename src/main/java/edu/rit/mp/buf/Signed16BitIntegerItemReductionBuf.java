@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.mp.buf;
 
 import edu.rit.mp.Signed16BitIntegerBuf;
@@ -37,154 +36,128 @@ import java.nio.ByteBuffer;
  * Class Signed16BitIntegerItemReductionBuf provides a reduction buffer for
  * class {@linkplain Signed16BitIntegerItemBuf}.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 26-Oct-2007
  */
 class Signed16BitIntegerItemReductionBuf
-	extends Signed16BitIntegerBuf
-	{
+        extends Signed16BitIntegerBuf {
 
 // Hidden data members.
-
-	Signed16BitIntegerItemBuf myBuf;
-	IntegerOp myOp;
+    Signed16BitIntegerItemBuf myBuf;
+    IntegerOp myOp;
 
 // Exported constructors.
-
-	/**
-	 * Construct a new signed 16-bit integer item reduction buffer.
-	 *
-	 * @param  buf  Buffer containing the item.
-	 * @param  op   Binary operation.
-	 *
-	 * @exception  NullPointerException
-	 *     (unchecked exception) Thrown if <TT>op</TT> is null.
-	 */
-	public Signed16BitIntegerItemReductionBuf
-		(Signed16BitIntegerItemBuf buf,
-		 IntegerOp op)
-		{
-		super (1);
-		if (op == null)
-			{
-			throw new NullPointerException
-				("Signed16BitIntegerItemReductionBuf(): op is null");
-			}
-		myBuf = buf;
-		myOp = op;
-		}
+    /**
+     * Construct a new signed 16-bit integer item reduction buffer.
+     *
+     * @param buf Buffer containing the item.
+     * @param op Binary operation.
+     *
+     * @exception NullPointerException (unchecked exception) Thrown if
+     * <TT>op</TT> is null.
+     */
+    public Signed16BitIntegerItemReductionBuf(Signed16BitIntegerItemBuf buf,
+            IntegerOp op) {
+        super(1);
+        if (op == null) {
+            throw new NullPointerException("Signed16BitIntegerItemReductionBuf(): op is null");
+        }
+        myBuf = buf;
+        myOp = op;
+    }
 
 // Exported operations.
+    /**
+     * Obtain the given item from this buffer.
+     * <P>
+     * The <TT>get()</TT> method must not block the calling thread; if it does,
+     * all message I/O in MP will be blocked.
+     *
+     * @param i Item index in the range 0 .. <TT>length()</TT>-1.
+     *
+     * @return Item at index <TT>i</TT>.
+     */
+    public int get(int i) {
+        return myBuf.item;
+    }
 
-	/**
-	 * Obtain the given item from this buffer.
-	 * <P>
-	 * The <TT>get()</TT> method must not block the calling thread; if it does,
-	 * all message I/O in MP will be blocked.
-	 *
-	 * @param  i  Item index in the range 0 .. <TT>length()</TT>-1.
-	 *
-	 * @return  Item at index <TT>i</TT>.
-	 */
-	public int get
-		(int i)
-		{
-		return myBuf.item;
-		}
+    /**
+     * Store the given item in this buffer. The item at index <TT>i</TT> in this
+     * buffer is combined with the given <TT>item</TT> using the binary
+     * operation.
+     * <P>
+     * The <TT>put()</TT> method must not block the calling thread; if it does,
+     * all message I/O in MP will be blocked.
+     *
+     * @param i Item index in the range 0 .. <TT>length()</TT>-1.
+     * @param item Item to be stored at index <TT>i</TT>.
+     */
+    public void put(int i,
+            int item) {
+        myBuf.item = myOp.op(myBuf.item, item);
+    }
 
-	/**
-	 * Store the given item in this buffer. The item at index <TT>i</TT> in this
-	 * buffer is combined with the given <TT>item</TT> using the binary
-	 * operation.
-	 * <P>
-	 * The <TT>put()</TT> method must not block the calling thread; if it does,
-	 * all message I/O in MP will be blocked.
-	 *
-	 * @param  i     Item index in the range 0 .. <TT>length()</TT>-1.
-	 * @param  item  Item to be stored at index <TT>i</TT>.
-	 */
-	public void put
-		(int i,
-		 int item)
-		{
-		myBuf.item = myOp.op (myBuf.item, item);
-		}
-
-	/**
-	 * Create a buffer for performing parallel reduction using the given binary
-	 * operation. The results of the reduction are placed into this buffer.
-	 *
-	 * @param  op  Binary operation.
-	 *
-	 * @exception  ClassCastException
-	 *     (unchecked exception) Thrown if this buffer's element data type and
-	 *     the given binary operation's argument data type are not the same.
-	 */
-	public Buf getReductionBuf
-		(Op op)
-		{
-		throw new UnsupportedOperationException();
-		}
+    /**
+     * Create a buffer for performing parallel reduction using the given binary
+     * operation. The results of the reduction are placed into this buffer.
+     *
+     * @param op Binary operation.
+     *
+     * @exception ClassCastException (unchecked exception) Thrown if this
+     * buffer's element data type and the given binary operation's argument data
+     * type are not the same.
+     */
+    public Buf getReductionBuf(Op op) {
+        throw new UnsupportedOperationException();
+    }
 
 // Hidden operations.
+    /**
+     * Send as many items as possible from this buffer to the given byte buffer.
+     * <P>
+     * The <TT>sendItems()</TT> method must not block the calling thread; if it
+     * does, all message I/O in MP will be blocked.
+     *
+     * @param i Index of first item to send, in the range 0 ..
+     * <TT>length</TT>-1.
+     * @param buffer Byte buffer.
+     *
+     * @return Number of items sent.
+     */
+    protected int sendItems(int i,
+            ByteBuffer buffer) {
+        if (buffer.remaining() >= 2) {
+            buffer.putShort((short) myBuf.item);
+            return 1;
+        } else {
+            return 0;
+        }
+    }
 
-	/**
-	 * Send as many items as possible from this buffer to the given byte
-	 * buffer.
-	 * <P>
-	 * The <TT>sendItems()</TT> method must not block the calling thread; if it
-	 * does, all message I/O in MP will be blocked.
-	 *
-	 * @param  i       Index of first item to send, in the range 0 ..
-	 *                 <TT>length</TT>-1.
-	 * @param  buffer  Byte buffer.
-	 *
-	 * @return  Number of items sent.
-	 */
-	protected int sendItems
-		(int i,
-		 ByteBuffer buffer)
-		{
-		if (buffer.remaining() >= 2)
-			{
-			buffer.putShort ((short) myBuf.item);
-			return 1;
-			}
-		else
-			{
-			return 0;
-			}
-		}
+    /**
+     * Receive as many items as possible from the given byte buffer to this
+     * buffer. As the items are received, they are combined with the items in
+     * this buffer using the binary operation.
+     * <P>
+     * The <TT>receiveItems()</TT> method must not block the calling thread; if
+     * it does, all message I/O in MP will be blocked.
+     *
+     * @param i Index of first item to receive, in the range 0 ..
+     * <TT>length</TT>-1.
+     * @param num Maximum number of items to receive.
+     * @param buffer Byte buffer.
+     *
+     * @return Number of items received.
+     */
+    protected int receiveItems(int i,
+            int num,
+            ByteBuffer buffer) {
+        if (num >= 1 && buffer.remaining() >= 2) {
+            myBuf.item = myOp.op(myBuf.item, buffer.getShort());
+            return 1;
+        } else {
+            return 0;
+        }
+    }
 
-	/**
-	 * Receive as many items as possible from the given byte buffer to this
-	 * buffer. As the items are received, they are combined with the items in
-	 * this buffer using the binary operation.
-	 * <P>
-	 * The <TT>receiveItems()</TT> method must not block the calling thread; if
-	 * it does, all message I/O in MP will be blocked.
-	 *
-	 * @param  i       Index of first item to receive, in the range 0 ..
-	 *                 <TT>length</TT>-1.
-	 * @param  num     Maximum number of items to receive.
-	 * @param  buffer  Byte buffer.
-	 *
-	 * @return  Number of items received.
-	 */
-	protected int receiveItems
-		(int i,
-		 int num,
-		 ByteBuffer buffer)
-		{
-		if (num >= 1 && buffer.remaining() >= 2)
-			{
-			myBuf.item = myOp.op (myBuf.item, buffer.getShort());
-			return 1;
-			}
-		else
-			{
-			return 0;
-			}
-		}
-
-	}
+}

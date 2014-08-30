@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.mp.buf;
 
 import edu.rit.mp.Buf;
@@ -37,96 +36,83 @@ import java.nio.ByteBuffer;
  * Class ObjectItemBuf provides a buffer for a single object item sent or
  * received using the Message Protocol (MP). While an instance of class
  * ObjectItemBuf may be constructed directly, normally you will use a factory
- * method in class {@linkplain edu.rit.mp.ObjectBuf ObjectBuf}. See that
- * class for further information.
+ * method in class {@linkplain edu.rit.mp.ObjectBuf ObjectBuf}. See that class
+ * for further information.
  *
- * @param  <T>  Data type of the objects in the buffer.
+ * @param <T> Data type of the objects in the buffer.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 23-Mar-2009
  */
 public class ObjectItemBuf<T>
-	extends ObjectBuf<T>
-	{
+        extends ObjectBuf<T> {
 
 // Exported data members.
-
-	/**
-	 * Object item to be sent or received.
-	 */
-	public T item;
+    /**
+     * Object item to be sent or received.
+     */
+    public T item;
 
 // Exported constructors.
+    /**
+     * Construct a new object item buffer.
+     */
+    public ObjectItemBuf() {
+        super(1);
+    }
 
-	/**
-	 * Construct a new object item buffer.
-	 */
-	public ObjectItemBuf()
-		{
-		super (1);
-		}
-
-	/**
-	 * Construct a new object item buffer with the given initial value.
-	 *
-	 * @param  item  Initial value of the {@link #item} field.
-	 */
-	public ObjectItemBuf
-		(T item)
-		{
-		super (1);
-		this.item = item;
-		}
+    /**
+     * Construct a new object item buffer with the given initial value.
+     *
+     * @param item Initial value of the {@link #item} field.
+     */
+    public ObjectItemBuf(T item) {
+        super(1);
+        this.item = item;
+    }
 
 // Exported operations.
+    /**
+     * Obtain the given item from this buffer.
+     * <P>
+     * The <TT>get()</TT> method must not block the calling thread; if it does,
+     * all message I/O in MP will be blocked.
+     *
+     * @param i Item index in the range 0 .. <TT>length()</TT>-1.
+     *
+     * @return Item at index <TT>i</TT>.
+     */
+    public T get(int i) {
+        return this.item;
+    }
 
-	/**
-	 * Obtain the given item from this buffer.
-	 * <P>
-	 * The <TT>get()</TT> method must not block the calling thread; if it does,
-	 * all message I/O in MP will be blocked.
-	 *
-	 * @param  i  Item index in the range 0 .. <TT>length()</TT>-1.
-	 *
-	 * @return  Item at index <TT>i</TT>.
-	 */
-	public T get
-		(int i)
-		{
-		return this.item;
-		}
+    /**
+     * Store the given item in this buffer.
+     * <P>
+     * The <TT>put()</TT> method must not block the calling thread; if it does,
+     * all message I/O in MP will be blocked.
+     *
+     * @param i Item index in the range 0 .. <TT>length()</TT>-1.
+     * @param item Item to be stored at index <TT>i</TT>.
+     */
+    public void put(int i,
+            T item) {
+        this.item = item;
+        reset();
+    }
 
-	/**
-	 * Store the given item in this buffer.
-	 * <P>
-	 * The <TT>put()</TT> method must not block the calling thread; if it does,
-	 * all message I/O in MP will be blocked.
-	 *
-	 * @param  i     Item index in the range 0 .. <TT>length()</TT>-1.
-	 * @param  item  Item to be stored at index <TT>i</TT>.
-	 */
-	public void put
-		(int i,
-		 T item)
-		{
-		this.item = item;
-		reset();
-		}
+    /**
+     * Create a buffer for performing parallel reduction using the given binary
+     * operation. The results of the reduction are placed into this buffer.
+     *
+     * @param op Binary operation.
+     *
+     * @exception ClassCastException (unchecked exception) Thrown if this
+     * buffer's element data type and the given binary operation's argument data
+     * type are not the same.
+     */
+    public Buf getReductionBuf(Op op) {
+        return new ObjectItemReductionBuf(this, (ObjectOp) op);
+    }
 
-	/**
-	 * Create a buffer for performing parallel reduction using the given binary
-	 * operation. The results of the reduction are placed into this buffer.
-	 *
-	 * @param  op  Binary operation.
-	 *
-	 * @exception  ClassCastException
-	 *     (unchecked exception) Thrown if this buffer's element data type and
-	 *     the given binary operation's argument data type are not the same.
-	 */
-	public Buf getReductionBuf
-		(Op op)
-		{
-		return new ObjectItemReductionBuf (this, (ObjectOp) op);
-		}
-
-	}
+}

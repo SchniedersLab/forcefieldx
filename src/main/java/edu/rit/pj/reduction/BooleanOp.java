@@ -22,87 +22,71 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj.reduction;
 
 /**
  * Class BooleanOp is the abstract base class for a binary operation on Boolean
  * values, used to do reduction in a parallel program.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 05-Jun-2007
  */
 public abstract class BooleanOp
-	extends Op
-	{
+        extends Op {
 
 // Hidden constructors.
-
-	/**
-	 * Construct a new Boolean binary operation.
-	 */
-	protected BooleanOp()
-		{
-		super();
-		}
+    /**
+     * Construct a new Boolean binary operation.
+     */
+    protected BooleanOp() {
+        super();
+    }
 
 // Exported operations.
-
-	/**
-	 * Perform this binary operation.
-	 *
-	 * @param  x  First argument.
-	 * @param  y  Second argument.
-	 *
-	 * @return  (<TT>x</TT> <I>op</I> <TT>y</TT>), where <I>op</I> stands for
-	 *          this binary operation.
-	 */
-	public abstract boolean op
-		(boolean x,
-		 boolean y);
+    /**
+     * Perform this binary operation.
+     *
+     * @param x First argument.
+     * @param y Second argument.
+     *
+     * @return (<TT>x</TT> <I>op</I> <TT>y</TT>), where <I>op</I> stands for
+     * this binary operation.
+     */
+    public abstract boolean op(boolean x,
+            boolean y);
 
 // Exported constants.
+    /**
+     * The Boolean logical "and" binary operation.
+     */
+    public static final BooleanOp AND
+            = new BooleanOp() {
+                public boolean op(boolean x,
+                        boolean y) {
+                    return x & y;
+                }
+            };
 
-	/**
-	 * The Boolean logical "and" binary operation.
-	 */
-	public static final BooleanOp AND =
-		new BooleanOp()
-			{
-			public boolean op
-				(boolean x,
-				 boolean y)
-				{
-				return x & y;
-				}
-			};
+    /**
+     * The Boolean logical "or" binary operation.
+     */
+    public static final BooleanOp OR
+            = new BooleanOp() {
+                public boolean op(boolean x,
+                        boolean y) {
+                    return x | y;
+                }
+            };
 
-	/**
-	 * The Boolean logical "or" binary operation.
-	 */
-	public static final BooleanOp OR =
-		new BooleanOp()
-			{
-			public boolean op
-				(boolean x,
-				 boolean y)
-				{
-				return x | y;
-				}
-			};
+    /**
+     * The Boolean logical "exclusive or" binary operation.
+     */
+    public static final BooleanOp XOR
+            = new BooleanOp() {
+                public boolean op(boolean x,
+                        boolean y) {
+                    return x ^ y;
+                }
+            };
 
-	/**
-	 * The Boolean logical "exclusive or" binary operation.
-	 */
-	public static final BooleanOp XOR =
-		new BooleanOp()
-			{
-			public boolean op
-				(boolean x,
-				 boolean y)
-				{
-				return x ^ y;
-				}
-			};
-
-	}
+}

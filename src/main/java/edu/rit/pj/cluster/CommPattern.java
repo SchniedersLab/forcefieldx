@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj.cluster;
 
 import java.util.ArrayList;
@@ -31,153 +30,132 @@ import java.util.ArrayList;
  * Class CommPattern provides static methods for calculating communication
  * patterns for collective communication operations.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 15-Mar-2008
  */
-public class CommPattern
-	{
+public class CommPattern {
 
 // Prevent construction.
-
-	private CommPattern()
-		{
-		}
+    private CommPattern() {
+    }
 
 // Exported operations.
+    /**
+     * Calculate the communication pattern for a parallel broadcast tree. This
+     * is also used in reverse for a parallel reduction tree.
+     *
+     * @param size Size of the communicator. Must be &gt;= 1.
+     * @param rank Rank of this process in the communicator. Must be in the
+     * range 0 .. <TT>size</TT>-1.
+     * @param root Rank of the root process for the broadcast. Must be in the
+     * range 0 .. <TT>size</TT>-1.
+     *
+     * @return Array of process ranks for the parallel broadcast pattern. The
+     * element at index 0 is the parent process rank, or -1 if there is no
+     * parent process. The elements at indexes 1 and above, if any, are the
+     * child process ranks.
+     *
+     * @exception IllegalArgumentException (unchecked exception) Thrown if any
+     * argument is illegal.
+     */
+    public static int[] broadcastPattern(int size,
+            int rank,
+            int root) {
+        // Verify preconditions.
+        if (size < 1) {
+            throw new IllegalArgumentException("broadcastPattern(): size must be >= 1");
+        }
+        if (0 > rank || rank >= size) {
+            throw new IllegalArgumentException("broadcastPattern(): rank must be in the range 0 .. "
+                    + (size - 1));
+        }
+        if (0 > root || root >= size) {
+            throw new IllegalArgumentException("broadcastPattern(): root must be in the range 0 .. "
+                    + (size - 1));
+        }
 
-	/**
-	 * Calculate the communication pattern for a parallel broadcast tree. This
-	 * is also used in reverse for a parallel reduction tree.
-	 *
-	 * @param  size  Size of the communicator. Must be &gt;= 1.
-	 * @param  rank  Rank of this process in the communicator. Must be in the
-	 *               range 0 .. <TT>size</TT>-1.
-	 * @param  root  Rank of the root process for the broadcast. Must be in the
-	 *               range 0 .. <TT>size</TT>-1.
-	 *
-	 * @return  Array of process ranks for the parallel broadcast pattern. The
-	 *          element at index 0 is the parent process rank, or -1 if there is
-	 *          no parent process. The elements at indexes 1 and above, if any,
-	 *          are the child process ranks.
-	 *
-	 * @exception  IllegalArgumentException
-	 *     (unchecked exception) Thrown if any argument is illegal.
-	 */
-	public static int[] broadcastPattern
-		(int size,
-		 int rank,
-		 int root)
-		{
-		// Verify preconditions.
-		if (size < 1)
-			{
-			throw new IllegalArgumentException
-				("broadcastPattern(): size must be >= 1");
-			}
-		if (0 > rank || rank >= size)
-			{
-			throw new IllegalArgumentException
-				("broadcastPattern(): rank must be in the range 0 .. " +
-				 (size-1));
-			}
-		if (0 > root || root >= size)
-			{
-			throw new IllegalArgumentException
-				("broadcastPattern(): root must be in the range 0 .. " +
-				 (size-1));
-			}
+        // Imagine for the moment that the processes are numbered 1 through K,
+        // where K = size. The broadcast communication pattern takes place in a
+        // number of rounds. The rounds are numbered 1, 2, 4, 8, and so on. In
+        // round 1, process 1 sends to process 2. In round 2, processes 1 and 2
+        // send to processes 3 and 4 in parallel. In round 4, processes 1, 2, 3,
+        // and 4 send to processes 5, 6, 7, and 8 in parallel:
+        //
+        // Process
+        // 1    2    3    4    5    6    7    8
+        // |    |    |    |    |    |    |    |
+        // |    |    |    |    |    |    |    |
+        // |--->|    |    |    |    |    |    |  Round 1
+        // |    |    |    |    |    |    |    |
+        // |    |    |    |    |    |    |    |
+        // |-------->|    |    |    |    |    |  Round 2
+        // |    |-------->|    |    |    |    |
+        // |    |    |    |    |    |    |    |
+        // |    |    |    |    |    |    |    |
+        // |------------------>|    |    |    |  Round 4
+        // |    |------------------>|    |    |
+        // |    |    |------------------>|    |
+        // |    |    |    |------------------>|
+        // |    |    |    |    |    |    |    |
+        // |    |    |    |    |    |    |    |
+        //
+        // In general, in round i, processes 1 through i send to processes 1+i
+        // through i+i in parallel. This continues until there are no more
+        // processes to send to.
+        //
+        // After calculating the above pattern, the process numbers are shifted
+        // such that process 1 becomes process root, process 2 becomes process
+        // root+1, and so on. In general, process i becomes process (i+root-1)
+        // (mod size).
+        // This process's rank relative to the root, in the range 1 .. size.
+        int thisrank
+                = rank >= root
+                ? rank - root + 1
+                : rank + size - root + 1;
 
-		// Imagine for the moment that the processes are numbered 1 through K,
-		// where K = size. The broadcast communication pattern takes place in a
-		// number of rounds. The rounds are numbered 1, 2, 4, 8, and so on. In
-		// round 1, process 1 sends to process 2. In round 2, processes 1 and 2
-		// send to processes 3 and 4 in parallel. In round 4, processes 1, 2, 3,
-		// and 4 send to processes 5, 6, 7, and 8 in parallel:
-		//
-		// Process
-		// 1    2    3    4    5    6    7    8
-		// |    |    |    |    |    |    |    |
-		// |    |    |    |    |    |    |    |
-		// |--->|    |    |    |    |    |    |  Round 1
-		// |    |    |    |    |    |    |    |
-		// |    |    |    |    |    |    |    |
-		// |-------->|    |    |    |    |    |  Round 2
-		// |    |-------->|    |    |    |    |
-		// |    |    |    |    |    |    |    |
-		// |    |    |    |    |    |    |    |
-		// |------------------>|    |    |    |  Round 4
-		// |    |------------------>|    |    |
-		// |    |    |------------------>|    |
-		// |    |    |    |------------------>|
-		// |    |    |    |    |    |    |    |
-		// |    |    |    |    |    |    |    |
-		//
-		// In general, in round i, processes 1 through i send to processes 1+i
-		// through i+i in parallel. This continues until there are no more
-		// processes to send to.
-		//
-		// After calculating the above pattern, the process numbers are shifted
-		// such that process 1 becomes process root, process 2 becomes process
-		// root+1, and so on. In general, process i becomes process (i+root-1)
-		// (mod size).
+        // Parent process.
+        int parent = -1;
 
-		// This process's rank relative to the root, in the range 1 .. size.
-		int thisrank =
-			rank >= root ?
-				rank - root + 1 :
-				rank + size - root + 1;
+        // List of child processes.
+        ArrayList<Integer> childlist = new ArrayList<Integer>();
 
-		// Parent process.
-		int parent = -1;
+        // Do all rounds.
+        int round = 1;
+        while (round < size) {
+            // Do all messages within this round.
+            for (int src = 1; src <= round; ++src) {
+                int dst = src + round;
 
-		// List of child processes.
-		ArrayList<Integer> childlist = new ArrayList<Integer>();
+                // If this process is the destination, record source as parent.
+                if (thisrank == dst) {
+                    parent = src;
+                } // If this process is the source, record destination as child.
+                else if (thisrank == src && dst <= size) {
+                    childlist.add(dst);
+                }
+            }
 
-		// Do all rounds.
-		int round = 1;
-		while (round < size)
-			{
-			// Do all messages within this round.
-			for (int src = 1; src <= round; ++ src)
-				{
-				int dst = src + round;
+            // Next round.
+            round <<= 1;
+        }
 
-				// If this process is the destination, record source as parent.
-				if (thisrank == dst)
-					{
-					parent = src;
-					}
+        // Make an array to hold parent and child processes.
+        int n = childlist.size();
+        int[] result = new int[n + 1];
 
-				// If this process is the source, record destination as child.
-				else if (thisrank == src && dst <= size)
-					{
-					childlist.add (dst);
-					}
-				}
+        // Record parent, offsetting rank.
+        result[0] = parent == -1 ? -1 : (parent + root - 1) % size;
 
-			// Next round.
-			round <<= 1;
-			}
+        // Record children, offsetting ranks.
+        for (int i = 0; i < n; ++i) {
+            result[i + 1] = (childlist.get(i) + root - 1) % size;
+        }
 
-		// Make an array to hold parent and child processes.
-		int n = childlist.size();
-		int[] result = new int [n+1];
-
-		// Record parent, offsetting rank.
-		result[0] = parent == -1 ? -1 : (parent + root - 1) % size;
-
-		// Record children, offsetting ranks.
-		for (int i = 0; i < n; ++ i)
-			{
-			result[i+1] = (childlist.get(i) + root - 1) % size;
-			}
-
-		// All done!
-		return result;
-		}
+        // All done!
+        return result;
+    }
 
 // Unit test main program.
-
 //	/**
 //	 * Unit test main program.
 //	 * <P>
@@ -216,5 +194,4 @@ public class CommPattern
 //		System.err.println ("Usage: java edu.rit.pj.cluster.CommPattern <size> <rank> <root>");
 //		System.exit (1);
 //		}
-
-	}
+}

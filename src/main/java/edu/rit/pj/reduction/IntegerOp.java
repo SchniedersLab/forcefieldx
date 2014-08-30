@@ -22,143 +22,115 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj.reduction;
 
 /**
  * Class IntegerOp is the abstract base class for a binary operation on integer
  * values, used to do reduction in a parallel program.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 24-Nov-2009
  */
 public abstract class IntegerOp
-	extends Op
-	{
+        extends Op {
 
 // Hidden constructors.
-
-	/**
-	 * Construct a new integer binary operation.
-	 */
-	protected IntegerOp()
-		{
-		super();
-		}
+    /**
+     * Construct a new integer binary operation.
+     */
+    protected IntegerOp() {
+        super();
+    }
 
 // Exported operations.
-
-	/**
-	 * Perform this binary operation.
-	 *
-	 * @param  x  First argument.
-	 * @param  y  Second argument.
-	 *
-	 * @return  (<TT>x</TT> <I>op</I> <TT>y</TT>), where <I>op</I> stands for
-	 *          this binary operation.
-	 */
-	public abstract int op
-		(int x,
-		 int y);
+    /**
+     * Perform this binary operation.
+     *
+     * @param x First argument.
+     * @param y Second argument.
+     *
+     * @return (<TT>x</TT> <I>op</I> <TT>y</TT>), where <I>op</I> stands for
+     * this binary operation.
+     */
+    public abstract int op(int x,
+            int y);
 
 // Exported constants.
+    /**
+     * The integer sum binary operation.
+     */
+    public static final IntegerOp SUM
+            = new IntegerOp() {
+                public int op(int x,
+                        int y) {
+                    return x + y;
+                }
+            };
 
-	/**
-	 * The integer sum binary operation.
-	 */
-	public static final IntegerOp SUM =
-		new IntegerOp()
-			{
-			public int op
-				(int x,
-				 int y)
-				{
-				return x + y;
-				}
-			};
+    /**
+     * The integer product binary operation.
+     */
+    public static final IntegerOp PRODUCT
+            = new IntegerOp() {
+                public int op(int x,
+                        int y) {
+                    return x * y;
+                }
+            };
 
-	/**
-	 * The integer product binary operation.
-	 */
-	public static final IntegerOp PRODUCT =
-		new IntegerOp()
-			{
-			public int op
-				(int x,
-				 int y)
-				{
-				return x * y;
-				}
-			};
+    /**
+     * The integer minimum binary operation.
+     */
+    public static final IntegerOp MINIMUM
+            = new IntegerOp() {
+                public int op(int x,
+                        int y) {
+                    return Math.min(x, y);
+                }
+            };
 
-	/**
-	 * The integer minimum binary operation.
-	 */
-	public static final IntegerOp MINIMUM =
-		new IntegerOp()
-			{
-			public int op
-				(int x,
-				 int y)
-				{
-				return Math.min (x, y);
-				}
-			};
+    /**
+     * The integer maximum binary operation.
+     */
+    public static final IntegerOp MAXIMUM
+            = new IntegerOp() {
+                public int op(int x,
+                        int y) {
+                    return Math.max(x, y);
+                }
+            };
 
-	/**
-	 * The integer maximum binary operation.
-	 */
-	public static final IntegerOp MAXIMUM =
-		new IntegerOp()
-			{
-			public int op
-				(int x,
-				 int y)
-				{
-				return Math.max (x, y);
-				}
-			};
+    /**
+     * The integer bitwise "and" binary operation.
+     */
+    public static final IntegerOp AND
+            = new IntegerOp() {
+                public int op(int x,
+                        int y) {
+                    return x & y;
+                }
+            };
 
-	/**
-	 * The integer bitwise "and" binary operation.
-	 */
-	public static final IntegerOp AND =
-		new IntegerOp()
-			{
-			public int op
-				(int x,
-				 int y)
-				{
-				return x & y;
-				}
-			};
+    /**
+     * The integer bitwise "or" binary operation.
+     */
+    public static final IntegerOp OR
+            = new IntegerOp() {
+                public int op(int x,
+                        int y) {
+                    return x | y;
+                }
+            };
 
-	/**
-	 * The integer bitwise "or" binary operation.
-	 */
-	public static final IntegerOp OR =
-		new IntegerOp()
-			{
-			public int op
-				(int x,
-				 int y)
-				{
-				return x | y;
-				}
-			};
+    /**
+     * The integer bitwise "exclusive or" binary operation.
+     */
+    public static final IntegerOp XOR
+            = new IntegerOp() {
+                public int op(int x,
+                        int y) {
+                    return x ^ y;
+                }
+            };
 
-	/**
-	 * The integer bitwise "exclusive or" binary operation.
-	 */
-	public static final IntegerOp XOR =
-		new IntegerOp()
-			{
-			public int op
-				(int x,
-				 int y)
-				{
-				return x ^ y;
-				}
-			};
-
-	}
+}

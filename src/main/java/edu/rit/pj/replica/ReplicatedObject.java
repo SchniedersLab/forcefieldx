@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj.replica;
 
 import edu.rit.mp.ObjectBuf;
@@ -38,8 +37,8 @@ import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Class ReplicatedObject provides a replicated, shared reduction variable for
- * a value of type T (a nonprimitive type).
+ * Class ReplicatedObject provides a replicated, shared reduction variable for a
+ * value of type T (a nonprimitive type).
  * <P>
  * A replicated, shared reduction variable is intended to be used in a cluster
  * or hybrid parallel program for a data item shared among all the processes in
@@ -52,10 +51,12 @@ import java.util.concurrent.atomic.AtomicReference;
  * updates, and specifying the communicator (class {@linkplain edu.rit.pj.Comm})
  * and the message tag to use for sending updates among the processes. At this
  * point a <I>replica</I> of the variable exists in each process.
- * <P><LI>
+ * <P>
+ * <LI>
  * To read the variable, call the <TT>get()</TT> method. The current value of
  * the local process's replicated variable is returned.
- * <P><LI>
+ * <P>
+ * <LI>
  * To update the variable, call the <TT>reduce()</TT> method, specifying a new
  * value. The <TT>reduce()</TT> method performs an <I>atomic reduction</I>
  * (described below) on the local process's replicated variable with the new
@@ -75,13 +76,13 @@ import java.util.concurrent.atomic.AtomicReference;
  * value back into the local process's replicated variable.
  * </OL>
  * <P>
- * Class ReplicatedObject does not itself guarantee consistency of the
- * replicas' values. This is to avoid the message passing overhead of a
- * distributed state update protocol. Instead, the parallel program must be
- * written to operate correctly when the variable is updated as described above.
- * Note that the value of a process's local replica can change asynchronously at
- * any time, either because a thread in the current process updated the
- * variable, or because a flooded message updated the variable.
+ * Class ReplicatedObject does not itself guarantee consistency of the replicas'
+ * values. This is to avoid the message passing overhead of a distributed state
+ * update protocol. Instead, the parallel program must be written to operate
+ * correctly when the variable is updated as described above. Note that the
+ * value of a process's local replica can change asynchronously at any time,
+ * either because a thread in the current process updated the variable, or
+ * because a flooded message updated the variable.
  * <P>
  * Class ReplicatedObject is multiple thread safe. The methods use lock-free
  * atomic compare-and-set.
@@ -89,215 +90,182 @@ import java.util.concurrent.atomic.AtomicReference;
  * <I>Note:</I> Class ReplicatedObject is implemented using class
  * java.util.concurrent.atomic.AtomicReference.
  *
- * @param  <T>  Object data type.
+ * @param <T> Object data type.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 13-Sep-2008
  */
-public class ReplicatedObject<T>
-	{
+public class ReplicatedObject<T> {
 
 // Hidden data members.
-
-	private ObjectOp<T> myOp;
-	private AtomicReference<T> myValue;
-	private int myTag;
-	private Comm myComm;
-	private Receiver myReceiver;
+    private ObjectOp<T> myOp;
+    private AtomicReference<T> myValue;
+    private int myTag;
+    private Comm myComm;
+    private Receiver myReceiver;
 
 // Hidden helper classes.
+    /**
+     * Class Receiver receives and processes flooded messages to update this
+     * replicated, shared reduction variable.
+     *
+     * @author Alan Kaminsky
+     * @version 13-Sep-2008
+     */
+    private class Receiver
+            extends Thread {
 
-	/**
-	 * Class Receiver receives and processes flooded messages to update this
-	 * replicated, shared reduction variable.
-	 *
-	 * @author  Alan Kaminsky
-	 * @version 13-Sep-2008
-	 */
-	private class Receiver
-		extends Thread
-		{
-		public void run()
-			{
-			ObjectItemBuf<T> buf = ObjectBuf.buffer();
+        public void run() {
+            ObjectItemBuf<T> buf = ObjectBuf.buffer();
 
-			try
-				{
-				for (;;)
-					{
-					// Receive a flooded message.
-					myComm.floodReceive (myTag, buf);
+            try {
+                for (;;) {
+                    // Receive a flooded message.
+                    myComm.floodReceive(myTag, buf);
 
-					// Do an atomic reduction.
-					T oldvalue, newvalue;
-					do
-						{
-						oldvalue = myValue.get();
-						newvalue = myOp.op (oldvalue, buf.item);
-						}
-					while (! myValue.compareAndSet (oldvalue, newvalue));
-					}
-				}
-
-			catch (Throwable exc)
-				{
-				exc.printStackTrace (System.err);
-				}
-			}
-		}
+                    // Do an atomic reduction.
+                    T oldvalue, newvalue;
+                    do {
+                        oldvalue = myValue.get();
+                        newvalue = myOp.op(oldvalue, buf.item);
+                    } while (!myValue.compareAndSet(oldvalue, newvalue));
+                }
+            } catch (Throwable exc) {
+                exc.printStackTrace(System.err);
+            }
+        }
+    }
 
 // Exported constructors.
+    /**
+     * Construct a new replicated, shared object reduction variable with the
+     * given reduction operator. The initial value is null. A message tag of 0
+     * is used. The world communicator is used.
+     *
+     * @param op Reduction operator.
+     *
+     * @exception NullPointerException (unchecked exception) Thrown if
+     * <TT>op</TT> is null.
+     */
+    public ReplicatedObject(ObjectOp<T> op) {
+        this(op, null, 0, Comm.world());
+    }
 
-	/**
-	 * Construct a new replicated, shared object reduction variable with the
-	 * given reduction operator. The initial value is null. A message tag of 0
-	 * is used. The world communicator is used.
-	 *
-	 * @param  op  Reduction operator.
-	 *
-	 * @exception  NullPointerException
-	 *     (unchecked exception) Thrown if <TT>op</TT> is null.
-	 */
-	public ReplicatedObject
-		(ObjectOp<T> op)
-		{
-		this (op, null, 0, Comm.world());
-		}
+    /**
+     * Construct a new replicated, shared object reduction variable with the
+     * given reduction operator and initial value. A message tag of 0 is used.
+     * The world communicator is used.
+     *
+     * @param op Reduction operator.
+     * @param initialValue Initial value.
+     *
+     * @exception NullPointerException (unchecked exception) Thrown if
+     * <TT>op</TT> is null.
+     */
+    public ReplicatedObject(ObjectOp<T> op,
+            T initialValue) {
+        this(op, initialValue, 0, Comm.world());
+    }
 
-	/**
-	 * Construct a new replicated, shared object reduction variable with the
-	 * given reduction operator and initial value. A message tag of 0 is used.
-	 * The world communicator is used.
-	 *
-	 * @param  op            Reduction operator.
-	 * @param  initialValue  Initial value.
-	 *
-	 * @exception  NullPointerException
-	 *     (unchecked exception) Thrown if <TT>op</TT> is null.
-	 */
-	public ReplicatedObject
-		(ObjectOp<T> op,
-		 T initialValue)
-		{
-		this (op, initialValue, 0, Comm.world());
-		}
+    /**
+     * Construct a new replicated, shared object reduction variable with the
+     * given reduction operator, initial value, and message tag. The world
+     * communicator is used.
+     *
+     * @param op Reduction operator.
+     * @param initialValue Initial value.
+     * @param tag Message tag.
+     *
+     * @exception NullPointerException (unchecked exception) Thrown if
+     * <TT>op</TT> is null. Thrown if
+     * <TT>comm</TT> is null.
+     */
+    public ReplicatedObject(ObjectOp<T> op,
+            T initialValue,
+            int tag) {
+        this(op, initialValue, tag, Comm.world());
+    }
 
-	/**
-	 * Construct a new replicated, shared object reduction variable with the
-	 * given reduction operator, initial value, and message tag. The world
-	 * communicator is used.
-	 *
-	 * @param  op            Reduction operator.
-	 * @param  initialValue  Initial value.
-	 * @param  tag           Message tag.
-	 *
-	 * @exception  NullPointerException
-	 *     (unchecked exception) Thrown if <TT>op</TT> is null. Thrown if
-	 *     <TT>comm</TT> is null.
-	 */
-	public ReplicatedObject
-		(ObjectOp<T> op,
-		 T initialValue,
-		 int tag)
-		{
-		this (op, initialValue, tag, Comm.world());
-		}
-
-	/**
-	 * Construct a new replicated, shared object reduction variable with the
-	 * given reduction operator, initial value, message tag, and communicator.
-	 *
-	 * @param  op            Reduction operator.
-	 * @param  initialValue  Initial value.
-	 * @param  tag           Message tag.
-	 * @param  comm          Communicator.
-	 *
-	 * @exception  NullPointerException
-	 *     (unchecked exception) Thrown if <TT>op</TT> is null. Thrown if
-	 *     <TT>comm</TT> is null.
-	 */
-	public ReplicatedObject
-		(ObjectOp<T> op,
-		 T initialValue,
-		 int tag,
-		 Comm comm)
-		{
-		if (op == null)
-			{
-			throw new NullPointerException
-				("ReplicatedObject(): op is null");
-			}
-		if (comm == null)
-			{
-			throw new NullPointerException
-				("ReplicatedObject(): comm is null");
-			}
-		myOp = op;
-		myValue = new AtomicReference<T> (initialValue);
-		myTag = tag;
-		myComm = comm;
-		myReceiver = new Receiver();
-		myReceiver.setDaemon (true);
-		myReceiver.start();
-		}
+    /**
+     * Construct a new replicated, shared object reduction variable with the
+     * given reduction operator, initial value, message tag, and communicator.
+     *
+     * @param op Reduction operator.
+     * @param initialValue Initial value.
+     * @param tag Message tag.
+     * @param comm Communicator.
+     *
+     * @exception NullPointerException (unchecked exception) Thrown if
+     * <TT>op</TT> is null. Thrown if
+     * <TT>comm</TT> is null.
+     */
+    public ReplicatedObject(ObjectOp<T> op,
+            T initialValue,
+            int tag,
+            Comm comm) {
+        if (op == null) {
+            throw new NullPointerException("ReplicatedObject(): op is null");
+        }
+        if (comm == null) {
+            throw new NullPointerException("ReplicatedObject(): comm is null");
+        }
+        myOp = op;
+        myValue = new AtomicReference<T>(initialValue);
+        myTag = tag;
+        myComm = comm;
+        myReceiver = new Receiver();
+        myReceiver.setDaemon(true);
+        myReceiver.start();
+    }
 
 // Exported operations.
+    /**
+     * Returns this replicated, shared reduction variable's current value.
+     *
+     * @return Current value.
+     */
+    public T get() {
+        return myValue.get();
+    }
 
-	/**
-	 * Returns this replicated, shared reduction variable's current value.
-	 *
-	 * @return  Current value.
-	 */
-	public T get()
-		{
-		return myValue.get();
-		}
+    /**
+     * Update this replicated, shared reduction variable's current value. This
+     * variable is combined with the given value using the reduction operation
+     * specified to the constructor (<I>op</I>). The result is stored back into
+     * this variable and is returned; the result may also be flooded to all
+     * processes in the communicator.
+     *
+     * @param value Value.
+     *
+     * @return (This variable) <I>op</I> (<TT>value</TT>).
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public T reduce(T value)
+            throws IOException {
+        // Do an atomic reduction.
+        T oldvalue, newvalue;
+        do {
+            oldvalue = myValue.get();
+            newvalue = myOp.op(oldvalue, value);
+        } while (!myValue.compareAndSet(oldvalue, newvalue));
 
-	/**
-	 * Update this replicated, shared reduction variable's current value. This
-	 * variable is combined with the given value using the reduction operation
-	 * specified to the constructor (<I>op</I>). The result is stored back into
-	 * this variable and is returned; the result may also be flooded to all
-	 * processes in the communicator.
-	 *
-	 * @param  value  Value.
-	 *
-	 * @return  (This variable) <I>op</I> (<TT>value</TT>).
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public T reduce
-		(T value)
-		throws IOException
-		{
-		// Do an atomic reduction.
-		T oldvalue, newvalue;
-		do
-			{
-			oldvalue = myValue.get();
-			newvalue = myOp.op (oldvalue, value);
-			}
-		while (! myValue.compareAndSet (oldvalue, newvalue));
+        // If value changed, send a flooded message.
+        if (newvalue != oldvalue) {
+            myComm.floodSend(myTag, ObjectBuf.buffer(newvalue));
+        }
 
-		// If value changed, send a flooded message.
-		if (newvalue != oldvalue)
-			{
-			myComm.floodSend (myTag, ObjectBuf.buffer (newvalue));
-			}
+        // Return updated value.
+        return newvalue;
+    }
 
-		// Return updated value.
-		return newvalue;
-		}
+    /**
+     * Returns a string version of this reduction variable.
+     *
+     * @return String version.
+     */
+    public String toString() {
+        return myValue.toString();
+    }
 
-	/**
-	 * Returns a string version of this reduction variable.
-	 *
-	 * @return  String version.
-	 */
-	public String toString()
-		{
-		return myValue.toString();
-		}
-
-	}
+}

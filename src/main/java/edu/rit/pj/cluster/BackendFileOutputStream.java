@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj.cluster;
 
 import java.io.File;
@@ -43,247 +42,212 @@ import java.util.concurrent.LinkedBlockingQueue;
  * Consider layering a BufferedOutputStream on top of the
  * BackendFileOutputStream.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 05-Nov-2006
  */
 public class BackendFileOutputStream
-	extends OutputStream
-	{
+        extends OutputStream {
 
 // Hidden data members.
+    private JobFrontendRef myJobFrontend;
+    private JobBackendRef myJobBackend;
 
-	private JobFrontendRef myJobFrontend;
-	private JobBackendRef myJobBackend;
+    // Queue of results from job frontend.
+    private LinkedBlockingQueue<Result> myResultQueue
+            = new LinkedBlockingQueue<Result>();
 
-	// Queue of results from job frontend.
-	private LinkedBlockingQueue<Result> myResultQueue =
-		new LinkedBlockingQueue<Result>();
+    private static class Result {
 
-	private static class Result
-		{
-		public int ffd;
-		public IOException exc;
-		public Result
-			(int ffd,
-			 IOException exc)
-			{
-			this.ffd = ffd;
-			this.exc = exc;
-			}
-		}
+        public int ffd;
+        public IOException exc;
 
-	// Frontend file descriptor.
-	private int ffd;
+        public Result(int ffd,
+                IOException exc) {
+            this.ffd = ffd;
+            this.exc = exc;
+        }
+    }
+
+    // Frontend file descriptor.
+    private int ffd;
 
 // Hidden constructors.
+    /**
+     * Construct a new backend file output stream. Call the <TT>open()</TT>
+     * method to open the file and obtain the frontend file descriptor.
+     *
+     * @param theJobFrontend Job Frontend.
+     * @param theJobBackend Job Backend.
+     */
+    BackendFileOutputStream(JobFrontendRef theJobFrontend,
+            JobBackendRef theJobBackend) {
+        this.myJobFrontend = theJobFrontend;
+        this.myJobBackend = theJobBackend;
+    }
 
-	/**
-	 * Construct a new backend file output stream. Call the <TT>open()</TT>
-	 * method to open the file and obtain the frontend file descriptor.
-	 *
-	 * @param  theJobFrontend  Job Frontend.
-	 * @param  theJobBackend   Job Backend.
-	 */
-	BackendFileOutputStream
-		(JobFrontendRef theJobFrontend,
-		 JobBackendRef theJobBackend)
-		{
-		this.myJobFrontend = theJobFrontend;
-		this.myJobBackend = theJobBackend;
-		}
-
-	/**
-	 * Construct a new backend file output stream. Use the given frontend file
-	 * descriptor.
-	 *
-	 * @param  theJobFrontend  Job Frontend.
-	 * @param  theJobBackend   Job Backend.
-	 * @param  ffd             Frontend file descriptor.
-	 */
-	BackendFileOutputStream
-		(JobFrontendRef theJobFrontend,
-		 JobBackendRef theJobBackend,
-		 int ffd)
-		{
-		this.myJobFrontend = theJobFrontend;
-		this.myJobBackend = theJobBackend;
-		this.ffd = ffd;
-		}
+    /**
+     * Construct a new backend file output stream. Use the given frontend file
+     * descriptor.
+     *
+     * @param theJobFrontend Job Frontend.
+     * @param theJobBackend Job Backend.
+     * @param ffd Frontend file descriptor.
+     */
+    BackendFileOutputStream(JobFrontendRef theJobFrontend,
+            JobBackendRef theJobBackend,
+            int ffd) {
+        this.myJobFrontend = theJobFrontend;
+        this.myJobBackend = theJobBackend;
+        this.ffd = ffd;
+    }
 
 // Exported operations.
+    /**
+     * Write the given byte to this output stream. Only the least significant
+     * eight bits are written.
+     *
+     * @param b Byte.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void write(int b)
+            throws IOException {
+        write(new byte[]{(byte) b});
+    }
 
-	/**
-	 * Write the given byte to this output stream. Only the least significant
-	 * eight bits are written.
-	 *
-	 * @param  b  Byte.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void write
-		(int b)
-		throws IOException
-		{
-		write (new byte[] {(byte) b});
-		}
+    /**
+     * Write the given byte array to this output stream.
+     *
+     * @param buf Byte array.
+     *
+     * @exception NullPointerException (unchecked exception) Thrown if
+     * <TT>buf</TT> is null.
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void write(byte[] buf)
+            throws IOException {
+        write(buf, 0, buf.length);
+    }
 
-	/**
-	 * Write the given byte array to this output stream.
-	 *
-	 * @param  buf  Byte array.
-	 *
-	 * @exception  NullPointerException
-	 *     (unchecked exception) Thrown if <TT>buf</TT> is null.
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void write
-		(byte[] buf)
-		throws IOException
-		{
-		write (buf, 0, buf.length);
-		}
+    /**
+     * Write a portion of the given byte array to this output stream.
+     *
+     * @param buf Byte array.
+     * @param off Index of first byte to write.
+     * @param len Number of bytes to write.
+     *
+     * @exception NullPointerException (unchecked exception) Thrown if
+     * <TT>buf</TT> is null.
+     * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
+     * <TT>off</TT> &lt; 0, <TT>len</TT>
+     * &lt; 0, or <TT>off+len</TT> &gt; <TT>buf.length</TT>.
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void write(byte[] buf,
+            int off,
+            int len)
+            throws IOException {
+        if (off < 0 || len < 0 || off + len > buf.length) {
+            throw new IndexOutOfBoundsException();
+        }
+        verifyOpen();
+        myJobFrontend.outputFileWrite(myJobBackend, ffd, buf, off, len);
+        getResult();
+    }
 
-	/**
-	 * Write a portion of the given byte array to this output stream.
-	 *
-	 * @param  buf  Byte array.
-	 * @param  off  Index of first byte to write.
-	 * @param  len  Number of bytes to write.
-	 *
-	 * @exception  NullPointerException
-	 *     (unchecked exception) Thrown if <TT>buf</TT> is null.
-	 * @exception  IndexOutOfBoundsException
-	 *     (unchecked exception) Thrown if <TT>off</TT> &lt; 0, <TT>len</TT>
-	 *     &lt; 0, or <TT>off+len</TT> &gt; <TT>buf.length</TT>.
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void write
-		(byte[] buf,
-		 int off,
-		 int len)
-		throws IOException
-		{
-		if (off < 0 || len < 0 || off+len > buf.length)
-			{
-			throw new IndexOutOfBoundsException();
-			}
-		verifyOpen();
-		myJobFrontend.outputFileWrite (myJobBackend, ffd, buf, off, len);
-		getResult();
-		}
+    /**
+     * Flush this output stream.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void flush()
+            throws IOException {
+        verifyOpen();
+        myJobFrontend.outputFileFlush(myJobBackend, ffd);
+        getResult();
+    }
 
-	/**
-	 * Flush this output stream.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void flush()
-		throws IOException
-		{
-		verifyOpen();
-		myJobFrontend.outputFileFlush (myJobBackend, ffd);
-		getResult();
-		}
-
-	/**
-	 * Close this output stream.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void close()
-		throws IOException
-		{
-		verifyOpen();
-		try
-			{
-			myJobFrontend.outputFileClose (myJobBackend, ffd);
-			getResult();
-			}
-		finally
-			{
-			ffd = 0;
-			}
-		}
+    /**
+     * Close this output stream.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void close()
+            throws IOException {
+        verifyOpen();
+        try {
+            myJobFrontend.outputFileClose(myJobBackend, ffd);
+            getResult();
+        } finally {
+            ffd = 0;
+        }
+    }
 
 // Hidden operations.
+    /**
+     * Request the Job Frontend to open the file.
+     *
+     * @param bfd Backend file descriptor.
+     * @param file File.
+     * @param append True to append, false to overwrite.
+     *
+     * @return Frontend file descriptor.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    int open(int bfd,
+            File file,
+            boolean append)
+            throws IOException {
+        myJobFrontend.outputFileOpen(myJobBackend, bfd, file, append);
+        this.ffd = getResult().ffd;
+        return this.ffd;
+    }
 
-	/**
-	 * Request the Job Frontend to open the file.
-	 *
-	 * @param  bfd     Backend file descriptor.
-	 * @param  file    File.
-	 * @param  append  True to append, false to overwrite.
-	 *
-	 * @return  Frontend file descriptor.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	int open
-		(int bfd,
-		 File file,
-		 boolean append)
-		throws IOException
-		{
-		myJobFrontend.outputFileOpen (myJobBackend, bfd, file, append);
-		this.ffd = getResult().ffd;
-		return this.ffd;
-		}
+    /**
+     * Get the next result from the result queue. Throw an IOException if
+     * necessary.
+     *
+     * @return Result object.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    private Result getResult()
+            throws IOException {
+        try {
+            Result result = myResultQueue.take();
+            if (result.exc != null) {
+                throw result.exc;
+            }
+            return result;
+        } catch (InterruptedException exc) {
+            IOException exc2 = new InterruptedIOException("I/O interrupted");
+            exc2.initCause(exc);
+            throw exc2;
+        }
+    }
 
-	/**
-	 * Get the next result from the result queue. Throw an IOException if
-	 * necessary.
-	 *
-	 * @return  Result object.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	private Result getResult()
-		throws IOException
-		{
-		try
-			{
-			Result result = myResultQueue.take();
-			if (result.exc != null) throw result.exc;
-			return result;
-			}
-		catch (InterruptedException exc)
-			{
-			IOException exc2 = new InterruptedIOException ("I/O interrupted");
-			exc2.initCause (exc);
-			throw exc2;
-			}
-		}
+    /**
+     * Put the given result into the result queue.
+     *
+     * @param ffd Frontend file descriptor.
+     * @param exc Null if success, exception if failure.
+     */
+    void putResult(int ffd,
+            IOException exc) {
+        myResultQueue.offer(new Result(ffd, exc));
+    }
 
-	/**
-	 * Put the given result into the result queue.
-	 *
-	 * @param  ffd  Frontend file descriptor.
-	 * @param  exc  Null if success, exception if failure.
-	 */
-	void putResult
-		(int ffd,
-		 IOException exc)
-		{
-		myResultQueue.offer (new Result (ffd, exc));
-		}
+    /**
+     * Verify that this file is open.
+     *
+     * @exception IOException Thrown if this file is not open.
+     */
+    private void verifyOpen()
+            throws IOException {
+        if (ffd == 0) {
+            throw new IOException("File closed");
+        }
+    }
 
-	/**
-	 * Verify that this file is open.
-	 *
-	 * @exception  IOException
-	 *     Thrown if this file is not open.
-	 */
-	private void verifyOpen()
-		throws IOException
-		{
-		if (ffd == 0) throw new IOException ("File closed");
-		}
-
-	}
+}

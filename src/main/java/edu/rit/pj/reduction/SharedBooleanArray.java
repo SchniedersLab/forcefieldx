@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj.reduction;
 
 import java.util.concurrent.atomic.AtomicIntegerArray;
@@ -39,258 +38,227 @@ import java.util.concurrent.atomic.AtomicIntegerArray;
  * stored as an <TT>int</TT> whose values are restricted to the range of type
  * <TT>boolean</TT> (0 = <TT>false</TT>, 1 = <TT>true</TT>).
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 07-Jun-2007
  */
-public class SharedBooleanArray
-	{
+public class SharedBooleanArray {
 
 // Hidden data members.
-
-	private AtomicIntegerArray myArray;
+    private AtomicIntegerArray myArray;
 
 // Exported constructors.
+    /**
+     * Construct a new Boolean array reduction variable with the given length.
+     * Each array element is initially <TT>false</TT>.
+     *
+     * @param len Length.
+     *
+     * @exception NegativeArraySizeException (unchecked exception) Thrown if
+     * <TT>len</TT> &lt; 0.
+     */
+    public SharedBooleanArray(int len) {
+        myArray = new AtomicIntegerArray(len);
+    }
 
-	/**
-	 * Construct a new Boolean array reduction variable with the given length.
-	 * Each array element is initially <TT>false</TT>.
-	 *
-	 * @param  len  Length.
-	 *
-	 * @exception  NegativeArraySizeException
-	 *     (unchecked exception) Thrown if <TT>len</TT> &lt; 0.
-	 */
-	public SharedBooleanArray
-		(int len)
-		{
-		myArray = new AtomicIntegerArray (len);
-		}
-
-	/**
-	 * Construct a new Boolean array reduction variable whose elements are
-	 * copied from the given array.
-	 *
-	 * @param  array  Array to copy.
-	 *
-	 * @exception  NullPointerException
-	 *     (unchecked exception) Thrown if <TT>array</TT> is null.
-	 */
-	public SharedBooleanArray
-		(boolean[] array)
-		{
-		int n = array.length;
-		int[] intarray = new int [n];
-		for (int i = 0; i < n; ++ i) intarray[i] = array[i] ? 1 : 0;
-		myArray = new AtomicIntegerArray (intarray);
-		}
+    /**
+     * Construct a new Boolean array reduction variable whose elements are
+     * copied from the given array.
+     *
+     * @param array Array to copy.
+     *
+     * @exception NullPointerException (unchecked exception) Thrown if
+     * <TT>array</TT> is null.
+     */
+    public SharedBooleanArray(boolean[] array) {
+        int n = array.length;
+        int[] intarray = new int[n];
+        for (int i = 0; i < n; ++i) {
+            intarray[i] = array[i] ? 1 : 0;
+        }
+        myArray = new AtomicIntegerArray(intarray);
+    }
 
 // Exported operations.
+    /**
+     * Returns this array reduction variable's length.
+     *
+     * @return Length.
+     */
+    public int length() {
+        return myArray.length();
+    }
 
-	/**
-	 * Returns this array reduction variable's length.
-	 *
-	 * @return  Length.
-	 */
-	public int length()
-		{
-		return myArray.length();
-		}
+    /**
+     * Returns this array reduction variable's current value at the given index.
+     *
+     * @param i Index.
+     *
+     * @return Current value.
+     */
+    public boolean get(int i) {
+        return myArray.get(i) != 0;
+    }
 
-	/**
-	 * Returns this array reduction variable's current value at the given index.
-	 *
-	 * @param  i  Index.
-	 *
-	 * @return  Current value.
-	 */
-	public boolean get
-		(int i)
-		{
-		return myArray.get (i) != 0;
-		}
+    /**
+     * Set this array reduction variable at the given index to the given value.
+     *
+     * @param i Index.
+     * @param value New value.
+     */
+    public void set(int i,
+            boolean value) {
+        myArray.set(i, value ? 1 : 0);
+    }
 
-	/**
-	 * Set this array reduction variable at the given index to the given value.
-	 *
-	 * @param  i      Index.
-	 * @param  value  New value.
-	 */
-	public void set
-		(int i,
-		 boolean value)
-		{
-		myArray.set (i, value ? 1 : 0);
-		}
+    /**
+     * Set this array reduction variable at the given index to the given value
+     * and return the previous value.
+     *
+     * @param i Index.
+     * @param value New value.
+     *
+     * @return Previous value.
+     */
+    public boolean getAndSet(int i,
+            boolean value) {
+        return myArray.getAndSet(i, value ? 1 : 0) != 0;
+    }
 
-	/**
-	 * Set this array reduction variable at the given index to the given value
-	 * and return the previous value.
-	 *
-	 * @param  i      Index.
-	 * @param  value  New value.
-	 *
-	 * @return  Previous value.
-	 */
-	public boolean getAndSet
-		(int i,
-		 boolean value)
-		{
-		return myArray.getAndSet (i, value ? 1 : 0) != 0;
-		}
+    /**
+     * Atomically set this array reduction variable at the given index to the
+     * given updated value if the current value equals the expected value.
+     *
+     * @param i Index.
+     * @param expect Expected value.
+     * @param update Updated value.
+     *
+     * @return True if the update happened, false otherwise.
+     */
+    public boolean compareAndSet(int i,
+            boolean expect,
+            boolean update) {
+        return myArray.compareAndSet(i, expect ? 1 : 0, update ? 1 : 0);
+    }
 
-	/**
-	 * Atomically set this array reduction variable at the given index to the
-	 * given updated value if the current value equals the expected value.
-	 *
-	 * @param  i       Index.
-	 * @param  expect  Expected value.
-	 * @param  update  Updated value.
-	 *
-	 * @return  True if the update happened, false otherwise.
-	 */
-	public boolean compareAndSet
-		(int i,
-		 boolean expect,
-		 boolean update)
-		{
-		return myArray.compareAndSet (i, expect ? 1 : 0, update ? 1 : 0);
-		}
+    /**
+     * Atomically set this array reduction variable at the given index to the
+     * given updated value if the current value equals the expected value. May
+     * fail spuriously.
+     *
+     * @param i Index.
+     * @param expect Expected value.
+     * @param update Updated value.
+     *
+     * @return True if the update happened, false otherwise.
+     */
+    public boolean weakCompareAndSet(int i,
+            boolean expect,
+            boolean update) {
+        return myArray.weakCompareAndSet(i, expect ? 1 : 0, update ? 1 : 0);
+    }
 
-	/**
-	 * Atomically set this array reduction variable at the given index to the
-	 * given updated value if the current value equals the expected value. May
-	 * fail spuriously.
-	 *
-	 * @param  i       Index.
-	 * @param  expect  Expected value.
-	 * @param  update  Updated value.
-	 *
-	 * @return  True if the update happened, false otherwise.
-	 */
-	public boolean weakCompareAndSet
-		(int i,
-		 boolean expect,
-		 boolean update)
-		{
-		return myArray.weakCompareAndSet (i, expect ? 1 : 0, update ? 1 : 0);
-		}
+    /**
+     * Combine this array reduction variable at the given index with the given
+     * value using the given operation. (This array <TT>[i]</TT>) is set to
+     * (this array <TT>[i]</TT>) <I>op</I> (<TT>value</TT>), then (this array
+     * <TT>[i]</TT>) is returned.
+     *
+     * @param i Index.
+     * @param value Value.
+     * @param op Binary operation.
+     *
+     * @return (This array <TT>[i]</TT>) <I>op</I> (<TT>value</TT>).
+     */
+    public boolean reduce(int i,
+            boolean value,
+            BooleanOp op) {
+        for (;;) {
+            int oldvalue = myArray.get(i);
+            int newvalue = op.op(oldvalue != 0, value) ? 1 : 0;
+            if (myArray.compareAndSet(i, oldvalue, newvalue)) {
+                return newvalue != 0;
+            }
+        }
+    }
 
-	/**
-	 * Combine this array reduction variable at the given index with the given
-	 * value using the given operation. (This array <TT>[i]</TT>) is set to
-	 * (this array <TT>[i]</TT>) <I>op</I> (<TT>value</TT>), then (this array
-	 * <TT>[i]</TT>) is returned.
-	 *
-	 * @param  i      Index.
-	 * @param  value  Value.
-	 * @param  op     Binary operation.
-	 *
-	 * @return  (This array <TT>[i]</TT>) <I>op</I> (<TT>value</TT>).
-	 */
-	public boolean reduce
-		(int i,
-		 boolean value,
-		 BooleanOp op)
-		{
-		for (;;)
-			{
-			int oldvalue = myArray.get (i);
-			int newvalue = op.op (oldvalue != 0, value) ? 1 : 0;
-			if (myArray.compareAndSet (i, oldvalue, newvalue))
-				{
-				return newvalue != 0;
-				}
-			}
-		}
+    /**
+     * Combine this array reduction variable with the given array using the
+     * given operation. For each index <TT>i</TT> from 0 to this array's
+     * length-1, (this array <TT>[i]</TT>) is set to (this array <TT>[i]</TT>)
+     * <I>op</I> (<TT>src[i]</TT>).
+     * <P>
+     * The <TT>reduce()</TT> method is multiple thread safe <I>on a per-element
+     * basis.</I> Each individual array element is updated atomically, but the
+     * array as a whole is not updated atomically.
+     *
+     * @param src Source array.
+     * @param op Binary operation.
+     *
+     * @exception NullPointerException (unchecked exception) Thrown if
+     * <TT>src</TT> is null. Thrown if
+     * <TT>op</TT> is null.
+     * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
+     * array index would be out of bounds.
+     */
+    public void reduce(boolean[] src,
+            BooleanOp op) {
+        reduce(0, src, 0, myArray.length(), op);
+    }
 
-	/**
-	 * Combine this array reduction variable with the given array using the
-	 * given operation. For each index <TT>i</TT> from 0 to this array's
-	 * length-1, (this array <TT>[i]</TT>) is set to (this array <TT>[i]</TT>)
-	 * <I>op</I> (<TT>src[i]</TT>).
-	 * <P>
-	 * The <TT>reduce()</TT> method is multiple thread safe <I>on a per-element
-	 * basis.</I> Each individual array element is updated atomically, but the
-	 * array as a whole is not updated atomically.
-	 *
-	 * @param  src  Source array.
-	 * @param  op   Binary operation.
-	 *
-	 * @exception  NullPointerException
-	 *     (unchecked exception) Thrown if <TT>src</TT> is null. Thrown if
-	 *     <TT>op</TT> is null.
-	 * @exception  IndexOutOfBoundsException
-	 *     (unchecked exception) Thrown if any array index would be out of
-	 *     bounds.
-	 */
-	public void reduce
-		(boolean[] src,
-		 BooleanOp op)
-		{
-		reduce (0, src, 0, myArray.length(), op);
-		}
+    /**
+     * Combine a portion of this array reduction variable with a portion of the
+     * given array using the given operation. For each index <TT>i</TT> from 0
+     * to <TT>len</TT>-1, (this array <TT>[dstoff+i]</TT>) is set to (this array
+     * <TT>[dstoff+i]</TT>) <I>op</I> (<TT>src[srcoff+i]</TT>).
+     * <P>
+     * The <TT>reduce()</TT> method is multiple thread safe <I>on a per-element
+     * basis.</I> Each individual array element is updated atomically, but the
+     * array as a whole is not updated atomically.
+     *
+     * @param dstoff Index of first element to update in this array.
+     * @param src Source array.
+     * @param srcoff Index of first element to update from in the source array.
+     * @param len Number of array elements to update.
+     * @param op Binary operation.
+     *
+     * @exception NullPointerException (unchecked exception) Thrown if
+     * <TT>src</TT> is null. Thrown if
+     * <TT>op</TT> is null.
+     * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
+     * <TT>len</TT> &lt; 0. Thrown if any array index would be out of bounds.
+     */
+    public void reduce(int dstoff,
+            boolean[] src,
+            int srcoff,
+            int len,
+            BooleanOp op) {
+        if (len < 0
+                || dstoff < 0 || dstoff + len > myArray.length()
+                || srcoff < 0 || srcoff + len > src.length) {
+            throw new IndexOutOfBoundsException();
+        }
+        while (len > 0) {
+            updateLoop:
+            for (;;) {
+                int oldvalue = myArray.get(dstoff);
+                int newvalue = op.op(oldvalue != 0, src[srcoff]) ? 1 : 0;
+                if (myArray.compareAndSet(dstoff, oldvalue, newvalue)) {
+                    break updateLoop;
+                }
+            }
+            ++dstoff;
+            ++srcoff;
+            --len;
+        }
+    }
 
-	/**
-	 * Combine a portion of this array reduction variable with a portion of the
-	 * given array using the given operation. For each index <TT>i</TT> from 0
-	 * to <TT>len</TT>-1, (this array <TT>[dstoff+i]</TT>) is set to (this array
-	 * <TT>[dstoff+i]</TT>) <I>op</I> (<TT>src[srcoff+i]</TT>).
-	 * <P>
-	 * The <TT>reduce()</TT> method is multiple thread safe <I>on a per-element
-	 * basis.</I> Each individual array element is updated atomically, but the
-	 * array as a whole is not updated atomically.
-	 *
-	 * @param  dstoff  Index of first element to update in this array.
-	 * @param  src     Source array.
-	 * @param  srcoff  Index of first element to update from in the source
-	 *                 array.
-	 * @param  len     Number of array elements to update.
-	 * @param  op      Binary operation.
-	 *
-	 * @exception  NullPointerException
-	 *     (unchecked exception) Thrown if <TT>src</TT> is null. Thrown if
-	 *     <TT>op</TT> is null.
-	 * @exception  IndexOutOfBoundsException
-	 *     (unchecked exception) Thrown if <TT>len</TT> &lt; 0. Thrown if any
-	 *     array index would be out of bounds.
-	 */
-	public void reduce
-		(int dstoff,
-		 boolean[] src,
-		 int srcoff,
-		 int len,
-		 BooleanOp op)
-		{
-		if
-			(len < 0 ||
-			 dstoff < 0 || dstoff+len > myArray.length() ||
-			 srcoff < 0 || srcoff+len > src.length)
-			{
-			throw new IndexOutOfBoundsException();
-			}
-		while (len > 0)
-			{
-			updateLoop: for (;;)
-				{
-				int oldvalue = myArray.get (dstoff);
-				int newvalue = op.op (oldvalue != 0, src[srcoff]) ? 1 : 0;
-				if (myArray.compareAndSet (dstoff, oldvalue, newvalue))
-					break updateLoop;
-				}
-			++ dstoff;
-			++ srcoff;
-			-- len;
-			}
-		}
+    /**
+     * Returns a string version of this array reduction variable.
+     *
+     * @return String version.
+     */
+    public String toString() {
+        return myArray.toString();
+    }
 
-	/**
-	 * Returns a string version of this array reduction variable.
-	 *
-	 * @return  String version.
-	 */
-	public String toString()
-		{
-		return myArray.toString();
-		}
-
-	}
+}

@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.mp.buf;
 
 import edu.rit.mp.Buf;
@@ -45,130 +44,112 @@ import java.nio.CharBuffer;
  * edu.rit.mp.CharacterBuf CharacterBuf}. See that class for further
  * information.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 25-Oct-2007
  */
 public class CharacterArrayBuf_1
-	extends CharacterArrayBuf
-	{
+        extends CharacterArrayBuf {
 
 // Exported constructors.
-
-	/**
-	 * Construct a new character array buffer.
-	 *
-	 * @param  theArray  Array.
-	 * @param  theRange  Range of array elements to include in the buffer. The
-	 *                   stride is assumed to be 1.
-	 */
-	public CharacterArrayBuf_1
-		(char[] theArray,
-		 Range theRange)
-		{
-		super (theArray, theRange);
-		}
+    /**
+     * Construct a new character array buffer.
+     *
+     * @param theArray Array.
+     * @param theRange Range of array elements to include in the buffer. The
+     * stride is assumed to be 1.
+     */
+    public CharacterArrayBuf_1(char[] theArray,
+            Range theRange) {
+        super(theArray, theRange);
+    }
 
 // Exported operations.
+    /**
+     * Obtain the given item from this buffer.
+     * <P>
+     * The <TT>get()</TT> method must not block the calling thread; if it does,
+     * all message I/O in MP will be blocked.
+     *
+     * @param i Item index in the range 0 .. <TT>length()</TT>-1.
+     *
+     * @return Item at index <TT>i</TT>.
+     */
+    public char get(int i) {
+        return myArray[myArrayOffset + i];
+    }
 
-	/**
-	 * Obtain the given item from this buffer.
-	 * <P>
-	 * The <TT>get()</TT> method must not block the calling thread; if it does,
-	 * all message I/O in MP will be blocked.
-	 *
-	 * @param  i  Item index in the range 0 .. <TT>length()</TT>-1.
-	 *
-	 * @return  Item at index <TT>i</TT>.
-	 */
-	public char get
-		(int i)
-		{
-		return myArray[myArrayOffset+i];
-		}
+    /**
+     * Store the given item in this buffer.
+     * <P>
+     * The <TT>put()</TT> method must not block the calling thread; if it does,
+     * all message I/O in MP will be blocked.
+     *
+     * @param i Item index in the range 0 .. <TT>length()</TT>-1.
+     * @param item Item to be stored at index <TT>i</TT>.
+     */
+    public void put(int i,
+            char item) {
+        myArray[myArrayOffset + i] = item;
+    }
 
-	/**
-	 * Store the given item in this buffer.
-	 * <P>
-	 * The <TT>put()</TT> method must not block the calling thread; if it does,
-	 * all message I/O in MP will be blocked.
-	 *
-	 * @param  i     Item index in the range 0 .. <TT>length()</TT>-1.
-	 * @param  item  Item to be stored at index <TT>i</TT>.
-	 */
-	public void put
-		(int i,
-		 char item)
-		{
-		myArray[myArrayOffset+i] = item;
-		}
-
-	/**
-	 * Create a buffer for performing parallel reduction using the given binary
-	 * operation. The results of the reduction are placed into this buffer.
-	 *
-	 * @param  op  Binary operation.
-	 *
-	 * @exception  ClassCastException
-	 *     (unchecked exception) Thrown if this buffer's element data type and
-	 *     the given binary operation's argument data type are not the same.
-	 */
-	public Buf getReductionBuf
-		(Op op)
-		{
-		return new CharacterArrayReductionBuf_1
-			(myArray, myRange, (CharacterOp) op);
-		}
+    /**
+     * Create a buffer for performing parallel reduction using the given binary
+     * operation. The results of the reduction are placed into this buffer.
+     *
+     * @param op Binary operation.
+     *
+     * @exception ClassCastException (unchecked exception) Thrown if this
+     * buffer's element data type and the given binary operation's argument data
+     * type are not the same.
+     */
+    public Buf getReductionBuf(Op op) {
+        return new CharacterArrayReductionBuf_1(myArray, myRange, (CharacterOp) op);
+    }
 
 // Hidden operations.
+    /**
+     * Send as many items as possible from this buffer to the given byte buffer.
+     * <P>
+     * The <TT>sendItems()</TT> method must not block the calling thread; if it
+     * does, all message I/O in MP will be blocked.
+     *
+     * @param i Index of first item to send, in the range 0 ..
+     * <TT>length</TT>-1.
+     * @param buffer Byte buffer.
+     *
+     * @return Number of items sent.
+     */
+    protected int sendItems(int i,
+            ByteBuffer buffer) {
+        CharBuffer charbuffer = buffer.asCharBuffer();
+        int n = Math.min(myLength - i, charbuffer.remaining());
+        charbuffer.put(myArray, myArrayOffset + i, n);
+        buffer.position(buffer.position() + 2 * n);
+        return n;
+    }
 
-	/**
-	 * Send as many items as possible from this buffer to the given byte
-	 * buffer.
-	 * <P>
-	 * The <TT>sendItems()</TT> method must not block the calling thread; if it
-	 * does, all message I/O in MP will be blocked.
-	 *
-	 * @param  i       Index of first item to send, in the range 0 ..
-	 *                 <TT>length</TT>-1.
-	 * @param  buffer  Byte buffer.
-	 *
-	 * @return  Number of items sent.
-	 */
-	protected int sendItems
-		(int i,
-		 ByteBuffer buffer)
-		{
-		CharBuffer charbuffer = buffer.asCharBuffer();
-		int n = Math.min (myLength - i, charbuffer.remaining());
-		charbuffer.put (myArray, myArrayOffset + i, n);
-		buffer.position (buffer.position() + 2*n);
-		return n;
-		}
+    /**
+     * Receive as many items as possible from the given byte buffer to this
+     * buffer.
+     * <P>
+     * The <TT>receiveItems()</TT> method must not block the calling thread; if
+     * it does, all message I/O in MP will be blocked.
+     *
+     * @param i Index of first item to receive, in the range 0 ..
+     * <TT>length</TT>-1.
+     * @param num Maximum number of items to receive.
+     * @param buffer Byte buffer.
+     *
+     * @return Number of items received.
+     */
+    protected int receiveItems(int i,
+            int num,
+            ByteBuffer buffer) {
+        CharBuffer charbuffer = buffer.asCharBuffer();
+        int n = Math.min(num, Math.min(myLength - i, charbuffer.remaining()));
+        charbuffer.get(myArray, myArrayOffset + i, n);
+        buffer.position(buffer.position() + 2 * n);
+        return n;
+    }
 
-	/**
-	 * Receive as many items as possible from the given byte buffer to this
-	 * buffer.
-	 * <P>
-	 * The <TT>receiveItems()</TT> method must not block the calling thread; if
-	 * it does, all message I/O in MP will be blocked.
-	 *
-	 * @param  i       Index of first item to receive, in the range 0 ..
-	 *                 <TT>length</TT>-1.
-	 * @param  num     Maximum number of items to receive.
-	 * @param  buffer  Byte buffer.
-	 *
-	 * @return  Number of items received.
-	 */
-	protected int receiveItems
-		(int i,
-		 int num,
-		 ByteBuffer buffer)
-		{
-		CharBuffer charbuffer = buffer.asCharBuffer();
-		int n = Math.min (num, Math.min (myLength - i, charbuffer.remaining()));
-		charbuffer.get (myArray, myArrayOffset + i, n);
-		buffer.position (buffer.position() + 2*n);
-		return n;
-		}
-
-	}
+}

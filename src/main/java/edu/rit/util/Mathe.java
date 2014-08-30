@@ -22,74 +22,63 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.util;
 
 /**
  * Class Mathe provides useful mathematical operations. The class is named
- * "Mathe" so the compiler won't confuse it with class java.lang.Math.
+ * "Mathe" so the compiler won't confuse it with class
+ * org.apache.commons.math3.util.FastMath.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 11-Feb-2010
  */
-public class Mathe
-	{
+public class Mathe {
 
 // Prevent construction.
-
-	private Mathe()
-		{
-		}
+    private Mathe() {
+    }
 
 // Exported operations.
-
-	/**
-	 * Compute the integer square root of the integer <TT>x</TT>. The value
-	 * floor(<TT>x</TT><SUP>1/2</SUP>) is returned. The answer is calculated
-	 * using an exact integer algorithm taken from:
-	 * <UL>
-	 * <LI>
-	 * J. Crenshaw. Integer square roots.
-	 * <A HREF="http://www.embedded.com/98/9802fe2.htm" TARGET="_top">http://www.embedded.com/98/9802fe2.htm</A>
-	 * </UL>
-	 *
-	 * @param  x  Input.
-	 *
-	 * @return  Floor(<TT>x</TT><SUP>1/2</SUP>).
-	 *
-	 * @exception  ArithmeticException
-	 *     (unchecked exception) Thrown if <TT>x</TT> &lt; 0.
-	 */
-	public static int sqrt
-		(int x)
-		{
-		if (x < 0)
-			{
-			throw new ArithmeticException ("Mathe.sqrt(): x < 0");
-			}
-		int rem = 0;
-		int root = 0;
-		for (int i = 0; i < 16; ++ i)
-			{
-			root <<= 1;
-			rem = (rem << 2) | (x >>> 30);
-			x <<= 2;
-			++ root;
-			if (root <= rem)
-				{
-				rem -= root;
-				++ root;
-				}
-			else
-				{
-				-- root;
-				}
-			}
-		return root >>> 1;
-		}
+    /**
+     * Compute the integer square root of the integer <TT>x</TT>. The value
+     * floor(<TT>x</TT><SUP>1/2</SUP>) is returned. The answer is calculated
+     * using an exact integer algorithm taken from:
+     * <UL>
+     * <LI>
+     * J. Crenshaw. Integer square roots.
+     * <A HREF="http://www.embedded.com/98/9802fe2.htm"
+     * TARGET="_top">http://www.embedded.com/98/9802fe2.htm</A>
+     * </UL>
+     *
+     * @param x Input.
+     *
+     * @return Floor(<TT>x</TT><SUP>1/2</SUP>).
+     *
+     * @exception ArithmeticException (unchecked exception) Thrown if <TT>x</TT>
+     * &lt; 0.
+     */
+    public static int sqrt(int x) {
+        if (x < 0) {
+            throw new ArithmeticException("Mathe.sqrt(): x < 0");
+        }
+        int rem = 0;
+        int root = 0;
+        for (int i = 0; i < 16; ++i) {
+            root <<= 1;
+            rem = (rem << 2) | (x >>> 30);
+            x <<= 2;
+            ++root;
+            if (root <= rem) {
+                rem -= root;
+                ++root;
+            } else {
+                --root;
+            }
+        }
+        return root >>> 1;
+    }
 
 // Unit test main program.
-
 //	/**
 //	 * Unit test main program.
 //	 */
@@ -106,5 +95,4 @@ public class Mathe
 //				}
 //			}
 //		}
-
-	}
+}

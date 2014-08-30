@@ -22,60 +22,51 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj;
 
 /**
  * Class ArrayItemGenerator provides an object that generates items for a
  * {@linkplain ParallelIteration}; the items come from an array.
  *
- * @param  <T>  Data type of the items iterated over.
+ * @param <T> Data type of the items iterated over.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 04-Jun-2007
  */
 class ArrayItemGenerator<T>
-	extends ItemGenerator<T>
-	{
+        extends ItemGenerator<T> {
 
 // Hidden data members.
-
-	// Array containing the items.
-	private T[] myArray;
+    // Array containing the items.
+    private T[] myArray;
 
 // Exported constructors.
-
-	/**
-	 * Construct a new array item generator.
-	 *
-	 * @param  theArray  Array containing the items.
-	 */
-	public ArrayItemGenerator
-		(T[] theArray)
-		{
-		super();
-		myArray = theArray;
-		}
+    /**
+     * Construct a new array item generator.
+     *
+     * @param theArray Array containing the items.
+     */
+    public ArrayItemGenerator(T[] theArray) {
+        super();
+        myArray = theArray;
+    }
 
 // Exported operations.
+    /**
+     * Return an item holder containing the next item to be processed plus
+     * associated information.
+     *
+     * @return Item holder, or null if no more items.
+     */
+    public synchronized ItemHolder<T> nextItem() {
+        ItemHolder<T> itemholder = null;
+        if (myCurrentSequenceNumber < myArray.length && !myBreak) {
+            itemholder = new ItemHolder<T>();
+            itemholder.myItem = myArray[myCurrentSequenceNumber];
+            itemholder.mySequenceNumber = myCurrentSequenceNumber;
+            ++myCurrentSequenceNumber;
+        }
+        return itemholder;
+    }
 
-	/**
-	 * Return an item holder containing the next item to be processed plus
-	 * associated information.
-	 *
-	 * @return  Item holder, or null if no more items.
-	 */
-	public synchronized ItemHolder<T> nextItem()
-		{
-		ItemHolder<T> itemholder = null;
-		if (myCurrentSequenceNumber < myArray.length && ! myBreak)
-			{
-			itemholder = new ItemHolder<T>();
-			itemholder.myItem = myArray[myCurrentSequenceNumber];
-			itemholder.mySequenceNumber = myCurrentSequenceNumber;
-			++ myCurrentSequenceNumber;
-			}
-		return itemholder;
-		}
-
-	}
+}

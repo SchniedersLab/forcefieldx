@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.util;
 
 /**
@@ -60,26 +59,23 @@ package edu.rit.util;
  * Unlike the latter, they also provide the ability to stop and restart a timer
  * and the ability to deal with race conditions in multithreaded programs.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 27-Sep-2002
  */
-public interface TimerTask
-	{
+public interface TimerTask {
 
 // Exported operations.
+    /**
+     * Perform this timer task's timed actions. The {@linkplain Timer} that was
+     * triggered is passed in as an argument.
+     * <P>
+     * The <TT>action()</TT> method must check whether the timer is still
+     * triggered. If it is, the <TT>action()</TT> method can perform its
+     * processing. But if the timer is no longer triggered, the
+     * <TT>action()</TT> method must return without doing anything.
+     *
+     * @param theTimer Timer that was triggered.
+     */
+    public void action(Timer theTimer);
 
-	/**
-	 * Perform this timer task's timed actions. The {@linkplain Timer} that was
-	 * triggered is passed in as an argument.
-	 * <P>
-	 * The <TT>action()</TT> method must check whether the timer is still
-	 * triggered. If it is, the <TT>action()</TT> method can perform its
-	 * processing. But if the timer is no longer triggered, the
-	 * <TT>action()</TT> method must return without doing anything.
-	 *
-	 * @param  theTimer  Timer that was triggered.
-	 */
-	public void action
-		(Timer theTimer);
-
-	}
+}

@@ -22,50 +22,45 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj.cluster;
 
 /**
  * Class Constants contains various constants used in the PJ cluster middleware.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 19-Oct-2006
  */
-public class Constants
-	{
+public class Constants {
 
 // Prevent construction.
-
-	private Constants()
-		{
-		}
+    private Constants() {
+    }
 
 // Exported constants.
+    /**
+     * Host name referring to all network interfaces (<TT>"0.0.0.0"</TT>).
+     */
+    public static final String ALL_NETWORK_INTERFACES = "0.0.0.0";
 
-	/**
-	 * Host name referring to all network interfaces (<TT>"0.0.0.0"</TT>).
-	 */
-	public static final String ALL_NETWORK_INTERFACES = "0.0.0.0";
+    /**
+     * The default port number to which the Job Scheduler listens for
+     * connections from job frontend processes (20617).
+     */
+    public static final int PJ_PORT = 20617;
 
-	/**
-	 * The default port number to which the Job Scheduler listens for
-	 * connections from job frontend processes (20617).
-	 */
-	public static final int PJ_PORT = 20617;
+    /**
+     * The default port number for the Job Scheduler's web interface (8080).
+     */
+    public static final int WEB_PORT = 8080;
 
-	/**
-	 * The default port number for the Job Scheduler's web interface (8080).
-	 */
-	public static final int WEB_PORT = 8080;
+    /**
+     * The lease renewal interval (60 seconds).
+     */
+    public static final long LEASE_RENEW_INTERVAL = 60000L;
 
-	/**
-	 * The lease renewal interval (60 seconds).
-	 */
-	public static final long LEASE_RENEW_INTERVAL = 60000L;
+    /**
+     * The lease expiration interval (150 seconds).
+     */
+    public static final long LEASE_EXPIRE_INTERVAL = 150000L;
 
-	/**
-	 * The lease expiration interval (150 seconds).
-	 */
-	public static final long LEASE_EXPIRE_INTERVAL = 150000L;
-
-	}
+}

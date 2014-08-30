@@ -22,34 +22,30 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj.job;
 
 /**
  * Enum Stdout enumerates how the standard output stream of a {@linkplain Job}
  * is redirected.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 07-Oct-2010
  */
-enum Stdout
-	{
+enum Stdout {
 
-	/**
-	 * The standard output is not redirected.
-	 */
-	NONE,
+    /**
+     * The standard output is not redirected.
+     */
+    NONE,
+    /**
+     * The standard output is stored in a file. The file is created if it does
+     * not exist. The file is overwritten if it does exist.
+     */
+    FILE,
+    /**
+     * The standard output is added to the end of a file. The file is created if
+     * it does not exist.
+     */
+    FILE_APPEND,
 
-	/**
-	 * The standard output is stored in a file. The file is created if it does
-	 * not exist. The file is overwritten if it does exist.
-	 */
-	FILE,
-
-	/**
-	 * The standard output is added to the end of a file. The file is created if
-	 * it does not exist.
-	 */
-	FILE_APPEND,
-
-	}
+}

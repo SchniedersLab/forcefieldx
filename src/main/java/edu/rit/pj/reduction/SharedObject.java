@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj.reduction;
 
 import java.util.concurrent.atomic.AtomicReference;
@@ -37,138 +36,120 @@ import java.util.concurrent.atomic.AtomicReference;
  * <I>Note:</I> Class SharedObject is implemented using class
  * java.util.concurrent.atomic.AtomicReference.
  *
- * @param  <T>  Object data type.
+ * @param <T> Object data type.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 20-Jun-2007
  */
-public class SharedObject<T>
-	{
+public class SharedObject<T> {
 
 // Hidden data members.
-
-	private AtomicReference<T> myValue;
+    private AtomicReference<T> myValue;
 
 // Exported constructors.
+    /**
+     * Construct a new object reduction variable with the initial value null.
+     */
+    public SharedObject() {
+        myValue = new AtomicReference<T>();
+    }
 
-	/**
-	 * Construct a new object reduction variable with the initial value null.
-	 */
-	public SharedObject()
-		{
-		myValue = new AtomicReference<T>();
-		}
-
-	/**
-	 * Construct a new object reduction variable with the given initial value.
-	 *
-	 * @param  initialValue  Initial value.
-	 */
-	public SharedObject
-		(T initialValue)
-		{
-		myValue = new AtomicReference<T> (initialValue);
-		}
+    /**
+     * Construct a new object reduction variable with the given initial value.
+     *
+     * @param initialValue Initial value.
+     */
+    public SharedObject(T initialValue) {
+        myValue = new AtomicReference<T>(initialValue);
+    }
 
 // Exported operations.
+    /**
+     * Returns this reduction variable's current value.
+     *
+     * @return Current value.
+     */
+    public T get() {
+        return myValue.get();
+    }
 
-	/**
-	 * Returns this reduction variable's current value.
-	 *
-	 * @return  Current value.
-	 */
-	public T get()
-		{
-		return myValue.get();
-		}
+    /**
+     * Set this reduction variable to the given value.
+     *
+     * @param value New value.
+     */
+    public void set(T value) {
+        myValue.set(value);
+    }
 
-	/**
-	 * Set this reduction variable to the given value.
-	 *
-	 * @param  value  New value.
-	 */
-	public void set
-		(T value)
-		{
-		myValue.set (value);
-		}
+    /**
+     * Set this reduction variable to the given value and return the previous
+     * value.
+     *
+     * @param value New value.
+     *
+     * @return Previous value.
+     */
+    public T getAndSet(T value) {
+        return myValue.getAndSet(value);
+    }
 
-	/**
-	 * Set this reduction variable to the given value and return the previous
-	 * value.
-	 *
-	 * @param  value  New value.
-	 *
-	 * @return  Previous value.
-	 */
-	public T getAndSet
-		(T value)
-		{
-		return myValue.getAndSet (value);
-		}
+    /**
+     * Atomically set this reduction variable to the given updated value if the
+     * current value equals the expected value.
+     *
+     * @param expect Expected value.
+     * @param update Updated value.
+     *
+     * @return True if the update happened, false otherwise.
+     */
+    public boolean compareAndSet(T expect,
+            T update) {
+        return myValue.compareAndSet(expect, update);
+    }
 
-	/**
-	 * Atomically set this reduction variable to the given updated value if the
-	 * current value equals the expected value.
-	 *
-	 * @param  expect  Expected value.
-	 * @param  update  Updated value.
-	 *
-	 * @return  True if the update happened, false otherwise.
-	 */
-	public boolean compareAndSet
-		(T expect,
-		 T update)
-		{
-		return myValue.compareAndSet (expect, update);
-		}
+    /**
+     * Atomically set this reduction variable to the given updated value if the
+     * current value equals the expected value. May fail spuriously.
+     *
+     * @param expect Expected value.
+     * @param update Updated value.
+     *
+     * @return True if the update happened, false otherwise.
+     */
+    public boolean weakCompareAndSet(T expect,
+            T update) {
+        return myValue.weakCompareAndSet(expect, update);
+    }
 
-	/**
-	 * Atomically set this reduction variable to the given updated value if the
-	 * current value equals the expected value. May fail spuriously.
-	 *
-	 * @param  expect  Expected value.
-	 * @param  update  Updated value.
-	 *
-	 * @return  True if the update happened, false otherwise.
-	 */
-	public boolean weakCompareAndSet
-		(T expect,
-		 T update)
-		{
-		return myValue.weakCompareAndSet (expect, update);
-		}
+    /**
+     * Combine this reduction variable with the given value using the given
+     * operation. The result is stored back into this reduction variable and is
+     * returned.
+     *
+     * @param value Value.
+     * @param op Binary operation.
+     *
+     * @return (This variable) <I>op</I> (<TT>value</TT>).
+     */
+    public T reduce(T value,
+            ObjectOp<T> op) {
+        for (;;) {
+            T oldvalue = myValue.get();
+            T newvalue = op.op(oldvalue, value);
+            if (myValue.compareAndSet(oldvalue, newvalue)) {
+                return newvalue;
+            }
+        }
+    }
 
-	/**
-	 * Combine this reduction variable with the given value using the given
-	 * operation. The result is stored back into this reduction variable and is
-	 * returned.
-	 *
-	 * @param  value  Value.
-	 * @param  op     Binary operation.
-	 *
-	 * @return  (This variable) <I>op</I> (<TT>value</TT>).
-	 */
-	public T reduce
-		(T value,
-		 ObjectOp<T> op)
-		{
-		for (;;)
-			{
-			T oldvalue = myValue.get();
-			T newvalue = op.op (oldvalue, value);
-			if (myValue.compareAndSet (oldvalue, newvalue)) return newvalue;
-			}
-		}
+    /**
+     * Returns a string version of this reduction variable.
+     *
+     * @return String version.
+     */
+    public String toString() {
+        return myValue.toString();
+    }
 
-	/**
-	 * Returns a string version of this reduction variable.
-	 *
-	 * @return  String version.
-	 */
-	public String toString()
-		{
-		return myValue.toString();
-		}
-
-	}
+}

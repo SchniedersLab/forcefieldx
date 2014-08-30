@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj.cluster;
 
 import edu.rit.mp.Channel;
@@ -34,140 +33,113 @@ import java.io.IOException;
  * Class JobSchedulerProxy provides a proxy object for sending messages to a PJ
  * job scheduler process.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 24-Jan-2012
  */
 public class JobSchedulerProxy
-	extends Proxy
-	implements JobSchedulerRef
-	{
+        extends Proxy
+        implements JobSchedulerRef {
 
 // Exported constructors.
-
-	/**
-	 * Construct a new job scheduler proxy. The proxy will use the given channel
-	 * in the given channel group to send messages to the job scheduler process.
-	 *
-	 * @param  theChannelGroup  Channel group.
-	 * @param  theChannel       Channel.
-	 */
-	public JobSchedulerProxy
-		(ChannelGroup theChannelGroup,
-		 Channel theChannel)
-		{
-		super (theChannelGroup, theChannel);
-		}
+    /**
+     * Construct a new job scheduler proxy. The proxy will use the given channel
+     * in the given channel group to send messages to the job scheduler process.
+     *
+     * @param theChannelGroup Channel group.
+     * @param theChannel Channel.
+     */
+    public JobSchedulerProxy(ChannelGroup theChannelGroup,
+            Channel theChannel) {
+        super(theChannelGroup, theChannel);
+    }
 
 // Exported operations.
+    /**
+     * Report that a backend node failed.
+     *
+     * @param theJobFrontend Job frontend that is calling this method.
+     * @param name Backend node name.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void backendFailed(JobFrontendRef theJobFrontend,
+            String name)
+            throws IOException {
+        send(JobSchedulerMessage.backendFailed(theJobFrontend, name));
+    }
 
-	/**
-	 * Report that a backend node failed.
-	 *
-	 * @param  theJobFrontend  Job frontend that is calling this method.
-	 * @param  name            Backend node name.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void backendFailed
-		(JobFrontendRef theJobFrontend,
-		 String name)
-		throws IOException
-		{
-		send (JobSchedulerMessage.backendFailed (theJobFrontend, name));
-		}
+    /**
+     * Cancel a job.
+     *
+     * @param theJobFrontend Job frontend that is calling this method.
+     * @param errmsg Error message string.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void cancelJob(JobFrontendRef theJobFrontend,
+            String errmsg)
+            throws IOException {
+        send(JobSchedulerMessage.cancelJob(theJobFrontend, errmsg));
+    }
 
-	/**
-	 * Cancel a job.
-	 *
-	 * @param  theJobFrontend  Job frontend that is calling this method.
-	 * @param  errmsg          Error message string.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void cancelJob
-		(JobFrontendRef theJobFrontend,
-		 String errmsg)
-		throws IOException
-		{
-		send (JobSchedulerMessage.cancelJob (theJobFrontend, errmsg));
-		}
+    /**
+     * Report that a job finished.
+     *
+     * @param theJobFrontend Job frontend that is calling this method.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void jobFinished(JobFrontendRef theJobFrontend)
+            throws IOException {
+        send(JobSchedulerMessage.jobFinished(theJobFrontend));
+    }
 
-	/**
-	 * Report that a job finished.
-	 *
-	 * @param  theJobFrontend  Job frontend that is calling this method.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void jobFinished
-		(JobFrontendRef theJobFrontend)
-		throws IOException
-		{
-		send (JobSchedulerMessage.jobFinished (theJobFrontend));
-		}
+    /**
+     * Renew the lease on a job.
+     *
+     * @param theJobFrontend Job frontend that is calling this method.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void renewLease(JobFrontendRef theJobFrontend)
+            throws IOException {
+        send(JobSchedulerMessage.renewLease(theJobFrontend));
+    }
 
-	/**
-	 * Renew the lease on a job.
-	 *
-	 * @param  theJobFrontend  Job frontend that is calling this method.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void renewLease
-		(JobFrontendRef theJobFrontend)
-		throws IOException
-		{
-		send (JobSchedulerMessage.renewLease (theJobFrontend));
-		}
+    /**
+     * Report a comment for a process.
+     *
+     * @param theJobFrontend Job frontend that is calling this method.
+     * @param rank Process rank.
+     * @param comment Comment string.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void reportComment(JobFrontendRef theJobFrontend,
+            int rank,
+            String comment)
+            throws IOException {
+        send(JobSchedulerMessage.reportComment(theJobFrontend, rank, comment));
+    }
 
-	/**
-	 * Report a comment for a process.
-	 *
-	 * @param  theJobFrontend  Job frontend that is calling this method.
-	 * @param  rank            Process rank.
-	 * @param  comment         Comment string.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void reportComment
-		(JobFrontendRef theJobFrontend,
-		 int rank,
-		 String comment)
-		throws IOException
-		{
-		send
-			(JobSchedulerMessage.reportComment
-				(theJobFrontend, rank, comment));
-		}
+    /**
+     * Request that a job be scheduled.
+     *
+     * @param theJobFrontend Job frontend that is calling this method.
+     * @param username User name.
+     * @param Nn Number of backend nodes.
+     * @param Np Number of processes.
+     * @param Nt Number of CPUs per process. 0 means "all CPUs."
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void requestJob(JobFrontendRef theJobFrontend,
+            String username,
+            int Nn,
+            int Np,
+            int Nt)
+            throws IOException {
+        send(JobSchedulerMessage.requestJob(theJobFrontend, username, Nn, Np, Nt));
+    }
 
-	/**
-	 * Request that a job be scheduled.
-	 *
-	 * @param  theJobFrontend  Job frontend that is calling this method.
-	 * @param  username        User name.
-	 * @param  Nn              Number of backend nodes.
-	 * @param  Np              Number of processes.
-	 * @param  Nt              Number of CPUs per process. 0 means "all CPUs."
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void requestJob
-		(JobFrontendRef theJobFrontend,
-		 String username,
-		 int Nn,
-		 int Np,
-		 int Nt)
-		throws IOException
-		{
-		send
-			(JobSchedulerMessage.requestJob
-				(theJobFrontend, username, Nn, Np, Nt));
-		}
-
-	}
+}

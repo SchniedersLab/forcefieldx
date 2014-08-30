@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,337 +38,280 @@ import java.util.concurrent.atomic.AtomicInteger;
  * pass this instance to the parallel team's <TT>execute()</TT> method. For
  * further information, see class {@linkplain ParallelRegion}.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 19-May-2008
  */
-public class ParallelTeam
-	{
+public class ParallelTeam {
 
 // Hidden data members.
+    // Number of threads.
+    int K;
 
-	// Number of threads.
-	int K;
+    // Array of threads in the team.
+    ParallelTeamThread[] myThread;
 
-	// Array of threads in the team.
-	ParallelTeamThread[] myThread;
+    // Parallel region being executed, or null if none is being executed.
+    ParallelRegion myRegion;
 
-	// Parallel region being executed, or null if none is being executed.
-	ParallelRegion myRegion;
+    // Semaphore for synchronizing threads at the end of a parallel region.
+    Semaphore myRegionEndSemaphore = new Semaphore(0);
 
-	// Semaphore for synchronizing threads at the end of a parallel region.
-	Semaphore myRegionEndSemaphore = new Semaphore (0);
+    // Exception map for parallel region, or null if none is being executed.
+    ConcurrentHashMap<Integer, Throwable> myExceptionMap;
 
-	// Exception map for parallel region, or null if none is being executed.
-	ConcurrentHashMap<Integer,Throwable> myExceptionMap;
+    // Team barrier flag. Used by the ParallelRegion.barrier() method.
+    volatile int myBarrierFlag;
 
-	// Team barrier flag. Used by the ParallelRegion.barrier() method.
-	volatile int myBarrierFlag;
-
-	// Parallel construct counter. Counts how many parallel constructs have been
-	// encountered.
-	AtomicInteger myConstructCount = new AtomicInteger (0);
+    // Parallel construct counter. Counts how many parallel constructs have been
+    // encountered.
+    AtomicInteger myConstructCount = new AtomicInteger(0);
 
 // Exported constructors.
+    /**
+     * Construct a new parallel team with the default number of threads. If the
+     * <TT>"pj.nt"</TT> Java property is specified, that property gives the
+     * default number of threads, which must be an integer greater than or equal
+     * to 1. If the <TT>"pj.nt"</TT> Java property is not specified, the default
+     * number of threads is the value returned by the
+     * <TT>Runtime.availableProcessors()</TT> method. You can specify the
+     * default number of threads on the Java command line like this:
+     * <PRE>
+     *     java -Dpj.nt=4 . . .
+     * </PRE>
+     *
+     * @exception IllegalArgumentException (unchecked exception) Thrown if the
+     * <TT>"pj.nt"</TT> property value is not an integer greater than or equal
+     * to 1.
+     */
+    public ParallelTeam() {
+        this(getDefaultThreadCount());
+    }
 
-	/**
-	 * Construct a new parallel team with the default number of threads. If the
-	 * <TT>"pj.nt"</TT> Java property is specified, that property gives the
-	 * default number of threads, which must be an integer greater than or equal
-	 * to 1. If the <TT>"pj.nt"</TT> Java property is not specified, the default
-	 * number of threads is the value returned by the
-	 * <TT>Runtime.availableProcessors()</TT> method. You can specify the
-	 * default number of threads on the Java command line like this:
-	 * <PRE>
-	 *     java -Dpj.nt=4 . . .
-	 * </PRE>
-	 *
-	 * @exception  IllegalArgumentException
-	 *     (unchecked exception) Thrown if the <TT>"pj.nt"</TT> property value
-	 *     is not an integer greater than or equal to 1.
-	 */
-	public ParallelTeam()
-		{
-		this (getDefaultThreadCount());
-		}
+    /**
+     * Construct a new parallel team with the given number of threads.
+     *
+     * @param K Number of threads.
+     *
+     * @exception IllegalArgumentException (unchecked exception) Thrown if
+     * <I>K</I> is less than 1.
+     */
+    public ParallelTeam(int K) {
+        if (K < 1) {
+            throw new IllegalArgumentException("ParallelTeam(): K must be >= 1");
+        }
+        this.K = K;
 
-	/**
-	 * Construct a new parallel team with the given number of threads.
-	 *
-	 * @param  K  Number of threads.
-	 *
-	 * @exception  IllegalArgumentException
-	 *     (unchecked exception) Thrown if <I>K</I> is less than 1.
-	 */
-	public ParallelTeam
-		(int K)
-		{
-		if (K < 1)
-			{
-			throw new IllegalArgumentException
-				("ParallelTeam(): K must be >= 1");
-			}
-		this.K = K;
-
-		myThread = new ParallelTeamThread [K];
-		myThread[0] = new ParallelTeamThread_0 (this, 0);
-		for (int i = 1; i < K; ++ i)
-			{
-			myThread[i] = new ParallelTeamThread (this, i);
-			}
-		}
+        myThread = new ParallelTeamThread[K];
+        myThread[0] = new ParallelTeamThread_0(this, 0);
+        for (int i = 1; i < K; ++i) {
+            myThread[i] = new ParallelTeamThread(this, i);
+        }
+    }
 
 // Exported operations.
+    /**
+     * Execute the given parallel region.
+     *
+     * @param theRegion Parallel region.
+     *
+     * @exception NullPointerException (unchecked exception) Thrown if
+     * <TT>theRegion</TT> is null.
+     * @exception IllegalStateException (unchecked exception) Thrown if this
+     * parallel team is already executing a parallel region. Thrown if
+     * <TT>theRegion</TT> is already being executed by a parallel team.
+     * @exception Exception Exception thrown by the parallel region's
+     * <TT>start()</TT>,
+     * <TT>run()</TT>, or <TT>finish()</TT> methods.
+     */
+    public final void execute(ParallelRegion theRegion)
+            throws Exception {
+        // Verify preconditions.
+        if (theRegion == null) {
+            throw new NullPointerException("ParallelTeam.execute(): theRegion is null");
+        }
+        if (myRegion != null) {
+            throw new IllegalStateException("ParallelTeam.execute(): Already executing a parallel region");
+        }
+        if (theRegion.myTeam != null) {
+            throw new IllegalStateException("ParallelTeam.execute(): theRegion already being executed by a parallel team");
+        }
 
-	/**
-	 * Execute the given parallel region.
-	 *
-	 * @param  theRegion  Parallel region.
-	 *
-	 * @exception  NullPointerException
-	 *     (unchecked exception) Thrown if <TT>theRegion</TT> is null.
-	 * @exception  IllegalStateException
-	 *     (unchecked exception) Thrown if this parallel team is already
-	 *     executing a parallel region. Thrown if <TT>theRegion</TT> is already
-	 *     being executed by a parallel team.
-	 * @exception  Exception
-	 *     Exception thrown by the parallel region's <TT>start()</TT>,
-	 *     <TT>run()</TT>, or <TT>finish()</TT> methods.
-	 */
-	public final void execute
-		(ParallelRegion theRegion)
-		throws Exception
-		{
-		// Verify preconditions.
-		if (theRegion == null)
-			{
-			throw new NullPointerException
-				("ParallelTeam.execute(): theRegion is null");
-			}
-		if (myRegion != null)
-			{
-			throw new IllegalStateException
-				("ParallelTeam.execute(): Already executing a parallel region");
-			}
-		if (theRegion.myTeam != null)
-			{
-			throw new IllegalStateException
-				("ParallelTeam.execute(): theRegion already being executed by a parallel team");
-			}
+        // Record parallel region.
+        myRegion = theRegion;
+        myExceptionMap = new ConcurrentHashMap<Integer, Throwable>(K, 0.75f, K);
+        theRegion.myTeam = this;
 
-		// Record parallel region.
-		myRegion = theRegion;
-		myExceptionMap = new ConcurrentHashMap<Integer,Throwable> (K, 0.75f, K);
-		theRegion.myTeam = this;
+        try {
+            // Perform the parallel region's start() method. Any exception
+            // aborts the execute() method.
+            myRegion.start();
 
-		try
-			{
-			// Perform the parallel region's start() method. Any exception
-			// aborts the execute() method.
-			myRegion.start();
+            // Release the team threads to perform the parallel region's run()
+            // method.
+            for (ParallelTeamThread thread : myThread) {
+                thread.myRegionBeginSemaphore.release();
+            }
 
-			// Release the team threads to perform the parallel region's run()
-			// method.
-			for (ParallelTeamThread thread : myThread)
-				{
-				thread.myRegionBeginSemaphore.release();
-				}
+            // Wait until all team threads have returned from the parallel
+            // region's run() method.
+            myRegionEndSemaphore.acquireUninterruptibly(K);
 
-			// Wait until all team threads have returned from the parallel
-			// region's run() method.
-			myRegionEndSemaphore.acquireUninterruptibly (K);
+            // Propagate any exceptions thrown by the run() method.
+            if (myExceptionMap.isEmpty()) {
+            } else if (myExceptionMap.size() == 1) {
+                rethrow(myExceptionMap.values().iterator().next());
+            } else {
+                throw new MultipleParallelException("ParallelTeam.execute(): Multiple threads threw exceptions",
+                        myExceptionMap);
+            }
 
-			// Propagate any exceptions thrown by the run() method.
-			if (myExceptionMap.isEmpty())
-				{
-				}
-			else if (myExceptionMap.size() == 1)
-				{
-				rethrow (myExceptionMap.values().iterator().next());
-				}
-			else
-				{
-				throw new MultipleParallelException
-					("ParallelTeam.execute(): Multiple threads threw exceptions",
-					 myExceptionMap);
-				}
+            // Perform the parallel region's finish() method. Any exception
+            // aborts the execute() method.
+            myRegion.finish();
+        } finally {
+            // Clean up.
+            myRegion.myTeam = null;
+            myExceptionMap = null;
+            myRegion = null;
+        }
+    }
 
-			// Perform the parallel region's finish() method. Any exception
-			// aborts the execute() method.
-			myRegion.finish();
-			}
+    /**
+     * Determine if this parallel team is executing a parallel region.
+     *
+     * @return True if this parallel team is executing a parallel region, false
+     * otherwise.
+     */
+    public final boolean isExecutingInParallel() {
+        return myRegion != null;
+    }
 
-		finally
-			{
-			// Clean up.
-			myRegion.myTeam = null;
-			myExceptionMap = null;
-			myRegion = null;
-			}
-		}
+    /**
+     * Returns the parallel region of code that this parallel team is executing.
+     *
+     * @return Parallel region.
+     *
+     * @exception IllegalStateException (unchecked exception) Thrown if this
+     * parallel team is not executing a parallel region.
+     */
+    public final ParallelRegion region() {
+        if (myRegion == null) {
+            throw new IllegalStateException("ParallelTeam.region(): Not executing a parallel region");
+        }
+        return myRegion;
+    }
 
-	/**
-	 * Determine if this parallel team is executing a parallel region.
-	 *
-	 * @return  True if this parallel team is executing a parallel region, false
-	 *          otherwise.
-	 */
-	public final boolean isExecutingInParallel()
-		{
-		return myRegion != null;
-		}
+    /**
+     * Determine the number of threads in this parallel team.
+     *
+     * @return Number of threads in the team.
+     */
+    public final int getThreadCount() {
+        return K;
+    }
 
-	/**
-	 * Returns the parallel region of code that this parallel team is executing.
-	 *
-	 * @return  Parallel region.
-	 *
-	 * @exception  IllegalStateException
-	 *     (unchecked exception) Thrown if this parallel team is not executing a
-	 *     parallel region.
-	 */
-	public final ParallelRegion region()
-		{
-		if (myRegion == null)
-			{
-			throw new IllegalStateException
-				("ParallelTeam.region(): Not executing a parallel region");
-			}
-		return myRegion;
-		}
-
-	/**
-	 * Determine the number of threads in this parallel team.
-	 *
-	 * @return  Number of threads in the team.
-	 */
-	public final int getThreadCount()
-		{
-		return K;
-		}
-
-	/**
-	 * Determine the default number of threads for a parallel team. If the
-	 * <TT>"pj.nt"</TT> Java property is specified, that property gives the
-	 * default number of threads, which must be an integer greater than or equal
-	 * to 1. If the <TT>"pj.nt"</TT> Java property is not specified, the default
-	 * number of threads is the value returned by the
-	 * <TT>Runtime.availableProcessors()</TT> method. You can specify the
-	 * default number of threads on the Java command line like this:
-	 * <PRE>
-	 *     java -Dpj.nt=4 . . .
-	 * </PRE>
-	 *
-	 * @return  Default number of threads for a parallel team.
-	 *
-	 * @exception  IllegalArgumentException
-	 *     (unchecked exception) Thrown if the <TT>"pj.nt"</TT> property value
-	 *     is not an integer greater than or equal to 1.
-	 */
-	public static int getDefaultThreadCount()
-		{
-		int k = PJProperties.getPjNt();
-		if (k == 0) k = Runtime.getRuntime().availableProcessors();
-		return k;
-		}
+    /**
+     * Determine the default number of threads for a parallel team. If the
+     * <TT>"pj.nt"</TT> Java property is specified, that property gives the
+     * default number of threads, which must be an integer greater than or equal
+     * to 1. If the <TT>"pj.nt"</TT> Java property is not specified, the default
+     * number of threads is the value returned by the
+     * <TT>Runtime.availableProcessors()</TT> method. You can specify the
+     * default number of threads on the Java command line like this:
+     * <PRE>
+     *     java -Dpj.nt=4 . . .
+     * </PRE>
+     *
+     * @return Default number of threads for a parallel team.
+     *
+     * @exception IllegalArgumentException (unchecked exception) Thrown if the
+     * <TT>"pj.nt"</TT> property value is not an integer greater than or equal
+     * to 1.
+     */
+    public static int getDefaultThreadCount() {
+        int k = PJProperties.getPjNt();
+        if (k == 0) {
+            k = Runtime.getRuntime().availableProcessors();
+        }
+        return k;
+    }
 
 // Hidden operations.
+    /**
+     * Do the thread-0 portion of a barrier with no barrier action. This method
+     * is called by thread 0 of the parallel team.
+     */
+    void barrier() {
+        // Get the new team barrier flag.
+        int newBarrierFlag = myBarrierFlag ^ 1;
 
-	/**
-	 * Do the thread-0 portion of a barrier with no barrier action. This method
-	 * is called by thread 0 of the parallel team.
-	 */
-	void barrier()
-		{
-		// Get the new team barrier flag.
-		int newBarrierFlag = myBarrierFlag ^ 1;
+        // Wait until each team thread 1 .. K-1 has switched to the new
+        // barrier flag.
+        for (int i = 1; i < K; ++i) {
+            ParallelTeamThread thread_i = myThread[i];
+            if (thread_i.myBarrierFlag != newBarrierFlag) {
+                Spinner spinner = new Spinner();
+                while (thread_i.myBarrierFlag != newBarrierFlag) {
+                    spinner.spin();
+                }
+            }
+        }
 
-		// Wait until each team thread 1 .. K-1 has switched to the new
-		// barrier flag.
-		for (int i = 1; i < K; ++ i)
-			{
-			ParallelTeamThread thread_i = myThread[i];
-			if (thread_i.myBarrierFlag != newBarrierFlag)
-				{
-				Spinner spinner = new Spinner();
-				while (thread_i.myBarrierFlag != newBarrierFlag)
-					{
-					spinner.spin();
-					}
-				}
-			}
+        // Switch to the new team barrier flag.
+        myBarrierFlag = newBarrierFlag;
+    }
 
-		// Switch to the new team barrier flag.
-		myBarrierFlag = newBarrierFlag;
-		}
+    /**
+     * Do the thread-0 portion of a barrier with a barrier action. This method
+     * is called by thread 0 of the parallel team.
+     *
+     * @param action Barrier action.
+     *
+     * @exception Exception Thrown if the <TT>action</TT>'s <TT>run()</TT>
+     * method throws an exception.
+     */
+    void barrier(BarrierAction action)
+            throws Exception {
+        // Get the new team barrier flag.
+        int newBarrierFlag = myBarrierFlag ^ 1;
 
-	/**
-	 * Do the thread-0 portion of a barrier with a barrier action. This method
-	 * is called by thread 0 of the parallel team.
-	 *
-	 * @param  action  Barrier action.
-	 *
-	 * @exception  Exception
-	 *     Thrown if the <TT>action</TT>'s <TT>run()</TT> method throws an
-	 *     exception.
-	 */
-	void barrier
-		(BarrierAction action)
-		throws Exception
-		{
-		// Get the new team barrier flag.
-		int newBarrierFlag = myBarrierFlag ^ 1;
+        // Wait until each team thread 1 .. K-1 has switched to the new
+        // barrier flag.
+        for (int i = 1; i < K; ++i) {
+            ParallelTeamThread thread_i = myThread[i];
+            if (thread_i.myBarrierFlag != newBarrierFlag) {
+                Spinner spinner = new Spinner();
+                while (thread_i.myBarrierFlag != newBarrierFlag) {
+                    spinner.spin();
+                }
+            }
+        }
 
-		// Wait until each team thread 1 .. K-1 has switched to the new
-		// barrier flag.
-		for (int i = 1; i < K; ++ i)
-			{
-			ParallelTeamThread thread_i = myThread[i];
-			if (thread_i.myBarrierFlag != newBarrierFlag)
-				{
-				Spinner spinner = new Spinner();
-				while (thread_i.myBarrierFlag != newBarrierFlag)
-					{
-					spinner.spin();
-					}
-				}
-			}
+        try {
+            // Do the barrier action.
+            action.myTeam = this;
+            action.run();
+        } finally {
+            action.myTeam = null;
 
-		try
-			{
-			// Do the barrier action.
-			action.myTeam = this;
-			action.run();
-			}
+            // Switch to the new team barrier flag.
+            myBarrierFlag = newBarrierFlag;
+        }
+    }
 
-		finally
-			{
-			action.myTeam = null;
+    /**
+     * Re-throw the given object as a checked or unchecked exception. If the
+     * given object is null or is not throwable, do nothing.
+     */
+    static void rethrow(Object exc)
+            throws Exception {
+        if (exc instanceof RuntimeException) {
+            throw (RuntimeException) exc;
+        } else if (exc instanceof Exception) {
+            throw (Exception) exc;
+        } else if (exc instanceof Error) {
+            throw (Error) exc;
+        }
+    }
 
-			// Switch to the new team barrier flag.
-			myBarrierFlag = newBarrierFlag;
-			}
-		}
-
-	/**
-	 * Re-throw the given object as a checked or unchecked exception. If the
-	 * given object is null or is not throwable, do nothing.
-	 */
-	static void rethrow
-		(Object exc)
-		throws Exception
-		{
-		if (exc instanceof RuntimeException)
-			{
-			throw (RuntimeException) exc;
-			}
-		else if (exc instanceof Exception)
-			{
-			throw (Exception) exc;
-			}
-		else if (exc instanceof Error)
-			{
-			throw (Error) exc;
-			}
-		}
-
-	}
+}

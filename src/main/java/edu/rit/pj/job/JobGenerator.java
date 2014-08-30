@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj.job;
 
 import java.util.HashSet;
@@ -45,116 +44,96 @@ import java.util.Set;
  * certain job numbers. This is used for checkpointing. For further information,
  * see class {@linkplain Runner}.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 08-Oct-2010
  */
 public abstract class JobGenerator
-	implements Iterable<Job>
-	{
+        implements Iterable<Job> {
 
 // Hidden data members.
-
-	private Set<Integer> myOmittedJobNumbers;
+    private Set<Integer> myOmittedJobNumbers;
 
 // Exported constructors.
-
-	/**
-	 * Construct a new job generator.
-	 */
-	public JobGenerator()
-		{
-		myOmittedJobNumbers = new HashSet<Integer>();
-		}
+    /**
+     * Construct a new job generator.
+     */
+    public JobGenerator() {
+        myOmittedJobNumbers = new HashSet<Integer>();
+    }
 
 // Exported operations.
+    /**
+     * Omit the job numbers in the given set when generating jobs. To be
+     * effective, <TT>omit()</TT> must be called before calling
+     * <TT>iterator()</TT>. A snapshot of the given set is taken; changing the
+     * set's contents thereafter will not affect the job numbers to be omitted.
+     *
+     * @param theOmittedJobNumbers Set of job numbers to be omitted.
+     *
+     * @exception NullPointerException (unchecked exception) Thrown if
+     * <TT>theOmittedJobNumbers</TT> is null.
+     */
+    public void omit(Set<Integer> theOmittedJobNumbers) {
+        myOmittedJobNumbers.clear();
+        myOmittedJobNumbers.addAll(theOmittedJobNumbers);
+    }
 
-	/**
-	 * Omit the job numbers in the given set when generating jobs. To be
-	 * effective, <TT>omit()</TT> must be called before calling
-	 * <TT>iterator()</TT>. A snapshot of the given set is taken; changing the
-	 * set's contents thereafter will not affect the job numbers to be omitted.
-	 *
-	 * @param  theOmittedJobNumbers  Set of job numbers to be omitted.
-	 *
-	 * @exception  NullPointerException
-	 *     (unchecked exception) Thrown if <TT>theOmittedJobNumbers</TT> is
-	 *     null.
-	 */
-	public void omit
-		(Set<Integer> theOmittedJobNumbers)
-		{
-		myOmittedJobNumbers.clear();
-		myOmittedJobNumbers.addAll (theOmittedJobNumbers);
-		}
+    /**
+     * Get an iterator for generating the jobs in the job group.
+     *
+     * @return Iterator.
+     */
+    public Iterator<Job> iterator() {
+        return new Iterator<Job>() {
+            private int N = jobCount();
+            private int myJobNumber = -1;
+            private boolean generated = true;
 
-	/**
-	 * Get an iterator for generating the jobs in the job group.
-	 *
-	 * @return  Iterator.
-	 */
-	public Iterator<Job> iterator()
-		{
-		return new Iterator<Job>()
-			{
-			private int N = jobCount();
-			private int myJobNumber = -1;
-			private boolean generated = true;
+            public boolean hasNext() {
+                advance();
+                return myJobNumber < N;
+            }
 
-			public boolean hasNext()
-				{
-				advance();
-				return myJobNumber < N;
-				}
+            public Job next() {
+                advance();
+                if (myJobNumber >= N) {
+                    throw new NoSuchElementException();
+                }
+                generated = true;
+                return createJob(myJobNumber);
+            }
 
-			public Job next()
-				{
-				advance();
-				if (myJobNumber >= N)
-					{
-					throw new NoSuchElementException();
-					}
-				generated = true;
-				return createJob (myJobNumber);
-				}
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
 
-			public void remove()
-				{
-				throw new UnsupportedOperationException();
-				}
-
-			private void advance()
-				{
-				if (generated)
-					{
-					generated = false;
-					do
-						{
-						++ myJobNumber;
-						}
-					while (myJobNumber < N &&
-							myOmittedJobNumbers.contains (myJobNumber));
-					}
-				}
-			};
-		}
+            private void advance() {
+                if (generated) {
+                    generated = false;
+                    do {
+                        ++myJobNumber;
+                    } while (myJobNumber < N
+                            && myOmittedJobNumbers.contains(myJobNumber));
+                }
+            }
+        };
+    }
 
 // Hidden operations.
+    /**
+     * Returns the number of jobs in the job group, <I>N</I>.
+     *
+     * @return Number of jobs.
+     */
+    protected abstract int jobCount();
 
-	/**
-	 * Returns the number of jobs in the job group, <I>N</I>.
-	 *
-	 * @return  Number of jobs.
-	 */
-	protected abstract int jobCount();
+    /**
+     * Create the job with the given job number. This method must create and
+     * return an instance of class {@linkplain Job} whose job number is
+     * <TT>theJobNumber</TT>.
+     *
+     * @param theJobNumber Job number (0 .. <I>N</I>&minus;1).
+     */
+    protected abstract Job createJob(int theJobNumber);
 
-	/**
-	 * Create the job with the given job number. This method must create and
-	 * return an instance of class {@linkplain Job} whose job number is
-	 * <TT>theJobNumber</TT>.
-	 *
-	 * @param  theJobNumber  Job number (0 .. <I>N</I>&minus;1).
-	 */
-	protected abstract Job createJob
-		(int theJobNumber);
-
-	}
+}

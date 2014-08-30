@@ -22,143 +22,115 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj.reduction;
 
 /**
  * Class ByteOp is the abstract base class for a binary operation on byte
  * values, used to do reduction in a parallel program.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 24-Nov-2009
  */
 public abstract class ByteOp
-	extends Op
-	{
+        extends Op {
 
 // Hidden constructors.
-
-	/**
-	 * Construct a new byte binary operation.
-	 */
-	protected ByteOp()
-		{
-		super();
-		}
+    /**
+     * Construct a new byte binary operation.
+     */
+    protected ByteOp() {
+        super();
+    }
 
 // Exported operations.
-
-	/**
-	 * Perform this binary operation.
-	 *
-	 * @param  x  First argument.
-	 * @param  y  Second argument.
-	 *
-	 * @return  (<TT>x</TT> <I>op</I> <TT>y</TT>), where <I>op</I> stands for
-	 *          this binary operation.
-	 */
-	public abstract byte op
-		(byte x,
-		 byte y);
+    /**
+     * Perform this binary operation.
+     *
+     * @param x First argument.
+     * @param y Second argument.
+     *
+     * @return (<TT>x</TT> <I>op</I> <TT>y</TT>), where <I>op</I> stands for
+     * this binary operation.
+     */
+    public abstract byte op(byte x,
+            byte y);
 
 // Exported constants.
+    /**
+     * The byte sum binary operation.
+     */
+    public static final ByteOp SUM
+            = new ByteOp() {
+                public byte op(byte x,
+                        byte y) {
+                    return (byte) (x + y);
+                }
+            };
 
-	/**
-	 * The byte sum binary operation.
-	 */
-	public static final ByteOp SUM =
-		new ByteOp()
-			{
-			public byte op
-				(byte x,
-				 byte y)
-				{
-				return (byte) (x + y);
-				}
-			};
+    /**
+     * The byte product binary operation.
+     */
+    public static final ByteOp PRODUCT
+            = new ByteOp() {
+                public byte op(byte x,
+                        byte y) {
+                    return (byte) (x * y);
+                }
+            };
 
-	/**
-	 * The byte product binary operation.
-	 */
-	public static final ByteOp PRODUCT =
-		new ByteOp()
-			{
-			public byte op
-				(byte x,
-				 byte y)
-				{
-				return (byte) (x * y);
-				}
-			};
+    /**
+     * The byte minimum binary operation.
+     */
+    public static final ByteOp MINIMUM
+            = new ByteOp() {
+                public byte op(byte x,
+                        byte y) {
+                    return (byte) Math.min(x, y);
+                }
+            };
 
-	/**
-	 * The byte minimum binary operation.
-	 */
-	public static final ByteOp MINIMUM =
-		new ByteOp()
-			{
-			public byte op
-				(byte x,
-				 byte y)
-				{
-				return (byte) Math.min (x, y);
-				}
-			};
+    /**
+     * The byte maximum binary operation.
+     */
+    public static final ByteOp MAXIMUM
+            = new ByteOp() {
+                public byte op(byte x,
+                        byte y) {
+                    return (byte) Math.max(x, y);
+                }
+            };
 
-	/**
-	 * The byte maximum binary operation.
-	 */
-	public static final ByteOp MAXIMUM =
-		new ByteOp()
-			{
-			public byte op
-				(byte x,
-				 byte y)
-				{
-				return (byte) Math.max (x, y);
-				}
-			};
+    /**
+     * The byte bitwise "and" binary operation.
+     */
+    public static final ByteOp AND
+            = new ByteOp() {
+                public byte op(byte x,
+                        byte y) {
+                    return (byte) (x & y);
+                }
+            };
 
-	/**
-	 * The byte bitwise "and" binary operation.
-	 */
-	public static final ByteOp AND =
-		new ByteOp()
-			{
-			public byte op
-				(byte x,
-				 byte y)
-				{
-				return (byte)(x & y);
-				}
-			};
+    /**
+     * The byte bitwise "or" binary operation.
+     */
+    public static final ByteOp OR
+            = new ByteOp() {
+                public byte op(byte x,
+                        byte y) {
+                    return (byte) (x | y);
+                }
+            };
 
-	/**
-	 * The byte bitwise "or" binary operation.
-	 */
-	public static final ByteOp OR =
-		new ByteOp()
-			{
-			public byte op
-				(byte x,
-				 byte y)
-				{
-				return (byte)(x | y);
-				}
-			};
+    /**
+     * The byte bitwise "exclusive or" binary operation.
+     */
+    public static final ByteOp XOR
+            = new ByteOp() {
+                public byte op(byte x,
+                        byte y) {
+                    return (byte) (x ^ y);
+                }
+            };
 
-	/**
-	 * The byte bitwise "exclusive or" binary operation.
-	 */
-	public static final ByteOp XOR =
-		new ByteOp()
-			{
-			public byte op
-				(byte x,
-				 byte y)
-				{
-				return (byte)(x ^ y);
-				}
-			};
-
-	}
+}

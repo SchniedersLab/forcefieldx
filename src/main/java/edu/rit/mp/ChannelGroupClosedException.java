@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.mp;
 
 import java.io.IOException;
@@ -31,62 +30,53 @@ import java.io.IOException;
  * Class ChannelGroupClosedException is thrown to indicate that an I/O operation
  * failed because the channel group was closed.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 26-Oct-2006
  */
 public class ChannelGroupClosedException
-	extends IOException
-	{
+        extends IOException {
 
 // Exported constructors.
+    /**
+     * Create a new channel group closed exception with no detail message and no
+     * cause.
+     */
+    public ChannelGroupClosedException() {
+        super();
+    }
 
-	/**
-	 * Create a new channel group closed exception with no detail message and no
-	 * cause.
-	 */
-	public ChannelGroupClosedException()
-		{
-		super();
-		}
+    /**
+     * Create a new channel group closed exception with the given detail message
+     * and no cause.
+     *
+     * @param msg Detail message.
+     */
+    public ChannelGroupClosedException(String msg) {
+        super(msg);
+    }
 
-	/**
-	 * Create a new channel group closed exception with the given detail message
-	 * and no cause.
-	 *
-	 * @param  msg  Detail message.
-	 */
-	public ChannelGroupClosedException
-		(String msg)
-		{
-		super (msg);
-		}
+    /**
+     * Create a new channel group closed exception with no detail message and
+     * the given cause.
+     *
+     * @param cause Cause.
+     */
+    public ChannelGroupClosedException(Throwable cause) {
+        super();
+        initCause(cause);
+    }
 
-	/**
-	 * Create a new channel group closed exception with no detail message and
-	 * the given cause.
-	 *
-	 * @param  cause  Cause.
-	 */
-	public ChannelGroupClosedException
-		(Throwable cause)
-		{
-		super();
-		initCause (cause);
-		}
+    /**
+     * Create a new channel group closed exception with the given detail message
+     * and the given cause.
+     *
+     * @param msg Detail message.
+     * @param cause Cause.
+     */
+    public ChannelGroupClosedException(String msg,
+            Throwable cause) {
+        super(msg);
+        initCause(cause);
+    }
 
-	/**
-	 * Create a new channel group closed exception with the given detail message
-	 * and the given cause.
-	 *
-	 * @param  msg    Detail message.
-	 * @param  cause  Cause.
-	 */
-	public ChannelGroupClosedException
-		(String msg,
-		 Throwable cause)
-		{
-		super (msg);
-		initCause (cause);
-		}
-
-	}
+}

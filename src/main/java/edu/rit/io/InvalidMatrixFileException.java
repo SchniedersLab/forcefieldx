@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.io;
 
 import java.io.IOException;
@@ -32,62 +31,53 @@ import java.io.IOException;
  * contents of a matrix file are invalid. The detail message and/or chained
  * exception give further information about the problem.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 07-Jan-2008
  */
 public class InvalidMatrixFileException
-	extends IOException
-	{
+        extends IOException {
 
 // Exported constructors.
+    /**
+     * Construct a new invalid matrix file exception with no detail message and
+     * no cause.
+     */
+    public InvalidMatrixFileException() {
+        super();
+    }
 
-	/**
-	 * Construct a new invalid matrix file exception with no detail message and
-	 * no cause.
-	 */
-	public InvalidMatrixFileException()
-		{
-		super();
-		}
+    /**
+     * Construct a new invalid matrix file exception with the given detail
+     * message and no cause.
+     *
+     * @param message Detail message.
+     */
+    public InvalidMatrixFileException(String message) {
+        super(message);
+    }
 
-	/**
-	 * Construct a new invalid matrix file exception with the given detail
-	 * message and no cause.
-	 *
-	 * @param  message  Detail message.
-	 */
-	public InvalidMatrixFileException
-		(String message)
-		{
-		super (message);
-		}
+    /**
+     * Construct a new invalid matrix file exception with the given cause and
+     * the default detail message.
+     *
+     * @param cause Cause.
+     */
+    public InvalidMatrixFileException(Throwable cause) {
+        super();
+        initCause(cause);
+    }
 
-	/**
-	 * Construct a new invalid matrix file exception with the given cause and
-	 * the default detail message.
-	 *
-	 * @param  cause  Cause.
-	 */
-	public InvalidMatrixFileException
-		(Throwable cause)
-		{
-		super();
-		initCause (cause);
-		}
+    /**
+     * Construct a new invalid matrix file exception with the given detail
+     * message and the given cause.
+     *
+     * @param message Detail message.
+     * @param cause Cause.
+     */
+    public InvalidMatrixFileException(String message,
+            Throwable cause) {
+        super(message);
+        initCause(cause);
+    }
 
-	/**
-	 * Construct a new invalid matrix file exception with the given detail
-	 * message and the given cause.
-	 *
-	 * @param  message  Detail message.
-	 * @param  cause  Cause.
-	 */
-	public InvalidMatrixFileException
-		(String message,
-		 Throwable cause)
-		{
-		super (message);
-		initCause (cause);
-		}
-
-	}
+}

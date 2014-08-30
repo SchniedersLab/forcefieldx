@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj.cluster;
 
 import edu.rit.io.LineBufferedOutputStream;
@@ -41,215 +40,180 @@ import java.util.Map;
  * <I>Note:</I> Class BackendFileWriter is not multiple thread safe; it assumes
  * it is being called by a synchronized method in the job backend.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 05-Nov-2006
  */
-public class BackendFileWriter
-	{
+public class BackendFileWriter {
 
 // Exported data members.
+    /**
+     * Print stream for printing on the job frontend's standard output.
+     */
+    public final PrintStream out;
 
-	/**
-	 * Print stream for printing on the job frontend's standard output.
-	 */
-	public final PrintStream out;
-
-	/**
-	 * Print stream for printing on the job frontend's standard error.
-	 */
-	public final PrintStream err;
+    /**
+     * Print stream for printing on the job frontend's standard error.
+     */
+    public final PrintStream err;
 
 // Hidden data members.
+    private JobFrontendRef myJobFrontend;
+    private JobBackendRef myJobBackend;
 
-	private JobFrontendRef myJobFrontend;
-	private JobBackendRef myJobBackend;
+    // Mapping from backend file descriptor to backend file output stream.
+    private Map<Integer, BackendFileOutputStream> myOutputStreamForBFD
+            = new HashMap<Integer, BackendFileOutputStream>();
 
-	// Mapping from backend file descriptor to backend file output stream.
-	private Map<Integer,BackendFileOutputStream> myOutputStreamForBFD =
-		new HashMap<Integer,BackendFileOutputStream>();
+    // Mapping from frontend file descriptor to backend file output stream.
+    private Map<Integer, BackendFileOutputStream> myOutputStreamForFFD
+            = new HashMap<Integer, BackendFileOutputStream>();
 
-	// Mapping from frontend file descriptor to backend file output stream.
-	private Map<Integer,BackendFileOutputStream> myOutputStreamForFFD =
-		new HashMap<Integer,BackendFileOutputStream>();
-
-	// Next backend file descriptor.
-	private int myNextBFD = 1;
+    // Next backend file descriptor.
+    private int myNextBFD = 1;
 
 // Exported constructors.
+    /**
+     * Construct a new backend file writer.
+     *
+     * @param theJobFrontend Job Frontend.
+     * @param theJobBackend Job Backend.
+     */
+    public BackendFileWriter(JobFrontendRef theJobFrontend,
+            JobBackendRef theJobBackend) {
+        myJobFrontend = theJobFrontend;
+        myJobBackend = theJobBackend;
 
-	/**
-	 * Construct a new backend file writer.
-	 *
-	 * @param  theJobFrontend  Job Frontend.
-	 * @param  theJobBackend   Job Backend.
-	 */
-	public BackendFileWriter
-		(JobFrontendRef theJobFrontend,
-		 JobBackendRef theJobBackend)
-		{
-		myJobFrontend = theJobFrontend;
-		myJobBackend = theJobBackend;
+        // Set up output streams for stdout and stderr.
+        BackendFileOutputStream outstream
+                = new BackendFileOutputStream(myJobFrontend, myJobBackend, 1);
+        BackendFileOutputStream errstream
+                = new BackendFileOutputStream(myJobFrontend, myJobBackend, 2);
+        myOutputStreamForFFD.put(1, outstream);
+        myOutputStreamForFFD.put(2, errstream);
 
-		// Set up output streams for stdout and stderr.
-		BackendFileOutputStream outstream =
-			new BackendFileOutputStream
-				(myJobFrontend, myJobBackend, 1);
-		BackendFileOutputStream errstream =
-			new BackendFileOutputStream
-				(myJobFrontend, myJobBackend, 2);
-		myOutputStreamForFFD.put (1, outstream);
-		myOutputStreamForFFD.put (2, errstream);
-
-		// Set up print streams for stdout and stderr.
-		out =
-			new PrintStream
-				(new LineBufferedOutputStream (outstream),
-				 true);
-		err =
-			new PrintStream
-				(new LineBufferedOutputStream (errstream),
-				 true);
-		}
+        // Set up print streams for stdout and stderr.
+        out
+                = new PrintStream(new LineBufferedOutputStream(outstream),
+                        true);
+        err
+                = new PrintStream(new LineBufferedOutputStream(errstream),
+                        true);
+    }
 
 // Exported operations.
+    /**
+     * Open a backend file output stream on the given file.
+     *
+     * @param file File.
+     * @param append True to append, false to overwrite.
+     *
+     * @return Backend file output stream.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public BackendFileOutputStream open(File file,
+            boolean append)
+            throws IOException {
+        BackendFileOutputStream stream = null;
+        int bfd = 0;
+        int ffd = 0;
 
-	/**
-	 * Open a backend file output stream on the given file.
-	 *
-	 * @param  file    File.
-	 * @param  append  True to append, false to overwrite.
-	 *
-	 * @return  Backend file output stream.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public BackendFileOutputStream open
-		(File file,
-		 boolean append)
-		throws IOException
-		{
-		BackendFileOutputStream stream = null;
-		int bfd = 0;
-		int ffd = 0;
+        synchronized (this) {
+            stream = new BackendFileOutputStream(myJobFrontend, myJobBackend);
+            bfd = myNextBFD++;
+            myOutputStreamForBFD.put(bfd, stream);
+        }
 
-		synchronized (this)
-			{
-			stream = new BackendFileOutputStream (myJobFrontend, myJobBackend);
-			bfd = myNextBFD ++;
-			myOutputStreamForBFD.put (bfd, stream);
-			}
+        ffd = stream.open(bfd, file, append);
 
-		ffd = stream.open (bfd, file, append);
+        synchronized (this) {
+            myOutputStreamForFFD.put(ffd, stream);
+        }
+        return stream;
+    }
 
-		synchronized (this)
-			{
-			myOutputStreamForFFD.put (ffd, stream);
-			}
-		return stream;
-		}
+    /**
+     * Report the result of opening the given output file.
+     *
+     * @param theJobFrontend Job Frontend that is calling this method.
+     * @param bfd Backend file descriptor.
+     * @param ffd Frontend file descriptor if success.
+     * @param exc Null if success, exception if failure.
+     */
+    public void outputFileOpenResult(JobFrontendRef theJobFrontend,
+            int bfd,
+            int ffd,
+            IOException exc) {
+        BackendFileOutputStream stream = null;
+        synchronized (this) {
+            stream = myOutputStreamForBFD.remove(bfd);
+        }
+        if (stream != null) {
+            stream.putResult(ffd, exc);
+        }
+    }
 
-	/**
-	 * Report the result of opening the given output file.
-	 *
-	 * @param  theJobFrontend  Job Frontend that is calling this method.
-	 * @param  bfd             Backend file descriptor.
-	 * @param  ffd             Frontend file descriptor if success.
-	 * @param  exc             Null if success, exception if failure.
-	 */
-	public void outputFileOpenResult
-		(JobFrontendRef theJobFrontend,
-		 int bfd,
-		 int ffd,
-		 IOException exc)
-		{
-		BackendFileOutputStream stream = null;
-		synchronized (this)
-			{
-			stream = myOutputStreamForBFD.remove (bfd);
-			}
-		if (stream != null)
-			{
-			stream.putResult (ffd, exc);
-			}
-		}
+    /**
+     * Report the result of writing the given output file.
+     *
+     * @param theJobFrontend Job Frontend that is calling this method.
+     * @param ffd Frontend file descriptor.
+     * @param exc Null if success, exception if failure.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void outputFileWriteResult(JobFrontendRef theJobFrontend,
+            int ffd,
+            IOException exc) {
+        BackendFileOutputStream stream = null;
+        synchronized (this) {
+            stream = myOutputStreamForFFD.get(ffd);
+        }
+        if (stream != null) {
+            stream.putResult(ffd, exc);
+        }
+    }
 
-	/**
-	 * Report the result of writing the given output file.
-	 *
-	 * @param  theJobFrontend  Job Frontend that is calling this method.
-	 * @param  ffd             Frontend file descriptor.
-	 * @param  exc             Null if success, exception if failure.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void outputFileWriteResult
-		(JobFrontendRef theJobFrontend,
-		 int ffd,
-		 IOException exc)
-		{
-		BackendFileOutputStream stream = null;
-		synchronized (this)
-			{
-			stream = myOutputStreamForFFD.get (ffd);
-			}
-		if (stream != null)
-			{
-			stream.putResult (ffd, exc);
-			}
-		}
+    /**
+     * Report the result of flushing the given output file.
+     *
+     * @param theJobFrontend Job Frontend that is calling this method.
+     * @param ffd Frontend file descriptor.
+     * @param exc Null if success, exception if failure.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void outputFileFlushResult(JobFrontendRef theJobFrontend,
+            int ffd,
+            IOException exc) {
+        BackendFileOutputStream stream = null;
+        synchronized (this) {
+            stream = myOutputStreamForFFD.get(ffd);
+        }
+        if (stream != null) {
+            stream.putResult(ffd, exc);
+        }
+    }
 
-	/**
-	 * Report the result of flushing the given output file.
-	 *
-	 * @param  theJobFrontend  Job Frontend that is calling this method.
-	 * @param  ffd             Frontend file descriptor.
-	 * @param  exc             Null if success, exception if failure.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void outputFileFlushResult
-		(JobFrontendRef theJobFrontend,
-		 int ffd,
-		 IOException exc)
-		{
-		BackendFileOutputStream stream = null;
-		synchronized (this)
-			{
-			stream = myOutputStreamForFFD.get (ffd);
-			}
-		if (stream != null)
-			{
-			stream.putResult (ffd, exc);
-			}
-		}
+    /**
+     * Report the result of closing the given output file.
+     *
+     * @param theJobFrontend Job Frontend that is calling this method.
+     * @param ffd Frontend file descriptor.
+     * @param exc Null if success, exception if failure.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void outputFileCloseResult(JobFrontendRef theJobFrontend,
+            int ffd,
+            IOException exc) {
+        BackendFileOutputStream stream = null;
+        synchronized (this) {
+            stream = myOutputStreamForFFD.remove(ffd);
+        }
+        if (stream != null) {
+            stream.putResult(ffd, exc);
+        }
+    }
 
-	/**
-	 * Report the result of closing the given output file.
-	 *
-	 * @param  theJobFrontend  Job Frontend that is calling this method.
-	 * @param  ffd             Frontend file descriptor.
-	 * @param  exc             Null if success, exception if failure.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void outputFileCloseResult
-		(JobFrontendRef theJobFrontend,
-		 int ffd,
-		 IOException exc)
-		{
-		BackendFileOutputStream stream = null;
-		synchronized (this)
-			{
-			stream = myOutputStreamForFFD.remove (ffd);
-			}
-		if (stream != null)
-			{
-			stream.putResult (ffd, exc);
-			}
-		}
-
-	}
+}

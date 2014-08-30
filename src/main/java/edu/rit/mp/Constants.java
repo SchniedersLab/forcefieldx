@@ -22,50 +22,43 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.mp;
 
 /**
  * Class Constants provides various constants used in the Message Protocol (MP).
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 26-Nov-2007
  */
-class Constants
-	{
+class Constants {
 
 // Prevent construction.
-
-	private Constants()
-		{
-		}
+    private Constants() {
+    }
 
 // Magic number.
-
-	static final int MAGIC_NUMBER = 30144596;
+    static final int MAGIC_NUMBER = 30144596;
 
 // Item types.
+    static final byte TYPE_BOOLEAN = (byte) 1;
+    static final byte TYPE_BYTE = (byte) 2;
+    static final byte TYPE_SHORT = (byte) 3;
+    static final byte TYPE_INTEGER = (byte) 4;
+    static final byte TYPE_LONG = (byte) 5;
+    static final byte TYPE_CHARACTER = (byte) 6;
+    static final byte TYPE_FLOAT = (byte) 7;
+    static final byte TYPE_DOUBLE = (byte) 8;
+    static final byte TYPE_OBJECT = (byte) 9;
+    static final byte TYPE_SIGNED_8_BIT_INTEGER = (byte) 10;
+    static final byte TYPE_SIGNED_16_BIT_INTEGER = (byte) 11;
+    static final byte TYPE_UNSIGNED_8_BIT_INTEGER = (byte) 12;
+    static final byte TYPE_UNSIGNED_16_BIT_INTEGER = (byte) 13;
 
-	static final byte TYPE_BOOLEAN   = (byte) 1;
-	static final byte TYPE_BYTE      = (byte) 2;
-	static final byte TYPE_SHORT     = (byte) 3;
-	static final byte TYPE_INTEGER   = (byte) 4;
-	static final byte TYPE_LONG      = (byte) 5;
-	static final byte TYPE_CHARACTER = (byte) 6;
-	static final byte TYPE_FLOAT     = (byte) 7;
-	static final byte TYPE_DOUBLE    = (byte) 8;
-	static final byte TYPE_OBJECT    = (byte) 9;
-	static final byte TYPE_SIGNED_8_BIT_INTEGER    = (byte) 10;
-	static final byte TYPE_SIGNED_16_BIT_INTEGER   = (byte) 11;
-	static final byte TYPE_UNSIGNED_8_BIT_INTEGER  = (byte) 12;
-	static final byte TYPE_UNSIGNED_16_BIT_INTEGER = (byte) 13;
-
-	static final byte TYPE_FIRST = TYPE_BOOLEAN;
-	static final byte TYPE_LAST  = TYPE_UNSIGNED_16_BIT_INTEGER;
+    static final byte TYPE_FIRST = TYPE_BOOLEAN;
+    static final byte TYPE_LAST = TYPE_UNSIGNED_16_BIT_INTEGER;
 
 // Default buffer size in bytes. This is the Ethernet MTU (1500) minus the IP
 // header (20) minus the TCP header (20), times 20.
+    static final int BUFFER_SIZE = 29200;
 
-	static final int BUFFER_SIZE = 29200;
-
-	}
+}

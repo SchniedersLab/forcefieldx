@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.mp.buf;
 
 import edu.rit.mp.Buf;
@@ -40,139 +39,115 @@ import java.nio.ByteBuffer;
  * Class FloatArrayReductionBuf provides a reduction buffer for class
  * {@linkplain FloatArrayBuf}.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 25-Oct-2007
  */
 class FloatArrayReductionBuf
-	extends FloatArrayBuf
-	{
+        extends FloatArrayBuf {
 
 // Hidden data members.
-
-	FloatOp myOp;
+    FloatOp myOp;
 
 // Exported constructors.
-
-	/**
-	 * Construct a new float array reduction buffer.
-	 *
-	 * @param  theArray  Array.
-	 * @param  theRange  Range of array elements to include in the buffer.
-	 * @param  op        Binary operation.
-	 *
-	 * @exception  NullPointerException
-	 *     (unchecked exception) Thrown if <TT>op</TT> is null.
-	 */
-	public FloatArrayReductionBuf
-		(float[] theArray,
-		 Range theRange,
-		 FloatOp op)
-		{
-		super (theArray, theRange);
-		if (op == null)
-			{
-			throw new NullPointerException
-				("FloatArrayReductionBuf(): op is null");
-			}
-		myOp = op;
-		}
+    /**
+     * Construct a new float array reduction buffer.
+     *
+     * @param theArray Array.
+     * @param theRange Range of array elements to include in the buffer.
+     * @param op Binary operation.
+     *
+     * @exception NullPointerException (unchecked exception) Thrown if
+     * <TT>op</TT> is null.
+     */
+    public FloatArrayReductionBuf(float[] theArray,
+            Range theRange,
+            FloatOp op) {
+        super(theArray, theRange);
+        if (op == null) {
+            throw new NullPointerException("FloatArrayReductionBuf(): op is null");
+        }
+        myOp = op;
+    }
 
 // Exported operations.
+    /**
+     * Store the given item in this buffer.
+     * <P>
+     * The <TT>put()</TT> method must not block the calling thread; if it does,
+     * all message I/O in MP will be blocked.
+     *
+     * @param i Item index in the range 0 .. <TT>length()</TT>-1.
+     * @param item Item to be stored at index <TT>i</TT>.
+     */
+    public void put(int i,
+            float item) {
+        int off = myArrayOffset + i * myStride;
+        myArray[off] = myOp.op(myArray[off], item);
+    }
 
-	/**
-	 * Store the given item in this buffer.
-	 * <P>
-	 * The <TT>put()</TT> method must not block the calling thread; if it does,
-	 * all message I/O in MP will be blocked.
-	 *
-	 * @param  i     Item index in the range 0 .. <TT>length()</TT>-1.
-	 * @param  item  Item to be stored at index <TT>i</TT>.
-	 */
-	public void put
-		(int i,
-		 float item)
-		{
-		int off = myArrayOffset + i * myStride;
-		myArray[off] = myOp.op (myArray[off], item);
-		}
+    /**
+     * Copy items from the given buffer to this buffer. The number of items
+     * copied is this buffer's length or <TT>theSrc</TT>'s length, whichever is
+     * smaller. If <TT>theSrc</TT> is this buffer, the <TT>copy()</TT> method
+     * does nothing.
+     *
+     * @param theSrc Source of items to copy into this buffer.
+     *
+     * @exception ClassCastException (unchecked exception) Thrown if
+     * <TT>theSrc</TT>'s item data type is not the same as this buffer's item
+     * data type.
+     */
+    public void copy(Buf theSrc) {
+        if (theSrc == this) {
+        } else if (theSrc instanceof FloatArrayBuf) {
+            FloatArrayBuf src = (FloatArrayBuf) theSrc;
+            ReduceArrays.reduce(src.myArray, src.myRange, this.myArray, this.myRange, myOp);
+        } else {
+            FloatBuf.defaultCopy((FloatBuf) theSrc, this);
+        }
+    }
 
-	/**
-	 * Copy items from the given buffer to this buffer. The number of items
-	 * copied is this buffer's length or <TT>theSrc</TT>'s length, whichever is
-	 * smaller. If <TT>theSrc</TT> is this buffer, the <TT>copy()</TT> method
-	 * does nothing.
-	 *
-	 * @param  theSrc  Source of items to copy into this buffer.
-	 *
-	 * @exception  ClassCastException
-	 *     (unchecked exception) Thrown if <TT>theSrc</TT>'s item data type is
-	 *     not the same as this buffer's item data type.
-	 */
-	public void copy
-		(Buf theSrc)
-		{
-		if (theSrc == this)
-			{
-			}
-		else if (theSrc instanceof FloatArrayBuf)
-			{
-			FloatArrayBuf src = (FloatArrayBuf) theSrc;
-			ReduceArrays.reduce
-				(src.myArray, src.myRange, this.myArray, this.myRange, myOp);
-			}
-		else
-			{
-			FloatBuf.defaultCopy ((FloatBuf) theSrc, this);
-			}
-		}
-
-	/**
-	 * Create a buffer for performing parallel reduction using the given binary
-	 * operation. The results of the reduction are placed into this buffer.
-	 *
-	 * @param  op  Binary operation.
-	 *
-	 * @exception  ClassCastException
-	 *     (unchecked exception) Thrown if this buffer's element data type and
-	 *     the given binary operation's argument data type are not the same.
-	 */
-	public Buf getReductionBuf
-		(Op op)
-		{
-		throw new UnsupportedOperationException();
-		}
+    /**
+     * Create a buffer for performing parallel reduction using the given binary
+     * operation. The results of the reduction are placed into this buffer.
+     *
+     * @param op Binary operation.
+     *
+     * @exception ClassCastException (unchecked exception) Thrown if this
+     * buffer's element data type and the given binary operation's argument data
+     * type are not the same.
+     */
+    public Buf getReductionBuf(Op op) {
+        throw new UnsupportedOperationException();
+    }
 
 // Hidden operations.
+    /**
+     * Receive as many items as possible from the given byte buffer to this
+     * buffer.
+     * <P>
+     * The <TT>receiveItems()</TT> method must not block the calling thread; if
+     * it does, all message I/O in MP will be blocked.
+     *
+     * @param i Index of first item to receive, in the range 0 ..
+     * <TT>length</TT>-1.
+     * @param num Maximum number of items to receive.
+     * @param buffer Byte buffer.
+     *
+     * @return Number of items received.
+     */
+    protected int receiveItems(int i,
+            int num,
+            ByteBuffer buffer) {
+        int index = i;
+        int off = myArrayOffset + i * myStride;
+        int max = Math.min(i + num, myLength);
+        while (index < max && buffer.remaining() >= 4) {
+            myArray[off] = myOp.op(myArray[off], buffer.getFloat());
+            ++index;
+            off += myStride;
+        }
+        return index - i;
+    }
 
-	/**
-	 * Receive as many items as possible from the given byte buffer to this
-	 * buffer.
-	 * <P>
-	 * The <TT>receiveItems()</TT> method must not block the calling thread; if
-	 * it does, all message I/O in MP will be blocked.
-	 *
-	 * @param  i       Index of first item to receive, in the range 0 ..
-	 *                 <TT>length</TT>-1.
-	 * @param  num     Maximum number of items to receive.
-	 * @param  buffer  Byte buffer.
-	 *
-	 * @return  Number of items received.
-	 */
-	protected int receiveItems
-		(int i,
-		 int num,
-		 ByteBuffer buffer)
-		{
-		int index = i;
-		int off = myArrayOffset + i * myStride;
-		int max = Math.min (i + num, myLength);
-		while (index < max && buffer.remaining() >= 4)
-			{
-			myArray[off] = myOp.op (myArray[off], buffer.getFloat());
-			++ index;
-			off += myStride;
-			}
-		return index - i;
-		}
-
-	}
+}

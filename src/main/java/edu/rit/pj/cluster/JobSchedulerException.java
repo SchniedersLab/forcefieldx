@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj.cluster;
 
 import java.io.IOException;
@@ -31,61 +30,52 @@ import java.io.IOException;
  * Class JobSchedulerException is thrown to indicate that a job frontend process
  * was unable to contact the Job Scheduler Daemon.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 24-Oct-2006
  */
 public class JobSchedulerException
-	extends IOException
-	{
+        extends IOException {
 
 // Exported constructors.
+    /**
+     * Create a new Job Scheduler exception with no detail message and no cause.
+     */
+    public JobSchedulerException() {
+        super();
+    }
 
-	/**
-	 * Create a new Job Scheduler exception with no detail message and no cause.
-	 */
-	public JobSchedulerException()
-		{
-		super();
-		}
+    /**
+     * Create a new Job Scheduler exception with the given detail message and no
+     * cause.
+     *
+     * @param msg Detail message.
+     */
+    public JobSchedulerException(String msg) {
+        super(msg);
+    }
 
-	/**
-	 * Create a new Job Scheduler exception with the given detail message and no
-	 * cause.
-	 *
-	 * @param  msg  Detail message.
-	 */
-	public JobSchedulerException
-		(String msg)
-		{
-		super (msg);
-		}
+    /**
+     * Create a new Job Scheduler exception with no detail message and the given
+     * cause.
+     *
+     * @param cause Cause.
+     */
+    public JobSchedulerException(Throwable cause) {
+        super();
+        initCause(cause);
+    }
 
-	/**
-	 * Create a new Job Scheduler exception with no detail message and the given
-	 * cause.
-	 *
-	 * @param  cause  Cause.
-	 */
-	public JobSchedulerException
-		(Throwable cause)
-		{
-		super();
-		initCause (cause);
-		}
+    /**
+     * Create a new Job Scheduler exception with the given detail message and
+     * the given cause.
+     *
+     * @param msg Detail message.
+     * @param cause Cause.
+     */
+    public JobSchedulerException(String msg,
+            Throwable cause) {
+        super(msg);
+        initCause(cause);
+    }
 
-	/**
-	 * Create a new Job Scheduler exception with the given detail message and
-	 * the given cause.
-	 *
-	 * @param  msg    Detail message.
-	 * @param  cause  Cause.
-	 */
-	public JobSchedulerException
-		(String msg,
-		 Throwable cause)
-		{
-		super (msg);
-		initCause (cause);
-		}
-
-	}
+}

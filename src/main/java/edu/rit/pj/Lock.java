@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj;
 
 import java.util.concurrent.locks.AbstractQueuedSynchronizer;
@@ -33,152 +32,140 @@ import java.util.concurrent.locks.AbstractQueuedSynchronizer;
  * you pass a Lock object to the <TT>critical()</TT> or
  * <TT>criticalNonexclusive()</TT> methods of class {@linkplain ParallelRegion}.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 05-Jun-2007
  */
-public class Lock
-	{
+public class Lock {
 
 // Hidden helper classes.
+    /**
+     * Class Lock.Synchronizer does the actual work. The synchronizer state, a
+     * single <TT>int</TT>, is interpreted as follows: state = 0 means unlocked;
+     * state &gt; 0 means locked nonexclusively, with the state giving the
+     * number of threads that have acquired the lock; state = -1 means locked
+     * exclusively, with one thread having acquired the lock.
+     *
+     * @author Alan Kaminsky
+     * @version 05-Jun-2007
+     */
+    private static class Synchronizer
+            extends AbstractQueuedSynchronizer {
 
-	/**
-	 * Class Lock.Synchronizer does the actual work. The synchronizer state, a
-	 * single <TT>int</TT>, is interpreted as follows: state = 0 means unlocked;
-	 * state &gt; 0 means locked nonexclusively, with the state giving the
-	 * number of threads that have acquired the lock; state = -1 means locked
-	 * exclusively, with one thread having acquired the lock.
-	 *
-	 * @author  Alan Kaminsky
-	 * @version 05-Jun-2007
-	 */
-	private static class Synchronizer
-		extends AbstractQueuedSynchronizer
-		{
-		/**
-		 * Construct a new lock synchronizer.
-		 */
-		public Synchronizer()
-			{
-			super();
-			}
+        /**
+         * Construct a new lock synchronizer.
+         */
+        public Synchronizer() {
+            super();
+        }
 
-		/**
-		 * Acquire the lock exclusively.
-		 *
-		 * @param  arg  Ignored.
-		 *
-		 * @return  True if acquired, false otherwise.
-		 */
-		protected boolean tryAcquire
-			(int arg)
-			{
-			for (;;)
-				{
-				int oldstate = getState();
-				if (oldstate != 0) return false;
-				if (compareAndSetState (0, -1)) return true;
-				}
-			}
+        /**
+         * Acquire the lock exclusively.
+         *
+         * @param arg Ignored.
+         *
+         * @return True if acquired, false otherwise.
+         */
+        protected boolean tryAcquire(int arg) {
+            for (;;) {
+                int oldstate = getState();
+                if (oldstate != 0) {
+                    return false;
+                }
+                if (compareAndSetState(0, -1)) {
+                    return true;
+                }
+            }
+        }
 
-		/**
-		 * Release the lock exclusively.
-		 *
-		 * @param  arg  Ignored.
-		 *
-		 * @return  True if released, false otherwise.
-		 */
-		protected boolean tryRelease
-			(int arg)
-			{
-			setState (0);
-			return true;
-			}
+        /**
+         * Release the lock exclusively.
+         *
+         * @param arg Ignored.
+         *
+         * @return True if released, false otherwise.
+         */
+        protected boolean tryRelease(int arg) {
+            setState(0);
+            return true;
+        }
 
-		/**
-		 * Acquire the lock nonexclusively.
-		 *
-		 * @param  arg  Ignored.
-		 *
-		 * @return  A positive value if successfully acquired nonexclusively,
-		 *          zero if successfully acquired exclusively, a negative value
-		 *          if not acquired.
-		 */
-		protected int tryAcquireShared
-			(int arg)
-			{
-			for (;;)
-				{
-				int oldstate = getState();
-				if (oldstate < 0) return -1;
-				int newstate = oldstate + 1;
-				if (compareAndSetState (oldstate, newstate)) return 1;
-				}
-			}
+        /**
+         * Acquire the lock nonexclusively.
+         *
+         * @param arg Ignored.
+         *
+         * @return A positive value if successfully acquired nonexclusively,
+         * zero if successfully acquired exclusively, a negative value if not
+         * acquired.
+         */
+        protected int tryAcquireShared(int arg) {
+            for (;;) {
+                int oldstate = getState();
+                if (oldstate < 0) {
+                    return -1;
+                }
+                int newstate = oldstate + 1;
+                if (compareAndSetState(oldstate, newstate)) {
+                    return 1;
+                }
+            }
+        }
 
-		/**
-		 * Release the lock nonexclusively.
-		 *
-		 * @param  arg  Ignored.
-		 *
-		 * @return  True if released, false otherwise.
-		 */
-		protected boolean tryReleaseShared
-			(int arg)
-			{
-			for (;;)
-				{
-				int oldstate = getState();
-				int newstate = oldstate - 1;
-				if (compareAndSetState (oldstate, newstate)) return true;
-				}
-			}
-		}
+        /**
+         * Release the lock nonexclusively.
+         *
+         * @param arg Ignored.
+         *
+         * @return True if released, false otherwise.
+         */
+        protected boolean tryReleaseShared(int arg) {
+            for (;;) {
+                int oldstate = getState();
+                int newstate = oldstate - 1;
+                if (compareAndSetState(oldstate, newstate)) {
+                    return true;
+                }
+            }
+        }
+    }
 
 // Hidden data members.
-
-	private Synchronizer mySynchronizer = new Synchronizer();
+    private Synchronizer mySynchronizer = new Synchronizer();
 
 // Exported constructors.
-
-	/**
-	 * Construct a new lock.
-	 */
-	public Lock()
-		{
-		}
+    /**
+     * Construct a new lock.
+     */
+    public Lock() {
+    }
 
 // Hidden operations.
+    /**
+     * Lock an exclusive lock.
+     */
+    void lockExclusive() {
+        mySynchronizer.acquire(0);
+    }
 
-	/**
-	 * Lock an exclusive lock.
-	 */
-	void lockExclusive()
-		{
-		mySynchronizer.acquire (0);
-		}
+    /**
+     * Unlock an exclusive lock.
+     */
+    void unlockExclusive() {
+        mySynchronizer.release(0);
+    }
 
-	/**
-	 * Unlock an exclusive lock.
-	 */
-	void unlockExclusive()
-		{
-		mySynchronizer.release (0);
-		}
+    /**
+     * Lock a nonexclusive lock.
+     */
+    void lockNonexclusive() {
+        mySynchronizer.acquireShared(0);
+    }
 
-	/**
-	 * Lock a nonexclusive lock.
-	 */
-	void lockNonexclusive()
-		{
-		mySynchronizer.acquireShared (0);
-		}
+    /**
+     * Unlock a nonexclusive lock.
+     */
+    void unlockNonexclusive() {
+        mySynchronizer.releaseShared(0);
+    }
 
-	/**
-	 * Unlock a nonexclusive lock.
-	 */
-	void unlockNonexclusive()
-		{
-		mySynchronizer.releaseShared (0);
-		}
-
-	}
+}

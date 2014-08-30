@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.util;
 
 import java.io.PrintStream;
@@ -33,138 +32,111 @@ import java.util.Date;
  * Class PrintStreamLogger provides an object that logs messages to a print
  * stream.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 16-Apr-2008
  */
 public class PrintStreamLogger
-	implements Logger
-	{
+        implements Logger {
 
 // Hidden operations.
-
-	private PrintStream out;
+    private PrintStream out;
 
 // Exported constructors.
+    /**
+     * Construct a new print stream logger that logs to <TT>System.err</TT>.
+     */
+    public PrintStreamLogger() {
+        this.out = System.err;
+    }
 
-	/**
-	 * Construct a new print stream logger that logs to <TT>System.err</TT>.
-	 */
-	public PrintStreamLogger()
-		{
-		this.out = System.err;
-		}
-
-	/**
-	 * Construct a new print stream logger that logs to the given print stream.
-	 *
-	 * @param  out  Print stream.
-	 *
-	 * @exception  NullPointerException
-	 *     (unchecked exception) Thrown if <TT>out</TT> is null.
-	 */
-	public PrintStreamLogger
-		(PrintStream out)
-		{
-		if (out == null)
-			{
-			throw new NullPointerException
-				("PrintStreamLogger(): Print stream is null");
-			}
-		this.out = out;
-		}
+    /**
+     * Construct a new print stream logger that logs to the given print stream.
+     *
+     * @param out Print stream.
+     *
+     * @exception NullPointerException (unchecked exception) Thrown if
+     * <TT>out</TT> is null.
+     */
+    public PrintStreamLogger(PrintStream out) {
+        if (out == null) {
+            throw new NullPointerException("PrintStreamLogger(): Print stream is null");
+        }
+        this.out = out;
+    }
 
 // Exported operations.
+    /**
+     * Log the given message.
+     *
+     * @param msg Message.
+     */
+    public void log(String msg) {
+        log(System.currentTimeMillis(), msg, null);
+    }
 
-	/**
-	 * Log the given message.
-	 *
-	 * @param  msg  Message.
-	 */
-	public void log
-		(String msg)
-		{
-		log (System.currentTimeMillis(), msg, null);
-		}
+    /**
+     * Log the given exception.
+     *
+     * @param exc Exception.
+     */
+    public void log(Throwable exc) {
+        log(System.currentTimeMillis(), null, exc);
+    }
 
-	/**
-	 * Log the given exception.
-	 *
-	 * @param  exc  Exception.
-	 */
-	public void log
-		(Throwable exc)
-		{
-		log (System.currentTimeMillis(), null, exc);
-		}
+    /**
+     * Log the given message and exception.
+     *
+     * @param msg Message.
+     * @param exc Exception.
+     */
+    public void log(String msg,
+            Throwable exc) {
+        log(System.currentTimeMillis(), msg, exc);
+    }
 
-	/**
-	 * Log the given message and exception.
-	 *
-	 * @param  msg  Message.
-	 * @param  exc  Exception.
-	 */
-	public void log
-		(String msg,
-		 Throwable exc)
-		{
-		log (System.currentTimeMillis(), msg, exc);
-		}
+    /**
+     * Log the given date and message.
+     *
+     * @param date Date and time in milliseconds since midnight 01-Jan-1970 UTC.
+     * @param msg Message.
+     */
+    public void log(long date,
+            String msg) {
+        log(date, msg, null);
+    }
 
-	/**
-	 * Log the given date and message.
-	 *
-	 * @param  date  Date and time in milliseconds since midnight 01-Jan-1970
-	 *               UTC.
-	 * @param  msg   Message.
-	 */
-	public void log
-		(long date,
-		 String msg)
-		{
-		log (date, msg, null);
-		}
+    /**
+     * Log the given date and exception.
+     *
+     * @param date Date and time in milliseconds since midnight 01-Jan-1970 UTC.
+     * @param exc Exception.
+     */
+    public void log(long date,
+            Throwable exc) {
+        log(date, null, exc);
+    }
 
-	/**
-	 * Log the given date and exception.
-	 *
-	 * @param  date  Date and time in milliseconds since midnight 01-Jan-1970
-	 *               UTC.
-	 * @param  exc   Exception.
-	 */
-	public void log
-		(long date,
-		 Throwable exc)
-		{
-		log (date, null, exc);
-		}
+    /**
+     * Log the given date, message, and exception.
+     *
+     * @param date Date and time in milliseconds since midnight 01-Jan-1970 UTC.
+     * @param msg Message.
+     * @param exc Exception.
+     */
+    public void log(long date,
+            String msg,
+            Throwable exc) {
+        synchronized (out) {
+            out.print(new Date(date));
+            if (msg != null) {
+                out.print(' ');
+                out.print(msg);
+            }
+            out.println();
+            if (exc != null) {
+                exc.printStackTrace(out);
+            }
+        }
+    }
 
-	/**
-	 * Log the given date, message, and exception.
-	 *
-	 * @param  date  Date and time in milliseconds since midnight 01-Jan-1970
-	 *               UTC.
-	 * @param  msg   Message.
-	 * @param  exc   Exception.
-	 */
-	public void log
-		(long date,
-		 String msg,
-		 Throwable exc)
-		{
-		synchronized (out)
-			{
-			out.print (new Date (date));
-			if (msg != null)
-				{
-				out.print (' ');
-				out.print (msg);
-				}
-			out.println();
-			if (exc != null)
-				{
-				exc.printStackTrace (out);
-				}
-			}
-		}
-
-	}
+}

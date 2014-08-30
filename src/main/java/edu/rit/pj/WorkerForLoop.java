@@ -22,45 +22,45 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj;
 
 /**
- * Class WorkerForLoop is the abstract base class for a worker for loop that
- * is executed inside a {@linkplain WorkerRegion}. There are four variations
- * of a worker for loop, depending on the loop index data type and on whether
- * the loop stride is implicit or explicit. There is a subclass for each
- * variation; see the subclasses for further information. The subclasses are:
+ * Class WorkerForLoop is the abstract base class for a worker for loop that is
+ * executed inside a {@linkplain WorkerRegion}. There are four variations of a
+ * worker for loop, depending on the loop index data type and on whether the
+ * loop stride is implicit or explicit. There is a subclass for each variation;
+ * see the subclasses for further information. The subclasses are:
  * <UL>
- * <P><LI>
+ * <P>
+ * <LI>
  * Class {@linkplain WorkerIntegerForLoop} -- loop index is type <TT>int</TT>,
  * loop stride is implicit (+1).
- * <P><LI>
+ * <P>
+ * <LI>
  * Class {@linkplain WorkerIntegerStrideForLoop} -- loop index is type
  * <TT>int</TT>, loop stride is explicitly specified.
- * <P><LI>
+ * <P>
+ * <LI>
  * Class {@linkplain WorkerLongForLoop} -- loop index is type <TT>long</TT>,
  * loop stride is implicit (+1).
- * <P><LI>
+ * <P>
+ * <LI>
  * Class {@linkplain WorkerLongStrideForLoop} -- loop index is type
  * <TT>long</TT>, loop stride is explicitly specified.
  * </UL>
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 17-Nov-2009
  */
 public abstract class WorkerForLoop
-	extends WorkerConstruct
-	{
+        extends WorkerConstruct {
 
 // Exported constructors.
+    /**
+     * Construct a new worker for loop.
+     */
+    public WorkerForLoop() {
+        super();
+    }
 
-	/**
-	 * Construct a new worker for loop.
-	 */
-	public WorkerForLoop()
-		{
-		super();
-		}
-
-	}
+}

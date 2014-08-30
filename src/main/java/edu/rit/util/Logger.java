@@ -22,79 +22,67 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.util;
 
 /**
  * Interface Logger specifies the interface for an object that logs messages.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 16-Apr-2008
  */
-public interface Logger
-	{
+public interface Logger {
 
 // Exported operations.
+    /**
+     * Log the given message.
+     *
+     * @param msg Message.
+     */
+    public void log(String msg);
 
-	/**
-	 * Log the given message.
-	 *
-	 * @param  msg  Message.
-	 */
-	public void log
-		(String msg);
+    /**
+     * Log the given exception.
+     *
+     * @param exc Exception.
+     */
+    public void log(Throwable exc);
 
-	/**
-	 * Log the given exception.
-	 *
-	 * @param  exc  Exception.
-	 */
-	public void log
-		(Throwable exc);
+    /**
+     * Log the given message and exception.
+     *
+     * @param msg Message.
+     * @param exc Exception.
+     */
+    public void log(String msg,
+            Throwable exc);
 
-	/**
-	 * Log the given message and exception.
-	 *
-	 * @param  msg  Message.
-	 * @param  exc  Exception.
-	 */
-	public void log
-		(String msg,
-		 Throwable exc);
+    /**
+     * Log the given date and message.
+     *
+     * @param date Date and time in milliseconds since midnight 01-Jan-1970 UTC.
+     * @param msg Message.
+     */
+    public void log(long date,
+            String msg);
 
-	/**
-	 * Log the given date and message.
-	 *
-	 * @param  date  Date and time in milliseconds since midnight 01-Jan-1970
-	 *               UTC.
-	 * @param  msg   Message.
-	 */
-	public void log
-		(long date,
-		 String msg);
+    /**
+     * Log the given date and exception.
+     *
+     * @param date Date and time in milliseconds since midnight 01-Jan-1970 UTC.
+     * @param exc Exception.
+     */
+    public void log(long date,
+            Throwable exc);
 
-	/**
-	 * Log the given date and exception.
-	 *
-	 * @param  date  Date and time in milliseconds since midnight 01-Jan-1970
-	 *               UTC.
-	 * @param  exc   Exception.
-	 */
-	public void log
-		(long date,
-		 Throwable exc);
+    /**
+     * Log the given date, message, and exception.
+     *
+     * @param date Date and time in milliseconds since midnight 01-Jan-1970 UTC.
+     * @param msg Message.
+     * @param exc Exception.
+     */
+    public void log(long date,
+            String msg,
+            Throwable exc);
 
-	/**
-	 * Log the given date, message, and exception.
-	 *
-	 * @param  date  Date and time in milliseconds since midnight 01-Jan-1970
-	 *               UTC.
-	 * @param  msg   Message.
-	 * @param  exc   Exception.
-	 */
-	public void log
-		(long date,
-		 String msg,
-		 Throwable exc);
-
-	}
+}

@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj;
 
 import edu.rit.util.Range;
@@ -34,104 +33,91 @@ import edu.rit.util.Range;
  * getting a fixed number of iterations, the same number of iterations for each
  * thread (plus or minus one).
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 27-Jan-2010
  */
 class FixedIntegerSchedule
-	extends IntegerSchedule
-	{
+        extends IntegerSchedule {
 
 // Hidden data members.
-
-	// Chunk for each thread.
-	private Range[] myChunk;
+    // Chunk for each thread.
+    private Range[] myChunk;
 
 // Exported constructors.
+    /**
+     * Construct a new fixed schedule object.
+     */
+    public FixedIntegerSchedule() {
+        super();
+    }
 
-	/**
-	 * Construct a new fixed schedule object.
-	 */
-	public FixedIntegerSchedule()
-		{
-		super();
-		}
-
-	/**
-	 * Construct a new fixed schedule object. This constructor is for use by the
-	 * <TT>IntegerSchedule.parse()</TT> method.
-	 *
-	 * @param  args  Array of argument strings.
-	 */
-	public FixedIntegerSchedule
-		(String[] args)
-		{
-		super();
-		throw new IllegalArgumentException
-			("FixedIntegerSchedule(): Usage: -Dpj.schedule=fixed");
-		}
+    /**
+     * Construct a new fixed schedule object. This constructor is for use by the
+     * <TT>IntegerSchedule.parse()</TT> method.
+     *
+     * @param args Array of argument strings.
+     */
+    public FixedIntegerSchedule(String[] args) {
+        super();
+        throw new IllegalArgumentException("FixedIntegerSchedule(): Usage: -Dpj.schedule=fixed");
+    }
 
 // Exported operations.
-
-	/**
-	 * Determine if this schedule is a fixed schedule. For a parallel team with
-	 * <I>K</I> threads, a fixed schedule partitions the loop index range into
-	 * exactly <I>K</I> chunks, one chunk for each thread, each chunk with
-	 * predetermined upper and lower bounds.
-	 *
-	 * @return  True if this is a fixed schedule, false otherwise.
-	 */
-	public boolean isFixedSchedule()
-		{
-		return true;
-		}
+    /**
+     * Determine if this schedule is a fixed schedule. For a parallel team with
+     * <I>K</I> threads, a fixed schedule partitions the loop index range into
+     * exactly <I>K</I> chunks, one chunk for each thread, each chunk with
+     * predetermined upper and lower bounds.
+     *
+     * @return True if this is a fixed schedule, false otherwise.
+     */
+    public boolean isFixedSchedule() {
+        return true;
+    }
 
 // Hidden operations.
+    /**
+     * Start generating chunks of iterations for a parallel for loop using this
+     * schedule.
+     * <P>
+     * The <TT>start()</TT> method is only called by a single thread in the
+     * Parallel Java middleware.
+     *
+     * @param K Number of threads in the parallel team.
+     * @param theLoopRange Range of iterations for the entire parallel for loop.
+     * The stride may be 1 or greater.
+     */
+    public void start(int K,
+            Range theLoopRange) {
+        myChunk = theLoopRange.subranges(K);
+        for (int i = 0; i < K; ++i) {
+            if (myChunk[i].length() == 0) {
+                myChunk[i] = null;
+            }
+        }
+    }
 
-	/**
-	 * Start generating chunks of iterations for a parallel for loop using this
-	 * schedule.
-	 * <P>
-	 * The <TT>start()</TT> method is only called by a single thread in the
-	 * Parallel Java middleware.
-	 *
-	 * @param  K             Number of threads in the parallel team.
-	 * @param  theLoopRange  Range of iterations for the entire parallel for
-	 *                       loop. The stride may be 1 or greater.
-	 */
-	public void start
-		(int K,
-		 Range theLoopRange)
-		{
-		myChunk = theLoopRange.subranges (K);
-		for (int i = 0; i < K; ++ i)
-			{
-			if (myChunk[i].length() == 0) myChunk[i] = null;
-			}
-		}
+    /**
+     * Obtain the next chunk of iterations for the given thread index. If there
+     * are more iterations, a range object is returned whose lower bound, upper
+     * bound, and stride specify the chunk of iterations to perform. The
+     * returned range object's stride is the same as that given to the
+     * <TT>start()</TT> method. The returned range object's lower bound and
+     * upper bound are contained within the range given to the <TT>start()</TT>
+     * method. If there are no more iterations, null is returned.
+     * <P>
+     * The <TT>next()</TT> method is called by multiple parallel team threads in
+     * the Parallel Java middleware. The <TT>next()</TT> method must be multiple
+     * thread safe.
+     *
+     * @param theThreadIndex Thread index in the range 0 .. <I>K</I>-1.
+     *
+     * @return Chunk of iterations, or null if no more iterations.
+     */
+    public Range next(int theThreadIndex) {
+        Range chunk = myChunk[theThreadIndex];
+        myChunk[theThreadIndex] = null;
+        return chunk;
+    }
 
-	/**
-	 * Obtain the next chunk of iterations for the given thread index. If there
-	 * are more iterations, a range object is returned whose lower bound, upper
-	 * bound, and stride specify the chunk of iterations to perform. The
-	 * returned range object's stride is the same as that given to the
-	 * <TT>start()</TT> method. The returned range object's lower bound and
-	 * upper bound are contained within the range given to the <TT>start()</TT>
-	 * method. If there are no more iterations, null is returned.
-	 * <P>
-	 * The <TT>next()</TT> method is called by multiple parallel team threads in
-	 * the Parallel Java middleware. The <TT>next()</TT> method must be multiple
-	 * thread safe.
-	 *
-	 * @param  theThreadIndex  Thread index in the range 0 .. <I>K</I>-1.
-	 *
-	 * @return  Chunk of iterations, or null if no more iterations.
-	 */
-	public Range next
-		(int theThreadIndex)
-		{
-		Range chunk = myChunk[theThreadIndex];
-		myChunk[theThreadIndex] = null;
-		return chunk;
-		}
-
-	}
+}

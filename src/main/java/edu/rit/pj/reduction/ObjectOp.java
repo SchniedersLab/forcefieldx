@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj.reduction;
 
 /**
@@ -42,48 +41,45 @@ package edu.rit.pj.reduction;
  * <LI>
  * If as a result of the binary operation the state of the reduction variable
  * will not change, the <TT>op(x,y)</TT> method must return <TT>x</TT>.
- * <P><LI>
+ * <P>
+ * <LI>
  * If as a result of the binary operation the state of the reduction variable
  * will change, the <TT>op(x,y)</TT> method must return a newly created object
  * containing the desired state.
- * <P><LI>
+ * <P>
+ * <LI>
  * The <TT>op(x,y)</TT> method must neither change the state of <TT>x</TT> nor
  * change the state of <TT>y</TT>; that is, the <TT>op(x,y)</TT> method must
  * have no side effects.
  * </UL>
  *
- * @param  <T>  Object data type.
+ * @param <T> Object data type.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 30-Mar-2008
  */
 public abstract class ObjectOp<T>
-	extends Op
-	{
+        extends Op {
 
 // Hidden constructors.
-
-	/**
-	 * Construct a new object binary operation.
-	 */
-	protected ObjectOp()
-		{
-		super();
-		}
+    /**
+     * Construct a new object binary operation.
+     */
+    protected ObjectOp() {
+        super();
+    }
 
 // Exported operations.
+    /**
+     * Perform this binary operation.
+     *
+     * @param x First argument.
+     * @param y Second argument.
+     *
+     * @return (<TT>x</TT> <I>op</I> <TT>y</TT>), where <I>op</I> stands for
+     * this binary operation.
+     */
+    public abstract T op(T x,
+            T y);
 
-	/**
-	 * Perform this binary operation.
-	 *
-	 * @param  x  First argument.
-	 * @param  y  Second argument.
-	 *
-	 * @return  (<TT>x</TT> <I>op</I> <TT>y</TT>), where <I>op</I> stands for
-	 *          this binary operation.
-	 */
-	public abstract T op
-		(T x,
-		 T y);
-
-	}
+}

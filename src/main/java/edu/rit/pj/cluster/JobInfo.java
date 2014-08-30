@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj.cluster;
 
 import edu.rit.util.Timer;
@@ -31,198 +30,188 @@ import edu.rit.util.Timer;
  * Class JobInfo provides a record of information about one job in a parallel
  * computer in the PJ cluster middleware.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 24-Jan-2012
  */
-public class JobInfo
-	{
+public class JobInfo {
 
 // Exported enumerations.
+    /**
+     * The state of a job.
+     */
+    public static enum State {
 
-	/**
-	 * The state of a job.
-	 */
-	public static enum State
-		{
-		/**
-		 * The job is waiting to run.
-		 */
-		WAITING ("Waiting"),
+        /**
+         * The job is waiting to run.
+         */
+        WAITING("Waiting"),
+        /**
+         * The job is running.
+         */
+        RUNNING("Running");
 
-		/**
-		 * The job is running.
-		 */
-		RUNNING ("Running");
+        private final String stringForm;
 
-		private final String stringForm;
+        /**
+         * Construct a new State value.
+         *
+         * @param stringForm String form.
+         */
+        State(String stringForm) {
+            this.stringForm = stringForm;
+        }
 
-		/**
-		 * Construct a new State value.
-		 *
-		 * @param  stringForm  String form.
-		 */
-		State
-			(String stringForm)
-			{
-			this.stringForm = stringForm;
-			}
-
-		/**
-		 * Returns a string version of this State value.
-		 *
-		 * @return  String version.
-		 */
-		public String toString()
-			{
-			return stringForm;
-			}
-		}
+        /**
+         * Returns a string version of this State value.
+         *
+         * @return String version.
+         */
+        public String toString() {
+            return stringForm;
+        }
+    }
 
 // Exported data members.
+    /**
+     * The job number.
+     */
+    public int jobnum;
 
-	/**
-	 * The job number.
-	 */
-	public int jobnum;
+    /**
+     * The job's state.
+     */
+    public State state;
 
-	/**
-	 * The job's state.
-	 */
-	public State state;
+    /**
+     * The time when the job entered its current state (milliseconds since
+     * midnight 01-Jan-1970 GMT).
+     */
+    public long stateTime;
 
-	/**
-	 * The time when the job entered its current state (milliseconds since
-	 * midnight 01-Jan-1970 GMT).
-	 */
-	public long stateTime;
+    /**
+     * The job's user name.
+     */
+    public String username;
 
-	/**
-	 * The job's user name.
-	 */
-	public String username;
+    /**
+     * The number of backend nodes in the job.
+     */
+    public int Nn;
 
-	/**
-	 * The number of backend nodes in the job.
-	 */
-	public int Nn;
+    /**
+     * The number of processes in the job.
+     */
+    public int Np;
 
-	/**
-	 * The number of processes in the job.
-	 */
-	public int Np;
+    /**
+     * The number of CPUs per process in the job.
+     */
+    public int Nt;
 
-	/**
-	 * The number of CPUs per process in the job.
-	 */
-	public int Nt;
+    /**
+     * The number of processes that have been assigned to the job so far.
+     */
+    public int count;
 
-	/**
-	 * The number of processes that have been assigned to the job so far.
-	 */
-	public int count;
+    /**
+     * Array of backend nodes for each process assigned to the job in rank
+     * order. The array has <TT>Np</TT> total elements. The first <TT>count</TT>
+     * elements have been assigned.
+     */
+    public BackendInfo[] backend;
 
-	/**
-	 * Array of backend nodes for each process assigned to the job in rank
-	 * order. The array has <TT>Np</TT> total elements. The first <TT>count</TT>
-	 * elements have been assigned.
-	 */
-	public BackendInfo[] backend;
+    /**
+     * Number of CPUs assigned to each process in the job in rank order. The
+     * array has <TT>Np</TT> total elements. The first <TT>count</TT> elements
+     * have been assigned.
+     */
+    public int[] cpus;
 
-	/**
-	 * Number of CPUs assigned to each process in the job in rank order. The
-	 * array has <TT>Np</TT> total elements. The first <TT>count</TT> elements
-	 * have been assigned.
-	 */
-	public int[] cpus;
+    /**
+     * The number of nodes that have been assigned to the job so far.
+     */
+    public int nodeCount;
 
-	/**
-	 * The number of nodes that have been assigned to the job so far.
-	 */
-	public int nodeCount;
+    /**
+     * Reference to the job frontend process.
+     */
+    public JobFrontendRef frontend;
 
-	/**
-	 * Reference to the job frontend process.
-	 */
-	public JobFrontendRef frontend;
+    /**
+     * Lease renewal timer.
+     */
+    public Timer renewTimer;
 
-	/**
-	 * Lease renewal timer.
-	 */
-	public Timer renewTimer;
+    /**
+     * Lease expiration timer.
+     */
+    public Timer expireTimer;
 
-	/**
-	 * Lease expiration timer.
-	 */
-	public Timer expireTimer;
+    /**
+     * Maximum job time timer.
+     */
+    public Timer jobTimer;
 
-	/**
-	 * Maximum job time timer.
-	 */
-	public Timer jobTimer;
-
-	/**
-	 * Comment for each process in the job in rank order. The array has
-	 * <TT>Np</TT> total elements. Initially, these are empty strings. The
-	 * process comments appear in the detailed job status display in the Job
-	 * Scheduler web interface.
-	 */
-	public String[] comment;
+    /**
+     * Comment for each process in the job in rank order. The array has
+     * <TT>Np</TT> total elements. Initially, these are empty strings. The
+     * process comments appear in the detailed job status display in the Job
+     * Scheduler web interface.
+     */
+    public String[] comment;
 
 // Exported constructors.
+    /**
+     * Construct a new job information record.
+     *
+     * @param jobnum The job number.
+     * @param state The job's state.
+     * @param stateTime The time when the job entered its current state.
+     * @param username The job's user name.
+     * @param Nn The number of backend nodes in the job.
+     * @param Np The number of processes in the job.
+     * @param Nt The number of CPUs per process in the job.
+     * @param count The number of processes that have been assigned to the job
+     * so far.
+     * @param backend Array of backends assigned to the job in rank order.
+     * @param cpus Array of CPUs for each process in rank order.
+     * @param nodeCount The number of nodes that have been assigned to the job
+     * so far.
+     * @param frontend Reference to the job frontend process.
+     * @param renewTimer Lease renewal timer.
+     * @param expireTimer Lease expiration timer.
+     * @param jobTimer Maximum job time timer.
+     */
+    public JobInfo(int jobnum,
+            State state,
+            long stateTime,
+            String username,
+            int Nn,
+            int Np,
+            int Nt,
+            int count,
+            BackendInfo[] backend,
+            int[] cpus,
+            int nodeCount,
+            JobFrontendRef frontend,
+            Timer renewTimer,
+            Timer expireTimer,
+            Timer jobTimer) {
+        this.jobnum = jobnum;
+        this.state = state;
+        this.stateTime = stateTime;
+        this.username = username;
+        this.Nn = Nn;
+        this.Np = Np;
+        this.Nt = Nt;
+        this.count = count;
+        this.backend = backend;
+        this.cpus = cpus;
+        this.nodeCount = nodeCount;
+        this.frontend = frontend;
+        this.renewTimer = renewTimer;
+        this.expireTimer = expireTimer;
+        this.jobTimer = jobTimer;
+    }
 
-	/**
-	 * Construct a new job information record.
-	 *
-	 * @param  jobnum       The job number.
-	 * @param  state        The job's state.
-	 * @param  stateTime    The time when the job entered its current state.
-	 * @param  username     The job's user name.
-	 * @param  Nn           The number of backend nodes in the job.
-	 * @param  Np           The number of processes in the job.
-	 * @param  Nt           The number of CPUs per process in the job.
-	 * @param  count        The number of processes that have been assigned to
-	 *                      the job so far.
-	 * @param  backend      Array of backends assigned to the job in rank order.
-	 * @param  cpus         Array of CPUs for each process in rank order.
-	 * @param  nodeCount    The number of nodes that have been assigned to the
-	 *                      job so far.
-	 * @param  frontend     Reference to the job frontend process.
-	 * @param  renewTimer   Lease renewal timer.
-	 * @param  expireTimer  Lease expiration timer.
-	 * @param  jobTimer     Maximum job time timer.
-	 */
-	public JobInfo
-		(int jobnum,
-		 State state,
-		 long stateTime,
-		 String username,
-		 int Nn,
-		 int Np,
-		 int Nt,
-		 int count,
-		 BackendInfo[] backend,
-		 int[] cpus,
-		 int nodeCount,
-		 JobFrontendRef frontend,
-		 Timer renewTimer,
-		 Timer expireTimer,
-		 Timer jobTimer)
-		{
-		this.jobnum = jobnum;
-		this.state = state;
-		this.stateTime = stateTime;
-		this.username = username;
-		this.Nn = Nn;
-		this.Np = Np;
-		this.Nt = Nt;
-		this.count = count;
-		this.backend = backend;
-		this.cpus = cpus;
-		this.nodeCount = nodeCount;
-		this.frontend = frontend;
-		this.renewTimer = renewTimer;
-		this.expireTimer = expireTimer;
-		this.jobTimer = jobTimer;
-		}
-
-	}
+}

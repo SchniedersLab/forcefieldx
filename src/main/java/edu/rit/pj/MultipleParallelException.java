@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj;
 
 import java.io.PrintStream;
@@ -37,128 +36,104 @@ import java.util.Map;
  * java.util.Map Map} mapping the thread index (type Integer) to the exception
  * thrown by that thread (type Throwable).
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 16-May-2007
  */
 public class MultipleParallelException
-	extends Exception
-	{
+        extends Exception {
 
 // Hidden data members.
-
-	private Map<Integer,Throwable> myMap;
+    private Map<Integer, Throwable> myMap;
 
 // Exported constructors.
+    /**
+     * Create a new multiple parallel exception with no detail message and no
+     * exception map.
+     */
+    public MultipleParallelException() {
+        super();
+    }
 
-	/**
-	 * Create a new multiple parallel exception with no detail message and no
-	 * exception map.
-	 */
-	public MultipleParallelException()
-		{
-		super();
-		}
+    /**
+     * Create a new multiple parallel exception with the given detail message
+     * and no exception map.
+     *
+     * @param theMessage Detail message.
+     */
+    public MultipleParallelException(String theMessage) {
+        super(theMessage);
+    }
 
-	/**
-	 * Create a new multiple parallel exception with the given detail message
-	 * and no exception map.
-	 *
-	 * @param  theMessage  Detail message.
-	 */
-	public MultipleParallelException
-		(String theMessage)
-		{
-		super (theMessage);
-		}
+    /**
+     * Create a new multiple parallel exception with no detail message and the
+     * given exception map.
+     *
+     * @param theMap Exception map.
+     */
+    public MultipleParallelException(Map<Integer, Throwable> theMap) {
+        super();
+        myMap = theMap;
+    }
 
-	/**
-	 * Create a new multiple parallel exception with no detail message and the
-	 * given exception map.
-	 *
-	 * @param  theMap  Exception map.
-	 */
-	public MultipleParallelException
-		(Map<Integer,Throwable> theMap)
-		{
-		super();
-		myMap = theMap;
-		}
-
-	/**
-	 * Create a new multiple parallel exception with the given detail message
-	 * and the given exception map.
-	 *
-	 * @param  theMessage  Detail message.
-	 * @param  theMap      Exception map.
-	 */
-	public MultipleParallelException
-		(String theMessage,
-		 Map<Integer,Throwable> theMap)
-		{
-		super (theMessage);
-		myMap = theMap;
-		}
+    /**
+     * Create a new multiple parallel exception with the given detail message
+     * and the given exception map.
+     *
+     * @param theMessage Detail message.
+     * @param theMap Exception map.
+     */
+    public MultipleParallelException(String theMessage,
+            Map<Integer, Throwable> theMap) {
+        super(theMessage);
+        myMap = theMap;
+    }
 
 // Exported operations.
+    /**
+     * Obtain this multiple parallel exception's exception map.
+     *
+     * @return Exception map, or null if none.
+     */
+    public Map<Integer, Throwable> getExceptionMap() {
+        return myMap;
+    }
 
-	/**
-	 * Obtain this multiple parallel exception's exception map.
-	 *
-	 * @return  Exception map, or null if none.
-	 */
-	public Map<Integer,Throwable> getExceptionMap()
-		{
-		return myMap;
-		}
+    /**
+     * Print this throwable and its backtrace to the specified print stream. The
+     * stack traces of this multiple parallel exception itself and of all the
+     * wrapped exceptions in the exception map are printed.
+     *
+     * @param s Print stream to use for output.
+     */
+    public void printStackTrace(PrintStream s) {
+        synchronized (s) {
+            super.printStackTrace(s);
+            if (myMap != null) {
+                for (Map.Entry<Integer, Throwable> entry : myMap.entrySet()) {
+                    s.println("Parallel team thread " + entry.getKey() + ":");
+                    entry.getValue().printStackTrace(s);
+                }
+            }
+        }
+    }
 
-	/**
-	 * Print this throwable and its backtrace to the specified print stream. The
-	 * stack traces of this multiple parallel exception itself and of all the
-	 * wrapped exceptions in the exception map are printed.
-	 *
-	 * @param  s  Print stream to use for output.
-	 */
-	public void printStackTrace
-		(PrintStream s)
-		{
-		synchronized (s)
-			{
-			super.printStackTrace (s);
-			if (myMap != null)
-				{
-				for
-					(Map.Entry<Integer,Throwable> entry : myMap.entrySet())
-					{
-					s.println ("Parallel team thread " + entry.getKey() + ":");
-					entry.getValue().printStackTrace (s);
-					}
-				}
-			}
-		}
+    /**
+     * Print this throwable and its backtrace to the specified print writer. The
+     * stack traces of this multiple parallel exception itself and of all the
+     * wrapped exceptions in the exception map are printed.
+     *
+     * @param s Print writer to use for output.
+     */
+    public void printStackTrace(PrintWriter s) {
+        synchronized (s) {
+            super.printStackTrace(s);
+            if (myMap != null) {
+                for (Map.Entry<Integer, Throwable> entry : myMap.entrySet()) {
+                    s.println("Parallel team thread " + entry.getKey() + ":");
+                    entry.getValue().printStackTrace(s);
+                }
+            }
+        }
+    }
 
-	/**
-	 * Print this throwable and its backtrace to the specified print writer. The
-	 * stack traces of this multiple parallel exception itself and of all the
-	 * wrapped exceptions in the exception map are printed.
-	 *
-	 * @param  s  Print writer to use for output.
-	 */
-	public void printStackTrace
-		(PrintWriter s)
-		{
-		synchronized (s)
-			{
-			super.printStackTrace (s);
-			if (myMap != null)
-				{
-				for
-					(Map.Entry<Integer,Throwable> entry : myMap.entrySet())
-					{
-					s.println ("Parallel team thread " + entry.getKey() + ":");
-					entry.getValue().printStackTrace (s);
-					}
-				}
-			}
-		}
-
-	}
+}

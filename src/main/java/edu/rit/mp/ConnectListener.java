@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.mp;
 
 import java.io.IOException;
@@ -32,46 +31,40 @@ import java.io.IOException;
  * notified whenever a {@linkplain Channel} is connected in a {@linkplain
  * ChannelGroup}.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 20-Dec-2007
  */
-public interface ConnectListener
-	{
+public interface ConnectListener {
 
 // Exported operations.
+    /**
+     * Report that a channel was connected in the given channel group, initiated
+     * by the near end. The channel group calls the <TT>nearEndConnected()</TT>
+     * method of a registered connect listener when the channel group's
+     * <TT>connect()</TT> method is called by code in the same process.
+     *
+     * @param theChannelGroup Channel group that is calling this method.
+     * @param theChannel Newly created channel.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void nearEndConnected(ChannelGroup theChannelGroup,
+            Channel theChannel)
+            throws IOException;
 
-	/**
-	 * Report that a channel was connected in the given channel group, initiated
-	 * by the near end. The channel group calls the <TT>nearEndConnected()</TT>
-	 * method of a registered connect listener when the channel group's
-	 * <TT>connect()</TT> method is called by code in the same process.
-	 *
-	 * @param  theChannelGroup  Channel group that is calling this method.
-	 * @param  theChannel       Newly created channel.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void nearEndConnected
-		(ChannelGroup theChannelGroup,
-		 Channel theChannel)
-		throws IOException;
+    /**
+     * Report that a channel was connected in the given channel group, initiated
+     * by the far end. The channel group calls the <TT>farEndConnected()</TT>
+     * method of a registered connect listener when an incoming connection
+     * request is received from another process.
+     *
+     * @param theChannelGroup Channel group that is calling this method.
+     * @param theChannel Newly created channel.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void farEndConnected(ChannelGroup theChannelGroup,
+            Channel theChannel)
+            throws IOException;
 
-	/**
-	 * Report that a channel was connected in the given channel group, initiated
-	 * by the far end. The channel group calls the <TT>farEndConnected()</TT>
-	 * method of a registered connect listener when an incoming connection
-	 * request is received from another process.
-	 *
-	 * @param  theChannelGroup  Channel group that is calling this method.
-	 * @param  theChannel       Newly created channel.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void farEndConnected
-		(ChannelGroup theChannelGroup,
-		 Channel theChannel)
-		throws IOException;
-
-	}
+}

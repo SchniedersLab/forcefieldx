@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj;
 
 /**
@@ -35,52 +34,43 @@ package edu.rit.pj;
  *        Spinner spinner = new Spinner();
  *        while (&lt;condition&gt;) spinner.spin();
  *        }
- * </PRE>
- * This will wait as long as the <TT>&lt;condition&gt;</TT> is true.
+ * </PRE> This will wait as long as the <TT>&lt;condition&gt;</TT> is true.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 20-Dec-2007
  */
-class Spinner
-	{
+class Spinner {
 
 // Hidden constants.
-
-	// In a spin-wait, the maximum number of iterations to spin before yielding
-	// the CPU.
-	static final int MAX_COUNT = 10000;
+    // In a spin-wait, the maximum number of iterations to spin before yielding
+    // the CPU.
+    static final int MAX_COUNT = 10000;
 
 // Hidden data members.
+    // Spin counter.
+    volatile int count;
 
-	// Spin counter.
-	volatile int count;
-
-	// 128 bytes of extra padding to avert cache interference.
-	private long p0, p1, p2, p3, p4, p5, p6, p7;
-	private long p8, p9, pa, pb, pc, pd, pe, pf;
+    // 128 bytes of extra padding to avert cache interference.
+    private long p0, p1, p2, p3, p4, p5, p6, p7;
+    private long p8, p9, pa, pb, pc, pd, pe, pf;
 
 // Exported constructors.
-
-	/**
-	 * Construct a new spinner.
-	 */
-	public Spinner()
-		{
-		}
+    /**
+     * Construct a new spinner.
+     */
+    public Spinner() {
+    }
 
 // Exported operations.
+    /**
+     * Spin this spinner. If enough consecutive <TT>spin()</TT> calls occur, the
+     * calling thread yields the CPU.
+     */
+    public void spin() {
+        if (count++ > MAX_COUNT) {
+            Thread.yield();
+            count = 0;
+        }
+    }
 
-	/**
-	 * Spin this spinner. If enough consecutive <TT>spin()</TT> calls occur, the
-	 * calling thread yields the CPU.
-	 */
-	public void spin()
-		{
-		if (count ++ > MAX_COUNT)
-			{
-			Thread.yield();
-			count = 0;
-			}
-		}
-
-	}
+}

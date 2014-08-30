@@ -22,49 +22,43 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj;
 
 /**
  * Class ItemGenerator is the abstract base class for an object that generates
  * items for a {@linkplain ParallelIteration}.
  *
- * @param  <T>  Data type of the items iterated over.
+ * @param <T> Data type of the items iterated over.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 04-Jun-2007
  */
-abstract class ItemGenerator<T>
-	{
+abstract class ItemGenerator<T> {
 
 // Hidden data members.
+    // Current item sequence number for filling in the item holder.
+    int myCurrentSequenceNumber;
 
-	// Current item sequence number for filling in the item holder.
-	int myCurrentSequenceNumber;
+    // Current iteration index for use by the ordered() construct.
+    int myOrderedIndex;
 
-	// Current iteration index for use by the ordered() construct.
-	int myOrderedIndex;
-
-	// True to break out of the parallel iteration.
-	boolean myBreak;
+    // True to break out of the parallel iteration.
+    boolean myBreak;
 
 // Exported constructors.
-
-	/**
-	 * Construct a new item generator.
-	 */
-	public ItemGenerator()
-		{
-		}
+    /**
+     * Construct a new item generator.
+     */
+    public ItemGenerator() {
+    }
 
 // Exported operations.
+    /**
+     * Return an item holder containing the next item to be processed plus
+     * associated information.
+     *
+     * @return Item holder, or null if no more items.
+     */
+    public abstract ItemHolder<T> nextItem();
 
-	/**
-	 * Return an item holder containing the next item to be processed plus
-	 * associated information.
-	 *
-	 * @return  Item holder, or null if no more items.
-	 */
-	public abstract ItemHolder<T> nextItem();
-
-	}
+}

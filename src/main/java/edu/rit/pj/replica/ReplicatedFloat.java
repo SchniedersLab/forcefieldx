@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj.replica;
 
 import edu.rit.mp.FloatBuf;
@@ -38,8 +37,8 @@ import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Class ReplicatedFloat provides a replicated, shared reduction variable for
- * a value of type <TT>float</TT>.
+ * Class ReplicatedFloat provides a replicated, shared reduction variable for a
+ * value of type <TT>float</TT>.
  * <P>
  * A replicated, shared reduction variable is intended to be used in a cluster
  * or hybrid parallel program for a data item shared among all the processes in
@@ -52,10 +51,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  * updates, and specifying the communicator (class {@linkplain edu.rit.pj.Comm})
  * and the message tag to use for sending updates among the processes. At this
  * point a <I>replica</I> of the variable exists in each process.
- * <P><LI>
+ * <P>
+ * <LI>
  * To read the variable, call the <TT>get()</TT> method. The current value of
  * the local process's replicated variable is returned.
- * <P><LI>
+ * <P>
+ * <LI>
  * To update the variable, call the <TT>reduce()</TT> method, specifying a new
  * value. The <TT>reduce()</TT> method performs an <I>atomic reduction</I>
  * (described below) on the local process's replicated variable with the new
@@ -75,13 +76,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  * value back into the local process's replicated variable.
  * </OL>
  * <P>
- * Class ReplicatedFloat does not itself guarantee consistency of the
- * replicas' values. This is to avoid the message passing overhead of a
- * distributed state update protocol. Instead, the parallel program must be
- * written to operate correctly when the variable is updated as described above.
- * Note that the value of a process's local replica can change asynchronously at
- * any time, either because a thread in the current process updated the
- * variable, or because a flooded message updated the variable.
+ * Class ReplicatedFloat does not itself guarantee consistency of the replicas'
+ * values. This is to avoid the message passing overhead of a distributed state
+ * update protocol. Instead, the parallel program must be written to operate
+ * correctly when the variable is updated as described above. Note that the
+ * value of a process's local replica can change asynchronously at any time,
+ * either because a thread in the current process updated the variable, or
+ * because a flooded message updated the variable.
  * <P>
  * Class ReplicatedFloat is multiple thread safe. The methods use lock-free
  * atomic compare-and-set.
@@ -89,264 +90,227 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <I>Note:</I> Class ReplicatedFloat is implemented using class
  * java.util.concurrent.atomic.AtomicInteger.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 13-Sep-2008
  */
 public class ReplicatedFloat
-	extends Number
-	{
+        extends Number {
 
 // Hidden data members.
-
-	private FloatOp myOp;
-	private AtomicInteger myValue;
-	private int myTag;
-	private Comm myComm;
-	private Receiver myReceiver;
+    private FloatOp myOp;
+    private AtomicInteger myValue;
+    private int myTag;
+    private Comm myComm;
+    private Receiver myReceiver;
 
 // Hidden helper classes.
+    /**
+     * Class Receiver receives and processes flooded messages to update this
+     * replicated, shared reduction variable.
+     *
+     * @author Alan Kaminsky
+     * @version 13-Sep-2008
+     */
+    private class Receiver
+            extends Thread {
 
-	/**
-	 * Class Receiver receives and processes flooded messages to update this
-	 * replicated, shared reduction variable.
-	 *
-	 * @author  Alan Kaminsky
-	 * @version 13-Sep-2008
-	 */
-	private class Receiver
-		extends Thread
-		{
-		public void run()
-			{
-			FloatItemBuf buf = FloatBuf.buffer();
+        public void run() {
+            FloatItemBuf buf = FloatBuf.buffer();
 
-			try
-				{
-				for (;;)
-					{
-					// Receive a flooded message.
-					myComm.floodReceive (myTag, buf);
+            try {
+                for (;;) {
+                    // Receive a flooded message.
+                    myComm.floodReceive(myTag, buf);
 
-					// Do an atomic reduction.
-					int oldint, newint;
-					float oldvalue, newvalue;
-					do
-						{
-						oldint = myValue.get();
-						oldvalue = Float.intBitsToFloat (oldint);
-						newvalue = myOp.op (oldvalue, buf.item);
-						newint = Float.floatToIntBits (newvalue);
-						}
-					while (! myValue.compareAndSet (oldint, newint));
-					}
-				}
-
-			catch (Throwable exc)
-				{
-				exc.printStackTrace (System.err);
-				}
-			}
-		}
+                    // Do an atomic reduction.
+                    int oldint, newint;
+                    float oldvalue, newvalue;
+                    do {
+                        oldint = myValue.get();
+                        oldvalue = Float.intBitsToFloat(oldint);
+                        newvalue = myOp.op(oldvalue, buf.item);
+                        newint = Float.floatToIntBits(newvalue);
+                    } while (!myValue.compareAndSet(oldint, newint));
+                }
+            } catch (Throwable exc) {
+                exc.printStackTrace(System.err);
+            }
+        }
+    }
 
 // Exported constructors.
+    /**
+     * Construct a new replicated, shared float reduction variable with the
+     * given reduction operator. The initial value is 0. A message tag of 0 is
+     * used. The world communicator is used.
+     *
+     * @param op Reduction operator.
+     *
+     * @exception NullPointerException (unchecked exception) Thrown if
+     * <TT>op</TT> is null.
+     */
+    public ReplicatedFloat(FloatOp op) {
+        this(op, 0.0f, 0, Comm.world());
+    }
 
-	/**
-	 * Construct a new replicated, shared float reduction variable with the
-	 * given reduction operator. The initial value is 0. A message tag of 0 is
-	 * used. The world communicator is used.
-	 *
-	 * @param  op  Reduction operator.
-	 *
-	 * @exception  NullPointerException
-	 *     (unchecked exception) Thrown if <TT>op</TT> is null.
-	 */
-	public ReplicatedFloat
-		(FloatOp op)
-		{
-		this (op, 0.0f, 0, Comm.world());
-		}
+    /**
+     * Construct a new replicated, shared float reduction variable with the
+     * given reduction operator and initial value. A message tag of 0 is used.
+     * The world communicator is used.
+     *
+     * @param op Reduction operator.
+     * @param initialValue Initial value.
+     *
+     * @exception NullPointerException (unchecked exception) Thrown if
+     * <TT>op</TT> is null.
+     */
+    public ReplicatedFloat(FloatOp op,
+            float initialValue) {
+        this(op, initialValue, 0, Comm.world());
+    }
 
-	/**
-	 * Construct a new replicated, shared float reduction variable with the
-	 * given reduction operator and initial value. A message tag of 0 is used.
-	 * The world communicator is used.
-	 *
-	 * @param  op            Reduction operator.
-	 * @param  initialValue  Initial value.
-	 *
-	 * @exception  NullPointerException
-	 *     (unchecked exception) Thrown if <TT>op</TT> is null.
-	 */
-	public ReplicatedFloat
-		(FloatOp op,
-		 float initialValue)
-		{
-		this (op, initialValue, 0, Comm.world());
-		}
+    /**
+     * Construct a new replicated, shared float reduction variable with the
+     * given reduction operator, initial value, and message tag. The world
+     * communicator is used.
+     *
+     * @param op Reduction operator.
+     * @param initialValue Initial value.
+     * @param tag Message tag.
+     *
+     * @exception NullPointerException (unchecked exception) Thrown if
+     * <TT>op</TT> is null. Thrown if
+     * <TT>comm</TT> is null.
+     */
+    public ReplicatedFloat(FloatOp op,
+            float initialValue,
+            int tag) {
+        this(op, initialValue, tag, Comm.world());
+    }
 
-	/**
-	 * Construct a new replicated, shared float reduction variable with the
-	 * given reduction operator, initial value, and message tag. The world
-	 * communicator is used.
-	 *
-	 * @param  op            Reduction operator.
-	 * @param  initialValue  Initial value.
-	 * @param  tag           Message tag.
-	 *
-	 * @exception  NullPointerException
-	 *     (unchecked exception) Thrown if <TT>op</TT> is null. Thrown if
-	 *     <TT>comm</TT> is null.
-	 */
-	public ReplicatedFloat
-		(FloatOp op,
-		 float initialValue,
-		 int tag)
-		{
-		this (op, initialValue, tag, Comm.world());
-		}
-
-	/**
-	 * Construct a new replicated, shared float reduction variable with the
-	 * given reduction operator, initial value, message tag, and communicator.
-	 *
-	 * @param  op            Reduction operator.
-	 * @param  initialValue  Initial value.
-	 * @param  tag           Message tag.
-	 * @param  comm          Communicator.
-	 *
-	 * @exception  NullPointerException
-	 *     (unchecked exception) Thrown if <TT>op</TT> is null. Thrown if
-	 *     <TT>comm</TT> is null.
-	 */
-	public ReplicatedFloat
-		(FloatOp op,
-		 float initialValue,
-		 int tag,
-		 Comm comm)
-		{
-		if (op == null)
-			{
-			throw new NullPointerException
-				("ReplicatedFloat(): op is null");
-			}
-		if (comm == null)
-			{
-			throw new NullPointerException
-				("ReplicatedFloat(): comm is null");
-			}
-		myOp = op;
-		myValue = new AtomicInteger (Float.floatToIntBits (initialValue));
-		myTag = tag;
-		myComm = comm;
-		myReceiver = new Receiver();
-		myReceiver.setDaemon (true);
-		myReceiver.start();
-		}
+    /**
+     * Construct a new replicated, shared float reduction variable with the
+     * given reduction operator, initial value, message tag, and communicator.
+     *
+     * @param op Reduction operator.
+     * @param initialValue Initial value.
+     * @param tag Message tag.
+     * @param comm Communicator.
+     *
+     * @exception NullPointerException (unchecked exception) Thrown if
+     * <TT>op</TT> is null. Thrown if
+     * <TT>comm</TT> is null.
+     */
+    public ReplicatedFloat(FloatOp op,
+            float initialValue,
+            int tag,
+            Comm comm) {
+        if (op == null) {
+            throw new NullPointerException("ReplicatedFloat(): op is null");
+        }
+        if (comm == null) {
+            throw new NullPointerException("ReplicatedFloat(): comm is null");
+        }
+        myOp = op;
+        myValue = new AtomicInteger(Float.floatToIntBits(initialValue));
+        myTag = tag;
+        myComm = comm;
+        myReceiver = new Receiver();
+        myReceiver.setDaemon(true);
+        myReceiver.start();
+    }
 
 // Exported operations.
+    /**
+     * Returns this replicated, shared reduction variable's current value.
+     *
+     * @return Current value.
+     */
+    public float get() {
+        return Float.intBitsToFloat(myValue.get());
+    }
 
-	/**
-	 * Returns this replicated, shared reduction variable's current value.
-	 *
-	 * @return  Current value.
-	 */
-	public float get()
-		{
-		return Float.intBitsToFloat (myValue.get());
-		}
+    /**
+     * Update this replicated, shared reduction variable's current value. This
+     * variable is combined with the given value using the reduction operation
+     * specified to the constructor (<I>op</I>). The result is stored back into
+     * this variable and is returned; the result may also be flooded to all
+     * processes in the communicator.
+     *
+     * @param value Value.
+     *
+     * @return (This variable) <I>op</I> (<TT>value</TT>).
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public float reduce(float value)
+            throws IOException {
+        // Do an atomic reduction.
+        int oldint, newint;
+        float oldvalue, newvalue;
+        do {
+            oldint = myValue.get();
+            oldvalue = Float.intBitsToFloat(oldint);
+            newvalue = myOp.op(oldvalue, value);
+            newint = Float.floatToIntBits(newvalue);
+        } while (!myValue.compareAndSet(oldint, newint));
 
-	/**
-	 * Update this replicated, shared reduction variable's current value. This
-	 * variable is combined with the given value using the reduction operation
-	 * specified to the constructor (<I>op</I>). The result is stored back into
-	 * this variable and is returned; the result may also be flooded to all
-	 * processes in the communicator.
-	 *
-	 * @param  value  Value.
-	 *
-	 * @return  (This variable) <I>op</I> (<TT>value</TT>).
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public float reduce
-		(float value)
-		throws IOException
-		{
-		// Do an atomic reduction.
-		int oldint, newint;
-		float oldvalue, newvalue;
-		do
-			{
-			oldint = myValue.get();
-			oldvalue = Float.intBitsToFloat (oldint);
-			newvalue = myOp.op (oldvalue, value);
-			newint = Float.floatToIntBits (newvalue);
-			}
-		while (! myValue.compareAndSet (oldint, newint));
+        // If value changed, send a flooded message.
+        if (newvalue != oldvalue) {
+            myComm.floodSend(myTag, FloatBuf.buffer(newvalue));
+        }
 
-		// If value changed, send a flooded message.
-		if (newvalue != oldvalue)
-			{
-			myComm.floodSend (myTag, FloatBuf.buffer (newvalue));
-			}
+        // Return updated value.
+        return newvalue;
+    }
 
-		// Return updated value.
-		return newvalue;
-		}
+    /**
+     * Returns a string version of this reduction variable.
+     *
+     * @return String version.
+     */
+    public String toString() {
+        return Float.toString(get());
+    }
 
-	/**
-	 * Returns a string version of this reduction variable.
-	 *
-	 * @return  String version.
-	 */
-	public String toString()
-		{
-		return Float.toString (get());
-		}
+    /**
+     * Returns this reduction variable's current value converted to type
+     * <TT>int</TT>.
+     *
+     * @return Current value.
+     */
+    public int intValue() {
+        return (int) get();
+    }
 
-	/**
-	 * Returns this reduction variable's current value converted to type
-	 * <TT>int</TT>.
-	 *
-	 * @return  Current value.
-	 */
-	public int intValue()
-		{
-		return (int) get();
-		}
+    /**
+     * Returns this reduction variable's current value converted to type
+     * <TT>long</TT>.
+     *
+     * @return Current value.
+     */
+    public long longValue() {
+        return (long) get();
+    }
 
-	/**
-	 * Returns this reduction variable's current value converted to type
-	 * <TT>long</TT>.
-	 *
-	 * @return  Current value.
-	 */
-	public long longValue()
-		{
-		return (long) get();
-		}
+    /**
+     * Returns this reduction variable's current value converted to type
+     * <TT>float</TT>.
+     *
+     * @return Current value.
+     */
+    public float floatValue() {
+        return (float) get();
+    }
 
-	/**
-	 * Returns this reduction variable's current value converted to type
-	 * <TT>float</TT>.
-	 *
-	 * @return  Current value.
-	 */
-	public float floatValue()
-		{
-		return (float) get();
-		}
+    /**
+     * Returns this reduction variable's current value converted to type
+     * <TT>double</TT>.
+     *
+     * @return Current value.
+     */
+    public double doubleValue() {
+        return (double) get();
+    }
 
-	/**
-	 * Returns this reduction variable's current value converted to type
-	 * <TT>double</TT>.
-	 *
-	 * @return  Current value.
-	 */
-	public double doubleValue()
-		{
-		return (double) get();
-		}
-
-	}
+}

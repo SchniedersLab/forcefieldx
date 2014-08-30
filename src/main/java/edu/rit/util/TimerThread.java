@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.util;
 
 import java.util.Iterator;
@@ -65,292 +64,255 @@ import java.util.Vector;
  * Unlike the latter, they also provide the ability to stop and restart a timer
  * and the ability to deal with race conditions in multithreaded programs.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 18-Jun-2003
  */
 public class TimerThread
-	extends Thread
-	{
+        extends Thread {
 
 // Hidden helper classes.
+    /**
+     * Class TimerThread.TimeoutInfo is a record used to keep track of a
+     * timeout.
+     *
+     * @author Alan Kaminsky
+     * @version 18-Sep-2002
+     */
+    private static class TimeoutInfo {
+        // Instant at which the timeout will occur (milliseconds since midnight
+        // 01-Jan-1970 UTC).
 
-	/**
-	 * Class TimerThread.TimeoutInfo is a record used to keep track of a
-	 * timeout.
-	 *
-	 * @author  Alan Kaminsky
-	 * @version 18-Sep-2002
-	 */
-	private static class TimeoutInfo
-		{
-		// Instant at which the timeout will occur (milliseconds since midnight
-		// 01-Jan-1970 UTC).
-		public long myTimeout;
+        public long myTimeout;
 
-		// Timer to trigger.
-		public Timer myTimer;
+        // Timer to trigger.
+        public Timer myTimer;
 
-		public TimeoutInfo
-			(long theTimeout,
-			 Timer theTimer)
-			{
-			myTimeout = theTimeout;
-			myTimer = theTimer;
-			}
-		}
+        public TimeoutInfo(long theTimeout,
+                Timer theTimer) {
+            myTimeout = theTimeout;
+            myTimer = theTimer;
+        }
+    }
 
 // Hidden data members.
+    /**
+     * Queue of timeout info records, organized as a heap in order of timeout.
+     * Index 0 is unused. Indexes 1 .. mySize contain the heap. The queue's
+     * length is increased by INCR when necessary to add a new record.
+     */
+    private static final int INCR = 4;
+    private TimeoutInfo[] myQueue = new TimeoutInfo[INCR + 1];
 
-	/**
-	 * Queue of timeout info records, organized as a heap in order of timeout.
-	 * Index 0 is unused. Indexes 1 .. mySize contain the heap. The queue's
-	 * length is increased by INCR when necessary to add a new record.
-	 */
-	private static final int INCR = 4;
-	private TimeoutInfo[] myQueue = new TimeoutInfo [INCR+1];
+    /**
+     * Number of records in the queue.
+     */
+    private int mySize = 0;
 
-	/**
-	 * Number of records in the queue.
-	 */
-	private int mySize = 0;
-
-	/**
-	 * True if this timer thread is running, false if it's shut down.
-	 */
-	private boolean iamRunning = true;
+    /**
+     * True if this timer thread is running, false if it's shut down.
+     */
+    private boolean iamRunning = true;
 
 // Hidden static data members.
-
-	/**
-	 * The default timer thread.
-	 */
-	private static TimerThread theDefaultTimerThread = null;
+    /**
+     * The default timer thread.
+     */
+    private static TimerThread theDefaultTimerThread = null;
 
 // Exported constructors.
-
-	/**
-	 * Construct a new timer thread. After constructing it, you must call the
-	 * timer thread's <TT>start()</TT> method, or no timeouts will occur.
-	 */
-	public TimerThread()
-		{
-		super();
-		}
+    /**
+     * Construct a new timer thread. After constructing it, you must call the
+     * timer thread's <TT>start()</TT> method, or no timeouts will occur.
+     */
+    public TimerThread() {
+        super();
+    }
 
 // Exported operations.
+    /**
+     * Get the default timer thread, a single shared instance of class
+     * TimerThread. The default timer thread is marked as a daemon thread and is
+     * started automatically. The default timer thread is not created until the
+     * first call to <TT>TimerThread.getDefault()</TT>.
+     *
+     * @return Default timer thread.
+     */
+    public static synchronized TimerThread getDefault() {
+        if (theDefaultTimerThread == null) {
+            theDefaultTimerThread = new TimerThread();
+            theDefaultTimerThread.setDaemon(true);
+            theDefaultTimerThread.start();
+        }
+        return theDefaultTimerThread;
+    }
 
-	/**
-	 * Get the default timer thread, a single shared instance of class
-	 * TimerThread. The default timer thread is marked as a daemon thread and is
-	 * started automatically. The default timer thread is not created until the
-	 * first call to <TT>TimerThread.getDefault()</TT>.
-	 *
-	 * @return  Default timer thread.
-	 */
-	public static synchronized TimerThread getDefault()
-		{
-		if (theDefaultTimerThread == null)
-			{
-			theDefaultTimerThread = new TimerThread();
-			theDefaultTimerThread.setDaemon (true);
-			theDefaultTimerThread.start();
-			}
-		return theDefaultTimerThread;
-		}
+    /**
+     * Create a new timer associated with the given timer task and under the
+     * control of this timer thread. When the timer is triggered, this timer
+     * thread will cause the timer to call the given timer task's
+     * <TT>action()</TT> method.
+     *
+     * @param theTimerTask Timer task.
+     *
+     * @exception NullPointerException (unchecked exception) Thrown if
+     * <TT>theTimerTask</TT> is null.
+     */
+    public Timer createTimer(TimerTask theTimerTask) {
+        return new Timer(this, theTimerTask);
+    }
 
-	/**
-	 * Create a new timer associated with the given timer task and under the
-	 * control of this timer thread. When the timer is triggered, this timer
-	 * thread will cause the timer to call the given timer task's
-	 * <TT>action()</TT> method.
-	 *
-	 * @param  theTimerTask  Timer task.
-	 *
-	 * @exception  NullPointerException
-	 *     (unchecked exception) Thrown if <TT>theTimerTask</TT> is null.
-	 */
-	public Timer createTimer
-		(TimerTask theTimerTask)
-		{
-		return new Timer (this, theTimerTask);
-		}
+    /**
+     * Shut down this timer thread.
+     */
+    public void shutdown() {
+        synchronized (this) {
+            iamRunning = false;
+            notifyAll();
+        }
+    }
 
-	/**
-	 * Shut down this timer thread.
-	 */
-	public void shutdown()
-		{
-		synchronized (this)
-			{
-			iamRunning = false;
-			notifyAll();
-			}
-		}
+    /**
+     * Perform this timer thread's processing. (Never call the <TT>run()</TT>
+     * method yourself!)
+     *
+     * @exception IllegalStateException (unchecked exception) Thrown if some
+     * thread other than this timer thread called the <TT>run()</TT> method.
+     */
+    public void run() {
+        // Only this timer thread itself can call the run() method.
+        if (Thread.currentThread() != this) {
+            throw new IllegalStateException("Wrong thread called the run() method");
+        }
 
-	/**
-	 * Perform this timer thread's processing. (Never call the <TT>run()</TT>
-	 * method yourself!)
-	 *
-	 * @exception  IllegalStateException
-	 *     (unchecked exception) Thrown if some thread other than this timer
-	 *     thread called the <TT>run()</TT> method.
-	 */
-	public void run()
-		{
-		// Only this timer thread itself can call the run() method.
-		if (Thread.currentThread() != this)
-			{
-			throw new IllegalStateException
-				("Wrong thread called the run() method");
-			}
+        try {
+            while (iamRunning) {
+                long now = System.currentTimeMillis();
+                Vector theTriggeredTimeouts = null;
 
-		try
-			{
-			while (iamRunning)
-				{
-				long now = System.currentTimeMillis();
-				Vector theTriggeredTimeouts = null;
+                synchronized (this) {
+                    // If timeout queue is empty, wait until notified.
+                    if (mySize == 0) {
+                        wait();
+                        now = System.currentTimeMillis();
+                    } // If timeout queue is not empty and first timeout is in the
+                    // future, wait until timeout or until notified.
+                    else {
+                        long waitTime = myQueue[1].myTimeout - now;
+                        if (waitTime > 0L) {
+                            wait(waitTime);
+                            now = System.currentTimeMillis();
+                        }
+                    }
 
-				synchronized (this)
-					{
-					// If timeout queue is empty, wait until notified.
-					if (mySize == 0)
-						{
-						wait();
-						now = System.currentTimeMillis();
-						}
+                    // Pull all timeouts that have occurred out of the timeout
+                    // queue into a separate list.
+                    theTriggeredTimeouts = new Vector();
+                    while (mySize > 0 && myQueue[1].myTimeout <= now) {
+                        theTriggeredTimeouts.add(myQueue[1]);
+                        myQueue[1] = myQueue[mySize];
+                        myQueue[mySize] = null;
+                        --mySize;
+                        siftDown(mySize);
+                    }
+                }
 
-					// If timeout queue is not empty and first timeout is in the
-					// future, wait until timeout or until notified.
-					else
-						{
-						long waitTime = myQueue[1].myTimeout - now;
-						if (waitTime > 0L)
-							{
-							wait (waitTime);
-							now = System.currentTimeMillis();
-							}
-						}
-
-					// Pull all timeouts that have occurred out of the timeout
-					// queue into a separate list.
-					theTriggeredTimeouts = new Vector();
-					while (mySize > 0 && myQueue[1].myTimeout <= now)
-						{
-						theTriggeredTimeouts.add (myQueue[1]);
-						myQueue[1] = myQueue[mySize];
-						myQueue[mySize] = null;
-						-- mySize;
-						siftDown (mySize);
-						}
-					}
-
-				// Perform the action of each triggered timeout. Do this outside
-				// the synchronized block, or a deadlock may happen if a timer
-				// is restarted.
-				Iterator iter = theTriggeredTimeouts.iterator();
-				while (iter.hasNext())
-					{
-					((TimeoutInfo) iter.next()).myTimer.trigger (now);
-					}
-				}
-			}
-
-		catch (InterruptedException exc)
-			{
-			System.err.println ("TimerThread interrupted");
-			exc.printStackTrace (System.err);
-			}
-		}
+                // Perform the action of each triggered timeout. Do this outside
+                // the synchronized block, or a deadlock may happen if a timer
+                // is restarted.
+                Iterator iter = theTriggeredTimeouts.iterator();
+                while (iter.hasNext()) {
+                    ((TimeoutInfo) iter.next()).myTimer.trigger(now);
+                }
+            }
+        } catch (InterruptedException exc) {
+            System.err.println("TimerThread interrupted");
+            exc.printStackTrace(System.err);
+        }
+    }
 
 // Hidden operations.
+    /**
+     * Schedule a timer.
+     *
+     * @param theTimeout Timeout instant.
+     * @param theTimer Timer.
+     */
+    synchronized void schedule(long theTimeout,
+            Timer theTimer) {
+        // Increase queue allocation if necessary.
+        if (mySize == myQueue.length - 1) {
+            TimeoutInfo[] newQueue = new TimeoutInfo[myQueue.length + INCR];
+            System.arraycopy(myQueue, 1, newQueue, 1, mySize);
+            myQueue = newQueue;
+        }
 
-	/**
-	 * Schedule a timer.
-	 *
-	 * @param  theTimeout  Timeout instant.
-	 * @param  theTimer    Timer.
-	 */
-	synchronized void schedule
-		(long theTimeout,
-		 Timer theTimer)
-		{
-		// Increase queue allocation if necessary.
-		if (mySize == myQueue.length - 1)
-			{
-			TimeoutInfo[] newQueue = new TimeoutInfo [myQueue.length + INCR];
-			System.arraycopy (myQueue, 1, newQueue, 1, mySize);
-			myQueue = newQueue;
-			}
+        // Add a new timeout info record to the queue.
+        ++mySize;
+        myQueue[mySize] = new TimeoutInfo(theTimeout, theTimer);
+        siftUp(mySize);
 
-		// Add a new timeout info record to the queue.
-		++ mySize;
-		myQueue[mySize] = new TimeoutInfo (theTimeout, theTimer);
-		siftUp (mySize);
+        // Wake up the timer thread.
+        notifyAll();
+    }
 
-		// Wake up the timer thread.
-		notifyAll();
-		}
+    /**
+     * Sift up the last element in the heap. Precondition: HEAP(1,n-1) and n
+     * &gt; 0. Postcondition: HEAP(1,n).
+     */
+    private void siftUp(int n) {
+        int i = n;
+        int p;
+        TimeoutInfo temp;
+        for (;;) {
+            // Invariant: HEAP(1,n) except perhaps between i and its parent.
+            if (i == 1) {
+                break;
+            }
+            p = i / 2;
+            if (myQueue[p].myTimeout <= myQueue[i].myTimeout) {
+                break;
+            }
+            temp = myQueue[p];
+            myQueue[p] = myQueue[i];
+            myQueue[i] = temp;
+            i = p;
+        }
+    }
 
-	/**
-	 * Sift up the last element in the heap. Precondition: HEAP(1,n-1) and n
-	 * &gt; 0. Postcondition: HEAP(1,n).
-	 */
-	private void siftUp
-		(int n)
-		{
-		int i = n;
-		int p;
-		TimeoutInfo temp;
-		for (;;)
-			{
-			// Invariant: HEAP(1,n) except perhaps between i and its parent.
-			if (i == 1) break;
-			p = i / 2;
-			if (myQueue[p].myTimeout <= myQueue[i].myTimeout) break;
-			temp = myQueue[p];
-			myQueue[p] = myQueue[i];
-			myQueue[i] = temp;
-			i = p;
-			}
-		}
-
-	/**
-	 * Sift down the first element in the heap. Precondition: HEAP(2,n) and n
-	 * &gt;= 0. Postcondition: HEAP(1,n).
-	 */
-	private void siftDown
-		(int n)
-		{
-		int i = 1;
-		int c;
-		TimeoutInfo temp;
-		for (;;)
-			{
-			// Invariant: HEAP(1,n) except perhaps between i and its 0, 1, or 2
-			// children.
-			c = 2 * i;
-			if (c > n) break;
-			// c is the left child of i.
-			if (c+1 <= n)
-				{
-				// c+1 is the right child of i.
-				if (myQueue[c+1].myTimeout < myQueue[c].myTimeout)
-					{
-					c = c + 1;
-					}
-				}
-			// c is the least child of i.
-			if (myQueue[i].myTimeout <= myQueue[c].myTimeout) break;
-			temp = myQueue[c];
-			myQueue[c] = myQueue[i];
-			myQueue[i] = temp;
-			i = c;
-			}
-		}
+    /**
+     * Sift down the first element in the heap. Precondition: HEAP(2,n) and n
+     * &gt;= 0. Postcondition: HEAP(1,n).
+     */
+    private void siftDown(int n) {
+        int i = 1;
+        int c;
+        TimeoutInfo temp;
+        for (;;) {
+            // Invariant: HEAP(1,n) except perhaps between i and its 0, 1, or 2
+            // children.
+            c = 2 * i;
+            if (c > n) {
+                break;
+            }
+            // c is the left child of i.
+            if (c + 1 <= n) {
+                // c+1 is the right child of i.
+                if (myQueue[c + 1].myTimeout < myQueue[c].myTimeout) {
+                    c = c + 1;
+                }
+            }
+            // c is the least child of i.
+            if (myQueue[i].myTimeout <= myQueue[c].myTimeout) {
+                break;
+            }
+            temp = myQueue[c];
+            myQueue[c] = myQueue[i];
+            myQueue[i] = temp;
+            i = c;
+        }
+    }
 
 // Unit test main program.
-
 //	/**
 //	 * Helper class for unit test main program.
 //	 */
@@ -405,5 +367,4 @@ public class TimerThread
 //			exc.printStackTrace (System.err);
 //			}
 //		}
-
-	}
+}

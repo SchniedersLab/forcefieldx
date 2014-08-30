@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj;
 
 import edu.rit.util.LongRange;
@@ -115,583 +114,462 @@ import java.util.Iterator;
  * If the worker region's <TT>finish()</TT> method throws an exception, the
  * worker team's <TT>execute()</TT> method throws that same exception.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 07-Oct-2010
  */
 public abstract class WorkerRegion
-	extends WorkerConstruct
-	{
+        extends WorkerConstruct {
 
 // Exported constructors.
-
-	/**
-	 * Construct a new worker region.
-	 */
-	public WorkerRegion()
-		{
-		super();
-		}
+    /**
+     * Construct a new worker region.
+     */
+    public WorkerRegion() {
+        super();
+    }
 
 // Exported operations.
+    /**
+     * Perform initialization actions before parallel execution begins. Only one
+     * thread in each process calls the <TT>start()</TT> method.
+     * <P>
+     * The <TT>start()</TT> method may be overridden in a subclass. If not
+     * overridden, the <TT>start()</TT> method does nothing.
+     *
+     * @exception Exception The <TT>start()</TT> method may throw any exception.
+     */
+    public void start()
+            throws Exception {
+    }
 
-	/**
-	 * Perform initialization actions before parallel execution begins. Only one
-	 * thread in each process calls the <TT>start()</TT> method.
-	 * <P>
-	 * The <TT>start()</TT> method may be overridden in a subclass. If not
-	 * overridden, the <TT>start()</TT> method does nothing.
-	 *
-	 * @exception  Exception
-	 *     The <TT>start()</TT> method may throw any exception.
-	 */
-	public void start()
-		throws Exception
-		{
-		}
+    /**
+     * Execute parallel code. All threads of the worker team in each process
+     * call the <TT>run()</TT> method concurrently.
+     * <P>
+     * The <TT>run()</TT> method must be implemented in a subclass.
+     *
+     * @exception Exception The <TT>run()</TT> method may throw any exception.
+     */
+    public abstract void run()
+            throws Exception;
 
-	/**
-	 * Execute parallel code. All threads of the worker team in each process
-	 * call the <TT>run()</TT> method concurrently.
-	 * <P>
-	 * The <TT>run()</TT> method must be implemented in a subclass.
-	 *
-	 * @exception  Exception
-	 *     The <TT>run()</TT> method may throw any exception.
-	 */
-	public abstract void run()
-		throws Exception;
+    /**
+     * Perform finalization actions after parallel execution ends. Only one
+     * thread in each process calls the <TT>finish()</TT> method.
+     * <P>
+     * The <TT>finish()</TT> method may be overridden in a subclass. If not
+     * overridden, the <TT>finish()</TT> method does nothing.
+     *
+     * @exception Exception The <TT>finish()</TT> method may throw any
+     * exception.
+     */
+    public void finish()
+            throws Exception {
+    }
 
-	/**
-	 * Perform finalization actions after parallel execution ends. Only one
-	 * thread in each process calls the <TT>finish()</TT> method.
-	 * <P>
-	 * The <TT>finish()</TT> method may be overridden in a subclass. If not
-	 * overridden, the <TT>finish()</TT> method does nothing.
-	 *
-	 * @exception  Exception
-	 *     The <TT>finish()</TT> method may throw any exception.
-	 */
-	public void finish()
-		throws Exception
-		{
-		}
+    /**
+     * Execute a worker for loop within this worker region. For further
+     * information, see class {@linkplain WorkerIntegerForLoop}. The loop index
+     * goes from <TT>first</TT> (inclusive) to <TT>last</TT> (inclusive) in
+     * steps of +1. If <TT>first</TT> is greater than <TT>last</TT>, then no
+     * loop iterations are performed.
+     * <P>
+     * <I>Note:</I> Either all threads in the worker team must call the
+     * <TT>execute()</TT> method with identical arguments, or none of the
+     * threads must call the <TT>execute()</TT> method.
+     *
+     * @param first First loop index.
+     * @param last Last loop index.
+     * @param theLoop Worker for loop.
+     *
+     * @exception NullPointerException (unchecked exception) Thrown if
+     * <TT>theLoop</TT> is null.
+     * @exception IllegalStateException (unchecked exception) Thrown if no
+     * worker team is executing this worker region.
+     * @exception Exception Thrown if one of <TT>theLoop</TT>'s methods throws
+     * an exception.
+     */
+    public final void execute(int first,
+            int last,
+            WorkerIntegerForLoop theLoop)
+            throws Exception {
+        // Verify preconditions.
+        if (theLoop == null) {
+            throw new NullPointerException("WorkerRegion.execute(): Worker for loop is null");
+        }
+        if (myTeam == null) {
+            throw new IllegalStateException("WorkerRegion.execute(): No parallel team executing");
+        }
 
-	/**
-	 * Execute a worker for loop within this worker region. For further
-	 * information, see class {@linkplain WorkerIntegerForLoop}. The loop index
-	 * goes from <TT>first</TT> (inclusive) to <TT>last</TT> (inclusive) in
-	 * steps of +1. If <TT>first</TT> is greater than <TT>last</TT>, then no
-	 * loop iterations are performed.
-	 * <P>
-	 * <I>Note:</I> Either all threads in the worker team must call the
-	 * <TT>execute()</TT> method with identical arguments, or none of the
-	 * threads must call the <TT>execute()</TT> method.
-	 *
-	 * @param  first    First loop index.
-	 * @param  last     Last loop index.
-	 * @param  theLoop  Worker for loop.
-	 *
-	 * @exception  NullPointerException
-	 *     (unchecked exception) Thrown if <TT>theLoop</TT> is null.
-	 * @exception  IllegalStateException
-	 *     (unchecked exception) Thrown if no worker team is executing this
-	 *     worker region.
-	 * @exception  Exception
-	 *     Thrown if one of <TT>theLoop</TT>'s methods throws an exception.
-	 */
-	public final void execute
-		(int first,
-		 int last,
-		 WorkerIntegerForLoop theLoop)
-		throws Exception
-		{
-		// Verify preconditions.
-		if (theLoop == null)
-			{
-			throw new NullPointerException
-				("WorkerRegion.execute(): Worker for loop is null");
-			}
-		if (myTeam == null)
-			{
-			throw new IllegalStateException
-				("WorkerRegion.execute(): No parallel team executing");
-			}
+        try {
+            // Record parallel team.
+            theLoop.myTeam = this.myTeam;
 
-		try
-			{
-			// Record parallel team.
-			theLoop.myTeam = this.myTeam;
+            // Get current parallel team thread.
+            WorkerTeamThread currentThread = getCurrentThread();
+            int w = currentThread.myIndex;
 
-			// Get current parallel team thread.
-			WorkerTeamThread currentThread = getCurrentThread();
-			int w = currentThread.myIndex;
+            // Do master or worker thread processing.
+            Range range = new Range(first, last);
+            if (w == -1) {
+                theLoop.masterExecute(range);
+            } else {
+                theLoop.workerExecute(w, range);
+            }
+        } finally {
+            // Forget parallel team.
+            theLoop.myTeam = null;
+        }
+    }
 
-			// Do master or worker thread processing.
-			Range range = new Range (first, last);
-			if (w == -1)
-				{
-				theLoop.masterExecute (range);
-				}
-			else
-				{
-				theLoop.workerExecute (w, range);
-				}
-			}
+    /**
+     * Execute a worker for loop within this worker region. For further
+     * information, see class {@linkplain WorkerIntegerStrideForLoop}. The loop
+     * index goes from <TT>first</TT> (inclusive) to <TT>last</TT> (inclusive)
+     * in steps of <TT>stride</TT>. The stride must be positive. If
+     * <TT>first</TT> is greater than <TT>last</TT>, then no loop iterations are
+     * performed.
+     * <P>
+     * <I>Note:</I> Either all threads in the worker team must call the
+     * <TT>execute()</TT> method with identical arguments, or none of the
+     * threads must call the <TT>execute()</TT> method.
+     *
+     * @param first First loop index.
+     * @param last Last loop index.
+     * @param stride Loop index stride, &gt;= 1.
+     * @param theLoop Worker for loop.
+     *
+     * @exception IllegalArgumentException (unchecked exception) Thrown if
+     * <TT>stride</TT> &lt; 1.
+     * @exception NullPointerException (unchecked exception) Thrown if
+     * <TT>theLoop</TT> is null.
+     * @exception IllegalStateException (unchecked exception) Thrown if no
+     * worker team is executing this worker region.
+     * @exception Exception Thrown if one of <TT>theLoop</TT>'s methods throws
+     * an exception.
+     */
+    public final void execute(int first,
+            int last,
+            int stride,
+            WorkerIntegerStrideForLoop theLoop)
+            throws Exception {
+        // Verify preconditions.
+        if (stride <= 0) {
+            throw new IllegalArgumentException("WorkerRegion.execute(): Stride = " + stride + " illegal");
+        }
+        if (theLoop == null) {
+            throw new NullPointerException("WorkerRegion.execute(): Worker for loop is null");
+        }
+        if (myTeam == null) {
+            throw new IllegalStateException("WorkerRegion.execute(): No parallel team executing");
+        }
 
-		finally
-			{
-			// Forget parallel team.
-			theLoop.myTeam = null;
-			}
-		}
+        try {
+            // Record parallel team.
+            theLoop.myTeam = this.myTeam;
 
-	/**
-	 * Execute a worker for loop within this worker region. For further
-	 * information, see class {@linkplain WorkerIntegerStrideForLoop}. The loop
-	 * index goes from <TT>first</TT> (inclusive) to <TT>last</TT> (inclusive)
-	 * in steps of <TT>stride</TT>. The stride must be positive. If
-	 * <TT>first</TT> is greater than <TT>last</TT>, then no loop iterations are
-	 * performed.
-	 * <P>
-	 * <I>Note:</I> Either all threads in the worker team must call the
-	 * <TT>execute()</TT> method with identical arguments, or none of the
-	 * threads must call the <TT>execute()</TT> method.
-	 *
-	 * @param  first    First loop index.
-	 * @param  last     Last loop index.
-	 * @param  stride   Loop index stride, &gt;= 1.
-	 * @param  theLoop  Worker for loop.
-	 *
-	 * @exception  IllegalArgumentException
-	 *     (unchecked exception) Thrown if <TT>stride</TT> &lt; 1.
-	 * @exception  NullPointerException
-	 *     (unchecked exception) Thrown if <TT>theLoop</TT> is null.
-	 * @exception  IllegalStateException
-	 *     (unchecked exception) Thrown if no worker team is executing this
-	 *     worker region.
-	 * @exception  Exception
-	 *     Thrown if one of <TT>theLoop</TT>'s methods throws an exception.
-	 */
-	public final void execute
-		(int first,
-		 int last,
-		 int stride,
-		 WorkerIntegerStrideForLoop theLoop)
-		throws Exception
-		{
-		// Verify preconditions.
-		if (stride <= 0)
-			{
-			throw new IllegalArgumentException
-				("WorkerRegion.execute(): Stride = " + stride + " illegal");
-			}
-		if (theLoop == null)
-			{
-			throw new NullPointerException
-				("WorkerRegion.execute(): Worker for loop is null");
-			}
-		if (myTeam == null)
-			{
-			throw new IllegalStateException
-				("WorkerRegion.execute(): No parallel team executing");
-			}
+            // Get current parallel team thread.
+            WorkerTeamThread currentThread = getCurrentThread();
+            int w = currentThread.myIndex;
 
-		try
-			{
-			// Record parallel team.
-			theLoop.myTeam = this.myTeam;
+            // Do master or worker thread processing.
+            Range range = new Range(first, last, stride);
+            if (w == -1) {
+                theLoop.masterExecute(range);
+            } else {
+                theLoop.workerExecute(w, range);
+            }
+        } finally {
+            // Forget parallel team.
+            theLoop.myTeam = null;
+        }
+    }
 
-			// Get current parallel team thread.
-			WorkerTeamThread currentThread = getCurrentThread();
-			int w = currentThread.myIndex;
+    /**
+     * Execute a worker for loop within this worker region. For further
+     * information, see class {@linkplain WorkerLongForLoop}. The loop index
+     * goes from <TT>first</TT> (inclusive) to <TT>last</TT> (inclusive) in
+     * steps of +1. If <TT>first</TT> is greater than <TT>last</TT>, then no
+     * loop iterations are performed.
+     * <P>
+     * <I>Note:</I> Either all threads in the worker team must call the
+     * <TT>execute()</TT> method with identical arguments, or none of the
+     * threads must call the <TT>execute()</TT> method.
+     *
+     * @param first First loop index.
+     * @param last Last loop index.
+     * @param theLoop Worker for loop.
+     *
+     * @exception NullPointerException (unchecked exception) Thrown if
+     * <TT>theLoop</TT> is null.
+     * @exception IllegalStateException (unchecked exception) Thrown if no
+     * worker team is executing this worker region.
+     * @exception Exception Thrown if one of <TT>theLoop</TT>'s methods throws
+     * an exception.
+     */
+    public final void execute(long first,
+            long last,
+            WorkerLongForLoop theLoop)
+            throws Exception {
+        // Verify preconditions.
+        if (theLoop == null) {
+            throw new NullPointerException("WorkerRegion.execute(): Worker for loop is null");
+        }
+        if (myTeam == null) {
+            throw new IllegalStateException("WorkerRegion.execute(): No parallel team executing");
+        }
 
-			// Do master or worker thread processing.
-			Range range = new Range (first, last, stride);
-			if (w == -1)
-				{
-				theLoop.masterExecute (range);
-				}
-			else
-				{
-				theLoop.workerExecute (w, range);
-				}
-			}
+        try {
+            // Record parallel team.
+            theLoop.myTeam = this.myTeam;
 
-		finally
-			{
-			// Forget parallel team.
-			theLoop.myTeam = null;
-			}
-		}
+            // Get current parallel team thread.
+            WorkerTeamThread currentThread = getCurrentThread();
+            int w = currentThread.myIndex;
 
-	/**
-	 * Execute a worker for loop within this worker region. For further
-	 * information, see class {@linkplain WorkerLongForLoop}. The loop index
-	 * goes from <TT>first</TT> (inclusive) to <TT>last</TT> (inclusive) in
-	 * steps of +1. If <TT>first</TT> is greater than <TT>last</TT>, then no
-	 * loop iterations are performed.
-	 * <P>
-	 * <I>Note:</I> Either all threads in the worker team must call the
-	 * <TT>execute()</TT> method with identical arguments, or none of the
-	 * threads must call the <TT>execute()</TT> method.
-	 *
-	 * @param  first    First loop index.
-	 * @param  last     Last loop index.
-	 * @param  theLoop  Worker for loop.
-	 *
-	 * @exception  NullPointerException
-	 *     (unchecked exception) Thrown if <TT>theLoop</TT> is null.
-	 * @exception  IllegalStateException
-	 *     (unchecked exception) Thrown if no worker team is executing this
-	 *     worker region.
-	 * @exception  Exception
-	 *     Thrown if one of <TT>theLoop</TT>'s methods throws an exception.
-	 */
-	public final void execute
-		(long first,
-		 long last,
-		 WorkerLongForLoop theLoop)
-		throws Exception
-		{
-		// Verify preconditions.
-		if (theLoop == null)
-			{
-			throw new NullPointerException
-				("WorkerRegion.execute(): Worker for loop is null");
-			}
-		if (myTeam == null)
-			{
-			throw new IllegalStateException
-				("WorkerRegion.execute(): No parallel team executing");
-			}
+            // Do master or worker thread processing.
+            LongRange range = new LongRange(first, last);
+            if (w == -1) {
+                theLoop.masterExecute(range);
+            } else {
+                theLoop.workerExecute(w, range);
+            }
+        } finally {
+            // Forget parallel team.
+            theLoop.myTeam = null;
+        }
+    }
 
-		try
-			{
-			// Record parallel team.
-			theLoop.myTeam = this.myTeam;
+    /**
+     * Execute a worker for loop within this worker region. For further
+     * information, see class {@linkplain WorkerLongStrideForLoop}. The loop
+     * index goes from <TT>first</TT> (inclusive) to <TT>last</TT> (inclusive)
+     * in steps of <TT>stride</TT>. The stride must be positive. If
+     * <TT>first</TT> is greater than <TT>last</TT>, then no loop iterations are
+     * performed.
+     * <P>
+     * <I>Note:</I> Either all threads in the worker team must call the
+     * <TT>execute()</TT> method with identical arguments, or none of the
+     * threads must call the <TT>execute()</TT> method.
+     *
+     * @param first First loop index.
+     * @param last Last loop index.
+     * @param stride Loop index stride, &gt;= 1.
+     * @param theLoop Worker for loop.
+     *
+     * @exception IllegalArgumentException (unchecked exception) Thrown if
+     * <TT>stride</TT> &lt; 1.
+     * @exception NullPointerException (unchecked exception) Thrown if
+     * <TT>theLoop</TT> is null.
+     * @exception IllegalStateException (unchecked exception) Thrown if no
+     * worker team is executing this worker region.
+     * @exception Exception Thrown if one of <TT>theLoop</TT>'s methods throws
+     * an exception.
+     */
+    public final void execute(long first,
+            long last,
+            long stride,
+            WorkerLongStrideForLoop theLoop)
+            throws Exception {
+        // Verify preconditions.
+        if (stride <= 0) {
+            throw new IllegalArgumentException("WorkerRegion.execute(): Stride = " + stride + " illegal");
+        }
+        if (theLoop == null) {
+            throw new NullPointerException("WorkerRegion.execute(): Worker for loop is null");
+        }
+        if (myTeam == null) {
+            throw new IllegalStateException("WorkerRegion.execute(): No parallel team executing");
+        }
 
-			// Get current parallel team thread.
-			WorkerTeamThread currentThread = getCurrentThread();
-			int w = currentThread.myIndex;
+        try {
+            // Record parallel team.
+            theLoop.myTeam = this.myTeam;
 
-			// Do master or worker thread processing.
-			LongRange range = new LongRange (first, last);
-			if (w == -1)
-				{
-				theLoop.masterExecute (range);
-				}
-			else
-				{
-				theLoop.workerExecute (w, range);
-				}
-			}
+            // Get current parallel team thread.
+            WorkerTeamThread currentThread = getCurrentThread();
+            int w = currentThread.myIndex;
 
-		finally
-			{
-			// Forget parallel team.
-			theLoop.myTeam = null;
-			}
-		}
+            // Do master or worker thread processing.
+            LongRange range = new LongRange(first, last, stride);
+            if (w == -1) {
+                theLoop.masterExecute(range);
+            } else {
+                theLoop.workerExecute(w, range);
+            }
+        } finally {
+            // Forget parallel team.
+            theLoop.myTeam = null;
+        }
+    }
 
-	/**
-	 * Execute a worker for loop within this worker region. For further
-	 * information, see class {@linkplain WorkerLongStrideForLoop}. The loop
-	 * index goes from <TT>first</TT> (inclusive) to <TT>last</TT> (inclusive)
-	 * in steps of <TT>stride</TT>. The stride must be positive. If
-	 * <TT>first</TT> is greater than <TT>last</TT>, then no loop iterations are
-	 * performed.
-	 * <P>
-	 * <I>Note:</I> Either all threads in the worker team must call the
-	 * <TT>execute()</TT> method with identical arguments, or none of the
-	 * threads must call the <TT>execute()</TT> method.
-	 *
-	 * @param  first    First loop index.
-	 * @param  last     Last loop index.
-	 * @param  stride   Loop index stride, &gt;= 1.
-	 * @param  theLoop  Worker for loop.
-	 *
-	 * @exception  IllegalArgumentException
-	 *     (unchecked exception) Thrown if <TT>stride</TT> &lt; 1.
-	 * @exception  NullPointerException
-	 *     (unchecked exception) Thrown if <TT>theLoop</TT> is null.
-	 * @exception  IllegalStateException
-	 *     (unchecked exception) Thrown if no worker team is executing this
-	 *     worker region.
-	 * @exception  Exception
-	 *     Thrown if one of <TT>theLoop</TT>'s methods throws an exception.
-	 */
-	public final void execute
-		(long first,
-		 long last,
-		 long stride,
-		 WorkerLongStrideForLoop theLoop)
-		throws Exception
-		{
-		// Verify preconditions.
-		if (stride <= 0)
-			{
-			throw new IllegalArgumentException
-				("WorkerRegion.execute(): Stride = " + stride + " illegal");
-			}
-		if (theLoop == null)
-			{
-			throw new NullPointerException
-				("WorkerRegion.execute(): Worker for loop is null");
-			}
-		if (myTeam == null)
-			{
-			throw new IllegalStateException
-				("WorkerRegion.execute(): No parallel team executing");
-			}
+    /**
+     * Execute a worker iteration within this worker region. For further
+     * information, see class {@linkplain WorkerIteration}. The items processed
+     * by the iteration are the elements of the given array. The iteration order
+     * is from index 0 upwards.
+     * <P>
+     * <I>Note:</I> Either all threads in the worker team must call the
+     * <TT>execute()</TT> method with identical arguments, or none of the
+     * threads must call the <TT>execute()</TT> method.
+     *
+     * @param <T> Data type of the items iterated over.
+     * @param theArray Array containing the items.
+     * @param theIteration Worker iteration.
+     *
+     * @exception NullPointerException (unchecked exception) Thrown if this is
+     * the master process and
+     * <TT>theArray</TT> is null. Thrown if <TT>theIteration</TT> is null.
+     * @exception IllegalStateException (unchecked exception) Thrown if no
+     * worker team is executing this worker region.
+     * @exception Exception Thrown if one of <TT>theIteration</TT>'s methods
+     * throws an exception.
+     */
+    public final <T> void execute(T[] theArray,
+            WorkerIteration<T> theIteration)
+            throws Exception {
+        // Verify preconditions.
+        if (myTeam == null) {
+            throw new IllegalStateException("WorkerRegion.execute(): No parallel team executing");
+        }
+        if (myTeam.rank == myTeam.masterRank() && theArray == null) {
+            throw new NullPointerException("WorkerRegion.execute(): Array is null");
+        }
+        if (theIteration == null) {
+            throw new NullPointerException("WorkerRegion.execute(): Worker iteration is null");
+        }
 
-		try
-			{
-			// Record parallel team.
-			theLoop.myTeam = this.myTeam;
+        try {
+            // Record parallel team.
+            theIteration.myTeam = this.myTeam;
 
-			// Get current parallel team thread.
-			WorkerTeamThread currentThread = getCurrentThread();
-			int w = currentThread.myIndex;
+            // Get current parallel team thread.
+            WorkerTeamThread currentThread = getCurrentThread();
+            int w = currentThread.myIndex;
 
-			// Do master or worker thread processing.
-			LongRange range = new LongRange (first, last, stride);
-			if (w == -1)
-				{
-				theLoop.masterExecute (range);
-				}
-			else
-				{
-				theLoop.workerExecute (w, range);
-				}
-			}
+            // Do master or worker thread processing.
+            if (w == -1) {
+                theIteration.masterExecute(new ArrayItemGenerator<T>(theArray));
+            } else {
+                theIteration.workerExecute(w);
+            }
+        } finally {
+            // Forget parallel team.
+            theIteration.myTeam = null;
+        }
+    }
 
-		finally
-			{
-			// Forget parallel team.
-			theLoop.myTeam = null;
-			}
-		}
+    /**
+     * Execute a worker iteration within this worker region. For further
+     * information, see class {@linkplain WorkerIteration}. The items processed
+     * by the iteration are the items returned by the given iterator. The
+     * iteration order is that of the given iterator.
+     * <P>
+     * <I>Note:</I> Either all threads in the worker team must call the
+     * <TT>execute()</TT> method with identical arguments, or none of the
+     * threads must call the <TT>execute()</TT> method.
+     *
+     * @param <T> Data type of the items iterated over.
+     * @param theIterator Iterator over the items.
+     * @param theIteration Worker iteration.
+     *
+     * @exception NullPointerException (unchecked exception) Thrown if this is
+     * the master process and
+     * <TT>theIterator</TT> is null. Thrown if <TT>theIteration</TT> is null.
+     * @exception IllegalStateException (unchecked exception) Thrown if no
+     * worker team is executing this worker region.
+     * @exception Exception Thrown if one of <TT>theIteration</TT>'s methods
+     * throws an exception.
+     */
+    public final <T> void execute(Iterator<T> theIterator,
+            WorkerIteration<T> theIteration)
+            throws Exception {
+        // Verify preconditions.
+        if (myTeam == null) {
+            throw new IllegalStateException("WorkerRegion.execute(): No parallel team executing");
+        }
+        if (myTeam.rank == myTeam.masterRank() && theIterator == null) {
+            throw new NullPointerException("WorkerRegion.execute(): Iterator is null");
+        }
+        if (theIteration == null) {
+            throw new NullPointerException("WorkerRegion.execute(): Worker iteration is null");
+        }
 
-	/**
-	 * Execute a worker iteration within this worker region. For further
-	 * information, see class {@linkplain WorkerIteration}. The items processed
-	 * by the iteration are the elements of the given array. The iteration order
-	 * is from index 0 upwards.
-	 * <P>
-	 * <I>Note:</I> Either all threads in the worker team must call the
-	 * <TT>execute()</TT> method with identical arguments, or none of the
-	 * threads must call the <TT>execute()</TT> method.
-	 *
-	 * @param  <T>           Data type of the items iterated over.
-	 * @param  theArray      Array containing the items.
-	 * @param  theIteration  Worker iteration.
-	 *
-	 * @exception  NullPointerException
-	 *     (unchecked exception) Thrown if this is the master process and
-	 *     <TT>theArray</TT> is null. Thrown if <TT>theIteration</TT> is null.
-	 * @exception  IllegalStateException
-	 *     (unchecked exception) Thrown if no worker team is executing this
-	 *     worker region.
-	 * @exception  Exception
-	 *     Thrown if one of <TT>theIteration</TT>'s methods throws an exception.
-	 */
-	public final <T> void execute
-		(T[] theArray,
-		 WorkerIteration<T> theIteration)
-		throws Exception
-		{
-		// Verify preconditions.
-		if (myTeam == null)
-			{
-			throw new IllegalStateException
-				("WorkerRegion.execute(): No parallel team executing");
-			}
-		if (myTeam.rank == myTeam.masterRank() && theArray == null)
-			{
-			throw new NullPointerException
-				("WorkerRegion.execute(): Array is null");
-			}
-		if (theIteration == null)
-			{
-			throw new NullPointerException
-				("WorkerRegion.execute(): Worker iteration is null");
-			}
+        try {
+            // Record parallel team.
+            theIteration.myTeam = this.myTeam;
 
-		try
-			{
-			// Record parallel team.
-			theIteration.myTeam = this.myTeam;
+            // Get current parallel team thread.
+            WorkerTeamThread currentThread = getCurrentThread();
+            int w = currentThread.myIndex;
 
-			// Get current parallel team thread.
-			WorkerTeamThread currentThread = getCurrentThread();
-			int w = currentThread.myIndex;
+            // Do master or worker thread processing.
+            if (w == -1) {
+                theIteration.masterExecute(new IteratorItemGenerator<T>(theIterator));
+            } else {
+                theIteration.workerExecute(w);
+            }
+        } finally {
+            // Forget parallel team.
+            theIteration.myTeam = null;
+        }
+    }
 
-			// Do master or worker thread processing.
-			if (w == -1)
-				{
-				theIteration.masterExecute
-					(new ArrayItemGenerator<T> (theArray));
-				}
-			else
-				{
-				theIteration.workerExecute (w);
-				}
-			}
+    /**
+     * Execute a worker iteration within this worker region. For further
+     * information, see class {@linkplain WorkerIteration}. The items processed
+     * by the iteration are the items contained in the given iterable
+     * collection. The iteration order is that of the given iterable
+     * collection's iterator.
+     * <P>
+     * <I>Note:</I> Either all threads in the worker team must call the
+     * <TT>execute()</TT> method with identical arguments, or none of the
+     * threads must call the <TT>execute()</TT> method.
+     *
+     * @param <T> Data type of the items iterated over.
+     * @param theIterable Iterable collection containing the items.
+     * @param theIteration Worker iteration.
+     *
+     * @exception NullPointerException (unchecked exception) Thrown if this is
+     * the master process and
+     * <TT>theIterable</TT> is null. Thrown if <TT>theIteration</TT> is null.
+     * @exception IllegalStateException (unchecked exception) Thrown if no
+     * worker team is executing this worker region.
+     * @exception Exception Thrown if one of <TT>theIteration</TT>'s methods
+     * throws an exception.
+     */
+    public final <T> void execute(Iterable<T> theIterable,
+            WorkerIteration<T> theIteration)
+            throws Exception {
+        // Verify preconditions.
+        if (myTeam == null) {
+            throw new IllegalStateException("WorkerRegion.execute(): No parallel team executing");
+        }
+        if (myTeam.rank == myTeam.masterRank() && theIterable == null) {
+            throw new NullPointerException("WorkerRegion.execute(): Iterable collection is null");
+        }
+        if (theIteration == null) {
+            throw new NullPointerException("WorkerRegion.execute(): Worker iteration is null");
+        }
 
-		finally
-			{
-			// Forget parallel team.
-			theIteration.myTeam = null;
-			}
-		}
+        try {
+            // Record parallel team.
+            theIteration.myTeam = this.myTeam;
 
-	/**
-	 * Execute a worker iteration within this worker region. For further
-	 * information, see class {@linkplain WorkerIteration}. The items processed
-	 * by the iteration are the items returned by the given iterator. The
-	 * iteration order is that of the given iterator.
-	 * <P>
-	 * <I>Note:</I> Either all threads in the worker team must call the
-	 * <TT>execute()</TT> method with identical arguments, or none of the
-	 * threads must call the <TT>execute()</TT> method.
-	 *
-	 * @param  <T>           Data type of the items iterated over.
-	 * @param  theIterator   Iterator over the items.
-	 * @param  theIteration  Worker iteration.
-	 *
-	 * @exception  NullPointerException
-	 *     (unchecked exception) Thrown if this is the master process and
-	 *     <TT>theIterator</TT> is null. Thrown if <TT>theIteration</TT> is
-	 *     null.
-	 * @exception  IllegalStateException
-	 *     (unchecked exception) Thrown if no worker team is executing this
-	 *     worker region.
-	 * @exception  Exception
-	 *     Thrown if one of <TT>theIteration</TT>'s methods throws an exception.
-	 */
-	public final <T> void execute
-		(Iterator<T> theIterator,
-		 WorkerIteration<T> theIteration)
-		throws Exception
-		{
-		// Verify preconditions.
-		if (myTeam == null)
-			{
-			throw new IllegalStateException
-				("WorkerRegion.execute(): No parallel team executing");
-			}
-		if (myTeam.rank == myTeam.masterRank() && theIterator == null)
-			{
-			throw new NullPointerException
-				("WorkerRegion.execute(): Iterator is null");
-			}
-		if (theIteration == null)
-			{
-			throw new NullPointerException
-				("WorkerRegion.execute(): Worker iteration is null");
-			}
+            // Get current parallel team thread.
+            WorkerTeamThread currentThread = getCurrentThread();
+            int w = currentThread.myIndex;
 
-		try
-			{
-			// Record parallel team.
-			theIteration.myTeam = this.myTeam;
+            // Do master or worker thread processing.
+            if (w == -1) {
+                theIteration.masterExecute(new IteratorItemGenerator<T>(theIterable.iterator()));
+            } else {
+                theIteration.workerExecute(w);
+            }
+        } finally {
+            // Forget parallel team.
+            theIteration.myTeam = null;
+        }
+    }
 
-			// Get current parallel team thread.
-			WorkerTeamThread currentThread = getCurrentThread();
-			int w = currentThread.myIndex;
-
-			// Do master or worker thread processing.
-			if (w == -1)
-				{
-				theIteration.masterExecute
-					(new IteratorItemGenerator<T> (theIterator));
-				}
-			else
-				{
-				theIteration.workerExecute (w);
-				}
-			}
-
-		finally
-			{
-			// Forget parallel team.
-			theIteration.myTeam = null;
-			}
-		}
-
-	/**
-	 * Execute a worker iteration within this worker region. For further
-	 * information, see class {@linkplain WorkerIteration}. The items processed
-	 * by the iteration are the items contained in the given iterable
-	 * collection. The iteration order is that of the given iterable
-	 * collection's iterator.
-	 * <P>
-	 * <I>Note:</I> Either all threads in the worker team must call the
-	 * <TT>execute()</TT> method with identical arguments, or none of the
-	 * threads must call the <TT>execute()</TT> method.
-	 *
-	 * @param  <T>           Data type of the items iterated over.
-	 * @param  theIterable   Iterable collection containing the items.
-	 * @param  theIteration  Worker iteration.
-	 *
-	 * @exception  NullPointerException
-	 *     (unchecked exception) Thrown if this is the master process and
-	 *     <TT>theIterable</TT> is null. Thrown if <TT>theIteration</TT> is
-	 *     null.
-	 * @exception  IllegalStateException
-	 *     (unchecked exception) Thrown if no worker team is executing this
-	 *     worker region.
-	 * @exception  Exception
-	 *     Thrown if one of <TT>theIteration</TT>'s methods throws an exception.
-	 */
-	public final <T> void execute
-		(Iterable<T> theIterable,
-		 WorkerIteration<T> theIteration)
-		throws Exception
-		{
-		// Verify preconditions.
-		if (myTeam == null)
-			{
-			throw new IllegalStateException
-				("WorkerRegion.execute(): No parallel team executing");
-			}
-		if (myTeam.rank == myTeam.masterRank() && theIterable == null)
-			{
-			throw new NullPointerException
-				("WorkerRegion.execute(): Iterable collection is null");
-			}
-		if (theIteration == null)
-			{
-			throw new NullPointerException
-				("WorkerRegion.execute(): Worker iteration is null");
-			}
-
-		try
-			{
-			// Record parallel team.
-			theIteration.myTeam = this.myTeam;
-
-			// Get current parallel team thread.
-			WorkerTeamThread currentThread = getCurrentThread();
-			int w = currentThread.myIndex;
-
-			// Do master or worker thread processing.
-			if (w == -1)
-				{
-				theIteration.masterExecute
-					(new IteratorItemGenerator<T> (theIterable.iterator()));
-				}
-			else
-				{
-				theIteration.workerExecute (w);
-				}
-			}
-
-		finally
-			{
-			// Forget parallel team.
-			theIteration.myTeam = null;
-			}
-		}
-
-	}
+}

@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj;
 
 /**
@@ -133,8 +132,8 @@ package edu.rit.pj;
  *         // This portion executed concurrently again
  *         . . .
  *         }
- * </PRE>
- * When called, the <TT>ordered()</TT> method waits until the <TT>ordered()</TT>
+ * </PRE> When called, the <TT>ordered()</TT> method waits until the
+ * <TT>ordered()</TT>
  * method has been called and has returned for all items prior to the current
  * item. Then the <TT>ordered()</TT> method calls the given parallel section's
  * <TT>run()</TT> method. When the parallel section's <TT>run()</TT> method
@@ -157,12 +156,12 @@ package edu.rit.pj;
  *         // More loop body
  *         . . .
  *         }
- * </PRE>
- * Once <TT>stopLoop()</TT> is called, after each parallel team thread finishes
- * processing its current item, each thread will process no further items and
- * will proceed to finish the parallel iteration. Note well that stopping a
- * parallel iteration is not the same as executing a <TT>break</TT> statement in
- * a regular loop. The parallel iteration does not stop until each thread,
+ * </PRE> Once <TT>stopLoop()</TT> is called, after each parallel team thread
+ * finishes processing its current item, each thread will process no further
+ * items and will proceed to finish the parallel iteration. Note well that
+ * stopping a parallel iteration is not the same as executing a <TT>break</TT>
+ * statement in a regular loop. The parallel iteration does not stop until each
+ * thread,
  * <I>including the thread that called <TT>stopLoop()</TT></I>, has finished
  * processing its current item. Thus, processing may continue for a while after
  * <TT>stopLoop()</TT> is called. (The <TT>return</TT> statement in the above
@@ -188,8 +187,7 @@ package edu.rit.pj;
  *             . . .
  *             }
  *         }
- * </PRE>
- * To execute a section of code in a single thread as part of the barrier
+ * </PRE> To execute a section of code in a single thread as part of the barrier
  * synchronization, include an instance of class {@linkplain BarrierAction} in
  * the <TT>execute()</TT> method call. The barrier action object's
  * <TT>run()</TT> method contains the code to be executed in a single thread
@@ -216,8 +214,7 @@ package edu.rit.pj;
  *             . . .
  *             }
  *         }
- * </PRE>
- * For further information, see class {@linkplain BarrierAction}.
+ * </PRE> For further information, see class {@linkplain BarrierAction}.
  * <P>
  * If the parallel iteration's <TT>start()</TT>, <TT>run()</TT>, or
  * <TT>finish()</TT> method throws an exception in one of the threads, then that
@@ -228,194 +225,163 @@ package edu.rit.pj;
  * exception, the whole parallel iteration exits with some (perhaps none) of the
  * iterations unperformed.
  *
- * @param  <T>  Data type of the items iterated over.
+ * @param <T> Data type of the items iterated over.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 11-Nov-2007
  */
 public abstract class ParallelIteration<T>
-	extends ParallelConstruct
-	{
+        extends ParallelConstruct {
 
 // Hidden data members.
+    // Item generator, used to obtain the items, to break this parallel
+    // iteration, and to implement the ordered() construct.
+    ItemGenerator<T> myItemGenerator;
 
-	// Item generator, used to obtain the items, to break this parallel
-	// iteration, and to implement the ordered() construct.
-	ItemGenerator<T> myItemGenerator;
-
-	// Iteration index for the ordered() construct.
-	int myOrderedIndex;
+    // Iteration index for the ordered() construct.
+    int myOrderedIndex;
 
 // Exported constructors.
-
-	/**
-	 * Construct a new parallel iteration.
-	 */
-	public ParallelIteration()
-		{
-		super();
-		}
+    /**
+     * Construct a new parallel iteration.
+     */
+    public ParallelIteration() {
+        super();
+    }
 
 // Exported operations.
+    /**
+     * Perform per-thread initialization actions before starting the loop
+     * iterations.
+     * <P>
+     * The <TT>start()</TT> method may be overridden in a subclass. If not
+     * overridden, the <TT>start()</TT> method does nothing.
+     *
+     * @exception Exception The <TT>start()</TT> method may throw any exception.
+     */
+    public void start()
+            throws Exception {
+    }
 
-	/**
-	 * Perform per-thread initialization actions before starting the loop
-	 * iterations.
-	 * <P>
-	 * The <TT>start()</TT> method may be overridden in a subclass. If not
-	 * overridden, the <TT>start()</TT> method does nothing.
-	 *
-	 * @exception  Exception
-	 *     The <TT>start()</TT> method may throw any exception.
-	 */
-	public void start()
-		throws Exception
-		{
-		}
+    /**
+     * Process one item in this parallel iteration. The <TT>run()</TT> method
+     * must perform the loop body for the given item.
+     * <P>
+     * The <TT>run()</TT> method must be overridden in a subclass.
+     *
+     * @param item Item.
+     *
+     * @exception Exception The <TT>run()</TT> method may throw any exception.
+     */
+    public abstract void run(T item)
+            throws Exception;
 
-	/**
-	 * Process one item in this parallel iteration. The <TT>run()</TT> method
-	 * must perform the loop body for the given item.
-	 * <P>
-	 * The <TT>run()</TT> method must be overridden in a subclass.
-	 *
-	 * @param  item  Item.
-	 *
-	 * @exception  Exception
-	 *     The <TT>run()</TT> method may throw any exception.
-	 */
-	public abstract void run
-		(T item)
-		throws Exception;
+    /**
+     * Perform per-thread finalization actions after finishing the loop
+     * iterations.
+     * <P>
+     * The <TT>finish()</TT> method may be overridden in a subclass. If not
+     * overridden, the <TT>finish()</TT> method does nothing.
+     *
+     * @exception Exception The <TT>finish()</TT> method may throw any
+     * exception.
+     */
+    public void finish()
+            throws Exception {
+    }
 
-	/**
-	 * Perform per-thread finalization actions after finishing the loop
-	 * iterations.
-	 * <P>
-	 * The <TT>finish()</TT> method may be overridden in a subclass. If not
-	 * overridden, the <TT>finish()</TT> method does nothing.
-	 *
-	 * @exception  Exception
-	 *     The <TT>finish()</TT> method may throw any exception.
-	 */
-	public void finish()
-		throws Exception
-		{
-		}
+    /**
+     * Execute the given section of code in the items' iteration order. A call
+     * to the <TT>ordered()</TT> method may appear in this parallel iteration's
+     * <TT>run()</TT> method. When called, the <TT>ordered()</TT> method waits
+     * until the <TT>ordered()</TT> method has been called and has returned for
+     * all items prior to the current item. Then the <TT>ordered()</TT> method
+     * calls the <TT>run()</TT> method of <TT>theParallelSection</TT>. When the
+     * parallel section's <TT>run()</TT> method returns, the <TT>ordered()</TT>
+     * method returns. If the parallel section's <TT>run()</TT> method throws an
+     * exception, the <TT>ordered()</TT> method throws that same exception.
+     * <P>
+     * The <TT>ordered()</TT> method is used when a portion of a parallel
+     * iteration has to be executed sequentially in the items' iteration order,
+     * while the rest of the parallel iteration can be executed concurrently.
+     * <P>
+     * <I>Note:</I> Either the <TT>ordered()</TT> method must be called exactly
+     * once during each call of the parallel iteration's <TT>run()</TT> method,
+     * or the <TT>ordered()</TT> method must not be called at all.
+     *
+     * @param theSection Parallel section to execute in order.
+     *
+     * @exception NullPointerException (unchecked exception) Thrown if
+     * <TT>theSection</TT> is null.
+     * @exception IllegalStateException (unchecked exception) Thrown if no
+     * parallel team is executing this parallel iteration.
+     * @exception Exception Thrown if <TT>theSection</TT>'s <TT>run()</TT>
+     * method throws an exception.
+     */
+    public final void ordered(ParallelSection theSection)
+            throws Exception {
+        // Verify preconditions.
+        if (theSection == null) {
+            throw new IllegalStateException("ParallelIteration.ordered(): Parallel section is null");
+        }
+        if (myTeam == null) {
+            throw new IllegalStateException("ParallelIteration.ordered(): No parallel team executing");
+        }
 
-	/**
-	 * Execute the given section of code in the items' iteration order. A call
-	 * to the <TT>ordered()</TT> method may appear in this parallel iteration's
-	 * <TT>run()</TT> method. When called, the <TT>ordered()</TT> method waits
-	 * until the <TT>ordered()</TT> method has been called and has returned for
-	 * all items prior to the current item. Then the <TT>ordered()</TT> method
-	 * calls the <TT>run()</TT> method of <TT>theParallelSection</TT>. When the
-	 * parallel section's <TT>run()</TT> method returns, the <TT>ordered()</TT>
-	 * method returns. If the parallel section's <TT>run()</TT> method throws an
-	 * exception, the <TT>ordered()</TT> method throws that same exception.
-	 * <P>
-	 * The <TT>ordered()</TT> method is used when a portion of a parallel
-	 * iteration has to be executed sequentially in the items' iteration order,
-	 * while the rest of the parallel iteration can be executed concurrently.
-	 * <P>
-	 * <I>Note:</I> Either the <TT>ordered()</TT> method must be called exactly
-	 * once during each call of the parallel iteration's <TT>run()</TT> method,
-	 * or the <TT>ordered()</TT> method must not be called at all.
-	 *
-	 * @param  theSection  Parallel section to execute in order.
-	 *
-	 * @exception  NullPointerException
-	 *     (unchecked exception) Thrown if <TT>theSection</TT> is null.
-	 * @exception  IllegalStateException
-	 *     (unchecked exception) Thrown if no parallel team is executing this
-	 *     parallel iteration.
-	 * @exception  Exception
-	 *     Thrown if <TT>theSection</TT>'s <TT>run()</TT> method throws an
-	 *     exception.
-	 */
-	public final void ordered
-		(ParallelSection theSection)
-		throws Exception
-		{
-		// Verify preconditions.
-		if (theSection == null)
-			{
-			throw new IllegalStateException
-				("ParallelIteration.ordered(): Parallel section is null");
-			}
-		if (myTeam == null)
-			{
-			throw new IllegalStateException
-				("ParallelIteration.ordered(): No parallel team executing");
-			}
+        // Wait until the ordered() construct has finished for all previous
+        // iterations.
+        if (myItemGenerator.myOrderedIndex != this.myOrderedIndex) {
+            Spinner spinner = new Spinner();
+            while (myItemGenerator.myOrderedIndex != this.myOrderedIndex) {
+                spinner.spin();
+            }
+        }
 
-		// Wait until the ordered() construct has finished for all previous
-		// iterations.
-		if (myItemGenerator.myOrderedIndex != this.myOrderedIndex)
-			{
-			Spinner spinner = new Spinner();
-			while (myItemGenerator.myOrderedIndex != this.myOrderedIndex)
-				{
-				spinner.spin();
-				}
-			}
+        // Execute parallel section. Propagate any exception.
+        theSection.myTeam = this.myTeam;
+        try {
+            theSection.run();
+        } finally {
+            theSection.myTeam = null;
 
-		// Execute parallel section. Propagate any exception.
-		theSection.myTeam = this.myTeam;
-		try
-			{
-			theSection.run();
-			}
-		finally
-			{
-			theSection.myTeam = null;
+            // Notify that the ordered construct has finished for this
+            // iteration.
+            ++this.myOrderedIndex;
+            myItemGenerator.myOrderedIndex = this.myOrderedIndex;
+        }
+    }
 
-			// Notify that the ordered construct has finished for this
-			// iteration.
-			++ this.myOrderedIndex;
-			myItemGenerator.myOrderedIndex = this.myOrderedIndex;
-			}
-		}
-
-	/**
-	 * Stop this parallel iteration. Once <TT>stopLoop()</TT> is called, after
-	 * each parallel team thread finishes processing its current item, each
-	 * thread will process no further items and will proceed to finish this
-	 * parallel iteration.
-	 *
-	 * @exception  IllegalStateException
-	 *     (unchecked exception) Thrown if no parallel team is executing this
-	 *     parallel iteration.
-	 */
-	public final void stopLoop()
-		{
-		if (myTeam == null)
-			{
-			throw new IllegalStateException
-				("ParallelIteration.stopLoop(): No parallel team executing");
-			}
-		myItemGenerator.myBreak = true;
-		}
+    /**
+     * Stop this parallel iteration. Once <TT>stopLoop()</TT> is called, after
+     * each parallel team thread finishes processing its current item, each
+     * thread will process no further items and will proceed to finish this
+     * parallel iteration.
+     *
+     * @exception IllegalStateException (unchecked exception) Thrown if no
+     * parallel team is executing this parallel iteration.
+     */
+    public final void stopLoop() {
+        if (myTeam == null) {
+            throw new IllegalStateException("ParallelIteration.stopLoop(): No parallel team executing");
+        }
+        myItemGenerator.myBreak = true;
+    }
 
 // Hidden operations.
+    /**
+     * Execute one chunk of iterations of this parallel for loop. This method
+     * performs common processing, then calls the <TT>run()</TT> method.
+     *
+     * @param index Iteration index.
+     * @param item Item.
+     *
+     * @exception Exception This method may throw any exception.
+     */
+    void commonRun(int index,
+            T item)
+            throws Exception {
+        myOrderedIndex = index;
+        run(item);
+    }
 
-	/**
-	 * Execute one chunk of iterations of this parallel for loop. This method
-	 * performs common processing, then calls the <TT>run()</TT> method.
-	 *
-	 * @param  index  Iteration index.
-	 * @param  item   Item.
-	 *
-	 * @exception  Exception
-	 *     This method may throw any exception.
-	 */
-	void commonRun
-		(int index,
-		 T item)
-		throws Exception
-		{
-		myOrderedIndex = index;
-		run (item);
-		}
-
-	}
+}

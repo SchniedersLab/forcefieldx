@@ -22,53 +22,47 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.mp;
 
 /**
  * Class Status provides the result of receiving a message in the Message
  * Protocol (MP).
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 29-Dec-2005
  */
-public class Status
-	{
+public class Status {
 
 // Exported data members.
+    /**
+     * The channel from which the message was received.
+     */
+    public Channel channel;
 
-	/**
-	 * The channel from which the message was received.
-	 */
-	public Channel channel;
+    /**
+     * The tag from the message that was received.
+     */
+    public int tag;
 
-	/**
-	 * The tag from the message that was received.
-	 */
-	public int tag;
-
-	/**
-	 * The actual number of items in the message that was received.
-	 */
-	public int length;
+    /**
+     * The actual number of items in the message that was received.
+     */
+    public int length;
 
 // Hidden constructors.
+    /**
+     * Construct a new status object.
+     *
+     * @param channel Channel.
+     * @param tag Tag.
+     * @param length Length.
+     */
+    Status(Channel channel,
+            int tag,
+            int length) {
+        this.channel = channel;
+        this.tag = tag;
+        this.length = length;
+    }
 
-	/**
-	 * Construct a new status object.
-	 *
-	 * @param  channel  Channel.
-	 * @param  tag      Tag.
-	 * @param  length   Length.
-	 */
-	Status
-		(Channel channel,
-		 int tag,
-		 int length)
-		{
-		this.channel = channel;
-		this.tag = tag;
-		this.length = length;
-		}
-
-	}
+}

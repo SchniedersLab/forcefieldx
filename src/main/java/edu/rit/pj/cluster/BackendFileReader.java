@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj.cluster;
 
 import java.io.File;
@@ -32,202 +31,171 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Class BackendFileReader provides an object that reads sequential files in
- * the job backend process.
+ * Class BackendFileReader provides an object that reads sequential files in the
+ * job backend process.
  * <P>
  * <I>Note:</I> Class BackendFileReader is not multiple thread safe; it assumes
  * it is being called by a synchronized method in the job backend.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 20-Nov-2006
  */
-public class BackendFileReader
-	{
+public class BackendFileReader {
 
 // Exported data members.
-
-	/**
-	 * Input stream for reading from the job frontend's standard input.
-	 */
-	public final BackendFileInputStream in;
+    /**
+     * Input stream for reading from the job frontend's standard input.
+     */
+    public final BackendFileInputStream in;
 
 // Hidden data members.
+    private JobFrontendRef myJobFrontend;
+    private JobBackendRef myJobBackend;
 
-	private JobFrontendRef myJobFrontend;
-	private JobBackendRef myJobBackend;
+    // Mapping from backend file descriptor to backend file input stream.
+    private Map<Integer, BackendFileInputStream> myInputStreamForBFD
+            = new HashMap<Integer, BackendFileInputStream>();
 
-	// Mapping from backend file descriptor to backend file input stream.
-	private Map<Integer,BackendFileInputStream> myInputStreamForBFD =
-		new HashMap<Integer,BackendFileInputStream>();
+    // Mapping from frontend file descriptor to backend file input stream.
+    private Map<Integer, BackendFileInputStream> myInputStreamForFFD
+            = new HashMap<Integer, BackendFileInputStream>();
 
-	// Mapping from frontend file descriptor to backend file input stream.
-	private Map<Integer,BackendFileInputStream> myInputStreamForFFD =
-		new HashMap<Integer,BackendFileInputStream>();
-
-	// Next backend file descriptor.
-	private int myNextBFD = 1;
+    // Next backend file descriptor.
+    private int myNextBFD = 1;
 
 // Exported constructors.
+    /**
+     * Construct a new backend file reader.
+     *
+     * @param theJobFrontend Job Frontend.
+     * @param theJobBackend Job Backend.
+     */
+    public BackendFileReader(JobFrontendRef theJobFrontend,
+            JobBackendRef theJobBackend) {
+        myJobFrontend = theJobFrontend;
+        myJobBackend = theJobBackend;
 
-	/**
-	 * Construct a new backend file reader.
-	 *
-	 * @param  theJobFrontend  Job Frontend.
-	 * @param  theJobBackend   Job Backend.
-	 */
-	public BackendFileReader
-		(JobFrontendRef theJobFrontend,
-		 JobBackendRef theJobBackend)
-		{
-		myJobFrontend = theJobFrontend;
-		myJobBackend = theJobBackend;
-
-		// Set up input stream for stdin.
-		in = new BackendFileInputStream (myJobFrontend, myJobBackend, 1);
-		myInputStreamForFFD.put (1, in);
-		}
+        // Set up input stream for stdin.
+        in = new BackendFileInputStream(myJobFrontend, myJobBackend, 1);
+        myInputStreamForFFD.put(1, in);
+    }
 
 // Exported operations.
+    /**
+     * Open a backend file input stream on the given file.
+     *
+     * @param file File.
+     *
+     * @return Backend file input stream.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public BackendFileInputStream open(File file)
+            throws IOException {
+        BackendFileInputStream stream = null;
+        int bfd = 0;
+        int ffd = 0;
 
-	/**
-	 * Open a backend file input stream on the given file.
-	 *
-	 * @param  file    File.
-	 *
-	 * @return  Backend file input stream.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public BackendFileInputStream open
-		(File file)
-		throws IOException
-		{
-		BackendFileInputStream stream = null;
-		int bfd = 0;
-		int ffd = 0;
+        synchronized (this) {
+            stream = new BackendFileInputStream(myJobFrontend, myJobBackend);
+            bfd = myNextBFD++;
+            myInputStreamForBFD.put(bfd, stream);
+        }
 
-		synchronized (this)
-			{
-			stream = new BackendFileInputStream (myJobFrontend, myJobBackend);
-			bfd = myNextBFD ++;
-			myInputStreamForBFD.put (bfd, stream);
-			}
+        ffd = stream.open(bfd, file);
 
-		ffd = stream.open (bfd, file);
+        synchronized (this) {
+            myInputStreamForFFD.put(ffd, stream);
+        }
+        return stream;
+    }
 
-		synchronized (this)
-			{
-			myInputStreamForFFD.put (ffd, stream);
-			}
-		return stream;
-		}
+    /**
+     * Report the result of opening the given input file.
+     *
+     * @param theJobFrontend Job Frontend that is calling this method.
+     * @param bfd Backend file descriptor.
+     * @param ffd Frontend file descriptor if success.
+     * @param exc Null if success, exception if failure.
+     */
+    public void inputFileOpenResult(JobFrontendRef theJobFrontend,
+            int bfd,
+            int ffd,
+            IOException exc) {
+        BackendFileInputStream stream = null;
+        synchronized (this) {
+            stream = myInputStreamForBFD.remove(bfd);
+        }
+        if (stream != null) {
+            stream.putResult(ffd, 0, 0L, exc);
+        }
+    }
 
-	/**
-	 * Report the result of opening the given input file.
-	 *
-	 * @param  theJobFrontend  Job Frontend that is calling this method.
-	 * @param  bfd             Backend file descriptor.
-	 * @param  ffd             Frontend file descriptor if success.
-	 * @param  exc             Null if success, exception if failure.
-	 */
-	public void inputFileOpenResult
-		(JobFrontendRef theJobFrontend,
-		 int bfd,
-		 int ffd,
-		 IOException exc)
-		{
-		BackendFileInputStream stream = null;
-		synchronized (this)
-			{
-			stream = myInputStreamForBFD.remove (bfd);
-			}
-		if (stream != null)
-			{
-			stream.putResult (ffd, 0, 0L, exc);
-			}
-		}
+    /**
+     * Report the result of reading the given input file.
+     *
+     * @param theJobFrontend Job Frontend that is calling this method.
+     * @param ffd Frontend file descriptor.
+     * @param len Number of bytes read, or -1 if EOF.
+     * @param exc Null if success, exception if failure.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void inputFileReadResult(JobFrontendRef theJobFrontend,
+            int ffd,
+            int len,
+            IOException exc) {
+        BackendFileInputStream stream = null;
+        synchronized (this) {
+            stream = myInputStreamForFFD.get(ffd);
+        }
+        if (stream != null) {
+            stream.putResult(ffd, len, 0L, exc);
+        }
+    }
 
-	/**
-	 * Report the result of reading the given input file.
-	 *
-	 * @param  theJobFrontend  Job Frontend that is calling this method.
-	 * @param  ffd             Frontend file descriptor.
-	 * @param  len             Number of bytes read, or -1 if EOF.
-	 * @param  exc             Null if success, exception if failure.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void inputFileReadResult
-		(JobFrontendRef theJobFrontend,
-		 int ffd,
-		 int len,
-		 IOException exc)
-		{
-		BackendFileInputStream stream = null;
-		synchronized (this)
-			{
-			stream = myInputStreamForFFD.get (ffd);
-			}
-		if (stream != null)
-			{
-			stream.putResult (ffd, len, 0L, exc);
-			}
-		}
+    /**
+     * Report the result of skipping the given input file.
+     *
+     * @param theJobFrontend Job Frontend that is calling this method.
+     * @param ffd Frontend file descriptor.
+     * @param len Number of bytes skipped.
+     * @param exc Null if success, exception if failure.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void inputFileSkipResult(JobFrontendRef theJobFrontend,
+            int ffd,
+            long len,
+            IOException exc) {
+        BackendFileInputStream stream = null;
+        synchronized (this) {
+            stream = myInputStreamForFFD.get(ffd);
+        }
+        if (stream != null) {
+            stream.putResult(ffd, 0, len, exc);
+        }
+    }
 
-	/**
-	 * Report the result of skipping the given input file.
-	 *
-	 * @param  theJobFrontend  Job Frontend that is calling this method.
-	 * @param  ffd             Frontend file descriptor.
-	 * @param  len             Number of bytes skipped.
-	 * @param  exc             Null if success, exception if failure.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void inputFileSkipResult
-		(JobFrontendRef theJobFrontend,
-		 int ffd,
-		 long len,
-		 IOException exc)
-		{
-		BackendFileInputStream stream = null;
-		synchronized (this)
-			{
-			stream = myInputStreamForFFD.get (ffd);
-			}
-		if (stream != null)
-			{
-			stream.putResult (ffd, 0, len, exc);
-			}
-		}
+    /**
+     * Report the result of closing the given input file.
+     *
+     * @param theJobFrontend Job Frontend that is calling this method.
+     * @param ffd Frontend file descriptor.
+     * @param exc Null if success, exception if failure.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void inputFileCloseResult(JobFrontendRef theJobFrontend,
+            int ffd,
+            IOException exc) {
+        BackendFileInputStream stream = null;
+        synchronized (this) {
+            stream = myInputStreamForFFD.remove(ffd);
+        }
+        if (stream != null) {
+            stream.putResult(ffd, 0, 0L, exc);
+        }
+    }
 
-	/**
-	 * Report the result of closing the given input file.
-	 *
-	 * @param  theJobFrontend  Job Frontend that is calling this method.
-	 * @param  ffd             Frontend file descriptor.
-	 * @param  exc             Null if success, exception if failure.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void inputFileCloseResult
-		(JobFrontendRef theJobFrontend,
-		 int ffd,
-		 IOException exc)
-		{
-		BackendFileInputStream stream = null;
-		synchronized (this)
-			{
-			stream = myInputStreamForFFD.remove (ffd);
-			}
-		if (stream != null)
-			{
-			stream.putResult (ffd, 0, 0L, exc);
-			}
-		}
-
-	}
+}

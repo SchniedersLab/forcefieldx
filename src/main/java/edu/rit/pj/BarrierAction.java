@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj;
 
 /**
@@ -33,10 +32,12 @@ package edu.rit.pj;
  * <LI>
  * When the {@linkplain ParallelTeam} threads finish executing all the
  * iterations of a parallel for loop.
- * <P><LI>
+ * <P>
+ * <LI>
  * When the {@linkplain ParallelTeam} threads finish executing all the
  * {@linkplain ParallelSection}s in a group of parallel sections.
- * <P><LI>
+ * <P>
+ * <LI>
  * When the {@linkplain ParallelTeam} threads call the {@linkplain
  * ParallelRegion}'s <TT>barrier()</TT> method explicitly.
  * </UL>
@@ -49,11 +50,13 @@ package edu.rit.pj;
  * BarrierAction.WAIT}, each thread stops and waits at the barrier. When all
  * threads have arrived at the barrier, each thread resumes and proceeds to
  * execute whatever comes after the construct.
- * <P><LI>
+ * <P>
+ * <LI>
  * If the barrier action is {@link #NO_WAIT BarrierAction.NO_WAIT}, nothing
  * happens. The threads do not wait for each other. Each thread immediately
  * proceeds to execute whatever comes after the construct.
- * <P><LI>
+ * <P>
+ * <LI>
  * If the barrier action is an instance of class BarrierAction with the
  * <TT>run()</TT> method overridden, each thread stops and waits at the barrier.
  * When all threads have arrived at the barrier, <I>one</I> thread calls the
@@ -67,85 +70,69 @@ package edu.rit.pj;
  * parallel construct and possibly to execute a section of code in a single
  * thread.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 11-Nov-2007
  */
 public abstract class BarrierAction
-	extends ParallelConstruct
-	{
+        extends ParallelConstruct {
 
 // Exported constructors.
-
-	/**
-	 * Construct a new barrier action.
-	 */
-	public BarrierAction()
-		{
-		}
+    /**
+     * Construct a new barrier action.
+     */
+    public BarrierAction() {
+    }
 
 // Exported operations.
-
-	/**
-	 * Execute this barrier action. The <TT>run()</TT> method is called by a
-	 * single thread after all threads have arrived at the barrier.
-	 * <P>
-	 * The <TT>run()</TT> method must be implemented in a subclass.
-	 *
-	 * @exception  Exception
-	 *     The <TT>run()</TT> method may throw any exception.
-	 */
-	public abstract void run()
-		throws Exception;
+    /**
+     * Execute this barrier action. The <TT>run()</TT> method is called by a
+     * single thread after all threads have arrived at the barrier.
+     * <P>
+     * The <TT>run()</TT> method must be implemented in a subclass.
+     *
+     * @exception Exception The <TT>run()</TT> method may throw any exception.
+     */
+    public abstract void run()
+            throws Exception;
 
 // Hidden operations.
-
-	/**
-	 * Execute a barrier.
-	 *
-	 * @param  currentThread  Parallel team thread calling <TT>doBarrier()</TT>.
-	 *
-	 * @exception  Exception
-	 *     The <TT>run()</TT> method may throw any exception.
-	 */
-	void doBarrier
-		(ParallelTeamThread currentThread)
-		throws Exception
-		{
-		// Default is to do a barrier wait with this as the barrier action.
-		currentThread.barrier (this);
-		}
+    /**
+     * Execute a barrier.
+     *
+     * @param currentThread Parallel team thread calling <TT>doBarrier()</TT>.
+     *
+     * @exception Exception The <TT>run()</TT> method may throw any exception.
+     */
+    void doBarrier(ParallelTeamThread currentThread)
+            throws Exception {
+        // Default is to do a barrier wait with this as the barrier action.
+        currentThread.barrier(this);
+    }
 
 // Exported constants.
+    /**
+     * Do a barrier wait, without executing any code in a single thread.
+     */
+    public static final BarrierAction WAIT = new BarrierAction() {
+        public void run() {
+        }
 
-	/**
-	 * Do a barrier wait, without executing any code in a single thread.
-	 */
-	public static final BarrierAction WAIT = new BarrierAction()
-		{
-		public void run()
-			{
-			}
-		void doBarrier
-			(ParallelTeamThread currentThread)
-			throws Exception
-			{
-			currentThread.barrier();
-			}
-		};
+        void doBarrier(ParallelTeamThread currentThread)
+                throws Exception {
+            currentThread.barrier();
+        }
+    };
 
-	/**
-	 * Do not do a barrier wait.
-	 */
-	public static final BarrierAction NO_WAIT = new BarrierAction()
-		{
-		public void run()
-			{
-			}
-		void doBarrier
-			(ParallelTeamThread currentThread)
-			throws Exception
-			{
-			}
-		};
+    /**
+     * Do not do a barrier wait.
+     */
+    public static final BarrierAction NO_WAIT = new BarrierAction() {
+        public void run() {
+        }
 
-	}
+        void doBarrier(ParallelTeamThread currentThread)
+                throws Exception {
+        }
+    };
+
+}

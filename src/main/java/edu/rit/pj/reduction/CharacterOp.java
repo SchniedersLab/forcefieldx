@@ -22,115 +22,93 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj.reduction;
 
 /**
  * Class CharacterOp is the abstract base class for a binary operation on
  * character values, used to do reduction in a parallel program.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 24-Nov-2009
  */
 public abstract class CharacterOp
-	extends Op
-	{
+        extends Op {
 
 // Hidden constructors.
-
-	/**
-	 * Construct a new character binary operation.
-	 */
-	protected CharacterOp()
-		{
-		super();
-		}
+    /**
+     * Construct a new character binary operation.
+     */
+    protected CharacterOp() {
+        super();
+    }
 
 // Exported operations.
-
-	/**
-	 * Perform this binary operation.
-	 *
-	 * @param  x  First argument.
-	 * @param  y  Second argument.
-	 *
-	 * @return  (<TT>x</TT> <I>op</I> <TT>y</TT>), where <I>op</I> stands for
-	 *          this binary operation.
-	 */
-	public abstract char op
-		(char x,
-		 char y);
+    /**
+     * Perform this binary operation.
+     *
+     * @param x First argument.
+     * @param y Second argument.
+     *
+     * @return (<TT>x</TT> <I>op</I> <TT>y</TT>), where <I>op</I> stands for
+     * this binary operation.
+     */
+    public abstract char op(char x,
+            char y);
 
 // Exported constants.
+    /**
+     * The character minimum binary operation.
+     */
+    public static final CharacterOp MINIMUM
+            = new CharacterOp() {
+                public char op(char x,
+                        char y) {
+                    return (char) Math.min(x, y);
+                }
+            };
 
-	/**
-	 * The character minimum binary operation.
-	 */
-	public static final CharacterOp MINIMUM =
-		new CharacterOp()
-			{
-			public char op
-				(char x,
-				 char y)
-				{
-				return (char) Math.min (x, y);
-				}
-			};
+    /**
+     * The character maximum binary operation.
+     */
+    public static final CharacterOp MAXIMUM
+            = new CharacterOp() {
+                public char op(char x,
+                        char y) {
+                    return (char) Math.max(x, y);
+                }
+            };
 
-	/**
-	 * The character maximum binary operation.
-	 */
-	public static final CharacterOp MAXIMUM =
-		new CharacterOp()
-			{
-			public char op
-				(char x,
-				 char y)
-				{
-				return (char) Math.max (x, y);
-				}
-			};
+    /**
+     * The character bitwise "and" binary operation.
+     */
+    public static final CharacterOp AND
+            = new CharacterOp() {
+                public char op(char x,
+                        char y) {
+                    return (char) (x & y);
+                }
+            };
 
-	/**
-	 * The character bitwise "and" binary operation.
-	 */
-	public static final CharacterOp AND =
-		new CharacterOp()
-			{
-			public char op
-				(char x,
-				 char y)
-				{
-				return (char)(x & y);
-				}
-			};
+    /**
+     * The character bitwise "or" binary operation.
+     */
+    public static final CharacterOp OR
+            = new CharacterOp() {
+                public char op(char x,
+                        char y) {
+                    return (char) (x | y);
+                }
+            };
 
-	/**
-	 * The character bitwise "or" binary operation.
-	 */
-	public static final CharacterOp OR =
-		new CharacterOp()
-			{
-			public char op
-				(char x,
-				 char y)
-				{
-				return (char)(x | y);
-				}
-			};
+    /**
+     * The character bitwise "exclusive or" binary operation.
+     */
+    public static final CharacterOp XOR
+            = new CharacterOp() {
+                public char op(char x,
+                        char y) {
+                    return (char) (x ^ y);
+                }
+            };
 
-	/**
-	 * The character bitwise "exclusive or" binary operation.
-	 */
-	public static final CharacterOp XOR =
-		new CharacterOp()
-			{
-			public char op
-				(char x,
-				 char y)
-				{
-				return (char)(x ^ y);
-				}
-			};
-
-	}
+}

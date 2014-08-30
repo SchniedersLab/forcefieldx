@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj;
 
 /**
@@ -57,8 +56,7 @@ package edu.rit.pj;
  *                     });
  *             }
  *         });
- * </PRE>
- * Here is another way to code a parallel section group with two parallel
+ * </PRE> Here is another way to code a parallel section group with two parallel
  * sections:
  * <PRE>
  *     ParallelSection section_1 = new ParallelSection()
@@ -84,9 +82,8 @@ package edu.rit.pj;
  *             execute (section_1, section_2);
  *             }
  *         });
- * </PRE>
- * A parallel section group may contain any number of parallel sections. There
- * are overloaded <TT>execute()</TT> methods that take one, two, or three
+ * </PRE> A parallel section group may contain any number of parallel sections.
+ * There are overloaded <TT>execute()</TT> methods that take one, two, or three
  * parallel section arguments. If there are four or more parallel sections, put
  * them in an array (type <TT>ParallelSection[]</TT>) and pass the array to the
  * <TT>execute()</TT> method.
@@ -103,8 +100,7 @@ package edu.rit.pj;
  *             execute (section_1, section_2, BarrierAction.NO_WAIT);
  *             }
  *         });
- * </PRE>
- * To execute a section of code in a single thread as part of the barrier
+ * </PRE> To execute a section of code in a single thread as part of the barrier
  * synchronization, include an instance of class {@linkplain BarrierAction} in
  * the <TT>execute()</TT> method call. The barrier action object's
  * <TT>run()</TT> method contains the code to be executed in a single thread
@@ -124,8 +120,7 @@ package edu.rit.pj;
  *                 });
  *             }
  *         });
- * </PRE>
- * For further information, see class {@linkplain BarrierAction}.
+ * </PRE> For further information, see class {@linkplain BarrierAction}.
  * <P>
  * A parallel section may be executed by one thread in the parallel thread team
  * by executing a parallel section group consisting of the one parallel section,
@@ -184,34 +179,29 @@ package edu.rit.pj;
  * concurrently. See class {@linkplain ParallelIteration} for further
  * information.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 11-Nov-2007
  */
 public abstract class ParallelSection
-	extends ParallelConstruct
-	{
+        extends ParallelConstruct {
 
 // Exported constructors.
-
-	/**
-	 * Construct a new parallel section.
-	 */
-	public ParallelSection()
-		{
-		super();
-		}
+    /**
+     * Construct a new parallel section.
+     */
+    public ParallelSection() {
+        super();
+    }
 
 // Exported operations.
+    /**
+     * Execute this parallel section.
+     * <P>
+     * The <TT>run()</TT> method must be implemented in a subclass.
+     *
+     * @exception Exception The <TT>run()</TT> method may throw any exception.
+     */
+    public abstract void run()
+            throws Exception;
 
-	/**
-	 * Execute this parallel section.
-	 * <P>
-	 * The <TT>run()</TT> method must be implemented in a subclass.
-	 *
-	 * @exception  Exception
-	 *     The <TT>run()</TT> method may throw any exception.
-	 */
-	public abstract void run()
-		throws Exception;
-
-	}
+}

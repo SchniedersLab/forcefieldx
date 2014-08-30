@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj.cluster;
 
 import java.io.IOException;
@@ -34,460 +33,384 @@ import java.io.ObjectOutput;
  * Class JobSchedulerMessage provides a message sent to a Job Scheduler process
  * (interface {@linkplain JobSchedulerRef}) in the PJ cluster middleware.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 24-Jan-2012
  */
 public abstract class JobSchedulerMessage
-	extends Message
-	implements Externalizable
-	{
+        extends Message
+        implements Externalizable {
 
 // Hidden data members.
-
-	private static final long serialVersionUID = -7379945472003527741L;
+    private static final long serialVersionUID = -7379945472003527741L;
 
 // Exported constructors.
+    /**
+     * Construct a new job scheduler message.
+     */
+    public JobSchedulerMessage() {
+    }
 
-	/**
-	 * Construct a new job scheduler message.
-	 */
-	public JobSchedulerMessage()
-		{
-		}
-
-	/**
-	 * Construct a new job scheduler message with the given message tag.
-	 *
-	 * @param  theTag  Message tag to use when sending this message.
-	 */
-	public JobSchedulerMessage
-		(int theTag)
-		{
-		super (theTag);
-		}
+    /**
+     * Construct a new job scheduler message with the given message tag.
+     *
+     * @param theTag Message tag to use when sending this message.
+     */
+    public JobSchedulerMessage(int theTag) {
+        super(theTag);
+    }
 
 // Exported operations.
+    /**
+     * Construct a new "backend failed" message.
+     *
+     * @param theJobFrontend Job frontend that is calling this method.
+     * @param name Backend node name.
+     *
+     * @return "Backend failed" message.
+     */
+    public static JobSchedulerMessage backendFailed(JobFrontendRef theJobFrontend,
+            String name) {
+        return new BackendFailedMessage(theJobFrontend, name);
+    }
 
-	/**
-	 * Construct a new "backend failed" message.
-	 *
-	 * @param  theJobFrontend  Job frontend that is calling this method.
-	 * @param  name            Backend node name.
-	 *
-	 * @return  "Backend failed" message.
-	 */
-	public static JobSchedulerMessage backendFailed
-		(JobFrontendRef theJobFrontend,
-		 String name)
-		{
-		return new BackendFailedMessage (theJobFrontend, name);
-		}
+    /**
+     * Construct a new "cancel job" message.
+     *
+     * @param theJobFrontend Job frontend that is calling this method.
+     * @param errmsg Error message string.
+     *
+     * @return "Cancel job" message.
+     */
+    public static JobSchedulerMessage cancelJob(JobFrontendRef theJobFrontend,
+            String errmsg) {
+        return new CancelJobMessage(theJobFrontend, errmsg);
+    }
 
-	/**
-	 * Construct a new "cancel job" message.
-	 *
-	 * @param  theJobFrontend  Job frontend that is calling this method.
-	 * @param  errmsg          Error message string.
-	 *
-	 * @return  "Cancel job" message.
-	 */
-	public static JobSchedulerMessage cancelJob
-		(JobFrontendRef theJobFrontend,
-		 String errmsg)
-		{
-		return new CancelJobMessage (theJobFrontend, errmsg);
-		}
+    /**
+     * Construct a new "job finished" message.
+     *
+     * @param theJobFrontend Job frontend that is calling this method.
+     *
+     * @return "Job finished" message.
+     */
+    public static JobSchedulerMessage jobFinished(JobFrontendRef theJobFrontend) {
+        return new JobFinishedMessage(theJobFrontend);
+    }
 
-	/**
-	 * Construct a new "job finished" message.
-	 *
-	 * @param  theJobFrontend  Job frontend that is calling this method.
-	 *
-	 * @return  "Job finished" message.
-	 */
-	public static JobSchedulerMessage jobFinished
-		(JobFrontendRef theJobFrontend)
-		{
-		return new JobFinishedMessage (theJobFrontend);
-		}
+    /**
+     * Construct a new "renew lease" message.
+     *
+     * @param theJobFrontend Job frontend that is calling this method.
+     *
+     * @return "Renew lease" message.
+     */
+    public static JobSchedulerMessage renewLease(JobFrontendRef theJobFrontend) {
+        return new RenewLeaseMessage(theJobFrontend);
+    }
 
-	/**
-	 * Construct a new "renew lease" message.
-	 *
-	 * @param  theJobFrontend  Job frontend that is calling this method.
-	 *
-	 * @return  "Renew lease" message.
-	 */
-	public static JobSchedulerMessage renewLease
-		(JobFrontendRef theJobFrontend)
-		{
-		return new RenewLeaseMessage (theJobFrontend);
-		}
+    /**
+     * Construct a new "report comment" message.
+     *
+     * @param theJobFrontend Job frontend that is calling this method.
+     * @param rank Process rank.
+     * @param comment Comment string.
+     *
+     * @return "Report comment" message.
+     */
+    public static JobSchedulerMessage reportComment(JobFrontendRef theJobFrontend,
+            int rank,
+            String comment) {
+        return new ReportCommentMessage(theJobFrontend, rank, comment);
+    }
 
-	/**
-	 * Construct a new "report comment" message.
-	 *
-	 * @param  theJobFrontend  Job frontend that is calling this method.
-	 * @param  rank            Process rank.
-	 * @param  comment         Comment string.
-	 *
-	 * @return  "Report comment" message.
-	 */
-	public static JobSchedulerMessage reportComment
-		(JobFrontendRef theJobFrontend,
-		 int rank,
-		 String comment)
-		{
-		return new ReportCommentMessage (theJobFrontend, rank, comment);
-		}
+    /**
+     * Construct a new "request job" message.
+     *
+     * @param theJobFrontend Job frontend that is calling this method.
+     * @param username User name.
+     * @param Nn Number of backend nodes.
+     * @param Np Number of processes.
+     * @param Nt Number of CPUs per process. 0 means "all CPUs."
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public static JobSchedulerMessage requestJob(JobFrontendRef theJobFrontend,
+            String username,
+            int Nn,
+            int Np,
+            int Nt) {
+        return new RequestJobMessage(theJobFrontend, username, Nn, Np, Nt);
+    }
 
-	/**
-	 * Construct a new "request job" message.
-	 *
-	 * @param  theJobFrontend  Job frontend that is calling this method.
-	 * @param  username        User name.
-	 * @param  Nn              Number of backend nodes.
-	 * @param  Np              Number of processes.
-	 * @param  Nt              Number of CPUs per process. 0 means "all CPUs."
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public static JobSchedulerMessage requestJob
-		(JobFrontendRef theJobFrontend,
-		 String username,
-		 int Nn,
-		 int Np,
-		 int Nt)
-		{
-		return new RequestJobMessage (theJobFrontend, username, Nn, Np, Nt);
-		}
+    /**
+     * Invoke the method corresponding to this job scheduler message on the
+     * given Job Scheduler object. The method arguments come from the fields of
+     * this job scheduler message object.
+     *
+     * @param theJobScheduler Job Scheduler on which to invoke the method.
+     * @param theJobFrontend Job Frontend that is calling the method.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void invoke(JobSchedulerRef theJobScheduler,
+            JobFrontendRef theJobFrontend)
+            throws IOException {
+        throw new UnsupportedOperationException();
+    }
 
-	/**
-	 * Invoke the method corresponding to this job scheduler message on the
-	 * given Job Scheduler object. The method arguments come from the fields of
-	 * this job scheduler message object.
-	 *
-	 * @param  theJobScheduler  Job Scheduler on which to invoke the method.
-	 * @param  theJobFrontend   Job Frontend that is calling the method.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void invoke
-		(JobSchedulerRef theJobScheduler,
-		 JobFrontendRef theJobFrontend)
-		throws IOException
-		{
-		throw new UnsupportedOperationException();
-		}
+    /**
+     * Write this job scheduler message to the given object output stream.
+     *
+     * @param out Object output stream.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void writeExternal(ObjectOutput out)
+            throws IOException {
+    }
 
-	/**
-	 * Write this job scheduler message to the given object output stream.
-	 *
-	 * @param  out  Object output stream.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void writeExternal
-		(ObjectOutput out)
-		throws IOException
-		{
-		}
-
-	/**
-	 * Read this job scheduler message from the given object input stream.
-	 *
-	 * @param  in  Object input stream.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void readExternal
-		(ObjectInput in)
-		throws IOException
-		{
-		}
+    /**
+     * Read this job scheduler message from the given object input stream.
+     *
+     * @param in Object input stream.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void readExternal(ObjectInput in)
+            throws IOException {
+    }
 
 // Hidden subclasses.
+    /**
+     * Class BackendFailedMessage provides the Job Scheduler "backend failed"
+     * message in the PJ cluster middleware.
+     *
+     * @author Alan Kaminsky
+     * @version 13-Oct-2006
+     */
+    private static class BackendFailedMessage
+            extends JobSchedulerMessage {
 
-	/**
-	 * Class BackendFailedMessage provides the Job Scheduler "backend failed"
-	 * message in the PJ cluster middleware.
-	 *
-	 * @author  Alan Kaminsky
-	 * @version 13-Oct-2006
-	 */
-	private static class BackendFailedMessage
-		extends JobSchedulerMessage
-		{
-		private static final long serialVersionUID = 6495614788809259018L;
+        private static final long serialVersionUID = 6495614788809259018L;
 
-		private String name;
+        private String name;
 
-		public BackendFailedMessage()
-			{
-			}
+        public BackendFailedMessage() {
+        }
 
-		public BackendFailedMessage
-			(JobFrontendRef theJobFrontend,
-			 String name)
-			{
-			super (Message.FROM_JOB_FRONTEND);
-			this.name = name;
-			}
+        public BackendFailedMessage(JobFrontendRef theJobFrontend,
+                String name) {
+            super(Message.FROM_JOB_FRONTEND);
+            this.name = name;
+        }
 
-		public void invoke
-			(JobSchedulerRef theJobScheduler,
-			 JobFrontendRef theJobFrontend)
-			throws IOException
-			{
-			theJobScheduler.backendFailed (theJobFrontend, name);
-			}
+        public void invoke(JobSchedulerRef theJobScheduler,
+                JobFrontendRef theJobFrontend)
+                throws IOException {
+            theJobScheduler.backendFailed(theJobFrontend, name);
+        }
 
-		public void writeExternal
-			(ObjectOutput out)
-			throws IOException
-			{
-			out.writeUTF (name);
-			}
+        public void writeExternal(ObjectOutput out)
+                throws IOException {
+            out.writeUTF(name);
+        }
 
-		public void readExternal
-			(ObjectInput in)
-			throws IOException
-			{
-			name = in.readUTF();
-			}
-		}
+        public void readExternal(ObjectInput in)
+                throws IOException {
+            name = in.readUTF();
+        }
+    }
 
-	/**
-	 * Class CancelJobMessage provides the Job Scheduler "cancel job" message in
-	 * the PJ cluster middleware.
-	 *
-	 * @author  Alan Kaminsky
-	 * @version 12-Oct-2006
-	 */
-	private static class CancelJobMessage
-		extends JobSchedulerMessage
-		{
-		private static final long serialVersionUID = 2902818757044365344L;
+    /**
+     * Class CancelJobMessage provides the Job Scheduler "cancel job" message in
+     * the PJ cluster middleware.
+     *
+     * @author Alan Kaminsky
+     * @version 12-Oct-2006
+     */
+    private static class CancelJobMessage
+            extends JobSchedulerMessage {
 
-		private String errmsg;
+        private static final long serialVersionUID = 2902818757044365344L;
 
-		public CancelJobMessage()
-			{
-			}
+        private String errmsg;
 
-		public CancelJobMessage
-			(JobFrontendRef theJobFrontend,
-			 String errmsg)
-			{
-			super (Message.FROM_JOB_FRONTEND);
-			this.errmsg = errmsg;
-			}
+        public CancelJobMessage() {
+        }
 
-		public void invoke
-			(JobSchedulerRef theJobScheduler,
-			 JobFrontendRef theJobFrontend)
-			throws IOException
-			{
-			theJobScheduler.cancelJob (theJobFrontend, errmsg);
-			}
+        public CancelJobMessage(JobFrontendRef theJobFrontend,
+                String errmsg) {
+            super(Message.FROM_JOB_FRONTEND);
+            this.errmsg = errmsg;
+        }
 
-		public void writeExternal
-			(ObjectOutput out)
-			throws IOException
-			{
-			out.writeUTF (errmsg);
-			}
+        public void invoke(JobSchedulerRef theJobScheduler,
+                JobFrontendRef theJobFrontend)
+                throws IOException {
+            theJobScheduler.cancelJob(theJobFrontend, errmsg);
+        }
 
-		public void readExternal
-			(ObjectInput in)
-			throws IOException
-			{
-			errmsg = in.readUTF();
-			}
-		}
+        public void writeExternal(ObjectOutput out)
+                throws IOException {
+            out.writeUTF(errmsg);
+        }
 
-	/**
-	 * Class JobFinishedMessage provides the Job Scheduler "job finished"
-	 * message in the PJ cluster middleware.
-	 *
-	 * @author  Alan Kaminsky
-	 * @version 13-Oct-2006
-	 */
-	private static class JobFinishedMessage
-		extends JobSchedulerMessage
-		{
-		private static final long serialVersionUID = -1179228962545666153L;
+        public void readExternal(ObjectInput in)
+                throws IOException {
+            errmsg = in.readUTF();
+        }
+    }
 
-		public JobFinishedMessage()
-			{
-			}
+    /**
+     * Class JobFinishedMessage provides the Job Scheduler "job finished"
+     * message in the PJ cluster middleware.
+     *
+     * @author Alan Kaminsky
+     * @version 13-Oct-2006
+     */
+    private static class JobFinishedMessage
+            extends JobSchedulerMessage {
 
-		public JobFinishedMessage
-			(JobFrontendRef theJobFrontend)
-			{
-			super (Message.FROM_JOB_FRONTEND);
-			}
+        private static final long serialVersionUID = -1179228962545666153L;
 
-		public void invoke
-			(JobSchedulerRef theJobScheduler,
-			 JobFrontendRef theJobFrontend)
-			throws IOException
-			{
-			theJobScheduler.jobFinished (theJobFrontend);
-			}
-		}
+        public JobFinishedMessage() {
+        }
 
-	/**
-	 * Class RenewLeaseMessage provides the Job Scheduler "renew lease" message
-	 * in the PJ cluster middleware.
-	 *
-	 * @author  Alan Kaminsky
-	 * @version 12-Oct-2006
-	 */
-	private static class RenewLeaseMessage
-		extends JobSchedulerMessage
-		{
-		private static final long serialVersionUID = 8547605668292095227L;
+        public JobFinishedMessage(JobFrontendRef theJobFrontend) {
+            super(Message.FROM_JOB_FRONTEND);
+        }
 
-		public RenewLeaseMessage()
-			{
-			}
+        public void invoke(JobSchedulerRef theJobScheduler,
+                JobFrontendRef theJobFrontend)
+                throws IOException {
+            theJobScheduler.jobFinished(theJobFrontend);
+        }
+    }
 
-		public RenewLeaseMessage
-			(JobFrontendRef theJobFrontend)
-			{
-			super (Message.FROM_JOB_FRONTEND);
-			}
+    /**
+     * Class RenewLeaseMessage provides the Job Scheduler "renew lease" message
+     * in the PJ cluster middleware.
+     *
+     * @author Alan Kaminsky
+     * @version 12-Oct-2006
+     */
+    private static class RenewLeaseMessage
+            extends JobSchedulerMessage {
 
-		public void invoke
-			(JobSchedulerRef theJobScheduler,
-			 JobFrontendRef theJobFrontend)
-			throws IOException
-			{
-			theJobScheduler.renewLease (theJobFrontend);
-			}
-		}
+        private static final long serialVersionUID = 8547605668292095227L;
 
-	/**
-	 * Class ReportCommentMessage provides the Job Scheduler "report comment"
-	 * message in the PJ cluster middleware.
-	 *
-	 * @author  Alan Kaminsky
-	 * @version 24-Jan-2012
-	 */
-	private static class ReportCommentMessage
-		extends JobSchedulerMessage
-		{
-		private static final long serialVersionUID = -7431990305653172900L;
+        public RenewLeaseMessage() {
+        }
 
-		private int rank;
-		private String comment;
+        public RenewLeaseMessage(JobFrontendRef theJobFrontend) {
+            super(Message.FROM_JOB_FRONTEND);
+        }
 
-		public ReportCommentMessage()
-			{
-			}
+        public void invoke(JobSchedulerRef theJobScheduler,
+                JobFrontendRef theJobFrontend)
+                throws IOException {
+            theJobScheduler.renewLease(theJobFrontend);
+        }
+    }
 
-		public ReportCommentMessage
-			(JobFrontendRef theJobFrontend,
-			 int rank,
-			 String comment)
-			{
-			super (Message.FROM_JOB_FRONTEND);
-			this.rank = rank;
-			this.comment = comment == null ? "" : comment;
-			}
+    /**
+     * Class ReportCommentMessage provides the Job Scheduler "report comment"
+     * message in the PJ cluster middleware.
+     *
+     * @author Alan Kaminsky
+     * @version 24-Jan-2012
+     */
+    private static class ReportCommentMessage
+            extends JobSchedulerMessage {
 
-		public void invoke
-			(JobSchedulerRef theJobScheduler,
-			 JobFrontendRef theJobFrontend)
-			throws IOException
-			{
-			theJobScheduler.reportComment (theJobFrontend, rank, comment);
-			}
+        private static final long serialVersionUID = -7431990305653172900L;
 
-		public void writeExternal
-			(ObjectOutput out)
-			throws IOException
-			{
-			out.writeInt (rank);
-			out.writeUTF (comment);
-			}
+        private int rank;
+        private String comment;
 
-		public void readExternal
-			(ObjectInput in)
-			throws IOException
-			{
-			rank = in.readInt();
-			comment = in.readUTF();
-			}
-		}
+        public ReportCommentMessage() {
+        }
 
-	/**
-	 * Class RequestJobMessage provides the Job Scheduler "request job" message
-	 * in the PJ cluster middleware.
-	 *
-	 * @author  Alan Kaminsky
-	 * @version 21-May-2008
-	 */
-	private static class RequestJobMessage
-		extends JobSchedulerMessage
-		{
-		private static final long serialVersionUID = -6712799261136980645L;
+        public ReportCommentMessage(JobFrontendRef theJobFrontend,
+                int rank,
+                String comment) {
+            super(Message.FROM_JOB_FRONTEND);
+            this.rank = rank;
+            this.comment = comment == null ? "" : comment;
+        }
 
-		private String username;
-		private int Nn;
-		private int Np;
-		private int Nt;
+        public void invoke(JobSchedulerRef theJobScheduler,
+                JobFrontendRef theJobFrontend)
+                throws IOException {
+            theJobScheduler.reportComment(theJobFrontend, rank, comment);
+        }
 
-		public RequestJobMessage()
-			{
-			}
+        public void writeExternal(ObjectOutput out)
+                throws IOException {
+            out.writeInt(rank);
+            out.writeUTF(comment);
+        }
 
-		public RequestJobMessage
-			(JobFrontendRef theJobFrontend,
-			 String username,
-			 int Nn,
-			 int Np,
-			 int Nt)
-			{
-			super (Message.FROM_JOB_FRONTEND);
-			this.username = username;
-			this.Nn = Nn;
-			this.Np = Np;
-			this.Nt = Nt;
-			}
+        public void readExternal(ObjectInput in)
+                throws IOException {
+            rank = in.readInt();
+            comment = in.readUTF();
+        }
+    }
 
-		public void invoke
-			(JobSchedulerRef theJobScheduler,
-			 JobFrontendRef theJobFrontend)
-			throws IOException
-			{
-			theJobScheduler.requestJob (theJobFrontend, username, Nn, Np, Nt);
-			}
+    /**
+     * Class RequestJobMessage provides the Job Scheduler "request job" message
+     * in the PJ cluster middleware.
+     *
+     * @author Alan Kaminsky
+     * @version 21-May-2008
+     */
+    private static class RequestJobMessage
+            extends JobSchedulerMessage {
 
-		public void writeExternal
-			(ObjectOutput out)
-			throws IOException
-			{
-			out.writeUTF (username);
-			out.writeInt (Nn);
-			out.writeInt (Np);
-			out.writeInt (Nt);
-			}
+        private static final long serialVersionUID = -6712799261136980645L;
 
-		public void readExternal
-			(ObjectInput in)
-			throws IOException
-			{
-			username = in.readUTF();
-			Nn = in.readInt();
-			Np = in.readInt();
-			Nt = in.readInt();
-			}
-		}
+        private String username;
+        private int Nn;
+        private int Np;
+        private int Nt;
 
-	}
+        public RequestJobMessage() {
+        }
+
+        public RequestJobMessage(JobFrontendRef theJobFrontend,
+                String username,
+                int Nn,
+                int Np,
+                int Nt) {
+            super(Message.FROM_JOB_FRONTEND);
+            this.username = username;
+            this.Nn = Nn;
+            this.Np = Np;
+            this.Nt = Nt;
+        }
+
+        public void invoke(JobSchedulerRef theJobScheduler,
+                JobFrontendRef theJobFrontend)
+                throws IOException {
+            theJobScheduler.requestJob(theJobFrontend, username, Nn, Np, Nt);
+        }
+
+        public void writeExternal(ObjectOutput out)
+                throws IOException {
+            out.writeUTF(username);
+            out.writeInt(Nn);
+            out.writeInt(Np);
+            out.writeInt(Nt);
+        }
+
+        public void readExternal(ObjectInput in)
+                throws IOException {
+            username = in.readUTF();
+            Nn = in.readInt();
+            Np = in.readInt();
+            Nt = in.readInt();
+        }
+    }
+
+}

@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj.job;
 
 import edu.rit.mp.BooleanBuf;
@@ -54,16 +53,18 @@ import java.util.Scanner;
  * <P>
  * The Runner program is targeted at three use cases:
  * <UL>
- * <P><LI>
+ * <P>
+ * <LI>
  * <B>Sequential jobs on a cluster parallel computer.</B> Each job is a
  * sequential (single-threaded) program. The Runner program is running on a
  * cluster parallel computer with <I>N</I> nodes and one CPU per node. Run the
  * Runner program as follows:
  * <PRE>
  *     java -Dpj.nn=<I>N</I> edu.rit.pj.job.Runner . . .
- * </PRE>
- * The Runner program runs with one process per node and one thread per process.
- * <P><LI>
+ * </PRE> The Runner program runs with one process per node and one thread per
+ * process.
+ * <P>
+ * <LI>
  * <B>Sequential jobs on a hybrid parallel computer.</B> Each job is a
  * sequential (single-threaded) program. The Runner program is running on a
  * hybrid SMP cluster parallel computer with <I>N</I> nodes and <I>C</I> total
@@ -71,19 +72,18 @@ import java.util.Scanner;
  * per node, <I>C</I> = 40.) Run the Runner program as follows:
  * <PRE>
  *     java -Dpj.nn=<I>N</I> -Dpj.np=<I>C</I> edu.rit.pj.job.Runner . . .
- * </PRE>
- * The Runner program runs with multiple processes per node and one thread per
- * process.
- * <P><LI>
+ * </PRE> The Runner program runs with multiple processes per node and one
+ * thread per process.
+ * <P>
+ * <LI>
  * <B>SMP parallel jobs on a hybrid parallel computer.</B> Each job is an SMP
  * parallel (multi-threaded) program. The Runner program is running on a hybrid
  * SMP cluster parallel computer with <I>N</I> nodes and multiple CPUs per node.
  * Run the Runner program as follows:
  * <PRE>
  *     java -Dpj.nn=<I>N</I> edu.rit.pj.job.Runner . . .
- * </PRE>
- * The Runner program runs with one process per node and multiple threads per
- * process, typically as many threads as there are CPUs on the node.
+ * </PRE> The Runner program runs with one process per node and multiple threads
+ * per process, typically as many threads as there are CPUs on the node.
  * </UL>
  * <P>
  * All these processes form a <I>worker team.</I> The Runner program uses the
@@ -109,188 +109,163 @@ import java.util.Scanner;
  * <BR><I>generator</I> = Job generator constructor expression
  * <BR><I>file</I> = Checkpoint file name
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 22-Oct-2010
  */
-public class Runner
-	{
+public class Runner {
 
 // Prevent construction.
-
-	private Runner()
-		{
-		}
+    private Runner() {
+    }
 
 // Global variables.
+    private static PrintStream stdout = System.out;
+    private static PrintStream stderr = System.err;
 
-	private static PrintStream stdout = System.out;
-	private static PrintStream stderr = System.err;
+    private static Comm world;
+    private static int rank;
 
-	private static Comm world;
-	private static int rank;
+    private static WorkerTeam team;
 
-	private static WorkerTeam team;
-
-	private static String generatorExpression;
-	private static HashSet<Integer> omitted;
-	private static JobGenerator generator;
+    private static String generatorExpression;
+    private static HashSet<Integer> omitted;
+    private static JobGenerator generator;
 
 // Main program.
+    /**
+     * Main program.
+     */
+    public static void main(String[] args)
+            throws Exception {
+        if (args.length != 1) {
+            usage();
+        }
 
-	/**
-	 * Main program.
-	 */
-	public static void main
-		(String[] args)
-		throws Exception
-		{
-		if (args.length != 1) usage();
+        // Initialize world communicator.
+        Comm.init(args);
+        world = Comm.world();
+        rank = world.rank();
 
-		// Initialize world communicator.
-		Comm.init (args);
-		world = Comm.world();
-		rank = world.rank();
+        // Set up worker team.
+        team = new WorkerTeam();
 
-		// Set up worker team.
-		team = new WorkerTeam();
+        // Master process sets up job generator.
+        if (rank == team.masterRank()) {
+            omitted = new HashSet<Integer>();
 
-		// Master process sets up job generator.
-		if (rank == team.masterRank())
-			{
-			omitted = new HashSet<Integer>();
+            // Assume argument is a checkpoint file name and try to read it.
+            Scanner scanner = null;
+            try {
+                scanner = new Scanner(new File(args[0]));
+            } catch (IOException exc) {
+            }
 
-			// Assume argument is a checkpoint file name and try to read it.
-			Scanner scanner = null;
-			try
-				{
-				scanner = new Scanner (new File (args[0]));
-				}
-			catch (IOException exc)
-				{
-				}
+            // Read checkpoint file.
+            if (scanner != null) {
+                while (scanner.hasNextLine()) {
+                    Scanner linescanner = new Scanner(scanner.nextLine());
+                    String word;
+                    int jobnum;
+                    if (!linescanner.hasNext()) {
+                        continue;
+                    }
+                    word = linescanner.next();
+                    if (!word.equals("***")) {
+                        continue;
+                    }
+                    if (!linescanner.hasNext()) {
+                        continue;
+                    }
+                    word = linescanner.next();
+                    if (word.equals("Generator")) {
+                        if (!linescanner.hasNext()) {
+                            continue;
+                        }
+                        if (generatorExpression == null) {
+                            generatorExpression = linescanner.next();
+                        }
+                    } else if (word.equals("Job")) {
+                        if (!linescanner.hasNextInt()) {
+                            continue;
+                        }
+                        jobnum = linescanner.nextInt();
+                        if (!linescanner.hasNext()) {
+                            continue;
+                        }
+                        word = linescanner.next();
+                        if (word.equals("finished")) {
+                            omitted.add(jobnum);
+                        }
+                    }
+                }
+                scanner.close();
+            } // Assume argument is a job generator constructor expression.
+            else {
+                generatorExpression = args[0];
+            }
 
-			// Read checkpoint file.
-			if (scanner != null)
-				{
-				while (scanner.hasNextLine())
-					{
-					Scanner linescanner = new Scanner (scanner.nextLine());
-					String word;
-					int jobnum;
-					if (! linescanner.hasNext()) continue;
-					word = linescanner.next();
-					if (! word.equals ("***")) continue;
-					if (! linescanner.hasNext()) continue;
-					word = linescanner.next();
-					if (word.equals ("Generator"))
-						{
-						if (! linescanner.hasNext()) continue;
-						if (generatorExpression == null)
-							{
-							generatorExpression = linescanner.next();
-							}
-						}
-					else if (word.equals ("Job"))
-						{
-						if (! linescanner.hasNextInt()) continue;
-						jobnum = linescanner.nextInt();
-						if (! linescanner.hasNext()) continue;
-						word = linescanner.next();
-						if (word.equals ("finished")) omitted.add (jobnum);
-						}
-					}
-				scanner.close();
-				}
+            // Create job generator.
+            if (generatorExpression == null) {
+                stderr.printf("Runner: No job generator in checkpoint file %s%n",
+                        args[0]);
+            } else {
+                try {
+                    generator = (JobGenerator) Instance.newInstance(generatorExpression);
+                    stdout.printf("*** Generator %s%n", generatorExpression);
+                    generator.omit(omitted);
+                } catch (Throwable exc) {
+                    stderr.printf("Runner: Could not create job generator %s%n",
+                            generatorExpression);
+                    exc.printStackTrace(stderr);
+                }
+            }
+        }
 
-			// Assume argument is a job generator constructor expression.
-			else
-				{
-				generatorExpression = args[0];
-				}
+        // Abort every process if job generator was not created.
+        BooleanItemBuf buf = BooleanBuf.buffer(generator != null);
+        world.broadcast(team.masterRank(), buf);
+        if (!buf.item) {
+            System.exit(1);
+        }
 
-			// Create job generator.
-			if (generatorExpression == null)
-				{
-				stderr.printf
-					("Runner: No job generator in checkpoint file %s%n",
-					 args[0]);
-				}
-			else
-				{
-				try
-					{
-					generator = (JobGenerator)
-						Instance.newInstance (generatorExpression);
-					stdout.printf
-						("*** Generator %s%n", generatorExpression);
-					generator.omit (omitted);
-					}
-				catch (Throwable exc)
-					{
-					stderr.printf
-						("Runner: Could not create job generator %s%n",
-						 generatorExpression);
-					exc.printStackTrace (stderr);
-					}
-				}
-			}
+        // Generate and run jobs.
+        team.execute(new WorkerRegion() {
+            public void run() throws Exception {
+                execute(generator, new WorkerIteration<Job>() {
+                    public void sendTaskInput(Job job, Comm comm, int wRank, int tag) {
+                        stdout.printf("*** Job %d started %s %s%n",
+                                job.getJobNumber(),
+                                new Date(),
+                                job.getDescription());
+                    }
 
-		// Abort every process if job generator was not created.
-		BooleanItemBuf buf = BooleanBuf.buffer (generator != null);
-		world.broadcast (team.masterRank(), buf);
-		if (! buf.item) System.exit (1);
+                    public void run(Job job) {
+                        job.run();
+                    }
 
-		// Generate and run jobs.
-		team.execute (new WorkerRegion()
-			{
-			public void run() throws Exception
-				{
-				execute (generator, new WorkerIteration<Job>()
-					{
-					public void sendTaskInput
-						(Job job, Comm comm, int wRank, int tag)
-						{
-						stdout.printf
-							("*** Job %d started %s %s%n",
-							 job.getJobNumber(),
-							 new Date(),
-							 job.getDescription());
-						}
+                    public void receiveTaskOutput(Job job, Comm comm, int wRank, int tag) {
+                        stdout.printf("*** Job %d finished %s%n",
+                                job.getJobNumber(),
+                                new Date());
+                    }
+                });
+            }
+        });
 
-					public void run (Job job)
-						{
-						job.run();
-						}
-
-					public void receiveTaskOutput
-						(Job job, Comm comm, int wRank, int tag)
-						{
-						stdout.printf
-							("*** Job %d finished %s%n",
-							 job.getJobNumber(),
-							 new Date());
-						}
-					});
-				}
-			});
-
-		if (rank == team.masterRank())
-			{
-			stdout.printf ("*** All jobs finished%n");
-			}
-		}
+        if (rank == team.masterRank()) {
+            stdout.printf("*** All jobs finished%n");
+        }
+    }
 
 // Hidden operations.
+    /**
+     * Print a usage message and exit.
+     */
+    private static void usage() {
+        stderr.println("Usage: java edu.rit.pj.job.Runner {<generator>|<file>}");
+        stderr.println("<generator> = Job generator constructor expression");
+        stderr.println("<file> = Checkpoint file name");
+        System.exit(1);
+    }
 
-	/**
-	 * Print a usage message and exit.
-	 */
-	private static void usage()
-		{
-		stderr.println ("Usage: java edu.rit.pj.job.Runner {<generator>|<file>}");
-		stderr.println ("<generator> = Job generator constructor expression");
-		stderr.println ("<file> = Checkpoint file name");
-		System.exit (1);
-		}
-
-	}
+}

@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.util;
 
 import java.util.Date;
@@ -113,347 +112,298 @@ import java.util.Date;
  * Unlike the latter, they also provide the ability to stop and restart a timer
  * and the ability to deal with race conditions in multithreaded programs.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 15-Dec-2002
  */
-public class Timer
-	{
+public class Timer {
 
 // Hidden data members.
+    // Timer thread which created this timer.
+    private TimerThread myTimerThread;
 
-	// Timer thread which created this timer.
-	private TimerThread myTimerThread;
+    // Associated timer task.
+    private TimerTask myTimerTask;
 
-	// Associated timer task.
-	private TimerTask myTimerTask;
+    // State of this timer.
+    private int myState = STOPPED;
+    private static final int STOPPED = 0;
+    private static final int STARTED = 1;
+    private static final int TRIGGERED = 2;
 
-	// State of this timer.
-	private int myState = STOPPED;
-		private static final int STOPPED   = 0;
-		private static final int STARTED   = 1;
-		private static final int TRIGGERED = 2;
+    // Kind of timeout.
+    private int myKind;
+    private static final int ONE_SHOT_TIMEOUT = 0;
+    private static final int FIXED_RATE_TIMEOUT = 1;
+    private static final int FIXED_INTERVAL_TIMEOUT = 2;
 
-	// Kind of timeout.
-	private int myKind;
-		private static final int ONE_SHOT_TIMEOUT       = 0;
-		private static final int FIXED_RATE_TIMEOUT     = 1;
-		private static final int FIXED_INTERVAL_TIMEOUT = 2;
+    // Time at which this timer is next scheduled to time out (milliseconds
+    // since midnight 01-Jan-1970 UTC).
+    private long myTimeout;
 
-	// Time at which this timer is next scheduled to time out (milliseconds
-	// since midnight 01-Jan-1970 UTC).
-	private long myTimeout;
-
-	// Interval for periodic timeouts (milliseconds).
-	private long myInterval;
+    // Interval for periodic timeouts (milliseconds).
+    private long myInterval;
 
 // Hidden constructors.
-
-	/**
-	 * Construct a new timer.
-	 *
-	 * @param  theTimerThread  Timer thread.
-	 * @param  theTimerTask    Timer task.
-	 *
-	 * @exception  NullPointerException
-	 *     (unchecked exception) Thrown if <TT>theTimerTask</TT> is null.
-	 */
-	Timer
-		(TimerThread theTimerThread,
-		 TimerTask theTimerTask)
-		{
-		if (theTimerTask == null)
-			{
-			throw new NullPointerException();
-			}
-		myTimerThread = theTimerThread;
-		myTimerTask = theTimerTask;
-		}
+    /**
+     * Construct a new timer.
+     *
+     * @param theTimerThread Timer thread.
+     * @param theTimerTask Timer task.
+     *
+     * @exception NullPointerException (unchecked exception) Thrown if
+     * <TT>theTimerTask</TT> is null.
+     */
+    Timer(TimerThread theTimerThread,
+            TimerTask theTimerTask) {
+        if (theTimerTask == null) {
+            throw new NullPointerException();
+        }
+        myTimerThread = theTimerThread;
+        myTimerTask = theTimerTask;
+    }
 
 // Exported operations.
+    /**
+     * Start this timer with a one-shot timeout at the given absolute time. If
+     * the time denotes a point in the past, the action is performed
+     * immediately.
+     *
+     * @param theTime Absolute time at which to perform the action.
+     */
+    public synchronized void start(Date theTime) {
+        myState = STARTED;
+        myKind = ONE_SHOT_TIMEOUT;
+        myTimeout = theTime.getTime();
+        myTimerThread.schedule(myTimeout, this);
+    }
 
-	/**
-	 * Start this timer with a one-shot timeout at the given absolute time. If
-	 * the time denotes a point in the past, the action is performed
-	 * immediately.
-	 *
-	 * @param  theTime
-	 *     Absolute time at which to perform the action.
-	 */
-	public synchronized void start
-		(Date theTime)
-		{
-		myState = STARTED;
-		myKind = ONE_SHOT_TIMEOUT;
-		myTimeout = theTime.getTime();
-		myTimerThread.schedule (myTimeout, this);
-		}
+    /**
+     * Start this timer with a one-shot timeout at the given interval from now.
+     * If the interval is less than or equal to zero, the action is performed
+     * immediately.
+     *
+     * @param theInterval Timeout interval before performing the action
+     * (milliseconds).
+     */
+    public synchronized void start(long theInterval) {
+        myState = STARTED;
+        myKind = ONE_SHOT_TIMEOUT;
+        myTimeout = System.currentTimeMillis() + theInterval;
+        myTimerThread.schedule(myTimeout, this);
+    }
 
-	/**
-	 * Start this timer with a one-shot timeout at the given interval from now.
-	 * If the interval is less than or equal to zero, the action is performed
-	 * immediately.
-	 *
-	 * @param  theInterval
-	 *     Timeout interval before performing the action (milliseconds).
-	 */
-	public synchronized void start
-		(long theInterval)
-		{
-		myState = STARTED;
-		myKind = ONE_SHOT_TIMEOUT;
-		myTimeout = System.currentTimeMillis() + theInterval;
-		myTimerThread.schedule (myTimeout, this);
-		}
+    /**
+     * Start this timer with a periodic fixed-rate timeout starting at the given
+     * absolute time. If the start time denotes a point in the past, the first
+     * action is performed immediately. Each subsequent action is started at the
+     * given repetition interval after the scheduled start of the previous
+     * action.
+     *
+     * @param theFirstTime Absolute time at which to perform the first action.
+     * @param theRepetitionInterval Interval between successive actions
+     * (milliseconds).
+     *
+     * @exception IllegalArgumentException (unchecked exception) Thrown if
+     * <TT>theRepetitionInterval</TT> &lt;= 0.
+     */
+    public synchronized void start(Date theFirstTime,
+            long theRepetitionInterval) {
+        if (theRepetitionInterval <= 0) {
+            throw new IllegalArgumentException();
+        }
+        myState = STARTED;
+        myKind = FIXED_RATE_TIMEOUT;
+        myTimeout = theFirstTime.getTime();
+        myInterval = theRepetitionInterval;
+        myTimerThread.schedule(myTimeout, this);
+    }
 
-	/**
-	 * Start this timer with a periodic fixed-rate timeout starting at the given
-	 * absolute time. If the start time denotes a point in the past, the first
-	 * action is performed immediately. Each subsequent action is started at the
-	 * given repetition interval after the scheduled start of the previous
-	 * action.
-	 *
-	 * @param  theFirstTime
-	 *     Absolute time at which to perform the first action.
-	 * @param  theRepetitionInterval
-	 *     Interval between successive actions (milliseconds).
-	 *
-	 * @exception  IllegalArgumentException
-	 *     (unchecked exception) Thrown if <TT>theRepetitionInterval</TT> &lt;=
-	 *     0.
-	 */
-	public synchronized void start
-		(Date theFirstTime,
-		 long theRepetitionInterval)
-		{
-		if (theRepetitionInterval <= 0)
-			{
-			throw new IllegalArgumentException();
-			}
-		myState = STARTED;
-		myKind = FIXED_RATE_TIMEOUT;
-		myTimeout = theFirstTime.getTime();
-		myInterval = theRepetitionInterval;
-		myTimerThread.schedule (myTimeout, this);
-		}
+    /**
+     * Start this timer with a periodic fixed-rate timeout starting at the given
+     * interval from now. If the interval is less than or equal to zero, the
+     * first action is performed immediately. Each subsequent action is started
+     * at the given repetition interval after the scheduled start of the
+     * previous action.
+     *
+     * @param theFirstInterval Timeout interval before performing the first
+     * action (milliseconds).
+     * @param theRepetitionInterval Interval between successive actions
+     * (milliseconds).
+     *
+     * @exception IllegalArgumentException (unchecked exception) Thrown if
+     * <TT>theRepetitionInterval</TT> &lt;= 0.
+     */
+    public synchronized void start(long theFirstInterval,
+            long theRepetitionInterval) {
+        if (theRepetitionInterval <= 0) {
+            throw new IllegalArgumentException();
+        }
+        myState = STARTED;
+        myKind = FIXED_RATE_TIMEOUT;
+        myTimeout = System.currentTimeMillis() + theFirstInterval;
+        myInterval = theRepetitionInterval;
+        myTimerThread.schedule(myTimeout, this);
+    }
 
-	/**
-	 * Start this timer with a periodic fixed-rate timeout starting at the given
-	 * interval from now. If the interval is less than or equal to zero, the
-	 * first action is performed immediately. Each subsequent action is started
-	 * at the given repetition interval after the scheduled start of the
-	 * previous action.
-	 *
-	 * @param  theFirstInterval
-	 *     Timeout interval before performing the first action (milliseconds).
-	 * @param  theRepetitionInterval
-	 *     Interval between successive actions (milliseconds).
-	 *
-	 * @exception  IllegalArgumentException
-	 *     (unchecked exception) Thrown if <TT>theRepetitionInterval</TT> &lt;=
-	 *     0.
-	 */
-	public synchronized void start
-		(long theFirstInterval,
-		 long theRepetitionInterval)
-		{
-		if (theRepetitionInterval <= 0)
-			{
-			throw new IllegalArgumentException();
-			}
-		myState = STARTED;
-		myKind = FIXED_RATE_TIMEOUT;
-		myTimeout = System.currentTimeMillis() + theFirstInterval;
-		myInterval = theRepetitionInterval;
-		myTimerThread.schedule (myTimeout, this);
-		}
+    /**
+     * Start this timer with a periodic fixed-interval timeout starting at the
+     * given absolute time. If the start time denotes a point in the past, the
+     * first action is performed immediately. Each subsequent action is started
+     * at the given repetition interval after the end of the previous action.
+     *
+     * @param theFirstTime Absolute time at which to perform the first action.
+     * @param theRepetitionInterval Interval between successive actions
+     * (milliseconds).
+     *
+     * @exception IllegalArgumentException (unchecked exception) Thrown if
+     * <TT>theRepetitionInterval</TT> &lt;= 0.
+     */
+    public synchronized void startFixedIntervalTimeout(Date theFirstTime,
+            long theRepetitionInterval) {
+        if (theRepetitionInterval <= 0) {
+            throw new IllegalArgumentException();
+        }
+        myState = STARTED;
+        myKind = FIXED_INTERVAL_TIMEOUT;
+        myTimeout = theFirstTime.getTime();
+        myInterval = theRepetitionInterval;
+        myTimerThread.schedule(myTimeout, this);
+    }
 
-	/**
-	 * Start this timer with a periodic fixed-interval timeout starting at the
-	 * given absolute time. If the start time denotes a point in the past, the
-	 * first action is performed immediately. Each subsequent action is started
-	 * at the given repetition interval after the end of the previous action.
-	 *
-	 * @param  theFirstTime
-	 *     Absolute time at which to perform the first action.
-	 * @param  theRepetitionInterval
-	 *     Interval between successive actions (milliseconds).
-	 *
-	 * @exception  IllegalArgumentException
-	 *     (unchecked exception) Thrown if <TT>theRepetitionInterval</TT> &lt;=
-	 *     0.
-	 */
-	public synchronized void startFixedIntervalTimeout
-		(Date theFirstTime,
-		 long theRepetitionInterval)
-		{
-		if (theRepetitionInterval <= 0)
-			{
-			throw new IllegalArgumentException();
-			}
-		myState = STARTED;
-		myKind = FIXED_INTERVAL_TIMEOUT;
-		myTimeout = theFirstTime.getTime();
-		myInterval = theRepetitionInterval;
-		myTimerThread.schedule (myTimeout, this);
-		}
+    /**
+     * Start this timer with a periodic fixed-interval timeout starting at the
+     * given interval from now. If the interval is less than or equal to zero,
+     * the first action is performed immediately. Each subsequent action is
+     * started at the given repetition interval after the end of the previous
+     * action.
+     *
+     * @param theFirstInterval Timeout interval before performing the first
+     * action (milliseconds).
+     * @param theRepetitionInterval Interval between successive actions
+     * (milliseconds).
+     *
+     * @exception IllegalArgumentException (unchecked exception) Thrown if
+     * <TT>theRepetitionInterval</TT> &lt;= 0.
+     */
+    public synchronized void startFixedIntervalTimeout(long theFirstInterval,
+            long theRepetitionInterval) {
+        if (theRepetitionInterval <= 0) {
+            throw new IllegalArgumentException();
+        }
+        myState = STARTED;
+        myKind = FIXED_INTERVAL_TIMEOUT;
+        myTimeout = System.currentTimeMillis() + theFirstInterval;
+        myInterval = theRepetitionInterval;
+        myTimerThread.schedule(myTimeout, this);
+    }
 
-	/**
-	 * Start this timer with a periodic fixed-interval timeout starting at the
-	 * given interval from now. If the interval is less than or equal to zero,
-	 * the first action is performed immediately. Each subsequent action is
-	 * started at the given repetition interval after the end of the previous
-	 * action.
-	 *
-	 * @param  theFirstInterval
-	 *     Timeout interval before performing the first action (milliseconds).
-	 * @param  theRepetitionInterval
-	 *     Interval between successive actions (milliseconds).
-	 *
-	 * @exception  IllegalArgumentException
-	 *     (unchecked exception) Thrown if <TT>theRepetitionInterval</TT> &lt;=
-	 *     0.
-	 */
-	public synchronized void startFixedIntervalTimeout
-		(long theFirstInterval,
-		 long theRepetitionInterval)
-		{
-		if (theRepetitionInterval <= 0)
-			{
-			throw new IllegalArgumentException();
-			}
-		myState = STARTED;
-		myKind = FIXED_INTERVAL_TIMEOUT;
-		myTimeout = System.currentTimeMillis() + theFirstInterval;
-		myInterval = theRepetitionInterval;
-		myTimerThread.schedule (myTimeout, this);
-		}
+    /**
+     * Stop this timer.
+     */
+    public synchronized void stop() {
+        myState = STOPPED;
+    }
 
-	/**
-	 * Stop this timer.
-	 */
-	public synchronized void stop()
-		{
-		myState = STOPPED;
-		}
+    /**
+     * Determine whether this timer is stopped.
+     *
+     * @return True if this timer is in the stopped state, false otherwise.
+     */
+    public synchronized boolean isStopped() {
+        return myState == STOPPED;
+    }
 
-	/**
-	 * Determine whether this timer is stopped.
-	 *
-	 * @return  True if this timer is in the stopped state, false otherwise.
-	 */
-	public synchronized boolean isStopped()
-		{
-		return myState == STOPPED;
-		}
+    /**
+     * Determine whether this timer is started.
+     *
+     * @return True if this timer is in the started state, false otherwise.
+     */
+    public synchronized boolean isStarted() {
+        return myState == STARTED;
+    }
 
-	/**
-	 * Determine whether this timer is started.
-	 *
-	 * @return  True if this timer is in the started state, false otherwise.
-	 */
-	public synchronized boolean isStarted()
-		{
-		return myState == STARTED;
-		}
+    /**
+     * Determine whether this timer is triggered.
+     *
+     * @return True if this timer is in the triggered state, false otherwise.
+     */
+    public synchronized boolean isTriggered() {
+        return myState == TRIGGERED;
+    }
 
-	/**
-	 * Determine whether this timer is triggered.
-	 *
-	 * @return  True if this timer is in the triggered state, false otherwise.
-	 */
-	public synchronized boolean isTriggered()
-		{
-		return myState == TRIGGERED;
-		}
+    /**
+     * Determine the time when this timer is or was scheduled to time out.
+     * <P>
+     * If the <TT>getTimeout()</TT> method is called when this timer is in the
+     * stopped state, then <TT>Long.MAX_VALUE</TT> is returned.
+     * <P>
+     * If the <TT>getTimeout()</TT> method is called when this timer is in the
+     * started state, then the <TT>getTimeout()</TT> method returns the time
+     * when the next timeout will occur.
+     * <P>
+     * If the <TT>getTimeout()</TT> method is called when this timer is in the
+     * triggered state, such as by this timer's timer task's <TT>action()</TT>
+     * method, then the <TT>getTimeout()</TT> method returns the time when the
+     * present timeout was <I>scheduled</I> to occur. Since a timer thread
+     * provides no real-time guarantees, the time when the timeout
+     * <I>actually</I> occurred may be some time later. If desired, the caller
+     * can compare the scheduled timeout to the actual time and decide whether
+     * it's too late to perform the action.
+     *
+     * @return Time of scheduled timeout (milliseconds since midnight
+     * 01-Jan-1970 UTC).
+     */
+    public synchronized long getTimeout() {
+        return myState == STOPPED ? Long.MAX_VALUE : myTimeout;
+    }
 
-	/**
-	 * Determine the time when this timer is or was scheduled to time out.
-	 * <P>
-	 * If the <TT>getTimeout()</TT> method is called when this timer is in the
-	 * stopped state, then <TT>Long.MAX_VALUE</TT> is returned.
-	 * <P>
-	 * If the <TT>getTimeout()</TT> method is called when this timer is in the
-	 * started state, then the <TT>getTimeout()</TT> method returns the time
-	 * when the next timeout will occur.
-	 * <P>
-	 * If the <TT>getTimeout()</TT> method is called when this timer is in the
-	 * triggered state, such as by this timer's timer task's <TT>action()</TT>
-	 * method, then the <TT>getTimeout()</TT> method returns the time when the
-	 * present timeout was <I>scheduled</I> to occur. Since a timer thread
-	 * provides no real-time guarantees, the time when the timeout
-	 * <I>actually</I> occurred may be some time later. If desired, the caller
-	 * can compare the scheduled timeout to the actual time and decide whether
-	 * it's too late to perform the action.
-	 *
-	 * @return  Time of scheduled timeout (milliseconds since midnight
-	 *          01-Jan-1970 UTC).
-	 */
-	public synchronized long getTimeout()
-		{
-		return myState == STOPPED ? Long.MAX_VALUE : myTimeout;
-		}
-
-	/**
-	 * Returns this timer's timer task.
-	 */
-	public TimerTask getTimerTask()
-		{
-		return myTimerTask;
-		}
+    /**
+     * Returns this timer's timer task.
+     */
+    public TimerTask getTimerTask() {
+        return myTimerTask;
+    }
 
 // Hidden operations.
+    /**
+     * Trigger this timer.
+     *
+     * @param theTriggerTime Time at which the trigger occurred (milliseconds
+     * since midnight 01-Jan-1970 UTC).
+     */
+    void trigger(long theTriggerTime) {
+        synchronized (this) {
+            // Make sure we're started and it really is time to trigger.
+            if (myState != STARTED || myTimeout > theTriggerTime) {
+                return;
+            }
 
-	/**
-	 * Trigger this timer.
-	 *
-	 * @param  theTriggerTime
-	 *     Time at which the trigger occurred (milliseconds since midnight
-	 *     01-Jan-1970 UTC).
-	 */
-	void trigger
-		(long theTriggerTime)
-		{
-		synchronized (this)
-			{
-			// Make sure we're started and it really is time to trigger.
-			if (myState != STARTED || myTimeout > theTriggerTime)
-				{
-				return;
-				}
+            // Switch to the triggered state.
+            myState = TRIGGERED;
+        }
 
-			// Switch to the triggered state.
-			myState = TRIGGERED;
-			}
+        // Call the timer task's action() method. Do it outside the synchronized
+        // block, otherwise a deadlock may happen if another thread tries to
+        // start or stop the timer.
+        myTimerTask.action(this);
 
-		// Call the timer task's action() method. Do it outside the synchronized
-		// block, otherwise a deadlock may happen if another thread tries to
-		// start or stop the timer.
-		myTimerTask.action (this);
+        synchronized (this) {
+            // Decide whether to do an automatic restart.
+            if (myState != TRIGGERED) {
+                // Someone already stopped or restarted us. Do nothing.
+            } else if (myKind == FIXED_RATE_TIMEOUT) {
+                myState = STARTED;
+                myTimeout += myInterval;
+                myTimerThread.schedule(myTimeout, this);
+            } else if (myKind == FIXED_INTERVAL_TIMEOUT) {
+                myState = STARTED;
+                myTimeout = System.currentTimeMillis() + myInterval;
+                myTimerThread.schedule(myTimeout, this);
+            } else // ONE_SHOT_TIMEOUT
+            {
+                myState = STOPPED;
+            }
+        }
+    }
 
-		synchronized (this)
-			{
-			// Decide whether to do an automatic restart.
-			if (myState != TRIGGERED)
-				{
-				// Someone already stopped or restarted us. Do nothing.
-				}
-			else if (myKind == FIXED_RATE_TIMEOUT)
-				{
-				myState = STARTED;
-				myTimeout += myInterval;
-				myTimerThread.schedule (myTimeout, this);
-				}
-			else if (myKind == FIXED_INTERVAL_TIMEOUT)
-				{
-				myState = STARTED;
-				myTimeout = System.currentTimeMillis() + myInterval;
-				myTimerThread.schedule (myTimeout, this);
-				}
-			else // ONE_SHOT_TIMEOUT
-				{
-				myState = STOPPED;
-				}
-			}
-		}
-
-	}
+}

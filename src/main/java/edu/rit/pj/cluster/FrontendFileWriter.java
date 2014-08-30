@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj.cluster;
 
 import edu.rit.mp.ByteBuf;
@@ -41,492 +40,404 @@ import java.util.concurrent.LinkedBlockingQueue;
  * Class FrontendFileWriter provides an object that writes sequential files in
  * the job frontend process.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 21-Jun-2007
  */
-public class FrontendFileWriter
-	{
+public class FrontendFileWriter {
 
 // Hidden data members.
+    private JobFrontend myJobFrontend;
 
-	private JobFrontend myJobFrontend;
+    // Mapping from frontend file descriptor to file handler.
+    private Map<Integer, FileHandler> myFileHandlerForFFD
+            = new HashMap<Integer, FileHandler>();
 
-	// Mapping from frontend file descriptor to file handler.
-	private Map<Integer,FileHandler> myFileHandlerForFFD =
-		new HashMap<Integer,FileHandler>();
-
-	// Next frontend file descriptor.
-	private int myNextFFD = 3;
+    // Next frontend file descriptor.
+    private int myNextFFD = 3;
 
 // Hidden helper classes.
+    /**
+     * Class FileHandler is an object that performs each file operation in a
+     * separate thread, so as not to block the job frontend's message processing
+     * thread.
+     *
+     * @author Alan Kaminsky
+     * @version 20-Nov-2006
+     */
+    private class FileHandler
+            extends Thread {
 
-	/**
-	 * Class FileHandler is an object that performs each file operation in a
-	 * separate thread, so as not to block the job frontend's message processing
-	 * thread.
-	 *
-	 * @author  Alan Kaminsky
-	 * @version 20-Nov-2006
-	 */
-	private class FileHandler
-		extends Thread
-		{
-		private LinkedBlockingQueue<Invocation> myQueue =
-			new LinkedBlockingQueue<Invocation>();
+        private LinkedBlockingQueue<Invocation> myQueue
+                = new LinkedBlockingQueue<Invocation>();
 
-		private OutputStream myOutputStream;
+        private OutputStream myOutputStream;
 
-		private byte[] myByteArray = new byte [0];
-		private ByteBuf myByteBuf = ByteBuf.buffer (myByteArray);
+        private byte[] myByteArray = new byte[0];
+        private ByteBuf myByteBuf = ByteBuf.buffer(myByteArray);
 
-		private abstract class Invocation
-			{
-			public abstract boolean invoke()
-				throws IOException;
-			}
+        private abstract class Invocation {
 
-		/**
-		 * Construct a new file handler.
-		 */
-		public FileHandler()
-			{
-			setDaemon (true);
-			start();
-			}
+            public abstract boolean invoke()
+                    throws IOException;
+        }
 
-		/**
-		 * Construct a new file handler to write the given output stream.
-		 *
-		 * @param  theOutputStream  Output stream.
-		 */
-		public FileHandler
-			(OutputStream theOutputStream)
-			{
-			myOutputStream = theOutputStream;
-			setDaemon (true);
-			start();
-			}
+        /**
+         * Construct a new file handler.
+         */
+        public FileHandler() {
+            setDaemon(true);
+            start();
+        }
 
-		/**
-		 * Run this file handler.
-		 */
-		public void run()
-			{
-			try
-				{
-				while (myQueue.take().invoke());
-				}
-			catch (Throwable exc)
-				{
-				myJobFrontend.terminateCancelJobOther (exc);
-				}
-			}
+        /**
+         * Construct a new file handler to write the given output stream.
+         *
+         * @param theOutputStream Output stream.
+         */
+        public FileHandler(OutputStream theOutputStream) {
+            myOutputStream = theOutputStream;
+            setDaemon(true);
+            start();
+        }
 
-		/**
-		 * Open the given output file for writing or appending.
-		 *
-		 * @param  theJobBackend  Job Backend that is calling this method.
-		 * @param  bfd            Backend file descriptor.
-		 * @param  file           File.
-		 * @param  append         True to append, false to overwrite.
-		 */
-		public void outputFileOpen
-			(JobBackendRef theJobBackend,
-			 int bfd,
-			 File file,
-			 boolean append)
-			{
-			myQueue.offer
-				(new OutputFileOpenInvocation
-					(theJobBackend, bfd, file, append));
-			}
+        /**
+         * Run this file handler.
+         */
+        public void run() {
+            try {
+                while (myQueue.take().invoke());
+            } catch (Throwable exc) {
+                myJobFrontend.terminateCancelJobOther(exc);
+            }
+        }
 
-		private class OutputFileOpenInvocation
-			extends Invocation
-			{
-			private JobBackendRef theJobBackend;
-			private int bfd;
-			private File file;
-			private boolean append;
+        /**
+         * Open the given output file for writing or appending.
+         *
+         * @param theJobBackend Job Backend that is calling this method.
+         * @param bfd Backend file descriptor.
+         * @param file File.
+         * @param append True to append, false to overwrite.
+         */
+        public void outputFileOpen(JobBackendRef theJobBackend,
+                int bfd,
+                File file,
+                boolean append) {
+            myQueue.offer(new OutputFileOpenInvocation(theJobBackend, bfd, file, append));
+        }
 
-			public OutputFileOpenInvocation
-				(JobBackendRef theJobBackend,
-				 int bfd,
-				 File file,
-				 boolean append)
-				{
-				this.theJobBackend = theJobBackend;
-				this.bfd = bfd;
-				this.file = file;
-				this.append = append;
-				}
+        private class OutputFileOpenInvocation
+                extends Invocation {
 
-			public boolean invoke()
-				throws IOException
-				{
-				return invokeOutputFileOpen (theJobBackend, bfd, file, append);
-				}
-			}
+            private JobBackendRef theJobBackend;
+            private int bfd;
+            private File file;
+            private boolean append;
 
-		private boolean invokeOutputFileOpen
-			(JobBackendRef theJobBackend,
-			 int bfd,
-			 File file,
-			 boolean append)
-			throws IOException
-			{
-			int ffd = 0;
-			IOException result = null;
-			boolean more = false;
-			try
-				{
-				myOutputStream = new FileOutputStream (file, append);
-				synchronized (myFileHandlerForFFD)
-					{
-					ffd = myNextFFD ++;
-					myFileHandlerForFFD.put (ffd, this);
-					}
-				more = true;
-				}
-			catch (IOException exc)
-				{
-				result = exc;
-				}
-			theJobBackend.outputFileOpenResult
-				(myJobFrontend, bfd, ffd, result);
-			return more;
-			}
+            public OutputFileOpenInvocation(JobBackendRef theJobBackend,
+                    int bfd,
+                    File file,
+                    boolean append) {
+                this.theJobBackend = theJobBackend;
+                this.bfd = bfd;
+                this.file = file;
+                this.append = append;
+            }
 
-		/**
-		 * Write the given bytes to the given output file. <TT>ffd</TT> = 1
-		 * refers to the job's standard output stream; <TT>ffd</TT> = 2 refers
-		 * to the job's standard error stream; other values refer to a
-		 * previously opened file.
-		 *
-		 * @param  theJobBackend  Job Backend that is calling this method.
-		 * @param  ffd            Frontend file descriptor.
-		 * @param  len            Number of bytes to write.
-		 */
-		public void outputFileWrite
-			(JobBackendRef theJobBackend,
-			 int ffd,
-			 int len)
-			{
-			myQueue.offer
-				(new OutputFileWriteInvocation
-					(theJobBackend, ffd, len));
-			}
+            public boolean invoke()
+                    throws IOException {
+                return invokeOutputFileOpen(theJobBackend, bfd, file, append);
+            }
+        }
 
-		private class OutputFileWriteInvocation
-			extends Invocation
-			{
-			private JobBackendRef theJobBackend;
-			private int ffd;
-			private int len;
+        private boolean invokeOutputFileOpen(JobBackendRef theJobBackend,
+                int bfd,
+                File file,
+                boolean append)
+                throws IOException {
+            int ffd = 0;
+            IOException result = null;
+            boolean more = false;
+            try {
+                myOutputStream = new FileOutputStream(file, append);
+                synchronized (myFileHandlerForFFD) {
+                    ffd = myNextFFD++;
+                    myFileHandlerForFFD.put(ffd, this);
+                }
+                more = true;
+            } catch (IOException exc) {
+                result = exc;
+            }
+            theJobBackend.outputFileOpenResult(myJobFrontend, bfd, ffd, result);
+            return more;
+        }
 
-			public OutputFileWriteInvocation
-				(JobBackendRef theJobBackend,
-				 int ffd,
-				 int len)
-				{
-				this.theJobBackend = theJobBackend;
-				this.ffd = ffd;
-				this.len = len;
-				}
+        /**
+         * Write the given bytes to the given output file. <TT>ffd</TT> = 1
+         * refers to the job's standard output stream; <TT>ffd</TT> = 2 refers
+         * to the job's standard error stream; other values refer to a
+         * previously opened file.
+         *
+         * @param theJobBackend Job Backend that is calling this method.
+         * @param ffd Frontend file descriptor.
+         * @param len Number of bytes to write.
+         */
+        public void outputFileWrite(JobBackendRef theJobBackend,
+                int ffd,
+                int len) {
+            myQueue.offer(new OutputFileWriteInvocation(theJobBackend, ffd, len));
+        }
 
-			public boolean invoke()
-				throws IOException
-				{
-				return invokeOutputFileWrite
-					(theJobBackend, ffd, len);
-				}
-			}
+        private class OutputFileWriteInvocation
+                extends Invocation {
 
-		private boolean invokeOutputFileWrite
-			(JobBackendRef theJobBackend,
-			 int ffd,
-			 int len)
-			throws IOException
-			{
-			IOException result = null;
-			boolean more = false;
-			try
-				{
-				if (myByteArray.length < len)
-					{
-					myByteArray = new byte [len];
-					myByteBuf = ByteBuf.buffer (myByteArray);
-					}
-				((JobBackendProxy) theJobBackend).receive (ffd, myByteBuf);
-				myOutputStream.write (myByteArray, 0, len);
-				more = true;
-				}
-			catch (IOException exc)
-				{
-				result = exc;
-				try { myOutputStream.close(); } catch (IOException exc2) {}
-				synchronized (myFileHandlerForFFD)
-					{
-					myFileHandlerForFFD.remove (ffd);
-					}
-				}
-			theJobBackend.outputFileWriteResult (myJobFrontend, ffd, result);
-			return more;
-			}
+            private JobBackendRef theJobBackend;
+            private int ffd;
+            private int len;
 
-		/**
-		 * Flush accumulated bytes to the given output file.
-		 *
-		 * @param  theJobBackend  Job Backend that is calling this method.
-		 * @param  ffd            Frontend file descriptor.
-		 */
-		public void outputFileFlush
-			(JobBackendRef theJobBackend,
-			 int ffd)
-			{
-			myQueue.offer
-				(new OutputFileFlushInvocation (theJobBackend, ffd));
-			}
+            public OutputFileWriteInvocation(JobBackendRef theJobBackend,
+                    int ffd,
+                    int len) {
+                this.theJobBackend = theJobBackend;
+                this.ffd = ffd;
+                this.len = len;
+            }
 
-		private class OutputFileFlushInvocation
-			extends Invocation
-			{
-			private JobBackendRef theJobBackend;
-			private int ffd;
+            public boolean invoke()
+                    throws IOException {
+                return invokeOutputFileWrite(theJobBackend, ffd, len);
+            }
+        }
 
-			public OutputFileFlushInvocation
-				(JobBackendRef theJobBackend,
-				 int ffd)
-				{
-				this.theJobBackend = theJobBackend;
-				this.ffd = ffd;
-				}
+        private boolean invokeOutputFileWrite(JobBackendRef theJobBackend,
+                int ffd,
+                int len)
+                throws IOException {
+            IOException result = null;
+            boolean more = false;
+            try {
+                if (myByteArray.length < len) {
+                    myByteArray = new byte[len];
+                    myByteBuf = ByteBuf.buffer(myByteArray);
+                }
+                ((JobBackendProxy) theJobBackend).receive(ffd, myByteBuf);
+                myOutputStream.write(myByteArray, 0, len);
+                more = true;
+            } catch (IOException exc) {
+                result = exc;
+                try {
+                    myOutputStream.close();
+                } catch (IOException exc2) {
+                }
+                synchronized (myFileHandlerForFFD) {
+                    myFileHandlerForFFD.remove(ffd);
+                }
+            }
+            theJobBackend.outputFileWriteResult(myJobFrontend, ffd, result);
+            return more;
+        }
 
-			public boolean invoke()
-				throws IOException
-				{
-				return invokeOutputFileFlush (theJobBackend, ffd);
-				}
-			}
+        /**
+         * Flush accumulated bytes to the given output file.
+         *
+         * @param theJobBackend Job Backend that is calling this method.
+         * @param ffd Frontend file descriptor.
+         */
+        public void outputFileFlush(JobBackendRef theJobBackend,
+                int ffd) {
+            myQueue.offer(new OutputFileFlushInvocation(theJobBackend, ffd));
+        }
 
-		private boolean invokeOutputFileFlush
-			(JobBackendRef theJobBackend,
-			 int ffd)
-			throws IOException
-			{
-			IOException result = null;
-			boolean more = false;
-			try
-				{
-				myOutputStream.flush();
-				more = true;
-				}
-			catch (IOException exc)
-				{
-				result = exc;
-				try { myOutputStream.close(); } catch (IOException exc2) {}
-				synchronized (myFileHandlerForFFD)
-					{
-					myFileHandlerForFFD.remove (ffd);
-					}
-				}
-			theJobBackend.outputFileFlushResult (myJobFrontend, ffd, result);
-			return more;
-			}
+        private class OutputFileFlushInvocation
+                extends Invocation {
 
-		/**
-		 * Close the given output file.
-		 *
-		 * @param  theJobBackend  Job Backend that is calling this method.
-		 * @param  ffd            Frontend file descriptor.
-		 */
-		public void outputFileClose
-			(JobBackendRef theJobBackend,
-			 int ffd)
-			{
-			myQueue.offer
-				(new OutputFileCloseInvocation (theJobBackend, ffd));
-			}
+            private JobBackendRef theJobBackend;
+            private int ffd;
 
-		private class OutputFileCloseInvocation
-			extends Invocation
-			{
-			private JobBackendRef theJobBackend;
-			private int ffd;
+            public OutputFileFlushInvocation(JobBackendRef theJobBackend,
+                    int ffd) {
+                this.theJobBackend = theJobBackend;
+                this.ffd = ffd;
+            }
 
-			public OutputFileCloseInvocation
-				(JobBackendRef theJobBackend,
-				 int ffd)
-				{
-				this.theJobBackend = theJobBackend;
-				this.ffd = ffd;
-				}
+            public boolean invoke()
+                    throws IOException {
+                return invokeOutputFileFlush(theJobBackend, ffd);
+            }
+        }
 
-			public boolean invoke()
-				throws IOException
-				{
-				return invokeOutputFileClose (theJobBackend, ffd);
-				}
-			}
+        private boolean invokeOutputFileFlush(JobBackendRef theJobBackend,
+                int ffd)
+                throws IOException {
+            IOException result = null;
+            boolean more = false;
+            try {
+                myOutputStream.flush();
+                more = true;
+            } catch (IOException exc) {
+                result = exc;
+                try {
+                    myOutputStream.close();
+                } catch (IOException exc2) {
+                }
+                synchronized (myFileHandlerForFFD) {
+                    myFileHandlerForFFD.remove(ffd);
+                }
+            }
+            theJobBackend.outputFileFlushResult(myJobFrontend, ffd, result);
+            return more;
+        }
 
-		private boolean invokeOutputFileClose
-			(JobBackendRef theJobBackend,
-			 int ffd)
-			throws IOException
-			{
-			IOException result = null;
-			try
-				{
-				myOutputStream.close();
-				}
-			catch (IOException exc)
-				{
-				result = exc;
-				}
-			synchronized (myFileHandlerForFFD)
-				{
-				myFileHandlerForFFD.remove (ffd);
-				}
-			theJobBackend.outputFileCloseResult (myJobFrontend, ffd, result);
-			return false;
-			}
-		}
+        /**
+         * Close the given output file.
+         *
+         * @param theJobBackend Job Backend that is calling this method.
+         * @param ffd Frontend file descriptor.
+         */
+        public void outputFileClose(JobBackendRef theJobBackend,
+                int ffd) {
+            myQueue.offer(new OutputFileCloseInvocation(theJobBackend, ffd));
+        }
+
+        private class OutputFileCloseInvocation
+                extends Invocation {
+
+            private JobBackendRef theJobBackend;
+            private int ffd;
+
+            public OutputFileCloseInvocation(JobBackendRef theJobBackend,
+                    int ffd) {
+                this.theJobBackend = theJobBackend;
+                this.ffd = ffd;
+            }
+
+            public boolean invoke()
+                    throws IOException {
+                return invokeOutputFileClose(theJobBackend, ffd);
+            }
+        }
+
+        private boolean invokeOutputFileClose(JobBackendRef theJobBackend,
+                int ffd)
+                throws IOException {
+            IOException result = null;
+            try {
+                myOutputStream.close();
+            } catch (IOException exc) {
+                result = exc;
+            }
+            synchronized (myFileHandlerForFFD) {
+                myFileHandlerForFFD.remove(ffd);
+            }
+            theJobBackend.outputFileCloseResult(myJobFrontend, ffd, result);
+            return false;
+        }
+    }
 
 // Exported constructors.
+    /**
+     * Construct a new frontend file writer.
+     *
+     * @param theJobFrontend Job Frontend.
+     */
+    public FrontendFileWriter(JobFrontend theJobFrontend) {
+        myJobFrontend = theJobFrontend;
 
-	/**
-	 * Construct a new frontend file writer.
-	 *
-	 * @param  theJobFrontend  Job Frontend.
-	 */
-	public FrontendFileWriter
-		(JobFrontend theJobFrontend)
-		{
-		myJobFrontend = theJobFrontend;
-
-		// Set up frontend file descriptor 1 (stdout) and 2 (stderr).
-		myFileHandlerForFFD.put (1, new FileHandler (System.out));
-		myFileHandlerForFFD.put (2, new FileHandler (System.err));
-		}
+        // Set up frontend file descriptor 1 (stdout) and 2 (stderr).
+        myFileHandlerForFFD.put(1, new FileHandler(System.out));
+        myFileHandlerForFFD.put(2, new FileHandler(System.err));
+    }
 
 // Exported operations.
+    /**
+     * Open the given output file for writing or appending.
+     *
+     * @param theJobBackend Job Backend that is calling this method.
+     * @param bfd Backend file descriptor.
+     * @param file File.
+     * @param append True to append, false to overwrite.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void outputFileOpen(JobBackendRef theJobBackend,
+            int bfd,
+            File file,
+            boolean append)
+            throws IOException {
+        new FileHandler().outputFileOpen(theJobBackend, bfd, file, append);
+    }
 
-	/**
-	 * Open the given output file for writing or appending.
-	 *
-	 * @param  theJobBackend  Job Backend that is calling this method.
-	 * @param  bfd            Backend file descriptor.
-	 * @param  file           File.
-	 * @param  append         True to append, false to overwrite.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void outputFileOpen
-		(JobBackendRef theJobBackend,
-		 int bfd,
-		 File file,
-		 boolean append)
-		throws IOException
-		{
-		new FileHandler().outputFileOpen (theJobBackend, bfd, file, append);
-		}
+    /**
+     * Write the given bytes to the given output file. <TT>ffd</TT> = 1 refers
+     * to the job's standard output stream; <TT>ffd</TT> = 2 refers to the job's
+     * standard error stream; other values refer to a previously opened file.
+     *
+     * @param theJobBackend Job Backend that is calling this method.
+     * @param ffd Frontend file descriptor.
+     * @param len Number of bytes to write.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void outputFileWrite(JobBackendRef theJobBackend,
+            int ffd,
+            int len)
+            throws IOException {
+        FileHandler handler = null;
+        synchronized (myFileHandlerForFFD) {
+            handler = myFileHandlerForFFD.get(ffd);
+        }
+        if (handler != null) {
+            handler.outputFileWrite(theJobBackend, ffd, len);
+        } else {
+            theJobBackend.outputFileWriteResult(myJobFrontend, ffd,
+                    new IOException("File closed, ffd=" + ffd));
+        }
+    }
 
-	/**
-	 * Write the given bytes to the given output file. <TT>ffd</TT> = 1 refers
-	 * to the job's standard output stream; <TT>ffd</TT> = 2 refers to the job's
-	 * standard error stream; other values refer to a previously opened file.
-	 *
-	 * @param  theJobBackend  Job Backend that is calling this method.
-	 * @param  ffd            Frontend file descriptor.
-	 * @param  len            Number of bytes to write.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void outputFileWrite
-		(JobBackendRef theJobBackend,
-		 int ffd,
-		 int len)
-		throws IOException
-		{
-		FileHandler handler = null;
-		synchronized (myFileHandlerForFFD)
-			{
-			handler = myFileHandlerForFFD.get (ffd);
-			}
-		if (handler != null)
-			{
-			handler.outputFileWrite (theJobBackend, ffd, len);
-			}
-		else
-			{
-			theJobBackend.outputFileWriteResult
-				(myJobFrontend, ffd,
-				 new IOException ("File closed, ffd=" + ffd));
-			}
-		}
+    /**
+     * Flush accumulated bytes to the given output file.
+     *
+     * @param theJobBackend Job Backend that is calling this method.
+     * @param ffd Frontend file descriptor.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void outputFileFlush(JobBackendRef theJobBackend,
+            int ffd)
+            throws IOException {
+        FileHandler handler = null;
+        synchronized (myFileHandlerForFFD) {
+            handler = myFileHandlerForFFD.get(ffd);
+        }
+        if (handler != null) {
+            handler.outputFileFlush(theJobBackend, ffd);
+        } else {
+            theJobBackend.outputFileFlushResult(myJobFrontend, ffd,
+                    new IOException("File closed, ffd=" + ffd));
+        }
+    }
 
-	/**
-	 * Flush accumulated bytes to the given output file.
-	 *
-	 * @param  theJobBackend  Job Backend that is calling this method.
-	 * @param  ffd            Frontend file descriptor.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void outputFileFlush
-		(JobBackendRef theJobBackend,
-		 int ffd)
-		throws IOException
-		{
-		FileHandler handler = null;
-		synchronized (myFileHandlerForFFD)
-			{
-			handler = myFileHandlerForFFD.get (ffd);
-			}
-		if (handler != null)
-			{
-			handler.outputFileFlush (theJobBackend, ffd);
-			}
-		else
-			{
-			theJobBackend.outputFileFlushResult
-				(myJobFrontend, ffd,
-				 new IOException ("File closed, ffd=" + ffd));
-			}
-		}
+    /**
+     * Close the given output file.
+     *
+     * @param theJobBackend Job Backend that is calling this method.
+     * @param ffd Frontend file descriptor.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void outputFileClose(JobBackendRef theJobBackend,
+            int ffd)
+            throws IOException {
+        FileHandler handler = null;
+        synchronized (myFileHandlerForFFD) {
+            handler = myFileHandlerForFFD.get(ffd);
+        }
+        if (handler != null) {
+            handler.outputFileClose(theJobBackend, ffd);
+        } else {
+            theJobBackend.outputFileCloseResult(myJobFrontend, ffd,
+                    new IOException("File closed, ffd=" + ffd));
+        }
+    }
 
-	/**
-	 * Close the given output file.
-	 *
-	 * @param  theJobBackend  Job Backend that is calling this method.
-	 * @param  ffd            Frontend file descriptor.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void outputFileClose
-		(JobBackendRef theJobBackend,
-		 int ffd)
-		throws IOException
-		{
-		FileHandler handler = null;
-		synchronized (myFileHandlerForFFD)
-			{
-			handler = myFileHandlerForFFD.get (ffd);
-			}
-		if (handler != null)
-			{
-			handler.outputFileClose (theJobBackend, ffd);
-			}
-		else
-			{
-			theJobBackend.outputFileCloseResult
-				(myJobFrontend, ffd,
-				 new IOException ("File closed, ffd=" + ffd));
-			}
-		}
-
-	}
+}

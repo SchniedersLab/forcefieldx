@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.http;
 
 import edu.rit.util.Logger;
@@ -37,7 +36,6 @@ import java.net.Socket;
 // For unit test main program
 // import java.io.PrintWriter;
 // import java.util.Map;
-
 /**
  * Class HttpServer provides a lightweight HTTP/1.0 server. The HTTP server is
  * designed to be embedded inside another application.
@@ -61,169 +59,134 @@ import java.net.Socket;
  * HTTP request message before the timeout, the {@linkplain HttpRequest}'s
  * <TT>isValid()</TT> method returns false.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 29-Jul-2010
  */
-public abstract class HttpServer
-	{
+public abstract class HttpServer {
 
 // Hidden data members.
-
-	private ServerSocket myServerSocket;
-	private AcceptorThread myAcceptorThread;
-	private Logger myLogger;
+    private ServerSocket myServerSocket;
+    private AcceptorThread myAcceptorThread;
+    private Logger myLogger;
 
 // Hidden helper classes.
+    private class AcceptorThread
+            extends Thread {
 
-	private class AcceptorThread
-		extends Thread
-		{
-		public void run()
-			{
-			try
-				{
-				for (;;)
-					{
-					Socket socket = myServerSocket.accept();
-					socket.setSoTimeout (2000);
-					HttpRequest request = new HttpRequest (socket);
-					HttpResponse response = new HttpResponse (socket);
-					try
-						{
-						process (request, response);
-						}
-					catch (Throwable exc)
-						{
-						// Any exception while processing a request: Ignore.
-						myLogger.log
-							("Exception while processing HTTP request",
-							 exc);
-						}
-					finally
-						{
-						try
-							{
-							if (! socket.isClosed()) socket.close();
-							}
-						catch (Throwable exc)
-							{
-							// Any exception while closing socket: Ignore.
-							myLogger.log
-								("Exception while closing HTTP socket",
-								 exc);
-							}
-						}
-					socket = null;
-					request = null;
-					response = null;
-					}
-				}
-			catch (Throwable exc)
-				{
-				// Any exception while accepting a connection: Terminate thread.
-				if (! myServerSocket.isClosed())
-					{
-					myLogger.log
-						("Exception while accepting HTTP connection",
-						 exc);
-					}
-				}
-			finally
-				{
-				myLogger.log ("HTTP server terminating");
-				}
-			}
-		}
+        public void run() {
+            try {
+                for (;;) {
+                    Socket socket = myServerSocket.accept();
+                    socket.setSoTimeout(2000);
+                    HttpRequest request = new HttpRequest(socket);
+                    HttpResponse response = new HttpResponse(socket);
+                    try {
+                        process(request, response);
+                    } catch (Throwable exc) {
+                        // Any exception while processing a request: Ignore.
+                        myLogger.log("Exception while processing HTTP request",
+                                exc);
+                    } finally {
+                        try {
+                            if (!socket.isClosed()) {
+                                socket.close();
+                            }
+                        } catch (Throwable exc) {
+                            // Any exception while closing socket: Ignore.
+                            myLogger.log("Exception while closing HTTP socket",
+                                    exc);
+                        }
+                    }
+                    socket = null;
+                    request = null;
+                    response = null;
+                }
+            } catch (Throwable exc) {
+                // Any exception while accepting a connection: Terminate thread.
+                if (!myServerSocket.isClosed()) {
+                    myLogger.log("Exception while accepting HTTP connection",
+                            exc);
+                }
+            } finally {
+                myLogger.log("HTTP server terminating");
+            }
+        }
+    }
 
 // Exported constructors.
+    /**
+     * Construct a new HTTP server. The HTTP server will print error messages on
+     * the standard error.
+     *
+     * @param address Host and port to which the HTTP server will listen for
+     * connections.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public HttpServer(InetSocketAddress address)
+            throws IOException {
+        this(address, null);
+    }
 
-	/**
-	 * Construct a new HTTP server. The HTTP server will print error messages
-	 * on the standard error.
-	 *
-	 * @param  address  Host and port to which the HTTP server will listen for
-	 *                  connections.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public HttpServer
-		(InetSocketAddress address)
-		throws IOException
-		{
-		this (address, null);
-		}
-
-	/**
-	 * Construct a new HTTP server. The HTTP server will print error messages
-	 * using the given logger.
-	 *
-	 * @param  address  Host and port to which the HTTP server will listen for
-	 *                  connections.
-	 * @param  logger   Error message logger. If null, the HTTP server will
-	 *                  print error messages on the standard error.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public HttpServer
-		(InetSocketAddress address,
-		 Logger logger)
-		throws IOException
-		{
-		myLogger = logger == null ? new PrintStreamLogger() : logger;
-		myServerSocket = new ServerSocket();
-		myServerSocket.bind (address);
-		myAcceptorThread = new AcceptorThread();
-		myAcceptorThread.setDaemon (true);
-		myAcceptorThread.start();
-		}
+    /**
+     * Construct a new HTTP server. The HTTP server will print error messages
+     * using the given logger.
+     *
+     * @param address Host and port to which the HTTP server will listen for
+     * connections.
+     * @param logger Error message logger. If null, the HTTP server will print
+     * error messages on the standard error.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public HttpServer(InetSocketAddress address,
+            Logger logger)
+            throws IOException {
+        myLogger = logger == null ? new PrintStreamLogger() : logger;
+        myServerSocket = new ServerSocket();
+        myServerSocket.bind(address);
+        myAcceptorThread = new AcceptorThread();
+        myAcceptorThread.setDaemon(true);
+        myAcceptorThread.start();
+    }
 
 // Exported operations.
+    /**
+     * Obtain the host and port to which this HTTP server is listening for
+     * connections.
+     *
+     * @return Host and port.
+     */
+    public InetSocketAddress getAddress() {
+        return (InetSocketAddress) myServerSocket.getLocalSocketAddress();
+    }
 
-	/**
-	 * Obtain the host and port to which this HTTP server is listening for
-	 * connections.
-	 *
-	 * @return  Host and port.
-	 */
-	public InetSocketAddress getAddress()
-		{
-		return (InetSocketAddress) myServerSocket.getLocalSocketAddress();
-		}
-
-	/**
-	 * Close this HTTP server.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void close()
-		throws IOException
-		{
-		myServerSocket.close();
-		}
+    /**
+     * Close this HTTP server.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void close()
+            throws IOException {
+        myServerSocket.close();
+    }
 
 // Hidden operations.
-
-	/**
-	 * Process the given HTTP request. The <TT>process()</TT> method must be
-	 * overridden in a subclass to read the HTTP request from
-	 * <TT>theRequest</TT> and write the HTTP response to <TT>theResponse</TT>.
-	 *
-	 * @param  theRequest   HTTP request.
-	 * @param  theResponse  HTTP response.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	protected abstract void process
-		(HttpRequest theRequest,
-		 HttpResponse theResponse)
-		throws IOException;
+    /**
+     * Process the given HTTP request. The <TT>process()</TT> method must be
+     * overridden in a subclass to read the HTTP request from
+     * <TT>theRequest</TT> and write the HTTP response to <TT>theResponse</TT>.
+     *
+     * @param theRequest HTTP request.
+     * @param theResponse HTTP response.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    protected abstract void process(HttpRequest theRequest,
+            HttpResponse theResponse)
+            throws IOException;
 
 // Unit test main program.
-
 //	/**
 //	 * Unit test main program. The program listens for connections to
 //	 * localhost:8080. The program reads each HTTP request from a web browser
@@ -299,5 +262,4 @@ public abstract class HttpServer
 //
 //		Thread.currentThread().join();
 //		}
-
-	}
+}

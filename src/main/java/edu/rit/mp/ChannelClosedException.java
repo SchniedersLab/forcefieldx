@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.mp;
 
 import java.io.IOException;
@@ -31,62 +30,53 @@ import java.io.IOException;
  * Class ChannelClosedException is thrown to indicate that an I/O operation
  * failed because the channel was closed.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 26-Oct-2006
  */
 public class ChannelClosedException
-	extends IOException
-	{
+        extends IOException {
 
 // Exported constructors.
+    /**
+     * Create a new channel closed exception with no detail message and no
+     * cause.
+     */
+    public ChannelClosedException() {
+        super();
+    }
 
-	/**
-	 * Create a new channel closed exception with no detail message and no
-	 * cause.
-	 */
-	public ChannelClosedException()
-		{
-		super();
-		}
+    /**
+     * Create a new channel closed exception with the given detail message and
+     * no cause.
+     *
+     * @param msg Detail message.
+     */
+    public ChannelClosedException(String msg) {
+        super(msg);
+    }
 
-	/**
-	 * Create a new channel closed exception with the given detail message and
-	 * no cause.
-	 *
-	 * @param  msg  Detail message.
-	 */
-	public ChannelClosedException
-		(String msg)
-		{
-		super (msg);
-		}
+    /**
+     * Create a new channel closed exception with no detail message and the
+     * given cause.
+     *
+     * @param cause Cause.
+     */
+    public ChannelClosedException(Throwable cause) {
+        super();
+        initCause(cause);
+    }
 
-	/**
-	 * Create a new channel closed exception with no detail message and the
-	 * given cause.
-	 *
-	 * @param  cause  Cause.
-	 */
-	public ChannelClosedException
-		(Throwable cause)
-		{
-		super();
-		initCause (cause);
-		}
+    /**
+     * Create a new channel closed exception with the given detail message and
+     * the given cause.
+     *
+     * @param msg Detail message.
+     * @param cause Cause.
+     */
+    public ChannelClosedException(String msg,
+            Throwable cause) {
+        super(msg);
+        initCause(cause);
+    }
 
-	/**
-	 * Create a new channel closed exception with the given detail message and
-	 * the given cause.
-	 *
-	 * @param  msg    Detail message.
-	 * @param  cause  Cause.
-	 */
-	public ChannelClosedException
-		(String msg,
-		 Throwable cause)
-		{
-		super (msg);
-		initCause (cause);
-		}
-
-	}
+}

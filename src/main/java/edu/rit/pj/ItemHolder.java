@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj;
 
 import java.io.Externalizable;
@@ -31,78 +30,66 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
 /**
- * Class ItemHolder provides an object that holds one item to be processed
- * by a {@linkplain ParallelIteration} along with associated information.
+ * Class ItemHolder provides an object that holds one item to be processed by a
+ * {@linkplain ParallelIteration} along with associated information.
  *
- * @param  <T>  Data type of the items iterated over.
+ * @param <T> Data type of the items iterated over.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 07-Oct-2010
  */
 class ItemHolder<T>
-	implements Externalizable
-	{
+        implements Externalizable {
 
 // Hidden data members.
-
-	private static final long serialVersionUID = -5475933248018589590L;
+    private static final long serialVersionUID = -5475933248018589590L;
 
 // Exported data members.
+    /**
+     * The item itself (may be null).
+     */
+    public T myItem;
 
-	/**
-	 * The item itself (may be null).
-	 */
-	public T myItem;
-
-	/**
-	 * The item's sequence number in the iteration. Sequence numbers start
-	 * at 0 and increase by 1 for each item.
-	 */
-	public int mySequenceNumber;
+    /**
+     * The item's sequence number in the iteration. Sequence numbers start at 0
+     * and increase by 1 for each item.
+     */
+    public int mySequenceNumber;
 
 // Exported constructors.
-
-	/**
-	 * Construct a new item holder.
-	 */
-	public ItemHolder()
-		{
-		}
+    /**
+     * Construct a new item holder.
+     */
+    public ItemHolder() {
+    }
 
 // Exported operations.
+    /**
+     * Write this object holder to the given object output stream.
+     *
+     * @param out Object output stream.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void writeExternal(ObjectOutput out)
+            throws IOException {
+        out.writeObject(myItem);
+        out.writeInt(mySequenceNumber);
+    }
 
-	/**
-	 * Write this object holder to the given object output stream.
-	 *
-	 * @param  out  Object output stream.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void writeExternal
-		(ObjectOutput out)
-		throws IOException
-		{
-		out.writeObject (myItem);
-		out.writeInt (mySequenceNumber);
-		}
+    /**
+     * Read this object holder from the given object input stream.
+     *
+     * @param in Object input stream.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     * @exception ClassNotFoundException Thrown if the class of the object could
+     * not be found.
+     */
+    public void readExternal(ObjectInput in)
+            throws IOException, ClassNotFoundException {
+        myItem = (T) in.readObject();
+        mySequenceNumber = in.readInt();
+    }
 
-	/**
-	 * Read this object holder from the given object input stream.
-	 *
-	 * @param  in  Object input stream.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 * @exception  ClassNotFoundException
-	 *     Thrown if the class of the object could not be found.
-	 */
-	public void readExternal
-		(ObjectInput in)
-		throws IOException, ClassNotFoundException
-		{
-		myItem = (T) in.readObject();
-		mySequenceNumber = in.readInt();
-		}
-
-	}
+}

@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.util;
 
 import java.io.Externalizable;
@@ -50,12 +49,11 @@ import java.io.ObjectOutput;
  *     int ub = range.ub();
  *     for (int i = lb; i &lt;= ub; ++ i)
  *         . . .
- * </PRE>
- * Note that the range is from <TT>lb()</TT> to <TT>ub()</TT> inclusive, so the
- * appropriate test in the for loop is <TT>i &lt;= ub</TT>. Also note that it
- * usually reduces the running time to call <TT>ub()</TT> once, store the result
- * in a local variable, and use the local variable in the for loop test, than to
- * call <TT>ub()</TT> directly in the for loop test.
+ * </PRE> Note that the range is from <TT>lb()</TT> to <TT>ub()</TT> inclusive,
+ * so the appropriate test in the for loop is <TT>i &lt;= ub</TT>. Also note
+ * that it usually reduces the running time to call <TT>ub()</TT> once, store
+ * the result in a local variable, and use the local variable in the for loop
+ * test, than to call <TT>ub()</TT> directly in the for loop test.
  * <P>
  * You can use a range object with a stride greater than 1 to control a for loop
  * like this:
@@ -68,436 +66,377 @@ import java.io.ObjectOutput;
  *         . . .
  * </PRE>
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 30-May-2007
  */
 public class Range
-	implements Externalizable
-	{
+        implements Externalizable {
 
 // Hidden data members.
+    private static final long serialVersionUID = -155434844308312282L;
 
-	private static final long serialVersionUID = -155434844308312282L;
-
-	int lb;
-	int stride;
-	int length;
-	int ub;
+    int lb;
+    int stride;
+    int length;
+    int ub;
 
 // Exported constructors.
+    /**
+     * Construct a new range object representing an empty range.
+     */
+    public Range() {
+        this.lb = 0;
+        this.stride = 1;
+        this.length = 0;
+        setUb();
+    }
 
-	/**
-	 * Construct a new range object representing an empty range.
-	 */
-	public Range()
-		{
-		this.lb = 0;
-		this.stride = 1;
-		this.length = 0;
-		setUb();
-		}
+    /**
+     * Construct a new range object with the given lower bound and upper bound.
+     * The stride is 1. The range object represents the following set of
+     * integers: {<I>L</I>, <I>L</I>+1, <I>L</I>+2, . . . , <I>U</I>}. The
+     * range's length <I>N</I> is <I>U</I>-<I>L</I>+1.
+     * <P>
+     * <I>Note:</I> <I>L</I> &gt; <I>U</I> is allowed and stands for an empty
+     * range.
+     *
+     * @param lb Lower bound <I>L</I>.
+     * @param ub Upper bound <I>U</I>.
+     */
+    public Range(int lb,
+            int ub) {
+        this.lb = lb;
+        this.stride = 1;
+        this.length = Math.max(ub - lb + 1, 0);
+        setUb();
+    }
 
-	/**
-	 * Construct a new range object with the given lower bound and upper bound.
-	 * The stride is 1. The range object represents the following set of
-	 * integers: {<I>L</I>, <I>L</I>+1, <I>L</I>+2, . . . , <I>U</I>}. The
-	 * range's length <I>N</I> is <I>U</I>-<I>L</I>+1.
-	 * <P>
-	 * <I>Note:</I> <I>L</I> &gt; <I>U</I> is allowed and stands for an empty
-	 * range.
-	 *
-	 * @param  lb  Lower bound <I>L</I>.
-	 * @param  ub  Upper bound <I>U</I>.
-	 */
-	public Range
-		(int lb,
-		 int ub)
-		{
-		this.lb = lb;
-		this.stride = 1;
-		this.length = Math.max (ub-lb+1, 0);
-		setUb();
-		}
+    /**
+     * Construct a new range object with the given lower bound, upper bound, and
+     * stride. The stride must be greater than or equal to 1. The range object
+     * represents the following set of integers: {<I>L</I>, <I>L</I>+<I>S</I>,
+     * <I>L</I>+2*<I>S</I>, . . . , <I>L</I>+(<I>N</I>-1)*<I>S</I>}, where the
+     * range's length <I>N</I> is such that <I>L</I>+(<I>N</I>-1)*<I>S</I> is
+     * the largest integer less than or equal to <I>U</I>. Note that the actual
+     * upper bound of the range, <I>L</I>+(<I>N</I>-1)*<I>S</I>, may not be the
+     * same as <I>U</I>.
+     * <P>
+     * <I>Note:</I> <I>L</I> &gt; <I>U</I> is allowed and stands for an empty
+     * range.
+     *
+     * @param lb Lower bound <I>L</I>.
+     * @param ub Upper bound <I>U</I>.
+     * @param stride Stride <I>S</I> &gt;= 1.
+     *
+     * @exception IllegalArgumentException (unchecked exception) Thrown if
+     * <I>S</I> &lt; 1.
+     */
+    public Range(int lb,
+            int ub,
+            int stride) {
+        if (stride < 1) {
+            throw new IllegalArgumentException("Range(): stride = " + stride + " illegal");
+        }
+        this.lb = lb;
+        this.stride = stride;
+        this.length = Math.max((ub - lb + stride) / stride, 0);
+        setUb();
+    }
 
-	/**
-	 * Construct a new range object with the given lower bound, upper bound, and
-	 * stride. The stride must be greater than or equal to 1. The range object
-	 * represents the following set of integers: {<I>L</I>, <I>L</I>+<I>S</I>,
-	 * <I>L</I>+2*<I>S</I>, . . . , <I>L</I>+(<I>N</I>-1)*<I>S</I>}, where the
-	 * range's length <I>N</I> is such that <I>L</I>+(<I>N</I>-1)*<I>S</I> is
-	 * the largest integer less than or equal to <I>U</I>. Note that the actual
-	 * upper bound of the range, <I>L</I>+(<I>N</I>-1)*<I>S</I>, may not be the
-	 * same as <I>U</I>.
-	 * <P>
-	 * <I>Note:</I> <I>L</I> &gt; <I>U</I> is allowed and stands for an empty
-	 * range.
-	 *
-	 * @param  lb      Lower bound <I>L</I>.
-	 * @param  ub      Upper bound <I>U</I>.
-	 * @param  stride  Stride <I>S</I> &gt;= 1.
-	 *
-	 * @exception  IllegalArgumentException
-	 *     (unchecked exception) Thrown if <I>S</I> &lt; 1.
-	 */
-	public Range
-		(int lb,
-		 int ub,
-		 int stride)
-		{
-		if (stride < 1)
-			{
-			throw new IllegalArgumentException
-				("Range(): stride = " + stride + " illegal");
-			}
-		this.lb = lb;
-		this.stride = stride;
-		this.length = Math.max ((ub-lb+stride)/stride, 0);
-		setUb();
-		}
-
-	/**
-	 * Construct a new range object that is a copy of the given range object.
-	 *
-	 * @param  range  Range object to copy.
-	 */
-	public Range
-		(Range range)
-		{
-		this.lb = range.lb;
-		this.stride = range.stride;
-		this.length = range.length;
-		this.ub = range.ub;
-		}
+    /**
+     * Construct a new range object that is a copy of the given range object.
+     *
+     * @param range Range object to copy.
+     */
+    public Range(Range range) {
+        this.lb = range.lb;
+        this.stride = range.stride;
+        this.length = range.length;
+        this.ub = range.ub;
+    }
 
 // Exported operations.
+    /**
+     * Returns this range's lower bound.
+     *
+     * @return Lower bound.
+     */
+    public int lb() {
+        return lb;
+    }
 
-	/**
-	 * Returns this range's lower bound.
-	 *
-	 * @return  Lower bound.
-	 */
-	public int lb()
-		{
-		return lb;
-		}
+    /**
+     * Returns this range's upper bound.
+     *
+     * @return Upper bound.
+     */
+    public int ub() {
+        return ub;
+    }
 
-	/**
-	 * Returns this range's upper bound.
-	 *
-	 * @return  Upper bound.
-	 */
-	public int ub()
-		{
-		return ub;
-		}
+    /**
+     * Returns this range's stride.
+     *
+     * @return Stride.
+     */
+    public int stride() {
+        return stride;
+    }
 
-	/**
-	 * Returns this range's stride.
-	 *
-	 * @return  Stride.
-	 */
-	public int stride()
-		{
-		return stride;
-		}
+    /**
+     * Returns this range's length.
+     *
+     * @return Length.
+     */
+    public int length() {
+        return length;
+    }
 
-	/**
-	 * Returns this range's length.
-	 *
-	 * @return  Length.
-	 */
-	public int length()
-		{
-		return length;
-		}
+    /**
+     * Determine if this range contains the given value. This range contains the
+     * given value if <TT>this.lb()</TT> &lt;= <TT>val</TT> &lt;=
+     * <TT>this.ub()</TT>. (The stride does not affect the outcome.)
+     *
+     * @param value Value to test.
+     *
+     * @return True if this range contains the given <TT>value</TT>, false
+     * otherwise.
+     */
+    public boolean contains(int value) {
+        return this.lb <= value && value <= this.ub;
+    }
 
-	/**
-	 * Determine if this range contains the given value. This range contains the
-	 * given value if <TT>this.lb()</TT> &lt;= <TT>val</TT> &lt;=
-	 * <TT>this.ub()</TT>. (The stride does not affect the outcome.)
-	 *
-	 * @param  value  Value to test.
-	 *
-	 * @return  True if this range contains the given <TT>value</TT>, false
-	 *          otherwise.
-	 */
-	public boolean contains
-		(int value)
-		{
-		return this.lb <= value && value <= this.ub;
-		}
+    /**
+     * Determine if this range contains the given range. This range contains the
+     * given range if <TT>this.lb()</TT> &lt;= <TT>range.lb()</TT> and
+     * <TT>range.ub()</TT> &lt;= <TT>this.ub()</TT>. (The strides do not affect
+     * the outcome.)
+     *
+     * @param range Range to test.
+     *
+     * @return True if this range contains the given <TT>range</TT>, false
+     * otherwise.
+     */
+    public boolean contains(Range range) {
+        return this.lb <= range.lb && range.ub <= this.ub;
+    }
 
-	/**
-	 * Determine if this range contains the given range. This range contains the
-	 * given range if <TT>this.lb()</TT> &lt;= <TT>range.lb()</TT> and
-	 * <TT>range.ub()</TT> &lt;= <TT>this.ub()</TT>. (The strides do not affect
-	 * the outcome.)
-	 *
-	 * @param  range  Range to test.
-	 *
-	 * @return  True if this range contains the given <TT>range</TT>, false
-	 *          otherwise.
-	 */
-	public boolean contains
-		(Range range)
-		{
-		return this.lb <= range.lb && range.ub <= this.ub;
-		}
+    /**
+     * Partition this range and return one subrange. This range is split up into
+     * subranges; the <TT>size</TT> argument specifies the number of subranges.
+     * This range is divided as equally as possible among the subranges; the
+     * lengths of the subranges differ by at most 1. The subranges are numbered
+     * 0, 1, . . . <TT>size-1</TT>. This method returns the subrange whose
+     * number is <TT>rank</TT>.
+     * <P>
+     * Note that if <TT>size</TT> is greater than the length of this range, the
+     * returned subrange may be empty.
+     *
+     * @param size Number of subranges, <TT>size</TT> &gt;= 1.
+     * @param rank Rank of the desired subrange, 0 &lt;= <TT>rank</TT> &lt;
+     * <TT>size</TT>.
+     *
+     * @return Subrange.
+     *
+     * @exception IllegalArgumentException (unchecked exception) Thrown if
+     * <TT>size</TT> or <TT>rank</TT> is out of bounds.
+     */
+    public Range subrange(int size,
+            int rank) {
+        // Verify preconditions.
+        if (size < 1) {
+            throw new IllegalArgumentException("Range.subrange(): size = " + size + " illegal");
+        }
+        if (0 > rank || rank >= size) {
+            throw new IllegalArgumentException("Range.subrange(): rank = " + rank + " illegal");
+        }
 
-	/**
-	 * Partition this range and return one subrange. This range is split up into
-	 * subranges; the <TT>size</TT> argument specifies the number of subranges.
-	 * This range is divided as equally as possible among the subranges; the
-	 * lengths of the subranges differ by at most 1. The subranges are numbered
-	 * 0, 1, . . . <TT>size-1</TT>. This method returns the subrange whose
-	 * number is <TT>rank</TT>.
-	 * <P>
-	 * Note that if <TT>size</TT> is greater than the length of this range, the
-	 * returned subrange may be empty.
-	 *
-	 * @param  size  Number of subranges, <TT>size</TT> &gt;= 1.
-	 * @param  rank  Rank of the desired subrange, 0 &lt;= <TT>rank</TT> &lt;
-	 *               <TT>size</TT>.
-	 *
-	 * @return  Subrange.
-	 *
-	 * @exception  IllegalArgumentException
-	 *     (unchecked exception) Thrown if <TT>size</TT> or <TT>rank</TT> is out
-	 *     of bounds.
-	 */
-	public Range subrange
-		(int size,
-		 int rank)
-		{
-		// Verify preconditions.
-		if (size < 1)
-			{
-			throw new IllegalArgumentException
-				("Range.subrange(): size = " + size + " illegal");
-			}
-		if (0 > rank || rank >= size)
-			{
-			throw new IllegalArgumentException
-				("Range.subrange(): rank = " + rank + " illegal");
-			}
+        // Split this range.
+        Range result = new Range();
+        int sublen = this.length / size;
+        int subrem = this.length % size;
+        if (rank < subrem) {
+            ++sublen;
+            result.lb = this.lb + (rank * sublen) * this.stride;
+        } else {
+            result.lb = this.lb + (subrem + rank * sublen) * this.stride;
+        }
+        result.stride = this.stride;
+        result.length = sublen;
+        result.setUb();
+        return result;
+    }
 
-		// Split this range.
-		Range result = new Range();
-		int sublen = this.length / size;
-		int subrem = this.length % size;
-		if (rank < subrem)
-			{
-			++ sublen;
-			result.lb = this.lb + (rank * sublen) * this.stride;
-			}
-		else
-			{
-			result.lb = this.lb + (subrem + rank * sublen) * this.stride;
-			}
-		result.stride = this.stride;
-		result.length = sublen;
-		result.setUb();
-		return result;
-		}
+    /**
+     * Partition this range and return all the subranges. This range is split up
+     * into subranges; the <TT>size</TT> argument specifies the number of
+     * subranges. This range is divided as equally as possible among the
+     * subranges; the lengths of the subranges differ by at most 1. The
+     * subranges are returned in an array with indexes 0, 1, . . .
+     * <TT>size-1</TT>.
+     * <P>
+     * Note that if <TT>size</TT> is greater than the length of this range, some
+     * of the returned subranges may be empty.
+     *
+     * @param size Number of subranges, size &gt;= 1.
+     *
+     * @return Array of subranges.
+     *
+     * @exception IllegalArgumentException (unchecked exception) Thrown if
+     * <TT>size</TT> is out of bounds.
+     */
+    public Range[] subranges(int size) {
+        // Verify preconditions.
+        if (size < 1) {
+            throw new IllegalArgumentException("Range.subranges(): size = " + size + " illegal");
+        }
 
-	/**
-	 * Partition this range and return all the subranges. This range is split up
-	 * into subranges; the <TT>size</TT> argument specifies the number of
-	 * subranges. This range is divided as equally as possible among the
-	 * subranges; the lengths of the subranges differ by at most 1. The
-	 * subranges are returned in an array with indexes 0, 1, . . .
-	 * <TT>size-1</TT>.
-	 * <P>
-	 * Note that if <TT>size</TT> is greater than the length of this range, some
-	 * of the returned subranges may be empty.
-	 *
-	 * @param  size  Number of subranges, size &gt;= 1.
-	 *
-	 * @return  Array of subranges.
-	 *
-	 * @exception  IllegalArgumentException
-	 *     (unchecked exception) Thrown if <TT>size</TT> is out of bounds.
-	 */
-	public Range[] subranges
-		(int size)
-		{
-		// Verify preconditions.
-		if (size < 1)
-			{
-			throw new IllegalArgumentException
-				("Range.subranges(): size = " + size + " illegal");
-			}
+        // Allocate storage for subranges.
+        Range[] result = new Range[size];
 
-		// Allocate storage for subranges.
-		Range[] result = new Range [size];
+        // Compute subranges.
+        int sublen = this.length / size;
+        int subrem = this.length % size;
+        int x = this.lb;
+        ++sublen;
+        for (int i = 0; i < subrem; ++i) {
+            Range result_i = new Range();
+            result_i.lb = x;
+            x += sublen * this.stride;
+            result_i.stride = this.stride;
+            result_i.length = sublen;
+            result_i.setUb();
+            result[i] = result_i;
+        }
+        --sublen;
+        for (int i = subrem; i < size; ++i) {
+            Range result_i = new Range();
+            result_i.lb = x;
+            x += sublen * this.stride;
+            result_i.stride = this.stride;
+            result_i.length = sublen;
+            result_i.setUb();
+            result[i] = result_i;
+        }
 
-		// Compute subranges.
-		int sublen = this.length / size;
-		int subrem = this.length % size;
-		int x = this.lb;
-		++ sublen;
-		for (int i = 0; i < subrem; ++ i)
-			{
-			Range result_i = new Range();
-			result_i.lb = x;
-			x += sublen * this.stride;
-			result_i.stride = this.stride;
-			result_i.length = sublen;
-			result_i.setUb();
-			result[i] = result_i;
-			}
-		-- sublen;
-		for (int i = subrem; i < size; ++ i)
-			{
-			Range result_i = new Range();
-			result_i.lb = x;
-			x += sublen * this.stride;
-			result_i.stride = this.stride;
-			result_i.length = sublen;
-			result_i.setUb();
-			result[i] = result_i;
-			}
+        return result;
+    }
 
-		return result;
-		}
+    /**
+     * Slice off a chunk of this range and return the chunk. Considering this
+     * range as a set of integers from the lower bound to the upper bound, the
+     * first <TT>N1</TT> integers are sliced off and discarded, then the next
+     * <TT>N2</TT> integers are sliced off to form a chunk, and the chunk is
+     * returned. If after removing the first <TT>N1</TT> integers there are
+     * fewer than <TT>N2</TT> integers left, a chunk consisting of all the
+     * remaining integers is returned; this may be an empty chunk.
+     *
+     * @param N1 Number of integers to discard (must be &gt;= 0).
+     * @param N2 Number of integers to include in the chunk (must be &gt;= 0).
+     *
+     * @return Chunk.
+     *
+     * @exception IllegalArgumentException (unchecked exception) Thrown if
+     * <TT>N1</TT> or <TT>N2</TT> is out of bounds.
+     */
+    public Range chunk(int N1,
+            int N2) {
+        // Verify preconditions.
+        if (N1 < 0) {
+            throw new IllegalArgumentException("Range.chunk(): N1 = " + N1 + " illegal");
+        }
+        if (N2 < 0) {
+            throw new IllegalArgumentException("Range.chunk(): N2 = " + N2 + " illegal");
+        }
 
-	/**
-	 * Slice off a chunk of this range and return the chunk. Considering this
-	 * range as a set of integers from the lower bound to the upper bound, the
-	 * first <TT>N1</TT> integers are sliced off and discarded, then the next
-	 * <TT>N2</TT> integers are sliced off to form a chunk, and the chunk is
-	 * returned. If after removing the first <TT>N1</TT> integers there are
-	 * fewer than <TT>N2</TT> integers left, a chunk consisting of all the
-	 * remaining integers is returned; this may be an empty chunk.
-	 *
-	 * @param  N1  Number of integers to discard (must be &gt;= 0).
-	 * @param  N2  Number of integers to include in the chunk (must be &gt;= 0).
-	 *
-	 * @return  Chunk.
-	 *
-	 * @exception  IllegalArgumentException
-	 *     (unchecked exception) Thrown if <TT>N1</TT> or <TT>N2</TT> is out of
-	 *     bounds.
-	 */
-	public Range chunk
-		(int N1,
-		 int N2)
-		{
-		// Verify preconditions.
-		if (N1 < 0)
-			{
-			throw new IllegalArgumentException
-				("Range.chunk(): N1 = " + N1 + " illegal");
-			}
-		if (N2 < 0)
-			{
-			throw new IllegalArgumentException
-				("Range.chunk(): N2 = " + N2 + " illegal");
-			}
+        Range result = new Range();
+        result.lb = this.lb + N1 * this.stride;
+        result.stride = this.stride;
+        result.length = Math.min(N2, Math.max(0, this.length - N1));
+        result.setUb();
+        return result;
+    }
 
-		Range result = new Range();
-		result.lb = this.lb + N1 * this.stride;
-		result.stride = this.stride;
-		result.length = Math.min (N2, Math.max (0, this.length - N1));
-		result.setUb();
-		return result;
-		}
+    /**
+     * Determine if this range is equal to the given object. Two ranges are
+     * equal if they both have the same lower bound, stride, and length.
+     *
+     * @param obj Object to test.
+     *
+     * @return True if this range is equal to <TT>obj</TT>, false otherwise.
+     */
+    public boolean equals(Object obj) {
+        return obj instanceof Range
+                && this.lb == ((Range) obj).lb
+                && this.stride == ((Range) obj).stride
+                && this.length == ((Range) obj).length;
+    }
 
-	/**
-	 * Determine if this range is equal to the given object. Two ranges are
-	 * equal if they both have the same lower bound, stride, and length.
-	 *
-	 * @param  obj  Object to test.
-	 *
-	 * @return  True if this range is equal to <TT>obj</TT>, false otherwise.
-	 */
-	public boolean equals
-		(Object obj)
-		{
-		return
-			obj instanceof Range &&
-			this.lb == ((Range) obj).lb &&
-			this.stride == ((Range) obj).stride &&
-			this.length == ((Range) obj).length;
-		}
+    /**
+     * Returns a hash code for this range.
+     */
+    public int hashCode() {
+        return (((this.lb << 10) + this.stride) << 10) + this.length;
+    }
 
-	/**
-	 * Returns a hash code for this range.
-	 */
-	public int hashCode()
-		{
-		return (((this.lb << 10) + this.stride) << 10) + this.length;
-		}
+    /**
+     * Returns a string version of this range. If the stride is 1, the format is
+     * <TT>"<I>L</I>..<I>U</I>"</TT>, where <I>L</I> is the lower bound and
+     * <I>U</I> is the upper bound. If the stride is greater than 1, the format
+     * is <TT>"<I>L</I>..<I>U</I>;<I>S</I>"</TT>, where <I>L</I> is the lower
+     * bound, <I>U</I> is the upper bound, and <I>S</I> is the stride.
+     */
+    public String toString() {
+        StringBuilder b = new StringBuilder();
+        b.append(lb);
+        b.append("..");
+        b.append(ub);
+        if (stride > 1) {
+            b.append(';');
+            b.append(stride);
+        }
+        return b.toString();
+    }
 
-	/**
-	 * Returns a string version of this range. If the stride is 1, the format is
-	 * <TT>"<I>L</I>..<I>U</I>"</TT>, where <I>L</I> is the lower bound and
-	 * <I>U</I> is the upper bound. If the stride is greater than 1, the format
-	 * is <TT>"<I>L</I>..<I>U</I>;<I>S</I>"</TT>, where <I>L</I> is the lower
-	 * bound, <I>U</I> is the upper bound, and <I>S</I> is the stride.
-	 */
-	public String toString()
-		{
-		StringBuilder b = new StringBuilder();
-		b.append (lb);
-		b.append ("..");
-		b.append (ub);
-		if (stride > 1)
-			{
-			b.append (';');
-			b.append (stride);
-			}
-		return b.toString();
-		}
+    /**
+     * Write this range to the given object output stream.
+     *
+     * @param out Object output stream.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void writeExternal(ObjectOutput out)
+            throws IOException {
+        out.writeInt(lb);
+        out.writeInt(stride);
+        out.writeInt(length);
+    }
 
-	/**
-	 * Write this range to the given object output stream.
-	 *
-	 * @param  out  Object output stream.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void writeExternal
-		(ObjectOutput out)
-		throws IOException
-		{
-		out.writeInt (lb);
-		out.writeInt (stride);
-		out.writeInt (length);
-		}
-
-	/**
-	 * Read this range from the given object input stream.
-	 *
-	 * @param  in  Object input stream.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void readExternal
-		(ObjectInput in)
-		throws IOException
-		{
-		lb = in.readInt();
-		stride = in.readInt();
-		length = in.readInt();
-		setUb();
-		}
+    /**
+     * Read this range from the given object input stream.
+     *
+     * @param in Object input stream.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void readExternal(ObjectInput in)
+            throws IOException {
+        lb = in.readInt();
+        stride = in.readInt();
+        length = in.readInt();
+        setUb();
+    }
 
 // Hidden operations.
-
-	/**
-	 * Set the upper bound of this range based on the lower bound, stride, and
-	 * length.
-	 */
-	private void setUb()
-		{
-		ub = lb + (length - 1) * stride;
-		}
+    /**
+     * Set the upper bound of this range based on the lower bound, stride, and
+     * length.
+     */
+    private void setUb() {
+        ub = lb + (length - 1) * stride;
+    }
 
 // Unit test main program.
-
 //	/**
 //	 * Unit test main program.
 //	 */
@@ -531,5 +470,4 @@ public class Range
 //				 ", length = " + subranges[rank].length());
 //			}
 //		}
-
-	}
+}

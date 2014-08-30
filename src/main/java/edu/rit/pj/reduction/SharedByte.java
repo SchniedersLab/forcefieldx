@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj.reduction;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -38,278 +37,254 @@ import java.util.concurrent.atomic.AtomicInteger;
  * java.util.concurrent.atomic.AtomicInteger. The byte value is stored as an
  * <TT>int</TT> whose values are restricted to the range of type <TT>byte</TT>.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 07-Jun-2007
  */
 public class SharedByte
-	extends Number
-	{
+        extends Number {
 
 // Hidden data members.
-
-	private AtomicInteger myValue;
+    private AtomicInteger myValue;
 
 // Exported constructors.
+    /**
+     * Construct a new byte reduction variable with the initial value 0.
+     */
+    public SharedByte() {
+        myValue = new AtomicInteger();
+    }
 
-	/**
-	 * Construct a new byte reduction variable with the initial value 0.
-	 */
-	public SharedByte()
-		{
-		myValue = new AtomicInteger();
-		}
-
-	/**
-	 * Construct a new byte reduction variable with the given initial value.
-	 *
-	 * @param  initialValue  Initial value.
-	 */
-	public SharedByte
-		(byte initialValue)
-		{
-		myValue = new AtomicInteger (initialValue);
-		}
+    /**
+     * Construct a new byte reduction variable with the given initial value.
+     *
+     * @param initialValue Initial value.
+     */
+    public SharedByte(byte initialValue) {
+        myValue = new AtomicInteger(initialValue);
+    }
 
 // Exported operations.
+    /**
+     * Returns this reduction variable's current value.
+     *
+     * @return Current value.
+     */
+    public byte get() {
+        return (byte) myValue.get();
+    }
 
-	/**
-	 * Returns this reduction variable's current value.
-	 *
-	 * @return  Current value.
-	 */
-	public byte get()
-		{
-		return (byte) myValue.get();
-		}
+    /**
+     * Set this reduction variable to the given value.
+     *
+     * @param value New value.
+     */
+    public void set(byte value) {
+        myValue.set(value);
+    }
 
-	/**
-	 * Set this reduction variable to the given value.
-	 *
-	 * @param  value  New value.
-	 */
-	public void set
-		(byte value)
-		{
-		myValue.set (value);
-		}
+    /**
+     * Set this reduction variable to the given value and return the previous
+     * value.
+     *
+     * @param value New value.
+     *
+     * @return Previous value.
+     */
+    public byte getAndSet(byte value) {
+        return (byte) myValue.getAndSet(value);
+    }
 
-	/**
-	 * Set this reduction variable to the given value and return the previous
-	 * value.
-	 *
-	 * @param  value  New value.
-	 *
-	 * @return  Previous value.
-	 */
-	public byte getAndSet
-		(byte value)
-		{
-		return (byte) myValue.getAndSet (value);
-		}
+    /**
+     * Atomically set this reduction variable to the given updated value if the
+     * current value equals the expected value.
+     *
+     * @param expect Expected value.
+     * @param update Updated value.
+     *
+     * @return True if the update happened, false otherwise.
+     */
+    public boolean compareAndSet(byte expect,
+            byte update) {
+        return myValue.compareAndSet(expect, update);
+    }
 
-	/**
-	 * Atomically set this reduction variable to the given updated value if the
-	 * current value equals the expected value.
-	 *
-	 * @param  expect  Expected value.
-	 * @param  update  Updated value.
-	 *
-	 * @return  True if the update happened, false otherwise.
-	 */
-	public boolean compareAndSet
-		(byte expect,
-		 byte update)
-		{
-		return myValue.compareAndSet (expect, update);
-		}
+    /**
+     * Atomically set this reduction variable to the given updated value if the
+     * current value equals the expected value. May fail spuriously.
+     *
+     * @param expect Expected value.
+     * @param update Updated value.
+     *
+     * @return True if the update happened, false otherwise.
+     */
+    public boolean weakCompareAndSet(byte expect,
+            byte update) {
+        return myValue.weakCompareAndSet(expect, update);
+    }
 
-	/**
-	 * Atomically set this reduction variable to the given updated value if the
-	 * current value equals the expected value. May fail spuriously.
-	 *
-	 * @param  expect  Expected value.
-	 * @param  update  Updated value.
-	 *
-	 * @return  True if the update happened, false otherwise.
-	 */
-	public boolean weakCompareAndSet
-		(byte expect,
-		 byte update)
-		{
-		return myValue.weakCompareAndSet (expect, update);
-		}
+    /**
+     * Add one to this reduction variable and return the previous value.
+     *
+     * @return Previous value.
+     */
+    public byte getAndIncrement() {
+        for (;;) {
+            byte oldvalue = (byte) myValue.get();
+            byte newvalue = (byte) (oldvalue + 1);
+            if (myValue.compareAndSet(oldvalue, newvalue)) {
+                return oldvalue;
+            }
+        }
+    }
 
-	/**
-	 * Add one to this reduction variable and return the previous value.
-	 *
-	 * @return  Previous value.
-	 */
-	public byte getAndIncrement()
-		{
-		for (;;)
-			{
-			byte oldvalue = (byte) myValue.get();
-			byte newvalue = (byte) (oldvalue + 1);
-			if (myValue.compareAndSet (oldvalue, newvalue)) return oldvalue;
-			}
-		}
+    /**
+     * Subtract one from this reduction variable and return the previous value.
+     *
+     * @return Previous value.
+     */
+    public byte getAndDecrement() {
+        for (;;) {
+            byte oldvalue = (byte) myValue.get();
+            byte newvalue = (byte) (oldvalue - 1);
+            if (myValue.compareAndSet(oldvalue, newvalue)) {
+                return oldvalue;
+            }
+        }
+    }
 
-	/**
-	 * Subtract one from this reduction variable and return the previous value.
-	 *
-	 * @return  Previous value.
-	 */
-	public byte getAndDecrement()
-		{
-		for (;;)
-			{
-			byte oldvalue = (byte) myValue.get();
-			byte newvalue = (byte) (oldvalue - 1);
-			if (myValue.compareAndSet (oldvalue, newvalue)) return oldvalue;
-			}
-		}
+    /**
+     * Add the given value to this reduction variable and return the previous
+     * value.
+     *
+     * @param value Value to add.
+     *
+     * @return Previous value.
+     */
+    public byte getAndAdd(byte value) {
+        for (;;) {
+            byte oldvalue = (byte) myValue.get();
+            byte newvalue = (byte) (oldvalue + value);
+            if (myValue.compareAndSet(oldvalue, newvalue)) {
+                return oldvalue;
+            }
+        }
+    }
 
-	/**
-	 * Add the given value to this reduction variable and return the previous
-	 * value.
-	 *
-	 * @param  value  Value to add.
-	 *
-	 * @return  Previous value.
-	 */
-	public byte getAndAdd
-		(byte value)
-		{
-		for (;;)
-			{
-			byte oldvalue = (byte) myValue.get();
-			byte newvalue = (byte) (oldvalue + value);
-			if (myValue.compareAndSet (oldvalue, newvalue)) return oldvalue;
-			}
-		}
+    /**
+     * Add one to this reduction variable and return the new value.
+     *
+     * @return New value.
+     */
+    public byte incrementAndGet() {
+        for (;;) {
+            byte oldvalue = (byte) myValue.get();
+            byte newvalue = (byte) (oldvalue + 1);
+            if (myValue.compareAndSet(oldvalue, newvalue)) {
+                return newvalue;
+            }
+        }
+    }
 
-	/**
-	 * Add one to this reduction variable and return the new value.
-	 *
-	 * @return  New value.
-	 */
-	public byte incrementAndGet()
-		{
-		for (;;)
-			{
-			byte oldvalue = (byte) myValue.get();
-			byte newvalue = (byte) (oldvalue + 1);
-			if (myValue.compareAndSet (oldvalue, newvalue)) return newvalue;
-			}
-		}
+    /**
+     * Subtract one from this reduction variable and return the new value.
+     *
+     * @return New value.
+     */
+    public byte decrementAndGet() {
+        for (;;) {
+            byte oldvalue = (byte) myValue.get();
+            byte newvalue = (byte) (oldvalue - 1);
+            if (myValue.compareAndSet(oldvalue, newvalue)) {
+                return newvalue;
+            }
+        }
+    }
 
-	/**
-	 * Subtract one from this reduction variable and return the new value.
-	 *
-	 * @return  New value.
-	 */
-	public byte decrementAndGet()
-		{
-		for (;;)
-			{
-			byte oldvalue = (byte) myValue.get();
-			byte newvalue = (byte) (oldvalue - 1);
-			if (myValue.compareAndSet (oldvalue, newvalue)) return newvalue;
-			}
-		}
+    /**
+     * Add the given value to this reduction variable and return the new value.
+     *
+     * @param value Value to add.
+     *
+     * @return New value.
+     */
+    public byte addAndGet(byte value) {
+        for (;;) {
+            byte oldvalue = (byte) myValue.get();
+            byte newvalue = (byte) (oldvalue + value);
+            if (myValue.compareAndSet(oldvalue, newvalue)) {
+                return newvalue;
+            }
+        }
+    }
 
-	/**
-	 * Add the given value to this reduction variable and return the new value.
-	 *
-	 * @param  value  Value to add.
-	 *
-	 * @return  New value.
-	 */
-	public byte addAndGet
-		(byte value)
-		{
-		for (;;)
-			{
-			byte oldvalue = (byte) myValue.get();
-			byte newvalue = (byte) (oldvalue + value);
-			if (myValue.compareAndSet (oldvalue, newvalue)) return newvalue;
-			}
-		}
+    /**
+     * Combine this reduction variable with the given value using the given
+     * operation. The result is stored back into this reduction variable and is
+     * returned.
+     *
+     * @param value Value.
+     * @param op Binary operation.
+     *
+     * @return (This variable) <I>op</I> (<TT>value</TT>).
+     */
+    public byte reduce(byte value,
+            ByteOp op) {
+        for (;;) {
+            byte oldvalue = (byte) myValue.get();
+            byte newvalue = op.op(oldvalue, value);
+            if (myValue.compareAndSet(oldvalue, newvalue)) {
+                return newvalue;
+            }
+        }
+    }
 
-	/**
-	 * Combine this reduction variable with the given value using the given
-	 * operation. The result is stored back into this reduction variable and is
-	 * returned.
-	 *
-	 * @param  value  Value.
-	 * @param  op     Binary operation.
-	 *
-	 * @return  (This variable) <I>op</I> (<TT>value</TT>).
-	 */
-	public byte reduce
-		(byte value,
-		 ByteOp op)
-		{
-		for (;;)
-			{
-			byte oldvalue = (byte) myValue.get();
-			byte newvalue = op.op (oldvalue, value);
-			if (myValue.compareAndSet (oldvalue, newvalue)) return newvalue;
-			}
-		}
+    /**
+     * Returns a string version of this reduction variable.
+     *
+     * @return String version.
+     */
+    public String toString() {
+        return Integer.toString(get());
+    }
 
-	/**
-	 * Returns a string version of this reduction variable.
-	 *
-	 * @return  String version.
-	 */
-	public String toString()
-		{
-		return Integer.toString (get());
-		}
+    /**
+     * Returns this reduction variable's current value converted to type
+     * <TT>int</TT>.
+     *
+     * @return Current value.
+     */
+    public int intValue() {
+        return (int) get();
+    }
 
-	/**
-	 * Returns this reduction variable's current value converted to type
-	 * <TT>int</TT>.
-	 *
-	 * @return  Current value.
-	 */
-	public int intValue()
-		{
-		return (int) get();
-		}
+    /**
+     * Returns this reduction variable's current value converted to type
+     * <TT>long</TT>.
+     *
+     * @return Current value.
+     */
+    public long longValue() {
+        return (long) get();
+    }
 
-	/**
-	 * Returns this reduction variable's current value converted to type
-	 * <TT>long</TT>.
-	 *
-	 * @return  Current value.
-	 */
-	public long longValue()
-		{
-		return (long) get();
-		}
+    /**
+     * Returns this reduction variable's current value converted to type
+     * <TT>float</TT>.
+     *
+     * @return Current value.
+     */
+    public float floatValue() {
+        return (float) get();
+    }
 
-	/**
-	 * Returns this reduction variable's current value converted to type
-	 * <TT>float</TT>.
-	 *
-	 * @return  Current value.
-	 */
-	public float floatValue()
-		{
-		return (float) get();
-		}
+    /**
+     * Returns this reduction variable's current value converted to type
+     * <TT>double</TT>.
+     *
+     * @return Current value.
+     */
+    public double doubleValue() {
+        return (double) get();
+    }
 
-	/**
-	 * Returns this reduction variable's current value converted to type
-	 * <TT>double</TT>.
-	 *
-	 * @return  Current value.
-	 */
-	public double doubleValue()
-		{
-		return (double) get();
-		}
-
-	}
+}

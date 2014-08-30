@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.http;
 
 import java.io.IOException;
@@ -40,7 +39,6 @@ import java.util.Scanner;
 // import java.net.InetSocketAddress;
 // import java.net.ServerSocket;
 // import java.nio.charset.Charset;
-
 /**
  * Class HttpRequest encapsulates an HTTP request received from a web browser.
  * <P>
@@ -65,270 +63,270 @@ import java.util.Scanner;
  * message.
  * </OL>
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 29-Jul-2010
  */
-public class HttpRequest
-	{
+public class HttpRequest {
 
 // Exported constants.
+    /**
+     * The GET method string, <TT>"GET"</TT>.
+     */
+    public static final String GET_METHOD = "GET";
 
-	/**
-	 * The GET method string, <TT>"GET"</TT>.
-	 */
-	public static final String GET_METHOD = "GET";
+    /**
+     * The HEAD method string, <TT>"HEAD"</TT>.
+     */
+    public static final String HEAD_METHOD = "HEAD";
 
-	/**
-	 * The HEAD method string, <TT>"HEAD"</TT>.
-	 */
-	public static final String HEAD_METHOD = "HEAD";
+    /**
+     * The POST method string, <TT>"POST"</TT>.
+     */
+    public static final String POST_METHOD = "POST";
 
-	/**
-	 * The POST method string, <TT>"POST"</TT>.
-	 */
-	public static final String POST_METHOD = "POST";
+    /**
+     * The HTTP/1.0 version string <TT>"HTTP/1.0"</TT>.
+     */
+    public static final String HTTP_1_0_VERSION = "HTTP/1.0";
 
-	/**
-	 * The HTTP/1.0 version string <TT>"HTTP/1.0"</TT>.
-	 */
-	public static final String HTTP_1_0_VERSION = "HTTP/1.0";
-
-	/**
-	 * The HTTP/1.1 version string, <TT>"HTTP/1.1"</TT>.
-	 */
-	public static final String HTTP_1_1_VERSION = "HTTP/1.1";
+    /**
+     * The HTTP/1.1 version string, <TT>"HTTP/1.1"</TT>.
+     */
+    public static final String HTTP_1_1_VERSION = "HTTP/1.1";
 
 // Hidden data members.
+    private Socket mySocket;
 
-	private Socket mySocket;
+    private String myMethod;
+    private String myUri;
+    private String myHttpVersion;
 
-	private String myMethod;
-	private String myUri;
-	private String myHttpVersion;
+    private Map<String, String> myHeaderMap
+            = new HashMap<String, String>();
+    private Map<String, String> myUnmodifiableHeaderMap
+            = Collections.unmodifiableMap(myHeaderMap);
 
-	private Map<String,String> myHeaderMap =
-		new HashMap<String,String>();
-	private Map<String,String> myUnmodifiableHeaderMap =
-		Collections.unmodifiableMap (myHeaderMap);
-
-	private boolean iamValid;
+    private boolean iamValid;
 
 // Exported constructors.
-
-	/**
-	 * Construct a new HTTP request. The request is read from the input stream
-	 * of the given socket.
-	 *
-	 * @param  theSocket  Socket.
-	 *
-	 * @exception  NullPointerException
-	 *     (unchecked exception) Thrown if <TT>theSocket</TT> is null.
-	 */
-	public HttpRequest
-		(Socket theSocket)
-		{
-		if (theSocket == null)
-			{
-			throw new NullPointerException
-				("HttpRequest(): theSocket is null");
-			}
-		mySocket = theSocket;
-		}
+    /**
+     * Construct a new HTTP request. The request is read from the input stream
+     * of the given socket.
+     *
+     * @param theSocket Socket.
+     *
+     * @exception NullPointerException (unchecked exception) Thrown if
+     * <TT>theSocket</TT> is null.
+     */
+    public HttpRequest(Socket theSocket) {
+        if (theSocket == null) {
+            throw new NullPointerException("HttpRequest(): theSocket is null");
+        }
+        mySocket = theSocket;
+    }
 
 // Exported operations.
+    /**
+     * Determine if this HTTP request is valid. If the data read from the input
+     * stream of the socket given to the constructor represents a valid HTTP
+     * request message, true is returned, otherwise false is returned. If an I/O
+     * exception is thrown while reading the input, this HTTP request is marked
+     * as invalid, but the I/O exception is not propagated to the caller.
+     *
+     * @return True if this HTTP request is valid, false otherwise.
+     */
+    public boolean isValid() {
+        parse();
+        return iamValid;
+    }
 
-	/**
-	 * Determine if this HTTP request is valid. If the data read from the input
-	 * stream of the socket given to the constructor represents a valid HTTP
-	 * request message, true is returned, otherwise false is returned. If an I/O
-	 * exception is thrown while reading the input, this HTTP request is marked
-	 * as invalid, but the I/O exception is not propagated to the caller.
-	 *
-	 * @return  True if this HTTP request is valid, false otherwise.
-	 */
-	public boolean isValid()
-		{
-		parse();
-		return iamValid;
-		}
+    /**
+     * Obtain this HTTP request's method.
+     *
+     * @return Method string, e.g. <TT>"GET"</TT>, <TT>"POST"</TT>.
+     *
+     * @exception IllegalStateException (unchecked exception) Thrown if this
+     * HTTP request is invalid.
+     */
+    public String getMethod() {
+        if (!isValid()) {
+            throw new IllegalStateException("HTTP request is invalid");
+        }
+        return myMethod;
+    }
 
-	/**
-	 * Obtain this HTTP request's method.
-	 *
-	 * @return  Method string, e.g. <TT>"GET"</TT>, <TT>"POST"</TT>.
-	 *
-	 * @exception  IllegalStateException
-	 *     (unchecked exception) Thrown if this HTTP request is invalid.
-	 */
-	public String getMethod()
-		{
-		if (! isValid())
-			throw new IllegalStateException ("HTTP request is invalid");
-		return myMethod;
-		}
+    /**
+     * Obtain this HTTP request's URI.
+     *
+     * @return URI string.
+     *
+     * @exception IllegalStateException (unchecked exception) Thrown if this
+     * HTTP request is invalid.
+     */
+    public String getUri() {
+        if (!isValid()) {
+            throw new IllegalStateException("HTTP request is invalid");
+        }
+        return myUri;
+    }
 
-	/**
-	 * Obtain this HTTP request's URI.
-	 *
-	 * @return  URI string.
-	 *
-	 * @exception  IllegalStateException
-	 *     (unchecked exception) Thrown if this HTTP request is invalid.
-	 */
-	public String getUri()
-		{
-		if (! isValid())
-			throw new IllegalStateException ("HTTP request is invalid");
-		return myUri;
-		}
+    /**
+     * Obtain this HTTP request's version.
+     *
+     * @return HTTP version string, e.g. <TT>"HTTP/1.0"</TT>,
+     * <TT>"HTTP/1.1"</TT>.
+     *
+     * @exception IllegalStateException (unchecked exception) Thrown if this
+     * HTTP request is invalid.
+     */
+    public String getHttpVersion() {
+        if (!isValid()) {
+            throw new IllegalStateException("HTTP request is invalid");
+        }
+        return myHttpVersion;
+    }
 
-	/**
-	 * Obtain this HTTP request's version.
-	 *
-	 * @return  HTTP version string, e.g. <TT>"HTTP/1.0"</TT>,
-	 *          <TT>"HTTP/1.1"</TT>.
-	 *
-	 * @exception  IllegalStateException
-	 *     (unchecked exception) Thrown if this HTTP request is invalid.
-	 */
-	public String getHttpVersion()
-		{
-		if (! isValid())
-			throw new IllegalStateException ("HTTP request is invalid");
-		return myHttpVersion;
-		}
+    /**
+     * Obtain the value of the given header in this HTTP request.
+     *
+     * @param theHeaderName Header name.
+     *
+     * @return Header value, or null if there is no header for
+     * <TT>theHeaderName</TT>.
+     *
+     * @exception IllegalStateException (unchecked exception) Thrown if this
+     * HTTP request is invalid.
+     */
+    public String getHeader(String theHeaderName) {
+        if (!isValid()) {
+            throw new IllegalStateException("HTTP request is invalid");
+        }
+        return myHeaderMap.get(theHeaderName);
+    }
 
-	/**
-	 * Obtain the value of the given header in this HTTP request.
-	 *
-	 * @param  theHeaderName  Header name.
-	 *
-	 * @return  Header value, or null if there is no header for
-	 *          <TT>theHeaderName</TT>.
-	 *
-	 * @exception  IllegalStateException
-	 *     (unchecked exception) Thrown if this HTTP request is invalid.
-	 */
-	public String getHeader
-		(String theHeaderName)
-		{
-		if (! isValid())
-			throw new IllegalStateException ("HTTP request is invalid");
-		return myHeaderMap.get (theHeaderName);
-		}
-
-	/**
-	 * Obtain a collection of all the headers in this HTTP request. The returned
-	 * object is an unmodifiable collection of zero or more map entries. Each
-	 * map entry's key is the header name. Each map entry's value is the
-	 * corresponding header value.
-	 *
-	 * @return  Unmodifiable collection of header name-value mappings.
-	 *
-	 * @exception  IllegalStateException
-	 *     (unchecked exception) Thrown if this HTTP request is invalid.
-	 */
-	public Collection<Map.Entry<String,String>> getHeaders()
-		{
-		if (! isValid())
-			throw new IllegalStateException ("HTTP request is invalid");
-		return myUnmodifiableHeaderMap.entrySet();
-		}
+    /**
+     * Obtain a collection of all the headers in this HTTP request. The returned
+     * object is an unmodifiable collection of zero or more map entries. Each
+     * map entry's key is the header name. Each map entry's value is the
+     * corresponding header value.
+     *
+     * @return Unmodifiable collection of header name-value mappings.
+     *
+     * @exception IllegalStateException (unchecked exception) Thrown if this
+     * HTTP request is invalid.
+     */
+    public Collection<Map.Entry<String, String>> getHeaders() {
+        if (!isValid()) {
+            throw new IllegalStateException("HTTP request is invalid");
+        }
+        return myUnmodifiableHeaderMap.entrySet();
+    }
 
 // Hidden operations.
+    /**
+     * Parse the input data read from this HTTP request's socket.
+     */
+    private void parse() {
+        // Early return if already parsed.
+        if (myMethod != null) {
+            return;
+        }
 
-	/**
-	 * Parse the input data read from this HTTP request's socket.
-	 */
-	private void parse()
-		{
-		// Early return if already parsed.
-		if (myMethod != null) return;
+        // Assume the request is invalid.
+        iamValid = false;
+        myMethod = "";
+        myUri = "";
+        myHttpVersion = "";
 
-		// Assume the request is invalid.
-		iamValid = false;
-		myMethod = "";
-		myUri = "";
-		myHttpVersion = "";
+        try {
+            // Set up to scan lines from the socket input stream.
+            Scanner scanner = new Scanner(mySocket.getInputStream());
 
-		try
-			{
-			// Set up to scan lines from the socket input stream.
-			Scanner scanner = new Scanner (mySocket.getInputStream());
+            // Read the first line. If none, invalid.
+            if (!scanner.hasNextLine()) {
+                return;
+            }
+            String line = scanner.nextLine();
 
-			// Read the first line. If none, invalid.
-			if (! scanner.hasNextLine()) return;
-			String line = scanner.nextLine();
+            // Parse the first line.
+            Scanner linescanner = new Scanner(line);
+            if (!linescanner.hasNext()) {
+                return;
+            }
+            String method = linescanner.next();
+            if (!linescanner.hasNext()) {
+                return;
+            }
+            String uri = linescanner.next();
+            if (!linescanner.hasNext()) {
+                return;
+            }
+            String httpVersion = linescanner.next();
+            if (linescanner.hasNext()) {
+                return;
+            }
 
-			// Parse the first line.
-			Scanner linescanner = new Scanner (line);
-			if (! linescanner.hasNext()) return;
-			String method = linescanner.next();
-			if (! linescanner.hasNext()) return;
-			String uri = linescanner.next();
-			if (! linescanner.hasNext()) return;
-			String httpVersion = linescanner.next();
-			if (linescanner.hasNext()) return;
+            // Read remaining lines if any until an empty line.
+            String headerName = null;
+            String headerValue = "";
+            for (;;) {
+                if (!scanner.hasNextLine()) {
+                    return;
+                }
+                line = scanner.nextLine();
+                if (line.length() == 0) {
+                    break;
+                }
 
-			// Read remaining lines if any until an empty line.
-			String headerName = null;
-			String headerValue = "";
-			for (;;)
-				{
-				if (! scanner.hasNextLine()) return;
-				line = scanner.nextLine();
-				if (line.length() == 0) break;
+                // Check whether line is starting or continuing a header.
+                if (Character.isWhitespace(line.charAt(0))) {
+                    // Continuing previous header.
+                    if (headerName == null) {
+                        return;
+                    }
+                    headerValue += line;
+                } else {
+                    // Starting new header. Record previous header if any.
+                    if (headerName != null) {
+                        myHeaderMap.put(headerName, headerValue);
+                        headerName = null;
+                        headerValue = "";
+                    }
 
-				// Check whether line is starting or continuing a header.
-				if (Character.isWhitespace (line.charAt (0)))
-					{
-					// Continuing previous header.
-					if (headerName == null) return;
-					headerValue += line;
-					}
-				else
-					{
-					// Starting new header. Record previous header if any.
-					if (headerName != null)
-						{
-						myHeaderMap.put (headerName, headerValue);
-						headerName = null;
-						headerValue = "";
-						}
+                    // Parse header name and value.
+                    int i = line.indexOf(':');
+                    if (i <= 0) {
+                        return;
+                    }
+                    if (i >= line.length() - 1) {
+                        return;
+                    }
+                    if (!Character.isWhitespace(line.charAt(i + 1))) {
+                        return;
+                    }
+                    headerName = line.substring(0, i);
+                    headerValue += line.substring(i + 2);
+                }
+            }
 
-					// Parse header name and value.
-					int i = line.indexOf (':');
-					if (i <= 0) return;
-					if (i >= line.length()-1) return;
-					if (! Character.isWhitespace (line.charAt (i+1))) return;
-					headerName = line.substring (0, i);
-					headerValue += line.substring (i+2);
-					}
-				}
+            // If we get here, all is well. Record final header if any.
+            if (headerName != null) {
+                myHeaderMap.put(headerName, headerValue);
+            }
 
-			// If we get here, all is well. Record final header if any.
-			if (headerName != null)
-				{
-				myHeaderMap.put (headerName, headerValue);
-				}
+            // Record method, URI, and HTTP version.
+            myMethod = method;
+            myUri = uri;
+            myHttpVersion = httpVersion;
 
-			// Record method, URI, and HTTP version.
-			myMethod = method;
-			myUri = uri;
-			myHttpVersion = httpVersion;
-
-			// Mark it valid.
-			iamValid = true;
-			}
-
-		catch (IOException exc)
-			{
-			// Leave it marked invalid.
-			}
-		}
+            // Mark it valid.
+            iamValid = true;
+        } catch (IOException exc) {
+            // Leave it marked invalid.
+        }
+    }
 
 // Unit test main program.
-
 //	/**
 //	 * Unit test main program. The program listens for connections to
 //	 * localhost:8080. The program reads each HTTP request from a web browser
@@ -370,5 +368,4 @@ public class HttpRequest
 //			socket.close();
 //			}
 //		}
-
-	}
+}

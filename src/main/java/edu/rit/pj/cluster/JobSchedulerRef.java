@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj.cluster;
 
 import java.io.IOException;
@@ -31,105 +30,91 @@ import java.io.IOException;
  * Interface JobSchedulerRef specifies the interface for the PJ Job Scheduler
  * Daemon process.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 24-Jan-2012
  */
-public interface JobSchedulerRef
-	{
+public interface JobSchedulerRef {
 
 // Exported operations.
+    /**
+     * Report that a backend node failed.
+     *
+     * @param theJobFrontend Job frontend that is calling this method.
+     * @param name Backend node name.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void backendFailed(JobFrontendRef theJobFrontend,
+            String name)
+            throws IOException;
 
-	/**
-	 * Report that a backend node failed.
-	 *
-	 * @param  theJobFrontend  Job frontend that is calling this method.
-	 * @param  name            Backend node name.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void backendFailed
-		(JobFrontendRef theJobFrontend,
-		 String name)
-		throws IOException;
+    /**
+     * Cancel a job.
+     *
+     * @param theJobFrontend Job frontend that is calling this method.
+     * @param errmsg Error message string.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void cancelJob(JobFrontendRef theJobFrontend,
+            String errmsg)
+            throws IOException;
 
-	/**
-	 * Cancel a job.
-	 *
-	 * @param  theJobFrontend  Job frontend that is calling this method.
-	 * @param  errmsg          Error message string.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void cancelJob
-		(JobFrontendRef theJobFrontend,
-		 String errmsg)
-		throws IOException;
+    /**
+     * Report that a job finished.
+     *
+     * @param theJobFrontend Job frontend that is calling this method.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void jobFinished(JobFrontendRef theJobFrontend)
+            throws IOException;
 
-	/**
-	 * Report that a job finished.
-	 *
-	 * @param  theJobFrontend  Job frontend that is calling this method.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void jobFinished
-		(JobFrontendRef theJobFrontend)
-		throws IOException;
+    /**
+     * Renew the lease on a job.
+     *
+     * @param theJobFrontend Job frontend that is calling this method.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void renewLease(JobFrontendRef theJobFrontend)
+            throws IOException;
 
-	/**
-	 * Renew the lease on a job.
-	 *
-	 * @param  theJobFrontend  Job frontend that is calling this method.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void renewLease
-		(JobFrontendRef theJobFrontend)
-		throws IOException;
+    /**
+     * Report a comment for a process.
+     *
+     * @param theJobFrontend Job frontend that is calling this method.
+     * @param rank Process rank.
+     * @param comment Comment string.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void reportComment(JobFrontendRef theJobFrontend,
+            int rank,
+            String comment)
+            throws IOException;
 
-	/**
-	 * Report a comment for a process.
-	 *
-	 * @param  theJobFrontend  Job frontend that is calling this method.
-	 * @param  rank            Process rank.
-	 * @param  comment         Comment string.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void reportComment
-		(JobFrontendRef theJobFrontend,
-		 int rank,
-		 String comment)
-		throws IOException;
+    /**
+     * Request that a job be scheduled.
+     *
+     * @param theJobFrontend Job frontend that is calling this method.
+     * @param username User name.
+     * @param Nn Number of backend nodes.
+     * @param Np Number of processes.
+     * @param Nt Number of CPUs per process. 0 means "all CPUs."
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public void requestJob(JobFrontendRef theJobFrontend,
+            String username,
+            int Nn,
+            int Np,
+            int Nt)
+            throws IOException;
 
-	/**
-	 * Request that a job be scheduled.
-	 *
-	 * @param  theJobFrontend  Job frontend that is calling this method.
-	 * @param  username        User name.
-	 * @param  Nn              Number of backend nodes.
-	 * @param  Np              Number of processes.
-	 * @param  Nt              Number of CPUs per process. 0 means "all CPUs."
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public void requestJob
-		(JobFrontendRef theJobFrontend,
-		 String username,
-		 int Nn,
-		 int Np,
-		 int Nt)
-		throws IOException;
+    /**
+     * Close communication with this Job Scheduler.
+     */
+    public void close();
 
-	/**
-	 * Close communication with this Job Scheduler.
-	 */
-	public void close();
-
-	}
+}

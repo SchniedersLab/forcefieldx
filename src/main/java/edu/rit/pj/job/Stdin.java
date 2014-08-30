@@ -22,28 +22,25 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj.job;
 
 /**
- * Enum Stdin enumerates how the standard input stream of a {@linkplain Job}
- * is redirected.
+ * Enum Stdin enumerates how the standard input stream of a {@linkplain Job} is
+ * redirected.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 07-Oct-2010
  */
-enum Stdin
-	{
+enum Stdin {
 
-	/**
-	 * The standard input is not redirected.
-	 */
-	NONE,
+    /**
+     * The standard input is not redirected.
+     */
+    NONE,
+    /**
+     * The standard input is read from a file. It is an error if the file does
+     * not exist.
+     */
+    FILE,
 
-	/**
-	 * The standard input is read from a file. It is an error if the file does
-	 * not exist.
-	 */
-	FILE,
-
-	}
+}

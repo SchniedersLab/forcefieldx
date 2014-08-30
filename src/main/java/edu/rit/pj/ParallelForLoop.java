@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj;
 
 /**
@@ -50,21 +49,18 @@ package edu.rit.pj;
  * <BR>&nbsp;
  * </UL>
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 31-May-2007
  */
 public abstract class ParallelForLoop
-	extends ParallelConstruct
-	{
+        extends ParallelConstruct {
 
 // Exported constructors.
+    /**
+     * Construct a new parallel for loop.
+     */
+    public ParallelForLoop() {
+        super();
+    }
 
-	/**
-	 * Construct a new parallel for loop.
-	 */
-	public ParallelForLoop()
-		{
-		super();
-		}
-
-	}
+}

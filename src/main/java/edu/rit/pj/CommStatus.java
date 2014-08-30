@@ -22,53 +22,47 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj;
 
 /**
  * Class CommStatus provides the result of receiving a message from a
  * communicator (class {@linkplain Comm}).
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 09-Mar-2006
  */
-public class CommStatus
-	{
+public class CommStatus {
 
 // Exported data members.
+    /**
+     * The rank of the source process that sent the message.
+     */
+    public int fromRank;
 
-	/**
-	 * The rank of the source process that sent the message.
-	 */
-	public int fromRank;
+    /**
+     * The tag from the message that was received.
+     */
+    public int tag;
 
-	/**
-	 * The tag from the message that was received.
-	 */
-	public int tag;
-
-	/**
-	 * The actual number of items in the message that was received.
-	 */
-	public int length;
+    /**
+     * The actual number of items in the message that was received.
+     */
+    public int length;
 
 // Hidden constructors.
+    /**
+     * Construct a new status object.
+     *
+     * @param fromRank Source process rank.
+     * @param tag Tag.
+     * @param length Length.
+     */
+    CommStatus(int fromRank,
+            int tag,
+            int length) {
+        this.fromRank = fromRank;
+        this.tag = tag;
+        this.length = length;
+    }
 
-	/**
-	 * Construct a new status object.
-	 *
-	 * @param  fromRank  Source process rank.
-	 * @param  tag       Tag.
-	 * @param  length    Length.
-	 */
-	CommStatus
-		(int fromRank,
-		 int tag,
-		 int length)
-		{
-		this.fromRank = fromRank;
-		this.tag = tag;
-		this.length = length;
-		}
-
-	}
+}

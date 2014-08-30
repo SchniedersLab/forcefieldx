@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.util;
 
 /**
@@ -38,7 +37,8 @@ package edu.rit.util;
  * Edition</I> (Cambridge University Press, 2007), page 352. The hash function
  * applied to the counter value <I>i</I> is:
  * <P>
- * <I>x</I> := 3935559000370003845 * <I>i</I> + 2691343689449507681 (mod 2<SUP>64</SUP>)
+ * <I>x</I> := 3935559000370003845 * <I>i</I> + 2691343689449507681 (mod
+ * 2<SUP>64</SUP>)
  * <BR><I>x</I> := <I>x</I> xor (<I>x</I> right-shift 21)
  * <BR><I>x</I> := <I>x</I> xor (<I>x</I> left-shift 37)
  * <BR><I>x</I> := <I>x</I> xor (<I>x</I> right-shift 4)
@@ -51,91 +51,77 @@ package edu.rit.util;
  * (The shift and arithmetic operations are all performed on unsigned 64-bit
  * numbers.)
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 30-Mar-2008
  */
 public class DefaultRandom
-	extends Random
-	{
+        extends Random {
 
 // Hidden data members.
+    // Seed for this PRNG.
+    private long seed;
 
-	// Seed for this PRNG.
-	private long seed;
-
-	// 128 bytes of extra padding to avert cache interference.
-	private transient long p0, p1, p2, p3, p4, p5, p6, p7;
-	private transient long p8, p9, pa, pb, pc, pd, pe, pf;
+    // 128 bytes of extra padding to avert cache interference.
+    private transient long p0, p1, p2, p3, p4, p5, p6, p7;
+    private transient long p8, p9, pa, pb, pc, pd, pe, pf;
 
 // Exported constructors.
-
-	/**
-	 * Construct a new PRNG with the given seed. Any seed value is allowed.
-	 *
-	 * @param  seed  Seed.
-	 */
-	public DefaultRandom
-		(long seed)
-		{
-		setSeed (seed);
-		}
+    /**
+     * Construct a new PRNG with the given seed. Any seed value is allowed.
+     *
+     * @param seed Seed.
+     */
+    public DefaultRandom(long seed) {
+        setSeed(seed);
+    }
 
 // Exported operations.
-
-	/**
-	 * Set this PRNG's seed. Any seed value is allowed.
-	 *
-	 * @param  seed  Seed.
-	 */
-	public void setSeed
-		(long seed)
-		{
-		this.seed = hash (seed);
-		}
+    /**
+     * Set this PRNG's seed. Any seed value is allowed.
+     *
+     * @param seed Seed.
+     */
+    public void setSeed(long seed) {
+        this.seed = hash(seed);
+    }
 
 // Hidden operations.
+    /**
+     * Return the next 64-bit pseudorandom value in this PRNG's sequence.
+     *
+     * @return Pseudorandom value.
+     */
+    protected long next() {
+        ++seed;
+        return hash(seed);
+    }
 
-	/**
-	 * Return the next 64-bit pseudorandom value in this PRNG's sequence.
-	 *
-	 * @return  Pseudorandom value.
-	 */
-	protected long next()
-		{
-		++ seed;
-		return hash (seed);
-		}
+    /**
+     * Return the 64-bit pseudorandom value the given number of positions ahead
+     * in this PRNG's sequence.
+     *
+     * @param skip Number of positions to skip, assumed to be &gt; 0.
+     *
+     * @return Pseudorandom value.
+     */
+    protected long next(long skip) {
+        seed += skip;
+        return hash(seed);
+    }
 
-	/**
-	 * Return the 64-bit pseudorandom value the given number of positions ahead
-	 * in this PRNG's sequence.
-	 *
-	 * @param  skip  Number of positions to skip, assumed to be &gt; 0.
-	 *
-	 * @return  Pseudorandom value.
-	 */
-	protected long next
-		(long skip)
-		{
-		seed += skip;
-		return hash (seed);
-		}
+    /**
+     * Return the hash of the given value.
+     */
+    private static long hash(long x) {
+        x = 3935559000370003845L * x + 2691343689449507681L;
+        x = x ^ (x >>> 21);
+        x = x ^ (x << 37);
+        x = x ^ (x >>> 4);
+        x = 4768777513237032717L * x;
+        x = x ^ (x << 20);
+        x = x ^ (x >>> 41);
+        x = x ^ (x << 5);
+        return x;
+    }
 
-	/**
-	 * Return the hash of the given value.
-	 */
-	private static long hash
-		(long x)
-		{
-		x = 3935559000370003845L * x + 2691343689449507681L;
-		x = x ^ (x >>> 21);
-		x = x ^ (x << 37);
-		x = x ^ (x >>> 4);
-		x = 4768777513237032717L * x;
-		x = x ^ (x << 20);
-		x = x ^ (x >>> 41);
-		x = x ^ (x << 5);
-		return x;
-		}
-
-	}
+}

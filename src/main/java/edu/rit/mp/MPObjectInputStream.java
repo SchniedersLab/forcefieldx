@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.mp;
 
 import java.io.IOException;
@@ -34,88 +33,69 @@ import java.io.ObjectStreamClass;
  * Class MPObjectInputStream provides an object input stream that can load
  * classes from an alternate class loader.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 31-Jan-2006
  */
 class MPObjectInputStream
-	extends ObjectInputStream
-	{
+        extends ObjectInputStream {
 
 // Hidden data members.
-
-	private ClassLoader myClassLoader;
+    private ClassLoader myClassLoader;
 
 // Exported constructors.
+    /**
+     * Create a new MP object input stream. An alternate class loader will not
+     * be used.
+     *
+     * @param in Underlying input stream.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public MPObjectInputStream(InputStream in)
+            throws IOException {
+        super(in);
+    }
 
-	/**
-	 * Create a new MP object input stream. An alternate class loader will not
-	 * be used.
-	 *
-	 * @param  in  Underlying input stream.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public MPObjectInputStream
-		(InputStream in)
-		throws IOException
-		{
-		super (in);
-		}
-
-	/**
-	 * Create a new MP object input stream. The given class loader will be used
-	 * to load classes; if null, an alternate class loader will not be used.
-	 *
-	 * @param  in  Underlying input stream.
-	 * @param  cl  Alternate class loader, or null.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	public MPObjectInputStream
-		(InputStream in,
-		 ClassLoader cl)
-		throws IOException
-		{
-		super (in);
-		myClassLoader = cl;
-		}
+    /**
+     * Create a new MP object input stream. The given class loader will be used
+     * to load classes; if null, an alternate class loader will not be used.
+     *
+     * @param in Underlying input stream.
+     * @param cl Alternate class loader, or null.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     */
+    public MPObjectInputStream(InputStream in,
+            ClassLoader cl)
+            throws IOException {
+        super(in);
+        myClassLoader = cl;
+    }
 
 // Hidden operations.
+    /**
+     * Load the local class equivalent of the specified stream class
+     * description.
+     *
+     * @param desc Stream class description.
+     *
+     * @return Local class.
+     *
+     * @exception IOException Thrown if an I/O error occurred.
+     * @exception ClassNotFoundException Thrown if the local class could not be
+     * found.
+     */
+    protected Class<?> resolveClass(ObjectStreamClass desc)
+            throws IOException, ClassNotFoundException {
+        try {
+            return super.resolveClass(desc);
+        } catch (ClassNotFoundException exc) {
+            if (myClassLoader != null) {
+                return Class.forName(desc.getName(), false, myClassLoader);
+            } else {
+                throw exc;
+            }
+        }
+    }
 
-	/**
-	 * Load the local class equivalent of the specified stream class
-	 * description.
-	 *
-	 * @param  desc  Stream class description.
-	 *
-	 * @return  Local class.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 * @exception  ClassNotFoundException
-	 *     Thrown if the local class could not be found.
-	 */
-	protected Class<?> resolveClass
-		(ObjectStreamClass desc)
-		throws IOException, ClassNotFoundException
-		{
-		try
-			{
-			return super.resolveClass (desc);
-			}
-		catch (ClassNotFoundException exc)
-			{
-			if (myClassLoader != null)
-				{
-				return Class.forName (desc.getName(), false, myClassLoader);
-				}
-			else
-				{
-				throw exc;
-				}
-			}
-		}
-
-	}
+}

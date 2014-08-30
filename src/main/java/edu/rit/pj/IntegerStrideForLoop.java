@@ -22,7 +22,6 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
-
 package edu.rit.pj;
 
 /**
@@ -107,9 +106,8 @@ package edu.rit.pj;
  *             . . .
  *             }
  *         }
- * </PRE>
- * with the loop indexes running from <TT>first</TT> to <TT>last</TT> inclusive
- * and increasing by <TT>stride</TT> on each iteration.
+ * </PRE> with the loop indexes running from <TT>first</TT> to <TT>last</TT>
+ * inclusive and increasing by <TT>stride</TT> on each iteration.
  * <P>
  * The <TT>finish()</TT> method is intended for performing per-thread
  * finalization after finishing the loop iterations. If no such finalization is
@@ -143,8 +141,8 @@ package edu.rit.pj;
  *             . . .
  *             }
  *         }
- * </PRE>
- * When called, the <TT>ordered()</TT> method waits until the <TT>ordered()</TT>
+ * </PRE> When called, the <TT>ordered()</TT> method waits until the
+ * <TT>ordered()</TT>
  * method has been called and has returned in all loop iterations prior to the
  * current loop iteration. Then the <TT>ordered()</TT> method calls the given
  * parallel section's <TT>run()</TT> method. When the parallel section's
@@ -170,10 +168,9 @@ package edu.rit.pj;
  *             . . .
  *             }
  *         }
- * </PRE>
- * Once <TT>stopLoop()</TT> is called, after each parallel team thread finishes
- * executing its current chunk of iterations, each thread will execute no
- * further chunks and will proceed to finish the parallel for loop. Note well
+ * </PRE> Once <TT>stopLoop()</TT> is called, after each parallel team thread
+ * finishes executing its current chunk of iterations, each thread will execute
+ * no further chunks and will proceed to finish the parallel for loop. Note well
  * that stopping a parallel for loop is not the same as executing a
  * <TT>break</TT> statement in a regular for loop. The parallel for loop does
  * not stop until each thread, <I>including the thread that called
@@ -183,8 +180,8 @@ package edu.rit.pj;
  * statement in the above example causes the thread that called
  * <TT>stopLoop()</TT> to finish its chunk of iterations early.)
  * <P>
- * Normally, at the end of the parallel for loop, the parallel team threads
- * wait for each other at a barrier. To eliminate this barrier wait, include
+ * Normally, at the end of the parallel for loop, the parallel team threads wait
+ * for each other at a barrier. To eliminate this barrier wait, include
  * {@link BarrierAction#NO_WAIT BarrierAction.NO_WAIT} in the <TT>execute()</TT>
  * method call:
  * <PRE>
@@ -202,8 +199,7 @@ package edu.rit.pj;
  *             . . .
  *             }
  *         }
- * </PRE>
- * To execute a section of code in a single thread as part of the barrier
+ * </PRE> To execute a section of code in a single thread as part of the barrier
  * synchronization, include an instance of class {@linkplain BarrierAction} in
  * the <TT>execute()</TT> method call. The barrier action object's
  * <TT>run()</TT> method contains the code to be executed in a single thread
@@ -230,8 +226,7 @@ package edu.rit.pj;
  *             . . .
  *             }
  *         }
- * </PRE>
- * For further information, see class {@linkplain BarrierAction}.
+ * </PRE> For further information, see class {@linkplain BarrierAction}.
  * <P>
  * If the parallel for loop's <TT>start()</TT>, <TT>run()</TT>, or
  * <TT>finish()</TT> method throws an exception in one of the threads, then that
@@ -242,218 +237,186 @@ package edu.rit.pj;
  * throws an exception, the whole parallel for loop exits with some (perhaps
  * none) of the iterations unperformed.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  * @version 11-Nov-2007
  */
 public abstract class IntegerStrideForLoop
-	extends ParallelForLoop
-	{
+        extends ParallelForLoop {
 
 // Hidden data members.
+    // Parallel for loop schedule.
+    IntegerSchedule mySchedule;
 
-	// Parallel for loop schedule.
-	IntegerSchedule mySchedule;
-
-	// Loop index and stride for ordered() construct.
-	int myOrderedIndex;
-	int myStride;
+    // Loop index and stride for ordered() construct.
+    int myOrderedIndex;
+    int myStride;
 
 // Exported constructors.
-
-	/**
-	 * Construct a new parallel for loop.
-	 */
-	public IntegerStrideForLoop()
-		{
-		super();
-		}
+    /**
+     * Construct a new parallel for loop.
+     */
+    public IntegerStrideForLoop() {
+        super();
+    }
 
 // Exported operations.
+    /**
+     * Determine this parallel for loop's schedule. The schedule determines how
+     * the loop iterations are apportioned among the parallel team threads. For
+     * further information, see class {@linkplain IntegerSchedule}.
+     * <P>
+     * The <TT>schedule()</TT> method may be overridden in a subclass to return
+     * the desired schedule. If not overridden, the default is a runtime
+     * schedule (see {@link IntegerSchedule#runtime()}).
+     *
+     * @return Schedule for this parallel for loop.
+     */
+    public IntegerSchedule schedule() {
+        return IntegerSchedule.runtime();
+    }
 
-	/**
-	 * Determine this parallel for loop's schedule. The schedule determines how
-	 * the loop iterations are apportioned among the parallel team threads. For
-	 * further information, see class {@linkplain IntegerSchedule}.
-	 * <P>
-	 * The <TT>schedule()</TT> method may be overridden in a subclass to return
-	 * the desired schedule. If not overridden, the default is a runtime
-	 * schedule (see {@link IntegerSchedule#runtime()}).
-	 *
-	 * @return  Schedule for this parallel for loop.
-	 */
-	public IntegerSchedule schedule()
-		{
-		return IntegerSchedule.runtime();
-		}
+    /**
+     * Perform per-thread initialization actions before starting the loop
+     * iterations.
+     * <P>
+     * The <TT>start()</TT> method may be overridden in a subclass. If not
+     * overridden, the <TT>start()</TT> method does nothing.
+     *
+     * @exception Exception The <TT>start()</TT> method may throw any exception.
+     */
+    public void start()
+            throws Exception {
+    }
 
-	/**
-	 * Perform per-thread initialization actions before starting the loop
-	 * iterations.
-	 * <P>
-	 * The <TT>start()</TT> method may be overridden in a subclass. If not
-	 * overridden, the <TT>start()</TT> method does nothing.
-	 *
-	 * @exception  Exception
-	 *     The <TT>start()</TT> method may throw any exception.
-	 */
-	public void start()
-		throws Exception
-		{
-		}
+    /**
+     * Execute one chunk of iterations of this parallel for loop. The
+     * <TT>run()</TT> method must perform the loop body for indexes
+     * <TT>first</TT> through <TT>last</TT> inclusive, increasing the loop index
+     * by <TT>stride</TT> after each iteration.
+     * <P>
+     * The <TT>run()</TT> method must be overridden in a subclass.
+     *
+     * @param first First loop index.
+     * @param last Last loop index.
+     * @param stride Loop index stride, always positive.
+     *
+     * @exception Exception The <TT>run()</TT> method may throw any exception.
+     */
+    public abstract void run(int first,
+            int last,
+            int stride)
+            throws Exception;
 
-	/**
-	 * Execute one chunk of iterations of this parallel for loop. The
-	 * <TT>run()</TT> method must perform the loop body for indexes
-	 * <TT>first</TT> through <TT>last</TT> inclusive, increasing the loop index
-	 * by <TT>stride</TT> after each iteration.
-	 * <P>
-	 * The <TT>run()</TT> method must be overridden in a subclass.
-	 *
-	 * @param  first   First loop index.
-	 * @param  last    Last loop index.
-	 * @param  stride  Loop index stride, always positive.
-	 *
-	 * @exception  Exception
-	 *     The <TT>run()</TT> method may throw any exception.
-	 */
-	public abstract void run
-		(int first,
-		 int last,
-		 int stride)
-		throws Exception;
+    /**
+     * Perform per-thread finalization actions after finishing the loop
+     * iterations.
+     * <P>
+     * The <TT>finish()</TT> method may be overridden in a subclass. If not
+     * overridden, the <TT>finish()</TT> method does nothing.
+     *
+     * @exception Exception The <TT>finish()</TT> method may throw any
+     * exception.
+     */
+    public void finish()
+            throws Exception {
+    }
 
-	/**
-	 * Perform per-thread finalization actions after finishing the loop
-	 * iterations.
-	 * <P>
-	 * The <TT>finish()</TT> method may be overridden in a subclass. If not
-	 * overridden, the <TT>finish()</TT> method does nothing.
-	 *
-	 * @exception  Exception
-	 *     The <TT>finish()</TT> method may throw any exception.
-	 */
-	public void finish()
-		throws Exception
-		{
-		}
+    /**
+     * Execute the given section of code in order of the loop indexes. A call to
+     * the <TT>ordered()</TT> method may appear in this parallel for loop's
+     * <TT>run()</TT> method. When called, the <TT>ordered()</TT> method waits
+     * until the <TT>ordered()</TT> method has been called and has returned in
+     * all loop iterations prior to the current loop iteration. Then the
+     * <TT>ordered()</TT> method calls the <TT>run()</TT> method of
+     * <TT>theParallelSection</TT>. When the parallel section's <TT>run()</TT>
+     * method returns, the <TT>ordered()</TT> method returns. If the parallel
+     * section's <TT>run()</TT> method throws an exception, the
+     * <TT>ordered()</TT> method throws that same exception.
+     * <P>
+     * The <TT>ordered()</TT> method is used when a portion of a parallel for
+     * loop has to be executed sequentially in the order of the loop indexes,
+     * while the rest of the parallel for loop can be executed concurrently.
+     * <P>
+     * <I>Note:</I> Either the <TT>ordered()</TT> method must be called exactly
+     * once during each call of the parallel for loop's <TT>run()</TT> method,
+     * or the <TT>ordered()</TT> method must not be called at all.
+     *
+     * @param theSection Parallel section to execute in order.
+     *
+     * @exception NullPointerException (unchecked exception) Thrown if
+     * <TT>theSection</TT> is null.
+     * @exception IllegalStateException (unchecked exception) Thrown if no
+     * parallel team is executing this parallel for loop.
+     * @exception Exception Thrown if <TT>theSection</TT>'s <TT>run()</TT>
+     * method throws an exception.
+     */
+    public final void ordered(ParallelSection theSection)
+            throws Exception {
+        // Verify preconditions.
+        if (theSection == null) {
+            throw new IllegalStateException("IntegerStrideForLoop.ordered(): Parallel section is null");
+        }
+        if (myTeam == null) {
+            throw new IllegalStateException("IntegerStrideForLoop.ordered(): No parallel team executing");
+        }
 
-	/**
-	 * Execute the given section of code in order of the loop indexes. A call to
-	 * the <TT>ordered()</TT> method may appear in this parallel for loop's
-	 * <TT>run()</TT> method. When called, the <TT>ordered()</TT> method waits
-	 * until the <TT>ordered()</TT> method has been called and has returned in
-	 * all loop iterations prior to the current loop iteration. Then the
-	 * <TT>ordered()</TT> method calls the <TT>run()</TT> method of
-	 * <TT>theParallelSection</TT>. When the parallel section's <TT>run()</TT>
-	 * method returns, the <TT>ordered()</TT> method returns. If the parallel
-	 * section's <TT>run()</TT> method throws an exception, the
-	 * <TT>ordered()</TT> method throws that same exception.
-	 * <P>
-	 * The <TT>ordered()</TT> method is used when a portion of a parallel for
-	 * loop has to be executed sequentially in the order of the loop indexes,
-	 * while the rest of the parallel for loop can be executed concurrently.
-	 * <P>
-	 * <I>Note:</I> Either the <TT>ordered()</TT> method must be called exactly
-	 * once during each call of the parallel for loop's <TT>run()</TT> method,
-	 * or the <TT>ordered()</TT> method must not be called at all.
-	 *
-	 * @param  theSection  Parallel section to execute in order.
-	 *
-	 * @exception  NullPointerException
-	 *     (unchecked exception) Thrown if <TT>theSection</TT> is null.
-	 * @exception  IllegalStateException
-	 *     (unchecked exception) Thrown if no parallel team is executing this
-	 *     parallel for loop.
-	 * @exception  Exception
-	 *     Thrown if <TT>theSection</TT>'s <TT>run()</TT> method throws an
-	 *     exception.
-	 */
-	public final void ordered
-		(ParallelSection theSection)
-		throws Exception
-		{
-		// Verify preconditions.
-		if (theSection == null)
-			{
-			throw new IllegalStateException
-				("IntegerStrideForLoop.ordered(): Parallel section is null");
-			}
-		if (myTeam == null)
-			{
-			throw new IllegalStateException
-				("IntegerStrideForLoop.ordered(): No parallel team executing");
-			}
+        // Wait until the ordered() construct has finished for all previous
+        // iterations.
+        if (mySchedule.myOrderedIndex != this.myOrderedIndex) {
+            Spinner spinner = new Spinner();
+            while (mySchedule.myOrderedIndex != this.myOrderedIndex) {
+                spinner.spin();
+            }
+        }
 
-		// Wait until the ordered() construct has finished for all previous
-		// iterations.
-		if (mySchedule.myOrderedIndex != this.myOrderedIndex)
-			{
-			Spinner spinner = new Spinner();
-			while (mySchedule.myOrderedIndex != this.myOrderedIndex)
-				{
-				spinner.spin();
-				}
-			}
+        // Execute parallel section. Propagate any exception.
+        theSection.myTeam = this.myTeam;
+        try {
+            theSection.run();
+        } finally {
+            theSection.myTeam = null;
 
-		// Execute parallel section. Propagate any exception.
-		theSection.myTeam = this.myTeam;
-		try
-			{
-			theSection.run();
-			}
-		finally
-			{
-			theSection.myTeam = null;
+            // Notify that the ordered construct has finished for this
+            // iteration.
+            this.myOrderedIndex += this.myStride;
+            mySchedule.myOrderedIndex = this.myOrderedIndex;
+        }
+    }
 
-			// Notify that the ordered construct has finished for this
-			// iteration.
-			this.myOrderedIndex += this.myStride;
-			mySchedule.myOrderedIndex = this.myOrderedIndex;
-			}
-		}
-
-	/**
-	 * Stop this parallel for loop. Once <TT>stopLoop()</TT> is called, after
-	 * each parallel team thread finishes executing its current chunk of
-	 * iterations, each thread will execute no further chunks and will proceed
-	 * to finish this parallel for loop.
-	 *
-	 * @exception  IllegalStateException
-	 *     (unchecked exception) Thrown if no parallel team is executing this
-	 *     parallel for loop.
-	 */
-	public final void stopLoop()
-		{
-		if (myTeam == null)
-			{
-			throw new IllegalStateException
-				("ParallelForLoop.stopLoop(): No parallel team executing");
-			}
-		mySchedule.myBreak = true;
-		}
+    /**
+     * Stop this parallel for loop. Once <TT>stopLoop()</TT> is called, after
+     * each parallel team thread finishes executing its current chunk of
+     * iterations, each thread will execute no further chunks and will proceed
+     * to finish this parallel for loop.
+     *
+     * @exception IllegalStateException (unchecked exception) Thrown if no
+     * parallel team is executing this parallel for loop.
+     */
+    public final void stopLoop() {
+        if (myTeam == null) {
+            throw new IllegalStateException("ParallelForLoop.stopLoop(): No parallel team executing");
+        }
+        mySchedule.myBreak = true;
+    }
 
 // Hidden operations.
+    /**
+     * Execute one chunk of iterations of this parallel for loop. This method
+     * performs common processing, then calls the <TT>run()</TT> method.
+     *
+     * @param first First loop index.
+     * @param last Last loop index.
+     * @param stride Loop index stride, always positive.
+     *
+     * @exception Exception This method may throw any exception.
+     */
+    void commonRun(int first,
+            int last,
+            int stride)
+            throws Exception {
+        myOrderedIndex = first;
+        myStride = stride;
+        run(first, last, stride);
+    }
 
-	/**
-	 * Execute one chunk of iterations of this parallel for loop. This method
-	 * performs common processing, then calls the <TT>run()</TT> method.
-	 *
-	 * @param  first   First loop index.
-	 * @param  last    Last loop index.
-	 * @param  stride  Loop index stride, always positive.
-	 *
-	 * @exception  Exception
-	 *     This method may throw any exception.
-	 */
-	void commonRun
-		(int first,
-		 int last,
-		 int stride)
-		throws Exception
-		{
-		myOrderedIndex = first;
-		myStride = stride;
-		run (first, last, stride);
-		}
-
-	}
+}
