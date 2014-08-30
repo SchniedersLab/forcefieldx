@@ -30,13 +30,12 @@ import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static org.apache.commons.math3.util.FastMath.PI;
-import static org.apache.commons.math3.util.FastMath.max;
-import static org.apache.commons.math3.util.FastMath.min;
-
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
+import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
@@ -49,7 +48,6 @@ import edu.rit.pj.reduction.SharedInteger;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
-import ffx.numerics.InverseSqrt;
 import ffx.potential.LambdaInterface;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
@@ -60,6 +58,8 @@ import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.VDWType;
+
+import static ffx.numerics.InverseSqrt.inverseSQRT;
 
 /**
  * The van der Waals class computes the buffered 14-7 van der Waals interaction
@@ -1415,7 +1415,7 @@ public class VanDerWaals implements MaskingInterface,
                         int a2 = atomClass[k] * 2;
                         final double irv = radEpsi[a2 + RADMIN];
                         if (r2 <= off2 && mask[k] > 0 && irv > 0) {
-                            double ir = InverseSqrt.inverseSQRT(r2);
+                            double ir = inverseSQRT(r2);
                             final double r = r2 * ir;
                             //final double r = sqrt(r2);
                             final double r3 = r2 * r;
@@ -1612,7 +1612,7 @@ public class VanDerWaals implements MaskingInterface,
                                 if (i == k) {
                                     selfScale = 0.5;
                                 }
-                                final double ir = InverseSqrt.inverseSQRT(r2);
+                                final double ir = inverseSQRT(r2);
                                 final double r = r2 * ir;
                                 //final double r = sqrt(r2);
                                 final double r3 = r2 * r;
@@ -1641,9 +1641,8 @@ public class VanDerWaals implements MaskingInterface,
                                 final double t2 = t2a - 2.0;
                                 double eij = eps_lambda * t1 * t2;
                                 /**
-                                 * Apply a multiplicative switch if the
-                                 * interaction distance is greater than the
-                                 * beginning of the taper.
+                                 * Apply a multiplicative switch if the interaction
+                                 * distance is greater than the beginning of the taper.
                                  */
                                 double taper = 1.0;
                                 double dtaper = 0.0;
@@ -1704,21 +1703,11 @@ public class VanDerWaals implements MaskingInterface,
                                     dEdL += selfScale * dedl * taper;
                                     double t1d2 = -dsc1dL * t1d * t1d;
                                     double t2d2 = -dsc1dL * t2d * t2d;
-                                    double d2t1 = -dt1 * t1d * dsc1dL
-                                            - t1 * t1d * d2sc1dL2
-                                            - t1 * t1d2 * dsc1dL;
-                                    double d2t2 = -dt2 * t2d * dsc1dL
-                                            - t2a * t2d * d2sc1dL2
-                                            - t2a * t2d2 * dsc1dL;
-                                    double df1 = d2sc2dL2 * t1 * t2
-                                            + dsc2dL * dt1 * t2
-                                            + dsc2dL * t1 * dt2;
-                                    double df2 = dsc2dL * dt1 * t2
-                                            + sc2 * d2t1 * t2
-                                            + sc2 * dt1 * dt2;
-                                    double df3 = dsc2dL * t1 * dt2
-                                            + sc2 * dt1 * dt2
-                                            + sc2 * t1 * d2t2;
+                                    double d2t1 = -dt1 * t1d * dsc1dL - t1 * t1d * d2sc1dL2 - t1 * t1d2 * dsc1dL;
+                                    double d2t2 = -dt2 * t2d * dsc1dL - t2a * t2d * d2sc1dL2 - t2a * t2d2 * dsc1dL;
+                                    double df1 = d2sc2dL2 * t1 * t2 + dsc2dL * dt1 * t2 + dsc2dL * t1 * dt2;
+                                    double df2 = dsc2dL * dt1 * t2 + sc2 * d2t1 * t2 + sc2 * dt1 * dt2;
+                                    double df3 = dsc2dL * t1 * dt2 + sc2 * dt1 * dt2 + sc2 * t1 * d2t2;
                                     double de2dl2 = ev * (df1 + df2 + df3);
                                     d2EdL2 += selfScale * de2dl2 * taper;
                                     double t11 = -dsc2dL * t2 * dt1_dr;

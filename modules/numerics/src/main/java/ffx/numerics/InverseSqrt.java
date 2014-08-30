@@ -30,17 +30,20 @@ public class InverseSqrt {
     public static double inverseSQRT(double x) {
         // t_convert result, bit_pattern;
         int xBits = Float.floatToIntBits((float) x);
-        int exp = EXP_ADDR(xBits);
-        int fract = FRACT_ADDR(xBits);
+        int exp = expAddress(xBits);
+        int fract = fractAdress(xBits);
         int result = expTable[exp] | fracTable[fract];
-        double lu = Float.intBitsToFloat(result);
+        float lu = Float.intBitsToFloat(result);
+
+        /* First iteration of Newton's method for finding roots of a given equation. */
         double y = (half * lu * (three - ((x * lu) * lu)));
         // return y; /* 5 Flops */
+
+        /* Second iteration of Newton's method. */
         double y2 = (half * y * (three - ((x * y) * y)));
         return y2; /* 10 Flops */
 
     }
-
     private static final double half = 0.5;
     private static final double three = 3.0;
 
@@ -56,7 +59,7 @@ public class InverseSqrt {
      * @param val
      * @return
      */
-    private static int EXP_ADDR(int val) {
+    private static int expAddress(int val) {
         return ((val) & 0x7f800000) >> 23;
     }
 
@@ -66,12 +69,11 @@ public class InverseSqrt {
      * @param val
      * @return
      */
-    private static int FRACT_ADDR(int val) {
+    private static int fractAdress(int val) {
         return ((val) & (0x007fffff | 0x00800000)) >> 12;
     }
 
-
-    /* data for exponent table - 256 floats */
+    /* Data for exponent table - 256 floats */
     private static final int expTable[] = {
         0x5f000000, 0x5e800000, 0x5e800000, 0x5e000000,
         0x5e000000, 0x5d800000, 0x5d800000, 0x5d000000,
@@ -139,7 +141,7 @@ public class InverseSqrt {
         0x20000000, 0x1f800000, 0x1f800000, 0x1f000000
     };
 
-    /* data for fraction table - 4096 floats */
+    /* Data for fraction table - 4096 floats */
     private static final int fracTable[] = {
         0x3504f3, 0x34f9a4, 0x34ee57, 0x34e30c, 0x34d7c3, 0x34cc7c, 0x34c137, 0x34b5f5,
         0x34aab4, 0x349f76, 0x34943a, 0x348900, 0x347dc7, 0x347291, 0x34675e, 0x345c2c,
