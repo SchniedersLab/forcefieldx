@@ -78,9 +78,9 @@ public class Atom extends MSNode implements Comparable<Atom> {
 
     static {
         // Initialize HashMaps
-        AtomColor = new HashMap<Integer, Color3f>();
-        AtomVDW = new HashMap<Integer, Double>();
-        hybridTable = new HashMap<String, Integer>();
+        AtomColor = new HashMap<>();
+        AtomVDW = new HashMap<>();
+        hybridTable = new HashMap<>();
         // van der Waals
         AtomVDW.put(0, 1.0);
         AtomVDW.put(1, 1.20);
@@ -252,6 +252,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     private boolean active = true;
     private String segID = null;
     private double formFactorWidth = 3.5;
+    private double formFactorWidth2 = formFactorWidth*formFactorWidth;
     private int formFactorIndex = -1;
     private ArrayList<Vector3d> trajectory;
     // Molecular Mechanics Info
@@ -266,10 +267,10 @@ public class Atom extends MSNode implements Comparable<Atom> {
     // solvation
     private double bornRadius;
     // Connectivity information.
-    private final ArrayList<Bond> bonds = new ArrayList<Bond>();
-    private final ArrayList<Angle> angles = new ArrayList<Angle>();
-    private final ArrayList<Torsion> torsions = new ArrayList<Torsion>();
-    private final ArrayList<Atom> one_5s = new ArrayList<Atom>();
+    private final ArrayList<Bond> bonds = new ArrayList<>();
+    private final ArrayList<Angle> angles = new ArrayList<>();
+    private final ArrayList<Torsion> torsions = new ArrayList<>();
+    private final ArrayList<Atom> one_5s = new ArrayList<>();
     /**
      * *************************************************************************
      */
@@ -294,7 +295,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     // making it visible
     private boolean stale = false;
     private String shortString = null;
-    private Vector3d vector3d = new Vector3d();
+    private final Vector3d vector3d = new Vector3d();
 
     /**
      * Default constructor.
@@ -1441,6 +1442,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     public void setFormFactorWidth(double width) {
         formFactorWidth = width;
+        formFactorWidth2 = width * width;
     }
 
     /**
@@ -1451,6 +1453,16 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     public double getFormFactorWidth() {
         return formFactorWidth;
+    }
+
+        /**
+     * <p>
+     * Getter for the field <code>formFactorWidth</code>.</p>
+     *
+     * @return a double.
+     */
+    public double getFormFactorWidth2() {
+        return formFactorWidth2;
     }
 
     /**

@@ -59,8 +59,6 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.VDWType;
 
-import static ffx.numerics.InverseSqrt.inverseSQRT;
-
 /**
  * The van der Waals class computes the buffered 14-7 van der Waals interaction
  * used by the AMOEBA force field in parallel using a {@link NeighborList} for
@@ -243,6 +241,9 @@ public class VanDerWaals implements MaskingInterface,
     private final long vdwTime[];
     private final long reductionTime[];
     private long initializationTotal, vdwTotal, reductionTotal;
+
+    private final MultiplicativeSwitch multiplicativeSwitch;
+
     private VDW_FORM vdwForm = VDW_FORM.BUFFERED_14_7;
 
     /**
@@ -409,17 +410,7 @@ public class VanDerWaals implements MaskingInterface,
         buff = 2.0;
         cut2 = cut * cut;
         off2 = off * off;
-        double denom = pow(off - cut, 5.0);
-        c0 = off * off2 * (off2 - 5.0 * off * cut + 10.0 * cut2) / denom;
-        c1 = -30.0 * off2 * cut2 / denom;
-        c2 = 30.0 * (off2 * cut + off * cut2) / denom;
-        c3 = -10.0 * (off2 + 4.0 * off * cut + cut2) / denom;
-        c4 = 15.0 * (off + cut) / denom;
-        c5 = -6.0 / denom;
-        twoC2 = 2.0 * c2;
-        threeC3 = 3.0 * c3;
-        fourC4 = 4.0 * c4;
-        fiveC5 = 5.0 * c5;
+        multiplicativeSwitch = new MultiplicativeSwitch(off, cut);
 
         /**
          * Parallel neighbor list builder.
@@ -666,7 +657,7 @@ public class VanDerWaals implements MaskingInterface,
                         double r3 = r * r2;
                         double r4 = r2 * r2;
                         double r5 = r2 * r3;
-                        taper = c5 * r5 + c4 * r4 + c3 * r3 + c2 * r2 + c1 * r + c0;
+                        taper = multiplicativeSwitch.taper(r, r2, r3, r4, r5);
                         taper = 1.0 - taper;
                     }
                     double jacobian = 4.0 * PI * r2;
@@ -1415,11 +1406,7 @@ public class VanDerWaals implements MaskingInterface,
                         int a2 = atomClass[k] * 2;
                         final double irv = radEpsi[a2 + RADMIN];
                         if (r2 <= off2 && mask[k] > 0 && irv > 0) {
-                            double ir = inverseSQRT(r2);
-                            final double r = r2 * ir;
-                            //final double r = sqrt(r2);
-                            final double r3 = r2 * r;
-                            final double r4 = r2 * r2;
+                            final double r = sqrt(r2);
                             double alpha = 0.0;
                             double lambda5 = 1.0;
                             boolean soft = softCorei[k] || (intermolecularSoftcore && (moleculei != molecule[k]));
@@ -1450,9 +1437,11 @@ public class VanDerWaals implements MaskingInterface,
                             double taper = 1.0;
                             double dtaper = 0.0;
                             if (r2 > cut2) {
+                                final double r3 = r2 * r;
+                                final double r4 = r2 * r2;
                                 final double r5 = r2 * r3;
-                                taper = c5 * r5 + c4 * r4 + c3 * r3 + c2 * r2 + c1 * r + c0;
-                                dtaper = fiveC5 * r4 + fourC4 * r3 + threeC3 * r2 + twoC2 * r + c1;
+                                taper = multiplicativeSwitch.taper(r, r2, r3, r4, r5);
+                                dtaper = multiplicativeSwitch.dtaper(r, r2, r3, r4);
                             }
                             e += eij * taper;
                             count++;
@@ -1467,7 +1456,7 @@ public class VanDerWaals implements MaskingInterface,
                             final double dt1_dr = t1 * dt1d_dr * t1d;
                             final double dt2_dr = t2a * dt2d_dr * t2d;
                             final double dedr = -eps_lambda * (dt1_dr * t2 + t1 * dt2_dr);
-                            // final double ir = 1.0 / r;
+                            final double ir = 1.0 / r;
                             final double drdx = dx_local[0] * ir;
                             final double drdy = dx_local[1] * ir;
                             final double drdz = dx_local[2] * ir;
@@ -1612,11 +1601,7 @@ public class VanDerWaals implements MaskingInterface,
                                 if (i == k) {
                                     selfScale = 0.5;
                                 }
-                                final double ir = inverseSQRT(r2);
-                                final double r = r2 * ir;
-                                //final double r = sqrt(r2);
-                                final double r3 = r2 * r;
-                                final double r4 = r2 * r2;
+                                final double r = sqrt(r2);
                                 double alpha = 0.0;
                                 double lambda5 = 1.0;
                                 boolean soft = (isSoft[i] || softCorei[k]);
@@ -1624,7 +1609,6 @@ public class VanDerWaals implements MaskingInterface,
                                     alpha = sc1;
                                     lambda5 = sc2;
                                 }
-
                                 final double ev = radEpsi[a2 + EPS];
                                 final double eps_lambda = ev * lambda5;
                                 final double rho = r * irv;
@@ -1641,15 +1625,18 @@ public class VanDerWaals implements MaskingInterface,
                                 final double t2 = t2a - 2.0;
                                 double eij = eps_lambda * t1 * t2;
                                 /**
-                                 * Apply a multiplicative switch if the interaction
-                                 * distance is greater than the beginning of the taper.
+                                 * Apply a multiplicative switch if the
+                                 * interaction distance is greater than the
+                                 * beginning of the taper.
                                  */
                                 double taper = 1.0;
                                 double dtaper = 0.0;
                                 if (r2 > cut2) {
+                                    final double r3 = r2 * r;
+                                    final double r4 = r2 * r2;
                                     final double r5 = r2 * r3;
-                                    taper = c5 * r5 + c4 * r4 + c3 * r3 + c2 * r2 + c1 * r + c0;
-                                    dtaper = fiveC5 * r4 + fourC4 * r3 + threeC3 * r2 + twoC2 * r + c1;
+                                    taper = multiplicativeSwitch.taper(r, r2, r3, r4, r5);
+                                    dtaper = multiplicativeSwitch.dtaper(r, r2, r3, r4);
                                 }
                                 e += selfScale * eij * taper;
                                 count++;
@@ -1664,7 +1651,7 @@ public class VanDerWaals implements MaskingInterface,
                                 final double dt1_dr = t1 * dt1d_dr * t1d;
                                 final double dt2_dr = t2a * dt2d_dr * t2d;
                                 double dedr = -eps_lambda * (dt1_dr * t2 + t1 * dt2_dr);
-                                // final double ir = 1.0 / r;
+                                final double ir = 1.0 / r;
                                 double drdx = dx_local[0] * ir;
                                 double drdy = dx_local[1] * ir;
                                 double drdz = dx_local[2] * ir;
@@ -1841,22 +1828,7 @@ public class VanDerWaals implements MaskingInterface,
      */
     private final double off2;
     private final double buff;
-    /**
-     * The 6 coefficients of the multiplicative polynomial switch are unique
-     * given the distances "off" and "cut". They are found by solving a system
-     * of 6 equations, which define the boundary conditions of the switch.
-     * f(cut) = 1 f'(cut) = f"(cut) = 0 f(off) = f'(off) = f"(off) = 0
-     */
-    private final double c0;
-    private final double c1;
-    private final double c2;
-    private final double c3;
-    private final double c4;
-    private final double c5;
-    private final double twoC2;
-    private final double threeC3;
-    private final double fourC4;
-    private final double fiveC5;
+
     /**
      * *************************************************************************
      * Buffered-14-7 constants.
@@ -1877,5 +1849,63 @@ public class VanDerWaals implements MaskingInterface,
     private final int dispersivePower1;
     private final int repDispPower;
     private final int repDispPower1;
+
+    /**
+     * The 6 coefficients of the multiplicative polynomial switch are unique
+     * given the distances "off" and "cut". They are found by solving a system
+     * of 6 equations, which define the boundary conditions of the switch.
+     * <br>
+     * f(cut) = 1
+     * <br>
+     * f'(cut) = f"(cut) = 0
+     * <br>
+     * f(off) = f'(off) = f"(off) = 0
+     */
+    private class MultiplicativeSwitch {
+
+        protected final double off;
+        protected final double off2;
+        protected final double cut;
+        protected final double cut2;
+
+        protected final double c0;
+        protected final double c1;
+        protected final double c2;
+        protected final double c3;
+        protected final double c4;
+        protected final double c5;
+        protected final double twoC2;
+        protected final double threeC3;
+        protected final double fourC4;
+        protected final double fiveC5;
+
+        public MultiplicativeSwitch(double off, double cut) {
+            this.off = off;
+            this.off2 = off * off;
+            this.cut = cut;
+            this.cut2 = cut * cut;
+
+            double denom = pow(off - cut, 5.0);
+            c0 = off * off2 * (off2 - 5.0 * off * cut + 10.0 * cut2) / denom;
+            c1 = -30.0 * off2 * cut2 / denom;
+            c2 = 30.0 * (off2 * cut + off * cut2) / denom;
+            c3 = -10.0 * (off2 + 4.0 * off * cut + cut2) / denom;
+            c4 = 15.0 * (off + cut) / denom;
+            c5 = -6.0 / denom;
+            twoC2 = 2.0 * c2;
+            threeC3 = 3.0 * c3;
+            fourC4 = 4.0 * c4;
+            fiveC5 = 5.0 * c5;
+        }
+
+        public double taper(double r, double r2, double r3, double r4, double r5) {
+            return c5 * r5 + c4 * r4 + c3 * r3 + c2 * r2 + c1 * r + c0;
+        }
+
+        public double dtaper(double r, double r2, double r3, double r4) {
+            return fiveC5 * r4 + fourC4 * r3 + threeC3 * r2 + twoC2 * r + c1;
+        }
+
+    }
 
 }

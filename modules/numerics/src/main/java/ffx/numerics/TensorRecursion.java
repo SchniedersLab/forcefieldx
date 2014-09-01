@@ -144,7 +144,7 @@ public class TensorRecursion {
              * Math.pow(-1.0, j) returns positive for all j, with -1.0 as the //
              * arguement rather than -1. This is a bug?
              */
-            t000j_Constants[j] = Math.pow(-1, j) * VectorMath.doublefactorial(2 * j - 1);
+            t000j_Constants[j] = Math.pow(-1, j) * VectorMath.doubleFactorial(2 * j - 1);
         }
         this.order = order;
         T000 = new double[order + 1];

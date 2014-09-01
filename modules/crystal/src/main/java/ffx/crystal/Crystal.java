@@ -44,8 +44,8 @@ import org.apache.commons.math3.linear.RealMatrix;
 
 import ffx.utilities.HashCodeUtil;
 
-import static ffx.numerics.VectorMath.mat3mat3;
-import static ffx.numerics.VectorMath.mat3symvec6;
+import static ffx.numerics.VectorMath.mat3Mat3;
+import static ffx.numerics.VectorMath.mat3SymVec6;
 import static ffx.numerics.VectorMath.transpose3;
 
 /**
@@ -747,7 +747,7 @@ public class Crystal {
             SymOp symop = spaceGroup.symOps.get(i);
             double rot[][] = symop.rot;
             double rt[][] = transpose3(rot);
-            double rmrt[][] = mat3mat3(mat3mat3(rot, m), rt);
+            double rmrt[][] = mat3Mat3(mat3Mat3(rot, m), rt);
             for (int j = 0; j < 3; j++) {
                 for (int k = 0; k < 3; k++) {
                     r[j][k] += rmrt[j][k];
@@ -774,7 +774,7 @@ public class Crystal {
             SymOp symop = spaceGroup.symOps.get(i);
             double rot[][] = symop.rot;
             double rt[][] = transpose3(rot);
-            double rmrt[][] = mat3mat3(mat3symvec6(rot, v), rt);
+            double rmrt[][] = mat3Mat3(mat3SymVec6(rot, v), rt);
             for (int j = 0; j < 3; j++) {
                 for (int k = 0; k < 3; k++) {
                     r[j][k] += rmrt[j][k];

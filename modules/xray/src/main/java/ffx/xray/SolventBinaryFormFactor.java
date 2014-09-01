@@ -97,7 +97,7 @@ public final class SolventBinaryFormFactor implements FormFactor {
      * {@inheritDoc}
      */
     @Override
-    public void rho_grad(double[] xyz, double dfc, RefinementMode refinementmode) {
+    public void rhoGrad(double[] xyz, double dfc, RefinementMode refinementmode) {
     }
 
     /**

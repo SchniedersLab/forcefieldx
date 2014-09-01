@@ -22,39 +22,114 @@
  */
 package ffx.numerics;
 
+import java.util.Random;
+
+import static java.lang.Float.floatToRawIntBits;
+import static java.lang.Float.intBitsToFloat;
+
 /**
+ * Software based computation of square root and inverse square root.
+ *
+ * The decimal accuracy compared to Math.sqrt is:
+ * <br>
+ * within 1.0e-13 for input values from 1.0e-2 to 1.0e3.
+ * <br>
+ * within 1.0e-12 for input values from 1.0e-4 to 1.0e4.
+ * <br>
+ * within 1.0e-11 for input values from 1.0e-5 to 1.0e5.
+ * <br>
+ * within 1.0e-10 for input values from 1.0e-8 to 1.0e8.
+ *
+ *
  * @author Michael J. Schnieders
+ *
+ * @see Ported to Java from the GROMACS code in cinvsqrtdata.c
+ *
+ * @since 1.0
  */
-public class InverseSqrt {
+public class SquareRoot {
 
-    public static double inverseSQRT(double x) {
-        // t_convert result, bit_pattern;
-        int xBits = Float.floatToIntBits((float) x);
+    /**
+     * This class only presents static methods.
+     */
+    private SquareRoot() {
+    }
+
+    public static void main(String[] args) {
+        for (int j = 0; j < 10; j++) {
+            Random random = new Random(1);
+            double sum = 0.0;
+            long time = -System.nanoTime();
+            for (int i = 0; i < 10000000; i++) {
+                sum += isqrt(random.nextDouble());
+            }
+            time += System.nanoTime();
+            System.out.println(String.format(" Software sum was    %16.8f in %16.8f seconds.", sum, 1.0e-9 * time));
+
+            random = new Random(1);
+            sum = 0.0;
+            time = -System.nanoTime();
+            for (int i = 0; i < 10000000; i++) {
+                sum += 1.0 / Math.sqrt(random.nextDouble());
+            }
+            time += System.nanoTime();
+            System.out.println(String.format(" 1/Math.sqrt sum was %16.8f in %16.8f seconds.", sum, 1.0e-9 * time));
+        }
+    }
+
+    /**
+     * Compute the square root of the input value x. The method calls
+     * <code>isqrt</code> and then multiples by the input
+     * <code>sqrt(x2) = x2 * isqrt(x2)</code>.
+     *
+     * @param x2 input value to take the square root of.
+     * @return the square root of x2.
+     */
+    public static double sqrt(double x2) {
+
+        assert (x2 > 0);
+
+        double ix = isqrt(x2);
+        return x2 * ix;
+    }
+
+    /**
+     * Compute the inverse square root <code>1.0/sqrt(x2)</code> of the of the
+     * input value x2 using a look-up table and two iterations of Newton's
+     * method for finding roots of an equation.
+     *
+     * @param x2 Input value.
+     * @return the inverse square root ( 1 / sqrt(x2) ).
+     */
+    public static double isqrt(double x2) {
+
+        assert (x2 > 0);
+
+        int xBits = floatToRawIntBits((float) x2);
         int exp = expAddress(xBits);
-        int fract = fractAdress(xBits);
+        int fract = fractAddress(xBits);
         int result = expTable[exp] | fracTable[fract];
-        float lu = Float.intBitsToFloat(result);
+        float lu = intBitsToFloat(result);
 
-        /* First iteration of Newton's method for finding roots of a given equation. */
-        double y = (half * lu * (three - ((x * lu) * lu)));
-        // return y; /* 5 Flops */
+        /* First iteration of Newton's method for finding roots of an equation. */
+        double y = (half * lu * (three - ((x2 * lu) * lu)));
+
+        /* 5 Flops */
+        //return y;
 
         /* Second iteration of Newton's method. */
-        double y2 = (half * y * (three - ((x * y) * y)));
-        return y2; /* 10 Flops */
+        double y2 = (half * y * (three - ((x2 * y) * y)));
+
+        /* 10 Flops */
+        return y2;
 
     }
     private static final double half = 0.5;
     private static final double three = 3.0;
 
-    // #define EXP_LSB 0x00800000
-    // #define EXP_MASK 0x7f800000
-    // #define EXP_SHIFT 23
-    // #define FRACT_MASK 0x007fffff
-    // #define FRACT_SIZE 11 /* significant part of fraction */
-    // #define FRACT_SHIFT (EXP_SHIFT-FRACT_SIZE)
     /**
-     * #define EXP_ADDR(val) (((val)&EXP_MASK)>>EXP_SHIFT)
+     * The Mask 0x7f800000 selects the Exponent Bits 30-23, which are then
+     * shifted 23 places to the right.
      *
      * @param val
      * @return
@@ -64,16 +139,21 @@ public class InverseSqrt {
     }
 
     /**
-     * #define FRACT_ADDR(val) (((val)&(FRACT_MASK|EXP_LSB))>>FRACT_SHIFT)
+     * The Mask 0x00800000 selects the least significant Exponent bit and the
+     * Mask 0x007fffff selects the Mantissa Bits 22-0, which are then shifted 12
+     * places to the right. The shift of 12 comes from the Exponent shift (23)
+     * minus the significant part of the the mantissa (11).
      *
      * @param val
      * @return
      */
-    private static int fractAdress(int val) {
+    private static int fractAddress(int val) {
         return ((val) & (0x007fffff | 0x00800000)) >> 12;
     }
 
-    /* Data for exponent table - 256 floats */
+    /**
+     * Data for the Exponent table (256 values)
+     */
     private static final int expTable[] = {
         0x5f000000, 0x5e800000, 0x5e800000, 0x5e000000,
         0x5e000000, 0x5d800000, 0x5d800000, 0x5d000000,
@@ -141,7 +221,9 @@ public class InverseSqrt {
         0x20000000, 0x1f800000, 0x1f800000, 0x1f000000
     };
 
-    /* Data for fraction table - 4096 floats */
+    /**
+     * Data for Mantissa table (4096 values)
+     */
     private static final int fracTable[] = {
         0x3504f3, 0x34f9a4, 0x34ee57, 0x34e30c, 0x34d7c3, 0x34cc7c, 0x34c137, 0x34b5f5,
         0x34aab4, 0x349f76, 0x34943a, 0x348900, 0x347dc7, 0x347291, 0x34675e, 0x345c2c,

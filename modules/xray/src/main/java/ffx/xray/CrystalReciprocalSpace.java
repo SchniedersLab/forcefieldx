@@ -1673,7 +1673,7 @@ public class CrystalReciprocalSpace {
                                 xf[2] = iz / (double) fftZ;
                                 crystal.toCartesianCoordinates(xf, xc);
                                 final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
-                                atomff.rho_grad(xc, weight * densityGrid[ii], refinementmode);
+                                atomff.rhoGrad(xc, weight * densityGrid[ii], refinementmode);
                             }
                         }
                     }
@@ -1783,7 +1783,7 @@ public class CrystalReciprocalSpace {
                                 crystal.toCartesianCoordinates(xf, xc);
 
                                 final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
-                                solventff.rho_grad(xc,
+                                solventff.rhoGrad(xc,
                                         weight * densityGrid[ii] * dfcmult * solventGrid[ii],
                                         refinementmode);
                             }

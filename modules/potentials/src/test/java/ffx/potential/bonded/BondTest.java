@@ -45,6 +45,7 @@ public class BondTest {
     private Atom a3;
     private Atom a4;
     private Angle an1;
+    private final double tolerance = 1.0e-14;
 
     @Test(timeout = 500)
     public void Bond_constructor() {
@@ -107,12 +108,12 @@ public class BondTest {
         // Atom 2 position == Atom 1 position
         a2.moveTo(a1.getX(), a1.getY(), a1.getZ());
         bond.update();
-        assertEquals(0.0, bond.getValue(), 0.0);
+        assertEquals(0.0, bond.getValue(), tolerance);
         // PI
         a1.moveTo(0.0, 0.0, 0.0);
         a2.moveTo(Math.PI, 0.0, 0.0);
         bond.update();
-        assertEquals(Math.PI, bond.getValue(), 0.0);
+        assertEquals(Math.PI, bond.getValue(), tolerance);
     }
 
     @Before

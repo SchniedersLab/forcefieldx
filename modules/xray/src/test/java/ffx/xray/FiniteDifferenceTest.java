@@ -156,7 +156,7 @@ public class FiniteDifferenceTest {
         for (int i = 0; i < atomarray.length; i++) {
             XRayFormFactor atomff
                     = new XRayFormFactor(atomarray[i], use_3g, 2.0);
-            atomarray[i].setFormFactorIndex(atomff.ffindex);
+            atomarray[i].setFormFactorIndex(atomff.ffIndex);
 
             if (atomarray[i].getOccupancy() == 0.0) {
                 atomarray[i].setFormFactorWidth(1.0);

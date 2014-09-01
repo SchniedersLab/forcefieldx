@@ -54,10 +54,10 @@ import ffx.numerics.Potential;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 
 import static ffx.numerics.VectorMath.dot;
-import static ffx.numerics.VectorMath.mat3mat3;
-import static ffx.numerics.VectorMath.mat3symvec6;
+import static ffx.numerics.VectorMath.mat3Mat3;
+import static ffx.numerics.VectorMath.mat3SymVec6;
 import static ffx.numerics.VectorMath.transpose3;
-import static ffx.numerics.VectorMath.vec3mat3;
+import static ffx.numerics.VectorMath.vec3Mat3;
 
 /**
  *
@@ -261,8 +261,8 @@ public class SigmaAEnergy implements Potential {
             System.arraycopy(refinementData.model_b, 0, model_b, 0, 6);
 
             // Generate Ustar
-            mat3symvec6(crystal.A, model_b, resm);
-            mat3mat3(resm, recipt, ustar);
+            mat3SymVec6(crystal.A, model_b, resm);
+            mat3Mat3(resm, recipt, ustar);
 
             for (int i = 0; i < n; i++) {
                 sa[i] = 1.0 + x[i];
@@ -351,7 +351,7 @@ public class SigmaAEnergy implements Potential {
                     ihc[0] = ih.h();
                     ihc[1] = ih.k();
                     ihc[2] = ih.l();
-                    vec3mat3(ihc, ustar, resv);
+                    vec3Mat3(ihc, ustar, resv);
                     double u = modelK - dot(resv, ihc);
                     double s = Crystal.invressq(crystal, ih);
                     double ebs = exp(-twoPI2 * solventUEq * s);

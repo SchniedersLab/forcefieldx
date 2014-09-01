@@ -94,7 +94,7 @@ public final class SolventGaussFormFactor implements FormFactor {
      * {@inheritDoc}
      */
     @Override
-    public void rho_grad(double[] xyz, double dfc, RefinementMode refinementmode) {
+    public void rhoGrad(double[] xyz, double dfc, RefinementMode refinementmode) {
         if (refinementmode == RefinementMode.BFACTORS
                 || refinementmode == RefinementMode.OCCUPANCIES
                 || refinementmode == RefinementMode.BFACTORS_AND_OCCUPANCIES) {

@@ -38,15 +38,9 @@ import static org.junit.Assert.assertEquals;
  * @author Michael J. Schnieders
  */
 @RunWith(Parameterized.class)
-public class InverseSqrtTest {
+public class SquareRootTest {
 
-    /**
-     * Java double precision follows the IEEE 754 Binary Floating-Point
-     * Arithmetic standard. Each double consumes 8 bytes of storage and offers
-     * 52 binary digits of precision (14-15 decimal digits). This implementation
-     * of Inverse SQRT passes for a tolerance of 1.0e-12.
-     */
-    private static final double tolerance = 1.0e-12;
+    private static final double tolerance = 1.0e-13;
 
     /**
      * The expected values are found using java.lang.Math.sqrt.
@@ -54,33 +48,32 @@ public class InverseSqrtTest {
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-            {"Test 1.0e-6", 1.0e-6},
-            {"Test 1.0e-5", 1.0e-5},
-            {"Test 1.0e-4", 1.0e-4},
-            {"Test 1.0e-3", 1.0e-3},
             {"Test 1.0e-2", 1.0e-2},
             {"Test 1.0e-1", 1.0e-1},
-            {"Test 1.0", 1.0},
+            {"Test 1.0e0", 1.0e0},
             {"Test 1.0e1", 1.0e1},
             {"Test 1.0e2", 1.0e2},
-            {"Test 1.0e3", 1.0e3},
-            {"Test 1.0e4", 1.0e4},
-            {"Test 1.0e5", 1.0e5},
-            {"Test 1.0e6", 1.0e6},
-            {"Test 1.0e7", 1.0e7},
-            {"Test 1.0e8", 1.0e8},
-            {"Test 2.0", 2.0},
-            {"Test 2.12345", 2.12345e0},
-            {"Test 4.0", 4.0},
-            {"Test 6.1", 6.1},
-            {"Test 12345.12345", 12345.12345},});
+        });
     }
     private final String info;
     private final double x;
 
-    public InverseSqrtTest(String info, double x) {
+    public SquareRootTest(String info, double x) {
         this.info = info;
         this.x = x;
+    }
+
+    /**
+     * Test sqrt method, of class InverseSqrt.
+     */
+    @Test
+    public void testSqrt() {
+        for (int i = 0; i < 1000; i++) {
+            double increment = i * x / 100.0;
+            double actual = SquareRoot.sqrt(x + increment);
+            double expected = sqrt(x + increment);
+            assertEquals(info + " + " + increment, expected, actual, tolerance);
+        }
     }
 
     /**
@@ -88,9 +81,12 @@ public class InverseSqrtTest {
      */
     @Test
     public void testInverseSqrt() {
-        double actual = InverseSqrt.inverseSQRT(x);
-        double expected = 1.0 / sqrt(x);
-        assertEquals(info, expected, actual, tolerance);
+        for (int i = 0; i < 100; i++) {
+            double increment = i * x / 10.0;
+            double actual = SquareRoot.isqrt(x + increment);
+            double expected = 1.0 / sqrt(x + increment);
+            assertEquals(info + " + " + increment, expected, actual, tolerance);
+        }
     }
 
 }

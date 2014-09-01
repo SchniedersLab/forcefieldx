@@ -332,7 +332,7 @@ public class DiffractionData implements DataContainer {
             a.setFormFactorIndex(-1);
             XRayFormFactor atomff
                     = new XRayFormFactor(a, use_3g, 2.0);
-            a.setFormFactorIndex(atomff.ffindex);
+            a.setFormFactorIndex(atomff.ffIndex);
 
             if (a.getOccupancy() == 0.0) {
                 a.setFormFactorWidth(1.0);
@@ -405,7 +405,7 @@ public class DiffractionData implements DataContainer {
             a.setFormFactorIndex(-1);
             XRayFormFactor atomff
                     = new XRayFormFactor(a, use_3g, 2.0);
-            a.setFormFactorIndex(atomff.ffindex);
+            a.setFormFactorIndex(atomff.ffIndex);
 
             if (a.getOccupancy() == 0.0) {
                 a.setFormFactorWidth(1.0);

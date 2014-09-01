@@ -46,7 +46,7 @@ public class TensorRecursionTest {
         return Arrays.asList(new Object[][]{{"Test {1.1,1.2,1.3} for order 5", 1.1e0, 1.2e0, 1.3e0, 5, 56}
         });
     }
-    private final double tolerance = 1.0e-15;
+    private final double tolerance = 1.0e-14;
     private final double r[] = new double[3];
     private final double tensors[];
     private final double noStorageTensors[];
