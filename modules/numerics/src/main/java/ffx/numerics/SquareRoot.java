@@ -42,8 +42,7 @@ import static java.lang.Float.intBitsToFloat;
  *
  *
  * @author Michael J. Schnieders
- *
- * @see Ported to Java from the GROMACS code in cinvsqrtdata.c
+ * @author Ported to Java from the GROMACS code in cinvsqrtdata.c
  *
  * @since 1.0
  */
