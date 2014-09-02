@@ -846,7 +846,7 @@ public class CrystalReciprocalSpace {
             c.re(fc[0]);
             c.im(fc[1]);
             // scale
-            c.times_ip(2.0 / fftScale);
+            c.timesIP(2.0 / fftScale);
 
             // apply symmetry
             for (int j = 0; j < nsym; j++) {
@@ -860,7 +860,7 @@ public class CrystalReciprocalSpace {
 
                 if (h < halfFFTX + 1) {
                     final int ii = iComplex3D(h, k, l, fftX, fftY);
-                    cj.phase_shift_ip(shift);
+                    cj.phaseShiftIP(shift);
                     densityGrid[ii] += cj.re();
                     densityGrid[ii + 1] += -cj.im();
                 } else {
@@ -868,7 +868,7 @@ public class CrystalReciprocalSpace {
                     k = (fftY - k) % fftY;
                     l = (fftZ - l) % fftZ;
                     final int ii = iComplex3D(h, k, l, fftX, fftY);
-                    cj.phase_shift_ip(shift);
+                    cj.phaseShiftIP(shift);
                     densityGrid[ii] += cj.re();
                     densityGrid[ii + 1] += cj.im();
                 }
@@ -2009,8 +2009,8 @@ public class CrystalReciprocalSpace {
                     c.im(fc[1]);
                     // Remove Badd
                     double s = Crystal.invressq(crystal, ih);
-                    c.times_ip(scale * exp(0.25 * bAdd * s));
-                    c.conjugate_ip();
+                    c.timesIP(scale * exp(0.25 * bAdd * s));
+                    c.conjugateIP();
                     fc[0] = c.re();
                     fc[1] = c.im();
                 }
@@ -2067,8 +2067,8 @@ public class CrystalReciprocalSpace {
                     double fc[] = hkldata[ih.index()];
                     c.re(fc[0]);
                     c.im(fc[1]);
-                    c.times_ip(scale);
-                    c.conjugate_ip();
+                    c.timesIP(scale);
+                    c.conjugateIP();
                     // negative: babinet
                     fc[0] = -c.re();
                     fc[1] = -c.im();
@@ -2136,7 +2136,7 @@ public class CrystalReciprocalSpace {
                             final int ii = iComplex3D(h, k, l, fftX, fftY);
                             c.re(densityGrid[ii]);
                             c.im(densityGrid[ii + 1]);
-                            c.phase_shift_ip(shift);
+                            c.phaseShiftIP(shift);
                             fc[0] += c.re();
                             fc[1] += c.im();
                         } else {
@@ -2146,7 +2146,7 @@ public class CrystalReciprocalSpace {
                             final int ii = iComplex3D(h, k, l, fftX, fftY);
                             c.re(densityGrid[ii]);
                             c.im(-densityGrid[ii + 1]);
-                            c.phase_shift_ip(shift);
+                            c.phaseShiftIP(shift);
                             fc[0] += c.re();
                             fc[1] += c.im();
                         }

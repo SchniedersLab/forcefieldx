@@ -22,9 +22,6 @@
  */
 package ffx.xray;
 
-import ffx.crystal.*;
-import ffx.numerics.ComplexNumber;
-import ffx.xray.MTZWriter.MTZType;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -32,8 +29,17 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.lang3.StringUtils;
+
+import static org.apache.commons.math3.util.FastMath.cos;
+import static org.apache.commons.math3.util.FastMath.sin;
+import static org.apache.commons.math3.util.FastMath.toRadians;
+
+import ffx.crystal.*;
+import ffx.numerics.ComplexNumber;
+import ffx.xray.MTZWriter.MTZType;
 
 /**
  * This class parses CCP4 MTZ files.<br>
@@ -637,13 +643,13 @@ public class MTZFilter implements DiffractionFileFilter {
 
                 if (hkl != null) {
                     if (fc > 0 && phic > 0) {
-                        c.re(data[fc] * Math.cos(Math.toRadians(data[phic])));
-                        c.im(data[fc] * Math.sin(Math.toRadians(data[phic])));
+                        c.re(data[fc] * cos(toRadians(data[phic])));
+                        c.im(data[fc] * sin(toRadians(data[phic])));
                         fcdata.set_fc(hkl.index(), c);
                     }
                     if (fs > 0 && phis > 0) {
-                        c.re(data[fs] * Math.cos(Math.toRadians(data[phis])));
-                        c.im(data[fs] * Math.sin(Math.toRadians(data[phis])));
+                        c.re(data[fs] * cos(toRadians(data[phis])));
+                        c.im(data[fs] * sin(toRadians(data[phis])));
                         fcdata.set_fs(hkl.index(), c);
                     }
                     nread++;

@@ -30,13 +30,11 @@ import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.atan;
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.cosh;
+import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.log;
-import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.tanh;
-
-import static org.apache.commons.math3.util.FastMath.exp;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
@@ -365,7 +363,7 @@ public class SigmaAEnergy implements Potential {
                     double eoscale = spline.f(s, refinementData.foesq);
                     double sai = spline.f(s, sa);
                     double wai = spline.f(s, wa);
-                    double sa2 = pow(sai, 2.0);
+                    double sa2 = sai * sai;
 
                     // Structure factors
                     refinementData.get_fc_ip(i, fcc);
@@ -373,29 +371,31 @@ public class SigmaAEnergy implements Potential {
                     fct.copy(fcc);
                     if (refinementData.crs_fs.solventModel != SolventModel.NONE) {
                         resc.copy(fsc);
-                        resc.times_ip(ksebs);
-                        fct.plus_ip(resc);
+                        resc.timesIP(ksebs);
+                        fct.plusIP(resc);
                     }
                     kfct.copy(fct);
-                    kfct.times_ip(kmems);
+                    kfct.timesIP(kmems);
 
                     ecc.copy(fcc);
-                    ecc.times_ip(sqrt(ecscale));
+                    ecc.timesIP(sqrt(ecscale));
                     esc.copy(fsc);
-                    esc.times_ip(sqrt(ecscale));
+                    esc.timesIP(sqrt(ecscale));
                     ect.copy(fct);
-                    ect.times_ip(sqrt(ecscale));
+                    ect.timesIP(sqrt(ecscale));
                     kect.copy(kfct);
-                    kect.times_ip(sqrt(ecscale));
+                    kect.timesIP(sqrt(ecscale));
                     double eo = fo[i][0] * sqrt(eoscale);
                     double sigeo = fo[i][1] * sqrt(eoscale);
-                    double eo2 = pow(eo, 2.0);
-                    double kect2 = pow(kect.abs(), 2.0);
+                    double eo2 = eo * eo;
+                    double akect = kect.abs();
+                    double kect2 = akect * akect;
 
                     // FOM
                     double d = 2.0 * sigeo * sigeo + epsc * wai;
-                    double d2 = d * d;
-                    double fomx = 2.0 * eo * sai * kect.abs() / d;
+                    double id = 1.0 / d;
+                    double id2 = id * id;
+                    double fomx = 2.0 * eo * sai * kect.abs() * id;
 
                     double inot, dinot, cf;
                     if (ih.centric()) {
@@ -407,7 +407,7 @@ public class SigmaAEnergy implements Potential {
                         dinot = sim(fomx);
                         cf = 1.0;
                     }
-                    double llk = cf * log(d) + (eo2 + sa2 * kect2) / d - inot;
+                    double llk = cf * log(d) + (eo2 + sa2 * kect2) * id - inot;
 
                     // Map coefficients
                     double f = dinot * eo;
@@ -418,8 +418,9 @@ public class SigmaAEnergy implements Potential {
                     mfo.im(f * sin(phi));
                     mfo2.re(2.0 * f * cos(phi));
                     mfo2.im(2.0 * f * sin(phi));
-                    dfcc.re(sai * kect.abs() * cos(phi));
-                    dfcc.im(sai * kect.abs() * sin(phi));
+                    akect = kect.abs();
+                    dfcc.re(sai * akect * cos(phi));
+                    dfcc.im(sai * akect * sin(phi));
                     // Set up map coefficients
                     fofc1[i][0] = 0.0;
                     fofc1[i][1] = 0.0;
@@ -448,24 +449,36 @@ public class SigmaAEnergy implements Potential {
                     fctot[i][1] = kfct.im();
                     // mFo - DFc
                     resc.copy(mfo);
-                    resc.minus_ip(dfcc);
+                    resc.minusIP(dfcc);
                     fofc1[i][0] = resc.re() / sqrt(eoscale);
                     fofc1[i][1] = resc.im() / sqrt(eoscale);
                     // 2mFo - DFc
                     resc.copy(mfo2);
-                    resc.minus_ip(dfcc);
+                    resc.minusIP(dfcc);
                     fofc2[i][0] = resc.re() / sqrt(eoscale);
                     fofc2[i][1] = resc.im() / sqrt(eoscale);
 
                     // Derivatives
+                //  double dfcr = (dfp1 * fct.re()) / d - ((dfp2 * fct.re()) / (d * fct.abs())) * dinot;
+                //  double dfci = (dfp1 * fct.im()) / d - ((dfp2 * fct.im()) / (d * fct.abs())) * dinot;
+                //  double dfsr = ((dfp2 * ksebs * fct.re()) / (d * fct.abs())) * dinot - (dfp1 * ksebs * fct.re()) / d;
+                //  double dfsi = ((dfp2 * ksebs * fct.im()) / (d * fct.abs())) * dinot - (dfp1 * ksebs * fct.im()) / d;
+                //  double dfsa = 2.0 * sai * kect2 / d - (2.0 * eo * kect.abs() / d) * dinot;
+                //  double dfwa = epsc * (cf / d - (eo2 + sa2 * kect2) / d2 + (2.0 * eo * sai * kect.abs() / d2) * dinot);
+                    double dafct = d * fct.abs();
+                    double idafct = 1.0 / dafct;
                     double dfp1 = 2.0 * sa2 * km2 * ecscale;
                     double dfp2 = 2.0 * eo * sai * kmems * sqrt(ecscale);
-                    double dfcr = (dfp1 * fct.re()) / d - ((dfp2 * fct.re()) / (d * fct.abs())) * dinot;
-                    double dfci = (dfp1 * fct.im()) / d - ((dfp2 * fct.im()) / (d * fct.abs())) * dinot;
-                    double dfsr = ((dfp2 * ksebs * fct.re()) / (d * fct.abs())) * dinot - (dfp1 * ksebs * fct.re()) / d;
-                    double dfsi = ((dfp2 * ksebs * fct.im()) / (d * fct.abs())) * dinot - (dfp1 * ksebs * fct.im()) / d;
-                    double dfsa = 2.0 * sai * kect2 / d - (2.0 * eo * kect.abs() / d) * dinot;
-                    double dfwa = epsc * (cf / d - (eo2 + sa2 * kect2) / d2 + (2.0 * eo * sai * kect.abs() / d2) * dinot);
+                    double dfp1id = dfp1 * id;
+                    double dfp2id = dfp2 * idafct * dinot;
+                    double dfp12 = dfp1id - dfp2id;
+                    double dfp21 = ksebs * (dfp2id - dfp1id);
+                    double dfcr = fct.re() * dfp12;
+                    double dfci = fct.im() * dfp12;
+                    double dfsr = fct.re() * dfp21;
+                    double dfsi = fct.im() * dfp21;
+                    double dfsa = 2.0 * (sai * kect2 - eo * akect * dinot) * id;
+                    double dfwa = epsc * (cf * id - (eo2 + sa2 * kect2) * id2 + 2.0 * eo * sai * akect * id2 * dinot);
 
                     // Partial LLK wrt Fc or Fs
                     dfc[i][0] = dfcr * dfscale;

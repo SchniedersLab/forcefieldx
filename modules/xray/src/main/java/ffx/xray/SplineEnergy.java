@@ -22,9 +22,12 @@
  */
 package ffx.xray;
 
+import java.util.Arrays;
 import java.util.logging.Logger;
 
-import static org.apache.commons.math3.util.FastMath.*;
+import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.pow;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
@@ -45,7 +48,6 @@ import ffx.numerics.Potential;
 public class SplineEnergy implements Potential {
 
     private static final Logger logger = Logger.getLogger(SplineEnergy.class.getName());
-    private static final double twopi2 = 2.0 * PI * PI;
     private final ReflectionList reflectionlist;
     private final ReflectionSpline spline;
     private final int nparams;
@@ -53,12 +55,9 @@ public class SplineEnergy implements Potential {
     private final Crystal crystal;
     private final DiffractionRefinementData refinementdata;
     private final double fc[][];
-    private final double fs[][];
-    private final double fctot[][];
     private final double fo[][];
-    private final int freer[];
     protected double[] optimizationScaling = null;
-    private ComplexNumber fct = new ComplexNumber();
+    private final ComplexNumber fct = new ComplexNumber();
     private double totalEnergy;
 
     /**
@@ -78,10 +77,7 @@ public class SplineEnergy implements Potential {
         this.refinementdata = refinementdata;
         this.type = type;
         this.fc = refinementdata.fc;
-        this.fs = refinementdata.fs;
-        this.fctot = refinementdata.fctot;
         this.fo = refinementdata.fsigf;
-        this.freer = refinementdata.freer;
 
         // initialize params
         this.spline = new ReflectionSpline(reflectionlist, nparams);
@@ -107,16 +103,19 @@ public class SplineEnergy implements Potential {
      * @return a double.
      */
     public double target(double x[], double g[], boolean gradient, boolean print) {
-        double r, rf, rfree, rfreef, sum, sumfo;
 
-// zero out the gradient
+        double r = 0.0;
+        double rf = 0.0;
+        double rfree = 0.0;
+        double rfreef = 0.0;
+        double sum = 0.0;
+        double sumfo = 0.0;
+
+        // Zero out the gradient.
         if (gradient) {
-            for (int i = 0; i < g.length; i++) {
-                g[i] = 0.0;
-            }
+            Arrays.fill(g, 0.0);
         }
 
-        r = rf = rfree = rfreef = sum = sumfo = 0.0;
         for (HKL ih : reflectionlist.hkllist) {
             int i = ih.index();
             if (Double.isNaN(fc[i][0])
@@ -132,28 +131,28 @@ public class SplineEnergy implements Potential {
 
             double eps = ih.epsilon();
             double s = Crystal.invressq(crystal, ih);
-
             // spline setup
             double fh = spline.f(s, x);
-
             refinementdata.get_fctot_ip(i, fct);
 
-            double f1, f2, d, d2, dr, w;
-            f1 = f2 = d = d2 = dr = w = 0.0;
+            double d2 = 0.0;
+            double dr = 0.0;
+            double w = 0.0;
             switch (type) {
                 case Type.FOFC:
                     w = 1.0;
-                    f1 = refinementdata.get_f(i);
-                    f2 = fct.abs();
-                    d = f1 - fh * f2;
+                    double f1 = refinementdata.get_f(i);
+                    double f2 = fct.abs();
+                    double d = f1 - fh * f2;
                     d2 = d * d;
                     dr = -2.0 * f2 * d;
                     sumfo += f1 * f1;
                     break;
                 case Type.F1F2:
                     w = 2.0 / ih.epsilonc();
-                    f1 = pow(fct.abs(), 2.0) / eps;
-                    f2 = pow(refinementdata.get_f(i), 2.0) / eps;
+                    double ieps = 1.0 / eps;
+                    f1 = pow(fct.abs(), 2.0) * ieps;
+                    f2 = pow(refinementdata.get_f(i), 2) * ieps;
                     d = fh * f1 - f2;
                     d2 = d * d / f1;
                     dr = 2.0 * d;
@@ -161,7 +160,7 @@ public class SplineEnergy implements Potential {
                     break;
                 case Type.FCTOESQ:
                     w = 2.0 / ih.epsilonc();
-                    f1 = pow(fct.abs() / sqrt(eps), 2.0);
+                    f1 = pow(fct.abs() / sqrt(eps), 2);
                     d = f1 * fh - 1.0;
                     d2 = d * d / f1;
                     dr = 2.0 * d;
@@ -169,7 +168,7 @@ public class SplineEnergy implements Potential {
                     break;
                 case Type.FOTOESQ:
                     w = 2.0 / ih.epsilonc();
-                    f1 = pow(refinementdata.get_f(i) / sqrt(eps), 2.0);
+                    f1 = pow(refinementdata.get_f(i) / sqrt(eps), 2);
                     d = f1 * fh - 1.0;
                     d2 = d * d / f1;
                     dr = 2.0 * d;
@@ -179,12 +178,14 @@ public class SplineEnergy implements Potential {
 
             sum += w * d2;
 
+            double afo = abs(fo[i][0]);
+            double afh = abs(fh * fct.abs());
             if (refinementdata.isfreer(i)) {
-                rfree += abs(abs(fo[i][0]) - abs(fh * fct.abs()));
-                rfreef += abs(fo[i][0]);
+                rfree += abs(afo - afh);
+                rfreef += afo;
             } else {
-                r += abs(abs(fo[i][0]) - abs(fh * fct.abs()));
-                rf += abs(fo[i][0]);
+                r += abs(afo - afh);
+                rf += afo;
             }
 
             if (gradient) {
@@ -201,9 +202,13 @@ public class SplineEnergy implements Potential {
             }
         }
 
+        /**
+         * Tim - should this only be done for Type.FOFC??
+         */
         if (gradient) {
+            double isumfo = 1.0 / sumfo;
             for (int i = 0; i < g.length; i++) {
-                g[i] /= sumfo;
+                g[i] *= isumfo;
             }
         }
 

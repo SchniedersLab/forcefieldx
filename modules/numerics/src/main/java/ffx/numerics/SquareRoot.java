@@ -40,6 +40,8 @@ import static java.lang.Float.intBitsToFloat;
  * <br>
  * within 1.0e-10 for input values from 1.0e-8 to 1.0e8.
  *
+ * The "main" method performance test shows that the software implementation
+ * is slower than simply calling Math.sqrt.
  *
  * @author Michael J. Schnieders
  * @author Ported to Java from the GROMACS code in cinvsqrtdata.c

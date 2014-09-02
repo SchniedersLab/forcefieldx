@@ -22,6 +22,8 @@
  */
 package ffx.xray;
 
+import static org.apache.commons.math3.util.FastMath.exp;
+
 import ffx.numerics.VectorMath;
 import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
@@ -87,7 +89,7 @@ public final class SolventGaussFormFactor implements FormFactor {
      */
     public double rho(double f, double lambda, double rsq) {
         double sd2 = sd * sd;
-        return f + Math.exp(-rsq / sd2);
+        return f + exp(-rsq / sd2);
     }
 
     /**
@@ -104,7 +106,7 @@ public final class SolventGaussFormFactor implements FormFactor {
         double r2 = VectorMath.rsq(dxyz);
         double sd2 = sd * sd;
 
-        double rho = Math.exp(-r2 / sd2);
+        double rho = exp(-r2 / sd2);
 
         g[0] = dfc * (2.0 * rho * -dxyz[0] / sd2);
         g[1] = dfc * (2.0 * rho * -dxyz[1] / sd2);

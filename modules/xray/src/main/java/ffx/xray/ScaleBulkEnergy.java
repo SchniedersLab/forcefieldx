@@ -27,8 +27,6 @@ import java.util.logging.Logger;
 
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.abs;
-import static org.apache.commons.math3.util.FastMath.pow;
-
 import static org.apache.commons.math3.util.FastMath.exp;
 
 import edu.rit.pj.IntegerForLoop;
@@ -299,11 +297,11 @@ public class ScaleBulkEnergy implements Potential {
                     fct.copy(fcc);
                     if (refinementData.crs_fs.solventModel != SolventModel.NONE) {
                         resc.copy(fsc);
-                        resc.times_ip(ksExpBS);
-                        fct.plus_ip(resc);
+                        resc.timesIP(ksExpBS);
+                        fct.plusIP(resc);
                     }
                     kfct.copy(fct);
-                    kfct.times_ip(expU);
+                    kfct.timesIP(expU);
 
                     /**
                      * Total structure factor (for refinement)
@@ -315,8 +313,9 @@ public class ScaleBulkEnergy implements Potential {
                      * Target
                      */
                     double f1 = refinementData.get_f(i);
-                    double f2 = kfct.abs();
-                    double d = f1 - f2;
+                    double akfct = kfct.abs();
+                    double af1 = abs(f1);
+                    double d = f1 - akfct;
                     double d2 = d * d;
                     double dr = -2.0 * d;
 
@@ -324,34 +323,36 @@ public class ScaleBulkEnergy implements Potential {
                     lsumfo += f1 * f1;
 
                     if (refinementData.isfreer(i)) {
-                        lrfree += abs(abs(f1) - abs(kfct.abs()));
-                        lrfreef += abs(f1);
+                        lrfree += abs(af1 - abs(akfct));
+                        lrfreef += af1;
                     } else {
-                        lr += abs(abs(f1) - abs(kfct.abs()));
-                        lrf += abs(f1);
+                        lr += abs(af1 - abs(akfct));
+                        lrf += af1;
                     }
 
                     if (gradient) {
                         /**
                          * model_k/model_b - common derivative element
                          */
-                        double dfm = 0.25 * kfct.abs() * dr;
+                        double dfm = 0.25 * akfct * dr;
                         /**
                          * bulk solvent - common derivative element
                          */
+                        double afsc = fsc.abs();
                         double dfb = expBS * (fcc.re() * fsc.re()
                                 + fcc.im() * fsc.im()
-                                + ksExpBS * pow(fsc.abs(), 2.0));
+                                + ksExpBS * afsc * afsc);
 
                         /**
                          * model_k derivative
                          */
                         lgrad[0] += dfm;
                         if (solvent_n > 1) {
+                            double iafct = 1.0 / fct.abs();
                             // solvent_k derivative
-                            lgrad[1] += expU * dfb * dr / fct.abs();
+                            lgrad[1] += expU * dfb * dr * iafct;
                             // solvent_ueq derivative
-                            lgrad[2] += expU * -twopi2 * s * solvent_k * dfb * dr / fct.abs();
+                            lgrad[2] += expU * -twopi2 * s * solvent_k * dfb * dr * iafct;
                         }
 
                         for (int jj = 0; jj < 6; jj++) {
@@ -444,8 +445,9 @@ public class ScaleBulkEnergy implements Potential {
         double rfreef = scaleBulkEnergyRegion.rfreef.get();
 
         if (gradient) {
+            double isumfo = 1.0 / sumfo;
             for (int i = 0; i < g.length; i++) {
-                g[i] /= sumfo;
+                g[i] *= isumfo;
             }
         }
 
