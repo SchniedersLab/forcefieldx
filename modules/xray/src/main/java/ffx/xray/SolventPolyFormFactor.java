@@ -22,9 +22,13 @@
  */
 package ffx.xray;
 
+import static java.lang.Math.sqrt;
+
 import ffx.numerics.VectorMath;
 import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
+
+import static ffx.numerics.VectorMath.diff;
 
 /**
  * <p>
@@ -36,10 +40,13 @@ import ffx.xray.RefinementMinimize.RefinementMode;
 public final class SolventPolyFormFactor implements FormFactor {
 
     private final Atom atom;
-    private double xyz[] = new double[3];
-    private double dxyz[] = new double[3];
-    private double g[] = new double[3];
-    private double arad, w;
+    private final double xyz[] = new double[3];
+    private final double dxyz[] = new double[3];
+    private final double g[] = new double[3];
+    private final double iw;
+    private final double aradMinusW, aradPlusW;
+    private final double aradMinusW2, aradPlusW2;
+    private final double wMinusArad;
 
     /**
      * <p>
@@ -64,9 +71,12 @@ public final class SolventPolyFormFactor implements FormFactor {
      */
     public SolventPolyFormFactor(Atom atom, double arad, double w, double xyz[]) {
         this.atom = atom;
-        this.arad = arad;
-        this.w = w;
-
+        this.iw = 1.0 / w;
+        aradMinusW = arad - w;
+        aradPlusW = arad + w;
+        wMinusArad = w - arad;
+        aradMinusW2 = aradMinusW * aradMinusW;
+        aradPlusW2 = aradPlusW * aradPlusW;
         update(xyz);
     }
 
@@ -76,7 +86,14 @@ public final class SolventPolyFormFactor implements FormFactor {
     @Override
     public double rho(double f, double lambda, double[] xyz) {
         VectorMath.diff(this.xyz, xyz, dxyz);
-        return rho(f, lambda, VectorMath.r(dxyz));
+        double ri2 = VectorMath.rsq(dxyz);
+        if (ri2 <= aradMinusW2) {
+            return 0.0;
+        }
+        if (ri2 >= aradPlusW2) {
+            return f;
+        }
+        return rho(f, lambda, sqrt(ri2));
     }
 
     /**
@@ -89,22 +106,16 @@ public final class SolventPolyFormFactor implements FormFactor {
      * @return a double.
      */
     public double rho(double f, double lambda, double ri) {
-        double bi = arad - w;
-        double ei = arad + w;
-        if (ri <= bi) {
+        if (ri <= aradMinusW) {
             return 0.0;
         }
-        if (ri >= ei) {
-            return f * 1.0;
+        if (ri >= aradPlusW) {
+            return f;
         }
-
-        double d = ri - arad + w;
-        double d2 = d * d;
-        double d3 = d2 * d;
-        double w2 = w * w;
-        double w3 = w2 * w;
-
-        return f * (0.75 * d2 / w2 - 0.25 * d3 / w3);
+        double d = ri + wMinusArad;
+        double dw = d * iw;
+        double dw2 = dw * dw;
+        return f * (0.75 - 0.25 * dw) * dw2;
     }
 
     /**
@@ -117,31 +128,22 @@ public final class SolventPolyFormFactor implements FormFactor {
                 || refinementmode == RefinementMode.BFACTORS_AND_OCCUPANCIES) {
             return;
         }
-        VectorMath.diff(this.xyz, xyz, dxyz);
-        double ri = VectorMath.r(dxyz);
-        double bi = arad - w;
-        double ei = arad + w;
-        if (ri <= bi) {
+        diff(this.xyz, xyz, dxyz);
+        double ri2 = VectorMath.rsq(dxyz);
+        if (ri2 <= aradMinusW2 || ri2 >= aradPlusW2) {
             return;
         }
-        if (ri >= ei) {
-            return;
-        }
-
-        double d = ri - arad + w;
-        double d2 = d * d;
-        double d3 = d2 * d;
-        double w2 = w * w;
-        double w3 = w2 * w;
-
-        double rho = 0.75 * d2 / w2 - 0.25 * d3 / w3;
-
-        double dp = 1.5 * d / (w2 * ri) - 0.75 * d2 / (w3 * ri);
-
-        g[0] = (dfc / rho) * (-dp * dxyz[0]);
-        g[1] = (dfc / rho) * (-dp * dxyz[1]);
-        g[2] = (dfc / rho) * (-dp * dxyz[2]);
-
+        double ri = sqrt(ri2);
+        double d = ri + wMinusArad;
+        double dw = d * iw;
+        double dw2 = dw * dw;
+        double rho = (0.75 - 0.25 * dw) * dw2;
+        double iri = 1.0 / ri;
+        double dp = (1.5 * dw - 0.75 * dw2) * iri * iw;
+        double prefactor = -dp * (dfc / rho);
+        g[0] = prefactor * dxyz[0];
+        g[1] = prefactor * dxyz[1];
+        g[2] = prefactor * dxyz[2];
         atom.addToXYZGradient(g[0], g[1], g[2]);
     }
 

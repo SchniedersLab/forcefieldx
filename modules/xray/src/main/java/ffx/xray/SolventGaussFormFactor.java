@@ -38,10 +38,10 @@ import ffx.xray.RefinementMinimize.RefinementMode;
 public final class SolventGaussFormFactor implements FormFactor {
 
     private final Atom atom;
-    private double xyz[] = new double[3];
-    private double dxyz[] = new double[3];
-    private double g[] = new double[3];
-    private double sd;
+    private final double xyz[] = new double[3];
+    private final double dxyz[] = new double[3];
+    private final double g[] = new double[3];
+    private final double isd2;
 
     /**
      * <p>
@@ -64,8 +64,7 @@ public final class SolventGaussFormFactor implements FormFactor {
      */
     public SolventGaussFormFactor(Atom atom, double sd, double xyz[]) {
         this.atom = atom;
-        this.sd = sd;
-
+        isd2 = 1.0 / (sd * sd);
         update(xyz);
     }
 
@@ -88,8 +87,7 @@ public final class SolventGaussFormFactor implements FormFactor {
      * @return a double.
      */
     public double rho(double f, double lambda, double rsq) {
-        double sd2 = sd * sd;
-        return f + exp(-rsq / sd2);
+        return f + exp(-rsq * isd2);
     }
 
     /**
@@ -104,14 +102,11 @@ public final class SolventGaussFormFactor implements FormFactor {
         }
         VectorMath.diff(this.xyz, xyz, dxyz);
         double r2 = VectorMath.rsq(dxyz);
-        double sd2 = sd * sd;
-
-        double rho = exp(-r2 / sd2);
-
-        g[0] = dfc * (2.0 * rho * -dxyz[0] / sd2);
-        g[1] = dfc * (2.0 * rho * -dxyz[1] / sd2);
-        g[2] = dfc * (2.0 * rho * -dxyz[2] / sd2);
-
+        double rho = exp(-r2 * isd2);
+        double prefactor = -dfc * 2.0 * rho * isd2;
+        g[0] = prefactor * dxyz[0];
+        g[1] = prefactor * dxyz[1];
+        g[2] = prefactor * dxyz[2];
         atom.addToXYZGradient(g[0], g[1], g[2]);
     }
 

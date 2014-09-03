@@ -30,15 +30,15 @@ import ffx.xray.RefinementMinimize.RefinementMode;
  * <p>
  * SolventBinaryFormFactor class.</p>
  *
- * @author fenn
+ * @author Timothy Fenn
  *
  */
 public final class SolventBinaryFormFactor implements FormFactor {
 
     private final Atom atom;
-    private double xyz[] = new double[3];
-    private double dxyz[] = new double[3];
-    private double proberad;
+    private final double xyz[] = new double[3];
+    private final double dxyz[] = new double[3];
+    private final double proberad;
 
     /**
      * <p>
@@ -88,12 +88,13 @@ public final class SolventBinaryFormFactor implements FormFactor {
         if (ri <= proberad) {
             return 0.0;
         } else {
-            return f * 1.0;
+            return f;
         }
     }
 
-    // no derivative for the binary model!!!
     /**
+     * Derivatives are zero or infinite for the binary model.
+     *
      * {@inheritDoc}
      */
     @Override
