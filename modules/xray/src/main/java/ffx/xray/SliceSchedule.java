@@ -31,7 +31,6 @@ public class SliceSchedule extends IntegerSchedule {
         ranges = new Range[nThreads];
         intervals = new int[nThreads + 1];
         this.fftZ = fftZ;
-        //defineRanges();
     }
 
     public void updateWeights(int weights[]) {
@@ -77,15 +76,39 @@ public class SliceSchedule extends IntegerSchedule {
     }
 
     private void defineRanges() {
-        int totalWeight = totalWeight();
+
+        double totalWeight = totalWeight();
         if (totalWeight > nThreads) {
-            int targetWeight = totalWeight / (nThreads + 1);
+            double targetWeight = totalWeight / nThreads;
             int j = 0;
+            boolean risk;
+            int diff;
+            int prevDiff;
+            int prevWeight;
+            double prop;
+            double tolerance = (fftZ / nThreads) / (fftZ * fftZ);
+
             intervals[0] = 0;
             for (int i = 0; i < nThreads - 1; i++) {
                 int threadWeight = 0;
-                while (threadWeight < targetWeight && j < fftZ - 1) {
+                prop = 0;
+                diff = 0;
+                prevDiff = 0;
+                prevWeight = 0;
+                risk = false;
+
+                while (threadWeight < targetWeight && j < fftZ - 1 && !risk) {
                     threadWeight += weights[j];
+
+                    prevDiff = diff;
+                    diff = weights[j] - prevWeight;
+                    prevWeight = weights[j];
+                    prop = (targetWeight - threadWeight) / targetWeight;
+                    if (prop > (1.0 - tolerance)) {
+                        if (diff * prevDiff > 0) {
+                            risk = true;
+                        }
+                    }
                     j++;
                 }
                 intervals[i + 1] = j;
@@ -106,6 +129,18 @@ public class SliceSchedule extends IntegerSchedule {
         } else {
             Range temp = new Range(0, fftZ - 1);
             ranges = temp.subranges(nThreads);
+        }
+    }
+
+    public int[] getWeightPerThread() {
+        if (intervals != null) {
+            int[] weightToReturn = new int[nThreads];
+            for (int i = 0; i < nThreads; i++) {
+                weightToReturn[i] = intervals[i + 1];
+            }
+            return weightToReturn;
+        } else {
+            return null;
         }
     }
 }

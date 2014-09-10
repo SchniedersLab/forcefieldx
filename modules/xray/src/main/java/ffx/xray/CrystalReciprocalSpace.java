@@ -1426,6 +1426,8 @@ public class CrystalReciprocalSpace {
         }
     }
 
+    
+    
     private class AtomicSliceLoop extends SliceLoop {
 
         final double xyz[] = new double[3];
@@ -1449,15 +1451,24 @@ public class CrystalReciprocalSpace {
         @Override
         public void start() {
             Arrays.fill(optLocal, 0);
+            super.initTiming(this.getClass().getSimpleName(), System.nanoTime());
+                  
         }
 
+        @Override
+        public void setWeight(){
+            super.setWeightOnRegion(sliceSchedule.getWeightPerThread());
+        }
+        
         @Override
         public void finish() {
             for (int i = 0; i < fftZ; i++) {
                 optWeight.addAndGet(i, optLocal[i]);
             }
+            setWeight();
+            super.finishTime(System.nanoTime());
         }
-
+            
         @Override
         public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
             if (!atoms[iAtom].isActive()) {
@@ -1515,6 +1526,7 @@ public class CrystalReciprocalSpace {
         final double xf[] = new double[3];
         final double grid[];
         final int optLocal[];
+        
 
         public SolventSliceLoop(SliceRegion region) {
             super(region.getNatoms(), region.getNsymm(), region);
@@ -1526,10 +1538,11 @@ public class CrystalReciprocalSpace {
         public IntegerSchedule schedule() {
             return sliceSchedule;
         }
-
+                
         @Override
         public void start() {
             Arrays.fill(optLocal, 0);
+            super.initTiming(this.getClass().getSimpleName(), System.nanoTime());
         }
 
         @Override
@@ -1537,8 +1550,15 @@ public class CrystalReciprocalSpace {
             for (int i = 0; i < fftZ; i++) {
                 optWeight.addAndGet(i, optLocal[i]);
             }
+            setWeight();
+            super.finishTime(System.nanoTime());
         }
 
+        @Override
+        public void setWeight(){
+            super.setWeightOnRegion(sliceSchedule.getWeightPerThread());
+        }
+        
         @Override
         public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
             if (!atoms[iAtom].isActive()) {
