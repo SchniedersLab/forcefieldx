@@ -148,7 +148,7 @@ public class SliceRegion extends ParallelRegion {
             logger.log(Level.SEVERE, message, e);
         }
         
-        if (threadIndex == 0 ) {
+        if (threadIndex == 0 && logger.isLoggable(Level.FINE)) {
             sliceRegionTime += System.nanoTime();
             double total = sliceLoopTime[0];
             double sliceMax = 0;
