@@ -1356,6 +1356,8 @@ public class ReciprocalSpace {
             this.use = use;
         }
 
+
+        
         @Override
         public void start() {
             threadIndex = getThreadIndex();
@@ -1500,6 +1502,11 @@ public class ReciprocalSpace {
                     }
                 }
             }
+        }
+
+        @Override
+        public void setWeight() {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
     }
 
@@ -1648,6 +1655,11 @@ public class ReciprocalSpace {
                     }
                 }
             }
+        }
+
+        @Override
+        public void setWeight() {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
     }
 
