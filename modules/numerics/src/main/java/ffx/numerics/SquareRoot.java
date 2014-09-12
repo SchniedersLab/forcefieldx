@@ -40,8 +40,8 @@ import static java.lang.Float.intBitsToFloat;
  * <br>
  * within 1.0e-10 for input values from 1.0e-8 to 1.0e8.
  *
- * The "main" method performance test shows that the software implementation
- * is slower than simply calling Math.sqrt.
+ * The "main" method performance test shows that the software implementation is
+ * slower than simply calling Math.sqrt.
  *
  * @author Michael J. Schnieders
  * @author Ported to Java from the GROMACS code in cinvsqrtdata.c
@@ -54,28 +54,6 @@ public class SquareRoot {
      * This class only presents static methods.
      */
     private SquareRoot() {
-    }
-
-    public static void main(String[] args) {
-        for (int j = 0; j < 10; j++) {
-            Random random = new Random(1);
-            double sum = 0.0;
-            long time = -System.nanoTime();
-            for (int i = 0; i < 10000000; i++) {
-                sum += isqrt(random.nextDouble());
-            }
-            time += System.nanoTime();
-            System.out.println(String.format(" Software sum was    %16.8f in %16.8f seconds.", sum, 1.0e-9 * time));
-
-            random = new Random(1);
-            sum = 0.0;
-            time = -System.nanoTime();
-            for (int i = 0; i < 10000000; i++) {
-                sum += 1.0 / Math.sqrt(random.nextDouble());
-            }
-            time += System.nanoTime();
-            System.out.println(String.format(" 1/Math.sqrt sum was %16.8f in %16.8f seconds.", sum, 1.0e-9 * time));
-        }
     }
 
     /**
@@ -150,6 +128,28 @@ public class SquareRoot {
      */
     private static int fractAddress(int val) {
         return ((val) & (0x007fffff | 0x00800000)) >> 12;
+    }
+
+    public static void main(String[] args) {
+        for (int j = 0; j < 10; j++) {
+            Random random = new Random(1);
+            double sum = 0.0;
+            long time = -System.nanoTime();
+            for (int i = 0; i < 10000000; i++) {
+                sum += isqrt(random.nextDouble());
+            }
+            time += System.nanoTime();
+            System.out.println(String.format(" Software sum was    %16.8f in %16.8f seconds.", sum, 1.0e-9 * time));
+
+            random = new Random(1);
+            sum = 0.0;
+            time = -System.nanoTime();
+            for (int i = 0; i < 10000000; i++) {
+                sum += 1.0 / Math.sqrt(random.nextDouble());
+            }
+            time += System.nanoTime();
+            System.out.println(String.format(" 1/Math.sqrt sum was %16.8f in %16.8f seconds.", sum, 1.0e-9 * time));
+        }
     }
 
     /**

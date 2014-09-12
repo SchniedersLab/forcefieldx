@@ -24,13 +24,14 @@ package ffx.numerics;
 
 import java.util.logging.Logger;
 
+import static java.lang.System.arraycopy;
+
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.acos;
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
-import static java.lang.System.arraycopy;
 
 import static ffx.numerics.LBFGS.XdotY;
 import static ffx.numerics.LBFGS.aXplusY;
@@ -64,6 +65,7 @@ public class LineSearch {
 
         Success, WideAngle, ScaleStep, IntplnErr, ReSearch, BadIntpln;
     };
+
     private final int n;
     private Potential optimizationSystem;
     private int functionEvaluations[];

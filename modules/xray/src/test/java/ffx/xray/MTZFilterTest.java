@@ -130,6 +130,6 @@ public class MTZFilterTest {
                 29.969, tmp.crystal.a, 0.01);
 
         assertEquals("reflection list should have correct resolution",
-                1.30, tmp.resolution.res_limit(), 0.01);
+                1.30, tmp.resolution.resolutionLimit(), 0.01);
     }
 }

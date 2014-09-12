@@ -150,21 +150,21 @@ public class CrystalStats {
         if (refinementdata.crs_fs.solventModel != SolventModel.NONE) {
             sb.append("REMARK   3  BULK SOLVENT MODELLING\n");
             switch (refinementdata.crs_fs.solventModel) {
-                case (SolventModel.BINARY):
+                case BINARY:
                     sb.append("REMARK   3   METHOD USED: BINARY MASK\n");
                     sb.append(String.format("REMARK   3    PROBE RADIUS  : %g\n",
                             refinementdata.solvent_a));
                     sb.append(String.format("REMARK   3    SHRINK RADIUS : %g\n",
                             refinementdata.solvent_b));
                     break;
-                case (SolventModel.POLYNOMIAL):
+                case POLYNOMIAL:
                     sb.append("REMARK   3   METHOD USED: POLYNOMIAL SWITCH\n");
                     sb.append(String.format("REMARK   3    ATOMIC RADIUS BUFFER : %g\n",
                             refinementdata.solvent_a));
                     sb.append(String.format("REMARK   3    SWITCH RADIUS        : %g\n",
                             refinementdata.solvent_b));
                     break;
-                case (SolventModel.GAUSSIAN):
+                case GAUSSIAN:
                     sb.append("REMARK   3   METHOD USED: GAUSSIAN\n");
                     sb.append(String.format("REMARK   3    ATOMIC RADIUS BUFFER : %g\n",
                             refinementdata.solvent_a));
@@ -363,7 +363,7 @@ public class CrystalStats {
         int nhkli = 0;
         int nhklo = refinementdata.n;
         double rfreefrac = getRFree() * 0.01;
-        double res = reflectionlist.resolution.res_limit();
+        double res = reflectionlist.resolution.resolutionLimit();
         for (HKL ih : reflectionlist.hkllist) {
             int i = ih.index();
 
@@ -636,19 +636,19 @@ public class CrystalStats {
                 refinementdata.model_b[2]));
         if (refinementdata.crs_fs.solventModel != SolventModel.NONE) {
             switch (refinementdata.crs_fs.solventModel) {
-                case (SolventModel.BINARY):
+                case BINARY:
                     sb.append(" Bulk solvent model: Binary mask\n");
                     sb.append(String.format("  Probe radius: %8.3f\n  Shrink radius: %8.3f\n",
                             refinementdata.solvent_a,
                             refinementdata.solvent_b));
                     break;
-                case (SolventModel.POLYNOMIAL):
+                case POLYNOMIAL:
                     sb.append(" Bulk solvent model: Polynomial switch\n");
                     sb.append(String.format("  a:     %8.3f\n  w:     %8.3f\n",
                             refinementdata.solvent_a,
                             refinementdata.solvent_b));
                     break;
-                case (SolventModel.GAUSSIAN):
+                case GAUSSIAN:
                     sb.append(" Bulk solvent model: Gaussian\n");
                     sb.append(String.format("  A: %8.3f\n  sd scale: %8.3f\n",
                             refinementdata.solvent_a,

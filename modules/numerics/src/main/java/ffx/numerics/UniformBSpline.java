@@ -65,12 +65,18 @@ public class UniformBSpline {
      */
     public static void bSpline(final double x, final int order,
             final double coefficients[]) {
-        // Initialization to get to a linear b-Spline (degree 1).
+
+        /**
+         * Initialization to get to a linear b-Spline (degree 1).
+         */
         coefficients[0] = 1.0 - x;
         coefficients[1] = x;
-        // Apply b-Spline recursion to desired degree.
+
+        /**
+         * Apply b-Spline recursion to desired degree.
+         */
         for (int k = 2; k < order; k++) {
-            bSplineRecur(x, k, coefficients, coefficients);
+            bSplineRecursion(x, k, coefficients, coefficients);
         }
     }
 
@@ -84,16 +90,16 @@ public class UniformBSpline {
      *
      * @since 1.0
      */
-    private static void bSplineRecur(final double x, final int order,
+    private static void bSplineRecursion(final double x, final int order,
             final double coefficients[], final double newCoefficients[]) {
-        double div, k1mw;
-        int i, km1, kmi;
-        div = 1.0 / order;
-        k1mw = order + 1 - x;
-        km1 = order - 1;
+
+        final double div = 1.0 / order;
+        final double k1mw = order + 1 - x;
+        final int km1 = order - 1;
+
         newCoefficients[order] = div * x * coefficients[km1];
-        for (i = 1; i < order; i++) {
-            kmi = order - i;
+        for (int i = 1; i < order; i++) {
+            int kmi = order - i;
             newCoefficients[kmi] = div * ((x + i) * coefficients[km1 - i] + (k1mw - i) * coefficients[kmi]);
         }
         newCoefficients[0] = div * (1.0 - x) * coefficients[0];
@@ -125,41 +131,45 @@ public class UniformBSpline {
 
         assert (deriveOrder <= order - 1 && deriveOrder <= 5);
 
-        int j, k, o1, o2, o3, o4, o5, o6, dr_ord1;
-        double tk[];
-        // initialization to get to 2nd order
+        /**
+         * Initialization to get to 2nd order.
+         */
         work[1][0] = 1.0 - x;
         work[1][1] = x;
-        // perform one pass to get to 3rd order
+        /**
+         * Perform one pass to get to 3rd order.
+         */
         work[2][0] = 0.5 * (1.0 - x) * work[1][0];
         work[2][1] = 0.5 * ((x + 1.0) * work[1][0] + (2.0 - x) * work[1][1]);
         work[2][2] = 0.5 * x * work[1][1];
-        // compute standard B-spline recursion to desired order
-        for (k = 3; k < order; k++) {
-            bSplineRecur(x, k, work[k - 1], work[k]);
+        /**
+         * Compute standard B-spline recursion to desired order.
+         */
+        for (int k = 3; k < order; k++) {
+            bSplineRecursion(x, k, work[k - 1], work[k]);
         }
-        o1 = order - 1;
+        int o1 = order - 1;
         // do derivatives
         if (deriveOrder > 0) {
-            o2 = order - 2;
+            int o2 = order - 2;
             bSplineDiff(work[o2], o1);
             if (deriveOrder > 1) {
-                o3 = order - 3;
+                int o3 = order - 3;
                 bSplineDiff(work[o3], o2);
                 bSplineDiff(work[o3], o1);
                 if (deriveOrder > 2) {
-                    o4 = order - 4;
+                    int o4 = order - 4;
                     bSplineDiff(work[o4], o3);
                     bSplineDiff(work[o4], o2);
                     bSplineDiff(work[o4], o1);
                     if (deriveOrder > 3) {
-                        o5 = order - 5;
+                        int o5 = order - 5;
                         bSplineDiff(work[o5], o4);
                         bSplineDiff(work[o5], o3);
                         bSplineDiff(work[o5], o2);
                         bSplineDiff(work[o5], o1);
                         if (deriveOrder > 4) {
-                            o6 = order - 6;
+                            int o6 = order - 6;
                             bSplineDiff(work[o6], o5);
                             bSplineDiff(work[o6], o4);
                             bSplineDiff(work[o6], o3);
@@ -173,10 +183,10 @@ public class UniformBSpline {
                 }
             }
         }
-        dr_ord1 = deriveOrder + 1;
-        for (k = 0; k < order; k++) {
-            tk = coefficients[k];
-            for (j = 0; j < dr_ord1; j++) {
+        int deriveOrder1 = deriveOrder + 1;
+        for (int k = 0; k < order; k++) {
+            double tk[] = coefficients[k];
+            for (int j = 0; j < deriveOrder1; j++) {
                 tk[j] = work[o1 - j][k];
             }
         }
@@ -191,10 +201,9 @@ public class UniformBSpline {
      * @since 1.0
      */
     private static void bSplineDiff(final double coefficients[], final int order) {
-        int km1, i;
-        km1 = order - 1;
-        coefficients[order] = coefficients[km1];
-        for (i = km1; i > 0; i--) {
+        final int order1 = order - 1;
+        coefficients[order] = coefficients[order1];
+        for (int i = order1; i > 0; i--) {
             coefficients[i] = coefficients[i - 1] - coefficients[i];
         }
         coefficients[0] = -coefficients[0];

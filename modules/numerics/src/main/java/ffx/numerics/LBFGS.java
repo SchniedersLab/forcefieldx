@@ -25,12 +25,13 @@ package ffx.numerics;
 import java.util.Arrays;
 import java.util.logging.Logger;
 
-import static org.apache.commons.math3.util.FastMath.abs;
-import static org.apache.commons.math3.util.FastMath.min;
-import static org.apache.commons.math3.util.FastMath.sqrt;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
+
+import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.numerics.LineSearch.LineSearchResult;
 
@@ -178,7 +179,7 @@ public class LBFGS {
         assert (g != null && g.length >= n);
 
         if (mSave > n) {
-            logger.warning(format(" Resetting the number of saved L-BFGS vectors to %d.", n));
+            logger.fine(format(" Resetting the number of saved L-BFGS vectors to %d.", n));
             mSave = n;
         }
 
@@ -242,25 +243,23 @@ public class LBFGS {
             return 0;
         }
 
-        double prevX[] = new double[n];
-        double prevG[] = new double[n];
-
-        double r[] = new double[n];
-        double p[] = new double[n];
-        double h0[] = new double[n];
-        double q[] = new double[n];
-
-        double alpha[] = new double[mSave];
-        double rho[] = new double[mSave];
+        final double prevX[] = new double[n];
+        final double prevG[] = new double[n];
+        final double r[] = new double[n];
+        final double p[] = new double[n];
+        final double h0[] = new double[n];
+        final double q[] = new double[n];
+        final double alpha[] = new double[mSave];
+        final double rho[] = new double[mSave];
         double gamma = 1.0;
 
         /**
          * Line search parameters.
          */
-        LineSearch lineSearch = new LineSearch(n);
-        LineSearchResult info[] = {LineSearchResult.Success};
-        int nFunctionEvals[] = {0};
-        double angle[] = {0.0};
+        final LineSearch lineSearch = new LineSearch(n);
+        final LineSearchResult info[] = {LineSearchResult.Success};
+        final int nFunctionEvals[] = {0};
+        final double angle[] = {0.0};
         double df = 0.5 * stepMax * gnorm;
         int m = -1;
 
@@ -478,7 +477,8 @@ public class LBFGS {
      * @param dy Y increment.
      * @since 1.0
      */
-    public static void aXplusY(int n, double a, double[] x, int x0, int dx, double[] y, int y0, int dy) {
+    public static void aXplusY(final int n, final double a, final double[] x,
+            final int x0, final int dx, final double[] y, final int y0, final int dy) {
         if (n <= 0 || a == 0) {
             return;
         }
@@ -501,7 +501,8 @@ public class LBFGS {
      * @return dot product
      * @since 1.0
      */
-    public static double XdotY(int n, double[] x, int x0, int dx, double[] y, int y0, int dy) {
+    public static double XdotY(final int n, final double[] x, final int x0,
+            final int dx, final double[] y, final int y0, final int dy) {
         if (n <= 0) {
             return 0;
         }

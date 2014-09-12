@@ -527,6 +527,7 @@ public final class PDBFilter extends SystemFilter {
                                 }
                                 newAtom = new Atom(0, name, altLoc, d, resName, resSeq,
                                         chainID, occupancy, tempFactor, segID);
+
                                 returnedAtom = (Atom) activeMolecularAssembly.addMSNode(newAtom);
                                 if (returnedAtom != newAtom) {
                                     // A previously added atom has been retained.

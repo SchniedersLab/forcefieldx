@@ -89,9 +89,9 @@ public class Scalar {
      */
     public Scalar(double x, double y, double z, double scalar) {
         this();
-        this.xyz[0] = x;
-        this.xyz[1] = y;
-        this.xyz[2] = z;
+        xyz[0] = x;
+        xyz[1] = y;
+        xyz[2] = z;
         this.scalar = scalar;
     }
 

@@ -52,6 +52,7 @@ import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
 import static ffx.numerics.VectorMath.b2u;
+import static ffx.xray.CrystalReciprocalSpace.SolventModel.NONE;
 
 /**
  *
@@ -65,14 +66,14 @@ public class FiniteDifferenceTest {
         return Arrays.asList(new Object[][]{
             {false,
                 "ala met anisou",
-                SolventModel.NONE,
+                NONE,
                 new int[]{91, 105, 119},
                 "ffx/xray/structures/alamet.pdb",
                 "ffx/xray/structures/alamet.mtz"}
         });
     }
     private final String info;
-    private final int solventmodel;
+    private final SolventModel solventmodel;
     private final String pdbname;
     private final String mtzname;
     private final boolean ci;
@@ -83,7 +84,7 @@ public class FiniteDifferenceTest {
     private final SigmaAMinimize sigmaaminimize;
 
     public FiniteDifferenceTest(boolean ciOnly,
-            String info, int solventmodel, int[] atoms,
+            String info, SolventModel solventmodel, int[] atoms,
             String pdbname, String mtzname) {
         this.ciOnly = ciOnly;
         this.info = info;

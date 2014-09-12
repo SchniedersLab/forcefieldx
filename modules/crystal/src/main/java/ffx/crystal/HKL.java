@@ -51,7 +51,6 @@ public class HKL {
     protected int index;
     private int hashCode;
 
-    // null constructor
     /**
      * <p>
      * Constructor for HKL.</p>

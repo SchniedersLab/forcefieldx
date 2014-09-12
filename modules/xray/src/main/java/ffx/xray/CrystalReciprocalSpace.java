@@ -31,8 +31,6 @@ import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.floor;
 import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.pow;
-import static org.apache.commons.math3.util.FastMath.pow;
-
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.pj.IntegerForLoop;
@@ -99,26 +97,27 @@ public class CrystalReciprocalSpace {
     /**
      * The possible solvent model methods
      */
-    public static interface SolventModel {
+    public enum SolventModel {
 
         /**
          * do not model solvent scattering
          */
-        public static final int NONE = 1;
+        NONE,
         /**
          * the classical binary (0, 1) model
          */
-        public static final int BINARY = 2;
+        BINARY,
         /**
          * a Gaussian switch model
          */
-        public static final int GAUSSIAN = 3;
+        GAUSSIAN,
         /**
          * a cubic polynomial switch model (default)
          */
-        public static final int POLYNOMIAL = 4;
+        POLYNOMIAL
     }
 
+    // NONE 1, BINARY 2, GAUSSIAN 3 and POLYNOMIAL 4
     public enum GridMethod {
 
         SPATIAL, SLICE
@@ -141,7 +140,7 @@ public class CrystalReciprocalSpace {
     protected final double densityGrid[];
     protected final double solventGrid[];
     private int aRadGrid;
-    protected int solventModel;
+    protected SolventModel solventModel;
     private final int nSymm;
     private final int bulkNSymm;
     private final int nAtoms;
@@ -263,7 +262,7 @@ public class CrystalReciprocalSpace {
     public CrystalReciprocalSpace(ReflectionList reflectionlist,
             Atom atoms[],
             ParallelTeam fftTeam, ParallelTeam parallelTeam,
-            boolean solventMask, boolean neutron, int solventModel) {
+            boolean solventMask, boolean neutron, SolventModel solventModel) {
         this.reflectionList = reflectionlist;
         this.crystal = reflectionlist.crystal;
         this.resolution = reflectionlist.resolution;
@@ -278,13 +277,13 @@ public class CrystalReciprocalSpace {
         threadCount = parallelTeam.getThreadCount();
         // necssary for the bulksolvent expansion!
         bulkNSymm = crystal.spaceGroup.symOps.size();
-        double density = 2.0 / resolution.sampling_limit();
-        double res = resolution.res_limit();
 
+        double gridFactor = resolution.samplingLimit() / 2.0;
+        double gridStep = resolution.resolutionLimit() * gridFactor;
         // Set default FFT grid size from unit cell dimensions.
-        int nX = (int) Math.floor(crystal.a * density / res) + 1;
-        int nY = (int) Math.floor(crystal.b * density / res) + 1;
-        int nZ = (int) Math.floor(crystal.c * density / res) + 1;
+        int nX = (int) Math.floor(crystal.a / gridStep) + 1;
+        int nY = (int) Math.floor(crystal.b / gridStep) + 1;
+        int nZ = (int) Math.floor(crystal.c / gridStep) + 1;
         if (nX % 2 != 0) {
             nX += 1;
         }
@@ -323,7 +322,7 @@ public class CrystalReciprocalSpace {
             atomFormFactors = null;
             double vdwr;
             switch (solventModel) {
-                case SolventModel.BINARY:
+                case BINARY:
                     solventName = "binary";
                     solventA = 1.0;
                     solventB = 1.0;
@@ -336,7 +335,7 @@ public class CrystalReciprocalSpace {
                         }
                     }
                     break;
-                case SolventModel.GAUSSIAN:
+                case GAUSSIAN:
                     solventName = "Gaussian";
                     solventA = 11.5;
                     solventB = 0.55;
@@ -349,7 +348,7 @@ public class CrystalReciprocalSpace {
                         }
                     }
                     break;
-                case SolventModel.POLYNOMIAL:
+                case POLYNOMIAL:
                     solventName = "polynomial switch";
                     solventA = 0.0;
                     solventB = 0.8;
@@ -362,6 +361,7 @@ public class CrystalReciprocalSpace {
                         }
                     }
                     break;
+                case NONE:
                 default:
                     solventGrid = null;
                     solventFormFactors = null;
@@ -396,15 +396,18 @@ public class CrystalReciprocalSpace {
                 aRad = Math.max(aRad, a.getFormFactorWidth());
             } else {
                 switch (solventModel) {
-                    case SolventModel.BINARY:
+                    case BINARY:
                         aRad = Math.max(aRad, vdwr + solventA + 0.2);
                         break;
-                    case SolventModel.GAUSSIAN:
+                    case GAUSSIAN:
                         aRad = Math.max(aRad, vdwr * solventB + 2.0);
                         break;
-                    case SolventModel.POLYNOMIAL:
+                    case POLYNOMIAL:
                         aRad = Math.max(aRad, vdwr + solventB + 0.2);
                         break;
+                    case NONE:
+                    default:
+                        aRad = 0.0;
                 }
             }
         }
@@ -431,16 +434,18 @@ public class CrystalReciprocalSpace {
             StringBuilder sb = new StringBuilder();
             if (solvent) {
                 sb.append(String.format("  Bulk Solvent Grid\n"));
-                sb.append(String.format("  Bulk solvent model type:       %s\n",
-                        solventName));
+                sb.append(String.format("  Bulk solvent model type:           %8s\n",
+                        solventModel.toString()));
             } else {
-                sb.append(String.format("  Atomic Grid\n"));
+                sb.append(String.format("  Atomic Scattering Grid\n"));
             }
-            sb.append(String.format("  Form factor grid radius (radius):  %d (%8.3f)\n",
-                    aRadGrid, aRad));
-            sb.append(String.format("  Grid density:               %8.3f\n",
-                    density));
-            sb.append(String.format("  Grid dimensions:           (%d,%d,%d)\n",
+            sb.append(String.format("  Form factor grid points:             %8d\n",
+                    aRadGrid * 2));
+            sb.append(String.format("  Form factor grid diameter:           %8.3f\n",
+                    aRad * 2));
+            sb.append(String.format("  Grid density:                        %8.3f\n",
+                    1.0 / gridStep));
+            sb.append(String.format("  Grid dimensions:                (%3d,%3d,%3d)\n",
                     fftX, fftY, fftZ));
             logger.info(sb.toString());
         }
@@ -453,8 +458,6 @@ public class CrystalReciprocalSpace {
             tempGrid = GridMethod.SLICE;
         }
         gridMethod = tempGrid;
-
-        logger.log(Level.INFO, " X-ray Refinement Parallelization Method: {0}", gridMethod.toString());
 
         if (solvent) {
             int minWork = nSymm;
@@ -618,7 +621,7 @@ public class CrystalReciprocalSpace {
             return;
         }
         switch (solventModel) {
-            case SolventModel.BINARY:
+            case BINARY:
                 for (int iSymm = 0; iSymm < bulkNSymm; iSymm++) {
                     for (int i = 0; i < nAtoms; i++) {
                         vdwr = atoms[i].getVDWType().radius * 0.5;
@@ -626,7 +629,7 @@ public class CrystalReciprocalSpace {
                     }
                 }
                 break;
-            case SolventModel.GAUSSIAN:
+            case GAUSSIAN:
                 for (int iSymm = 0; iSymm < bulkNSymm; iSymm++) {
                     for (int i = 0; i < nAtoms; i++) {
                         vdwr = atoms[i].getVDWType().radius * 0.5;
@@ -634,7 +637,7 @@ public class CrystalReciprocalSpace {
                     }
                 }
                 break;
-            case SolventModel.POLYNOMIAL:
+            case POLYNOMIAL:
                 for (int iSymm = 0; iSymm < bulkNSymm; iSymm++) {
                     for (int i = 0; i < nAtoms; i++) {
                         vdwr = atoms[i].getVDWType().radius * 0.5;
@@ -1381,18 +1384,21 @@ public class CrystalReciprocalSpace {
             double vdwr = atoms[n].getVDWType().radius * 0.5;
             int frad = aRadGrid;
             switch (solventModel) {
-                case SolventModel.BINARY:
+                case BINARY:
                     frad = Math.min(aRadGrid,
                             (int) Math.floor((vdwr + solventA + 0.2) * fftX / crystal.a) + 1);
                     break;
-                case SolventModel.GAUSSIAN:
+                case GAUSSIAN:
                     frad = Math.min(aRadGrid,
                             (int) Math.floor((vdwr * solventB + 2.0) * fftX / crystal.a) + 1);
                     break;
-                case SolventModel.POLYNOMIAL:
+                case POLYNOMIAL:
                     frad = Math.min(aRadGrid,
                             (int) Math.floor((vdwr + solventB + 0.2) * fftX / crystal.a) + 1);
                     break;
+                case NONE:
+                default:
+                    return;
             }
 
             // Logic to loop within the cutoff box.
@@ -1553,15 +1559,18 @@ public class CrystalReciprocalSpace {
             double vdwr = atoms[iAtom].getVDWType().radius * 0.5;
             int frad = aRadGrid;
             switch (solventModel) {
-                case SolventModel.BINARY:
+                case BINARY:
                     frad = min(aRadGrid, (int) floor((vdwr + solventA + 0.2) * fftX / crystal.a) + 1);
                     break;
-                case SolventModel.GAUSSIAN:
+                case GAUSSIAN:
                     frad = min(aRadGrid, (int) floor((vdwr * solventB + 2.0) * fftX / crystal.a) + 1);
                     break;
-                case SolventModel.POLYNOMIAL:
+                case POLYNOMIAL:
                     frad = min(aRadGrid, (int) floor((vdwr + solventB + 0.2) * fftX / crystal.a) + 1);
                     break;
+                case NONE:
+                default:
+                    return;
             }
 
             // Logic to loop within the cutoff box.
@@ -1751,19 +1760,21 @@ public class CrystalReciprocalSpace {
                     double dfcmult = 1.0;
                     int dfrad = aRadGrid;
                     switch (solventModel) {
-                        case SolventModel.BINARY:
+                        case BINARY:
                             dfrad = Math.min(aRadGrid,
                                     (int) Math.floor((vdwr + solventA + 0.2) * fftX / crystal.a) + 1);
                             break;
-                        case SolventModel.GAUSSIAN:
+                        case GAUSSIAN:
                             dfrad = Math.min(aRadGrid,
                                     (int) Math.floor((vdwr * solventB + 2.0) * fftX / crystal.a) + 1);
                             dfcmult = solventA;
                             break;
-                        case SolventModel.POLYNOMIAL:
+                        case POLYNOMIAL:
                             dfrad = Math.min(aRadGrid,
                                     (int) Math.floor((vdwr + solventB + 0.2) * fftX / crystal.a) + 1);
                             break;
+                        case NONE:
+                            return;
                     }
 
                     // Logic to loop within the cutoff box.

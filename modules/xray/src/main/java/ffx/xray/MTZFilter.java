@@ -472,7 +472,7 @@ public class MTZFilter implements DiffractionFileFilter {
                     nread++;
                 } else {
                     HKL tmp = new HKL(ih, ik, il);
-                    if (!reflectionlist.resolution.inInvresolutionRange(Crystal.invressq(reflectionlist.crystal, tmp))) {
+                    if (!reflectionlist.resolution.inInverseResSqRange(Crystal.invressq(reflectionlist.crystal, tmp))) {
                         nres++;
                     } else {
                         nignore++;
@@ -655,7 +655,7 @@ public class MTZFilter implements DiffractionFileFilter {
                     nread++;
                 } else {
                     HKL tmp = new HKL(ih, ik, il);
-                    if (!reflectionlist.resolution.inInvresolutionRange(Crystal.invressq(reflectionlist.crystal, tmp))) {
+                    if (!reflectionlist.resolution.inInverseResSqRange(Crystal.invressq(reflectionlist.crystal, tmp))) {
                         nres++;
                     } else {
                         nignore++;

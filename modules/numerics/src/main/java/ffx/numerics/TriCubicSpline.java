@@ -52,7 +52,7 @@ public class TriCubicSpline {
      * smoothing matrix: Catmull-Rom spline with tau=0.25
      */
     private static final double tau = 0.25;
-    private static final double catmullrommat[][] = new double[][]{
+    private static final double catmullRomMat[][] = new double[][]{
         {0.0, 1.0, 0.0, 0.0},
         {-tau, 0.0, tau, 0.0},
         {2.0 * tau, tau - 3.0, 3.0 - 2.0 * tau, -tau},
@@ -78,7 +78,7 @@ public class TriCubicSpline {
     }
 
     /**
-     * determine the spline value at a given point
+     * Determine the spline value at a given point.
      *
      * @param dx delta between point and previous grid point in X
      * @param dy delta between point and previous grid point in Y
@@ -90,9 +90,8 @@ public class TriCubicSpline {
     public double spline(double dx, double dy, double dz,
             double scalar[][][], double g[]) {
 
-        /*
-         * p(s) = u . catmull-rom matrix . p^T
-         * applied in 3 dimensions (u, v, w)
+        /**
+         * p(s) = u . catmull-rom matrix . p^T applied in 3 dimensions (u, v, w)
          */
         u[0] = 1.0;
         v[0] = 1.0;
@@ -102,7 +101,10 @@ public class TriCubicSpline {
             v[i] = v[i - 1] * dy;
             w[i] = w[i - 1] * dz;
         }
-        // derivatives
+
+        /**
+         * Derivatives
+         */
         du[0] = dv[0] = dw[0] = 0.0;
         du[1] = dv[1] = dw[1] = 1.0;
         du[2] = 2.0 * dx;
@@ -112,21 +114,25 @@ public class TriCubicSpline {
         dw[2] = 2.0 * dz;
         dw[3] = 3.0 * dz * dz;
 
-        // vec4mat4 - could put this in VectorMath class
+        /**
+         * vec4mat4 - could put this in VectorMath class
+         */
         for (int i = 0; i < 4; i++) {
             p[i] = q[i] = r[i] = 0.0;
             dp[i] = dq[i] = dr[i] = 0.0;
             for (int j = 0; j < 4; j++) {
-                p[i] += u[j] * catmullrommat[j][i];
-                q[i] += v[j] * catmullrommat[j][i];
-                r[i] += w[j] * catmullrommat[j][i];
-                dp[i] += du[j] * catmullrommat[j][i];
-                dq[i] += dv[j] * catmullrommat[j][i];
-                dr[i] += dw[j] * catmullrommat[j][i];
+                p[i] += u[j] * catmullRomMat[j][i];
+                q[i] += v[j] * catmullRomMat[j][i];
+                r[i] += w[j] * catmullRomMat[j][i];
+                dp[i] += du[j] * catmullRomMat[j][i];
+                dq[i] += dv[j] * catmullRomMat[j][i];
+                dr[i] += dw[j] * catmullRomMat[j][i];
             }
         }
 
-        // tensor products
+        /**
+         * Tensor products
+         */
         double sum = 0.0;
         double gx = 0.0, gy = 0.0, gz = 0.0;
         for (int i = 0; i < 4; i++) {
