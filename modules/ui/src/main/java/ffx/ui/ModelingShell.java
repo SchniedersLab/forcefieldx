@@ -63,6 +63,7 @@ import ffx.algorithms.Minimize;
 import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.Terminatable;
 import ffx.algorithms.Thermostat.Thermostats;
+import ffx.algorithms.AlgorithmFunctions;
 import ffx.autoparm.Energy;
 import ffx.autoparm.Minimize_2;
 import ffx.autoparm.Poledit;
@@ -74,6 +75,7 @@ import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.RendererCache.ColorModel;
 import ffx.potential.bonded.RendererCache.ViewModel;
+import ffx.potential.parsers.PotentialsFunctions;
 
 /**
  * The ModelingShell is used to script Multiscale Modeling Routines via the
@@ -228,6 +230,10 @@ public final class ModelingShell extends Console implements AlgorithmListener {
         setVariable("potential", new MethodClosure(this, "potential"));
         setVariable("poledit", new MethodClosure(this, "poledit"));
         setVariable("superpose", new MethodClosure(this, "superpose"));
+        
+        // Obtain UIUtils object
+        setVariable("getAlgorithmUtils", new MethodClosure(this, "getUIAlgorithmUtils"));
+        setVariable("getPotentialsUtils", new MethodClosure(this, "getUIPotentialsUtils"));
     }
 
     /**
@@ -366,6 +372,14 @@ public final class ModelingShell extends Console implements AlgorithmListener {
         }
         logger.warning(" Energy could not be calculated");
         return 0.0;
+    }
+    
+    public AlgorithmFunctions getUIAlgorithmUtils() {
+        return new UIUtils(this, mainPanel);
+    }
+    
+    public PotentialsFunctions getUIPotentialsUtils() {
+        return new UIUtils(this, mainPanel);
     }
 
     /**

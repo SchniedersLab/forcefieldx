@@ -20,33 +20,25 @@
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
  */
-package ffx.ui;
+package ffx.algorithms;
+
+import ffx.numerics.Potential;
+import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.parsers.PotentialsFunctions;
+import java.io.File;
 
 /**
- * The FileCloser class wraps the closing of an FFXSystem within a thread.
+ * The AlgorithmFunctions interface specifies default methods for LBFGS minimization
+ * and molecular dynamics, similar to pre-existing Groovy method closures. Enables
+ * FFX classes and scripts to perform these functions using either default FFX 
+ * methods, a local implementation, or another implementation replacing User Interfaces.
  *
+ * @author Jacob M. Litman
  * @author Michael J. Schnieders
- *
  */
-public final class FileCloser implements Runnable {
-
-    FFXSystem ffxSystem;
-
-    /**
-     * <p>
-     * Constructor for FileCloser.</p>
-     *
-     * @param sys a {@link ffx.ui.FFXSystem} object.
-     */
-    public FileCloser(FFXSystem sys) {
-        ffxSystem = sys;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void run() {
-        ffxSystem.destroy();
-    }
+public interface AlgorithmFunctions extends PotentialsFunctions {
+    public void md(MolecularAssembly assembly, int nStep, double timeStep, 
+            double printInterval, double saveInterval, double temperature, 
+            boolean initVelocities, File dyn);
+    public Potential minimize(MolecularAssembly assembly, double eps);
 }
