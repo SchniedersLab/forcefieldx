@@ -109,7 +109,7 @@ public class TinkerSimulation implements ActionListener {
                                 "Simulation", Keyword.loadProperties(null));
                     }
                     simulationFilter = new SimulationFilter(sys, system);
-                    FileOpener openFile = new FileOpener(simulationFilter,
+                    UIFileOpener openFile = new UIFileOpener(simulationFilter,
                             mainPanel);
                     reader = new Thread(openFile);
                     reader.start();

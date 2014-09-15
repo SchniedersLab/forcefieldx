@@ -26,8 +26,6 @@ import java.io.File;
 
 import javax.swing.filechooser.FileFilter;
 
-import org.apache.commons.io.FilenameUtils;
-
 /**
  * The CoordinateFileFilter class globally determines if a file is a valid
  * coordinate file (PDB, XYZ, INT, or ARC formats).

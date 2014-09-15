@@ -53,3 +53,26 @@ if (arguments != null && arguments.size() > 0) {
 logger.info("\n Running energy on " + modelfilename);
 
 energy();
+
+/*
+ * Example of using the new PotentialsFunctions interface instead of Groovy method
+ * closures:
+
+logger.info("\n Running energy on " + modelfilename);
+PotentialsFunctions functions; // This is an interface specifying the closure-like methods.
+try {
+    // Use a method closure to try to get an instance of UIUtils (the User Interfaces
+    // implementation, which interfaces with the GUI, etc.).
+    functions = getPotentialsFunctions();
+} catch (MissingMethodException ex) {
+    // If Groovy can't find the appropriate closure, catch the exception and build
+    // an instance of the local implementation.
+    functions = new PotentialsUtils();
+}
+
+// Use PotentialsFunctions methods instead of Groovy method closures to do work.
+MolecularAssembly[] assemblies = functions.open(modelfilename);
+MolecularAssembly activeAssembly = assemblies[0];
+functions.energy(activeAssembly);
+
+*/
