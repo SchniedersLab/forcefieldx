@@ -60,21 +60,22 @@ public class Complex3DParallel {
 
     private static final Logger logger = Logger.getLogger(Complex3DParallel.class.getName());
     private final int nX, nY, nZ;
-    private final int nXm1, nYm1, nZm1;
     private final int nY2, nZ2;
     private final int strideX, strideY, strideZ;
     private final double[] recip;
-    private double input[];
     private final long convolutionTime[];
     private final int threadCount;
     private final ParallelTeam parallelTeam;
     private final Complex fftX[];
     private final Complex fftY[];
     private final Complex fftZ[];
-    private final ParallelFFT parallelFFT;
-    private final ParallelIFFT parallelIFFT;
-    private final Convolution convolution;
     private final IntegerSchedule schedule;
+
+    public double input[];
+    public final int nXm1, nYm1, nZm1;
+    public final FFTRegion fftRegion;
+    public final IFFTRegion ifftRegion;
+    public final ConvolutionRegion convRegion;
 
     /**
      * Initialize the 3D FFT for complex 3D matrix.
@@ -128,9 +129,9 @@ public class Complex3DParallel {
             fftY[i] = new Complex(nY);
             fftZ[i] = new Complex(nZ);
         }
-        parallelFFT = new ParallelFFT();
-        parallelIFFT = new ParallelIFFT();
-        convolution = new Convolution();
+        fftRegion = new FFTRegion();
+        ifftRegion = new IFFTRegion();
+        convRegion = new ConvolutionRegion();
         convolutionTime = new long[threadCount];
     }
 
@@ -153,7 +154,7 @@ public class Complex3DParallel {
     public void fft(final double input[]) {
         this.input = input;
         try {
-            parallelTeam.execute(parallelFFT);
+            parallelTeam.execute(fftRegion);
         } catch (Exception e) {
             String message = " Fatal exception evaluating the FFT.\n";
             logger.log(Level.SEVERE, message, e);
@@ -169,7 +170,7 @@ public class Complex3DParallel {
     public void ifft(final double input[]) {
         this.input = input;
         try {
-            parallelTeam.execute(parallelIFFT);
+            parallelTeam.execute(ifftRegion);
         } catch (Exception e) {
             String message = "Fatal exception evaluating the inverse FFT.\n";
             logger.log(Level.SEVERE, message, e);
@@ -187,7 +188,7 @@ public class Complex3DParallel {
     public void convolution(final double input[]) {
         this.input = input;
         try {
-            parallelTeam.execute(convolution);
+            parallelTeam.execute(convRegion);
         } catch (Exception e) {
             String message = "Fatal exception evaluating a convolution.\n";
             logger.log(Level.SEVERE, message, e);
@@ -217,23 +218,36 @@ public class Complex3DParallel {
         }
     }
 
-    private class ParallelFFT extends ParallelRegion {
+    /**
+     * An external ParallelRegion can be used as follows:
+     *
+     * <code>
+     * start() {
+     *  fftRegion.input = input;
+     * }
+     * run(){
+     *  execute(0, nZm1, fftRegion.fftXYLoop[threadID]);
+     *  execute(0, nXm1, fftRegion.fftZLoop[threadID]);
+     * }
+     * </code>
+     */
+    public class FFTRegion extends ParallelRegion {
 
-        private final FFTXYLoop fftXYLoop[];
-        private final FFTZLoop fftZLoop[];
+        public final FFTXYLoop fftXYLoop[];
+        public final FFTZLoop fftZLoop[];
 
-        public ParallelFFT() {
+        public FFTRegion() {
             fftXYLoop = new FFTXYLoop[threadCount];
             fftZLoop = new FFTZLoop[threadCount];
+            for (int i = 0; i < threadCount; i++) {
+                fftXYLoop[i] = new FFTXYLoop();
+                fftZLoop[i] = new FFTZLoop();
+            }
         }
 
         @Override
         public void run() {
             int threadIndex = getThreadIndex();
-            if (fftXYLoop[threadIndex] == null) {
-                fftXYLoop[threadIndex] = new FFTXYLoop();
-                fftZLoop[threadIndex] = new FFTZLoop();
-            }
             try {
                 execute(0, nZm1, fftXYLoop[threadIndex]);
                 execute(0, nXm1, fftZLoop[threadIndex]);
@@ -243,23 +257,36 @@ public class Complex3DParallel {
         }
     }
 
-    private class ParallelIFFT extends ParallelRegion {
+    /**
+     * An external ParallelRegion can be used as follows:
+     *
+     * <code>
+     * start() {
+     *  ifftRegion.input = input;
+     * }
+     * run(){
+     *  execute(0, nXm1, ifftRegion.ifftZLoop[threadID]);
+     *  execute(0, nZm1, ifftRegion.ifftXYLoop[threadID]);
+     * }
+     * </code>
+     */
+    public class IFFTRegion extends ParallelRegion {
 
-        private final IFFTXYLoop ifftXYLoop[];
-        private final IFFTZLoop ifftZLoop[];
+        public final IFFTXYLoop ifftXYLoop[];
+        public final IFFTZLoop ifftZLoop[];
 
-        public ParallelIFFT() {
+        public IFFTRegion() {
             ifftXYLoop = new IFFTXYLoop[threadCount];
             ifftZLoop = new IFFTZLoop[threadCount];
+            for (int i = 0; i < threadCount; i++) {
+                ifftXYLoop[i] = new IFFTXYLoop();
+                ifftZLoop[i] = new IFFTZLoop();
+            }
         }
 
         @Override
         public void run() {
             int threadIndex = getThreadIndex();
-            if (ifftZLoop[threadIndex] == null) {
-                ifftXYLoop[threadIndex] = new IFFTXYLoop();
-                ifftZLoop[threadIndex] = new IFFTZLoop();
-            }
             try {
                 execute(0, nXm1, ifftZLoop[threadIndex]);
                 execute(0, nZm1, ifftXYLoop[threadIndex]);
@@ -269,43 +296,53 @@ public class Complex3DParallel {
         }
     }
 
-    private class Convolution extends ParallelRegion {
+    /**
+     * An external ParallelRegion can be used as follows:
+     *
+     * <code>
+     * start() {
+     *  convRegion.input = input;
+     * }
+     * run(){
+     *  execute(0, nZm1, convRegion.fftXYLoop[threadID]);
+     *  execute(0, nYm1, convRegion.fftZIZLoop[threadID]);
+     *  execute(0, nZm1, convRegion.ifftXYLoop[threadID]);
+     * }
+     * </code>
+     */
+    public class ConvolutionRegion extends ParallelRegion {
 
         private final FFTXYLoop fftXYLoop[];
-        private final FFTZ_Multiply_IFFTZLoop fftZ_Multiply_IFFTZLoop[];
+        private final FFTZIZLoop fftZIZLoop[];
         private final IFFTXYLoop ifftXYLoop[];
 
-        public Convolution() {
+        public ConvolutionRegion() {
             fftXYLoop = new FFTXYLoop[threadCount];
-            fftZ_Multiply_IFFTZLoop = new FFTZ_Multiply_IFFTZLoop[threadCount];
+            fftZIZLoop = new FFTZIZLoop[threadCount];
             ifftXYLoop = new IFFTXYLoop[threadCount];
+            for (int i = 0; i < threadCount; i++) {
+                fftXYLoop[i] = new FFTXYLoop();
+                fftZIZLoop[i] = new FFTZIZLoop();
+                ifftXYLoop[i] = new IFFTXYLoop();
+            }
         }
 
         @Override
         public void run() {
             int threadIndex = getThreadIndex();
-
             convolutionTime[threadIndex] -= System.nanoTime();
-
-            if (fftXYLoop[threadIndex] == null) {
-                fftXYLoop[threadIndex] = new FFTXYLoop();
-                fftZ_Multiply_IFFTZLoop[threadIndex] = new FFTZ_Multiply_IFFTZLoop();
-                ifftXYLoop[threadIndex] = new IFFTXYLoop();
-            }
-
             try {
                 execute(0, nZm1, fftXYLoop[threadIndex]);
-                execute(0, nYm1, fftZ_Multiply_IFFTZLoop[threadIndex]);
+                execute(0, nYm1, fftZIZLoop[threadIndex]);
                 execute(0, nZm1, ifftXYLoop[threadIndex]);
             } catch (Exception e) {
                 logger.severe(e.toString());
             }
-
             convolutionTime[threadIndex] += System.nanoTime();
         }
     }
 
-    private class FFTXYLoop extends IntegerForLoop {
+    public class FFTXYLoop extends IntegerForLoop {
 
         private Complex localFFTX;
         private Complex localFFTY;
@@ -334,7 +371,7 @@ public class Complex3DParallel {
         }
     }
 
-    private class FFTZLoop extends IntegerForLoop {
+    public class FFTZLoop extends IntegerForLoop {
 
         private final double work[];
         private Complex localFFTZ;
@@ -371,7 +408,7 @@ public class Complex3DParallel {
         }
     }
 
-    private class IFFTXYLoop extends IntegerForLoop {
+    public class IFFTXYLoop extends IntegerForLoop {
 
         private Complex localFFTY;
         private Complex localFFTX;
@@ -400,7 +437,7 @@ public class Complex3DParallel {
         }
     }
 
-    private class IFFTZLoop extends IntegerForLoop {
+    public class IFFTZLoop extends IntegerForLoop {
 
         private final double work[];
         private Complex localFFTZ;
@@ -437,12 +474,12 @@ public class Complex3DParallel {
         }
     }
 
-    private class FFTZ_Multiply_IFFTZLoop extends IntegerForLoop {
+    public class FFTZIZLoop extends IntegerForLoop {
 
         private final double work[];
         private Complex localFFTZ;
 
-        private FFTZ_Multiply_IFFTZLoop() {
+        private FFTZIZLoop() {
             work = new double[nZ2];
         }
 

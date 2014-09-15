@@ -26,6 +26,8 @@ import java.nio.DoubleBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.lang.String.format;
+
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.exp;
@@ -35,7 +37,6 @@ import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.round;
 import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.sqrt;
-import static java.lang.String.format;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
@@ -221,10 +222,10 @@ public class ReciprocalSpace {
     private final int gridAtomList[][][];
 
     private final PermanentPhiRegion permanentPhiRegion;
-
     private final InducedPhiRegion polarizationPhiRegion;
     private Complex3DParallel complexFFT3D;
     private final IntegerSchedule recipSchedule;
+    
     /**
      * Timing variables.
      */
@@ -921,12 +922,25 @@ public class ReciprocalSpace {
     }
 
     /**
-     * The BSplineRegion computes the b-Splines used spline multipoles onto the
-     * reciprocal space grid and spline the reciprocal potential from the
-     * reciprocal space grid. An instance of BSplineRegion automatically updates
-     * itself to be consistent with the current
+     * The class computes b-Splines that are used to spline multipoles and
+     * induced dipoles onto the PME grid. Following convolution, the b-Splines
+     * are then used to obtain the reciprocal space potential and fields from
+     * the PME grid. This class automatically updates itself to be consistent
+     * with the current Crystal boundary conditions.
+     *
+     * An external ParallelRegion can be used as follows:
+     *
+     * <code>
+     * start() {
+     *  bSplineRegion.start();
+     * }
+     * run() {
+     *  execute(0, nAtoms - 1, bSplineRegion.bSplineLoop[threadID]);
+     * }
+     * </code>
+     *
      */
-    private class BSplineRegion extends ParallelRegion {
+    public class BSplineRegion extends ParallelRegion {
 
         private double r00;
         private double r01;
@@ -937,14 +951,18 @@ public class ReciprocalSpace {
         private double r20;
         private double r21;
         private double r22;
-        private final BSplineFillLoop bSplineFillLoop[];
+
         public double splineX[][][][];
         public double splineY[][][][];
         public double splineZ[][][][];
         public int initGrid[][][];
+        public final BSplineLoop bSplineLoop[];
 
         public BSplineRegion() {
-            bSplineFillLoop = new BSplineFillLoop[threadCount];
+            bSplineLoop = new BSplineLoop[threadCount];
+            for (int i = 0; i < threadCount; i++) {
+                bSplineLoop[i] = new BSplineLoop();
+            }
         }
 
         @Override
@@ -968,10 +986,6 @@ public class ReciprocalSpace {
 
         @Override
         public void run() {
-            int threadIndex = getThreadIndex();
-            if (bSplineFillLoop[threadIndex] == null) {
-                bSplineFillLoop[threadIndex] = new BSplineFillLoop();
-            }
             /**
              * Currently this condition would indicate a programming bug, since
              * the space group is not allowed to change and the ReciprocalSpace
@@ -982,21 +996,22 @@ public class ReciprocalSpace {
                 logger.severe(" Programming Error: the number of reciprocal space symmetry operators changed.");
             }
             try {
-                execute(0, nAtoms - 1, bSplineFillLoop[threadIndex]);
+                int threadID = getThreadIndex();
+                execute(0, nAtoms - 1, bSplineLoop[threadID]);
             } catch (Exception e) {
                 logger.severe(e.toString());
             }
         }
 
-        private class BSplineFillLoop extends IntegerForLoop {
+        public class BSplineLoop extends IntegerForLoop {
 
             private final double bSplineWork[][];
             private final IntegerSchedule schedule = IntegerSchedule.fixed();
             // Extra padding to avert cache interference.
-            long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
-            long pad8, pad9, pada, padb, padc, padd, pade, padf;
+            private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
+            private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
-            public BSplineFillLoop() {
+            public BSplineLoop() {
                 bSplineWork = new double[bSplineOrder][bSplineOrder];
             }
 
@@ -1356,8 +1371,6 @@ public class ReciprocalSpace {
             this.use = use;
         }
 
-
-        
         @Override
         public void start() {
             threadIndex = getThreadIndex();
@@ -1663,15 +1676,35 @@ public class ReciprocalSpace {
         }
     }
 
+    /**
+     * This class is used to obtain the reciprocal space potential and fields
+     * due to permanent multipoles from the PME grid.
+     *
+     * An external ParallelRegion can be used as follows:
+     *
+     * <code>
+     * start() {
+     *  permanentPhiRegion.setCartPermanentPhi(...);
+     * }
+     *
+     * run() {
+     *  execute(0, nAtoms - 1, permanentPhiLoops[threadID]);
+     * }
+     * </code>
+     */
     private class PermanentPhiRegion extends ParallelRegion {
 
-        private final FractionalPhiLoop fractionalPhiLoop[];
+        public final PermanentPhiLoop permanentPhiLoop[];
+
         private final BSplineRegion bSplineRegion;
         private double cartPermanentPhi[][];
 
         public PermanentPhiRegion(BSplineRegion bSplineRegion) {
             this.bSplineRegion = bSplineRegion;
-            fractionalPhiLoop = new FractionalPhiLoop[threadCount];
+            permanentPhiLoop = new PermanentPhiLoop[threadCount];
+            for (int i = 0; i < threadCount; i++) {
+                permanentPhiLoop[i] = new PermanentPhiLoop();
+            }
         }
 
         public void setCartPermanentPhi(double cartPermanentPhi[][]) {
@@ -1680,21 +1713,15 @@ public class ReciprocalSpace {
 
         @Override
         public void run() {
-
-            int threadIndex = getThreadIndex();
-
-            if (fractionalPhiLoop[threadIndex] == null) {
-                fractionalPhiLoop[threadIndex] = new FractionalPhiLoop();
-            }
-
             try {
-                execute(0, nAtoms - 1, fractionalPhiLoop[threadIndex]);
+                int threadID = getThreadIndex();
+                execute(0, nAtoms - 1, permanentPhiLoop[threadID]);
             } catch (Exception e) {
                 logger.severe(e.toString());
             }
         }
 
-        private class FractionalPhiLoop extends IntegerForLoop {
+        public class PermanentPhiLoop extends IntegerForLoop {
 
             @Override
             public IntegerSchedule schedule() {
@@ -1857,16 +1884,36 @@ public class ReciprocalSpace {
         }
     }
 
+    /**
+     * This class is used to obtain the reciprocal space potential and fields
+     * due to induced dipoles from the PME grid.
+     *
+     * An external ParallelRegion can be used as follows:
+     *
+     * <code>
+     * start() {
+     *  inducedPhiRegion.setCartInducedDipolePhi(...);
+     * }
+     *
+     * run() {
+     *  execute(0, nAtoms - 1, inducedPhiLoops[threadID]);
+     * }
+     * </code>
+     */
     private class InducedPhiRegion extends ParallelRegion {
 
+        public final InducedPhiLoop inducedPhiLoops[];
+
         private final BSplineRegion bSplineRegion;
-        private final PolarizationPhiInducedLoop polarizationPhiInducedLoops[];
         private double cartInducedDipolePhi[][];
         private double cartInducedDipoleCRPhi[][];
 
         public InducedPhiRegion(BSplineRegion bSplineRegion) {
             this.bSplineRegion = bSplineRegion;
-            polarizationPhiInducedLoops = new PolarizationPhiInducedLoop[threadCount];
+            inducedPhiLoops = new InducedPhiLoop[threadCount];
+            for (int i = 0; i < threadCount; i++) {
+                inducedPhiLoops[i] = new InducedPhiLoop();
+            }
         }
 
         public void setCartInducedDipolePhi(double cartInducedDipolePhi[][],
@@ -1877,22 +1924,15 @@ public class ReciprocalSpace {
 
         @Override
         public void run() {
-
-            int threadIndex = getThreadIndex();
-
-            if (polarizationPhiInducedLoops[threadIndex] == null) {
-                polarizationPhiInducedLoops[threadIndex] = new PolarizationPhiInducedLoop();
-            }
-
             try {
-                execute(0, nAtoms - 1, polarizationPhiInducedLoops[threadIndex]);
+                int threadID = getThreadIndex();
+                execute(0, nAtoms - 1, inducedPhiLoops[threadID]);
             } catch (Exception e) {
                 logger.severe(e.toString());
             }
-
         }
 
-        private class PolarizationPhiInducedLoop extends IntegerForLoop {
+        public class InducedPhiLoop extends IntegerForLoop {
 
             @Override
             public IntegerSchedule schedule() {

@@ -2150,10 +2150,10 @@ public class ParticleMeshEwald implements LambdaInterface {
         private class PermanentRealSpaceFieldSection extends ParallelSection {
 
             private final PermanentRealSpaceFieldRegion permanentRealSpaceFieldRegion;
-            private final ParallelTeam pt;
+            private final ParallelTeam parallelTeam;
 
             public PermanentRealSpaceFieldSection(ParallelTeam pt) {
-                this.pt = pt;
+                this.parallelTeam = pt;
                 int nt = pt.getThreadCount();
                 permanentRealSpaceFieldRegion = new PermanentRealSpaceFieldRegion(nt);
             }
@@ -2162,7 +2162,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             public void run() {
                 try {
                     realSpacePermTotal -= System.nanoTime();
-                    pt.execute(permanentRealSpaceFieldRegion);
+                    parallelTeam.execute(permanentRealSpaceFieldRegion);
                     realSpacePermTotal += System.nanoTime();
                 } catch (Exception e) {
                     String message = "Fatal exception computing the real space field.\n";
