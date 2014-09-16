@@ -5,21 +5,22 @@
  */
 package ffx.potential.parsers;
 
-import edu.rit.pj.IntegerForLoop;
-import edu.rit.pj.ParallelRegion;
-import edu.rit.pj.ParallelTeam;
 import java.io.File;
 import java.io.IOException;
 import java.util.logging.Logger;
+
 import org.biojava.bio.structure.Structure;
 import org.biojava.bio.structure.StructureException;
 import org.biojava.bio.structure.align.StructurePairAligner;
 import org.biojava.bio.structure.align.pairwise.AlternativeAlignment;
 import org.biojava.bio.structure.io.PDBFileReader;
 
+import edu.rit.pj.IntegerForLoop;
+import edu.rit.pj.ParallelRegion;
+import edu.rit.pj.ParallelTeam;
+
 /**
- *
- * @author JacobLitman
+ * @author Jacob Litman
  */
 public class SimplePDBMatcher {
 

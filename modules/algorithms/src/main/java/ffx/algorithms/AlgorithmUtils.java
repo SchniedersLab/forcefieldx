@@ -22,16 +22,18 @@
  */
 package ffx.algorithms;
 
+import java.io.File;
+import java.util.logging.Logger;
+
+import org.apache.commons.configuration.CompositeConfiguration;
+
 import ffx.numerics.Potential;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.parsers.PotentialsUtils;
 import ffx.utilities.Keyword;
-import java.io.File;
-import java.util.logging.Logger;
-import org.apache.commons.configuration.CompositeConfiguration;
 
 /**
- * The AlgorithmUtils class provides a local implementation, independent of the 
+ * The AlgorithmUtils class provides a local implementation, independent of the
  * User Interfaces module, of AlgorithmFunctions methods (MD, minimization).
  *
  * @author Jacob M. Litman
@@ -41,12 +43,12 @@ public class AlgorithmUtils extends PotentialsUtils implements AlgorithmFunction
     private static final Logger logger = Logger.getLogger(AlgorithmUtils.class.getName());
     private final long initTime;
     private long interTime;
-    
+
     public AlgorithmUtils() {
         initTime = System.nanoTime();
         interTime = initTime;
     }
-    
+
     /**
      * Logs time since this interface was created and the last time this method
      * was called. May be more elegant to replace this by using protected variables
@@ -72,18 +74,18 @@ public class AlgorithmUtils extends PotentialsUtils implements AlgorithmFunction
      * @param saveInterval
      * @param temperature
      * @param initVelocities
-     * @param dyn 
+     * @param dyn
      */
     @Override
-    public void md(MolecularAssembly assembly, int nStep, double timeStep, 
-            double printInterval, double saveInterval, double temperature, 
+    public void md(MolecularAssembly assembly, int nStep, double timeStep,
+            double printInterval, double saveInterval, double temperature,
             boolean initVelocities, File dyn) {
         if (assembly == null) {
             logger.info(" No active system to minimize.");
         } else {
             CompositeConfiguration properties = Keyword.loadProperties(assembly.getFile());
-            MolecularDynamics molecularDynamics = new MolecularDynamics(assembly, 
-                    assembly.getPotentialEnergy(), properties, null, 
+            MolecularDynamics molecularDynamics = new MolecularDynamics(assembly,
+                    assembly.getPotentialEnergy(), properties, null,
                     Thermostat.Thermostats.BUSSI, Integrator.Integrators.BEEMAN);
             molecularDynamics.dynamic(nStep, timeStep, printInterval, saveInterval,
                     temperature, initVelocities, dyn);

@@ -29,25 +29,24 @@ import java.util.logging.Logger;
 
 import static java.lang.String.format;
 
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.io.FilenameUtils;
 
 import ffx.potential.ForceFieldEnergy;
+import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Utilities;
+import ffx.potential.parsers.FileOpener;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.SystemFilter;
-import ffx.potential.parsers.FileOpener;
-import ffx.potential.bonded.MolecularAssembly;
 
 /**
- * The UIFileOpener class opens a file into Force Field X using a filter from the
- * ffx.potential.parsers package. To avoid freezing the FFX GUI, it implements the
- * FileOpener interface, which extends Runnable.
+ * The UIFileOpener class opens a file into Force Field X using a filter from
+ * the ffx.potential.parsers package. To avoid freezing the FFX GUI, it
+ * implements the FileOpener interface, which extends Runnable.
  *
  * @author Michael J. Schnieders
  */
-public class UIFileOpener
-        implements FileOpener {
+public class UIFileOpener implements FileOpener {
 
     private static final Logger logger = Logger.getLogger(UIFileOpener.class.getName());
     private static final long KB = 1024;
@@ -139,9 +138,10 @@ public class UIFileOpener
             stopTimer(ffxSystem);
         }
     }
-    
+
     /**
      * Returns the active MolecularAssembly from the user interface hierarchy.
+     *
      * @return Active MolecularAssembly
      * @throws NullPointerException If no active MolecularAssembly
      */
@@ -153,11 +153,13 @@ public class UIFileOpener
         }
         return assembly;
     }
-    
+
     /**
      * Returns all MolecularAssemblys in the user interface hierarchy.
+     *
      * @return All MolecularAssembly objects stored by the hierarchy.
-     * @throws NullPointerException If hierarchy has a null or empty list of assemblies.
+     * @throws NullPointerException If hierarchy has a null or empty list of
+     * assemblies.
      */
     @Override
     public MolecularAssembly[] getAllAssemblies() throws NullPointerException {
@@ -170,18 +172,20 @@ public class UIFileOpener
             return assemblies;
         }
     }
-    
+
     /**
      * Returns the properties of the hierarchy's active FFXSystem.
+     *
      * @return Active properties
      */
     @Override
     public CompositeConfiguration getProperties() {
         return mainPanel.getHierarchy().getActive().getProperties();
     }
-    
+
     /**
      * Returns the properties of all FFXSystems in the hierarchy.
+     *
      * @return Properties for all systems.
      */
     @Override

@@ -22,13 +22,6 @@
  */
 package ffx.potential.parsers;
 
-// FFX imports
-import ffx.potential.bonded.MolecularAssembly;
-import ffx.potential.bonded.Utilities;
-import ffx.potential.parameters.ForceField;
-import ffx.utilities.Keyword;
-
-// Java imports
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -36,18 +29,24 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-// Apache Commons imports
 import org.apache.commons.configuration.CompositeConfiguration;
 
+import ffx.potential.ForceFieldEnergy;
+import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.bonded.Utilities;
+import ffx.potential.parameters.ForceField;
+import ffx.utilities.Keyword;
+
 /**
- * The PotentialsFileOpener class specifies a Runnable object which is constructed
- * with a File and, when run, allows returning any opened MolecularAssembly objects  
- * and their associated properties.
+ * The PotentialsFileOpener class specifies a Runnable object which is
+ * constructed with a File and, when run, allows returning any opened
+ * MolecularAssembly objects and their associated properties.
  *
  * @author Jacob M. Litman
  * @author Michael J. Schnieders
  */
 public class PotentialsFileOpener implements FileOpener {
+
     private final File file;
     private final Path filepath;
     private final File[] allFiles;
@@ -56,7 +55,7 @@ public class PotentialsFileOpener implements FileOpener {
     private MolecularAssembly activeAssembly; // Presently, will just be the first element of assemblies.
     private List<CompositeConfiguration> propertyList;
     private CompositeConfiguration activeProperties;
-    
+
     public PotentialsFileOpener(File file) {
         if (!file.exists() || !file.isFile()) {
             throw new IllegalArgumentException(String.format(" File %s either did not exist or was not a file.", file.getName()));
@@ -82,15 +81,15 @@ public class PotentialsFileOpener implements FileOpener {
         assemblies = new ArrayList<>();
         propertyList = new ArrayList<>();
     }
-    
+
     public PotentialsFileOpener(String filename) {
         this(new File(filename));
     }
-    
+
     public PotentialsFileOpener(Path filepath) {
         this(filepath.toString());
     }
-    
+
     public PotentialsFileOpener(File[] files) {
         if (files == null) {
             throw new IllegalArgumentException(" Array of files to be opened was null.");
@@ -132,7 +131,7 @@ public class PotentialsFileOpener implements FileOpener {
         assemblies = new ArrayList<>();
         propertyList = new ArrayList<>();
     }
-    
+
     public PotentialsFileOpener(String[] filenames) {
         if (filenames == null) {
             throw new IllegalArgumentException(" Array of files to be opened was null.");
@@ -141,7 +140,7 @@ public class PotentialsFileOpener implements FileOpener {
         if (numFiles == 0) {
             throw new IllegalArgumentException(" Array of files to be opened was empty.");
         }
-        
+
         List<File> fileList = new ArrayList<>();
         List<Path> pathList = new ArrayList<>();
         Path pwdPath;
@@ -182,8 +181,8 @@ public class PotentialsFileOpener implements FileOpener {
     }
 
     /**
-     * At present, parses the PDB, XYZ, INT, or ARC file from the constructor and
-     * creates MolecularAssembly and properties objects.
+     * At present, parses the PDB, XYZ, INT, or ARC file from the constructor
+     * and creates MolecularAssembly and properties objects.
      */
     @Override
     public void run() {
@@ -193,13 +192,13 @@ public class PotentialsFileOpener implements FileOpener {
             Path pathI = allPaths[i];
             MolecularAssembly assembly = new MolecularAssembly(pathI.toString());
             assembly.setFile(fileI);
-            
+
             CompositeConfiguration properties = Keyword.loadProperties(fileI);
             ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties);
             ForceField forceField = forceFieldFilter.parse();
             assembly.setForceField(forceField);
             SystemFilter filter;
-            
+
             if (new PDBFileFilter().acceptDeep(fileI)) {
                 filter = new PDBFilter(fileI, assembly, forceField, properties);
             } else if (new XYZFileFilter().acceptDeep(fileI)) {
@@ -214,6 +213,8 @@ public class PotentialsFileOpener implements FileOpener {
                 Utilities.biochemistry(assembly, filter.getAtomList());
             }
             assembly.finalize(true);
+            ForceFieldEnergy energy = new ForceFieldEnergy(assembly);
+            assembly.setPotential(energy);
             assemblies.add(assembly);
             propertyList.add(properties);
         }
@@ -223,6 +224,7 @@ public class PotentialsFileOpener implements FileOpener {
 
     /**
      * Returns the first MolecularAssembly created by the run() function.
+     *
      * @return A MolecularAssembly
      */
     @Override
@@ -232,24 +234,28 @@ public class PotentialsFileOpener implements FileOpener {
 
     /**
      * Returns all MolecularAssembly objects created by this opener.
+     *
      * @return Array of MolecularAssemblys
      */
     @Override
     public MolecularAssembly[] getAllAssemblies() {
         return assemblies.toArray(new MolecularAssembly[assemblies.size()]);
     }
-    
+
     /**
      * Returns the properties associated with the first MolecularAssembly.
+     *
      * @return Active properties
      */
     @Override
     public CompositeConfiguration getProperties() {
         return activeProperties;
     }
-    
+
     /**
-     * Returns the properties of all MolecularAssembly objects created by this opener.
+     * Returns the properties of all MolecularAssembly objects created by this
+     * opener.
+     *
      * @return Array of all properties
      */
     @Override

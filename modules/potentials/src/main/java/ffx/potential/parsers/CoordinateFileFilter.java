@@ -33,7 +33,6 @@ import javax.swing.filechooser.FileFilter;
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
  * @since 1.0
- *
  */
 public final class CoordinateFileFilter extends FileFilter {
 

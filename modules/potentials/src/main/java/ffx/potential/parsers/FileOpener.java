@@ -22,27 +22,35 @@
  */
 package ffx.potential.parsers;
 
-import ffx.potential.bonded.MolecularAssembly;
 import org.apache.commons.configuration.CompositeConfiguration;
+
+import ffx.potential.bonded.MolecularAssembly;
 
 /**
  * The FileOpener interface specifies Runnable objects which can return one or
- * more MolecularAssemblies. Implementing classes should not be constructed except
- * by a class implementing PotentialsFunctions; one should pass that class the File
- * to be opened, which constructs an implementation of FileOpener. 
- * 
- * To some extent, this interface is legacy code of when I was trying to implement
- * the open() methods from MainPanel instead of openWait(); it should be possible
- * to simply wrap the methods into the classes implementing PotentialsFunctions.
+ * more MolecularAssemblies. Implementing classes should not be constructed
+ * except by a class implementing PotentialsFunctions; one should pass that
+ * class the File to be opened, which constructs an implementation of
+ * FileOpener.
+ *
+ * To some extent, this interface is legacy code of when I was trying to
+ * implement the open() methods from MainPanel instead of openWait(); it should
+ * be possible to simply wrap the methods into the classes implementing
+ * PotentialsFunctions.
  *
  * @author Jacob M. Litman
  * @author Michael J. Schnieders
  */
 public interface FileOpener extends Runnable {
+
     @Override
     public void run();
+
     public MolecularAssembly getAssembly();
+
     public MolecularAssembly[] getAllAssemblies();
+
     public CompositeConfiguration getProperties();
+
     public CompositeConfiguration[] getAllProperties();
 }

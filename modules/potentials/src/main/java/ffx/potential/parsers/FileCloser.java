@@ -23,18 +23,20 @@
 package ffx.potential.parsers;
 
 /**
- * The FileCloser interface returns a Runnable object which removes any 
+ * The FileCloser interface returns a Runnable object which removes any
  * higher-level references to a MolecularAssembly object (highly implementation-
- * specific). UIFileCloser removes it from the Hierarchy, while PotentialsFileCloser
- * does exactly nothing, because that does not depend on a higher-level structure.
- * 
- * Also legacy code whose functions could probably be wrapped directly into 
+ * specific). UIFileCloser removes it from the Hierarchy, while
+ * PotentialsFileCloser does exactly nothing, because that does not depend on a
+ * higher-level structure.
+ *
+ * Also legacy code whose functions could probably be wrapped directly into
  * implementations of PotentialsFunctions.
  *
  * @author Jacob M. Litman
  * @author Michael J. Schnieders
  */
 public interface FileCloser extends Runnable {
+
     @Override
     public void run();
 }

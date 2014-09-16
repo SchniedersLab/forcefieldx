@@ -15,36 +15,9 @@
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- *
- * BioJava development code
- *
- * This code may be freely distributed and modified under the terms of the GNU
- * Lesser General Public Licence. This should be distributed with the code. If
- * you do not have a copy, see:
- *
- * http://www.gnu.org/copyleft/lesser.html
- *
- * Copyright for this code is held jointly by the individual authors. These
- * should be listed in @author doc comments.
- *
- * For more information on the BioJava project and its aims, or to join the
- * biojava-l mailing list, visit the home page at:
- *
- * http://www.biojava.org/
- *
- * Created on 7/8/2014
- *
  */
 package ffx.potential.parsers;
 
-// Parallel Java Imports
-import edu.rit.pj.IntegerForLoop;
-import edu.rit.pj.ParallelRegion;
-import edu.rit.pj.ParallelTeam;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -53,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import org.apache.commons.io.FilenameUtils;
 import org.biojava.bio.structure.Atom;
 import org.biojava.bio.structure.Chain;
@@ -67,6 +41,10 @@ import org.biojava.bio.structure.StructureTools;
 import org.biojava.bio.structure.align.StructurePairAligner;
 import org.biojava.bio.structure.align.pairwise.AlternativeAlignment;
 import org.biojava.bio.structure.io.PDBFileReader;
+
+import edu.rit.pj.IntegerForLoop;
+import edu.rit.pj.ParallelRegion;
+import edu.rit.pj.ParallelTeam;
 
 /**
  * Aligns a list of files with a list of source files by RMSD, and can use the

@@ -22,23 +22,27 @@
  */
 package ffx.algorithms;
 
+import java.io.File;
+
 import ffx.numerics.Potential;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.parsers.PotentialsFunctions;
-import java.io.File;
 
 /**
- * The AlgorithmFunctions interface specifies default methods for LBFGS minimization
- * and molecular dynamics, similar to pre-existing Groovy method closures. Enables
- * FFX classes and scripts to perform these functions using either default FFX 
- * methods, a local implementation, or another implementation replacing User Interfaces.
+ * The AlgorithmFunctions interface specifies default methods for L-BFGS
+ * minimization and molecular dynamics, similar to pre-existing Groovy method
+ * closures. Enables FFX classes and scripts to perform these functions using
+ * either default FFX methods, a local implementation, or another implementation
+ * replacing User Interfaces.
  *
  * @author Jacob M. Litman
  * @author Michael J. Schnieders
  */
 public interface AlgorithmFunctions extends PotentialsFunctions {
-    public void md(MolecularAssembly assembly, int nStep, double timeStep, 
-            double printInterval, double saveInterval, double temperature, 
+
+    public void md(MolecularAssembly assembly, int nStep, double timeStep,
+            double printInterval, double saveInterval, double temperature,
             boolean initVelocities, File dyn);
+
     public Potential minimize(MolecularAssembly assembly, double eps);
 }
