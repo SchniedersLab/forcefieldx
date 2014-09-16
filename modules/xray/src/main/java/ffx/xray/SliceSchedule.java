@@ -22,6 +22,8 @@ public class SliceSchedule extends IntegerSchedule {
     private boolean threadDone[];
     private Range ranges[];
     private final int intervals[];
+    private final int ub[];
+    private final int lb[];
     private final int fftZ;
     private int weights[];
 
@@ -30,6 +32,8 @@ public class SliceSchedule extends IntegerSchedule {
         threadDone = new boolean[nThreads];
         ranges = new Range[nThreads];
         intervals = new int[nThreads + 1];
+        ub = new int[nThreads];
+        lb = new int[nThreads];
         this.fftZ = fftZ;
     }
 
@@ -54,7 +58,7 @@ public class SliceSchedule extends IntegerSchedule {
         if (nThreads != ranges.length) {
             ranges = new Range[nThreads];
         }
-
+        Arrays.fill(intervals, 0);
         defineRanges();
     }
 
@@ -79,53 +83,49 @@ public class SliceSchedule extends IntegerSchedule {
 
         double totalWeight = totalWeight();
         if (totalWeight > nThreads) {
-            double targetWeight = totalWeight / nThreads;
+            double targetWeight = (totalWeight / (nThreads)) * .95;
             int j = 0;
-            boolean risk;
-            int diff;
-            int prevDiff;
-            int prevWeight;
-            double prop;
-            double tolerance = (fftZ / nThreads) / (fftZ * fftZ);
-
+            boolean quit = false;
             intervals[0] = 0;
-            for (int i = 0; i < nThreads - 1; i++) {
+            int i = 0;
+
+            while (i < (nThreads) && !quit) {
                 int threadWeight = 0;
-                prop = 0;
-                diff = 0;
-                prevDiff = 0;
-                prevWeight = 0;
-                risk = false;
-
-                while (threadWeight < targetWeight && j < fftZ - 1 && !risk) {
+                while (threadWeight < targetWeight && j < (fftZ - 1)) {
                     threadWeight += weights[j];
-
-                    prevDiff = diff;
-                    diff = weights[j] - prevWeight;
-                    prevWeight = weights[j];
-                    prop = (targetWeight - threadWeight) / targetWeight;
-                    if (prop > (1.0 - tolerance)) {
-                        if (diff * prevDiff > 0) {
-                            risk = true;
-                        }
-                    }
                     j++;
                 }
-                intervals[i + 1] = j;
+                if (j < (fftZ - 1)) intervals[i + 1] = j;
+                 else quit = true;
+                i++;
             }
+            
             /**
              * Check if final slices remain to be assigned.
              */
-            if (j < fftZ - 1) {
-                intervals[nThreads] = fftZ - 1;
+            boolean terminatorFound = false;
+            int terminator = 1;
+
+            while (!terminatorFound) {
+                if (intervals[terminator] != 0) terminator++;
+                else terminatorFound = true;
+                
+                if (terminator == nThreads)  terminatorFound = true;
             }
 
-            for (int i = 0; i < nThreads - 1; i++) {
-                ranges[i] = new Range(intervals[i], intervals[i + 1] - 1);
-                //     logger.info(String.format("Range for thread %d %s %d.", i, ranges[i], fftZ));
+            intervals[terminator] = fftZ - 1;
+
+            int iThreads = 0;
+            while (iThreads < (terminator - 1)) {
+                ranges[iThreads] = new Range(intervals[iThreads], intervals[iThreads + 1] - 1);
+                logger.info(String.format("Range for thread %d %s %d.", iThreads, ranges[iThreads], fftZ));
+                iThreads++;
             }
-            ranges[nThreads - 1] = new Range(intervals[nThreads - 1], intervals[nThreads]);
-            //   logger.info(String.format("Range for thread %d %s %d.", nThreads-1, ranges[nThreads - 1], fftZ));
+            ranges[terminator - 1] = new Range(intervals[terminator - 1], intervals[terminator]);
+            logger.info(String.format("Range for thread %d %s %d.", terminator - 1, ranges[terminator - 1], fftZ));
+
+            for (int it = terminator; it < nThreads; it++) ranges[it] = null;
+            
         } else {
             Range temp = new Range(0, fftZ - 1);
             ranges = temp.subranges(nThreads);
