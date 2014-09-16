@@ -3742,11 +3742,11 @@ public final class PDBFilter extends SystemFilter {
 
     private void buildIsoleucine(Residue residue, Atom CA, Atom N, Atom C, int k) {
         Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 109.5, 1, k);
-        Atom CG1 = buildHeavy(residue, "CG1", CB, 1.54, CA, 109.5, N, 180, 0, k + 2);
-        Atom CG2 = buildHeavy(residue, "CG2", CB, 1.54, CA, 109.5, CG1, 109.5, -1, k + 4);
+        Atom CG1 = buildHeavy(residue, "CG1", CB, 1.54, CA, 109.5, N, 0, 0, k + 2);
+        Atom CG2 = buildHeavy(residue, "CG2", CB, 1.54, CA, 109.5, CG1, 109.5, 1, k + 4);
         Atom CD1 = buildHeavy(residue, "CD1", CG1, 1.54, CB, 109.5, CA, 180, 0, k + 6);
         //  CD1 = setHeavy(residue, "CD", CG1, 1.54, CB, 109.5, CA, 180, 0, k + 6);
-        Atom HB = buildHydrogen(residue, "HB", CB, 1.11, CA, 109.4, CG1, 109.4, 1, k + 1);
+        Atom HB = buildHydrogen(residue, "HB", CB, 1.11, CA, 109.4, CG2, 109.4, 1, k + 1);
         Atom HG12 = buildHydrogen(residue, "HG12", CG1, 1.11, CB, 109.4, CD1, 109.4, 1, k + 3);
         Atom HG13 = buildHydrogen(residue, "HG13", CG1, 1.11, CB, 109.4, CD1, 109.4, -1, k + 3);
         Atom HG21 = buildHydrogen(residue, "HG21", CG2, 1.11, CB, 110.0, CG1, 180.0, 0, k + 5);
@@ -3809,15 +3809,22 @@ public final class PDBFilter extends SystemFilter {
     }
 
     private Residue buildProline(Residue residue, Atom CA, Atom N, Atom C, int k, ResiduePosition position) {
-        Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 107.0, C, 109.5, 1, k);
-        Atom CG = buildHeavy(residue, "CG", CB, 1.54, CA, 107.0, N, 180, 0, k + 2);
+        Atom CB = buildHeavy(residue, "CB", CA, 1.5247, N, 104.0, C, 109.5, 1, k);
+        Atom CG = buildHeavy(residue, "CG", CB, 1.5247, CA, 104.0, N, 30.0, 0, k+2);
+        int cdKey = position == FIRST_RESIDUE ? 469 : k + 4;
+        //Atom CD = buildHeavy(residue, "CD", CG, 1.5247, CB, 104.0, CA, 30.0, 0, cdKey); Initial fix attempt
+        Atom CD = buildHeavy(residue, "CD", N, 1.5247, CA, 104.0, CB, 0, 0, cdKey);
+        /* Old code
+        Atom CG = buildHeavy(residue, "CG", CB, 1.54, N, 107.0, CA, 180, 0, k + 2);
         Atom CD;
         if (position == FIRST_RESIDUE) {
-            CD = buildHeavy(residue, "CD", CG, 1.54, CB, 107.0, CA, 180, 0, 469);
+            CD = buildHeavy(residue, "CD", CG, 1.54, CA, 107.0, CB, 180, 0, 469);
         } else {
-            CD = buildHeavy(residue, "CD", CG, 1.54, CB, 107.0, CA, 180, 0, k + 4);
+            CD = buildHeavy(residue, "CD", CG, 1.54, CA, 107.0, CB, 180, 0, k + 4);
         }
         buildBond(CD, N);
+        */
+        buildBond(CD, CG);
         Atom HB2 = buildHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
         Atom HB3 = buildHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
         Atom HG2 = buildHydrogen(residue, "HG2", CG, 1.11, CB, 109.4, CD, 109.4, 1, k + 3);
@@ -3853,8 +3860,8 @@ public final class PDBFilter extends SystemFilter {
 
     private Residue buildTyrosine(Residue residue, Atom CA, Atom N, Atom C, int k) {
         Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k);
-        Atom CG = buildHeavy(residue, "CG", CB, 1.50, CA, 109.5, N, 180, 0, k + 2);
-        Atom CD1 = buildHeavy(residue, "CD1", CG, 1.39, CB, 120.0, CA, 180, 0, k + 3);
+        Atom CG = buildHeavy(residue, "CG", CB, 1.50, CA, 109.5, N, 62, 0, k + 2);
+        Atom CD1 = buildHeavy(residue, "CD1", CG, 1.39, CB, 120.0, CA, 90, 0, k + 3);
         Atom CD2 = buildHeavy(residue, "CD2", CG, 1.39, CB, 120.0, CD1, 120.0, 1, k + 3);
         Atom CE1 = buildHeavy(residue, "CE1", CD1, 1.39, CG, 120.0, CB, 180, 0, k + 5);
         Atom CE2 = buildHeavy(residue, "CE2", CD2, 1.39, CG, 120.0, CB, 180, 0, k + 5);
@@ -3873,8 +3880,8 @@ public final class PDBFilter extends SystemFilter {
 
     private Residue buildDeprotonatedTyrosine(Residue residue, Atom CA, Atom N, Atom C, int k) {
         Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k);
-        Atom CG = buildHeavy(residue, "CG", CB, 1.50, CA, 109.5, N, 180, 0, k + 2);
-        Atom CD1 = buildHeavy(residue, "CD1", CG, 1.39, CB, 120.0, CA, 180, 0, k + 3);
+        Atom CG = buildHeavy(residue, "CG", CB, 1.50, CA, 109.5, N, 62, 0, k + 2);
+        Atom CD1 = buildHeavy(residue, "CD1", CG, 1.39, CB, 120.0, CA, 90, 0, k + 3);
         Atom CD2 = buildHeavy(residue, "CD2", CG, 1.39, CB, 120.0, CD1, 120.0, 1, k + 3);
         Atom CE1 = buildHeavy(residue, "CE1", CD1, 1.39, CG, 120.0, CB, 180, 0, k + 5);
         Atom CE2 = buildHeavy(residue, "CE2", CD2, 1.39, CG, 120.0, CB, 180, 0, k + 5);
@@ -3892,8 +3899,8 @@ public final class PDBFilter extends SystemFilter {
 
     private Residue buildTryptophan(Residue residue, Atom CA, Atom N, Atom C, int k) {
         Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 109.5, 1, k);
-        Atom CG = buildHeavy(residue, "CG", CB, 1.50, CA, 109.5, N, 0.0, 0, k + 2);
-        Atom CD1 = buildHeavy(residue, "CD1", CG, 1.35, CB, 126.0, CA, 180, 0, k + 3);
+        Atom CG = buildHeavy(residue, "CG", CB, 1.50, CA, 109.5, N, 62, 0, k + 2);
+        Atom CD1 = buildHeavy(residue, "CD1", CG, 1.35, CB, 126.0, CA, -90, 0, k + 3);
         Atom CD2 = buildHeavy(residue, "CD2", CG, 1.35, CB, 126.0, CD1, 108.0, 1, k + 5);
         Atom NE1 = buildHeavy(residue, "NE1", CD1, 1.35, CG, 108.0, CD2, 0.0, 0, k + 6);
         Atom CE2 = buildHeavy(residue, "CE2", NE1, 1.35, CD1, 108.0, CG, 0.0, 0, k + 8);
