@@ -2454,7 +2454,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                         counts[i] = 0;
                         preCounts[i] = 0;
                         final int ewald[] = ewalds[i];
-                        final int preList[] = preLists[i];
+                        int preList[] = preLists[i];
                         for (int j = 0; j < npair; j++) {
                             int k = list[j];
                             if (!use[k]
@@ -2491,6 +2491,11 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 final double qkyz = globalMultipolek[t011] * oneThird;
                                 double r = sqrt(r2);
                                 if (r < preconditionerCutoff) {
+                                    if (preList.length <= preCounts[i]) {
+                                        int len = preList.length;
+                                        preLists[i] = Arrays.copyOf(preList, len + 10);
+                                        preList = preLists[i];
+                                    }
                                     preList[preCounts[i]++] = k;
                                 }
                                 /**
