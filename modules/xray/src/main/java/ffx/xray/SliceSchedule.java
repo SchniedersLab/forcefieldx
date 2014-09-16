@@ -118,11 +118,11 @@ public class SliceSchedule extends IntegerSchedule {
             int iThreads = 0;
             while (iThreads < (terminator - 1)) {
                 ranges[iThreads] = new Range(intervals[iThreads], intervals[iThreads + 1] - 1);
-                logger.info(String.format("Range for thread %d %s %d.", iThreads, ranges[iThreads], fftZ));
+          //      logger.info(String.format("Range for thread %d %s %d.", iThreads, ranges[iThreads], fftZ));
                 iThreads++;
             }
             ranges[terminator - 1] = new Range(intervals[terminator - 1], intervals[terminator]);
-            logger.info(String.format("Range for thread %d %s %d.", terminator - 1, ranges[terminator - 1], fftZ));
+         //   logger.info(String.format("Range for thread %d %s %d.", terminator - 1, ranges[terminator - 1], fftZ));
 
             for (int it = terminator; it < nThreads; it++) ranges[it] = null;
             
