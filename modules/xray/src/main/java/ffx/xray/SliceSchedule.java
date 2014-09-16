@@ -21,7 +21,7 @@ public class SliceSchedule extends IntegerSchedule {
     private int nThreads;
     private boolean threadDone[];
     private Range ranges[];
-    private final int intervals[];
+    private final int lowerBounds[];
     private final int ub[];
     private final int lb[];
     private final int fftZ;
@@ -31,7 +31,7 @@ public class SliceSchedule extends IntegerSchedule {
         this.nThreads = nThreads;
         threadDone = new boolean[nThreads];
         ranges = new Range[nThreads];
-        intervals = new int[nThreads + 1];
+        lowerBounds = new int[nThreads + 1];
         ub = new int[nThreads];
         lb = new int[nThreads];
         this.fftZ = fftZ;
@@ -58,7 +58,7 @@ public class SliceSchedule extends IntegerSchedule {
         if (nThreads != ranges.length) {
             ranges = new Range[nThreads];
         }
-        Arrays.fill(intervals, 0);
+        Arrays.fill(lowerBounds, 0);
         defineRanges();
     }
 
@@ -82,61 +82,76 @@ public class SliceSchedule extends IntegerSchedule {
     private void defineRanges() {
 
         double totalWeight = totalWeight();
-        if (totalWeight > nThreads) {
-            double targetWeight = (totalWeight / (nThreads)) * .95;
-            int j = 0;
-            boolean quit = false;
-            intervals[0] = 0;
-            int i = 0;
-
-            while (i < (nThreads) && !quit) {
-                int threadWeight = 0;
-                while (threadWeight < targetWeight && j < (fftZ - 1)) {
-                    threadWeight += weights[j];
-                    j++;
-                }
-                if (j < (fftZ - 1)) intervals[i + 1] = j;
-                 else quit = true;
-                i++;
-            }
-            
-            /**
-             * Check if final slices remain to be assigned.
-             */
-            boolean terminatorFound = false;
-            int terminator = 1;
-
-            while (!terminatorFound) {
-                if (intervals[terminator] != 0) terminator++;
-                else terminatorFound = true;
-                
-                if (terminator == nThreads)  terminatorFound = true;
-            }
-
-            intervals[terminator] = fftZ - 1;
-
-            int iThreads = 0;
-            while (iThreads < (terminator - 1)) {
-                ranges[iThreads] = new Range(intervals[iThreads], intervals[iThreads + 1] - 1);
-          //      logger.info(String.format("Range for thread %d %s %d.", iThreads, ranges[iThreads], fftZ));
-                iThreads++;
-            }
-            ranges[terminator - 1] = new Range(intervals[terminator - 1], intervals[terminator]);
-         //   logger.info(String.format("Range for thread %d %s %d.", terminator - 1, ranges[terminator - 1], fftZ));
-
-            for (int it = terminator; it < nThreads; it++) ranges[it] = null;
-            
-        } else {
+        
+        /**
+         * Infrequent edge case where the total weight is less than or 
+         * equal to the number of threads.
+         */
+        if (totalWeight <= nThreads) {
             Range temp = new Range(0, fftZ - 1);
             ranges = temp.subranges(nThreads);
+            return;
         }
+        
+        /**
+         * Handle the case where we only have a single thread, which will receive
+         * all the slices.
+         */
+        if (nThreads == 1) {
+            ranges[0] = new Range(0, fftZ);
+            return;
+        }
+
+        double targetWeight = (totalWeight / nThreads) * .95;
+        int lastSlice = fftZ - 1;
+        
+        int currentSlice = 0;
+        lowerBounds[0] = 0;
+        int currentThread = 0;
+        while (currentThread < nThreads) {
+            int threadWeight = 0;
+            while (threadWeight < targetWeight && currentSlice < lastSlice) {
+                threadWeight += weights[currentSlice];
+                currentSlice++;
+            }
+            currentThread++;
+            if (currentSlice < lastSlice) {
+                lowerBounds[currentThread] = currentSlice;
+            } else {
+                lowerBounds[currentThread] = lastSlice;
+                break;
+            }
+        }
+        
+        int lastThread = currentThread;
+
+        /**
+         * Loop over all threads that will receive work except the final one.
+         */
+        for (currentThread=0; currentThread<lastThread-1; currentThread++) {
+            ranges[currentThread] = new Range(lowerBounds[currentThread], lowerBounds[currentThread + 1] - 1);
+            //      logger.info(String.format("Range for thread %d %s %d.", iThreads, ranges[iThreads], fftZ));
+        }
+        /**
+         * Final range for the last thread that will receive work.
+         */
+        ranges[lastThread - 1] = new Range(lowerBounds[lastThread - 1], lastSlice);
+        //   logger.info(String.format("Range for thread %d %s %d.", terminator - 1, ranges[terminator - 1], fftZ));
+
+        /**
+         * Left-over threads with null ranges.
+         */
+        for (int it = lastThread; it < nThreads; it++) {
+            ranges[it] = null;
+        }
+
     }
 
     public int[] getWeightPerThread() {
-        if (intervals != null) {
+        if (lowerBounds != null) {
             int[] weightToReturn = new int[nThreads];
             for (int i = 0; i < nThreads; i++) {
-                weightToReturn[i] = intervals[i + 1];
+                weightToReturn[i] = lowerBounds[i + 1];
             }
             return weightToReturn;
         } else {
