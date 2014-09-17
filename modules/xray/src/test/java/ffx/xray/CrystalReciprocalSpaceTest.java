@@ -26,7 +26,11 @@ import java.io.File;
 import java.util.List;
 
 import org.apache.commons.configuration.CompositeConfiguration;
-import org.junit.*;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 

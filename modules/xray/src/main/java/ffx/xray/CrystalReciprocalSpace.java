@@ -124,7 +124,7 @@ public class CrystalReciprocalSpace {
         SPATIAL, SLICE
     }
 
-    private static double toSeconds = 0.000000001;
+    private static double toSeconds = 1.0e-9;
     private boolean solvent = false;
     private final boolean neutron;
     private boolean useThreeGaussians = true;
@@ -276,9 +276,9 @@ public class CrystalReciprocalSpace {
         this.neutron = neutron;
         this.nSymm = 1;
         threadCount = parallelTeam.getThreadCount();
+
         // necssary for the bulksolvent expansion!
         bulkNSymm = crystal.spaceGroup.symOps.size();
-
         double gridFactor = resolution.samplingLimit() / 2.0;
         double gridStep = resolution.resolutionLimit() * gridFactor;
         // Set default FFT grid size from unit cell dimensions.
@@ -317,14 +317,12 @@ public class CrystalReciprocalSpace {
         previousOptWeightSolvent = new int[fftZ];
         sliceSchedule = new SliceSchedule(threadCount, fftZ);
 
-        String solventName = "none";
         if (solvent) {
             bAdd = 0.0;
             atomFormFactors = null;
             double vdwr;
             switch (solventModel) {
                 case BINARY:
-                    solventName = "binary";
                     solventA = 1.0;
                     solventB = 1.0;
                     solventGrid = new double[complexFFT3DSpace];
@@ -337,7 +335,6 @@ public class CrystalReciprocalSpace {
                     }
                     break;
                 case GAUSSIAN:
-                    solventName = "Gaussian";
                     solventA = 11.5;
                     solventB = 0.55;
                     solventGrid = new double[complexFFT3DSpace];
@@ -350,7 +347,6 @@ public class CrystalReciprocalSpace {
                     }
                     break;
                 case POLYNOMIAL:
-                    solventName = "polynomial switch";
                     solventA = 0.0;
                     solventB = 0.8;
                     solventGrid = new double[complexFFT3DSpace];
@@ -440,14 +436,10 @@ public class CrystalReciprocalSpace {
             } else {
                 sb.append(String.format("  Atomic Scattering Grid\n"));
             }
-            sb.append(String.format("  Form factor grid points:             %8d\n",
-                    aRadGrid * 2));
-            sb.append(String.format("  Form factor grid diameter:           %8.3f\n",
-                    aRad * 2));
-            sb.append(String.format("  Grid density:                        %8.3f\n",
-                    1.0 / gridStep));
-            sb.append(String.format("  Grid dimensions:                (%3d,%3d,%3d)\n",
-                    fftX, fftY, fftZ));
+            sb.append(String.format("  Form factor grid points:             %8d\n", aRadGrid * 2));
+            sb.append(String.format("  Form factor grid diameter:           %8.3f\n", aRad * 2));
+            sb.append(String.format("  Grid density:                        %8.3f\n", 1.0 / gridStep));
+            sb.append(String.format("  Grid dimensions:                (%3d,%3d,%3d)\n", fftX, fftY, fftZ));
             logger.info(sb.toString());
         }
 
@@ -949,6 +941,7 @@ public class CrystalReciprocalSpace {
      * @see DiffractionRefinementData
      */
     public void computeAtomicDensity(double hklData[][], boolean print) {
+        print = true;
         /**
          * Zero out reflection data.
          */
@@ -1043,6 +1036,7 @@ public class CrystalReciprocalSpace {
      * @see DiffractionRefinementData
      */
     public void computeSolventDensity(double hklData[][], boolean print) {
+        print = true;
         /**
          * Zero out the reflection data.
          */
@@ -1432,8 +1426,6 @@ public class CrystalReciprocalSpace {
             }
         }
     }
-
-
 
     private class AtomicSliceLoop extends SliceLoop {
 
@@ -2193,5 +2185,4 @@ public class CrystalReciprocalSpace {
             }
         }
     }
-
 }

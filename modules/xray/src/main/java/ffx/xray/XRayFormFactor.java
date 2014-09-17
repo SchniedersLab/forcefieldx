@@ -228,7 +228,6 @@ public final class XRayFormFactor implements FormFactor {
             return ffactor[1];
         }
         return null;
-
     }
 
     /**
@@ -244,7 +243,6 @@ public final class XRayFormFactor implements FormFactor {
             return ffactor[2];
         }
         return null;
-
     }
 
     /**
@@ -256,7 +254,6 @@ public final class XRayFormFactor implements FormFactor {
      */
     public static double[][] getFormFactor(String atom) {
         double ffactor[][] = null;
-
         if (formfactors.containsKey(atom)) {
             ffactor = (double[][]) formfactors.get(atom);
         } else {
@@ -264,7 +261,6 @@ public final class XRayFormFactor implements FormFactor {
                     + " not found!\n";
             logger.severe(message);
         }
-
         return ffactor;
     }
 

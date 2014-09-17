@@ -81,21 +81,25 @@ public class SliceSchedule extends IntegerSchedule {
         double totalWeight = totalWeight();
 
         /**
-         * Infrequent edge case where the total weight is less than or
-         * equal to the number of threads.
+         * Infrequent edge case where the total weight is less than or equal to
+         * the number of threads.
          */
         if (totalWeight <= nThreads) {
             Range temp = new Range(0, fftZ - 1);
             ranges = temp.subranges(nThreads);
+            for (int i = 0; i < nThreads; i++) {
+                logger.info(String.format("Range for thread %d %s.", i, ranges[i]));
+            }
             return;
         }
 
         /**
-         * Handle the case where we only have a single thread, which will receive
-         * all the slices.
+         * Handle the case where we only have a single thread, which will
+         * receive all the slices.
          */
         if (nThreads == 1) {
-            ranges[0] = new Range(0, fftZ);
+            ranges[0] = new Range(0, fftZ - 1);
+            logger.info(String.format("Range for thread %d %s.", 0, ranges[0]));
             return;
         }
 
@@ -125,7 +129,7 @@ public class SliceSchedule extends IntegerSchedule {
         /**
          * Loop over all threads that will receive work except the final one.
          */
-        for (currentThread=0; currentThread<lastThread-1; currentThread++) {
+        for (currentThread = 0; currentThread < lastThread - 1; currentThread++) {
             ranges[currentThread] = new Range(lowerBounds[currentThread], lowerBounds[currentThread + 1] - 1);
             logger.info(String.format("Range for thread %d %s.", currentThread, ranges[currentThread]));
         }
