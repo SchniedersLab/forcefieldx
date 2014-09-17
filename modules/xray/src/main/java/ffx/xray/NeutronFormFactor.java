@@ -22,15 +22,15 @@
  */
 package ffx.xray;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
+import static java.util.Arrays.fill;
+
 import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sqrt;
-
-import static org.apache.commons.math3.util.FastMath.exp;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
@@ -383,8 +383,8 @@ public final class NeutronFormFactor implements FormFactor {
         diff(this.xyz, xyz, dxyz);
         double r = r(dxyz);
         double r2 = r * r;
-        Arrays.fill(gradp, 0.0);
-        Arrays.fill(gradu, 0.0);
+        fill(gradp, 0.0);
+        fill(gradu, 0.0);
 
         if (r > atom.getFormFactorWidth()) {
             return;

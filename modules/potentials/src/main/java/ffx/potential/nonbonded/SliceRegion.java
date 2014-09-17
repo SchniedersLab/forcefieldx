@@ -22,17 +22,22 @@
  */
 package ffx.potential.nonbonded;
 
+import java.nio.DoubleBuffer;
+import java.util.logging.Level;
+
+import static java.util.Arrays.fill;
+
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
+
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
+
 import static ffx.potential.nonbonded.SpatialDensityRegion.logger;
-import java.nio.DoubleBuffer;
-import java.util.Arrays;
-import java.util.logging.Level;
-import static org.apache.commons.math3.util.FastMath.max;
-import static org.apache.commons.math3.util.FastMath.min;
 
 /**
  * @author Armin Avdic
@@ -74,7 +79,7 @@ public class SliceRegion extends ParallelRegion {
         initTime = new double[threadCount];
         weight = new int[threadCount];
         timeDefineRange = new double[threadCount];
-        
+
         this.atoms = atoms;
         this.nAtoms = atoms.length;
         this.gX = gX;
@@ -96,7 +101,7 @@ public class SliceRegion extends ParallelRegion {
         }
         select = new boolean[nSymm][nAtoms];
         for (int i = 0; i < nSymm; i++) {
-            Arrays.fill(select[i], true);
+            fill(select[i], true);
         }
     }
 
@@ -147,7 +152,7 @@ public class SliceRegion extends ParallelRegion {
             String message = " Exception in SliceRegion.";
             logger.log(Level.SEVERE, message, e);
         }
-        
+
         if (threadIndex == 0 && logger.isLoggable(Level.FINE)) {
             sliceRegionTime += System.nanoTime();
             double total = sliceLoopTime[0];
@@ -170,7 +175,7 @@ public class SliceRegion extends ParallelRegion {
             logger.info(" Thread     GridInit    Loop   Region  Weight");
             for (int i = 0; i < threadCount; i++) {
                 logger.info(String.format("     %3d     %7.4f %7.4f %7.4f %7d", i, initTime[i] * toSeconds,
-                    sliceLoopTime[i] * toSeconds, sliceRegionTime * toSeconds, weight[i]));
+                        sliceLoopTime[i] * toSeconds, sliceRegionTime * toSeconds, weight[i]));
             }
 
             logger.info(String.format("   Min      %7.4f %7.4f %7.4f %7d", initMin * toSeconds, sliceMin * toSeconds, sliceRegionTime * toSeconds, weightMin));
@@ -200,7 +205,7 @@ public class SliceRegion extends ParallelRegion {
      */
     public void selectAtoms() {
         for (int i = 0; i < nSymm; i++) {
-            Arrays.fill(select[i], true);
+            fill(select[i], true);
         }
     }
 

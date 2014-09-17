@@ -23,11 +23,11 @@
 package ffx.algorithms;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.lang.String.format;
+import static java.util.Arrays.fill;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
@@ -538,7 +538,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 if (initVelocities) {
                     thermostat.maxwell(targetTemperature);
                 } else {
-                    Arrays.fill(v, 0.0);
+                    fill(v, 0.0);
                 }
             }
         } else {

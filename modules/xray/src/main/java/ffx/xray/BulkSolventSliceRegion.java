@@ -22,9 +22,10 @@
  */
 package ffx.xray;
 
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.util.Arrays.fill;
 
 import edu.rit.pj.ParallelTeam;
 
@@ -78,7 +79,7 @@ public class BulkSolventSliceRegion extends SliceRegion {
         this.gZ = gZ;
 
         // Asymmetric unit atoms never selected by this class.
-        Arrays.fill(select[0], false);
+        fill(select[0], false);
         bulkSolventList = new BulkSolventList(crystal, atoms, cutoff, parallelTeam);
     }
 

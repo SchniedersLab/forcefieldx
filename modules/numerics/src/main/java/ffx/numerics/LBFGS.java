@@ -192,7 +192,7 @@ public class LBFGS {
         double scaling[] = potential.getScaling();
         if (scaling == null) {
             scaling = new double[n];
-            Arrays.fill(scaling, 1.0);
+            fill(scaling, 1.0);
         }
 
         /**

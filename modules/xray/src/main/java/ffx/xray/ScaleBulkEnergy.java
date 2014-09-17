@@ -22,8 +22,9 @@
  */
 package ffx.xray;
 
-import java.util.Arrays;
 import java.util.logging.Logger;
+
+import static java.util.Arrays.fill;
 
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.abs;
@@ -261,7 +262,7 @@ public class ScaleBulkEnergy implements Potential {
                 lrfreef = 0.0;
                 lsum = 0.0;
                 lsumfo = 0.0;
-                Arrays.fill(lgrad, 0.0);
+                fill(lgrad, 0.0);
             }
 
             @Override

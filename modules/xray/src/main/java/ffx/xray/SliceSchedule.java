@@ -5,10 +5,12 @@
  */
 package ffx.xray;
 
+import java.util.logging.Logger;
+
+import static java.util.Arrays.fill;
+
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.util.Range;
-import java.util.Arrays;
-import java.util.logging.Logger;
 
 /**
  *
@@ -53,12 +55,12 @@ public class SliceSchedule extends IntegerSchedule {
         if (nThreads != threadDone.length) {
             threadDone = new boolean[nThreads];
         }
-        Arrays.fill(threadDone, false);
+        fill(threadDone, false);
 
         if (nThreads != ranges.length) {
             ranges = new Range[nThreads];
         }
-        Arrays.fill(intervals, 0);
+        fill(intervals, 0);
         defineRanges();
     }
 
@@ -95,11 +97,14 @@ public class SliceSchedule extends IntegerSchedule {
                     threadWeight += weights[j];
                     j++;
                 }
-                if (j < (fftZ - 1)) intervals[i + 1] = j;
-                 else quit = true;
+                if (j < (fftZ - 1)) {
+                    intervals[i + 1] = j;
+                } else {
+                    quit = true;
+                }
                 i++;
             }
-            
+
             /**
              * Check if final slices remain to be assigned.
              */
@@ -107,10 +112,15 @@ public class SliceSchedule extends IntegerSchedule {
             int terminator = 1;
 
             while (!terminatorFound) {
-                if (intervals[terminator] != 0) terminator++;
-                else terminatorFound = true;
-                
-                if (terminator == nThreads)  terminatorFound = true;
+                if (intervals[terminator] != 0) {
+                    terminator++;
+                } else {
+                    terminatorFound = true;
+                }
+
+                if (terminator == nThreads) {
+                    terminatorFound = true;
+                }
             }
 
             intervals[terminator] = fftZ - 1;
@@ -118,14 +128,16 @@ public class SliceSchedule extends IntegerSchedule {
             int iThreads = 0;
             while (iThreads < (terminator - 1)) {
                 ranges[iThreads] = new Range(intervals[iThreads], intervals[iThreads + 1] - 1);
-          //      logger.info(String.format("Range for thread %d %s %d.", iThreads, ranges[iThreads], fftZ));
+                //      logger.info(String.format("Range for thread %d %s %d.", iThreads, ranges[iThreads], fftZ));
                 iThreads++;
             }
             ranges[terminator - 1] = new Range(intervals[terminator - 1], intervals[terminator]);
-         //   logger.info(String.format("Range for thread %d %s %d.", terminator - 1, ranges[terminator - 1], fftZ));
+            //   logger.info(String.format("Range for thread %d %s %d.", terminator - 1, ranges[terminator - 1], fftZ));
 
-            for (int it = terminator; it < nThreads; it++) ranges[it] = null;
-            
+            for (int it = terminator; it < nThreads; it++) {
+                ranges[it] = null;
+            }
+
         } else {
             Range temp = new Range(0, fftZ - 1);
             ranges = temp.subranges(nThreads);

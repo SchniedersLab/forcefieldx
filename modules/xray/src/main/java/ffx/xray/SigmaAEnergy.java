@@ -22,8 +22,9 @@
  */
 package ffx.xray;
 
-import java.util.Arrays;
 import java.util.logging.Logger;
+
+import static java.util.Arrays.fill;
 
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.abs;
@@ -326,7 +327,7 @@ public class SigmaAEnergy implements Potential {
                 lsumr = 0.0;
                 lnsum = 0;
                 lnsumr = 0;
-                Arrays.fill(lgrad, 0.0);
+                fill(lgrad, 0.0);
             }
 
             @Override
@@ -459,12 +460,12 @@ public class SigmaAEnergy implements Potential {
                     fofc2[i][1] = resc.im() / sqrt(eoscale);
 
                     // Derivatives
-                //  double dfcr = (dfp1 * fct.re()) / d - ((dfp2 * fct.re()) / (d * fct.abs())) * dinot;
-                //  double dfci = (dfp1 * fct.im()) / d - ((dfp2 * fct.im()) / (d * fct.abs())) * dinot;
-                //  double dfsr = ((dfp2 * ksebs * fct.re()) / (d * fct.abs())) * dinot - (dfp1 * ksebs * fct.re()) / d;
-                //  double dfsi = ((dfp2 * ksebs * fct.im()) / (d * fct.abs())) * dinot - (dfp1 * ksebs * fct.im()) / d;
-                //  double dfsa = 2.0 * sai * kect2 / d - (2.0 * eo * kect.abs() / d) * dinot;
-                //  double dfwa = epsc * (cf / d - (eo2 + sa2 * kect2) / d2 + (2.0 * eo * sai * kect.abs() / d2) * dinot);
+                    //  double dfcr = (dfp1 * fct.re()) / d - ((dfp2 * fct.re()) / (d * fct.abs())) * dinot;
+                    //  double dfci = (dfp1 * fct.im()) / d - ((dfp2 * fct.im()) / (d * fct.abs())) * dinot;
+                    //  double dfsr = ((dfp2 * ksebs * fct.re()) / (d * fct.abs())) * dinot - (dfp1 * ksebs * fct.re()) / d;
+                    //  double dfsi = ((dfp2 * ksebs * fct.im()) / (d * fct.abs())) * dinot - (dfp1 * ksebs * fct.im()) / d;
+                    //  double dfsa = 2.0 * sai * kect2 / d - (2.0 * eo * kect.abs() / d) * dinot;
+                    //  double dfwa = epsc * (cf / d - (eo2 + sa2 * kect2) / d2 + (2.0 * eo * sai * kect.abs() / d2) * dinot);
                     double dafct = d * fct.abs();
                     double idafct = 1.0 / dafct;
                     double dfp1 = 2.0 * sa2 * km2 * ecscale;

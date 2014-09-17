@@ -23,9 +23,10 @@
 package ffx.potential.nonbonded;
 
 import java.nio.DoubleBuffer;
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.util.Arrays.fill;
 
 import static org.apache.commons.math3.util.FastMath.floor;
 
@@ -317,7 +318,7 @@ public class SpatialDensityRegion extends ParallelRegion {
         if (select == null || select.length < nSymm || select[0].length < nAtoms) {
             select = new boolean[nSymm][nAtoms];
             for (int i = 0; i < nSymm; i++) {
-                Arrays.fill(select[i], true);
+                fill(select[i], true);
             }
             cellList = new int[nSymm][nAtoms];
             cellIndex = new int[nSymm][nAtoms];

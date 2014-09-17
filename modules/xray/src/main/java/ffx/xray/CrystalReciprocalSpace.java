@@ -22,10 +22,11 @@
  */
 package ffx.xray;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.util.Arrays.fill;
 
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.floor;
@@ -1432,8 +1433,8 @@ public class CrystalReciprocalSpace {
         }
     }
 
-    
-    
+
+
     private class AtomicSliceLoop extends SliceLoop {
 
         final double xyz[] = new double[3];
@@ -1456,16 +1457,15 @@ public class CrystalReciprocalSpace {
 
         @Override
         public void start() {
-            Arrays.fill(optLocal, 0);
+            fill(optLocal, 0);
             super.initTiming(this.getClass().getSimpleName(), System.nanoTime());
-                  
         }
 
         @Override
         public void setWeight(){
             super.setWeightOnRegion(sliceSchedule.getWeightPerThread());
         }
-        
+
         @Override
         public void finish() {
             for (int i = 0; i < fftZ; i++) {
@@ -1474,7 +1474,7 @@ public class CrystalReciprocalSpace {
             setWeight();
             super.finishTime(System.nanoTime());
         }
-            
+
         @Override
         public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
             if (!atoms[iAtom].isActive()) {
@@ -1532,7 +1532,7 @@ public class CrystalReciprocalSpace {
         final double xf[] = new double[3];
         final double grid[];
         final int optLocal[];
-        
+
 
         public SolventSliceLoop(SliceRegion region) {
             super(region.getNatoms(), region.getNsymm(), region);
@@ -1544,10 +1544,10 @@ public class CrystalReciprocalSpace {
         public IntegerSchedule schedule() {
             return sliceSchedule;
         }
-                
+
         @Override
         public void start() {
-            Arrays.fill(optLocal, 0);
+            fill(optLocal, 0);
             super.initTiming(this.getClass().getSimpleName(), System.nanoTime());
         }
 
@@ -1564,7 +1564,7 @@ public class CrystalReciprocalSpace {
         public void setWeight(){
             super.setWeightOnRegion(sliceSchedule.getWeightPerThread());
         }
-        
+
         @Override
         public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
             if (!atoms[iAtom].isActive()) {

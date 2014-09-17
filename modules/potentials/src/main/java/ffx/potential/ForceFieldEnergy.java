@@ -27,19 +27,33 @@ import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.lang.String.format;
+import static java.util.Arrays.fill;
+
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.sqrt;
-import static java.lang.String.format;
 
 import edu.rit.pj.ParallelTeam;
 
 import ffx.crystal.Crystal;
-import ffx.potential.nonbonded.NCSRestraint;
 import ffx.crystal.ReplicatesCrystal;
 import ffx.numerics.Potential;
-import ffx.potential.bonded.*;
-import ffx.potential.nonbonded.CoordRestraint;
+import ffx.potential.bonded.Angle;
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Bond;
+import ffx.potential.bonded.ImproperTorsion;
+import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.bonded.OutOfPlaneBend;
+import ffx.potential.bonded.PiOrbitalTorsion;
+import ffx.potential.bonded.ROLS;
+import ffx.potential.bonded.RestraintBond;
+import ffx.potential.bonded.StretchBend;
+import ffx.potential.bonded.Torsion;
+import ffx.potential.bonded.TorsionTorsion;
+import ffx.potential.bonded.UreyBradley;
 import ffx.potential.nonbonded.COMRestraint;
+import ffx.potential.nonbonded.CoordRestraint;
+import ffx.potential.nonbonded.NCSRestraint;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.ELEC_FORM;
 import ffx.potential.nonbonded.VanDerWaals;
@@ -545,7 +559,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             ArrayList<ROLS> bond = molecularAssembly.getBondList();
             nBonds = bond.size();
             if (nBonds <= bonds.length) {
-                Arrays.fill(bonds, null);
+                fill(bonds, null);
                 bonds = bond.toArray(bonds);
             } else {
                 bonds = bond.toArray(new Bond[nBonds]);
@@ -564,7 +578,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             ArrayList<ROLS> angle = molecularAssembly.getAngleList();
             nAngles = angle.size();
             if (nAngles <= angles.length) {
-                Arrays.fill(angles, null);
+                fill(angles, null);
                 angles = angle.toArray(angles);
             } else {
                 angles = angle.toArray(new Angle[nAngles]);
@@ -583,7 +597,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             ArrayList<ROLS> stretchBend = molecularAssembly.getStretchBendList();
             nStretchBends = stretchBend.size();
             if (nStretchBends <= stretchBends.length) {
-                Arrays.fill(stretchBends, null);
+                fill(stretchBends, null);
                 stretchBends = stretchBend.toArray(stretchBends);
             } else {
                 stretchBends = stretchBend.toArray(new StretchBend[nStretchBends]);
@@ -602,7 +616,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             ArrayList<ROLS> ureyBradley = molecularAssembly.getUreyBradleyList();
             nUreyBradleys = ureyBradley.size();
             if (nUreyBradleys <= ureyBradleys.length) {
-                Arrays.fill(ureyBradleys, null);
+                fill(ureyBradleys, null);
                 ureyBradleys = ureyBradley.toArray(ureyBradleys);
             } else {
                 ureyBradleys = ureyBradley.toArray(new UreyBradley[nUreyBradleys]);
@@ -656,7 +670,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             ArrayList<ROLS> outOfPlaneBend = molecularAssembly.getOutOfPlaneBendList();
             nOutOfPlaneBends = outOfPlaneBend.size();
             if (nOutOfPlaneBends <= outOfPlaneBends.length) {
-                Arrays.fill(outOfPlaneBends, null);
+                fill(outOfPlaneBends, null);
                 outOfPlaneBends = outOfPlaneBend.toArray(outOfPlaneBends);
             } else {
                 outOfPlaneBends = outOfPlaneBend.toArray(new OutOfPlaneBend[nOutOfPlaneBends]);
@@ -675,7 +689,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             ArrayList<ROLS> torsion = molecularAssembly.getTorsionList();
             nTorsions = torsion.size();
             if (nTorsions <= torsions.length) {
-                Arrays.fill(torsions, null);
+                fill(torsions, null);
                 torsions = torsion.toArray(torsions);
             } else {
                 torsions = torsion.toArray(new Torsion[nTorsions]);
@@ -694,7 +708,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             ArrayList<ROLS> piOrbitalTorsion = molecularAssembly.getPiOrbitalTorsionList();
             nPiOrbitalTorsions = piOrbitalTorsion.size();
             if (nPiOrbitalTorsions <= piOrbitalTorsions.length) {
-                Arrays.fill(piOrbitalTorsions, null);
+                fill(piOrbitalTorsions, null);
                 piOrbitalTorsions = piOrbitalTorsion.toArray(piOrbitalTorsions);
             } else {
                 piOrbitalTorsions = piOrbitalTorsion.toArray(new PiOrbitalTorsion[nPiOrbitalTorsions]);
@@ -712,7 +726,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             ArrayList<ROLS> torsionTorsion = molecularAssembly.getTorsionTorsionList();
             nTorsionTorsions = torsionTorsion.size();
             if (nTorsionTorsions <= torsionTorsions.length) {
-                Arrays.fill(torsionTorsions, null);
+                fill(torsionTorsions, null);
                 torsionTorsions = torsionTorsion.toArray(torsionTorsions);
             } else {
                 torsionTorsions = torsionTorsion.toArray(new TorsionTorsion[nTorsionTorsions]);
@@ -730,7 +744,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             ArrayList<ROLS> improperTorsion = molecularAssembly.getImproperTorsionList();
             nImproperTorsions = improperTorsion.size();
             if (nImproperTorsions <= improperTorsions.length) {
-                Arrays.fill(improperTorsions, null);
+                fill(improperTorsions, null);
                 improperTorsions = improperTorsion.toArray(improperTorsions);
             } else {
                 improperTorsions = improperTorsion.toArray(new ImproperTorsion[nImproperTorsions]);

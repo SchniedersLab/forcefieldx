@@ -30,6 +30,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.lang.String.format;
+import static java.util.Arrays.copyOf;
 import static java.util.Arrays.fill;
 
 import org.apache.commons.math3.analysis.DifferentiableMultivariateVectorFunction;
@@ -1072,8 +1073,8 @@ public class ParticleMeshEwald implements LambdaInterface {
          * Initialize the soft core lambda mask to false for all atoms.
          * Initialize the use mask to true for all atoms.
          */
-        Arrays.fill(isSoft, false);
-        Arrays.fill(use, true);
+        fill(isSoft, false);
+        fill(use, true);
         assignMultipoles();
         assignPolarizationGroups();
         for (Atom ai : atoms) {
@@ -1586,7 +1587,7 @@ public class ParticleMeshEwald implements LambdaInterface {
         d2lAlpha = d2lAlphaBack;
         generalizedKirkwoodTerm = gkBack;
 
-        Arrays.fill(use, true);
+        fill(use, true);
 
         return energy;
     }
@@ -2493,7 +2494,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 if (r < preconditionerCutoff) {
                                     if (preList.length <= preCounts[i]) {
                                         int len = preList.length;
-                                        preLists[i] = Arrays.copyOf(preList, len + 10);
+                                        preLists[i] = copyOf(preList, len + 10);
                                         preList = preLists[i];
                                     }
                                     preList[preCounts[i]++] = k;

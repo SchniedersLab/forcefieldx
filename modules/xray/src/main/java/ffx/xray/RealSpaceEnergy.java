@@ -22,8 +22,9 @@
  */
 package ffx.xray;
 
-import java.util.Arrays;
 import java.util.logging.Logger;
+
+import static java.util.Arrays.fill;
 
 import ffx.numerics.Potential;
 import ffx.potential.LambdaInterface;
@@ -237,7 +238,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         assert (x != null);
         double xyz[] = new double[3];
         int index = 0;
-        Arrays.fill(x, 0.0);
+        fill(x, 0.0);
 
         if (refinexyz) {
             for (Atom a : atomarray) {

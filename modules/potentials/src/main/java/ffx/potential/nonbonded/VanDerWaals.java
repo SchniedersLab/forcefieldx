@@ -480,10 +480,10 @@ public class VanDerWaals implements MaskingInterface,
         /**
          * Initialize all atoms to be used in the energy.
          */
-        Arrays.fill(use, true);
-        Arrays.fill(isSoft, false);
-        Arrays.fill(softCore[HARD], false);
-        Arrays.fill(softCore[SOFT], false);
+        fill(use, true);
+        fill(isSoft, false);
+        fill(softCore[HARD], false);
+        fill(softCore[SOFT], false);
         softCoreInit = false;
         molecule = molecularAssembly.getMoleculeNumbers();
 

@@ -49,6 +49,7 @@ import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 
 import static java.lang.String.format;
+import static java.util.Arrays.copyOfRange;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -874,7 +875,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
             String argLine = statusLabel.getText().replace('\n', ' ');
             String args[] = argLine.trim().split(" +");
             // Remove the command (first token) and system name (last token).
-            args = Arrays.copyOfRange(args, 1, args.length - 1);
+            args = copyOfRange(args, 1, args.length - 1);
             List<String> argList = Arrays.asList(args);
             ffxLauncher = new FFXLauncher(argList, scriptFile);
             ffxThread = new Thread(ffxLauncher);

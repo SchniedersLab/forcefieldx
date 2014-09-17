@@ -23,10 +23,11 @@
 package ffx.xray;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.util.Arrays.fill;
 
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Thermostat;
@@ -307,7 +308,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
     public double energyAndGradient(double[] x, double[] g) {
         double weight = data.getWeight();
         double e = 0.0;
-        Arrays.fill(g, 0.0);
+        fill(g, 0.0);
 
         if (thermostat != null) {
             ktscale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);

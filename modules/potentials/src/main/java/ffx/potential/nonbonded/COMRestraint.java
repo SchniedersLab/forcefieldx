@@ -22,6 +22,13 @@
  */
 package ffx.potential.nonbonded;
 
+import java.util.List;
+import java.util.logging.Logger;
+
+import static java.util.Arrays.fill;
+
+import static org.apache.commons.math3.util.FastMath.pow;
+
 import ffx.crystal.Crystal;
 import ffx.potential.LambdaInterface;
 import ffx.potential.bonded.Atom;
@@ -30,10 +37,7 @@ import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.parameters.ForceField;
-import static org.apache.commons.math3.util.FastMath.pow;
-import java.util.Arrays;
-import java.util.List;
-import java.util.logging.Logger;
+
 import static ffx.numerics.VectorMath.rsq;
 
 /**
@@ -108,12 +112,12 @@ public class COMRestraint implements LambdaInterface {
         if (lambdaTerm) {
             dEdL = 0.0;
             d2EdL2 = 0.0;
-            Arrays.fill(lambdaGradient, 0.0);
+            fill(lambdaGradient, 0.0);
         }
         double residual = 0.0;
         double fx2 = forceConstant * 2.0;
         //boolean computedcomdx = true;
-        //Arrays.fill(currentCOM, 0.0);
+        //fill(currentCOM, 0.0);
         computeCOM(currentCOM, nMolecules);
         computedcomdx();
         for (int i = 0; i < nMolecules; i++) {

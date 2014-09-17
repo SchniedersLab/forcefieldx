@@ -22,8 +22,9 @@
  */
 package ffx.xray;
 
-import java.util.Arrays;
 import java.util.logging.Logger;
+
+import static java.util.Arrays.fill;
 
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.pow;
@@ -113,7 +114,7 @@ public class SplineEnergy implements Potential {
 
         // Zero out the gradient.
         if (gradient) {
-            Arrays.fill(g, 0.0);
+            fill(g, 0.0);
         }
 
         for (HKL ih : reflectionlist.hkllist) {

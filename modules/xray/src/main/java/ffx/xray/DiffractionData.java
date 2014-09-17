@@ -33,6 +33,8 @@ import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.util.Arrays.fill;
+
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
@@ -381,7 +383,7 @@ public class DiffractionData implements DataContainer {
         }
 
         scaled = new boolean[n];
-        Arrays.fill(scaled, false);
+        fill(scaled, false);
     }
 
     /**

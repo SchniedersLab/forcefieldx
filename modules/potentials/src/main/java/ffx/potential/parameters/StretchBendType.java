@@ -26,6 +26,8 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 
+import static java.util.Arrays.copyOf;
+
 import static org.apache.commons.math3.util.FastMath.PI;
 
 /**
@@ -56,7 +58,7 @@ public final class StretchBendType extends BaseType implements Comparator<String
         /**
          * Pass the key from sorted classes to the super constructor.
          */
-        super(ForceField.ForceFieldType.STRBND, sortKey(Arrays.copyOf(atomClasses, 3)));
+        super(ForceField.ForceFieldType.STRBND, sortKey(copyOf(atomClasses, 3)));
 
         /**
          * Sort the atom classes and force constants in tandem.

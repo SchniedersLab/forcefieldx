@@ -22,14 +22,16 @@
  */
 package ffx.potential.nonbonded;
 
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.lang.String.format;
+import static java.util.Arrays.copyOf;
+import static java.util.Arrays.fill;
 
 import static org.apache.commons.math3.util.FastMath.floor;
 import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.sqrt;
-import static java.lang.String.format;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
@@ -772,7 +774,7 @@ public class NeighborList extends ParallelRegion {
 
         public final void init() {
             mask = new double[nAtoms];
-            Arrays.fill(mask, 1.0);
+            fill(mask, 1.0);
         }
 
         @Override
@@ -986,7 +988,7 @@ public class NeighborList extends ParallelRegion {
                             pairs[n++] = aj;
                         } catch (Exception e) {
                             n = pairs.length;
-                            pairs = java.util.Arrays.copyOf(pairs, n + 100);
+                            pairs = copyOf(pairs, n + 100);
                             pairs[n++] = aj;
                         }
                     }
