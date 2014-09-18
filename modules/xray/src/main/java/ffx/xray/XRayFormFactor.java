@@ -23,6 +23,7 @@
 package ffx.xray;
 
 import java.util.HashMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.util.Arrays.fill;
@@ -190,10 +191,8 @@ public final class XRayFormFactor implements FormFactor {
         assert (nGaussians > 0);
         occupancy = atom.getOccupancy();
 
-        if (occupancy <= 0.0) {
-            StringBuilder sb = new StringBuilder();
-            sb.append(" Zero occupancy for atom: " + atom.toString());
-            logger.info(sb.toString());
+        if (occupancy <= 0.0 && logger.isLoggable(Level.FINE)) {
+            logger.log(Level.FINE, " Zero occupancy for atom: {0}", atom.toString());
         }
 
         update(xyz, uAdd);
