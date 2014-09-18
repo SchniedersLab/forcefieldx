@@ -727,7 +727,7 @@ public class DiffractionData implements DataContainer {
 
         // minimize
         if (solventModel != SolventModel.NONE && gridsearch) {
-            scaleBulkMinimize[i].minimize(6, 1e-2);
+            scaleBulkMinimize[i].minimize(6, xrayScaleTol);
             scaleBulkMinimize[i].GridOptimize();
         }
         scaleBulkMinimize[i].minimize(6, xrayScaleTol);

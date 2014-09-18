@@ -313,7 +313,7 @@ public class ScaleBulkEnergy implements Potential {
                     /**
                      * Target
                      */
-                    double f1 = refinementData.get_f(i);
+                    double f1 = refinementData.getF(i);
                     double akfct = kfct.abs();
                     double af1 = abs(f1);
                     double d = f1 - akfct;

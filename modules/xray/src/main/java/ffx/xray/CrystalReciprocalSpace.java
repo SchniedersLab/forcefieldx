@@ -941,7 +941,6 @@ public class CrystalReciprocalSpace {
      * @see DiffractionRefinementData
      */
     public void computeAtomicDensity(double hklData[][], boolean print) {
-        print = true;
         /**
          * Zero out reflection data.
          */
@@ -1036,7 +1035,6 @@ public class CrystalReciprocalSpace {
      * @see DiffractionRefinementData
      */
     public void computeSolventDensity(double hklData[][], boolean print) {
-        print = true;
         /**
          * Zero out the reflection data.
          */

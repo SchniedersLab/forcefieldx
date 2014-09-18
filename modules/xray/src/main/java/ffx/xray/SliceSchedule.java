@@ -13,8 +13,7 @@ import edu.rit.pj.IntegerSchedule;
 import edu.rit.util.Range;
 
 /**
- *
- * @author avdic
+ * @author Armin Avdic
  */
 public class SliceSchedule extends IntegerSchedule {
 
@@ -87,9 +86,6 @@ public class SliceSchedule extends IntegerSchedule {
         if (totalWeight <= nThreads) {
             Range temp = new Range(0, fftZ - 1);
             ranges = temp.subranges(nThreads);
-            for (int i = 0; i < nThreads; i++) {
-                logger.info(String.format("Range for thread %d %s.", i, ranges[i]));
-            }
             return;
         }
 
@@ -99,7 +95,6 @@ public class SliceSchedule extends IntegerSchedule {
          */
         if (nThreads == 1) {
             ranges[0] = new Range(0, fftZ - 1);
-            logger.info(String.format("Range for thread %d %s.", 0, ranges[0]));
             return;
         }
 
@@ -131,13 +126,13 @@ public class SliceSchedule extends IntegerSchedule {
          */
         for (currentThread = 0; currentThread < lastThread - 1; currentThread++) {
             ranges[currentThread] = new Range(lowerBounds[currentThread], lowerBounds[currentThread + 1] - 1);
-            logger.info(String.format("Range for thread %d %s.", currentThread, ranges[currentThread]));
+            //logger.info(String.format("Range for thread %d %s.", currentThread, ranges[currentThread]));
         }
         /**
          * Final range for the last thread that will receive work.
          */
         ranges[lastThread - 1] = new Range(lowerBounds[lastThread - 1], lastSlice);
-        logger.info(String.format("Range for thread %d %s.", lastThread - 1, ranges[lastThread - 1]));
+        //logger.info(String.format("Range for thread %d %s.", lastThread - 1, ranges[lastThread - 1]));
 
         /**
          * Left-over threads with null ranges.

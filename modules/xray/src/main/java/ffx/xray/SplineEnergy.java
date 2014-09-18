@@ -142,7 +142,7 @@ public class SplineEnergy implements Potential {
             switch (type) {
                 case Type.FOFC:
                     w = 1.0;
-                    double f1 = refinementdata.get_f(i);
+                    double f1 = refinementdata.getF(i);
                     double f2 = fct.abs();
                     double d = f1 - fh * f2;
                     d2 = d * d;
@@ -153,7 +153,7 @@ public class SplineEnergy implements Potential {
                     w = 2.0 / ih.epsilonc();
                     double ieps = 1.0 / eps;
                     f1 = pow(fct.abs(), 2.0) * ieps;
-                    f2 = pow(refinementdata.get_f(i), 2) * ieps;
+                    f2 = pow(refinementdata.getF(i), 2) * ieps;
                     d = fh * f1 - f2;
                     d2 = d * d / f1;
                     dr = 2.0 * d;
@@ -169,7 +169,7 @@ public class SplineEnergy implements Potential {
                     break;
                 case Type.FOTOESQ:
                     w = 2.0 / ih.epsilonc();
-                    f1 = pow(refinementdata.get_f(i) / sqrt(eps), 2);
+                    f1 = pow(refinementdata.getF(i) / sqrt(eps), 2);
                     d = f1 * fh - 1.0;
                     d2 = d * d / f1;
                     dr = 2.0 * d;

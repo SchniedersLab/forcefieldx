@@ -25,9 +25,11 @@ package ffx.xray;
 import java.io.File;
 
 import org.apache.commons.configuration.CompositeConfiguration;
-import org.junit.*;
+import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
@@ -43,93 +45,64 @@ public class MTZFilterTest {
 
     String filename = "ffx/xray/structures/2DRM.mtz";
     ClassLoader cl = this.getClass().getClassLoader();
-    File mtzfile = new File(cl.getResource(filename).getPath());
+    File mtzFile = new File(cl.getResource(filename).getPath());
     // load any properties associated with it
-    CompositeConfiguration properties = Keyword.loadProperties(mtzfile);
+    CompositeConfiguration properties = Keyword.loadProperties(mtzFile);
     // set up the crystal data
-    Crystal crystal
-            = new Crystal(29.97, 37.86, 44.51, 90.28, 90.11, 90.64, "P1");
+    Crystal crystal = new Crystal(29.97, 37.86, 44.51, 90.28, 90.11, 90.64, "P1");
     Resolution resolution = new Resolution(1.30);
-    ReflectionList reflectionlist = new ReflectionList(crystal, resolution);
-    DiffractionRefinementData refinementdata = new DiffractionRefinementData(properties, reflectionlist);
-
-    public MTZFilterTest() {
-    }
-
-    @BeforeClass
-    public static void setUpClass() throws Exception {
-    }
-
-    @AfterClass
-    public static void tearDownClass() throws Exception {
-    }
-
-    @Before
-    public void setUp() {
-    }
-
-    @After
-    public void tearDown() {
-    }
+    ReflectionList reflectionList = new ReflectionList(crystal, resolution);
+    DiffractionRefinementData refinementData = new DiffractionRefinementData(properties, reflectionList);
 
     @Test
     public void testMTZReadFile() {
-        MTZFilter mtzfilter = new MTZFilter();
+        MTZFilter mtzFilter = new MTZFilter();
         assertTrue("mtz file should be read in without errors",
-                mtzfilter.readFile(mtzfile, reflectionlist, refinementdata, null));
+                mtzFilter.readFile(mtzFile, reflectionList, refinementData, null));
     }
 
     @Test
     public void testMTZParams() {
-        MTZFilter mtzfilter = new MTZFilter();
+        MTZFilter mtzFilter = new MTZFilter();
         assertTrue("mtz file should be read in without errors",
-                mtzfilter.readFile(mtzfile, reflectionlist, refinementdata, null));
-
-        assertEquals("mtz file should have correct number of columns",
-                6, mtzfilter.nColumns);
-
-        assertEquals("mtz file should have correct number of reflections",
-                48115, mtzfilter.nReflections);
-
-        assertEquals("mtz file should have correct space group number",
-                1, mtzfilter.sgnum);
+                mtzFilter.readFile(mtzFile, reflectionList, refinementData, null));
+        assertEquals("mtz file number of columns",
+                6, mtzFilter.nColumns);
+        assertEquals("mtz file number of reflections",
+                48115, mtzFilter.nReflections);
+        assertEquals("mtz file space group number",
+                1, mtzFilter.sgnum);
     }
 
     @Test
     public void testMTZHKL() {
-        MTZFilter mtzfilter = new MTZFilter();
-        assertTrue("mtz file should be read in without errors",
-                mtzfilter.readFile(mtzfile, reflectionlist, refinementdata, null));
-
-        HKL hkl = reflectionlist.getHKL(-10, 1, 1);
-        assertEquals("-10 1 1 FP value should be correct",
-                229.90, refinementdata.get_f(hkl.index()), 0.02);
-        assertEquals("-10 1 1 SIGFP value should be correct",
-                2.50, refinementdata.get_sigf(hkl.index()), 0.02);
-        assertEquals("-10 1 1 FREE value should be correct",
-                1, refinementdata.get_freer(hkl.index()));
-
-        hkl = reflectionlist.getHKL(-10, 1, 10);
+        MTZFilter mtzFilter = new MTZFilter();
+        assertTrue("mtz file errors",
+                mtzFilter.readFile(mtzFile, reflectionList, refinementData, null));
+        HKL hkl = reflectionList.getHKL(-10, 1, 1);
+        assertEquals("-10 1 1 FP value",
+                229.90, refinementData.getF(hkl.index()), 0.02);
+        assertEquals("-10 1 1 SIGFP value",
+                2.50, refinementData.getSigF(hkl.index()), 0.02);
+        assertEquals("-10 1 1 FREE value",
+                1, refinementData.get_freer(hkl.index()));
+        hkl = reflectionList.getHKL(-10, 1, 10);
         assertEquals("-10 1 10 FP value should be NaN",
-                Double.NaN, refinementdata.get_f(hkl.index()), 0.1);
+                Double.NaN, refinementData.getF(hkl.index()), 0.1);
         assertEquals("-10 1 10 SIGFP value should be NaN",
-                Double.NaN, refinementdata.get_sigf(hkl.index()), 0.1);
+                Double.NaN, refinementData.getSigF(hkl.index()), 0.1);
     }
 
     @Test
     public void testMTZReflectionList() {
-        MTZFilter mtzfilter = new MTZFilter();
-
-        ReflectionList tmp = mtzfilter.getReflectionList(mtzfile);
+        MTZFilter mtzFilter = new MTZFilter();
+        ReflectionList tmp = mtzFilter.getReflectionList(mtzFile);
         assertNotNull("mtz file should return a reflection list", tmp);
-
-        assertEquals("reflection list should have correct space group",
+        assertEquals("reflection list space group",
                 1, tmp.spaceGroup.number);
-
-        assertEquals("reflection list should have correct a cell dimension",
+        assertEquals("reflection list cell dimension",
                 29.969, tmp.crystal.a, 0.01);
-
-        assertEquals("reflection list should have correct resolution",
+        assertEquals("reflection list resolution",
                 1.30, tmp.resolution.resolutionLimit(), 0.01);
     }
 }

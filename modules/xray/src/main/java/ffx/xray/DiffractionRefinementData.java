@@ -332,12 +332,12 @@ public class DiffractionRefinementData {
 
     /**
      * <p>
-     * get_f</p>
+ getF</p>
      *
      * @param i a int.
      * @return a double.
      */
-    public double get_f(int i) {
+    public double getF(int i) {
         return fsigf[i][0];
     }
 
@@ -353,12 +353,12 @@ public class DiffractionRefinementData {
 
     /**
      * <p>
-     * get_sigf</p>
+ getSigF</p>
      *
      * @param i a int.
      * @return a double.
      */
-    public double get_sigf(int i) {
+    public double getSigF(int i) {
         return fsigf[i][1];
     }
 
@@ -455,7 +455,7 @@ public class DiffractionRefinementData {
      * @param i reflection to get
      * @return newly allocated {@link ComplexNumber}
      */
-    public ComplexNumber get_fc(int i) {
+    public ComplexNumber getFc(int i) {
         return new ComplexNumber(fc[i][0], fc[i][1]);
     }
 

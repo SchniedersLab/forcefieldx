@@ -72,26 +72,19 @@ public class FiniteDifferenceTest {
                 "ffx/xray/structures/alamet.mtz"}
         });
     }
-    private final String info;
-    private final SolventModel solventmodel;
-    private final String pdbname;
-    private final String mtzname;
+
     private final boolean ci;
     private final boolean ciOnly;
-    private final Atom atomarray[];
+    private final Atom atomArray[];
     private final int atoms[];
-    private final DiffractionRefinementData refinementdata;
-    private final SigmaAMinimize sigmaaminimize;
+    private final DiffractionRefinementData refinementData;
+    private final SigmaAMinimize sigmaAMinimize;
 
     public FiniteDifferenceTest(boolean ciOnly,
-            String info, SolventModel solventmodel, int[] atoms,
-            String pdbname, String mtzname) {
+            String info, SolventModel solventModel, int[] atoms,
+            String pdbName, String mtzName) {
         this.ciOnly = ciOnly;
-        this.info = info;
-        this.solventmodel = solventmodel;
         this.atoms = atoms;
-        this.pdbname = pdbname;
-        this.mtzname = mtzname;
 
         String ffxCi = System.getProperty("ffx.ci");
         if (ffxCi != null && ffxCi.equalsIgnoreCase("true")) {
@@ -101,40 +94,38 @@ public class FiniteDifferenceTest {
         }
 
         if (!ci && ciOnly) {
-            atomarray = null;
-            refinementdata = null;
-            sigmaaminimize = null;
+            atomArray = null;
+            refinementData = null;
+            sigmaAMinimize = null;
             return;
         }
 
-        int index = pdbname.lastIndexOf(".");
-        String name = pdbname.substring(0, index);
+        int index = pdbName.lastIndexOf(".");
+        String name = pdbName.substring(0, index);
 
         // load the structure
         ClassLoader cl = this.getClass().getClassLoader();
-        File structure = new File(cl.getResource(pdbname).getPath());
-        File mtzfile = null, ciffile = null;
-        mtzfile = new File(cl.getResource(mtzname).getPath());
+        File structure = new File(cl.getResource(pdbName).getPath());
+        File mtzFile = new File(cl.getResource(mtzName).getPath());
 
         // load any properties associated with it
         CompositeConfiguration properties = Keyword.loadProperties(structure);
 
         // read in Fo/sigFo/FreeR
-        MTZFilter mtzfilter = new MTZFilter();
-        CIFFilter ciffilter = new CIFFilter();
-        ReflectionList reflectionlist;
+        MTZFilter mtzFilter = new MTZFilter();
+        ReflectionList reflectionList;
         Crystal crystal = Crystal.checkProperties(properties);
         Resolution resolution = Resolution.checkProperties(properties);
         if (crystal == null || resolution == null) {
-            reflectionlist = mtzfilter.getReflectionList(mtzfile);
+            reflectionList = mtzFilter.getReflectionList(mtzFile);
         } else {
-            reflectionlist = new ReflectionList(crystal, resolution);
+            reflectionList = new ReflectionList(crystal, resolution);
         }
 
-        refinementdata = new DiffractionRefinementData(properties,
-                reflectionlist);
+        refinementData = new DiffractionRefinementData(properties,
+                reflectionList);
         assertTrue(info + " mtz file should be read in without errors",
-                mtzfilter.readFile(mtzfile, reflectionlist, refinementdata,
+                mtzFilter.readFile(mtzFile, reflectionList, refinementData,
                         properties));
 
         ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties);
@@ -144,71 +135,68 @@ public class FiniteDifferenceTest {
         MolecularAssembly molecularAssembly = new MolecularAssembly(name);
         molecularAssembly.setFile(structure);
         molecularAssembly.setForceField(forceField);
-        PDBFilter pdbfile = new PDBFilter(structure, molecularAssembly, forceField, properties);
-        pdbfile.readFile();
+        PDBFilter pdbFile = new PDBFilter(structure, molecularAssembly, forceField, properties);
+        pdbFile.readFile();
         molecularAssembly.finalize(true);
         ForceFieldEnergy energy = new ForceFieldEnergy(molecularAssembly);
 
-        List<Atom> atomlist = molecularAssembly.getAtomList();
-        atomarray = atomlist.toArray(new Atom[atomlist.size()]);
+        List<Atom> atomList = molecularAssembly.getAtomList();
+        atomArray = atomList.toArray(new Atom[0]);
         boolean use_3g = properties.getBoolean("use_3g", true);
 
         // initialize atomic form factors
-        for (int i = 0; i < atomarray.length; i++) {
-            XRayFormFactor atomff
-                    = new XRayFormFactor(atomarray[i], use_3g, 2.0);
-            atomarray[i].setFormFactorIndex(atomff.ffIndex);
-
-            if (atomarray[i].getOccupancy() == 0.0) {
-                atomarray[i].setFormFactorWidth(1.0);
+        for (Atom atom : atomArray) {
+            XRayFormFactor xrayFormFactor = new XRayFormFactor(atom, use_3g, 2.0);
+            atom.setFormFactorIndex(xrayFormFactor.ffIndex);
+            if (atom.getOccupancy() == 0.0) {
+                atom.setFormFactorWidth(1.0);
                 continue;
             }
-
-            double arad = 2.4;
+            double aRad = 2.4;
             double xyz[] = new double[3];
-            xyz[0] = atomarray[i].getX() + arad;
-            xyz[1] = atomarray[i].getY();
-            xyz[2] = atomarray[i].getZ();
+            xyz[0] = atom.getX() + aRad;
+            xyz[1] = atom.getY();
+            xyz[2] = atom.getZ();
             while (true) {
-                double rho = atomff.rho(0.0, 1.0, xyz);
+                double rho = xrayFormFactor.rho(0.0, 1.0, xyz);
                 if (rho > 0.1) {
-                    arad += 0.5;
+                    aRad += 0.5;
                 } else if (rho > 0.001) {
-                    arad += 0.1;
+                    aRad += 0.1;
                 } else {
-                    arad += 0.75;
-                    atomarray[i].setFormFactorWidth(arad);
+                    aRad += 0.75;
+                    atom.setFormFactorWidth(aRad);
                     break;
                 }
-                xyz[0] = atomarray[i].getX() + arad;
+                xyz[0] = atom.getX() + aRad;
             }
         }
 
         // set up FFT and run it
         ParallelTeam parallelTeam = new ParallelTeam();
-        CrystalReciprocalSpace crs = new CrystalReciprocalSpace(reflectionlist,
-                atomarray, parallelTeam, parallelTeam, false, false);
-        crs.computeDensity(refinementdata.fc);
-        refinementdata.setCrystalReciprocalSpace_fc(crs);
-        crs = new CrystalReciprocalSpace(reflectionlist,
-                atomarray, parallelTeam, parallelTeam, true, false, solventmodel);
-        crs.computeDensity(refinementdata.fs);
-        refinementdata.setCrystalReciprocalSpace_fs(crs);
+        CrystalReciprocalSpace crs = new CrystalReciprocalSpace(reflectionList,
+                atomArray, parallelTeam, parallelTeam, false, false);
+        crs.computeDensity(refinementData.fc);
+        refinementData.setCrystalReciprocalSpace_fc(crs);
+        crs = new CrystalReciprocalSpace(reflectionList,
+                atomArray, parallelTeam, parallelTeam, true, false, solventModel);
+        crs.computeDensity(refinementData.fs);
+        refinementData.setCrystalReciprocalSpace_fs(crs);
 
-        ScaleBulkMinimize scalebulkminimize
-                = new ScaleBulkMinimize(reflectionlist, refinementdata, crs, parallelTeam);
-        scalebulkminimize.minimize(6, 1e-4);
+        ScaleBulkMinimize scaleBulkMinimize
+                = new ScaleBulkMinimize(reflectionList, refinementData, crs, parallelTeam);
+        scaleBulkMinimize.minimize(6, 1.0e-4);
 
-        sigmaaminimize = new SigmaAMinimize(reflectionlist,
-                refinementdata, parallelTeam);
-        sigmaaminimize.minimize(7, 1.0);
+        sigmaAMinimize = new SigmaAMinimize(reflectionList,
+                refinementData, parallelTeam);
+        sigmaAMinimize.minimize(7, 1.0e-1);
 
-        SplineMinimize splineminimize = new SplineMinimize(reflectionlist,
-                refinementdata, refinementdata.spline,
+        SplineMinimize splineMinimize = new SplineMinimize(reflectionList,
+                refinementData, refinementData.spline,
                 SplineEnergy.Type.FOFC);
-        splineminimize.minimize(7, 1e-5);
+        splineMinimize.minimize(7, 1e-5);
 
-        CrystalStats crystalstats = new CrystalStats(reflectionlist, refinementdata);
+        CrystalStats crystalstats = new CrystalStats(reflectionList, refinementData);
         crystalstats.printScaleStats();
         crystalstats.printHKLStats();
         crystalstats.printSNStats();
@@ -225,68 +213,63 @@ public class FiniteDifferenceTest {
         double delta = 1e-4;
 
         // compute gradients
-        refinementdata.crs_fc.computeAtomicGradients(refinementdata.dfc,
-                refinementdata.freer, refinementdata.rfreeflag,
+        refinementData.crs_fc.computeAtomicGradients(refinementData.dfc,
+                refinementData.freer, refinementData.rfreeflag,
                 RefinementMode.COORDINATES_AND_BFACTORS);
 
-        int natoms = atomarray.length;
-        double llk0 = refinementdata.llkr;
-        double llk1, llk2, fd;
-        double mean = 0.0, nmean = 0.0;
+        double mean = 0.0;
+        double nmean = 0.0;
         double gxyz[] = new double[3];
         for (int i = 0; i < atoms.length; i++) {
-            Atom atom = atomarray[atoms[i]];
+            Atom atom = atomArray[atoms[i]];
             int index = atom.getXYZIndex() - 1;
             if (atom.getOccupancy() == 0.0) {
                 continue;
             }
 
-            System.out.println("atom " + i + ": (" + atom.getXYZIndex() + ") " + atom.toString());
+            System.out.println(" " + i + ": " + atom.toString());
             atom.getXYZGradient(gxyz);
             double bg = atom.getTempFactorGradient();
-            double anisoug[] = null;
+            double anisouG[] = null;
             if (atom.getAnisou() != null) {
-                anisoug = atom.getAnisouGradient();
+                anisouG = atom.getAnisouGradient();
             }
 
-            refinementdata.crs_fc.deltaX(index, delta);
-            refinementdata.crs_fc.computeDensity(refinementdata.fc);
-            llk1 = sigmaaminimize.calculateLikelihood();
-            refinementdata.crs_fc.deltaX(index, -delta);
-            refinementdata.crs_fc.computeDensity(refinementdata.fc);
-            llk2 = sigmaaminimize.calculateLikelihood();
-            fd = (llk1 - llk2) / (2.0 * delta);
-            System.out.print(String.format("+x: %g -x: %g dfx: %g fdx: %g ratio: %g\n",
-                    llk1 - llk0, llk2 - llk0, gxyz[0], fd, gxyz[0] / fd));
-            refinementdata.crs_fc.deltaX(index, 0.0);
+            refinementData.crs_fc.deltaX(index, delta);
+            refinementData.crs_fc.computeDensity(refinementData.fc);
+            double llk1 = sigmaAMinimize.calculateLikelihood();
+            refinementData.crs_fc.deltaX(index, -delta);
+            refinementData.crs_fc.computeDensity(refinementData.fc);
+            double llk2 = sigmaAMinimize.calculateLikelihood();
+            double fd = (llk1 - llk2) / (2.0 * delta);
+            System.out.print(String.format(" X A: %16.8f FD: %16.8f Error: %16.8f\n", gxyz[0], fd, gxyz[0] - fd));
+            refinementData.crs_fc.deltaX(index, 0.0);
 
             nmean++;
             mean += (gxyz[0] / fd - mean) / nmean;
 
-            refinementdata.crs_fc.deltaY(index, delta);
-            refinementdata.crs_fc.computeDensity(refinementdata.fc);
-            llk1 = sigmaaminimize.calculateLikelihood();
-            refinementdata.crs_fc.deltaY(index, -delta);
-            refinementdata.crs_fc.computeDensity(refinementdata.fc);
-            llk2 = sigmaaminimize.calculateLikelihood();
+            refinementData.crs_fc.deltaY(index, delta);
+            refinementData.crs_fc.computeDensity(refinementData.fc);
+            llk1 = sigmaAMinimize.calculateLikelihood();
+            refinementData.crs_fc.deltaY(index, -delta);
+            refinementData.crs_fc.computeDensity(refinementData.fc);
+            llk2 = sigmaAMinimize.calculateLikelihood();
             fd = (llk1 - llk2) / (2.0 * delta);
-            System.out.print(String.format("+y: %g -y: %g dfy: %g fdy: %g ratio: %g\n",
-                    llk1 - llk0, llk2 - llk0, gxyz[1], fd, gxyz[1] / fd));
-            refinementdata.crs_fc.deltaY(index, 0.0);
+            System.out.print(String.format(" Y A: %16.8f FD: %16.8f Error: %16.8f\n", gxyz[1], fd, gxyz[1] - fd));
+            refinementData.crs_fc.deltaY(index, 0.0);
 
             nmean++;
             mean += (gxyz[1] / fd - mean) / nmean;
 
-            refinementdata.crs_fc.deltaZ(index, delta);
-            refinementdata.crs_fc.computeDensity(refinementdata.fc);
-            llk1 = sigmaaminimize.calculateLikelihood();
-            refinementdata.crs_fc.deltaZ(index, -delta);
-            refinementdata.crs_fc.computeDensity(refinementdata.fc);
-            llk2 = sigmaaminimize.calculateLikelihood();
+            refinementData.crs_fc.deltaZ(index, delta);
+            refinementData.crs_fc.computeDensity(refinementData.fc);
+            llk1 = sigmaAMinimize.calculateLikelihood();
+            refinementData.crs_fc.deltaZ(index, -delta);
+            refinementData.crs_fc.computeDensity(refinementData.fc);
+            llk2 = sigmaAMinimize.calculateLikelihood();
             fd = (llk1 - llk2) / (2.0 * delta);
-            System.out.print(String.format("+z: %g -z: %g dfz: %g fdz: %g ratio: %g\n",
-                    llk1 - llk0, llk2 - llk0, gxyz[2], fd, gxyz[2] / fd));
-            refinementdata.crs_fc.deltaZ(index, 0.0);
+            System.out.print(String.format(" Z A: %16.8f FD: %16.8f Error: %16.8f\n", gxyz[2], fd, gxyz[2] - fd));
+            refinementData.crs_fc.deltaZ(index, 0.0);
 
             nmean++;
             mean += (gxyz[2] / fd - mean) / nmean;
@@ -294,16 +277,15 @@ public class FiniteDifferenceTest {
             if (atom.getAnisou() == null) {
                 double b = atom.getTempFactor();
                 atom.setTempFactor(b + delta);
-                refinementdata.crs_fc.computeDensity(refinementdata.fc);
-                llk1 = sigmaaminimize.calculateLikelihood();
+                refinementData.crs_fc.computeDensity(refinementData.fc);
+                llk1 = sigmaAMinimize.calculateLikelihood();
                 atom.setTempFactor(b - delta);
-                refinementdata.crs_fc.computeDensity(refinementdata.fc);
-                llk2 = sigmaaminimize.calculateLikelihood();
+                refinementData.crs_fc.computeDensity(refinementData.fc);
+                llk2 = sigmaAMinimize.calculateLikelihood();
                 fd = (llk1 - llk2) / (2.0 * delta);
-                System.out.print(String.format("+B: %g -B: %g dfB: %g fdB: %g ratio: %g\n",
-                        llk1 - llk0, llk2 - llk0, bg, fd, bg / fd));
+                System.out.print(String.format(" B A: %16.8f FD: %16.8f Error: %16.8f\n",
+                        bg, fd, bg - fd));
                 atom.setTempFactor(b);
-
                 nmean++;
                 mean += (bg / fd - mean) / nmean;
             } else {
@@ -311,25 +293,23 @@ public class FiniteDifferenceTest {
                 for (int j = 0; j < 6; j++) {
                     double tmpu = anisou[j];
                     anisou[j] = tmpu + b2u(delta);
-                    refinementdata.crs_fc.computeDensity(refinementdata.fc);
-                    llk1 = sigmaaminimize.calculateLikelihood();
+                    refinementData.crs_fc.computeDensity(refinementData.fc);
+                    llk1 = sigmaAMinimize.calculateLikelihood();
                     anisou[j] = tmpu - b2u(delta);
-                    refinementdata.crs_fc.computeDensity(refinementdata.fc);
-                    llk2 = sigmaaminimize.calculateLikelihood();
+                    refinementData.crs_fc.computeDensity(refinementData.fc);
+                    llk2 = sigmaAMinimize.calculateLikelihood();
                     fd = (llk1 - llk2) / (2.0 * b2u(delta));
-                    System.out.print(String.format("+u%d: %g -u%d: %g dfu%d: %g fdu%d: %g ratio: %g\n",
-                            j, llk1 - llk0, j, llk2 - llk0, j, anisoug[j], j, fd, anisoug[j] / fd));
+                    System.out.print(String.format(" %d A: %16.8f FD: %16.8f Error: %16.8f\n",
+                            j, anisouG[j], fd, anisouG[j] - fd));
                     anisou[j] = tmpu;
 
                     nmean++;
-                    mean += (anisoug[j] / fd - mean) / nmean;
+                    mean += (anisouG[j] / fd - mean) / nmean;
                 }
             }
         }
 
-        System.out.println("mean df/fd ratio (" + nmean + "): " + mean);
-
-        assertEquals("gradient : finite difference ratio should be approx. 1.0",
-                1.00, mean, 0.01);
+        System.out.println(" Mean df/fd ratio (" + nmean + "): " + mean);
+        assertEquals(" Gradient: finite-difference ratio should be approx. 1.0", 1.0, mean, 0.01);
     }
 }

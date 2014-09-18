@@ -25,9 +25,12 @@ package ffx.xray;
 import java.io.File;
 
 import org.apache.commons.configuration.CompositeConfiguration;
-import org.junit.*;
+import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
@@ -41,97 +44,77 @@ import ffx.utilities.Keyword;
  */
 public class CIFFilterTest {
 
-    public CIFFilterTest() {
-    }
-
-    @BeforeClass
-    public static void setUpClass() throws Exception {
-    }
-
-    @AfterClass
-    public static void tearDownClass() throws Exception {
-    }
-
-    @Before
-    public void setUp() {
-    }
-
-    @After
-    public void tearDown() {
-    }
-
     @Test
     public void testCIFFilter3DYC() {
         String filename = "ffx/xray/structures/3DYC.ent";
         ClassLoader cl = this.getClass().getClassLoader();
-        File ciffile = new File(cl.getResource(filename).getPath());
+        File cifFile = new File(cl.getResource(filename).getPath());
         // load any properties associated with it
-        CompositeConfiguration properties = Keyword.loadProperties(ciffile);
+        CompositeConfiguration properties = Keyword.loadProperties(cifFile);
 
-        CIFFilter ciffilter = new CIFFilter();
-        ReflectionList reflectionlist = ciffilter.getReflectionList(ciffile);
-        assertNotNull("reflection list should be nonnull", reflectionlist);
-        DiffractionRefinementData refinementdata = new DiffractionRefinementData(properties,
-                reflectionlist);
+        CIFFilter cifFilter = new CIFFilter();
+        ReflectionList reflectionList = cifFilter.getReflectionList(cifFile);
+        assertNotNull(" Reflection list should not be null", reflectionList);
+        DiffractionRefinementData refinementData = new DiffractionRefinementData(properties,
+                reflectionList);
 
-        assertTrue("CIF data shoud be read in correctly",
-                ciffilter.readFile(ciffile, reflectionlist, refinementdata,
-                        properties));
+        assertTrue(" CIF data not read in correctly",
+                cifFilter.readFile(cifFile, reflectionList, refinementData, properties));
 
-        HKL hkl = reflectionlist.getHKL(58, 0, 13);
-        assertEquals("58 0 13 F should be correct",
-                99.7, refinementdata.get_f(hkl.index()), 0.01);
-        assertEquals("58 0 13 sigF should be correct",
-                69.7, refinementdata.get_sigf(hkl.index()), 0.01);
-        assertEquals("58 0 13 freeR value should be correct",
-                1, refinementdata.freer[hkl.index()]);
+        HKL hkl = reflectionList.getHKL(58, 0, 13);
+        assertEquals("58 0 13 F",
+                99.7, refinementData.getF(hkl.index()), 0.01);
+        assertEquals("58 0 13 sigF",
+                69.7, refinementData.getSigF(hkl.index()), 0.01);
+        assertEquals("58 0 13 freeR value",
+                1, refinementData.freer[hkl.index()]);
 
-        hkl = reflectionlist.getHKL(28, 20, 5);
-        assertEquals("28 20 5 F should be correct",
-                428.1, refinementdata.get_f(hkl.index()), 0.01);
-        assertEquals("28 20 5 sigF should be correct",
-                10.1, refinementdata.get_sigf(hkl.index()), 0.01);
-        assertEquals("28 20 5 freeR value should be correct",
-                0, refinementdata.freer[hkl.index()]);
+        hkl = reflectionList.getHKL(28, 20, 5);
+        assertEquals("28 20 5 F",
+                428.1, refinementData.getF(hkl.index()), 0.01);
+        assertEquals("28 20 5 sigF",
+                10.1, refinementData.getSigF(hkl.index()), 0.01);
+        assertEquals("28 20 5 freeR value",
+                0, refinementData.freer[hkl.index()]);
     }
 
     @Test
     public void testCIFFilter2DRM() {
         String filename = "ffx/xray/structures/2DRM.cif";
         ClassLoader cl = this.getClass().getClassLoader();
-        File ciffile = new File(cl.getResource(filename).getPath());
+        File cifFile = new File(cl.getResource(filename).getPath());
         // load any properties associated with it
-        CompositeConfiguration properties = Keyword.loadProperties(ciffile);
+        CompositeConfiguration properties = Keyword.loadProperties(cifFile);
 
-        CIFFilter ciffilter = new CIFFilter();
-        ReflectionList reflectionlist = ciffilter.getReflectionList(ciffile);
-        assertNull("reflection list should be null", reflectionlist);
+        CIFFilter cifFilter = new CIFFilter();
+        ReflectionList reflectionList = cifFilter.getReflectionList(cifFile);
+        assertNull(" Reflection list should be null", reflectionList);
 
         Crystal crystal = new Crystal(29.969, 37.861, 44.506,
                 90.28, 90.11, 90.64, "P1");
         Resolution resolution = new Resolution(1.30);
-        reflectionlist = new ReflectionList(crystal, resolution);
-        DiffractionRefinementData refinementdata = new DiffractionRefinementData(properties,
-                reflectionlist);
+        reflectionList = new ReflectionList(crystal, resolution);
+        DiffractionRefinementData refinementData = new DiffractionRefinementData(properties,
+                reflectionList);
 
-        assertTrue("CIF data shoud be read in correctly",
-                ciffilter.readFile(ciffile, reflectionlist, refinementdata,
+        assertTrue(" CIF data not read correctly",
+                cifFilter.readFile(cifFile, reflectionList, refinementData,
                         properties));
 
-        HKL hkl = reflectionlist.getHKL(-21, -6, 7);
-        assertEquals("-21 -6 7 F should be correct",
-                18.6, refinementdata.get_f(hkl.index()), 0.01);
-        assertEquals("-21 -6 7 sigF should be correct",
-                3.6, refinementdata.get_sigf(hkl.index()), 0.01);
-        assertEquals("-21 -6 7 freeR value should be correct",
-                0, refinementdata.freer[hkl.index()]);
+        HKL hkl = reflectionList.getHKL(-21, -6, 7);
+        assertEquals("-21 -6 7 F",
+                18.6, refinementData.getF(hkl.index()), 0.01);
+        assertEquals("-21 -6 7 sigF",
+                3.6, refinementData.getSigF(hkl.index()), 0.01);
+        assertEquals("-21 -6 7 freeR value",
+                0, refinementData.freer[hkl.index()]);
 
-        hkl = reflectionlist.getHKL(-21, -6, 8);
-        assertEquals("-21 -6 7 F should be correct",
-                20.2, refinementdata.get_f(hkl.index()), 0.01);
-        assertEquals("-21 -6 7 sigF should be correct",
-                5.0, refinementdata.get_sigf(hkl.index()), 0.01);
-        assertEquals("-21 -6 7 freeR value should be correct",
-                1, refinementdata.freer[hkl.index()]);
+        hkl = reflectionList.getHKL(-21, -6, 8);
+        assertEquals("-21 -6 7 F",
+                20.2, refinementData.getF(hkl.index()), 0.01);
+        assertEquals("-21 -6 7 sigF",
+                5.0, refinementData.getSigF(hkl.index()), 0.01);
+        assertEquals("-21 -6 7 freeR value",
+                1, refinementData.freer[hkl.index()]);
     }
 }
