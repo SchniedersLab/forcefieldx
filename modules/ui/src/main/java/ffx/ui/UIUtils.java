@@ -3,31 +3,33 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package ffx.ui;
+
+import java.io.File;
 
 import ffx.algorithms.AlgorithmFunctions;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.MolecularAssembly;
-import java.io.File;
 
 /**
- * The UIUtils class implements all <module>Functions interfaces, enabling lower
- * modules to be blind to the existence of User Interfaces but still update the 
- * GUI and be in communication with User Interfaces. It presently gets away with 
- * simply implementing AlgorithmFunctions; if the Automatic Parametrization 
- * method closures are similarly re-implemented, it will probably be necessary to
- * implement a new interface which extends both AlgorithmFunctions and 
- * AutomaticParamFunctions interfaces.
+ * The UIUtils class implements all Function interfaces, enabling lower modules
+ * to be blind to the existence of User Interfaces but still update the GUI and
+ * be in communication with User Interfaces.
+ *
+ * It presently gets away with simply implementing AlgorithmFunctions; if the
+ * Automatic Parametrization method closures are similarly re-implemented, it
+ * will probably be necessary to implement a new interface which extends both
+ * AlgorithmFunctions and AutomaticParamFunctions interfaces.
  *
  * @author Jacob M. Litman
  * @author Michael J. Schnieders
  */
 public class UIUtils implements AlgorithmFunctions {
+
     private final ModelingShell modelingShell;
     private final MainPanel mainPanel;
-    
+
     public UIUtils(ModelingShell modelingShell, MainPanel mainPanel) {
         this.modelingShell = modelingShell;
         this.mainPanel = mainPanel;
@@ -47,12 +49,12 @@ public class UIUtils implements AlgorithmFunctions {
     public boolean isLocal() {
         return false;
     }
-    
+
     @Override
     public FFXSystem[] open(String file) {
         return mainPanel.openWait(file);
     }
-    
+
     @Override
     public FFXSystem[] open(String[] files) {
         return mainPanel.openWait(files);
