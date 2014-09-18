@@ -1083,9 +1083,10 @@ public class ParticleMeshEwald implements LambdaInterface {
             thole[index] = polarizeType.thole;
             ipdamp[index] = polarizeType.pdamp;
             if (!(ipdamp[index] > 0.0)) {
-                logger.severe(String.format(" Damping factor must be greater than 0.0, but was %8.3f", ipdamp[index]));
+                ipdamp[index] = Double.POSITIVE_INFINITY;
+            } else {
+                ipdamp[index] = 1.0 / ipdamp[index];
             }
-            ipdamp[index] = 1.0 / ipdamp[index];
             polarizability[index] = polarizeType.polarizability;
         }
         molecule = molecularAssembly.getMoleculeNumbers();
