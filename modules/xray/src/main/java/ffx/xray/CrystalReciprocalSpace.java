@@ -1074,10 +1074,9 @@ public class CrystalReciprocalSpace {
 
         long expTime = -System.nanoTime();
         if (solventModel == SolventModel.BINARY) {
-            /*
-             * need to shrink mask
-             * first, copy densitygrid to df_map
-             * temporarily to store original map
+            /**
+             * Need to shrink mask. First, copy densityGrid to solventGrid
+             * temporarily to store original map.
              */
             int nmap = densityGrid.length;
             System.arraycopy(densityGrid, 0, solventGrid, 0, nmap);
@@ -1114,13 +1113,15 @@ public class CrystalReciprocalSpace {
                     }
                 }
             }
-
             // Copy the completed solvent grid back.
             System.arraycopy(solventGrid, 0, densityGrid, 0, nmap);
         }
 
-        // Copy the grid over for derivatives.
+        /**
+         * Copy the grid over for derivatives. TODO: Parallelize.
+         */
         System.arraycopy(densityGrid, 0, solventGrid, 0, densityGrid.length);
+
         /**
          * Babinet Principle.
          */
@@ -1182,16 +1183,17 @@ public class CrystalReciprocalSpace {
         }
         solventDensityTime += System.nanoTime();
 
-        long solventExpTime = -System.nanoTime();
+        long solventExpTime = 0;
         if (solventModel == SolventModel.GAUSSIAN) {
+            solventExpTime = -System.nanoTime();
             try {
                 parallelTeam.execute(solventGridRegion);
             } catch (Exception e) {
                 String message = "Fatal exception solvent grid region.";
                 logger.log(Level.SEVERE, message, e);
             }
+            solventExpTime += System.nanoTime();
         }
-        solventExpTime += System.nanoTime();
 
         // CCP4MapWriter mapout = new CCP4MapWriter(fftX, fftY, fftZ, crystal, "/tmp/foo.map");
         // mapout.write(solventGrid);
@@ -1203,7 +1205,10 @@ public class CrystalReciprocalSpace {
             sb.append(String.format(" Solvent FFT:                           %8.4f\n", fftTime * toSeconds));
             sb.append(String.format(" Solvent symmetry & scaling:            %8.4f\n", symTime * toSeconds));
             sb.append(String.format(" Solvent grid expansion:                %8.4f\n", solventDensityTime * toSeconds));
-            sb.append(String.format(" Solvent grid expansion exponentiation: %8.4f\n", solventExpTime * toSeconds));
+            if (solventModel == SolventModel.GAUSSIAN) {
+                sb.append(String.format(" Gaussian grid exponentiation: %8.4f\n",
+                        solventExpTime * toSeconds));
+            }
             logger.info(sb.toString());
         }
     }
@@ -1452,7 +1457,7 @@ public class CrystalReciprocalSpace {
         }
 
         @Override
-        public void setWeight(){
+        public void setWeight() {
             super.setWeightOnRegion(sliceSchedule.getWeightPerThread());
         }
 
@@ -1523,7 +1528,6 @@ public class CrystalReciprocalSpace {
         final double grid[];
         final int optLocal[];
 
-
         public SolventSliceLoop(SliceRegion region) {
             super(region.getNatoms(), region.getNsymm(), region);
             grid = region.getGrid();
@@ -1551,7 +1555,7 @@ public class CrystalReciprocalSpace {
         }
 
         @Override
-        public void setWeight(){
+        public void setWeight() {
             super.setWeightOnRegion(sliceSchedule.getWeightPerThread());
         }
 
