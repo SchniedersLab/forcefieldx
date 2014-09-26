@@ -27,20 +27,22 @@ import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
 /**
- * <p>SolventBinaryFormFactor class.</p>
+ * <p>
+ * SolventBinaryFormFactor class.</p>
  *
- * @author fenn
+ * @author Timothy Fenn
  *
  */
 public final class SolventBinaryFormFactor implements FormFactor {
 
     private final Atom atom;
-    private double xyz[] = new double[3];
-    private double dxyz[] = new double[3];
-    private double proberad;
+    private final double xyz[] = new double[3];
+    private final double dxyz[] = new double[3];
+    private final double proberad;
 
     /**
-     * <p>Constructor for SolventBinaryFormFactor.</p>
+     * <p>
+     * Constructor for SolventBinaryFormFactor.</p>
      *
      * @param atom a {@link ffx.potential.bonded.Atom} object.
      * @param proberad a double.
@@ -50,7 +52,8 @@ public final class SolventBinaryFormFactor implements FormFactor {
     }
 
     /**
-     * <p>Constructor for SolventBinaryFormFactor.</p>
+     * <p>
+     * Constructor for SolventBinaryFormFactor.</p>
      *
      * @param atom a {@link ffx.potential.bonded.Atom} object.
      * @param proberad a double.
@@ -73,7 +76,8 @@ public final class SolventBinaryFormFactor implements FormFactor {
     }
 
     /**
-     * <p>rho</p>
+     * <p>
+     * rho</p>
      *
      * @param f a double.
      * @param lambda a double.
@@ -84,16 +88,17 @@ public final class SolventBinaryFormFactor implements FormFactor {
         if (ri <= proberad) {
             return 0.0;
         } else {
-            return f * 1.0;
+            return f;
         }
     }
 
-    // no derivative for the binary model!!!
     /**
+     * Derivatives are zero or infinite for the binary model.
+     *
      * {@inheritDoc}
      */
     @Override
-    public void rho_grad(double[] xyz, double dfc, RefinementMode refinementmode) {
+    public void rhoGrad(double[] xyz, double dfc, RefinementMode refinementmode) {
     }
 
     /**

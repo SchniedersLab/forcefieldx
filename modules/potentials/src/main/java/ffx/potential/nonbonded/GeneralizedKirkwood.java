@@ -27,19 +27,21 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.lang.Math.PI;
-import static java.lang.Math.abs;
-import static java.lang.Math.acos;
-import static java.lang.Math.asin;
-import static java.lang.Math.atan2;
-import static java.lang.Math.cos;
-import static java.lang.Math.exp;
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-import static java.lang.Math.pow;
-import static java.lang.Math.sin;
-import static java.lang.Math.sqrt;
-import static java.lang.Math.tanh;
+import static java.util.Arrays.fill;
+
+import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.acos;
+import static org.apache.commons.math3.util.FastMath.asin;
+import static org.apache.commons.math3.util.FastMath.atan2;
+import static org.apache.commons.math3.util.FastMath.cos;
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+import static org.apache.commons.math3.util.FastMath.sin;
+import static org.apache.commons.math3.util.FastMath.sqrt;
+import static org.apache.commons.math3.util.FastMath.tanh;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
@@ -282,7 +284,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             use = new boolean[nAtoms];
         }
 
-        Arrays.fill(use, true);
+        fill(use, true);
         for (int i = 0; i < nAtoms; i++) {
             baseRadius[i] = 2.0;
             overlapScale[i] = 0.69;
@@ -643,7 +645,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 if (localBorn == null || localBorn.length < nAtoms) {
                     localBorn = new double[nAtoms];
                 }
-                Arrays.fill(localBorn, 0.0);
+                fill(localBorn, 0.0);
             }
 
             @Override
@@ -1375,9 +1377,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     fy_local = new double[nAtoms];
                     fz_local = new double[nAtoms];
                 }
-                Arrays.fill(fx_local, 0.0);
-                Arrays.fill(fy_local, 0.0);
-                Arrays.fill(fz_local, 0.0);
+                fill(fx_local, 0.0);
+                fill(fy_local, 0.0);
+                fill(fz_local, 0.0);
             }
 
             @Override
@@ -1713,12 +1715,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     fyCR_local = new double[nAtoms];
                     fzCR_local = new double[nAtoms];
                 }
-                Arrays.fill(fx_local, 0.0);
-                Arrays.fill(fy_local, 0.0);
-                Arrays.fill(fz_local, 0.0);
-                Arrays.fill(fxCR_local, 0.0);
-                Arrays.fill(fyCR_local, 0.0);
-                Arrays.fill(fzCR_local, 0.0);
+                fill(fx_local, 0.0);
+                fill(fy_local, 0.0);
+                fill(fz_local, 0.0);
+                fill(fxCR_local, 0.0);
+                fill(fyCR_local, 0.0);
+                fill(fzCR_local, 0.0);
             }
 
             @Override
@@ -2003,8 +2005,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 tY = torque[threadID][1];
                 tZ = torque[threadID][2];
                 if (gradient) {
-                    Arrays.fill(gb_local, 0.0);
-                    Arrays.fill(gbi_local, 0.0);
+                    fill(gb_local, 0.0);
+                    fill(gbi_local, 0.0);
                 }
                 if (lambdaTerm) {
                     lgX = lambdaGrad[threadID][0];
@@ -4504,8 +4506,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     ldArea[2] = lambdaGrad[threadID][2];
                 }
                 ecav = 0;
-                Arrays.fill(ider, 0);
-                Arrays.fill(sign_yder, 0);
+                fill(ider, 0);
+                fill(sign_yder, 0);
             }
 
             @Override
@@ -5485,9 +5487,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
             @Override
             public void start() {
-                Arrays.fill(dex[0], 0.0);
-                Arrays.fill(dex[1], 0.0);
-                Arrays.fill(dex[2], 0.0);
+                fill(dex[0], 0.0);
+                fill(dex[1], 0.0);
+                fill(dex[2], 0.0);
                 evol = 0.0;
             }
 
@@ -5746,7 +5748,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 /**
                  * Initialize linked list pointers.
                  */
-                Arrays.fill(nextAtomPointer, 0);
+                fill(nextAtomPointer, 0);
 
                 /**
                  * Set up head and later pointers for each atom.
@@ -7154,7 +7156,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                          * Form cycles; initialize all the convex edges as not
                          * used in cycle.
                          */
-                        Arrays.fill(epused, 0, nepa, false);
+                        fill(epused, 0, nepa, false);
                         /**
                          * Save old number of cycles.
                          */
@@ -8013,7 +8015,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                  */
                 double totap = 0.0;
                 double totvp = 0.0;
-                Arrays.fill(atmarea, 0.0);
+                fill(atmarea, 0.0);
                 double convexFaces[] = {0.0, 0.0};
                 for (int ifp = 0; ifp < nfp; ifp++) {
                     measfp(ifp, convexFaces);

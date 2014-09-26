@@ -34,7 +34,8 @@ import ffx.numerics.OptimizationListener;
 import ffx.xray.SplineEnergy.Type;
 
 /**
- * <p>SplineMinimize class.</p>
+ * <p>
+ * SplineMinimize class.</p>
  *
  * @author Timothy D. Fenn
  *
@@ -57,7 +58,8 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
     private int nSteps;
 
     /**
-     * <p>Constructor for SplineMinimize.</p>
+     * <p>
+     * Constructor for SplineMinimize.</p>
      *
      * @param reflectionlist a {@link ffx.crystal.ReflectionList} object.
      * @param refinementdata a {@link ffx.xray.DiffractionRefinementData}
@@ -90,7 +92,8 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
     }
 
     /**
-     * <p>minimize</p>
+     * <p>
+     * minimize</p>
      *
      * @return a {@link ffx.xray.SplineEnergy} object.
      */
@@ -99,7 +102,8 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
     }
 
     /**
-     * <p>minimize</p>
+     * <p>
+     * minimize</p>
      *
      * @param eps a double.
      * @return a {@link ffx.xray.SplineEnergy} object.
@@ -109,7 +113,8 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
     }
 
     /**
-     * <p>minimize</p>
+     * <p>
+     * minimize</p>
      *
      * @param m a int.
      * @param eps a double.
@@ -165,7 +170,6 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
          }
          }
          */
-
         if (terminate) {
             logger.info(" The optimization recieved a termination request.");
             // Tell the L-BFGS optimizer to terminate.

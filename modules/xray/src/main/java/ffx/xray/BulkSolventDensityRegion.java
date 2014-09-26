@@ -22,7 +22,7 @@
  */
 package ffx.xray;
 
-import java.util.Arrays;
+import static java.util.Arrays.fill;
 
 import edu.rit.pj.ParallelTeam;
 
@@ -70,7 +70,7 @@ public class BulkSolventDensityRegion extends SpatialDensityRegion {
         super(gX, gY, gZ, grid, basisSize, nSymm, minWork,
                 threadCount, crystal, atoms, coordinates);
         // Asymmetric unit atoms never selected by this class.
-        Arrays.fill(select[0], false);
+        fill(select[0], false);
         bulkSolventList = new BulkSolventList(crystal, atoms, cutoff, parallelTeam);
     }
 

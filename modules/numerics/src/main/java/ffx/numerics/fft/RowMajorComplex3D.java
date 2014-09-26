@@ -24,10 +24,13 @@ package ffx.numerics.fft;
 
 /**
  * Compute the 3D FFT of complex, double precision input of arbitrary dimensions
- * via 1D Mixed Radix FFTs. <p> The location of the input point [i, j, k] within
- * the input array must be:<br> <br> double real = input[x*nextX + y*nextY +
- * z*nextZ]<br> double imag = input[x*nextX + y*nextY + z*nextZ + 1]<br> <br>
- * where<br> int nextX = 2<br> int nextY = 2*nX<br> int nextZ = 2*nX*nY<br> <p>
+ * via 1D Mixed Radix FFTs.
+ * <p>
+ * The location of the input point [i, j, k] within the input array must be:<br>
+ * <br> double real = input[x*nextX + y*nextY + z*nextZ]<br> double imag =
+ * input[x*nextX + y*nextY + z*nextZ + 1]<br> <br>
+ * where<br> int nextX = 2<br> int nextY = 2*nX<br> int nextZ = 2*nX*nY<br>
+ * <p>
  *
  * @author Michal J. Schnieders
  *
@@ -128,8 +131,8 @@ public class RowMajorComplex3D {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>recip</code>.</p>
+     * <p>
+     * Setter for the field <code>recip</code>.</p>
      *
      * @param recip an array of double.
      */
@@ -151,7 +154,8 @@ public class RowMajorComplex3D {
     }
 
     /**
-     * <p>convolution</p>
+     * <p>
+     * convolution</p>
      *
      * @param input an array of double.
      */

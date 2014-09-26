@@ -46,7 +46,8 @@ public class MouseTranslate extends MouseBehavior {
     int doneID = 0;
 
     /**
-     * <p>Constructor for MouseTranslate.</p>
+     * <p>
+     * Constructor for MouseTranslate.</p>
      *
      * @param flags a int.
      * @param VPTG a {@link javax.media.j3d.TransformGroup} object.
@@ -56,7 +57,8 @@ public class MouseTranslate extends MouseBehavior {
     }
 
     /**
-     * <p>Constructor for MouseTranslate.</p>
+     * <p>
+     * Constructor for MouseTranslate.</p>
      *
      * @param flags a int.
      * @param VPTG a {@link javax.media.j3d.TransformGroup} object.
@@ -74,7 +76,8 @@ public class MouseTranslate extends MouseBehavior {
      * Return the x-axis movement multipler.
      */
     /**
-     * <p>getXFactor</p>
+     * <p>
+     * getXFactor</p>
      *
      * @return a double.
      */
@@ -86,7 +89,8 @@ public class MouseTranslate extends MouseBehavior {
      * Return the y-axis movement multipler.
      */
     /**
-     * <p>getYFactor</p>
+     * <p>
+     * getYFactor</p>
      *
      * @return a double.
      */
@@ -95,7 +99,8 @@ public class MouseTranslate extends MouseBehavior {
     }
 
     /**
-     * <p>initialize</p>
+     * <p>
+     * initialize</p>
      */
     public void initialize() {
         super.initialize();
@@ -107,8 +112,8 @@ public class MouseTranslate extends MouseBehavior {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>mouseButton</code>.</p>
+     * <p>
+     * Setter for the field <code>mouseButton</code>.</p>
      *
      * @param button a int.
      */
@@ -192,7 +197,8 @@ public class MouseTranslate extends MouseBehavior {
      * Set the x-axis amd y-axis movement multipler with factor.
      */
     /**
-     * <p>setFactor</p>
+     * <p>
+     * setFactor</p>
      *
      * @param factor a double.
      */
@@ -205,7 +211,8 @@ public class MouseTranslate extends MouseBehavior {
      * respectively.
      */
     /**
-     * <p>setFactor</p>
+     * <p>
+     * setFactor</p>
      *
      * @param xFactor a double.
      * @param yFactor a double.
@@ -220,7 +227,8 @@ public class MouseTranslate extends MouseBehavior {
      * time the transform is updated
      */
     /**
-     * <p>setupCallback</p>
+     * <p>
+     * setupCallback</p>
      *
      * @param c a {@link ffx.ui.behaviors.MouseBehaviorCallback} object.
      */
@@ -229,7 +237,8 @@ public class MouseTranslate extends MouseBehavior {
     }
 
     /**
-     * <p>transformChanged</p>
+     * <p>
+     * transformChanged</p>
      *
      * @param transform a {@link javax.media.j3d.Transform3D} object.
      */

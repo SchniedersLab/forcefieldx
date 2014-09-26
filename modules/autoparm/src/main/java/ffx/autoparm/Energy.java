@@ -30,13 +30,13 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
-import static java.lang.Math.max;
+import static org.apache.commons.math3.util.FastMath.max;
 import static java.lang.String.format;
 
 import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.math.linear.Array2DRowRealMatrix;
-import org.apache.commons.math.linear.EigenDecompositionImpl;
-import org.apache.commons.math.linear.RealMatrix;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.EigenDecomposition;
+import org.apache.commons.math3.linear.RealMatrix;
 
 import edu.rit.pj.ParallelTeam;
 
@@ -85,7 +85,8 @@ public class Energy {
     private boolean do_detail = false;
 
     /**
-     * <p>Constructor for Energy.</p>
+     * <p>
+     * Constructor for Energy.</p>
      *
      * @param xyz_filename a {@link java.lang.String} object.
      * @param keyfname a {@link java.lang.String} object.
@@ -154,7 +155,6 @@ public class Energy {
         Utilities.biochemistry(molecularAssembly, xyzFilter.getAtomList());
         molecularAssembly.finalize(true);
 
-
         //Read options
         if (options != null) {
             if (options.toLowerCase().contains("p")) {
@@ -168,7 +168,6 @@ public class Energy {
             // Get a reference to the sorted atom array.
             atoms = molecularAssembly.getAtomArray();
             nAtoms = atoms.length;
-
 
             // Define the cutoff lengths.
             double vdwOff = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 9.0);
@@ -236,7 +235,8 @@ public class Energy {
     }
 
     /**
-     * <p>energy</p>
+     * <p>
+     * energy</p>
      *
      * @param gradient a boolean.
      * @param print a boolean.
@@ -254,13 +254,15 @@ public class Energy {
     }
 
     /**
-     * <p>torsional_angles</p>
+     * <p>
+     * torsional_angles</p>
      */
     public void torsional_angles() {
     }
 
     /**
-     * <p>system_mpoles</p>
+     * <p>
+     * system_mpoles</p>
      */
     public void system_mpoles() {
         //Find center of mass.
@@ -309,8 +311,6 @@ public class Energy {
             zzqdp = zzqdp + xyzcm[i][2] * xyzcm[i][2] * charge + 2 * xyzcm[i][2] * dipole[2];
         }
 
-
-
         double qave = (xxqdp + yyqdp + zzqdp) / 3;
         xxqdp = 1.5 * (xxqdp - qave);
         xyqdp = 1.5 * xyqdp;
@@ -354,7 +354,7 @@ public class Energy {
 
         RealMatrix a = new Array2DRowRealMatrix(new double[][]{{xxqdp, xyqdp, xzqdp}, {yxqdp, yyqdp, yzqdp}, {zxqdp, zyqdp, zzqdp}});
 
-        EigenDecompositionImpl e = new EigenDecompositionImpl(a, 1);
+        EigenDecomposition e = new EigenDecomposition(a, 1);
         a = e.getD();
         double[] netqdp = {a.getColumn(0)[0], a.getColumn(1)[1], a.getColumn(2)[2]};
 
@@ -378,7 +378,8 @@ public class Energy {
     }
 
     /**
-     * <p>addInducedToGlobal</p>
+     * <p>
+     * addInducedToGlobal</p>
      */
     public void addInducedToGlobal() {
         for (int i = 0; i < nAtoms; i++) {
@@ -389,7 +390,8 @@ public class Energy {
     }
 
     /**
-     * <p>main</p>
+     * <p>
+     * main</p>
      *
      * @param args an array of {@link java.lang.String} objects.
      * @throws java.io.IOException if any.

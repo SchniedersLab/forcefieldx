@@ -29,7 +29,8 @@ import java.util.logging.Logger;
 import ffx.potential.bonded.*;
 
 /**
- * <p>RefinementModel class.</p>
+ * <p>
+ * RefinementModel class.</p>
  *
  * @author Timothy D. Fenn
  *
@@ -44,7 +45,8 @@ public class RefinementModel {
     protected ArrayList<ArrayList<Molecule>> altmolecules;
 
     /**
-     * <p>Constructor for RefinementModel.</p>
+     * <p>
+     * Constructor for RefinementModel.</p>
      *
      * @param assembly an array of
      * {@link ffx.potential.bonded.MolecularAssembly} objects.
@@ -54,7 +56,8 @@ public class RefinementModel {
     }
 
     /**
-     * <p>Constructor for RefinementModel.</p>
+     * <p>
+     * Constructor for RefinementModel.</p>
      *
      * @param assembly an array of
      * {@link ffx.potential.bonded.MolecularAssembly} objects.

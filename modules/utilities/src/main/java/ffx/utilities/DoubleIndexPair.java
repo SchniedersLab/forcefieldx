@@ -3,7 +3,6 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package ffx.utilities;
 
 /**
@@ -20,10 +19,11 @@ public class DoubleIndexPair implements Comparable {
     private final double doubleValue;
 
     /**
-     * Allows sorting of floating-point values while retaining knowledge of where
-     * that value was in some original list or array.
+     * Allows sorting of floating-point values while retaining knowledge of
+     * where that value was in some original list or array.
+     *
      * @param index
-     * @param doubleValue 
+     * @param doubleValue
      */
     public DoubleIndexPair(int index, double doubleValue) {
         this.index = index;

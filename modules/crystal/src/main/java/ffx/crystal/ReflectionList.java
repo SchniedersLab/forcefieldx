@@ -26,12 +26,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import static java.lang.Math.PI;
-import static java.lang.Math.cos;
-import static java.lang.Math.floor;
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-import static java.lang.Math.rint;
+import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.cos;
+import static org.apache.commons.math3.util.FastMath.floor;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.rint;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 
@@ -90,9 +90,9 @@ public class ReflectionList {
         laueSystem = spaceGroup.laueSystem;
         this.resolution = resolution;
 
-        int hmax = (int) (this.crystal.a / this.resolution.res_limit());
-        int kmax = (int) (this.crystal.b / this.resolution.res_limit());
-        int lmax = (int) (this.crystal.c / this.resolution.res_limit());
+        int hmax = (int) (this.crystal.a / this.resolution.resolutionLimit());
+        int kmax = (int) (this.crystal.b / this.resolution.resolutionLimit());
+        int lmax = (int) (this.crystal.c / this.resolution.resolutionLimit());
 
         minres = Double.POSITIVE_INFINITY;
         maxres = Double.NEGATIVE_INFINITY;
@@ -109,7 +109,7 @@ public class ReflectionList {
                     double res = Crystal.invressq(this.crystal, hkl);
                     getepsilon(hkl);
                     if (SpaceGroup.checkLaueRestrictions(laueSystem, h, k, l)
-                            && resolution.inInvresolutionRange(res)
+                            && resolution.inInverseResSqRange(res)
                             && !HKL.sys_abs(hkl)) {
                         minres = min(res, minres);
                         maxres = max(res, maxres);
@@ -180,7 +180,7 @@ public class ReflectionList {
     public String toString() {
         return " Reflection list with " + this.hkllist.size()
                 + " reflections, spacegroup " + this.spaceGroup.shortName
-                + " resolution limit: " + resolution.res_limit();
+                + " resolution limit: " + resolution.resolutionLimit();
     }
 
     /**

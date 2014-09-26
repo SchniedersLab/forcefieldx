@@ -24,11 +24,11 @@ package ffx.numerics;
 
 import java.util.logging.Logger;
 
-import static java.lang.Math.abs;
-import static java.lang.Math.acos;
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-import static java.lang.Math.sqrt;
+import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.acos;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * The VectorMath class is a simple math library that operates on 3-coordinate
@@ -42,6 +42,9 @@ import static java.lang.Math.sqrt;
 public final class VectorMath {
 
     private static final Logger logger = Logger.getLogger(VectorMath.class.getName());
+    /**
+     * Internal float work arrays.
+     */
     private static final float fa[] = new float[3];
     private static final float fb[] = new float[3];
     private static final float fc[] = new float[3];
@@ -52,6 +55,9 @@ public final class VectorMath {
     private static final float[] ft = new float[3];
     private static final float[] fu = new float[3];
     private static final float[] ftu = new float[3];
+    /**
+     * Internal double work arrays.
+     */
     private static final double da[] = new double[3];
     private static final double db[] = new double[3];
     private static final double dc[] = new double[3];
@@ -403,13 +409,13 @@ public final class VectorMath {
      * @param n long
      * @return long
      */
-    public static long doublefactorial(long n) {
+    public static long doubleFactorial(long n) {
         if (n < -1) {
             throw new RuntimeException("Underflow error in doublefactorial");
         } else if (n == 0 || n == 1 || n == -1) {
             return 1;
         } else {
-            return n * doublefactorial(n - 2);
+            return n * doubleFactorial(n - 2);
         }
     }
 
@@ -445,9 +451,9 @@ public final class VectorMath {
      * @param m input matrix
      * @return matrix inverse
      */
-    public static double[][] mat3inverse(double m[][]) {
+    public static double[][] mat3Inverse(double m[][]) {
         double res[][] = new double[3][3];
-        mat3inverse(m, res);
+        mat3Inverse(m, res);
         return res;
     }
 
@@ -458,7 +464,7 @@ public final class VectorMath {
      * @param m an array of double.
      * @param res an array of double.
      */
-    public static void mat3inverse(double m[][], double res[][]) {
+    public static void mat3Inverse(double m[][], double res[][]) {
         double det = determinant3(m);
         res[0][0] = (m[1][1] * m[2][2] - m[1][2] * m[2][1]) / det;
         res[0][1] = (m[0][2] * m[2][1] - m[0][1] * m[2][2]) / det;
@@ -478,9 +484,9 @@ public final class VectorMath {
      * @param m input matrix
      * @return vector product
      */
-    public static double[] vec3mat3(double v[], double m[][]) {
+    public static double[] vec3Mat3(double v[], double m[][]) {
         double res[] = new double[3];
-        vec3mat3(v, m, res);
+        vec3Mat3(v, m, res);
         return res;
     }
 
@@ -492,7 +498,7 @@ public final class VectorMath {
      * @param m an array of double.
      * @param res an array of double.
      */
-    public static void vec3mat3(double v[], double m[][], double res[]) {
+    public static void vec3Mat3(double v[], double m[][], double res[]) {
         res[0] = v[0] * m[0][0] + v[1] * m[1][0] + v[2] * m[2][0];
         res[1] = v[0] * m[0][1] + v[1] * m[1][1] + v[2] * m[2][1];
         res[2] = v[0] * m[0][2] + v[1] * m[1][2] + v[2] * m[2][2];
@@ -505,9 +511,9 @@ public final class VectorMath {
      * @param v input vector
      * @return vector product
      */
-    public static double[] mat3vec3(double v[], double m[][]) {
+    public static double[] mat3Vec3(double v[], double m[][]) {
         double res[] = new double[3];
-        mat3vec3(v, m, res);
+        mat3Vec3(v, m, res);
         return res;
     }
 
@@ -519,7 +525,7 @@ public final class VectorMath {
      * @param m an array of double.
      * @param res an array of double.
      */
-    public static void mat3vec3(double v[], double m[][], double res[]) {
+    public static void mat3Vec3(double v[], double m[][], double res[]) {
         res[0] = m[0][0] * v[0] + m[0][1] * v[1] + m[0][2] * v[2];
         res[1] = m[1][0] * v[0] + m[1][1] * v[1] + m[1][2] * v[2];
         res[2] = m[2][0] * v[0] + m[2][1] * v[1] + m[2][2] * v[2];
@@ -532,9 +538,9 @@ public final class VectorMath {
      * @param m input matrix
      * @return matrix product
      */
-    public static double[][] symvec6mat3(double v[], double m[][]) {
+    public static double[][] symVec6Mat3(double v[], double m[][]) {
         double res[][] = new double[3][3];
-        symvec6mat3(v, m, res);
+        symVec6Mat3(v, m, res);
         return res;
     }
 
@@ -546,7 +552,7 @@ public final class VectorMath {
      * @param m an array of double.
      * @param res an array of double.
      */
-    public static void symvec6mat3(double v[], double m[][], double res[][]) {
+    public static void symVec6Mat3(double v[], double m[][], double res[][]) {
         res[0][0] = v[0] * m[0][0] + v[3] * m[1][0] + v[4] * m[2][0];
         res[0][1] = v[0] * m[0][1] + v[3] * m[1][1] + v[4] * m[2][1];
         res[0][2] = v[0] * m[0][2] + v[3] * m[1][2] + v[4] * m[2][2];
@@ -565,9 +571,9 @@ public final class VectorMath {
      * @param v input vector of the form 11, 22, 33, 12, 13, 23
      * @return matrix product
      */
-    public static double[][] mat3symvec6(double m[][], double v[]) {
+    public static double[][] mat3SymVec6(double m[][], double v[]) {
         double res[][] = new double[3][3];
-        mat3symvec6(m, v, res);
+        VectorMath.mat3SymVec6(m, v, res);
         return res;
     }
 
@@ -579,7 +585,7 @@ public final class VectorMath {
      * @param v an array of double.
      * @param res an array of double.
      */
-    public static void mat3symvec6(double m[][], double v[], double res[][]) {
+    public static void mat3SymVec6(double m[][], double v[], double res[][]) {
         res[0][0] = m[0][0] * v[0] + m[0][1] * v[3] + m[0][2] * v[4];
         res[0][1] = m[0][0] * v[3] + m[0][1] * v[1] + m[0][2] * v[5];
         res[0][2] = m[0][0] * v[4] + m[0][1] * v[5] + m[0][2] * v[2];
@@ -598,9 +604,9 @@ public final class VectorMath {
      * @param m2 second input matrix
      * @return matrix product
      */
-    public static double[][] mat3mat3(double m1[][], double m2[][]) {
+    public static double[][] mat3Mat3(double m1[][], double m2[][]) {
         double res[][] = new double[3][3];
-        mat3mat3(m1, m2, res);
+        mat3Mat3(m1, m2, res);
         return res;
     }
 
@@ -612,7 +618,7 @@ public final class VectorMath {
      * @param m2 an array of double.
      * @param res an array of double.
      */
-    public static void mat3mat3(double m1[][], double m2[][], double res[][]) {
+    public static void mat3Mat3(double m1[][], double m2[][], double res[][]) {
         res[0][0] = m1[0][0] * m2[0][0] + m1[0][1] * m2[1][0] + m1[0][2] * m2[2][0];
         res[0][1] = m1[0][0] * m2[0][1] + m1[0][1] * m2[1][1] + m1[0][2] * m2[2][1];
         res[0][2] = m1[0][0] * m2[0][2] + m1[0][1] * m2[1][2] + m1[0][2] * m2[2][2];
@@ -632,9 +638,9 @@ public final class VectorMath {
      * @param m2 second input matrix
      * @return matrix product
      */
-    public static double[][] scalarmat3mat3(double scalar, double m1[][], double m2[][]) {
+    public static double[][] scalarMat3Mat3(double scalar, double m1[][], double m2[][]) {
         double res[][] = new double[3][3];
-        scalarmat3mat3(scalar, m1, m2, res);
+        scalarMat3Mat3(scalar, m1, m2, res);
         return res;
     }
 
@@ -647,7 +653,7 @@ public final class VectorMath {
      * @param m2 an array of double.
      * @param res an array of double.
      */
-    public static void scalarmat3mat3(double scalar, double m1[][], double m2[][], double res[][]) {
+    public static void scalarMat3Mat3(double scalar, double m1[][], double m2[][], double res[][]) {
         res[0][0] = (scalar * m1[0][0]) * m2[0][0] + (scalar * m1[0][1]) * m2[1][0] + (scalar * m1[0][2]) * m2[2][0];
         res[0][1] = (scalar * m1[0][0]) * m2[0][1] + (scalar * m1[0][1]) * m2[1][1] + (scalar * m1[0][2]) * m2[2][1];
         res[0][2] = (scalar * m1[0][0]) * m2[0][2] + (scalar * m1[0][1]) * m2[1][2] + (scalar * m1[0][2]) * m2[2][2];

@@ -24,8 +24,8 @@ package ffx.algorithms;
 
 import java.util.Random;
 
-import static java.lang.Math.exp;
-import static java.lang.Math.sqrt;
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.numerics.Potential.VARIABLE_TYPE;
 
@@ -49,7 +49,8 @@ public class Bussi extends Thermostat {
     private final Random random;
 
     /**
-     * <p>Constructor for Bussi.</p>
+     * <p>
+     * Constructor for Bussi.</p>
      *
      * @param dof a int.
      * @param x an array of double.
@@ -68,7 +69,8 @@ public class Bussi extends Thermostat {
     }
 
     /**
-     * <p>Constructor for Bussi.</p>
+     * <p>
+     * Constructor for Bussi.</p>
      *
      * @param dof a int.
      * @param x an array of double.
@@ -82,8 +84,8 @@ public class Bussi extends Thermostat {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>tau</code>.</p>
+     * <p>
+     * Setter for the field <code>tau</code>.</p>
      *
      * @param tau a double.
      */
@@ -92,8 +94,8 @@ public class Bussi extends Thermostat {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>tau</code>.</p>
+     * <p>
+     * Getter for the field <code>tau</code>.</p>
      *
      * @return a double.
      */

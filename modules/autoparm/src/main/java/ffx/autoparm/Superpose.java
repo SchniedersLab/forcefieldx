@@ -25,9 +25,9 @@ package ffx.autoparm;
 import java.io.*;
 import java.text.DecimalFormat;
 
-import org.apache.commons.math.linear.Array2DRowRealMatrix;
-import org.apache.commons.math.linear.EigenDecompositionImpl;
-import org.apache.commons.math.linear.RealMatrix;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.EigenDecomposition;
+import org.apache.commons.math3.linear.RealMatrix;
 
 /**
  * Superpose two molecules.
@@ -44,7 +44,8 @@ public class Superpose {
     double xmid = 0, ymid = 0, zmid = 0;
 
     /**
-     * <p>Constructor for Superpose.</p>
+     * <p>
+     * Constructor for Superpose.</p>
      *
      * @param xyzfname1 a {@link java.lang.String} object.
      * @param xyzfname2 a {@link java.lang.String} object.
@@ -119,7 +120,6 @@ public class Superpose {
         }
         nfit = Math.min(n1, n2);
 
-
         center();
         quatfit();
 
@@ -138,7 +138,8 @@ public class Superpose {
     }
 
     /**
-     * <p>center</p>
+     * <p>
+     * center</p>
      */
     public void center() {
         double norm = 0;
@@ -177,7 +178,8 @@ public class Superpose {
     }
 
     /**
-     * <p>quatfit</p>
+     * <p>
+     * quatfit</p>
      */
     public void quatfit() {
         double xxyx = 0.0;
@@ -213,10 +215,10 @@ public class Superpose {
         c[3][3] = xzyz - xxyx - xyyy;
 
         RealMatrix a = new Array2DRowRealMatrix(new double[][]{
-                    {c[0][0], c[0][1], c[0][2], c[0][3]},
-                    {c[0][1], c[1][1], c[1][2], c[1][3]}, {c[0][2], c[1][2], c[2][2], c[2][3]},
-                    {c[0][3], c[1][3], c[2][3], c[3][3]}});
-        EigenDecompositionImpl e = new EigenDecompositionImpl(a, 1);
+            {c[0][0], c[0][1], c[0][2], c[0][3]},
+            {c[0][1], c[1][1], c[1][2], c[1][3]}, {c[0][2], c[1][2], c[2][2], c[2][3]},
+            {c[0][3], c[1][3], c[2][3], c[3][3]}});
+        EigenDecomposition e = new EigenDecomposition(a, 1);
         a = e.getV();
         double[] q = {a.getEntry(0, 0), a.getEntry(1, 0), a.getEntry(2, 0), a.getEntry(3, 0)};
         double rot[][] = new double[3][3];
@@ -241,7 +243,8 @@ public class Superpose {
     }
 
     /**
-     * <p>rms</p>
+     * <p>
+     * rms</p>
      *
      * @return a double.
      */
@@ -259,7 +262,8 @@ public class Superpose {
     }
 
     /**
-     * <p>output</p>
+     * <p>
+     * output</p>
      */
     public void output() {
         DecimalFormat myFormatter = new DecimalFormat(" ##########0.000000;-##########0.000000");
@@ -280,7 +284,8 @@ public class Superpose {
     }
 
     /**
-     * <p>main</p>
+     * <p>
+     * main</p>
      *
      * @param args an array of {@link java.lang.String} objects.
      */

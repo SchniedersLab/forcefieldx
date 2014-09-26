@@ -34,41 +34,34 @@ import javax.media.j3d.TransformGroup;
 public interface PickingCallback {
 
     /**
-     * Constant
-     * <code>ROTATE=0</code>
+     * Constant <code>ROTATE=0</code>
      */
     public final static int ROTATE = 0;
     /**
-     * Constant
-     * <code>TRANSLATE=1</code>
+     * Constant <code>TRANSLATE=1</code>
      */
     public final static int TRANSLATE = 1;
     /**
-     * Constant
-     * <code>ZOOM=2</code>
+     * Constant <code>ZOOM=2</code>
      */
     public final static int ZOOM = 2;
     /**
-     * Constant
-     * <code>SELECTION=4</code>
+     * Constant <code>SELECTION=4</code>
      */
     public final static int SELECTION = 4;
     /**
-     * Constant
-     * <code>PROPERTIES=5</code>
+     * Constant <code>PROPERTIES=5</code>
      */
     public final static int PROPERTIES = 5;
     /**
-     * Constant
-     * <code>ORBIT=6</code>
+     * Constant <code>ORBIT=6</code>
      */
     public final static int ORBIT = 6;
     /*
      * The user made a selection but nothing was actually picked
      */
     /**
-     * Constant
-     * <code>NO_PICK=3</code>
+     * Constant <code>NO_PICK=3</code>
      */
     public final static int NO_PICK = 3;
 
@@ -77,7 +70,8 @@ public interface PickingCallback {
      * time the Picked object is moved
      */
     /**
-     * <p>transformChanged</p>
+     * <p>
+     * transformChanged</p>
      *
      * @param type a int.
      * @param tg a {@link javax.media.j3d.TransformGroup} object.
@@ -85,7 +79,8 @@ public interface PickingCallback {
     public void transformChanged(int type, TransformGroup tg);
 
     /**
-     * <p>transformClicked</p>
+     * <p>
+     * transformClicked</p>
      *
      * @param type a int.
      * @param tg a {@link javax.media.j3d.TransformGroup} object.
@@ -93,7 +88,8 @@ public interface PickingCallback {
     public void transformClicked(int type, TransformGroup tg);
 
     /**
-     * <p>transformDoubleClicked</p>
+     * <p>
+     * transformDoubleClicked</p>
      *
      * @param type a int.
      * @param tg a {@link javax.media.j3d.TransformGroup} object.

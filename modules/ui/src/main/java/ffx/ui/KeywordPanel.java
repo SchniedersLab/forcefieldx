@@ -103,40 +103,45 @@ public final class KeywordPanel extends JPanel implements ActionListener {
      */
     private JComboBox groupComboBox;
     /**
-     * The editPanel holds the toolBar (north), splitPane (center) and statusLabel (south).
+     * The editPanel holds the toolBar (north), splitPane (center) and
+     * statusLabel (south).
      */
     private JPanel editPanel;
     private JToolBar toolBar;
-/**
- * The splitPane holds the editScrollPane (top) and descriptScrollPane (bottom).
- */
+    /**
+     * The splitPane holds the editScrollPane (top) and descriptScrollPane
+     * (bottom).
+     */
     private JSplitPane splitPane;
     private final JLabel statusLabel = new JLabel("  ");
     /**
-     * The editScrollPane holds the gridPanel, where KeywordComponents actually live.
+     * The editScrollPane holds the gridPanel, where KeywordComponents actually
+     * live.
      */
     private JScrollPane editScrollPane;
     /**
-     * The descriptScrollPane holds the descriptTextArea for Keyword Descriptions.
+     * The descriptScrollPane holds the descriptTextArea for Keyword
+     * Descriptions.
      */
     private JScrollPane descriptScrollPane;
     /**
-     *  The descriptTextArea actually holds Keyword Descriptions.
+     * The descriptTextArea actually holds Keyword Descriptions.
      */
     private JTextArea descriptTextArea;
     /**
-     *  Allow the user to show/hide Keyword Descriptions.
+     * Allow the user to show/hide Keyword Descriptions.
      */
     private JCheckBoxMenuItem descriptCheckBox;
     private final GridBagLayout gridBagLayout = new GridBagLayout();
     private final GridBagConstraints gridBagConstraints = new GridBagConstraints();
     /**
-     *  The gridPanel holds an array of KeywordComponents.
+     * The gridPanel holds an array of KeywordComponents.
      */
     private final JPanel gridPanel = new JPanel(gridBagLayout);
     /**
      * Lines in Keyword files that are comments, unrecognized keywords, or
-     * keywords where editing is not supported are stored in a big StringBuilder.
+     * keywords where editing is not supported are stored in a big
+     * StringBuilder.
      */
     private StringBuilder commentStringBuffer = new StringBuilder();
     /**

@@ -22,10 +22,11 @@
  */
 package ffx.numerics;
 
-import static java.lang.Math.abs;
-import static java.lang.Math.floor;
-
-import static org.apache.commons.math.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.floor;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * Static methods to evaluate erf(x) and erfc(x) for a real argument x. Rational
@@ -41,16 +42,16 @@ import static org.apache.commons.math.util.FastMath.exp;
  * @see
  * <ul>
  * <li>
- * <a href="http://www.jstor.org/stable/2004390" target="_blank"> W. J.
- * Cody, Mathematics of Computation 23 (107), 631 (1969).</a>
+ * <a href="http://www.jstor.org/stable/2004390" target="_blank"> W. J. Cody,
+ * Mathematics of Computation 23 (107), 631 (1969).</a>
  * </li>
  * <li>
  * <a href="http://en.wikipedia.org/wiki/Error_function" target="_blank"> Error
  * function at Wikipedia</a>
  * </li>
  * <li>
- * <a href="http://mathworld.wolfram.com/Erf.html"
- * target="_blank"> Error function at MathWorld</a>
+ * <a href="http://mathworld.wolfram.com/Erf.html" target="_blank"> Error
+ * function at MathWorld</a>
  * </li>
  * </ul>
  *
@@ -58,20 +59,32 @@ import static org.apache.commons.math.util.FastMath.exp;
  */
 public class Erf {
 
-    /**
-     * Mathematical and machine-dependent constants. xsmall argument below which
-     * erf(x) may be represented by 2*x/sqrt(pi) and above which x*x won't
-     * underflow; a conservative value is the largest machine number X such that
-     * 1.0 + X = 1.0 to machine precision xbig largest argument acceptable for
-     * erfc; solution to the equation: W(x) * (1-0.5/x**2) = XMIN, where W(x) =
-     * exp(-x*x)/[x*sqrt(pi)]
-     */
     private Erf() {
     }
-    private static final double sqrpi = 1.0 / Math.sqrt(Math.PI);
-    // original: 0.56418958354775628695;
+
+    /**
+     * Mathematical and machine-dependent constants.
+     */
+    private static final double sqrtPI = 1.0 / sqrt(PI);
+    private static final double oneSixteenth = 1.0 / 16.0;
     private static final double thresh = 0.46875;
+    /**
+     * xsmall argument below which erf(x) may be represented by 2*x/sqrt(pi) and
+     * above which x*x won't underflow.
+     *
+     * A conservative value is the largest machine number X such that 1.0 + X =
+     * 1.0 to machine precision
+     */
     private static final double xsmall = 1.11e-16;
+    /**
+     * xbig largest argument acceptable for erfc.
+     *
+     * Solution to the equation:
+     *
+     * W(x) * (1-0.5/x**2) = XMIN, where
+     *
+     * W(x) = exp(-x*x)/[x*sqrt(pi)]
+     */
     private static final double xbig = 26.543;
 
     /**
@@ -156,7 +169,7 @@ public class Erf {
             xden = (xden + 3.43936767414372164e3) * y;
             result = (xnum + 1.23033935479799725e3)
                     / (xden + 1.23033935480374942e3);
-            double ysq = floor(16.0 * y) / 16.0;
+            double ysq = floor(16.0 * y) * oneSixteenth;
             double del = (y - ysq) * (y + ysq);
             result = exp(-ysq * ysq - del) * result;
             if (!mode) {
@@ -172,7 +185,8 @@ public class Erf {
              * Get complementary error function for |x| greater than 4.0.
              */
             if (y < xbig) {
-                double ysq = 1.0 / (y * y);
+                double iy = 1.0 / y;
+                double ysq = iy * iy;
                 double xnum = 1.63153871373020978e-2 * ysq;
                 double xden = ysq;
                 xnum = (xnum + 3.05326634961232344e-1) * ysq;
@@ -185,8 +199,8 @@ public class Erf {
                 xden = (xden + 6.05183413124413191e-2) * ysq;
                 result = ysq * (xnum + 6.58749161529837803e-4)
                         / (xden + 2.33520497626869185e-3);
-                result = (sqrpi - result) / y;
-                ysq = floor(16.0 * y) / 16.0;
+                result = (sqrtPI - result) * iy;
+                ysq = floor(16.0 * y) * oneSixteenth;
                 double del = (y - ysq) * (y + ysq);
                 result = exp(-ysq * ysq - del) * result;
             }

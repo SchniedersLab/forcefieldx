@@ -25,7 +25,8 @@ package ffx.xray;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
 /**
- * <p>FormFactor interface.</p>
+ * <p>
+ * FormFactor interface.</p>
  *
  * @author Timothy D. Fenn
  *
@@ -50,7 +51,7 @@ public interface FormFactor {
      * @param refinementmode {@link RefinementMinimize.RefinementMode}
      * determines which gradients will be computed
      */
-    void rho_grad(double xyz[], double dfc, RefinementMode refinementmode);
+    void rhoGrad(double xyz[], double dfc, RefinementMode refinementmode);
 
     /**
      * update the coordinates to the current position

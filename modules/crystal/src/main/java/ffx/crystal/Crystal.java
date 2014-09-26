@@ -27,26 +27,25 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.lang.Math.PI;
-import static java.lang.Math.abs;
-import static java.lang.Math.cos;
-import static java.lang.Math.floor;
-import static java.lang.Math.rint;
-import static java.lang.Math.signum;
-import static java.lang.Math.sin;
-import static java.lang.Math.sqrt;
-import static java.lang.Math.toRadians;
+import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.cos;
+import static org.apache.commons.math3.util.FastMath.floor;
+import static org.apache.commons.math3.util.FastMath.rint;
+import static org.apache.commons.math3.util.FastMath.signum;
+import static org.apache.commons.math3.util.FastMath.sin;
+import static org.apache.commons.math3.util.FastMath.sqrt;
+import static org.apache.commons.math3.util.FastMath.toRadians;
 
 import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.math.linear.Array2DRowRealMatrix;
-import org.apache.commons.math.linear.LUDecompositionImpl;
-import org.apache.commons.math.linear.RealMatrix;
-import org.apache.commons.math.util.MathUtils;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.LUDecomposition;
+import org.apache.commons.math3.linear.RealMatrix;
 
 import ffx.utilities.HashCodeUtil;
 
-import static ffx.numerics.VectorMath.mat3mat3;
-import static ffx.numerics.VectorMath.mat3symvec6;
+import static ffx.numerics.VectorMath.mat3Mat3;
+import static ffx.numerics.VectorMath.mat3SymVec6;
 import static ffx.numerics.VectorMath.transpose3;
 
 /**
@@ -415,7 +414,7 @@ public class Crystal {
 
         // Invert A^-1 to get A
         RealMatrix m = new Array2DRowRealMatrix(Ai, true);
-        m = new LUDecompositionImpl(m).getSolver().getInverse();
+        m = new LUDecomposition(m).getSolver().getInverse();
         A = m.getData();
 
         // The columns of A are the reciprocal basis vectors
@@ -465,7 +464,7 @@ public class Crystal {
 
         // invert G to yield Gstar
         m = new Array2DRowRealMatrix(G, true);
-        m = new LUDecompositionImpl(m).getSolver().getInverse();
+        m = new LUDecomposition(m).getSolver().getInverse();
         Gstar = m.getData();
 
         List<SymOp> symOps = spaceGroup.symOps;
@@ -605,12 +604,12 @@ public class Crystal {
 
         Crystal other = (Crystal) obj;
 
-        return (MathUtils.equals(a, other.a, 0.01)
-                && MathUtils.equals(b, other.b, 0.01)
-                && MathUtils.equals(c, other.c, 0.01)
-                && MathUtils.equals(alpha, other.alpha, 0.01)
-                && MathUtils.equals(beta, other.beta, 0.01)
-                && MathUtils.equals(gamma, other.gamma, 0.01)
+        return (abs(a - other.a) < 0.01
+                && abs(b - other.b) < 0.01
+                && abs(c - other.c) < 0.01
+                && abs(alpha - other.alpha) < 0.01
+                && abs(beta - other.beta) < 0.01
+                && abs(gamma - other.gamma) < 0.01
                 && spaceGroup.number == other.spaceGroup.number);
     }
 
@@ -748,7 +747,7 @@ public class Crystal {
             SymOp symop = spaceGroup.symOps.get(i);
             double rot[][] = symop.rot;
             double rt[][] = transpose3(rot);
-            double rmrt[][] = mat3mat3(mat3mat3(rot, m), rt);
+            double rmrt[][] = mat3Mat3(mat3Mat3(rot, m), rt);
             for (int j = 0; j < 3; j++) {
                 for (int k = 0; k < 3; k++) {
                     r[j][k] += rmrt[j][k];
@@ -775,7 +774,7 @@ public class Crystal {
             SymOp symop = spaceGroup.symOps.get(i);
             double rot[][] = symop.rot;
             double rt[][] = transpose3(rot);
-            double rmrt[][] = mat3mat3(mat3symvec6(rot, v), rt);
+            double rmrt[][] = mat3Mat3(mat3SymVec6(rot, v), rt);
             for (int j = 0; j < 3; j++) {
                 for (int k = 0; k < 3; k++) {
                     r[j][k] += rmrt[j][k];

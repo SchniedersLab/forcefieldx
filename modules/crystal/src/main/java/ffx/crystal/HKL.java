@@ -22,7 +22,7 @@
  */
 package ffx.crystal;
 
-import static java.lang.Math.PI;
+import static org.apache.commons.math3.util.FastMath.PI;
 
 import ffx.utilities.HashCodeUtil;
 
@@ -51,7 +51,6 @@ public class HKL {
     protected int index;
     private int hashCode;
 
-    // null constructor
     /**
      * <p>
      * Constructor for HKL.</p>

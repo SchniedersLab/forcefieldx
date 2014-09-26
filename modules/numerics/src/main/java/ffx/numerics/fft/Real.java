@@ -22,9 +22,9 @@
  */
 package ffx.numerics.fft;
 
-import static java.lang.Math.PI;
-import static java.lang.Math.cos;
-import static java.lang.Math.sin;
+import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.cos;
+import static org.apache.commons.math3.util.FastMath.sin;
 
 /**
  * Compute the FFT of real, double precision data of arbitrary length n using a

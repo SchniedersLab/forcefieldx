@@ -34,7 +34,8 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import ffx.crystal.*;
 
 /**
- * <p>CNSFilter class.</p>
+ * <p>
+ * CNSFilter class.</p>
  *
  * @author Timothy D. Fenn
  *
@@ -50,7 +51,8 @@ public class CNSFilter implements DiffractionFileFilter {
 
     // null constructor
     /**
-     * <p>Constructor for CNSFilter.</p>
+     * <p>
+     * Constructor for CNSFilter.</p>
      */
     public CNSFilter() {
     }
@@ -282,7 +284,7 @@ public class CNSFilter implements DiffractionFileFilter {
                                 nread++;
                             } else {
                                 HKL tmp = new HKL(ih, ik, il);
-                                if (!reflectionlist.resolution.inInvresolutionRange(Crystal.invressq(reflectionlist.crystal, tmp))) {
+                                if (!reflectionlist.resolution.inInverseResSqRange(Crystal.invressq(reflectionlist.crystal, tmp))) {
                                     nres++;
                                 } else {
                                     nignore++;

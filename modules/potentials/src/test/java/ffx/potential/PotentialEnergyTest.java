@@ -34,7 +34,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
@@ -42,6 +42,7 @@ import ffx.potential.bonded.Utilities;
 import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.ForceFieldFilter;
+import ffx.potential.parsers.PotentialsUtils;
 import ffx.potential.parsers.XYZFilter;
 import ffx.utilities.Keyword;
 
@@ -132,24 +133,24 @@ public class PotentialEnergyTest {
     private final int nVanDerWaals;
     private final int nPermanent;
     private final int nPolar;
-    private double bondEnergy;
-    private double angleEnergy;
-    private double stretchBendEnergy;
-    private double ureyBradleyEnergy;
-    private double outOfPlaneBendEnergy;
-    private double torsionEnergy;
-    private double piOrbitalTorsionEnergy;
-    private double torsionTorsionEnergy;
-    private double vanDerWaalsEnergy;
-    private double permanentEnergy;
-    private Polarization polarization;
-    private double polarizationEnergy;
-    private final ForceFieldEnergy energy;
-    private boolean mpoleTerm;
+    private final double bondEnergy;
+    private final double angleEnergy;
+    private final double stretchBendEnergy;
+    private final double ureyBradleyEnergy;
+    private final double outOfPlaneBendEnergy;
+    private final double torsionEnergy;
+    private final double piOrbitalTorsionEnergy;
+    private final double torsionTorsionEnergy;
+    private final double vanDerWaalsEnergy;
+    private final double permanentEnergy;
+    private final double polarizationEnergy;
     private final double tolerance = 1.0e-3;
     private final double gradientTolerance = 1.0e-4;
     private final boolean ci;
     private final boolean ciOnly;
+    private Polarization polarization;
+    private boolean mpoleTerm;
+    private final ForceFieldEnergy forceFieldEnergy;
 
     public PotentialEnergyTest(
             boolean ciOnly,
@@ -191,46 +192,27 @@ public class PotentialEnergyTest {
         this.nPolar = nPolar;
 
         String ffxCi = System.getProperty("ffx.ci", "false");
-        if (ffxCi.equalsIgnoreCase("true")) {
-            ci = true;
-        } else {
-            ci = false;
-        }
+        ci = ffxCi.equalsIgnoreCase("true");
 
         if (!ci && ciOnly) {
             structure = null;
             molecularAssembly = null;
             nAtoms = 0;
-            energy = null;
+            forceFieldEnergy = null;
             return;
         }
 
-        polarization = Polarization.MUTUAL;
-        System.setProperty("polarization", "mutual");
-
+        /**
+         * Load the test system.
+         */
         ClassLoader cl = this.getClass().getClassLoader();
         structure = new File(cl.getResource(filename).getPath());
-
-        int index = filename.lastIndexOf(".");
-        String name = filename.substring(0, index);
-        molecularAssembly = new MolecularAssembly(name);
-        molecularAssembly.setFile(structure);
-
-        CompositeConfiguration properties = Keyword.loadProperties(structure);
-        ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties);
-        ForceField forceField = forceFieldFilter.parse();
-        molecularAssembly.setForceField(forceField);
-
-        XYZFilter xyzFilter = new XYZFilter(structure, molecularAssembly, forceField, properties);
-        boolean expectedReturn = true;
-        boolean actualReturn = xyzFilter.readFile();
-        assertEquals(info, expectedReturn, actualReturn);
-        Utilities.biochemistry(molecularAssembly, xyzFilter.getAtomList());
-        molecularAssembly.finalize(true);
+        PotentialsUtils potentialUtils = new PotentialsUtils();
+        molecularAssembly = potentialUtils.open(structure.getAbsolutePath())[0];
 
         nAtoms = molecularAssembly.getAtomArray().length;
-        energy = new ForceFieldEnergy(molecularAssembly);
-        mpoleTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.MPOLETERM, true);
+        forceFieldEnergy = molecularAssembly.getPotentialEnergy();
+        mpoleTerm = molecularAssembly.getForceField().getBoolean(ForceField.ForceFieldBoolean.MPOLETERM, true);
 
         /*
          if (ci) {
@@ -254,43 +236,43 @@ public class PotentialEnergyTest {
 
         boolean gradient = false;
         boolean print = true;
-        double total = energy.energy(gradient, print);
+        double total = forceFieldEnergy.energy(gradient, print);
         // Bond Energy
-        assertEquals(info + " Bond Energy", bondEnergy, energy.bondEnergy, tolerance);
-        assertEquals(info + " Bond Count", nBonds, energy.nBonds);
+        assertEquals(info + " Bond Energy", bondEnergy, forceFieldEnergy.bondEnergy, tolerance);
+        assertEquals(info + " Bond Count", nBonds, forceFieldEnergy.nBonds);
         // Angle Energy
-        assertEquals(info + " Angle Energy", angleEnergy, energy.angleEnergy, tolerance);
-        assertEquals(info + " Angle Count", nAngles, energy.nAngles);
+        assertEquals(info + " Angle Energy", angleEnergy, forceFieldEnergy.angleEnergy, tolerance);
+        assertEquals(info + " Angle Count", nAngles, forceFieldEnergy.nAngles);
         // Stretch-Bend Energy
-        assertEquals(info + " Stretch-Bend Energy", stretchBendEnergy, energy.stretchBendEnergy, tolerance);
-        assertEquals(info + " Stretch-Bend Count", nStretchBends, energy.nStretchBends);
+        assertEquals(info + " Stretch-Bend Energy", stretchBendEnergy, forceFieldEnergy.stretchBendEnergy, tolerance);
+        assertEquals(info + " Stretch-Bend Count", nStretchBends, forceFieldEnergy.nStretchBends);
         // Urey-Bradley Energy
-        assertEquals(info + " Urey-Bradley Energy", ureyBradleyEnergy, energy.ureyBradleyEnergy, tolerance);
-        assertEquals(info + " Urey-Bradley Count", nUreyBradleys, energy.nUreyBradleys);
+        assertEquals(info + " Urey-Bradley Energy", ureyBradleyEnergy, forceFieldEnergy.ureyBradleyEnergy, tolerance);
+        assertEquals(info + " Urey-Bradley Count", nUreyBradleys, forceFieldEnergy.nUreyBradleys);
         // Out-of-Plane Bend
-        assertEquals(info + " Out-of-Plane Bend Energy", outOfPlaneBendEnergy, energy.outOfPlaneBendEnergy, tolerance);
-        assertEquals(info + " Out-of-Plane Bend Count", nOutOfPlaneBends, energy.nOutOfPlaneBends);
+        assertEquals(info + " Out-of-Plane Bend Energy", outOfPlaneBendEnergy, forceFieldEnergy.outOfPlaneBendEnergy, tolerance);
+        assertEquals(info + " Out-of-Plane Bend Count", nOutOfPlaneBends, forceFieldEnergy.nOutOfPlaneBends);
         // Torsional Angle
-        assertEquals(info + " Torsion Energy", torsionEnergy, energy.torsionEnergy, tolerance);
-        assertEquals(info + " Torsion Count", nTorsions, energy.nTorsions);
+        assertEquals(info + " Torsion Energy", torsionEnergy, forceFieldEnergy.torsionEnergy, tolerance);
+        assertEquals(info + " Torsion Count", nTorsions, forceFieldEnergy.nTorsions);
         // Pi-Orbital Torsion
-        assertEquals(info + " Pi-OrbitalTorsion Energy", piOrbitalTorsionEnergy, energy.piOrbitalTorsionEnergy, tolerance);
-        assertEquals(info + " Pi-OrbitalTorsion Count", nPiOrbitalTorsions, energy.nPiOrbitalTorsions);
+        assertEquals(info + " Pi-OrbitalTorsion Energy", piOrbitalTorsionEnergy, forceFieldEnergy.piOrbitalTorsionEnergy, tolerance);
+        assertEquals(info + " Pi-OrbitalTorsion Count", nPiOrbitalTorsions, forceFieldEnergy.nPiOrbitalTorsions);
         // Torsion-Torsion
-        assertEquals(info + " Torsion-Torsion Energy", torsionTorsionEnergy, energy.torsionTorsionEnergy, tolerance);
-        assertEquals(info + " Torsion-Torsion Count", nTorsionTorsions, energy.nTorsionTorsions);
+        assertEquals(info + " Torsion-Torsion Energy", torsionTorsionEnergy, forceFieldEnergy.torsionTorsionEnergy, tolerance);
+        assertEquals(info + " Torsion-Torsion Count", nTorsionTorsions, forceFieldEnergy.nTorsionTorsions);
         // van Der Waals
-        assertEquals(info + " van Der Waals Energy", vanDerWaalsEnergy, energy.vanDerWaalsEnergy, tolerance);
-        assertEquals(info + " van Der Waals Count", nVanDerWaals, energy.nVanDerWaals);
+        assertEquals(info + " van Der Waals Energy", vanDerWaalsEnergy, forceFieldEnergy.vanDerWaalsEnergy, tolerance);
+        assertEquals(info + " van Der Waals Count", nVanDerWaals, forceFieldEnergy.nVanDerWaals);
         // Permanent Multipoles
         if (mpoleTerm) {
-            assertEquals(info + " Permanent Multipole Energy", permanentEnergy, energy.permanentMultipoleEnergy, tolerance);
-            assertEquals(info + " Permanent Multipole Count", nPermanent, energy.nPME);
+            assertEquals(info + " Permanent Multipole Energy", permanentEnergy, forceFieldEnergy.permanentMultipoleEnergy, tolerance);
+            assertEquals(info + " Permanent Multipole Count", nPermanent, forceFieldEnergy.nPME);
         }
         // Polarization
         if (polarization == Polarization.MUTUAL) {
-            assertEquals(info + " Polarization Energy", polarizationEnergy, energy.polarizationEnergy, tolerance);
-            assertEquals(info + " Polarization Count", nPolar, energy.nPME);
+            assertEquals(info + " Polarization Energy", polarizationEnergy, forceFieldEnergy.polarizationEnergy, tolerance);
+            assertEquals(info + " Polarization Count", nPolar, forceFieldEnergy.nPME);
         }
     }
 
@@ -300,7 +282,7 @@ public class PotentialEnergyTest {
     public void testGradient() {
         boolean gradient = true;
         boolean print = true;
-        energy.energy(gradient, print);
+        forceFieldEnergy.energy(gradient, print);
         gradient = false;
         print = false;
         double step = 0.00001;
@@ -319,28 +301,28 @@ public class PotentialEnergyTest {
         // Find numeric dX
         xyz[0] += step;
         a0.moveTo(xyz);
-        double e = energy.energy(gradient, print);
+        double e = forceFieldEnergy.energy(gradient, print);
         xyz[0] -= 2.0 * step;
         a0.moveTo(xyz);
-        e -= energy.energy(gradient, print);
+        e -= forceFieldEnergy.energy(gradient, print);
         numeric[0] = e / (2.0 * step);
         xyz[0] += step;
         // Find numeric dY
         xyz[1] += step;
         a0.moveTo(xyz);
-        e = energy.energy(gradient, print);
+        e = forceFieldEnergy.energy(gradient, print);
         xyz[1] -= 2.0 * step;
         a0.moveTo(xyz);
-        e -= energy.energy(gradient, print);
+        e -= forceFieldEnergy.energy(gradient, print);
         numeric[1] = e / (2.0 * step);
         xyz[1] += step;
         // Find numeric dZ
         xyz[2] += step;
         a0.moveTo(xyz);
-        e = energy.energy(gradient, print);
+        e = forceFieldEnergy.energy(gradient, print);
         xyz[2] -= 2.0 * step;
         a0.moveTo(xyz);
-        e -= energy.energy(gradient, print);
+        e -= forceFieldEnergy.energy(gradient, print);
         numeric[2] = e / (2.0 * step);
         xyz[2] += step;
         a0.moveTo(xyz);
@@ -365,7 +347,7 @@ public class PotentialEnergyTest {
     public void testSoftCore() {
         boolean gradient = false;
         boolean print = true;
-        double e = energy.energy(gradient, print);
+        double e = forceFieldEnergy.energy(gradient, print);
         Atom atoms[] = molecularAssembly.getAtomArray();
         int n = atoms.length;
         // Make the 3 atoms soft
@@ -375,8 +357,8 @@ public class PotentialEnergyTest {
         }
         // Compute the energy with Lambda = 1.0;
         double lambda = 1.0;
-        energy.setLambda(lambda);
-        double e2 = energy.energy(gradient, print);
+        forceFieldEnergy.setLambda(lambda);
+        double e2 = forceFieldEnergy.energy(gradient, print);
         assertEquals(e, e2, tolerance);
     }
 }

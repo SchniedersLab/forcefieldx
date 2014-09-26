@@ -172,7 +172,8 @@ public class LogPanel extends JPanel implements ActionListener {
     }
 
     /**
-     * <p>close</p>
+     * <p>
+     * close</p>
      */
     public void close() {
         int index = resultsTabbedPane.getSelectedIndex();
@@ -197,7 +198,8 @@ public class LogPanel extends JPanel implements ActionListener {
     }
 
     /**
-     * <p>close</p>
+     * <p>
+     * close</p>
      *
      * @param file a {@link java.lang.String} object.
      */
@@ -234,7 +236,8 @@ public class LogPanel extends JPanel implements ActionListener {
     }
 
     /**
-     * <p>closeAll</p>
+     * <p>
+     * closeAll</p>
      */
     public void closeAll() {
         synchronized (this) {
@@ -245,7 +248,8 @@ public class LogPanel extends JPanel implements ActionListener {
     }
 
     /**
-     * <p>getProgressBar</p>
+     * <p>
+     * getProgressBar</p>
      *
      * @return a {@link javax.swing.JProgressBar} object.
      */
@@ -324,7 +328,8 @@ public class LogPanel extends JPanel implements ActionListener {
     }
 
     /**
-     * <p>refresh</p>
+     * <p>
+     * refresh</p>
      */
     public void refresh() {
         synchronized (tinkerThreads) {
@@ -349,7 +354,8 @@ public class LogPanel extends JPanel implements ActionListener {
     }
 
     /**
-     * <p>refreshStatus</p>
+     * <p>
+     * refreshStatus</p>
      */
     public void refreshStatus() {
         int count = tinkerThreads.size();
@@ -425,7 +431,8 @@ public class LogPanel extends JPanel implements ActionListener {
     }
 
     /**
-     * <p>selected</p>
+     * <p>
+     * selected</p>
      */
     public void selected() {
         validate();
@@ -433,7 +440,8 @@ public class LogPanel extends JPanel implements ActionListener {
     }
 
     /**
-     * <p>setDone</p>
+     * <p>
+     * setDone</p>
      *
      * @param logFileName a {@link java.lang.String} object.
      */
@@ -466,7 +474,8 @@ public class LogPanel extends JPanel implements ActionListener {
     }
 
     /**
-     * <p>toString</p>
+     * <p>
+     * toString</p>
      *
      * @return a {@link java.lang.String} object.
      */

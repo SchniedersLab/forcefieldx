@@ -96,8 +96,8 @@ public class FFXExec implements Runnable {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>returnValue</code>.</p>
+     * <p>
+     * Getter for the field <code>returnValue</code>.</p>
      *
      * @return a int.
      */
@@ -106,7 +106,8 @@ public class FFXExec implements Runnable {
     }
 
     /**
-     * <p>isAlive</p>
+     * <p>
+     * isAlive</p>
      *
      * @return a boolean.
      */

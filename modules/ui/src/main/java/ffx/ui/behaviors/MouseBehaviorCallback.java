@@ -34,33 +34,27 @@ import javax.media.j3d.Transform3D;
 public interface MouseBehaviorCallback {
 
     /**
-     * Constant
-     * <code>ROTATE=0</code>
+     * Constant <code>ROTATE=0</code>
      */
     public final static int ROTATE = 0;
     /**
-     * Constant
-     * <code>TRANSLATE=1</code>
+     * Constant <code>TRANSLATE=1</code>
      */
     public final static int TRANSLATE = 1;
     /**
-     * Constant
-     * <code>ZOOM=2</code>
+     * Constant <code>ZOOM=2</code>
      */
     public final static int ZOOM = 2;
     /**
-     * Constant
-     * <code>SELECTION=4</code>
+     * Constant <code>SELECTION=4</code>
      */
     public final static int SELECTION = 4;
     /**
-     * Constant
-     * <code>PROPERTIES=5</code>
+     * Constant <code>PROPERTIES=5</code>
      */
     public final static int PROPERTIES = 5;
     /**
-     * Constant
-     * <code>ORBIT=6</code>
+     * Constant <code>ORBIT=6</code>
      */
     public final static int ORBIT = 6;
 
@@ -70,7 +64,8 @@ public interface MouseBehaviorCallback {
      * Transform @param type will be one of ROTATE, TRANSLATE or ZOOM
      */
     /**
-     * <p>transformChanged</p>
+     * <p>
+     * transformChanged</p>
      *
      * @param type a int.
      * @param transform a {@link javax.media.j3d.Transform3D} object.
@@ -78,7 +73,8 @@ public interface MouseBehaviorCallback {
     public void transformChanged(int type, Transform3D transform);
 
     /**
-     * <p>transformClicked</p>
+     * <p>
+     * transformClicked</p>
      *
      * @param type a int.
      * @param transform a {@link javax.media.j3d.Transform3D} object.
@@ -86,7 +82,8 @@ public interface MouseBehaviorCallback {
     public void transformClicked(int type, Transform3D transform);
 
     /**
-     * <p>transformDoubleClicked</p>
+     * <p>
+     * transformDoubleClicked</p>
      *
      * @param type a int.
      * @param transform a {@link javax.media.j3d.Transform3D} object.

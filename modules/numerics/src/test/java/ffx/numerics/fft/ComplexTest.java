@@ -49,13 +49,13 @@ public class ComplexTest {
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-                    /**
-                     * This test will fail without the factor 7 {"Test n = 21",
-                     * 21, true},
-                     */
-                    {"Test n = 22", 22, false},
-                    {"Test n = 120", 120, true}
-                });
+            /**
+             * This test will fail without the factor 7 {"Test n = 21", 21,
+             * true},
+             */
+            {"Test n = 22", 22, false},
+            {"Test n = 120", 120, true}
+        });
     }
 
     public ComplexTest(String info, int n, boolean preferred) {

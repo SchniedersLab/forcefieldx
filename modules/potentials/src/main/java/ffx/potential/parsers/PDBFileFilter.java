@@ -60,7 +60,7 @@ public final class PDBFileFilter extends FileFilter {
         String ext = FilenameUtils.getExtension(file.getName());
         return ext.toUpperCase().startsWith("PDB");
     }
-    
+
     /**
      * <p>
      * acceptDeep</p> Accepts a PDB file if it finds at least one parseable ATOM
@@ -104,8 +104,8 @@ public final class PDBFileFilter extends FileFilter {
                         try {
                             /* In a perfect world, every PDB file which claims to be at the 3.3 standard
                              * will actually be at the 3.3 standard.
-                            Integer.parseInt(line.substring(6, 11).trim());
-                            Integer.parseInt(line.substring(22, 26).trim());*/
+                             Integer.parseInt(line.substring(6, 11).trim());
+                             Integer.parseInt(line.substring(22, 26).trim());*/
                             validTerLine = true;
                         } catch (NumberFormatException | StringIndexOutOfBoundsException ex) {
                             // Do nothing.

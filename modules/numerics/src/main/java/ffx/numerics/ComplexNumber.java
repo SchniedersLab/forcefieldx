@@ -22,10 +22,12 @@
  */
 package ffx.numerics;
 
-import static java.lang.Math.atan2;
-import static java.lang.Math.cosh;
-import static java.lang.Math.hypot;
-import static java.lang.Math.sinh;
+import org.apache.commons.math3.util.FastMath;
+
+import static org.apache.commons.math3.util.FastMath.atan2;
+import static org.apache.commons.math3.util.FastMath.cosh;
+import static org.apache.commons.math3.util.FastMath.hypot;
+import static org.apache.commons.math3.util.FastMath.sinh;
 
 /**
  * <p>
@@ -150,50 +152,46 @@ public class ComplexNumber {
 
     /**
      * <p>
-     * phase_shift</p>
+     * phaseShift</p>
      *
      * @param s a double.
      * @return a {@link ffx.numerics.ComplexNumber} object.
      */
-    public ComplexNumber phase_shift(double s) {
-        ComplexNumber sc = new ComplexNumber(Math.cos(s), Math.sin(s));
+    public ComplexNumber phaseShift(double s) {
+        ComplexNumber sc = new ComplexNumber(FastMath.cos(s), FastMath.sin(s));
         return this.times(sc);
     }
 
     /**
      * <p>
-     * phase_shift_ip</p>
+     * phaseShiftIP</p>
      *
      * @param s a double.
      */
-    public void phase_shift_ip(double s) {
+    public void phaseShiftIP(double s) {
         ComplexNumber a = this;
-        double sr = Math.cos(s);
-        double si = Math.sin(s);
+        double sr = FastMath.cos(s);
+        double si = FastMath.sin(s);
         double real = a.re * sr - a.im * si;
         double imag = a.re * si + a.im * sr;
         a.re = real;
         a.im = imag;
     }
 
-    // static version of phase_shift
     /**
-     * <p>
-     * phase_shift</p>
+     * Static version of phaseShift.
      *
      * @param a a {@link ffx.numerics.ComplexNumber} object.
      * @param s a double.
      * @return a {@link ffx.numerics.ComplexNumber} object.
      */
-    public static ComplexNumber phase_shift(ComplexNumber a, double s) {
-        ComplexNumber sc = new ComplexNumber(Math.cos(s), Math.sin(s));
+    public static ComplexNumber phaseShift(ComplexNumber a, double s) {
+        ComplexNumber sc = new ComplexNumber(FastMath.cos(s), FastMath.sin(s));
         return a.times(sc);
     }
 
-    // return a new Complex object whose value is (this + b)
     /**
-     * <p>
-     * plus</p>
+     * Return a new Complex object whose value is (this + b).
      *
      * @param b a {@link ffx.numerics.ComplexNumber} object.
      * @return a {@link ffx.numerics.ComplexNumber} object.
@@ -207,20 +205,18 @@ public class ComplexNumber {
 
     /**
      * <p>
-     * plus_ip</p>
+     * plusIP</p>
      *
      * @param b a {@link ffx.numerics.ComplexNumber} object.
      */
-    public void plus_ip(ComplexNumber b) {
+    public void plusIP(ComplexNumber b) {
         ComplexNumber a = this;
         a.re += b.re;
         a.im += b.im;
     }
 
-    // return a new Complex object whose value is (this - b)
     /**
-     * <p>
-     * minus</p>
+     * Return a new Complex object whose value is (this - b).
      *
      * @param b a {@link ffx.numerics.ComplexNumber} object.
      * @return a {@link ffx.numerics.ComplexNumber} object.
@@ -234,20 +230,18 @@ public class ComplexNumber {
 
     /**
      * <p>
-     * minus_ip</p>
+     * minusIP</p>
      *
      * @param b a {@link ffx.numerics.ComplexNumber} object.
      */
-    public void minus_ip(ComplexNumber b) {
+    public void minusIP(ComplexNumber b) {
         ComplexNumber a = this;
         a.re -= b.re;
         a.im -= b.im;
     }
 
-    // return a new Complex object whose value is (this * b)
     /**
-     * <p>
-     * times</p>
+     * Return a new Complex object whose value is (this * b).
      *
      * @param b a {@link ffx.numerics.ComplexNumber} object.
      * @return a {@link ffx.numerics.ComplexNumber} object.
@@ -261,11 +255,11 @@ public class ComplexNumber {
 
     /**
      * <p>
-     * times_ip</p>
+     * timesIP</p>
      *
      * @param b a {@link ffx.numerics.ComplexNumber} object.
      */
-    public void times_ip(ComplexNumber b) {
+    public void timesIP(ComplexNumber b) {
         ComplexNumber a = this;
         double real = a.re * b.re - a.im * b.im;
         double imag = a.re * b.im + a.im * b.re;
@@ -273,10 +267,8 @@ public class ComplexNumber {
         a.im = imag;
     }
 
-    // return a new object whose value is (this * alpha)
     /**
-     * <p>
-     * times</p>
+     * Return a new object whose value is (this * alpha).
      *
      * @param alpha a double.
      * @return a {@link ffx.numerics.ComplexNumber} object.
@@ -287,20 +279,19 @@ public class ComplexNumber {
 
     /**
      * <p>
-     * times_ip</p>
+     * timesIP</p>
      *
      * @param alpha a double.
      */
-    public void times_ip(double alpha) {
+    public void timesIP(double alpha) {
         ComplexNumber a = this;
         a.re *= alpha;
         a.im *= alpha;
     }
 
-    // return a new Complex object whose value is the conjugate of this
     /**
-     * <p>
-     * conjugate</p>
+     *
+     * Return a new Complex object whose value is the conjugate of this.
      *
      * @return a {@link ffx.numerics.ComplexNumber} object.
      */
@@ -310,39 +301,36 @@ public class ComplexNumber {
 
     /**
      * <p>
-     * conjugate_ip</p>
+     * conjugateIP</p>
      */
-    public void conjugate_ip() {
+    public void conjugateIP() {
         this.im = -this.im;
     }
 
-    // return a new Complex object whose value is the reciprocal of this
     /**
-     * <p>
-     * reciprocal</p>
+     * Return a new Complex object whose value is the reciprocal of this.
      *
      * @return a {@link ffx.numerics.ComplexNumber} object.
      */
     public ComplexNumber reciprocal() {
         double scale = re * re + im * im;
-        return new ComplexNumber(re / scale, -im / scale);
+        double iscale = 1.0 / scale;
+        return new ComplexNumber(re * iscale, -im * iscale);
     }
 
     /**
      * <p>
-     * reciprocal_ip</p>
+     * reciprocalIP</p>
      */
-    public void reciprocal_ip() {
-        ComplexNumber a = this;
+    public void reciprocalIP() {
         double scale = re * re + im * im;
-        a.re = re / scale;
-        a.im = -im / scale;
+        double iscale = 1.0 / scale;
+        re *= iscale;
+        im *= -iscale;
     }
 
-    // return a / b
     /**
-     * <p>
-     * divides</p>
+     * Return a / b.
      *
      * @param b a {@link ffx.numerics.ComplexNumber} object.
      * @return a {@link ffx.numerics.ComplexNumber} object.
@@ -352,43 +340,36 @@ public class ComplexNumber {
         return a.times(b.reciprocal());
     }
 
-    // return a new Complex object whose value is the complex exponential of this
     /**
-     * <p>
-     * exp</p>
+     * Return a new Complex object whose value is the complex exponential of
+     * this.
      *
      * @return a {@link ffx.numerics.ComplexNumber} object.
      */
     public ComplexNumber exp() {
-        return new ComplexNumber(Math.exp(re) * Math.cos(im), Math.exp(re) * Math.sin(im));
+        return new ComplexNumber(FastMath.exp(re) * FastMath.cos(im), FastMath.exp(re) * FastMath.sin(im));
     }
 
-    // return a new Complex object whose value is the complex sine of this
     /**
-     * <p>
-     * sin</p>
+     * Return a new Complex object whose value is the complex sine of this.
      *
      * @return a {@link ffx.numerics.ComplexNumber} object.
      */
     public ComplexNumber sin() {
-        return new ComplexNumber(Math.sin(re) * cosh(im), Math.cos(re) * sinh(im));
+        return new ComplexNumber(FastMath.sin(re) * cosh(im), FastMath.cos(re) * sinh(im));
     }
 
-    // return a new Complex object whose value is the complex cosine of this
     /**
-     * <p>
-     * cos</p>
+     * Return a new Complex object whose value is the complex cosine of this.
      *
      * @return a {@link ffx.numerics.ComplexNumber} object.
      */
     public ComplexNumber cos() {
-        return new ComplexNumber(Math.cos(re) * cosh(im), -Math.sin(re) * sinh(im));
+        return new ComplexNumber(FastMath.cos(re) * cosh(im), -FastMath.sin(re) * sinh(im));
     }
 
-    // return a new Complex object whose value is the complex tangent of this
     /**
-     * <p>
-     * tan</p>
+     * Return a new Complex object whose value is the complex tangent of this.
      *
      * @return a {@link ffx.numerics.ComplexNumber} object.
      */

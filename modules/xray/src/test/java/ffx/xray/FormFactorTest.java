@@ -22,33 +22,23 @@
  */
 package ffx.xray;
 
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import ffx.crystal.HKL;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.AtomType;
 
 /**
- *
  * @author Timothy D. Fenn
  */
 public class FormFactorTest {
 
     private Atom carbon;
-    private XRayFormFactor carbonff;
-
-    public FormFactorTest() {
-    }
-
-    @BeforeClass
-    public static void setUpClass() throws Exception {
-    }
-
-    @AfterClass
-    public static void tearDownClass() throws Exception {
-    }
+    private XRayFormFactor carbonFormFactor;
 
     @Before
     public void setUp() {
@@ -62,38 +52,34 @@ public class FormFactorTest {
         carbon.setAtomType(atomType);
         carbon.setAltLoc('A');
         carbon.setAnisou(anisou);
-        carbonff = new XRayFormFactor(carbon, false);
-    }
-
-    @After
-    public void tearDown() {
+        carbonFormFactor = new XRayFormFactor(carbon, false);
     }
 
     @Test
     public void testCarbonFF() {
-        double ff[][] = new double[2][6];
+        double formFactor[][] = new double[2][6];
 
-        assertNotNull("carbon form factors should exist",
+        assertNotNull(" Carbon form factors should exist",
                 XRayFormFactor.getFormFactor("6"));
 
-        ff = XRayFormFactor.getFormFactor("6");
+        formFactor = XRayFormFactor.getFormFactor("6");
 
-        assertEquals("carbon form factors should be correct",
-                5, (int) ff[0][0]);
-        assertEquals("carbon form factors should be correct",
-                2.09921, ff[1][0], 0.0001);
-        assertEquals("carbon form factors should be correct",
-                13.18997, ff[2][0], 0.0001);
+        assertEquals(" Carbon form factors",
+                5, (int) formFactor[0][0]);
+        assertEquals(" Carbon form factors",
+                2.09921, formFactor[1][0], 0.0001);
+        assertEquals(" Carbon form factors",
+                13.18997, formFactor[2][0], 0.0001);
     }
 
     @Test
     public void testCarbonfrho() {
         HKL hkl = new HKL(1, 1, 1);
         assertEquals("carbon (1 1 1) structure factor should be correct",
-                2.3986e-26, carbonff.f(hkl), 1e-30);
+                2.3986e-26, carbonFormFactor.f(hkl), 1e-30);
 
         double xyz[] = {1.0, 1.0, 1.0};
         assertEquals("carbon (1 1 1) electron density should be correct",
-                0.081937, carbonff.rho(0.0, 1.0, xyz), 0.000001);
+                0.081937, carbonFormFactor.rho(0.0, 1.0, xyz), 0.000001);
     }
 }

@@ -30,6 +30,7 @@ import org.junit.runners.Suite.SuiteClasses;
  * NumericsTestSuite collects all Unit tests from the ffx.numerics package.
  */
 @RunWith(Suite.class)
-@SuiteClasses({ErfTest.class, TensorRecursionTest.class, UniformBSplineTest.class})
+@SuiteClasses({ErfTest.class, SquareRootTest.class,
+    TensorRecursionTest.class, UniformBSplineTest.class})
 public class NumericsTestSuite {
 }

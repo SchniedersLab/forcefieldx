@@ -30,6 +30,7 @@ import edu.rit.pj.IntegerForLoop;
  * @author Armin Avdic
  */
 public abstract class SliceLoop extends IntegerForLoop {
+
     /**
      * Constant <code>logger</code>
      */
@@ -38,19 +39,22 @@ public abstract class SliceLoop extends IntegerForLoop {
     int nAtoms;
     int nSymm;
     SliceRegion sliceRegion;
-    double sliceLoopTime;
 
     public SliceLoop(int nAtoms, int nSymm, SliceRegion sliceRegion) {
         this.nAtoms = nAtoms;
         this.nSymm = nSymm;
         this.sliceRegion = sliceRegion;
     }
-    
-    
-    @Override
-    public void start(){
-        sliceLoopTime -= System.nanoTime();
+
+    public void initTiming(String className, long time){
+        sliceRegion.sliceLoopTime[getThreadIndex()] -= time;
+        sliceRegion.className = className;
     }
+    
+    public void finishTime(long time){
+        sliceRegion.sliceLoopTime[getThreadIndex()] += time;
+    }
+    
     /**
      * <p>
      * setNsymm</p>
@@ -73,12 +77,13 @@ public abstract class SliceLoop extends IntegerForLoop {
             }
         }
     }
+    
+    public abstract void setWeight();
 
-    @Override
-    public void finish(){
-        sliceLoopTime += System.nanoTime();
-       // logger.info(String.format("Slice Loop Time: %7.4f (sec)",sliceLoopTime * toSeconds));
+    public void setWeightOnRegion(int [] currentWeight){
+        sliceRegion.weight = currentWeight;
     }
+    
     /**
      * Apply electron density "as normal", but check that the z index is greater
      * than or equal to lb and less than or equal to ub.

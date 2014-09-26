@@ -43,8 +43,8 @@ public class Real3DTest {
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{{"Test nx=32, ny=32, nz=32}", 32, 32, 32},
-                    {"Test nx=32, ny=45, nz=21}", 32, 45, 21}
-                });
+        {"Test nx=32, ny=45, nz=21}", 32, 45, 21}
+        });
     }
     private final String info;
     private final int nx;

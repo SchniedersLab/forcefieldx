@@ -10,13 +10,11 @@ import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
 
-import static java.lang.Math.exp;
-import static java.lang.Math.random;
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.random;
 
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.Random;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -24,8 +22,9 @@ import java.util.logging.Logger;
  * @author Jordan
  */
 public class Protonate {
+
     private static final Logger logger = Logger.getLogger(Protonate.class.getName());
-    
+
     private int stepCount; //the current step
     static int howOften; //how often an MC switch should be attempted
 
@@ -43,23 +42,22 @@ public class Protonate {
     private int numAccepted; //number of accepted MC moves
 
     private final double boltzmann = 0.0019872041; //kcal/mol/kelvin
-    private final double temperature = 298.15; 
-    private final double kT = boltzmann * temperature; 
+    private final double temperature = 298.15;
+    private final double kT = boltzmann * temperature;
 
     public enum titratableList {
 
         CYS, TYR, HIS, ASP, GLU, LYS, ARG;
 
     }; //list of residues that have titratable R groups
-    
 
     //initializes variables and searches species for titratable resiudes
     Protonate(MolecularAssembly molecularassembly, int howoften) {
-        
+
         //initialize stepcount and the number of accepted moves
         stepCount = 0;
         numAccepted = 0;
-        
+
         //set how often a MC switch should be attempted
         howOften = howoften;
 
@@ -90,7 +88,7 @@ public class Protonate {
                 return true;
             }
         }
-        
+
         return false;
     }
 
@@ -100,17 +98,16 @@ public class Protonate {
         }
         //determine which titratable residue should have a protonation state switch attempt
         int Random = randomGenerator.nextInt(numTitratable);
-        DOTHEMIKEYSWITCH(titratable.get(Random));
+        //DOTHEMIKEYSWITCH(titratable.get(Random));
 
-        
         //calculate the free energy to be used as the MC acceptance criteria
         double elec = potential.getTotalEnergy() - InitialEnergy;
-        
+
         double pKaref;
-        
+
         String name = (titratable.get(Random)).getName();
         switch (name) {
-            case "ARG":  
+            case "ARG":
                 pKaref = 12.48;
                 break;
             case "ASP":
@@ -133,12 +130,11 @@ public class Protonate {
                 break;
             default:
                 pKaref = 7.0;
-            
+
         }
-        
-        double deltaG = kT * (pH - pKaref ) * Math.log(10) + elec - elecref;
-        
-        
+
+        double deltaG = kT * (pH - pKaref) * Math.log(10) + elec - elecref;
+
         //accept the change if the energy change is favorable
         if (deltaG < 0) {
             numAccepted++;
@@ -154,8 +150,7 @@ public class Protonate {
             return;
         }
 
-        DOTHEMIKEYSWITCH(titratable.get(Random));
-
+        //DOTHEMIKEYSWITCH(titratable.get(Random));
     }
 
     //increments stepCount and checks if a monte carlo switch should be attempted
@@ -164,9 +159,9 @@ public class Protonate {
         return (stepCount % howOften == 0);
     }
 
-    //finds the 
-    public double getAcceptanceRate () {
-        double numTries = stepCount /howOften;
-        return numAccepted/numTries;
+    //finds the
+    public double getAcceptanceRate() {
+        double numTries = stepCount / howOften;
+        return numAccepted / numTries;
     }
 }

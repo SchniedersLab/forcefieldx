@@ -23,6 +23,9 @@
 package ffx.xray;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.logging.Logger;
 
 import static org.apache.commons.io.FilenameUtils.isExtension;
@@ -31,7 +34,8 @@ import static org.apache.commons.io.FilenameUtils.removeExtension;
 import ffx.potential.bonded.MolecularAssembly;
 
 /**
- * <p>RealSpaceFile class.</p>
+ * <p>
+ * RealSpaceFile class.</p>
  *
  * @author Timothy D. Fenn
  *
@@ -115,8 +119,16 @@ public class RealSpaceFile {
             logger.severe(" No input data was found.");
             realspacefilter = null;
         }
-
-        this.filename = tmp.getName();
+        String filenameHolder; // Compiler complains if I set this.filename directly.
+        try {
+            Path filepath = Paths.get(tmp.getCanonicalPath());
+            Path pwdPath = Paths.get(new File("").getCanonicalPath());
+            filenameHolder = pwdPath.relativize(filepath).toString();
+        } catch (IOException ex) {
+            logger.warning(" Relative path to provided data file could not be resolved: using map file name instead.");
+            filenameHolder = tmp.getName();
+        }
+        this.filename = filenameHolder;
         this.weight = weight;
     }
 

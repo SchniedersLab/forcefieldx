@@ -54,12 +54,12 @@ public class ErfTest {
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{{"Test 0.0", 0.0e0, 0.0e0},
-                    {"Test 0.1; below the first branch point.", 0.1e0, 0.1124629160182848984e0},
-                    {"Test 0.46875; at the first branch point.", 0.46875e0, 0.4926134732179379916e0},
-                    {"Test 1.0; between the branch points.", 1.0e0, 0.842700792949714869e0},
-                    {"Test 4.0; at the second branch point.", 4.0e0, 1.0e0 - 1.5417257900280018852e-8},
-                    {"Test 5.0; above the second branch point.", 5.0e0, 1.0e0 - 1.5374597944280348502e-12}
-                });
+        {"Test 0.1; below the first branch point.", 0.1e0, 0.1124629160182848984e0},
+        {"Test 0.46875; at the first branch point.", 0.46875e0, 0.4926134732179379916e0},
+        {"Test 1.0; between the branch points.", 1.0e0, 0.842700792949714869e0},
+        {"Test 4.0; at the second branch point.", 4.0e0, 1.0e0 - 1.5417257900280018852e-8},
+        {"Test 5.0; above the second branch point.", 5.0e0, 1.0e0 - 1.5374597944280348502e-12}
+        });
     }
     private final String info;
     private final double x;

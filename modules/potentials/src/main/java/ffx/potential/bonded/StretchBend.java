@@ -24,10 +24,10 @@ package ffx.potential.bonded;
 
 import java.util.logging.Logger;
 
-import static java.lang.Math.acos;
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-import static java.lang.Math.toDegrees;
+import static org.apache.commons.math3.util.FastMath.acos;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.toDegrees;
 
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.StretchBendType;

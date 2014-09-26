@@ -405,7 +405,8 @@ public final class Complex3DOpenCL implements Runnable {
     private static native int teardownNative();
 
     /**
-     * <p>main</p>
+     * <p>
+     * main</p>
      *
      * @param args an array of {@link java.lang.String} objects.
      * @throws java.lang.Exception if any.
@@ -435,7 +436,6 @@ public final class Complex3DOpenCL implements Runnable {
 
         final int dimCubed = dim * dim * dim;
 
-
         /**
          * Create an array to save the initial input and result.
          */
@@ -458,8 +458,8 @@ public final class Complex3DOpenCL implements Runnable {
         }
 
         Complex3D complex3D = new Complex3D(dim, dim, dim);
-        Complex3DParallel complex3DParallel =
-                new Complex3DParallel(dim, dim, dim, new ParallelTeam(), IntegerSchedule.fixed());
+        Complex3DParallel complex3DParallel
+                = new Complex3DParallel(dim, dim, dim, new ParallelTeam(), IntegerSchedule.fixed());
         complex3DParallel.setRecip(recip);
 
         Complex3DOpenCL complex3DOpenCL = new Complex3DOpenCL(dim, dim, dim);

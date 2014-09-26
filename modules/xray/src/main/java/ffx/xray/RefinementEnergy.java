@@ -23,10 +23,11 @@
 package ffx.xray;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.util.Arrays.fill;
 
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Thermostat;
@@ -225,7 +226,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
             gChemical[i] = new double[len];
         }
     }
-    
+
     public Potential getDataEnergy() {
         return dataEnergy;
     }
@@ -307,7 +308,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
     public double energyAndGradient(double[] x, double[] g) {
         double weight = data.getWeight();
         double e = 0.0;
-        Arrays.fill(g, 0.0);
+        fill(g, 0.0);
 
         if (thermostat != null) {
             ktscale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
@@ -362,7 +363,6 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
                  * normchem + " xray: " + normxray + " weight wa: " + normchem /
                  * normxray);
                  */
-
                 // Add the chemical and X-ray gradients.
                 for (int i = 0; i < nxyz; i++) {
                     g[i] += weight * gXray[i];
@@ -555,8 +555,8 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
 
     // this should probably be part of the potential class
     /**
-     * <p>Setter for the field
-     * <code>thermostat</code>.</p>
+     * <p>
+     * Setter for the field <code>thermostat</code>.</p>
      *
      * @param thermostat a {@link ffx.algorithms.Thermostat} object.
      */
@@ -566,8 +566,8 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
 
     // this should probably be part of the potential class
     /**
-     * <p>Getter for the field
-     * <code>thermostat</code>.</p>
+     * <p>
+     * Getter for the field <code>thermostat</code>.</p>
      *
      * @return a {@link ffx.algorithms.Thermostat} object.
      */

@@ -22,21 +22,31 @@
  */
 package ffx.xray;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
-import static java.lang.Math.*;
+import static java.util.Arrays.fill;
 
-import static org.apache.commons.math.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.pow;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
-import ffx.numerics.VectorMath;
 import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
-import static ffx.numerics.VectorMath.*;
+import static ffx.numerics.VectorMath.b2u;
+import static ffx.numerics.VectorMath.determinant3;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.mat3Inverse;
+import static ffx.numerics.VectorMath.mat3Mat3;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalarMat3Mat3;
+import static ffx.numerics.VectorMath.u2b;
+import static ffx.numerics.VectorMath.vec3Mat3;
 
 /**
  * This implementation uses the coefficients from International Tables, Vol. C,
@@ -369,12 +379,12 @@ public final class NeutronFormFactor implements FormFactor {
      * {@inheritDoc}
      */
     @Override
-    public void rho_grad(double xyz[], double dfc, RefinementMode refinementmode) {
+    public void rhoGrad(double xyz[], double dfc, RefinementMode refinementmode) {
         diff(this.xyz, xyz, dxyz);
         double r = r(dxyz);
         double r2 = r * r;
-        Arrays.fill(gradp, 0.0);
-        Arrays.fill(gradu, 0.0);
+        fill(gradp, 0.0);
+        fill(gradu, 0.0);
 
         if (r > atom.getFormFactorWidth()) {
             return;
@@ -409,7 +419,7 @@ public final class NeutronFormFactor implements FormFactor {
         double aex = ainv[0] * exp(-0.5 * Crystal.quad_form(dxyz, uinv[0]));
 
         if (refinexyz) {
-            vec3mat3(dxyz, uinv[0], resv);
+            vec3Mat3(dxyz, uinv[0], resv);
             gradp[0] += aex * dot(resv, vx);
             gradp[1] += aex * dot(resv, vy);
             gradp[2] += aex * dot(resv, vz);
@@ -423,18 +433,18 @@ public final class NeutronFormFactor implements FormFactor {
             gradp[4] += aex * 0.5 * (r2 * binv[0] * binv[0] - 3.0 * binv[0]);
 
             if (refineanisou) {
-                scalarmat3mat3(-1.0, uinv[0], u11, resm);
-                mat3mat3(resm, uinv[0], jmat[0]);
-                scalarmat3mat3(-1.0, uinv[0], u22, resm);
-                mat3mat3(resm, uinv[0], jmat[1]);
-                scalarmat3mat3(-1.0, uinv[0], u33, resm);
-                mat3mat3(resm, uinv[0], jmat[2]);
-                scalarmat3mat3(-1.0, uinv[0], u12, resm);
-                mat3mat3(resm, uinv[0], jmat[3]);
-                scalarmat3mat3(-1.0, uinv[0], u13, resm);
-                mat3mat3(resm, uinv[0], jmat[4]);
-                scalarmat3mat3(-1.0, uinv[0], u23, resm);
-                mat3mat3(resm, uinv[0], jmat[5]);
+                scalarMat3Mat3(-1.0, uinv[0], u11, resm);
+                mat3Mat3(resm, uinv[0], jmat[0]);
+                scalarMat3Mat3(-1.0, uinv[0], u22, resm);
+                mat3Mat3(resm, uinv[0], jmat[1]);
+                scalarMat3Mat3(-1.0, uinv[0], u33, resm);
+                mat3Mat3(resm, uinv[0], jmat[2]);
+                scalarMat3Mat3(-1.0, uinv[0], u12, resm);
+                mat3Mat3(resm, uinv[0], jmat[3]);
+                scalarMat3Mat3(-1.0, uinv[0], u13, resm);
+                mat3Mat3(resm, uinv[0], jmat[4]);
+                scalarMat3Mat3(-1.0, uinv[0], u23, resm);
+                mat3Mat3(resm, uinv[0], jmat[5]);
 
                 gradu[0] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[0]) - uinv[0][0][0]);
                 gradu[1] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[1]) - uinv[0][1][1]);
@@ -446,7 +456,6 @@ public final class NeutronFormFactor implements FormFactor {
         }
 
         // double rho = occ * twopi32 * gradp[3];
-
         // x, y, z
         if (refinexyz) {
             atom.addToXYZGradient(
@@ -548,7 +557,7 @@ public final class NeutronFormFactor implements FormFactor {
         u[0][0][2] = u[0][2][0] = uaniso[4];
         u[0][1][2] = u[0][2][1] = uaniso[5];
 
-        mat3inverse(u[0], uinv[0]);
+        mat3Inverse(u[0], uinv[0]);
 
         double det = determinant3(u[0]);
         ainv[0] = a[0] / sqrt(det);

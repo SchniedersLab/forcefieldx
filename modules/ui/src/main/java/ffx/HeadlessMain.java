@@ -82,7 +82,7 @@ public class HeadlessMain {
                     try {
                         commandLineFile = new File(
                                 FFXClassLoader.copyInputStreamToTmpFile(
-                                embeddedScript.openStream(), commandLineFile.getName(), ".ffx"));
+                                        embeddedScript.openStream(), commandLineFile.getName(), ".ffx"));
                     } catch (Exception e) {
                         logger.warning("Exception extracting embedded script "
                                 + embeddedScript.toString() + "\n" + e.toString());
@@ -132,8 +132,7 @@ public class HeadlessMain {
     public MainPanel mainPanel;
 
     /**
-     * Constant
-     * <code>stopWatch</code>
+     * Constant <code>stopWatch</code>
      */
     public static StopWatch stopWatch = new StopWatch();
 }

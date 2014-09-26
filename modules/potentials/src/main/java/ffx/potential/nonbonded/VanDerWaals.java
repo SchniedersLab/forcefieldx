@@ -30,13 +30,14 @@ import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.lang.Math.PI;
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-import static java.lang.Math.pow;
-import static java.lang.Math.sqrt;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
+
+import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
@@ -240,6 +241,9 @@ public class VanDerWaals implements MaskingInterface,
     private final long vdwTime[];
     private final long reductionTime[];
     private long initializationTotal, vdwTotal, reductionTotal;
+
+    private final MultiplicativeSwitch multiplicativeSwitch;
+
     private VDW_FORM vdwForm = VDW_FORM.BUFFERED_14_7;
 
     /**
@@ -268,23 +272,23 @@ public class VanDerWaals implements MaskingInterface,
          */
         switch (vdwForm) {
             case LENNARD_JONES_6_12:
-                repulsivePower = 12.0;
-                dispersivePower = 6.0;
+                repulsivePower = 12;
+                dispersivePower = 6;
                 this.delta = 0.0;
                 this.gamma = 0.0;
                 break;
             case BUFFERED_14_7:
             default:
-                repulsivePower = 14.0;
-                dispersivePower = 7.0;
+                repulsivePower = 14;
+                dispersivePower = 7;
                 this.delta = 0.07;
                 this.gamma = 0.12;
                 break;
         }
 
         repDispPower = repulsivePower - dispersivePower;
-        dispersivePower1 = dispersivePower - 1.0;
-        repDispPower1 = repDispPower - 1.0;
+        dispersivePower1 = dispersivePower - 1;
+        repDispPower1 = repDispPower - 1;
         delta1 = 1.0 + delta;
         t1n = pow(delta1, dispersivePower);
         gamma1 = 1.0 + gamma;
@@ -345,9 +349,9 @@ public class VanDerWaals implements MaskingInterface,
                         break;
                 }
 
-                radEps[i][j * 2 + RADMIN] = radmin;
+                radEps[i][j * 2 + RADMIN] = 1.0 / radmin;
                 radEps[i][j * 2 + EPS] = eps;
-                radEps[j][i * 2 + RADMIN] = radmin;
+                radEps[j][i * 2 + RADMIN] = 1.0 / radmin;
                 radEps[j][i * 2 + EPS] = eps;
             }
         }
@@ -406,17 +410,7 @@ public class VanDerWaals implements MaskingInterface,
         buff = 2.0;
         cut2 = cut * cut;
         off2 = off * off;
-        double denom = pow(off - cut, 5.0);
-        c0 = off * off2 * (off2 - 5.0 * off * cut + 10.0 * cut2) / denom;
-        c1 = -30.0 * off2 * cut2 / denom;
-        c2 = 30.0 * (off2 * cut + off * cut2) / denom;
-        c3 = -10.0 * (off2 + 4.0 * off * cut + cut2) / denom;
-        c4 = 15.0 * (off + cut) / denom;
-        c5 = -6.0 / denom;
-        twoC2 = 2.0 * c2;
-        threeC3 = 3.0 * c3;
-        fourC4 = 4.0 * c4;
-        fiveC5 = 5.0 * c5;
+        multiplicativeSwitch = new MultiplicativeSwitch(off, cut);
 
         /**
          * Parallel neighbor list builder.
@@ -486,10 +480,10 @@ public class VanDerWaals implements MaskingInterface,
         /**
          * Initialize all atoms to be used in the energy.
          */
-        Arrays.fill(use, true);
-        Arrays.fill(isSoft, false);
-        Arrays.fill(softCore[HARD], false);
-        Arrays.fill(softCore[SOFT], false);
+        fill(use, true);
+        fill(isSoft, false);
+        fill(softCore[HARD], false);
+        fill(softCore[SOFT], false);
         softCoreInit = false;
         molecule = molecularAssembly.getMoleculeNumbers();
 
@@ -638,13 +632,13 @@ public class VanDerWaals implements MaskingInterface,
         for (int i = 0; i < maxClass; i++) {
             for (int j = 0; j < maxClass; j++) {
                 int j2 = j * 2;
-                double rv = radEps[i][j2 + RADMIN];
+                double irv = radEps[i][j2 + RADMIN];
                 double ev = radEps[i][j2 + EPS];
                 double sume = 0.0;
                 for (int k = 0; k <= n; k++) {
                     double r = cut + k * delR;
                     double r2 = r * r;
-                    final double rho = r / rv;
+                    final double rho = r * irv;
                     final double rho3 = rho * rho * rho;
                     final double rho7 = rho3 * rho3 * rho;
                     final double rhod = rho + delta;
@@ -663,7 +657,7 @@ public class VanDerWaals implements MaskingInterface,
                         double r3 = r * r2;
                         double r4 = r2 * r2;
                         double r5 = r2 * r3;
-                        taper = c5 * r5 + c4 * r4 + c3 * r3 + c2 * r2 + c1 * r + c0;
+                        taper = multiplicativeSwitch.taper(r, r2, r3, r4, r5);
                         taper = 1.0 - taper;
                     }
                     double jacobian = 4.0 * PI * r2;
@@ -821,7 +815,7 @@ public class VanDerWaals implements MaskingInterface,
         logger.info(String.format("%s %6d-%s %6d-%s %10.4f  %10.4f  %10.4f",
                 "VDW", atoms[i].xyzIndex, atoms[i].getAtomType().name,
                 atoms[k].xyzIndex, atoms[k].getAtomType().name,
-                radEps[classi][classk * 2 + RADMIN], r, eij));
+                1.0 / radEps[classi][classk * 2 + RADMIN], r, eij));
     }
 
     /**
@@ -1410,11 +1404,9 @@ public class VanDerWaals implements MaskingInterface,
                         dx_local[2] = zi - zk;
                         final double r2 = crystal.image(dx_local);
                         int a2 = atomClass[k] * 2;
-                        final double rv = radEpsi[a2 + RADMIN];
-                        if (r2 <= off2 && mask[k] > 0 && rv > 0) {
+                        final double irv = radEpsi[a2 + RADMIN];
+                        if (r2 <= off2 && mask[k] > 0 && irv > 0) {
                             final double r = sqrt(r2);
-                            final double r3 = r2 * r;
-                            final double r4 = r2 * r2;
                             double alpha = 0.0;
                             double lambda5 = 1.0;
                             boolean soft = softCorei[k] || (intermolecularSoftcore && (moleculei != molecule[k]));
@@ -1424,7 +1416,7 @@ public class VanDerWaals implements MaskingInterface,
                             }
                             final double ev = mask[k] * radEpsi[a2 + EPS];
                             final double eps_lambda = ev * lambda5;
-                            final double rho = r / rv;
+                            final double rho = r * irv;
                             final double rhoDisp1 = pow(rho, dispersivePower1);
                             final double rhoDisp = rhoDisp1 * rho;
                             final double rhoDelta1 = pow(rho + delta, repDispPower1);
@@ -1445,9 +1437,11 @@ public class VanDerWaals implements MaskingInterface,
                             double taper = 1.0;
                             double dtaper = 0.0;
                             if (r2 > cut2) {
+                                final double r3 = r2 * r;
+                                final double r4 = r2 * r2;
                                 final double r5 = r2 * r3;
-                                taper = c5 * r5 + c4 * r4 + c3 * r3 + c2 * r2 + c1 * r + c0;
-                                dtaper = fiveC5 * r4 + fourC4 * r3 + threeC3 * r2 + twoC2 * r + c1;
+                                taper = multiplicativeSwitch.taper(r, r2, r3, r4, r5);
+                                dtaper = multiplicativeSwitch.dtaper(r, r2, r3, r4);
                             }
                             e += eij * taper;
                             count++;
@@ -1457,9 +1451,8 @@ public class VanDerWaals implements MaskingInterface,
                             final int redk = reductionIndex[k];
                             final double red = reductionValue[k];
                             final double redkv = 1.0 - red;
-                            final double drho_dr = 1.0 / rv;
-                            final double dt1d_dr = repDispPower * rhoDelta1 * drho_dr;
-                            final double dt2d_dr = dispersivePower * rhoDisp1 * drho_dr;
+                            final double dt1d_dr = repDispPower * rhoDelta1 * irv;
+                            final double dt2d_dr = dispersivePower * rhoDisp1 * irv;
                             final double dt1_dr = t1 * dt1d_dr * t1d;
                             final double dt2_dr = t2a * dt2d_dr * t2d;
                             final double dedr = -eps_lambda * (dt1_dr * t2 + t1 * dt2_dr);
@@ -1602,15 +1595,13 @@ public class VanDerWaals implements MaskingInterface,
                             dx_local[2] = zi - zk;
                             final double r2 = crystal.image(dx_local);
                             int a2 = atomClass[k] * 2;
-                            final double rv = radEpsi[a2 + RADMIN];
-                            if (r2 <= off2 && rv > 0) {
+                            final double irv = radEpsi[a2 + RADMIN];
+                            if (r2 <= off2 && irv > 0) {
                                 double selfScale = 1.0;
                                 if (i == k) {
                                     selfScale = 0.5;
                                 }
                                 final double r = sqrt(r2);
-                                final double r3 = r2 * r;
-                                final double r4 = r2 * r2;
                                 double alpha = 0.0;
                                 double lambda5 = 1.0;
                                 boolean soft = (isSoft[i] || softCorei[k]);
@@ -1618,10 +1609,9 @@ public class VanDerWaals implements MaskingInterface,
                                     alpha = sc1;
                                     lambda5 = sc2;
                                 }
-
                                 final double ev = radEpsi[a2 + EPS];
                                 final double eps_lambda = ev * lambda5;
-                                final double rho = r / rv;
+                                final double rho = r * irv;
                                 final double rhoDisp1 = pow(rho, dispersivePower1);
                                 final double rhoDisp = rhoDisp1 * rho;
                                 final double rhoDelta1 = pow(rho + delta, repDispPower1);
@@ -1642,9 +1632,11 @@ public class VanDerWaals implements MaskingInterface,
                                 double taper = 1.0;
                                 double dtaper = 0.0;
                                 if (r2 > cut2) {
+                                    final double r3 = r2 * r;
+                                    final double r4 = r2 * r2;
                                     final double r5 = r2 * r3;
-                                    taper = c5 * r5 + c4 * r4 + c3 * r3 + c2 * r2 + c1 * r + c0;
-                                    dtaper = fiveC5 * r4 + fourC4 * r3 + threeC3 * r2 + twoC2 * r + c1;
+                                    taper = multiplicativeSwitch.taper(r, r2, r3, r4, r5);
+                                    dtaper = multiplicativeSwitch.dtaper(r, r2, r3, r4);
                                 }
                                 e += selfScale * eij * taper;
                                 count++;
@@ -1654,9 +1646,8 @@ public class VanDerWaals implements MaskingInterface,
                                 final int redk = reductionIndex[k];
                                 final double red = reductionValue[k];
                                 final double redkv = 1.0 - red;
-                                final double drho_dr = 1.0 / rv;
-                                final double dt1d_dr = repDispPower * rhoDelta1 * drho_dr;
-                                final double dt2d_dr = dispersivePower * rhoDisp1 * drho_dr;
+                                final double dt1d_dr = repDispPower * rhoDelta1 * irv;
+                                final double dt2d_dr = dispersivePower * rhoDisp1 * irv;
                                 final double dt1_dr = t1 * dt1d_dr * t1d;
                                 final double dt2_dr = t2a * dt2d_dr * t2d;
                                 double dedr = -eps_lambda * (dt1_dr * t2 + t1 * dt2_dr);
@@ -1699,21 +1690,11 @@ public class VanDerWaals implements MaskingInterface,
                                     dEdL += selfScale * dedl * taper;
                                     double t1d2 = -dsc1dL * t1d * t1d;
                                     double t2d2 = -dsc1dL * t2d * t2d;
-                                    double d2t1 = -dt1 * t1d * dsc1dL
-                                            - t1 * t1d * d2sc1dL2
-                                            - t1 * t1d2 * dsc1dL;
-                                    double d2t2 = -dt2 * t2d * dsc1dL
-                                            - t2a * t2d * d2sc1dL2
-                                            - t2a * t2d2 * dsc1dL;
-                                    double df1 = d2sc2dL2 * t1 * t2
-                                            + dsc2dL * dt1 * t2
-                                            + dsc2dL * t1 * dt2;
-                                    double df2 = dsc2dL * dt1 * t2
-                                            + sc2 * d2t1 * t2
-                                            + sc2 * dt1 * dt2;
-                                    double df3 = dsc2dL * t1 * dt2
-                                            + sc2 * dt1 * dt2
-                                            + sc2 * t1 * d2t2;
+                                    double d2t1 = -dt1 * t1d * dsc1dL - t1 * t1d * d2sc1dL2 - t1 * t1d2 * dsc1dL;
+                                    double d2t2 = -dt2 * t2d * dsc1dL - t2a * t2d * d2sc1dL2 - t2a * t2d2 * dsc1dL;
+                                    double df1 = d2sc2dL2 * t1 * t2 + dsc2dL * dt1 * t2 + dsc2dL * t1 * dt2;
+                                    double df2 = dsc2dL * dt1 * t2 + sc2 * d2t1 * t2 + sc2 * dt1 * dt2;
+                                    double df3 = dsc2dL * t1 * dt2 + sc2 * dt1 * dt2 + sc2 * t1 * d2t2;
                                     double de2dl2 = ev * (df1 + df2 + df3);
                                     d2EdL2 += selfScale * de2dl2 * taper;
                                     double t11 = -dsc2dL * t2 * dt1_dr;
@@ -1847,22 +1828,7 @@ public class VanDerWaals implements MaskingInterface,
      */
     private final double off2;
     private final double buff;
-    /**
-     * The 6 coefficients of the multiplicative polynomial switch are unique
-     * given the distances "off" and "cut". They are found by solving a system
-     * of 6 equations, which define the boundary conditions of the switch.
-     * f(cut) = 1 f'(cut) = f"(cut) = 0 f(off) = f'(off) = f"(off) = 0
-     */
-    private final double c0;
-    private final double c1;
-    private final double c2;
-    private final double c3;
-    private final double c4;
-    private final double c5;
-    private final double twoC2;
-    private final double threeC3;
-    private final double fourC4;
-    private final double fiveC5;
+
     /**
      * *************************************************************************
      * Buffered-14-7 constants.
@@ -1878,10 +1844,68 @@ public class VanDerWaals implements MaskingInterface,
     private final double delta;
     private final double delta1;
     private final double t1n;
-    private final double repulsivePower;
-    private final double dispersivePower;
-    private final double dispersivePower1;
-    private final double repDispPower;
-    private final double repDispPower1;
+    private final int repulsivePower;
+    private final int dispersivePower;
+    private final int dispersivePower1;
+    private final int repDispPower;
+    private final int repDispPower1;
+
+    /**
+     * The 6 coefficients of the multiplicative polynomial switch are unique
+     * given the distances "off" and "cut". They are found by solving a system
+     * of 6 equations, which define the boundary conditions of the switch.
+     * <br>
+     * f(cut) = 1
+     * <br>
+     * f'(cut) = f"(cut) = 0
+     * <br>
+     * f(off) = f'(off) = f"(off) = 0
+     */
+    private class MultiplicativeSwitch {
+
+        protected final double off;
+        protected final double off2;
+        protected final double cut;
+        protected final double cut2;
+
+        protected final double c0;
+        protected final double c1;
+        protected final double c2;
+        protected final double c3;
+        protected final double c4;
+        protected final double c5;
+        protected final double twoC2;
+        protected final double threeC3;
+        protected final double fourC4;
+        protected final double fiveC5;
+
+        public MultiplicativeSwitch(double off, double cut) {
+            this.off = off;
+            this.off2 = off * off;
+            this.cut = cut;
+            this.cut2 = cut * cut;
+
+            double denom = pow(off - cut, 5.0);
+            c0 = off * off2 * (off2 - 5.0 * off * cut + 10.0 * cut2) / denom;
+            c1 = -30.0 * off2 * cut2 / denom;
+            c2 = 30.0 * (off2 * cut + off * cut2) / denom;
+            c3 = -10.0 * (off2 + 4.0 * off * cut + cut2) / denom;
+            c4 = 15.0 * (off + cut) / denom;
+            c5 = -6.0 / denom;
+            twoC2 = 2.0 * c2;
+            threeC3 = 3.0 * c3;
+            fourC4 = 4.0 * c4;
+            fiveC5 = 5.0 * c5;
+        }
+
+        public double taper(double r, double r2, double r3, double r4, double r5) {
+            return c5 * r5 + c4 * r4 + c3 * r3 + c2 * r2 + c1 * r + c0;
+        }
+
+        public double dtaper(double r, double r2, double r3, double r4) {
+            return fiveC5 * r4 + fourC4 * r3 + threeC3 * r2 + twoC2 * r + c1;
+        }
+
+    }
 
 }

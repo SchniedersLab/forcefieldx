@@ -41,7 +41,8 @@ public class PickRotateBehavior extends PickMouseBehavior implements
     private TransformGroup currentTG;
 
     /**
-     * <p>Constructor for PickRotateBehavior.</p>
+     * <p>
+     * Constructor for PickRotateBehavior.</p>
      *
      * @param bg a {@link javax.media.j3d.BranchGroup} object.
      * @param canvas a {@link javax.media.j3d.Canvas3D} object.
@@ -65,7 +66,8 @@ public class PickRotateBehavior extends PickMouseBehavior implements
      * Return the pickMode component of this PickRotateBehavior.
      */
     /**
-     * <p>getPickMode</p>
+     * <p>
+     * getPickMode</p>
      *
      * @return a int.
      */
@@ -78,7 +80,8 @@ public class PickRotateBehavior extends PickMouseBehavior implements
      * the passed pickMode. @param pickMode the pickMode to be copied.
      */
     /**
-     * <p>setPickMode</p>
+     * <p>
+     * setPickMode</p>
      *
      * @param pickMode a int.
      */
@@ -91,7 +94,8 @@ public class PickRotateBehavior extends PickMouseBehavior implements
      * object moves
      */
     /**
-     * <p>setupCallback</p>
+     * <p>
+     * setupCallback</p>
      *
      * @param c a {@link ffx.ui.behaviors.PickingCallback} object.
      */

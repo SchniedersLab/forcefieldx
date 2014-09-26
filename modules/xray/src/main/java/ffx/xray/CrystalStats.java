@@ -24,8 +24,8 @@ package ffx.xray;
 
 import java.util.logging.Logger;
 
-import static java.lang.Math.abs;
-import static java.lang.Math.exp;
+import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.exp;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
@@ -85,7 +85,8 @@ public class CrystalStats {
     }
 
     /**
-     * <p>getPDBHeaderString</p>
+     * <p>
+     * getPDBHeaderString</p>
      *
      * @return a {@link java.lang.String} object.
      */
@@ -149,21 +150,21 @@ public class CrystalStats {
         if (refinementdata.crs_fs.solventModel != SolventModel.NONE) {
             sb.append("REMARK   3  BULK SOLVENT MODELLING\n");
             switch (refinementdata.crs_fs.solventModel) {
-                case (SolventModel.BINARY):
+                case BINARY:
                     sb.append("REMARK   3   METHOD USED: BINARY MASK\n");
                     sb.append(String.format("REMARK   3    PROBE RADIUS  : %g\n",
                             refinementdata.solvent_a));
                     sb.append(String.format("REMARK   3    SHRINK RADIUS : %g\n",
                             refinementdata.solvent_b));
                     break;
-                case (SolventModel.POLYNOMIAL):
+                case POLYNOMIAL:
                     sb.append("REMARK   3   METHOD USED: POLYNOMIAL SWITCH\n");
                     sb.append(String.format("REMARK   3    ATOMIC RADIUS BUFFER : %g\n",
                             refinementdata.solvent_a));
                     sb.append(String.format("REMARK   3    SWITCH RADIUS        : %g\n",
                             refinementdata.solvent_b));
                     break;
-                case (SolventModel.GAUSSIAN):
+                case GAUSSIAN:
                     sb.append("REMARK   3   METHOD USED: GAUSSIAN\n");
                     sb.append(String.format("REMARK   3    ATOMIC RADIUS BUFFER : %g\n",
                             refinementdata.solvent_a));
@@ -362,7 +363,7 @@ public class CrystalStats {
         int nhkli = 0;
         int nhklo = refinementdata.n;
         double rfreefrac = getRFree() * 0.01;
-        double res = reflectionlist.resolution.res_limit();
+        double res = reflectionlist.resolution.resolutionLimit();
         for (HKL ih : reflectionlist.hkllist) {
             int i = ih.index();
 
@@ -557,7 +558,7 @@ public class CrystalStats {
 
         StringBuilder sb = new StringBuilder(
                 String.format("\n %15s | %7s | %7s | %7s | %7s | %7s | %7s\n",
-                "Res. Range", "  R", "Rfree", "s", "w(E)", "w(F)", "FOM"));
+                        "Res. Range", "  R", "Rfree", "s", "w(E)", "w(F)", "FOM"));
         for (int i = 0; i < n; i++) {
             sb.append(String.format(" %7.3f %7.3f | ", res[i][0], res[i][1]));
             sb.append(String.format("%7.2f | %7.2f | %7.4f | %7.4f | %7.2f | %7.4f\n",
@@ -615,7 +616,7 @@ public class CrystalStats {
 
         StringBuilder sb = new StringBuilder(
                 String.format(" Fc to Fo scale: %4.2f\n",
-                exp(0.25 * refinementdata.model_k)));
+                        exp(0.25 * refinementdata.model_k)));
         sb.append(" Fc to Fo spline scale: ");
         for (int i = 0; i < n; i++) {
             sb.append(String.format("%4.2f ", scale[i]));
@@ -635,19 +636,19 @@ public class CrystalStats {
                 refinementdata.model_b[2]));
         if (refinementdata.crs_fs.solventModel != SolventModel.NONE) {
             switch (refinementdata.crs_fs.solventModel) {
-                case (SolventModel.BINARY):
+                case BINARY:
                     sb.append(" Bulk solvent model: Binary mask\n");
                     sb.append(String.format("  Probe radius: %8.3f\n  Shrink radius: %8.3f\n",
                             refinementdata.solvent_a,
                             refinementdata.solvent_b));
                     break;
-                case (SolventModel.POLYNOMIAL):
+                case POLYNOMIAL:
                     sb.append(" Bulk solvent model: Polynomial switch\n");
                     sb.append(String.format("  a:     %8.3f\n  w:     %8.3f\n",
                             refinementdata.solvent_a,
                             refinementdata.solvent_b));
                     break;
-                case (SolventModel.GAUSSIAN):
+                case GAUSSIAN:
                     sb.append(" Bulk solvent model: Gaussian\n");
                     sb.append(String.format("  A: %8.3f\n  sd scale: %8.3f\n",
                             refinementdata.solvent_a,

@@ -22,14 +22,16 @@
  */
 package ffx.potential.nonbonded;
 
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.lang.Math.floor;
-import static java.lang.Math.min;
-import static java.lang.Math.sqrt;
 import static java.lang.String.format;
+import static java.util.Arrays.copyOf;
+import static java.util.Arrays.fill;
+
+import static org.apache.commons.math3.util.FastMath.floor;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
@@ -339,7 +341,7 @@ public class NeighborList extends ParallelRegion {
             cellB = new int[nAtoms];
             cellC = new int[nAtoms];
             frac = new double[3 * nAtoms];
-            previous = new double[3* nAtoms];
+            previous = new double[3 * nAtoms];
             listCount = new int[nAtoms];
             pairwiseSchedule = new PairwiseSchedule(threadCount, nAtoms, ranges);
             for (int i = 0; i < threadCount; i++) {
@@ -452,7 +454,7 @@ public class NeighborList extends ParallelRegion {
         initNeighborList(false);
     }
 
-        /**
+    /**
      * The NeighborList will be re-configured, if necessary, for the supplied
      * atom list.
      *
@@ -574,18 +576,18 @@ public class NeighborList extends ParallelRegion {
                 // Move the atom into the range 0.0 <= x < 1.0
                 /*
                  * Format for potential replacement code.
-                if (xu < 0.0) {
-                    int belowZero = (int) (xu / 1.0);
-                    belowZero = 1 + (-1 * belowZero);
-                    xu = xu + belowZero;
-                } else {
-                    xu = xu % 1.0;
-                }
-                OR
-                xu = moveBetweenZeroAndOne(xu);
-                yu = moveBetweenZeroAndOne(yu);
-                zu = moveBetweenZeroAndOne(zu);
-                */
+                 if (xu < 0.0) {
+                 int belowZero = (int) (xu / 1.0);
+                 belowZero = 1 + (-1 * belowZero);
+                 xu = xu + belowZero;
+                 } else {
+                 xu = xu % 1.0;
+                 }
+                 OR
+                 xu = moveBetweenZeroAndOne(xu);
+                 yu = moveBetweenZeroAndOne(yu);
+                 zu = moveBetweenZeroAndOne(zu);
+                 */
                 while (xu < 0.0) {
                     xu += 1.0;
                 }
@@ -772,7 +774,7 @@ public class NeighborList extends ParallelRegion {
 
         public final void init() {
             mask = new double[nAtoms];
-            Arrays.fill(mask, 1.0);
+            fill(mask, 1.0);
         }
 
         @Override
@@ -986,7 +988,7 @@ public class NeighborList extends ParallelRegion {
                             pairs[n++] = aj;
                         } catch (Exception e) {
                             n = pairs.length;
-                            pairs = java.util.Arrays.copyOf(pairs, n + 100);
+                            pairs = copyOf(pairs, n + 100);
                             pairs[n++] = aj;
                         }
                     }
@@ -1000,23 +1002,25 @@ public class NeighborList extends ParallelRegion {
             }
         }
     }
+
     /**
-     * Moves an array of doubles to be within 0.0 and 1.0 by addition or 
+     * Moves an array of doubles to be within 0.0 and 1.0 by addition or
      * subtraction of a multiple of 1.0. Typical use is moving an atom placed
      * outside crystal boundaries from the symmetry mate back into the crystal.
-     * 
+     *
      * @param valuesToMove Doubles to be moved between 0 and 1.
      */
     public static void moveValuesBetweenZeroAndOne(double[] valuesToMove) {
         for (int i = 0; i < valuesToMove.length; i++) {
-           valuesToMove[i] = moveBetweenZeroAndOne(valuesToMove[i]);
+            valuesToMove[i] = moveBetweenZeroAndOne(valuesToMove[i]);
         }
     }
+
     /**
      * Moves a double to be within 0.0 and 1.0 by addition or subtraction of a
-     * multiple of 1.0. Typical use is moving an atom place outside crystal 
+     * multiple of 1.0. Typical use is moving an atom place outside crystal
      * boundaries from the symmetry mate back into the crystal.
-     * 
+     *
      * @param value Double to be moved between 0 and 1.
      * @return Shifted double.
      */

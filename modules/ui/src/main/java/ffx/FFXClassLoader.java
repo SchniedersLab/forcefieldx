@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+
 /**
  * Class loader able to load classes and DLLs with a higher priority from a
  * given set of JARs. Its bytecode is Java 1.1 compatible to be loadable by old
@@ -68,12 +69,10 @@ public class FFXClassLoader extends URLClassLoader {
         "org.apache.commons.io",
         "org.apache.commons.lang",
         "org.apache.commons.lang3",
-        "org.apache.commons.math",
         "org.apache.commons.math3",
         "org.jogamp",
         "edu.rit.pj",
-        "jcuda",
-        "com.amd.aparapi"};
+        "jcuda"};
     static final List<String> FFX_FILES;
     private static String gluegen = null;
     private static String jogl = null;
@@ -100,14 +99,12 @@ public class FFXClassLoader extends URLClassLoader {
             "jcuda/jcuda-all.jar",
             // Parallel Java
             "edu.rit.pj/pj.jar",
-            // Aparapi
-            "com.amd.aparapi/aparapi.jar",
-            // Java3D 1.6.1 (depends on JOGL v. 2.1.4)
+            // Java3D 1.6.2 (depends on JOGL v. 2.2.0)
             "java3d/j3dcore.jar",
             "java3d/j3dutils.jar",
             "java3d/j3dvrml.jar",
             "java3d/vecmath.jar",
-            // JOGAMP GLUEGEN, JOGL and JOCL v. 2.1.4
+            // JOGAMP GLUEGEN, JOGL and JOCL v. 2.2.0
             "org.jogamp.gluegen/gluegen-rt.jar",
             "org.jogamp.gluegen/gluegen-rt-main.jar",
             "org.jogamp.jogl/jogl-all.jar",
@@ -124,16 +121,12 @@ public class FFXClassLoader extends URLClassLoader {
             "commons-lang/commons-lang.jar",
             "commons-lang/commons-lang3.jar",
             "commons-logging/commons-logging.jar",
-            "commons-math/commons-math.jar",
             "commons-math/commons-math3.jar",
             // Mac OS X Extensions
             "macosx/AppleJavaExtensions.jar",
             // Java Help
             "javax.help/javahelp.jar",
-            // JFluid Profiler
-            //"jfluid/jfluid-server.jar",
-            //"jfluid/jfluid-server-15.jar",
-            //"jfluid/jfluid-server-cvm.jar"
+            // BioJava
             "org.biojava/biojava3-core.jar",
             "org.biojava/core.jar",
             "org.biojava/bytecode.jar",
@@ -225,7 +218,9 @@ public class FFXClassLoader extends URLClassLoader {
     }
 
     /**
-     * Implementation of this method is to allow use of the NetBeans JFluid profiler.
+     * Implementation of this method is to allow use of the NetBeans JFluid
+     * profiler.
+     *
      * @param value
      */
     private void appendToClassPathForInstrumentation(String value) {

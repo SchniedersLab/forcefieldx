@@ -296,7 +296,7 @@ public class MTZWriter {
 
                 if (mtzType != MTZType.FCONLY) {
                     // F/sigF (2)
-                    fmapdata = (float) refinementdata.get_f(i);
+                    fmapdata = (float) refinementdata.getF(i);
                     if (!Double.isNaN(fmapdata)) {
                         colminmax[col][0] = Math.min(fmapdata, colminmax[col][0]);
                         colminmax[col][1] = Math.max(fmapdata, colminmax[col][1]);
@@ -306,7 +306,7 @@ public class MTZWriter {
                     }
                     bb.order(b).putFloat(fmapdata);
                     col++;
-                    fmapdata = (float) refinementdata.get_sigf(i);
+                    fmapdata = (float) refinementdata.getSigF(i);
                     if (!Double.isNaN(fmapdata)) {
                         colminmax[col][0] = Math.min(fmapdata, colminmax[col][0]);
                         colminmax[col][1] = Math.max(fmapdata, colminmax[col][1]);

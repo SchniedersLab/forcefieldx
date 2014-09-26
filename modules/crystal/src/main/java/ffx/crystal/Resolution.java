@@ -23,7 +23,8 @@
 package ffx.crystal;
 
 import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.math.util.MathUtils;
+
+import static org.apache.commons.math3.util.FastMath.abs;
 
 /**
  * The Resolution class encapsulates the sampling limits and resolution limits
@@ -37,7 +38,7 @@ public class Resolution {
 
     public final double sampling;
     public final double resolution;
-    public final double invres;
+    public final double inverseResSq;
 
     /**
      * <p>
@@ -48,7 +49,7 @@ public class Resolution {
      */
     public Resolution(double resolution, double sampling) {
         this.resolution = resolution;
-        this.invres = 1.0 / (resolution * resolution);
+        this.inverseResSq = 1.0 / (resolution * resolution);
         this.sampling = sampling;
     }
 
@@ -71,43 +72,43 @@ public class Resolution {
      * @return a {@link ffx.crystal.Resolution} object.
      */
     public static Resolution checkProperties(CompositeConfiguration properties) {
-        double res = properties.getDouble("resolution", -1.0);
+        double resolution = properties.getDouble("resolution", -1.0);
         double sampling = properties.getDouble("sampling", 0.6);
 
-        if (res < 0.0) {
+        if (resolution < 0.0) {
             return null;
         }
 
-        return new Resolution(res, sampling);
+        return new Resolution(resolution, sampling);
     }
 
     /**
      * <p>
-     * res_limit</p>
+     * resolutionLimit</p>
      *
      * @return a double.
      */
-    public double res_limit() {
+    public double resolutionLimit() {
         return resolution;
     }
 
     /**
      * <p>
-     * invressq_limit</p>
+     * inverseResSqLimit</p>
      *
      * @return a double.
      */
-    public double invressq_limit() {
-        return invres;
+    public double inverseResSqLimit() {
+        return inverseResSq;
     }
 
     /**
      * <p>
-     * sampling_limit</p>
+     * samplingLimit</p>
      *
      * @return a double.
      */
-    public double sampling_limit() {
+    public double samplingLimit() {
         return sampling;
     }
 
@@ -119,29 +120,21 @@ public class Resolution {
      * @return a boolean.
      */
     public boolean inResolutionRange(double res) {
-        if (MathUtils.equals(res, this.resolution, 1e-8)) {
+        if (abs(res - this.resolution) < 1e-8) {
             return true;
-        } else if (res > this.resolution) {
-            return true;
-        } else {
-            return false;
-        }
+        } else return res > this.resolution;
     }
 
     /**
      * <p>
-     * inInvresolutionRange</p>
+     * inInverseResSqRange</p>
      *
      * @param res a double.
      * @return a boolean.
      */
-    public boolean inInvresolutionRange(double res) {
-        if (MathUtils.equals(res, this.invres, 1e-8)) {
+    public boolean inInverseResSqRange(double res) {
+        if (abs(res - this.inverseResSq) < 1e-8) {
             return true;
-        } else if (res < this.invres) {
-            return true;
-        } else {
-            return false;
-        }
+        } else return res < this.inverseResSq;
     }
 }

@@ -51,7 +51,8 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
     private boolean done, terminate;
 
     /**
-     * <p>Constructor for SimulatedAnnealing.</p>
+     * <p>
+     * Constructor for SimulatedAnnealing.</p>
      *
      * @param assembly a {@link ffx.potential.bonded.MolecularAssembly} object.
      * @param potentialEnergy a {@link ffx.numerics.Potential} object.
@@ -69,7 +70,8 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
     }
 
     /**
-     * <p>Constructor for SimulatedAnnealing.</p>
+     * <p>
+     * Constructor for SimulatedAnnealing.</p>
      *
      * @param assembly a {@link ffx.potential.bonded.MolecularAssembly} object.
      * @param potentialEnergy a {@link ffx.numerics.Potential} object.
@@ -97,7 +99,8 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
     }
 
     /**
-     * <p>anneal</p>
+     * <p>
+     * anneal</p>
      *
      * @param highTemperature a double.
      * @param lowTemperature a double.
@@ -112,7 +115,8 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
     }
 
     /**
-     * <p>anneal</p>
+     * <p>
+     * anneal</p>
      *
      * @param highTemperature a double.
      * @param lowTemperature a double.

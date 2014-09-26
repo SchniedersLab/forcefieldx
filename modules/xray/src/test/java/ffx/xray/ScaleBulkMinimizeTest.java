@@ -50,7 +50,6 @@ import ffx.potential.parsers.PDBFilter;
 import ffx.utilities.Keyword;
 
 /**
- *
  * @author Timothy D. Fenn
  */
 @RunWith(Parameterized.class)
@@ -59,50 +58,44 @@ public class ScaleBulkMinimizeTest {
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-                    {false,
-                        "NSF D2 domain test",
-                        "ffx/xray/structures/1NSF.pdb",
-                        "ffx/xray/structures/1NSF.mtz",
-                        null,
-                        25.19,
-                        25.41,
-                        0.8922,
-                        0.1524},
-                    {false,
-                        "SNARE complex",
-                        "ffx/xray/structures/1N7S.pdb",
-                        "ffx/xray/structures/1N7S.mtz",
-                        null,
-                        19.45,
-                        21.55,
-                        0.9310,
-                        0.1363}
-                });
+            {false,
+                "NSF D2 domain test",
+                "ffx/xray/structures/1NSF.pdb",
+                "ffx/xray/structures/1NSF.mtz",
+                null,
+                25.178605682089,
+                25.448314839595,
+                0.8921390108139,
+                0.1526816244814},
+            {false,
+                "SNARE complex",
+                "ffx/xray/structures/1N7S.pdb",
+                "ffx/xray/structures/1N7S.mtz",
+                null,
+                19.412671496011,
+                21.555930987573,
+                0.9314271250347,
+                0.1361239311856}
+        });
     }
     private final String info;
-    private final String pdbname;
-    private final String mtzname;
-    private final String cifname;
-    private final CrystalStats crystalstats;
+    private final CrystalStats crystalStats;
     private final double r;
-    private final double rfree;
-    private final double sigmaa;
-    private final double sigmaw;
+    private final double rFree;
+    private final double sigmaA;
+    private final double sigmaW;
     private final boolean ci;
     private final boolean ciOnly;
 
     public ScaleBulkMinimizeTest(boolean ciOnly,
             String info, String pdbname, String mtzname, String cifname,
-            double r, double rfree, double sigmaa, double sigmaw) {
+            double r, double rFree, double sigmaA, double sigmaW) {
         this.ciOnly = ciOnly;
         this.info = info;
-        this.pdbname = pdbname;
-        this.mtzname = mtzname;
-        this.cifname = cifname;
         this.r = r;
-        this.rfree = rfree;
-        this.sigmaa = sigmaa;
-        this.sigmaw = sigmaw;
+        this.rFree = rFree;
+        this.sigmaA = sigmaA;
+        this.sigmaW = sigmaW;
 
         String ffxCi = System.getProperty("ffx.ci");
         if (ffxCi != null && ffxCi.equalsIgnoreCase("true")) {
@@ -112,7 +105,7 @@ public class ScaleBulkMinimizeTest {
         }
 
         if (!ci && ciOnly) {
-            crystalstats = null;
+            crystalStats = null;
             return;
         }
 
@@ -122,42 +115,42 @@ public class ScaleBulkMinimizeTest {
         // load the structure
         ClassLoader cl = this.getClass().getClassLoader();
         File structure = new File(cl.getResource(pdbname).getPath());
-        File mtzfile = null, ciffile = null;
+        File mtzFile = null, cifFile = null;
         if (mtzname != null) {
-            mtzfile = new File(cl.getResource(mtzname).getPath());
+            mtzFile = new File(cl.getResource(mtzname).getPath());
         } else {
-            ciffile = new File(cl.getResource(cifname).getPath());
+            cifFile = new File(cl.getResource(cifname).getPath());
         }
 
         // load any properties associated with it
         CompositeConfiguration properties = Keyword.loadProperties(structure);
 
         // read in Fo/sigFo/FreeR
-        MTZFilter mtzfilter = new MTZFilter();
-        CIFFilter ciffilter = new CIFFilter();
-        ReflectionList reflectionlist;
+        MTZFilter mtzFilter = new MTZFilter();
+        CIFFilter cifFilter = new CIFFilter();
+        ReflectionList reflectionList;
         Crystal crystal = Crystal.checkProperties(properties);
         Resolution resolution = Resolution.checkProperties(properties);
         if (crystal == null || resolution == null) {
             if (mtzname != null) {
-                reflectionlist = mtzfilter.getReflectionList(mtzfile);
+                reflectionList = mtzFilter.getReflectionList(mtzFile);
             } else {
-                reflectionlist = ciffilter.getReflectionList(ciffile);
+                reflectionList = cifFilter.getReflectionList(cifFile);
             }
         } else {
-            reflectionlist = new ReflectionList(crystal, resolution);
+            reflectionList = new ReflectionList(crystal, resolution);
         }
 
-        DiffractionRefinementData refinementdata = new DiffractionRefinementData(properties,
-                reflectionlist);
+        DiffractionRefinementData refinementData = new DiffractionRefinementData(properties,
+                reflectionList);
         if (mtzname != null) {
             assertTrue(info + " mtz file should be read in without errors",
-                    mtzfilter.readFile(mtzfile, reflectionlist, refinementdata,
-                    properties));
+                    mtzFilter.readFile(mtzFile, reflectionList, refinementData,
+                            properties));
         } else {
             assertTrue(info + " cif file should be read in without errors",
-                    ciffilter.readFile(ciffile, reflectionlist, refinementdata,
-                    properties));
+                    cifFilter.readFile(cifFile, reflectionList, refinementData,
+                            properties));
         }
 
         ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties);
@@ -167,68 +160,38 @@ public class ScaleBulkMinimizeTest {
         MolecularAssembly molecularAssembly = new MolecularAssembly(name);
         molecularAssembly.setFile(structure);
         molecularAssembly.setForceField(forceField);
-        PDBFilter pdbfile = new PDBFilter(structure, molecularAssembly, forceField, properties);
-        pdbfile.readFile();
+        PDBFilter pdbFile = new PDBFilter(structure, molecularAssembly, forceField, properties);
+        pdbFile.readFile();
         molecularAssembly.finalize(true);
         ForceFieldEnergy energy = new ForceFieldEnergy(molecularAssembly);
 
-        List<Atom> atomlist = molecularAssembly.getAtomList();
-        Atom atomarray[] = atomlist.toArray(new Atom[atomlist.size()]);
+        List<Atom> atomList = molecularAssembly.getAtomList();
+        Atom atomArray[] = atomList.toArray(new Atom[atomList.size()]);
 
         // set up FFT and run it
         ParallelTeam parallelTeam = new ParallelTeam();
-        CrystalReciprocalSpace crs = new CrystalReciprocalSpace(reflectionlist,
-                atomarray, parallelTeam, parallelTeam, false);
-        crs.computeDensity(refinementdata.fc);
-        refinementdata.setCrystalReciprocalSpace_fc(crs);
-        crs = new CrystalReciprocalSpace(reflectionlist,
-                atomarray, parallelTeam, parallelTeam, true);
-        crs.computeDensity(refinementdata.fs);
-        refinementdata.setCrystalReciprocalSpace_fs(crs);
+        CrystalReciprocalSpace crs = new CrystalReciprocalSpace(reflectionList,
+                atomArray, parallelTeam, parallelTeam, false);
+        crs.computeDensity(refinementData.fc);
+        refinementData.setCrystalReciprocalSpace_fc(crs);
+        crs = new CrystalReciprocalSpace(reflectionList,
+                atomArray, parallelTeam, parallelTeam, true);
+        crs.computeDensity(refinementData.fs);
+        refinementData.setCrystalReciprocalSpace_fs(crs);
 
-        /*
-         try {
-         PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("/tmp/foo.cns")));
-         out.println("ANOMalous=FALSE");
-         out.println("DECLare NAME=FC DOMAin=RECIprocal TYPE=COMP END");
-         for (HKL ih : reflectionlist.hkllist) {
-         if (ih.h() == 0
-         && ih.k() == 0
-         && ih.l() == 0) {
-         continue;
-         }
-         double fc[] = refinementdata.fs[ih.index()];
-         out.printf("INDE %5d%5d%5d FC= ", ih.h(), ih.k(), ih.l());
-         out.printf("%10.3f%10.3f\n",
-         Math.hypot(fc[0], fc[1]),
-         Math.toDegrees(Math.atan2(fc[1], fc[0])));
-         }
-         out.close();
-         } catch (Exception e) {
-         System.out.println("error: " + e.getMessage());
-         }
-         */
+        ScaleBulkMinimize scaleBulkMinimize
+                = new ScaleBulkMinimize(reflectionList, refinementData, crs, parallelTeam);
+        scaleBulkMinimize.minimize(6, 1.0e-4);
 
-        ScaleBulkMinimize scalebulkminimize =
-                new ScaleBulkMinimize(reflectionlist, refinementdata, crs, parallelTeam);
-        /*
-         if (refinementdata.solvent_n > 1) {
-         scalebulkminimize.minimize(7, 1e-2);
-         scalebulkminimize.GridOptimize();
-         }
-         */
-        scalebulkminimize.minimize(6, 1e-4);
+        SigmaAMinimize sigmaAMinimize = new SigmaAMinimize(reflectionList,
+                refinementData, parallelTeam);
+        sigmaAMinimize.minimize(7, 1.0e-1);
 
-        SigmaAMinimize sigmaaminimize = new SigmaAMinimize(reflectionlist,
-                refinementdata, parallelTeam);
-        sigmaaminimize.minimize(7, 1e-1);
+        SplineMinimize splineMinimize = new SplineMinimize(reflectionList,
+                refinementData, refinementData.spline, SplineEnergy.Type.FOFC);
+        splineMinimize.minimize(7, 1e-5);
 
-        SplineMinimize splineminimize = new SplineMinimize(reflectionlist,
-                refinementdata, refinementdata.spline,
-                SplineEnergy.Type.FOFC);
-        splineminimize.minimize(7, 1e-5);
-
-        crystalstats = new CrystalStats(reflectionlist, refinementdata);
+        crystalStats = new CrystalStats(reflectionList, refinementData);
     }
 
     @Test
@@ -237,18 +200,18 @@ public class ScaleBulkMinimizeTest {
             return;
         }
 
-        crystalstats.printScaleStats();
-        crystalstats.printHKLStats();
-        crystalstats.printSNStats();
-        crystalstats.printRStats();
+        crystalStats.printScaleStats();
+        crystalStats.printHKLStats();
+        crystalStats.printSNStats();
+        crystalStats.printRStats();
 
-        assertEquals(info + " R value should be correct",
-                r, crystalstats.getR(), 0.01);
-        assertEquals(info + " Rfree value should be correct",
-                rfree, crystalstats.getRFree(), 0.01);
-        assertEquals(info + " sigmaA s value should be correct",
-                sigmaa, crystalstats.getSigmaA(), 0.01);
-        assertEquals(info + " sigmaA w value should be correct",
-                sigmaw, crystalstats.getSigmaW(), 0.01);
+        assertEquals(info + " R value",
+                r, crystalStats.getR(), 0.01);
+        assertEquals(info + " Rfree value",
+                rFree, crystalStats.getRFree(), 0.01);
+        assertEquals(info + " sigmaA s",
+                sigmaA, crystalStats.getSigmaA(), 0.001);
+        assertEquals(info + " sigmaA w",
+                sigmaW, crystalStats.getSigmaW(), 0.001);
     }
 }

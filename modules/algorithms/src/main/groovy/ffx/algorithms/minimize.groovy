@@ -121,7 +121,7 @@ if (arguments != null && arguments.size() > 0) {
     filename = arguments.get(0);
     systems = open(filename);
     if (arguments.size() > 1) {
-       filename2 = arguments.get(1);
+        filename2 = arguments.get(1);
     }
 } else if (active == null) {
     return cli.usage();

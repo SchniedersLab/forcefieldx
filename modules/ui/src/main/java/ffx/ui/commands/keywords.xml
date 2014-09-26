@@ -256,7 +256,7 @@
             <subsection name="xrayscaletol" rep="TEXTFIELD">
                 Gradient rms tolerance for scaling.
             </subsection>
-                        <subsection name="sigmaatol" rep="TEXTFIELD">
+            <subsection name="sigmaatol" rep="TEXTFIELD">
                 Gradient rms tolerance for sigmaA fit.
             </subsection>
             <subsection name="xweight" rep="TEXTFIELD">

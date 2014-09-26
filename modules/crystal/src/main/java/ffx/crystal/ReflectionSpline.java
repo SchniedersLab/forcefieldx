@@ -22,9 +22,9 @@
  */
 package ffx.crystal;
 
-import static java.lang.Math.floor;
-import static java.lang.Math.max;
-import static java.lang.Math.min;
+import static org.apache.commons.math3.util.FastMath.floor;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
 
 /**
  * The ReflectionSpline class represents a reflection spline basis.

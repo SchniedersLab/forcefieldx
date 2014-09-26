@@ -156,10 +156,10 @@
                 lowerLimit="0.1"/>
 
         <Option name="Integrator"
-                 flag="i"
-                 description="Choose the integration algorithm."
-                 gui="RADIOBUTTONS"
-                 default="Beeman"
+                flag="i"
+                description="Choose the integration algorithm."
+                gui="RADIOBUTTONS"
+                default="Beeman"
         >
             <Value name="Beeman"/>
             <Value name="RESPA"/>

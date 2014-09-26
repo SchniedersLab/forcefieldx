@@ -33,6 +33,8 @@ import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.util.Arrays.fill;
+
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
@@ -51,6 +53,8 @@ import ffx.potential.parsers.PDBFilter;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.MTZWriter.MTZType;
 import ffx.xray.RefinementMinimize.RefinementMode;
+
+import static ffx.xray.CrystalReciprocalSpace.SolventModel.POLYNOMIAL;
 
 /**
  * <p>
@@ -72,7 +76,7 @@ public class DiffractionData implements DataContainer {
     protected final DiffractionRefinementData[] refinementData;
     protected final CrystalReciprocalSpace crs_fc[];
     protected final CrystalReciprocalSpace crs_fs[];
-    public final int solventModel;
+    public final SolventModel solventModel;
     protected final RefinementModel refinementModel;
     protected ScaleBulkMinimize[] scaleBulkMinimize;
     protected SigmaAMinimize[] sigmaAMinimize;
@@ -118,7 +122,7 @@ public class DiffractionData implements DataContainer {
     public DiffractionData(MolecularAssembly assembly,
             CompositeConfiguration properties) {
         this(new MolecularAssembly[]{assembly}, properties,
-                SolventModel.POLYNOMIAL, new DiffractionFile(assembly));
+                POLYNOMIAL, new DiffractionFile(assembly));
     }
 
     /**
@@ -133,7 +137,7 @@ public class DiffractionData implements DataContainer {
     public DiffractionData(MolecularAssembly assembly,
             CompositeConfiguration properties, DiffractionFile... datafile) {
         this(new MolecularAssembly[]{assembly}, properties,
-                SolventModel.POLYNOMIAL, datafile);
+                POLYNOMIAL, datafile);
     }
 
     /**
@@ -148,7 +152,7 @@ public class DiffractionData implements DataContainer {
      * {@link CrystalReciprocalSpace.SolventModel bulk solvent model} selections
      */
     public DiffractionData(MolecularAssembly assembly,
-            CompositeConfiguration properties, int solventmodel) {
+            CompositeConfiguration properties, SolventModel solventmodel) {
         this(new MolecularAssembly[]{assembly}, properties, solventmodel,
                 new DiffractionFile(assembly));
     }
@@ -165,7 +169,7 @@ public class DiffractionData implements DataContainer {
      * @param datafile one or more {@link DiffractionFile} to be refined against
      */
     public DiffractionData(MolecularAssembly assembly,
-            CompositeConfiguration properties, int solventmodel,
+            CompositeConfiguration properties, SolventModel solventmodel,
             DiffractionFile... datafile) {
         this(new MolecularAssembly[]{assembly}, properties, solventmodel,
                 datafile);
@@ -183,7 +187,7 @@ public class DiffractionData implements DataContainer {
      */
     public DiffractionData(MolecularAssembly assembly[],
             CompositeConfiguration properties) {
-        this(assembly, properties, SolventModel.POLYNOMIAL,
+        this(assembly, properties, POLYNOMIAL,
                 new DiffractionFile(assembly[0]));
     }
 
@@ -199,7 +203,7 @@ public class DiffractionData implements DataContainer {
      */
     public DiffractionData(MolecularAssembly assembly[],
             CompositeConfiguration properties, DiffractionFile... datafile) {
-        this(assembly, properties, SolventModel.POLYNOMIAL, datafile);
+        this(assembly, properties, POLYNOMIAL, datafile);
     }
 
     /**
@@ -215,7 +219,7 @@ public class DiffractionData implements DataContainer {
      * @param datafile one or more {@link DiffractionFile} to be refined against
      */
     public DiffractionData(MolecularAssembly assembly[],
-            CompositeConfiguration properties, int solventmodel,
+            CompositeConfiguration properties, SolventModel solventmodel,
             DiffractionFile... datafile) {
 
         this.assembly = assembly;
@@ -332,32 +336,26 @@ public class DiffractionData implements DataContainer {
             a.setFormFactorIndex(-1);
             XRayFormFactor atomff
                     = new XRayFormFactor(a, use_3g, 2.0);
-            a.setFormFactorIndex(atomff.ffindex);
+            a.setFormFactorIndex(atomff.ffIndex);
 
             if (a.getOccupancy() == 0.0) {
                 a.setFormFactorWidth(1.0);
                 continue;
             }
 
-            double arad = 2.4;
-            // double arad = 2.0;
+            double arad = a.getVDWType().radius * 0.5;
             double xyz[] = new double[3];
             xyz[0] = a.getX() + arad;
             xyz[1] = a.getY();
             xyz[2] = a.getZ();
-            while (true) {
-                double rho = atomff.rho(0.0, 1.0, xyz);
-                if (rho > 0.1) {
-                    arad += 0.5;
-                } else if (rho > 0.001) {
-                    arad += 0.1;
-                } else {
-                    arad += aRadBuff;
-                    a.setFormFactorWidth(arad);
-                    break;
-                }
+            double rho = atomff.rho(0.0, 1.0, xyz);
+            while (rho > 0.001) {
+                arad += 0.1;
                 xyz[0] = a.getX() + arad;
+                rho = atomff.rho(0.0, 1.0, xyz);
             }
+            arad += aRadBuff;
+            a.setFormFactorWidth(arad);
         }
 
         // set up FFT and run it
@@ -385,7 +383,7 @@ public class DiffractionData implements DataContainer {
         }
 
         scaled = new boolean[n];
-        Arrays.fill(scaled, false);
+        fill(scaled, false);
     }
 
     /**
@@ -405,32 +403,26 @@ public class DiffractionData implements DataContainer {
             a.setFormFactorIndex(-1);
             XRayFormFactor atomff
                     = new XRayFormFactor(a, use_3g, 2.0);
-            a.setFormFactorIndex(atomff.ffindex);
+            a.setFormFactorIndex(atomff.ffIndex);
 
             if (a.getOccupancy() == 0.0) {
                 a.setFormFactorWidth(1.0);
                 continue;
             }
 
-            double arad = 2.4;
-            // double arad = 2.0;
+            double arad = a.getVDWType().radius * 0.5;
             double xyz[] = new double[3];
             xyz[0] = a.getX() + arad;
             xyz[1] = a.getY();
             xyz[2] = a.getZ();
-            while (true) {
-                double rho = atomff.rho(0.0, 1.0, xyz);
-                if (rho > 0.1) {
-                    arad += 0.5;
-                } else if (rho > 0.001) {
-                    arad += 0.1;
-                } else {
-                    arad += aRadBuff;
-                    a.setFormFactorWidth(arad);
-                    break;
-                }
+            double rho = atomff.rho(0.0, 1.0, xyz);
+            while (rho > 0.001) {
+                arad += 0.1;
                 xyz[0] = a.getX() + arad;
+                rho = atomff.rho(0.0, 1.0, xyz);
             }
+            arad += aRadBuff;
+            a.setFormFactorWidth(arad);
         }
 
         // set up FFT and run it
@@ -735,7 +727,7 @@ public class DiffractionData implements DataContainer {
 
         // minimize
         if (solventModel != SolventModel.NONE && gridsearch) {
-            scaleBulkMinimize[i].minimize(6, 1e-2);
+            scaleBulkMinimize[i].minimize(6, xrayScaleTol);
             scaleBulkMinimize[i].GridOptimize();
         }
         scaleBulkMinimize[i].minimize(6, xrayScaleTol);

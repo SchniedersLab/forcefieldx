@@ -23,8 +23,12 @@
 package ffx.potential.nonbonded;
 
 import java.nio.DoubleBuffer;
-import java.util.Arrays;
 import java.util.logging.Level;
+
+import static java.util.Arrays.fill;
+
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
@@ -47,22 +51,35 @@ public class SliceRegion extends ParallelRegion {
     int gX, gY, gZ;
     int basisSize;
     int threadCount;
+    int weight[];
+
     DoubleBuffer gridBuffer;
     GridInitLoop gridInitLoop[];
     Crystal crystal;
     double initValue = 0.0;
     int gridSize;
     double grid[];
+    double sliceLoopTime[];
+    double sliceRegionTime;
+    double initTime[];
+    String className;
+    double timeDefineRange[];
 
     protected SliceLoop sliceLoop[];
     protected double coordinates[][][];
     protected boolean select[][];
+    private static final double toSeconds = 1.0e-9;
 
     // Constructor
     public SliceRegion(int gX, int gY, int gZ, double grid[],
             int basisSize, int nSymm,
             int threadCount, Crystal crystal,
             Atom atoms[], double coordinates[][][]) {
+        sliceLoopTime = new double[threadCount];
+        initTime = new double[threadCount];
+        weight = new int[threadCount];
+        timeDefineRange = new double[threadCount];
+
         this.atoms = atoms;
         this.nAtoms = atoms.length;
         this.gX = gX;
@@ -84,7 +101,7 @@ public class SliceRegion extends ParallelRegion {
         }
         select = new boolean[nSymm][nAtoms];
         for (int i = 0; i < nSymm; i++) {
-            Arrays.fill(select[i], true);
+            fill(select[i], true);
         }
     }
 
@@ -116,6 +133,7 @@ public class SliceRegion extends ParallelRegion {
     @Override
     public void start() {
         selectAtoms();
+        sliceRegionTime -= System.nanoTime();
     }
 
     @Override
@@ -133,6 +151,36 @@ public class SliceRegion extends ParallelRegion {
         } catch (Exception e) {
             String message = " Exception in SliceRegion.";
             logger.log(Level.SEVERE, message, e);
+        }
+
+        if (threadIndex == 0 && logger.isLoggable(Level.FINE)) {
+            sliceRegionTime += System.nanoTime();
+            double total = sliceLoopTime[0];
+            double sliceMax = 0;
+            double sliceMin = sliceLoopTime[0];
+            double initMax = 0;
+            double initMin = initTime[0];
+            int weightMin = weight[0];
+            int weightMax = 0;
+            for (int i = 1; i < threadCount; i++) {
+                total += sliceLoopTime[i];
+                sliceMax = max(sliceLoopTime[i], sliceMax);
+                sliceMin = min(sliceLoopTime[i], sliceMin);
+                initMin = min(initTime[i], initMin);
+                initMax = max(initTime[i], initMax);
+                weightMax = max(weight[i], weightMax);
+                weightMin = min(weight[i], weightMin);
+            }
+            logger.info(String.format("\n SliceLoop (%s): %7.4f (sec)", className, total * toSeconds));
+            logger.info(" Thread     GridInit    Loop   Region  Weight");
+            for (int i = 0; i < threadCount; i++) {
+                logger.info(String.format("     %3d     %7.4f %7.4f %7.4f %7d", i, initTime[i] * toSeconds,
+                        sliceLoopTime[i] * toSeconds, sliceRegionTime * toSeconds, weight[i]));
+            }
+
+            logger.info(String.format("   Min      %7.4f %7.4f %7.4f %7d", initMin * toSeconds, sliceMin * toSeconds, sliceRegionTime * toSeconds, weightMin));
+            logger.info(String.format("   Max      %7.4f %7.4f %7.4f %7d", initMax * toSeconds, sliceMax * toSeconds, sliceRegionTime * toSeconds, weightMax));
+            logger.info(String.format("   Delta    %7.4f %7.4f %7.4f %7d", (initMax - initMin) * toSeconds, sliceMax - sliceMin, 0.0, weightMax - weightMin));
         }
     }
 
@@ -157,7 +205,7 @@ public class SliceRegion extends ParallelRegion {
      */
     public void selectAtoms() {
         for (int i = 0; i < nSymm; i++) {
-            Arrays.fill(select[i], true);
+            fill(select[i], true);
         }
     }
 
@@ -174,6 +222,16 @@ public class SliceRegion extends ParallelRegion {
         }
 
         @Override
+        public void start() {
+            initTime[getThreadIndex()] -= System.nanoTime();
+        }
+
+        @Override
+        public void finish() {
+            initTime[getThreadIndex()] += System.nanoTime();
+        }
+
+        @Override
         public void run(int lb, int ub) {
             if (gridBuffer != null) {
                 //if (grid != null) {
@@ -182,6 +240,7 @@ public class SliceRegion extends ParallelRegion {
                     gridBuffer.put(i, initValue);
                 }
             }
+
         }
     }
 

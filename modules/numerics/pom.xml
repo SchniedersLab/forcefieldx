@@ -95,37 +95,32 @@
     <dependencies>
         <dependency>
             <groupId>commons-math</groupId>
-            <artifactId>commons-math</artifactId>
+            <artifactId>commons-math3</artifactId>
             <type>jar</type>
-            <version>2.2</version>
+            <version>${commons-math3.version}</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <type>jar</type>
-            <version>2.4</version>
+            <version>${commons-io.version}</version>
         </dependency>
         <dependency>
             <groupId>edu.rit.pj</groupId>
             <artifactId>pj</artifactId>
             <type>jar</type>
-            <version>1.7</version>
+            <version>${parallel-java.version}</version>
         </dependency>
         <dependency>
             <groupId>jcuda</groupId>
             <artifactId>jcuda-all</artifactId>
             <type>jar</type>
-            <version>5.0.0</version>
+            <version>${jcuda.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jogamp.jocl</groupId>
             <artifactId>jocl-main</artifactId>
-            <version>2.1.4</version>
-        </dependency>
-        <dependency>
-            <groupId>jclfft</groupId>
-            <artifactId>jclfft</artifactId>
-            <version>1.0</version>
+            <version>${jocl.version}</version>
         </dependency>
     </dependencies>
 </project>

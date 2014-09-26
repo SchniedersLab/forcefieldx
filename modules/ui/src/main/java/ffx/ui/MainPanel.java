@@ -554,7 +554,7 @@ public final class MainPanel extends JPanel implements ActionListener,
             }
             hierarchy.removeTreeNode(closedModel);
             closedModel.setView(RendererCache.ViewModel.DESTROY, null);
-            Thread thread = new Thread(new FileCloser(closedModel));
+            Thread thread = new Thread(new UIFileCloser(closedModel));
             thread.start();
             return thread;
         }
@@ -1159,7 +1159,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
         MergeFilter mergeFilter = new MergeFilter(system, mergedAtoms,
                 mergedBonds);
-        FileOpener fileOpener = new FileOpener(mergeFilter, this);
+        UIFileOpener fileOpener = new UIFileOpener(mergeFilter, this);
         Thread thread = new Thread(fileOpener);
         thread.start();
     }
@@ -1218,6 +1218,22 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
         return null;
     }
+    
+    private UIFileOpener openFromUtils(File file, String commandDescription) {
+        UIFileOpener opener = openInit(file, commandDescription);
+        openThread = new Thread(opener);
+        openThread.start();
+        setPanel(GRAPHICS);
+        return opener;
+    }
+    
+    public Thread open(File file, String commandDescription) {
+        UIFileOpener opener = openInit(file, commandDescription);
+        openThread = new Thread(opener);
+        openThread.start();
+        setPanel(GRAPHICS);
+        return openThread;
+    }
 
     /**
      * Attempts to load the supplied file
@@ -1227,7 +1243,7 @@ public final class MainPanel extends JPanel implements ActionListener,
      * file.
      * @return a {@link java.lang.Thread} object.
      */
-    public Thread open(File file, String commandDescription) {
+    private UIFileOpener openInit(File file, String commandDescription) {
         if (file == null || !file.isFile() || !file.canRead()) {
             return null;
         }
@@ -1285,7 +1301,19 @@ public final class MainPanel extends JPanel implements ActionListener,
 
         setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         activeFilter = systemFilter;
-        FileOpener openFile = new FileOpener(systemFilter, this);
+        return new UIFileOpener(systemFilter, this);
+    }
+    
+    private UIFileOpener openFromUtils(List<File> files, String commandDescription) {
+        UIFileOpener openFile = openInit(files, commandDescription);
+        openThread = new Thread(openFile);
+        openThread.start();
+        setPanel(GRAPHICS);
+        return openFile;
+    }
+    
+    public Thread open(List<File> files, String commandDescription) {
+        UIFileOpener openFile = openInit(files, commandDescription);
         openThread = new Thread(openFile);
         openThread.start();
         setPanel(GRAPHICS);
@@ -1300,7 +1328,7 @@ public final class MainPanel extends JPanel implements ActionListener,
      * file.
      * @return a {@link java.lang.Thread} object.
      */
-    public Thread open(List<File> files, String commandDescription) {
+    private UIFileOpener openInit(List<File> files, String commandDescription) {
         if (files == null) {
             return null;
         }
@@ -1344,14 +1372,37 @@ public final class MainPanel extends JPanel implements ActionListener,
 
         setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         activeFilter = systemFilter;
-        FileOpener openFile = new FileOpener(systemFilter, this);
-        openThread = new Thread(openFile);
-        openThread.start();
-        setPanel(GRAPHICS);
-
-        return openThread;
+        return new UIFileOpener(systemFilter, this);
     }
 
+    public synchronized MolecularAssembly[] openWaitUtils(String file) {
+        UIFileOpener opener = openFromUtils(file);
+        Thread thread = new Thread(opener);
+        while (thread != null && thread.isAlive()) {
+            try {
+                wait(1);
+            } catch (InterruptedException e) {
+                String message = "Exception waiting for " + file + " to open.";
+                logger.log(Level.WARNING, message, e);
+                return null;
+            }
+        }
+
+        MolecularAssembly systems[] = activeFilter.getMolecularAssemblys();
+        if (systems != null) {
+            int n = systems.length;
+            FFXSystem ffxSystems[] = new FFXSystem[n];
+            FFXSystem allSystems[] = getHierarchy().getSystems();
+            int total = allSystems.length;
+            for (int i = 0; i < n; i++) {
+                ffxSystems[i] = allSystems[total - n + i];
+            }
+            return ffxSystems;
+        } else {
+            return null;
+        }
+    }
+    
     /**
      * <p>
      * openWait</p>
@@ -1395,6 +1446,7 @@ public final class MainPanel extends JPanel implements ActionListener,
      * @return an array of {@link ffx.ui.FFXSystem} objects.
      */
     public synchronized FFXSystem[] openWait(String files[]) {
+        logger.info(" It has come to this.");
         Thread thread = open(files);
         while (thread != null && thread.isAlive()) {
             try {
@@ -1435,6 +1487,15 @@ public final class MainPanel extends JPanel implements ActionListener,
             return null;
         }
         return open(file, null);
+    }
+    
+    private UIFileOpener openFromUtils(String name) {
+        File file = resolveName(name);
+        if (file == null) {
+            logger.log(Level.WARNING, "{0}: could not be found.", name);
+            return null;
+        }
+        return openFromUtils(file, null);
     }
 
     private File resolveName(String name) {
@@ -1498,6 +1559,23 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
         return open(files, null);
     }
+    
+    private UIFileOpener openFromUtils(String[] names) {
+        if (names == null) {
+            return null;
+        }
+        int n = names.length;
+        List<File> files = new ArrayList<>();
+        // Resolve all file names.
+        for (int i = 0; i < n; i++) {
+            File file = resolveName(names[i]);
+            if (file == null || !file.exists()) {
+                return null;
+            }
+            files.add(file);
+        }
+        return openFromUtils(files, null);
+    }
 
     /**
      * Opens a file from the PDB
@@ -1535,7 +1613,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
         PDBFilter pdbFilter = new PDBFilter(pdbFile, newSystem, forceField, properties);
         setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-        FileOpener openFile = new FileOpener(pdbFilter, this);
+        UIFileOpener openFile = new UIFileOpener(pdbFilter, this);
         openThread = new Thread(openFile);
         openThread.start();
         setPanel(GRAPHICS);

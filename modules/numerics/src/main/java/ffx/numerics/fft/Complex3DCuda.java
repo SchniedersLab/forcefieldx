@@ -185,8 +185,8 @@ public class Complex3DCuda implements Runnable {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>recip</code>.</p>
+     * <p>
+     * Setter for the field <code>recip</code>.</p>
      *
      * @param recip an array of double.
      */
@@ -416,7 +416,8 @@ public class Complex3DCuda implements Runnable {
     }
 
     /**
-     * <p>main</p>
+     * <p>
+     * main</p>
      *
      * @param args an array of {@link java.lang.String} objects.
      * @throws java.lang.Exception if any.
@@ -446,7 +447,6 @@ public class Complex3DCuda implements Runnable {
 
         final int dimCubed = dim * dim * dim;
 
-
         /**
          * Create an array to save the initial input and result.
          */
@@ -469,8 +469,8 @@ public class Complex3DCuda implements Runnable {
         }
 
         Complex3D complex3D = new Complex3D(dim, dim, dim);
-        Complex3DParallel complex3DParallel =
-                new Complex3DParallel(dim, dim, dim, new ParallelTeam(), IntegerSchedule.fixed());
+        Complex3DParallel complex3DParallel
+                = new Complex3DParallel(dim, dim, dim, new ParallelTeam(), IntegerSchedule.fixed());
         complex3DParallel.setRecip(recip);
 
         Complex3DCuda complex3DCUDA = new Complex3DCuda(dim, dim, dim);

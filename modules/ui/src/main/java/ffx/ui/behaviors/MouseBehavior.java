@@ -39,8 +39,7 @@ public abstract class MouseBehavior extends Behavior {
      */
 
     /**
-     * Constant
-     * <code>MANUAL_WAKEUP=0x1</code>
+     * Constant <code>MANUAL_WAKEUP=0x1</code>
      */
     public static final int MANUAL_WAKEUP = 0x1;
     /*
@@ -49,8 +48,7 @@ public abstract class MouseBehavior extends Behavior {
      * for the object.
      */
     /**
-     * Constant
-     * <code>INVERT_INPUT=0x2</code>
+     * Constant <code>INVERT_INPUT=0x2</code>
      */
     public static final int INVERT_INPUT = 0x2;
     protected WakeupCriterion[] mouseEvents;
@@ -78,7 +76,8 @@ public abstract class MouseBehavior extends Behavior {
     Transform3D t3d = new Transform3D();
 
     /**
-     * <p>Constructor for MouseBehavior.</p>
+     * <p>
+     * Constructor for MouseBehavior.</p>
      *
      * @param format a int.
      * @param VPTG a {@link javax.media.j3d.TransformGroup} object.
@@ -94,7 +93,8 @@ public abstract class MouseBehavior extends Behavior {
     }
 
     /**
-     * <p>Constructor for MouseBehavior.</p>
+     * <p>
+     * Constructor for MouseBehavior.</p>
      *
      * @param format a int.
      * @param VPTG a {@link javax.media.j3d.TransformGroup} object.
@@ -111,7 +111,8 @@ public abstract class MouseBehavior extends Behavior {
      * Initializes the behavior.
      */
     /**
-     * <p>initialize</p>
+     * <p>
+     * initialize</p>
      */
     public void initialize() {
         mouseEvents = new WakeupCriterion[3];
@@ -135,7 +136,8 @@ public abstract class MouseBehavior extends Behavior {
      * Handles mouse events
      */
     /**
-     * <p>processMouseEvent</p>
+     * <p>
+     * processMouseEvent</p>
      *
      * @param evt a {@link java.awt.event.MouseEvent} object.
      */
@@ -154,8 +156,8 @@ public abstract class MouseBehavior extends Behavior {
     public abstract void processStimulus(Enumeration criteria);
 
     /**
-     * <p>Setter for the field
-     * <code>transformGroup</code>.</p>
+     * <p>
+     * Setter for the field <code>transformGroup</code>.</p>
      *
      * @param t a {@link javax.media.j3d.TransformGroup} object.
      */
@@ -172,7 +174,8 @@ public abstract class MouseBehavior extends Behavior {
      * creation, you must wake up this behavior each time it is handled.
      */
     /**
-     * <p>wakeup</p>
+     * <p>
+     * wakeup</p>
      */
     public void wakeup() {
         wakeUp = true;

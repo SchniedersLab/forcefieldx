@@ -1827,7 +1827,7 @@ public class RotamerLibrary {
                     break;
             }
         }
-        
+
     }
 
     /**
@@ -1857,12 +1857,12 @@ public class RotamerLibrary {
             }
         }
     }
-    
+
     /**
-     * Applies a coordinates-based Rotamer (defined by Cartesian coordinates instead
-     * of by a set of torsion angles); intended for use with original coordinates
-     * Rotamers and possibly other future cases.
-     * 
+     * Applies a coordinates-based Rotamer (defined by Cartesian coordinates
+     * instead of by a set of torsion angles); intended for use with original
+     * coordinates Rotamers and possibly other future cases.
+     *
      * @param residue Residue to apply Rotamer for
      * @param rotamer Coordinates-based Rotamer
      */
@@ -2018,9 +2018,9 @@ public class RotamerLibrary {
                 double dHG2_CG_CB = HG2_CG_CB.angleType.angle[HG2_CG_CB.nh];
                 double dHD_CD1_CG1 = HD_CD1_CG1.angleType.angle[HD_CD1_CG1.nh];
                 intxyz(CG1, CB, dCG1_CB, CA, dCG1_CB_CA, N, rotamer.chi1, 0);
-                intxyz(CG2, CB, dCG2_CB, CA, dCG2_CB_CA, CG1, 109.5, -1);
+                intxyz(CG2, CB, dCG2_CB, CA, dCG2_CB_CA, CG1, 109.5, 1);
                 intxyz(CD1, CG1, dCD1_CG1, CB, dCD1_CG1_CB, CA, rotamer.chi2, 0);
-                intxyz(HB, CB, dHB_CB, CA, dHB_CB_CA, CG1, 109.4, 1);
+                intxyz(HB, CB, dHB_CB, CA, dHB_CB_CA, CG2, 109.4, 1);
                 intxyz(HG12, CG1, dHG1_CG, CB, dHG1_CG_CB, CD1, 109.4, 1);
                 intxyz(HG13, CG1, dHG1_CG, CB, dHG1_CG_CB, CD1, 109.4, -1);
                 intxyz(HG21, CG2, dHG2_CG, CB, dHG2_CG_CB, CG1, 180.0, 0);
@@ -3782,8 +3782,8 @@ public class RotamerLibrary {
             corrections[6][i] = (1.0 / 12.0) * corrections[5][i];
         }
 
-        /* 
-         * Move backbone atoms by an appropriate fraction of the correction 
+        /*
+         * Move backbone atoms by an appropriate fraction of the correction
          * vector. Do this before checking the threshold, so that atoms are moved
          * in case that is needed before the exception gets thrown.
          */

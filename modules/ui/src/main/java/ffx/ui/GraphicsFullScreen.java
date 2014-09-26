@@ -42,7 +42,8 @@ public class GraphicsFullScreen extends Window implements KeyListener {
     private boolean fullScreen = false;
 
     /**
-     * <p>Constructor for GraphicsFullScreen.</p>
+     * <p>
+     * Constructor for GraphicsFullScreen.</p>
      *
      * @param f a {@link java.awt.Frame} object.
      * @param graphics a {@link ffx.ui.GraphicsCanvas} object.
@@ -62,7 +63,8 @@ public class GraphicsFullScreen extends Window implements KeyListener {
     }
 
     /**
-     * <p>enterFullScreen</p>
+     * <p>
+     * enterFullScreen</p>
      */
     public void enterFullScreen() {
         /*
@@ -72,7 +74,8 @@ public class GraphicsFullScreen extends Window implements KeyListener {
     }
 
     /**
-     * <p>exitFullScreen</p>
+     * <p>
+     * exitFullScreen</p>
      */
     public void exitFullScreen() {
         /*
@@ -109,7 +112,8 @@ public class GraphicsFullScreen extends Window implements KeyListener {
     }
 
     /**
-     * <p>toggleFullScreen</p>
+     * <p>
+     * toggleFullScreen</p>
      */
     public void toggleFullScreen() {
         if (fullScreen) {

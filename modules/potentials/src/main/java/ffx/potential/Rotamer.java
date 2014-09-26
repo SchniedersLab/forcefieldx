@@ -25,7 +25,7 @@ package ffx.potential;
 import ffx.potential.ResidueEnumerations.AminoAcid3;
 import ffx.potential.ResidueEnumerations.NucleicAcid3;
 
-import static java.lang.Math.max;
+import static org.apache.commons.math3.util.FastMath.max;
 
 /**
  * The Rotamer Class usually represents one immutable amino acid Rotamer. It is
@@ -98,7 +98,7 @@ public class Rotamer {
         atomicCoordinates = null;
         isCoordinates = false;
     }
-    
+
     public Rotamer(AminoAcid3 name, double[][] origCoordinates, double... values) {
         length = values.length / 2;
         angles = new double[max(length, 4)];
@@ -115,7 +115,7 @@ public class Rotamer {
         chi4 = angles[3];
         chi5 = chi6 = chi7 = 0;
         nucleicName = null;
-        atomicCoordinates = new double [origCoordinates.length][];
+        atomicCoordinates = new double[origCoordinates.length][];
         for (int i = 0; i < origCoordinates.length; i++) {
             atomicCoordinates[i] = new double[origCoordinates[i].length];
             System.arraycopy(origCoordinates[i], 0, atomicCoordinates[i], 0, origCoordinates[i].length);
@@ -141,7 +141,7 @@ public class Rotamer {
         chi5 = angles[4];
         chi6 = angles[5];
         chi7 = angles[6];
-        atomicCoordinates = new double [origCoordinates.length][];
+        atomicCoordinates = new double[origCoordinates.length][];
         for (int i = 0; i < origCoordinates.length; i++) {
             atomicCoordinates[i] = new double[origCoordinates[i].length];
             System.arraycopy(origCoordinates[i], 0, atomicCoordinates[i], 0, origCoordinates[i].length);

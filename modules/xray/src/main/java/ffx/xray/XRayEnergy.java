@@ -23,8 +23,9 @@
 package ffx.xray;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.logging.Logger;
+
+import static java.util.Arrays.fill;
 
 import ffx.numerics.Potential;
 import ffx.potential.LambdaInterface;
@@ -36,7 +37,9 @@ import ffx.xray.RefinementMinimize.RefinementMode;
 
 import static ffx.algorithms.Thermostat.convert;
 import static ffx.algorithms.Thermostat.kB;
-import static ffx.numerics.VectorMath.*;
+import static ffx.numerics.VectorMath.b2u;
+import static ffx.numerics.VectorMath.determinant3;
+import static ffx.numerics.VectorMath.u2b;
 
 /**
  * Combine the X-ray target and chemical potential energy.
@@ -266,8 +269,8 @@ public class XRayEnergy implements LambdaInterface, Potential {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>refinementMode</code>.</p>
+     * <p>
+     * Getter for the field <code>refinementMode</code>.</p>
      *
      * @return a {@link ffx.xray.RefinementMinimize.RefinementMode} object.
      */
@@ -276,8 +279,8 @@ public class XRayEnergy implements LambdaInterface, Potential {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>refinementMode</code>.</p>
+     * <p>
+     * Setter for the field <code>refinementMode</code>.</p>
      *
      * @param refinementmode a
      * {@link ffx.xray.RefinementMinimize.RefinementMode} object.
@@ -502,7 +505,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
         assert (x != null);
         double xyz[] = new double[3];
         int index = 0;
-        Arrays.fill(x, 0.0);
+        fill(x, 0.0);
 
         if (refinexyz) {
             for (Atom a : atomarray) {

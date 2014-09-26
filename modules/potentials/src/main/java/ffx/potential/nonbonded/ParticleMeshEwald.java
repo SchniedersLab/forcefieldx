@@ -29,10 +29,8 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-import static java.lang.Math.sqrt;
 import static java.lang.String.format;
+import static java.util.Arrays.copyOf;
 import static java.util.Arrays.fill;
 
 import org.apache.commons.math3.analysis.DifferentiableMultivariateVectorFunction;
@@ -57,7 +55,10 @@ import org.apache.commons.math3.util.IterationListener;
 import org.apache.commons.math3.util.IterationManager;
 
 import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.pow;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
@@ -468,7 +469,8 @@ public class ParticleMeshEwald implements LambdaInterface {
      * that are 1-3 is scaled by p13scale.
      */
     private final double p13scale;
-    private double pdamp[];
+    //private double pdamp[];
+    private double ipdamp[];
     private double thole[];
     private double polarizability[];
     /**
@@ -1017,7 +1019,8 @@ public class ParticleMeshEwald implements LambdaInterface {
             ip12 = new int[nAtoms][];
             ip13 = new int[nAtoms][];
             thole = new double[nAtoms];
-            pdamp = new double[nAtoms];
+            //pdamp = new double[nAtoms];
+            ipdamp = new double[nAtoms];
             polarizability = new double[nAtoms];
             realSpaceSchedule = new PairwiseSchedule(maxThreads, nAtoms, realSpaceRanges);
             if (scfAlgorithm == SCFAlgorithm.CG) {
@@ -1070,15 +1073,20 @@ public class ParticleMeshEwald implements LambdaInterface {
          * Initialize the soft core lambda mask to false for all atoms.
          * Initialize the use mask to true for all atoms.
          */
-        Arrays.fill(isSoft, false);
-        Arrays.fill(use, true);
+        fill(isSoft, false);
+        fill(use, true);
         assignMultipoles();
         assignPolarizationGroups();
         for (Atom ai : atoms) {
             PolarizeType polarizeType = ai.getPolarizeType();
             int index = ai.xyzIndex - 1;
             thole[index] = polarizeType.thole;
-            pdamp[index] = polarizeType.pdamp;
+            ipdamp[index] = polarizeType.pdamp;
+            if (!(ipdamp[index] > 0.0)) {
+                ipdamp[index] = Double.POSITIVE_INFINITY;
+            } else {
+                ipdamp[index] = 1.0 / ipdamp[index];
+            }
             polarizability[index] = polarizeType.polarizability;
         }
         molecule = molecularAssembly.getMoleculeNumbers();
@@ -1580,7 +1588,7 @@ public class ParticleMeshEwald implements LambdaInterface {
         d2lAlpha = d2lAlphaBack;
         generalizedKirkwoodTerm = gkBack;
 
-        Arrays.fill(use, true);
+        fill(use, true);
 
         return energy;
     }
@@ -2144,10 +2152,10 @@ public class ParticleMeshEwald implements LambdaInterface {
         private class PermanentRealSpaceFieldSection extends ParallelSection {
 
             private final PermanentRealSpaceFieldRegion permanentRealSpaceFieldRegion;
-            private final ParallelTeam pt;
+            private final ParallelTeam parallelTeam;
 
             public PermanentRealSpaceFieldSection(ParallelTeam pt) {
-                this.pt = pt;
+                this.parallelTeam = pt;
                 int nt = pt.getThreadCount();
                 permanentRealSpaceFieldRegion = new PermanentRealSpaceFieldRegion(nt);
             }
@@ -2156,7 +2164,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             public void run() {
                 try {
                     realSpacePermTotal -= System.nanoTime();
-                    pt.execute(permanentRealSpaceFieldRegion);
+                    parallelTeam.execute(permanentRealSpaceFieldRegion);
                     realSpacePermTotal += System.nanoTime();
                 } catch (Exception e) {
                     String message = "Fatal exception computing the real space field.\n";
@@ -2392,7 +2400,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                             continue;
                         }
                         final int moleculei = molecule[i];
-                        final double pdi = pdamp[i];
+                        final double pdi = ipdamp[i];
                         final double pti = thole[i];
                         final double xi = x[i];
                         final double yi = y[i];
@@ -2448,7 +2456,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                         counts[i] = 0;
                         preCounts[i] = 0;
                         final int ewald[] = ewalds[i];
-                        final int preList[] = preLists[i];
+                        int preList[] = preLists[i];
                         for (int j = 0; j < npair; j++) {
                             int k = list[j];
                             if (!use[k]
@@ -2470,7 +2478,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 final double xr = dx_local[0];
                                 final double yr = dx_local[1];
                                 final double zr = dx_local[2];
-                                final double pdk = pdamp[k];
+                                final double pdk = ipdamp[k];
                                 final double ptk = thole[k];
                                 final double globalMultipolek[] = mpole[k];
                                 final double ck = globalMultipolek[t000];
@@ -2485,6 +2493,11 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 final double qkyz = globalMultipolek[t011] * oneThird;
                                 double r = sqrt(r2);
                                 if (r < preconditionerCutoff) {
+                                    if (preList.length <= preCounts[i]) {
+                                        int len = preList.length;
+                                        preLists[i] = copyOf(preList, len + 10);
+                                        preList = preLists[i];
+                                    }
                                     preList[preCounts[i]++] = k;
                                 }
                                 /**
@@ -2506,10 +2519,9 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 double scale5 = 1.0;
                                 double scale7 = 1.0;
                                 double damp = pdi * pdk;
-                                if (damp != 0.0) {
-                                    r = sqrt(r2);
+                                //if (damp != 0.0) {
                                     final double pgamma = min(pti, ptk);
-                                    final double rdamp = r / damp;
+                                    final double rdamp = r * damp;
                                     damp = -pgamma * rdamp * rdamp * rdamp;
                                     if (damp > -50.0) {
                                         double expdamp = exp(damp);
@@ -2517,7 +2529,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                                         scale5 = 1.0 - expdamp * (1.0 - damp);
                                         scale7 = 1.0 - expdamp * (1.0 - damp + 0.6 * damp * damp);
                                     }
-                                }
+                                //}
                                 final double scale = mask_local[k];
                                 final double scalep = maskp_local[k];
                                 final double dsc3 = scale3 * scale;
@@ -2540,41 +2552,47 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 final double qiy = 2.0 * (qixy * xr + qiyy * yr + qiyz * zr);
                                 final double qiz = 2.0 * (qixz * xr + qiyz * yr + qizz * zr);
                                 final double qir = (qix * xr + qiy * yr + qiz * zr) * 0.5;
+                                final double bn123i = bn1 * ci + bn2 * dir + bn3 * qir;
+                                final double fkmx = xr * bn123i - bn1 * dix - bn2 * qix;
+                                final double fkmy = yr * bn123i - bn1 * diy - bn2 * qiy;
+                                final double fkmz = zr * bn123i - bn1 * diz - bn2 * qiz;
+                                final double ddr357i = drr3 * ci + drr5 * dir + drr7 * qir;
+                                final double fkdx = xr * ddr357i - drr3 * dix - drr5 * qix;
+                                final double fkdy = yr * ddr357i - drr3 * diy - drr5 * qiy;
+                                final double fkdz = zr * ddr357i - drr3 * diz - drr5 * qiz;
+                                fX[k] += (fkmx - fkdx);
+                                fY[k] += (fkmy - fkdy);
+                                fZ[k] += (fkmz - fkdz);
+                                final double prr357i = prr3 * ci + prr5 * dir + prr7 * qir;
+                                final double fkpx = xr * prr357i - prr3 * dix - prr5 * qix;
+                                final double fkpy = yr * prr357i - prr3 * diy - prr5 * qiy;
+                                final double fkpz = zr * prr357i - prr3 * diz - prr5 * qiz;
+                                fXCR[k] += (fkmx - fkpx);
+                                fYCR[k] += (fkmy - fkpy);
+                                fZCR[k] += (fkmz - fkpz);
                                 final double dkr = dkx * xr + dky * yr + dkz * zr;
                                 final double qkx = 2.0 * (qkxx * xr + qkxy * yr + qkxz * zr);
                                 final double qky = 2.0 * (qkxy * xr + qkyy * yr + qkyz * zr);
                                 final double qkz = 2.0 * (qkxz * xr + qkyz * yr + qkzz * zr);
                                 final double qkr = (qkx * xr + qky * yr + qkz * zr) * 0.5;
-                                final double fimx = -xr * (bn1 * ck - bn2 * dkr + bn3 * qkr) - bn1 * dkx + bn2 * qkx;
-                                final double fimy = -yr * (bn1 * ck - bn2 * dkr + bn3 * qkr) - bn1 * dky + bn2 * qky;
-                                final double fimz = -zr * (bn1 * ck - bn2 * dkr + bn3 * qkr) - bn1 * dkz + bn2 * qkz;
-                                final double fkmx = xr * (bn1 * ci + bn2 * dir + bn3 * qir) - bn1 * dix - bn2 * qix;
-                                final double fkmy = yr * (bn1 * ci + bn2 * dir + bn3 * qir) - bn1 * diy - bn2 * qiy;
-                                final double fkmz = zr * (bn1 * ci + bn2 * dir + bn3 * qir) - bn1 * diz - bn2 * qiz;
-                                final double fidx = -xr * (drr3 * ck - drr5 * dkr + drr7 * qkr) - drr3 * dkx + drr5 * qkx;
-                                final double fidy = -yr * (drr3 * ck - drr5 * dkr + drr7 * qkr) - drr3 * dky + drr5 * qky;
-                                final double fidz = -zr * (drr3 * ck - drr5 * dkr + drr7 * qkr) - drr3 * dkz + drr5 * qkz;
-                                final double fkdx = xr * (drr3 * ci + drr5 * dir + drr7 * qir) - drr3 * dix - drr5 * qix;
-                                final double fkdy = yr * (drr3 * ci + drr5 * dir + drr7 * qir) - drr3 * diy - drr5 * qiy;
-                                final double fkdz = zr * (drr3 * ci + drr5 * dir + drr7 * qir) - drr3 * diz - drr5 * qiz;
-                                final double fipx = -xr * (prr3 * ck - prr5 * dkr + prr7 * qkr) - prr3 * dkx + prr5 * qkx;
-                                final double fipy = -yr * (prr3 * ck - prr5 * dkr + prr7 * qkr) - prr3 * dky + prr5 * qky;
-                                final double fipz = -zr * (prr3 * ck - prr5 * dkr + prr7 * qkr) - prr3 * dkz + prr5 * qkz;
-                                final double fkpx = xr * (prr3 * ci + prr5 * dir + prr7 * qir) - prr3 * dix - prr5 * qix;
-                                final double fkpy = yr * (prr3 * ci + prr5 * dir + prr7 * qir) - prr3 * diy - prr5 * qiy;
-                                final double fkpz = zr * (prr3 * ci + prr5 * dir + prr7 * qir) - prr3 * diz - prr5 * qiz;
+                                final double bn123k = bn1 * ck - bn2 * dkr + bn3 * qkr;
+                                final double fimx = -xr * bn123k - bn1 * dkx + bn2 * qkx;
+                                final double fimy = -yr * bn123k - bn1 * dky + bn2 * qky;
+                                final double fimz = -zr * bn123k - bn1 * dkz + bn2 * qkz;
+                                final double drr357k = drr3 * ck - drr5 * dkr + drr7 * qkr;
+                                final double fidx = -xr * drr357k - drr3 * dkx + drr5 * qkx;
+                                final double fidy = -yr * drr357k - drr3 * dky + drr5 * qky;
+                                final double fidz = -zr * drr357k - drr3 * dkz + drr5 * qkz;
                                 fX[i] += (fimx - fidx);
                                 fY[i] += (fimy - fidy);
                                 fZ[i] += (fimz - fidz);
-                                fX[k] += (fkmx - fkdx);
-                                fY[k] += (fkmy - fkdy);
-                                fZ[k] += (fkmz - fkdz);
+                                final double prr357k = prr3 * ck - prr5 * dkr + prr7 * qkr;
+                                final double fipx = -xr * prr357k - prr3 * dkx + prr5 * qkx;
+                                final double fipy = -yr * prr357k - prr3 * dky + prr5 * qky;
+                                final double fipz = -zr * prr357k - prr3 * dkz + prr5 * qkz;
                                 fXCR[i] += (fimx - fipx);
                                 fYCR[i] += (fimy - fipy);
                                 fZCR[i] += (fimz - fipz);
-                                fXCR[k] += (fkmx - fkpx);
-                                fYCR[k] += (fkmy - fkpy);
-                                fZCR[k] += (fkmz - fkpz);
                             }
                         }
                         for (Torsion torsion : ai.getTorsions()) {
@@ -2621,7 +2639,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                             if (!use[i]) {
                                 continue;
                             }
-                            final double pdi = pdamp[i];
+                            final double pdi = ipdamp[i];
                             final double pti = thole[i];
                             final double multipolei[] = mpole[i];
                             final double ci = multipolei[t000];
@@ -2668,7 +2686,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                                     final double xr = dx_local[0];
                                     final double yr = dx_local[1];
                                     final double zr = dx_local[2];
-                                    final double pdk = pdamp[k];
+                                    final double pdk = ipdamp[k];
                                     final double ptk = thole[k];
                                     final double multipolek[] = mpoles[k];
                                     final double ck = multipolek[t000];
@@ -2705,9 +2723,9 @@ public class ParticleMeshEwald implements LambdaInterface {
                                     double scale5 = 1.0;
                                     double scale7 = 1.0;
                                     double damp = pdi * pdk;
-                                    if (damp != 0.0) {
+                                    //if (damp != 0.0) {
                                         final double pgamma = min(pti, ptk);
-                                        final double rdamp = r / damp;
+                                        final double rdamp = r * damp;
                                         damp = -pgamma * rdamp * rdamp * rdamp;
                                         if (damp > -50.0) {
                                             double expdamp = exp(damp);
@@ -2715,7 +2733,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                                             scale5 = 1.0 - expdamp * (1.0 - damp);
                                             scale7 = 1.0 - expdamp * (1.0 - damp + 0.6 * damp * damp);
                                         }
-                                    }
+                                    //}
                                     final double dsc3 = scale3;
                                     final double dsc5 = scale5;
                                     final double dsc7 = scale7;
@@ -2725,28 +2743,35 @@ public class ParticleMeshEwald implements LambdaInterface {
                                     final double drr3 = (1.0 - dsc3) * rr3;
                                     final double drr5 = (1.0 - dsc5) * rr5;
                                     final double drr7 = (1.0 - dsc7) * rr7;
+
                                     final double dkr = dkx * xr + dky * yr + dkz * zr;
                                     final double qkx = 2.0 * (qkxx * xr + qkxy * yr + qkxz * zr);
                                     final double qky = 2.0 * (qkxy * xr + qkyy * yr + qkyz * zr);
                                     final double qkz = 2.0 * (qkxz * xr + qkyz * yr + qkzz * zr);
                                     final double qkr = (qkx * xr + qky * yr + qkz * zr) * 0.5;
+                                    final double bn123k = bn1 * ck - bn2 * dkr + bn3 * qkr;
+                                    final double drr357k = drr3 * ck - drr5 * dkr + drr7 * qkr;
+                                    final double fimx = -xr * bn123k - bn1 * dkx + bn2 * qkx;
+                                    final double fimy = -yr * bn123k - bn1 * dky + bn2 * qky;
+                                    final double fimz = -zr * bn123k - bn1 * dkz + bn2 * qkz;
+                                    final double fidx = -xr * drr357k - drr3 * dkx + drr5 * qkx;
+                                    final double fidy = -yr * drr357k - drr3 * dky + drr5 * qky;
+                                    final double fidz = -zr * drr357k - drr3 * dkz + drr5 * qkz;
+
                                     final double dir = dix * xr + diy * yr + diz * zr;
                                     final double qix = 2.0 * (qixx * xr + qixy * yr + qixz * zr);
                                     final double qiy = 2.0 * (qixy * xr + qiyy * yr + qiyz * zr);
                                     final double qiz = 2.0 * (qixz * xr + qiyz * yr + qizz * zr);
                                     final double qir = (qix * xr + qiy * yr + qiz * zr) * 0.5;
-                                    final double fimx = -xr * (bn1 * ck - bn2 * dkr + bn3 * qkr) - bn1 * dkx + bn2 * qkx;
-                                    final double fimy = -yr * (bn1 * ck - bn2 * dkr + bn3 * qkr) - bn1 * dky + bn2 * qky;
-                                    final double fimz = -zr * (bn1 * ck - bn2 * dkr + bn3 * qkr) - bn1 * dkz + bn2 * qkz;
-                                    final double fkmx = xr * (bn1 * ci + bn2 * dir + bn3 * qir) - bn1 * dix - bn2 * qix;
-                                    final double fkmy = yr * (bn1 * ci + bn2 * dir + bn3 * qir) - bn1 * diy - bn2 * qiy;
-                                    final double fkmz = zr * (bn1 * ci + bn2 * dir + bn3 * qir) - bn1 * diz - bn2 * qiz;
-                                    final double fidx = -xr * (drr3 * ck - drr5 * dkr + drr7 * qkr) - drr3 * dkx + drr5 * qkx;
-                                    final double fidy = -yr * (drr3 * ck - drr5 * dkr + drr7 * qkr) - drr3 * dky + drr5 * qky;
-                                    final double fidz = -zr * (drr3 * ck - drr5 * dkr + drr7 * qkr) - drr3 * dkz + drr5 * qkz;
-                                    final double fkdx = xr * (drr3 * ci + drr5 * dir + drr7 * qir) - drr3 * dix - drr5 * qix;
-                                    final double fkdy = yr * (drr3 * ci + drr5 * dir + drr7 * qir) - drr3 * diy - drr5 * qiy;
-                                    final double fkdz = zr * (drr3 * ci + drr5 * dir + drr7 * qir) - drr3 * diz - drr5 * qiz;
+                                    final double bn123i = bn1 * ci + bn2 * dir + bn3 * qir;
+                                    final double ddr357i = drr3 * ci + drr5 * dir + drr7 * qir;
+                                    final double fkmx = xr * bn123i - bn1 * dix - bn2 * qix;
+                                    final double fkmy = yr * bn123i - bn1 * diy - bn2 * qiy;
+                                    final double fkmz = zr * bn123i - bn1 * diz - bn2 * qiz;
+                                    final double fkdx = xr * ddr357i - drr3 * dix - drr5 * qix;
+                                    final double fkdy = yr * ddr357i - drr3 * diy - drr5 * qiy;
+                                    final double fkdz = zr * ddr357i - drr3 * diz - drr5 * qiz;
+
                                     final double fix = selfScale * (fimx - fidx);
                                     final double fiy = selfScale * (fimy - fidy);
                                     final double fiz = selfScale * (fimz - fidz);
@@ -2934,7 +2959,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                         final double pix = dipoleCRi[0];
                         final double piy = dipoleCRi[1];
                         final double piz = dipoleCRi[2];
-                        final double pdi = pdamp[i];
+                        final double pdi = ipdamp[i];
                         final double pti = thole[i];
                         /**
                          * Loop over the neighbor list.
@@ -2949,7 +2974,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                                     && moleculei != molecule[k])) {
                                 continue;
                             }
-                            final double pdk = pdamp[k];
+                            final double pdk = ipdamp[k];
                             final double ptk = thole[k];
                             dx[0] = x[k] - xi;
                             dx[1] = y[k] - yi;
@@ -2969,16 +2994,16 @@ public class ParticleMeshEwald implements LambdaInterface {
                             double scale3 = 1.0;
                             double scale5 = 1.0;
                             double damp = pdi * pdk;
-                            if (damp != 0.0) {
+                            //if (damp != 0.0) {
                                 final double pgamma = min(pti, ptk);
-                                final double rdamp = r / damp;
+                                final double rdamp = r * damp;
                                 damp = -pgamma * rdamp * rdamp * rdamp;
                                 if (damp > -50.0) {
                                     final double expdamp = exp(damp);
                                     scale3 = 1.0 - expdamp;
                                     scale5 = 1.0 - expdamp * (1.0 - damp);
                                 }
-                            }
+                            //}
                             double rr3 = rr1 * rr2;
                             double rr5 = 3.0 * rr3 * rr2;
                             rr3 *= (1.0 - scale3);
@@ -3087,7 +3112,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                             final double pix = dipoleCRi[0];
                             final double piy = dipoleCRi[1];
                             final double piz = dipoleCRi[2];
-                            final double pdi = pdamp[i];
+                            final double pdi = ipdamp[i];
                             final double pti = thole[i];
                             /**
                              * Loop over the neighbor list.
@@ -3103,7 +3128,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 if (i == k) {
                                     selfScale = 0.5;
                                 }
-                                final double pdk = pdamp[k];
+                                final double pdk = ipdamp[k];
                                 final double ptk = thole[k];
                                 dx[0] = xs[k] - xi;
                                 dx[1] = ys[k] - yi;
@@ -3123,16 +3148,16 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 double scale3 = 1.0;
                                 double scale5 = 1.0;
                                 double damp = pdi * pdk;
-                                if (damp != 0.0) {
+                                //if (damp != 0.0) {
                                     final double pgamma = min(pti, ptk);
-                                    final double rdamp = r / damp;
+                                    final double rdamp = r * damp;
                                     damp = -pgamma * rdamp * rdamp * rdamp;
                                     if (damp > -50.0) {
                                         final double expdamp = exp(damp);
                                         scale3 = 1.0 - expdamp;
                                         scale5 = 1.0 - expdamp * (1.0 - damp);
                                     }
-                                }
+                                //}
                                 double rr3 = rr1 * rr2;
                                 double rr5 = 3.0 * rr3 * rr2;
                                 rr3 *= (1.0 - scale3);
@@ -3837,7 +3862,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                     piy = inducedDipolepi[1];
                     piz = inducedDipolepi[2];
                     final boolean softi = isSoft[i];
-                    final double pdi = pdamp[i];
+                    final double pdi = ipdamp[i];
                     final double pti = thole[i];
                     final int list[] = lists[i];
                     final int npair = realSpaceCounts[iSymm][i];
@@ -3889,7 +3914,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                         pkx = inducedDipolepk[0];
                         pky = inducedDipolepk[1];
                         pkz = inducedDipolepk[2];
-                        final double pdk = pdamp[k];
+                        final double pdk = ipdamp[k];
                         final double ptk = thole[k];
                         scale = masking_local[k];
                         scalep = maskingp_local[k];
@@ -3925,16 +3950,16 @@ public class ParticleMeshEwald implements LambdaInterface {
                         ddsc7y = 0.0;
                         ddsc7z = 0.0;
                         double damp = pdi * pdk;
-                        if (damp != 0.0) {
-                            final double pgamma = min(pti, ptk);
-                            final double rdamp = r / damp;
+                        //if (damp != 0.0) {
+                            double pgamma = min(pti, ptk);
+                            double rdamp = r * damp;
                             damp = -pgamma * rdamp * rdamp * rdamp;
                             if (damp > -50.0) {
                                 final double expdamp = exp(damp);
                                 scale3 = 1.0 - expdamp;
                                 scale5 = 1.0 - expdamp * (1.0 - damp);
                                 scale7 = 1.0 - expdamp * (1.0 - damp + 0.6 * damp * damp);
-                                final double temp3 = -3.0 * damp * expdamp / r2;
+                                final double temp3 = -3.0 * damp * expdamp * rr2;
                                 final double temp5 = -damp;
                                 final double temp7 = -0.2 - 0.6 * damp;
                                 ddsc3x = temp3 * xr;
@@ -3947,7 +3972,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 ddsc7y = temp7 * ddsc5y;
                                 ddsc7z = temp7 * ddsc5z;
                             }
-                        }
+                        //}
                         if (doPermanentRealSpace) {
                             double ei = permanentPair();
                             //log(i,k,r,ei);
@@ -3995,16 +4020,16 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 ddsc7y = 0.0;
                                 ddsc7z = 0.0;
                                 damp = pdi * pdk;
-                                if (damp != 0.0) {
-                                    final double pgamma = min(pti, ptk);
-                                    final double rdamp = r / damp;
+                                //if (damp != 0.0) {
+                                    pgamma = min(pti, ptk);
+                                    rdamp = r * damp;
                                     damp = -pgamma * rdamp * rdamp * rdamp;
                                     if (damp > -50.0) {
                                         final double expdamp = exp(damp);
                                         scale3 = 1.0 - expdamp;
                                         scale5 = 1.0 - expdamp * (1.0 - damp);
                                         scale7 = 1.0 - expdamp * (1.0 - damp + 0.6 * damp * damp);
-                                        final double temp3 = -3.0 * damp * expdamp / r2;
+                                        final double temp3 = -3.0 * damp * expdamp * rr2;
                                         final double temp5 = -damp;
                                         final double temp7 = -0.2 - 0.6 * damp;
                                         ddsc3x = temp3 * xr;
@@ -4017,7 +4042,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                                         ddsc7y = temp7 * ddsc5y;
                                         ddsc7z = temp7 * ddsc5z;
                                     }
-                                }
+                                //}
                             }
                             double ei = polarizationPair();
                             if (Double.isNaN(ei) || Double.isInfinite(ei)) {
@@ -7848,7 +7873,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                         final double pix = dipoleCRi[0];
                         final double piy = dipoleCRi[1];
                         final double piz = dipoleCRi[2];
-                        final double pdi = pdamp[i];
+                        final double pdi = ipdamp[i];
                         final double pti = thole[i];
                         /**
                          * Loop over the neighbor list.
@@ -7860,7 +7885,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                             if (!use[k]) {
                                 continue;
                             }
-                            final double pdk = pdamp[k];
+                            final double pdk = ipdamp[k];
                             final double ptk = thole[k];
                             dx[0] = x[k] - xi;
                             dx[1] = y[k] - yi;
@@ -7880,16 +7905,16 @@ public class ParticleMeshEwald implements LambdaInterface {
                             double scale3 = 1.0;
                             double scale5 = 1.0;
                             double damp = pdi * pdk;
-                            if (damp != 0.0) {
+                            //if (damp != 0.0) {
                                 final double pgamma = min(pti, ptk);
-                                final double rdamp = r / damp;
+                                final double rdamp = r * damp;
                                 damp = -pgamma * rdamp * rdamp * rdamp;
                                 if (damp > -50.0) {
                                     final double expdamp = exp(damp);
                                     scale3 = 1.0 - expdamp;
                                     scale5 = 1.0 - expdamp * (1.0 - damp);
                                 }
-                            }
+                            //}
                             double rr3 = rr1 * rr2;
                             double rr5 = 3.0 * rr3 * rr2;
                             rr3 *= (1.0 - scale3);
@@ -7998,7 +8023,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                             final double pix = dipoleCRi[0];
                             final double piy = dipoleCRi[1];
                             final double piz = dipoleCRi[2];
-                            final double pdi = pdamp[i];
+                            final double pdi = ipdamp[i];
                             final double pti = thole[i];
                             /**
                              * Loop over the neighbor list.
@@ -8014,7 +8039,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 if (i == k) {
                                     selfScale = 0.5;
                                 }
-                                final double pdk = pdamp[k];
+                                final double pdk = ipdamp[k];
                                 final double ptk = thole[k];
                                 dx[0] = xs[k] - xi;
                                 dx[1] = ys[k] - yi;
@@ -8034,16 +8059,16 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 double scale3 = 1.0;
                                 double scale5 = 1.0;
                                 double damp = pdi * pdk;
-                                if (damp != 0.0) {
+                                //if (damp != 0.0) {
                                     final double pgamma = min(pti, ptk);
-                                    final double rdamp = r / damp;
+                                    final double rdamp = r * damp;
                                     damp = -pgamma * rdamp * rdamp * rdamp;
                                     if (damp > -50.0) {
                                         final double expdamp = exp(damp);
                                         scale3 = 1.0 - expdamp;
                                         scale5 = 1.0 - expdamp * (1.0 - damp);
                                     }
-                                }
+                                //}
                                 double rr3 = rr1 * rr2;
                                 double rr5 = 3.0 * rr3 * rr2;
                                 rr3 *= (1.0 - scale3);

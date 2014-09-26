@@ -15,40 +15,9 @@
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * 
- *                    BioJava development code
- *
- * This code may be freely distributed and modified under the
- * terms of the GNU Lesser General Public Licence.  This should
- * be distributed with the code.  If you do not have a copy,
- * see:
- *
- *      http://www.gnu.org/copyleft/lesser.html
- *
- * Copyright for this code is held jointly by the individual
- * authors.  These should be listed in @author doc comments.
- *
- * For more information on the BioJava project and its aims,
- * or to join the biojava-l mailing list, visit the home page
- * at:
- *
- *      http://www.biojava.org/
- *
- * Created on 7/8/2014
- *
  */
-
-
 package ffx.potential.parsers;
 
-// Parallel Java Imports
-import edu.rit.pj.IntegerForLoop;
-import edu.rit.pj.ParallelRegion;
-import edu.rit.pj.ParallelTeam;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -57,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import org.apache.commons.io.FilenameUtils;
 import org.biojava.bio.structure.Atom;
 import org.biojava.bio.structure.Chain;
@@ -72,14 +42,19 @@ import org.biojava.bio.structure.align.StructurePairAligner;
 import org.biojava.bio.structure.align.pairwise.AlternativeAlignment;
 import org.biojava.bio.structure.io.PDBFileReader;
 
+import edu.rit.pj.IntegerForLoop;
+import edu.rit.pj.ParallelRegion;
+import edu.rit.pj.ParallelTeam;
+
 /**
- * Aligns a list of files with a list of source files by RMSD, and can use the source
- * files to fix certain issues in the aligned files.
+ * Aligns a list of files with a list of source files by RMSD, and can use the
+ * source files to fix certain issues in the aligned files.
  *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
  */
 public class PDBFileMatcher {
+
     private static final Logger logger = Logger.getLogger(PDBFileMatcher.class.getName());
     private final File[] sourceFiles;
     private final FileFilePair[] matchFilePairs;
@@ -98,7 +73,7 @@ public class PDBFileMatcher {
     private boolean robustMatch = false;
     private boolean fixCryst = false;
     private boolean fixModel = false;
-    
+
     public PDBFileMatcher(File[] sourceFiles, File[] matchFiles) {
         this.sourceFiles = sourceFiles;
         int numMatchFiles = matchFiles.length;
@@ -109,47 +84,50 @@ public class PDBFileMatcher {
             matchFilePairs[i] = new FileFilePair(matchFiles[i]);
         }
     }
-    
+
     public void setVerbose(boolean verbose) {
         this.verbose = verbose;
     }
-    
+
     public void setParallel(boolean parallel) {
         this.parallel = parallel;
     }
-    
+
     public void setHeaderLink(boolean headerLink) {
         this.headerLink = headerLink;
     }
-    
+
     public void setFixBFactors(boolean fixBFactors) {
         this.fixBFactors = fixBFactors;
     }
-    
+
     public void setFixSSBonds(boolean fixSSBonds) {
         this.fixSSBonds = fixSSBonds;
     }
-    
+
     public void setSuperpose(boolean superpose) {
         this.superpose = superpose;
     }
-    
+
     public void setAtomsUsed(int atomsUsed) {
         this.atomsUsed = atomsUsed;
     }
+
     public void setSuffix(String suffix) {
         this.fileSuffix = suffix;
     }
+
     public void setRobustMatch(boolean robustMatch) {
         this.robustMatch = robustMatch;
     }
+
     public void setFixCryst(boolean fixCryst) {
         this.fixCryst = fixCryst;
     }
-    
+
     /**
-     * Primary class method: matches match files to source files, and if any fixer
-     * flags are set, calls fixFiles to edit the match files.
+     * Primary class method: matches match files to source files, and if any
+     * fixer flags are set, calls fixFiles to edit the match files.
      */
     public void match() {
         try {
@@ -177,8 +155,8 @@ public class PDBFileMatcher {
     }
 
     /**
-     * Second major class method: uses information from source files to fix match
-     * files.
+     * Second major class method: uses information from source files to fix
+     * match files.
      */
     private void fixFiles() {
         if (parallel) {
@@ -197,10 +175,10 @@ public class PDBFileMatcher {
             logger.info(String.format(" File %d fix time: %12.9f sec", i, 1.0E-9 * fixTimes[i]));
         }
     }
-    
+
     private double calculateRMSD(FileFilePair matchFile, Structure sourceStructure, StructurePairAligner aligner) throws StructureException {
         Structure matchStructure = matchFile.getStructure();
-        
+
         if (superpose) {
             double rmsd = Double.MAX_VALUE;
             aligner.align(matchStructure, matchStructure);
@@ -211,7 +189,7 @@ public class PDBFileMatcher {
             }
             return rmsd;
         }
-        
+
         Atom[] matchArray;
         Atom[] sourceArray;
         switch (atomsUsed) {
@@ -220,7 +198,7 @@ public class PDBFileMatcher {
                 matchArray = StructureTools.getAtomArray(matchStructure, atomNames);
                 sourceArray = StructureTools.getAtomArray(sourceStructure, atomNames);
                 break;
-                
+
             case 2:
                 List<Atom> matchAtoms = new ArrayList<>();
                 List<Chain> matchChains = matchStructure.getChains();
@@ -232,7 +210,7 @@ public class PDBFileMatcher {
                     }
                 }
                 matchArray = matchAtoms.toArray(new Atom[matchAtoms.size()]);
-                
+
                 List<Atom> sourceAtoms = new ArrayList<>();
                 List<Chain> sourceChains = sourceStructure.getChains();
                 for (Chain chain : sourceChains) {
@@ -244,7 +222,7 @@ public class PDBFileMatcher {
                 }
                 sourceArray = sourceAtoms.toArray(new Atom[sourceAtoms.size()]);
                 break;
-                
+
             case 3:
                 matchAtoms = new ArrayList<>();
                 matchChains = matchStructure.getChains();
@@ -257,7 +235,7 @@ public class PDBFileMatcher {
                     }
                 }
                 matchArray = matchAtoms.toArray(new Atom[matchAtoms.size()]);
-                
+
                 sourceAtoms = new ArrayList<>();
                 sourceChains = sourceStructure.getChains();
                 for (Chain chain : sourceChains) {
@@ -270,7 +248,7 @@ public class PDBFileMatcher {
                 }
                 sourceArray = sourceAtoms.toArray(new Atom[sourceAtoms.size()]);
                 break;
-                
+
             case 4:
                 matchArray = StructureTools.getAllAtomArray(matchStructure);
                 sourceArray = StructureTools.getAllAtomArray(sourceStructure);
@@ -278,73 +256,72 @@ public class PDBFileMatcher {
             default:
                 throw new IllegalArgumentException("atomsUsed is not 1-4: this has not been properly checked at an earlier stage.");
         } // Returns simpleRMSD(matchArray, sourceArray) below old code.
-        
+
         /*List<Atom> matchAtoms = new ArrayList<>();
-        Structure matchStructure = matchFile.getStructure();
-        List<Chain> matchChains = matchStructure.getChains();
-        if (atomsUsed == 4) {
-            matchAtoms = StructureTools.getAllAtomArray(matchStructure);
-        }
-        for (Chain chain : matchChains) {
-            List<Group> matchGroups = chain.getSeqResGroups();
-            for (Group group : matchGroups) {
-                String groupType = group.getType();
-                if (groupType.equalsIgnoreCase("HETATOM")) {
-                    if (atomsUsed < 3) {
-                        continue;
-                    } else if (atomsUsed < 4 && group.isWater()) {
-                        continue;
-                    }
-                }
-                if (atomsUsed != 1) {
-                    matchAtoms.addAll(group.getAtoms());
-                } else {
-                    try {
-                        matchAtoms.add(getReferenceAtom(group));
-                    } catch (StructureException ex) {
-                        String refAtomType = (groupType.equalsIgnoreCase("AminoAcid") ? "CA" : "N1/9");
-                        // refAtomType should be binary between amino acid and nucleic acid, as HETATOM is eliminated.
-                        logger.info(String.format(" Reference atom %s could not be found for group %s", 
-                                refAtomType, group.toString()));
-                    }
-                }
-            }
-        }
-        Atom[] match = new Atom[matchAtoms.size()];
-        matchAtoms.toArray(match);
-        matchAtoms.clear();
-        
-        List<Atom> sourceAtoms = new ArrayList<>();
-        List<Chain> sourceChains = sourceStructure.getChains();
-        for (Chain chain : sourceChains) {
-            List<Group> sourceGroups = chain.getSeqResGroups();
-            for (Group group : sourceGroups) {
-                String groupType = group.getType();
-                if (groupType.equalsIgnoreCase("HETATOM")) {
-                    if (atomsUsed < 3) {
-                        continue;
-                    } else if (atomsUsed < 4 && group.isWater()) {
-                        continue;
-                    }
-                }
-                if (atomsUsed != 1) {
-                    sourceAtoms.addAll(group.getAtoms());
-                } else {
-                    try {
-                        sourceAtoms.add(getReferenceAtom(group));
-                    } catch (StructureException ex) {
-                        logger.info(String.format(" Reference atom could not be found for group %s", group.toString()));
-                    }
-                }
-            }
-        }
-        Atom[] sourceArray = new Atom[sourceAtoms.size()];
-        sourceAtoms.toArray(sourceArray);
-        sourceAtoms.clear();*/
-        
+         Structure matchStructure = matchFile.getStructure();
+         List<Chain> matchChains = matchStructure.getChains();
+         if (atomsUsed == 4) {
+         matchAtoms = StructureTools.getAllAtomArray(matchStructure);
+         }
+         for (Chain chain : matchChains) {
+         List<Group> matchGroups = chain.getSeqResGroups();
+         for (Group group : matchGroups) {
+         String groupType = group.getType();
+         if (groupType.equalsIgnoreCase("HETATOM")) {
+         if (atomsUsed < 3) {
+         continue;
+         } else if (atomsUsed < 4 && group.isWater()) {
+         continue;
+         }
+         }
+         if (atomsUsed != 1) {
+         matchAtoms.addAll(group.getAtoms());
+         } else {
+         try {
+         matchAtoms.add(getReferenceAtom(group));
+         } catch (StructureException ex) {
+         String refAtomType = (groupType.equalsIgnoreCase("AminoAcid") ? "CA" : "N1/9");
+         // refAtomType should be binary between amino acid and nucleic acid, as HETATOM is eliminated.
+         logger.info(String.format(" Reference atom %s could not be found for group %s",
+         refAtomType, group.toString()));
+         }
+         }
+         }
+         }
+         Atom[] match = new Atom[matchAtoms.size()];
+         matchAtoms.toArray(match);
+         matchAtoms.clear();
+
+         List<Atom> sourceAtoms = new ArrayList<>();
+         List<Chain> sourceChains = sourceStructure.getChains();
+         for (Chain chain : sourceChains) {
+         List<Group> sourceGroups = chain.getSeqResGroups();
+         for (Group group : sourceGroups) {
+         String groupType = group.getType();
+         if (groupType.equalsIgnoreCase("HETATOM")) {
+         if (atomsUsed < 3) {
+         continue;
+         } else if (atomsUsed < 4 && group.isWater()) {
+         continue;
+         }
+         }
+         if (atomsUsed != 1) {
+         sourceAtoms.addAll(group.getAtoms());
+         } else {
+         try {
+         sourceAtoms.add(getReferenceAtom(group));
+         } catch (StructureException ex) {
+         logger.info(String.format(" Reference atom could not be found for group %s", group.toString()));
+         }
+         }
+         }
+         }
+         Atom[] sourceArray = new Atom[sourceAtoms.size()];
+         sourceAtoms.toArray(sourceArray);
+         sourceAtoms.clear();*/
         return simpleRMSD(sourceArray, matchArray);
     }
-    
+
     private double simpleRMSD(Atom[] atomsA, Atom[] atomsB) throws IllegalArgumentException {
         double rmsd = 0.0;
         //double comp = 0.0; PDB file precision more important than addition error.
@@ -357,9 +334,9 @@ public class PDBFileMatcher {
                 ++numMatches; // Done here in case of exceptions thrown.
                 rmsd += getSqDistance(atomFromA, atomFromB);
                 /*double dist2 = getSqDistance(atomFromA, atomFromB) - comp; // Kahan summation algorithm.
-                double temp = rmsd + dist2;
-                comp = (temp - rmsd) - dist2;
-                rmsd = temp;*/
+                 double temp = rmsd + dist2;
+                 comp = (temp - rmsd) - dist2;
+                 rmsd = temp;*/
             } catch (IllegalArgumentException ex) {
                 if (!atomFromA.getElement().isHydrogen()) {
                     // Will eventually move logger statement here.
@@ -373,7 +350,7 @@ public class PDBFileMatcher {
         rmsd = Math.sqrt(rmsd / numMatches);
         return rmsd;
     }
-    
+
     private double getSqDistance(Atom a1, Atom a2) {
         double dx = a1.getX();
         dx -= a2.getX();
@@ -381,15 +358,16 @@ public class PDBFileMatcher {
         dy -= a2.getY();
         double dz = a2.getZ();
         dz -= a2.getZ();
-        return dx*dx + dy*dy + dz*dz;
+        return dx * dx + dy * dy + dz * dz;
     }
-    
+
     private double getDistance(Atom a1, Atom a2) {
         return Math.sqrt(getSqDistance(a1, a2));
     }
-    
+
     /**
      * Finds atom1's match in atoms2[], given an array index to search first.
+     *
      * @param atom1 An Atom
      * @param atoms2 An Atom[] to search
      * @param i Index in atoms2 to check first.
@@ -409,11 +387,12 @@ public class PDBFileMatcher {
         atom2 = getMatchingAtom(atom1, atoms2);
         return atom2;
     }
-    
+
     /**
-     * Finds atom1's match in structure2; uses atom1's residue number, atom type,
-     * and PDB serial number as a guess; if robustMatch is set true, will search
-     * all Atoms in structure2.
+     * Finds atom1's match in structure2; uses atom1's residue number, atom
+     * type, and PDB serial number as a guess; if robustMatch is set true, will
+     * search all Atoms in structure2.
+     *
      * @param atom1 An Atom
      * @param structure2 A Structure to search
      * @param searchAll Whether to search all Atoms in structure2.
@@ -456,10 +435,11 @@ public class PDBFileMatcher {
         }
         throw new IllegalArgumentException("Matching atom not found.");
     }
-    
+
     /**
-     * Searches for atom1's match in atoms2; first checks for an equivalent atom, 
-     * then performs a search over all atoms in atoms2.
+     * Searches for atom1's match in atoms2; first checks for an equivalent
+     * atom, then performs a search over all atoms in atoms2.
+     *
      * @param atom1 An Atom.
      * @param atoms2 An Atom[] to search.
      * @return atom1's match in atom2.
@@ -480,12 +460,13 @@ public class PDBFileMatcher {
         }
         throw new IllegalArgumentException(String.format("No matching atom for %s found", atom1.toString()));
     }
-    
+
     /**
      * Mildly robust atom comparison tool which attempts to account for things
      * like missing hydrogens causing inequal PDB serial numbering. Compares on
-     * element, group PDB code, atom serial (if false, also checks group number),
-     * and atom name (currently only accepts H-H1 mismatches).
+     * element, group PDB code, atom serial (if false, also checks group
+     * number), and atom name (currently only accepts H-H1 mismatches).
+     *
      * @param a1
      * @param a2
      * @return if considered equivalent.
@@ -509,18 +490,19 @@ public class PDBFileMatcher {
         String a2Name = a2.getName();
         if (!a1Name.equalsIgnoreCase(a2Name)) {
             // Courtesy of MSMBuilder, I have to keep track of Hs which should be H1.
-            if (!((a1Name.equalsIgnoreCase("H") && a2Name.equalsIgnoreCase("H1")) 
+            if (!((a1Name.equalsIgnoreCase("H") && a2Name.equalsIgnoreCase("H1"))
                     || (a2Name.equalsIgnoreCase("H") && a1Name.equalsIgnoreCase("H1")))) {
                 return false;
             }
         }
         return true;
     }
-    
+
     /**
-     * May rework once I figure out whether BioJava likes to keep atom names intact
-     * or not: returns CA (proteins), N1/9 (nucleic acids), or the first returned
-     * atom (default) as in FFX's Residue.getReferenceAtom().
+     * May rework once I figure out whether BioJava likes to keep atom names
+     * intact or not: returns CA (proteins), N1/9 (nucleic acids), or the first
+     * returned atom (default) as in FFX's Residue.getReferenceAtom().
+     *
      * @param group Residue to get reference atom for.
      * @return CA or N1/9 Atom.
      * @throws StructureException If no proper reference Atom could be found.
@@ -541,7 +523,7 @@ public class PDBFileMatcher {
                 return group.getAtoms().get(0);
         }
     }
-    
+
     private File createVersionedCopy(File origFile) throws IOException {
         String filename = origFile.getName();
         String ext = FilenameUtils.getExtension(filename);
@@ -609,9 +591,10 @@ public class PDBFileMatcher {
         }
         return true;
     }
-    
+
     /**
      * Creates a duplicate PDBCrystallographicInfo object.
+     *
      * @param sourceInfo
      * @return duplicate of sourceInfo
      * @throws IllegalArgumentException if sourceInfo not crystallographic.
@@ -622,10 +605,10 @@ public class PDBFileMatcher {
             throw new IllegalArgumentException(" Source structure has no meaningful "
                     + "crystallographic information.");
         }
-        
+
         PDBCrystallographicInfo retInfo = new PDBCrystallographicInfo();
         retInfo.setSpaceGroup(sourceInfo.getSpaceGroup());
-        
+
         // Newer versions of BioJava can use the CrystalCell object.
         retInfo.setA(sourceInfo.getA());
         retInfo.setAlpha(sourceInfo.getAlpha());
@@ -634,7 +617,7 @@ public class PDBFileMatcher {
         retInfo.setC(sourceInfo.getC());
         retInfo.setGamma(sourceInfo.getGamma());
         retInfo.setZ(sourceInfo.getZ());
-        
+
         return retInfo;
     }
 
@@ -676,7 +659,7 @@ public class PDBFileMatcher {
         if (sourceFile == null) {
             throw new IOException(String.format("No source file was matched to file %s", matchFile.toString()));
         }
-        
+
         Structure sourceStructure = null;
         if (fixAtoms) {
             sourceStructure = filereader.getStructure(sourceFile);
@@ -741,7 +724,7 @@ public class PDBFileMatcher {
                     // Silent.
                 }
             }
-            
+
             String toInsert = String.format("REMARK%4d SOURCE FILE: %s", remarkNumber, sourceFile.getName());
             toInsert = toInsert.concat(String.format("REMARK%4d RMSD:%11.6f ANGSTROMS", remarkNumber, currentPair.getRMSD()));
             pdbBuilder.insert(position, toInsert);
@@ -757,8 +740,8 @@ public class PDBFileMatcher {
             }
         }
     }
-    
-    private void sequentialFileMatch () {
+
+    private void sequentialFileMatch() {
         PDBFileReader filereader = new PDBFileReader();
         StructurePairAligner aligner = new StructurePairAligner();
         //int numSources = sourceFiles.length;
@@ -773,7 +756,7 @@ public class PDBFileMatcher {
             logger.severe(String.format(" Exception matching files %s", ex.toString()));
         }
     }
-    
+
     private void sequentialFixer() {
         PDBFileReader filereader = new PDBFileReader();
         for (int i = 0; i < matchFilePairs.length; i++) {
@@ -782,14 +765,15 @@ public class PDBFileMatcher {
             try {
                 fixFile(currentPair, filereader);
             } catch (IOException ex) {
-                
+
             }
             fixTime += System.nanoTime();
             fixTimes[i] += fixTime;
         }
     }
-    
+
     private class MatchingRegion extends ParallelRegion {
+
         @Override
         public void run() {
             try {
@@ -800,8 +784,9 @@ public class PDBFileMatcher {
             }
         }
     }
-    
+
     private class MatchingLoop extends IntegerForLoop {
+
         @Override
         public void run(int lb, int ub) throws IOException {
             PDBFileReader filereader = new PDBFileReader();
@@ -815,8 +800,9 @@ public class PDBFileMatcher {
             }
         }
     }
-    
+
     private class FixerRegion extends ParallelRegion {
+
         @Override
         public void run() {
             try {
@@ -827,8 +813,9 @@ public class PDBFileMatcher {
             }
         }
     }
-    
+
     private class FixerLoop extends IntegerForLoop {
+
         @Override
         public void run(int lb, int ub) throws IOException {
             PDBFileReader filereader = new PDBFileReader();
@@ -841,61 +828,65 @@ public class PDBFileMatcher {
             }
         }
     }
-    
+
     /**
      * Used to keep track of what is currently considered the best source file
      * candidate for an alignment file and its RMSD.
      */
     private class FileFilePair {
+
         private final File matchFile;
         private Structure matchStructure;
         private File sourceFile;
         private double rmsd;
-        
+
         public FileFilePair(File matchFile) {
             this.matchFile = matchFile;
             rmsd = Double.MAX_VALUE;
         }
+
         public FileFilePair(File matchFile, File sourceFile) {
             this(matchFile);
             this.sourceFile = sourceFile;
         }
+
         public FileFilePair(File match, File sourceFile, double rmsd) {
             this(match, sourceFile);
             this.rmsd = rmsd;
         }
-        
+
         public void setSourceFile(File sourceFile) {
             this.sourceFile = sourceFile;
         }
-        
+
         public void setRMSD(double rmsd) {
             this.rmsd = rmsd;
         }
-        
+
         public void setStructure(Structure structure) {
             this.matchStructure = structure;
         }
-        
+
         public File getSourceFile() {
             return sourceFile;
         }
-        
+
         public File getMatchedFile() {
             return matchFile;
         }
-        
+
         public double getRMSD() {
             return rmsd;
         }
-        
+
         public Structure getStructure() {
             return matchStructure;
         }
-        
+
         /**
          * Will replace the source file if its RMSD is lower than current RMSD
          * and returns true; otherwise returns false.
+         *
          * @param newSource Source file to check
          * @param rmsd A double
          * @return Whether replaced
@@ -912,7 +903,7 @@ public class PDBFileMatcher {
         /**
          * {@inheritDoc}
          *
-         * Overidden equals method that return true if object is equals to this, 
+         * Overidden equals method that return true if object is equals to this,
          * or is of the same class and has the same alignedFile and sourceFile.
          */
         @Override
@@ -925,7 +916,7 @@ public class PDBFileMatcher {
             FileFilePair other = (FileFilePair) object;
             return other.getMatchedFile().equals(this.matchFile) && other.getSourceFile().equals(this.sourceFile);
         }
-        
+
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder("Aligned file: ").append(matchFile.getPath()).append("\nSource file: ");
@@ -942,66 +933,65 @@ public class PDBFileMatcher {
             return sb.toString();
         }
     }
-    
-    /*private class AtomAtomPair {
-        private final Atom atom1;
-        private Atom atom2;
-        
-        public AtomAtomPair(Atom atom1) {
-            this.atom1 = atom1;
-        }
-        public AtomAtomPair(Atom atom1, Atom atom2) {
-            this(atom1);
-            this.atom2 = atom2;
-        }
-        
-        public Atom getAtom1() {
-            return atom1;
-        }
-        public Atom getAtom2() {
-            return atom2;
-        }
-        public Atom[] getAtoms() {
-            Atom[] ret = {atom1, atom2};
-            return ret;
-        }
-        public void setAtom2(Atom a2) {
-            this.atom2 = a2;
-        }
-        /**
-         * Returns true and sets atom2 if a2 matches (using compareAtoms) atom1.
-         * @param a2 Candidate Atom match for atom1
-         * @return If a match
-         */
-        /*public boolean tryMatch(Atom a2) {
-            if (compareAtoms(atom1, a2)) {
-                this.atom2 = a2;
-                return true;
-            } else {
-                return false;
-            }
-        }*/
 
-        /**
-         * {@inheritDoc}
-         *
-         * Overidden equals method that return true if object is equals to this, 
-         * or is of the same class and has the same alignedFile and sourceFile.
-         */
-        /*@Override
-        public boolean equals(Object object) {
-            if (this == object) {
-                return true;
-            } else if (object == null || getClass() != object.getClass()) {
-                return false;
-            }
-            AtomAtomPair other = (AtomAtomPair) object;
-            return atom1.equals(other.getAtom1()) && atom2.equals(other.getAtom2());
-        }
-        
-        @Override
-        public String toString() {
-            return new StringBuilder("Atom 1: ").append(atom1.toString()).append("   Atom 2: ").append(atom2.toString()).toString();
-        }
-    }*/
+    /*private class AtomAtomPair {
+     private final Atom atom1;
+     private Atom atom2;
+
+     public AtomAtomPair(Atom atom1) {
+     this.atom1 = atom1;
+     }
+     public AtomAtomPair(Atom atom1, Atom atom2) {
+     this(atom1);
+     this.atom2 = atom2;
+     }
+
+     public Atom getAtom1() {
+     return atom1;
+     }
+     public Atom getAtom2() {
+     return atom2;
+     }
+     public Atom[] getAtoms() {
+     Atom[] ret = {atom1, atom2};
+     return ret;
+     }
+     public void setAtom2(Atom a2) {
+     this.atom2 = a2;
+     }
+     /**
+     * Returns true and sets atom2 if a2 matches (using compareAtoms) atom1.
+     * @param a2 Candidate Atom match for atom1
+     * @return If a match
+     */
+    /*public boolean tryMatch(Atom a2) {
+     if (compareAtoms(atom1, a2)) {
+     this.atom2 = a2;
+     return true;
+     } else {
+     return false;
+     }
+     }*/
+    /**
+     * {@inheritDoc}
+     *
+     * Overidden equals method that return true if object is equals to this, or
+     * is of the same class and has the same alignedFile and sourceFile.
+     */
+    /*@Override
+     public boolean equals(Object object) {
+     if (this == object) {
+     return true;
+     } else if (object == null || getClass() != object.getClass()) {
+     return false;
+     }
+     AtomAtomPair other = (AtomAtomPair) object;
+     return atom1.equals(other.getAtom1()) && atom2.equals(other.getAtom2());
+     }
+
+     @Override
+     public String toString() {
+     return new StringBuilder("Atom 1: ").append(atom1.toString()).append("   Atom 2: ").append(atom2.toString()).toString();
+     }
+     }*/
 }

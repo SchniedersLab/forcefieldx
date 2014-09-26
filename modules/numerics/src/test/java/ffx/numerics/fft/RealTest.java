@@ -50,9 +50,9 @@ public class RealTest {
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{{"Test n = 20", 20},
-                    {"Test n = 22", 22},
-                    {"Test n = 120", 120}
-                });
+        {"Test n = 22", 22},
+        {"Test n = 120", 120}
+        });
     }
 
     public RealTest(String info, int n) {

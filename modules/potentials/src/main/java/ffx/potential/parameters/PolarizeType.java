@@ -25,7 +25,7 @@ package ffx.potential.parameters;
 import java.util.Comparator;
 import java.util.HashMap;
 
-import static java.lang.Math.pow;
+import static org.apache.commons.math3.util.FastMath.pow;
 
 /**
  * The PolarizeType class defines an isotropic atomic polarizability.

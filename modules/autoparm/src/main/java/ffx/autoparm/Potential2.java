@@ -22,13 +22,23 @@
  */
 package ffx.autoparm;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 import java.util.logging.Logger;
 
 import org.apache.commons.configuration.CompositeConfiguration;
+
+import static org.apache.commons.math3.util.FastMath.cos;
+import static org.apache.commons.math3.util.FastMath.sin;
 
 import edu.rit.pj.ParallelTeam;
 
@@ -833,9 +843,9 @@ public class Potential2 implements OptimizationListener {
             } else {
                 phi = (phiold + 3.6 / Math.sqrt(tot * (1 - h * h))) % (2 * Math.PI);
             }
-            dot[i][0] = Math.sin(theta) * Math.cos(phi);
-            dot[i][1] = Math.sin(theta) * Math.sin(phi);
-            dot[i][2] = Math.cos(theta);
+            dot[i][0] = sin(theta) * cos(phi);
+            dot[i][1] = sin(theta) * sin(phi);
+            dot[i][2] = cos(theta);
             phiold = phi;
         }
 

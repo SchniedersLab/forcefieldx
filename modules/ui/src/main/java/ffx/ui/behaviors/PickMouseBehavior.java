@@ -54,7 +54,8 @@ public abstract class PickMouseBehavior extends Behavior {
      * operate on, and the bounds.
      */
     /**
-     * <p>Constructor for PickMouseBehavior.</p>
+     * <p>
+     * Constructor for PickMouseBehavior.</p>
      *
      * @param canvas a {@link javax.media.j3d.Canvas3D} object.
      * @param root a {@link javax.media.j3d.BranchGroup} object.
@@ -73,7 +74,8 @@ public abstract class PickMouseBehavior extends Behavior {
     }
 
     /**
-     * <p>initialize</p>
+     * <p>
+     * initialize</p>
      */
     public void initialize() {
         conditions = new WakeupCriterion[1];
@@ -127,7 +129,8 @@ public abstract class PickMouseBehavior extends Behavior {
     }
 
     /**
-     * <p>setTolerance</p>
+     * <p>
+     * setTolerance</p>
      *
      * @param tol a float.
      */
@@ -141,7 +144,8 @@ public abstract class PickMouseBehavior extends Behavior {
      * Subclasses shall implement this update function
      */
     /**
-     * <p>updateScene</p>
+     * <p>
+     * updateScene</p>
      *
      * @param xpos a int.
      * @param ypos a int.

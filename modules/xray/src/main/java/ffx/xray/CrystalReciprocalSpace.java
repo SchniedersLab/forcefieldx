@@ -26,14 +26,19 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.lang.Math.floor;
-import static java.lang.Math.min;
+import static java.util.Arrays.fill;
 
-import static org.apache.commons.math.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.floor;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.pj.IntegerForLoop;
+import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
+import edu.rit.pj.reduction.SharedIntegerArray;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
@@ -93,32 +98,33 @@ public class CrystalReciprocalSpace {
     /**
      * The possible solvent model methods
      */
-    public static interface SolventModel {
+    public enum SolventModel {
 
         /**
          * do not model solvent scattering
          */
-        public static final int NONE = 1;
+        NONE,
         /**
          * the classical binary (0, 1) model
          */
-        public static final int BINARY = 2;
+        BINARY,
         /**
          * a Gaussian switch model
          */
-        public static final int GAUSSIAN = 3;
+        GAUSSIAN,
         /**
          * a cubic polynomial switch model (default)
          */
-        public static final int POLYNOMIAL = 4;
+        POLYNOMIAL
     }
 
+    // NONE 1, BINARY 2, GAUSSIAN 3 and POLYNOMIAL 4
     public enum GridMethod {
 
         SPATIAL, SLICE
     }
 
-    private static double toSeconds = 0.000000001;
+    private static double toSeconds = 1.0e-9;
     private boolean solvent = false;
     private final boolean neutron;
     private boolean useThreeGaussians = true;
@@ -135,14 +141,19 @@ public class CrystalReciprocalSpace {
     protected final double densityGrid[];
     protected final double solventGrid[];
     private int aRadGrid;
-    protected int solventModel;
+    protected SolventModel solventModel;
     private final int nSymm;
     private final int bulkNSymm;
     private final int nAtoms;
     private final int fftX, fftY, fftZ;
+    private final double ifftX, ifftY, ifftZ;
     private final int halfFFTX, halfFFTY, halfFFTZ;
     private final int complexFFT3DSpace;
     private final int threadCount;
+    private final SharedIntegerArray optWeight;
+    private final int previousOptWeight[];
+    private final int previousOptWeightSolvent[];
+    private final SliceSchedule sliceSchedule;
     private final ParallelTeam parallelTeam;
     private final Atom atoms[];
     private final Crystal crystal;
@@ -252,7 +263,7 @@ public class CrystalReciprocalSpace {
     public CrystalReciprocalSpace(ReflectionList reflectionlist,
             Atom atoms[],
             ParallelTeam fftTeam, ParallelTeam parallelTeam,
-            boolean solventMask, boolean neutron, int solventModel) {
+            boolean solventMask, boolean neutron, SolventModel solventModel) {
         this.reflectionList = reflectionlist;
         this.crystal = reflectionlist.crystal;
         this.resolution = reflectionlist.resolution;
@@ -265,15 +276,15 @@ public class CrystalReciprocalSpace {
         this.neutron = neutron;
         this.nSymm = 1;
         threadCount = parallelTeam.getThreadCount();
+
         // necssary for the bulksolvent expansion!
         bulkNSymm = crystal.spaceGroup.symOps.size();
-        double density = 2.0 / resolution.sampling_limit();
-        double res = resolution.res_limit();
-
+        double gridFactor = resolution.samplingLimit() / 2.0;
+        double gridStep = resolution.resolutionLimit() * gridFactor;
         // Set default FFT grid size from unit cell dimensions.
-        int nX = (int) Math.floor(crystal.a * density / res) + 1;
-        int nY = (int) Math.floor(crystal.b * density / res) + 1;
-        int nZ = (int) Math.floor(crystal.c * density / res) + 1;
+        int nX = (int) Math.floor(crystal.a / gridStep) + 1;
+        int nY = (int) Math.floor(crystal.b / gridStep) + 1;
+        int nZ = (int) Math.floor(crystal.c / gridStep) + 1;
         if (nX % 2 != 0) {
             nX += 1;
         }
@@ -294,18 +305,24 @@ public class CrystalReciprocalSpace {
         halfFFTX = nX / 2;
         halfFFTY = nY / 2;
         halfFFTZ = nZ / 2;
+        ifftX = 1.0 / (double) fftX;
+        ifftY = 1.0 / (double) fftY;
+        ifftZ = 1.0 / (double) fftZ;
         fftScale = crystal.volume;
         complexFFT3DSpace = fftX * fftY * fftZ * 2;
         densityGrid = new double[complexFFT3DSpace];
 
-        String solventName = "none";
+        optWeight = new SharedIntegerArray(fftZ);
+        previousOptWeight = new int[fftZ];
+        previousOptWeightSolvent = new int[fftZ];
+        sliceSchedule = new SliceSchedule(threadCount, fftZ);
+
         if (solvent) {
             bAdd = 0.0;
             atomFormFactors = null;
             double vdwr;
             switch (solventModel) {
-                case SolventModel.BINARY:
-                    solventName = "binary";
+                case BINARY:
                     solventA = 1.0;
                     solventB = 1.0;
                     solventGrid = new double[complexFFT3DSpace];
@@ -317,8 +334,7 @@ public class CrystalReciprocalSpace {
                         }
                     }
                     break;
-                case SolventModel.GAUSSIAN:
-                    solventName = "Gaussian";
+                case GAUSSIAN:
                     solventA = 11.5;
                     solventB = 0.55;
                     solventGrid = new double[complexFFT3DSpace];
@@ -330,8 +346,7 @@ public class CrystalReciprocalSpace {
                         }
                     }
                     break;
-                case SolventModel.POLYNOMIAL:
-                    solventName = "polynomial switch";
+                case POLYNOMIAL:
                     solventA = 0.0;
                     solventB = 0.8;
                     solventGrid = new double[complexFFT3DSpace];
@@ -343,6 +358,7 @@ public class CrystalReciprocalSpace {
                         }
                     }
                     break;
+                case NONE:
                 default:
                     solventGrid = null;
                     solventFormFactors = null;
@@ -377,15 +393,18 @@ public class CrystalReciprocalSpace {
                 aRad = Math.max(aRad, a.getFormFactorWidth());
             } else {
                 switch (solventModel) {
-                    case SolventModel.BINARY:
+                    case BINARY:
                         aRad = Math.max(aRad, vdwr + solventA + 0.2);
                         break;
-                    case SolventModel.GAUSSIAN:
+                    case GAUSSIAN:
                         aRad = Math.max(aRad, vdwr * solventB + 2.0);
                         break;
-                    case SolventModel.POLYNOMIAL:
+                    case POLYNOMIAL:
                         aRad = Math.max(aRad, vdwr + solventB + 0.2);
                         break;
+                    case NONE:
+                    default:
+                        aRad = 0.0;
                 }
             }
         }
@@ -412,17 +431,15 @@ public class CrystalReciprocalSpace {
             StringBuilder sb = new StringBuilder();
             if (solvent) {
                 sb.append(String.format("  Bulk Solvent Grid\n"));
-                sb.append(String.format("  Bulk solvent model type:       %s\n",
-                        solventName));
+                sb.append(String.format("  Bulk solvent model type:           %8s\n",
+                        solventModel.toString()));
             } else {
-                sb.append(String.format("  Atomic Grid\n"));
+                sb.append(String.format("  Atomic Scattering Grid\n"));
             }
-            sb.append(String.format("  Form factor grid radius (radius):  %d (%8.3f)\n",
-                    aRadGrid, aRad));
-            sb.append(String.format("  Grid density:               %8.3f\n",
-                    density));
-            sb.append(String.format("  Grid dimensions:           (%d,%d,%d)\n",
-                    fftX, fftY, fftZ));
+            sb.append(String.format("  Form factor grid points:             %8d\n", aRadGrid * 2));
+            sb.append(String.format("  Form factor grid diameter:           %8.3f\n", aRad * 2));
+            sb.append(String.format("  Grid density:                        %8.3f\n", 1.0 / gridStep));
+            sb.append(String.format("  Grid dimensions:                (%3d,%3d,%3d)\n", fftX, fftY, fftZ));
             logger.info(sb.toString());
         }
 
@@ -434,8 +451,6 @@ public class CrystalReciprocalSpace {
             tempGrid = GridMethod.SLICE;
         }
         gridMethod = tempGrid;
-
-        logger.log( Level.INFO, " X-ray Refinement Parallelization Method: {0}", gridMethod.toString());
 
         if (solvent) {
             int minWork = nSymm;
@@ -599,7 +614,7 @@ public class CrystalReciprocalSpace {
             return;
         }
         switch (solventModel) {
-            case SolventModel.BINARY:
+            case BINARY:
                 for (int iSymm = 0; iSymm < bulkNSymm; iSymm++) {
                     for (int i = 0; i < nAtoms; i++) {
                         vdwr = atoms[i].getVDWType().radius * 0.5;
@@ -607,7 +622,7 @@ public class CrystalReciprocalSpace {
                     }
                 }
                 break;
-            case SolventModel.GAUSSIAN:
+            case GAUSSIAN:
                 for (int iSymm = 0; iSymm < bulkNSymm; iSymm++) {
                     for (int i = 0; i < nAtoms; i++) {
                         vdwr = atoms[i].getVDWType().radius * 0.5;
@@ -615,7 +630,7 @@ public class CrystalReciprocalSpace {
                     }
                 }
                 break;
-            case SolventModel.POLYNOMIAL:
+            case POLYNOMIAL:
                 for (int iSymm = 0; iSymm < bulkNSymm; iSymm++) {
                     for (int i = 0; i < nAtoms; i++) {
                         vdwr = atoms[i].getVDWType().radius * 0.5;
@@ -834,7 +849,7 @@ public class CrystalReciprocalSpace {
             c.re(fc[0]);
             c.im(fc[1]);
             // scale
-            c.times_ip(2.0 / fftScale);
+            c.timesIP(2.0 / fftScale);
 
             // apply symmetry
             for (int j = 0; j < nsym; j++) {
@@ -848,7 +863,7 @@ public class CrystalReciprocalSpace {
 
                 if (h < halfFFTX + 1) {
                     final int ii = iComplex3D(h, k, l, fftX, fftY);
-                    cj.phase_shift_ip(shift);
+                    cj.phaseShiftIP(shift);
                     densityGrid[ii] += cj.re();
                     densityGrid[ii + 1] += -cj.im();
                 } else {
@@ -856,7 +871,7 @@ public class CrystalReciprocalSpace {
                     k = (fftY - k) % fftY;
                     l = (fftZ - l) % fftZ;
                     final int ii = iComplex3D(h, k, l, fftX, fftY);
-                    cj.phase_shift_ip(shift);
+                    cj.phaseShiftIP(shift);
                     densityGrid[ii] += cj.re();
                     densityGrid[ii + 1] += cj.im();
                 }
@@ -951,7 +966,14 @@ public class CrystalReciprocalSpace {
                     break;
                 case SLICE:
                 default:
+                    for (int i = 0; i < fftZ; i++) {
+                        optWeight.set(i, 0);
+                    }
+                    sliceSchedule.updateWeights(previousOptWeight);
                     parallelTeam.execute(atomicSliceRegion);
+                    for (int i = 0; i < fftZ; i++) {
+                        previousOptWeight[i] = optWeight.get(i);
+                    }
             }
         } catch (Exception e) {
             String message = "Fatal exception evaluating atomic electron density.";
@@ -1035,7 +1057,14 @@ public class CrystalReciprocalSpace {
                     break;
                 case SLICE:
                 default:
+                    for (int i = 0; i < fftZ; i++) {
+                        optWeight.set(i, 0);
+                    }
+                    sliceSchedule.updateWeights(previousOptWeight);
                     parallelTeam.execute(atomicSliceRegion);
+                    for (int i = 0; i < fftZ; i++) {
+                        previousOptWeight[i] = optWeight.get(i);
+                    }
             }
         } catch (Exception e) {
             String message = "Fatal exception evaluating solvent electron density.";
@@ -1138,7 +1167,14 @@ public class CrystalReciprocalSpace {
                     break;
                 case SLICE:
                 default:
+                    for (int i = 0; i < fftZ; i++) {
+                        optWeight.set(i, 0);
+                    }
+                    sliceSchedule.updateWeights(previousOptWeightSolvent);
                     parallelTeam.execute(solventSliceRegion);
+                    for (int i = 0; i < fftZ; i++) {
+                        previousOptWeightSolvent[i] = optWeight.get(i);
+                    }
             }
         } catch (Exception e) {
             String message = "Fatal exception evaluating solvent electron density.";
@@ -1230,12 +1266,12 @@ public class CrystalReciprocalSpace {
             for (int j = 0; j < fftY; j++) {
                 for (int i = 0; i < fftX; i++) {
                     int index = iComplex3D(i, j, k, fftX, fftY);
-                    sd += Math.pow(data[index] - mean, 2.0);
+                    sd += pow(data[index] - mean, 2);
                     n++;
                 }
             }
         }
-        sd = Math.sqrt(sd / n);
+        sd = sqrt(sd / n);
 
         if (meansd != null) {
             meansd[0] = mean;
@@ -1243,11 +1279,12 @@ public class CrystalReciprocalSpace {
         }
 
         if (norm) {
+            double isd = 1.0 / sd;
             for (int k = 0; k < fftZ; k++) {
                 for (int j = 0; j < fftY; j++) {
                     for (int i = 0; i < fftX; i++) {
                         int index = iComplex3D(i, j, k, fftX, fftY);
-                        data[index] = (data[index] - mean) / sd;
+                        data[index] = (data[index] - mean) * isd;
                     }
                 }
             }
@@ -1297,13 +1334,13 @@ public class CrystalReciprocalSpace {
 
             for (int iz = ifrz - frad; iz <= ifrzu; iz++) {
                 int giz = Crystal.mod(iz, fftZ);
-                xf[2] = iz / (double) fftZ;
+                xf[2] = iz * ifftZ;
                 for (int iy = ifry - frad; iy <= ifryu; iy++) {
                     int giy = Crystal.mod(iy, fftY);
-                    xf[1] = iy / (double) fftY;
+                    xf[1] = iy * ifftY;
                     for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
                         int gix = Crystal.mod(ix, fftX);
-                        xf[0] = ix / (double) fftX;
+                        xf[0] = ix * ifftX;
                         crystal.toCartesianCoordinates(xf, xc);
                         final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
                         grid[ii] = atomff.rho(grid[ii], lambdai, xc);
@@ -1340,18 +1377,21 @@ public class CrystalReciprocalSpace {
             double vdwr = atoms[n].getVDWType().radius * 0.5;
             int frad = aRadGrid;
             switch (solventModel) {
-                case SolventModel.BINARY:
+                case BINARY:
                     frad = Math.min(aRadGrid,
                             (int) Math.floor((vdwr + solventA + 0.2) * fftX / crystal.a) + 1);
                     break;
-                case SolventModel.GAUSSIAN:
+                case GAUSSIAN:
                     frad = Math.min(aRadGrid,
                             (int) Math.floor((vdwr * solventB + 2.0) * fftX / crystal.a) + 1);
                     break;
-                case SolventModel.POLYNOMIAL:
+                case POLYNOMIAL:
                     frad = Math.min(aRadGrid,
                             (int) Math.floor((vdwr + solventB + 0.2) * fftX / crystal.a) + 1);
                     break;
+                case NONE:
+                default:
+                    return;
             }
 
             // Logic to loop within the cutoff box.
@@ -1369,13 +1409,13 @@ public class CrystalReciprocalSpace {
 
             for (int iz = ifrz - frad; iz <= ifrzu; iz++) {
                 int giz = Crystal.mod(iz, fftZ);
-                xf[2] = iz / (double) fftZ;
+                xf[2] = iz * ifftZ;
                 for (int iy = ifry - frad; iy <= ifryu; iy++) {
                     int giy = Crystal.mod(iy, fftY);
-                    xf[1] = iy / (double) fftY;
+                    xf[1] = iy * ifftY;
                     for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
                         int gix = Crystal.mod(ix, fftX);
-                        xf[0] = ix / (double) fftX;
+                        xf[0] = ix * ifftX;
                         crystal.toCartesianCoordinates(xf, xc);
                         final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
                         grid[ii] = solventff.rho(grid[ii], lambdai, xc);
@@ -1392,10 +1432,37 @@ public class CrystalReciprocalSpace {
         final double xc[] = new double[3];
         final double xf[] = new double[3];
         final double grid[];
+        final int optLocal[];
 
         public AtomicSliceLoop(SliceRegion region) {
             super(region.getNatoms(), region.getNsymm(), region);
             grid = region.getGrid();
+            optLocal = new int[fftZ];
+        }
+
+        @Override
+        public IntegerSchedule schedule() {
+            return sliceSchedule;
+        }
+
+        @Override
+        public void start() {
+            fill(optLocal, 0);
+            super.initTiming(this.getClass().getSimpleName(), System.nanoTime());
+        }
+
+        @Override
+        public void setWeight(){
+            super.setWeightOnRegion(sliceSchedule.getWeightPerThread());
+        }
+
+        @Override
+        public void finish() {
+            for (int i = 0; i < fftZ; i++) {
+                optWeight.addAndGet(i, optLocal[i]);
+            }
+            setWeight();
+            super.finishTime(System.nanoTime());
         }
 
         @Override
@@ -1429,14 +1496,15 @@ public class CrystalReciprocalSpace {
             for (int iz = ifrz - frad; iz <= ifrzu; iz++) {
                 int giz = Crystal.mod(iz, fftZ);
                 if (lb <= giz && giz <= ub) {
-                    xf[2] = iz / (double) fftZ;
+                    xf[2] = iz * ifftZ;
                     for (int iy = ifry - frad; iy <= ifryu; iy++) {
                         int giy = Crystal.mod(iy, fftY);
-                        xf[1] = iy / (double) fftY;
+                        xf[1] = iy * ifftY;
                         for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
                             int gix = Crystal.mod(ix, fftX);
-                            xf[0] = ix / (double) fftX;
+                            xf[0] = ix * ifftX;
                             crystal.toCartesianCoordinates(xf, xc);
+                            optLocal[giz]++;
                             final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
                             grid[ii] = atomff.rho(grid[ii], lambdai, xc);
                         }
@@ -1453,10 +1521,38 @@ public class CrystalReciprocalSpace {
         final double xc[] = new double[3];
         final double xf[] = new double[3];
         final double grid[];
+        final int optLocal[];
+
 
         public SolventSliceLoop(SliceRegion region) {
             super(region.getNatoms(), region.getNsymm(), region);
             grid = region.getGrid();
+            optLocal = new int[fftZ];
+        }
+
+        @Override
+        public IntegerSchedule schedule() {
+            return sliceSchedule;
+        }
+
+        @Override
+        public void start() {
+            fill(optLocal, 0);
+            super.initTiming(this.getClass().getSimpleName(), System.nanoTime());
+        }
+
+        @Override
+        public void finish() {
+            for (int i = 0; i < fftZ; i++) {
+                optWeight.addAndGet(i, optLocal[i]);
+            }
+            setWeight();
+            super.finishTime(System.nanoTime());
+        }
+
+        @Override
+        public void setWeight(){
+            super.setWeightOnRegion(sliceSchedule.getWeightPerThread());
         }
 
         @Override
@@ -1473,15 +1569,18 @@ public class CrystalReciprocalSpace {
             double vdwr = atoms[iAtom].getVDWType().radius * 0.5;
             int frad = aRadGrid;
             switch (solventModel) {
-                case SolventModel.BINARY:
+                case BINARY:
                     frad = min(aRadGrid, (int) floor((vdwr + solventA + 0.2) * fftX / crystal.a) + 1);
                     break;
-                case SolventModel.GAUSSIAN:
+                case GAUSSIAN:
                     frad = min(aRadGrid, (int) floor((vdwr * solventB + 2.0) * fftX / crystal.a) + 1);
                     break;
-                case SolventModel.POLYNOMIAL:
+                case POLYNOMIAL:
                     frad = min(aRadGrid, (int) floor((vdwr + solventB + 0.2) * fftX / crystal.a) + 1);
                     break;
+                case NONE:
+                default:
+                    return;
             }
 
             // Logic to loop within the cutoff box.
@@ -1502,14 +1601,15 @@ public class CrystalReciprocalSpace {
                 if (lb > giz || giz > ub) {
                     continue;
                 }
-                xf[2] = iz / (double) fftZ;
+                xf[2] = iz * ifftZ;
                 for (int iy = ifry - frad; iy <= ifryu; iy++) {
                     int giy = Crystal.mod(iy, fftY);
-                    xf[1] = iy / (double) fftY;
+                    xf[1] = iy * ifftY;
                     for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
                         int gix = Crystal.mod(ix, fftX);
-                        xf[0] = ix / (double) fftX;
+                        xf[0] = ix * ifftX;
                         crystal.toCartesianCoordinates(xf, xc);
+                        optLocal[giz]++;
                         final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
                         grid[ii] = formFactor.rho(grid[ii], lambdai, xc);
                     }
@@ -1591,17 +1691,16 @@ public class CrystalReciprocalSpace {
 
                     for (int ix = ifrx - dfrad; ix <= ifrx + dfrad; ix++) {
                         int gix = Crystal.mod(ix, fftX);
-                        xf[0] = ix / (double) fftX;
+                        xf[0] = ix * ifftX;
                         for (int iy = ifry - dfrad; iy <= ifry + dfrad; iy++) {
                             int giy = Crystal.mod(iy, fftY);
-                            xf[1] = iy / (double) fftY;
+                            xf[1] = iy * ifftY;
                             for (int iz = ifrz - dfrad; iz <= ifrz + dfrad; iz++) {
                                 int giz = Crystal.mod(iz, fftZ);
-                                xf[2] = iz / (double) fftZ;
+                                xf[2] = iz * ifftZ;
                                 crystal.toCartesianCoordinates(xf, xc);
-
                                 final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
-                                atomff.rho_grad(xc, weight * densityGrid[ii], refinementmode);
+                                atomff.rhoGrad(xc, weight * densityGrid[ii], refinementmode);
                             }
                         }
                     }
@@ -1671,19 +1770,21 @@ public class CrystalReciprocalSpace {
                     double dfcmult = 1.0;
                     int dfrad = aRadGrid;
                     switch (solventModel) {
-                        case SolventModel.BINARY:
+                        case BINARY:
                             dfrad = Math.min(aRadGrid,
                                     (int) Math.floor((vdwr + solventA + 0.2) * fftX / crystal.a) + 1);
                             break;
-                        case SolventModel.GAUSSIAN:
+                        case GAUSSIAN:
                             dfrad = Math.min(aRadGrid,
                                     (int) Math.floor((vdwr * solventB + 2.0) * fftX / crystal.a) + 1);
                             dfcmult = solventA;
                             break;
-                        case SolventModel.POLYNOMIAL:
+                        case POLYNOMIAL:
                             dfrad = Math.min(aRadGrid,
                                     (int) Math.floor((vdwr + solventB + 0.2) * fftX / crystal.a) + 1);
                             break;
+                        case NONE:
+                            return;
                     }
 
                     // Logic to loop within the cutoff box.
@@ -1701,17 +1802,16 @@ public class CrystalReciprocalSpace {
 
                     for (int ix = ifrx - dfrad; ix <= ifrxu; ix++) {
                         int gix = Crystal.mod(ix, fftX);
-                        xf[0] = ix / (double) fftX;
+                        xf[0] = ix * ifftX;
                         for (int iy = ifry - dfrad; iy <= ifryu; iy++) {
                             int giy = Crystal.mod(iy, fftY);
-                            xf[1] = iy / (double) fftY;
+                            xf[1] = iy * ifftY;
                             for (int iz = ifrz - dfrad; iz <= ifrzu; iz++) {
                                 int giz = Crystal.mod(iz, fftZ);
-                                xf[2] = iz / (double) fftZ;
+                                xf[2] = iz * ifftZ;
                                 crystal.toCartesianCoordinates(xf, xc);
-
                                 final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
-                                solventff.rho_grad(xc,
+                                solventff.rhoGrad(xc,
                                         weight * densityGrid[ii] * dfcmult * solventGrid[ii],
                                         refinementmode);
                             }
@@ -1937,8 +2037,8 @@ public class CrystalReciprocalSpace {
                     c.im(fc[1]);
                     // Remove Badd
                     double s = Crystal.invressq(crystal, ih);
-                    c.times_ip(scale * exp(0.25 * bAdd * s));
-                    c.conjugate_ip();
+                    c.timesIP(scale * exp(0.25 * bAdd * s));
+                    c.conjugateIP();
                     fc[0] = c.re();
                     fc[1] = c.im();
                 }
@@ -1995,8 +2095,8 @@ public class CrystalReciprocalSpace {
                     double fc[] = hkldata[ih.index()];
                     c.re(fc[0]);
                     c.im(fc[1]);
-                    c.times_ip(scale);
-                    c.conjugate_ip();
+                    c.timesIP(scale);
+                    c.conjugateIP();
                     // negative: babinet
                     fc[0] = -c.re();
                     fc[1] = -c.im();
@@ -2064,7 +2164,7 @@ public class CrystalReciprocalSpace {
                             final int ii = iComplex3D(h, k, l, fftX, fftY);
                             c.re(densityGrid[ii]);
                             c.im(densityGrid[ii + 1]);
-                            c.phase_shift_ip(shift);
+                            c.phaseShiftIP(shift);
                             fc[0] += c.re();
                             fc[1] += c.im();
                         } else {
@@ -2074,7 +2174,7 @@ public class CrystalReciprocalSpace {
                             final int ii = iComplex3D(h, k, l, fftX, fftY);
                             c.re(densityGrid[ii]);
                             c.im(-densityGrid[ii + 1]);
-                            c.phase_shift_ip(shift);
+                            c.phaseShiftIP(shift);
                             fc[0] += c.re();
                             fc[1] += c.im();
                         }
@@ -2083,5 +2183,4 @@ public class CrystalReciprocalSpace {
             }
         }
     }
-
 }

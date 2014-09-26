@@ -71,14 +71,16 @@ public class TinkerSystem implements Serializable {
     }
 
     /**
-     * <p>print</p>
+     * <p>
+     * print</p>
      */
     public void print() {
         System.out.println(this.toString());
     }
 
     /**
-     * <p>toString</p>
+     * <p>
+     * toString</p>
      *
      * @return a {@link java.lang.String} object.
      */

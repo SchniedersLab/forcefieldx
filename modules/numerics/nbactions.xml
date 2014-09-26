@@ -8,4 +8,16 @@
             <goal>exec:exec</goal>
         </goals>
     </action>
+    <action>
+            <actionName>test</actionName>
+            <packagings>
+                <packaging>*</packaging>
+            </packagings>
+            <goals>
+                <goal>test</goal>
+            </goals>
+            <properties>
+                <skipTests>false</skipTests>
+            </properties>
+        </action>
 </actions>

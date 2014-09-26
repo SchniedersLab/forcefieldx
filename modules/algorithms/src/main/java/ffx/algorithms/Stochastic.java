@@ -24,8 +24,8 @@ package ffx.algorithms;
 
 import java.util.Random;
 
-import static java.lang.Math.exp;
-import static java.lang.Math.sqrt;
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.numerics.Potential;
 

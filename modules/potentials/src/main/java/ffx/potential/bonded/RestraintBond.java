@@ -26,7 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
-import static java.lang.Math.pow;
+import static org.apache.commons.math3.util.FastMath.pow;
 
 import javax.media.j3d.*;
 import javax.vecmath.AxisAngle4d;

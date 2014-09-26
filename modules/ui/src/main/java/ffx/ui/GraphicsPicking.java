@@ -53,8 +53,7 @@ public class GraphicsPicking extends PickMouseBehavior {
         PICKATOM, PICKBOND, PICKANGLE, PICKDIHEDRAL, PICKRESIDUE, PICKMOLECULE, PICKPOLYMER, PICKSYSTEM, MEASUREDISTANCE, MEASUREANGLE, MEASUREDIHEDRAL;
     }
     /**
-     * Constant
-     * <code>pickLevelHash</code>
+     * Constant <code>pickLevelHash</code>
      */
     public static final Hashtable<String, PickLevel> pickLevelHash = new Hashtable<String, PickLevel>();
 
@@ -137,7 +136,8 @@ public class GraphicsPicking extends PickMouseBehavior {
     }
 
     /**
-     * <p>getPick</p>
+     * <p>
+     * getPick</p>
      *
      * @return a {@link ffx.potential.bonded.MSNode} object.
      */
@@ -146,8 +146,8 @@ public class GraphicsPicking extends PickMouseBehavior {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>picking</code>.</p>
+     * <p>
+     * Getter for the field <code>picking</code>.</p>
      *
      * @return a boolean.
      */
@@ -156,8 +156,8 @@ public class GraphicsPicking extends PickMouseBehavior {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>pickLevel</code>.</p>
+     * <p>
+     * Getter for the field <code>pickLevel</code>.</p>
      *
      * @return a {@link java.lang.String} object.
      */
@@ -229,15 +229,16 @@ public class GraphicsPicking extends PickMouseBehavior {
     }
 
     /**
-     * <p>resetCount</p>
+     * <p>
+     * resetCount</p>
      */
     public void resetCount() {
         count = 0;
     }
 
     /**
-     * <p>Setter for the field
-     * <code>picking</code>.</p>
+     * <p>
+     * Setter for the field <code>picking</code>.</p>
      *
      * @param m a boolean.
      */
@@ -249,8 +250,8 @@ public class GraphicsPicking extends PickMouseBehavior {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>pickLevel</code>.</p>
+     * <p>
+     * Setter for the field <code>pickLevel</code>.</p>
      *
      * @param newPick a {@link java.lang.String} object.
      */

@@ -50,7 +50,8 @@ public class MouseRotate extends MouseBehavior {
     private MouseBehaviorCallback callback = null;
 
     /**
-     * <p>Constructor for MouseRotate.</p>
+     * <p>
+     * Constructor for MouseRotate.</p>
      *
      * @param flags a int.
      * @param VPTG a {@link javax.media.j3d.TransformGroup} object.
@@ -60,7 +61,8 @@ public class MouseRotate extends MouseBehavior {
     }
 
     /**
-     * <p>Constructor for MouseRotate.</p>
+     * <p>
+     * Constructor for MouseRotate.</p>
      *
      * @param flags a int.
      * @param VPTG a {@link javax.media.j3d.TransformGroup} object.
@@ -78,7 +80,8 @@ public class MouseRotate extends MouseBehavior {
      * Return the x-axis movement multipler.
      */
     /**
-     * <p>getXFactor</p>
+     * <p>
+     * getXFactor</p>
      *
      * @return a double.
      */
@@ -90,7 +93,8 @@ public class MouseRotate extends MouseBehavior {
      * Return the y-axis movement multipler.
      */
     /**
-     * <p>getYFactor</p>
+     * <p>
+     * getYFactor</p>
      *
      * @return a double.
      */
@@ -99,7 +103,8 @@ public class MouseRotate extends MouseBehavior {
     }
 
     /**
-     * <p>initialize</p>
+     * <p>
+     * initialize</p>
      */
     public void initialize() {
         super.initialize();
@@ -192,7 +197,8 @@ public class MouseRotate extends MouseBehavior {
      * Set the x-axis amd y-axis movement multipler with factor.
      */
     /**
-     * <p>setFactor</p>
+     * <p>
+     * setFactor</p>
      *
      * @param factor a double.
      */
@@ -205,7 +211,8 @@ public class MouseRotate extends MouseBehavior {
      * respectively.
      */
     /**
-     * <p>setFactor</p>
+     * <p>
+     * setFactor</p>
      *
      * @param xFactor a double.
      * @param yFactor a double.
@@ -216,7 +223,8 @@ public class MouseRotate extends MouseBehavior {
     }
 
     /**
-     * <p>setupCallback</p>
+     * <p>
+     * setupCallback</p>
      *
      * @param c a {@link ffx.ui.behaviors.MouseBehaviorCallback} object.
      */
@@ -225,7 +233,8 @@ public class MouseRotate extends MouseBehavior {
     }
 
     /**
-     * <p>transformChanged</p>
+     * <p>
+     * transformChanged</p>
      *
      * @param transform a {@link javax.media.j3d.Transform3D} object.
      */

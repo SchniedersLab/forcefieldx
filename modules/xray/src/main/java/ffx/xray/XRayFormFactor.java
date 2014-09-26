@@ -22,21 +22,32 @@
  */
 package ffx.xray;
 
-import java.util.Arrays;
 import java.util.HashMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.lang.Math.*;
+import static java.util.Arrays.fill;
 
-import static org.apache.commons.math.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.pow;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
-import ffx.numerics.VectorMath;
 import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
-import static ffx.numerics.VectorMath.*;
+import static ffx.numerics.VectorMath.b2u;
+import static ffx.numerics.VectorMath.determinant3;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.mat3Inverse;
+import static ffx.numerics.VectorMath.mat3Mat3;
+import static ffx.numerics.VectorMath.rsq;
+import static ffx.numerics.VectorMath.scalarMat3Mat3;
+import static ffx.numerics.VectorMath.u2b;
+import static ffx.numerics.VectorMath.vec3Mat3;
 
 /**
  * This implementation uses the coefficients from Su and Coppens and 3
@@ -67,8 +78,470 @@ import static ffx.numerics.VectorMath.*;
 public final class XRayFormFactor implements FormFactor {
 
     private static final Logger logger = Logger.getLogger(ffx.xray.XRayFormFactor.class.getName());
+
+    private final Atom atom;
+    private final double xyz[] = new double[3];
+    private final double dxyz[] = new double[3];
+    private final double resv[] = new double[3];
+    private final double a[] = new double[6];
+    private final double b[] = new double[6];
+    private final double ainv[] = new double[6];
+    private final double binv[] = new double[6];
+    private final double gradp[] = new double[6];
+    private final double gradu[] = new double[6];
+    private final double resm[][] = new double[3][3];
+    private final double u[][][] = new double[6][3][3];
+    private final double uinv[][][] = new double[6][3][3];
+    private final double jmat[][][] = new double[6][3][3];
+    private double anisou[] = null;
+    protected final int ffIndex;
+    private double bIso;
+    private double uAdd;
+    private double occupancy;
+    private boolean hasAnisou;
+    private final int nGaussians;
+
+    /**
+     * <p>
+     * Constructor for XRayFormFactor.</p>
+     *
+     * @param atom a {@link ffx.potential.bonded.Atom} object.
+     */
+    public XRayFormFactor(Atom atom) {
+        this(atom, true, 0.0, atom.getXYZ());
+    }
+
+    /**
+     * <p>
+     * Constructor for XRayFormFactor.</p>
+     *
+     * @param atom a {@link ffx.potential.bonded.Atom} object.
+     * @param use3G a boolean.
+     */
+    public XRayFormFactor(Atom atom, boolean use3G) {
+        this(atom, use3G, 0.0, atom.getXYZ());
+    }
+
+    /**
+     * <p>
+     * Constructor for XRayFormFactor.</p>
+     *
+     * @param atom a {@link ffx.potential.bonded.Atom} object.
+     * @param use3G a boolean.
+     * @param badd a double.
+     */
+    public XRayFormFactor(Atom atom, boolean use3G, double badd) {
+        this(atom, use3G, badd, atom.getXYZ());
+    }
+
+    /**
+     * <p>
+     * Constructor for XRayFormFactor.</p>
+     *
+     * @param atom a {@link ffx.potential.bonded.Atom} object.
+     * @param use3G a boolean.
+     * @param badd a double.
+     * @param xyz an array of double.
+     */
+    public XRayFormFactor(Atom atom, boolean use3G, double badd, double xyz[]) {
+        this.atom = atom;
+        this.uAdd = b2u(badd);
+        double ffactor[][];
+        String key = "" + atom.getAtomicNumber();
+        int charge = 0;
+        if (atom.getMultipoleType() != null) {
+            charge = (int) atom.getMultipoleType().charge;
+        }
+
+        int atomindex = atom.getFormFactorIndex();
+        if (atomindex < 0) {
+            // if it has a charge, first try to find Su&Coppens 6G params
+            if (formfactors.containsKey(key + "_" + charge)) {
+                ffactor = getFormFactor(key + "_" + charge);
+            } else {
+                // if not, use 3G params if requested
+                if (use3G) {
+                    // first look for charged form
+                    if (formfactors.containsKey(key + "_" + charge + "_3g")) {
+                        ffactor = getFormFactor(key + "_" + charge + "_3g");
+                    } else {
+                        // if this fails, we don't have the SFs
+                        ffactor = getFormFactor(key + "_3g");
+                    }
+                } else {
+                    ffactor = getFormFactor(key);
+                }
+            }
+            ffIndex = (int) ffactor[0][0];
+            atom.setFormFactorIndex(ffIndex);
+        } else {
+            ffIndex = atomindex;
+            ffactor = ffactors[atomindex];
+        }
+
+        int i;
+        for (i = 0; i < ffactor[1].length; i++) {
+            if (ffactor[1][i] < 0.01) {
+                break;
+            }
+            a[i] = ffactor[1][i];
+            b[i] = ffactor[2][i];
+        }
+        nGaussians = i;
+        assert (nGaussians > 0);
+        occupancy = atom.getOccupancy();
+
+        if (occupancy <= 0.0 && logger.isLoggable(Level.FINE)) {
+            logger.log(Level.FINE, " Zero occupancy for atom: {0}", atom.toString());
+        }
+
+        update(xyz, uAdd);
+    }
+
+    /**
+     * <p>
+     * getFormFactorIndex</p>
+     *
+     * @param atom a {@link java.lang.String} object.
+     * @return a int.
+     */
+    public static int getFormFactorIndex(String atom) {
+        double ffactor[][] = getFormFactor(atom);
+        if (ffactor != null) {
+            return (int) ffactor[0][0];
+        }
+        return -1;
+
+    }
+
+    /**
+     * <p>
+     * getFormFactorA</p>
+     *
+     * @param atom a {@link java.lang.String} object.
+     * @return an array of double.
+     */
+    public static double[] getFormFactorA(String atom) {
+        double ffactor[][] = getFormFactor(atom);
+        if (ffactor != null) {
+            return ffactor[1];
+        }
+        return null;
+    }
+
+    /**
+     * <p>
+     * getFormFactorB</p>
+     *
+     * @param atom a {@link java.lang.String} object.
+     * @return an array of double.
+     */
+    public static double[] getFormFactorB(String atom) {
+        double ffactor[][] = getFormFactor(atom);
+        if (ffactor != null) {
+            return ffactor[2];
+        }
+        return null;
+    }
+
+    /**
+     * <p>
+     * getFormFactor</p>
+     *
+     * @param atom a {@link java.lang.String} object.
+     * @return an array of double.
+     */
+    public static double[][] getFormFactor(String atom) {
+        double ffactor[][] = null;
+        if (formfactors.containsKey(atom)) {
+            ffactor = (double[][]) formfactors.get(atom);
+        } else {
+            String message = " Form factor for atom: " + atom
+                    + " not found!\n";
+            logger.severe(message);
+        }
+        return ffactor;
+    }
+
+    /**
+     * <p>
+     * f</p>
+     *
+     * @param hkl a {@link ffx.crystal.HKL} object.
+     * @return a double.
+     */
+    public double f(HKL hkl) {
+        return fN(hkl, nGaussians);
+    }
+
+    /**
+     * <p>
+     * f_n</p>
+     *
+     * @param hkl a {@link ffx.crystal.HKL} object.
+     * @param nGaussians a int.
+     * @return a double.
+     */
+    public double fN(HKL hkl, int nGaussians) {
+        double sum = 0.0;
+
+        for (int i = 0; i < nGaussians; i++) {
+            sum += a[i] * exp(-twopi2 * Crystal.quad_form(hkl, u[i]));
+        }
+        return occupancy * sum;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double rho(double f, double lambda, double xyz[]) {
+        return rhoN(f, lambda, xyz, nGaussians);
+    }
+
+    /**
+     * <p>
+     * rho_n</p>
+     *
+     * @param f a double.
+     * @param lambda a double.
+     * @param xyz an array of double.
+     * @param nGaussians a int.
+     * @return a double.
+     */
+    public double rhoN(double f, double lambda, double xyz[], int nGaussians) {
+        assert (nGaussians > 0 && nGaussians <= nGaussians);
+        diff(this.xyz, xyz, xyz);
+
+        /**
+         * Compare r^2 to form factor width^2 to avoid expensive sqrt.
+         */
+        if (rsq(xyz) > atom.getFormFactorWidth2()) {
+            return f;
+        }
+
+        double sum = 0.0;
+        for (int i = 0; i < nGaussians; i++) {
+            sum += ainv[i] * exp(-0.5 * Crystal.quad_form(xyz, uinv[i]));
+        }
+        return f + (lambda * occupancy * twopi32 * sum);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void rhoGrad(double xyz[], double dfc, RefinementMode refinementMode) {
+        rhoGradN(xyz, nGaussians, dfc, refinementMode);
+    }
+
+    /**
+     * <p>
+     * rho_grad_n</p>
+     *
+     * @param xyz an array of double.
+     * @param nGaussians a int.
+     * @param dfc a double.
+     * @param refinementMode a
+     * {@link ffx.xray.RefinementMinimize.RefinementMode} object.
+     */
+    public void rhoGradN(double xyz[], int nGaussians, double dfc, RefinementMode refinementMode) {
+        assert (nGaussians > 0 && nGaussians <= nGaussians);
+        diff(this.xyz, xyz, dxyz);
+        double r2 = rsq(dxyz);
+
+        /**
+         * Compare r^2 to form factor width^2 to avoid expensive sqrt.
+         */
+        if (r2 > atom.getFormFactorWidth2()) {
+            return;
+        }
+
+        fill(gradp, 0.0);
+        fill(gradu, 0.0);
+        double aex;
+        boolean refinexyz = false;
+        boolean refineb = false;
+        boolean refineanisou = false;
+        boolean refineocc = false;
+        if (refinementMode == RefinementMode.COORDINATES
+                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS
+                || refinementMode == RefinementMode.COORDINATES_AND_OCCUPANCIES
+                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
+            refinexyz = true;
+        }
+        if (refinementMode == RefinementMode.BFACTORS
+                || refinementMode == RefinementMode.BFACTORS_AND_OCCUPANCIES
+                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS
+                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
+            refineb = true;
+            if (hasAnisou) {
+                refineanisou = true;
+            }
+        }
+        if (refinementMode == RefinementMode.OCCUPANCIES
+                || refinementMode == RefinementMode.BFACTORS_AND_OCCUPANCIES
+                || refinementMode == RefinementMode.COORDINATES_AND_OCCUPANCIES
+                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
+            refineocc = true;
+        }
+
+        for (int i = 0; i < nGaussians; i++) {
+            aex = ainv[i] * exp(-0.5 * Crystal.quad_form(dxyz, uinv[i]));
+
+            if (refinexyz) {
+                vec3Mat3(dxyz, uinv[i], resv);
+                gradp[0] += aex * dot(resv, vx);
+                gradp[1] += aex * dot(resv, vy);
+                gradp[2] += aex * dot(resv, vz);
+            }
+
+            if (refineocc) {
+                gradp[3] += aex;
+            }
+
+            if (refineb) {
+                gradp[4] += aex * 0.5 * (r2 * binv[i] * binv[i] - 3.0 * binv[i]);
+
+                if (refineanisou) {
+                    scalarMat3Mat3(-1.0, uinv[i], u11, resm);
+                    mat3Mat3(resm, uinv[i], jmat[0]);
+                    scalarMat3Mat3(-1.0, uinv[i], u22, resm);
+                    mat3Mat3(resm, uinv[i], jmat[1]);
+                    scalarMat3Mat3(-1.0, uinv[i], u33, resm);
+                    mat3Mat3(resm, uinv[i], jmat[2]);
+                    scalarMat3Mat3(-1.0, uinv[i], u12, resm);
+                    mat3Mat3(resm, uinv[i], jmat[3]);
+                    scalarMat3Mat3(-1.0, uinv[i], u13, resm);
+                    mat3Mat3(resm, uinv[i], jmat[4]);
+                    scalarMat3Mat3(-1.0, uinv[i], u23, resm);
+                    mat3Mat3(resm, uinv[i], jmat[5]);
+
+                    gradu[0] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[0]) - uinv[i][0][0]);
+                    gradu[1] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[1]) - uinv[i][1][1]);
+                    gradu[2] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[2]) - uinv[i][2][2]);
+                    gradu[3] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[3]) - uinv[i][0][1] * 2.0);
+                    gradu[4] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[4]) - uinv[i][0][2] * 2.0);
+                    gradu[5] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[5]) - uinv[i][1][2] * 2.0);
+                }
+            }
+        }
+
+        //double rho = occ * twopi32 * gradp[3];
+        // x, y, z
+        if (refinexyz) {
+            atom.addToXYZGradient(
+                    dfc * occupancy * -twopi32 * gradp[0],
+                    dfc * occupancy * -twopi32 * gradp[1],
+                    dfc * occupancy * -twopi32 * gradp[2]);
+        }
+
+        // occ
+        if (refineocc) {
+            atom.addToOccupancyGradient(dfc * twopi32 * gradp[3]);
+        }
+
+        // Biso
+        if (refineb) {
+            atom.addToTempFactorGradient(dfc * b2u(occupancy * twopi32 * gradp[4]));
+            // Uaniso
+            if (hasAnisou) {
+                for (int i = 0; i < 6; i++) {
+                    gradu[i] = dfc * occupancy * twopi32 * gradu[i];
+                }
+                atom.addToAnisouGradient(gradu);
+            }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void update(double xyz[]) {
+        update(xyz, u2b(uAdd));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void update(double xyz[], double bAdd) {
+        this.xyz[0] = xyz[0];
+        this.xyz[1] = xyz[1];
+        this.xyz[2] = xyz[2];
+        bIso = atom.getTempFactor();
+        uAdd = b2u(bAdd);
+        occupancy = atom.getOccupancy();
+
+        // check occ is valid
+        if (occupancy < 0.0) {
+            StringBuilder sb = new StringBuilder();
+            sb.append(" Negative occupancy for atom: " + atom.toString());
+            sb.append(" \nResetting to 0.0\n");
+            logger.warning(sb.toString());
+            occupancy = 0.0;
+            atom.setOccupancy(0.0);
+        }
+
+        // check if anisou changed
+        if (atom.getAnisou() == null) {
+            if (anisou == null) {
+                anisou = new double[6];
+            }
+            hasAnisou = false;
+        } else {
+            hasAnisou = true;
+        }
+
+        if (hasAnisou) {
+            // first check the ANISOU is valid
+            anisou = atom.getAnisou();
+            double det = determinant3(anisou);
+
+            if (det <= 1e-14) {
+                StringBuilder sb = new StringBuilder();
+                sb.append(" Non-positive definite ANISOU for atom: " + atom.toString());
+                sb.append("\n Resetting ANISOU based on isotropic B: (" + bIso + ")\n");
+                logger.warning(sb.toString());
+
+                anisou[0] = anisou[1] = anisou[2] = b2u(bIso);
+                anisou[3] = anisou[4] = anisou[5] = 0.0;
+            }
+        } else {
+            if (bIso < 0.0) {
+                StringBuilder sb = new StringBuilder();
+                sb.append(" Negative B factor for atom: " + atom.toString());
+                sb.append("\n Resetting B to 0.01\n");
+                logger.warning(sb.toString());
+                bIso = 0.01;
+                atom.setTempFactor(0.01);
+            }
+            anisou[0] = anisou[1] = anisou[2] = b2u(bIso);
+            anisou[3] = anisou[4] = anisou[5] = 0.0;
+        }
+
+        for (int i = 0; i < nGaussians; i++) {
+            u[i][0][0] = anisou[0] + b2u(b[i]) + uAdd;
+            u[i][1][1] = anisou[1] + b2u(b[i]) + uAdd;
+            u[i][2][2] = anisou[2] + b2u(b[i]) + uAdd;
+            u[i][0][1] = u[i][1][0] = anisou[3];
+            u[i][0][2] = u[i][2][0] = anisou[4];
+            u[i][1][2] = u[i][2][1] = anisou[5];
+
+            mat3Inverse(u[i], uinv[i]);
+
+            double det = determinant3(u[i]);
+            ainv[i] = a[i] / sqrt(det);
+            // b[i] = pow(det, 0.33333333333);
+            det = determinant3(uinv[i]);
+            binv[i] = pow(det, oneThird);
+        }
+    }
+
     private static final double twopi2 = 2.0 * PI * PI;
     private static final double twopi32 = pow(2.0 * PI, -1.5);
+    private final static double oneThird = 1.0 / 3.0;
     private static final double vx[] = {1.0, 0.0, 0.0};
     private static final double vy[] = {0.0, 1.0, 0.0};
     private static final double vz[] = {0.0, 0.0, 1.0};
@@ -79,6 +552,7 @@ public final class XRayFormFactor implements FormFactor {
     private static final double u13[][] = {{0.0, 0.0, 1.0}, {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}};
     private static final double u23[][] = {{0.0, 0.0, 0.0}, {0.0, 0.0, 1.0}, {0.0, 1.0, 0.0}};
     private static final HashMap formfactors = new HashMap();
+
     private static final String[] atoms = {"H", "He", "Li", "Be", "B", "C", "N", "O",
         "F", "Ne", "Na", "Mg", "Al", "Si", "P", "S", "Cl", "Ar", "K", "Ca",
         "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Ga", "Ge",
@@ -129,8 +603,11 @@ public final class XRayFormFactor implements FormFactor {
         "21_3g", "22_3g", "23_3g", "24_3g", "25_3g", "26_3g", "27_3g", "28_3g", "29_3g", "30_3g", "31_3g", "32_3g",
         "33_3g", "34_3g", "35_3g", "36_3g", "37_3g", "38_3g", "39_3g", "40_3g", "41_3g", "42_3g", "43_3g", "44_3g",
         "45_3g", "46_3g", "47_3g", "48_3g", "49_3g", "50_3g", "51_3g", "52_3g", "53_3g", "54_3g", "80_3g"};
+
     private static final double[][][] ffactors = {
-        // Su and Coppens data
+        /**
+         * Su and Coppens data.
+         */
         {{0},
         {0.43028, 0.28537, 0.17134, 0.09451, 0.01725, 0.00114},
         {23.02312, 10.20138, 51.25444, 4.13511, 1.35427, 0.24269}},
@@ -473,7 +950,9 @@ public final class XRayFormFactor implements FormFactor {
         {{113},
         {18.97534, 15.68841, 6.74714, 4.42194, 4.08431, 4.06854},
         {0.38165, 4.33217, 26.51128, 4.35007, 0.00013, 70.73529}},
-        // cctbx - 3 Gaussians
+        /**
+         * cctbx - 3 Gaussians.
+         */
         {{114},
         {1.05674999997, 0.644323530897, 0.298305313502},
         {1.10072695216, 3.30968118776, 0.263851354839}},
@@ -788,475 +1267,6 @@ public final class XRayFormFactor implements FormFactor {
     static {
         for (int i = 0; i < atoms.length; i++) {
             formfactors.put(atomsi[i], ffactors[i]);
-        }
-    }
-    private final Atom atom;
-    protected final int ffindex;
-    private double xyz[] = new double[3];
-    private double dxyz[] = new double[3];
-    private double biso;
-    private double uadd;
-    private boolean hasanisou;
-    private double uaniso[] = null;
-    private double occ;
-    private final double a[] = new double[6];
-    private double ainv[] = new double[6];
-    private final double b[] = new double[6];
-    private double binv[] = new double[6];
-    private double u[][][] = new double[6][3][3];
-    private double uinv[][][] = new double[6][3][3];
-    private final int n;
-    private double jmat[][][] = new double[6][3][3];
-    private double gradp[] = new double[6];
-    private double gradu[] = new double[6];
-    private double resv[] = new double[3];
-    private double resm[][] = new double[3][3];
-
-    /**
-     * <p>
-     * Constructor for XRayFormFactor.</p>
-     *
-     * @param atom a {@link ffx.potential.bonded.Atom} object.
-     */
-    public XRayFormFactor(Atom atom) {
-        this(atom, true, 0.0, atom.getXYZ());
-    }
-
-    /**
-     * <p>
-     * Constructor for XRayFormFactor.</p>
-     *
-     * @param atom a {@link ffx.potential.bonded.Atom} object.
-     * @param use_3g a boolean.
-     */
-    public XRayFormFactor(Atom atom, boolean use_3g) {
-        this(atom, use_3g, 0.0, atom.getXYZ());
-    }
-
-    /**
-     * <p>
-     * Constructor for XRayFormFactor.</p>
-     *
-     * @param atom a {@link ffx.potential.bonded.Atom} object.
-     * @param use_3g a boolean.
-     * @param badd a double.
-     */
-    public XRayFormFactor(Atom atom, boolean use_3g, double badd) {
-        this(atom, use_3g, badd, atom.getXYZ());
-    }
-
-    /**
-     * <p>
-     * Constructor for XRayFormFactor.</p>
-     *
-     * @param atom a {@link ffx.potential.bonded.Atom} object.
-     * @param use_3g a boolean.
-     * @param badd a double.
-     * @param xyz an array of double.
-     */
-    public XRayFormFactor(Atom atom, boolean use_3g, double badd, double xyz[]) {
-        this.atom = atom;
-        this.uadd = b2u(badd);
-        double ffactor[][];
-        String key = "" + atom.getAtomicNumber();
-        int charge = 0;
-        if (atom.getMultipoleType() != null) {
-            charge = (int) atom.getMultipoleType().charge;
-        }
-
-        int atomindex = atom.getFormFactorIndex();
-        if (atomindex < 0) {
-            // if it has a charge, first try to find Su&Coppens 6G params
-            if (formfactors.containsKey(key + "_" + charge)) {
-                ffactor = getFormFactor(key + "_" + charge);
-            } else {
-                // if not, use 3G params if requested
-                if (use_3g) {
-                    // first look for charged form
-                    if (formfactors.containsKey(key + "_" + charge + "_3g")) {
-                        ffactor = getFormFactor(key + "_" + charge + "_3g");
-                    } else {
-                        // if this fails, we don't have the SFs
-                        ffactor = getFormFactor(key + "_3g");
-                    }
-                } else {
-                    ffactor = getFormFactor(key);
-                }
-            }
-            ffindex = (int) ffactor[0][0];
-            atom.setFormFactorIndex(ffindex);
-        } else {
-            ffindex = atomindex;
-            ffactor = ffactors[atomindex];
-        }
-
-        int i;
-        for (i = 0; i < ffactor[1].length; i++) {
-            if (ffactor[1][i] < 0.01) {
-                break;
-            }
-            a[i] = ffactor[1][i];
-            b[i] = ffactor[2][i];
-        }
-        n = i;
-        assert (n > 0);
-        occ = atom.getOccupancy();
-
-        if (occ <= 0.0) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("zero occ for atom: " + atom.toString() + "\n");
-            sb.append("(atom will not contribute to electron density calculation)\n");
-            logger.warning(sb.toString());
-        }
-
-        update(xyz, uadd);
-    }
-
-    /**
-     * <p>
-     * getFormFactorIndex</p>
-     *
-     * @param atom a {@link java.lang.String} object.
-     * @return a int.
-     */
-    public static int getFormFactorIndex(String atom) {
-        double ffactor[][] = null;
-
-        ffactor = getFormFactor(atom);
-        if (ffactor != null) {
-            return (int) ffactor[0][0];
-        } else {
-            return -1;
-        }
-    }
-
-    /**
-     * <p>
-     * getFormFactorA</p>
-     *
-     * @param atom a {@link java.lang.String} object.
-     * @return an array of double.
-     */
-    public static double[] getFormFactorA(String atom) {
-        double ffactor[][] = null;
-
-        ffactor = getFormFactor(atom);
-        if (ffactor != null) {
-            return ffactor[1];
-        } else {
-            return null;
-        }
-    }
-
-    /**
-     * <p>
-     * getFormFactorB</p>
-     *
-     * @param atom a {@link java.lang.String} object.
-     * @return an array of double.
-     */
-    public static double[] getFormFactorB(String atom) {
-        double ffactor[][] = null;
-
-        ffactor = getFormFactor(atom);
-        if (ffactor != null) {
-            return ffactor[2];
-        } else {
-            return null;
-        }
-    }
-
-    /**
-     * <p>
-     * getFormFactor</p>
-     *
-     * @param atom a {@link java.lang.String} object.
-     * @return an array of double.
-     */
-    public static double[][] getFormFactor(String atom) {
-        double ffactor[][] = null;
-
-        if (formfactors.containsKey(atom)) {
-            ffactor = (double[][]) formfactors.get(atom);
-        } else {
-            String message = "Form factor for atom: " + atom
-                    + " not found!";
-            logger.severe(message);
-        }
-
-        return ffactor;
-    }
-
-    /**
-     * <p>
-     * f</p>
-     *
-     * @param hkl a {@link ffx.crystal.HKL} object.
-     * @return a double.
-     */
-    public double f(HKL hkl) {
-        return f_n(hkl, n);
-    }
-
-    /**
-     * <p>
-     * f_n</p>
-     *
-     * @param hkl a {@link ffx.crystal.HKL} object.
-     * @param ng a int.
-     * @return a double.
-     */
-    public double f_n(HKL hkl, int ng) {
-        double sum = 0.0;
-
-        for (int i = 0; i < ng; i++) {
-            sum += a[i] * exp(-twopi2 * Crystal.quad_form(hkl, u[i]));
-        }
-        return occ * sum;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double rho(double f, double lambda, double xyz[]) {
-        return rho_n(f, lambda, xyz, n);
-    }
-
-    /**
-     * <p>
-     * rho_n</p>
-     *
-     * @param f a double.
-     * @param lambda a double.
-     * @param xyz an array of double.
-     * @param ng a int.
-     * @return a double.
-     */
-    public double rho_n(double f, double lambda, double xyz[], int ng) {
-        assert (ng > 0 && ng <= n);
-        diff(this.xyz, xyz, xyz);
-        double r = r(xyz);
-
-        if (r > atom.getFormFactorWidth()) {
-            return f;
-        }
-
-        double sum = 0.0;
-        for (int i = 0; i < ng; i++) {
-            sum += ainv[i] * exp(-0.5 * Crystal.quad_form(xyz, uinv[i]));
-        }
-        return f + (lambda * occ * twopi32 * sum);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void rho_grad(double xyz[], double dfc, RefinementMode refinementmode) {
-        rho_grad_n(xyz, n, dfc, refinementmode);
-    }
-
-    /**
-     * <p>
-     * rho_grad_n</p>
-     *
-     * @param xyz an array of double.
-     * @param ng a int.
-     * @param dfc a double.
-     * @param refinementmode a
-     * {@link ffx.xray.RefinementMinimize.RefinementMode} object.
-     */
-    public void rho_grad_n(double xyz[], int ng, double dfc, RefinementMode refinementmode) {
-        assert (ng > 0 && ng <= n);
-        diff(this.xyz, xyz, dxyz);
-        double r = r(dxyz);
-        double r2 = r * r;
-        double aex;
-        Arrays.fill(gradp, 0.0);
-        Arrays.fill(gradu, 0.0);
-
-        if (r > atom.getFormFactorWidth()) {
-            return;
-        }
-
-        boolean refinexyz = false;
-        boolean refineb = false;
-        boolean refineanisou = false;
-        boolean refineocc = false;
-        if (refinementmode == RefinementMode.COORDINATES
-                || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS
-                || refinementmode == RefinementMode.COORDINATES_AND_OCCUPANCIES
-                || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-            refinexyz = true;
-        }
-        if (refinementmode == RefinementMode.BFACTORS
-                || refinementmode == RefinementMode.BFACTORS_AND_OCCUPANCIES
-                || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS
-                || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-            refineb = true;
-            if (hasanisou) {
-                refineanisou = true;
-            }
-        }
-        if (refinementmode == RefinementMode.OCCUPANCIES
-                || refinementmode == RefinementMode.BFACTORS_AND_OCCUPANCIES
-                || refinementmode == RefinementMode.COORDINATES_AND_OCCUPANCIES
-                || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-            refineocc = true;
-        }
-
-        for (int i = 0; i < ng; i++) {
-            aex = ainv[i] * exp(-0.5 * Crystal.quad_form(dxyz, uinv[i]));
-
-            if (refinexyz) {
-                vec3mat3(dxyz, uinv[i], resv);
-                gradp[0] += aex * dot(resv, vx);
-                gradp[1] += aex * dot(resv, vy);
-                gradp[2] += aex * dot(resv, vz);
-            }
-
-            if (refineocc) {
-                gradp[3] += aex;
-            }
-
-            if (refineb) {
-                gradp[4] += aex * 0.5 * (r2 * binv[i] * binv[i] - 3.0 * binv[i]);
-
-                if (refineanisou) {
-                    scalarmat3mat3(-1.0, uinv[i], u11, resm);
-                    mat3mat3(resm, uinv[i], jmat[0]);
-                    scalarmat3mat3(-1.0, uinv[i], u22, resm);
-                    mat3mat3(resm, uinv[i], jmat[1]);
-                    scalarmat3mat3(-1.0, uinv[i], u33, resm);
-                    mat3mat3(resm, uinv[i], jmat[2]);
-                    scalarmat3mat3(-1.0, uinv[i], u12, resm);
-                    mat3mat3(resm, uinv[i], jmat[3]);
-                    scalarmat3mat3(-1.0, uinv[i], u13, resm);
-                    mat3mat3(resm, uinv[i], jmat[4]);
-                    scalarmat3mat3(-1.0, uinv[i], u23, resm);
-                    mat3mat3(resm, uinv[i], jmat[5]);
-
-                    gradu[0] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[0]) - uinv[i][0][0]);
-                    gradu[1] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[1]) - uinv[i][1][1]);
-                    gradu[2] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[2]) - uinv[i][2][2]);
-                    gradu[3] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[3]) - uinv[i][0][1] * 2.0);
-                    gradu[4] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[4]) - uinv[i][0][2] * 2.0);
-                    gradu[5] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[5]) - uinv[i][1][2] * 2.0);
-                }
-            }
-        }
-
-        //double rho = occ * twopi32 * gradp[3];
-
-        // x, y, z
-        if (refinexyz) {
-            atom.addToXYZGradient(
-                    dfc * occ * -twopi32 * gradp[0],
-                    dfc * occ * -twopi32 * gradp[1],
-                    dfc * occ * -twopi32 * gradp[2]);
-        }
-
-        // occ
-        if (refineocc) {
-            atom.addToOccupancyGradient(dfc * twopi32 * gradp[3]);
-        }
-
-        // Biso
-        if (refineb) {
-            atom.addToTempFactorGradient(dfc * b2u(occ * twopi32 * gradp[4]));
-            // Uaniso
-            if (hasanisou) {
-                for (int i = 0; i < 6; i++) {
-                    gradu[i] = dfc * occ * twopi32 * gradu[i];
-                }
-                atom.addToAnisouGradient(gradu);
-            }
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void update(double xyz[]) {
-        update(xyz, u2b(uadd));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void update(double xyz[], double badd) {
-        this.xyz[0] = xyz[0];
-        this.xyz[1] = xyz[1];
-        this.xyz[2] = xyz[2];
-        biso = atom.getTempFactor();
-        uadd = b2u(badd);
-        occ = atom.getOccupancy();
-
-        // check occ is valid
-        if (occ < 0.0) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("negative occupancy for atom: " + atom.toString() + "\n");
-            sb.append("resetting to 0.0\n");
-            logger.warning(sb.toString());
-            occ = 0.0;
-            atom.setOccupancy(0.0);
-        }
-
-        // check if anisou changed
-        if (atom.getAnisou() == null) {
-            if (uaniso == null) {
-                uaniso = new double[6];
-            }
-            hasanisou = false;
-        } else {
-            hasanisou = true;
-        }
-
-        if (hasanisou) {
-            // first check the ANISOU is valid
-            uaniso = atom.getAnisou();
-            double det = determinant3(uaniso);
-
-            if (det <= 1e-14) {
-                StringBuilder sb = new StringBuilder();
-                sb.append("non-positive definite ANISOU for atom: " + atom.toString() + "\n");
-                sb.append("resetting ANISOU based on isotropic B: (" + biso + ")\n");
-                logger.warning(sb.toString());
-
-                uaniso[0] = uaniso[1] = uaniso[2] = b2u(biso);
-                uaniso[3] = uaniso[4] = uaniso[5] = 0.0;
-            }
-        } else {
-            if (biso < 0.0) {
-                StringBuilder sb = new StringBuilder();
-                sb.append("negative B factor for atom: " + atom.toString() + "\n");
-                sb.append("resetting B to 0.01\n");
-                logger.warning(sb.toString());
-                biso = 0.01;
-                atom.setTempFactor(0.01);
-            }
-            uaniso[0] = uaniso[1] = uaniso[2] = b2u(biso);
-            uaniso[3] = uaniso[4] = uaniso[5] = 0.0;
-        }
-
-        for (int i = 0; i < n; i++) {
-            u[i][0][0] = uaniso[0] + b2u(b[i]) + uadd;
-            u[i][1][1] = uaniso[1] + b2u(b[i]) + uadd;
-            u[i][2][2] = uaniso[2] + b2u(b[i]) + uadd;
-            u[i][0][1] = u[i][1][0] = uaniso[3];
-            u[i][0][2] = u[i][2][0] = uaniso[4];
-            u[i][1][2] = u[i][2][1] = uaniso[5];
-
-            mat3inverse(u[i], uinv[i]);
-
-            double det = determinant3(u[i]);
-            ainv[i] = a[i] / sqrt(det);
-            // b[i] = pow(det, 0.33333333333);
-            det = determinant3(uinv[i]);
-            binv[i] = pow(det, 0.33333333333);
         }
     }
 }

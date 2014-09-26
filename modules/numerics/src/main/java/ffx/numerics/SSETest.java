@@ -16,14 +16,14 @@ public class SSETest {
 
         int nLoops = 100000;
 
-        test.init(m,n);
+        test.init(m, n);
         Random r = new Random(0);
         double temp = 0;
         long time = 0;
         for (int i = 1; i <= nLoops; i++) {
-            time -=  System.nanoTime();
+            time -= System.nanoTime();
             double y[] = test.matVec(test.A, test.x, m, n);
-            time +=  System.nanoTime();
+            time += System.nanoTime();
             int j = (int) Math.floor(m * r.nextDouble());
             temp += y[j];
             if (i % 10000 == 0) {
@@ -32,14 +32,14 @@ public class SSETest {
             }
         }
 
-        test.init(m,n);
+        test.init(m, n);
         r = new Random(0);
         temp = 0;
         time = 0;
         for (int i = 1; i <= nLoops; i++) {
-            time -=  System.nanoTime();
+            time -= System.nanoTime();
             double y[] = test.matVec(test.flatA, test.x, m, n);
-            time +=  System.nanoTime();
+            time += System.nanoTime();
             int j = (int) Math.floor(m * r.nextDouble());
             temp += y[j];
             if (i % 10000 == 0) {

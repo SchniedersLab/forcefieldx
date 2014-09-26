@@ -38,20 +38,20 @@ import static java.lang.String.format;
  * @author Salvo
  */
 public class Octree {
-    
+
     private static final Logger logger = Logger.getLogger(Octree.class.getName());
     private static boolean warnedAboutSplit = false;
     private static boolean leaveStraddlersInParent = false;
-    
+
     private static int maxAtomsPerVolume = 20;
     private static int maxTreeDepth = 10;
-    
+
     private int depth;
     private Octree children[];
     private List<Atom> contents = new ArrayList<>();
     private Point3d corner;
     private double edgeLength;
-    
+
     public Octree(int depth, Point3d corner, double edgeLength) {
         this.depth = depth;
         this.corner = corner;
@@ -81,7 +81,7 @@ public class Octree {
                 minContents = (nodeContents < minContents) ? nodeContents : minContents;
                 maxContents = (nodeContents > maxContents) ? nodeContents : maxContents;
                 minEdgeLength = (nodeEdge < minEdgeLength) ? nodeEdge : minEdgeLength;
-                maxEdgeLength = (nodeEdge > maxEdgeLength) ? nodeEdge: maxEdgeLength;
+                maxEdgeLength = (nodeEdge > maxEdgeLength) ? nodeEdge : maxEdgeLength;
                 minConc = (nodeConc < minConc) ? nodeConc : minConc;
                 maxConc = (nodeConc > maxConc) ? nodeConc : maxConc;
             }
@@ -90,8 +90,8 @@ public class Octree {
         logger.info(format("    Max Depth:        %10d", maxDepth));
         logger.info(format("    Min/Max Atoms:    %10d", minContents));
         logger.info(format("                      %10d", maxContents));
-        logger.info(format("    Min/Max Volume:   %10.2g", Math.pow(minEdgeLength,3)));
-        logger.info(format("                      %10.2g", Math.pow(maxEdgeLength,3)));
+        logger.info(format("    Min/Max Volume:   %10.2g", Math.pow(minEdgeLength, 3)));
+        logger.info(format("                      %10.2g", Math.pow(maxEdgeLength, 3)));
         logger.info(format("    Min/Max Conc:     %10.2g", minConc));
         logger.info(format("                      %10.2g", maxConc));
         logger.info(format(" "));
@@ -124,49 +124,49 @@ public class Octree {
             }
         }
     }
-    
+
     public void addAtoms(List<Atom> atoms) {
         for (Atom atom : atoms) {
             addAtom(atom);
         }
     }
-    
+
     public void setMaxAtomsPerVolume(int max) {
         maxAtomsPerVolume = max;
     }
-    
+
     public void setMaxTreeDepth(int max) {
         maxTreeDepth = max;
     }
-    
+
     public void setLeaveStraddlersInParent(boolean set) {
         leaveStraddlersInParent = set;
     }
-    
+
     private void split() {
         double sel = edgeLength / 2;
         double x = corner.x;    // for Java3d 1.3 compatibility, use corner.getX() in 1.5+
         double y = corner.y;
         double z = corner.z;
         children = new Octree[8];
-        children[0] = new Octree(depth+1,
-                new Point3d(x,y,z), sel);
-        children[1] = new Octree(depth+1,
-                new Point3d(x+sel, y, z), sel);
-        children[2] = new Octree(depth+1,
-                new Point3d(x, y+sel, z), sel);
-        children[3] = new Octree(depth+1,
-                new Point3d(x, y, z+sel), sel);
-        children[4] = new Octree(depth+1,
-                new Point3d(x+sel, y+sel, z), sel);
-        children[5] = new Octree(depth+1,
-                new Point3d(x+sel, y, z+sel), sel);
-        children[6] = new Octree(depth+1,
-                new Point3d(x, y+sel, z+sel), sel);
-        children[7] = new Octree(depth+1,
-                new Point3d(x+sel, y+sel, z+sel), sel);
+        children[0] = new Octree(depth + 1,
+                new Point3d(x, y, z), sel);
+        children[1] = new Octree(depth + 1,
+                new Point3d(x + sel, y, z), sel);
+        children[2] = new Octree(depth + 1,
+                new Point3d(x, y + sel, z), sel);
+        children[3] = new Octree(depth + 1,
+                new Point3d(x, y, z + sel), sel);
+        children[4] = new Octree(depth + 1,
+                new Point3d(x + sel, y + sel, z), sel);
+        children[5] = new Octree(depth + 1,
+                new Point3d(x + sel, y, z + sel), sel);
+        children[6] = new Octree(depth + 1,
+                new Point3d(x, y + sel, z + sel), sel);
+        children[7] = new Octree(depth + 1,
+                new Point3d(x + sel, y + sel, z + sel), sel);
     }
-    
+
     private void addAtom(Atom atom) {
         if (children != null) {
             if (leaveStraddlersInParent) {
@@ -196,7 +196,7 @@ public class Octree {
                 return;
             }
             split();
-            for (int i = 0; i < contents.size(); ) {    // NOTE: intentional lack of auto-increment
+            for (int i = 0; i < contents.size();) {    // NOTE: intentional lack of auto-increment
                 if (leaveStraddlersInParent) {
                     int index = findAtomIndex(contents.get(i));
                     if (index != -1) {
@@ -216,9 +216,11 @@ public class Octree {
             }
         }
     }
-    
+
     /**
-     * Finds the index of the single child octree to which this atom belongs; returns -1 for straddlers.
+     * Finds the index of the single child octree to which this atom belongs;
+     * returns -1 for straddlers.
+     *
      * @param atom query atom
      * @return index of children[] octree inside which this atom fits completely
      */
@@ -233,13 +235,16 @@ public class Octree {
                 index = i;
             }
         }
-        return index;        
+        return index;
     }
-    
+
     /**
-     * Finds the indices of the children octrees to which this atom belongs (wholly or partially).
+     * Finds the indices of the children octrees to which this atom belongs
+     * (wholly or partially).
+     *
      * @param atom query atom
-     * @return boolean array such that if (b[i] == true) then children[i] touches this atom
+     * @return boolean array such that if (b[i] == true) then children[i]
+     * touches this atom
      */
     private boolean[] partitionAtom(Atom atom) {
         boolean b[] = new boolean[8];
@@ -260,27 +265,59 @@ public class Octree {
         boolean frontSide = (atomZ + vdwr < midZ);
         boolean backSide = (atomZ - vdwr > midZ);
         if (leftSide) {
-            b[1] = false; b[4] = false; b[5] = false; b[7] = false;
+            b[1] = false;
+            b[4] = false;
+            b[5] = false;
+            b[7] = false;
         } else if (rightSide) {
-            b[0] = false; b[2] = false; b[3] = false; b[6] = false;
+            b[0] = false;
+            b[2] = false;
+            b[3] = false;
+            b[6] = false;
         }
         if (topSide) {
-            b[2] = false; b[4] = false; b[6] = false; b[7] = false;
+            b[2] = false;
+            b[4] = false;
+            b[6] = false;
+            b[7] = false;
         } else if (botSide) {
-            b[0] = false; b[1] = false; b[3] = false; b[5] = false;
+            b[0] = false;
+            b[1] = false;
+            b[3] = false;
+            b[5] = false;
         }
         if (frontSide) {
-            b[3] = false; b[5] = false; b[6] = false; b[7] = false;
+            b[3] = false;
+            b[5] = false;
+            b[6] = false;
+            b[7] = false;
         } else if (backSide) {
-            b[0] = false; b[1] = false; b[2] = false; b[4] = false;
+            b[0] = false;
+            b[1] = false;
+            b[2] = false;
+            b[4] = false;
         }
         return b;
     }
-    
-    public int getDepth() { return depth; }
-    public Octree[] getChildren() { return children; }
-    public List<Atom> getContents() { return contents; }
-    public Point3d getCorner() { return corner; }
-    public double getEdgeLength() { return edgeLength; }
-    
+
+    public int getDepth() {
+        return depth;
+    }
+
+    public Octree[] getChildren() {
+        return children;
+    }
+
+    public List<Atom> getContents() {
+        return contents;
+    }
+
+    public Point3d getCorner() {
+        return corner;
+    }
+
+    public double getEdgeLength() {
+        return edgeLength;
+    }
+
 }

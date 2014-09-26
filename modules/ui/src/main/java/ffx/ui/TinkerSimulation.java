@@ -70,7 +70,8 @@ public class TinkerSimulation implements ActionListener {
 
     // Constructor
     /**
-     * <p>Constructor for TinkerSimulation.</p>
+     * <p>
+     * Constructor for TinkerSimulation.</p>
      *
      * @param s a {@link ffx.ui.FFXSystem} object.
      * @param j a {@link java.lang.Thread} object.
@@ -108,7 +109,7 @@ public class TinkerSimulation implements ActionListener {
                                 "Simulation", Keyword.loadProperties(null));
                     }
                     simulationFilter = new SimulationFilter(sys, system);
-                    FileOpener openFile = new FileOpener(simulationFilter,
+                    UIFileOpener openFile = new UIFileOpener(simulationFilter,
                             mainPanel);
                     reader = new Thread(openFile);
                     reader.start();
@@ -130,7 +131,8 @@ public class TinkerSimulation implements ActionListener {
     }
 
     /**
-     * <p>connect</p>
+     * <p>
+     * connect</p>
      *
      * @return a boolean.
      */
@@ -167,7 +169,8 @@ public class TinkerSimulation implements ActionListener {
     }
 
     /**
-     * <p>getFSystem</p>
+     * <p>
+     * getFSystem</p>
      *
      * @return a {@link ffx.ui.FFXSystem} object.
      */
@@ -176,7 +179,8 @@ public class TinkerSimulation implements ActionListener {
     }
 
     /**
-     * <p>isConnected</p>
+     * <p>
+     * isConnected</p>
      *
      * @return a boolean.
      */
@@ -188,7 +192,8 @@ public class TinkerSimulation implements ActionListener {
     }
 
     /**
-     * <p>isFinished</p>
+     * <p>
+     * isFinished</p>
      *
      * @return a boolean.
      */
@@ -211,7 +216,8 @@ public class TinkerSimulation implements ActionListener {
 
     // Release the simulation
     /**
-     * <p>release</p>
+     * <p>
+     * release</p>
      */
     public void release() {
         finished = true;

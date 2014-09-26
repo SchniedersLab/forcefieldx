@@ -25,8 +25,9 @@ package ffx.potential;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.lang.Math.pow;
 import static java.util.Arrays.fill;
+
+import static org.apache.commons.math3.util.FastMath.pow;
 
 import ffx.numerics.Potential;
 import ffx.potential.bonded.Atom;

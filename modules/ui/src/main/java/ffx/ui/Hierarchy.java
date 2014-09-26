@@ -67,7 +67,7 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
     private JLabel energy = null;
     ArrayList<TreePath> newPaths = new ArrayList<>();
     ArrayList<TreePath> removedPaths = new ArrayList<>();
-    ArrayList<TreePath> prePaths = new ArrayList<>();
+    ArrayList<TreePath> previousPaths = new ArrayList<>();
     ArrayList<MSNode> picks = new ArrayList<>();
     TreePath nullPath = null;
 
@@ -384,11 +384,28 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
                 return;
             }
 
-            if (root.getChildCount() <= 1) {
-                setRootVisible(false);
+            hierarchyModel.removeNodeFromParent(nodeToRemove);
+
+            /**
+             * The DefaultTreeModel and DefaultTreeSelectionModel classes retain
+             * references to removed nodes. To work around this, we create new
+             * instances of these classes whenever an FFXSystem is removed.
+             */
+            if (nodeToRemove instanceof FFXSystem) {
+                hierarchyModel = new DefaultTreeModel(root);
+                treeSelectionModel = new DefaultTreeSelectionModel();
+                setModel(hierarchyModel);
+                setSelectionModel(treeSelectionModel);
             }
 
-            hierarchyModel.removeNodeFromParent(nodeToRemove);
+            /**
+             * Whenever a node is removed, clear and reset activeNodes and path
+             * instances.
+             */
+            activeNodes.clear();
+            previousPaths.clear();
+            newPaths.clear();
+            removedPaths.clear();
 
             if (getActive() == nodeToRemove && root.getChildCount() != 0) {
                 FFXSystem m = (FFXSystem) root.getChildAt(0);
@@ -396,6 +413,10 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
                 onlySelection(activeSystem);
             } else {
                 setActive(null);
+            }
+
+            if (root.getChildCount() <= 1) {
+                setRootVisible(false);
             }
         }
     }
@@ -583,6 +604,7 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
     @Override
     public void valueChanged(TreeSelectionEvent e) {
         synchronized (this) {
+
             // Determine the Active System
             MSNode lastNode = (MSNode) getLastSelectedPathComponent();
             if (lastNode != null) {
@@ -596,9 +618,10 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
             if (paths == null) {
                 return;
             }
+
             // Reuse the same ArrayLists
-            ArrayList<TreePath> temp = prePaths;
-            prePaths = newPaths;
+            ArrayList<TreePath> temp = previousPaths;
+            previousPaths = newPaths;
             newPaths = temp;
             // Determine new and removed paths
             newPaths.clear();
@@ -655,18 +678,18 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
                 check = removedPaths.remove(nullPath);
             }
             // Remove the RemovedPaths from the Existing List
-            for (int i = 0; i < prePaths.size(); i++) {
-                pathi = prePaths.get(i);
+            for (int i = 0; i < previousPaths.size(); i++) {
+                pathi = previousPaths.get(i);
                 for (TreePath removedPath : removedPaths) {
                     if (removedPath.isDescendant(pathi)) {
-                        prePaths.set(i, nullPath);
+                        previousPaths.set(i, nullPath);
                         break;
                     }
                 }
             }
             check = true;
             while (check) {
-                check = prePaths.remove(nullPath);
+                check = previousPaths.remove(nullPath);
             }
             // Combine new Paths and Existing Paths non-redundantly
             for (int i = 0; i < newPaths.size(); i++) {
@@ -674,8 +697,8 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
                 if (pathi == nullPath) {
                     continue;
                 }
-                for (int j = 0; j < prePaths.size(); j++) {
-                    pathj = prePaths.get(j);
+                for (int j = 0; j < previousPaths.size(); j++) {
+                    pathj = previousPaths.get(j);
                     if (pathj == nullPath) {
                         continue;
                     }
@@ -683,7 +706,7 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
                         continue;
                     }
                     if (pathi.isDescendant(pathj)) {
-                        prePaths.set(j, nullPath);
+                        previousPaths.set(j, nullPath);
                     } else if (pathj.isDescendant(pathi)) {
                         newPaths.set(i, nullPath);
                     }
@@ -695,9 +718,9 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
             }
             check = true;
             while (check) {
-                check = prePaths.remove(nullPath);
+                check = previousPaths.remove(nullPath);
             }
-            newPaths.addAll(prePaths);
+            newPaths.addAll(previousPaths);
             activeNodes.clear();
             for (TreePath newPath : newPaths) {
                 pathi = newPath;
@@ -728,7 +751,7 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
             }
             for (TreePath n : newPaths) {
                 boolean change = true;
-                for (TreePath p : prePaths) {
+                for (TreePath p : previousPaths) {
                     if (p.isDescendant(n)) {
                         change = false;
                     }

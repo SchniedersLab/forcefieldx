@@ -50,14 +50,10 @@ if (options.h) {
 }
 
 String modelfilename = null;
-if (arguments != null && arguments.size() > 1) {
-    // Read in command line.
+if (arguments != null && arguments.size() > 0) {
     modelfilename = arguments.get(0);
-    open(modelfilename);
-} else if (active == null) {
-    return cli.usage();
 } else {
-    modelfilename = active.getFile();
+    return cli.usage();
 }
 
 List diffractionfiles = new ArrayList();
@@ -77,6 +73,6 @@ diffractiondata.computeAtomicDensity();
 
 // output Fcs
 MTZWriter mtzwriter = new MTZWriter(diffractiondata.reflectionlist[0], diffractiondata.refinementdata[0],
-  FilenameUtils.getBaseName(modelfilename) + "_fc.mtz", MTZType.FCONLY);
+    FilenameUtils.getBaseName(modelfilename) + "_fc.mtz", MTZType.FCONLY);
 
 mtzwriter.write();

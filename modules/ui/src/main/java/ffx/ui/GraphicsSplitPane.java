@@ -48,7 +48,8 @@ public class GraphicsSplitPane extends JSplitPane implements MouseListener,
     int currentPos = 0;
 
     /**
-     * <p>Constructor for GraphicsSplitPane.</p>
+     * <p>
+     * Constructor for GraphicsSplitPane.</p>
      */
     public GraphicsSplitPane() {
         super();
@@ -57,7 +58,8 @@ public class GraphicsSplitPane extends JSplitPane implements MouseListener,
     }
 
     /**
-     * <p>Constructor for GraphicsSplitPane.</p>
+     * <p>
+     * Constructor for GraphicsSplitPane.</p>
      *
      * @param orient a int.
      * @param b a boolean.

@@ -51,7 +51,8 @@ public class Keyword_poltype {
     private Vector<String> data = null;
 
     /**
-     * <p>Constructor for Keyword_poltype.</p>
+     * <p>
+     * Constructor for Keyword_poltype.</p>
      *
      * @param k a {@link java.lang.String} object.
      */
@@ -61,7 +62,8 @@ public class Keyword_poltype {
     }
 
     /**
-     * <p>Constructor for Keyword_poltype.</p>
+     * <p>
+     * Constructor for Keyword_poltype.</p>
      *
      * @param k a {@link java.lang.String} object.
      * @param entry a {@link java.lang.String} object.
@@ -72,7 +74,8 @@ public class Keyword_poltype {
     }
 
     /**
-     * <p>Constructor for Keyword_poltype.</p>
+     * <p>
+     * Constructor for Keyword_poltype.</p>
      *
      * @param k a {@link java.lang.String} object.
      * @param entry an array of {@link java.lang.String} objects.
@@ -85,7 +88,8 @@ public class Keyword_poltype {
     }
 
     /**
-     * <p>append</p>
+     * <p>
+     * append</p>
      *
      * @param entry a {@link java.lang.String} object.
      */
@@ -94,7 +98,8 @@ public class Keyword_poltype {
     }
 
     /**
-     * <p>append</p>
+     * <p>
+     * append</p>
      *
      * @param entry an array of {@link java.lang.String} objects.
      */
@@ -105,14 +110,16 @@ public class Keyword_poltype {
     }
 
     /**
-     * <p>clear</p>
+     * <p>
+     * clear</p>
      */
     public void clear() {
         data.clear();
     }
 
     /**
-     * <p>getEntries</p>
+     * <p>
+     * getEntries</p>
      *
      * @return a {@link java.util.Vector} object.
      */
@@ -121,7 +128,8 @@ public class Keyword_poltype {
     }
 
     /**
-     * <p>getEntry</p>
+     * <p>
+     * getEntry</p>
      *
      * @param i a int.
      * @return a {@link java.lang.String} object.
@@ -131,8 +139,8 @@ public class Keyword_poltype {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>keyword</code>.</p>
+     * <p>
+     * Getter for the field <code>keyword</code>.</p>
      *
      * @return a {@link java.lang.String} object.
      */
@@ -141,7 +149,8 @@ public class Keyword_poltype {
     }
 
     /**
-     * <p>print</p>
+     * <p>
+     * print</p>
      */
     public void print() {
         logger.info(this.toString());
@@ -233,7 +242,6 @@ public class Keyword_poltype {
 //				}
 //			}
 //		}
-
         /**
          * Echo the interpolated configuration.
          */

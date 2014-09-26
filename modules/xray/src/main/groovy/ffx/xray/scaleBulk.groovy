@@ -56,17 +56,13 @@ if (options.h) {
     return cli.usage();
 }
 
-
 String modelfilename = null;
 if (arguments != null && arguments.size() > 0) {
-    // Read in command line.
     modelfilename = arguments.get(0);
-    open(modelfilename);
-} else if (active == null) {
-    return cli.usage();
 } else {
-    modelfilename = active.getFile();
+    return cli.usage();
 }
+
 
 // set up diffraction data (can be multiple files)
 List diffractionfiles = new ArrayList();

@@ -23,11 +23,11 @@
 package ffx.algorithms;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.lang.String.format;
+import static java.util.Arrays.fill;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
@@ -90,7 +90,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private double restartFrequency = 0.1;
 
     /**
-     * <p>Constructor for MolecularDynamics.</p>
+     * <p>
+     * Constructor for MolecularDynamics.</p>
      *
      * @param assembly a {@link ffx.potential.bonded.MolecularAssembly} object.
      * @param potentialEnergy a {@link ffx.numerics.Potential} object.
@@ -159,7 +160,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 integrator = new BetterBeeman(numberOfVariables, x, v, a, aPrevious, mass);
         }
 
-
         /**
          * If a Thermostat wasn't passed to the MD constructor, check for one
          * specified as a property.
@@ -202,8 +202,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>thermostat</code>.</p>
+     * <p>
+     * Setter for the field <code>thermostat</code>.</p>
      *
      * @param thermostat a {@link ffx.algorithms.Thermostat} object.
      */
@@ -212,8 +212,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>thermostat</code>.</p>
+     * <p>
+     * Getter for the field <code>thermostat</code>.</p>
      *
      * @return a {@link ffx.algorithms.Thermostat} object.
      */
@@ -222,8 +222,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>x</code>.</p>
+     * <p>
+     * Setter for the field <code>x</code>.</p>
      *
      * @param x a double array to set the current parameters to.
      */
@@ -232,8 +232,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>x</code>.</p>
+     * <p>
+     * Getter for the field <code>x</code>.</p>
      *
      * @return a double array with the current parameters
      */
@@ -242,8 +242,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>archiveFile</code>.</p>
+     * <p>
+     * Setter for the field <code>archiveFile</code>.</p>
      *
      * @param archive a {@link java.io.File} object.
      */
@@ -252,8 +252,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>archiveFile</code>.</p>
+     * <p>
+     * Getter for the field <code>archiveFile</code>.</p>
      *
      * @return a {@link java.io.File} object.
      */
@@ -262,7 +262,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
-     * <p>init</p>
+     * <p>
+     * init</p>
      *
      * @param nSteps a int.
      * @param timeStep a double.
@@ -363,6 +364,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * A version of init with the original method header. Redirects to the new
      * method with default values for added parameters. Needed by (at least)
      * ReplicaExchange, which calls this directly.
+     *
      * @param nSteps
      * @param timeStep
      * @param printInterval
@@ -536,7 +538,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 if (initVelocities) {
                     thermostat.maxwell(targetTemperature);
                 } else {
-                    Arrays.fill(v, 0.0);
+                    fill(v, 0.0);
                 }
             }
         } else {
