@@ -63,7 +63,7 @@ public class ScaleBulkMinimizeTest {
                 "ffx/xray/structures/1NSF.pdb",
                 "ffx/xray/structures/1NSF.mtz",
                 null,
-                25.178605682089,
+                25.167755827993,
                 25.448314839595,
                 0.8921390108139,
                 0.1526816244814},
