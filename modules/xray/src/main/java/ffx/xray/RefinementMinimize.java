@@ -235,13 +235,13 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                 || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
             if (data instanceof DiffractionData) {
                 int i = nXYZ + nB;
-                for (ArrayList<Residue> list : refinementModel.altresidues) {
+                for (ArrayList<Residue> list : refinementModel.altResidues) {
                     for (int j = 0; j < list.size(); j++) {
                         scaling[i] = occscale;
                         i++;
                     }
                 }
-                for (ArrayList<Molecule> list : refinementModel.altmolecules) {
+                for (ArrayList<Molecule> list : refinementModel.altMolecules) {
                     for (int j = 0; j < list.size(); j++) {
                         scaling[i] = occscale;
                         i++;

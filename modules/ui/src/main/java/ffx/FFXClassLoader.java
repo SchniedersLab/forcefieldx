@@ -55,7 +55,7 @@ import java.util.jar.JarFile;
 public class FFXClassLoader extends URLClassLoader {
 
     private final ProtectionDomain protectionDomain;
-    private final Map extensionDlls = new HashMap();
+    private final Map<String, String> extensionDlls = new HashMap<>();
     private JarFile[] extensionJars = null;
     private final String[] applicationPackages = {"ffx",
         "javax.media.j3d",

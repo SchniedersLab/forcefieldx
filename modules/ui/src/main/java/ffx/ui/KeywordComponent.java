@@ -35,6 +35,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.ListIterator;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.swing.JButton;
@@ -198,6 +199,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
      * {@inheritDoc}
      */
     @Override
+    @SuppressWarnings("unchecked")
     public void actionPerformed(ActionEvent evt) {
         synchronized (this) {
             isModified = true;
@@ -207,13 +209,13 @@ public final class KeywordComponent implements MouseListener, ActionListener,
                     JTextField text = (JTextField) keywordValues.get(3);
                     String s = text.getText();
                     if (s != null && !s.trim().equals("")) {
-                        JComboBox jcb = (JComboBox) keywordValues.get(1);
+                        JComboBox<String> jcb = (JComboBox<String>) keywordValues.get(1);
                         jcb.addItem(s);
                         text.setText("");
                         active = true;
                     }
                 } else if (button.getText().equalsIgnoreCase("Remove")) {
-                    JComboBox jcb = (JComboBox) keywordValues.get(1);
+                    JComboBox<String> jcb = (JComboBox<String>) keywordValues.get(1);
                     if (jcb.getItemCount() > 0) {
                         jcb.removeItemAt(jcb.getSelectedIndex());
                     }
@@ -222,15 +224,11 @@ public final class KeywordComponent implements MouseListener, ActionListener,
                     }
                 }
             } else if (evt.getSource() instanceof JComboBox) {
-                JComboBox jcb = (JComboBox) evt.getSource();
+                JComboBox<String> jcb = (JComboBox<String>) evt.getSource();
                 String selected = (String) jcb.getSelectedItem();
                 if (selected == null) {
                     active = false;
-                } else if (selected.equalsIgnoreCase("DEFAULT")) {
-                    active = false;
-                } else {
-                    active = true;
-                }
+                } else active = !selected.equalsIgnoreCase("DEFAULT");
             }
         }
     }
@@ -303,7 +301,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
         jl.setPreferredSize(labelDimension);
         jl.setMaximumSize(labelDimension);
         keywordValues.add(jl);
-        JComboBox cb = new JComboBox();
+        JComboBox<String> cb = new JComboBox<>();
         cb.setEditable(false);
         cb.addMouseListener(this);
         cb.addActionListener(this);
@@ -389,9 +387,8 @@ public final class KeywordComponent implements MouseListener, ActionListener,
                     JComboBox cb = (JComboBox) c;
                     if (swingRepresentation == SwingRepresentation.COMBOBOX) {
                         String s = (String) cb.getSelectedItem();
-                        if (s == "DEFAULT") {
-                            logger.warning("Keyword should not be active: "
-                                    + toString());
+                        if ("DEFAULT".equals(s)) {
+                            logger.log(Level.WARNING, "Keyword should not be active: {0}", toString());
                             return;
                         }
                         keywordData.append(s);
@@ -509,6 +506,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
      *
      * @param s A Keyword line, not including the Keyword itself.
      */
+    @SuppressWarnings("unchecked")
     public void loadKeywordEntry(String s) {
         synchronized (this) {
             if (!init) {
@@ -527,7 +525,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
                     tf.setText(s);
                     break;
                 } else if (c instanceof JComboBox && s != null) {
-                    JComboBox cb = (JComboBox) c;
+                    JComboBox<String> cb = (JComboBox<String>) c;
                     if (swingRepresentation == SwingRepresentation.EDITCOMBOBOX) {
                         cb.addItem(s);
                     } else {
@@ -662,12 +660,10 @@ public final class KeywordComponent implements MouseListener, ActionListener,
                     } else {
                         if (cb.isSelected()) {
                             if (s.length() > 0) {
-                                s.append("\n" + keyword + " " + cb.getText());
+                                s.append("\n").append(keyword).append(" ").append(cb.getText());
                             } else {
-                                s.append(keyword + " " + cb.getText());
+                                s.append(keyword).append(" ").append(cb.getText());
                             }
-                        } else {
-                            continue;
                         }
                     }
                 } else if (c instanceof JTextField) {
@@ -677,7 +673,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
                     }
                     String v = tf.getText();
                     if (v.length() < 8) {
-                        s.append(v + spaces.substring(0, 8 - v.length()));
+                        s.append(v).append(spaces.substring(0, 8 - v.length()));
                     } else {
                         s.append(v);
                     }
@@ -696,8 +692,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
                         java.util.Arrays.sort(entries);
                         StringBuilder sb = new StringBuilder();
                         for (int i = 0; i < count; i++) {
-                            sb.append(keyword
-                                    + spaces.substring(0, 18 - keyword.length()));
+                            sb.append(keyword).append(spaces.substring(0, 18 - keyword.length()));
                             sb.append(entries[i].toUpperCase());
                             if (i < count - 1) {
                                 sb.append("\n");
@@ -709,7 +704,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
                         if (selection.startsWith("DEFAULT")) {
                             return null;
                         } else if (!selection.equalsIgnoreCase("PRESENT")) {
-                            s.append(" " + selection);
+                            s.append(" ").append(selection);
                         }
                     }
                     break;

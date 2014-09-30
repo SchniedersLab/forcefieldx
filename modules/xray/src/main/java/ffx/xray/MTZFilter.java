@@ -22,7 +22,11 @@
  */
 package ffx.xray;
 
-import java.io.*;
+import java.io.DataInputStream;
+import java.io.EOFException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -37,7 +41,11 @@ import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.toRadians;
 
-import ffx.crystal.*;
+import ffx.crystal.Crystal;
+import ffx.crystal.HKL;
+import ffx.crystal.ReflectionList;
+import ffx.crystal.Resolution;
+import ffx.crystal.SpaceGroup;
 import ffx.numerics.ComplexNumber;
 import ffx.xray.MTZWriter.MTZType;
 
@@ -91,8 +99,8 @@ public class MTZFilter implements DiffractionFileFilter {
             }
         }
     }
-    final private ArrayList<Column> columns = new ArrayList();
-    final private ArrayList<Dataset> datasets = new ArrayList();
+    final private ArrayList<Column> columns = new ArrayList<>();
+    final private ArrayList<Dataset> datasets = new ArrayList<>();
     private boolean headerParsed = false;
     private String title;
     private String foString, sigfoString, rfreeString;
@@ -700,11 +708,7 @@ public class MTZFilter implements DiffractionFileFilter {
         String[] strarray = str.split("\\s+");
 
         if (headerParsed) {
-            if (Header.toHeader(strarray[0]) == Header.END) {
-                return false;
-            } else {
-                return true;
-            }
+            return Header.toHeader(strarray[0]) != Header.END;
         }
 
         switch (Header.toHeader(strarray[0])) {
@@ -983,31 +987,34 @@ public class MTZFilter implements DiffractionFileFilter {
      */
     public void printHeader() {
         StringBuilder sb = new StringBuilder();
-        sb.append(" MTZ title: " + title + "\n");
-        sb.append(" MTZ space group: " + spaceGroupName + " space group number: " + sgnum
-                + " (" + SpaceGroup.spaceGroupNames[sgnum - 1] + ")\n");
-        sb.append(" MTZ resolution: " + resLow + " - " + resHigh + "\n");
-        sb.append(" Number of reflections: " + nReflections + "\n");
+        sb.append(" MTZ title: ").append(title).append("\n");
+        sb.append(" MTZ space group: ").append(spaceGroupName).
+                append(" space group number: ").append(sgnum).append(" (").
+                append(SpaceGroup.spaceGroupNames[sgnum - 1]).append(")\n");
+        sb.append(" MTZ resolution: ").append(resLow).append(" - ").
+                append(resHigh).append("\n");
+        sb.append(" Number of reflections: ").append(nReflections).append("\n");
 
         int ndset = 1;
         for (Iterator i = datasets.iterator(); i.hasNext(); ndset++) {
             Dataset d = (Dataset) i.next();
-
-            sb.append("  dataset " + ndset + ": " + d.dataset + "\n");
-            sb.append("  project " + ndset + ": " + d.project + "\n");
-            sb.append("  wavelength " + ndset + ": " + d.lambda + "\n");
-            sb.append("  cell " + ndset + ": "
-                    + d.cell[0] + " " + d.cell[1] + " " + d.cell[2] + " "
-                    + d.cell[3] + " " + d.cell[4] + " " + d.cell[5] + "\n");
+            sb.append("  dataset ").append(ndset).append(": ").append(d.dataset).append("\n");
+            sb.append("  project ").append(ndset).append(": ").append(d.project).append("\n");
+            sb.append("  wavelength ").append(ndset).append(": ").
+                    append(d.lambda).append("\n");
+            sb.append("  cell ").append(ndset).append(": ").append(d.cell[0]).
+                    append(" ").append(d.cell[1]).append(" ").append(d.cell[2]).
+                    append(" ").append(d.cell[3]).append(" ").append(d.cell[4]).
+                    append(" ").append(d.cell[5]).append("\n");
             sb.append("\n");
         }
 
-        sb.append(" Number of columns: " + nColumns + "\n");
+        sb.append(" Number of columns: ").append(nColumns).append("\n");
         int nc = 0;
         for (Iterator i = columns.iterator(); i.hasNext(); nc++) {
             Column c = (Column) i.next();
-
-            sb.append(String.format("  column %d: dataset id: %d min: %9.2f max: %9.2f label: %s type: %c\n",
+            sb.append(String.format(
+                    "  column %d: dataset id: %d min: %9.2f max: %9.2f label: %s type: %c\n",
                     nc, c.id, c.min, c.max, c.label, c.type));
         }
 

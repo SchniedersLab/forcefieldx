@@ -332,7 +332,7 @@ public class DiffractionData implements DataContainer {
         refinementModel = new RefinementModel(assembly, refinemolocc);
 
         // initialize atomic form factors
-        for (Atom a : refinementModel.atomarray) {
+        for (Atom a : refinementModel.atomArray) {
             a.setFormFactorIndex(-1);
             XRayFormFactor atomff
                     = new XRayFormFactor(a, use_3g, 2.0);
@@ -364,14 +364,14 @@ public class DiffractionData implements DataContainer {
         parallelTeam = new ParallelTeam();
         for (int i = 0; i < n; i++) {
             crs_fc[i] = new CrystalReciprocalSpace(reflectionList[i],
-                    refinementModel.atomarray, parallelTeam, parallelTeam,
+                    refinementModel.atomArray, parallelTeam, parallelTeam,
                     false, dataFiles[i].neutron);
             refinementData[i].setCrystalReciprocalSpace_fc(crs_fc[i]);
             crs_fc[i].setUse3G(use_3g);
             crs_fc[i].setWeight(dataFiles[i].weight);
             crs_fc[i].lambdaTerm = lambdaTerm;
             crs_fs[i] = new CrystalReciprocalSpace(reflectionList[i],
-                    refinementModel.atomarray, parallelTeam, parallelTeam,
+                    refinementModel.atomArray, parallelTeam, parallelTeam,
                     true, dataFiles[i].neutron, solventmodel);
             refinementData[i].setCrystalReciprocalSpace_fs(crs_fs[i]);
             crs_fs[i].setUse3G(use_3g);
@@ -399,7 +399,7 @@ public class DiffractionData implements DataContainer {
         RefinementModel tmprefinementmodel = new RefinementModel(assembly, refinemolocc);
 
         // initialize atomic form factors
-        for (Atom a : tmprefinementmodel.atomarray) {
+        for (Atom a : tmprefinementmodel.atomArray) {
             a.setFormFactorIndex(-1);
             XRayFormFactor atomff
                     = new XRayFormFactor(a, use_3g, 2.0);
@@ -428,11 +428,11 @@ public class DiffractionData implements DataContainer {
         // set up FFT and run it
         for (int i = 0; i < n; i++) {
             crs_fc[i] = new CrystalReciprocalSpace(reflectionList[i],
-                    tmprefinementmodel.atomarray, parallelTeam, parallelTeam,
+                    tmprefinementmodel.atomArray, parallelTeam, parallelTeam,
                     false, dataFiles[i].neutron);
             refinementData[i].setCrystalReciprocalSpace_fc(crs_fc[i]);
             crs_fs[i] = new CrystalReciprocalSpace(reflectionList[i],
-                    tmprefinementmodel.atomarray, parallelTeam, parallelTeam,
+                    tmprefinementmodel.atomArray, parallelTeam, parallelTeam,
                     true, dataFiles[i].neutron, solventModel);
             refinementData[i].setCrystalReciprocalSpace_fs(crs_fs[i]);
         }
@@ -533,12 +533,12 @@ public class DiffractionData implements DataContainer {
 
     /**
      * {@inheritDoc}
-     *
-     * return the atomarray for the model associated with this data
+
+ return the atomArray for the model associated with this data
      */
     @Override
     public Atom[] getAtomArray() {
-        return refinementModel.atomarray;
+        return refinementModel.atomArray;
     }
 
     /**
@@ -546,7 +546,7 @@ public class DiffractionData implements DataContainer {
      */
     @Override
     public ArrayList<ArrayList<Residue>> getAltResidues() {
-        return refinementModel.altresidues;
+        return refinementModel.altResidues;
     }
 
     /**
@@ -554,7 +554,7 @@ public class DiffractionData implements DataContainer {
      */
     @Override
     public ArrayList<ArrayList<Molecule>> getAltMolecules() {
-        return refinementModel.altmolecules;
+        return refinementModel.altMolecules;
     }
 
     /**
@@ -651,7 +651,7 @@ public class DiffractionData implements DataContainer {
     public void printStats() {
         int nat = 0;
         int nnonh = 0;
-        for (Atom a : refinementModel.atomlist) {
+        for (Atom a : refinementModel.atomList) {
             if (a.getOccupancy() == 0.0) {
                 continue;
             }

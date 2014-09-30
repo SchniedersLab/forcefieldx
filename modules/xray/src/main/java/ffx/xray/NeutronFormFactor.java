@@ -99,7 +99,7 @@ public final class NeutronFormFactor implements FormFactor {
     private static final double u12[][] = {{0.0, 1.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
     private static final double u13[][] = {{0.0, 0.0, 1.0}, {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}};
     private static final double u23[][] = {{0.0, 0.0, 0.0}, {0.0, 0.0, 1.0}, {0.0, 1.0, 0.0}};
-    private static final HashMap formfactors = new HashMap();
+    private static final HashMap<String, double[][]> formfactors = new HashMap<>();
     private static final String[] atoms = {"H", "D", "He", "Li", "Be", "B", "C",
         "N", "O", "F", "Ne", "Na", "Mg", "Al", "Si", "P", "S", "Cl", "Ar", "K",
         "Ca", "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Ga",
@@ -210,23 +210,23 @@ public final class NeutronFormFactor implements FormFactor {
     }
     private final Atom atom;
     protected final int ffindex;
-    private double xyz[] = new double[3];
-    private double dxyz[] = new double[3];
+    private final double xyz[] = new double[3];
+    private final double dxyz[] = new double[3];
+    private final double a[] = new double[2];
+    private final double ainv[] = new double[1];
+    private final double binv[] = new double[1];
+    private final double u[][][] = new double[1][3][3];
+    private final double uinv[][][] = new double[1][3][3];
+    private final double jmat[][][] = new double[6][3][3];
+    private final double gradp[] = new double[6];
+    private final double gradu[] = new double[6];
+    private final double resv[] = new double[3];
+    private final double resm[][] = new double[3][3];
     private double biso;
     private double uadd;
-    private boolean hasanisou;
     private double uaniso[] = null;
     private double occ;
-    private final double a[] = new double[2];
-    private double ainv[] = new double[1];
-    private double binv[] = new double[1];
-    private double u[][][] = new double[1][3][3];
-    private double uinv[][][] = new double[1][3][3];
-    private double jmat[][][] = new double[6][3][3];
-    private double gradp[] = new double[6];
-    private double gradu[] = new double[6];
-    private double resv[] = new double[3];
-    private double resm[][] = new double[3][3];
+    private boolean hasanisou;
 
     /**
      * <p>
@@ -262,7 +262,7 @@ public final class NeutronFormFactor implements FormFactor {
         this.uadd = b2u(badd);
         double ffactor[][];
 
-        String key = null;
+        String key;
         if (atom.getAtomicNumber() == 1) {
             if (atom.isDeuterium()) {
                 key = "" + atom.getAtomicNumber() + "_2";
@@ -284,7 +284,7 @@ public final class NeutronFormFactor implements FormFactor {
 
         if (occ <= 0.0) {
             StringBuilder sb = new StringBuilder();
-            sb.append("zero occ for atom: " + atom.toString() + "\n");
+            sb.append("zero occ for atom: ").append(atom.toString()).append("\n");
             sb.append("(atom will not contribute to electron density calculation)\n");
             logger.warning(sb.toString());
         }
@@ -300,7 +300,7 @@ public final class NeutronFormFactor implements FormFactor {
      * @return a int.
      */
     public static int getFormFactorIndex(String atom) {
-        double ffactor[][] = null;
+        double ffactor[][];
 
         ffactor = getFormFactor(atom);
         if (ffactor != null) {
@@ -318,8 +318,8 @@ public final class NeutronFormFactor implements FormFactor {
      * @return an array of double.
      */
     public static double[] getFormFactorA(String atom) {
-        double ffactor[][] = null;
 
+        double ffactor[][];
         ffactor = getFormFactor(atom);
         if (ffactor != null) {
             return ffactor[1];
@@ -505,7 +505,7 @@ public final class NeutronFormFactor implements FormFactor {
         // check occ is valid
         if (occ < 0.0) {
             StringBuilder sb = new StringBuilder();
-            sb.append("negative occupancy for atom: " + atom.toString() + "\n");
+            sb.append("negative occupancy for atom: ").append(atom.toString()).append("\n");
             sb.append("resetting to 0.0\n");
             logger.warning(sb.toString());
             occ = 0.0;
@@ -529,8 +529,8 @@ public final class NeutronFormFactor implements FormFactor {
 
             if (det <= 1e-14) {
                 StringBuilder sb = new StringBuilder();
-                sb.append("non-positive definite ANISOU for atom: " + atom.toString() + "\n");
-                sb.append("resetting ANISOU based on isotropic B: (" + biso + ")\n");
+                sb.append("non-positive definite ANISOU for atom: ").append(atom.toString()).append("\n");
+                sb.append("resetting ANISOU based on isotropic B: (").append(biso).append(")\n");
                 logger.warning(sb.toString());
 
                 uaniso[0] = uaniso[1] = uaniso[2] = b2u(biso);
@@ -539,7 +539,7 @@ public final class NeutronFormFactor implements FormFactor {
         } else {
             if (biso < 0.0) {
                 StringBuilder sb = new StringBuilder();
-                sb.append("negative B factor for atom: " + atom.toString() + "\n");
+                sb.append("negative B factor for atom: ").append(atom.toString()).append("\n");
                 sb.append("resetting B to 0.01\n");
                 logger.warning(sb.toString());
                 atom.setTempFactor(0.01);
