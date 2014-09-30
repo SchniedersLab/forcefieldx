@@ -44,9 +44,10 @@ import ffx.ui.MainPanel;
  * @author Michael J. Schnieders
  *
  */
+@SuppressWarnings("deprecation")
 public class OSXAdapter extends ApplicationAdapter {
 
-    private MainPanel mainPanel;
+    private final MainPanel mainPanel;
     private static OSXAdapter adapter;
     private static Application application;
     private static final Logger logger = Logger.getLogger(OSXAdapter.class.getName());
@@ -77,6 +78,7 @@ public class OSXAdapter extends ApplicationAdapter {
      *
      * @param m a {@link ffx.ui.MainPanel} object.
      */
+    @SuppressWarnings("unchecked")
     public static void macOSXRegistration(MainPanel m) {
         try {
             String name = OSXAdapter.class.getName();

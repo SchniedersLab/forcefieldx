@@ -22,12 +22,21 @@
  */
 package ffx.ui;
 
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.net.URL;
-import java.util.Enumeration;
+import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -36,7 +45,19 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 
-import javax.swing.*;
+import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
+import javax.swing.JTextArea;
+import javax.swing.JToolBar;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 import javax.xml.parsers.DocumentBuilder;
@@ -101,7 +122,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
      * JComboBox with Keyword Groups, plus a few special cases (Active,
      * FlatFile).
      */
-    private JComboBox groupComboBox;
+    private JComboBox<String> groupComboBox;
     /**
      * The editPanel holds the toolBar (north), splitPane (center) and
      * statusLabel (south).
@@ -156,15 +177,14 @@ public final class KeywordPanel extends JPanel implements ActionListener {
     // A simple label if no Keyword Description is available.
     private final JLabel noKeywordLabel = new JLabel(
             "Keyword desciptions are displayed here.");
-    private final JPanel noKeywordPanel = new JPanel(new FlowLayout(FlowLayout.LEFT,
-            5, 5));
+    private final JPanel noKeywordPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 5));
     private final FlowLayout flowLayout = new FlowLayout(FlowLayout.LEFT, 5, 5);
     private final BorderLayout borderLayout = new BorderLayout();
     // Location of TINKER parameter files
     private File paramDir = null;
     private File paramFiles[] = null;
     private String paramNames[] = null;
-    private Hashtable<String, String> paramHashtable = null;
+    private LinkedHashMap<String, String> paramHashtable = null;
 
     /**
      * Default Construtor where parent is the tinker Window Frame object.
@@ -182,6 +202,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
      *
      * Handles input from KeywordPanel ToolBar buttons.
      *
+     * @param evt
      */
     @Override
     public void actionPerformed(ActionEvent evt) {
@@ -659,7 +680,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
              * keyword Hashtable and appended to the generic "Comments"
              * KeywordData instance.
              */
-            Vector<String> keysToRemove = new Vector<String>();
+            ArrayList<String> keysToRemove = new ArrayList<>();
             Keyword comments = currentKeys.get("COMMENTS");
             for (Keyword keyword : currentKeys.values()) {
                 String label = keyword.getKeyword();
@@ -672,7 +693,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
                 // as a Comment
                 if (tk == null) {
                     keysToRemove.add(keyword.getKeyword());
-                    if (data.size() == 0) {
+                    if (data.isEmpty()) {
                         comments.append(label);
                     } else if (label.equalsIgnoreCase("MULTIPOLE")) {
                         int count = 5;
@@ -710,7 +731,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
                 }
                 // No data for this keyword (something like "verbose" that
                 // doesn't have modifiers)
-                if (data.size() == 0) {
+                if (data.isEmpty()) {
                     tk.loadKeywordEntry(label);
                 }
                 // One to many data entries (something "atom" or "bond" that
@@ -725,10 +746,10 @@ public final class KeywordPanel extends JPanel implements ActionListener {
                 for (String s : entries) {
                     if (s.length() > 1) {
                         if (!groupHashMap.containsKey(s.substring(1).toUpperCase().trim())) {
-                            commentStringBuffer.append(s + "\n");
+                            commentStringBuffer.append(s).append("\n");
                         }
                     } else {
-                        commentStringBuffer.append(s + "\n");
+                        commentStringBuffer.append(s).append("\n");
                     }
                 }
             }
@@ -850,13 +871,13 @@ public final class KeywordPanel extends JPanel implements ActionListener {
             Element body = (Element) document.getElementsByTagName("body").item(0);
             groups = body.getElementsByTagName("section");
         } catch (ParserConfigurationException | SAXException | IOException e) {
-            logger.warning("" + e);
+            logger.warning(e.toString());
         }
         keywordHashMap = new LinkedHashMap<>();
         groupHashMap = new LinkedHashMap<>();
         groupHashMap.put("ACTIVE KEYWORDS", "Active Keywords");
         groupHashMap.put("FLAT FILE VIEW", "Flat File View");
-        groupComboBox = new JComboBox();
+        groupComboBox = new JComboBox<>();
         groupComboBox.addItem("Active Keywords");
         groupComboBox.addItem("Flat File View");
         descriptTextArea = new JTextArea();
@@ -1118,9 +1139,8 @@ public final class KeywordPanel extends JPanel implements ActionListener {
                 + "params");
         if (paramDir != null && paramDir.exists()) {
             paramFiles = paramDir.listFiles();
-            paramHashtable = new Hashtable<String, String>();
-            for (int i = 0; i < paramFiles.length; i++) {
-                File f = paramFiles[i];
+            paramHashtable = new LinkedHashMap<>();
+            for (File f : paramFiles) {
                 if (f.exists() && f.canRead()
                         && MainPanel.forceFieldFileFilter.accept(f)) {
                     paramHashtable.put(f.getName(), f.getAbsolutePath());
@@ -1129,8 +1149,8 @@ public final class KeywordPanel extends JPanel implements ActionListener {
             int num = paramHashtable.size();
             paramNames = new String[num + 1];
             int i = 1;
-            for (Enumeration e = paramHashtable.keys(); e.hasMoreElements();) {
-                paramNames[i] = (String) e.nextElement();
+            for (String name : paramHashtable.keySet()) {
+                paramNames[i] = name;
                 i++;
             }
             paramNames[0] = "AAA";

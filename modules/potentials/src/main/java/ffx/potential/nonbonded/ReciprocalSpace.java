@@ -225,7 +225,7 @@ public class ReciprocalSpace {
     private final InducedPhiRegion polarizationPhiRegion;
     private Complex3DParallel complexFFT3D;
     private final IntegerSchedule recipSchedule;
-    
+
     /**
      * Timing variables.
      */
@@ -644,6 +644,12 @@ public class ReciprocalSpace {
      */
     public void splinePermanentMultipoles(double globalMultipoles[][][], boolean use[]) {
         splinePermanentTotal -= System.nanoTime();
+
+        if (cudaFFT) {
+            splineBuffer = cudaFFT3D.getDoubleBuffer();
+            spatialDensityRegion.setGridBuffer(splineBuffer);
+        }
+
         switch (gridMethod) {
             case SPATIAL:
                 spatialDensityRegion.setCrystal(crystal.getUnitCell(), fftX, fftY, fftZ);
@@ -728,6 +734,12 @@ public class ReciprocalSpace {
             double inducedDipoleCR[][][],
             boolean use[]) {
         splineInducedTotal -= System.nanoTime();
+
+        if (cudaFFT) {
+            splineBuffer = cudaFFT3D.getDoubleBuffer();
+            spatialDensityRegion.setGridBuffer(splineBuffer);
+        }
+
         switch (gridMethod) {
             case SPATIAL:
                 spatialDensityRegion.setDensityLoop(spatialInducedLoops);

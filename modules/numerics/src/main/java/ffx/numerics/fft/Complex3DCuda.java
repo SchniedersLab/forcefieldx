@@ -39,6 +39,7 @@ import jcuda.LogLevel;
 import jcuda.Pointer;
 import jcuda.Sizeof;
 import jcuda.driver.CUcontext;
+import jcuda.driver.CUctx_flags;
 import jcuda.driver.CUdevice;
 import jcuda.driver.CUdeviceptr;
 import jcuda.driver.CUdevprop;
@@ -49,6 +50,7 @@ import jcuda.jcufft.JCufft;
 import jcuda.jcufft.cufftHandle;
 import jcuda.jcufft.cufftType;
 
+import static jcuda.driver.JCudaDriver.CU_MEMHOSTALLOC_DEVICEMAP;
 import static jcuda.driver.JCudaDriver.align;
 import static jcuda.driver.JCudaDriver.cuCtxCreate;
 import static jcuda.driver.JCudaDriver.cuCtxSynchronize;
@@ -99,6 +101,7 @@ public class Complex3DCuda implements Runnable {
     Pointer recipCPUPtr;
     Pointer dataGPUPtr, recipGPUPtr;
     CUdeviceptr dataDevice, recipDevice;
+    private final boolean usePinnedMemory = false;
 
     private enum MODE {
 
@@ -136,12 +139,8 @@ public class Complex3DCuda implements Runnable {
         if (dead || mode != null) {
             return;
         }
-        // pinnedMemoryBuffer.rewind();
-        // pinnedMemoryBuffer.put(data);
         mode = MODE.FFT;
         execute();
-        // pinnedMemoryBuffer.rewind();
-        // pinnedMemoryBuffer.get(data);
     }
 
     /**
@@ -155,12 +154,8 @@ public class Complex3DCuda implements Runnable {
         if (dead || mode != null) {
             return;
         }
-        // pinnedMemoryBuffer.rewind();
-        // pinnedMemoryBuffer.put(data);
         mode = MODE.IFFT;
         execute();
-        // pinnedMemoryBuffer.rewind();
-        // pinnedMemoryBuffer.get(data);
     }
 
     /**
@@ -173,15 +168,9 @@ public class Complex3DCuda implements Runnable {
         if (dead || mode != null) {
             return;
         }
-        // Copy input into pinned memory.
-        // pinnedMemoryBuffer.rewind();
-        // pinnedMemoryBuffer.put(data);
         // Do the CUDA computation.
         mode = MODE.CONVOLUTION;
         execute();
-        // Copy output from pinned memory.
-        // pinnedMemoryBuffer.rewind();
-        // pinnedMemoryBuffer.get(data);
     }
 
     /**
@@ -265,13 +254,16 @@ public class Complex3DCuda implements Runnable {
         CUdevice dev = new CUdevice();
         CUdevprop prop = new CUdevprop();
         cuDeviceGetProperties(prop, dev);
-        logger.info(" CUDA " + prop.toFormattedString());
+        logger.info("   CUDA " + prop.toFormattedString());
         cuDeviceGet(dev, 0);
 
         // Create a context that allows the GPU to map pinned host memory.
-        // cuCtxCreate(pctx, CUctx_flags.CU_CTX_MAP_HOST, dev);
-        // Create a context that does not allows the GPU to map pinned host memory.
-        cuCtxCreate(pctx, 0, dev);
+        if (usePinnedMemory) {
+            cuCtxCreate(pctx, CUctx_flags.CU_CTX_MAP_HOST, dev);
+        } else {
+            // Create a context that does not allows the GPU to map pinned host memory.
+            cuCtxCreate(pctx, 0, dev);
+        }
 
         // Load the CUBIN file and obtain the "recipSummation" function.
         try {
@@ -290,10 +282,13 @@ public class Complex3DCuda implements Runnable {
 
         pinnedMemory = new Pointer();
 
-        // Allocate pinned memory mapped into the GPU address space.
-        // cuMemHostAlloc(pinnedMemory, len * 2 * Sizeof.DOUBLE, CU_MEMHOSTALLOC_DEVICEMAP);
-        // Allocate memory
-        cuMemHostAlloc(pinnedMemory, len * 2 * Sizeof.DOUBLE, 0);
+        if (usePinnedMemory) {
+            // Allocate pinned memory mapped into the GPU address space.
+            cuMemHostAlloc(pinnedMemory, len * 2 * Sizeof.DOUBLE, CU_MEMHOSTALLOC_DEVICEMAP);
+        } else {
+            // Allocate memory
+            cuMemHostAlloc(pinnedMemory, len * 2 * Sizeof.DOUBLE, 0);
+        }
 
         ByteBuffer byteBuffer = pinnedMemory.getByteBuffer(0, len * 2 * Sizeof.DOUBLE);
         byteBuffer.order(ByteOrder.nativeOrder());
@@ -320,8 +315,8 @@ public class Complex3DCuda implements Runnable {
         int nBlocks = len / threads + (len % threads == 0 ? 0 : 1);
         int gridSize = (int) Math.floor(Math.sqrt(nBlocks)) + 1;
 
-        logger.info(format(" CUDA thread initialized with %d threads per block", threads));
-        logger.info(format(" Grid Size: (%d x %d x 1)", gridSize, gridSize));
+        logger.info(format("   CUDA thread initialized: %d threads per block", threads));
+        logger.info(format("   Grid Size:                     (%3d,%3d,%3d)", gridSize, gridSize, 1));
 
         assert (gridSize * gridSize * threads >= len);
 
@@ -335,18 +330,26 @@ public class Complex3DCuda implements Runnable {
                             break;
 
                         case FFT:
-                            cuMemcpyHtoD(dataDevice, pinnedMemory, 2 * len * Sizeof.DOUBLE);
-                            cufftExecZ2Z(plan, dataDevice, dataDevice, CUFFT_FORWARD);
-                            cuMemcpyDtoH(pinnedMemory, dataDevice, 2 * len * Sizeof.DOUBLE);
+                            // Zero Copy
+                            if (usePinnedMemory) {
+                                cufftExecZ2Z(plan, pinnedMemory, pinnedMemory, CUFFT_FORWARD);
+                            } else {
+                                cuMemcpyHtoD(dataDevice, pinnedMemory, 2 * len * Sizeof.DOUBLE);
+                                cufftExecZ2Z(plan, dataDevice, dataDevice, CUFFT_FORWARD);
+                                cuMemcpyDtoH(pinnedMemory, dataDevice, 2 * len * Sizeof.DOUBLE);
+                            }
                             break;
 
                         case CONVOLUTION:
 
-                            // Zero Copy
-                            // cufftExecZ2Z(plan, pinnedMemory, dataDevice, CUFFT_FORWARD);
-                            // Copy data to device and run forward FFT.
-                            cuMemcpyHtoD(dataDevice, pinnedMemory, 2 * len * Sizeof.DOUBLE);
-                            cufftExecZ2Z(plan, dataDevice, dataDevice, CUFFT_FORWARD);
+                            if (usePinnedMemory) {
+                                // Zero Copy
+                                cufftExecZ2Z(plan, pinnedMemory, dataDevice, CUFFT_FORWARD);
+                            } else {
+                                // Copy data to device and run forward FFT.
+                                cuMemcpyHtoD(dataDevice, pinnedMemory, 2 * len * Sizeof.DOUBLE);
+                                cufftExecZ2Z(plan, dataDevice, dataDevice, CUFFT_FORWARD);
+                            }
 
                             // Set up the execution parameters for the kernel
                             cuFuncSetBlockShape(function, threads, 1, 1);
@@ -363,20 +366,26 @@ public class Complex3DCuda implements Runnable {
                             cuParamSetSize(function, offset);
                             // Call the kernel function.
                             cuLaunchGrid(function, gridSize, gridSize);
-
-                            // Zero Copy
-                            // cufftExecZ2Z(plan, dataDevice, pinnedMemory, CUFFT_INVERSE);
-                            // Perform inverse FFT and copy memory back to the CPU.
-                            cufftExecZ2Z(plan, dataDevice, dataDevice, CUFFT_INVERSE);
-                            cuMemcpyDtoH(pinnedMemory, dataDevice, 2 * len * Sizeof.DOUBLE);
+                            if (usePinnedMemory) {
+                                // Zero Copy
+                                cufftExecZ2Z(plan, dataDevice, pinnedMemory, CUFFT_INVERSE);
+                            } else {
+                                // Perform inverse FFT and copy memory back to the CPU.
+                                cufftExecZ2Z(plan, dataDevice, dataDevice, CUFFT_INVERSE);
+                                cuMemcpyDtoH(pinnedMemory, dataDevice, 2 * len * Sizeof.DOUBLE);
+                            }
                             break;
 
                         case IFFT:
-                            cuMemcpyHtoD(dataDevice, pinnedMemory, 2 * len * Sizeof.DOUBLE);
-                            cufftExecZ2Z(plan, dataDevice, dataDevice, CUFFT_INVERSE);
-                            cuMemcpyDtoH(pinnedMemory, dataDevice, 2 * len * Sizeof.DOUBLE);
+                            // Zero Copy
+                            if (usePinnedMemory) {
+                                cufftExecZ2Z(plan, pinnedMemory, pinnedMemory, CUFFT_INVERSE);
+                            } else {
+                                cuMemcpyHtoD(dataDevice, pinnedMemory, 2 * len * Sizeof.DOUBLE);
+                                cufftExecZ2Z(plan, dataDevice, dataDevice, CUFFT_INVERSE);
+                                cuMemcpyDtoH(pinnedMemory, dataDevice, 2 * len * Sizeof.DOUBLE);
+                            }
                             break;
-
                     }
 
                     // Block for the context's tasks to complete.
@@ -431,9 +440,9 @@ public class Complex3DCuda implements Runnable {
                 if (dimNotFinal < 1) {
                     dimNotFinal = 64;
                 }
-                reps = Integer.parseInt(args[2]);
+                reps = Integer.parseInt(args[1]);
                 if (reps < 1) {
-                    reps = 5;
+                    reps = 10;
                 }
             } catch (Exception e) {
             }
@@ -529,10 +538,14 @@ public class Complex3DCuda implements Runnable {
         rmse /= dimCubed;
         rmse = Math.sqrt(rmse);
         logger.info(String.format(" Parallel RMSE:   %12.10f, Max: %12.10f", rmse, maxError));
+
+        DoubleBuffer cudaBuffer = complex3DCUDA.getDoubleBuffer();
         for (int i = 0; i < reps; i++) {
             for (int j = 0; j < dimCubed; j++) {
-                data[j * 2] = orig[j];
-                data[j * 2 + 1] = 0.0;
+                // data[j * 2] = orig[j];
+                // data[j * 2 + 1] = 0.0;
+                cudaBuffer.put(j * 2, orig[j]);
+                cudaBuffer.put(j * 2 + 1, 0.0);
             }
             long time = System.nanoTime();
             complex3DCUDA.convolution(data);
@@ -547,7 +560,8 @@ public class Complex3DCuda implements Runnable {
         double avg = 0.0;
         rmse = 0.0;
         for (int i = 0; i < dimCubed; i++) {
-            double error = Math.abs(answer[i] / dimCubed - data[2 * i]);
+            double error = Math.abs(answer[i] - cudaBuffer.get(2*i));
+            // double error = Math.abs(answer[i] / dimCubed -  data[2 * i]);
             avg += error;
             if (error > maxError) {
                 maxError = error;

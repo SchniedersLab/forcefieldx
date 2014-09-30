@@ -68,7 +68,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         this.realspacedata = realspacedata;
         this.refinementmodel = realspacedata.getRefinementModel();
         this.refinementMode = refinementmode;
-        this.atomarray = refinementmodel.atomarray;
+        this.atomarray = refinementmodel.atomArray;
         this.nAtoms = atomarray.length;
         this.nxyz = nxyz;
 

@@ -92,7 +92,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
         this.diffractiondata = diffractiondata;
         this.refinementmodel = diffractiondata.getRefinementModel();
         this.refinementMode = refinementmode;
-        this.atomarray = refinementmodel.atomarray;
+        this.atomarray = refinementmodel.atomArray;
         this.nAtoms = atomarray.length;
         this.nxyz = nxyz;
         this.nb = nb;
@@ -432,7 +432,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
         int index = nxyz + nb;
 
         // first: alternate residues
-        for (ArrayList<Residue> list : refinementmodel.altresidues) {
+        for (ArrayList<Residue> list : refinementmodel.altResidues) {
             ave = 0.0;
             for (Residue r : list) {
                 for (Atom a : r.getAtomList()) {
@@ -456,7 +456,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
         }
 
         // now the molecules (HETATMs)
-        for (ArrayList<Molecule> list : refinementmodel.altmolecules) {
+        for (ArrayList<Molecule> list : refinementmodel.altMolecules) {
             ave = 0.0;
             for (Molecule m : list) {
                 for (Atom a : m.getAtomList()) {
@@ -567,7 +567,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
         }
 
         if (refineocc) {
-            for (ArrayList<Residue> list : refinementmodel.altresidues) {
+            for (ArrayList<Residue> list : refinementmodel.altResidues) {
                 for (Residue r : list) {
                     for (Atom a : r.getAtomList()) {
                         if (a.getOccupancy() < 1.0) {
@@ -577,7 +577,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
                     }
                 }
             }
-            for (ArrayList<Molecule> list : refinementmodel.altmolecules) {
+            for (ArrayList<Molecule> list : refinementmodel.altMolecules) {
                 for (Molecule m : list) {
                     for (Atom a : m.getAtomList()) {
                         if (a.getOccupancy() < 1.0) {
@@ -706,7 +706,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
     public void setOccupancies(double x[]) {
         double occ = 0.0;
         int index = nxyz + nb;
-        for (ArrayList<Residue> list : refinementmodel.altresidues) {
+        for (ArrayList<Residue> list : refinementmodel.altResidues) {
             for (Residue r : list) {
                 occ = x[index++];
                 for (Atom a : r.getAtomList()) {
@@ -716,7 +716,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
                 }
             }
         }
-        for (ArrayList<Molecule> list : refinementmodel.altmolecules) {
+        for (ArrayList<Molecule> list : refinementmodel.altMolecules) {
             for (Molecule m : list) {
                 occ = x[index++];
                 for (Atom a : m.getAtomList()) {
