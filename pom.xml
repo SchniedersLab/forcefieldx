@@ -759,7 +759,7 @@
         <groovy-all.version>2.3.6</groovy-all.version>
         <javahelp.version>2.0.05</javahelp.version>
         <java3d.version>1.6.2</java3d.version>
-        <jcuda.version>5.0.0</jcuda.version>
+        <jcuda.version>6.5.0</jcuda.version>
         <jocl.version>2.2.0</jocl.version>
         <parallel-java.version>1.7</parallel-java.version>
     </properties>
