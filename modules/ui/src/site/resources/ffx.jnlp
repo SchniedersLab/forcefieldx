@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE jnlp PUBLIC '-//Sun Microsystems, Inc//DTD JNLP Descriptor 6.0//EN' 'http://java.sun.com/dtd/JNLP-6.0.dtd'>
-<jnlp spec="6.0+" codebase="http://kenai.com/website/ffx/modules/ui/" href="ffx.jnlp">
+<jnlp spec="6.0+" href="ffx.jnlp">
     <information>
         <title>Force Field X</title>
         <vendor>Michael J. Schnieders</vendor>
-        <homepage href="http://kenai.com/website/ffx/modules/ui/" />
+        <homepage href="http://ffx.eng.uiowa.edu"/>
         <description>Software for Molecular Biophysics</description>
         <icon href="images/icon128.png"/>
         <offline-allowed/>
@@ -30,9 +30,14 @@
     </security>
     <update check="always" policy="always"/>
     <resources>
-        <java version="1.6+" initial-heap-size="1G" max-heap-size="1G"/>
-        <jar href="ffx-all.jar" />
+        <java version="1.8" initial-heap-size="1G" max-heap-size="1G"/>
         <property name="j3d.rend" value="jogl"/>
+        <extension name="jogl-all-awt" href="http://jogamp.org/deployment/v2.1.5/jogl-all-awt.jnlp" />
+        <extension name="ffx-dependency" href="https://kenai.com/projects/ffx/sources/dependency-repo/content/ffx-dependency-1.0.0-beta.jnlp" />
+        <extension name="ffx-all" href="https://kenai.com/projects/ffx/sources/ffx-commons/content/ffx-all-1.0.0-beta.jnlp" />
     </resources>
-    <application-desc main-class="ffx.Launcher"/>
+    <application-desc main-class="ffx.Main">
+       <argument>minimize</argument>
+       <argument>1crn</argument>  
+    </application-desc>
 </jnlp>

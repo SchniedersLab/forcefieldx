@@ -73,7 +73,7 @@ public class Main extends JFrame {
      * Process any "-D" command line flags.
      */
     private static String[] processProperties(String args[]) {
-        List newArgs = new ArrayList<>();
+        List<String> newArgs = new ArrayList<>();
         for (String arg : args) {
             arg = arg.trim();
             if (arg.startsWith("-D")) {

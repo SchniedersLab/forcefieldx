@@ -162,12 +162,12 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     protected double solvationEnergy;
     protected double ncsEnergy;
     protected double restrainEnergy;
-    protected double comRestrainEnergy;
+    protected double comRestraintEnergy;
     protected double totalEnergy;
     protected long bondTime, angleTime, stretchBendTime, ureyBradleyTime;
     protected long outOfPlaneBendTime, torsionTime, piOrbitalTorsionTime, improperTorsionTime;
     protected long torsionTorsionTime, vanDerWaalsTime, electrostaticTime;
-    protected long restraintBondTime, ncsTime, coordRestraintTime, comRestrainTime;
+    protected long restraintBondTime, ncsTime, coordRestraintTime, comRestraintTime;
     protected long totalTime;
     protected double lambda = 1.0;
     protected double[] optimizationScaling = null;
@@ -997,9 +997,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             }
 
             if (comTerm) {
-                comRestrainTime = -System.nanoTime();
-                comRestrainEnergy = comRestraint.residual(gradient, print);
-                comRestrainTime += System.nanoTime();
+                comRestraintTime = -System.nanoTime();
+                comRestraintEnergy = comRestraint.residual(gradient, print);
+                comRestraintTime += System.nanoTime();
             }
 
             if (vanderWaalsTerm) {
@@ -1120,7 +1120,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
         if (comTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                    "COM RESRAINT               : ", comRestrainEnergy, nAtoms));
+                    "COM RESRAINT               : ", comRestraintEnergy, nAtoms));
         }
 
         if (vanderWaalsTerm) {
@@ -1220,8 +1220,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
         if (comTerm) {
             sb.append(String.format("  %s %16.8f %12d %12.3f\n",
-                    "COM Restraint     ", comRestrainEnergy, nAtoms,
-                    comRestrainTime * toSeconds));
+                    "COM Restraint     ", comRestraintEnergy, nAtoms,
+                    comRestraintTime * toSeconds));
         }
         if (vanderWaalsTerm && nVanDerWaals > 0) {
             sb.append(String.format("  %s %16.8f %12d %12.3f\n",

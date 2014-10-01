@@ -106,7 +106,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         this.refinementmodel = data.getRefinementModel();
         this.atomarray = data.getAtomArray();
         this.nAtoms = atomarray.length;
-        this.xindex = refinementmodel.xindex;
+        this.xindex = refinementmodel.xIndex;
         this.refinementMode = refinementmode;
         this.optimizationScaling = scaling;
         this.thermostat = null;
@@ -177,10 +177,10 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
                             || refinementmode == RefinementMode.BFACTORS_AND_OCCUPANCIES
                             || refinementmode == RefinementMode.COORDINATES_AND_OCCUPANCIES
                             || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-                        for (ArrayList<Residue> list : refinementmodel.altresidues) {
+                        for (ArrayList<Residue> list : refinementmodel.altResidues) {
                             nocc += list.size();
                         }
-                        for (ArrayList<Molecule> list : refinementmodel.altmolecules) {
+                        for (ArrayList<Molecule> list : refinementmodel.altMolecules) {
                             nocc += list.size();
                         }
                     }

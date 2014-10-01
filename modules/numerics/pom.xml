@@ -47,7 +47,6 @@
                 <configuration>
                     <executable>java</executable>
                     <arguments>
-                        <argument>-d64</argument>
                         <argument>-ms2G</argument>
                         <argument>-mx2G</argument>
                         <argument>-Djava.library.path=/Data/ffx-project/ffx/bin/64-bit</argument>
@@ -55,6 +54,7 @@
                         <classpath/>
                         <argument>ffx.numerics.fft.Complex3DCuda</argument>
                         <argument>128</argument>
+                        <argument>20</argument>
                     </arguments>
                 </configuration>
             </plugin>

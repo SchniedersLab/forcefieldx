@@ -40,10 +40,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
@@ -121,7 +119,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
     /**
      * File Types for this Command
      */
-    private final Vector<FileType> commandFileTypes = new Vector<>();
+    private final ArrayList<FileType> commandFileTypes = new ArrayList<>();
     /**
      * Actions to take for this Command when it finishes
      */
@@ -129,22 +127,22 @@ public class ModelingPanel extends JPanel implements ActionListener,
     /**
      * Executing Commands
      */
-    private final Vector<Thread> executingCommands = new Vector<>();
+    private final ArrayList<Thread> executingCommands = new ArrayList<>();
     /**
      * Log Settings
      */
-    private final JComboBox logSettings = new JComboBox();
+    private final JComboBox<String> logSettings = new JComboBox<>();
     private String logString = null;
     /**
      * Commands for supported file types
      */
     private NodeList commandList;
-    private JComboBox xyzCommands;
-    private JComboBox intCommands;
-    private JComboBox arcCommands;
-    private JComboBox pdbCommands;
-    private JComboBox anyCommands;
-    private JComboBox currentCommandBox;
+    private JComboBox<String> xyzCommands;
+    private JComboBox<String> intCommands;
+    private JComboBox<String> arcCommands;
+    private JComboBox<String> pdbCommands;
+    private JComboBox<String> anyCommands;
+    private JComboBox<String> currentCommandBox;
     /**
      * The CommandPanel holds the toolBar (north), splitPane (center) and
      * statusLabel (south).
@@ -161,7 +159,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
     private JScrollPane descriptScrollPane;
     private JTextArea descriptTextArea;
     private JCheckBoxMenuItem descriptCheckBox;
-    private final Vector<JLabel> conditionals = new Vector<>();
+    private final ArrayList<JLabel> conditionals = new ArrayList<>();
     /**
      * Command input is formed in the commandTextArea, then exported to an input
      * file.
@@ -170,10 +168,10 @@ public class ModelingPanel extends JPanel implements ActionListener,
     /**
      * Nucleic Acid and Protein builder components.
      */
-    private final JComboBox acidComboBox = new JComboBox();
+    private final JComboBox<String> acidComboBox = new JComboBox<>();
     private final JTextField acidTextField = new JTextField();
     private final JTextArea acidTextArea = new JTextArea();
-    private JComboBox conformationComboBox;
+    private JComboBox<String> conformationComboBox;
     private JScrollPane acidScrollPane = null;
     private JPanel aminoPanel = null;
     private JPanel nucleicPanel = null;
@@ -272,19 +270,19 @@ public class ModelingPanel extends JPanel implements ActionListener,
         String arg = evt.getActionCommand();
         int index = acidComboBox.getSelectedIndex();
         String selected = (String) acidComboBox.getItemAt(index);
-        if (button.getText() == "Remove") {
+        if ("Remove".equals(button.getText())) {
             // Remove one entry
             if (acidComboBox.getItemCount() > 0) {
                 acidComboBox.removeItemAt(index);
                 index--;
             }
-        } else if (button.getText() == "Edit") {
+        } else if ("Edit".equals(button.getText())) {
             String entry = new String(acidTextField.getText());
             // Allow editing - should add more input validation here
             if (!entry.equals("")) {
                 String s[] = entry.trim().split(" +");
                 String newResidue = s[0].toUpperCase();
-                if (arg == "NUCLEIC") {
+                if ("NUCLEIC".equals(arg)) {
                     // Residue.NA3Set.contains(newResidue);
                     try {
                         Residue.NA3.valueOf(newResidue);
@@ -303,18 +301,18 @@ public class ModelingPanel extends JPanel implements ActionListener,
                     }
                 }
             }
-        } else if (button.getText() == "Reset") {
+        } else if ("Reset".equals(button.getText())) {
             // Remove all entries
             acidComboBox.removeAllItems();
             acidTextArea.setText("");
         } else {
             // A base/residue button was selected
-            String newResidue = new String(button.getText());
-            if (arg == "PROTEIN") {
+            String newResidue = button.getText();
+            if ("PROTEIN".equals(arg)) {
                 String c = (String) conformationComboBox.getSelectedItem();
                 if (!c.toUpperCase().startsWith("DEFAULT")) {
                     c = c.substring(c.indexOf("[") + 1, c.indexOf("]"));
-                    newResidue = new String(newResidue + " " + c);
+                    newResidue = newResidue + " " + c;
                 }
                 acidComboBox.insertItemAt("" + index + " " + newResidue,
                         index + 1);
@@ -337,9 +335,9 @@ public class ModelingPanel extends JPanel implements ActionListener,
             String s[] = ((String) acidComboBox.getItemAt(i)).trim().toUpperCase().split(" +");
             if (s.length > 1) {
                 if (s[1].equalsIgnoreCase("MOL")) {
-                    sequence.append(s[1] + "\n");
+                    sequence.append(s[1]).append("\n");
                 } else {
-                    sequence.append(s[1] + " ");
+                    sequence.append(s[1]).append(" ");
                 }
             }
         }
@@ -377,11 +375,10 @@ public class ModelingPanel extends JPanel implements ActionListener,
         if (source instanceof JRadioButton) {
             JRadioButton jrb = (JRadioButton) source;
             String selection = jrb.getText().toLowerCase();
-            for (Enumeration e = conditionals.elements(); e.hasMoreElements();) {
-                JLabel label = (JLabel) e.nextElement();
+            for (JLabel label : conditionals) {
                 JTextField jtf = (JTextField) label.getLabelFor();
                 String cupon = label.getName().toLowerCase();
-                if (cupon.indexOf(selection) >= 0 && jrb.isSelected()) {
+                if (cupon.contains(selection) && jrb.isSelected()) {
                     label.setEnabled(true);
                     jtf.setEnabled(true);
                 } else {
@@ -392,11 +389,10 @@ public class ModelingPanel extends JPanel implements ActionListener,
         } else if (source instanceof JCheckBox) {
             JCheckBox jcb = (JCheckBox) source;
             String selection = jcb.getText().toLowerCase();
-            for (Enumeration e = conditionals.elements(); e.hasMoreElements();) {
-                JLabel label = (JLabel) e.nextElement();
+            for (JLabel label : conditionals) {
                 String cupon = label.getName().toLowerCase();
                 JTextField jtf = (JTextField) label.getLabelFor();
-                if (cupon.indexOf(selection) >= 0 && jcb.isSelected()) {
+                if (cupon.contains(selection) && jcb.isSelected()) {
                     label.setEnabled(true);
                     jtf.setEnabled(true);
                 } else {
@@ -517,7 +513,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
                         }
                         // Append a newline to "enter" the option string.
                         // Append "conditional" input.
-                        optionString.append("\n" + conditionalInput);
+                        optionString.append("\n").append(conditionalInput);
                     }
                 }
             }
@@ -530,7 +526,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
         }
         String commandInput = commandTextArea.getText();
         if (commandInput != null && !commandInput.trim().equalsIgnoreCase("")) {
-            commandLineParams.append(commandInput.toString());
+            commandLineParams.append(commandInput);
         }
 
         // The final token on the command line is the structure file name, except
@@ -583,7 +579,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
         aminoPanel = new JPanel();
         aminoPanel.setLayout(new BoxLayout(aminoPanel, BoxLayout.Y_AXIS));
         aminoPanel.add(buttonPanel);
-        conformationComboBox = new JComboBox(Residue.Ramachandran);
+        conformationComboBox = new JComboBox<>(Residue.Ramachandran);
         conformationComboBox.setFont(Font.decode("Monospaced"));
         conformationComboBox.setMaximumSize(buttonPanel.getPreferredSize());
         aminoPanel.add(conformationComboBox);
@@ -597,7 +593,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
      * @return a {@link java.util.ArrayList} object.
      */
     public ArrayList<String> getAvailableCommands() {
-        ArrayList<String> availableCommands = new ArrayList<String>();
+        ArrayList<String> availableCommands = new ArrayList<>();
         for (int i = 0; i < currentCommandBox.getItemCount(); i++) {
             availableCommands.add((String) currentCommandBox.getItemAt(i));
         }
@@ -618,20 +614,20 @@ public class ModelingPanel extends JPanel implements ActionListener,
         String currentMode = (String) logSettings.getSelectedItem();
         if (currentMode.startsWith("Create")) {
             currentLog = SystemFilter.version(currentLog);
-            return new String(" > \"" + currentLog.getAbsolutePath() + "\"");
+            return " > \"" + currentLog.getAbsolutePath() + "\"";
         } else if (currentMode.startsWith("Append")) {
-            return new String(" >> \"" + currentLog.getAbsolutePath() + "\"");
+            return " >> \"" + currentLog.getAbsolutePath() + "\"";
         } else {
-            return new String(" > \"" + currentLog.getAbsolutePath() + "\"");
+            return " > \"" + currentLog.getAbsolutePath() + "\"";
         }
     }
 
     /**
-     * Get a Vector of executing TINKER jobs
+     * Get an ArrayList of executing jobs
      *
-     * @return a Vector containing Thread objects
+     * @return an ArrayList containing Thread objects
      */
-    public Vector<Thread> getModelingJobs() {
+    public ArrayList<Thread> getModelingJobs() {
         return executingCommands;
     }
 
@@ -742,11 +738,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
                 commandList = null;
             }
             commandList = ((Element) commandroot).getElementsByTagName("Command");
-        } catch (ParserConfigurationException e) {
-            System.err.println(e);
-        } catch (SAXException e) {
-            System.err.println(e);
-        } catch (IOException e) {
+        } catch (ParserConfigurationException | SAXException | IOException e) {
             System.err.println(e);
         } finally {
             if (commandList == null) {
@@ -757,11 +749,11 @@ public class ModelingPanel extends JPanel implements ActionListener,
         }
         // Create a ComboBox with commands specific to each type of coordinate
         // file.
-        xyzCommands = new JComboBox();
-        intCommands = new JComboBox();
-        arcCommands = new JComboBox();
-        pdbCommands = new JComboBox();
-        anyCommands = new JComboBox();
+        xyzCommands = new JComboBox<>();
+        intCommands = new JComboBox<>();
+        arcCommands = new JComboBox<>();
+        pdbCommands = new JComboBox<>();
+        anyCommands = new JComboBox<>();
         Element command;
         String name;
         int numcommands = commandList.getLength();
@@ -769,22 +761,22 @@ public class ModelingPanel extends JPanel implements ActionListener,
             command = (Element) commandList.item(i);
             name = command.getAttribute("name");
             String temp = command.getAttribute("fileType");
-            if (temp.indexOf("ANY") >= 0) {
+            if (temp.contains("ANY")) {
                 temp = "XYZ INT ARC PDB";
                 anyCommands.addItem(name);
             }
             String[] types = temp.split(" +");
             for (String type : types) {
-                if (type.indexOf("XYZ") >= 0) {
+                if (type.contains("XYZ")) {
                     xyzCommands.addItem(name);
                 }
-                if (type.indexOf("INT") >= 0) {
+                if (type.contains("INT")) {
                     intCommands.addItem(name);
                 }
-                if (type.indexOf("ARC") >= 0) {
+                if (type.contains("ARC")) {
                     arcCommands.addItem(name);
                 }
-                if (type.indexOf("PDB") >= 0) {
+                if (type.contains("PDB")) {
                     pdbCommands.addItem(name);
                 }
             }
@@ -927,12 +919,11 @@ public class ModelingPanel extends JPanel implements ActionListener,
             if (!exe.exists()) {
                 exe = new File(exe.getAbsolutePath() + ".exe");
                 if (!exe.exists()) {
-                    String message = new String(
-                            "The "
+                    String message = "The "
                             + activeCommand
                             + " executable was not found in "
                             + path
-                            + ". Please use the 'Set TINKER...' dialog to change the TINKER directory.");
+                            + ". Please use the 'Set TINKER...' dialog to change the TINKER directory.";
                     JOptionPane.showMessageDialog(null, message,
                             "Could not launch " + activeCommand,
                             JOptionPane.ERROR_MESSAGE);
@@ -942,8 +933,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
             // Check that the directory to execute the command in is valid
             File dirf = new File(dir);
             if (!dirf.exists()) {
-                logger.warning("Directory doesn't exist: "
-                        + dirf.getAbsolutePath());
+                logger.log(Level.WARNING, "Directory doesn''t exist: {0}", dirf.getAbsolutePath());
                 return null;
             }
             // Check if we need a key file
@@ -954,9 +944,9 @@ public class ModelingPanel extends JPanel implements ActionListener,
                 activeFileType = FileType.XYZ;
                 // Check that the TINKER command executes on this file type
                 if (!commandFileTypes.contains(activeFileType)) {
-                    String message = new String(activeCommand.toUpperCase()
+                    String message = activeCommand.toUpperCase()
                             + " does not execute on " + activeFileType
-                            + " files.");
+                            + " files.";
                     JOptionPane.showMessageDialog(null, message,
                             "Could not launch " + activeCommand,
                             JOptionPane.ERROR_MESSAGE);
@@ -1015,23 +1005,23 @@ public class ModelingPanel extends JPanel implements ActionListener,
             // If a new structure file will be created, determine what the name
             // will be.
             File newFile = null;
-            if (commandActions.toUpperCase().indexOf("LOAD") >= 0) {
+            if (commandActions.toUpperCase().contains("LOAD")) {
                 File oldFile = activeSystem.getFile();
-                if (commandActions.toUpperCase().indexOf("LOADXYZ") >= 0) {
+                if (commandActions.toUpperCase().contains("LOADXYZ")) {
                     String fileName = oldFile.getAbsolutePath();
                     int dot = fileName.lastIndexOf(".");
                     if (dot > 0) {
                         fileName = fileName.substring(0, dot) + ".xyz";
                     }
                     oldFile = new File(fileName);
-                } else if (commandActions.toUpperCase().indexOf("LOADINT") >= 0) {
+                } else if (commandActions.toUpperCase().contains("LOADINT")) {
                     String fileName = oldFile.getAbsolutePath();
                     int dot = fileName.lastIndexOf(".");
                     if (dot > 0) {
                         fileName = fileName.substring(0, dot) + ".int";
                     }
                     oldFile = new File(fileName);
-                } else if (commandActions.toUpperCase().indexOf("LOADPDB") >= 0) {
+                } else if (commandActions.toUpperCase().contains("LOADPDB")) {
                     String fileName = oldFile.getAbsolutePath();
                     int dot = fileName.lastIndexOf(".");
                     if (dot > 0) {
@@ -1057,13 +1047,13 @@ public class ModelingPanel extends JPanel implements ActionListener,
                     fw.write(commandInput);
                     fw.close();
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    logger.info(e.toString());
                     return null;
                 }
             }
             // If the job progressively modifies coordinates, open a copy of it.
             boolean openOnto = false;
-            if (commandActions.toUpperCase().indexOf("CONNECT") >= 0) {
+            if (commandActions.toUpperCase().contains("CONNECT")) {
                 // If a version file is created, open it onto the structure used
                 // to
                 // display the job.
@@ -1076,7 +1066,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
                         wait(10);
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    logger.info(e.toString());
                     return null;
                 }
                 activeSystem = mainPanel.getHierarchy().getActive();
@@ -1088,7 +1078,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
             tinkerThread.setPriority(Thread.NORM_PRIORITY);
             tinkerThread.setName(logName);
             // If the job progressively modifies coordinates, connect to it.
-            if (commandActions.toUpperCase().indexOf("CONNECT") >= 0) {
+            if (commandActions.toUpperCase().contains("CONNECT")) {
                 mainPanel.connectToTINKER(activeSystem, tinkerThread);
             } else {
                 tinkerThread.start();
@@ -1112,7 +1102,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
     public void loadActive(FFXSystem active) {
         synchronized (this) {
             activeSystem = active;
-            FileType fileType = FileType.UNK;
+            FileType fileType;
             // No Open Molecules
             if (activeSystem == null || activeSystem.isClosing()) {
                 currentCommandBox = anyCommands;
@@ -1198,19 +1188,19 @@ public class ModelingPanel extends JPanel implements ActionListener,
             String[] types = string.split(" +");
             commandFileTypes.clear();
             for (String type : types) {
-                if (type.indexOf("XYZ") >= 0) {
+                if (type.contains("XYZ")) {
                     commandFileTypes.add(FileType.XYZ);
                 }
-                if (type.indexOf("INT") >= 0) {
+                if (type.contains("INT")) {
                     commandFileTypes.add(FileType.INT);
                 }
-                if (type.indexOf("ARC") >= 0) {
+                if (type.contains("ARC")) {
                     commandFileTypes.add(FileType.ARC);
                 }
-                if (type.indexOf("PDB") >= 0) {
+                if (type.contains("PDB")) {
                     commandFileTypes.add(FileType.PDB);
                 }
-                if (type.indexOf("ANY") >= 0) {
+                if (type.contains("ANY")) {
                     commandFileTypes.add(FileType.ANY);
                 }
             }
@@ -1397,7 +1387,8 @@ public class ModelingPanel extends JPanel implements ActionListener,
                     acidTextField.setText("");
                 } else if (swing.equalsIgnoreCase("SYSTEMS")) {
                     // SYSTEMS allows selection of an open system
-                    JComboBox jcb = new JComboBox(mainPanel.getHierarchy().getNonActiveSystems());
+                    JComboBox<FFXSystem> jcb = new JComboBox<>(
+                            mainPanel.getHierarchy().getNonActiveSystems());
                     jcb.setSize(jcb.getMaximumSize());
                     jcb.addActionListener(this);
                     optionValuesPanel.add(jcb);
@@ -1446,7 +1437,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
                         optionPanel.add(condpanel, BorderLayout.SOUTH);
                     } else if (conditionalName.toUpperCase().startsWith(
                             "REFLECTION")) {
-                        String[] condModifiers = null;
+                        String[] condModifiers;
                         if (conditionalValues.equalsIgnoreCase("AltLoc")) {
                             condModifiers = activeSystem.getAltLocations();
                             if (condModifiers != null
@@ -1501,10 +1492,10 @@ public class ModelingPanel extends JPanel implements ActionListener,
         String selected = (String) logSettings.getSelectedItem();
         logSettings.removeActionListener(this);
         logSettings.removeAllItems();
-        File currentLog = null;
-        String fileName = null;
-        File logDir = null;
-        File systemDir = null;
+        File currentLog;
+        String fileName;
+        File logDir;
+        File systemDir;
         // This implies no Open System
         if (activeSystem == null) {
             fileName = ((String) currentCommandBox.getSelectedItem()).toLowerCase()
@@ -1519,8 +1510,8 @@ public class ModelingPanel extends JPanel implements ActionListener,
             logDir = currentLog.getParentFile();
             systemDir = activeSystem.getFile().getAbsoluteFile().getParentFile();
         }
-        File tempLog = null;
-        File newLog = null;
+        File tempLog;
+        File newLog;
         if (logDir == null || !logDir.equals(systemDir)) {
             tempLog = new File(systemDir.getAbsolutePath() + File.separator
                     + fileName);
@@ -1533,7 +1524,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
         // Simple Case - default log file doesn't exist yet
         String createNew = null;
         if (!tempLog.exists()) {
-            createNew = new String("Create " + fileName);
+            createNew = "Create " + fileName;
             logSettings.addItem(createNew);
             logSettings.setSelectedItem(createNew);
             logString = getLogString(tempLog);
@@ -1548,12 +1539,12 @@ public class ModelingPanel extends JPanel implements ActionListener,
         newLog = SystemFilter.version(tempLog);
         tempLog = SystemFilter.previousVersion(newLog);
         fileName = tempLog.getName();
-        String append = new String("Append to " + fileName);
-        String overwrite = new String("Overwrite " + fileName);
+        String append = "Append to " + fileName;
+        String overwrite = "Overwrite " + fileName;
         logSettings.addItem(append);
         logSettings.addItem(overwrite);
         if (!newLog.equals(tempLog)) {
-            createNew = new String("Create " + newLog.getName());
+            createNew = "Create " + newLog.getName();
             logSettings.addItem(createNew);
         }
         if (selected == null) {
@@ -1646,7 +1637,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
             if (f.getName().indexOf(".") > 0) {
                 String name = f.getName().substring(0,
                         f.getName().lastIndexOf("."));
-                end = new File(f.getParent(), name.toString() + ".end");
+                end = new File(f.getParent(), name + ".end");
             } else {
                 end = new File(f.getParent(), f.getName() + ".end");
             }
@@ -1691,10 +1682,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
         command = command.replaceFirst(command.substring(0, 1), command.toUpperCase().substring(0, 1));
         currentCommandBox.setSelectedItem(command);
         mainPanel.setPanel(MainPanel.MODELING);
-        if (currentCommandBox.getSelectedItem().equals(command)) {
-            return true;
-        }
-        return false;
+        return currentCommandBox.getSelectedItem().equals(command);
     }
 
     /**
@@ -1776,6 +1764,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
      *
      * @return a {@link java.lang.String} object.
      */
+    @Override
     public String toString() {
         return "Modeling Panel";
     }

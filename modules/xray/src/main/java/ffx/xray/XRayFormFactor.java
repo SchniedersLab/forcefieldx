@@ -501,8 +501,8 @@ public final class XRayFormFactor implements FormFactor {
 
             if (det <= 1e-14) {
                 StringBuilder sb = new StringBuilder();
-                sb.append(" Non-positive definite ANISOU for atom: " + atom.toString());
-                sb.append("\n Resetting ANISOU based on isotropic B: (" + bIso + ")\n");
+                sb.append(" Non-positive definite ANISOU for atom: ").append(atom.toString());
+                sb.append("\n Resetting ANISOU based on isotropic B: (").append(bIso).append(")\n");
                 logger.warning(sb.toString());
 
                 anisou[0] = anisou[1] = anisou[2] = b2u(bIso);
@@ -511,7 +511,7 @@ public final class XRayFormFactor implements FormFactor {
         } else {
             if (bIso < 0.0) {
                 StringBuilder sb = new StringBuilder();
-                sb.append(" Negative B factor for atom: " + atom.toString());
+                sb.append(" Negative B factor for atom: ").append(atom.toString());
                 sb.append("\n Resetting B to 0.01\n");
                 logger.warning(sb.toString());
                 bIso = 0.01;
@@ -551,7 +551,7 @@ public final class XRayFormFactor implements FormFactor {
     private static final double u12[][] = {{0.0, 1.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
     private static final double u13[][] = {{0.0, 0.0, 1.0}, {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}};
     private static final double u23[][] = {{0.0, 0.0, 0.0}, {0.0, 0.0, 1.0}, {0.0, 1.0, 0.0}};
-    private static final HashMap formfactors = new HashMap();
+    private static final HashMap<String,double[][]> formfactors = new HashMap<>();
 
     private static final String[] atoms = {"H", "He", "Li", "Be", "B", "C", "N", "O",
         "F", "Ne", "Na", "Mg", "Al", "Si", "P", "S", "Cl", "Ar", "K", "Ca",
