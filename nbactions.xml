@@ -13,6 +13,7 @@
             <goal>site:site</goal>
             <goal>site:stage</goal>
         </goals>
+        <recursive>false</recursive>
         <properties>
             <skipTests>true</skipTests>
         </properties>

@@ -4,19 +4,24 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
-        <title>Getting (Web) Started</title>
+        <title>Webstart Force Field X</title>
         <author email="michael-schnieders@uiowa.edu">
             Michael J. Schnieders
         </author>
     </properties>
+    <head>
+        <title>Webstart Force Field X</title>
+        <script type="text/javascript" src="https://www.java.com/js/deployJava.js"></script>
+    </head>
     <body>
         <section name="Run Force Field X">
             <p>One click via Java Web Start.</p>
-            <p>            
-                <a href="modules/ui/ffx.jnlp">
-                    <img src="images/webstart.png" alt="Start FFX"/>
-                </a>
-            </p>
+            <script type="text/javascript">
+                //<![CDATA[
+                var url = "images/ffx.jnlp";
+                deployJava.createWebStartLaunchButton(url, '1.8.0');
+                //]]>
+            </script>
             <subsection name="Java Web Start Benefits">
                 <ul>
                     <li>Full support for Linux, Mac OS X, Solaris and Windows.</li>
