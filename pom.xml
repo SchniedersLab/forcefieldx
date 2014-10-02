@@ -804,6 +804,7 @@
                             <storepass>${storepass}</storepass>
                             <keypass>${keypass}</keypass>
                             <removeExistingSignatures>true</removeExistingSignatures>
+                            <tca>http://timestamp.digicert.com</tca>
                         </configuration>
                         <executions>
                             <execution>

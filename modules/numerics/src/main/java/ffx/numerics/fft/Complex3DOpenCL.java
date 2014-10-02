@@ -5,6 +5,13 @@
  */
 package ffx.numerics.fft;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.DoubleBuffer;
+import java.util.Random;
+import java.util.logging.Logger;
+
 import com.jogamp.opencl.CLBuffer;
 import com.jogamp.opencl.CLCommandQueue;
 import com.jogamp.opencl.CLContext;
@@ -13,14 +20,6 @@ import com.jogamp.opencl.CLKernel;
 import com.jogamp.opencl.CLMemory;
 import com.jogamp.opencl.CLPlatform;
 import com.jogamp.opencl.CLProgram;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.nio.DoubleBuffer;
-import java.util.Arrays;
-import java.util.Random;
-import java.util.logging.Logger;
 
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelTeam;
@@ -50,6 +49,7 @@ public final class Complex3DOpenCL implements Runnable {
 
     public CLBuffer<DoubleBuffer> dataBuffer;
     public CLBuffer<DoubleBuffer> recipBuffer;
+    public boolean transferOnly = false;
     private PlanHandle planHandle;
 
     /**
@@ -67,6 +67,10 @@ public final class Complex3DOpenCL implements Runnable {
         mode = null;
         free = false;
         dead = false;
+    }
+
+    public void setTransferOnly(boolean transferOnly) {
+        this.transferOnly = transferOnly;
     }
 
     public void fft(final double data[]) {
@@ -210,7 +214,9 @@ public final class Complex3DOpenCL implements Runnable {
                                 doubleBuffer.rewind();
                                 queue.putWriteBuffer(dataBuffer, false);
                                 queue.putBarrier();
-                                executeTransform(Complex3DOpenCL_DIRECTION.FORWARD, queue, dataBuffer, dataBuffer);
+                                if (!transferOnly) {
+                                    executeTransform(Complex3DOpenCL_DIRECTION.FORWARD, queue, dataBuffer, dataBuffer);
+                                }
                                 queue.finish();
                                 queue.putReadBuffer(dataBuffer, true);
                                 doubleBuffer.rewind();
@@ -224,14 +230,15 @@ public final class Complex3DOpenCL implements Runnable {
                                 queue.putWriteBuffer(dataBuffer, false);
                                 queue.putBarrier();
                                 // Forward FFT
+                                if (!transferOnly) {
                                 executeTransform(Complex3DOpenCL_DIRECTION.FORWARD, queue, dataBuffer, dataBuffer);
-                                queue.putBarrier();
                                 // Reciprocal Space Multiply
                                 kernel.rewind().putArgs(dataBuffer, recipBuffer).putArg(len);
                                 queue.put1DRangeKernel(kernel, 0, globalWorkSize, localWorkSize);
                                 queue.putBarrier();
                                 // Backward FFT
                                 executeTransform(Complex3DOpenCL_DIRECTION.BACKWARD, queue, dataBuffer, dataBuffer);
+                                }
                                 queue.finish();
                                 queue.putReadBuffer(dataBuffer, true);
                                 doubleBuffer.rewind();
@@ -243,7 +250,9 @@ public final class Complex3DOpenCL implements Runnable {
                                 doubleBuffer.put(data);
                                 doubleBuffer.rewind();
                                 queue.putWriteBuffer(dataBuffer, true);
-                                executeTransform(Complex3DOpenCL_DIRECTION.BACKWARD, queue, dataBuffer, dataBuffer);
+                                if (!transferOnly) {
+                                    executeTransform(Complex3DOpenCL_DIRECTION.BACKWARD, queue, dataBuffer, dataBuffer);
+                                }
                                 queue.finish();
                                 queue.putReadBuffer(dataBuffer, true);
                                 doubleBuffer.rewind();
@@ -414,15 +423,20 @@ public final class Complex3DOpenCL implements Runnable {
     public static void main(String[] args) throws Exception {
         int dimNotFinal = 64;
         int reps = 10;
+        boolean transferOnly = false;
         if (args != null) {
             try {
                 dimNotFinal = Integer.parseInt(args[0]);
                 if (dimNotFinal < 1) {
                     dimNotFinal = 64;
                 }
-                reps = Integer.parseInt(args[2]);
+                reps = Integer.parseInt(args[1]);
                 if (reps < 1) {
                     reps = 5;
+                }
+                int transfer = Integer.parseInt(args[2]);
+                if (transfer == 1) {
+                    transferOnly = true;
                 }
             } catch (Exception e) {
             }
@@ -463,9 +477,12 @@ public final class Complex3DOpenCL implements Runnable {
         complex3DParallel.setRecip(recip);
 
         Complex3DOpenCL complex3DOpenCL = new Complex3DOpenCL(dim, dim, dim);
+        complex3DOpenCL.setTransferOnly(transferOnly);
+
         Thread openCLThread = new Thread(complex3DOpenCL);
         openCLThread.setPriority(Thread.MAX_PRIORITY);
         openCLThread.start();
+
 
         double toSeconds = 0.000000001;
         long parTime = Long.MAX_VALUE;
