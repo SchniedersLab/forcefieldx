@@ -20,7 +20,7 @@
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
  */
-package ffx.potential;
+package ffx.potential.bonded;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,16 +29,8 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import ffx.potential.ResidueEnumerations.AminoAcid3;
-import ffx.potential.ResidueEnumerations.NucleicAcid3;
-import ffx.potential.bonded.Angle;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Bond;
-import ffx.potential.bonded.MolecularAssembly;
-import ffx.potential.bonded.Polymer;
-import ffx.potential.bonded.ROLS;
-import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.Torsion;
+import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
+import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
 import ffx.potential.parsers.INTFilter;
 
 import static ffx.potential.bonded.Residue.ResidueType.AA;
@@ -55,7 +47,7 @@ import static ffx.potential.parsers.INTFilter.intxyz;
  */
 public class RotamerLibrary {
 
-    private static final Logger logger = Logger.getLogger(ForceFieldEnergy.class.getName());
+    private static final Logger logger = Logger.getLogger(RotamerLibrary.class.getName());
     /**
      * Number of amino acid residues types currently recognized, although there
      * are not rotamer libraries for each yet.

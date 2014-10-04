@@ -20,12 +20,12 @@
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
  */
-package ffx.potential;
-
-import ffx.potential.ResidueEnumerations.AminoAcid3;
-import ffx.potential.ResidueEnumerations.NucleicAcid3;
+package ffx.potential.bonded;
 
 import static org.apache.commons.math3.util.FastMath.max;
+
+import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
+import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
 
 /**
  * The Rotamer Class usually represents one immutable amino acid Rotamer. It is

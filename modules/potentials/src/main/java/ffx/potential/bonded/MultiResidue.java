@@ -23,18 +23,17 @@
 package ffx.potential.bonded;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
-import ffx.potential.ResidueEnumerations.AminoAcid3;
-import ffx.potential.RotamerLibrary;
-import ffx.potential.Rotamer;
-import ffx.potential.parsers.PDBFilter;
-import ffx.potential.parsers.PDBFilter.ResiduePosition;
-import ffx.potential.parsers.PDBFilter.MissingHeavyAtomException;
-import java.util.List;
 import javax.media.j3d.BranchGroup;
 import javax.media.j3d.Material;
 import javax.vecmath.Color3f;
+
+import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
+import ffx.potential.parsers.PDBFilter;
+import ffx.potential.parsers.PDBFilter.MissingHeavyAtomException;
+import ffx.potential.parsers.PDBFilter.ResiduePosition;
 
 /**
  *

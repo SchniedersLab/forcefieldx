@@ -38,9 +38,7 @@ import javax.vecmath.Point2d;
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
 
-import ffx.potential.ResidueEnumerations.NucleicAcid3;
-import ffx.potential.Rotamer;
-import ffx.potential.RotamerLibrary;
+import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
 
 import static ffx.utilities.HashCodeUtil.SEED;
 import static ffx.utilities.HashCodeUtil.hash;
