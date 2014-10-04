@@ -28,9 +28,9 @@ import java.util.logging.Logger;
 import static java.util.Arrays.fill;
 
 import ffx.numerics.Potential;
-import ffx.potential.LambdaInterface;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
+import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Residue;
 import ffx.xray.RefinementMinimize.RefinementMode;

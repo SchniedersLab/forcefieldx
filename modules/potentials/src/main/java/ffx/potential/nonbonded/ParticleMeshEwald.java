@@ -23,7 +23,6 @@
 package ffx.potential.nonbonded;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
@@ -75,10 +74,10 @@ import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.numerics.TensorRecursion;
 import ffx.numerics.VectorMath;
-import ffx.potential.LambdaInterface;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
+import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.parameters.AtomType;
@@ -2520,15 +2519,15 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 double scale7 = 1.0;
                                 double damp = pdi * pdk;
                                 //if (damp != 0.0) {
-                                    final double pgamma = min(pti, ptk);
-                                    final double rdamp = r * damp;
-                                    damp = -pgamma * rdamp * rdamp * rdamp;
-                                    if (damp > -50.0) {
-                                        double expdamp = exp(damp);
-                                        scale3 = 1.0 - expdamp;
-                                        scale5 = 1.0 - expdamp * (1.0 - damp);
-                                        scale7 = 1.0 - expdamp * (1.0 - damp + 0.6 * damp * damp);
-                                    }
+                                final double pgamma = min(pti, ptk);
+                                final double rdamp = r * damp;
+                                damp = -pgamma * rdamp * rdamp * rdamp;
+                                if (damp > -50.0) {
+                                    double expdamp = exp(damp);
+                                    scale3 = 1.0 - expdamp;
+                                    scale5 = 1.0 - expdamp * (1.0 - damp);
+                                    scale7 = 1.0 - expdamp * (1.0 - damp + 0.6 * damp * damp);
+                                }
                                 //}
                                 final double scale = mask_local[k];
                                 final double scalep = maskp_local[k];
@@ -2724,15 +2723,15 @@ public class ParticleMeshEwald implements LambdaInterface {
                                     double scale7 = 1.0;
                                     double damp = pdi * pdk;
                                     //if (damp != 0.0) {
-                                        final double pgamma = min(pti, ptk);
-                                        final double rdamp = r * damp;
-                                        damp = -pgamma * rdamp * rdamp * rdamp;
-                                        if (damp > -50.0) {
-                                            double expdamp = exp(damp);
-                                            scale3 = 1.0 - expdamp;
-                                            scale5 = 1.0 - expdamp * (1.0 - damp);
-                                            scale7 = 1.0 - expdamp * (1.0 - damp + 0.6 * damp * damp);
-                                        }
+                                    final double pgamma = min(pti, ptk);
+                                    final double rdamp = r * damp;
+                                    damp = -pgamma * rdamp * rdamp * rdamp;
+                                    if (damp > -50.0) {
+                                        double expdamp = exp(damp);
+                                        scale3 = 1.0 - expdamp;
+                                        scale5 = 1.0 - expdamp * (1.0 - damp);
+                                        scale7 = 1.0 - expdamp * (1.0 - damp + 0.6 * damp * damp);
+                                    }
                                     //}
                                     final double dsc3 = scale3;
                                     final double dsc5 = scale5;
@@ -2995,14 +2994,14 @@ public class ParticleMeshEwald implements LambdaInterface {
                             double scale5 = 1.0;
                             double damp = pdi * pdk;
                             //if (damp != 0.0) {
-                                final double pgamma = min(pti, ptk);
-                                final double rdamp = r * damp;
-                                damp = -pgamma * rdamp * rdamp * rdamp;
-                                if (damp > -50.0) {
-                                    final double expdamp = exp(damp);
-                                    scale3 = 1.0 - expdamp;
-                                    scale5 = 1.0 - expdamp * (1.0 - damp);
-                                }
+                            final double pgamma = min(pti, ptk);
+                            final double rdamp = r * damp;
+                            damp = -pgamma * rdamp * rdamp * rdamp;
+                            if (damp > -50.0) {
+                                final double expdamp = exp(damp);
+                                scale3 = 1.0 - expdamp;
+                                scale5 = 1.0 - expdamp * (1.0 - damp);
+                            }
                             //}
                             double rr3 = rr1 * rr2;
                             double rr5 = 3.0 * rr3 * rr2;
@@ -3149,14 +3148,14 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 double scale5 = 1.0;
                                 double damp = pdi * pdk;
                                 //if (damp != 0.0) {
-                                    final double pgamma = min(pti, ptk);
-                                    final double rdamp = r * damp;
-                                    damp = -pgamma * rdamp * rdamp * rdamp;
-                                    if (damp > -50.0) {
-                                        final double expdamp = exp(damp);
-                                        scale3 = 1.0 - expdamp;
-                                        scale5 = 1.0 - expdamp * (1.0 - damp);
-                                    }
+                                final double pgamma = min(pti, ptk);
+                                final double rdamp = r * damp;
+                                damp = -pgamma * rdamp * rdamp * rdamp;
+                                if (damp > -50.0) {
+                                    final double expdamp = exp(damp);
+                                    scale3 = 1.0 - expdamp;
+                                    scale5 = 1.0 - expdamp * (1.0 - damp);
+                                }
                                 //}
                                 double rr3 = rr1 * rr2;
                                 double rr5 = 3.0 * rr3 * rr2;
@@ -3951,27 +3950,27 @@ public class ParticleMeshEwald implements LambdaInterface {
                         ddsc7z = 0.0;
                         double damp = pdi * pdk;
                         //if (damp != 0.0) {
-                            double pgamma = min(pti, ptk);
-                            double rdamp = r * damp;
-                            damp = -pgamma * rdamp * rdamp * rdamp;
-                            if (damp > -50.0) {
-                                final double expdamp = exp(damp);
-                                scale3 = 1.0 - expdamp;
-                                scale5 = 1.0 - expdamp * (1.0 - damp);
-                                scale7 = 1.0 - expdamp * (1.0 - damp + 0.6 * damp * damp);
-                                final double temp3 = -3.0 * damp * expdamp * rr2;
-                                final double temp5 = -damp;
-                                final double temp7 = -0.2 - 0.6 * damp;
-                                ddsc3x = temp3 * xr;
-                                ddsc3y = temp3 * yr;
-                                ddsc3z = temp3 * zr;
-                                ddsc5x = temp5 * ddsc3x;
-                                ddsc5y = temp5 * ddsc3y;
-                                ddsc5z = temp5 * ddsc3z;
-                                ddsc7x = temp7 * ddsc5x;
-                                ddsc7y = temp7 * ddsc5y;
-                                ddsc7z = temp7 * ddsc5z;
-                            }
+                        double pgamma = min(pti, ptk);
+                        double rdamp = r * damp;
+                        damp = -pgamma * rdamp * rdamp * rdamp;
+                        if (damp > -50.0) {
+                            final double expdamp = exp(damp);
+                            scale3 = 1.0 - expdamp;
+                            scale5 = 1.0 - expdamp * (1.0 - damp);
+                            scale7 = 1.0 - expdamp * (1.0 - damp + 0.6 * damp * damp);
+                            final double temp3 = -3.0 * damp * expdamp * rr2;
+                            final double temp5 = -damp;
+                            final double temp7 = -0.2 - 0.6 * damp;
+                            ddsc3x = temp3 * xr;
+                            ddsc3y = temp3 * yr;
+                            ddsc3z = temp3 * zr;
+                            ddsc5x = temp5 * ddsc3x;
+                            ddsc5y = temp5 * ddsc3y;
+                            ddsc5z = temp5 * ddsc3z;
+                            ddsc7x = temp7 * ddsc5x;
+                            ddsc7y = temp7 * ddsc5y;
+                            ddsc7z = temp7 * ddsc5z;
+                        }
                         //}
                         if (doPermanentRealSpace) {
                             double ei = permanentPair();
@@ -4021,27 +4020,27 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 ddsc7z = 0.0;
                                 damp = pdi * pdk;
                                 //if (damp != 0.0) {
-                                    pgamma = min(pti, ptk);
-                                    rdamp = r * damp;
-                                    damp = -pgamma * rdamp * rdamp * rdamp;
-                                    if (damp > -50.0) {
-                                        final double expdamp = exp(damp);
-                                        scale3 = 1.0 - expdamp;
-                                        scale5 = 1.0 - expdamp * (1.0 - damp);
-                                        scale7 = 1.0 - expdamp * (1.0 - damp + 0.6 * damp * damp);
-                                        final double temp3 = -3.0 * damp * expdamp * rr2;
-                                        final double temp5 = -damp;
-                                        final double temp7 = -0.2 - 0.6 * damp;
-                                        ddsc3x = temp3 * xr;
-                                        ddsc3y = temp3 * yr;
-                                        ddsc3z = temp3 * zr;
-                                        ddsc5x = temp5 * ddsc3x;
-                                        ddsc5y = temp5 * ddsc3y;
-                                        ddsc5z = temp5 * ddsc3z;
-                                        ddsc7x = temp7 * ddsc5x;
-                                        ddsc7y = temp7 * ddsc5y;
-                                        ddsc7z = temp7 * ddsc5z;
-                                    }
+                                pgamma = min(pti, ptk);
+                                rdamp = r * damp;
+                                damp = -pgamma * rdamp * rdamp * rdamp;
+                                if (damp > -50.0) {
+                                    final double expdamp = exp(damp);
+                                    scale3 = 1.0 - expdamp;
+                                    scale5 = 1.0 - expdamp * (1.0 - damp);
+                                    scale7 = 1.0 - expdamp * (1.0 - damp + 0.6 * damp * damp);
+                                    final double temp3 = -3.0 * damp * expdamp * rr2;
+                                    final double temp5 = -damp;
+                                    final double temp7 = -0.2 - 0.6 * damp;
+                                    ddsc3x = temp3 * xr;
+                                    ddsc3y = temp3 * yr;
+                                    ddsc3z = temp3 * zr;
+                                    ddsc5x = temp5 * ddsc3x;
+                                    ddsc5y = temp5 * ddsc3y;
+                                    ddsc5z = temp5 * ddsc3z;
+                                    ddsc7x = temp7 * ddsc5x;
+                                    ddsc7y = temp7 * ddsc5y;
+                                    ddsc7z = temp7 * ddsc5z;
+                                }
                                 //}
                             }
                             double ei = polarizationPair();
@@ -7906,14 +7905,14 @@ public class ParticleMeshEwald implements LambdaInterface {
                             double scale5 = 1.0;
                             double damp = pdi * pdk;
                             //if (damp != 0.0) {
-                                final double pgamma = min(pti, ptk);
-                                final double rdamp = r * damp;
-                                damp = -pgamma * rdamp * rdamp * rdamp;
-                                if (damp > -50.0) {
-                                    final double expdamp = exp(damp);
-                                    scale3 = 1.0 - expdamp;
-                                    scale5 = 1.0 - expdamp * (1.0 - damp);
-                                }
+                            final double pgamma = min(pti, ptk);
+                            final double rdamp = r * damp;
+                            damp = -pgamma * rdamp * rdamp * rdamp;
+                            if (damp > -50.0) {
+                                final double expdamp = exp(damp);
+                                scale3 = 1.0 - expdamp;
+                                scale5 = 1.0 - expdamp * (1.0 - damp);
+                            }
                             //}
                             double rr3 = rr1 * rr2;
                             double rr5 = 3.0 * rr3 * rr2;
@@ -8060,14 +8059,14 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 double scale5 = 1.0;
                                 double damp = pdi * pdk;
                                 //if (damp != 0.0) {
-                                    final double pgamma = min(pti, ptk);
-                                    final double rdamp = r * damp;
-                                    damp = -pgamma * rdamp * rdamp * rdamp;
-                                    if (damp > -50.0) {
-                                        final double expdamp = exp(damp);
-                                        scale3 = 1.0 - expdamp;
-                                        scale5 = 1.0 - expdamp * (1.0 - damp);
-                                    }
+                                final double pgamma = min(pti, ptk);
+                                final double rdamp = r * damp;
+                                damp = -pgamma * rdamp * rdamp * rdamp;
+                                if (damp > -50.0) {
+                                    final double expdamp = exp(damp);
+                                    scale3 = 1.0 - expdamp;
+                                    scale5 = 1.0 - expdamp * (1.0 - damp);
+                                }
                                 //}
                                 double rr3 = rr1 * rr2;
                                 double rr5 = 3.0 * rr3 * rr2;

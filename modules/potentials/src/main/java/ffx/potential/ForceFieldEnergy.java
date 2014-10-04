@@ -42,6 +42,7 @@ import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.ImproperTorsion;
+import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.OutOfPlaneBend;
 import ffx.potential.bonded.PiOrbitalTorsion;

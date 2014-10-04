@@ -23,7 +23,6 @@
 package ffx.potential.nonbonded;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -48,10 +47,10 @@ import edu.rit.pj.reduction.SharedInteger;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
-import ffx.potential.LambdaInterface;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
+import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.parameters.AtomType;

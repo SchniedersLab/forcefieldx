@@ -30,8 +30,8 @@ import static java.util.Arrays.fill;
 import static org.apache.commons.math3.util.FastMath.pow;
 
 import ffx.crystal.Crystal;
-import ffx.potential.LambdaInterface;
 import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Molecule;
