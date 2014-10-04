@@ -30,8 +30,6 @@ import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.toRadians;
 
-import ffx.potential.bonded.Atom;
-
 /**
  * The ImproperTorsionType class defines an improper torsion.
  *
@@ -114,51 +112,43 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
     /**
      * Returns true if the atoms can be assigned this improperTorsionType.
      *
-     * @param atoms The atom array will be re-ordered if its member atoms match
-     * this ImproperTorsionType. The trigonal atom will not change position.
+     * @param inputClasses The atom classes will be re-ordered if its member atoms
+     * match this ImproperTorsionType. The trigonal atom will not change position.
      * @return true if this torsionType is assignable to the atom array.
      */
-    public boolean assigned(Atom atoms[]) {
-        int c0 = atoms[0].getAtomType().atomClass;
-        int c1 = atoms[1].getAtomType().atomClass;
-        int c2 = atoms[2].getAtomType().atomClass;
-        int c3 = atoms[3].getAtomType().atomClass;
-
+    public boolean assigned(int inputClasses[]) {
         // Assign the trigonal atom.
-        if (c2 != atomClasses[2]) {
+        if (inputClasses[2] != atomClasses[2]) {
             return false;
         }
 
         // Assign the first atom.
-        if (c0 == atomClasses[0]) {
+        if (inputClasses[0] == atomClasses[0]) {
             // do nothing.
-        } else if (c1 == atomClasses[0]) {
-            Atom temp = atoms[0];
-            atoms[0] = atoms[1];
-            atoms[1] = temp;
-            c1 = c0;
-        } else if (c3 == atomClasses[0]) {
-            Atom temp = atoms[0];
-            atoms[0] = atoms[3];
-            atoms[3] = temp;
-            c3 = c0;
+        } else if (inputClasses[1] == atomClasses[0]) {
+            int temp = inputClasses[0];
+            inputClasses[0] = inputClasses[1];
+            inputClasses[1] = temp;
+        } else if (inputClasses[3] == atomClasses[0]) {
+            int temp = inputClasses[0];
+            inputClasses[0] = inputClasses[3];
+            inputClasses[3] = temp;
         } else {
             return false;
         }
 
         // Assign the second atom.
-        if (c1 == atomClasses[1]) {
+        if (inputClasses[1] == atomClasses[1]) {
             // Do nothing.
-        } else if (c3 == atomClasses[1]) {
-            Atom temp = atoms[1];
-            atoms[1] = atoms[3];
-            atoms[3] = temp;
-            c3 = c1;
+        } else if (inputClasses[3] == atomClasses[1]) {
+            int temp = inputClasses[1];
+            inputClasses[1] = inputClasses[3];
+            inputClasses[3] = temp;
         } else {
             return false;
         }
 
-        return c3 == atomClasses[3];
+        return inputClasses[3] == atomClasses[3];
     }
 
     /**
