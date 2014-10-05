@@ -32,8 +32,8 @@
     <resources>
         <java version="1.8" initial-heap-size="1G" max-heap-size="1G"/>
         <property name="j3d.rend" value="jogl"/>
-        <extension name="ffx-all" href="https://kenai.com/projects/ffx/sources/ffx-commons/content/ffx-all-1.0.0-beta.jnlp" />
-        <extension name="ffx-dependency" href="https://kenai.com/projects/ffx/sources/dependency-repo/content/ffx-dependency-1.0.0-beta.jnlp" />
+        <extension name="ffx-all" href="http://ffx.eng.uiowa.edu/ffx-commons/ffx-all-1.0.0-beta.jnlp" />
+        <extension name="ffx-dependency" href="http://ffx.eng.uiowa.edu/dependency-repo/ffx-dependency-1.0.0-beta.jnlp" />
         <extension name="jogl-all-awt" href="http://jogamp.org/deployment/v2.1.5/jogl-all-awt.jnlp" />
     </resources>
     <application-desc main-class="ffx.Main">

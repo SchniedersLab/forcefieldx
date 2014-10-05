@@ -24,11 +24,32 @@ package ffx.potential.bonded;
 
 import java.io.File;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.media.j3d.*;
+import javax.media.j3d.Appearance;
+import javax.media.j3d.BoundingSphere;
+import javax.media.j3d.BranchGroup;
+import javax.media.j3d.ColoringAttributes;
+import javax.media.j3d.GeometryArray;
+import javax.media.j3d.Group;
+import javax.media.j3d.LineArray;
+import javax.media.j3d.LineAttributes;
+import javax.media.j3d.Link;
+import javax.media.j3d.Material;
+import javax.media.j3d.Node;
+import javax.media.j3d.RenderingAttributes;
+import javax.media.j3d.Shape3D;
+import javax.media.j3d.SharedGroup;
+import javax.media.j3d.Switch;
+import javax.media.j3d.Transform3D;
+import javax.media.j3d.TransformGroup;
 import javax.vecmath.Color3f;
 import javax.vecmath.Matrix3d;
 import javax.vecmath.Point3d;
@@ -42,7 +63,12 @@ import org.jdesktop.j3d.loaders.vrml97.VrmlScene;
 import ffx.crystal.Crystal;
 import ffx.numerics.VectorMath;
 import ffx.potential.ForceFieldEnergy;
+import ffx.potential.bonded.Residue.ResiduePosition;
 import ffx.potential.parameters.ForceField;
+
+import static ffx.potential.bonded.Residue.ResiduePosition.FIRST_RESIDUE;
+import static ffx.potential.bonded.Residue.ResiduePosition.LAST_RESIDUE;
+import static ffx.potential.bonded.Residue.ResiduePosition.MIDDLE_RESIDUE;
 
 /**
  * The MolecularAssembly class is a collection of Polymers, Hetero Molecules,
@@ -154,6 +180,26 @@ public class MolecularAssembly extends MSGroup {
      */
     public ForceFieldEnergy getPotentialEnergy() {
         return potentialEnergy;
+    }
+
+    public ResiduePosition getResiduePosition(int residueNumber) {
+        ResiduePosition position;
+        int numberOfResidues = 0;
+        Polymer polymers[] = getChains();
+        int nPolymers = polymers.length;
+        for (int i = 0; i < nPolymers; i++) {
+            Polymer polymer = polymers[i];
+            ArrayList<Residue> residues = polymer.getResidues();
+            numberOfResidues += residues.size();
+        }
+        if (residueNumber == 0) {
+            position = FIRST_RESIDUE;
+        } else if (residueNumber == numberOfResidues - 1) {
+            position = LAST_RESIDUE;
+        } else {
+            position = MIDDLE_RESIDUE;
+        }
+        return position;
     }
 
     /**

@@ -51,7 +51,16 @@ import static ffx.utilities.HashCodeUtil.hash;
  */
 public class Residue extends MSGroup {
 
-    private static final Logger logger = Logger.getLogger(ffx.potential.bonded.Residue.class.getName());
+    private static final Logger logger = Logger.getLogger(Residue.class.getName());
+
+    /**
+     * The location of a residue within a chain.
+     */
+    public enum ResiduePosition {
+
+        FIRST_RESIDUE, MIDDLE_RESIDUE, LAST_RESIDUE
+    };
+
     private static final long serialVersionUID = 1L;
     private static Point3d point3d = new Point3d();
     private static Point2d point2d = new Point2d();

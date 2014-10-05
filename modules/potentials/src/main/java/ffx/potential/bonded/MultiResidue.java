@@ -30,14 +30,13 @@ import javax.media.j3d.BranchGroup;
 import javax.media.j3d.Material;
 import javax.vecmath.Color3f;
 
+import ffx.potential.bonded.BondedUtils.MissingHeavyAtomException;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
-import ffx.potential.parsers.PDBFilter;
-import ffx.potential.parsers.PDBFilter.MissingHeavyAtomException;
-import ffx.potential.parsers.PDBFilter.ResiduePosition;
+import ffx.potential.parameters.ForceField;
+import static ffx.potential.bonded.BondedUtils.buildBond;
 
 /**
- *
- * @author wtollefson
+ * @author Will Tollefson and Michael J. Schnieders
  */
 public class MultiResidue extends Residue {
 
@@ -50,11 +49,15 @@ public class MultiResidue extends Residue {
      * List of residues under consideration.
      */
     ArrayList<Residue> consideredResidues;
-    PDBFilter pdbFilter;
+
+    MolecularAssembly molecularAssembly;
+    ForceField forceField;
 
     public MultiResidue(Residue residue, MolecularAssembly molecularAssembly) {
         super("MultiResidue", residue.getResidueNumber(), residue.residueType);
-        pdbFilter = new PDBFilter(molecularAssembly.getFile(), molecularAssembly, molecularAssembly.getForceField(), null);
+
+        this.molecularAssembly = molecularAssembly;
+        this.forceField = molecularAssembly.getForceField();
         activeResidue = residue;
         // Initialize consideredResidue list.
         consideredResidues = new ArrayList<>();
@@ -309,7 +312,8 @@ public class MultiResidue extends Residue {
 
     public void addResidue(Residue residue) {
         int number = residue.getResidueNumber();
-        ResiduePosition position = pdbFilter.getResiduePosition(number);
+
+        ResiduePosition position = molecularAssembly.getResiduePosition(number);
         AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
 
         // Get references to the backbone atoms
@@ -331,11 +335,11 @@ public class MultiResidue extends Residue {
         newC.setResName(residue.getName());
         Atom newO = O.copy();
         newO.setResName(residue.getName());
-        pdbFilter.buildBond(newN, newH);
-        pdbFilter.buildBond(newN, newCA);
-        pdbFilter.buildBond(newCA, newHA);
-        pdbFilter.buildBond(newCA, newC);
-        pdbFilter.buildBond(newC, newO);
+        buildBond(newN, newH, forceField, null);
+        buildBond(newN, newCA, forceField, null);
+        buildBond(newCA, newHA, forceField, null);
+        buildBond(newCA, newC, forceField, null);
+        buildBond(newC, newO, forceField, null);
         // Add them to residue
         residue.addMSNode(newN);
         residue.addMSNode(newH);
@@ -343,13 +347,14 @@ public class MultiResidue extends Residue {
         residue.addMSNode(newHA);
         residue.addMSNode(newC);
         residue.addMSNode(newO);
+        /**
         try {
-            pdbFilter.assignAminoAcidSideChain(position, name, residue, CA, N, C);
+            assignAminoAcidSideChain(position, name, residue, CA, N, C);
             add(residue);
             residue.finalize(true);
         } catch (MissingHeavyAtomException missingHeavyAtomException) {
             logger.severe(missingHeavyAtomException.toString());
         }
-
+        */
     }
 }

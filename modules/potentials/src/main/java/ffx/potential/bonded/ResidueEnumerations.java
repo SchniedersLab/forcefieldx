@@ -30,6 +30,26 @@ import java.util.List;
  */
 public class ResidueEnumerations {
 
+    public static AminoAcid3 getAminoAcid(String residueName) {
+        for (AminoAcid3 aminoAcid : aminoAcidList) {
+            if (aminoAcid.toString().equalsIgnoreCase(residueName)) {
+                return aminoAcid;
+            }
+        }
+        return AminoAcid3.UNK;
+    }
+
+    public static int getAminoAcidNumber(String residueName) {
+        int aminoAcidNumber = -1;
+        for (AminoAcid3 aminoAcid : aminoAcidList) {
+            aminoAcidNumber++;
+            if (aminoAcid.toString().equalsIgnoreCase(residueName)) {
+                break;
+            }
+        }
+        return aminoAcidNumber;
+    }
+
     public enum AminoAcid1 {
 
         G, A, V, L, I, S, T, C, X, c,
