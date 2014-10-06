@@ -25,11 +25,11 @@ package ffx.potentials;
 
 import org.apache.commons.io.FilenameUtils;
 
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
-import ffx.potential.Rotamer;
-import ffx.potential.RotamerLibrary;
+import ffx.potential.bonded.Rotamer;
+import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.Residue;
 

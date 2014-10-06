@@ -21,17 +21,17 @@
  * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-package ffx.potentials
+package ffx.potentials;
 
-import org.apache.commons.configuration.CompositeConfiguration
+import org.apache.commons.configuration.CompositeConfiguration;
 
-import ffx.potential.bonded.MolecularAssembly
-import ffx.potential.parameters.ForceField
-import ffx.potential.parsers.ForceFieldFilter
-import ffx.potential.parsers.PDBFilter
-import ffx.potential.bonded.Polymer
-import ffx.potential.bonded.Residue
-import ffx.potential.bonded.Atom
+import ffx.potential.MolecularAssembly;
+import ffx.potential.parameters.ForceField;
+import ffx.potential.parsers.ForceFieldFilter;
+import ffx.potential.parsers.PDBFilter;
+import ffx.potential.bonded.Polymer;
+import ffx.potential.bonded.Residue;
+import ffx.potential.bonded.Atom;
 import ffx.utilities.Keyword;
 
 // Create the command line parser.

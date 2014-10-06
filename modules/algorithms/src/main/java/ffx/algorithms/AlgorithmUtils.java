@@ -28,7 +28,7 @@ import java.util.logging.Logger;
 import org.apache.commons.configuration.CompositeConfiguration;
 
 import ffx.numerics.Potential;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.parsers.PotentialsUtils;
 import ffx.utilities.Keyword;
 

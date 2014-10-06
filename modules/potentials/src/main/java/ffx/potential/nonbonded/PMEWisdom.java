@@ -35,7 +35,7 @@ import edu.rit.pj.ParallelTeam;
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.nonbonded.ParticleMeshEwald.ELEC_FORM;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
@@ -77,7 +77,7 @@ public class PMEWisdom {
      * The PMEWisdom constructor requires a MolecularAssembly that is a
      * periodic.
      *
-     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
      * object.
      * @since 1.0
      */

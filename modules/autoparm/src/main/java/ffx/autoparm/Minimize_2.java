@@ -37,7 +37,7 @@ import ffx.numerics.OptimizationListener;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Utilities;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.XYZFilter;

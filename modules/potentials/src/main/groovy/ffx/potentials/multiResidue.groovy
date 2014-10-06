@@ -23,13 +23,13 @@
 
 package ffx.potentials
 
-import ffx.potential.bonded.Polymer
-import ffx.potential.bonded.MolecularAssembly
-
 // Groovy Imports
 import groovy.util.CliBuilder;
-import ffx.potential.bonded.MultiResidue
-import ffx.potential.bonded.Residue
+
+import ffx.potential.bonded.Polymer;
+import ffx.potential.bonded.MultiResidue;
+import ffx.potential.bonded.Residue;
+import ffx.potential.MolecularAssembly;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================

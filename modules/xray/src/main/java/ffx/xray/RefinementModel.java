@@ -29,7 +29,7 @@ import java.util.logging.Logger;
 
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MSNode;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Residue;
 
@@ -53,7 +53,7 @@ public class RefinementModel {
      * Constructor for RefinementModel.</p>
      *
      * @param assembly an array of
-     * {@link ffx.potential.bonded.MolecularAssembly} objects.
+     * {@link ffx.potential.MolecularAssembly} objects.
      */
     public RefinementModel(MolecularAssembly assembly[]) {
         this(assembly, false);
@@ -64,7 +64,7 @@ public class RefinementModel {
      * Constructor for RefinementModel.</p>
      *
      * @param assembly an array of
-     * {@link ffx.potential.bonded.MolecularAssembly} objects.
+     * {@link ffx.potential.MolecularAssembly} objects.
      * @param refinemolocc a boolean.
      */
     @SuppressWarnings("unchecked")

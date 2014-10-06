@@ -32,10 +32,10 @@ import groovy.util.CliBuilder;
 // FFX Imports
 import ffx.numerics.Potential;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.bonded.LambdaInterface;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.DualTopologyEnergy;
 import ffx.potential.ForceFieldEnergy;
-import ffx.potential.LambdaInterface;
 
 // First ligand atom.
 int ligandStart = 1;

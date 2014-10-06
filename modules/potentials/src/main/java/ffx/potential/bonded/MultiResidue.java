@@ -22,6 +22,8 @@
  */
 package ffx.potential.bonded;
 
+import ffx.potential.MolecularAssembly;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -33,6 +35,7 @@ import javax.vecmath.Color3f;
 import ffx.potential.bonded.BondedUtils.MissingHeavyAtomException;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.parameters.ForceField;
+
 import static ffx.potential.bonded.BondedUtils.buildBond;
 
 /**

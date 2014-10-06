@@ -48,7 +48,7 @@ import ffx.potential.bonded.BondedUtils.MissingAtomTypeException;
 import ffx.potential.bonded.BondedUtils.MissingHeavyAtomException;
 import ffx.potential.bonded.MSGroup;
 import ffx.potential.bonded.MSNode;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
@@ -281,7 +281,7 @@ public final class PDBFilter extends SystemFilter {
      * Constructor for PDBFilter.</p>
      *
      * @param files a {@link java.util.List} object.
-     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
      * object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
      * @param properties a
@@ -298,7 +298,7 @@ public final class PDBFilter extends SystemFilter {
      * Parse the PDB File from a URL.
      *
      * @param file a {@link java.io.File} object.
-     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
      * object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
      * @param properties a

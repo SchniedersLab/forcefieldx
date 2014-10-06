@@ -27,7 +27,7 @@ import java.awt.event.ActionListener;
 
 import javax.swing.Timer;
 
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 
 /**
  * The Trajectory class controls playback of a TINKER trajectory.
@@ -51,7 +51,7 @@ public class Trajectory implements ActionListener {
      * <p>
      * Constructor for Trajectory.</p>
      *
-     * @param mol a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param mol a {@link ffx.potential.MolecularAssembly} object.
      * @param f a {@link ffx.ui.MainPanel} object.
      */
     public Trajectory(MolecularAssembly mol, MainPanel f) {
@@ -127,7 +127,7 @@ public class Trajectory implements ActionListener {
      * <p>
      * getFSystem</p>
      *
-     * @return a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @return a {@link ffx.potential.MolecularAssembly} object.
      */
     public MolecularAssembly getFSystem() {
         return molecularSystem;

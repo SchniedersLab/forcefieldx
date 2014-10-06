@@ -30,7 +30,7 @@ import java.util.logging.Logger;
 
 import static org.apache.commons.io.FilenameUtils.*;
 
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 
 /**
  * <p>
@@ -102,7 +102,7 @@ public class DiffractionFile {
      * read in a diffraction file based on the molecular assembly filename,
      * using a weight of 1.0 and neutron value of false
      *
-     * @param assembly {@link ffx.potential.bonded.MolecularAssembly} from which
+     * @param assembly {@link ffx.potential.MolecularAssembly} from which
      * a filename will be determined
      */
     public DiffractionFile(MolecularAssembly assembly[]) {
@@ -114,7 +114,7 @@ public class DiffractionFile {
      * Constructor for DiffractionFile.</p>
      *
      * @param assembly an array of
-     * {@link ffx.potential.bonded.MolecularAssembly} objects.
+     * {@link ffx.potential.MolecularAssembly} objects.
      * @param weight a double.
      */
     public DiffractionFile(MolecularAssembly assembly[], double weight) {
@@ -126,7 +126,7 @@ public class DiffractionFile {
      * Constructor for DiffractionFile.</p>
      *
      * @param assembly an array of
-     * {@link ffx.potential.bonded.MolecularAssembly} objects.
+     * {@link ffx.potential.MolecularAssembly} objects.
      * @param weight a double.
      * @param neutron a boolean.
      */
@@ -139,7 +139,7 @@ public class DiffractionFile {
      * read in a diffraction file based on the molecular assembly filename,
      * using a weight of 1.0 and neutron value of false
      *
-     * @param assembly {@link ffx.potential.bonded.MolecularAssembly} from which
+     * @param assembly {@link ffx.potential.MolecularAssembly} from which
      * a filename will be determined
      */
     public DiffractionFile(MolecularAssembly assembly) {
@@ -150,7 +150,7 @@ public class DiffractionFile {
      * read in a diffraction file based on the molecular assembly filename,
      * using a neutron value of false
      *
-     * @param assembly {@link ffx.potential.bonded.MolecularAssembly} from which
+     * @param assembly {@link ffx.potential.MolecularAssembly} from which
      * a filename will be determined
      * @param weight the weight of the data
      */
@@ -162,7 +162,7 @@ public class DiffractionFile {
      * read in a diffraction file based on the molecular assembly filename,
      * using a weight of 1.0 and neutron value of false
      *
-     * @param assembly {@link ffx.potential.bonded.MolecularAssembly} from which
+     * @param assembly {@link ffx.potential.MolecularAssembly} from which
      * a filename will be determined
      * @param weight the weight of the data
      * @param neutron if true, this is a neutron data set

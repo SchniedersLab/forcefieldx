@@ -31,7 +31,7 @@ import static org.apache.commons.math3.util.FastMath.pow;
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.parameters.ForceField;
 
 import static ffx.numerics.VectorMath.rsq;

@@ -25,7 +25,7 @@ package ffx.potential.parsers;
 import java.io.File;
 
 import ffx.potential.ForceFieldEnergy;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 
 /**
  * The PotentialsFunctions interface specifies utility methods such as opening

@@ -31,7 +31,7 @@ import java.util.logging.Logger;
 import static org.apache.commons.io.FilenameUtils.isExtension;
 import static org.apache.commons.io.FilenameUtils.removeExtension;
 
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 
 /**
  * <p>
@@ -82,7 +82,7 @@ public class RealSpaceFile {
      * read in a Real Space density file based on the molecular assembly
      * filename, using a weight of 1.0 and neutron value of false
      *
-     * @param assembly {@link ffx.potential.bonded.MolecularAssembly} from which
+     * @param assembly {@link ffx.potential.MolecularAssembly} from which
      * a filename will be determined
      */
     public RealSpaceFile(MolecularAssembly assembly[]) {
@@ -93,7 +93,7 @@ public class RealSpaceFile {
      * read in a Real Space density file based on the molecular assembly
      * filename, using a weight of 1.0
      *
-     * @param assembly {@link ffx.potential.bonded.MolecularAssembly} from which
+     * @param assembly {@link ffx.potential.MolecularAssembly} from which
      * a filename will be determined
      */
     public RealSpaceFile(MolecularAssembly assembly) {
@@ -104,7 +104,7 @@ public class RealSpaceFile {
      * read in a Real Space density file based on the molecular assembly
      * filename, using a weight of 1.0
      *
-     * @param assembly {@link ffx.potential.bonded.MolecularAssembly} from which
+     * @param assembly {@link ffx.potential.MolecularAssembly} from which
      * a filename will be determined
      * @param weight the weight of the data
      */

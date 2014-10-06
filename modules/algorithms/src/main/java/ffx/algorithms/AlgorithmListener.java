@@ -22,7 +22,7 @@
  */
 package ffx.algorithms;
 
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 
 /**
  * The AlgorithmListener will be notified at regular intervals during an

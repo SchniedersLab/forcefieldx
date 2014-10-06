@@ -92,7 +92,7 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MSRoot;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.ROLS;
 import ffx.potential.bonded.RendererCache;
 import ffx.potential.parameters.ForceField;
@@ -1971,7 +1971,7 @@ public final class MainPanel extends JPanel implements ActionListener,
      * saveAsPDB</p>
      *
      * @param activeSystems an array of
-     * {@link ffx.potential.bonded.MolecularAssembly} objects.
+     * {@link ffx.potential.MolecularAssembly} objects.
      * @param file a {@link java.io.File} object.
      */
     public void saveAsPDB(MolecularAssembly activeSystems[], File file) {

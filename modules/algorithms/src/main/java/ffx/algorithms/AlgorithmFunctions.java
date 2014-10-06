@@ -25,7 +25,7 @@ package ffx.algorithms;
 import java.io.File;
 
 import ffx.numerics.Potential;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.parsers.PotentialsFunctions;
 
 /**

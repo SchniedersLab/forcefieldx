@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import static org.apache.commons.math3.util.FastMath.max;
+
 import static java.lang.String.format;
 
 import org.apache.commons.configuration.CompositeConfiguration;
@@ -44,7 +45,7 @@ import ffx.crystal.Crystal;
 import ffx.crystal.ReplicatesCrystal;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Utilities;
 import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.nonbonded.VanDerWaals.VDW_FORM;

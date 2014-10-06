@@ -35,7 +35,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Utilities.FileType;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
@@ -58,7 +58,7 @@ public class INTFilter extends SystemFilter {
      * Constructor for INTFilter.</p>
      *
      * @param files a {@link java.util.List} object.
-     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
      * object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
      * @param properties a
@@ -75,7 +75,7 @@ public class INTFilter extends SystemFilter {
      * Constructor for INTFilter.</p>
      *
      * @param file a {@link java.io.File} object.
-     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
      * object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
      * @param properties a

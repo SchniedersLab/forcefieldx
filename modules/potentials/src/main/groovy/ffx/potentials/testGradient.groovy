@@ -29,7 +29,7 @@ import groovy.util.CliBuilder;
 // FFX Imports
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 
 // First atom to test.
 int atomID = 0;

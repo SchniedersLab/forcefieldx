@@ -20,7 +20,7 @@
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
  */
-package ffx.potential.bonded;
+package ffx.potential;
 
 import java.io.File;
 import java.net.URL;
@@ -63,7 +63,17 @@ import org.jdesktop.j3d.loaders.vrml97.VrmlScene;
 import ffx.crystal.Crystal;
 import ffx.numerics.VectorMath;
 import ffx.potential.ForceFieldEnergy;
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Bond;
+import ffx.potential.bonded.MSGroup;
+import ffx.potential.bonded.MSNode;
+import ffx.potential.bonded.Molecule;
+import ffx.potential.bonded.Polymer;
+import ffx.potential.bonded.ROLS;
+import ffx.potential.bonded.RendererCache;
+import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Residue.ResiduePosition;
+import ffx.potential.bonded.Utilities;
 import ffx.potential.parameters.ForceField;
 
 import static ffx.potential.bonded.Residue.ResiduePosition.FIRST_RESIDUE;

@@ -28,7 +28,7 @@ import java.util.logging.Logger;
 
 import ffx.crystal.Crystal;
 import ffx.potential.ForceFieldEnergy;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldString;

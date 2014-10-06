@@ -39,7 +39,7 @@ import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Utilities.FileType;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BondType;
@@ -63,7 +63,7 @@ public class XYZFilter extends SystemFilter {
      * readOnto</p>
      *
      * @param newFile a {@link java.io.File} object.
-     * @param oldSystem a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param oldSystem a {@link ffx.potential.MolecularAssembly} object.
      * @return a boolean.
      */
     public static boolean readOnto(File newFile, MolecularAssembly oldSystem) {
@@ -121,7 +121,7 @@ public class XYZFilter extends SystemFilter {
      * Constructor for XYZFilter.</p>
      *
      * @param files a {@link java.util.List} object.
-     * @param system a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param system a {@link ffx.potential.MolecularAssembly} object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
      * @param properties a
      * {@link org.apache.commons.configuration.CompositeConfiguration} object.
@@ -137,7 +137,7 @@ public class XYZFilter extends SystemFilter {
      * Constructor for XYZFilter.</p>
      *
      * @param file a {@link java.io.File} object.
-     * @param system a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param system a {@link ffx.potential.MolecularAssembly} object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
      * @param properties a
      * {@link org.apache.commons.configuration.CompositeConfiguration} object.

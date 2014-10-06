@@ -6,7 +6,7 @@
 package ffx.algorithms;
 
 import ffx.numerics.Potential;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
 

@@ -16,7 +16,7 @@ import ffx.crystal.SpaceGroup;
 import ffx.crystal.SymOp;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.parameters.ForceField;
 
 import static ffx.numerics.VectorMath.rsq;

@@ -35,7 +35,7 @@ import ffx.algorithms.Minimize;
 import ffx.potential.DualTopologyEnergy;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 
 // Default convergence criteria.
 double eps = 1.0;

@@ -27,7 +27,7 @@ import java.util.ArrayList;
 
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 
 /**
  * The MergeFilter class allows Force Field X to treat merging of Systems just
@@ -43,7 +43,7 @@ public class MergeFilter extends SystemFilter {
      * <p>
      * Constructor for MergeFilter.</p>
      *
-     * @param f a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param f a {@link ffx.potential.MolecularAssembly} object.
      * @param a a {@link java.util.ArrayList} object.
      * @param b a {@link java.util.ArrayList} object.
      */
