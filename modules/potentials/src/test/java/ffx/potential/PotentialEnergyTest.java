@@ -22,6 +22,8 @@
  */
 package ffx.potential;
 
+import ffx.potential.utils.PotentialsUtils;
+
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
@@ -40,7 +42,6 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.ForceFieldFilter;
-import ffx.potential.parsers.PotentialsUtils;
 import ffx.potential.parsers.XYZFilter;
 import ffx.utilities.Keyword;
 

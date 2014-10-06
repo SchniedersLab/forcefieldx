@@ -75,7 +75,7 @@ import ffx.potential.bonded.MSNode;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.RendererCache.ColorModel;
 import ffx.potential.bonded.RendererCache.ViewModel;
-import ffx.potential.parsers.PotentialsFunctions;
+import ffx.potential.utils.PotentialsFunctions;
 
 /**
  * The ModelingShell is used to script Multiscale Modeling Routines via the

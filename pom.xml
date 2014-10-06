@@ -245,6 +245,11 @@
             <!-- Explicitly define plugin versions for reproducible builds -->
             <plugins>
                 <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>jdepend-maven-plugin</artifactId>
+                    <version>2.0</version>
+                </plugin>
+                <plugin>
                     <artifactId>maven-assembly-plugin</artifactId>
                     <version>2.4.1</version>
                 </plugin>
@@ -785,6 +790,11 @@
                 <configuration>
                     <configLocation>config/sun_checks.xml</configLocation>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>jdepend-maven-plugin</artifactId>
+                <version>2.0</version>
             </plugin>
         </plugins>
     </reporting>

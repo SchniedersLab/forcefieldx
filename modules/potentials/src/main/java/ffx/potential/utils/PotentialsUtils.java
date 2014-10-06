@@ -20,7 +20,7 @@
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
  */
-package ffx.potential.parsers;
+package ffx.potential.utils;
 
 import java.io.File;
 import java.util.Arrays;
@@ -32,6 +32,8 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldString;
+import ffx.potential.parsers.PDBFilter;
+import ffx.potential.parsers.XYZFilter;
 
 /**
  * The PotentialsUtils class provides a local implementation, independent of the
