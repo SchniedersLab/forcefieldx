@@ -24,6 +24,7 @@ package ffx.potential;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -43,8 +44,11 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.ImproperTorsion;
 import ffx.potential.bonded.LambdaInterface;
+import ffx.potential.bonded.MSNode;
+import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.OutOfPlaneBend;
 import ffx.potential.bonded.PiOrbitalTorsion;
+import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.ROLS;
 import ffx.potential.bonded.RestraintBond;
 import ffx.potential.bonded.StretchBend;
@@ -494,12 +498,14 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         logger.info("\n Non-Bonded Terms");
 
         String name = forceField.toString().toUpperCase();
-
+        int molecule[] = molecularAssembly.getMoleculeNumbers();
         if (vanderWaalsTerm) {
             if (name.contains("OPLS")) {
-                vanderWaals = new VanDerWaals(molecularAssembly, crystal, parallelTeam, VDW_FORM.LENNARD_JONES_6_12);
+                vanderWaals = new VanDerWaals(atoms, molecule, crystal, forceField,
+                        parallelTeam, VDW_FORM.LENNARD_JONES_6_12);
             } else {
-                vanderWaals = new VanDerWaals(molecularAssembly, crystal, parallelTeam, VDW_FORM.BUFFERED_14_7);
+                vanderWaals = new VanDerWaals(atoms, molecule, crystal, forceField,
+                        parallelTeam, VDW_FORM.BUFFERED_14_7);
             }
         } else {
             vanderWaals = null;
@@ -507,10 +513,10 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
         if (multipoleTerm) {
             if (name.contains("OPLS")) {
-                particleMeshEwald = new ParticleMeshEwald(molecularAssembly, crystal,
+                particleMeshEwald = new ParticleMeshEwald(atoms, molecule, forceField, crystal,
                         vanderWaals.getNeighborList(), ELEC_FORM.FIXED_CHARGE, parallelTeam);
             } else {
-                particleMeshEwald = new ParticleMeshEwald(molecularAssembly, crystal,
+                particleMeshEwald = new ParticleMeshEwald(atoms, molecule, forceField, crystal,
                         vanderWaals.getNeighborList(), ELEC_FORM.PAM, parallelTeam);
             }
         } else {
@@ -520,22 +526,27 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         if (ncsTerm) {
             String sg = forceField.getString(ForceFieldString.NCSGROUP, "P 1");
             Crystal ncsCrystal = new Crystal(a, b, c, alpha, beta, gamma, sg);
-            ncsRestraint = new NCSRestraint(molecularAssembly, ncsCrystal);
+            ncsRestraint = new NCSRestraint(atoms, forceField, ncsCrystal);
         } else {
             ncsRestraint = null;
         }
 
         if (restrainTerm) {
-            this.coordRestraint = new CoordRestraint(molecularAssembly, crystal);
+            this.coordRestraint = new CoordRestraint(atoms, forceField);
         } else {
             coordRestraint = null;
         }
 
         if (comTerm) {
-            this.comRestraint = new COMRestraint(molecularAssembly, crystal);
+            Polymer polymers[] = molecularAssembly.getChains();
+            List<Molecule> molecules = molecularAssembly.getMolecules();
+            List<MSNode> waters = molecularAssembly.getWaters();
+            List<MSNode> ions = molecularAssembly.getIons();
+            comRestraint = new COMRestraint(atoms, polymers, molecules, waters, ions, forceField);
         } else {
             comRestraint = null;
         }
+
         molecularAssembly.setPotential(this);
     }
 
@@ -758,7 +769,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
 
         if (vanderWaalsTerm) {
-            vanderWaals.setAtoms(atoms);
+            vanderWaals.setAtoms(atoms, molecularAssembly.getMoleculeNumbers());
         }
 
         if (multipoleTerm) {

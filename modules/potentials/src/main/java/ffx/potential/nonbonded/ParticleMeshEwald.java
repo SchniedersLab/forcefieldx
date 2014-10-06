@@ -78,7 +78,6 @@ import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.LambdaInterface;
-import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
@@ -173,10 +172,6 @@ public class ParticleMeshEwald implements LambdaInterface {
 
         MUTUAL, DIRECT, NONE
     }
-    /**
-     * Electrostatics will be computed for the atoms of this MolecularAssembly.
-     */
-    private MolecularAssembly molecularAssembly;
     /**
      * Polarization mode.
      */
@@ -677,18 +672,19 @@ public class ParticleMeshEwald implements LambdaInterface {
     /**
      * ParticleMeshEwald constructor.
      *
-     * @param molecularAssembly The electrostatics will be computed for this
-     * MolecularAssembly.
+     * @param atoms
      * @param crystal The boundary conditions.
+     * @param molecule
      * @param neighborList The NeighborList for both van der Waals and PME.
+     * @param forceField
      * @param elecForm
      * @param parallelTeam A ParallelTeam that delegates parallelization.
      */
-    public ParticleMeshEwald(MolecularAssembly molecularAssembly,
+    public ParticleMeshEwald(Atom atoms[], int molecule[], ForceField forceField,
             Crystal crystal, NeighborList neighborList, ELEC_FORM elecForm, ParallelTeam parallelTeam) {
-        this.molecularAssembly = molecularAssembly;
-        this.forceField = molecularAssembly.getForceField();
-        this.atoms = molecularAssembly.getAtomArray();
+        this.atoms = atoms;
+        this.molecule = molecule;
+        this.forceField = forceField;
         this.crystal = crystal;
         this.parallelTeam = parallelTeam;
         this.neighborList = neighborList;
@@ -1088,7 +1084,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             }
             polarizability[index] = polarizeType.polarizability;
         }
-        molecule = molecularAssembly.getMoleculeNumbers();
+
     }
 
     /**
@@ -1149,7 +1145,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             vaporCrystal.setAperiodic(true);
             NeighborList vacuumNeighborList = new NeighborList(null, vaporCrystal, atoms, vacuumOff, 2.0, parallelTeam);
 
-            vacuumNeighborList.setIntermolecular(false, molecularAssembly);
+            vacuumNeighborList.setIntermolecular(false, molecule);
 
             vaporLists = new int[1][nAtoms][];
             double coords[][] = new double[1][nAtoms * 3];
@@ -1189,12 +1185,13 @@ public class ParticleMeshEwald implements LambdaInterface {
         initSoftCore = true;
     }
 
-    public void setAtoms(Atom atoms[]) {
+    public void setAtoms(Atom atoms[], int molecule[]) {
         if (lambdaTerm) {
             logger.severe(" Changing the number of atoms is not compatible with use of Lambda.");
         }
-        nAtoms = atoms.length;
         this.atoms = atoms;
+        this.molecule = molecule;
+        nAtoms = atoms.length;
         initAtomArrays();
     }
 

@@ -35,7 +35,6 @@ import edu.rit.pj.ParallelTeam;
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.potential.bonded.Atom;
-import ffx.potential.MolecularAssembly;
 import ffx.potential.nonbonded.ParticleMeshEwald.ELEC_FORM;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
@@ -59,7 +58,6 @@ import ffx.potential.parameters.ForceField.ForceFieldString;
 public class PMEWisdom {
 
     private static final Logger logger = Logger.getLogger(PMEWisdom.class.getName());
-    private final MolecularAssembly molecularAssembly;
     private final ForceField forceField;
     private final Crystal crystal;
     private final int nAtoms;
@@ -77,15 +75,14 @@ public class PMEWisdom {
      * The PMEWisdom constructor requires a MolecularAssembly that is a
      * periodic.
      *
-     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
-     * object.
+     * @param atomList
+     * @param forceField
      * @since 1.0
      */
-    public PMEWisdom(MolecularAssembly molecularAssembly) {
-        this.molecularAssembly = molecularAssembly;
-        this.forceField = molecularAssembly.getForceField();
+    public PMEWisdom(ArrayList<Atom> atomList, ForceField forceField) {
+        this.forceField = forceField;
         this.parallelTeam = new ParallelTeam();
-        nAtoms = molecularAssembly.getAtomList().size();
+        nAtoms = atomList.size();
         highAccuracyGradients = new double[3][nAtoms];
         hx = highAccuracyGradients[0];
         hy = highAccuracyGradients[1];
@@ -105,7 +102,6 @@ public class PMEWisdom {
         crystal = new Crystal(a, b, c, alpha, beta, gamma, spacegroup);
         logger.info(crystal.toString());
 
-        ArrayList<Atom> atomList = molecularAssembly.getAtomList();
         atoms = atomList.toArray(new Atom[nAtoms]);
         Arrays.sort(atoms);
 
@@ -176,8 +172,10 @@ public class PMEWisdom {
         NeighborList neighborList = new NeighborList(null, crystal, atoms, cutoff, buffer,
                 parallelTeam);
         neighborList.buildList(coordinates, neighborLists, null, true, true);
-        ParticleMeshEwald particleMeshEwald = new ParticleMeshEwald(molecularAssembly,
-                crystal, neighborList, ELEC_FORM.PAM, parallelTeam);
+
+        ParticleMeshEwald particleMeshEwald = null;
+        //ParticleMeshEwald particleMeshEwald = new ParticleMeshEwald(molecularAssembly,
+        //        crystal, neighborList, ELEC_FORM.PAM, parallelTeam);
 
         /**
          * Time the high accuracy energy gradients.
@@ -244,8 +242,9 @@ public class PMEWisdom {
             forceField.addForceFieldDouble(ForceFieldDouble.EWALD_ALPHA, alpha);
             forceField.addForceFieldDouble(ForceFieldDouble.PME_MESH_DENSITY, spacing);
             forceField.addForceFieldInteger(ForceFieldInteger.PME_ORDER, order);
-            ParticleMeshEwald particleMeshEwald = new ParticleMeshEwald(
-                    molecularAssembly, crystal, neighborList, ELEC_FORM.PAM, parallelTeam);
+            ParticleMeshEwald particleMeshEwald = null;
+            //ParticleMeshEwald particleMeshEwald = new ParticleMeshEwald(
+            //        molecularAssembly, crystal, neighborList, ELEC_FORM.PAM, parallelTeam);
 
             System.gc();
             particleMeshEwald.energy(true, false);
@@ -277,8 +276,11 @@ public class PMEWisdom {
         forceField.addForceFieldDouble(ForceFieldDouble.PME_MESH_DENSITY, spacing);
         forceField.addForceFieldInteger(ForceField.ForceFieldInteger.PME_ORDER,
                 order);
-        ParticleMeshEwald particleMeshEwald = new ParticleMeshEwald(
-                molecularAssembly, crystal, neighborList, ELEC_FORM.PAM, parallelTeam);
+
+        ParticleMeshEwald particleMeshEwald = null;
+        // ParticleMeshEwald particleMeshEwald = new ParticleMeshEwald(
+        //        molecularAssembly, crystal, neighborList, ELEC_FORM.PAM, parallelTeam);
+
         System.gc();
         long bestTime = System.nanoTime();
         particleMeshEwald.energy(true, false);

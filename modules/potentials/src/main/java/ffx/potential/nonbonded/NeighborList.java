@@ -42,7 +42,6 @@ import edu.rit.util.Range;
 
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
-import ffx.potential.MolecularAssembly;
 
 /**
  * The NeighborList class builds Verlet lists in parallel via a spatial
@@ -323,11 +322,9 @@ public class NeighborList extends ParallelRegion {
         initNeighborList(true);
     }
 
-    public void setIntermolecular(boolean intermolecular, MolecularAssembly molecularAssembly) {
+    public void setIntermolecular(boolean intermolecular, int molecules[]) {
         this.intermolecular = intermolecular;
-        if (molecularAssembly != null) {
-            this.molecules = molecularAssembly.getMoleculeNumbers();
-        }
+        this.molecules = molecules;
     }
 
     private void initNeighborList(boolean print) {

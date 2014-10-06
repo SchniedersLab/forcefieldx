@@ -29,11 +29,9 @@ import static java.util.Arrays.fill;
 
 import static org.apache.commons.math3.util.FastMath.pow;
 
-import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.MSNode;
-import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.parameters.ForceField;
@@ -50,17 +48,19 @@ public class COMRestraint implements LambdaInterface {
     private static final Logger logger = Logger.getLogger(COMRestraint.class.getName());
     private final Atom atoms[];
     private final int nAtoms;
-    private MolecularAssembly molecularAssembly = null;
-    private Crystal crystal = null;
+    private final Polymer polymers[];
+    private final List<Molecule> molecules;
+    private final List<MSNode> waters;
+    private final List<MSNode> ions;
     private final int nMolecules;
     /**
      * Force constant in Kcal/mole/Angstrom.
      */
     private final double forceConstant;
     private final double initialCOM[][];
-    private double currentCOM[][];
-    private double dx[] = new double[3];
-    private double dcomdx[];
+    private final double currentCOM[][];
+    private final double dx[] = new double[3];
+    private final double dcomdx[];
 
     private double lambda = 1.0;
     private final double lambdaExp = 1.0;
@@ -77,18 +77,25 @@ public class COMRestraint implements LambdaInterface {
      * This NCSRestraint is based on the unit cell parameters and symmetry
      * operators of the supplied crystal.
      *
-     * @param molecularAssembly
-     * @param crystal
+     * @param atoms
+     * @param polymers
+     * @param molecules
+     * @param waters
+     * @param ions
+     * @param forceField
      */
-    public COMRestraint(MolecularAssembly molecularAssembly, Crystal crystal) {
-        this.molecularAssembly = molecularAssembly;
-        this.crystal = crystal.getUnitCell();
-        atoms = molecularAssembly.getAtomArray();
+    public COMRestraint(Atom atoms[], Polymer polymers[], List<Molecule> molecules,
+            List<MSNode> waters, List<MSNode> ions, ForceField forceField) {
+        this.atoms = atoms;
         nAtoms = atoms.length;
+        this.polymers = polymers;
+        this.molecules = molecules;
+        this.waters = waters;
+        this.ions = ions;
+
         nMolecules = countMolecules();
         initialCOM = new double[3][nMolecules];
         currentCOM = new double[3][nMolecules];
-        ForceField forceField = molecularAssembly.getForceField();
 
         lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
         if (lambdaTerm) {
@@ -156,7 +163,6 @@ public class COMRestraint implements LambdaInterface {
     private void computeCOM(double[][] com, int nMolecules) {
         int i = 0;
         while (i < nMolecules) {
-            Polymer polymers[] = molecularAssembly.getChains();
             if (polymers != null && polymers.length > 0) {
                 // Find the center of mass
                 for (Polymer polymer : polymers) {
@@ -180,7 +186,6 @@ public class COMRestraint implements LambdaInterface {
             }
 
             // Loop over each molecule
-            List<Molecule> molecules = molecularAssembly.getMolecules();
             for (MSNode molecule : molecules) {
                 List<Atom> list = molecule.getAtomList();
                 // Find the center of mass
@@ -202,7 +207,6 @@ public class COMRestraint implements LambdaInterface {
             }
 
             // Loop over each water
-            List<MSNode> waters = molecularAssembly.getWaters();
             for (MSNode water : waters) {
                 List<Atom> list = water.getAtomList();
                 // Find the center of mass
@@ -224,7 +228,6 @@ public class COMRestraint implements LambdaInterface {
             }
 
             // Loop over each ion
-            List<MSNode> ions = molecularAssembly.getIons();
             for (MSNode ion : ions) {
                 List<Atom> list = ion.getAtomList();
                 // Find the center of mass
@@ -251,7 +254,6 @@ public class COMRestraint implements LambdaInterface {
 //        double totalMass = 0.0;
         int i = 0;
         while (i < nAtoms) {
-            Polymer polymers[] = molecularAssembly.getChains();
             if (polymers != null && polymers.length > 0) {
                 for (Polymer polymer : polymers) {
                     List<Atom> list = polymer.getAtomList();
@@ -269,7 +271,6 @@ public class COMRestraint implements LambdaInterface {
             }
 
             // Loop over each molecule
-            List<Molecule> molecules = molecularAssembly.getMolecules();
             for (MSNode molecule : molecules) {
                 List<Atom> list = molecule.getAtomList();
                 double totalMass = 0.0;
@@ -285,7 +286,6 @@ public class COMRestraint implements LambdaInterface {
             }
 
             // Loop over each water
-            List<MSNode> waters = molecularAssembly.getWaters();
             for (MSNode water : waters) {
                 List<Atom> list = water.getAtomList();
                 double totalMass = 0.0;
@@ -301,7 +301,6 @@ public class COMRestraint implements LambdaInterface {
             }
 
             // Loop over each ion
-            List<MSNode> ions = molecularAssembly.getIons();
             for (MSNode ion : ions) {
                 List<Atom> list = ion.getAtomList();
                 double totalMass = 0.0;
@@ -326,19 +325,15 @@ public class COMRestraint implements LambdaInterface {
     private int countMolecules() {
         int count = 0;
         // Move polymers togethers.
-        Polymer polymers[] = molecularAssembly.getChains();
         if (polymers != null && polymers.length > 0) {
             count += polymers.length;
         }
-        List<Molecule> molecules = molecularAssembly.getMolecules();
         if (molecules != null) {
             count += molecules.size();
         }
-        List<MSNode> waters = molecularAssembly.getWaters();
         if (waters != null) {
             count += waters.size();
         }
-        List<MSNode> ions = molecularAssembly.getIons();
         if (ions != null) {
             count += ions.size();
         }

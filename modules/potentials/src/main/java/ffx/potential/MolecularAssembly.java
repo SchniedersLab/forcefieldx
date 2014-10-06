@@ -645,14 +645,15 @@ public class MolecularAssembly extends MSGroup {
      * This method assigns a unique integer to every molecule in the
      * MolecularAssembly beginning at 0. An integer array with these values for
      * each atom is returned.
+     *
+     * @return an array of molecule numbers for each atom.
      */
     public int[] getMoleculeNumbers() {
         int moleculeNumber[] = new int[getAtomList().size()];
         int current = 0;
-        // Move the polymers together
+        // Loop over polymers together
         Polymer[] polymers = getChains();
         if (polymers != null && polymers.length > 0) {
-            // Find the center of mass
             for (Polymer polymer : polymers) {
                 List<Atom> atomList = polymer.getAtomList();
                 for (Atom atom : atomList) {

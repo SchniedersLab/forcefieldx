@@ -16,7 +16,6 @@ import ffx.crystal.SpaceGroup;
 import ffx.crystal.SymOp;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
-import ffx.potential.MolecularAssembly;
 import ffx.potential.parameters.ForceField;
 
 import static ffx.numerics.VectorMath.rsq;
@@ -30,7 +29,6 @@ import static ffx.numerics.VectorMath.rsq;
 public class NCSRestraint implements LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(NCSRestraint.class.getName());
-    private MolecularAssembly molecularAssembly = null;
     private Crystal ncsCrystal = null;
     private SpaceGroup spaceGroup = null;
     private final Atom atoms[];
@@ -56,19 +54,17 @@ public class NCSRestraint implements LambdaInterface {
      * This NCSRestraint is based on the unit cell parameters and symmetry
      * operators of the supplied crystal.
      *
-     * @param molecularAssembly
+     * @param atoms
+     * @param forceField
      * @param crystal
      */
-    public NCSRestraint(MolecularAssembly molecularAssembly, Crystal crystal) {
-        this.molecularAssembly = molecularAssembly;
+    public NCSRestraint(Atom atoms[], ForceField forceField, Crystal crystal) {
         this.ncsCrystal = crystal;
-        atoms = molecularAssembly.getAtomArray();
+        this.atoms = atoms;
         nAtoms = atoms.length;
         spaceGroup = this.ncsCrystal.spaceGroup;
         nSymm = spaceGroup.getNumberOfSymOps();
         assert (nAtoms % nSymm == 0);
-        ForceField forceField = molecularAssembly.getForceField();
-        //lambdaTerm = false;
         lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
         if (lambdaTerm) {
             lambdaGradient = new double[nAtoms * 3];
