@@ -31,7 +31,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import ffx.crystal.Crystal;
 import ffx.numerics.TriCubicSpline;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Residue;
 import ffx.xray.RefinementMinimize.RefinementMode;
@@ -62,7 +62,7 @@ public class RealSpaceData implements DataContainer {
      * weight of 1.0 using the same name as the molecular assembly
      *
      * @param assembly
-     * {@link ffx.potential.bonded.MolecularAssembly molecular assembly} object,
+     * {@link ffx.potential.MolecularAssembly molecular assembly} object,
      * used as the atomic model for comparison against the data
      * @param properties system properties file
      * @param diffractiondata {@link ffx.xray.DiffractionData diffraction data}
@@ -77,7 +77,7 @@ public class RealSpaceData implements DataContainer {
      * weight of 1.0 using the same name as the molecular assembly
      *
      * @param assembly
-     * {@link ffx.potential.bonded.MolecularAssembly molecular assembly} object,
+     * {@link ffx.potential.MolecularAssembly molecular assembly} object,
      * used as the atomic model for comparison against the data
      * @param properties system properties file
      * @param diffractiondata {@link ffx.xray.DiffractionData diffraction data}
@@ -147,7 +147,7 @@ public class RealSpaceData implements DataContainer {
      * weight of 1.0 using the same name as the molecular assembly
      *
      * @param assembly
-     * {@link ffx.potential.bonded.MolecularAssembly molecular assembly} object,
+     * {@link ffx.potential.MolecularAssembly molecular assembly} object,
      * used as the atomic model for comparison against the data
      * @param properties system properties file
      */
@@ -161,7 +161,7 @@ public class RealSpaceData implements DataContainer {
      * construct a real space data assembly
      *
      * @param assembly
-     * {@link ffx.potential.bonded.MolecularAssembly molecular assembly} object,
+     * {@link ffx.potential.MolecularAssembly molecular assembly} object,
      * used as the atomic model for comparison against the data
      * @param properties system properties file
      * @param datafile one or more {@link RealSpaceFile} to be refined against
@@ -175,7 +175,7 @@ public class RealSpaceData implements DataContainer {
      * construct a real space data assembly
      *
      * @param assembly
-     * {@link ffx.potential.bonded.MolecularAssembly molecular assembly} object
+     * {@link ffx.potential.MolecularAssembly molecular assembly} object
      * array (typically containing alternate conformer assemblies), used as the
      * atomic model for comparison against the data
      * @param properties system properties file

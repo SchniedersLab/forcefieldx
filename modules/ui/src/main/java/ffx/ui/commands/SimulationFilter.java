@@ -29,8 +29,8 @@ import java.util.Vector;
 
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
-import ffx.potential.bonded.MolecularAssembly;
-import ffx.potential.bonded.Utilities.FileType;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.Utilities.FileType;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parsers.SystemFilter;
 
@@ -51,7 +51,7 @@ public final class SimulationFilter extends SystemFilter {
      * Constructor for SimulationFilter.</p>
      *
      * @param sys a {@link ffx.ui.commands.TinkerSystem} object.
-     * @param m a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param m a {@link ffx.potential.MolecularAssembly} object.
      */
     public SimulationFilter(TinkerSystem sys, MolecularAssembly m) {
         super(new File(""), m, null, null);

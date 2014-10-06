@@ -23,6 +23,7 @@
 package ffx.algorithms;
 
 import ffx.crystal.Crystal;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,7 +33,8 @@ import ffx.numerics.OptimizationListener;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.XtalEnergy;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
+
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
@@ -64,7 +66,7 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
      * <p>
      * Constructor for Minimize.</p>
      *
-     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
      * object.
      * @param potential a {@link ffx.numerics.Potential} object.
      * @param algorithmListener a {@link ffx.algorithms.AlgorithmListener}
@@ -100,7 +102,7 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
      * <p>
      * Constructor for Minimize.</p>
      *
-     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
      * object.
      * @param algorithmListener a {@link ffx.algorithms.AlgorithmListener}
      * object.

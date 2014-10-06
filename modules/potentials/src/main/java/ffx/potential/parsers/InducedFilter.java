@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 
 /**
  * The InducedFilter class parses TINKER Induced Dipole (*.*U) files.
@@ -48,7 +48,7 @@ public class InducedFilter {
      * <p>
      * Constructor for InducedFilter.</p>
      *
-     * @param s a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param s a {@link ffx.potential.MolecularAssembly} object.
      * @param f a {@link java.io.File} object.
      */
     public InducedFilter(MolecularAssembly s, File f) {

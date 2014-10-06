@@ -33,8 +33,8 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
 import ffx.potential.ForceFieldEnergy;
-import ffx.potential.bonded.MolecularAssembly;
-import ffx.potential.bonded.Utilities;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.Utilities;
 import ffx.potential.parsers.FileOpener;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.SystemFilter;

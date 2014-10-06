@@ -30,7 +30,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import ffx.algorithms.Integrator.Integrators;
 import ffx.algorithms.Thermostat.Thermostats;
 import ffx.numerics.Potential;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 
 /**
  * Run NVT molecular dynamics at a series of temperatures.
@@ -54,7 +54,7 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
      * <p>
      * Constructor for SimulatedAnnealing.</p>
      *
-     * @param assembly a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param assembly a {@link ffx.potential.MolecularAssembly} object.
      * @param potentialEnergy a {@link ffx.numerics.Potential} object.
      * @param properties a
      * {@link org.apache.commons.configuration.CompositeConfiguration} object.
@@ -73,7 +73,7 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
      * <p>
      * Constructor for SimulatedAnnealing.</p>
      *
-     * @param assembly a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param assembly a {@link ffx.potential.MolecularAssembly} object.
      * @param potentialEnergy a {@link ffx.numerics.Potential} object.
      * @param properties a
      * {@link org.apache.commons.configuration.CompositeConfiguration} object.

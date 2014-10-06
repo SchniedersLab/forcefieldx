@@ -25,7 +25,7 @@ package ffx.xray;
 import java.util.ArrayList;
 
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Residue;
 
@@ -66,7 +66,7 @@ public interface DataContainer {
      * <p>
      * getMolecularAssembly</p>
      *
-     * @return an array of {@link ffx.potential.bonded.MolecularAssembly}
+     * @return an array of {@link ffx.potential.MolecularAssembly}
      * objects.
      */
     public MolecularAssembly[] getMolecularAssembly();

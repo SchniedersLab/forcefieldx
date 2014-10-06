@@ -41,36 +41,111 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import ffx.crystal.Crystal;
 import ffx.crystal.SpaceGroup;
 import ffx.numerics.VectorMath;
-import ffx.potential.ResidueEnumerations.AminoAcid3;
-import ffx.potential.ResidueEnumerations.NucleicAcid3;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
+import ffx.potential.bonded.BondedUtils;
+import ffx.potential.bonded.BondedUtils.MissingAtomTypeException;
+import ffx.potential.bonded.BondedUtils.MissingHeavyAtomException;
 import ffx.potential.bonded.MSGroup;
 import ffx.potential.bonded.MSNode;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.Utilities.FileType;
+import ffx.potential.bonded.Residue.ResiduePosition;
+import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
+import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
+import ffx.potential.Utilities.FileType;
 import ffx.potential.parameters.AtomType;
-import ffx.potential.parameters.BioType;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.MultipoleType;
-import ffx.potential.parsers.PDBFilter.ResiduePosition;
 import ffx.utilities.Hybrid36;
 
 import static ffx.numerics.VectorMath.diff;
 import static ffx.numerics.VectorMath.r;
-import static ffx.potential.ResidueEnumerations.aminoAcidHeavyAtoms;
-import static ffx.potential.ResidueEnumerations.aminoAcidList;
-import static ffx.potential.ResidueEnumerations.nucleicAcidList;
-import static ffx.potential.parsers.INTFilter.intxyz;
+import static ffx.potential.bonded.AminoAcidUtils.buildAIB;
+import static ffx.potential.bonded.AminoAcidUtils.buildAlanine;
+import static ffx.potential.bonded.AminoAcidUtils.buildArginine;
+import static ffx.potential.bonded.AminoAcidUtils.buildAsparagine;
+import static ffx.potential.bonded.AminoAcidUtils.buildAspartate;
+import static ffx.potential.bonded.AminoAcidUtils.buildCysteine;
+import static ffx.potential.bonded.AminoAcidUtils.buildCystine;
+import static ffx.potential.bonded.AminoAcidUtils.buildDeprotonatedCysteine;
+import static ffx.potential.bonded.AminoAcidUtils.buildDeprotonatedLysine;
+import static ffx.potential.bonded.AminoAcidUtils.buildDeprotonatedTyrosine;
+import static ffx.potential.bonded.AminoAcidUtils.buildGlutamate;
+import static ffx.potential.bonded.AminoAcidUtils.buildGlutamine;
+import static ffx.potential.bonded.AminoAcidUtils.buildHistidine;
+import static ffx.potential.bonded.AminoAcidUtils.buildIsoleucine;
+import static ffx.potential.bonded.AminoAcidUtils.buildLeucine;
+import static ffx.potential.bonded.AminoAcidUtils.buildLysine;
+import static ffx.potential.bonded.AminoAcidUtils.buildMethionine;
+import static ffx.potential.bonded.AminoAcidUtils.buildNeutralAsparticAcid;
+import static ffx.potential.bonded.AminoAcidUtils.buildNeutralGlutamicAcid;
+import static ffx.potential.bonded.AminoAcidUtils.buildNeutralHistidineD;
+import static ffx.potential.bonded.AminoAcidUtils.buildNeutralHistidineE;
+import static ffx.potential.bonded.AminoAcidUtils.buildOrnithine;
+import static ffx.potential.bonded.AminoAcidUtils.buildPCA;
+import static ffx.potential.bonded.AminoAcidUtils.buildPhenylalanine;
+import static ffx.potential.bonded.AminoAcidUtils.buildProline;
+import static ffx.potential.bonded.AminoAcidUtils.buildSerine;
+import static ffx.potential.bonded.AminoAcidUtils.buildThreonine;
+import static ffx.potential.bonded.AminoAcidUtils.buildTryptophan;
+import static ffx.potential.bonded.AminoAcidUtils.buildTyrosine;
+import static ffx.potential.bonded.AminoAcidUtils.buildValine;
+import static ffx.potential.bonded.AminoAcidUtils.cType;
+import static ffx.potential.bonded.AminoAcidUtils.caType;
+import static ffx.potential.bonded.AminoAcidUtils.cbType;
+import static ffx.potential.bonded.AminoAcidUtils.haType;
+import static ffx.potential.bonded.AminoAcidUtils.hnType;
+import static ffx.potential.bonded.AminoAcidUtils.nType;
+import static ffx.potential.bonded.AminoAcidUtils.oType;
+import static ffx.potential.bonded.AminoAcidUtils.removeH1_H2_H3;
+import static ffx.potential.bonded.AminoAcidUtils.removeOXT_OT2;
+import static ffx.potential.bonded.AminoAcidUtils.renameArginineHydrogens;
+import static ffx.potential.bonded.AminoAcidUtils.renameAsparagineHydrogens;
+import static ffx.potential.bonded.AminoAcidUtils.renameBetaHydrogens;
+import static ffx.potential.bonded.AminoAcidUtils.renameDeltaHydrogens;
+import static ffx.potential.bonded.AminoAcidUtils.renameEpsilonHydrogens;
+import static ffx.potential.bonded.AminoAcidUtils.renameGammaHydrogens;
+import static ffx.potential.bonded.AminoAcidUtils.renameGlutamineHydrogens;
+import static ffx.potential.bonded.AminoAcidUtils.renameGlycineAlphaHydrogens;
+import static ffx.potential.bonded.AminoAcidUtils.renameIsoleucineHydrogens;
+import static ffx.potential.bonded.AminoAcidUtils.renameZetaHydrogens;
+import static ffx.potential.bonded.BondedUtils.intxyz;
+import static ffx.potential.bonded.NucleicAcidUtils.c1Typ;
+import static ffx.potential.bonded.NucleicAcidUtils.c2Typ;
+import static ffx.potential.bonded.NucleicAcidUtils.c3Typ;
+import static ffx.potential.bonded.NucleicAcidUtils.c4Typ;
+import static ffx.potential.bonded.NucleicAcidUtils.c5Typ;
+import static ffx.potential.bonded.NucleicAcidUtils.h1Typ;
+import static ffx.potential.bonded.NucleicAcidUtils.h21Typ;
+import static ffx.potential.bonded.NucleicAcidUtils.h22Typ;
+import static ffx.potential.bonded.NucleicAcidUtils.h3Typ;
+import static ffx.potential.bonded.NucleicAcidUtils.h3tTyp;
+import static ffx.potential.bonded.NucleicAcidUtils.h4Typ;
+import static ffx.potential.bonded.NucleicAcidUtils.h51Typ;
+import static ffx.potential.bonded.NucleicAcidUtils.h52Typ;
+import static ffx.potential.bonded.NucleicAcidUtils.h5tTyp;
+import static ffx.potential.bonded.NucleicAcidUtils.o2Typ;
+import static ffx.potential.bonded.NucleicAcidUtils.o3Typ;
+import static ffx.potential.bonded.NucleicAcidUtils.o4Typ;
+import static ffx.potential.bonded.NucleicAcidUtils.o5Typ;
+import static ffx.potential.bonded.NucleicAcidUtils.opTyp;
+import static ffx.potential.bonded.NucleicAcidUtils.pTyp;
+import static ffx.potential.bonded.Residue.ResiduePosition.FIRST_RESIDUE;
+import static ffx.potential.bonded.Residue.ResiduePosition.LAST_RESIDUE;
+import static ffx.potential.bonded.Residue.ResiduePosition.MIDDLE_RESIDUE;
+import static ffx.potential.bonded.ResidueEnumerations.aminoAcidHeavyAtoms;
+import static ffx.potential.bonded.ResidueEnumerations.aminoAcidList;
+import static ffx.potential.bonded.ResidueEnumerations.getAminoAcid;
+import static ffx.potential.bonded.ResidueEnumerations.getAminoAcidNumber;
+import static ffx.potential.bonded.ResidueEnumerations.nucleicAcidList;
 import static ffx.potential.parsers.PDBFilter.PDBFileStandard.VERSION3_2;
 import static ffx.potential.parsers.PDBFilter.PDBFileStandard.VERSION3_3;
-import static ffx.potential.parsers.PDBFilter.ResiduePosition.FIRST_RESIDUE;
-import static ffx.potential.parsers.PDBFilter.ResiduePosition.LAST_RESIDUE;
-import static ffx.potential.parsers.PDBFilter.ResiduePosition.MIDDLE_RESIDUE;
+import static ffx.utilities.StringUtils.padLeft;
+import static ffx.utilities.StringUtils.padRight;
 
 /**
  * The PDBFilter class parses data from a Protein DataBank (*.PDB) file. The
@@ -155,26 +230,6 @@ public final class PDBFilter extends SystemFilter {
         segIDs.clear();
     }
 
-    public ResiduePosition getResiduePosition(int residueNumber) {
-        ResiduePosition position;
-        int numberOfResidues = 0;
-        Polymer polymers[] = activeMolecularAssembly.getChains();
-        int nPolymers = polymers.length;
-        for (int i = 0; i < nPolymers; i++) {
-            Polymer polymer = polymers[i];
-            ArrayList<Residue> residues = polymer.getResidues();
-            numberOfResidues += residues.size();
-        }
-        if (residueNumber == 0) {
-            position = FIRST_RESIDUE;
-        } else if (residueNumber == numberOfResidues - 1) {
-            position = LAST_RESIDUE;
-        } else {
-            position = MIDDLE_RESIDUE;
-        }
-        return position;
-    }
-
     /**
      * Convert possibly duplicate chain IDs into unique segIDs.
      *
@@ -226,7 +281,7 @@ public final class PDBFilter extends SystemFilter {
      * Constructor for PDBFilter.</p>
      *
      * @param files a {@link java.util.List} object.
-     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
      * object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
      * @param properties a
@@ -243,7 +298,7 @@ public final class PDBFilter extends SystemFilter {
      * Parse the PDB File from a URL.
      *
      * @param file a {@link java.io.File} object.
-     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
      * object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
      * @param properties a
@@ -270,34 +325,6 @@ public final class PDBFilter extends SystemFilter {
         super(file, molecularAssemblies, forceField, properties);
         bondList = new ArrayList<>();
         this.fileType = FileType.PDB;
-    }
-
-    /**
-     * <p>
-     * pdbForID</p>
-     *
-     * @param id a {@link java.lang.String} object.
-     * @return a {@link java.lang.String} object.
-     */
-    public static String pdbForID(String id) {
-        if (id.length() != 4) {
-            return null;
-        }
-        return "http://www.rcsb.org/pdb/files/" + id.toLowerCase() + ".pdb";
-    }
-
-    /**
-     * <p>
-     * cifForID</p>
-     *
-     * @param id a {@link java.lang.String} object.
-     * @return a {@link java.lang.String} object.
-     */
-    public static String cifForID(String id) {
-        if (id.length() != 4) {
-            return null;
-        }
-        return "http://www.rcsb.org/pdb/files/" + id.toLowerCase() + ".cif";
     }
 
     /**
@@ -1711,7 +1738,8 @@ public final class PDBFilter extends SystemFilter {
                             && position != LAST_RESIDUE && numberOfResidues != 1) {
                         continue;
                     }
-                    logger.log(Level.WARNING, format(" An atom for residue %s has the wrong number of bonds:\n %s", residueName, atom.toString()));
+                    logger.log(Level.WARNING, format(" An atom for residue %s has the wrong number of bonds:\n %s",
+                            residueName, atom.toString()));
                     logger.log(Level.WARNING, format(" Expected: %d Actual: %d.", atomType.valence, numberOfBonds));
                 }
             }
@@ -2138,66 +2166,6 @@ public final class PDBFilter extends SystemFilter {
     }
 
     /**
-     * Only the first nitrogen should have H1, H2 and H3 atoms, unless it's an
-     * NME cap.
-     *
-     * @param aminoAcid
-     * @param residue
-     */
-    private void removeH1_H2_H3(AminoAcid3 aminoAcid, Residue residue) {
-        if (aminoAcid != AminoAcid3.NME) {
-            Atom H1 = (Atom) residue.getAtomNode("H1");
-            if (H1 != null) {
-                residue.deleteAtom(H1);
-            }
-            Atom H2 = (Atom) residue.getAtomNode("H2");
-            if (H2 != null) {
-                residue.deleteAtom(H2);
-            }
-            Atom H3 = (Atom) residue.getAtomNode("H3");
-            if (H3 != null) {
-                residue.deleteAtom(H3);
-            }
-        }
-    }
-
-    /**
-     * Only the last residue in a chain should have an OXT/OT2 atom.
-     *
-     * @param residue
-     */
-    private void removeOXT_OT2(Residue residue) {
-        Atom OXT = (Atom) residue.getAtomNode("OXT");
-        if (OXT != null) {
-            residue.deleteAtom(OXT);
-        }
-        Atom OT2 = (Atom) residue.getAtomNode("OT2");
-        if (OT2 != null) {
-            residue.deleteAtom(OT2);
-        }
-    }
-
-    private AminoAcid3 getAminoAcid(String residueName) {
-        for (AminoAcid3 aminoAcid : aminoAcidList) {
-            if (aminoAcid.toString().equalsIgnoreCase(residueName)) {
-                return aminoAcid;
-            }
-        }
-        return AminoAcid3.UNK;
-    }
-
-    private int getAminoAcidNumber(String residueName) {
-        int aminoAcidNumber = -1;
-        for (AminoAcid3 aminoAcid : aminoAcidList) {
-            aminoAcidNumber++;
-            if (aminoAcid.toString().equalsIgnoreCase(residueName)) {
-                break;
-            }
-        }
-        return aminoAcidNumber;
-    }
-
-    /**
      * Check for missing heavy atoms. This check ignores special terminating
      * groups like FOR, NH2, etc.
      *
@@ -2278,7 +2246,7 @@ public final class PDBFilter extends SystemFilter {
         }
     }
 
-    private void assignAminoAcidAtomTypes(Residue residue, Residue previousResidue, Residue nextResidue)
+   private void assignAminoAcidAtomTypes(Residue residue, Residue previousResidue, Residue nextResidue)
             throws MissingHeavyAtomException, MissingAtomTypeException {
 
         String residueName = residue.getName().toUpperCase();
@@ -2336,7 +2304,7 @@ public final class PDBFilter extends SystemFilter {
             try {
                 checkForMissingHeavyAtoms(aminoAcidNumber, aminoAcid, position, residue);
             } catch (MissingHeavyAtomException e) {
-                logger.info(" " + residue.toString() + " could not be parsed.");
+                logger.log(Level.INFO, " {0} could not be parsed.", residue.toString());
                 throw e;
             }
         }
@@ -2527,8 +2495,7 @@ public final class PDBFilter extends SystemFilter {
      * @param CA The C-alpha carbon of this residue.
      * @param N The peptide nitrogen of this residue.
      * @param C The peptide carbonyl carbon.
-     *
-     * @throws ffx.potential.parsers.PDBFilter.MissingHeavyAtomException
+     * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException
      */
     public void assignAminoAcidSideChain(ResiduePosition position, AminoAcid3 aminoAcid, Residue residue,
             Atom CA, Atom N, Atom C) throws MissingHeavyAtomException {
@@ -2549,100 +2516,100 @@ public final class PDBFilter extends SystemFilter {
                 buildHydrogen(residue, "HA3", CA, 1.10, N, 109.5, C, 109.5, 1, k);
                 break;
             case ALA:
-                buildAlanine(residue, CA, N, C, k);
+                buildAlanine(residue, CA, N, C, k, forceField, bondList);
                 break;
             case VAL:
-                buildValine(residue, CA, N, C, k);
+                buildValine(residue, CA, N, C, k, forceField, bondList);
                 break;
             case LEU:
-                buildLeucine(residue, CA, N, C, k);
+                buildLeucine(residue, CA, N, C, k, forceField, bondList);
                 break;
             case ILE:
-                buildIsoleucine(residue, CA, N, C, k);
+                buildIsoleucine(residue, CA, N, C, k, forceField, bondList);
                 break;
             case SER:
-                buildSerine(residue, CA, N, C, k);
+                buildSerine(residue, CA, N, C, k, forceField, bondList);
                 break;
             case THR:
-                buildThreonine(residue, CA, N, C, k);
+                buildThreonine(residue, CA, N, C, k, forceField, bondList);
                 break;
             case CYS:
-                buildCysteine(residue, CA, N, C, k);
+                buildCysteine(residue, CA, N, C, k, forceField, bondList);
                 break;
             case CYX:
-                buildCystine(residue, CA, N, C, k);
+                buildCystine(residue, CA, N, C, k, forceField, bondList);
                 break;
             case CYD:
-                buildDeprotonatedCysteine(residue, CA, N, C, k);
+                buildDeprotonatedCysteine(residue, CA, N, C, k, forceField, bondList);
                 break;
             case PRO:
-                buildProline(residue, CA, N, C, k, position);
+                buildProline(residue, CA, N, C, k, position, forceField, bondList);
                 break;
             case PHE:
-                buildPhenylalanine(residue, CA, N, C, k);
+                buildPhenylalanine(residue, CA, N, C, k, forceField, bondList);
                 break;
             case TYR:
-                buildTyrosine(residue, CA, N, C, k);
+                buildTyrosine(residue, CA, N, C, k, forceField, bondList);
                 break;
             case TYD:
-                buildDeprotonatedTyrosine(residue, CA, N, C, k);
+                buildDeprotonatedTyrosine(residue, CA, N, C, k, forceField, bondList);
                 break;
             case TRP:
-                buildTryptophan(residue, CA, N, C, k);
+                buildTryptophan(residue, CA, N, C, k, forceField, bondList);
                 break;
             case HIS:
-                buildHistidine(residue, CA, N, C, k);
+                buildHistidine(residue, CA, N, C, k, forceField, bondList);
                 break;
             case HID:
-                buildNeutralHistidineD(residue, CA, N, C, k);
+                buildNeutralHistidineD(residue, CA, N, C, k, forceField, bondList);
                 break;
             case HIE:
-                buildNeutralHistidineE(residue, CA, N, C, k);
+                buildNeutralHistidineE(residue, CA, N, C, k, forceField, bondList);
                 break;
             case ASP:
-                buildAspartate(residue, CA, N, C, k);
+                buildAspartate(residue, CA, N, C, k, forceField, bondList);
                 break;
             case ASH:
-                buildNeutralAsparticAcid(residue, CA, N, C, k);
+                buildNeutralAsparticAcid(residue, CA, N, C, k, forceField, bondList);
                 break;
             case ASN:
-                buildAsparagine(residue, CA, N, C, k);
+                buildAsparagine(residue, CA, N, C, k, forceField, bondList);
                 break;
             case GLU:
-                buildGlutamate(residue, CA, N, C, k);
+                buildGlutamate(residue, CA, N, C, k, forceField, bondList);
                 break;
             case GLH:
-                buildNeutralGlutamicAcid(residue, CA, N, C, k);
+                buildNeutralGlutamicAcid(residue, CA, N, C, k, forceField, bondList);
                 break;
             case GLN:
-                buildGlutamine(residue, CA, N, C, k);
+                buildGlutamine(residue, CA, N, C, k, forceField, bondList);
                 break;
             case MET:
-                buildMethionine(residue, CA, N, C, k);
+                buildMethionine(residue, CA, N, C, k, forceField, bondList);
                 break;
             case LYS:
-                buildLysine(residue, CA, N, C, k);
+                buildLysine(residue, CA, N, C, k, forceField, bondList);
                 break;
             case LYD:
-                buildDeprotonatedLysine(residue, CA, N, C, k);
+                buildDeprotonatedLysine(residue, CA, N, C, k, forceField, bondList);
                 break;
             case ARG:
-                buildArginine(residue, CA, N, C, k);
+                buildArginine(residue, CA, N, C, k, forceField, bondList);
                 break;
             case ORN:
-                buildOrnithine(residue, CA, N, C, k);
+                buildOrnithine(residue, CA, N, C, k, forceField, bondList);
                 break;
             case AIB:
-                buildAIB(residue, CA, N, C, k);
+                buildAIB(residue, CA, N, C, k, forceField, bondList);
                 break;
             case PCA:
-                buildPCA(residue, CA, N, C, k);
+                buildPCA(residue, CA, N, C, k, forceField, bondList);
                 break;
             case UNK:
                 String residueName = residue.getName();
-                logger.info(" Patching side-chain " + residueName);
+                logger.log(Level.INFO, " Patching side-chain {0}", residueName);
                 HashMap<String, AtomType> types = forceField.getAtomTypes(residueName);
-                HashMap<AtomType, AtomType> typeMap = new HashMap<AtomType, AtomType>();
+                HashMap<AtomType, AtomType> typeMap = new HashMap<>();
                 if (!types.isEmpty()) {
                     boolean patched = true;
                     ArrayList<Atom> residueAtoms = residue.getAtomList();
@@ -2660,7 +2627,8 @@ public final class PDBFilter extends SystemFilter {
                         } else {
                             AtomType atomType = types.get(atomName);
                             if (atomType == null) {
-                                logger.info(" No atom type was found for " + atomName + " of " + residueName + ".");
+                                logger.log(Level.INFO, " No atom type was found for {0} of {1}.",
+                                        new Object[]{atomName, residueName});
                                 patched = false;
                                 break;
                             } else {
@@ -2691,7 +2659,7 @@ public final class PDBFilter extends SystemFilter {
                     if (patched && !types.isEmpty()) {
                         for (AtomType type : types.values()) {
                             if (type.atomicNumber != 1) {
-                                logger.info(" Missing heavy atom " + type.name);
+                                logger.log(Level.INFO, " Missing heavy atom {0}", type.name);
                                 patched = false;
                                 break;
                             }
@@ -2715,7 +2683,7 @@ public final class PDBFilter extends SystemFilter {
                     // Create missing hydrogen atoms.
                     if (patched && !types.isEmpty()) {
                         // Create a hashmap of the molecule's atoms
-                        HashMap<String, Atom> atomMap = new HashMap<String, Atom>();
+                        HashMap<String, Atom> atomMap = new HashMap<>();
                         for (Atom atom : residueAtoms) {
                             atomMap.put(atom.getName().toUpperCase(), atom);
                         }
@@ -2724,7 +2692,7 @@ public final class PDBFilter extends SystemFilter {
                             String bonds[] = forceField.getBonds(residueName, atomName.toUpperCase());
                             if (bonds == null || bonds.length != 1) {
                                 patched = false;
-                                logger.info(" Check biotype for hydrogen " + type.name + ".");
+                                logger.log(Level.INFO, " Check biotype for hydrogen {0}.", type.name);
                                 break;
                             }
                             // Get the heavy atom the hydrogen is bonded to.
@@ -2732,7 +2700,7 @@ public final class PDBFilter extends SystemFilter {
                             Atom hydrogen = new Atom(0, atomName, ia.getAltLoc(), new double[3],
                                     ia.getResidueName(), ia.getResidueNumber(), ia.getChainID(),
                                     ia.getOccupancy(), ia.getTempFactor(), ia.getSegID());
-                            logger.fine(" Created hydrogen " + atomName + ".");
+                            logger.log(Level.FINE, " Created hydrogen {0}.", atomName);
                             hydrogen.setAtomType(type);
                             hydrogen.setHetero(true);
                             residue.addMSNode(hydrogen);
@@ -2762,8 +2730,8 @@ public final class PDBFilter extends SystemFilter {
                              * Building the hydrogens depends on hybridization
                              * and the locations of other bonded atoms.
                              */
-                            logger.fine(" Bonding " + atomName + " to " + ia.getName()
-                                    + " (" + numBonds + " of " + valence + ").");
+                            logger.log(Level.FINE, " Bonding {0} to {1} ({2} of {3}).",
+                                    new Object[]{atomName, ia.getName(), numBonds, valence});
                             switch (valence) {
                                 case 4:
                                     switch (numBonds) {
@@ -2805,7 +2773,7 @@ public final class PDBFilter extends SystemFilter {
                                             intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
                                             break;
                                         default:
-                                            logger.info(" Check biotype for hydrogen " + atomName + ".");
+                                            logger.log(Level.INFO, " Check biotype for hydrogen {0}.", atomName);
                                             patched = false;
                                     }
                                     break;
@@ -2821,7 +2789,7 @@ public final class PDBFilter extends SystemFilter {
                                             intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
                                             break;
                                         default:
-                                            logger.info(" Check biotype for hydrogen " + atomName + ".");
+                                            logger.log(Level.INFO, " Check biotype for hydrogen {0}.", atomName);
                                             patched = false;
                                     }
                                     break;
@@ -2834,7 +2802,7 @@ public final class PDBFilter extends SystemFilter {
                                             intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
                                             break;
                                         default:
-                                            logger.info(" Check biotype for hydrogen " + atomName + ".");
+                                            logger.log(Level.INFO, " Check biotype for hydrogen {0}.", atomName);
                                             patched = false;
                                     }
                                     break;
@@ -2844,12 +2812,12 @@ public final class PDBFilter extends SystemFilter {
                                             intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
                                             break;
                                         default:
-                                            logger.info(" Check biotype for hydrogen " + atomName + ".");
+                                            logger.log(Level.INFO, " Check biotype for hydrogen {0}.", atomName);
                                             patched = false;
                                     }
                                     break;
                                 default:
-                                    logger.info(" Check biotype for hydrogen " + atomName + ".");
+                                    logger.log(Level.INFO, " Check biotype for hydrogen {0}.", atomName);
                                     patched = false;
                             }
                             if (!patched) {
@@ -2862,7 +2830,7 @@ public final class PDBFilter extends SystemFilter {
                     if (!patched) {
                         logger.log(Level.SEVERE, format(" Could not patch %s.", residueName));
                     } else {
-                        logger.info(" Patch for " + residueName + " succeeded.");
+                        logger.log(Level.INFO, " Patch for {0} succeeded.", residueName);
                     }
                 } else {
 
@@ -2879,114 +2847,6 @@ public final class PDBFilter extends SystemFilter {
                 }
                 break;
         }
-    }
-
-    /**
-     * This exception is thrown when an atom type could not be assigned.
-     */
-    private class MissingAtomTypeException extends Exception {
-
-        public final Residue residue;
-        public final Atom atom;
-
-        public MissingAtomTypeException(Residue residue, Atom atom) {
-            super();
-            this.residue = residue;
-            this.atom = atom;
-        }
-
-        @Override
-        public String toString() {
-            StringBuilder sb = new StringBuilder(super.toString());
-            sb.append(format(" Atom %s", atom.toString()));
-            if (residue != null) {
-                sb.append(format("\n of residue %s", residue.toString()));
-            }
-            sb.append("\n could not be assigned an atom type.\n");
-            return sb.toString();
-        }
-    }
-
-    /**
-     * This exception is thrown when a heavy atom is not found.
-     */
-    public class MissingHeavyAtomException extends Exception {
-
-        public final String atomName;
-        public final AtomType atomType;
-        public final Atom bondedTo;
-
-        public MissingHeavyAtomException(String atomName, AtomType atomType, Atom bondedTo) {
-            super();
-            this.atomName = atomName;
-            this.atomType = atomType;
-            this.bondedTo = bondedTo;
-        }
-
-        @Override
-        public String toString() {
-            StringBuilder sb = new StringBuilder(super.toString());
-            if (atomType != null) {
-                sb.append(format("\n An atom of type\n %s\n", atomType.toString()));
-            } else {
-                sb.append(format("\n Atom %s", atomName));
-            }
-            sb.append(" was not found");
-            if (bondedTo != null) {
-                sb.append(format(" bonded to atom %s ", bondedTo));
-            }
-            sb.append(".\n");
-            return sb.toString();
-        }
-    }
-
-    /**
-     * Determine the atom type based on a biotype key.
-     *
-     * @param key The biotype key.
-     * @return The atom type.
-     * @since 1.0
-     */
-    private AtomType findAtomType(int key) {
-        BioType bioType = forceField.getBioType(Integer.toString(key));
-        if (bioType != null) {
-            AtomType atomType = forceField.getAtomType(Integer.toString(bioType.atomType));
-            if (atomType != null) {
-                return atomType;
-            } else {
-                logger.severe(format("The atom type %s was not found for biotype %s.", bioType.atomType,
-                        bioType.toString()));
-            }
-        }
-        /*
-         * else { logger.severe(format("The biotype %s was not found.",
-         * bioType.toString())); }
-         */
-        return null;
-    }
-
-    /**
-     * <p>
-     * padRight</p>
-     *
-     * @param s a {@link java.lang.String} object.
-     * @param n a int.
-     * @return a {@link java.lang.String} object.
-     */
-    public static String padRight(String s, int n) {
-        return String.format("%-" + n + "s", s);
-    }
-
-    /**
-     * <p>
-     * padLeft</p>
-     *
-     * @param s a {@link java.lang.String} object.
-     * @param n a int.
-     * @return a {@link java.lang.String} object.
-     */
-    public static String padLeft(String s, int n) {
-        return String.format("%" + n + "s", s);
     }
 
     /**
@@ -3465,1042 +3325,10 @@ public final class PDBFilter extends SystemFilter {
         listOutput.clear();
     }
 
-    /**
-     * The location of a residue within a chain.
-     */
-    public enum ResiduePosition {
-
-        FIRST_RESIDUE, MIDDLE_RESIDUE, LAST_RESIDUE
-    };
-
     private enum HetAtoms {
 
         HOH, H2O, WAT, NA, K, MG, MG2, CA, CA2, CL, BR, ZN, ZN2
     };
-    /**
-     * Biotype keys for nucleic acid backbone atom types. These are consistent
-     * with parameter files from TINKER v. 6.1 (June 2012).
-     */
-    private static final int o5Typ[] = {
-        1001, 1031, 1062, 1090, 1117, 1146, 1176, 1203, 0, 0, 0, 0,
-        1300, 1334, 1363, 1400, 1431, 1465, 1492, 1523, 1559, 1589, 1624
-    };
-    private static final int c5Typ[] = {
-        1002, 1032, 1063, 1091, 1118, 1147, 1177, 1204, 0, 0, 0, 0,
-        1301, 1335, 1364, 1401, 1432, 1466, 1493, 1524, 1560, 1590, 1625
-    };
-    private static final int h51Typ[] = {
-        1003, 1033, 1064, 1092, 1119, 1148, 1178, 1205, 0, 0, 0, 0,
-        1302, 1336, 1365, 1402, 1433, 1467, 1494, 1525, 1561, 1591, 1626
-    };
-    private static final int h52Typ[] = {
-        1004, 1034, 1065, 1093, 1120, 1149, 1179, 1206, 0, 0, 0, 0,
-        1303, 1337, 1366, 1403, 1434, 1468, 1495, 1526, 1562, 1592, 1627
-    };
-    private static final int c4Typ[] = {
-        1005, 1035, 1066, 1094, 1121, 1150, 1180, 1207, 0, 0, 0, 0,
-        1304, 1338, 1367, 1404, 1435, 1469, 1496, 1527, 1563, 1593, 1628
-    };
-    private static final int h4Typ[] = {
-        1006, 1036, 1067, 1095, 1122, 1151, 1181, 1208, 0, 0, 0, 0,
-        1305, 1339, 1368, 1405, 1436, 1470, 1497, 1528, 1564, 1594, 1629
-    };
-    private static final int o4Typ[] = {
-        1007, 1037, 1068, 1096, 1123, 1152, 1182, 1209, 0, 0, 0, 0,
-        1306, 1340, 1369, 1406, 1437, 1471, 1498, 1529, 1565, 1595, 1630
-    };
-    private static final int c1Typ[] = {
-        1008, 1038, 1069, 1097, 1124, 1153, 1183, 1210, 0, 0, 0, 0,
-        1307, 1341, 1370, 1407, 1438, 1472, 1499, 1530, 1566, 1596, 1631
-    };
-    private static final int h1Typ[] = {
-        1009, 1039, 1070, 1098, 1125, 1154, 1184, 1211, 0, 0, 0, 0,
-        1308, 1342, 1371, 1408, 1439, 1473, 1500, 1531, 1567, 1597, 1632
-    };
-    private static final int c3Typ[] = {
-        1010, 1040, 1071, 1099, 1126, 1155, 1185, 1212, 0, 0, 0, 0,
-        1309, 1343, 1372, 1409, 1440, 1474, 1501, 1532, 1568, 1598, 1633
-    };
-    private static final int h3Typ[] = {
-        1011, 1041, 1072, 1100, 1127, 1156, 1186, 1213, 0, 0, 0, 0,
-        1310, 1344, 1373, 1410, 1441, 1475, 1502, 1533, 1569, 1599, 1634
-    };
-    private static final int c2Typ[] = {
-        1012, 1042, 1073, 1101, 1128, 1157, 1187, 1214, 0, 0, 0, 0,
-        1311, 1345, 1374, 1411, 1442, 1476, 1503, 1534, 1570, 1600, 1635
-    };
-    private static final int h21Typ[] = {
-        1013, 1043, 1074, 1102, 1129, 1158, 1188, 1215, 0, 0, 0, 0,
-        1312, 1346, 1375, 1412, 1443, 1477, 1504, 1535, 1571, 1601, 1636
-    };
-    private static final int o2Typ[] = {
-        1014, 1044, 1075, 1103, 0, 0, 0, 0, 0, 0, 0, 0,
-        1313, 1347, 1376, 1413, 1444, 1478, 1505, 1536, 1572, 1602, 1637
-    };
-    private static final int h22Typ[] = {
-        1015, 1045, 1076, 1104, 1130, 1159, 1189, 1216, 0, 0, 0, 0,
-        1314, 1348, 1377, 0, 0, 1479, 1506, 1537, 1573, 1603, 1638
-    };
-    private static final int o3Typ[] = {
-        1016, 1046, 1077, 1105, 1131, 1160, 1190, 1217, 0, 0, 0, 0,
-        1315, 1349, 1378, 1414, 1445, 1480, 1507, 1538, 1574, 1604, 1639
-    };
-    private static final int pTyp[] = {
-        1230, 1230, 1230, 1230, 1242, 1242, 1242, 1242, 0, 0, 0, 0,
-        1230, 1230, 1230, 1230, 1230, 1230, 1230, 1230, 1230, 1230, 1230
-    };
-    private static final int opTyp[] = {
-        1231, 1231, 1231, 1231, 1243, 1243, 1243, 1243, 0, 0, 0, 0,
-        1231, 1231, 1231, 1231, 1231, 1231, 1231, 1231, 1231, 1231, 1231
-    };
-    private static final int h5tTyp[] = {
-        1233, 1233, 1233, 1233, 1245, 1245, 1245, 1245, 0, 0, 0, 0,
-        1233, 1233, 1233, 1233, 1233, 1233, 1233, 1233, 1233, 1233, 1233
-    };
-    private static final int h3tTyp[] = {
-        1238, 1238, 1238, 1238, 1250, 1250, 1250, 1250, 0, 0, 0, 0,
-        1238, 1238, 1238, 1238, 1238, 1238, 1238, 1238, 1238, 1238, 1238
-    };
-    /**
-     * Biotype keys for amino acid backbone atom types. These are consistent
-     * with parameter files from TINKER v. 6.1 (June 2012).
-     * <br>
-     * xType[0][..] are for N-terminal residues.
-     * <br>
-     * xType[1][..] are mid-chain residues.
-     * <br>
-     * xType[2][..] are for C-terminal residues.
-     */
-    private static final int nType[][] = {
-        {
-            403, 409, 415, 421, 427, 433, 439, 445,
-            451, 457, 463, 471, 477, 483, 489, 495,
-            501, 507, 513, 519, 525, 531, 537, 543,
-            549, 555, 561, 567, 573, 579, 391, 762,
-            0, 0, 0, 0, 0, 403
-        }, {
-            1, 7, 15, 27, 41, 55, 65, 77,
-            87, 96, 105, 116, 131, 147, 162, 185,
-            202, 218, 234, 244, 256, 268, 280, 294,
-            308, 321, 337, 353, 370, 384, 391, 0,
-            0, 0, 0, 0, 0, 1
-        }, {
-            584, 590, 596, 602, 608, 614, 620, 626,
-            632, 638, 644, 649, 655, 661, 667, 673,
-            679, 685, 691, 697, 703, 709, 715, 721,
-            727, 733, 739, 745, 751, 757, 0, 0,
-            0, 0, 773, 775, 777, 584
-        }
-    };
-    private static final int caType[][] = {
-        {
-            404, 410, 416, 422, 428, 434, 440, 446,
-            452, 458, 464, 472, 478, 484, 490, 496,
-            502, 508, 514, 520, 526, 532, 538, 544,
-            550, 556, 562, 568, 574, 580, 392, 0,
-            0, 767, 0, 0, 0, 404
-        }, {
-            2, 8, 16, 28, 42, 56, 66, 78,
-            88, 97, 106, 117, 132, 148, 163, 186,
-            203, 219, 235, 245, 257, 269, 281, 295,
-            309, 322, 338, 354, 371, 385, 392, 0,
-            0, 0, 0, 0, 0, 2
-        }, {
-            585, 591, 597, 603, 609, 615, 621, 627,
-            633, 639, 645, 650, 656, 662, 668, 674,
-            680, 686, 692, 698, 704, 710, 716, 722,
-            728, 734, 740, 746, 752, 758, 0, 0,
-            0, 0, 0, 0, 779, 585
-        }
-    };
-    private static final int cType[][] = {
-        {
-            405, 411, 417, 423, 429, 435, 441, 447,
-            453, 459, 465, 473, 479, 485, 491, 497,
-            503, 509, 515, 521, 527, 533, 539, 545,
-            551, 557, 563, 569, 575, 581, 393, 0,
-            764, 769, 0, 0, 0, 405
-        }, {
-            3, 9, 17, 29, 43, 57, 67, 79,
-            89, 98, 107, 118, 133, 149, 164, 187,
-            204, 220, 236, 246, 258, 270, 282, 296,
-            310, 323, 339, 355, 372, 386, 393, 0,
-            0, 0, 0, 0, 0, 3
-        }, {
-            586, 592, 598, 604, 610, 616, 622, 628,
-            634, 640, 646, 651, 657, 663, 669, 675,
-            681, 687, 693, 699, 705, 711, 717, 723,
-            729, 735, 741, 747, 753, 759, 0, 0,
-            0, 0, 771, 0, 0, 586
-        }
-    };
-    private static final int hnType[][] = {
-        {
-            406, 412, 418, 424, 430, 436, 442, 448,
-            454, 460, 466, 474, 480, 486, 492, 498,
-            504, 510, 516, 522, 528, 534, 540, 546,
-            552, 558, 564, 570, 576, 582, 394, 763,
-            0, 0, 0, 0, 0, 406
-        }, {
-            4, 10, 18, 30, 44, 58, 68, 80,
-            90, 99, 0, 119, 134, 150, 165, 188,
-            205, 221, 237, 247, 259, 271, 283, 297,
-            311, 324, 340, 356, 373, 387, 394, 0,
-            0, 0, 0, 0, 0, 4
-        }, {
-            587, 593, 599, 605, 611, 617, 623, 629,
-            635, 641, 0, 652, 658, 664, 670, 676,
-            682, 688, 694, 700, 706, 712, 718, 724,
-            730, 736, 742, 748, 754, 760, 0, 0,
-            0, 0, 774, 776, 778, 587}
-    };
-    private static final int oType[][] = {
-        {
-            407, 413, 419, 425, 431, 437, 443, 449,
-            455, 461, 467, 475, 481, 487, 493, 499,
-            505, 511, 517, 523, 529, 535, 541, 547,
-            553, 559, 565, 571, 577, 583, 395, 0,
-            766, 770, 0, 0, 0, 407
-        }, {
-            5, 11, 19, 31, 45, 59, 69, 81,
-            91, 100, 108, 120, 135, 151, 166, 189,
-            206, 222, 238, 248, 260, 272, 284, 298,
-            312, 325, 341, 357, 374, 388, 395, 0,
-            0, 0, 0, 0, 0, 5
-        }, {
-            588, 594, 600, 606, 612, 618, 624, 630,
-            636, 642, 647, 653, 659, 665, 671, 677,
-            683, 689, 695, 701, 707, 713, 719, 725,
-            731, 737, 743, 749, 755, 761, 0, 0,
-            0, 0, 772, 0, 0, 588
-        }
-    };
-    private static final int haType[][] = {
-        {
-            408, 414, 420, 426, 432, 438, 444, 450,
-            456, 462, 468, 476, 482, 488, 494, 500,
-            506, 512, 518, 524, 530, 536, 542, 548,
-            554, 560, 566, 572, 578, 0, 396, 0,
-            765, 768, 0, 0, 0, 408},
-        {
-            6, 12, 20, 32, 46, 60, 70, 82,
-            92, 101, 109, 121, 136, 152, 167, 190,
-            207, 223, 239, 249, 261, 273, 285, 299,
-            313, 326, 342, 358, 375, 0, 396, 0,
-            0, 0, 0, 0, 0, 6},
-        {
-            589, 595, 601, 607, 613, 619, 625, 631,
-            637, 643, 648, 654, 660, 666, 672, 678,
-            684, 690, 696, 702, 708, 714, 720, 726,
-            732, 738, 744, 750, 756, 0, 0, 0,
-            0, 0, 0, 0, 780, 589
-        }
-    };
-    private static final int cbType[] = {
-        0, 13, 21, 33, 47, 61, 71, 83,
-        93, 102, 110, 122, 137, 153, 168, 191,
-        208, 224, 240, 250, 262, 274, 286, 300,
-        314, 327, 343, 359, 376, 389, 397, 0,
-        0, 0, 0, 0, 0, 0
-    };
-
-    private void buildAlanine(Residue residue, Atom CA, Atom N, Atom C, int k) {
-        Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k);
-        Atom HB1 = buildHydrogen(residue, "HB1", CB, 1.11, CA, 109.4, N, 180.0, 0, k + 1);
-        buildHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, HB1, 109.4, 1, k + 1);
-        buildHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, HB1, 109.4, -1, k + 1);
-    }
-
-    private void buildValine(Residue residue, Atom CA, Atom N, Atom C, int k) {
-        Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k);
-        Atom CG1 = buildHeavy(residue, "CG1", CB, 1.54, CA, 109.5, N, 180, 0, k + 2);
-        Atom CG2 = buildHeavy(residue, "CG2", CB, 1.54, CA, 109.5, CG1, 109.5, -1, k + 4);
-        Atom HB = buildHydrogen(residue, "HB", CB, 1.11, CA, 109.4, CG1, 109.4, 1, k + 1);
-        Atom HG11 = buildHydrogen(residue, "HG11", CG1, 1.11, CB, 109.4, CA, 180.0, 0, k + 3);
-        Atom HG12 = buildHydrogen(residue, "HG12", CG1, 1.11, CB, 109.4, HG11, 109.4, 1, k + 3);
-        Atom HG13 = buildHydrogen(residue, "HG13", CG1, 1.11, CB, 109.4, HG11, 109.4, -1, k + 3);
-        Atom HG21 = buildHydrogen(residue, "HG21", CG2, 1.11, CB, 109.4, CA, 180.0, 0, k + 5);
-        Atom HG22 = buildHydrogen(residue, "HG22", CG2, 1.11, CB, 109.4, HG21, 109.4, 1, k + 5);
-        Atom HG23 = buildHydrogen(residue, "HG23", CG2, 1.11, CB, 109.4, HG21, 109.4, -1, k + 5);
-    }
-
-    private void buildLeucine(Residue residue, Atom CA, Atom N, Atom C, int k) {
-        Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k);
-        Atom CG = buildHeavy(residue, "CG", CB, 1.54, CA, 109.5, N, 180, 0, k + 2);
-        Atom CD1 = buildHeavy(residue, "CD1", CG, 1.54, CB, 109.5, CA, 180, 0, k + 4);
-        Atom CD2 = buildHeavy(residue, "CD2", CG, 1.54, CB, 109.5, CD1, 109.5, -1, k + 6);
-        Atom HB2 = buildHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
-        Atom HB3 = buildHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
-        Atom HG = buildHydrogen(residue, "HG", CG, 1.11, CB, 109.4, CD1, 109.4, 1, k + 3);
-        Atom HD11 = buildHydrogen(residue, "HD11", CD1, 1.11, CG, 109.4, CB, 180.0, 0, k + 5);
-        Atom HD12 = buildHydrogen(residue, "HD12", CD1, 1.11, CG, 109.4, HD11, 109.4, 1, k + 5);
-        Atom HD13 = buildHydrogen(residue, "HD13", CD1, 1.11, CG, 109.4, HD11, 109.4, -1, k + 5);
-        Atom HD21 = buildHydrogen(residue, "HD21", CD2, 1.11, CG, 109.4, CB, 180.0, 0, k + 7);
-        Atom HD22 = buildHydrogen(residue, "HD22", CD2, 1.11, CG, 109.4, HD21, 109.4, 1, k + 7);
-        Atom HD23 = buildHydrogen(residue, "HD23", CD2, 1.11, CG, 109.4, HD21, 109.4, -1, k + 7);
-    }
-
-    private void buildIsoleucine(Residue residue, Atom CA, Atom N, Atom C, int k) {
-        Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 109.5, 1, k);
-        Atom CG1 = buildHeavy(residue, "CG1", CB, 1.54, CA, 109.5, N, 0, 0, k + 2);
-        Atom CG2 = buildHeavy(residue, "CG2", CB, 1.54, CA, 109.5, CG1, 109.5, 1, k + 4);
-        Atom CD1 = buildHeavy(residue, "CD1", CG1, 1.54, CB, 109.5, CA, 180, 0, k + 6);
-        //  CD1 = setHeavy(residue, "CD", CG1, 1.54, CB, 109.5, CA, 180, 0, k + 6);
-        Atom HB = buildHydrogen(residue, "HB", CB, 1.11, CA, 109.4, CG2, 109.4, 1, k + 1);
-        Atom HG12 = buildHydrogen(residue, "HG12", CG1, 1.11, CB, 109.4, CD1, 109.4, 1, k + 3);
-        Atom HG13 = buildHydrogen(residue, "HG13", CG1, 1.11, CB, 109.4, CD1, 109.4, -1, k + 3);
-        Atom HG21 = buildHydrogen(residue, "HG21", CG2, 1.11, CB, 110.0, CG1, 180.0, 0, k + 5);
-        Atom HG22 = buildHydrogen(residue, "HG22", CG2, 1.11, CB, 110.0, HG21, 109.0, 1, k + 5);
-        Atom HG23 = buildHydrogen(residue, "HG23", CG2, 1.11, CB, 110.0, HG21, 109.0, -1, k + 5);
-        Atom HD11 = buildHydrogen(residue, "HD11", CD1, 1.11, CG1, 110.0, CB, 180.0, 0, k + 7);
-        Atom HD12 = buildHydrogen(residue, "HD12", CD1, 1.11, CG1, 110.0, HD11, 109.0, 1, k + 7);
-        Atom HD13 = buildHydrogen(residue, "HD13", CD1, 1.11, CG1, 110.0, HD11, 109.0, -1, k + 7);
-    }
-
-    private Residue buildSerine(Residue residue, Atom CA, Atom N, Atom C, int k) {
-        Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k);
-        Atom OG = buildHeavy(residue, "OG", CB, 1.41, CA, 107.5, N, 180, 0, k + 2);
-        Atom HB2 = buildHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, OG, 106.7, 1, k + 1);
-        Atom HB3 = buildHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, OG, 106.7, -1, k + 1);
-        Atom HG = buildHydrogen(residue, "HG", OG, 0.94, CB, 106.9, CA, 180.0, 0, k + 3);
-        return residue;
-    }
-
-    private Residue buildThreonine(Residue residue, Atom CA, Atom N, Atom C, int k) {
-        Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 109.5, 1, k);
-        Atom OG1 = buildHeavy(residue, "OG1", CB, 1.41, CA, 107.5, N, 180, 0, k + 2);
-        Atom CG2 = buildHeavy(residue, "CG2", CB, 1.54, CA, 109.5, OG1, 107.7, 1, k + 4);
-        Atom HB = buildHydrogen(residue, "HB", CB, 1.11, CA, 109.4, OG1, 106.7, -1, k + 1);
-        Atom HG1 = buildHydrogen(residue, "HG1", OG1, 0.94, CB, 106.9, CA, 180.0, 0, k + 3);
-        Atom HG21 = buildHydrogen(residue, "HG21", CG2, 1.11, CB, 110.0, CA, 180.0, 0, k + 5);
-        Atom HG22 = buildHydrogen(residue, "HG22", CG2, 1.11, CB, 110.0, HG21, 109.0, 1, k + 5);
-        Atom HD23 = buildHydrogen(residue, "HG23", CG2, 1.11, CB, 110.0, HG21, 109.0, -1, k + 5);
-        return residue;
-    }
-
-    private Residue buildCysteine(Residue residue, Atom CA, Atom N, Atom C, int k) {
-        Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k);
-        Atom SG = buildHeavy(residue, "SG", CB, 1.82, CA, 109.0, N, 180, 0, k + 2);
-        Atom HB2 = buildHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, SG, 112.0, 1, k + 1);
-        Atom HB3 = buildHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, SG, 112.0, -1, k + 1);
-        Atom HG = buildHydrogen(residue, "HG", SG, 1.34, CB, 96.0, CA, 180.0, 0, k + 3);
-        return residue;
-    }
-
-    private Residue buildDeprotonatedCysteine(Residue residue, Atom CA, Atom N, Atom C, int k) {
-        Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k);
-        Atom SG = buildHeavy(residue, "SG", CB, 1.82, CA, 109.0, N, 180, 0, k + 2);
-        Atom HB2 = buildHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, SG, 112.0, 1, k + 1);
-        Atom HB3 = buildHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, SG, 112.0, -1, k + 1);
-        return residue;
-    }
-
-    private Residue buildCystine(Residue residue, Atom CA, Atom N, Atom C, int k) {
-        Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k);
-        Atom SG = buildHeavy(residue, "SG", CB, 1.82, CA, 109.0, N, 180, 0, k + 2);
-        Atom HB2 = buildHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, SG, 112.0, 1, k + 1);
-        Atom HB3 = buildHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, SG, 112.0, -1, k + 1);
-        List<Atom> resAtoms = residue.getAtomList();
-        for (Atom atom : resAtoms) {
-            atom.setResName("CYS");
-        }
-        residue.setName("CYS");
-        return residue;
-    }
-
-    private Residue buildProline(Residue residue, Atom CA, Atom N, Atom C, int k, ResiduePosition position) {
-        Atom CB = buildHeavy(residue, "CB", CA, 1.5247, N, 104.0, C, 109.5, 1, k);
-        Atom CG = buildHeavy(residue, "CG", CB, 1.5247, CA, 104.0, N, 30.0, 0, k+2);
-        int cdKey = position == FIRST_RESIDUE ? 469 : k + 4;
-        //Atom CD = buildHeavy(residue, "CD", CG, 1.5247, CB, 104.0, CA, 30.0, 0, cdKey); Initial fix attempt
-        Atom CD = buildHeavy(residue, "CD", N, 1.5247, CA, 104.0, CB, 0, 0, cdKey);
-        /* Old code
-        Atom CG = buildHeavy(residue, "CG", CB, 1.54, N, 107.0, CA, 180, 0, k + 2);
-        Atom CD;
-        if (position == FIRST_RESIDUE) {
-            CD = buildHeavy(residue, "CD", CG, 1.54, CA, 107.0, CB, 180, 0, 469);
-        } else {
-            CD = buildHeavy(residue, "CD", CG, 1.54, CA, 107.0, CB, 180, 0, k + 4);
-        }
-        buildBond(CD, N);
-        */
-        buildBond(CD, CG);
-        Atom HB2 = buildHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
-        Atom HB3 = buildHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
-        Atom HG2 = buildHydrogen(residue, "HG2", CG, 1.11, CB, 109.4, CD, 109.4, 1, k + 3);
-        Atom HG3 = buildHydrogen(residue, "HG3", CG, 1.11, CB, 109.4, CD, 109.4, -1, k + 3);
-        if (position == FIRST_RESIDUE) {
-            buildHydrogen(residue, "HD2", CD, 1.11, CG, 109.4, N, 109.4, 1, 470);
-            buildHydrogen(residue, "HD3", CD, 1.11, CG, 109.4, N, 109.4, -1, 470);
-        } else {
-            buildHydrogen(residue, "HD2", CD, 1.11, CG, 109.4, N, 109.4, 1, k + 5);
-            buildHydrogen(residue, "HD3", CD, 1.11, CG, 109.4, N, 109.4, -1, k + 5);
-        }
-        return residue;
-    }
-
-    private Residue buildPhenylalanine(Residue residue, Atom CA, Atom N, Atom C, int k) {
-        Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k);
-        Atom CG = buildHeavy(residue, "CG", CB, 1.50, CA, 109.5, N, 180, 0, k + 2);
-        Atom CD1 = buildHeavy(residue, "CD1", CG, 1.39, CB, 120.0, CA, 180, 0, k + 3);
-        Atom CD2 = buildHeavy(residue, "CD2", CG, 1.39, CB, 120.0, CD1, 120.0, 1, k + 3);
-        Atom CE1 = buildHeavy(residue, "CE1", CD1, 1.39, CG, 120.0, CB, 180, 0, k + 5);
-        Atom CE2 = buildHeavy(residue, "CE2", CD2, 1.39, CG, 120.0, CB, 180, 0, k + 5);
-        Atom CZ = buildHeavy(residue, "CZ", CE1, 1.39, CD1, 120.0, CG, 0.0, 0, k + 7);
-        buildBond(CE2, CZ);
-        Atom HB2 = buildHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
-        Atom HB3 = buildHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
-        Atom HD1 = buildHydrogen(residue, "HD1", CD1, 1.11, CG, 120.0, CE1, 120.0, 1, k + 4);
-        Atom HD2 = buildHydrogen(residue, "HD2", CD2, 1.11, CG, 120.0, CE2, 120.0, 1, k + 4);
-        Atom HE1 = buildHydrogen(residue, "HE1", CE1, 1.11, CD1, 120.0, CZ, 120.0, 1, k + 6);
-        Atom HE2 = buildHydrogen(residue, "HE2", CE2, 1.11, CD2, 120.0, CZ, 120.0, 1, k + 6);
-        Atom HZ = buildHydrogen(residue, "HZ", CZ, 1.11, CE1, 120.0, CE2, 120.0, 1, k + 8);
-        return residue;
-    }
-
-    private Residue buildTyrosine(Residue residue, Atom CA, Atom N, Atom C, int k) {
-        Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k);
-        Atom CG = buildHeavy(residue, "CG", CB, 1.50, CA, 109.5, N, 62, 0, k + 2);
-        Atom CD1 = buildHeavy(residue, "CD1", CG, 1.39, CB, 120.0, CA, 90, 0, k + 3);
-        Atom CD2 = buildHeavy(residue, "CD2", CG, 1.39, CB, 120.0, CD1, 120.0, 1, k + 3);
-        Atom CE1 = buildHeavy(residue, "CE1", CD1, 1.39, CG, 120.0, CB, 180, 0, k + 5);
-        Atom CE2 = buildHeavy(residue, "CE2", CD2, 1.39, CG, 120.0, CB, 180, 0, k + 5);
-        Atom CZ = buildHeavy(residue, "CZ", CE1, 1.39, CD1, 120.0, CG, 0.0, 0, k + 7);
-        buildBond(CE2, CZ);
-        Atom OH = buildHeavy(residue, "OH", CZ, 1.36, CE2, 120.0, CE1, 120.0, 1, k + 8);
-        Atom HB2 = buildHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
-        Atom HB3 = buildHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
-        Atom HD1 = buildHydrogen(residue, "HD1", CD1, 1.10, CG, 120.0, CE1, 120.0, 1, k + 4);
-        Atom HD2 = buildHydrogen(residue, "HD2", CD2, 1.10, CG, 120.0, CE2, 120.0, 1, k + 4);
-        Atom HE1 = buildHydrogen(residue, "HE1", CE1, 1.10, CD1, 120.0, CZ, 120.0, 1, k + 6);
-        Atom HE2 = buildHydrogen(residue, "HE2", CE2, 1.10, CD2, 120.0, CZ, 120.0, 1, k + 6);
-        Atom HH = buildHydrogen(residue, "HH", OH, 0.97, CZ, 108.0, CE2, 0.0, 0, k + 9);
-        return residue;
-    }
-
-    private Residue buildDeprotonatedTyrosine(Residue residue, Atom CA, Atom N, Atom C, int k) {
-        Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k);
-        Atom CG = buildHeavy(residue, "CG", CB, 1.50, CA, 109.5, N, 62, 0, k + 2);
-        Atom CD1 = buildHeavy(residue, "CD1", CG, 1.39, CB, 120.0, CA, 90, 0, k + 3);
-        Atom CD2 = buildHeavy(residue, "CD2", CG, 1.39, CB, 120.0, CD1, 120.0, 1, k + 3);
-        Atom CE1 = buildHeavy(residue, "CE1", CD1, 1.39, CG, 120.0, CB, 180, 0, k + 5);
-        Atom CE2 = buildHeavy(residue, "CE2", CD2, 1.39, CG, 120.0, CB, 180, 0, k + 5);
-        Atom CZ = buildHeavy(residue, "CZ", CE1, 1.39, CD1, 120.0, CG, 0.0, 0, k + 7);
-        buildBond(CE2, CZ);
-        Atom OH = buildHeavy(residue, "OH", CZ, 1.36, CE2, 120.0, CE1, 120.0, 1, k + 8);
-        Atom HB2 = buildHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
-        Atom HB3 = buildHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
-        Atom HD1 = buildHydrogen(residue, "HD1", CD1, 1.10, CG, 120.0, CE1, 120.0, 1, k + 4);
-        Atom HD2 = buildHydrogen(residue, "HD2", CD2, 1.10, CG, 120.0, CE2, 120.0, 1, k + 4);
-        Atom HE1 = buildHydrogen(residue, "HE1", CE1, 1.10, CD1, 120.0, CZ, 120.0, 1, k + 6);
-        Atom HE2 = buildHydrogen(residue, "HE2", CE2, 1.10, CD2, 120.0, CZ, 120.0, 1, k + 6);
-        return residue;
-    }
-
-    private Residue buildTryptophan(Residue residue, Atom CA, Atom N, Atom C, int k) {
-        Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 109.5, 1, k);
-        Atom CG = buildHeavy(residue, "CG", CB, 1.50, CA, 109.5, N, 62, 0, k + 2);
-        Atom CD1 = buildHeavy(residue, "CD1", CG, 1.35, CB, 126.0, CA, -90, 0, k + 3);
-        Atom CD2 = buildHeavy(residue, "CD2", CG, 1.35, CB, 126.0, CD1, 108.0, 1, k + 5);
-        Atom NE1 = buildHeavy(residue, "NE1", CD1, 1.35, CG, 108.0, CD2, 0.0, 0, k + 6);
-        Atom CE2 = buildHeavy(residue, "CE2", NE1, 1.35, CD1, 108.0, CG, 0.0, 0, k + 8);
-        buildBond(CE2, CD2);
-        Atom CE3 = buildHeavy(residue, "CE3", CD2, 1.35, CE2, 120.0, NE1, 180.0, 0, k + 9);
-        Atom CZ2 = buildHeavy(residue, "CZ2", CE2, 1.35, CD2, 120.0, CE3, 0.0, 0, k + 11);
-        Atom CZ3 = buildHeavy(residue, "CZ3", CE3, 1.35, CD2, 120.0, CE2, 0.0, 0, k + 13);
-        Atom CH2 = buildHeavy(residue, "CH2", CZ2, 1.35, CE2, 120.0, CD2, 0.0, 0, k + 15);
-        buildBond(CH2, CZ3);
-        Atom HB2 = buildHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
-        Atom HB3 = buildHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
-        Atom HD1 = buildHydrogen(residue, "HD1", CD1, 1.10, CG, 126.0, NE1, 126.0, 1, k + 4);
-        Atom HE1 = buildHydrogen(residue, "HE1", NE1, 1.05, CD1, 126.0, CE2, 126.0, 1, k + 7);
-        Atom HE3 = buildHydrogen(residue, "HE3", CE3, 1.10, CD1, 120.0, CZ3, 120.0, 1, k + 10);
-        Atom HZ2 = buildHydrogen(residue, "HZ2", CZ2, 1.10, CE2, 120.0, CH2, 120.0, 1, k + 12);
-        Atom HZ3 = buildHydrogen(residue, "HZ3", CZ3, 1.10, CE3, 120.0, CH2, 120.0, 1, k + 14);
-        Atom HH2 = buildHydrogen(residue, "HH2", CH2, 1.10, CZ2, 120.0, CZ3, 120.0, 1, k + 16);
-        return residue;
-    }
-
-    private Residue buildHistidine(Residue residue, Atom CA, Atom N, Atom C, int k) {
-        Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 109.5, 1, k);
-        Atom CG = buildHeavy(residue, "CG", CB, 1.50, CA, 109.5, N, 180, 0, k + 2);
-        Atom ND1 = buildHeavy(residue, "ND1", CG, 1.35, CB, 126.0, CA, 180, 0, k + 3);
-        Atom CD2 = buildHeavy(residue, "CD2", CG, 1.35, CB, 126.0, ND1, 108.0, 1, k + 5);
-        Atom CE1 = buildHeavy(residue, "CE1", ND1, 1.35, CG, 108.0, CD2, 0.0, 0, k + 7);
-        Atom NE2 = buildHeavy(residue, "NE2", CD2, 1.35, CG, 108.0, ND1, 0.0, 0, k + 9);
-        buildBond(NE2, CE1);
-        Atom HB2 = buildHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
-        Atom HB3 = buildHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
-        Atom HD1 = buildHydrogen(residue, "HD1", ND1, 1.02, CG, 126.0, CB, 0.0, 0, k + 4);
-        Atom HD2 = buildHydrogen(residue, "HD2", CD2, 1.10, CG, 126.0, NE2, 126.0, 1, k + 6);
-        Atom HE1 = buildHydrogen(residue, "HE1", CE1, 1.10, ND1, 126.0, NE2, 126.0, 1, k + 8);
-        Atom HE2 = buildHydrogen(residue, "HE2", NE2, 1.02, CD2, 126.0, CE1, 126.0, 1, k + 10);
-        return residue;
-    }
-
-    private Residue buildNeutralHistidineD(Residue residue, Atom CA, Atom N, Atom C, int k) {
-        Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 109.5, 1, k);
-        Atom CG = buildHeavy(residue, "CG", CB, 1.50, CA, 109.5, N, 180, 0, k + 2);
-        Atom ND1 = buildHeavy(residue, "ND1", CG, 1.35, CB, 126.0, CA, 180, 0, k + 3);
-        Atom CD2 = buildHeavy(residue, "CD2", CG, 1.35, CB, 126.0, ND1, 108.0, 1, k + 5);
-        Atom CE1 = buildHeavy(residue, "CE1", ND1, 1.35, CG, 108.0, CD2, 0.0, 0, k + 7);
-        Atom NE2 = buildHeavy(residue, "NE2", CD2, 1.35, CG, 108.0, ND1, 0.0, 0, k + 9);
-        buildBond(NE2, CE1);
-        Atom HB2 = buildHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
-        Atom HB3 = buildHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
-        Atom HD1 = buildHydrogen(residue, "HD1", ND1, 1.02, CG, 126.0, CB, 0.0, 0, k + 4);
-        Atom HD2 = buildHydrogen(residue, "HD2", CD2, 1.10, CG, 126.0, NE2, 126.0, 1, k + 6);
-        Atom HE1 = buildHydrogen(residue, "HE1", CE1, 1.10, ND1, 126.0, NE2, 126.0, 1, k + 8);
-        return residue;
-    }
-
-    private Residue buildNeutralHistidineE(Residue residue, Atom CA, Atom N, Atom C, int k) {
-        Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 109.5, 1, k);
-        Atom CG = buildHeavy(residue, "CG", CB, 1.50, CA, 109.5, N, 180, 0, k + 2);
-        Atom ND1 = buildHeavy(residue, "ND1", CG, 1.35, CB, 126.0, CA, 180, 0, k + 3);
-        Atom CD2 = buildHeavy(residue, "CD2", CG, 1.35, CB, 126.0, ND1, 108.0, 1, k + 4);
-        Atom CE1 = buildHeavy(residue, "CE1", ND1, 1.35, CG, 108.0, CD2, 0.0, 0, k + 6);
-        Atom NE2 = buildHeavy(residue, "NE2", CD2, 1.35, CG, 108.0, ND1, 0.0, 0, k + 8);
-        buildBond(NE2, CE1);
-        Atom HB2 = buildHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
-        Atom HB3 = buildHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
-        Atom HD2 = buildHydrogen(residue, "HD2", CD2, 1.10, CG, 126.0, NE2, 126.0, 1, k + 5);
-        Atom HE1 = buildHydrogen(residue, "HE1", CE1, 1.10, ND1, 126.0, NE2, 126.0, 1, k + 7);
-        Atom HE2 = buildHydrogen(residue, "HE2", NE2, 1.02, CD2, 126.0, CE1, 126.0, 1, k + 9);
-        return residue;
-    }
-
-    private Residue buildAspartate(Residue residue, Atom CA, Atom N, Atom C, int k) {
-        Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k);
-        Atom CG = buildHeavy(residue, "CG", CB, 1.51, CA, 107.8, N, 180, 0, k + 2);
-        Atom OD1 = buildHeavy(residue, "OD1", CG, 1.25, CB, 117.0, CA, 0.0, 0, k + 3);
-        Atom OD2 = buildHeavy(residue, "OD2", CG, 1.25, CB, 117.0, OD1, 126.0, 1, k + 3);
-        Atom HB2 = buildHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 107.9, 1, k + 1);
-        Atom HB3 = buildHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 107.9, -1, k + 1);
-        return residue;
-    }
-
-    private Residue buildNeutralAsparticAcid(Residue residue, Atom CA, Atom N, Atom C, int k) {
-        Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k);
-        Atom CG = buildHeavy(residue, "CG", CB, 1.51, CA, 107.8, N, 180, 0, k + 2);
-        Atom OD1 = buildHeavy(residue, "OD1", CG, 1.25, CB, 117.0, CA, 0.0, 0, k + 3);
-        Atom OD2 = buildHeavy(residue, "OD2", CG, 1.25, CB, 117.0, OD1, 126.0, 1, k + 4);
-        Atom HB2 = buildHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 107.9, 1, k + 1);
-        Atom HB3 = buildHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 107.9, -1, k + 1);
-        Atom HD2 = buildHydrogen(residue, "HD2", OD2, 0.98, CG, 108.7, OD1, 0.0, 0, k + 5);
-        return residue;
-    }
-
-    private Residue buildAsparagine(Residue residue, Atom CA, Atom N, Atom C, int k) {
-        Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k);
-        Atom CG = buildHeavy(residue, "CG", CB, 1.51, CA, 107.8, N, 180, 0, k + 2);
-        Atom OD1 = buildHeavy(residue, "OD1", CG, 1.22, CB, 122.5, CA, 180, 0, k + 3);
-        Atom ND2 = buildHeavy(residue, "ND2", CG, 1.34, CB, 112.7, OD1, 124.0, 1, k + 4);
-        Atom HB2 = buildHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 107.9, 1, k + 1);
-        Atom HB3 = buildHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 107.9, -1, k + 1);
-        Atom HD21 = buildHydrogen(residue, "HD21", ND2, 1.02, CG, 119.0, CB, 0.0, 0, k + 5);
-        Atom HD22 = buildHydrogen(residue, "HD22", ND2, 1.02, CG, 119.0, HD21, 120.0, 1, k + 5);
-        return residue;
-    }
-
-    private Residue buildGlutamate(Residue residue, Atom CA, Atom N, Atom C, int k) {
-        Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k);
-        Atom CG = buildHeavy(residue, "CG", CB, 1.54, CA, 109.5, N, 180, 0, k + 2);
-        Atom CD = buildHeavy(residue, "CD", CG, 1.51, CB, 107.8, CA, 180, 0, k + 4);
-        Atom OE1 = buildHeavy(residue, "OE1", CD, 1.25, CG, 117.0, CB, 180, 0, k + 5);
-        Atom OE2 = buildHeavy(residue, "OE2", CD, 1.25, CG, 117.0, OE1, 126.0, 1, k + 5);
-        Atom HB2 = buildHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
-        Atom HB3 = buildHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
-        Atom HG2 = buildHydrogen(residue, "HG2", CG, 1.11, CB, 109.4, CD, 107.9, 1, k + 3);
-        Atom HG3 = buildHydrogen(residue, "HG3", CG, 1.11, CB, 109.4, CD, 107.9, -1, k + 3);
-        return residue;
-    }
-
-    private Residue buildNeutralGlutamicAcid(Residue residue, Atom CA, Atom N, Atom C, int k) {
-        Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k);
-        Atom CG = buildHeavy(residue, "CG", CB, 1.54, CA, 109.5, N, 180, 0, k + 2);
-        Atom CD = buildHeavy(residue, "CD", CG, 1.51, CB, 107.8, CA, 180, 0, k + 4);
-        Atom OE1 = buildHeavy(residue, "OE1", CD, 1.25, CG, 117.0, CB, 180, 0, k + 5);
-        Atom OE2 = buildHeavy(residue, "OE2", CD, 1.25, CG, 117.0, OE1, 126.0, 1, k + 6);
-        Atom HB2 = buildHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
-        Atom HB3 = buildHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
-        Atom HG2 = buildHydrogen(residue, "HG2", CG, 1.11, CB, 109.4, CD, 107.9, 1, k + 3);
-        Atom HG3 = buildHydrogen(residue, "HG3", CG, 1.11, CB, 109.4, CD, 107.9, -1, k + 3);
-        Atom HE2 = buildHydrogen(residue, "HE2", OE2, 0.98, CD, 108.7, OE1, 0.0, 0, k + 7);
-        return residue;
-    }
-
-    public Residue buildGlutamine(Residue residue, Atom CA, Atom N, Atom C, int k) {
-        Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k);
-        Atom CG = buildHeavy(residue, "CG", CB, 1.54, CA, 109.5, N, 180, 0, k + 2);
-        Atom CD = buildHeavy(residue, "CD", CG, 1.51, CB, 107.8, CA, 180, 0, k + 4);
-        Atom OE1 = buildHeavy(residue, "OE1", CD, 1.22, CG, 122.5, CB, 180, 0, k + 5);
-        Atom NE2 = buildHeavy(residue, "NE2", CD, 1.34, CG, 112.7, OE1, 124.0, 1, k + 6);
-        Atom HB2 = buildHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
-        Atom HB3 = buildHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
-        Atom HG2 = buildHydrogen(residue, "HG2", CG, 1.11, CB, 109.4, CD, 107.9, 1, k + 3);
-        Atom HG3 = buildHydrogen(residue, "HG3", CG, 1.11, CB, 109.4, CD, 107.9, -1, k + 3);
-        Atom HE21 = buildHydrogen(residue, "HE21", NE2, 1.02, CD, 119.0, CG, 0.0, 0, k + 7);
-        Atom HE22 = buildHydrogen(residue, "HE22", NE2, 1.02, CD, 119.0, HE21, 120.0, 1, k + 7);
-        return residue;
-    }
-
-    public Residue buildMethionine(Residue residue, Atom CA, Atom N, Atom C, int k) {
-        Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k);
-        Atom CG = buildHeavy(residue, "CG", CB, 1.54, CA, 109.5, N, 180, 0, k + 2);
-        Atom SD = buildHeavy(residue, "SD", CG, 1.82, CB, 109.0, CA, 180, 0, k + 4);
-        Atom CE = buildHeavy(residue, "CE", SD, 1.82, CG, 96.3, CB, 180, 0, k + 5);
-        Atom HB2 = buildHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
-        Atom HB3 = buildHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
-        Atom HG2 = buildHydrogen(residue, "HG2", CG, 1.11, CB, 109.4, SD, 112.0, 1, k + 3);
-        Atom HG3 = buildHydrogen(residue, "HG3", CG, 1.11, CB, 109.4, SD, 112.0, -1, k + 3);
-        Atom HE1 = buildHydrogen(residue, "HE1", CE, 1.11, SD, 112.0, CG, 180.0, 0, k + 6);
-        Atom HE2 = buildHydrogen(residue, "HE2", CE, 1.11, SD, 112.0, HE1, 109.4, 1, k + 6);
-        Atom HE3 = buildHydrogen(residue, "HE3", CE, 1.11, SD, 112.0, HE1, 109.4, -1, k + 6);
-        return residue;
-    }
-
-    public Residue buildLysine(Residue residue, Atom CA, Atom N, Atom C, int k) {
-        Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k);
-        Atom CG = buildHeavy(residue, "CG", CB, 1.54, CA, 109.5, N, 180, 0, k + 2);
-        Atom CD = buildHeavy(residue, "CD", CG, 1.54, CB, 109.5, CA, 180, 0, k + 4);
-        Atom CE = buildHeavy(residue, "CE", CD, 1.54, CG, 109.5, CB, 180, 0, k + 6);
-        Atom NZ = buildHeavy(residue, "NZ", CE, 1.50, CD, 109.5, CG, 180, 0, k + 8);
-        Atom HB2 = buildHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
-        Atom HB3 = buildHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
-        Atom HG2 = buildHydrogen(residue, "HG2", CG, 1.11, CB, 109.4, CD, 109.4, 1, k + 3);
-        Atom HG3 = buildHydrogen(residue, "HG3", CG, 1.11, CB, 109.4, CD, 109.4, -1, k + 3);
-        Atom HD2 = buildHydrogen(residue, "HD2", CD, 1.11, CG, 109.4, CE, 109.4, 1, k + 5);
-        Atom HD3 = buildHydrogen(residue, "HD3", CD, 1.11, CG, 109.4, CE, 109.4, -1, k + 5);
-        Atom HE2 = buildHydrogen(residue, "HE2", CE, 1.11, CD, 109.4, NZ, 108.8, 1, k + 7);
-        Atom HE3 = buildHydrogen(residue, "HE3", CE, 1.11, CD, 109.4, NZ, 108.8, -1, k + 7);
-        Atom HZ1 = buildHydrogen(residue, "HZ1", NZ, 1.02, CE, 109.5, CD, 180.0, 0, k + 9);
-        Atom HZ2 = buildHydrogen(residue, "HZ2", NZ, 1.02, CE, 109.5, HZ1, 109.5, 1, k + 9);
-        Atom HZ3 = buildHydrogen(residue, "HZ3", NZ, 1.02, CE, 109.5, HZ1, 109.5, -1, k + 9);
-        return residue;
-    }
-
-    public Residue buildDeprotonatedLysine(Residue residue, Atom CA, Atom N, Atom C, int k) {
-        Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k);
-        Atom CG = buildHeavy(residue, "CG", CB, 1.54, CA, 109.5, N, 180, 0, k + 2);
-        Atom CD = buildHeavy(residue, "CD", CG, 1.54, CB, 109.5, CA, 180, 0, k + 4);
-        Atom CE = buildHeavy(residue, "CE", CD, 1.54, CG, 109.5, CB, 180, 0, k + 6);
-        Atom NZ = buildHeavy(residue, "NZ", CE, 1.50, CD, 109.5, CG, 180, 0, k + 8);
-        Atom HB2 = buildHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
-        Atom HB3 = buildHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
-        Atom HG2 = buildHydrogen(residue, "HG2", CG, 1.11, CB, 109.4, CD, 109.4, 1, k + 3);
-        Atom HG3 = buildHydrogen(residue, "HG3", CG, 1.11, CB, 109.4, CD, 109.4, -1, k + 3);
-        Atom HD2 = buildHydrogen(residue, "HD2", CD, 1.11, CG, 109.4, CE, 109.4, 1, k + 5);
-        Atom HD3 = buildHydrogen(residue, "HD3", CD, 1.11, CG, 109.4, CE, 109.4, -1, k + 5);
-        Atom HE2 = buildHydrogen(residue, "HE2", CE, 1.11, CD, 109.4, NZ, 108.8, 1, k + 7);
-        Atom HE3 = buildHydrogen(residue, "HE3", CE, 1.11, CD, 109.4, NZ, 108.8, -1, k + 7);
-        Atom HZ1 = buildHydrogen(residue, "HZ1", NZ, 1.02, CE, 109.5, CD, 180.0, 0, k + 9);
-        Atom HZ2 = buildHydrogen(residue, "HZ2", NZ, 1.02, CE, 109.5, HZ1, 109.5, 1, k + 9);
-        return residue;
-    }
-
-    public Residue buildArginine(Residue residue, Atom CA, Atom N, Atom C, int k) {
-        Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k);
-        Atom CG = buildHeavy(residue, "CG", CB, 1.54, CA, 109.5, N, 180, 0, k + 2);
-        Atom CD = buildHeavy(residue, "CD", CG, 1.54, CB, 109.5, CA, 180, 0, k + 4);
-        Atom NE = buildHeavy(residue, "NE", CD, 1.45, CG, 109.5, CB, 180, 0, k + 6);
-        Atom CZ = buildHeavy(residue, "CZ", NE, 1.35, CD, 120.0, CG, 180, 0, k + 8);
-        Atom NH1 = buildHeavy(residue, "NH1", CZ, 1.35, NE, 120.0, CD, 180, 0, k + 9);
-        Atom NH2 = buildHeavy(residue, "NH2", CZ, 1.35, NE, 120.0, NH1, 120.0, 1, k + 9);
-        Atom HB2 = buildHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
-        Atom HB3 = buildHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
-        Atom HG2 = buildHydrogen(residue, "HG2", CG, 1.11, CB, 109.4, CD, 109.4, 1, k + 3);
-        Atom HG3 = buildHydrogen(residue, "HG3", CG, 1.11, CB, 109.4, CD, 109.4, -1, k + 3);
-        Atom HD2 = buildHydrogen(residue, "HD2", CD, 1.11, CG, 109.4, NE, 109.4, 1, k + 5);
-        Atom HD3 = buildHydrogen(residue, "HD3", CD, 1.11, CG, 109.4, NE, 109.4, -1, k + 5);
-        Atom HE = buildHydrogen(residue, "HE", NE, 1.02, CD, 120.0, CZ, 120.0, 1, k + 7);
-        Atom HH11 = buildHydrogen(residue, "HH11", NH1, 1.02, CZ, 120.0, NE, 180.0, 0, k + 10);
-        Atom HH12 = buildHydrogen(residue, "HH12", NH1, 1.02, CZ, 120.0, HH11, 120.0, 1, k + 10);
-        Atom HH21 = buildHydrogen(residue, "HH21", NH2, 1.02, CZ, 120.0, NE, 180.0, 0, k + 10);
-        Atom HH22 = buildHydrogen(residue, "HH22", NH2, 1.02, CZ, 120.0, HH21, 120.0, 1, k + 10);
-        return residue;
-    }
-
-    public Residue buildOrnithine(Residue residue, Atom CA, Atom N, Atom C, int k) {
-        Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k);
-        Atom CG = buildHeavy(residue, "CG", CB, 1.54, CA, 109.5, N, 180, 0, k + 2);
-        Atom CD = buildHeavy(residue, "CD", CG, 1.54, CB, 109.5, CA, 180, 0, k + 4);
-        Atom NE = buildHeavy(residue, "NE", CD, 1.50, CG, 109.5, CB, 180, 0, k + 6);
-        Atom HB2 = buildHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
-        Atom HB3 = buildHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
-        Atom HG2 = buildHydrogen(residue, "HG2", CG, 1.11, CB, 109.4, CD, 109.4, 1, k + 3);
-        Atom HG3 = buildHydrogen(residue, "HG3", CG, 1.11, CB, 109.4, CD, 109.4, -1, k + 3);
-        Atom HD2 = buildHydrogen(residue, "HD2", CD, 1.11, CG, 109.4, NE, 109.4, 1, k + 5);
-        Atom HD3 = buildHydrogen(residue, "HD3", CD, 1.11, CG, 109.4, NE, 109.4, -1, k + 5);
-        Atom HE1 = buildHydrogen(residue, "HE1", NE, 1.02, CD, 109.5, CG, 180.0, 0, k + 7);
-        Atom HE2 = buildHydrogen(residue, "HE2", NE, 1.02, CD, 109.5, HE1, 109.5, 1, k + 7);
-        Atom HE3 = buildHydrogen(residue, "HE3", NE, 1.02, CD, 109.5, HE1, 109.5, -1, k + 7);
-        return residue;
-    }
-
-    public Residue buildAIB(Residue residue, Atom CA, Atom N, Atom C, int k) {
-        Atom CB1 = buildHeavy(residue, "CB1", CA, 1.54, N, 109.5, C, 107.8, -1, k);
-        Atom CB2 = buildHeavy(residue, "CB1", CA, 1.54, N, 109.5, C, 107.8, 1, k);
-        Atom HB11 = buildHydrogen(residue, "HB11", CB1, 1.11, CA, 109.4, N, 180.0, 0, k + 1);
-        Atom HB12 = buildHydrogen(residue, "HB12", CB1, 1.11, CA, 109.4, HB11, 109.4, 1, k + 1);
-        Atom HB13 = buildHydrogen(residue, "HB13", CB1, 1.11, CA, 109.4, HB11, 109.4, -1, k + 1);
-        Atom HG21 = buildHydrogen(residue, "HG21", CB2, 1.11, CA, 109.4, N, 180.0, 0, k + 1);
-        Atom HG22 = buildHydrogen(residue, "HG22", CB2, 1.11, CA, 109.4, HG21, 109.4, 1, k + 1);
-        Atom HG23 = buildHydrogen(residue, "HG23", CB2, 1.11, CA, 109.4, HG21, 109.4, -1, k + 1);
-        return residue;
-    }
-
-    public Residue buildPCA(Residue residue, Atom CA, Atom N, Atom C, int k) {
-        Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k);
-        Atom CG = buildHeavy(residue, "CG", CB, 1.54, CA, 109.5, N, 180, 0, k + 2);
-        Atom CD = buildHeavy(residue, "CD", CG, 1.54, CB, 109.5, CA, 180, 0, k + 4);
-        Atom OE = buildHeavy(residue, "OE", CD, 1.22, N, 126.0, CG, 126.0, 1, k + 5);
-        Atom HB2 = buildHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
-        Atom HB3 = buildHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
-        Atom HG2 = buildHydrogen(residue, "HG2", CG, 1.11, CB, 109.4, CD, 109.4, 1, k + 3);
-        Atom HG3 = buildHydrogen(residue, "HG3", CG, 1.11, CB, 109.4, CD, 109.4, -1, k + 3);
-        return residue;
-    }
-
-    private void renameGlycineAlphaHydrogens(Residue residue, List<Atom> resAtoms) {
-        Atom HA2 = (Atom) residue.getAtomNode("HA2");
-        Atom HA3 = (Atom) residue.getAtomNode("HA3");
-        if (HA2 != null) {
-            resAtoms.remove(HA2);
-        }
-        if (HA3 != null) {
-            resAtoms.remove(HA3);
-        }
-        if (HA2 == null && !resAtoms.isEmpty()) {
-            resAtoms.get(0).setName("HA2");
-            resAtoms.remove(0);
-        }
-        if (HA3 == null && !resAtoms.isEmpty()) {
-            resAtoms.get(0).setName("HA3");
-        }
-    }
-
-    private void renameHydrogenType(Residue residue, List<Atom> resAtoms, int indices, String hydrogenType) {
-        // Planned to replace rename<Beta/Gamma/...>Hydrogens methods.
-    }
-
-    private void renameBetaHydrogens(Residue residue, List<Atom> resAtoms, int indexes) {
-        Atom[] HBn = new Atom[3];
-        switch (indexes) {
-            case 12:
-                HBn[0] = (Atom) residue.getAtomNode("HB1");
-                HBn[1] = (Atom) residue.getAtomNode("HB2");
-                break;
-            case 13:
-                HBn[0] = (Atom) residue.getAtomNode("HB1");
-                HBn[2] = (Atom) residue.getAtomNode("HB3");
-                break;
-            case 23:
-                HBn[1] = (Atom) residue.getAtomNode("HB2");
-                HBn[2] = (Atom) residue.getAtomNode("HB3");
-                break;
-            default:
-                return;
-        }
-        for (Atom HBatom : HBn) {
-            if (resAtoms.contains(HBatom)) {
-                resAtoms.remove(HBatom);
-            }
-        }
-        if (!resAtoms.isEmpty() && HBn[0] == null && (indexes == 12 || indexes == 13)) {
-            resAtoms.get(0).setName("HB1");
-            resAtoms.remove(0);
-        }
-        if (!resAtoms.isEmpty() && HBn[1] == null && (indexes == 12 || indexes == 23)) {
-            resAtoms.get(0).setName("HB2");
-            resAtoms.remove(0);
-        }
-        if (!resAtoms.isEmpty() && HBn[2] == null && (indexes == 13 || indexes == 23)) {
-            resAtoms.get(0).setName("HB3");
-            resAtoms.remove(0);
-        }
-    }
-
-    private void renameGammaHydrogens(Residue residue, List<Atom> resAtoms, int indexes) {
-        Atom[] HGn = new Atom[3];
-        switch (indexes) {
-            case 12:
-                HGn[0] = (Atom) residue.getAtomNode("HG1");
-                HGn[1] = (Atom) residue.getAtomNode("HG2");
-                break;
-            case 13:
-                HGn[0] = (Atom) residue.getAtomNode("HG1");
-                HGn[2] = (Atom) residue.getAtomNode("HG3");
-                break;
-            case 23:
-                HGn[1] = (Atom) residue.getAtomNode("HG2");
-                HGn[2] = (Atom) residue.getAtomNode("HG3");
-                break;
-            default:
-                return;
-        }
-        for (Atom HGatom : HGn) {
-            if (resAtoms.contains(HGatom)) {
-                resAtoms.remove(HGatom);
-            }
-        }
-        if (!resAtoms.isEmpty() && HGn[0] == null && (indexes == 12 || indexes == 13)) {
-            resAtoms.get(0).setName("HG1");
-            resAtoms.remove(0);
-        }
-        if (!resAtoms.isEmpty() && HGn[1] == null && (indexes == 12 || indexes == 23)) {
-            resAtoms.get(0).setName("HG2");
-            resAtoms.remove(0);
-        }
-        if (!resAtoms.isEmpty() && HGn[2] == null && (indexes == 13 || indexes == 23)) {
-            resAtoms.get(0).setName("HG3");
-            resAtoms.remove(0);
-        }
-    }
-
-    private void renameDeltaHydrogens(Residue residue, List<Atom> resAtoms, int indexes) {
-        Atom[] HDn = new Atom[3];
-        switch (indexes) {
-            case 12:
-                HDn[0] = (Atom) residue.getAtomNode("HD1");
-                HDn[1] = (Atom) residue.getAtomNode("HD2");
-                break;
-            case 13:
-                HDn[0] = (Atom) residue.getAtomNode("HD1");
-                HDn[2] = (Atom) residue.getAtomNode("HD3");
-                break;
-            case 23:
-                HDn[1] = (Atom) residue.getAtomNode("HD2");
-                HDn[2] = (Atom) residue.getAtomNode("HD3");
-                break;
-            default:
-                return;
-        }
-        for (Atom HDatom : HDn) {
-            if (resAtoms.contains(HDatom)) {
-                resAtoms.remove(HDatom);
-            }
-        }
-        if (!resAtoms.isEmpty() && HDn[0] == null && (indexes == 12 || indexes == 13)) {
-            resAtoms.get(0).setName("HD1");
-            resAtoms.remove(0);
-        }
-        if (!resAtoms.isEmpty() && HDn[1] == null && (indexes == 12 || indexes == 23)) {
-            resAtoms.get(0).setName("HD2");
-            resAtoms.remove(0);
-        }
-        if (!resAtoms.isEmpty() && HDn[2] == null && (indexes == 13 || indexes == 23)) {
-            resAtoms.get(0).setName("HD3");
-            resAtoms.remove(0);
-        }
-    }
-
-    private void renameEpsilonHydrogens(Residue residue, List<Atom> resAtoms, int indexes) {
-        Atom[] HEn = new Atom[3];
-        switch (indexes) {
-            case 12:
-                HEn[0] = (Atom) residue.getAtomNode("HE1");
-                HEn[1] = (Atom) residue.getAtomNode("HE2");
-                break;
-            case 13:
-                HEn[0] = (Atom) residue.getAtomNode("HE1");
-                HEn[2] = (Atom) residue.getAtomNode("HE3");
-                break;
-            case 23:
-                HEn[1] = (Atom) residue.getAtomNode("HE2");
-                HEn[2] = (Atom) residue.getAtomNode("HE3");
-                break;
-            default:
-                return;
-        }
-        for (Atom HEatom : HEn) {
-            if (resAtoms.contains(HEatom)) {
-                resAtoms.remove(HEatom);
-            }
-        }
-        if (!resAtoms.isEmpty() && HEn[0] == null && (indexes == 12 || indexes == 13)) {
-            resAtoms.get(0).setName("HE1");
-            resAtoms.remove(0);
-        }
-        if (!resAtoms.isEmpty() && HEn[1] == null && (indexes == 12 || indexes == 23)) {
-            resAtoms.get(0).setName("HE2");
-            resAtoms.remove(0);
-        }
-        if (!resAtoms.isEmpty() && HEn[2] == null && (indexes == 13 || indexes == 23)) {
-            resAtoms.get(0).setName("HE3");
-            resAtoms.remove(0);
-        }
-    }
-
-    private void renameZetaHydrogens(Residue residue, List<Atom> resAtoms, int indexes) {
-        Atom[] HZn = new Atom[3];
-        switch (indexes) {
-            case 12:
-                HZn[0] = (Atom) residue.getAtomNode("HZ1");
-                HZn[1] = (Atom) residue.getAtomNode("HZ2");
-                break;
-            case 13:
-                HZn[0] = (Atom) residue.getAtomNode("HZ1");
-                HZn[2] = (Atom) residue.getAtomNode("HZ3");
-                break;
-            case 23:
-                HZn[1] = (Atom) residue.getAtomNode("HZ2");
-                HZn[2] = (Atom) residue.getAtomNode("HZ3");
-                break;
-            default:
-                return;
-        }
-        for (Atom HZatom : HZn) {
-            if (resAtoms.contains(HZatom)) {
-                resAtoms.remove(HZatom);
-            }
-        }
-        if (!resAtoms.isEmpty() && HZn[0] == null && (indexes == 12 || indexes == 13)) {
-            resAtoms.get(0).setName("HZ1");
-            resAtoms.remove(0);
-        }
-        if (!resAtoms.isEmpty() && HZn[1] == null && (indexes == 12 || indexes == 23)) {
-            resAtoms.get(0).setName("HZ2");
-            resAtoms.remove(0);
-        }
-        if (!resAtoms.isEmpty() && HZn[2] == null && (indexes == 13 || indexes == 23)) {
-            resAtoms.get(0).setName("HZ3");
-            resAtoms.remove(0);
-        }
-    }
-
-    private void renameIsoleucineHydrogens(Residue residue, List<Atom> resAtoms) {
-        Atom HG12 = (Atom) residue.getAtomNode("HG12");
-        Atom HG13 = (Atom) residue.getAtomNode("HG13");
-        if (HG12 != null) {
-            resAtoms.remove(HG12);
-        }
-        if (HG13 != null) {
-            resAtoms.remove(HG13);
-        }
-        if (HG12 == null && !resAtoms.isEmpty()) {
-            resAtoms.get(0).setName("HG12");
-            resAtoms.remove(0);
-        }
-        if (HG13 == null && !resAtoms.isEmpty()) {
-            resAtoms.get(0).setName("HG13");
-        }
-    }
-
-    private void renameAsparagineHydrogens(Residue residue, List<Atom> resAtoms) {
-        Atom HD21 = (Atom) residue.getAtomNode("HD21");
-        Atom HD22 = (Atom) residue.getAtomNode("HD22");
-        if (HD21 != null) {
-            resAtoms.remove(HD21);
-        }
-        if (HD22 != null) {
-            resAtoms.remove(HD22);
-        }
-        if (!resAtoms.isEmpty() && HD21 == null) {
-            resAtoms.get(0).setName("HD21");
-            resAtoms.remove(0);
-        }
-        if (!resAtoms.isEmpty() && HD22 == null) {
-            resAtoms.get(0).setName("HD21");
-        }
-    }
-
-    private void renameGlutamineHydrogens(Residue residue, List<Atom> resAtoms) {
-        Atom HE21 = (Atom) residue.getAtomNode("HE21");
-        Atom HE22 = (Atom) residue.getAtomNode("HE22");
-        if (HE21 != null) {
-            resAtoms.remove(HE21);
-        }
-        if (HE22 != null) {
-            resAtoms.remove(HE22);
-        }
-        if (!resAtoms.isEmpty() && HE21 == null) {
-            resAtoms.get(0).setName("HE21");
-            resAtoms.remove(0);
-        }
-        if (!resAtoms.isEmpty() && HE22 == null) {
-            resAtoms.get(0).setName("HE21");
-        }
-    }
-
-    private void renameArginineHydrogens(Residue residue, List<Atom> resAtoms) {
-        Atom HH11 = (Atom) residue.getAtomNode("HH11");
-        Atom HH12 = (Atom) residue.getAtomNode("HH12");
-        Atom HH21 = (Atom) residue.getAtomNode("HH21");
-        Atom HH22 = (Atom) residue.getAtomNode("HH22");
-        if (HH11 != null) {
-            resAtoms.remove(HH11);
-        }
-        if (HH12 != null) {
-            resAtoms.remove(HH12);
-        }
-        if (HH21 != null) {
-            resAtoms.remove(HH21);
-        }
-        if (HH22 != null) {
-            resAtoms.remove(HH22);
-        }
-        if (!resAtoms.isEmpty() && HH11 == null) {
-            resAtoms.get(0).setName("HH11");
-            resAtoms.remove(0);
-        }
-        if (!resAtoms.isEmpty() && HH12 == null) {
-            resAtoms.get(0).setName("HH12");
-            resAtoms.remove(0);
-        }
-        if (!resAtoms.isEmpty() && HH21 == null) {
-            resAtoms.get(0).setName("HH21");
-            resAtoms.remove(0);
-        }
-        if (!resAtoms.isEmpty() && HH22 == null) {
-            resAtoms.get(0).setName("HH22");
-            resAtoms.remove(0);
-        }
-    }
-
-    private void renameNTerminusHydrogens(Residue residue) {
-        Atom[] h = new Atom[3];
-        h[0] = (Atom) residue.getAtomNode("H1");
-        h[1] = (Atom) residue.getAtomNode("H2");
-        h[2] = (Atom) residue.getAtomNode("H3");
-        int numAtoms = 0;
-        for (Atom atom : h) {
-            numAtoms += (atom == null ? 0 : 1);
-        }
-        if (numAtoms == 3) {
-            return;
-        }
-        List<Atom> resAtoms = residue.getAtomList();
-        for (Atom resAtom : resAtoms) {
-            // Check if already contained in h[].
-            boolean doContinue = false;
-            for (Atom hAtom : h) {
-                if (resAtom.equals(hAtom)) {
-                    doContinue = true;
-                    break;
-                }
-            }
-            if (doContinue) {
-                continue;
-            }
-
-            // If the hydrogen matches H or H[1-3], assign to first null h entity.
-            String atomName = resAtom.getName().toUpperCase();
-            if (atomName.equals("H") || atomName.matches("H[1-3]") || atomName.matches("[1-3]H")) {
-                ++numAtoms;
-                for (int i = 0; i < h.length; i++) {
-                    if (h[i] == null) {
-                        resAtom.setName("H" + (i + 1));
-                        h[i] = resAtom;
-                        break;
-                    }
-                }
-                if (numAtoms == 3) {
-                    return;
-                }
-            }
-        }
-    }
 
     /**
      * Ensures proper naming of hydrogens according to latest PDB format.
@@ -4991,100 +3819,39 @@ public final class PDBFilter extends SystemFilter {
 
     private Atom buildHeavy(MSGroup residue, String atomName, Atom bondedTo, int key)
             throws MissingHeavyAtomException {
-        Atom atom = (Atom) residue.getAtomNode(atomName);
-        AtomType atomType = findAtomType(key);
-        if (atom == null) {
-            MissingHeavyAtomException missingHeavyAtom = new MissingHeavyAtomException(atomName, atomType, bondedTo);
-            throw missingHeavyAtom;
-        }
-        atom.setAtomType(atomType);
-        if (bondedTo != null) {
-            buildBond(atom, bondedTo);
-        }
-        return atom;
+        return BondedUtils.buildHeavy(residue, atomName, bondedTo, key, forceField, bondList);
     }
 
     private Atom buildHeavy(MSGroup residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
             Atom ic, double angle2, int chiral, int lookUp) {
-        AtomType atomType = findAtomType(lookUp);
-        return buildHeavyAtom(residue, atomName, ia, bond, ib, angle1, ic, angle2, chiral, atomType);
-    }
-
-    private Atom buildHeavyAtom(MSGroup residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
-            Atom ic, double angle2, int chiral, AtomType atomType) {
-        Atom atom = (Atom) residue.getAtomNode(atomName);
-        if (atomType == null) {
-            return null;
-        }
-        if (atom == null) {
-            String resName = ia.getResidueName();
-            int resSeq = ia.getResidueNumber();
-            Character chainID = ia.getChainID();
-            Character altLoc = ia.getAltLoc();
-            String segID = ia.getSegID();
-            double occupancy = ia.getOccupancy();
-            double tempFactor = ia.getTempFactor();
-            atom = new Atom(0, atomName, altLoc, new double[3], resName, resSeq, chainID,
-                    occupancy, tempFactor, segID);
-            residue.addMSNode(atom);
-            intxyz(atom, ia, bond, ib, angle1, ic, angle2, chiral);
-        }
-        atom.setAtomType(atomType);
-        buildBond(ia, atom);
-        return atom;
+        return BondedUtils.buildHeavy(residue, atomName, ia, bond, ib, angle1, ic, angle2, chiral, lookUp,
+                forceField, bondList);
     }
 
     private Atom buildHydrogen(MSGroup residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
             Atom ic, double angle2, int chiral, int lookUp) {
-        AtomType atomType = findAtomType(lookUp);
-        return buildHydrogenAtom(residue, atomName, ia, bond, ib, angle1, ic, angle2, chiral, atomType);
+        return BondedUtils.buildHydrogen(residue, atomName, ia, bond, ib, angle1, ic, angle2, chiral, lookUp, forceField, bondList);
     }
 
     private Atom buildHydrogenAtom(MSGroup residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
             Atom ic, double angle2, int chiral, AtomType atomType) {
-        if (atomType == null) {
-            return null;
-        }
-        Atom atom = (Atom) residue.getAtomNode(atomName);
-        // It may be a Deuterium
-        if (atom == null) {
-            String dAtomName = atomName.replaceFirst("H", "D");
-            atom = (Atom) residue.getAtomNode(dAtomName);
-        }
-        if (atom == null) {
-            String resName = ia.getResidueName();
-            int resSeq = ia.getResidueNumber();
-            Character chainID = ia.getChainID();
-            Character altLoc = ia.getAltLoc();
-            String segID = ia.getSegID();
-            double occupancy = ia.getOccupancy();
-            double tempFactor = ia.getTempFactor();
-            atom = new Atom(0, atomName, altLoc, new double[3], resName, resSeq, chainID,
-                    occupancy, tempFactor, segID);
-            residue.addMSNode(atom);
-            intxyz(atom, ia, bond, ib, angle1, ic, angle2, chiral);
-        }
-        atom.setAtomType(atomType);
-        buildBond(ia, atom);
-        return atom;
+        return BondedUtils.buildHydrogenAtom(residue, atomName, ia, bond, ib, angle1, ic, angle2, chiral, atomType,
+                forceField, bondList);
     }
 
     public Bond buildBond(Atom a1, Atom a2) {
-        Bond bond = new Bond(a1, a2);
-        int c[] = new int[2];
-        c[0] = a1.getAtomType().atomClass;
-        c[1] = a2.getAtomType().atomClass;
-        String key = BondType.sortKey(c);
-        BondType bondType = forceField.getBondType(key);
-        if (bondType == null) {
-            logger.severe(format("No BondType for key: %s\n %s\n %s\n %s\n %s", key,
-                    a1.toString(), a1.getAtomType().toString(),
-                    a2.toString(), a2.getAtomType().toString()));
-        } else {
-            bond.setBondType(bondType);
-        }
-        bondList.add(bond);
-        return bond;
+        return BondedUtils.buildBond(a1, a2, forceField, bondList);
+    }
+
+    /**
+     * Determine the atom type based on a biotype key.
+     *
+     * @param key The biotype key.
+     * @return The atom type.
+     * @since 1.0
+     */
+    private AtomType findAtomType(int key) {
+        return BondedUtils.findAtomType(key, forceField);
     }
 
     // Presently, VERSION3_3 is default, and VERSION3_2 is anything non-standard.

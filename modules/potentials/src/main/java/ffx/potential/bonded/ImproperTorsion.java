@@ -111,7 +111,31 @@ public class ImproperTorsion extends BondedTerm implements
         ArrayList<ImproperTorsion> improperTorsions = new ArrayList<>();
         Collection<ImproperTorsionType> types = forceField.getImproperTypes();
         for (ImproperTorsionType type : types) {
-            if (type.assigned(atoms)) {
+            int classes[] = new int[4];
+            classes[0] = atoms[0].getAtomType().atomClass;
+            classes[1] = atoms[1].getAtomType().atomClass;
+            classes[2] = atoms[2].getAtomType().atomClass;
+            classes[3] = atoms[3].getAtomType().atomClass;
+            if (type.assigned(classes)) {
+                // Finalize atom ordering.
+                if (classes[0] == atoms[0].getAtomType().atomClass) {
+                    // do nothing.
+                } else if (classes[0] == atoms[1].getAtomType().atomClass) {
+                    Atom temp = atoms[0];
+                    atoms[0] = atoms[1];
+                    atoms[1] = temp;
+                } else {
+                    Atom temp = atoms[0];
+                    atoms[0] = atoms[3];
+                    atoms[3] = temp;
+                }
+                if (classes[1] == atoms[1].getAtomType().atomClass) {
+                    // do nothing.
+                } else if (classes[1] == atoms[3].getAtomType().atomClass) {
+                    Atom temp = atoms[1];
+                    atoms[1] = atoms[3];
+                    atoms[3] = temp;
+                }
                 ImproperTorsion improperTorsion = new ImproperTorsion(atoms[0], atoms[1], atoms[2], atoms[3]);
                 improperTorsion.setImproperType(type);
                 improperTorsions.add(improperTorsion);

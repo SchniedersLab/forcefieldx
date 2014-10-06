@@ -20,7 +20,7 @@
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
  */
-package ffx.potential;
+package ffx.potential.bonded;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,21 +29,13 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import ffx.potential.ResidueEnumerations.AminoAcid3;
-import ffx.potential.ResidueEnumerations.NucleicAcid3;
-import ffx.potential.bonded.Angle;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Bond;
-import ffx.potential.bonded.MolecularAssembly;
-import ffx.potential.bonded.Polymer;
-import ffx.potential.bonded.ROLS;
-import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.Torsion;
-import ffx.potential.parsers.INTFilter;
+import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
+import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
 
+import static ffx.potential.bonded.BondedUtils.determineIntxyz;
+import static ffx.potential.bonded.BondedUtils.intxyz;
 import static ffx.potential.bonded.Residue.ResidueType.AA;
 import static ffx.potential.bonded.Residue.ResidueType.NA;
-import static ffx.potential.parsers.INTFilter.intxyz;
 
 /**
  * The Rotamer Library Class manages a library of side-chain Rotamers for amino
@@ -55,7 +47,7 @@ import static ffx.potential.parsers.INTFilter.intxyz;
  */
 public class RotamerLibrary {
 
-    private static final Logger logger = Logger.getLogger(ForceFieldEnergy.class.getName());
+    private static final Logger logger = Logger.getLogger(RotamerLibrary.class.getName());
     /**
      * Number of amino acid residues types currently recognized, although there
      * are not rotamer libraries for each yet.
@@ -228,11 +220,9 @@ public class RotamerLibrary {
      * This MUST be called before any applyRotamer calls are made, else invalid
      * coordinates will be stored.
      *
-     * @param molecularAssembly To search for nucleic acids.
+     * @param polymers
      */
-    public static void initializeDefaultAtomicCoordinates(MolecularAssembly molecularAssembly) {
-        // Loads default atomic coordinates for all nucleic acid residues.
-        Polymer[] polymers = molecularAssembly.getChains();
+    public static void initializeDefaultAtomicCoordinates(Polymer[] polymers) {
         for (Polymer polymer : polymers) {
             ArrayList<Residue> current = polymer.getResidues();
             for (Residue residuej : current) {
@@ -3429,20 +3419,20 @@ public class RotamerLibrary {
             // O3s coordinates will be filled into ret.
             if (isDeoxy) {
                 if (pucker == 1) {
-                    C3sXYZ = INTFilter.determineIntxyz(C4sXYZ, dC3s_C4s, O4sXYZ, dC3s_C4s_O4s, C1sXYZ, C3_SP_NORTH_DNA, 0);
-                    ret = INTFilter.determineIntxyz(C3sXYZ, dC3s_O3s, C4sXYZ, dC4s_C3s_O3s, O4sXYZ, O3_SP_NORTH_DNA, 0);
+                    C3sXYZ = determineIntxyz(C4sXYZ, dC3s_C4s, O4sXYZ, dC3s_C4s_O4s, C1sXYZ, C3_SP_NORTH_DNA, 0);
+                    ret = determineIntxyz(C3sXYZ, dC3s_O3s, C4sXYZ, dC4s_C3s_O3s, O4sXYZ, O3_SP_NORTH_DNA, 0);
                 } // TODO: else-if for 3'-exo configuration (DNA only)
                 else {
-                    C3sXYZ = INTFilter.determineIntxyz(C4sXYZ, dC3s_C4s, O4sXYZ, dC3s_C4s_O4s, C1sXYZ, C3_SP_SOUTH_DNA, 0);
-                    ret = INTFilter.determineIntxyz(C3sXYZ, dC3s_O3s, C4sXYZ, dC4s_C3s_O3s, O4sXYZ, O3_SP_SOUTH_DNA, 0);
+                    C3sXYZ = determineIntxyz(C4sXYZ, dC3s_C4s, O4sXYZ, dC3s_C4s_O4s, C1sXYZ, C3_SP_SOUTH_DNA, 0);
+                    ret = determineIntxyz(C3sXYZ, dC3s_O3s, C4sXYZ, dC4s_C3s_O3s, O4sXYZ, O3_SP_SOUTH_DNA, 0);
                 }
             } else {
                 if (pucker == 1) {
-                    C3sXYZ = INTFilter.determineIntxyz(C4sXYZ, dC3s_C4s, O4sXYZ, dC3s_C4s_O4s, C1sXYZ, C3_SP_NORTH_RNA, 0);
-                    ret = INTFilter.determineIntxyz(C3sXYZ, dC3s_O3s, C4sXYZ, dC4s_C3s_O3s, O4sXYZ, O3_SP_NORTH_RNA, 0);
+                    C3sXYZ = determineIntxyz(C4sXYZ, dC3s_C4s, O4sXYZ, dC3s_C4s_O4s, C1sXYZ, C3_SP_NORTH_RNA, 0);
+                    ret = determineIntxyz(C3sXYZ, dC3s_O3s, C4sXYZ, dC4s_C3s_O3s, O4sXYZ, O3_SP_NORTH_RNA, 0);
                 } else {
-                    C3sXYZ = INTFilter.determineIntxyz(C4sXYZ, dC3s_C4s, O4sXYZ, dC3s_C4s_O4s, C1sXYZ, C3_SP_SOUTH_RNA, 0);
-                    ret = INTFilter.determineIntxyz(C3sXYZ, dC3s_O3s, C4sXYZ, dC4s_C3s_O3s, O4sXYZ, O3_SP_SOUTH_RNA, 0);
+                    C3sXYZ = determineIntxyz(C4sXYZ, dC3s_C4s, O4sXYZ, dC3s_C4s_O4s, C1sXYZ, C3_SP_SOUTH_RNA, 0);
+                    ret = determineIntxyz(C3sXYZ, dC3s_O3s, C4sXYZ, dC4s_C3s_O3s, O4sXYZ, O3_SP_SOUTH_RNA, 0);
                 }
             }
         }
@@ -3637,16 +3627,16 @@ public class RotamerLibrary {
                 } else {
                     O3sPriorCoords = prevResidue.getO3sSouth();
                 }
-                double[] OP1XYZ = INTFilter.determineIntxyz(PXYZ, dP_OP1, O5sXYZ, dO5s_P_OP1, O3sPriorCoords, 109.4, 1);
-                double[] OP2XYZ = INTFilter.determineIntxyz(PXYZ, dP_OP2, O5sXYZ, dO5s_P_OP2, O3sPriorCoords, 109.4, -1);
+                double[] OP1XYZ = determineIntxyz(PXYZ, dP_OP1, O5sXYZ, dO5s_P_OP1, O3sPriorCoords, 109.4, 1);
+                double[] OP2XYZ = determineIntxyz(PXYZ, dP_OP2, O5sXYZ, dO5s_P_OP2, O3sPriorCoords, 109.4, -1);
                 OP1.moveTo(OP1XYZ);
                 OP2.moveTo(OP2XYZ);
             } else {
                 Atom OP3 = (Atom) residue.getAtomNode("OP3");
                 double[] OP3XYZ = new double[3];
                 OP3.getXYZ(OP3XYZ);
-                double[] OP1XYZ = INTFilter.determineIntxyz(PXYZ, dP_OP1, O5sXYZ, dO5s_P_OP1, OP3XYZ, 109.4, 1);
-                double[] OP2XYZ = INTFilter.determineIntxyz(PXYZ, dP_OP2, O5sXYZ, dO5s_P_OP2, OP3XYZ, 109.4, -1);
+                double[] OP1XYZ = determineIntxyz(PXYZ, dP_OP1, O5sXYZ, dO5s_P_OP1, OP3XYZ, 109.4, 1);
+                double[] OP2XYZ = determineIntxyz(PXYZ, dP_OP2, O5sXYZ, dO5s_P_OP2, OP3XYZ, 109.4, -1);
                 OP1.moveTo(OP1XYZ);
                 OP2.moveTo(OP2XYZ);
             }
@@ -3766,7 +3756,7 @@ public class RotamerLibrary {
         double dP_O3sPrev = P_O3sPrev.bondType.distance;
         Angle O5s_P_O3sPrev = O5s.getAngle(P, O3sPrev);
         double dO5s_P_O3sPrev = O5s_P_O3sPrev.angleType.angle[O5s_P_O3sPrev.nh];
-        double[] O3sHypCoords = INTFilter.determineIntxyz(P.getXYZ(), dP_O3sPrev, O5s.getXYZ(), dO5s_P_O3sPrev, C5s.getXYZ(), rotamer.chi4, 0);
+        double[] O3sHypCoords = determineIntxyz(P.getXYZ(), dP_O3sPrev, O5s.getXYZ(), dO5s_P_O3sPrev, C5s.getXYZ(), rotamer.chi4, 0);
 
         // Index 5 will be full correction, and indices 0-4 will be 1/6 to 5/6
         // of the full correction in increasing order.  Index 6 is a 1/12

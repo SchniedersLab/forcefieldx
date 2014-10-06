@@ -24,6 +24,8 @@ package ffx.potential.bonded;
 
 import java.util.logging.Logger;
 
+import ffx.potential.parameters.ForceField;
+
 /**
  * The Molecule class is a general container used for simple compounds or in
  * cases where more specialized classes have not been implemented.
@@ -204,13 +206,12 @@ public class Molecule extends MSGroup {
     /**
      * {@inheritDoc}
      */
-    @Override
-    public void finalize(boolean finalizeGeometry) {
+    public void finalize(boolean finalizeGeometry, ForceField forceField) {
         setFinalized(false);
         getAtomNode().setName("Atoms (" + getAtomList().size() + ")");
         if (finalizeGeometry) {
             //constructValenceTerms();
-            assignBondedTerms();
+            assignBondedTerms(forceField);
             removeLeaves();
         }
         // findDangelingAtoms();

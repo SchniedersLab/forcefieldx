@@ -47,8 +47,8 @@ import ffx.numerics.LBFGS;
 import ffx.numerics.LineSearch.LineSearchResult;
 import ffx.numerics.OptimizationListener;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.MolecularAssembly;
-import ffx.potential.bonded.Utilities;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.Utilities;
 import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.nonbonded.VanDerWaals.VDW_FORM;
 import ffx.potential.parameters.ForceField;
@@ -195,13 +195,15 @@ public class Potential2 implements OptimizationListener {
         XYZFilter xyzFilter = new XYZFilter(structure_xyz, molecularAssembly, forceField, properties);
         xyzFilter.readFile();
         Utilities.biochemistry(molecularAssembly, xyzFilter.getAtomList());
-        molecularAssembly.finalize(true);
+        molecularAssembly.finalize(true, forceField);
         atoms = molecularAssembly.getAtomArray();
         nAtoms = atoms.length;
         ParallelTeam parallelTeam = new ParallelTeam();
         crystal = create_crystal(forceField, atoms);
         nSymm = crystal.spaceGroup.getNumberOfSymOps();
-        VanDerWaals vanderWaals = new VanDerWaals(molecularAssembly, crystal, parallelTeam, VDW_FORM.BUFFERED_14_7);
+        int molecule[] = molecularAssembly.getMoleculeNumbers();
+        VanDerWaals vanderWaals = new VanDerWaals(atoms, molecule,
+                crystal, forceField, parallelTeam, VDW_FORM.BUFFERED_14_7);
         //RENAME
         //store_key_file(structure_prm);
         store_key_file(structure_key);

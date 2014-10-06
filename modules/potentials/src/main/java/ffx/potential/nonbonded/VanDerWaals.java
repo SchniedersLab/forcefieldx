@@ -23,7 +23,6 @@
 package ffx.potential.nonbonded;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -48,11 +47,10 @@ import edu.rit.pj.reduction.SharedInteger;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
-import ffx.potential.LambdaInterface;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
@@ -79,10 +77,6 @@ public class VanDerWaals implements MaskingInterface,
     };
 
     /**
-     * MolecularAssembly
-     */
-    private final MolecularAssembly molecularAssembly;
-    /**
      * Crystal parameters.
      */
     private Crystal crystal;
@@ -90,6 +84,10 @@ public class VanDerWaals implements MaskingInterface,
      * An array of all atoms in the system.
      */
     private Atom[] atoms;
+    /**
+     * The Force Field that defines the van der Waals interactions.
+     */
+    private ForceField forceField;
     /**
      * An array of whether each atom in the system should be used in the
      * calculations.
@@ -249,20 +247,22 @@ public class VanDerWaals implements MaskingInterface,
     /**
      * The VanDerWaals class constructor.
      *
-     * @param molecularAssembly The MolecularAssembly to compute the van der
-     * Waals energy of.
+     * @param atoms
+     * @param molecule
      * @param crystal The boundary conditions.
+     * @param forceField
      * @param parallelTeam The parallel environment.
      * @param vdwForm
      * @since 1.0
      */
-    public VanDerWaals(MolecularAssembly molecularAssembly, Crystal crystal,
+    public VanDerWaals(Atom atoms[], int molecule[], Crystal crystal, ForceField forceField,
             ParallelTeam parallelTeam, VDW_FORM vdwForm) {
-        this.molecularAssembly = molecularAssembly;
-        this.atoms = molecularAssembly.getAtomArray();
+        this.atoms = atoms;
+        this.molecule = molecule;
         this.crystal = crystal;
         this.parallelTeam = parallelTeam;
         this.vdwForm = vdwForm;
+        this.forceField = forceField;
 
         nAtoms = atoms.length;
         nSymm = crystal.spaceGroup.getNumberOfSymOps();
@@ -293,7 +293,6 @@ public class VanDerWaals implements MaskingInterface,
         t1n = pow(delta1, dispersivePower);
         gamma1 = 1.0 + gamma;
 
-        ForceField forceField = molecularAssembly.getForceField();
         Map<String, VDWType> map = forceField.getVDWTypes();
         TreeMap<String, VDWType> vdwTypes = new TreeMap<>(map);
         maxClass = 0;
@@ -485,7 +484,6 @@ public class VanDerWaals implements MaskingInterface,
         fill(softCore[HARD], false);
         fill(softCore[SOFT], false);
         softCoreInit = false;
-        molecule = molecularAssembly.getMoleculeNumbers();
 
         for (int i = 0; i < nAtoms; i++) {
             Atom ai = atoms[i];
@@ -501,7 +499,6 @@ public class VanDerWaals implements MaskingInterface,
                 continue;
             }
             atomClass[i] = type.atomClass;
-            ForceField forceField = molecularAssembly.getForceField();
             VDWType vdwType = forceField.getVDWType(Integer.toString(atomClass[i]));
             ai.setVDWType(vdwType);
             ArrayList<Bond> bonds = ai.getBonds();
@@ -558,9 +555,10 @@ public class VanDerWaals implements MaskingInterface,
         }
     }
 
-    public void setAtoms(Atom atoms[]) {
+    public void setAtoms(Atom atoms[], int molecule[]) {
         this.atoms = atoms;
         this.nAtoms = atoms.length;
+        this.molecule = molecule;
         initAtomArrays();
 
         /**

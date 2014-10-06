@@ -25,8 +25,8 @@ package ffx.algorithms;
 import java.io.File;
 
 import ffx.numerics.Potential;
-import ffx.potential.bonded.MolecularAssembly;
-import ffx.potential.parsers.PotentialsFunctions;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.utils.PotentialsFunctions;
 
 /**
  * The AlgorithmFunctions interface specifies default methods for L-BFGS

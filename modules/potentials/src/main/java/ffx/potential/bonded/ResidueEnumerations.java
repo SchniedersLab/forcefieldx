@@ -20,7 +20,7 @@
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
  */
-package ffx.potential;
+package ffx.potential.bonded;
 
 import java.util.Arrays;
 import java.util.List;
@@ -29,6 +29,26 @@ import java.util.List;
  * @author Ava M. Lynn
  */
 public class ResidueEnumerations {
+
+    public static AminoAcid3 getAminoAcid(String residueName) {
+        for (AminoAcid3 aminoAcid : aminoAcidList) {
+            if (aminoAcid.toString().equalsIgnoreCase(residueName)) {
+                return aminoAcid;
+            }
+        }
+        return AminoAcid3.UNK;
+    }
+
+    public static int getAminoAcidNumber(String residueName) {
+        int aminoAcidNumber = -1;
+        for (AminoAcid3 aminoAcid : aminoAcidList) {
+            aminoAcidNumber++;
+            if (aminoAcid.toString().equalsIgnoreCase(residueName)) {
+                break;
+            }
+        }
+        return aminoAcidNumber;
+    }
 
     public enum AminoAcid1 {
 

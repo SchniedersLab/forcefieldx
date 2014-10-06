@@ -30,7 +30,6 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
-import static org.apache.commons.math3.util.FastMath.max;
 import static java.lang.String.format;
 
 import org.apache.commons.configuration.CompositeConfiguration;
@@ -38,14 +37,16 @@ import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.EigenDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
 
+import static org.apache.commons.math3.util.FastMath.max;
+
 import edu.rit.pj.ParallelTeam;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.ReplicatesCrystal;
 import ffx.potential.ForceFieldEnergy;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.MolecularAssembly;
-import ffx.potential.bonded.Utilities;
+import ffx.potential.Utilities;
 import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.nonbonded.VanDerWaals.VDW_FORM;
 import ffx.potential.parameters.ForceField;
@@ -153,7 +154,7 @@ public class Energy {
         XYZFilter xyzFilter = new XYZFilter(structure_xyz, molecularAssembly, forceField, properties);
         xyzFilter.readFile();
         Utilities.biochemistry(molecularAssembly, xyzFilter.getAtomList());
-        molecularAssembly.finalize(true);
+        molecularAssembly.finalize(true, forceField);
 
         //Read options
         if (options != null) {
@@ -227,7 +228,9 @@ public class Energy {
                 this.crystal = unitCell;
             }
 
-            vanderWaals = new VanDerWaals(molecularAssembly, crystal, parallelTeam, VDW_FORM.BUFFERED_14_7);
+            int molecule[] = molecularAssembly.getMoleculeNumbers();
+            vanderWaals = new VanDerWaals(atoms, molecule, crystal, forceField,
+                    parallelTeam, VDW_FORM.BUFFERED_14_7);
             pme2 = new PME_2(forceField, atoms, crystal, parallelTeam, vanderWaals.getNeighborLists(), key);
             pme2.propyze = true;
             pme2.init_prms();

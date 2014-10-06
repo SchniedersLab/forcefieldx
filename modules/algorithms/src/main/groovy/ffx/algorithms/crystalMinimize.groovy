@@ -33,7 +33,7 @@ import groovy.util.CliBuilder;
 import ffx.algorithms.CrystalMinimize;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 import ffx.algorithms.CrystalMinimize
 import ffx.potential.XtalEnergy
 
@@ -78,8 +78,8 @@ XtalEnergy xtalEnergy = new XtalEnergy(forceFieldEnergy, active);
 
 // Do the minimization
 CrystalMinimize crystalMinimize = new CrystalMinimize(active, xtalEnergy, sh);
-    
-            
+
+
 e = crystalMinimize.minimize(eps);
 
 String ext = FilenameUtils.getExtension(filename);

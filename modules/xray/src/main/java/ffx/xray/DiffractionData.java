@@ -46,7 +46,7 @@ import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Residue;
 import ffx.potential.parsers.PDBFilter;
@@ -115,7 +115,7 @@ public class DiffractionData implements DataContainer {
      * weight of 1.0 using the same name as the molecular assembly
      *
      * @param assembly
-     * {@link ffx.potential.bonded.MolecularAssembly molecular assembly} object,
+     * {@link ffx.potential.MolecularAssembly molecular assembly} object,
      * used as the atomic model for comparison against the data
      * @param properties system properties file
      */
@@ -129,7 +129,7 @@ public class DiffractionData implements DataContainer {
      * construct a diffraction data assembly
      *
      * @param assembly
-     * {@link ffx.potential.bonded.MolecularAssembly molecular assembly} object,
+     * {@link ffx.potential.MolecularAssembly molecular assembly} object,
      * used as the atomic model for comparison against the data
      * @param properties system properties file
      * @param datafile one or more {@link DiffractionFile} to be refined against
@@ -145,7 +145,7 @@ public class DiffractionData implements DataContainer {
      * weight of 1.0 using the same name as the molecular assembly
      *
      * @param assembly
-     * {@link ffx.potential.bonded.MolecularAssembly molecular assembly} object,
+     * {@link ffx.potential.MolecularAssembly molecular assembly} object,
      * used as the atomic model for comparison against the data
      * @param properties system properties file
      * @param solventmodel the type of solvent model desired - see
@@ -161,7 +161,7 @@ public class DiffractionData implements DataContainer {
      * construct a diffraction data assembly
      *
      * @param assembly
-     * {@link ffx.potential.bonded.MolecularAssembly molecular assembly} object,
+     * {@link ffx.potential.MolecularAssembly molecular assembly} object,
      * used as the atomic model for comparison against the data
      * @param properties system properties file
      * @param solventmodel the type of solvent model desired - see
@@ -180,7 +180,7 @@ public class DiffractionData implements DataContainer {
      * weight of 1.0 using the same name as the molecular assembly
      *
      * @param assembly
-     * {@link ffx.potential.bonded.MolecularAssembly molecular assembly} object
+     * {@link ffx.potential.MolecularAssembly molecular assembly} object
      * array (typically containing alternate conformer assemblies), used as the
      * atomic model for comparison against the data
      * @param properties system properties file
@@ -195,7 +195,7 @@ public class DiffractionData implements DataContainer {
      * construct a diffraction data assembly
      *
      * @param assembly
-     * {@link ffx.potential.bonded.MolecularAssembly molecular assembly} object
+     * {@link ffx.potential.MolecularAssembly molecular assembly} object
      * array (typically containing alternate conformer assemblies), used as the
      * atomic model for comparison against the data
      * @param properties system properties file
@@ -210,7 +210,7 @@ public class DiffractionData implements DataContainer {
      * construct a diffraction data assembly
      *
      * @param assembly
-     * {@link ffx.potential.bonded.MolecularAssembly molecular assembly} object
+     * {@link ffx.potential.MolecularAssembly molecular assembly} object
      * array (typically containing alternate conformer assemblies), used as the
      * atomic model for comparison against the data
      * @param properties system properties file
@@ -390,7 +390,7 @@ public class DiffractionData implements DataContainer {
      * read in a different assembly to average in structure factors
      *
      * @param assembly the
-     * {@link ffx.potential.bonded.MolecularAssembly molecular assembly} object
+     * {@link ffx.potential.MolecularAssembly molecular assembly} object
      * array (typically containing alternate conformer assemblies), used as the
      * atomic model to average in with previous assembly
      * @param index the current data index (for cumulative average purposes)

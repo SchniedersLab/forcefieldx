@@ -28,10 +28,8 @@ import static java.util.Arrays.fill;
 
 import static org.apache.commons.math3.util.FastMath.pow;
 
-import ffx.crystal.Crystal;
-import ffx.potential.LambdaInterface;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.parameters.ForceField;
 
 import static ffx.numerics.VectorMath.rsq;
@@ -44,8 +42,7 @@ import static ffx.numerics.VectorMath.rsq;
 public class CoordRestraint implements LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(CoordRestraint.class.getName());
-    private MolecularAssembly molecularAssembly = null;
-    private Crystal crystal = null;
+
     private final Atom atoms[];
     private final double initialCoordinates[][];
     private int nAtoms = 0;
@@ -70,15 +67,12 @@ public class CoordRestraint implements LambdaInterface {
      * This NCSRestraint is based on the unit cell parameters and symmetry
      * operators of the supplied crystal.
      *
-     * @param molecularAssembly
-     * @param crystal
+     * @param atoms
+     * @param forceField
      */
-    public CoordRestraint(MolecularAssembly molecularAssembly, Crystal crystal) {
-        this.molecularAssembly = molecularAssembly;
-        this.crystal = crystal.getUnitCell();
-        atoms = molecularAssembly.getAtomArray();
+    public CoordRestraint(Atom[] atoms, ForceField forceField) {
+        this.atoms = atoms;
         nAtoms = atoms.length;
-        ForceField forceField = molecularAssembly.getForceField();
 
         //lambdaTerm = false;
         lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);

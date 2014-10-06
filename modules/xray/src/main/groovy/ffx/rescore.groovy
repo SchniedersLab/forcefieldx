@@ -21,7 +21,7 @@
  * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-package ffx
+package ffx;
 
 // Apache Commons Imports
 import org.apache.commons.io.FilenameUtils;
@@ -48,12 +48,12 @@ import ffx.algorithms.Minimize;
 import ffx.potential.DualTopologyEnergy;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.parsers.CoordinateFileFilter;
 import ffx.algorithms.AlgorithmFunctions;
 import ffx.algorithms.AlgorithmUtils;
 
-// Force Field X real-space Imports
+// Force Field X Real-Space Imports
 import ffx.xray.RealSpaceData;
 import ffx.xray.RealSpaceFile;
 import ffx.xray.RefinementMinimize;

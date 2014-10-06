@@ -52,8 +52,8 @@ import edu.rit.pj.Comm;
 import edu.rit.pj.cluster.JobBackend;
 
 import ffx.numerics.Potential;
-import ffx.potential.LambdaInterface;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.bonded.LambdaInterface;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.parsers.PDBFilter;
 
 /**

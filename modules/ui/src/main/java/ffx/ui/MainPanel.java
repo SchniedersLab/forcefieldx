@@ -86,13 +86,12 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.SystemUtils;
 
-import ffx.FFXClassLoader;
 import ffx.crystal.Crystal;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MSRoot;
-import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.ROLS;
 import ffx.potential.bonded.RendererCache;
 import ffx.potential.parameters.ForceField;
@@ -117,6 +116,9 @@ import ffx.potential.parsers.XYZFileFilter;
 import ffx.potential.parsers.XYZFilter;
 import ffx.ui.properties.FFXLocale;
 import ffx.utilities.Keyword;
+import ffx.utilities.StringUtils;
+
+import static ffx.utilities.StringUtils.pdbForID;
 
 /**
  * The MainPanel class is the main container for Force Field X, handles file
@@ -443,7 +445,7 @@ public final class MainPanel extends JPanel implements ActionListener,
                 logger.info(url.toString());
                 File structureFile = new File(url.getFile());
                 logger.info(structureFile.toString());
-                String tempFile = FFXClassLoader.copyInputStreamToTmpFile(url.openStream(), structureFile.getName(), "pdb");
+                String tempFile = StringUtils.copyInputStreamToTmpFile(url.openStream(), structureFile.getName(), "pdb");
                 open(tempFile);
             } catch (Exception e) {
                 System.err.println("MainPanel - Menu command not found: " + arg);
@@ -1218,7 +1220,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
         return null;
     }
-    
+
     private UIFileOpener openFromUtils(File file, String commandDescription) {
         UIFileOpener opener = openInit(file, commandDescription);
         openThread = new Thread(opener);
@@ -1226,7 +1228,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         setPanel(GRAPHICS);
         return opener;
     }
-    
+
     public Thread open(File file, String commandDescription) {
         UIFileOpener opener = openInit(file, commandDescription);
         openThread = new Thread(opener);
@@ -1303,7 +1305,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         activeFilter = systemFilter;
         return new UIFileOpener(systemFilter, this);
     }
-    
+
     private UIFileOpener openFromUtils(List<File> files, String commandDescription) {
         UIFileOpener openFile = openInit(files, commandDescription);
         openThread = new Thread(openFile);
@@ -1311,7 +1313,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         setPanel(GRAPHICS);
         return openFile;
     }
-    
+
     public Thread open(List<File> files, String commandDescription) {
         UIFileOpener openFile = openInit(files, commandDescription);
         openThread = new Thread(openFile);
@@ -1402,7 +1404,7 @@ public final class MainPanel extends JPanel implements ActionListener,
             return null;
         }
     }
-    
+
     /**
      * <p>
      * openWait</p>
@@ -1488,7 +1490,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
         return open(file, null);
     }
-    
+
     private UIFileOpener openFromUtils(String name) {
         File file = resolveName(name);
         if (file == null) {
@@ -1527,7 +1529,7 @@ public final class MainPanel extends JPanel implements ActionListener,
             String path = getPWD().getAbsolutePath();
             File pdbFile = new File(path + File.separatorChar + fileName);
             if (!pdbFile.exists()) {
-                String fromURL = PDBFilter.pdbForID(name);
+                String fromURL = pdbForID(name);
                 return downloadURL(fromURL);
             } else {
                 return pdbFile;
@@ -1559,7 +1561,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
         return open(files, null);
     }
-    
+
     private UIFileOpener openFromUtils(String[] names) {
         if (names == null) {
             return null;
@@ -1602,7 +1604,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         FFXSystem newSystem = new FFXSystem(pdbFile, "PDB", properties);
         newSystem.setForceField(forceField);
         if (!pdbFile.exists()) {
-            String fromURL = PDBFilter.pdbForID(code);
+            String fromURL = pdbForID(code);
             pdbFile = downloadURL(fromURL);
             if (pdbFile == null || !pdbFile.exists()) {
                 return;
@@ -1969,7 +1971,7 @@ public final class MainPanel extends JPanel implements ActionListener,
      * saveAsPDB</p>
      *
      * @param activeSystems an array of
-     * {@link ffx.potential.bonded.MolecularAssembly} objects.
+     * {@link ffx.potential.MolecularAssembly} objects.
      * @param file a {@link java.io.File} object.
      */
     public void saveAsPDB(MolecularAssembly activeSystems[], File file) {

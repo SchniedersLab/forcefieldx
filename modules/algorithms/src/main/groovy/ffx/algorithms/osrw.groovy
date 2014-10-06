@@ -42,7 +42,7 @@ import ffx.algorithms.Thermostat.Thermostats;
 import ffx.potential.DualTopologyEnergy;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 
 // Asychronous communication between walkers.
 boolean asynchronous = false;

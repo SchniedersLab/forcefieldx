@@ -37,8 +37,8 @@ import ffx.numerics.OptimizationListener;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.MolecularAssembly;
-import ffx.potential.bonded.Utilities;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.Utilities;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.XYZFilter;
 
@@ -140,7 +140,7 @@ public class Minimize_2 implements OptimizationListener, Terminatable {
         xyzFilter.readFile();
         Utilities.biochemistry(molecularAssembly, xyzFilter.getAtomList());
         atoms = molecularAssembly.getAtomArray();
-        molecularAssembly.finalize(true);
+        molecularAssembly.finalize(true, forceField);
         //algorithmListener = this;
         if (molecularAssembly.getPotentialEnergy() == null) {
             molecularAssembly.setPotential(new ForceFieldEnergy(molecularAssembly));

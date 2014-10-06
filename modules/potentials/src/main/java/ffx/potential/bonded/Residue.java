@@ -38,9 +38,8 @@ import javax.vecmath.Point2d;
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
 
-import ffx.potential.ResidueEnumerations.NucleicAcid3;
-import ffx.potential.Rotamer;
-import ffx.potential.RotamerLibrary;
+import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
+import ffx.potential.parameters.ForceField;
 
 import static ffx.utilities.HashCodeUtil.SEED;
 import static ffx.utilities.HashCodeUtil.hash;
@@ -53,7 +52,16 @@ import static ffx.utilities.HashCodeUtil.hash;
  */
 public class Residue extends MSGroup {
 
-    private static final Logger logger = Logger.getLogger(ffx.potential.bonded.Residue.class.getName());
+    private static final Logger logger = Logger.getLogger(Residue.class.getName());
+
+    /**
+     * The location of a residue within a chain.
+     */
+    public enum ResiduePosition {
+
+        FIRST_RESIDUE, MIDDLE_RESIDUE, LAST_RESIDUE
+    };
+
     private static final long serialVersionUID = 1L;
     private static Point3d point3d = new Point3d();
     private static Point2d point2d = new Point2d();
@@ -303,13 +311,14 @@ public class Residue extends MSGroup {
      * @param num a int.
      * @param atoms a {@link ffx.potential.bonded.MSNode} object.
      * @param rt a {@link ffx.potential.bonded.Residue.ResidueType} object.
+     * @param forceField
      */
-    public Residue(String name, int num, MSNode atoms, ResidueType rt) {
+    public Residue(String name, int num, MSNode atoms, ResidueType rt, ForceField forceField) {
         super(name, atoms);
         resNumber = num;
         residueType = rt;
         assignResidueType();
-        finalize(true);
+        finalize(true, forceField);
     }
 
     public Rotamer[] getRotamers(Residue residue) {
@@ -608,15 +617,13 @@ public class Residue extends MSGroup {
      * followed by a determination of under-constrained (Dangeling) atoms.
      */
     @Override
-    public void finalize(boolean finalizeGeometry) {
+    public void finalize(boolean finalizeGeometry, ForceField forceField) {
         setFinalized(false);
         getAtomNode().setName("Atoms (" + getAtomList().size() + ")");
         if (finalizeGeometry) {
-            // constructValenceTerms();
-            assignBondedTerms();
+            assignBondedTerms(forceField);
             removeLeaves();
         }
-        // findDangelingAtoms();
         setCenter(getMultiScaleCenter(false));
         setFinalized(true);
     }

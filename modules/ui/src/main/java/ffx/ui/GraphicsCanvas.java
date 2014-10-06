@@ -71,7 +71,7 @@ import javax.vecmath.Vector3f;
 import com.sun.j3d.utils.universe.SimpleUniverse;
 
 import ffx.potential.bonded.MSNode;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.RendererCache;
 import ffx.potential.bonded.RendererCache.ColorModel;
 import ffx.potential.bonded.RendererCache.ViewModel;
@@ -124,7 +124,7 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
         }
     }
     // Controller Classes
-    private ffx.potential.bonded.Renderer renderer;
+    private ffx.potential.Renderer renderer;
     private GraphicsEvents graphicsEvents;
     private GraphicsPicking rendererPicking;
     private MainPanel mainPanel;
@@ -452,7 +452,7 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
         rendererPicking = new GraphicsPicking(baseBranchGroup, bounds, this,
                 mainPanel);
         baseBranchGroup.addChild(rendererPicking);
-        renderer = new ffx.potential.bonded.Renderer(bounds, mainPanel.getStatusBar());
+        renderer = new ffx.potential.Renderer(bounds, mainPanel.getStatusBar());
         baseBranchGroup.addChild(renderer);
         // Compile the Root BranchGroup and add it to the Universe
         objRoot.compile();

@@ -10,7 +10,7 @@ import java.io.File;
 import ffx.algorithms.AlgorithmFunctions;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 
 /**
  * The UIUtils class implements all Function interfaces, enabling lower modules

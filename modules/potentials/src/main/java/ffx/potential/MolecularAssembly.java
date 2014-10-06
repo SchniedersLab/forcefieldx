@@ -20,15 +20,36 @@
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
  */
-package ffx.potential.bonded;
+package ffx.potential;
 
 import java.io.File;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.media.j3d.*;
+import javax.media.j3d.Appearance;
+import javax.media.j3d.BoundingSphere;
+import javax.media.j3d.BranchGroup;
+import javax.media.j3d.ColoringAttributes;
+import javax.media.j3d.GeometryArray;
+import javax.media.j3d.Group;
+import javax.media.j3d.LineArray;
+import javax.media.j3d.LineAttributes;
+import javax.media.j3d.Link;
+import javax.media.j3d.Material;
+import javax.media.j3d.Node;
+import javax.media.j3d.RenderingAttributes;
+import javax.media.j3d.Shape3D;
+import javax.media.j3d.SharedGroup;
+import javax.media.j3d.Switch;
+import javax.media.j3d.Transform3D;
+import javax.media.j3d.TransformGroup;
 import javax.vecmath.Color3f;
 import javax.vecmath.Matrix3d;
 import javax.vecmath.Point3d;
@@ -42,7 +63,21 @@ import org.jdesktop.j3d.loaders.vrml97.VrmlScene;
 import ffx.crystal.Crystal;
 import ffx.numerics.VectorMath;
 import ffx.potential.ForceFieldEnergy;
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Bond;
+import ffx.potential.bonded.MSGroup;
+import ffx.potential.bonded.MSNode;
+import ffx.potential.bonded.Molecule;
+import ffx.potential.bonded.Polymer;
+import ffx.potential.bonded.ROLS;
+import ffx.potential.bonded.RendererCache;
+import ffx.potential.bonded.Residue;
+import ffx.potential.bonded.Residue.ResiduePosition;
 import ffx.potential.parameters.ForceField;
+
+import static ffx.potential.bonded.Residue.ResiduePosition.FIRST_RESIDUE;
+import static ffx.potential.bonded.Residue.ResiduePosition.LAST_RESIDUE;
+import static ffx.potential.bonded.Residue.ResiduePosition.MIDDLE_RESIDUE;
 
 /**
  * The MolecularAssembly class is a collection of Polymers, Hetero Molecules,
@@ -154,6 +189,26 @@ public class MolecularAssembly extends MSGroup {
      */
     public ForceFieldEnergy getPotentialEnergy() {
         return potentialEnergy;
+    }
+
+    public ResiduePosition getResiduePosition(int residueNumber) {
+        ResiduePosition position;
+        int numberOfResidues = 0;
+        Polymer polymers[] = getChains();
+        int nPolymers = polymers.length;
+        for (int i = 0; i < nPolymers; i++) {
+            Polymer polymer = polymers[i];
+            ArrayList<Residue> residues = polymer.getResidues();
+            numberOfResidues += residues.size();
+        }
+        if (residueNumber == 0) {
+            position = FIRST_RESIDUE;
+        } else if (residueNumber == numberOfResidues - 1) {
+            position = LAST_RESIDUE;
+        } else {
+            position = MIDDLE_RESIDUE;
+        }
+        return position;
     }
 
     /**
@@ -465,7 +520,7 @@ public class MolecularAssembly extends MSGroup {
      * {@inheritDoc}
      */
     @Override
-    public void finalize(boolean finalizeGroups) {
+    public void finalize(boolean finalizeGroups, ForceField forceField) {
         setFinalized(false);
         if (finalizeGroups) {
             bondTime = 0;
@@ -483,7 +538,7 @@ public class MolecularAssembly extends MSGroup {
                     logger.fine(" Finalizing bonded terms for polymer " + group.toString());
                 }
                 try {
-                    group.finalize(true);
+                    group.finalize(true, forceField);
                 } catch (Exception e) {
                     String message = "Fatal exception finalizing " + group.toString();
                     logger.log(Level.SEVERE, message, e);
@@ -500,15 +555,15 @@ public class MolecularAssembly extends MSGroup {
             }
             for (MSNode m : molecules.getChildList()) {
                 Molecule molecule = (Molecule) m;
-                molecule.finalize(true);
+                molecule.finalize(true, forceField);
             }
             for (MSNode m : water.getChildList()) {
                 Molecule molecule = (Molecule) m;
-                molecule.finalize(true);
+                molecule.finalize(true, forceField);
             }
             for (MSNode m : ions.getChildList()) {
                 Molecule molecule = (Molecule) m;
-                molecule.finalize(true);
+                molecule.finalize(true, forceField);
             }
             if (logger.isLoggable(Level.FINE)) {
                 StringBuilder sb = new StringBuilder("\n Time to create bonded energy terms\n\n");
@@ -589,14 +644,15 @@ public class MolecularAssembly extends MSGroup {
      * This method assigns a unique integer to every molecule in the
      * MolecularAssembly beginning at 0. An integer array with these values for
      * each atom is returned.
+     *
+     * @return an array of molecule numbers for each atom.
      */
     public int[] getMoleculeNumbers() {
         int moleculeNumber[] = new int[getAtomList().size()];
         int current = 0;
-        // Move the polymers together
+        // Loop over polymers together
         Polymer[] polymers = getChains();
         if (polymers != null && polymers.length > 0) {
-            // Find the center of mass
             for (Polymer polymer : polymers) {
                 List<Atom> atomList = polymer.getAtomList();
                 for (Atom atom : atomList) {

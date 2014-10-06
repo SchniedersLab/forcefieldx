@@ -23,6 +23,7 @@
 package ffx.potential;
 
 import ffx.crystal.Crystal;
+
 import static ffx.crystal.SpaceGroup.CrystalSystem.CUBIC;
 import static ffx.crystal.SpaceGroup.CrystalSystem.HEXAGONAL;
 import static ffx.crystal.SpaceGroup.CrystalSystem.MONOCLINIC;
@@ -30,9 +31,10 @@ import static ffx.crystal.SpaceGroup.CrystalSystem.ORTHORHOMBIC;
 import static ffx.crystal.SpaceGroup.CrystalSystem.TETRAGONAL;
 import static ffx.crystal.SpaceGroup.CrystalSystem.TRICLINIC;
 import static ffx.crystal.SpaceGroup.CrystalSystem.TRIGONAL;
+
 import ffx.numerics.Potential;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.MolecularAssembly;
+
 import java.util.logging.Logger;
 
 /**

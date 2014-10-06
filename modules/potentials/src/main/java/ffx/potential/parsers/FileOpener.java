@@ -24,7 +24,7 @@ package ffx.potential.parsers;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 
 /**
  * The FileOpener interface specifies Runnable objects which can return one or

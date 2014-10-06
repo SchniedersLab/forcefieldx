@@ -35,7 +35,7 @@ import org.apache.commons.io.FilenameUtils;
 import ffx.algorithms.Integrator.Integrators;
 import ffx.algorithms.Thermostat.Thermostats;
 import ffx.numerics.Potential;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.parsers.DYNFilter;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.XYZFilter;
@@ -93,7 +93,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * <p>
      * Constructor for MolecularDynamics.</p>
      *
-     * @param assembly a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param assembly a {@link ffx.potential.MolecularAssembly} object.
      * @param potentialEnergy a {@link ffx.numerics.Potential} object.
      * @param properties a
      * {@link org.apache.commons.configuration.CompositeConfiguration} object.

@@ -20,7 +20,7 @@
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
  */
-package ffx.potential.parsers;
+package ffx.potential.utils;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,9 +32,19 @@ import java.util.List;
 import org.apache.commons.configuration.CompositeConfiguration;
 
 import ffx.potential.ForceFieldEnergy;
-import ffx.potential.bonded.MolecularAssembly;
-import ffx.potential.bonded.Utilities;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.Utilities;
 import ffx.potential.parameters.ForceField;
+import ffx.potential.parsers.ARCFileFilter;
+import ffx.potential.parsers.FileOpener;
+import ffx.potential.parsers.ForceFieldFilter;
+import ffx.potential.parsers.INTFileFilter;
+import ffx.potential.parsers.INTFilter;
+import ffx.potential.parsers.PDBFileFilter;
+import ffx.potential.parsers.PDBFilter;
+import ffx.potential.parsers.SystemFilter;
+import ffx.potential.parsers.XYZFileFilter;
+import ffx.potential.parsers.XYZFilter;
 import ffx.utilities.Keyword;
 
 /**
@@ -212,7 +222,7 @@ public class PotentialsFileOpener implements FileOpener {
             if (!(filter instanceof PDBFilter)) {
                 Utilities.biochemistry(assembly, filter.getAtomList());
             }
-            assembly.finalize(true);
+            assembly.finalize(true, forceField);
             ForceFieldEnergy energy = new ForceFieldEnergy(assembly);
             assembly.setPotential(energy);
             assemblies.add(assembly);

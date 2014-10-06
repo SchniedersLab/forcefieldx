@@ -28,8 +28,8 @@ import java.util.logging.Logger;
 import org.apache.commons.configuration.CompositeConfiguration;
 
 import ffx.numerics.Potential;
-import ffx.potential.bonded.MolecularAssembly;
-import ffx.potential.parsers.PotentialsUtils;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.utils.PotentialsUtils;
 import ffx.utilities.Keyword;
 
 /**
@@ -40,6 +40,7 @@ import ffx.utilities.Keyword;
  * @author Michael J. Schnieders
  */
 public class AlgorithmUtils extends PotentialsUtils implements AlgorithmFunctions {
+
     private static final Logger logger = Logger.getLogger(AlgorithmUtils.class.getName());
     private final long initTime;
     private long interTime;
@@ -51,8 +52,9 @@ public class AlgorithmUtils extends PotentialsUtils implements AlgorithmFunction
 
     /**
      * Logs time since this interface was created and the last time this method
-     * was called. May be more elegant to replace this by using protected variables
-     * and simply inheriting the time() function.
+     * was called. May be more elegant to replace this by using protected
+     * variables and simply inheriting the time() function.
+     *
      * @return Time since last call (double).
      */
     @Override
@@ -67,6 +69,7 @@ public class AlgorithmUtils extends PotentialsUtils implements AlgorithmFunction
 
     /**
      * Performs molecular dynamics on a MolecularAssembly.
+     *
      * @param assembly
      * @param nStep
      * @param timeStep
@@ -94,6 +97,7 @@ public class AlgorithmUtils extends PotentialsUtils implements AlgorithmFunction
 
     /**
      * Minimizes a MolecularAssembly using AMOEBA potential energy.
+     *
      * @param assembly Assembly to minimize
      * @param eps Convergence criterion
      * @return A Potential.

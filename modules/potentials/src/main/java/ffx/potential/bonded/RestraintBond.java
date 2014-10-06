@@ -26,18 +26,28 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
-import static org.apache.commons.math3.util.FastMath.pow;
-
-import javax.media.j3d.*;
+import javax.media.j3d.BranchGroup;
+import javax.media.j3d.Geometry;
+import javax.media.j3d.LineArray;
+import javax.media.j3d.Shape3D;
+import javax.media.j3d.Transform3D;
+import javax.media.j3d.TransformGroup;
 import javax.vecmath.AxisAngle4d;
 import javax.vecmath.Vector3d;
 
+import static org.apache.commons.math3.util.FastMath.pow;
+
 import ffx.crystal.Crystal;
-import ffx.potential.LambdaInterface;
 import ffx.potential.bonded.RendererCache.ViewModel;
 import ffx.potential.parameters.BondType;
 
-import static ffx.numerics.VectorMath.*;
+import static ffx.numerics.VectorMath.angle;
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
 import static ffx.potential.parameters.BondType.units;
 
 /**

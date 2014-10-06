@@ -31,8 +31,8 @@ import org.apache.commons.configuration.CompositeConfiguration;
 
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
-import ffx.potential.bonded.MolecularAssembly;
-import ffx.potential.bonded.Utilities.FileType;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.Utilities.FileType;
 import ffx.potential.parameters.ForceField;
 
 /**
@@ -184,7 +184,7 @@ public abstract class SystemFilter {
      * Constructor for SystemFilter.</p>
      *
      * @param files a {@link java.util.List} object.
-     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
      * object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
      * @param properties a
@@ -206,7 +206,7 @@ public abstract class SystemFilter {
      * Constructor for SystemFilter.</p>
      *
      * @param file a {@link java.io.File} object.
-     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
      * object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
      * @param properties a
@@ -295,7 +295,7 @@ public abstract class SystemFilter {
     /**
      * Return the MolecularSystem that has been read in
      *
-     * @return a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @return a {@link ffx.potential.MolecularAssembly} object.
      */
     public MolecularAssembly getActiveMolecularSystem() {
         return activeMolecularAssembly;
@@ -305,7 +305,7 @@ public abstract class SystemFilter {
      * <p>
      * getMolecularAssemblys</p>
      *
-     * @return an array of {@link ffx.potential.bonded.MolecularAssembly}
+     * @return an array of {@link ffx.potential.MolecularAssembly}
      * objects.
      */
     public MolecularAssembly[] getMolecularAssemblys() {
@@ -390,7 +390,7 @@ public abstract class SystemFilter {
      * <p>
      * setMolecularSystem</p>
      *
-     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
      * object.
      */
     public void setMolecularSystem(MolecularAssembly molecularAssembly) {

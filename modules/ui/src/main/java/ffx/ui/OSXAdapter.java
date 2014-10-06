@@ -20,7 +20,7 @@
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
  */
-package ffx.ui.macosx;
+package ffx.ui;
 
 import java.lang.reflect.Method;
 import java.util.logging.Level;
@@ -33,8 +33,6 @@ import com.apple.eawt.ApplicationAdapter;
 import com.apple.eawt.ApplicationEvent;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
-
-import ffx.ui.MainPanel;
 
 /**
  * The OSXAdapter class was developed by following an example supplied on the OS

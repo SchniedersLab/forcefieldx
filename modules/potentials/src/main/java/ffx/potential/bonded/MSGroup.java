@@ -192,8 +192,9 @@ public abstract class MSGroup extends MSNode {
     /**
      * <p>
      * assignBondedTerms</p>
+     * @param forceField
      */
-    public void assignBondedTerms() {
+    public void assignBondedTerms(ForceField forceField) {
         MSNode newBondNode = new MSNode("Bonds");
         MSNode newAngleNode = new MSNode("Angles");
         MSNode newStretchBendNode = new MSNode("Stretch-Bends");
@@ -203,10 +204,7 @@ public abstract class MSGroup extends MSNode {
         MSNode newPiOrbitalTorsionNode = new MSNode("Pi-Orbital Torsions");
         MSNode newTorsionTorsionNode = new MSNode("Torsion-Torsions");
         MSNode newImproperTorsionNode = new MSNode("Improper Torsions");
-
-        MolecularAssembly molecularAssembly = (MolecularAssembly) getMSNode(MolecularAssembly.class);
-        ForceField forceField = molecularAssembly.getForceField();
-
+;
         // Collect all bonds for which both atoms are in this Group
         long time = System.nanoTime();
         ArrayList<Bond> bonds = new ArrayList<>();
@@ -447,7 +445,7 @@ public abstract class MSGroup extends MSNode {
      * @param group1 a {@link ffx.potential.bonded.MSGroup} object.
      * @param group2 a {@link ffx.potential.bonded.MSGroup} object.
      */
-    public Joint createJoint(Bond bond, MSGroup group1, MSGroup group2) {
+    public Joint createJoint(Bond bond, MSGroup group1, MSGroup group2, ForceField forceField) {
         MSNode newBondNode = new MSNode("Bonds");
         MSNode newAngleNode = new MSNode("Angles");
         MSNode newStretchBendNode = new MSNode("Stretch-Bends");
@@ -456,9 +454,7 @@ public abstract class MSGroup extends MSNode {
         MSNode newTorsionNode = new MSNode("Torsions");
         MSNode newPiOrbitalTorsionNode = new MSNode("Pi-Orbital Torsions");
         MSNode newTorsionTorsionNode = new MSNode("Torsion-Torsions");
-        //MSNode newImproperTorsionNode = new MSNode("Torsion-Torsions");
-        MolecularAssembly sys = (MolecularAssembly) getMSNode(MolecularAssembly.class);
-        ForceField forceField = sys.getForceField();
+        //MSNode newImproperTorsionNode = new MSNode("Improper Torsions");
         newBondNode.add(bond);
         newBondNode.setName("Bonds (" + newBondNode.getChildCount() + ")");
 
@@ -576,9 +572,10 @@ public abstract class MSGroup extends MSNode {
      *
      * @param group1 a {@link ffx.potential.bonded.MSGroup} object.
      * @param group2 a {@link ffx.potential.bonded.MSGroup} object.
+     * @param forceField
      * @return a {@link ffx.potential.bonded.Joint} object.
      */
-    public Joint createJoint(MSGroup group1, MSGroup group2) {
+    public Joint createJoint(MSGroup group1, MSGroup group2, ForceField forceField) {
         Joint joint = null;
         for (Atom a1 : group1.getAtomList()) {
             a1.getXYZ(da);
@@ -588,7 +585,7 @@ public abstract class MSGroup extends MSNode {
                 double d2 = Bond.BUFF + a1.getVDWR() / 2 + a2.getVDWR() / 2;
                 if (d1 < d2) {
                     Bond b = new Bond(a1, a2);
-                    Joint newJoint = createJoint(b, group1, group2);
+                    Joint newJoint = createJoint(b, group1, group2, forceField);
                     if (joint != null) {
                         joint.merge(newJoint);
                     } else {
@@ -605,7 +602,7 @@ public abstract class MSGroup extends MSNode {
      *
      * @param finalizeGroups a boolean.
      */
-    public abstract void finalize(boolean finalizeGroups);
+    public abstract void finalize(boolean finalizeGroups, ForceField forceField);
 
     /**
      * This method constructs an ArrayList of atoms which are under-constrained.

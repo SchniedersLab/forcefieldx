@@ -46,7 +46,7 @@ import com.sun.j3d.utils.picking.PickResult;
 import com.sun.j3d.utils.universe.SimpleUniverse;
 
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 import ffx.ui.GraphicsCanvas.LeftButtonMode;
 import ffx.ui.behaviors.GlobalBehavior;
 import ffx.ui.behaviors.MouseRotate;

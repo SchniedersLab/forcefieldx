@@ -22,6 +22,8 @@
  */
 package ffx.ui;
 
+import ffx.potential.MolecularAssembly;
+
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Vector;

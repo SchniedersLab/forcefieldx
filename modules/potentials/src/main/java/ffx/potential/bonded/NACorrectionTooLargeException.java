@@ -20,9 +20,7 @@
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
  */
-package ffx.potential;
-
-import ffx.potential.bonded.Residue;
+package ffx.potential.bonded;
 
 /**
  * This exception is thrown when a nucleic acid Rotamer must be distorted to an
