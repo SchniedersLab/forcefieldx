@@ -22,8 +22,6 @@
  */
 package ffx.potential.bonded;
 
-import ffx.potential.MolecularAssembly;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -32,7 +30,6 @@ import javax.media.j3d.BranchGroup;
 import javax.media.j3d.Material;
 import javax.vecmath.Color3f;
 
-import ffx.potential.bonded.BondedUtils.MissingHeavyAtomException;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.parameters.ForceField;
 
@@ -53,14 +50,12 @@ public class MultiResidue extends Residue {
      */
     ArrayList<Residue> consideredResidues;
 
-    MolecularAssembly molecularAssembly;
     ForceField forceField;
 
-    public MultiResidue(Residue residue, MolecularAssembly molecularAssembly) {
+    public MultiResidue(Residue residue, ForceField forceField) {
         super("MultiResidue", residue.getResidueNumber(), residue.residueType);
 
-        this.molecularAssembly = molecularAssembly;
-        this.forceField = molecularAssembly.getForceField();
+        this.forceField = forceField;
         activeResidue = residue;
         // Initialize consideredResidue list.
         consideredResidues = new ArrayList<>();
@@ -79,8 +74,8 @@ public class MultiResidue extends Residue {
     }
 
     @Override
-    public void assignBondedTerms() {
-        activeResidue.assignBondedTerms();
+    public void assignBondedTerms(ForceField forceField) {
+        activeResidue.assignBondedTerms(forceField);
     }
 
     @Override
@@ -89,18 +84,18 @@ public class MultiResidue extends Residue {
     }
 
     @Override
-    public Joint createJoint(Bond bond, MSGroup group1, MSGroup group2) {
-        return activeResidue.createJoint(bond, group1, group2);
+    public Joint createJoint(Bond bond, MSGroup group1, MSGroup group2, ForceField forceField) {
+        return activeResidue.createJoint(bond, group1, group2, forceField);
     }
 
     @Override
-    public Joint createJoint(MSGroup group1, MSGroup group2) {
-        return activeResidue.createJoint(group1, group2);
+    public Joint createJoint(MSGroup group1, MSGroup group2, ForceField forceField) {
+        return activeResidue.createJoint(group1, group2, forceField);
     }
 
     @Override
-    public void finalize(boolean finalizeGeometry) {
-        activeResidue.finalize(finalizeGeometry);
+    public void finalize(boolean finalizeGeometry, ForceField forceField) {
+        activeResidue.finalize(finalizeGeometry, forceField);
     }
 
     @Override
@@ -315,8 +310,6 @@ public class MultiResidue extends Residue {
 
     public void addResidue(Residue residue) {
         int number = residue.getResidueNumber();
-
-        ResiduePosition position = molecularAssembly.getResiduePosition(number);
         AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
 
         // Get references to the backbone atoms

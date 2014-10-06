@@ -33,7 +33,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.Utilities;
+import ffx.potential.Utilities;
 import ffx.potential.parameters.ForceField;
 import ffx.utilities.Keyword;
 
@@ -212,7 +212,7 @@ public class PotentialsFileOpener implements FileOpener {
             if (!(filter instanceof PDBFilter)) {
                 Utilities.biochemistry(assembly, filter.getAtomList());
             }
-            assembly.finalize(true);
+            assembly.finalize(true, forceField);
             ForceFieldEnergy energy = new ForceFieldEnergy(assembly);
             assembly.setPotential(energy);
             assemblies.add(assembly);

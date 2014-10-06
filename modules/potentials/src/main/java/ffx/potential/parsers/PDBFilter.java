@@ -55,7 +55,7 @@ import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Residue.ResiduePosition;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
-import ffx.potential.bonded.Utilities.FileType;
+import ffx.potential.Utilities.FileType;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;

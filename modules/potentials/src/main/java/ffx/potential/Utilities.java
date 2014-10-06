@@ -20,15 +20,19 @@
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
  */
-package ffx.potential.bonded;
-
-import ffx.potential.MolecularAssembly;
+package ffx.potential;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.logging.Logger;
+
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Bond;
+import ffx.potential.bonded.Molecule;
+import ffx.potential.bonded.Polymer;
+import ffx.potential.bonded.Residue;
 
 import static ffx.numerics.VectorMath.diff;
 
@@ -64,7 +68,7 @@ public final class Utilities {
      * performance win - although better algorithms probably exist. This is
      * currently backed by ArrayLists.
      */
-    public static List<List<Atom>> atomListPool = new ArrayList<List<Atom>>();
+    public static List<List<Atom>> atomListPool = new ArrayList<>();
     static int count = 0;
     /**
      * Repeating atomic numbers of an amino acid chain.
@@ -81,7 +85,8 @@ public final class Utilities {
      * single character for nucleic acids, or an integer indicating a special
      * case.
      */
-    private static final HashMap<String, String> sidechainStoichiometry = new HashMap<String, String>();
+    private static final HashMap<String, String> sidechainStoichiometry = new HashMap<>();
+
     private static final double p4 = 15.236;
     private static final double p5 = 1.254;
     private static final double p5inv = 1.0 / 1.254;
@@ -325,7 +330,7 @@ public final class Utilities {
         int waterNum = 0;
         int ionNum = 0;
         int moleculeNum = 0;
-        List<String> segIDs = new ArrayList<String>();
+        List<String> segIDs = new ArrayList<>();
         while (atoms.size() > 0) {
             /**
              * Nitrogen is used to "seed" a backbone search because carbon can

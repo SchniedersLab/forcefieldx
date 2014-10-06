@@ -73,7 +73,6 @@ import ffx.potential.bonded.ROLS;
 import ffx.potential.bonded.RendererCache;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Residue.ResiduePosition;
-import ffx.potential.bonded.Utilities;
 import ffx.potential.parameters.ForceField;
 
 import static ffx.potential.bonded.Residue.ResiduePosition.FIRST_RESIDUE;
@@ -521,7 +520,7 @@ public class MolecularAssembly extends MSGroup {
      * {@inheritDoc}
      */
     @Override
-    public void finalize(boolean finalizeGroups) {
+    public void finalize(boolean finalizeGroups, ForceField forceField) {
         setFinalized(false);
         if (finalizeGroups) {
             bondTime = 0;
@@ -539,7 +538,7 @@ public class MolecularAssembly extends MSGroup {
                     logger.fine(" Finalizing bonded terms for polymer " + group.toString());
                 }
                 try {
-                    group.finalize(true);
+                    group.finalize(true, forceField);
                 } catch (Exception e) {
                     String message = "Fatal exception finalizing " + group.toString();
                     logger.log(Level.SEVERE, message, e);
@@ -556,15 +555,15 @@ public class MolecularAssembly extends MSGroup {
             }
             for (MSNode m : molecules.getChildList()) {
                 Molecule molecule = (Molecule) m;
-                molecule.finalize(true);
+                molecule.finalize(true, forceField);
             }
             for (MSNode m : water.getChildList()) {
                 Molecule molecule = (Molecule) m;
-                molecule.finalize(true);
+                molecule.finalize(true, forceField);
             }
             for (MSNode m : ions.getChildList()) {
                 Molecule molecule = (Molecule) m;
-                molecule.finalize(true);
+                molecule.finalize(true, forceField);
             }
             if (logger.isLoggable(Level.FINE)) {
                 StringBuilder sb = new StringBuilder("\n Time to create bonded energy terms\n\n");

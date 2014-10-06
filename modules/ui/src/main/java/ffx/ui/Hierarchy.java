@@ -175,7 +175,7 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
         if (newModel == null) {
             return;
         }
-        newModel.finalize(true);
+        newModel.finalize(true, newModel.getForceField());
         GraphicsCanvas graphics = mainPanel.getGraphics3D();
         if (graphics != null) {
             graphics.attachModel(newModel);

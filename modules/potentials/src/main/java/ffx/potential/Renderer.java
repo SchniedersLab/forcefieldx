@@ -20,9 +20,7 @@
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
  */
-package ffx.potential.bonded;
-
-import ffx.potential.MolecularAssembly;
+package ffx.potential;
 
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -33,6 +31,11 @@ import javax.media.j3d.Bounds;
 import javax.media.j3d.BranchGroup;
 import javax.media.j3d.WakeupOnBehaviorPost;
 import javax.swing.JLabel;
+
+import ffx.potential.bonded.MSNode;
+import ffx.potential.bonded.MSRoot;
+import ffx.potential.bonded.ROLSP;
+import ffx.potential.bonded.RendererCache;
 
 /**
  * The Renderer class attempts to maximize throughput of graphics operations on

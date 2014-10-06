@@ -84,7 +84,7 @@ import org.xml.sax.SAXException;
 
 import ffx.FFXClassLoader;
 import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.Utilities.FileType;
+import ffx.potential.Utilities.FileType;
 import ffx.potential.parsers.SystemFilter;
 import ffx.ui.commands.DTDResolver;
 import ffx.utilities.Keyword;

@@ -32,7 +32,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.Utilities.FileType;
+import ffx.potential.Utilities.FileType;
 import ffx.potential.parameters.ForceField;
 
 /**

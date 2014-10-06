@@ -35,6 +35,7 @@ import javax.vecmath.Color3f;
 
 import ffx.numerics.VectorMath;
 import ffx.potential.bonded.Residue.ResidueType;
+import ffx.potential.parameters.ForceField;
 
 import static ffx.utilities.HashCodeUtil.SEED;
 import static ffx.utilities.HashCodeUtil.hash;
@@ -134,7 +135,7 @@ public class Polymer extends MSGroup {
      * @param residue2 a {@link ffx.potential.bonded.Residue} object.
      * @return a {@link ffx.potential.bonded.Joint} object.
      */
-    public Joint createJoint(Residue residue1, Residue residue2) {
+    public Joint createJoint(Residue residue1, Residue residue2, ForceField forceField) {
         Joint joint = null;
         for (Enumeration e = residue1.getAtomNode().children(); e.hasMoreElements();) {
             Atom a1 = (Atom) e.nextElement();
@@ -146,7 +147,7 @@ public class Polymer extends MSGroup {
                 double d2 = Bond.BUFF + a1.getVDWR() / 2 + a2.getVDWR() / 2;
                 if (d1 < d2) {
                     Bond b = new Bond(a1, a2);
-                    Joint newJoint = createJoint(b, residue1, residue2);
+                    Joint newJoint = createJoint(b, residue1, residue2, forceField);
                     if (joint != null) {
                         joint.merge(newJoint);
                     } else {
@@ -182,7 +183,7 @@ public class Polymer extends MSGroup {
      * then forms Joints between adjacent Residues in the Polymer
      */
     @Override
-    public void finalize(boolean finalizeGroups) {
+    public void finalize(boolean finalizeGroups, ForceField forceField) {
         ListIterator li;
         ArrayList res = getAtomNodeList();
         setFinalized(false);
@@ -190,7 +191,7 @@ public class Polymer extends MSGroup {
         // Finalize the residues in the Polymer
         if (finalizeGroups) {
             for (li = res.listIterator(); li.hasNext();) {
-                ((Residue) li.next()).finalize(true);
+                ((Residue) li.next()).finalize(true, forceField);
             }
         }
         // Join the residues in the Polymer
@@ -215,7 +216,7 @@ public class Polymer extends MSGroup {
                             Residue r1 = (Residue) a.getMSNode(Residue.class);
                             Residue r2 = (Residue) b.get1_2(a).getMSNode(
                                     Residue.class);
-                            j = createJoint(b, r1, r2);
+                            j = createJoint(b, r1, r2, forceField);
                             joints.add(j);
                         }
                     }

@@ -46,7 +46,7 @@ import ffx.crystal.ReplicatesCrystal;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Utilities;
+import ffx.potential.Utilities;
 import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.nonbonded.VanDerWaals.VDW_FORM;
 import ffx.potential.parameters.ForceField;
@@ -154,7 +154,7 @@ public class Energy {
         XYZFilter xyzFilter = new XYZFilter(structure_xyz, molecularAssembly, forceField, properties);
         xyzFilter.readFile();
         Utilities.biochemistry(molecularAssembly, xyzFilter.getAtomList());
-        molecularAssembly.finalize(true);
+        molecularAssembly.finalize(true, forceField);
 
         //Read options
         if (options != null) {

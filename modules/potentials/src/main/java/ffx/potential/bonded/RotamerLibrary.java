@@ -22,8 +22,6 @@
  */
 package ffx.potential.bonded;
 
-import ffx.potential.MolecularAssembly;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -222,11 +220,9 @@ public class RotamerLibrary {
      * This MUST be called before any applyRotamer calls are made, else invalid
      * coordinates will be stored.
      *
-     * @param molecularAssembly To search for nucleic acids.
+     * @param polymers
      */
-    public static void initializeDefaultAtomicCoordinates(MolecularAssembly molecularAssembly) {
-        // Loads default atomic coordinates for all nucleic acid residues.
-        Polymer[] polymers = molecularAssembly.getChains();
+    public static void initializeDefaultAtomicCoordinates(Polymer[] polymers) {
         for (Polymer polymer : polymers) {
             ArrayList<Residue> current = polymer.getResidues();
             for (Residue residuej : current) {
