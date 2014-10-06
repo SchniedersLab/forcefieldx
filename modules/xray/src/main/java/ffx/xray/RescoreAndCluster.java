@@ -66,7 +66,7 @@ package ffx.xray;
 
 import com.apporiented.algorithm.clustering.Cluster;
 import ffx.algorithms.AlgorithmFunctions;
-import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.MolecularAssembly;
 import ffx.utilities.DoubleIndexPair;
 import ffx.utilities.Keyword;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;

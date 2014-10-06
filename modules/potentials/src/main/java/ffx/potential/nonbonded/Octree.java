@@ -103,7 +103,7 @@ public class Octree {
                 for (Octree leaf : leaves) {
                     Point3d p = leaf.getCorner();
                     bw.write(format("Leaf %d:  (%6.2f, %6.2f, %6.2f) x %6.2f\n",
-                            i++, p.getX(), p.getY(), p.getZ(), leaf.getEdgeLength()));
+                            i++, p.x, p.y, p.z, leaf.getEdgeLength()));
                     for (Atom atom : leaf.getContents()) {
                         bw.write(format("  %s\n", atom.toString()));
                     }
