@@ -132,7 +132,9 @@ public class FFXClassLoader extends URLClassLoader {
             "org.biojava/bytecode.jar",
             "org.biojava/biojava3-structure.jar",
             "org.biojava/biojava3-alignment.jar",
-            "org.biojava/biojava3-phylo.jar"
+            "org.biojava/biojava3-phylo.jar",
+            // Lars Behnke's hierarchical-clustering-java
+            "com.apporiented/hierarchical-clustering.jar"
         }));
 
         String osName = System.getProperty("os.name").toUpperCase();
