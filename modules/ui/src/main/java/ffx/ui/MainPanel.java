@@ -86,13 +86,12 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.SystemUtils;
 
-import ffx.FFXClassLoader;
 import ffx.crystal.Crystal;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MSRoot;
-import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.ROLS;
 import ffx.potential.bonded.RendererCache;
 import ffx.potential.parameters.ForceField;
@@ -117,6 +116,7 @@ import ffx.potential.parsers.XYZFileFilter;
 import ffx.potential.parsers.XYZFilter;
 import ffx.ui.properties.FFXLocale;
 import ffx.utilities.Keyword;
+import ffx.utilities.StringUtils;
 
 import static ffx.utilities.StringUtils.pdbForID;
 
@@ -445,7 +445,7 @@ public final class MainPanel extends JPanel implements ActionListener,
                 logger.info(url.toString());
                 File structureFile = new File(url.getFile());
                 logger.info(structureFile.toString());
-                String tempFile = FFXClassLoader.copyInputStreamToTmpFile(url.openStream(), structureFile.getName(), "pdb");
+                String tempFile = StringUtils.copyInputStreamToTmpFile(url.openStream(), structureFile.getName(), "pdb");
                 open(tempFile);
             } catch (Exception e) {
                 System.err.println("MainPanel - Menu command not found: " + arg);

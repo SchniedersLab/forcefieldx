@@ -22,6 +22,13 @@
  */
 package ffx.utilities;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
 /**
  * @author Michael Schnieders
  */
@@ -77,6 +84,48 @@ public class StringUtils {
             return null;
         }
         return "http://www.rcsb.org/pdb/files/" + id.toLowerCase() + ".cif";
+    }
+
+    /**
+     * Returns the file name of a temporary copy of <code>input</code> content.
+     *
+     * @param input a {@link java.io.InputStream} object.
+     * @param name a {@link java.lang.String} object.
+     * @param suffix a {@link java.lang.String} object.
+     * @return a {@link java.lang.String} object.
+     * @throws java.io.IOException if any.
+     */
+    public static String copyInputStreamToTmpFile(final InputStream input,
+            String name, final String suffix) throws IOException {
+        File tmpFile = null;
+        try {
+            name = "ffx." + name + ".";
+            tmpFile = File.createTempFile(name, suffix);
+        } catch (Exception e) {
+            System.out.println(" Could not extract a Force Field X library.");
+            System.err.println(e.toString());
+            System.exit(-1);
+        }
+
+        tmpFile.deleteOnExit();
+        OutputStream output = null;
+        try {
+            output = new BufferedOutputStream(new FileOutputStream(tmpFile));
+            byte[] buffer = new byte[8192];
+            int size;
+            while ((size = input.read(buffer)) != -1) {
+                output.write(buffer, 0, size);
+            }
+        } finally {
+            if (input != null) {
+                input.close();
+            }
+            if (output != null) {
+                output.close();
+            }
+        }
+
+        return tmpFile.toString();
     }
 
 }

@@ -82,12 +82,12 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import ffx.FFXClassLoader;
-import ffx.potential.bonded.Residue;
 import ffx.potential.Utilities.FileType;
+import ffx.potential.bonded.Residue;
 import ffx.potential.parsers.SystemFilter;
 import ffx.ui.commands.DTDResolver;
 import ffx.utilities.Keyword;
+import ffx.utilities.StringUtils;
 
 /**
  * The ModelingPanel class encapsulates functionality needed to run FFX Modeling
@@ -856,7 +856,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
         if (embeddedScript != null) {
             try {
                 scriptFile = new File(
-                        FFXClassLoader.copyInputStreamToTmpFile(
+                    StringUtils.copyInputStreamToTmpFile(
                                 embeddedScript.openStream(), name, ".ffx"));
             } catch (IOException e) {
                 logger.log(Level.WARNING, "Exception extracting embedded script {0}\n{1}",

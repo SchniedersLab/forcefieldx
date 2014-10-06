@@ -53,7 +53,7 @@ import edu.rit.pj.Comm;
 
 import ffx.ui.LogHandler;
 import ffx.ui.MainPanel;
-import ffx.ui.macosx.OSXAdapter;
+import ffx.ui.OSXAdapter;
 
 /**
  * The Main class is the entry point to the graphical user interface version of
