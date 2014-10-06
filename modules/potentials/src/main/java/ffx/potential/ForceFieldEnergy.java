@@ -93,89 +93,91 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private TorsionTorsion torsionTorsions[];
     private ImproperTorsion improperTorsions[];
     private RestraintBond restraintBonds[];
-    private VanDerWaals vanderWaals;
-    private ParticleMeshEwald particleMeshEwald;
+    private final VanDerWaals vanderWaals;
+    private final ParticleMeshEwald particleMeshEwald;
     private final NCSRestraint ncsRestraint;
     private final CoordRestraint coordRestraint;
     private final COMRestraint comRestraint;
-    protected int nAtoms;
-    protected int nBonds;
-    protected int nAngles;
-    protected int nStretchBends;
-    protected int nUreyBradleys;
-    protected int nOutOfPlaneBends;
-    protected int nTorsions;
-    protected int nPiOrbitalTorsions;
-    protected int nTorsionTorsions;
-    protected int nImproperTorsions;
-    protected int nRestraintBonds;
-    protected int nVanDerWaals, nPME, nGK;
-    protected boolean bondTerm;
-    protected boolean angleTerm;
-    protected boolean stretchBendTerm;
-    protected boolean ureyBradleyTerm;
-    protected boolean outOfPlaneBendTerm;
-    protected boolean torsionTerm;
-    protected boolean piOrbitalTorsionTerm;
-    protected boolean torsionTorsionTerm;
-    protected boolean improperTorsionTerm;
-    protected boolean restraintBondTerm;
-    protected boolean vanderWaalsTerm;
-    protected boolean multipoleTerm;
-    protected boolean polarizationTerm;
-    protected boolean generalizedKirkwoodTerm;
-    protected boolean ncsTerm;
-    protected boolean restrainTerm;
-    protected boolean comTerm;
-    protected boolean lambdaBondedTerms = false;
-    protected boolean rigidHydrogens = false;
-    protected double rigidScale = 1.0;
-    protected boolean bondTermOrig;
-    protected boolean angleTermOrig;
-    protected boolean stretchBendTermOrig;
-    protected boolean ureyBradleyTermOrig;
-    protected boolean outOfPlaneBendTermOrig;
-    protected boolean torsionTermOrig;
-    protected boolean piOrbitalTorsionTermOrig;
-    protected boolean torsionTorsionTermOrig;
-    protected boolean improperTorsionTermOrig;
-    protected boolean restraintBondTermOrig;
-    protected boolean vanderWaalsTermOrig;
-    protected boolean multipoleTermOrig;
-    protected boolean polarizationTermOrig;
-    protected boolean generalizedKirkwoodTermOrig;
-    protected boolean ncsTermOrig;
-    protected boolean restrainTermOrig;
-    protected boolean comTermOrig;
-    protected double bondEnergy, bondRMSD;
-    protected double angleEnergy, angleRMSD;
-    protected double stretchBendEnergy;
-    protected double ureyBradleyEnergy;
-    protected double outOfPlaneBendEnergy;
-    protected double torsionEnergy;
-    protected double piOrbitalTorsionEnergy;
-    protected double torsionTorsionEnergy;
-    protected double improperTorsionEnergy;
-    protected double restraintBondEnergy;
-    protected double totalBondedEnergy;
-    protected double vanDerWaalsEnergy;
-    protected double permanentMultipoleEnergy;
-    protected double polarizationEnergy;
-    protected double totalElectrostaticEnergy;
-    protected double totalNonBondedEnergy;
-    protected double solvationEnergy;
-    protected double ncsEnergy;
-    protected double restrainEnergy;
-    protected double comRestraintEnergy;
-    protected double totalEnergy;
-    protected long bondTime, angleTime, stretchBendTime, ureyBradleyTime;
-    protected long outOfPlaneBendTime, torsionTime, piOrbitalTorsionTime, improperTorsionTime;
-    protected long torsionTorsionTime, vanDerWaalsTime, electrostaticTime;
-    protected long restraintBondTime, ncsTime, coordRestraintTime, comRestraintTime;
-    protected long totalTime;
-    protected double lambda = 1.0;
-    protected double[] optimizationScaling = null;
-    protected VARIABLE_TYPE[] variableTypes = null;
+    private int nAtoms;
+    private int nBonds;
+    private int nAngles;
+    private int nStretchBends;
+    private int nUreyBradleys;
+    private int nOutOfPlaneBends;
+    private int nTorsions;
+    private int nPiOrbitalTorsions;
+    private int nTorsionTorsions;
+    private int nImproperTorsions;
+    private int nRestraintBonds;
+    private int nVanDerWaalInteractions;
+    private int nPermanentInteractions;
+    private int nGKIteractions;
+    private boolean bondTerm;
+    private boolean angleTerm;
+    private boolean stretchBendTerm;
+    private boolean ureyBradleyTerm;
+    private boolean outOfPlaneBendTerm;
+    private boolean torsionTerm;
+    private boolean piOrbitalTorsionTerm;
+    private boolean torsionTorsionTerm;
+    private boolean improperTorsionTerm;
+    private boolean restraintBondTerm;
+    private boolean vanderWaalsTerm;
+    private boolean multipoleTerm;
+    private boolean polarizationTerm;
+    private boolean generalizedKirkwoodTerm;
+    private boolean ncsTerm;
+    private boolean restrainTerm;
+    private boolean comTerm;
+    private boolean lambdaBondedTerms = false;
+    private boolean rigidHydrogens = false;
+    private double rigidScale = 1.0;
+    private boolean bondTermOrig;
+    private boolean angleTermOrig;
+    private boolean stretchBendTermOrig;
+    private boolean ureyBradleyTermOrig;
+    private boolean outOfPlaneBendTermOrig;
+    private boolean torsionTermOrig;
+    private boolean piOrbitalTorsionTermOrig;
+    private boolean torsionTorsionTermOrig;
+    private boolean improperTorsionTermOrig;
+    private boolean restraintBondTermOrig;
+    private boolean vanderWaalsTermOrig;
+    private boolean multipoleTermOrig;
+    private boolean polarizationTermOrig;
+    private boolean generalizedKirkwoodTermOrig;
+    private boolean ncsTermOrig;
+    private boolean restrainTermOrig;
+    private boolean comTermOrig;
+    private double bondEnergy, bondRMSD;
+    private double angleEnergy, angleRMSD;
+    private double stretchBendEnergy;
+    private double ureyBradleyEnergy;
+    private double outOfPlaneBendEnergy;
+    private double torsionEnergy;
+    private double piOrbitalTorsionEnergy;
+    private double torsionTorsionEnergy;
+    private double improperTorsionEnergy;
+    private double restraintBondEnergy;
+    private double totalBondedEnergy;
+    private double vanDerWaalsEnergy;
+    private double permanentMultipoleEnergy;
+    private double polarizationEnergy;
+    private double totalElectrostaticEnergy;
+    private double totalNonBondedEnergy;
+    private double solvationEnergy;
+    private double ncsEnergy;
+    private double restrainEnergy;
+    private double comRestraintEnergy;
+    private double totalEnergy;
+    private long bondTime, angleTime, stretchBendTime, ureyBradleyTime;
+    private long outOfPlaneBendTime, torsionTime, piOrbitalTorsionTime, improperTorsionTime;
+    private long torsionTorsionTime, vanDerWaalsTime, electrostaticTime;
+    private long restraintBondTime, ncsTime, coordRestraintTime, comRestraintTime;
+    private long totalTime;
+    private double lambda = 1.0;
+    private double[] optimizationScaling = null;
+    private VARIABLE_TYPE[] variableTypes = null;
     private double xyz[] = null;
 
     /**
@@ -1016,7 +1018,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             if (vanderWaalsTerm) {
                 vanDerWaalsTime = System.nanoTime();
                 vanDerWaalsEnergy = vanderWaals.energy(gradient, print);
-                nVanDerWaals = this.vanderWaals.getInteractions();
+                nVanDerWaalInteractions = this.vanderWaals.getInteractions();
                 vanDerWaalsTime = System.nanoTime() - vanDerWaalsTime;
             }
 
@@ -1025,10 +1027,10 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 totalElectrostaticEnergy = particleMeshEwald.energy(gradient, print);
                 permanentMultipoleEnergy = particleMeshEwald.getPermanentEnergy();
                 polarizationEnergy = particleMeshEwald.getPolarizationEnergy();
-                nPME = particleMeshEwald.getInteractions();
+                nPermanentInteractions = particleMeshEwald.getInteractions();
 
                 solvationEnergy = particleMeshEwald.getGKEnergy();
-                nGK = particleMeshEwald.getGKInteractions();
+                nGKIteractions = particleMeshEwald.getGKInteractions();
 
                 electrostaticTime = System.nanoTime() - electrostaticTime;
             }
@@ -1136,15 +1138,15 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
         if (vanderWaalsTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                    "VAN DER WAALS              : ", vanDerWaalsEnergy, nVanDerWaals));
+                    "VAN DER WAALS              : ", vanDerWaalsEnergy, nVanDerWaalInteractions));
         }
         if (multipoleTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                    "ATOMIC MULTIPOLES          : ", permanentMultipoleEnergy, nPME));
+                    "ATOMIC MULTIPOLES          : ", permanentMultipoleEnergy, nPermanentInteractions));
         }
         if (polarizationTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                    "POLARIZATION               : ", polarizationEnergy, nPME));
+                    "POLARIZATION               : ", polarizationEnergy, nPermanentInteractions));
         }
         sb.append(String.format("REMARK   3   %s %g\n",
                 "TOTAL POTENTIAL (KCAL/MOL) : ", totalEnergy));
@@ -1234,28 +1236,28 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     "COM Restraint     ", comRestraintEnergy, nAtoms,
                     comRestraintTime * toSeconds));
         }
-        if (vanderWaalsTerm && nVanDerWaals > 0) {
+        if (vanderWaalsTerm && nVanDerWaalInteractions > 0) {
             sb.append(String.format("  %s %16.8f %12d %12.3f\n",
                     "Van der Waals     ", vanDerWaalsEnergy,
-                    nVanDerWaals, vanDerWaalsTime * toSeconds));
+                    nVanDerWaalInteractions, vanDerWaalsTime * toSeconds));
         }
-        if (multipoleTerm && nPME > 0) {
+        if (multipoleTerm && nPermanentInteractions > 0) {
             if (polarizationTerm) {
                 sb.append(String.format("  %s %16.8f %12d\n",
-                        "Atomic Multipoles ", permanentMultipoleEnergy, nPME));
+                        "Atomic Multipoles ", permanentMultipoleEnergy, nPermanentInteractions));
             } else {
                 sb.append(String.format("  %s %16.8f %12d %12.3f\n",
-                        "Atomic Multipoles ", permanentMultipoleEnergy, nPME, electrostaticTime * toSeconds));
+                        "Atomic Multipoles ", permanentMultipoleEnergy, nPermanentInteractions, electrostaticTime * toSeconds));
             }
         }
-        if (polarizationTerm && nPME > 0) {
+        if (polarizationTerm && nPermanentInteractions > 0) {
             sb.append(String.format("  %s %16.8f %12d %12.3f\n",
                     "Polarization      ", polarizationEnergy,
-                    nPME, electrostaticTime * toSeconds));
+                    nPermanentInteractions, electrostaticTime * toSeconds));
         }
-        if (generalizedKirkwoodTerm && nGK > 0) {
+        if (generalizedKirkwoodTerm && nGKIteractions > 0) {
             sb.append(String.format("  %s %16.8f %12d\n",
-                    "Solvation         ", solvationEnergy, nGK));
+                    "Solvation         ", solvationEnergy, nGKIteractions));
         }
 
         sb.append(String.format("  %s %16.8f  %s %12.3f (sec)\n",
@@ -1713,4 +1715,93 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
          * operators and periodic boundary conditions.
          */
     }
+
+    public int getNumberofAtoms() {
+        return nAtoms;
+    }
+
+    public double getBondEnergy() {
+        return bondEnergy;
+    }
+
+    public int getNumberofBonds() {
+        return nBonds;
+    }
+
+    public double getAngleEnergy() {
+        return angleEnergy;
+    }
+
+    public int getNumberofAngles() {
+        return nAngles;
+    }
+
+    public double getStrenchBendEnergy() {
+        return stretchBendEnergy;
+    }
+
+    public int getNumberofStretchBends() {
+        return nStretchBends;
+    }
+
+    public double getUreyBradleyEnergy() {
+        return ureyBradleyEnergy;
+    }
+
+    public int getNumberofUreyBradleys() {
+        return nUreyBradleys;
+    }
+
+    public double getOutOfPlaneBendEnergy() {
+        return outOfPlaneBendEnergy;
+    }
+
+    public int getNumberofOutOfPlaneBends() {
+        return nOutOfPlaneBends;
+    }
+
+    public double getTorsionEnergy() {
+        return torsionEnergy;
+    }
+
+    public int getNumberofTorsions() {
+        return nTorsions;
+    }
+
+    public double getPiOrbitalTorsionEnergy() {
+        return piOrbitalTorsionEnergy;
+    }
+
+    public int getNumberofPiOrbitalTorsions() {
+        return nPiOrbitalTorsions;
+    }
+
+    public double getTorsionTorsionEnergy() {
+        return torsionTorsionEnergy;
+    }
+
+    public int getNumberofTorsionTorsions() {
+        return nTorsionTorsions;
+    }
+
+    public double getVanDerWaalsEnergy() {
+        return vanDerWaalsEnergy;
+    }
+
+    public int getVanDerWaalsInteractions() {
+        return nVanDerWaalInteractions;
+    }
+
+    public double getPermanentMultipoleEnergy() {
+        return permanentMultipoleEnergy;
+    }
+
+    public int getPermanentInteractions() {
+        return nPermanentInteractions;
+    }
+
+    public double getPolarizationEnergy() {
+        return polarizationEnergy;
+    }
+
 }
