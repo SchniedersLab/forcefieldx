@@ -72,7 +72,7 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
      * @param reflectionlist a {@link ffx.crystal.ReflectionList} object.
      * @param refinementdata a {@link ffx.xray.DiffractionRefinementData}
      * object.
-     * @param parallelTeam
+     * @param parallelTeam the ParallelTeam to execute the SigmaAMinimize.
      */
     public SigmaAMinimize(ReflectionList reflectionlist,
             DiffractionRefinementData refinementdata, ParallelTeam parallelTeam) {

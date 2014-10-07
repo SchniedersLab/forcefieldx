@@ -36,13 +36,13 @@ import ffx.numerics.Potential.VARIABLE_TYPE;
 
 /**
  * The abstract Thermostat class implements methods common to all thermostats
- * for initalizing velocities from a Maxwell-Boltzmann distribution and
+ * for initializing velocities from a Maxwell-Boltzmann distribution and
  * computing the instantaneous temperature. Abstract methods are declared for
- * half-step and full-step modification of velocities thermostat implementions.
+ * half-step and full-step modification of velocities for thermostat implementations.
  *
  * @author Michael J. Schnieders
- * @since 1.0
  *
+ * @since 1.0
  */
 public abstract class Thermostat {
 
@@ -90,10 +90,11 @@ public abstract class Thermostat {
      * @param x an array of double.
      * @param v an array of double.
      * @param mass an array of double.
-     * @param t a double.
+     * @param type the VARIABLE_TYPE of each variable.
+     * @param targetTemperature a double.
      */
     public Thermostat(int nVariables, double x[], double v[], double mass[],
-            VARIABLE_TYPE type[], double t) {
+            VARIABLE_TYPE type[], double targetTemperature) {
         assert (nVariables > 3);
 
         this.nVariables = nVariables;
@@ -106,7 +107,7 @@ public abstract class Thermostat {
         assert (mass.length == nVariables);
         assert (type.length == nVariables);
         random = new Random();
-        setTargetTemperature(t);
+        setTargetTemperature(targetTemperature);
         /**
          * Set the degrees of freedom to nVariables - 3 because we will remove
          * center of mass motion.
@@ -214,6 +215,8 @@ public abstract class Thermostat {
     /**
      * Reset velocities from a Maxwell-Boltzmann distribution of momenta. The
      * variance of each independent momentum component is kT * mass.
+     *
+     * @param targetTemperature the target Temperature for the Maxwell distribution.
      */
     public void maxwell(double targetTemperature) {
         for (int i = 0; i < nVariables; i++) {

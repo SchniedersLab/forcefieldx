@@ -526,14 +526,15 @@ public class MTZFilter implements DiffractionFileFilter {
     }
 
     /**
-     * {@inheritDoc}
+     * Average the computed structure factors for two systems.
      *
      * @param mtzFile1 file 1 (which will be overwritten and become the new
      * average)
      * @param mtzFile2 second MTZ file
      * @param reflectionlist list of HKLs
      * @param iter the iteration in the running average
-     * @param properties
+     * @param properties the CompositeConfiguration defines the properties of
+     * each system.
      */
     public void averageFcs(File mtzFile1, File mtzFile2, ReflectionList reflectionlist,
             int iter, CompositeConfiguration properties) {

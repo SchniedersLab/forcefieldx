@@ -184,7 +184,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
      * <p>
      * Constructor for ForceFieldEnergy.</p>
      *
-     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
      * object.
      */
     public ForceFieldEnergy(MolecularAssembly molecularAssembly) {

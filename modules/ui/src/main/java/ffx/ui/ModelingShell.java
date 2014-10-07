@@ -125,7 +125,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
      * <p>
      * Constructor for ModelingShell.</p>
      *
-     * @param mainPanel
+     * @param mainPanel a reference to the MainPanel.
      */
     public ModelingShell(MainPanel mainPanel) {
         this.mainPanel = mainPanel;
@@ -230,7 +230,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
         setVariable("potential", new MethodClosure(this, "potential"));
         setVariable("poledit", new MethodClosure(this, "poledit"));
         setVariable("superpose", new MethodClosure(this, "superpose"));
-        
+
         // Obtain UIUtils object
         setVariable("getAlgorithmUtils", new MethodClosure(this, "getUIAlgorithmUtils"));
         setVariable("getPotentialsUtils", new MethodClosure(this, "getUIPotentialsUtils"));
@@ -373,11 +373,11 @@ public final class ModelingShell extends Console implements AlgorithmListener {
         logger.warning(" Energy could not be calculated");
         return 0.0;
     }
-    
+
     public AlgorithmFunctions getUIAlgorithmUtils() {
         return new UIUtils(this, mainPanel);
     }
-    
+
     public PotentialsFunctions getUIPotentialsUtils() {
         return new UIUtils(this, mainPanel);
     }
@@ -767,7 +767,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
      * If at exit time, a script is running, the user is given an option to
      * interrupt it first
      *
-     * @return
+     * {@inheritDoc}
      */
     @Override
     public Object askToInterruptScript() {

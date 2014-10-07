@@ -72,6 +72,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
      * @param refinementdata a {@link ffx.xray.DiffractionRefinementData}
      * object.
      * @param crs a {@link ffx.xray.CrystalReciprocalSpace} object.
+     * @param parallelTeam the ParallelTeam to execute the ScaleBulkMinimize.
      */
     public ScaleBulkMinimize(ReflectionList reflectionlist,
             DiffractionRefinementData refinementdata, CrystalReciprocalSpace crs, ParallelTeam parallelTeam) {

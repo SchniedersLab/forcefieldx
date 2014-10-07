@@ -50,6 +50,7 @@ public class Berendsen extends Thermostat {
      * @param x an array of double.
      * @param v an array of double.
      * @param mass an array of double.
+     * @param type the VARIABLE_TYPE of each variable.
      * @param targetTemperature a double.
      * @param tau a double.
      */
@@ -68,6 +69,7 @@ public class Berendsen extends Thermostat {
      * @param x an array of double.
      * @param v an array of double.
      * @param mass an array of double.
+     * @param type the VARIABLE_TYPE of each variable.
      * @param targetTemperature a double.
      */
     public Berendsen(int n, double x[], double v[], double mass[],

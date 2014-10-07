@@ -38,20 +38,20 @@ import ffx.numerics.Potential;
  */
 public class Stochastic extends Integrator {
 
-    private int numberOfVariables;
-    private double x[];
-    private double v[];
-    private double a[];
-    private double mass[];
+    private final int numberOfVariables;
+    private final double x[];
+    private final double v[];
+    private final double a[];
+    private final double mass[];
     private double dt;
-    private double friction;
+    private final double friction;
     private double inverseFriction;
     private double fdt;
     private double efdt;
     private double temperature;
-    private double vfric[];
-    private double vrand[];
-    private Random random;
+    private final double vfric[];
+    private final double vrand[];
+    private final Random random;
 
     /**
      * Constructor for Stochastic Dynamics.
@@ -88,7 +88,7 @@ public class Stochastic extends Integrator {
     /**
      * Set the stochastic dynamics time-step.
      *
-     * @param dt
+     * @param dt the time step.
      */
     @Override
     public void setTimeStep(double dt) {

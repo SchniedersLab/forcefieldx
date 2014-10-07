@@ -129,7 +129,8 @@ public interface Potential {
     /**
      * Set the Potential Energy terms that should be active.
      *
-     * @param state
+     * @param state include FAST varying energy terms, SLOW
+     * varying energy terms or BOTH.
      */
     public abstract void setEnergyTermState(STATE state);
 }

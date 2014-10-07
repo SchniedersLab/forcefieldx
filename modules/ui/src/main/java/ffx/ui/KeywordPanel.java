@@ -198,11 +198,9 @@ public final class KeywordPanel extends JPanel implements ActionListener {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Handles input from KeywordPanel ToolBar buttons.
-     *
-     * @param evt
+     * 
+     * {@inheritDoc}
      */
     @Override
     public void actionPerformed(ActionEvent evt) {

@@ -111,7 +111,7 @@ public class ScaleBulkEnergy implements Potential {
      * @param refinementdata a {@link ffx.xray.DiffractionRefinementData}
      * object.
      * @param n a int.
-     * @param parallelTeam
+     * @param parallelTeam the ParallelTeam to execute the ScaleBulkEnergy.
      */
     public ScaleBulkEnergy(ReflectionList reflectionlist, DiffractionRefinementData refinementdata, int n, ParallelTeam parallelTeam) {
         this.reflectionlist = reflectionlist;
