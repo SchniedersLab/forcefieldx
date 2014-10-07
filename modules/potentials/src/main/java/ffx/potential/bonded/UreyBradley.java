@@ -91,8 +91,8 @@ public class UreyBradley extends BondedTerm implements Comparable<UreyBradley> {
     /**
      * Attempt to create a new UreyBradley for the specified Angle.
      *
-     * @param angle
-     * @param forceField
+     * @param angle the Angle to create the UreyBradley from.
+     * @param forceField the ForceField parameters to apply.
      * @return a new UreyBradley, or null.
      */
     public static UreyBradley ureyBradlyFactory(Angle angle, ForceField forceField) {

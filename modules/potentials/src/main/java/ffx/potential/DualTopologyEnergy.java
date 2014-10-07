@@ -418,9 +418,9 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
      * The coordinate and gradient arrays are unpacked/packed based on the dual
      * topology.
      *
-     * @param x
-     * @param g
-     * @return The DualTopologyEnergy total energy.
+     * @param x the coordinate array.
+     * @param g the gradient array.
+     * @return the DualTopologyEnergy total energy.
      */
     @Override
     public double energyAndGradient(double[] x, double[] g) {

@@ -45,8 +45,8 @@ import static ffx.potential.parameters.StretchBendType.units;
  * bonded atoms.
  *
  * @author Michael J. Schnieders
- * @since 1.0
  *
+ * @since 1.0
  */
 public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
 
@@ -92,8 +92,8 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
      * Attempt to create a new StretchBend if a StretchBendType exists for the
      * specified Angle.
      *
-     * @param angle
-     * @param forceField
+     * @param angle the Angle to created the StrechBend around.
+     * @param forceField the ForceField parameters to use.
      * @return a new StretchBend, or null.
      */
     public static StretchBend stretchBendFactory(Angle angle, ForceField forceField) {

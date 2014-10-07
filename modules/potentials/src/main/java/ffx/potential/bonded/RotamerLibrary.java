@@ -77,7 +77,7 @@ public class RotamerLibrary {
     /**
      * Set the protein rotamer library to use.
      *
-     * @param name
+     * @param name the ProteinLibrary to use.
      */
     public static void setLibrary(ProteinLibrary name) {
         proteinLibrary = name;
@@ -97,7 +97,7 @@ public class RotamerLibrary {
     /**
      * Get the protein rotamer library.
      *
-     * @return
+     * @return the ProteinLibrary in use.
      */
     public static ProteinLibrary getLibrary() {
         return proteinLibrary;
@@ -106,7 +106,7 @@ public class RotamerLibrary {
     /**
      * Return rotamer array for the given AA or NA residue.
      *
-     * @param residue
+     * @param residue the Residue to examine.
      * @return Array of Rotamers for Residue's type.
      */
     public static Rotamer[] getRotamers(Residue residue) {
@@ -220,7 +220,7 @@ public class RotamerLibrary {
      * This MUST be called before any applyRotamer calls are made, else invalid
      * coordinates will be stored.
      *
-     * @param polymers
+     * @param polymers the Polymer array to examine.
      */
     public static void initializeDefaultAtomicCoordinates(Polymer[] polymers) {
         for (Polymer polymer : polymers) {
@@ -1773,8 +1773,8 @@ public class RotamerLibrary {
      * Applies a Rotamer to a Residue by calling applyAARotamer or
      * applyNARotamer.
      *
-     * @param residue
-     * @param rotamer
+     * @param residue the Residue whose side-chain will be moved.
+     * @param rotamer the Rotamer defining the move.
      */
     public static void applyRotamer(Residue residue, Rotamer rotamer) {
         if (rotamer.isCoordinates) {
@@ -1798,8 +1798,8 @@ public class RotamerLibrary {
      * drawing of nucleic acid Rotamers. Solely used in saveRotamers at this
      * point, although it may be useful for debugging.
      *
-     * @param residue
-     * @param rotamer Rotamer to be applied
+     * @param residue the Residue to be moved.
+     * @param rotamer Rotamer to be applied.
      * @param independent Whether to draw Rotamer independent of chain context.
      */
     public static void applyRotamer(Residue residue, Rotamer rotamer, boolean independent) {

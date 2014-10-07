@@ -1696,7 +1696,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     /**
      * Set the boundary conditions for this calculation.
      *
-     * @param crystal
+     * @param crystal the Crystal contains symmetry and PBC conditions.
      */
     public void setCrystal(Crystal crystal) {
         this.crystal = crystal;

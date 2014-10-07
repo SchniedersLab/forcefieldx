@@ -24,10 +24,11 @@ package ffx.potential.bonded;
 
 import java.util.logging.Logger;
 
+import static java.lang.String.format;
+
 import static org.apache.commons.math3.util.FastMath.acos;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
-import static java.lang.String.format;
 
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TorsionType;
@@ -158,10 +159,10 @@ public class Torsion extends BondedTerm {
      * error checking to enforce that the bonds make up a linear series of 4
      * bonded atoms.
      *
-     * @param bond1
-     * @param middleBond
-     * @param bond3
-     * @param forceField
+     * @param bond1 the first Bond.
+     * @param middleBond the middle Bond.
+     * @param bond3 the last Bond.
+     * @param forceField the ForceField parameters to apply.
      * @return a new Torsion, or null.
      */
     public static Torsion torsionFactory(Bond bond1, Bond middleBond, Bond bond3, ForceField forceField) {

@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import ffx.potential.bonded.Residue.ResiduePosition;
+import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.parameters.ForceField;
 
 import static ffx.potential.bonded.BondedUtils.buildBond;
@@ -47,11 +48,11 @@ public class AminoAcidUtils {
      * Only the first nitrogen should have H1, H2 and H3 atoms, unless it's an
      * NME cap.
      *
-     * @param aminoAcid
-     * @param residue
+     * @param aminoAcid 3-letter amino acid name.
+     * @param residue the amino acid Residue.
      */
-    public static void removeH1_H2_H3(ResidueEnumerations.AminoAcid3 aminoAcid, Residue residue) {
-        if (aminoAcid != ResidueEnumerations.AminoAcid3.NME) {
+    public static void removeH1_H2_H3(AminoAcid3 aminoAcid, Residue residue) {
+        if (aminoAcid != AminoAcid3.NME) {
             Atom H1 = (Atom) residue.getAtomNode("H1");
             if (H1 != null) {
                 residue.deleteAtom(H1);
@@ -70,7 +71,7 @@ public class AminoAcidUtils {
     /**
      * Only the last residue in a chain should have an OXT/OT2 atom.
      *
-     * @param residue
+     * @param residue the amino acid residue.
      */
     public static void removeOXT_OT2(Residue residue) {
         Atom OXT = (Atom) residue.getAtomNode("OXT");

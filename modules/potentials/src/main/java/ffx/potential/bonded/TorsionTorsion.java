@@ -100,11 +100,11 @@ public class TorsionTorsion extends BondedTerm {
     }
 
     /**
-     * @param firstBond
-     * @param angle
-     * @param lastBond
-     * @param forceField
-     * @return
+     * @param firstBond the first Bond.
+     * @param angle the Angle.
+     * @param lastBond the last Bond.
+     * @param forceField the ForceField parameters to apply.
+     * @return the new TorsionTorsion, or null.
      */
     public static TorsionTorsion torsionTorsionFactory(Bond firstBond,
             Angle angle, Bond lastBond, ForceField forceField) {

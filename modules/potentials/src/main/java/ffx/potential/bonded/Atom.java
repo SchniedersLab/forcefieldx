@@ -30,7 +30,16 @@ import java.util.logging.Logger;
 
 import static java.lang.String.format;
 
-import javax.media.j3d.*;
+import javax.media.j3d.Appearance;
+import javax.media.j3d.BranchGroup;
+import javax.media.j3d.Canvas3D;
+import javax.media.j3d.Geometry;
+import javax.media.j3d.J3DGraphics2D;
+import javax.media.j3d.Material;
+import javax.media.j3d.Node;
+import javax.media.j3d.Shape3D;
+import javax.media.j3d.Transform3D;
+import javax.media.j3d.TransformGroup;
 import javax.vecmath.Color3f;
 import javax.vecmath.Point2d;
 import javax.vecmath.Point3d;
@@ -252,7 +261,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     private boolean active = true;
     private String segID = null;
     private double formFactorWidth = 3.5;
-    private double formFactorWidth2 = formFactorWidth*formFactorWidth;
+    private double formFactorWidth2 = formFactorWidth * formFactorWidth;
     private int formFactorIndex = -1;
     private ArrayList<Vector3d> trajectory;
     // Molecular Mechanics Info
@@ -674,10 +683,10 @@ public class Atom extends MSNode implements Comparable<Atom> {
     /**
      * Finds a Torsion which contains this atom, and atoms 2, 3, and 4.
      *
-     * @param atom2
-     * @param atom3
-     * @param atom4
-     * @return Torsion.
+     * @param atom2 Atom number 2.
+     * @param atom3 Atom number 3.
+     * @param atom4 Atom number 4.
+     * @return Torsion the Torsion if found, or null if not found.
      */
     public Torsion getTorsion(Atom atom2, Atom atom3, Atom atom4) {
         for (Torsion torsion : torsions) {
@@ -1455,7 +1464,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
         return formFactorWidth;
     }
 
-        /**
+    /**
      * <p>
      * Getter for the field <code>formFactorWidth</code>.</p>
      *

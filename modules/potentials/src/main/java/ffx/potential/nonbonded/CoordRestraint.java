@@ -64,11 +64,11 @@ public class CoordRestraint implements LambdaInterface {
     private boolean lambdaTerm = false;
 
     /**
-     * This NCSRestraint is based on the unit cell parameters and symmetry
+     * This CoordRestraint is based on the unit cell parameters and symmetry
      * operators of the supplied crystal.
      *
-     * @param atoms
-     * @param forceField
+     * @param atoms the Atom array to base this CoordRestraint on.
+     * @param forceField the ForceField to apply.
      */
     public CoordRestraint(Atom[] atoms, ForceField forceField) {
         this.atoms = atoms;

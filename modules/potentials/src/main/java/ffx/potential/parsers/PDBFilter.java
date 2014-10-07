@@ -41,6 +41,8 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import ffx.crystal.Crystal;
 import ffx.crystal.SpaceGroup;
 import ffx.numerics.VectorMath;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.Utilities.FileType;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.BondedUtils;
@@ -48,14 +50,12 @@ import ffx.potential.bonded.BondedUtils.MissingAtomTypeException;
 import ffx.potential.bonded.BondedUtils.MissingHeavyAtomException;
 import ffx.potential.bonded.MSGroup;
 import ffx.potential.bonded.MSNode;
-import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Residue.ResiduePosition;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
-import ffx.potential.Utilities.FileType;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
@@ -208,9 +208,9 @@ public final class PDBFilter extends SystemFilter {
     /**
      * Mutate a residue at the PDB file is being parsed.
      *
-     * @param chainID
-     * @param resID
-     * @param name
+     * @param chainID the Chain ID of the residue to mutate.
+     * @param resID the Residue ID of the residue to mutate.
+     * @param name the 3-letter code of the amino acid to mutate to.
      */
     public void mutate(Character chainID, int resID, String name) {
         if (name != null && name.length() == 3) {
@@ -2246,7 +2246,7 @@ public final class PDBFilter extends SystemFilter {
         }
     }
 
-   private void assignAminoAcidAtomTypes(Residue residue, Residue previousResidue, Residue nextResidue)
+    private void assignAminoAcidAtomTypes(Residue residue, Residue previousResidue, Residue nextResidue)
             throws MissingHeavyAtomException, MissingAtomTypeException {
 
         String residueName = residue.getName().toUpperCase();
@@ -2495,7 +2495,9 @@ public final class PDBFilter extends SystemFilter {
      * @param CA The C-alpha carbon of this residue.
      * @param N The peptide nitrogen of this residue.
      * @param C The peptide carbonyl carbon.
-     * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException
+     * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException this
+     * exception is thrown if when heavy is atom is missing that cannot be
+     * built.
      */
     public void assignAminoAcidSideChain(ResiduePosition position, AminoAcid3 aminoAcid, Residue residue,
             Atom CA, Atom N, Atom C) throws MissingHeavyAtomException {
