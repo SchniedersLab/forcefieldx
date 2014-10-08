@@ -22,6 +22,11 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
+
+//******************************************************************************
+// File modified 10/8/2014 by Jacob Litman to enable garbage collection of
+// ParallelTeamThreads.
+//******************************************************************************
 package edu.rit.pj;
 
 import java.util.concurrent.Semaphore;
@@ -94,6 +99,16 @@ class ParallelTeamThread
             // Wait until released by the main thread.
             myRegionBeginSemaphore.acquireUninterruptibly();
 
+            if (myTeam.myRegion instanceof KillRegion) {
+                try {
+                    myTeam.myRegion.run();
+                } catch (Exception ex) {
+                    System.err.println(String.format("Error exiting parallel "
+                            + "team thread: %s", ex.toString()));
+                }
+                break;
+            }
+            
             // Call the parallel region's run() method. Save any
             // exception for later.
             try {
@@ -110,6 +125,7 @@ class ParallelTeamThread
             // Tell the main thread we're done.
             myTeam.myRegionEndSemaphore.release();
         }
+        myTeam.myRegionEndSemaphore.release();
     }
 
 // Hidden operations.

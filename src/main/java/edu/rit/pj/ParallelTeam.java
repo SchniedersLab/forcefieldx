@@ -22,6 +22,11 @@
 // Web at http://www.gnu.org/licenses/gpl.html.
 //
 //******************************************************************************
+
+//******************************************************************************
+// File modified 10/8/2014 by Jacob Litman to enable garbage collection of
+// ParallelTeamThreads.
+//******************************************************************************
 package edu.rit.pj;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -65,6 +70,9 @@ public class ParallelTeam {
     // Parallel construct counter. Counts how many parallel constructs have been
     // encountered.
     AtomicInteger myConstructCount = new AtomicInteger(0);
+    
+    // Set false if the ParallelTeam is shut down.
+    boolean isActive = true;
 
 // Exported constructors.
     /**
@@ -134,6 +142,9 @@ public class ParallelTeam {
         }
         if (theRegion.myTeam != null) {
             throw new IllegalStateException("ParallelTeam.execute(): theRegion already being executed by a parallel team");
+        }
+        if (!isActive) {
+            throw new IllegalStateException("ParallelTeam.execute(): The team has been shut down.");
         }
 
         // Record parallel region.
@@ -313,5 +324,19 @@ public class ParallelTeam {
             throw (Error) exc;
         }
     }
-
+    
+    /**
+     * Kills the team's threads run() methods so that they are no longer GC roots.
+     * Useful if you are repetitively constructing ParallelTeam objects, although
+     * it is slightly more elegant just to keep the same ParallelTeam objects through
+     * the entire execution of a program.
+     * 
+     * @throws java.lang.Exception
+     */
+    public void shutdown() throws Exception {
+        if (isActive) {
+            this.execute(new KillRegion());
+            isActive = false;
+        }
+    }
 }
