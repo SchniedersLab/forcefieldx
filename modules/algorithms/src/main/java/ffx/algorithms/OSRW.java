@@ -333,17 +333,18 @@ public class OSRW implements Potential {
     /**
      * OSRW Asynchronous MultiWalker Constructor.
      *
-     * @param lambdaInterface
-     * @param potential
-     * @param lambdaFile
-     * @param histogramFile
-     * @param properties
-     * @param temperature
-     * @param dt
-     * @param printInterval
-     * @param saveInterval
-     * @param asynchronous
-     * @param algorithmListener
+     * @param lambdaInterface defines Lambda and dU/dL.
+     * @param potential defines the Potential energy.
+     * @param lambdaFile contains the current Lambda particle position and velocity.
+     * @param histogramFile contains the Lambda and dU/dL histogram.
+     * @param properties defines System properties.
+     * @param temperature the simulation temperature.
+     * @param dt the time step.
+     * @param printInterval number of steps between logging updates.
+     * @param saveInterval number of steps between restart file updates.
+     * @param asynchronous set to true if walkers run asynchronously.
+     * @param algorithmListener the AlgorithmListener to be notified of progress.
+     * @param wellTempered true for well-tempered OSRW (not implemented yet).
      */
     public OSRW(LambdaInterface lambdaInterface, Potential potential,
             File lambdaFile, File histogramFile, CompositeConfiguration properties,

@@ -46,15 +46,15 @@ public abstract class SliceLoop extends IntegerForLoop {
         this.sliceRegion = sliceRegion;
     }
 
-    public void initTiming(String className, long time){
+    public void initTiming(String className, long time) {
         sliceRegion.sliceLoopTime[getThreadIndex()] -= time;
         sliceRegion.className = className;
     }
-    
-    public void finishTime(long time){
+
+    public void finishTime(long time) {
         sliceRegion.sliceLoopTime[getThreadIndex()] += time;
     }
-    
+
     /**
      * <p>
      * setNsymm</p>
@@ -77,21 +77,21 @@ public abstract class SliceLoop extends IntegerForLoop {
             }
         }
     }
-    
+
     public abstract void setWeight();
 
-    public void setWeightOnRegion(int [] currentWeight){
+    public void setWeightOnRegion(int[] currentWeight) {
         sliceRegion.weight = currentWeight;
     }
-    
+
     /**
      * Apply electron density "as normal", but check that the z index is greater
      * than or equal to lb and less than or equal to ub.
      *
-     * @param iSymm
-     * @param iAtom
-     * @param lb
-     * @param ub
+     * @param iSymm the SymOp to apply.
+     * @param iAtom the index of the Atom to put onto the grid.
+     * @param lb the lower bound along the z-axis.
+     * @param ub the upper bound along the z-axis.
      */
     public abstract void gridDensity(int iSymm, int iAtom, int lb, int ub);
 }

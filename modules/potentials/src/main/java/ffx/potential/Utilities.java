@@ -320,7 +320,7 @@ public final class Utilities {
      * This routine sub-divides a system into groups of ions, water, hetero
      * molecules, and polynucleotides/polypeptides.
      *
-     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
      * object.
      * @param atoms a {@link java.util.List} object.
      */
@@ -1246,8 +1246,8 @@ public final class Utilities {
      * Finds the RMS deviation between the atoms of MolecularAssembly m1 and m2
      * provided they have the same number of atoms.
      *
-     * @param m1 a {@link ffx.potential.bonded.MolecularAssembly} object.
-     * @param m2 a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param m1 a {@link ffx.potential.MolecularAssembly} object.
+     * @param m2 a {@link ffx.potential.MolecularAssembly} object.
      * @return a double.
      */
     public static double RMSCoordDev(MolecularAssembly m1, MolecularAssembly m2) {

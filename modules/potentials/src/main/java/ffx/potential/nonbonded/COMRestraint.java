@@ -74,15 +74,15 @@ public class COMRestraint implements LambdaInterface {
     private boolean lambdaTerm = false;
 
     /**
-     * This NCSRestraint is based on the unit cell parameters and symmetry
+     * This COMRestraint is based on the unit cell parameters and symmetry
      * operators of the supplied crystal.
      *
-     * @param atoms
-     * @param polymers
-     * @param molecules
-     * @param waters
-     * @param ions
-     * @param forceField
+     * @param atoms the Atom array to construct the restraint from.
+     * @param polymers the system Polymer array.
+     * @param molecules the system Molecule array.
+     * @param waters the system Water List.
+     * @param ions the system Ion List.
+     * @param forceField the ForceField to apply.
      */
     public COMRestraint(Atom atoms[], Polymer polymers[], List<Molecule> molecules,
             List<MSNode> waters, List<MSNode> ions, ForceField forceField) {

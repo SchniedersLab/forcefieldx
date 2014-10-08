@@ -247,12 +247,13 @@ public class VanDerWaals implements MaskingInterface,
     /**
      * The VanDerWaals class constructor.
      *
-     * @param atoms
-     * @param molecule
+     * @param atoms the Atom array to do van Der Waals calculations on.
+     * @param molecule the molecule number for each atom.
      * @param crystal The boundary conditions.
-     * @param forceField
+     * @param forceField the ForceField parameters to apply.
      * @param parallelTeam The parallel environment.
-     * @param vdwForm
+     * @param vdwForm the van der Waals functional form.
+     *
      * @since 1.0
      */
     public VanDerWaals(Atom atoms[], int molecule[], Crystal crystal, ForceField forceField,
@@ -888,7 +889,7 @@ public class VanDerWaals implements MaskingInterface,
     /**
      * {@inheritDoc}
      *
-     * @param lambdaGradient
+     * @param lambdaGradient the lambda Gradient array (dU/dL/dX).
      */
     @Override
     public void getdEdXdL(double[] lambdaGradient) {

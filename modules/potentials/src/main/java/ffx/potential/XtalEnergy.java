@@ -64,7 +64,7 @@ public class XtalEnergy implements Potential {
 
     public XtalEnergy(ForceFieldEnergy forceFieldEnergy, MolecularAssembly molecularAssembly) {
         this.forceFieldEnergy = forceFieldEnergy;
-        nAtoms = forceFieldEnergy.nAtoms;
+        nAtoms = forceFieldEnergy.getNumberofAtoms();
         nParams = 3 * nAtoms + 6;
         atoms = molecularAssembly.getAtomArray();
         crystal = forceFieldEnergy.getCrystal();

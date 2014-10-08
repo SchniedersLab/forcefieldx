@@ -511,7 +511,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     /**
      * Updates the value of lambda.
      *
-     * @param lambda
+     * @param lambda the current lambda value.
      */
     @Override
     public void setLambda(double lambda) {
@@ -525,14 +525,16 @@ public class GeneralizedKirkwood implements LambdaInterface {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getLambda() {
         return lambda;
     }
 
     /**
-     *
-     * @return
+     * {@inheritDoc}
      */
     @Override
     public double getdEdL() {
@@ -544,8 +546,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     /**
      * The 2nd derivative is 0.0. (U=Lambda*Egk, dU/dL=Egk, d2U/dL2=0.0)
-     *
-     * @return 0.0
+     * @return 0.0 is always returned.
      */
     @Override
     public double getd2EdL2() {
@@ -555,7 +556,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     /**
      * These contributions are already aggregated into the arrays used by PME.
      *
-     * @param gradient
+     * @param gradient the Gradient array.
      */
     @Override
     public void getdEdXdL(double[] gradient) {

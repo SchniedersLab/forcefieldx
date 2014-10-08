@@ -322,7 +322,7 @@ public abstract class SystemFilter {
      * <p>
      * getType</p>
      *
-     * @return a {@link ffx.potential.bonded.Utilities.FileType} object.
+     * @return a {@link ffx.potential.Utilities.FileType} object.
      */
     public FileType getType() {
         return fileType;
@@ -401,7 +401,7 @@ public abstract class SystemFilter {
      * <p>
      * setType</p>
      *
-     * @param fileType a {@link ffx.potential.bonded.Utilities.FileType} object.
+     * @param fileType a {@link ffx.potential.Utilities.FileType} object.
      */
     public void setType(FileType fileType) {
         this.fileType = fileType;

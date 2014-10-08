@@ -89,8 +89,8 @@ public class PiOrbitalTorsion extends BondedTerm {
      * Attempt to create a new PiOrbitalTorsion based on the supplied bond and
      * forceField.
      *
-     * @param bond
-     * @param forceField
+     * @param bond the Bond to create a PiOrbitalTorsion around.
+     * @param forceField the ForceField parameters to use.
      * @return a new PiOrbitalToersion, or null.
      */
     public static PiOrbitalTorsion piOrbitalTorsionFactory(Bond bond, ForceField forceField) {

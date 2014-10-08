@@ -44,8 +44,8 @@ import ffx.potential.parsers.XYZFilter;
  * Run NVE or NVT molecular dynamics.
  *
  * @author Michael J. Schnieders
- * @since 1.0
  *
+ * @since 1.0
  */
 public class MolecularDynamics implements Runnable, Terminatable {
 
@@ -100,7 +100,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
      * @param requestedThermostat a
      * {@link ffx.algorithms.Thermostat.Thermostats} object.
-     * @param requestedIntegrator
+     * @param requestedIntegrator a
+     * {@link ffx.algorithms.Integrator.Integrators} object.
      */
     public MolecularDynamics(MolecularAssembly assembly,
             Potential potentialEnergy,
@@ -269,8 +270,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * @param timeStep a double.
      * @param printInterval a double.
      * @param saveInterval a double.
-     * @param fileType
-     * @param restartFrequency
+     * @param fileType a String.
+     * @param restartFrequency the number of steps between writing restart
+     * files.
      * @param temperature a double.
      * @param initVelocities a boolean.
      * @param dyn a {@link java.io.File} object.
@@ -365,13 +367,14 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * method with default values for added parameters. Needed by (at least)
      * ReplicaExchange, which calls this directly.
      *
-     * @param nSteps
-     * @param timeStep
-     * @param printInterval
-     * @param saveInterval
-     * @param temperature
-     * @param initVelocities
-     * @param dyn
+     * @param nSteps the number of MD steps.
+     * @param timeStep the time step.
+     * @param printInterval the number of steps between loggging updates.
+     * @param saveInterval the number of steps between saving snapshots.
+     * @param temperature the target temperature.
+     * @param initVelocities true to reset velocities from a Maxwell
+     * distribution.
+     * @param dyn the Dynamic restart file.
      */
     public void init(final int nSteps, final double timeStep, final double printInterval,
             final double saveInterval, final double temperature, final boolean initVelocities,
@@ -464,12 +467,19 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
-     * Methods to set file type and restartFrequency from groovy scripts
+     * Method to set file type from groovy scripts.
+     *
+     * @param fileType the type of snapshot files to write.
      */
     public void setFileType(String fileType) {
         this.fileType = fileType;
     }
 
+    /**
+     * Method to set the Restart Frequency.
+     *
+     * @param restartFrequency the time between writing restart files.
+     */
     public void setRestartFrequency(double restartFrequency) {
         this.restartFrequency = restartFrequency;
     }
@@ -720,7 +730,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
-     * [SDL] Added as a way for pKa.groovy to request final delta_G
+     * Get the total system energy.
+     *
+     * @return total energy.
      */
     public double getTotalEnergy() {
         return currentTotalEnergy;

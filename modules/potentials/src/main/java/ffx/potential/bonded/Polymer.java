@@ -59,7 +59,7 @@ public class Polymer extends MSGroup {
     /**
      * Constant <code>polymerColor</code>
      */
-    public static Map<Integer, Color3f> polymerColor = new HashMap<Integer, Color3f>();
+    public final static Map<Integer, Color3f> polymerColor = new HashMap<>();
 
     static {
         polymerColor.put(0, RendererCache.RED);
@@ -133,6 +133,7 @@ public class Polymer extends MSGroup {
      *
      * @param residue1 a {@link ffx.potential.bonded.Residue} object.
      * @param residue2 a {@link ffx.potential.bonded.Residue} object.
+     * @param forceField the ForceField to use when creating joint bonded terms.
      * @return a {@link ffx.potential.bonded.Joint} object.
      */
     public Joint createJoint(Residue residue1, Residue residue2, ForceField forceField) {

@@ -672,12 +672,13 @@ public class ParticleMeshEwald implements LambdaInterface {
     /**
      * ParticleMeshEwald constructor.
      *
-     * @param atoms
+     * @param atoms the Atom array to do electrostatics on.
+     * @param molecule the molecule number for each atom.
+     * @param forceField the ForceField the defines the electrostatics
+     * parameters.
      * @param crystal The boundary conditions.
-     * @param molecule
+     * @param elecForm The electrostatics functional form.
      * @param neighborList The NeighborList for both van der Waals and PME.
-     * @param forceField
-     * @param elecForm
      * @param parallelTeam A ParallelTeam that delegates parallelization.
      */
     public ParticleMeshEwald(Atom atoms[], int molecule[], ForceField forceField,
@@ -2028,9 +2029,9 @@ public class ParticleMeshEwald implements LambdaInterface {
 
     /**
      * Converge the SCF using Conjugate Gradient (CG) optimization with a local
-     * preconditioner.
+     * pre-conditioner.
      *
-     * @return
+     * @return the number of SCF iterations.
      */
     public int scfByCG() {
         // Load B with the direct field (E_dir = U_dir / polarizability).

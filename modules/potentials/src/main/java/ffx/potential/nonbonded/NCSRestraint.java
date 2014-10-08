@@ -54,9 +54,9 @@ public class NCSRestraint implements LambdaInterface {
      * This NCSRestraint is based on the unit cell parameters and symmetry
      * operators of the supplied crystal.
      *
-     * @param atoms
-     * @param forceField
-     * @param crystal
+     * @param atoms the Atom array to construct this NCSRestraint from.
+     * @param forceField the ForceField parameters
+     * @param crystal the Crystal specifies symmetry and PBCs.
      */
     public NCSRestraint(Atom atoms[], ForceField forceField, Crystal crystal) {
         this.ncsCrystal = crystal;

@@ -207,8 +207,6 @@ public class ModelingPanel extends JPanel implements ActionListener,
 
     /**
      * {@inheritDoc}
-     *
-     * @param evt
      */
     @Override
     public void actionPerformed(ActionEvent evt) {
@@ -856,7 +854,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
         if (embeddedScript != null) {
             try {
                 scriptFile = new File(
-                    StringUtils.copyInputStreamToTmpFile(
+                        StringUtils.copyInputStreamToTmpFile(
                                 embeddedScript.openStream(), name, ".ffx"));
             } catch (IOException e) {
                 logger.log(Level.WARNING, "Exception extracting embedded script {0}\n{1}",
@@ -1569,11 +1567,9 @@ public class ModelingPanel extends JPanel implements ActionListener,
     }
 
     /**
-     * {@inheritDoc}
-     *
      * Mouse events are used to trigger status bar updates.
      *
-     * @param evt
+     * {@inheritDoc}
      */
     @Override
     public void mouseClicked(MouseEvent evt) {
@@ -1582,8 +1578,6 @@ public class ModelingPanel extends JPanel implements ActionListener,
 
     /**
      * {@inheritDoc}
-     *
-     * @param evt
      */
     @Override
     public void mouseEntered(MouseEvent evt) {
@@ -1592,8 +1586,6 @@ public class ModelingPanel extends JPanel implements ActionListener,
 
     /**
      * {@inheritDoc}
-     *
-     * @param evt
      */
     @Override
     public void mouseExited(MouseEvent evt) {
@@ -1602,8 +1594,6 @@ public class ModelingPanel extends JPanel implements ActionListener,
 
     /**
      * {@inheritDoc}
-     *
-     * @param evt
      */
     @Override
     public void mousePressed(MouseEvent evt) {
@@ -1612,8 +1602,6 @@ public class ModelingPanel extends JPanel implements ActionListener,
 
     /**
      * {@inheritDoc}
-     *
-     * @param evt
      */
     @Override
     public void mouseReleased(MouseEvent evt) {

@@ -44,11 +44,15 @@ public abstract class Integrator {
 
     /**
      * Integrator halfStep operation.
+     *
+     * @param potential the Potential this integrator operates on.
      */
     abstract public void preForce(Potential potential);
 
     /**
      * Integrator fullStep operation.
+     *
+     * @param gradient the gradient for the post-force operation.
      */
     abstract public void postForce(double gradient[]);
 }

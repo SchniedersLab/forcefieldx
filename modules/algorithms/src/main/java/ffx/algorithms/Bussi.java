@@ -46,7 +46,7 @@ import ffx.numerics.Potential.VARIABLE_TYPE;
 public class Bussi extends Thermostat {
 
     private double tau;
-    private final Random random;
+    private final Random bussiRandom;
 
     /**
      * <p>
@@ -56,6 +56,7 @@ public class Bussi extends Thermostat {
      * @param x an array of double.
      * @param v an array of double.
      * @param mass an array of double.
+     * @param type the VARIABLE_TYPE of each variable.
      * @param targetTemperature a double.
      * @param tau a double.
      */
@@ -65,7 +66,7 @@ public class Bussi extends Thermostat {
         super(dof, x, v, mass, type, targetTemperature);
         this.name = Thermostats.BUSSI;
         this.tau = tau;
-        this.random = new Random(0);
+        this.bussiRandom = new Random(0);
     }
 
     /**
@@ -76,6 +77,7 @@ public class Bussi extends Thermostat {
      * @param x an array of double.
      * @param v an array of double.
      * @param mass an array of double.
+     * @param type the VARIABLE_TYPE of each variable.
      * @param targetTemperature a double.
      */
     public Bussi(int dof, double x[], double v[], double mass[],
@@ -131,10 +133,10 @@ public class Bussi extends Thermostat {
         double exptau = exp(-dt / tau);
         double ratio = targetTemperature / currentTemperature;
         double rate = (1.0 - exptau) * ratio / nVariables;
-        double r = random.nextGaussian();
+        double r = bussiRandom.nextGaussian();
         double s = 0.0;
         for (int i = 0; i < nVariables - 1; i++) {
-            double si = random.nextGaussian();
+            double si = bussiRandom.nextGaussian();
             s += si * si;
         }
         double scale = sqrt(exptau + (s + r * r) * rate + 2.0 * r * sqrt(exptau * rate));

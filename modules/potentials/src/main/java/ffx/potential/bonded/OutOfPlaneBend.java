@@ -24,20 +24,33 @@ package ffx.potential.bonded;
 
 import java.util.logging.Logger;
 
-import static org.apache.commons.math3.util.FastMath.*;
+import static org.apache.commons.math3.util.FastMath.acos;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.signum;
+import static org.apache.commons.math3.util.FastMath.sqrt;
+import static org.apache.commons.math3.util.FastMath.toDegrees;
 
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.OutOfPlaneBendType;
 
-import static ffx.numerics.VectorMath.*;
-import static ffx.potential.parameters.OutOfPlaneBendType.*;
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.potential.parameters.OutOfPlaneBendType.cubic;
+import static ffx.potential.parameters.OutOfPlaneBendType.quartic;
+import static ffx.potential.parameters.OutOfPlaneBendType.quintic;
+import static ffx.potential.parameters.OutOfPlaneBendType.sextic;
+import static ffx.potential.parameters.OutOfPlaneBendType.units;
 
 /**
  * The OutOfPlaneBend class represents an Out-Of-Plane Bend.
  *
  * @author Michael J. Schnieders
- * @since 1.0
  *
+ * @since 1.0
  */
 public class OutOfPlaneBend extends BondedTerm implements
         Comparable<OutOfPlaneBend> {
@@ -72,8 +85,8 @@ public class OutOfPlaneBend extends BondedTerm implements
      * Attempt to create a new OutOfPlaneBend instance for a given Angle and
      * Force Field.
      *
-     * @param angle
-     * @param forceField
+     * @param angle the Angle to create an OutOfPlaneBend around.
+     * @param forceField the ForceField parameters to use.
      * @return a new OutOfPlaneBend if the central atom of the angle is trigonal
      * and a force field type exists.
      */

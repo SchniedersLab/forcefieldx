@@ -41,6 +41,7 @@ public class Adiabatic extends Thermostat {
      * @param x an array of double.
      * @param v an array of double.
      * @param mass an array of double.
+     * @param type the VARIABLE_TYPE of each variable.
      */
     public Adiabatic(int n, double x[], double v[], double mass[], VARIABLE_TYPE type[]) {
         super(n, x, v, mass, type, 0.0);

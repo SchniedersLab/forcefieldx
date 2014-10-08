@@ -22,8 +22,8 @@ public class DoubleIndexPair implements Comparable {
      * Allows sorting of floating-point values while retaining knowledge of
      * where that value was in some original list or array.
      *
-     * @param index
-     * @param doubleValue
+     * @param index the original index of this double.
+     * @param doubleValue the double value.
      */
     public DoubleIndexPair(int index, double doubleValue) {
         this.index = index;

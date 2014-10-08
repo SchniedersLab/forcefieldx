@@ -70,14 +70,14 @@ public class AlgorithmUtils extends PotentialsUtils implements AlgorithmFunction
     /**
      * Performs molecular dynamics on a MolecularAssembly.
      *
-     * @param assembly
-     * @param nStep
-     * @param timeStep
-     * @param printInterval
-     * @param saveInterval
-     * @param temperature
-     * @param initVelocities
-     * @param dyn
+     * @param assembly the MolecularAssembly to do MD on.
+     * @param nStep the number of MD steps.
+     * @param timeStep the MD time step.
+     * @param printInterval the time between logging statements.
+     * @param saveInterval the time between saving restart files.
+     * @param temperature the target temperature.
+     * @param initVelocities if true, reset velocities from a Maxwell distribution.
+     * @param dyn a dynamics restart.
      */
     @Override
     public void md(MolecularAssembly assembly, int nStep, double timeStep,

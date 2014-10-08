@@ -26,6 +26,8 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 
+import ffx.potential.parameters.ForceField.ForceFieldType;
+
 /**
  * The BondType class defines one harmonic bond stretch energy term.
  *
@@ -61,10 +63,10 @@ public final class BondType extends BaseType implements Comparator<String> {
      * @param atomClasses int[]
      * @param forceConstant double
      * @param distance double
-     * @param bondFunction
+     * @param bondFunction the BondFunction type to apply.
      */
     public BondType(int atomClasses[], double forceConstant, double distance, BondFunction bondFunction) {
-        super(ForceField.ForceFieldType.BOND, sortKey(atomClasses));
+        super(ForceFieldType.BOND, sortKey(atomClasses));
         this.atomClasses = atomClasses;
         this.forceConstant = forceConstant;
         this.distance = distance;

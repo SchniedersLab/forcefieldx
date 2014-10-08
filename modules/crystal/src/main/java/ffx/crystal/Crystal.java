@@ -616,6 +616,9 @@ public class Crystal {
     /**
      * Two crystals are equal only if all unit cell parameters are exactly the
      * same.
+     *
+     * @param obj the Crystal to compare to.
+     * @return true if all unit cell parameters are exactly the same.
      */
     public boolean strictEquals(Object obj) {
         if (obj == null) {
@@ -979,9 +982,9 @@ public class Crystal {
     /**
      * Multiply coordinates by the transpose of a matrix.
      *
-     * @param in
-     * @param out
-     * @param matrix
+     * @param in input coordinates.
+     * @param out output coordinates.
+     * @param matrix multiply by the transpose of this matrix.
      */
     public void applyMatrixTranspose(double in[], double out[], double matrix[][]) {
         double xc = in[0];

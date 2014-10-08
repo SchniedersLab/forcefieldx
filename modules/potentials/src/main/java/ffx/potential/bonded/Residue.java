@@ -311,7 +311,7 @@ public class Residue extends MSGroup {
      * @param num a int.
      * @param atoms a {@link ffx.potential.bonded.MSNode} object.
      * @param rt a {@link ffx.potential.bonded.Residue.ResidueType} object.
-     * @param forceField
+     * @param forceField the ForceField to use when created bonded terms.
      */
     public Residue(String name, int num, MSNode atoms, ResidueType rt, ForceField forceField) {
         super(name, atoms);

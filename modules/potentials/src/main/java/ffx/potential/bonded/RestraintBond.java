@@ -179,6 +179,7 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
      *
      * @param a1 Atom number 1.
      * @param a2 Atom number 2.
+     * @param crystal the Crystal defines boundary and symmetry conditions.
      */
     public RestraintBond(Atom a1, Atom a2, Crystal crystal) {
         atoms = new Atom[2];

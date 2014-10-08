@@ -50,17 +50,17 @@ public class ImproperTorsion extends BondedTerm implements
 
     private static final Logger logger = Logger.getLogger(OutOfPlaneBend.class.getName());
     /**
-     * Force field parameters to compute the Out-of-Plane Bend energy.
+     * Force field parameters to compute the ImproperTorsion energy.
      */
     public ImproperTorsionType improperType = null;
 
     /**
-     * OutOfPlaneBend constructor.
+     * ImproperTorsion constructor.
      *
-     * @param atom1
-     * @param atom2
-     * @param atom4
-     * @param atom3
+     * @param atom1 Atom number 1.
+     * @param atom2 Atom number 2.
+     * @param atom3 Atom number 3.
+     * @param atom4 Atom number 4.
      */
     public ImproperTorsion(Atom atom1, Atom atom2, Atom atom3, Atom atom4) {
         super();
@@ -80,10 +80,11 @@ public class ImproperTorsion extends BondedTerm implements
     }
 
     /**
+     * ImproperTorsion factory method.
      *
-     * @param atom
-     * @param forceField
-     * @return
+     * @param atom Create the improper torsion around this atom.
+     * @param forceField retrieve parameters from this ForceField.
+     * @return the ImproperTorsion if created, or null otherwise.
      */
     public static ArrayList<ImproperTorsion> improperTorsionFactory(Atom atom, ForceField forceField) {
 

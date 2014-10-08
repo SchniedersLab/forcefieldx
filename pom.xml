@@ -749,7 +749,7 @@
         <changes.jira.skip>true</changes.jira.skip>
         <checkstyle.skip>true</checkstyle.skip>
         <dependencyDetails>false</dependencyDetails>
-        <maven.javadoc.skip>true</maven.javadoc.skip>
+        <maven.javadoc.skip>false</maven.javadoc.skip>
         <maven.jxr.skip>true</maven.jxr.skip>
         <linkcheck.skip>true</linkcheck.skip>
         <pmd.skip>true</pmd.skip>

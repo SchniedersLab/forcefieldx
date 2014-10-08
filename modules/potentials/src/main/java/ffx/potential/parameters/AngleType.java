@@ -29,6 +29,8 @@ import java.util.HashMap;
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.pow;
 
+import ffx.potential.parameters.ForceField.ForceFieldType;
+
 /**
  * The AngleType class defines one harmonic angle bend energy term.
  *
@@ -66,10 +68,10 @@ public final class AngleType extends BaseType implements Comparator<String> {
      * @param atomClasses an array of int.
      * @param forceConstant a double.
      * @param angle an array of double.
-     * @param angleFunction
+     * @param angleFunction the AngleFunction to apply.
      */
     public AngleType(int atomClasses[], double forceConstant, double angle[], AngleFunction angleFunction) {
-        super(ForceField.ForceFieldType.ANGLE, sortKey(atomClasses));
+        super(ForceFieldType.ANGLE, sortKey(atomClasses));
         this.atomClasses = atomClasses;
         this.forceConstant = forceConstant;
         this.angle = angle;

@@ -91,7 +91,7 @@ public interface DataContainer {
      * <p>
      * setWeight</p>
      *
-     * set the overall weight of the data.
+     * @param weight set the overall weight of the data.
      */
     public void setWeight(double weight);
 

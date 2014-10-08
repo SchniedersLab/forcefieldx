@@ -37,30 +37,30 @@ import ffx.numerics.Potential;
  */
 public class Respa extends Integrator {
 
-    private double x[];
-    private double v[];
-    private double a[];
-    private double aAlt[];
-    private double mass[];
-    private int nVariables;
+    private final double x[];
+    private final double v[];
+    private final double a[];
+    private final double aAlt[];
+    private final double mass[];
+    private final int nVariables;
     private double dt;
     private double dt_2;
     private double dalt;
     private double dta;
     private double dta_2;
     private int nalt;
-    private double eps = .00000001;
+    private final double eps = .00000001;
     private double halfStepEnergy = 0;
 
     /**
      * Initialize Respa multiple time step molecular dynamics.
      *
-     * @param nVariables
-     * @param x
-     * @param v
-     * @param a
-     * @param aPrevious
-     * @param mass
+     * @param nVariables Number of variables.
+     * @param x Variables current value.
+     * @param v Current velocities.
+     * @param a Current accelerations.
+     * @param aPrevious Previous accelerations.
+     * @param mass Mass of the variables.
      */
     public Respa(int nVariables, double x[], double v[], double a[],
             double aPrevious[], double mass[]) {
@@ -91,7 +91,7 @@ public class Respa extends Integrator {
     /**
      * Performs the inner RESPA loop via position Verlet.
      *
-     * @param potential
+     * @param potential the Potential for RESPA.
      */
     @Override
     public void preForce(Potential potential) {
@@ -121,7 +121,7 @@ public class Respa extends Integrator {
     /**
      * The Respa full-step integration operation.
      *
-     * @param gradient
+     * @param gradient the Gradient over all parameters.
      */
     @Override
     public void postForce(double[] gradient) {

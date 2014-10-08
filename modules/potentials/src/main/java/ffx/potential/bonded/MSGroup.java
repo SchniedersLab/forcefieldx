@@ -192,7 +192,8 @@ public abstract class MSGroup extends MSNode {
     /**
      * <p>
      * assignBondedTerms</p>
-     * @param forceField
+     *
+     * @param forceField the ForceField to use when creating bonded terms.
      */
     public void assignBondedTerms(ForceField forceField) {
         MSNode newBondNode = new MSNode("Bonds");
@@ -204,7 +205,7 @@ public abstract class MSGroup extends MSNode {
         MSNode newPiOrbitalTorsionNode = new MSNode("Pi-Orbital Torsions");
         MSNode newTorsionTorsionNode = new MSNode("Torsion-Torsions");
         MSNode newImproperTorsionNode = new MSNode("Improper Torsions");
-;
+        ;
         // Collect all bonds for which both atoms are in this Group
         long time = System.nanoTime();
         ArrayList<Bond> bonds = new ArrayList<>();
@@ -441,9 +442,12 @@ public abstract class MSGroup extends MSNode {
      * Create a joint between two chemical groups.
      *
      * @param bond Bond
-     * @return Joint
      * @param group1 a {@link ffx.potential.bonded.MSGroup} object.
      * @param group2 a {@link ffx.potential.bonded.MSGroup} object.
+     * @param forceField the ForceField parameters to use when creating the
+     * joint.
+     * @return Joint the created Joint.
+     *
      */
     public Joint createJoint(Bond bond, MSGroup group1, MSGroup group2, ForceField forceField) {
         MSNode newBondNode = new MSNode("Bonds");
@@ -572,7 +576,8 @@ public abstract class MSGroup extends MSNode {
      *
      * @param group1 a {@link ffx.potential.bonded.MSGroup} object.
      * @param group2 a {@link ffx.potential.bonded.MSGroup} object.
-     * @param forceField
+     * @param forceField the ForceField parameters to use when creating the
+     * joint.
      * @return a {@link ffx.potential.bonded.Joint} object.
      */
     public Joint createJoint(MSGroup group1, MSGroup group2, ForceField forceField) {
@@ -598,15 +603,17 @@ public abstract class MSGroup extends MSNode {
     }
 
     /**
-     * Abstact method that should specify how to finalize a MultiScaleGroup
+     * Abstract method that should specify how to finalize a MSGroup
      *
      * @param finalizeGroups a boolean.
+     * @param forceField the ForceField parameters to use when finalizing the
+     * MSGroup.
      */
     public abstract void finalize(boolean finalizeGroups, ForceField forceField);
 
     /**
      * This method constructs an ArrayList of atoms which are under-constrained.
-     * (ie They can except more bonds)
+     * (i.e. They can except more bonds)
      */
     public void findDangelingAtoms() {
         ArrayList<Atom> d = new ArrayList<>();

@@ -129,7 +129,7 @@ public class SigmaAEnergy implements Potential {
      * @param reflectionList a {@link ffx.crystal.ReflectionList} object.
      * @param refinementData a {@link ffx.xray.DiffractionRefinementData}
      * object.
-     * @param parallelTeam
+     * @param parallelTeam the ParallelTeam to execute the SigmaAEnergy.
      */
     public SigmaAEnergy(ReflectionList reflectionList,
             DiffractionRefinementData refinementData, ParallelTeam parallelTeam) {

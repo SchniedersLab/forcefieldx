@@ -386,8 +386,6 @@ public class FFXClassLoader extends URLClassLoader {
      * {@inheritDoc}
      *
      * Returns the library path of an extension DLL.
-     *
-     * @return
      */
     @Override
     protected String findLibrary(String libname) {
@@ -409,8 +407,6 @@ public class FFXClassLoader extends URLClassLoader {
      *
      * Returns the URL of the given resource searching first if it exists among
      * the extension JARs given in constructor.
-     *
-     * @return
      */
     @Override
     public URL findResource(String name) {
@@ -472,9 +468,6 @@ public class FFXClassLoader extends URLClassLoader {
      *
      * Loads a class with this class loader if its package belongs to
      * <code>applicationPackages</code> given in constructor.
-     *
-     * @return
-     * @throws java.lang.ClassNotFoundException
      */
     @Override
     protected Class loadClass(String name, boolean resolve) throws ClassNotFoundException {

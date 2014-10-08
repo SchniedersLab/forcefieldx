@@ -439,12 +439,12 @@ public class SpaceGroup {
      *
      * @param crystalSystem a {@link ffx.crystal.SpaceGroup.CrystalSystem}
      * object.
-     * @param a
-     * @param b
-     * @param c a double.
-     * @param alpha a double.
-     * @param beta a double.
-     * @param gamma a double.
+     * @param a the a-axis length.
+     * @param b the b-axis length.
+     * @param c the c-axis length.
+     * @param alpha the alpha angle.
+     * @param beta the beta angle.
+     * @param gamma the gamma angle.
      * @return True if the restrictions are satisfied, false otherwise.
      */
     public static boolean checkRestrictions(CrystalSystem crystalSystem,

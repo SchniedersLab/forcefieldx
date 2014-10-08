@@ -35,7 +35,6 @@ import edu.rit.pj.ParallelTeam;
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.potential.bonded.Atom;
-import ffx.potential.nonbonded.ParticleMeshEwald.ELEC_FORM;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldInteger;
@@ -72,11 +71,11 @@ public class PMEWisdom {
     private final ParallelTeam parallelTeam;
 
     /**
-     * The PMEWisdom constructor requires a MolecularAssembly that is a
-     * periodic.
+     * The PMEWisdom constructor.
      *
-     * @param atomList
-     * @param forceField
+     * @param atomList the Atom list to perform electrostatics calculations on.
+     * @param forceField the ForceField that defines the electrostatics parameters.
+     * 
      * @since 1.0
      */
     public PMEWisdom(ArrayList<Atom> atomList, ForceField forceField) {
