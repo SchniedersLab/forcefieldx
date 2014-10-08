@@ -377,7 +377,7 @@ if (resultsFile.exists()) {
 
 AlgorithmFunctions utils;
 try {
-    utils = getAlgorithmFunctions();
+    utils = getAlgorithmUtils();
 } catch (MissingMethodException ex) {
     utils = new AlgorithmUtils();
 }

@@ -2115,6 +2115,30 @@ public class ParticleMeshEwald implements LambdaInterface {
 
         return conjugateGradientListener.event.getIterations();
     }
+    
+    public void destroy() throws Exception {
+        if (fftTeam != null) {
+            try {
+                fftTeam.shutdown();
+            } catch (Exception ex) {
+                logger.warning(" Exception in shutting down fftTeam");
+            }
+        }
+        if (sectionTeam != null) {
+            try {
+                sectionTeam.shutdown();
+            } catch (Exception ex) {
+                logger.warning(" Exception in shutting down sectionTeam");
+            }
+        }
+        if (realSpaceTeam != null) {
+            try {
+                realSpaceTeam.shutdown();
+            } catch (Exception ex) {
+                logger.warning(" Exception in shutting down realSpaceTeam");
+            }
+        }
+    }
 
     /**
      * The Permanent Field Region should be executed by a ParallelTeam with

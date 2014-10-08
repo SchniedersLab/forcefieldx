@@ -639,5 +639,6 @@ public class Complex3DParallel {
                 toSeconds * parTime));
         System.out.println(String.format("Speedup: %15.5f", (double) seqTime
                 / parTime));
+        parallelTeam.shutdown();
     }
 }

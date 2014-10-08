@@ -134,6 +134,8 @@ public class MolecularAssembly extends MSGroup {
     private boolean visible = false;
     private ArrayList<ROLS> bondList = null;
     private final ArrayList<BranchGroup> myNewShapes = new ArrayList<BranchGroup>();
+    
+    private int numTimesDestroyed = 0;
 
     // Constructors
     /**
@@ -500,6 +502,12 @@ public class MolecularAssembly extends MSGroup {
      */
     @Override
     public boolean destroy() {
+        try {
+            potentialEnergy.destroy();
+        } catch (Exception ex) {
+            logger.warning(String.format(" Exception in shutting down force field "
+                    + "energy parallel teams: %s", ex.toString()));
+        }
         detach();
         return super.destroy();
     }

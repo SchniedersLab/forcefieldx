@@ -1713,4 +1713,20 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
          * operators and periodic boundary conditions.
          */
     }
+    
+    public void destroy() throws Exception {
+        if (parallelTeam != null) {
+            try {
+                parallelTeam.shutdown();
+            } catch (Exception ex) {
+                logger.warning(" Error in shutting down the FFE team.");
+            }
+        }
+        if (vanderWaals != null) {
+            vanderWaals.destroy();
+        }
+        if (particleMeshEwald != null) {
+            particleMeshEwald.destroy();
+        }
+    }
 }

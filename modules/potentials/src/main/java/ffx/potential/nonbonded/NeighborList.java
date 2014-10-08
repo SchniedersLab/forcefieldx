@@ -999,6 +999,10 @@ public class NeighborList extends ParallelRegion {
             }
         }
     }
+    
+    public void destroy() throws Exception {
+        parallelTeam.shutdown();
+    }
 
     /**
      * Moves an array of doubles to be within 0.0 and 1.0 by addition or

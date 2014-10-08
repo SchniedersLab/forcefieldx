@@ -47,9 +47,9 @@ public interface PotentialsFunctions {
 
     public MolecularAssembly[] open(String[] files);
 
-    public void close();
+    public void close(MolecularAssembly assembly);
 
-    public void closeAll();
+    public void closeAll(MolecularAssembly[] assemblies);
 
     public double time();
 
