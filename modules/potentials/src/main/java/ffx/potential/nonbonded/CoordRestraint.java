@@ -79,10 +79,6 @@ public class CoordRestraint implements LambdaInterface {
     public CoordRestraint(Atom[] atoms, ForceField forceField) {
         this.atoms = atoms;
         nAtoms = atoms.length;
-<<<<<<< HEAD
-        forceField = molecularAssembly.getForceField();
-=======
->>>>>>> fe3218e8f80e60c0b5ffe0a096539703cd180e5b
 
         //lambdaTerm = false;
         lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
