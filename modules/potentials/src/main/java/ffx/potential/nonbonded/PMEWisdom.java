@@ -312,4 +312,8 @@ public class PMEWisdom {
         logger.info(sb.toString());
         return bestTime;
     }
+    
+    public void destroy() throws Exception {
+        parallelTeam.shutdown();
+    }
 }

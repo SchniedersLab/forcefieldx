@@ -107,19 +107,26 @@ public class PotentialsUtils implements PotentialsFunctions {
     }
 
     /**
-     * Does nothing (no higher-level data structure).
+     * Shuts down parallel teams in the force field of the provided MolecularAssembly.
+     * Kaminsky's ParallelTeamThreads' run() methods are infinite loops, and because
+     * running threads are always GC roots, it is necessary to send them a signal
+     * to shut down to enable garbage collection.
+     * @param assembly Assembly to close.
      */
     @Override
-    public void close() {
-        // Is not meaningful in the local implementation.
+    public void close(MolecularAssembly assembly) {
+        assembly.destroy();
     }
 
     /**
-     * Does nothing (no higher-level data structure).
+     * Shuts down parallel teams in the force fields of the provided MolecularAssemblys.
+     * @param assemblies Assemblies to close.
      */
     @Override
-    public void closeAll() {
-        // Is not meaningful in the local implementation.
+    public void closeAll(MolecularAssembly[] assemblies) {
+        for (MolecularAssembly assembly : assemblies) {
+            assembly.destroy();
+        }
     }
 
     /**

@@ -945,6 +945,12 @@ public class VanDerWaals implements MaskingInterface,
             logger.log(Level.SEVERE, message, e);
         }
     }
+    
+    public void destroy() throws Exception {
+        if (neighborList != null) {
+            neighborList.destroy();
+        }
+    }
 
     private class VanDerWaalsRegion extends ParallelRegion {
 

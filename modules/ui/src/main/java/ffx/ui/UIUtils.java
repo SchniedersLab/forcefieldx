@@ -21,7 +21,7 @@ import ffx.potential.MolecularAssembly;
  * Automatic Parametrization method closures are similarly re-implemented, it
  * will probably be necessary to implement a new interface which extends both
  * AlgorithmFunctions and AutomaticParamFunctions interfaces.
- *
+ * 
  * @author Jacob M. Litman
  * @author Michael J. Schnieders
  */
@@ -61,12 +61,12 @@ public class UIUtils implements AlgorithmFunctions {
     }
 
     @Override
-    public void close() {
+    public void close(MolecularAssembly assembly) {
         mainPanel.closeWait();
     }
 
     @Override
-    public void closeAll() {
+    public void closeAll(MolecularAssembly[] assemblies) {
         mainPanel.closeAll();
     }
 

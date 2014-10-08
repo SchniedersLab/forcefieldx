@@ -411,7 +411,7 @@ public class RescoreAndCluster {
             }
             double e = utils.returnEnergy(assembly);
             energies[i] = new DoubleIndexPair(i, e);
-            utils.close();
+            utils.closeAll(openedAssemblies);
         } catch (Exception ex) {
             logger.warning(String.format(" Exception rescoring on file %s", filename));
             logger.info(ex.toString());
