@@ -30,10 +30,10 @@ import static org.apache.commons.math3.util.FastMath.pow;
 
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
+import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 
 import static ffx.numerics.VectorMath.rsq;
-import ffx.potential.parameters.AtomType;
 
 /**
  * Restrain atoms to their initial coordinates.
@@ -67,7 +67,6 @@ public class CoordRestraint implements LambdaInterface {
     private AtomType definePlane1 = null;
     private AtomType definePlane2 = null;
     private AtomType definePlane3 = null;
-    private ForceField forceField = null;
 
     /**
      * This CoordRestraint is based on the unit cell parameters and symmetry
