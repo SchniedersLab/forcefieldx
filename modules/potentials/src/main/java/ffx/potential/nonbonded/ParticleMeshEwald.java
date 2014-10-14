@@ -181,6 +181,10 @@ public class ParticleMeshEwald implements LambdaInterface {
      */
     private boolean generalizedKirkwoodTerm;
     /**
+     * Flag to indicate use of Born solvation energy.
+     */
+    private boolean bornSolvation;
+    /**
      * If lambdaTerm is true, some ligand atom interactions with the environment
      * are being turned on/off.
      */
@@ -980,8 +984,9 @@ public class ParticleMeshEwald implements LambdaInterface {
          * self-consistent reaction field.
          */
         generalizedKirkwoodTerm = forceField.getBoolean(ForceFieldBoolean.GKTERM, false);
-        if (generalizedKirkwoodTerm) {
-            generalizedKirkwood = new GeneralizedKirkwood(forceField, atoms, this, crystal, parallelTeam);
+        bornSolvation = forceField.getBoolean(ForceFieldBoolean.BORN_SOLVATION, false);
+        if (generalizedKirkwoodTerm || bornSolvation) {
+            generalizedKirkwood = new GeneralizedKirkwood(forceField, atoms, this, crystal, bornSolvation, parallelTeam);
         } else {
             generalizedKirkwood = null;
         }

@@ -121,6 +121,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     private static final double epsh = 0.0135;
     private static final double rmino = 1.7025;
     private static final double rminh = 1.3275;
+    private final boolean useBorn;
     private final double probe;
     private boolean use[] = null;
     private final Polarization polarization;
@@ -189,11 +190,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * @param particleMeshEwald a
      * {@link ffx.potential.nonbonded.ParticleMeshEwald} object.
      * @param crystal a {@link ffx.crystal.Crystal} object.
+     * @param bornSolvation Whether to use the Born solvation approximation.
      * @param parallelTeam a {@link edu.rit.pj.ParallelTeam} object.
      */
     public GeneralizedKirkwood(ForceField forceField, Atom[] atoms,
             ParticleMeshEwald particleMeshEwald, Crystal crystal,
-            ParallelTeam parallelTeam) {
+            boolean bornSolvation, ParallelTeam parallelTeam) {
 
         this.parallelTeam = parallelTeam;
         nAtoms = atoms.length;
@@ -202,6 +204,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
         neighborLists = particleMeshEwald.neighborLists;
         this.crystal = crystal;
         this.atoms = atoms;
+        
+        useBorn = bornSolvation;
 
         sharedGKField = new SharedDoubleArray[3];
         sharedGKFieldCR = new SharedDoubleArray[3];
@@ -447,6 +451,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 dispersionRegion.setGradient(gradient);
                 parallelTeam.execute(dispersionRegion);
                 dispersionTime += System.nanoTime();
+                // Suggested commenting out these three
                 cavitationTime = -System.nanoTime();
                 parallelTeam.execute(cavitationRegion);
                 cavitationTime += System.nanoTime();
@@ -560,6 +565,17 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     @Override
     public void getdEdXdL(double[] gradient) {
+    }
+    
+    /**
+     * Gets the ai term for Born solvation energy.
+     * @param i Atom index
+     * @return ai term (or 1.0, depending on whether you can decipher FORTRAN runes).
+     */
+    private double getai(int i) {
+        Atom ati = atoms[i];
+        // Insert fancy-dancy logic here.
+        return 1.0;
     }
 
     private enum NonPolar {
@@ -3493,12 +3509,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
     private class BornCRRegion extends ParallelRegion {
 
         private final BornCRLoop bornCRLoop[];
+        private SharedDouble ecavTot;
 
         public BornCRRegion(int nt) {
             bornCRLoop = new BornCRLoop[nt];
             for (int i = 0; i < nt; i++) {
                 bornCRLoop[i] = new BornCRLoop();
             }
+            ecavTot = new SharedDouble(0.0);
         }
 
         @Override
@@ -3528,12 +3546,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
             private double lgX[];
             private double lgY[];
             private double lgZ[];
+            private double ecav;
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
             public BornCRLoop() {
                 dx_local = new double[3];
+                ecav = 0.0;
             }
 
             @Override
@@ -3695,6 +3715,33 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             }
                         }
                     }
+                    /**
+                     * Formula for Born energy approximation is:
+                     * e = ai * 4.0*pi * (ri + probe)^2 * (ri/rb)^6.
+                     * ri is baseRadius, rb is Born radius of given atom. ai is
+                     * an empirical constant for the atom. If ai is too low, everything
+                     * wants to pack into a solid ball, and if ai is too high, everything
+                     * wants to unfold and be as solvent-exposed as possible.
+                     */
+                    if (useBorn) {
+                        double e = baseRadius[i] + probe; // e = ri + probe
+                        e *= (e * 4.0 * PI * getai(i));// e = (ri + probe) * ((ri + probe) * 4 * pi * ai)
+                        e *= pow(baseRadius[i]/born[i], 6); // e = consts * (ri/rb)^6
+                        ecav += e;
+                        // Now calculate derivatives
+                        e *= (-6.0 / born[i]); // e = consts * -6*ri^6 / rb^-7
+                        // To get each derivative, would multiple 
+                    }
+                }
+            }
+            
+            @Override
+            /**
+             * Sums up total energy from per-thread energies.
+             */
+            public void finish() {
+                if (useBorn) {
+                    ecavTot.addAndGet(ecav);
                 }
             }
         }
@@ -4411,14 +4458,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 }
             }
         }
-
+        
         /**
          * Compute Cavitation energy for a range of atoms.
          *
          * @since 1.0
          */
         private class CavitationLoop extends IntegerForLoop {
-
+            
             private double thec = 0;
             private IndexedDouble arci[];
             private final double dArea[][];
