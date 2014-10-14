@@ -773,7 +773,7 @@
         <module>modules/autoparm</module>
         <module>modules/crystal</module>
         <module>modules/numerics</module>
-        <module>modules/potentials</module>
+        <module>modules/potential</module>
         <module>modules/ui</module>
         <module>modules/utilities</module>
         <module>modules/xray</module>
