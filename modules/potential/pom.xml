@@ -11,15 +11,15 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <groupId>edu.uiowa.eng.ffx</groupId>
-    <artifactId>potentials</artifactId>
+    <artifactId>potential</artifactId>
     <packaging>jar</packaging>
-    <name>Potentials</name>
+    <name>Potential</name>
     <organization>
         <name>Michael J. Schnieders</name>
         <url>http://ffx.eng.uiowa.edu</url>
     </organization>
     <description>
-        The Potentials module computes the potential energy of a
+        The Potential module computes the potential energy of a
         molecular system via a classical force field.
     </description>
     <developers>
@@ -66,7 +66,7 @@
                 </includes>
             </resource>
             <resource>
-                <directory>${basedir}/src/main/groovy/ffx/potentials</directory>
+                <directory>${basedir}/src/main/groovy/ffx/potential</directory>
                 <targetPath>ffx/scripts</targetPath>
                 <includes>
                     <include>*</include>

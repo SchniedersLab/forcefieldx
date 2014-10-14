@@ -236,7 +236,7 @@ public class DiffractionData implements DataContainer {
         aRadBuff = properties.getDouble("aradbuff", 0.75);
         double sampling = properties.getDouble("sampling", 0.6);
         xrayScaleTol = properties.getDouble("xrayscaletol", 1e-4);
-        sigmaATol = properties.getDouble("sigmaatol", 1.0);
+        sigmaATol = properties.getDouble("sigmaatol", 0.05);
         xWeight = properties.getDouble("xweight", 1.0);
         bsimweight = properties.getDouble("bsimweight", 1.0);
         bnonzeroweight = properties.getDouble("bnonzeroweight", 1.0);
@@ -302,28 +302,29 @@ public class DiffractionData implements DataContainer {
             StringBuilder sb = new StringBuilder();
             sb.append(" Refinement Settings\n\n");
             sb.append("  Target Function\n");
-            sb.append("  X-ray refinement weight (xweight): " + xWeight + "\n");
-            sb.append("  Use cctbx 3 Gaussians (use_3g): " + use_3g + "\n");
-            sb.append("  Atomic form factor radius buffer (aradbuff): " + aRadBuff + "\n");
-            sb.append("  Reciprocal space sampling rate (sampling): " + sampling + "\n");
-            sb.append("  Resolution dependent spline scale (splinefit): " + splinefit + "\n");
-            sb.append("  Solvent grid search (gridsearch): " + gridsearch + "\n");
-            sb.append("  X-ray scale fit tolerance (xrayscaletol): " + xrayScaleTol + "\n");
-            sb.append("  Sigma A fit tolerance (sigmaatol): " + sigmaATol + "\n\n");
+            sb.append("  X-ray refinement weight (xweight): ").append(xWeight).append("\n");
+            sb.append("  Use cctbx 3 Gaussians (use_3g): ").append(use_3g).append("\n");
+            sb.append("  Atomic form factor radius buffer (aradbuff): ").append(aRadBuff).append("\n");
+            sb.append("  Reciprocal space sampling rate (sampling): ").append(sampling).append("\n");
+            sb.append("  Resolution dependent spline scale (splinefit): ").append(splinefit).append("\n");
+            sb.append("  Solvent grid search (gridsearch): ").append(gridsearch).append("\n");
+            sb.append("  X-ray scale fit tolerance (xrayscaletol): ").append(xrayScaleTol).append("\n");
+            sb.append("  Sigma A fit tolerance (sigmaatol): ").append(sigmaATol).append("\n\n");
             sb.append("  Reflections\n");
-            sb.append("  F/sigF cutoff (fsigfcutoff): " + fsigfCutoff + "\n");
-            sb.append("  R Free flag (rfreeflag) (if -1, value will be updated when data is read in): " + rflag + "\n");
-            sb.append("  Number of bins (nbins): " + reflectionList[0].nbins + "\n\n");
+            sb.append("  F/sigF cutoff (fsigfcutoff): ").append(fsigfCutoff).append("\n");
+            sb.append("  R Free flag (rfreeflag) (if -1, value will be updated when data is read in): ").
+                    append(rflag).append("\n");
+            sb.append("  Number of bins (nbins): ").append(reflectionList[0].nbins).append("\n\n");
             sb.append("  B-Factors\n");
-            sb.append("  Similarity weight (bsimweight): " + bsimweight + "\n");
-            sb.append("  Non-zero weight (bnonzeroweight): " + bnonzeroweight + "\n");
-            sb.append("  Lagrangian mass (bmass): " + bmass + "\n");
-            sb.append("  Refined by residue (residuebfactor): " + residuebfactor + "\n");
-            sb.append("    (if true, num. residues per B (nresiduebfactor): " + nresiduebfactor + ")\n");
-            sb.append("  Add ANISOU for refinement (addanisou): " + addanisou + "\n\n");
+            sb.append("  Similarity weight (bsimweight): ").append(bsimweight).append("\n");
+            sb.append("  Non-zero weight (bnonzeroweight): ").append(bnonzeroweight).append("\n");
+            sb.append("  Lagrangian mass (bmass): ").append(bmass).append("\n");
+            sb.append("  Refined by residue (residuebfactor): ").append(residuebfactor).append("\n");
+            sb.append("    (if true, num. residues per B (nresiduebfactor): ").append(nresiduebfactor).append(")\n");
+            sb.append("  Add ANISOU for refinement (addanisou): ").append(addanisou).append("\n\n");
             sb.append("  Occupancies\n");
-            sb.append("  Refine on molecules (HETATMs - refinemolocc): " + refinemolocc + "\n");
-            sb.append("  Lagrangian mass (occmass): " + occmass + "\n");
+            sb.append("  Refine on molecules (HETATMs - refinemolocc): ").append(refinemolocc).append("\n");
+            sb.append("  Lagrangian mass (occmass): ").append(occmass).append("\n");
 
             logger.info(sb.toString());
         }

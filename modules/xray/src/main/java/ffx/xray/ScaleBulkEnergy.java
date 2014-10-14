@@ -113,7 +113,8 @@ public class ScaleBulkEnergy implements Potential {
      * @param n a int.
      * @param parallelTeam the ParallelTeam to execute the ScaleBulkEnergy.
      */
-    public ScaleBulkEnergy(ReflectionList reflectionlist, DiffractionRefinementData refinementdata, int n, ParallelTeam parallelTeam) {
+    public ScaleBulkEnergy(ReflectionList reflectionlist, DiffractionRefinementData refinementdata,
+            int n, ParallelTeam parallelTeam) {
         this.reflectionlist = reflectionlist;
         this.crystal = reflectionlist.crystal;
         this.refinementData = refinementdata;
@@ -122,7 +123,6 @@ public class ScaleBulkEnergy implements Potential {
         this.fo = refinementdata.fsigf;
         this.n = n;
         this.solvent_n = n - refinementdata.scale_n;
-        threadCount = parallelTeam.getThreadCount();
 
         recipt = transpose3(crystal.A);
         j11 = mat3Mat3(mat3Mat3(crystal.A, u11), recipt);
@@ -131,6 +131,9 @@ public class ScaleBulkEnergy implements Potential {
         j12 = mat3Mat3(mat3Mat3(crystal.A, u12), recipt);
         j13 = mat3Mat3(mat3Mat3(crystal.A, u13), recipt);
         j23 = mat3Mat3(mat3Mat3(crystal.A, u23), recipt);
+
+        // parallelTeam = new ParallelTeam(1);
+        threadCount = parallelTeam.getThreadCount();
         this.parallelTeam = parallelTeam;
         scaleBulkEnergyRegion = new ScaleBulkEnergyRegion(threadCount);
     }
@@ -231,6 +234,16 @@ public class ScaleBulkEnergy implements Potential {
                     g[i] = grad.get(i);
                 }
             }
+            
+            /*
+            logger.info(String.format("Bulk R         %16.8f", r.get()));
+            logger.info(String.format("Bulk Rf        %16.8f", rf.get()));
+            logger.info(String.format("Bulk Rfree     %16.8f", rfree.get()));
+            logger.info(String.format("Bulk Rfreef    %16.8f", rfreef.get()));
+            logger.info(String.format("Bulk Sum       %16.8f", sum.get()));
+            logger.info(String.format("Bulk Sum Fo    %16.8f", sumfo.get()));
+            logger.info(String.format("Bulk Sum/SumFo %16.8f", sum.get()/sumfo.get()));
+            */
         }
 
         private class ScaleBulkEnergyLoop extends IntegerForLoop {

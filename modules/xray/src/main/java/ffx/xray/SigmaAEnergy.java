@@ -155,8 +155,9 @@ public class SigmaAEnergy implements Potential {
         sa = new double[n];
         wa = new double[n];
 
+        // parallelTeam = new ParallelTeam(1);
         this.parallelTeam = parallelTeam;
-        sigmaARegion = new SigmaARegion(parallelTeam.getThreadCount());
+        sigmaARegion = new SigmaARegion(this.parallelTeam.getThreadCount());
     }
 
     /*
@@ -236,6 +237,9 @@ public class SigmaAEnergy implements Potential {
                     g[i] = grad.get(i);
                 }
             }
+
+            // logger.info(String.format("SigmaA Sum   %16.8f", sum.get()));
+            // logger.info(String.format("SigmaA Sum R %16.8f", sumr.get()));
         }
 
         @Override
@@ -362,6 +366,10 @@ public class SigmaAEnergy implements Potential {
                     // Spline setup
                     double ecscale = spline.f(s, refinementData.fcesq);
                     double eoscale = spline.f(s, refinementData.foesq);
+                    double sqrtECScale = sqrt(ecscale);
+                    double sqrtEOScale = sqrt(eoscale);
+                    double iSqrtEOScale = 1.0 / sqrtEOScale;
+
                     double sai = spline.f(s, sa);
                     double wai = spline.f(s, wa);
                     double sa2 = sai * sai;
@@ -379,15 +387,15 @@ public class SigmaAEnergy implements Potential {
                     kfct.timesIP(kmems);
 
                     ecc.copy(fcc);
-                    ecc.timesIP(sqrt(ecscale));
+                    ecc.timesIP(sqrtECScale);
                     esc.copy(fsc);
-                    esc.timesIP(sqrt(ecscale));
+                    esc.timesIP(sqrtECScale);
                     ect.copy(fct);
-                    ect.timesIP(sqrt(ecscale));
+                    ect.timesIP(sqrtECScale);
                     kect.copy(kfct);
-                    kect.timesIP(sqrt(ecscale));
-                    double eo = fo[i][0] * sqrt(eoscale);
-                    double sigeo = fo[i][1] * sqrt(eoscale);
+                    kect.timesIP(sqrtECScale);
+                    double eo = fo[i][0] * sqrtEOScale;
+                    double sigeo = fo[i][1] * sqrtEOScale;
                     double eo2 = eo * eo;
                     double akect = kect.abs();
                     double kect2 = akect * akect;
@@ -413,15 +421,17 @@ public class SigmaAEnergy implements Potential {
                     // Map coefficients
                     double f = dinot * eo;
                     double phi = kect.phase();
+                    double sinPhi = sin(phi);
+                    double cosPhi = cos(phi);
                     fomphi[i][0] = dinot;
                     fomphi[i][1] = phi;
-                    mfo.re(f * cos(phi));
-                    mfo.im(f * sin(phi));
-                    mfo2.re(2.0 * f * cos(phi));
-                    mfo2.im(2.0 * f * sin(phi));
+                    mfo.re(f * cosPhi);
+                    mfo.im(f * sinPhi);
+                    mfo2.re(2.0 * f * cosPhi);
+                    mfo2.im(2.0 * f * sinPhi);
                     akect = kect.abs();
-                    dfcc.re(sai * akect * cos(phi));
-                    dfcc.im(sai * akect * sin(phi));
+                    dfcc.re(sai * akect * cosPhi);
+                    dfcc.im(sai * akect * sinPhi);
                     // Set up map coefficients
                     fofc1[i][0] = 0.0;
                     fofc1[i][1] = 0.0;
@@ -433,15 +443,15 @@ public class SigmaAEnergy implements Potential {
                     dfs[i][1] = 0.0;
                     if (Double.isNaN(fctot[i][0])) {
                         if (!Double.isNaN(fo[i][0])) {
-                            fofc2[i][0] = mfo.re() / sqrt(eoscale);
-                            fofc2[i][1] = mfo.im() / sqrt(eoscale);
+                            fofc2[i][0] = mfo.re() * iSqrtEOScale;
+                            fofc2[i][1] = mfo.im() * iSqrtEOScale;
                         }
                         continue;
                     }
                     if (Double.isNaN(fo[i][0])) {
                         if (!Double.isNaN(fctot[i][0])) {
-                            fofc2[i][0] = dfcc.re() / sqrt(eoscale);
-                            fofc2[i][1] = dfcc.im() / sqrt(eoscale);
+                            fofc2[i][0] = dfcc.re() * iSqrtEOScale;
+                            fofc2[i][1] = dfcc.im() * iSqrtEOScale;
                         }
                         continue;
                     }
@@ -451,21 +461,15 @@ public class SigmaAEnergy implements Potential {
                     // mFo - DFc
                     resc.copy(mfo);
                     resc.minusIP(dfcc);
-                    fofc1[i][0] = resc.re() / sqrt(eoscale);
-                    fofc1[i][1] = resc.im() / sqrt(eoscale);
+                    fofc1[i][0] = resc.re() * iSqrtEOScale;
+                    fofc1[i][1] = resc.im() * iSqrtEOScale;
                     // 2mFo - DFc
                     resc.copy(mfo2);
                     resc.minusIP(dfcc);
-                    fofc2[i][0] = resc.re() / sqrt(eoscale);
-                    fofc2[i][1] = resc.im() / sqrt(eoscale);
+                    fofc2[i][0] = resc.re() * iSqrtEOScale;
+                    fofc2[i][1] = resc.im() * iSqrtEOScale;
 
                     // Derivatives
-                    //  double dfcr = (dfp1 * fct.re()) / d - ((dfp2 * fct.re()) / (d * fct.abs())) * dinot;
-                    //  double dfci = (dfp1 * fct.im()) / d - ((dfp2 * fct.im()) / (d * fct.abs())) * dinot;
-                    //  double dfsr = ((dfp2 * ksebs * fct.re()) / (d * fct.abs())) * dinot - (dfp1 * ksebs * fct.re()) / d;
-                    //  double dfsi = ((dfp2 * ksebs * fct.im()) / (d * fct.abs())) * dinot - (dfp1 * ksebs * fct.im()) / d;
-                    //  double dfsa = 2.0 * sai * kect2 / d - (2.0 * eo * kect.abs() / d) * dinot;
-                    //  double dfwa = epsc * (cf / d - (eo2 + sa2 * kect2) / d2 + (2.0 * eo * sai * kect.abs() / d2) * dinot);
                     double dafct = d * fct.abs();
                     double idafct = 1.0 / dafct;
                     double dfp1 = 2.0 * sa2 * km2 * ecscale;
@@ -479,7 +483,8 @@ public class SigmaAEnergy implements Potential {
                     double dfsr = fct.re() * dfp21;
                     double dfsi = fct.im() * dfp21;
                     double dfsa = 2.0 * (sai * kect2 - eo * akect * dinot) * id;
-                    double dfwa = epsc * (cf * id - (eo2 + sa2 * kect2) * id2 + 2.0 * eo * sai * akect * id2 * dinot);
+                    double dfwa = epsc * (cf * id - (eo2 + sa2 * kect2) * id2
+                            + 2.0 * eo * sai * akect * id2 * dinot);
 
                     // Partial LLK wrt Fc or Fs
                     dfc[i][0] = dfcr * dfscale;
@@ -512,7 +517,6 @@ public class SigmaAEnergy implements Potential {
                         lgrad[n + i0] += dfwa * g0;
                         lgrad[n + i1] += dfwa * g1;
                         lgrad[n + i2] += dfwa * g2;
-
                     }
                 }
             }

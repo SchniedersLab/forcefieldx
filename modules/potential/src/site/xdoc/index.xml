@@ -4,13 +4,13 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
-        <title>Potentials Home Page</title>
+        <title>Potential Home Page</title>
         <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
     </properties>
     <body>
-        <section name="Potentials Introduction">
+        <section name="Potential Introduction">
             <p>
-                The Potentials module computes the potential energy of a
+                The Potential module computes the potential energy of a
                 molecular system via a classical force field.
             </p>
         </section>

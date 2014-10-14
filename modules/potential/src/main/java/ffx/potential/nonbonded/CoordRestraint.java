@@ -30,6 +30,7 @@ import static org.apache.commons.math3.util.FastMath.pow;
 
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
+import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 
 import static ffx.numerics.VectorMath.rsq;
@@ -62,6 +63,10 @@ public class CoordRestraint implements LambdaInterface {
     private double d2EdL2 = 0.0;
     private final double lambdaGradient[];
     private boolean lambdaTerm = false;
+
+    private AtomType definePlane1 = null;
+    private AtomType definePlane2 = null;
+    private AtomType definePlane3 = null;
 
     /**
      * This CoordRestraint is based on the unit cell parameters and symmetry
@@ -99,6 +104,9 @@ public class CoordRestraint implements LambdaInterface {
             initialCoordinates[2][i] = a.getZ();
             a.print();
         }
+        if (System.getProperty("atomrestraint1") != null) {
+            setPlaneAtoms();
+        }
 
     }
 
@@ -116,32 +124,77 @@ public class CoordRestraint implements LambdaInterface {
             // Current atomic coordinates.
             Atom atom = atoms[i];
 
-            if (atom.isHydrogen()) {
-                continue;
-            }
-
-            atom.getXYZ(a1);
-            // Compute their separation.
-            dx[0] = a1[0] - initialCoordinates[0][i];
-            dx[1] = a1[1] - initialCoordinates[1][i];
-            dx[2] = a1[2] - initialCoordinates[2][i];
-            double r2 = rsq(dx);
-            // Apply the minimum image convention.
-            // double r2 = crystal.image(dx);
-            //logger.info(String.format(" %d %16.8f", j, Math.sqrt(r2)));
-            residual += r2;
-            if (gradient || lambdaTerm) {
-                final double dedx = dx[0] * fx2;
-                final double dedy = dx[1] * fx2;
-                final double dedz = dx[2] * fx2;
-                if (gradient) {
-                    atom.addToXYZGradient(lambdaPow * dedx, lambdaPow * dedy, lambdaPow * dedz);
+            if (definePlane1 != null) {
+                AtomType atomType = atom.getAtomType();
+                if (atomType.equals(definePlane1)) {
+                    atom.getXYZ(a1);
+                    // Compute their separation.
+                    dx[0] = a1[0] - initialCoordinates[0][i];
+                    dx[1] = a1[1] - initialCoordinates[1][i];
+                    dx[2] = a1[2] - initialCoordinates[2][i];
+                } else if (atomType.equals(definePlane2)) {
+                    atom.getXYZ(a1);
+                    // Compute their separation.
+                    dx[0] = a1[0] - initialCoordinates[0][i];
+                    dx[1] = a1[1] - initialCoordinates[1][i];
+                    dx[2] = a1[2] - initialCoordinates[2][i];
+                } else if (atomType.equals(definePlane3)) {
+                    atom.getXYZ(a1);
+                    // Compute their separation.
+                    dx[0] = a1[0] - initialCoordinates[0][i];
+                    dx[1] = a1[1] - initialCoordinates[1][i];
+                    dx[2] = a1[2] - initialCoordinates[2][i];
+                } else {
+                    continue;
                 }
-                if (lambdaTerm) {
-                    int j3 = i * 3;
-                    lambdaGradient[j3] = dLambdaPow * dedx;
-                    lambdaGradient[j3 + 1] = dLambdaPow * dedy;
-                    lambdaGradient[j3 + 2] = dLambdaPow * dedz;
+                double r2 = rsq(dx);
+                // Apply the minimum image convention.
+                // double r2 = crystal.image(dx);
+                //logger.info(String.format(" %d %16.8f", j, Math.sqrt(r2)));
+                residual += r2;
+                if (gradient || lambdaTerm) {
+                    final double dedx = dx[0] * fx2;
+                    final double dedy = dx[1] * fx2;
+                    final double dedz = dx[2] * fx2;
+                    if (gradient) {
+                        atom.addToXYZGradient(lambdaPow * dedx, lambdaPow * dedy, lambdaPow * dedz);
+                    }
+                    if (lambdaTerm) {
+                        int j3 = i * 3;
+                        lambdaGradient[j3] = dLambdaPow * dedx;
+                        lambdaGradient[j3 + 1] = dLambdaPow * dedy;
+                        lambdaGradient[j3 + 2] = dLambdaPow * dedz;
+                    }
+                }
+            } else {
+
+                if (atom.isHydrogen()) {
+                    continue;
+                }
+
+                atom.getXYZ(a1);
+                // Compute their separation.
+                dx[0] = a1[0] - initialCoordinates[0][i];
+                dx[1] = a1[1] - initialCoordinates[1][i];
+                dx[2] = a1[2] - initialCoordinates[2][i];
+                double r2 = rsq(dx);
+                // Apply the minimum image convention.
+                // double r2 = crystal.image(dx);
+                //logger.info(String.format(" %d %16.8f", j, Math.sqrt(r2)));
+                residual += r2;
+                if (gradient || lambdaTerm) {
+                    final double dedx = dx[0] * fx2;
+                    final double dedy = dx[1] * fx2;
+                    final double dedz = dx[2] * fx2;
+                    if (gradient) {
+                        atom.addToXYZGradient(lambdaPow * dedx, lambdaPow * dedy, lambdaPow * dedz);
+                    }
+                    if (lambdaTerm) {
+                        int j3 = i * 3;
+                        lambdaGradient[j3] = dLambdaPow * dedx;
+                        lambdaGradient[j3 + 1] = dLambdaPow * dedy;
+                        lambdaGradient[j3 + 2] = dLambdaPow * dedz;
+                    }
                 }
             }
         }
@@ -152,6 +205,23 @@ public class CoordRestraint implements LambdaInterface {
 
         //logger.info(String.format(" Restraint Energy %16.8f", forceConstant * residual * lambdaPow));
         return forceConstant * residual * lambdaPow;
+    }
+
+    public final void setPlaneAtoms() {
+        int planeAtom1 = Integer.parseInt(System.getProperty("atomrestraint1"));
+        int planeAtom2 = Integer.parseInt(System.getProperty("atomrestraint2"));
+        int planeAtom3 = Integer.parseInt(System.getProperty("atomrestraint3"));
+        for (int i = 0; i < nAtoms; i++) {
+            // Current atomic coordinates.
+            Atom atom = atoms[i];
+            if (atom.getXYZIndex() == planeAtom1) {
+                definePlane1 = atom.getAtomType();
+            } else if (atom.getXYZIndex() == planeAtom2) {
+                definePlane2 = atom.getAtomType();
+            } else if (atom.getXYZIndex() == planeAtom1) {
+                definePlane3 = atom.getAtomType();
+            }
+        }
     }
 
     @Override

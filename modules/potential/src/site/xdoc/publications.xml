@@ -4,11 +4,11 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
-        <title>Potentials Publications</title>
+        <title>Potential Publications</title>
         <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
     </properties>
     <body>
-        <section name="Potentials Publications">
+        <section name="Potential Publications">
             <ol>
                 <li>
                     <a target="_blank" href="http://dx.doi.org/10.1021/jp910674d">

@@ -31,7 +31,7 @@
     <dependencies>
         <dependency>
             <groupId>edu.uiowa.eng.ffx</groupId>
-            <artifactId>potentials</artifactId>
+            <artifactId>potential</artifactId>
             <version>${project.version}</version>
             <type>jar</type>
         </dependency>
