@@ -4,11 +4,11 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
-        <title>Potentials Examples</title>
+        <title>Potential Examples</title>
         <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
     </properties>
     <body>
-        <section name="Potentials Examples">
+        <section name="Potential Examples">
             <subsection name="Available Force Fields">
                 <p>Force Field X stores AMOEBA force fields internally. The 2009
                     AMOEBA Biomolecular force field is specified as:

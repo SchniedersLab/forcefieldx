@@ -83,11 +83,11 @@
                 </tr>
                 <tr>
                     <td>
-                        <a href="modules/potentials/index.html">Potentials</a> for molecular biophyiscs with support for space group symmetry
+                        <a href="modules/potential/index.html">Potential</a> for molecular biophyiscs with support for space group symmetry
                     </td>
                     <td>Michael J. Schnieders</td>
                     <td>
-                        <a href="modules/potentials/publications.html">Publications</a>
+                        <a href="modules/potential/publications.html">Publications</a>
                     </td>
                 </tr>
                 <tr>

@@ -86,7 +86,7 @@ public class FFXClassLoader extends URLClassLoader {
             "edu.uiowa.eng.ffx/binding.jar",
             "edu.uiowa.eng.ffx/crystal.jar",
             "edu.uiowa.eng.ffx/numerics.jar",
-            "edu.uiowa.eng.ffx/potentials.jar",
+            "edu.uiowa.eng.ffx/potential.jar",
             "edu.uiowa.eng.ffx/ui.jar",
             "edu.uiowa.eng.ffx/utilities.jar",
             "edu.uiowa.eng.ffx/xray.jar",

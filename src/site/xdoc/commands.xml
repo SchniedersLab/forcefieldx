@@ -87,7 +87,7 @@
                         </tr>
                         <tr>
                             <td>
-                                <a href="modules/potentials/scripts/energy.groovy" >energy</a>
+                                <a href="modules/potential/scripts/energy.groovy" >energy</a>
                             </td>
                             <td>Calculate the AMOEBA potential energy.</td>
                         </tr>
@@ -171,13 +171,13 @@
                     <tbody>
                         <tr>
                             <td>
-                                <a href="modules/potentials/scripts/biotype.groovy" >biotype</a>
+                                <a href="modules/potential/scripts/biotype.groovy" >biotype</a>
                             </td>
                             <td>Print out a lookup table from PDB atom names to force field atom types.</td>
                         </tr>
                         <tr>
                             <td>
-                                <a href="modules/potentials/scripts/cart2frac.groovy" >cart2frac</a>
+                                <a href="modules/potential/scripts/cart2frac.groovy" >cart2frac</a>
                             </td>
                             <td>Convert Cartesian coordinates to fractional coordinates.</td>
                         </tr>
@@ -195,13 +195,13 @@
                         </tr>
                         <tr>
                             <td>
-                                <a href="modules/potentials/scripts/frac2cart.groovy" >frac2cart</a>
+                                <a href="modules/potential/scripts/frac2cart.groovy" >frac2cart</a>
                             </td>
                             <td>Convert fractional coordinates to Cartesian coordinates.</td>
                         </tr>
                         <tr>
                             <td>
-                                <a href="modules/potentials/scripts/moveIntoUnitCell.groovy" >moveIntoUnitCell</a>
+                                <a href="modules/potential/scripts/moveIntoUnitCell.groovy" >moveIntoUnitCell</a>
                             </td>
                             <td>Move the center of mass of each molecule into the unit cell.</td>
                         </tr>
@@ -213,19 +213,19 @@
                         </tr>
                         <tr>
                             <td>
-                                <a href="modules/potentials/scripts/saveAsP1.groovy" >saveAsP1</a>
+                                <a href="modules/potential/scripts/saveAsP1.groovy" >saveAsP1</a>
                             </td>
                             <td>Generate a P1 unit cell from an asymmetric unit.</td>
                         </tr>
                         <tr>
                             <td>
-                                <a href="modules/potentials/scripts/saveAsPDB.groovy" >saveAsPDB</a>
+                                <a href="modules/potential/scripts/saveAsPDB.groovy" >saveAsPDB</a>
                             </td>
                             <td>Convert input XYZ file to PDB format.</td>
                         </tr>
                         <tr>
                             <td>
-                                <a href="modules/potentials/scripts/saveAsXYZ.groovy" >saveAsXYZ</a>
+                                <a href="modules/potential/scripts/saveAsXYZ.groovy" >saveAsXYZ</a>
                             </td>
                             <td>Convert input PDB file to XYZ format.</td>
                         </tr>
@@ -243,19 +243,19 @@
                     <tbody>
                         <tr>
                             <td>
-                                <a href="modules/potentials/scripts/testGradient.groovy" >testGradient</a>
+                                <a href="modules/potential/scripts/testGradient.groovy" >testGradient</a>
                             </td>
                             <td>Test the analytic Cartesian coordinate energy gradient numerically.</td>
                         </tr>
                         <tr>
                             <td>
-                                <a href="modules/potentials/scripts/testLambdaGradient.groovy" >testLambdaGradient</a>
+                                <a href="modules/potential/scripts/testLambdaGradient.groovy" >testLambdaGradient</a>
                             </td>
                             <td>Test the analytic Lambda gradient numerically.</td>
                         </tr>
                         <tr>
                             <td>
-                                <a href="modules/potentials/scripts/timer.groovy" >timer</a>
+                                <a href="modules/potential/scripts/timer.groovy" >timer</a>
                             </td>
                             <td>Time the computation of the AMOEBA energy and gradient.</td>
                         </tr>
