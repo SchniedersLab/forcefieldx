@@ -57,6 +57,7 @@ import ffx.potential.bonded.TorsionTorsion;
 import ffx.potential.bonded.UreyBradley;
 import ffx.potential.nonbonded.COMRestraint;
 import ffx.potential.nonbonded.CoordRestraint;
+import ffx.potential.nonbonded.GeneralizedKirkwood;
 import ffx.potential.nonbonded.NCSRestraint;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.ELEC_FORM;
@@ -1256,10 +1257,10 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     nPermanentInteractions, electrostaticTime * toSeconds));
         }
         if (generalizedKirkwoodTerm && nGKIteractions > 0) {
-            sb.append(String.format("  %s %16.8f %12d\n",
+                    sb.append(String.format("  %s %16.8f %12d\n",
                     "Solvation         ", solvationEnergy, nGKIteractions));
         }
-
+            
         sb.append(String.format("  %s %16.8f  %s %12.3f (sec)\n",
                 "Total Potential   ", totalEnergy, "(Kcal/mole)", totalTime * toSeconds));
 
