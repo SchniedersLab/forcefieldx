@@ -424,7 +424,7 @@ public class VanDerWaals implements MaskingInterface,
          * the first neighborlist.
          */
         try {
-            parallelTeam.execute(vanDerWaalsRegion);
+            this.parallelTeam.execute(vanDerWaalsRegion);
         } catch (Exception e) {
             String message = " Fatal exception executing van Der Waals Region.\n";
             logger.log(Level.SEVERE, message, e);

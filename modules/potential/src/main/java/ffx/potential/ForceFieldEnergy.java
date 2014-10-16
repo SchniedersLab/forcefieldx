@@ -189,21 +189,24 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
      * object.
      */
     public ForceFieldEnergy(MolecularAssembly molecularAssembly) {
-        parallelTeam = new ParallelTeam();
-        logger.info(format(" Constructing Force Field"));
-        logger.info(format("\n SMP threads:                        %10d", parallelTeam.getThreadCount()));
-
         // Get a reference to the sorted atom array.
         this.molecularAssembly = molecularAssembly;
         atoms = molecularAssembly.getAtomArray();
-        nAtoms = atoms.length;
         xyz = new double[nAtoms * 3];
+        nAtoms = atoms.length;
 
         // Check that atom ordering is correct.
         for (int i = 0; i < nAtoms; i++) {
             int index = atoms[i].xyzIndex - 1;
             assert (i == index);
         }
+        
+        // Check if more threads available than atoms.
+        int nThreads = ParallelTeam.getDefaultThreadCount();
+        nThreads = nAtoms < nThreads ? nAtoms : nThreads;
+        parallelTeam = new ParallelTeam(nThreads);
+        logger.info(format(" Constructing Force Field"));
+        logger.info(format("\n SMP threads:                        %10d", nThreads));
 
         ForceField forceField = molecularAssembly.getForceField();
         bondTerm = forceField.getBoolean(ForceFieldBoolean.BONDTERM, true);

@@ -95,6 +95,8 @@ double[] numeric = new double[3];
 energy.getCoordinates(x);
 energy.energyAndGradient(x,analytic);
 
+double avLen = 0.0;
+int nFailures = 0;
 for (int i=atomID; i<n; i++) {
     Atom a0 = atoms[i];
     int i3 = i*3;
@@ -138,15 +140,27 @@ for (int i=atomID; i<n; i++) {
     double dx = analytic[i0] - numeric[0];
     double dy = analytic[i1] - numeric[1];
     double dz = analytic[i2] - numeric[2];
-    double len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    double len = dx * dx + dy * dy + dz * dz;
+    avLen += len;
+    len = Math.sqrt(len);
     if (len > gradientTolerance) {
         logger.info(" " + a0.toShortString() + String.format(" failed: %10.6f.", len)
             + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", analytic[i0], analytic[i1], analytic[i2])
             + String.format(" Numeric:  (%12.4f, %12.4f, %12.4f)\n", numeric[0], numeric[1], numeric[2]));
-        return;
+        ++nFailures;
+        //return;
     } else {
         logger.info(" " + a0.toShortString() + String.format(" passed: %10.6f.", len)
             + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", analytic[i0], analytic[i1], analytic[i2])
             + String.format(" Numeric:  (%12.4f, %12.4f, %12.4f)\n", numeric[0], numeric[1], numeric[2]));
     }
 }
+
+avLen = avLen / n;
+avLen = Math.sqrt(avLen);
+if (avLen > gradientTolerance) {
+    logger.info(String.format(" Test failure: RMSD from analytic solution is %10.6f > %10.6f", avLen, gradientTolerance));
+} else {
+    logger.info(String.format(" Test success: RMSD from analytic solution is %10.6f < %10.6f", avLen, gradientTolerance));
+}
+logger.info(String.format(" Number of atoms failing gradient test: %d", nFailures));
