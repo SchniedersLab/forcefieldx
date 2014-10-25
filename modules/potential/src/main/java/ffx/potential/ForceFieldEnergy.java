@@ -57,6 +57,7 @@ import ffx.potential.bonded.TorsionTorsion;
 import ffx.potential.bonded.UreyBradley;
 import ffx.potential.nonbonded.COMRestraint;
 import ffx.potential.nonbonded.CoordRestraint;
+import ffx.potential.nonbonded.GeneralizedKirkwood;
 import ffx.potential.nonbonded.NCSRestraint;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.ELEC_FORM;
@@ -188,21 +189,24 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
      * object.
      */
     public ForceFieldEnergy(MolecularAssembly molecularAssembly) {
-        parallelTeam = new ParallelTeam();
-        logger.info(format(" Constructing Force Field"));
-        logger.info(format("\n SMP threads:                        %10d", parallelTeam.getThreadCount()));
-
         // Get a reference to the sorted atom array.
         this.molecularAssembly = molecularAssembly;
         atoms = molecularAssembly.getAtomArray();
-        nAtoms = atoms.length;
         xyz = new double[nAtoms * 3];
+        nAtoms = atoms.length;
 
         // Check that atom ordering is correct.
         for (int i = 0; i < nAtoms; i++) {
             int index = atoms[i].xyzIndex - 1;
             assert (i == index);
         }
+        
+        // Check if more threads available than atoms.
+        int nThreads = ParallelTeam.getDefaultThreadCount();
+        nThreads = nAtoms < nThreads ? nAtoms : nThreads;
+        parallelTeam = new ParallelTeam(nThreads);
+        logger.info(format(" Constructing Force Field"));
+        logger.info(format("\n SMP threads:                        %10d", nThreads));
 
         ForceField forceField = molecularAssembly.getForceField();
         bondTerm = forceField.getBoolean(ForceFieldBoolean.BONDTERM, true);
@@ -1256,10 +1260,10 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     nPermanentInteractions, electrostaticTime * toSeconds));
         }
         if (generalizedKirkwoodTerm && nGKIteractions > 0) {
-            sb.append(String.format("  %s %16.8f %12d\n",
+                    sb.append(String.format("  %s %16.8f %12d\n",
                     "Solvation         ", solvationEnergy, nGKIteractions));
         }
-
+            
         sb.append(String.format("  %s %16.8f  %s %12.3f (sec)\n",
                 "Total Potential   ", totalEnergy, "(Kcal/mole)", totalTime * toSeconds));
 

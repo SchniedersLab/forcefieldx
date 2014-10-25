@@ -93,7 +93,7 @@ ClustAlg clusterAlg = ClustAlg.NO_CLUSTERS;
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc rescore [options] <modelfilename> [datafilename]');
 cli.h(longOpt:'help', 'Print this help message.');
-cli.m(longOpt: 'minimize', args: 1, argName:'0', 'Do not rescore (0), rescore on energy evaluation (1), minimization (2), minimization with X-ray target (3), or minimization with real-space target (3).');
+cli.m(longOpt: 'minimize', args: 1, argName:'0', 'Do not rescore (0), rescore on energy evaluation (1), minimization (2), minimization with X-ray target (3), or minimization with real-space target (4).');
 cli.e(longOpt:'eps', args:1, argName:'-1.0', 'RMS gradient convergence criteria (negative: automatically determine based on refinement type)');
 cli.xd(longOpt:'xrayData', args:3, valueSeparator:',', argName:'data,1.0,false', 'specify input xray data filename or filenames (or simply provide the datafilename argument after the PDB file), weight applied to the data (wA) and if the data is from a neutron experiment.');
 cli.rd(longOpt:'realspaceData', args:2, valueSeparator:',', argName:'data,1.0', 'specify input map data filename or filenames (or simply provide the datafilename argument after the PDB file) and weight applied to the data.');
@@ -162,7 +162,7 @@ if (options.m) {
         }
         break;
     default:
-        logger.warning(" Improper use of -m flag: must be 0, 1, 2, or 3");
+        logger.warning(" Improper use of -m flag: must be 0, 1, 2, 3, or 4.");
         return cli.usage();
     }
 }

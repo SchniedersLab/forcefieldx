@@ -121,6 +121,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     private static final double epsh = 0.0135;
     private static final double rmino = 1.7025;
     private static final double rminh = 1.3275;
+    private final double bornaiTerm;
     private final double probe;
     private boolean use[] = null;
     private final Polarization polarization;
@@ -169,7 +170,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     protected SharedDoubleArray sharedGKFieldCR[];
     private final double cutoff;
     private final double cut2;
-    private NonPolar nonPolar = NonPolar.CAV_DISP;
+    private final NonPolar nonPolar;
 
     private double lambda = 1.0;
     private double solvationEnergy = 0.0;
@@ -202,6 +203,47 @@ public class GeneralizedKirkwood implements LambdaInterface {
         neighborLists = particleMeshEwald.neighborLists;
         this.crystal = crystal;
         this.atoms = atoms;
+
+        NonPolar nonpolarModel = NonPolar.CAV_DISP;
+        try {
+            String cavModel = forceField.getString(ForceField.ForceFieldString.CAVMODEL, "CAV_DISP").toUpperCase();
+            switch (cavModel) {
+                case "CAV_DISP":
+                    nonpolarModel = NonPolar.CAV_DISP;
+                    break;
+                case "HYDROPHOBIC_PMF":
+                    nonpolarModel = NonPolar.HYDROPHOBIC_PMF;
+                    break;
+                case "BORN_SOLV":
+                    nonpolarModel = NonPolar.BORN_SOLV;
+                    break;
+                case "BORN_CAV_DISP":
+                    nonpolarModel = NonPolar.BORN_CAV_DISP;
+                    break;
+                default:
+                    logger.warning(" Cavitation model not recognized: using surface area cav-disp GK");
+            }
+        } catch (Exception ex) {
+            logger.warning(String.format(" Error in parsing GK cavitation model: set to surface area: %s", ex.toString()));
+        }
+        nonPolar = nonpolarModel;
+
+        double aiTerm = 4.0 * PI;
+        try {
+            aiTerm *= forceField.getDouble(ForceField.ForceFieldDouble.BORNAI);
+        } catch (Exception ex) {
+            switch (nonPolar) {
+                case BORN_SOLV:
+                    aiTerm *= 0.003; // Value from TINKER.
+                    break;
+                case BORN_CAV_DISP:
+                    aiTerm *= 0.050; // Complete random guess.
+                    break;
+                default:
+                    break;
+            }
+        }
+        bornaiTerm = aiTerm;
 
         sharedGKField = new SharedDoubleArray[3];
         sharedGKFieldCR = new SharedDoubleArray[3];
@@ -236,17 +278,26 @@ public class GeneralizedKirkwood implements LambdaInterface {
         logger.info(String.format("  Non-Polar Model:                     %s",
                 nonPolar.toString().replace('_', '-')));
 
-        if (nonPolar == NonPolar.CAV_DISP) {
-            dispersionRegion = new DispersionRegion(threadCount);
-            cavitationRegion = new CavitationRegion(threadCount);
-            //volumeRegion = new VolumeRegion(threadCount);
-            //volumeRegion = null;
-            //hydrophobicPMFRegion = null;
-        } else {
-            //hydrophobicPMFRegion = new HydrophobicPMFRegion(threadCount);
-            dispersionRegion = null;
-            cavitationRegion = null;
-            //volumeRegion = null;
+        switch (nonPolar) {
+            case CAV_DISP:
+                dispersionRegion = new DispersionRegion(threadCount);
+                cavitationRegion = new CavitationRegion(threadCount);
+                //volumeRegion = new VolumeRegion(threadCount);
+                //volumeRegion = null;
+                //hydrophobicPMFRegion = null;
+                break;
+            case BORN_CAV_DISP:
+                dispersionRegion = new DispersionRegion(threadCount);
+                cavitationRegion = null;
+                break;
+            case HYDROPHOBIC_PMF:
+                //hydrophobicPMFRegion = new HydrophobicPMFRegion(threadCount);
+                //volumeRegion = null;
+            case BORN_SOLV:
+            default:
+                dispersionRegion = null;
+                cavitationRegion = null;
+                break;
         }
         logger.info("");
     }
@@ -437,21 +488,33 @@ public class GeneralizedKirkwood implements LambdaInterface {
             /**
              * Find the nonpolar energy.
              */
-            if (nonPolar == NonPolar.HYDROPHOBIC_PMF) {
-                pmfTime = -System.nanoTime();
-                //hydrophobicPMFRegion.setGradient(gradient);
-                //parallelTeam.execute(hydrophobicPMFRegion);
-                pmfTime += System.nanoTime();
-            } else {
-                dispersionTime = -System.nanoTime();
-                dispersionRegion.setGradient(gradient);
-                parallelTeam.execute(dispersionRegion);
-                dispersionTime += System.nanoTime();
-                cavitationTime = -System.nanoTime();
-                parallelTeam.execute(cavitationRegion);
-                cavitationTime += System.nanoTime();
-                //parallelTeam.execute(volumeRegion);
+            switch (nonPolar) {
+                case HYDROPHOBIC_PMF:
+                    pmfTime = -System.nanoTime();
+                    //hydrophobicPMFRegion.setGradient(gradient);
+                    //parallelTeam.execute(hydrophobicPMFRegion);
+                    pmfTime += System.nanoTime();
+                    break;
+                case CAV_DISP:
+                    dispersionTime = -System.nanoTime();
+                    dispersionRegion.setGradient(gradient);
+                    parallelTeam.execute(dispersionRegion);
+                    dispersionTime += System.nanoTime();
+                    cavitationTime = -System.nanoTime();
+                    parallelTeam.execute(cavitationRegion);
+                    cavitationTime += System.nanoTime();
+                    break;
+                case BORN_CAV_DISP:
+                    dispersionTime = -System.nanoTime();
+                    dispersionRegion.setGradient(gradient);
+                    parallelTeam.execute(dispersionRegion);
+                    dispersionTime += System.nanoTime();
+                    break;
+                case BORN_SOLV:
+                default:
+                    break;
             }
+            //parallelTeam.execute(volumeRegion);
         } catch (Exception e) {
             String message = "Fatal exception computing the continuum solvation energy.";
             logger.log(Level.SEVERE, message, e);
@@ -474,21 +537,38 @@ public class GeneralizedKirkwood implements LambdaInterface {
         if (print) {
             logger.info(String.format(" Generalized Kirkwood%16.8f %10.3f",
                     gkEnergyRegion.getEnergy(), gkTime * 1e-9));
-            if (nonPolar == NonPolar.HYDROPHOBIC_PMF) {
-                //logger.info(String.format(" Hydrophibic PMF     %16.8f %10.3f", hydrophobicPMFRegion.getEnergy(), pmfTime * 1e-9));
-            } else {
-                logger.info(String.format(" Dispersion          %16.8f %10.3f",
-                        dispersionRegion.getEnergy(), dispersionTime * 1e-9));
-                logger.info(String.format(" Cavitation          %16.8f %10.3f",
-                        cavitationRegion.getEnergy(), cavitationTime * 1e-9));
+            switch (nonPolar) {
+                case HYDROPHOBIC_PMF:
+                    //logger.info(String.format(" Hydrophibic PMF     %16.8f %10.3f", hydrophobicPMFRegion.getEnergy(), pmfTime * 1e-9));
+                    break;
+                case CAV_DISP:
+                    logger.info(String.format(" Cavitation          %16.8f %10.3f",
+                            cavitationRegion.getEnergy(), cavitationTime * 1e-9));
+                    // Fall through.
+                case BORN_CAV_DISP:
+                    logger.info(String.format(" Dispersion          %16.8f %10.3f",
+                            dispersionRegion.getEnergy(), dispersionTime * 1e-9));
+                    break;
+                case BORN_SOLV:
+                default:
+                    break;
             }
         }
 
-        if (nonPolar == NonPolar.HYDROPHOBIC_PMF) {
-            //solvationEnergy = gkEnergyRegion.getEnergy() + hydrophobicPMFRegion.getEnergy();
-        } else {
-            solvationEnergy = gkEnergyRegion.getEnergy() + dispersionRegion.getEnergy()
+        switch (nonPolar) {
+            case CAV_DISP:
+                // gk.getElectrostatic + gk.getCavitation?
+                solvationEnergy = gkEnergyRegion.getEnergy() + dispersionRegion.getEnergy()
                     + cavitationRegion.getEnergy();
+                break;
+            case BORN_CAV_DISP:
+                solvationEnergy = gkEnergyRegion.getEnergy() + dispersionRegion.getEnergy();
+                break;
+            case BORN_SOLV:
+                solvationEnergy = gkEnergyRegion.getEnergy();
+                break;
+            case HYDROPHOBIC_PMF:
+                //solvationEnergy = gkEnergyRegion.getEnergy() + hydrophobicPMFRegion.getEnergy();
         }
 
         if (lambdaTerm) {
@@ -564,7 +644,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     private enum NonPolar {
 
-        CAV_DISP, HYDROPHOBIC_PMF
+        CAV_DISP, HYDROPHOBIC_PMF, BORN_CAV_DISP, BORN_SOLV
     }
 
     /**
@@ -576,6 +656,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
         private final BornRadiiLoop bornRadiiLoop[];
         private final SharedDoubleArray sharedBorn;
+        private SharedDouble ecavTot;
 
         public BornRadiiRegion(int nt) {
             bornRadiiLoop = new BornRadiiLoop[nt];
@@ -583,6 +664,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 bornRadiiLoop[i] = new BornRadiiLoop();
             }
             sharedBorn = new SharedDoubleArray(nAtoms);
+            ecavTot = new SharedDouble(0.0);
         }
 
         @Override
@@ -637,8 +719,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
+            private double ecav;
 
             public BornRadiiLoop() {
+                ecav = 0.0;
             }
 
             @Override
@@ -652,6 +736,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             @Override
             public void finish() {
                 sharedBorn.reduce(localBorn, DoubleOp.SUM);
+                ecavTot.addAndGet(ecav);
             }
 
             @Override
@@ -2060,6 +2145,37 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     }
                     // Include the self-interaction.
                     interaction(i, i);
+
+                    /**
+                     * Formula for Born energy approximation is: e = ai * 4.0*pi
+                     * * (ri + probe)^2 * (ri/rb)^6. ri is baseRadius, rb is
+                     * Born radius of given atom. ai is an empirical constant
+                     * for the atom. If ai is too low, everything wants to pack
+                     * into a solid ball, and if ai is too high, everything
+                     * wants to unfold and be as solvent-exposed as possible.
+                     *
+                     * The bornaiTerm is a precalculated 4 * pi * ai value.
+                     *
+                     * Fix this.
+                     */
+                    switch (nonPolar) {
+                        case BORN_SOLV:
+                        case BORN_CAV_DISP:
+                            double e = baseRadius[i] + probe; // e = ri + probe
+                            e *= (e * bornaiTerm);// e = (ri + probe) * ((ri + probe) * 4 * pi * ai)
+                            double rirb = baseRadius[i] / born[i]; // ri/rb^6
+                            rirb *= rirb;
+                            rirb *= (rirb * rirb);
+                            e *= rirb; // e = consts * (ri/rb)^6
+                            gkEnergy += e;
+                            // Now calculate derivatives
+                            e *= (-6.0 / born[i]); // e = consts * -6*ri^6 / rb^-7
+                            // To get each derivative, would multiple
+                            gb_local[i] += e;
+                            break;
+                        default:
+                            break;
+                    }
                 }
             }
 
@@ -3493,12 +3609,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
     private class BornCRRegion extends ParallelRegion {
 
         private final BornCRLoop bornCRLoop[];
+        private SharedDouble ecavTot;
 
         public BornCRRegion(int nt) {
             bornCRLoop = new BornCRLoop[nt];
             for (int i = 0; i < nt; i++) {
                 bornCRLoop[i] = new BornCRLoop();
             }
+            ecavTot = new SharedDouble(0.0);
         }
 
         @Override
@@ -3528,12 +3646,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
             private double lgX[];
             private double lgY[];
             private double lgZ[];
+            private double ecav;
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
             public BornCRLoop() {
                 dx_local = new double[3];
+                ecav = 0.0;
             }
 
             @Override

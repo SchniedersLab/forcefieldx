@@ -329,6 +329,8 @@ potential.energyAndGradient(x,gradient);
 logger.info(String.format(" Checking Cartesian coordinate gradient"));
 
 double[] numeric = new double[3];
+double avLen = 0.0;
+int nFailures = 0;
 for (int i=0; i<nAtoms; i++) {
     int i3 = i*3;
     int i0 = i3 + 0;
@@ -365,12 +367,16 @@ for (int i=0; i<nAtoms; i++) {
     double dx = gradient[i0] - numeric[0];
     double dy = gradient[i1] - numeric[1];
     double dz = gradient[i2] - numeric[2];
-    double len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    double len = dx * dx + dy * dy + dz * dz;
+    avLen += len;
+    len = Math.sqrt(len);
+    
     if (len > errTol) {
         logger.info(String.format(" Atom %d failed: %10.6f.",i+1,len)
             + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", gradient[i0], gradient[i1], gradient[i2])
             + String.format(" Numeric:  (%12.4f, %12.4f, %12.4f)\n", numeric[0], numeric[1], numeric[2]));
-        return;
+        ++nFailures;
+        //return;
     } else {
         logger.info(String.format(" Atom %d passed: %10.6f.",i+1,len)
             + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", gradient[i0], gradient[i1], gradient[i2])
@@ -378,3 +384,11 @@ for (int i=0; i<nAtoms; i++) {
     }
 }
 
+avLen = avLen / nAtoms;
+avLen = Math.sqrt(avLen);
+if (avLen > errTol) {
+    logger.info(String.format(" Test failure: RMSD from analytic solution is %10.6f > %10.6f", avLen, errTol));
+} else {
+    logger.info(String.format(" Test success: RMSD from analytic solution is %10.6f < %10.6f", avLen, errTol));
+}
+logger.info(String.format(" Number of atoms failing gradient test: %d", nFailures));
