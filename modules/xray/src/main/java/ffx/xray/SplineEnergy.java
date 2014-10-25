@@ -134,7 +134,7 @@ public class SplineEnergy implements Potential {
             double s = Crystal.invressq(crystal, ih);
             // spline setup
             double fh = spline.f(s, x);
-            refinementdata.get_fctot_ip(i, fct);
+            refinementdata.getFcTotIP(i, fct);
 
             double d2 = 0.0;
             double dr = 0.0;
@@ -181,7 +181,7 @@ public class SplineEnergy implements Potential {
 
             double afo = abs(fo[i][0]);
             double afh = abs(fh * fct.abs());
-            if (refinementdata.isfreer(i)) {
+            if (refinementdata.isFreeR(i)) {
                 rfree += abs(afo - afh);
                 rfreef += afo;
             } else {

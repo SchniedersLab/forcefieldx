@@ -85,7 +85,7 @@ public class MTZFilterTest {
         assertEquals("-10 1 1 SIGFP value",
                 2.50, refinementData.getSigF(hkl.index()), 0.02);
         assertEquals("-10 1 1 FREE value",
-                1, refinementData.get_freer(hkl.index()));
+                1, refinementData.getFreeR(hkl.index()));
         hkl = reflectionList.getHKL(-10, 1, 10);
         assertEquals("-10 1 10 FP value should be NaN",
                 Double.NaN, refinementData.getF(hkl.index()), 0.1);

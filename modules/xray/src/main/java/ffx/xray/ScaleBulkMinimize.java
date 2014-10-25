@@ -128,7 +128,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
                 continue;
             }
 
-            fct = refinementData.fctot_f(i);
+            fct = refinementData.fcTotF(i);
             sumfofc += fo[i][0] * fct;
             sumfc += fct * fct;
         }

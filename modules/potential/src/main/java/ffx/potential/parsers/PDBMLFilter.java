@@ -62,14 +62,8 @@ public class PDBMLFilter implements ErrorHandler {
             Document doc = db.parse(pdbxFile);
             NodeList list = doc.getElementsByTagName("PDBx:atom_site");
             System.out.println("Number of Atoms: " + list.getLength());
-        } catch (ParserConfigurationException e) {
-            System.out.println("Could not parse: " + pdbxFile + "\n" + e);
-        } catch (IllegalArgumentException e) {
-            System.out.println("Could not parse: " + pdbxFile + "\n" + e);
-        } catch (SAXException e) {
-            System.out.println("Could not parse: " + pdbxFile + "\n" + e);
-        } catch (IOException e) {
-            System.out.println("Could not parse: " + pdbxFile + "\n" + e);
+        } catch (ParserConfigurationException | IllegalArgumentException | SAXException | IOException e) {
+            parseMessage(e);
         }
     }
 
@@ -91,21 +85,28 @@ public class PDBMLFilter implements ErrorHandler {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void error(SAXParseException e) throws SAXException {
-        System.out.println("Could not parse: " + pdbxFile + "\n" + e);
+        parseMessage(e);
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public void fatalError(SAXParseException e) throws SAXException {
-        System.out.println("Could not parse: " + pdbxFile + "\n" + e);
+        parseMessage(e);
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public void warning(SAXParseException e) throws SAXException {
+        parseMessage(e);
+    }
+
+    public void parseMessage(Exception e) {
         System.out.println("Could not parse: " + pdbxFile + "\n" + e);
     }
 }

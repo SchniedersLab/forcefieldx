@@ -22,8 +22,6 @@
  */
 package ffx.potential.bonded;
 
-import java.util.logging.Logger;
-
 /**
  * Utilities for creating Nucleic Acid residues.
  *
@@ -31,9 +29,7 @@ import java.util.logging.Logger;
  */
 public class NucleicAcidUtils {
 
-    private static final Logger logger = Logger.getLogger(NucleicAcidUtils.class.getName());
-
-        /**
+    /**
      * Biotype keys for nucleic acid backbone atom types. These are consistent
      * with parameter files from TINKER v. 6.1 (June 2012).
      */
@@ -117,7 +113,5 @@ public class NucleicAcidUtils {
         1238, 1238, 1238, 1238, 1250, 1250, 1250, 1250, 0, 0, 0, 0,
         1238, 1238, 1238, 1238, 1238, 1238, 1238, 1238, 1238, 1238, 1238
     };
-
-
 
 }

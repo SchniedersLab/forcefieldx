@@ -946,8 +946,8 @@ public class DiffractionData implements DataContainer {
                     int j = ih.index();
                     cnsfile.printf(" INDE %d %d %d FS= %.4f %.4f\n",
                             ih.h(), ih.k(), ih.l(),
-                            refinementData[i].fs_f(j),
-                            Math.toDegrees(refinementData[i].fs_phi(j)));
+                            refinementData[i].fsF(j),
+                            Math.toDegrees(refinementData[i].fsPhi(j)));
                 }
                 cnsfile.close();
             } catch (Exception e) {

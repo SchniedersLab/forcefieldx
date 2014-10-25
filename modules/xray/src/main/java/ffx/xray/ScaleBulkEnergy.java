@@ -306,8 +306,8 @@ public class ScaleBulkEnergy implements Potential {
                     /**
                      * Structure Factors
                      */
-                    refinementData.get_fc_ip(i, fcc);
-                    refinementData.get_fs_ip(i, fsc);
+                    refinementData.getFcIP(i, fcc);
+                    refinementData.getFsIP(i, fsc);
                     fct.copy(fcc);
                     if (refinementData.crs_fs.solventModel != SolventModel.NONE) {
                         resc.copy(fsc);
@@ -336,7 +336,7 @@ public class ScaleBulkEnergy implements Potential {
                     lsum += d2;
                     lsumfo += f1 * f1;
 
-                    if (refinementData.isfreer(i)) {
+                    if (refinementData.isFreeR(i)) {
                         lrfree += abs(af1 - abs(akfct));
                         lrfreef += af1;
                     } else {

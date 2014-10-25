@@ -233,7 +233,7 @@ public class CrystalStats {
             denom = abs(fo[i][0]);
             sumall += numer;
             sumfoall += denom;
-            if (!refinementdata.isfreer(i)) {
+            if (!refinementdata.isFreeR(i)) {
                 sum += numer;
                 sumfo += denom;
             }
@@ -267,7 +267,7 @@ public class CrystalStats {
             double fh = spline.f(ss, refinementdata.spline);
 
             ComplexNumber c = new ComplexNumber(fc[i][0], fc[i][1]);
-            if (refinementdata.isfreer(i)) {
+            if (refinementdata.isFreeR(i)) {
                 sum += abs(abs(fo[i][0]) - fh * abs(c.abs()));
                 sumfo += abs(fo[i][0]);
             }
@@ -528,7 +528,7 @@ public class CrystalStats {
             ComplexNumber c = new ComplexNumber(fc[i][0], fc[i][1]);
             numer = abs(abs(fo[i][0]) - fh * abs(c.abs()));
             denom = abs(fo[i][0]);
-            if (refinementdata.isfreer(i)) {
+            if (refinementdata.isFreeR(i)) {
                 rb[b][1] += numer;
                 sumfo[b][1] += denom;
                 rb[n][1] += numer;

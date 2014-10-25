@@ -22,8 +22,6 @@
  */
 package ffx.utilities;
 
-import java.util.logging.Logger;
-
 /**
  * Java port of the hy36encode() and hy36decode() functions in the hybrid_36.py
  * Python prototype/reference implementation.
@@ -40,7 +38,6 @@ import java.util.logging.Logger;
  */
 public class Hybrid36 {
 
-    private static final Logger logger = Logger.getLogger(Hybrid36.class.getName());
     private static final String digitsBase10 = "0123456789";
     private static final String digitsUpper = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private static final String digitsLower = "0123456789abcdefghijklmnopqrstuvwxyz";

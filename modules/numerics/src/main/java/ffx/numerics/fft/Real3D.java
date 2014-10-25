@@ -161,7 +161,7 @@ public class Real3D {
         }
         for (int index = 0, offset = 0, y = 0; y < nY; y++) {
             for (int x = 0; x < nX1; x++, offset += nextX) {
-                for (int i = 0, j = 0, z = offset; i < nZ2; i += 2, j++, z += nextZ) {
+                for (int i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
                     work[i] = input[z];
                     work[i + 1] = input[z + 1];
                 }
