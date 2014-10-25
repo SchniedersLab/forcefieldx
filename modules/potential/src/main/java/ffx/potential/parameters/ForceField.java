@@ -225,61 +225,62 @@ public class ForceField {
 
     public void renumberForceField(int classOffset, int typeOffset, int bioTypeOffset) {
 
-        angleTypes.values().stream().forEach((patchType) -> {
-            patchType.incrementClasses(classOffset);
-        });
+        for (AngleType angleType : angleTypes.values()) {
+            angleType.incrementClasses(classOffset);
+        }
 
-        atomTypes.values().stream().forEach((patchType) -> {
-            patchType.incrementClassAndType(classOffset, typeOffset);
-        });
+        for (AtomType atomType : atomTypes.values()) {
+            atomType.incrementClassAndType(classOffset, typeOffset);
+        }
 
-        bioTypes.values().stream().forEach((patchType) -> {
-            patchType.incrementIndexAndType(bioTypeOffset, typeOffset);
-        });
+        for (BioType bioType : bioTypes.values()) {
+            bioType.incrementIndexAndType(bioTypeOffset, typeOffset);
+        }
 
-        bondTypes.values().stream().forEach((patchType) -> {
-            patchType.incrementClasses(classOffset);
-        });
+        for (BondType bondType : bondTypes.values()) {
+            bondType.incrementClasses(classOffset);
+        }
 
-        multipoleTypes.values().stream().forEach((patchType) -> {
-            patchType.incrementType(typeOffset);
-        });
+        for (MultipoleType multipoleType : multipoleTypes.values()) {
+            multipoleType.incrementType(typeOffset);
+        }
 
-        outOfPlaneBendTypes.values().stream().forEach((patchType) -> {
-            patchType.incrementClasses(classOffset);
-        });
+        for (OutOfPlaneBendType outOfPlaneBendType : outOfPlaneBendTypes.values()) {
+            outOfPlaneBendType.incrementClasses(classOffset);
+        }
 
-        piTorsionTypes.values().stream().forEach((patchType) -> {
-            patchType.incrementClasses(classOffset);
-        });
+        for (PiTorsionType piTorsionType : piTorsionTypes.values()) {
+            piTorsionType.incrementClasses(classOffset);
+        }
 
-        polarizeTypes.values().stream().forEach((patchType) -> {
-            patchType.incrementType(typeOffset);
-        });
+        for (PolarizeType polarizeType : polarizeTypes.values()) {
+            polarizeType.incrementType(typeOffset);
+        }
 
-        stretchBendTypes.values().stream().forEach((patchType) -> {
-            patchType.incrementClasses(classOffset);
-        });
+        for (StretchBendType stretchBendType : stretchBendTypes.values()) {
+            stretchBendType.incrementClasses(classOffset);
+        }
 
-        torsionTorsionTypes.values().stream().forEach((patchType) -> {
-            patchType.incrementClasses(classOffset);
-        });
+        for (TorsionTorsionType torsionTorsionType : torsionTorsionTypes.values()) {
+            torsionTorsionType.incrementClasses(classOffset);
+        }
 
-        torsionTypes.values().stream().forEach((patchType) -> {
-            patchType.incrementClasses(classOffset);
-        });
+        for (TorsionType torsionType : torsionTypes.values()) {
+            torsionType.incrementClasses(classOffset);
+        }
 
-        imptorsTypes.values().stream().forEach((patchType) -> {
-            patchType.incrementClasses(classOffset);
-        });
+        for (ImproperTorsionType improperTorsionType : imptorsTypes.values()) {
+            improperTorsionType.incrementClasses(classOffset);
+        }
 
-        ureyBradleyTypes.values().stream().forEach((patchType) -> {
-            patchType.incrementClasses(classOffset);
-        });
+        for (UreyBradleyType ureyBradleyType : ureyBradleyTypes.values()) {
+            ureyBradleyType.incrementClasses(classOffset);
+        }
 
-        vanderWaalsTypes.values().stream().forEach((patchType) -> {
-            patchType.incrementClass(classOffset);
-        });
+        for (VDWType vanderWaalsType : vanderWaalsTypes.values()) {
+            vanderWaalsType.incrementClass(classOffset);
+        }
+
     }
 
     /**
@@ -304,61 +305,61 @@ public class ForceField {
 
         patch.renumberForceField(classOffset, typeOffset, bioTypeOffset);
 
-        patch.angleTypes.values().stream().forEach((patchType) -> {
-            angleTypes.put(patchType.getKey(), patchType);
-        });
+        for (AngleType angleType : patch.angleTypes.values()) {
+            angleTypes.put(angleType.getKey(), angleType);
+        }
 
-        patch.atomTypes.values().stream().forEach((patchType) -> {
-            atomTypes.put(patchType.getKey(), patchType);
-        });
+        for (AtomType atomType : patch.atomTypes.values()) {
+            atomTypes.put(atomType.getKey(), atomType);
+        }
 
-        patch.bioTypes.values().stream().forEach((patchType) -> {
-            bioTypes.put(patchType.getKey(), patchType);
-        });
+        for (BioType bioType : patch.bioTypes.values()) {
+            bioTypes.put(bioType.getKey(), bioType);
+        }
 
-        patch.bondTypes.values().stream().forEach((patchType) -> {
-            bondTypes.put(patchType.getKey(), patchType);
-        });
+        for (BondType bondType : patch.bondTypes.values()) {
+            bondTypes.put(bondType.getKey(), bondType);
+        }
 
-        patch.multipoleTypes.values().stream().forEach((patchType) -> {
-            multipoleTypes.put(patchType.getKey(), patchType);
-        });
+        for (MultipoleType multipoleType : patch.multipoleTypes.values()) {
+            multipoleTypes.put(multipoleType.getKey(), multipoleType);
+        }
 
-        patch.outOfPlaneBendTypes.values().stream().forEach((patchType) -> {
-            outOfPlaneBendTypes.put(patchType.getKey(), patchType);
-        });
+        for (OutOfPlaneBendType outOfPlaneBendType : patch.outOfPlaneBendTypes.values()) {
+            outOfPlaneBendTypes.put(outOfPlaneBendType.getKey(), outOfPlaneBendType);
+        }
 
-        patch.piTorsionTypes.values().stream().forEach((patchType) -> {
-            piTorsionTypes.put(patchType.getKey(), patchType);
-        });
+        for (PiTorsionType piTorsionType : patch.piTorsionTypes.values()) {
+            piTorsionTypes.put(piTorsionType.getKey(), piTorsionType);
+        }
 
-        patch.polarizeTypes.values().stream().forEach((patchType) -> {
-            polarizeTypes.put(patchType.getKey(), patchType);
-        });
+        for (PolarizeType polarizeType : patch.polarizeTypes.values()) {
+            polarizeTypes.put(polarizeType.getKey(), polarizeType);
+        }
 
-        patch.stretchBendTypes.values().stream().forEach((patchType) -> {
-            stretchBendTypes.put(patchType.getKey(), patchType);
-        });
+        for (StretchBendType stretchBendType : patch.stretchBendTypes.values()) {
+            stretchBendTypes.put(stretchBendType.getKey(), stretchBendType);
+        }
 
-        patch.torsionTorsionTypes.values().stream().forEach((patchType) -> {
-            torsionTorsionTypes.put(patchType.getKey(), patchType);
-        });
+        for (TorsionTorsionType torsionTorsionType : patch.torsionTorsionTypes.values()) {
+            torsionTorsionTypes.put(torsionTorsionType.getKey(), torsionTorsionType);
+        }
 
-        patch.torsionTypes.values().stream().forEach((patchType) -> {
-            torsionTypes.put(patchType.getKey(), patchType);
-        });
+        for (TorsionType torsionType : patch.torsionTypes.values()) {
+            torsionTypes.put(torsionType.getKey(), torsionType);
+        }
 
-        patch.imptorsTypes.values().stream().forEach((patchType) -> {
-            imptorsTypes.put(patchType.getKey(), patchType);
-        });
+        for (ImproperTorsionType improperTorsionType : patch.imptorsTypes.values()) {
+            imptorsTypes.put(improperTorsionType.getKey(), improperTorsionType);
+        }
 
-        patch.ureyBradleyTypes.values().stream().forEach((patchType) -> {
-            ureyBradleyTypes.put(patchType.getKey(), patchType);
-        });
+        for (UreyBradleyType ureyBradleyType : patch.ureyBradleyTypes.values()) {
+            ureyBradleyTypes.put(ureyBradleyType.getKey(), ureyBradleyType);
+        }
 
-        patch.vanderWaalsTypes.values().stream().forEach((patchType) -> {
-            vanderWaalsTypes.put(patchType.getKey(), patchType);
-        });
+        for (VDWType vdwType : patch.vanderWaalsTypes.values()) {
+            vanderWaalsTypes.put(vdwType.getKey(), vdwType);
+        }
     }
 
     /**
@@ -954,9 +955,9 @@ public class ForceField {
      * log</p>
      */
     public void log() {
-        forceFieldTypes.keySet().stream().forEach((s) -> {
+        for (ForceFieldType s : forceFieldTypes.keySet()) {
             log(s.toString());
-        });
+        }
     }
 
     /**
@@ -974,9 +975,9 @@ public class ForceField {
      * print</p>
      */
     public void print() {
-        forceFieldTypes.keySet().stream().forEach((s) -> {
+        for (ForceFieldType s : forceFieldTypes.keySet()) {
             print(s.toString());
-        });
+        }
     }
 
     /**

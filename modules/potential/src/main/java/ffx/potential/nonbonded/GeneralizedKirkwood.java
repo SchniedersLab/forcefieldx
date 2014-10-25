@@ -269,7 +269,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         lambdaGrad = particleMeshEwald.getLambdaGradient();
         lambdaTorque = particleMeshEwald.getLambdaTorque();
 
-        if (sharedGKField == null || sharedGKField.length < nAtoms) {
+        if (sharedGKField[0] == null || sharedGKField[0].length() < nAtoms) {
             sharedGKField[0] = new SharedDoubleArray(nAtoms);
             sharedGKField[1] = new SharedDoubleArray(nAtoms);
             sharedGKField[2] = new SharedDoubleArray(nAtoms);
