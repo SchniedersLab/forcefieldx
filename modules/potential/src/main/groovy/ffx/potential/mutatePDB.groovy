@@ -85,6 +85,6 @@ molecularAssembly.setForceField(forceField);
 PDBFilter pdbFilter = new PDBFilter(structure, molecularAssembly, forceField, properties);
 pdbFilter.mutate(chain,resID,resName);
 pdbFilter.readFile();
-molecularAssembly.finalize(true);
+molecularAssembly.finalize(true, forceField);
 pdbFilter.writeFile(structure, false);
 

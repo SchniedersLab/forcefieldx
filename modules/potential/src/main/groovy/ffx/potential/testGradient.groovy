@@ -40,6 +40,9 @@ double step = 1.0e-5;
 // Print out the energy for each step.
 boolean print = false;
 
+// Upper bound for typical gradient sizes (expected gradient)
+double expGrad = 1000.0;
+
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
@@ -48,6 +51,7 @@ def cli = new CliBuilder(usage:' ffxc testGradient [options] <filename>');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.a(longOpt:'atomID', args:1, argName:'1', 'Number of the first atom to test')
 cli.d(longOpt:'dx', args:1, argName:'1.0e-5', 'Finite-difference step size (Angstroms)');
+//cli.e(longOpt:'expectedGradient', args:1, argName:'1.0e3', 'RMS kcal/mol*')
 cli.v(longOpt:'verbose', args:1, argName:'false', 'Print out the energy for each step');
 def options = cli.parse(args);
 
@@ -97,6 +101,8 @@ energy.energyAndGradient(x,analytic);
 
 double avLen = 0.0;
 int nFailures = 0;
+double avGrad = 0.0;
+double expGrad2 = expGrad * expGrad;
 for (int i=atomID; i<n; i++) {
     Atom a0 = atoms[i];
     int i3 = i*3;
@@ -143,6 +149,10 @@ for (int i=atomID; i<n; i++) {
     double len = dx * dx + dy * dy + dz * dz;
     avLen += len;
     len = Math.sqrt(len);
+    
+    double grad2 = analytic[i0] * analytic[i0] + analytic[i1] * analytic[i1] + analytic[i2] * analytic[i2];
+    avGrad += grad2;
+    
     if (len > gradientTolerance) {
         logger.info(" " + a0.toShortString() + String.format(" failed: %10.6f.", len)
             + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", analytic[i0], analytic[i1], analytic[i2])
@@ -152,8 +162,13 @@ for (int i=atomID; i<n; i++) {
     } else {
         logger.info(" " + a0.toShortString() + String.format(" passed: %10.6f.", len)
             + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", analytic[i0], analytic[i1], analytic[i2])
-            + String.format(" Numeric:  (%12.4f, %12.4f, %12.4f)\n", numeric[0], numeric[1], numeric[2]));
+            + String.format(" Numeric:  (%12.4f, %12.4f, %12.4f)", numeric[0], numeric[1], numeric[2]));
     }
+    
+    if (grad2 > expGrad2) {
+        logger.info(String.format(" Atom %d has an unusually large gradient: %10.6f", i+1, Math.sqrt(grad2)));
+    }
+    logger.info("\n");
 }
 
 avLen = avLen / n;
@@ -163,4 +178,12 @@ if (avLen > gradientTolerance) {
 } else {
     logger.info(String.format(" Test success: RMSD from analytic solution is %10.6f < %10.6f", avLen, gradientTolerance));
 }
-logger.info(String.format(" Number of atoms failing gradient test: %d", nFailures));
+logger.info(String.format(" Number of atoms failing analytic test: %d", nFailures));
+
+avGrad = avGrad / n;
+avGrad = Math.sqrt(avGrad);
+if (avGrad > expGrad) {
+    logger.info(String.format(" Unusually large RMS gradient: %10.6f > %10.6f", avGrad, expGrad));
+} else {
+    logger.info(String.format(" RMS gradient: %10.6f", avGrad));
+}

@@ -234,6 +234,8 @@ double width = 2.0 * step;
 
 // Error tolerence
 double errTol = 1.0e-3;
+// Upper bound for typical gradient sizes (expected gradient)
+double expGrad = 1000.0;
 
 // Test Lambda gradient in the neighborhood of the lambda variable.
 for (int j=0; j<3; j++) {
@@ -331,6 +333,7 @@ logger.info(String.format(" Checking Cartesian coordinate gradient"));
 double[] numeric = new double[3];
 double avLen = 0.0;
 int nFailures = 0;
+double avGrad = 0.0;
 for (int i=0; i<nAtoms; i++) {
     int i3 = i*3;
     int i0 = i3 + 0;
@@ -371,6 +374,9 @@ for (int i=0; i<nAtoms; i++) {
     avLen += len;
     len = Math.sqrt(len);
     
+    double grad2 = gradient[i0] * gradient[i0] + gradient[i1] * gradient[i1] + gradient[i2] * gradient[i2];
+    avGrad += grad2;
+    
     if (len > errTol) {
         logger.info(String.format(" Atom %d failed: %10.6f.",i+1,len)
             + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", gradient[i0], gradient[i1], gradient[i2])
@@ -380,8 +386,13 @@ for (int i=0; i<nAtoms; i++) {
     } else {
         logger.info(String.format(" Atom %d passed: %10.6f.",i+1,len)
             + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", gradient[i0], gradient[i1], gradient[i2])
-            + String.format(" Numeric:  (%12.4f, %12.4f, %12.4f)\n", numeric[0], numeric[1], numeric[2]));
+            + String.format(" Numeric:  (%12.4f, %12.4f, %12.4f)", numeric[0], numeric[1], numeric[2]));
     }
+    
+    if (grad2 > expGrad) {
+        logger.info(String.format(" Atom %d has an unusually large gradient: %10.6f", i+1, grad2));
+    }
+    logger.info("\n");
 }
 
 avLen = avLen / nAtoms;
@@ -392,3 +403,11 @@ if (avLen > errTol) {
     logger.info(String.format(" Test success: RMSD from analytic solution is %10.6f < %10.6f", avLen, errTol));
 }
 logger.info(String.format(" Number of atoms failing gradient test: %d", nFailures));
+
+avGrad = avGrad / nAtoms;
+avGrad = Math.sqrt(avGrad);
+if (avGrad > expGrad) {
+    logger.info(String.format(" Unusually large RMS gradient: %10.6f > %10.6f", avGrad, expGrad));
+} else {
+    logger.info(String.format(" RMS gradient: %10.6f", avGrad));
+}

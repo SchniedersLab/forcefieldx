@@ -249,7 +249,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         sharedGKFieldCR = new SharedDoubleArray[3];
 
         probe = forceField.getDouble(ForceField.ForceFieldDouble.PROBE_RADIUS, 1.4);
-        cutoff = forceField.getDouble(ForceField.ForceFieldDouble.VDW_CUTOFF, 12.0);
+        cutoff = forceField.getDouble(ForceField.ForceFieldDouble.EWALD_CUTOFF, 7.0);;
         cut2 = cutoff * cutoff;
         lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
 
