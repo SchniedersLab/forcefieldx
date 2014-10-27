@@ -391,14 +391,14 @@ public class MTZFilter implements DiffractionFileFilter {
 
             if (none > (nzero * 2)
                     && refinementdata.rfreeflag < 0) {
-                refinementdata.set_freerflag(0);
+                refinementdata.setFreeRFlag(0);
                 sb.append(String.format(" Setting R free flag to %d based on MTZ file data.\n", refinementdata.rfreeflag));
             } else if (nzero > (none * 2)
                     && refinementdata.rfreeflag < 0) {
-                refinementdata.set_freerflag(1);
+                refinementdata.setFreeRFlag(1);
                 sb.append(String.format(" Setting R free flag to %d based on MTZ file data.\n", refinementdata.rfreeflag));
             } else if (refinementdata.rfreeflag < 0) {
-                refinementdata.set_freerflag(0);
+                refinementdata.setFreeRFlag(0);
                 sb.append(String.format(" Setting R free flag to MTZ default: %d\n", refinementdata.rfreeflag));
             }
 
@@ -466,15 +466,15 @@ public class MTZFilter implements DiffractionFileFilter {
                         }
                     }
                     if (rfree > 0) {
-                        refinementdata.set_freer(hkl.index(), (int) data[rfree]);
+                        refinementdata.setFreeR(hkl.index(), (int) data[rfree]);
                     } else {
                         if (rfreeplus > 0 && rfreeminus > 0) {
                             // not sure what the correct thing to do here is?
-                            refinementdata.set_freer(hkl.index(), (int) data[rfreeplus]);
+                            refinementdata.setFreeR(hkl.index(), (int) data[rfreeplus]);
                         } else if (rfreeplus > 0) {
-                            refinementdata.set_freer(hkl.index(), (int) data[rfreeplus]);
+                            refinementdata.setFreeR(hkl.index(), (int) data[rfreeplus]);
                         } else if (rfreeminus > 0) {
-                            refinementdata.set_freer(hkl.index(), (int) data[rfreeminus]);
+                            refinementdata.setFreeR(hkl.index(), (int) data[rfreeminus]);
                         }
                     }
                     nread++;
@@ -654,12 +654,12 @@ public class MTZFilter implements DiffractionFileFilter {
                     if (fc > 0 && phic > 0) {
                         c.re(data[fc] * cos(toRadians(data[phic])));
                         c.im(data[fc] * sin(toRadians(data[phic])));
-                        fcdata.set_fc(hkl.index(), c);
+                        fcdata.setFc(hkl.index(), c);
                     }
                     if (fs > 0 && phis > 0) {
                         c.re(data[fs] * cos(toRadians(data[phis])));
                         c.im(data[fs] * sin(toRadians(data[phis])));
-                        fcdata.set_fs(hkl.index(), c);
+                        fcdata.setFs(hkl.index(), c);
                     }
                     nread++;
                 } else {

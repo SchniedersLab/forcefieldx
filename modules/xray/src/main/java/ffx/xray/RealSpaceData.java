@@ -91,7 +91,7 @@ public class RealSpaceData implements DataContainer {
         crystal = new Crystal[n];
         crystal[0] = diffractiondata.crystal[0];
         refinementdata = new RealSpaceRefinementData[n];
-        refinementdata[0] = new RealSpaceRefinementData(properties);
+        refinementdata[0] = new RealSpaceRefinementData();
         refinementdata[0].periodic = true;
 
         xweight = properties.getDouble("xweight", 1.0);
@@ -202,7 +202,7 @@ public class RealSpaceData implements DataContainer {
         }
 
         for (int i = 0; i < n; i++) {
-            refinementdata[i] = new RealSpaceRefinementData(properties);
+            refinementdata[i] = new RealSpaceRefinementData();
             datafile[i].realspacefilter.readFile(datafile[i].filename,
                     refinementdata[i], properties);
 

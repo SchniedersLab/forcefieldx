@@ -22,8 +22,6 @@
  */
 package ffx.xray;
 
-import java.util.logging.Logger;
-
 import org.apache.commons.configuration.CompositeConfiguration;
 
 /**
@@ -35,7 +33,6 @@ import org.apache.commons.configuration.CompositeConfiguration;
  */
 public class RealSpaceRefinementData {
 
-    private static final Logger logger = Logger.getLogger(RealSpaceRefinementData.class.getName());
     protected final int ori[];
     protected final int ext[];
     protected final int ni[];
@@ -47,10 +44,8 @@ public class RealSpaceRefinementData {
      * <p>
      * Constructor for RealSpaceRefinementData.</p>
      *
-     * @param properties a
-     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
      */
-    public RealSpaceRefinementData(CompositeConfiguration properties) {
+    public RealSpaceRefinementData() {
         ori = new int[3];
         ext = new int[3];
         ni = new int[3];

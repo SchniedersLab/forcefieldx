@@ -195,7 +195,7 @@ public class CNSFilter implements DiffractionFileFilter {
         StringBuilder sb = new StringBuilder();
         sb.append(String.format("\n Opening %s\n", cnsFile.getName()));
         if (refinementdata.rfreeflag < 0) {
-            refinementdata.set_freerflag(1);
+            refinementdata.setFreeRFlag(1);
             sb.append(String.format(" Setting R free flag to CNS default: %d\n", refinementdata.rfreeflag));
         }
 
@@ -280,7 +280,7 @@ public class CNSFilter implements DiffractionFileFilter {
                                     anofsigf[hkl.index()][0] = fo;
                                     anofsigf[hkl.index()][1] = sigfo;
                                 }
-                                refinementdata.set_freer(hkl.index(), free);
+                                refinementdata.setFreeR(hkl.index(), free);
                                 nread++;
                             } else {
                                 HKL tmp = new HKL(ih, ik, il);

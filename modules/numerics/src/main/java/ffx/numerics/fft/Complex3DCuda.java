@@ -254,7 +254,7 @@ public class Complex3DCuda implements Runnable {
         CUdevice dev = new CUdevice();
         CUdevprop prop = new CUdevprop();
         cuDeviceGetProperties(prop, dev);
-        logger.info("   CUDA " + prop.toFormattedString());
+        logger.log(Level.INFO, "   CUDA {0}", prop.toFormattedString());
         cuDeviceGet(dev, 0);
 
         // Create a context that allows the GPU to map pinned host memory.

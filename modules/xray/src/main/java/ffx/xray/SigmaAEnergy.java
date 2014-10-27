@@ -375,8 +375,8 @@ public class SigmaAEnergy implements Potential {
                     double sa2 = sai * sai;
 
                     // Structure factors
-                    refinementData.get_fc_ip(i, fcc);
-                    refinementData.get_fs_ip(i, fsc);
+                    refinementData.getFcIP(i, fcc);
+                    refinementData.getFsIP(i, fsc);
                     fct.copy(fcc);
                     if (refinementData.crs_fs.solventModel != SolventModel.NONE) {
                         resc.copy(fsc);
@@ -493,7 +493,7 @@ public class SigmaAEnergy implements Potential {
                     dfs[i][1] = dfsi * dfscale;
 
                     // Only use freeR flagged reflections in overall sum
-                    if (refinementData.isfreer(i)) {
+                    if (refinementData.isFreeR(i)) {
                         lsum += llk;
                         lnsum++;
                     } else {

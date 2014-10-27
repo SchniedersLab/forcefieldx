@@ -203,7 +203,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         neighborLists = particleMeshEwald.neighborLists;
         this.crystal = crystal;
         this.atoms = atoms;
-        
+
         NonPolar nonpolarModel = NonPolar.CAV_DISP;
         try {
             String cavModel = forceField.getString(ForceField.ForceFieldString.CAVMODEL, "CAV_DISP").toUpperCase();
@@ -227,7 +227,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             logger.warning(String.format(" Error in parsing GK cavitation model: set to surface area: %s", ex.toString()));
         }
         nonPolar = nonpolarModel;
-        
+
         double aiTerm = 4.0 * PI;
         try {
             aiTerm *= forceField.getDouble(ForceField.ForceFieldDouble.BORNAI);
@@ -320,7 +320,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         lambdaGrad = particleMeshEwald.getLambdaGradient();
         lambdaTorque = particleMeshEwald.getLambdaTorque();
 
-        if (sharedGKField == null || sharedGKField[0] == null || sharedGKField[0].length() < nAtoms) {
+        if (sharedGKField[0] == null || sharedGKField[0].length() < nAtoms) {
             sharedGKField[0] = new SharedDoubleArray(nAtoms);
             sharedGKField[1] = new SharedDoubleArray(nAtoms);
             sharedGKField[2] = new SharedDoubleArray(nAtoms);
@@ -2170,7 +2170,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             gkEnergy += e;
                             // Now calculate derivatives
                             e *= (-6.0 / born[i]); // e = consts * -6*ri^6 / rb^-7
-                            // To get each derivative, would multiple 
+                            // To get each derivative, would multiple
                             gb_local[i] += e;
                             break;
                         default:
@@ -4531,14 +4531,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 }
             }
         }
-        
+
         /**
          * Compute Cavitation energy for a range of atoms.
          *
          * @since 1.0
          */
         private class CavitationLoop extends IntegerForLoop {
-            
+
             private double thec = 0;
             private IndexedDouble arci[];
             private final double dArea[][];
@@ -9235,6 +9235,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 calcVolume();
                 calcDerivative(lb, ub);
             }
-        } 
+        }
     }
 }

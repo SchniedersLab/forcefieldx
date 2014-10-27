@@ -26,7 +26,12 @@ import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.lang.Double.isNaN;
+
 import org.apache.commons.configuration.CompositeConfiguration;
+
+import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.crystal.ReflectionList;
 import ffx.numerics.ComplexNumber;
@@ -199,7 +204,7 @@ public class DiffractionRefinementData {
 
         // initial guess for scaling/bulk solvent correction
         solvent_k = 0.33;
-        solvent_ueq = 50.0 / (8.0 * Math.PI * Math.PI);
+        solvent_ueq = 50.0 / (8.0 * PI * PI);
         model_k = 0.0;
     }
 
@@ -241,7 +246,7 @@ public class DiffractionRefinementData {
         }
 
         for (int i = 0; i < n; i++) {
-            if (Double.isNaN(fsigf[i][0])) {
+            if (isNaN(fsigf[i][0])) {
                 freer[i] = nonfree;
                 continue;
             }
@@ -273,17 +278,16 @@ public class DiffractionRefinementData {
      */
     public void generate_fsigf_from_anofsigf(double anofsigf[][]) {
         for (int i = 0; i < n; i++) {
-            if (Double.isNaN(anofsigf[i][0])
-                    && Double.isNaN(anofsigf[i][2])) {
-            } else if (Double.isNaN(anofsigf[i][0])) {
+            if (isNaN(anofsigf[i][0]) && isNaN(anofsigf[i][2])) {
+            } else if (isNaN(anofsigf[i][0])) {
                 fsigf[i][0] = anofsigf[i][2];
                 fsigf[i][1] = anofsigf[i][3];
-            } else if (Double.isNaN(anofsigf[i][2])) {
+            } else if (isNaN(anofsigf[i][2])) {
                 fsigf[i][0] = anofsigf[i][0];
                 fsigf[i][1] = anofsigf[i][1];
             } else {
                 fsigf[i][0] = (anofsigf[i][0] + anofsigf[i][2]) / 2.0;
-                fsigf[i][1] = Math.sqrt(anofsigf[i][1] * anofsigf[i][1]
+                fsigf[i][1] = sqrt(anofsigf[i][1] * anofsigf[i][1]
                         + anofsigf[i][3] * anofsigf[i][3]);
             }
         }
@@ -299,14 +303,14 @@ public class DiffractionRefinementData {
         for (int i = 0; i < n; i++) {
             if (fsigf[i][0] > 0.0) {
                 tmp = fsigf[i][0];
-                fsigf[i][0] = Math.sqrt(tmp);
+                fsigf[i][0] = sqrt(tmp);
                 if (fsigf[i][1] < tmp) {
                     fsigf[i][1] = fsigf[i][0]
-                            - Math.sqrt(tmp - fsigf[i][1]);
+                            - sqrt(tmp - fsigf[i][1]);
                 } else {
                     fsigf[i][1] = fsigf[i][0];
                 }
-            } else if (!Double.isNaN(fsigf[i][0])) {
+            } else if (!isNaN(fsigf[i][0])) {
                 fsigf[i][0] = 0.0;
                 fsigf[i][1] = 0.0;
             }
@@ -326,13 +330,13 @@ public class DiffractionRefinementData {
      * @param i reflection to set
      * @param f value of F desired
      */
-    public void set_f(int i, double f) {
+    public void setF(int i, double f) {
         fsigf[i][0] = f;
     }
 
     /**
      * <p>
- getF</p>
+     * getF</p>
      *
      * @param i a int.
      * @return a double.
@@ -347,13 +351,13 @@ public class DiffractionRefinementData {
      * @param i reflection to set
      * @param sigf value of sigF desired
      */
-    public void set_sigf(int i, double sigf) {
+    public void setSigF(int i, double sigf) {
         fsigf[i][1] = sigf;
     }
 
     /**
      * <p>
- getSigF</p>
+     * getSigF</p>
      *
      * @param i a int.
      * @return a double.
@@ -369,19 +373,19 @@ public class DiffractionRefinementData {
      * @param f value of F desired
      * @param sigf value of sigF desired
      */
-    public void set_fsigf(int i, double f, double sigf) {
+    public void setFSigF(int i, double f, double sigf) {
         fsigf[i][0] = f;
         fsigf[i][1] = sigf;
     }
 
     /**
      * <p>
-     * get_fsigf</p>
+     * getFSigF</p>
      *
      * @param i a int.
      * @return an array of double.
      */
-    public double[] get_fsigf(int i) {
+    public double[] getFSigF(int i) {
         return fsigf[i];
     }
 
@@ -390,7 +394,7 @@ public class DiffractionRefinementData {
      *
      * @param i if FreeR value is i, it is marked for cross validation
      */
-    public void set_freerflag(int i) {
+    public void setFreeRFlag(int i) {
         rfreeflag = i;
     }
 
@@ -400,41 +404,41 @@ public class DiffractionRefinementData {
      * @param i reflection to set
      * @param f FreeR value to set reflection to
      */
-    public void set_freer(int i, int f) {
+    public void setFreeR(int i, int f) {
         freer[i] = f;
     }
 
     /**
      * <p>
-     * get_freer</p>
+     * getFreeR</p>
      *
      * @param i a int.
      * @return a int.
      */
-    public int get_freer(int i) {
+    public int getFreeR(int i) {
         return freer[i];
     }
 
     /**
      * <p>
-     * isfreer</p>
+     * isFreeR</p>
      *
      * @param i a int.
      * @param f a int.
      * @return a boolean.
      */
-    public boolean isfreer(int i, int f) {
+    public boolean isFreeR(int i, int f) {
         return (freer[i] == f);
     }
 
     /**
      * <p>
-     * isfreer</p>
+     * isFreeR</p>
      *
      * @param i a int.
      * @return a boolean.
      */
-    public boolean isfreer(int i) {
+    public boolean isFreeR(int i) {
         return (freer[i] == rfreeflag);
     }
 
@@ -444,7 +448,7 @@ public class DiffractionRefinementData {
      * @param i reflection to set
      * @param c {@link ComplexNumber} to set reflection to
      */
-    public void set_fc(int i, ComplexNumber c) {
+    public void setFc(int i, ComplexNumber c) {
         fc[i][0] = c.re();
         fc[i][1] = c.im();
     }
@@ -465,7 +469,7 @@ public class DiffractionRefinementData {
      * @param i reflection to get
      * @param c {@link ComplexNumber} to fill
      */
-    public void get_fc_ip(int i, ComplexNumber c) {
+    public void getFcIP(int i, ComplexNumber c) {
         c.re(fc[i][0]);
         c.im(fc[i][1]);
     }
@@ -476,7 +480,7 @@ public class DiffractionRefinementData {
      * @param i reflection to get
      * @return amplitude of Fc
      */
-    public double fc_f(int i) {
+    public double fcF(int i) {
         ComplexNumber c = new ComplexNumber(fc[i][0], fc[i][1]);
 
         return c.abs();
@@ -488,7 +492,7 @@ public class DiffractionRefinementData {
      * @param i reflection to get
      * @return phase of Fc
      */
-    public double fc_phi(int i) {
+    public double fcPhi(int i) {
         ComplexNumber c = new ComplexNumber(fc[i][0], fc[i][1]);
 
         return c.phase();
@@ -496,47 +500,47 @@ public class DiffractionRefinementData {
 
     /**
      * <p>
-     * set_fs</p>
+     * setFs</p>
      *
      * @param i a int.
      * @param c a {@link ffx.numerics.ComplexNumber} object.
      */
-    public void set_fs(int i, ComplexNumber c) {
+    public void setFs(int i, ComplexNumber c) {
         fs[i][0] = c.re();
         fs[i][1] = c.im();
     }
 
     /**
      * <p>
-     * get_fs</p>
+     * getFs</p>
      *
      * @param i a int.
      * @return a {@link ffx.numerics.ComplexNumber} object.
      */
-    public ComplexNumber get_fs(int i) {
+    public ComplexNumber getFs(int i) {
         return new ComplexNumber(fs[i][0], fs[i][1]);
     }
 
     /**
      * <p>
-     * get_fs_ip</p>
+     * getFsIP</p>
      *
      * @param i a int.
      * @param c a {@link ffx.numerics.ComplexNumber} object.
      */
-    public void get_fs_ip(int i, ComplexNumber c) {
+    public void getFsIP(int i, ComplexNumber c) {
         c.re(fs[i][0]);
         c.im(fs[i][1]);
     }
 
     /**
      * <p>
-     * fs_f</p>
+     * fsF</p>
      *
      * @param i a int.
      * @return a double.
      */
-    public double fs_f(int i) {
+    public double fsF(int i) {
         ComplexNumber c = new ComplexNumber(fs[i][0], fs[i][1]);
 
         return c.abs();
@@ -544,12 +548,12 @@ public class DiffractionRefinementData {
 
     /**
      * <p>
-     * fs_phi</p>
+     * fsPhi</p>
      *
      * @param i a int.
      * @return a double.
      */
-    public double fs_phi(int i) {
+    public double fsPhi(int i) {
         ComplexNumber c = new ComplexNumber(fs[i][0], fs[i][1]);
 
         return c.phase();
@@ -557,47 +561,47 @@ public class DiffractionRefinementData {
 
     /**
      * <p>
-     * set_fctot</p>
+     * setFcTot</p>
      *
      * @param i a int.
      * @param c a {@link ffx.numerics.ComplexNumber} object.
      */
-    public void set_fctot(int i, ComplexNumber c) {
+    public void setFcTot(int i, ComplexNumber c) {
         fctot[i][0] = c.re();
         fctot[i][1] = c.im();
     }
 
     /**
      * <p>
-     * get_fctot</p>
+     * getFcTot</p>
      *
      * @param i a int.
      * @return a {@link ffx.numerics.ComplexNumber} object.
      */
-    public ComplexNumber get_fctot(int i) {
+    public ComplexNumber getFcTot(int i) {
         return new ComplexNumber(fctot[i][0], fctot[i][1]);
     }
 
     /**
      * <p>
-     * get_fctot_ip</p>
+     * getFcTotIP</p>
      *
      * @param i a int.
      * @param c a {@link ffx.numerics.ComplexNumber} object.
      */
-    public void get_fctot_ip(int i, ComplexNumber c) {
+    public void getFcTotIP(int i, ComplexNumber c) {
         c.re(fctot[i][0]);
         c.im(fctot[i][1]);
     }
 
     /**
      * <p>
-     * fctot_f</p>
+     * fcTotF</p>
      *
      * @param i a int.
      * @return a double.
      */
-    public double fctot_f(int i) {
+    public double fcTotF(int i) {
         ComplexNumber c = new ComplexNumber(fctot[i][0], fctot[i][1]);
 
         return c.abs();
@@ -605,12 +609,12 @@ public class DiffractionRefinementData {
 
     /**
      * <p>
-     * fctot_phi</p>
+     * fcTotPhi</p>
      *
      * @param i a int.
      * @return a double.
      */
-    public double fctot_phi(int i) {
+    public double fcTotPhi(int i) {
         ComplexNumber c = new ComplexNumber(fctot[i][0], fctot[i][1]);
 
         return c.phase();
@@ -618,47 +622,47 @@ public class DiffractionRefinementData {
 
     /**
      * <p>
-     * set_fofc2</p>
+     * setFoFc2</p>
      *
      * @param i a int.
      * @param c a {@link ffx.numerics.ComplexNumber} object.
      */
-    public void set_fofc2(int i, ComplexNumber c) {
+    public void setFoFc2(int i, ComplexNumber c) {
         fofc2[i][0] = c.re();
         fofc2[i][1] = c.im();
     }
 
     /**
      * <p>
-     * get_fofc2</p>
+     * getFoFc2</p>
      *
      * @param i a int.
      * @return a {@link ffx.numerics.ComplexNumber} object.
      */
-    public ComplexNumber get_fofc2(int i) {
+    public ComplexNumber getFoFc2(int i) {
         return new ComplexNumber(fofc2[i][0], fofc2[i][1]);
     }
 
     /**
      * <p>
-     * get_fofc2_ip</p>
+     * getFoFc2IP</p>
      *
      * @param i a int.
      * @param c a {@link ffx.numerics.ComplexNumber} object.
      */
-    public void get_fofc2_ip(int i, ComplexNumber c) {
+    public void getFoFc2IP(int i, ComplexNumber c) {
         c.re(fofc2[i][0]);
         c.im(fofc2[i][1]);
     }
 
     /**
      * <p>
-     * fofc2_f</p>
+     * FoFc2F</p>
      *
      * @param i a int.
      * @return a double.
      */
-    public double fofc2_f(int i) {
+    public double FoFc2F(int i) {
         ComplexNumber c = new ComplexNumber(fofc2[i][0], fofc2[i][1]);
 
         return c.abs();
@@ -666,12 +670,12 @@ public class DiffractionRefinementData {
 
     /**
      * <p>
-     * fofc2_phi</p>
+     * FoFc2Phi</p>
      *
      * @param i a int.
      * @return a double.
      */
-    public double fofc2_phi(int i) {
+    public double FoFc2Phi(int i) {
         ComplexNumber c = new ComplexNumber(fofc2[i][0], fofc2[i][1]);
 
         return c.phase();
@@ -679,47 +683,47 @@ public class DiffractionRefinementData {
 
     /**
      * <p>
-     * set_fofc1</p>
+     * setFoFc1</p>
      *
      * @param i a int.
      * @param c a {@link ffx.numerics.ComplexNumber} object.
      */
-    public void set_fofc1(int i, ComplexNumber c) {
+    public void setFoFc1(int i, ComplexNumber c) {
         fofc1[i][0] = c.re();
         fofc1[i][1] = c.im();
     }
 
     /**
      * <p>
-     * get_fofc1</p>
+     * getFoFc1</p>
      *
      * @param i a int.
      * @return a {@link ffx.numerics.ComplexNumber} object.
      */
-    public ComplexNumber get_fofc1(int i) {
+    public ComplexNumber getFoFc1(int i) {
         return new ComplexNumber(fofc1[i][0], fofc1[i][1]);
     }
 
     /**
      * <p>
-     * get_fofc1_ip</p>
+     * getFoFc1IP</p>
      *
      * @param i a int.
      * @param c a {@link ffx.numerics.ComplexNumber} object.
      */
-    public void get_fofc1_ip(int i, ComplexNumber c) {
+    public void getFoFc1IP(int i, ComplexNumber c) {
         c.re(fofc1[i][0]);
         c.im(fofc1[i][1]);
     }
 
     /**
      * <p>
-     * fofc1_f</p>
+     * foFc1F</p>
      *
      * @param i a int.
      * @return a double.
      */
-    public double fofc1_f(int i) {
+    public double foFc1F(int i) {
         ComplexNumber c = new ComplexNumber(fofc1[i][0], fofc1[i][1]);
 
         return c.abs();
@@ -727,12 +731,12 @@ public class DiffractionRefinementData {
 
     /**
      * <p>
-     * fofc1_phi</p>
+     * foFc1Phi</p>
      *
      * @param i a int.
      * @return a double.
      */
-    public double fofc1_phi(int i) {
+    public double foFc1Phi(int i) {
         ComplexNumber c = new ComplexNumber(fofc1[i][0], fofc1[i][1]);
 
         return c.phase();
@@ -743,7 +747,7 @@ public class DiffractionRefinementData {
      *
      * @return the work likelihood (non-Rfree based)
      */
-    public double likelihood_work() {
+    public double likelihoodWork() {
         return llkr;
     }
 
@@ -752,7 +756,7 @@ public class DiffractionRefinementData {
      *
      * @return the free likelihood (Rfree based)
      */
-    public double likelihood_free() {
+    public double likelihoodFree() {
         return llkf;
     }
 }

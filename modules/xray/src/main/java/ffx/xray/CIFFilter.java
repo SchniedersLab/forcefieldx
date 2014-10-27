@@ -280,7 +280,7 @@ public class CIFFilter implements DiffractionFileFilter {
         StringBuilder sb = new StringBuilder();
         sb.append(String.format(" Opening %s\n", cifFile.getName()));
         if (refinementdata.rfreeflag < 0) {
-            refinementdata.set_freerflag(1);
+            refinementdata.setFreeRFlag(1);
             sb.append(String.format(" Setting R free flag to CIF default: %d\n", refinementdata.rfreeflag));
         }
 
@@ -449,9 +449,9 @@ public class CIFFilter implements DiffractionFileFilter {
 
                     if (rfree > 0) {
                         if (strarray[rfree].charAt(0) == 'o') {
-                            refinementdata.set_freer(hkl.index(), 0);
+                            refinementdata.setFreeR(hkl.index(), 0);
                         } else if (strarray[rfree].charAt(0) == 'f') {
-                            refinementdata.set_freer(hkl.index(), 1);
+                            refinementdata.setFreeR(hkl.index(), 1);
                         } else if (strarray[rfree].charAt(0) == 'x') {
                             isnull = true;
                             nnan++;
@@ -462,7 +462,7 @@ public class CIFFilter implements DiffractionFileFilter {
                             isnull = true;
                             ncifignore++;
                         } else {
-                            refinementdata.set_freer(hkl.index(),
+                            refinementdata.setFreeR(hkl.index(),
                                     Integer.parseInt(strarray[rfree]));
                         }
                     }
