@@ -3702,7 +3702,7 @@ public final class PDBFilter extends SystemFilter {
             sb.replace(30, 66, String.format("%8.3f%8.3f%8.3f%6.2f%6.2f",
                 xyz[0], xyz[1], xyz[2], atom.getOccupancy(), 2.00));
         } else {
-            sb.replace(30, 66, String.format("%8.3f%8.3f%8.3f%6.2f%6.3f",
+            sb.replace(30, 66, String.format("%8.3f%8.3f%8.3f%6.2f%6.2f",
                 xyz[0], xyz[1], xyz[2], atom.getOccupancy(), Float.parseFloat(siftScore)));
         }
         name = Atom.ElementSymbol.values()[atom.getAtomicNumber() - 1].toString();
