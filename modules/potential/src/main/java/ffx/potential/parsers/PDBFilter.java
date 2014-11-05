@@ -3392,9 +3392,12 @@ public final class PDBFilter extends SystemFilter {
                         String[] entries = null;
                         for (; i < resAndScore.length; i++) {
                             entries = resAndScore[i].split("\\t");
+                            if (!entries[0].equals(entries[0].replaceAll("\\D+",""))) {
+                                String[] subEntries = entries[0].split("[^0-9]");
+                                entries[0] = subEntries[0];
+                            }
                             if (entries[0].equals(String.valueOf(resID)) 
                                     && !".".equals(entries[1])) {
-                                logger.info(String.format("Found position at "+ String.valueOf(resID)));
                                 break;
                             }
                         }
