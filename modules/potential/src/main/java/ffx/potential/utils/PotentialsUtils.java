@@ -210,6 +210,21 @@ public class PotentialsUtils implements PotentialsFunctions {
             }
         }
     }
+    
+    public void saveAsSIFTPDB(MolecularAssembly assembly, File file, String[] resAndScore) {
+        if (assembly == null) {
+            logger.info(" Assembly to save was null.");
+        } else if (file == null) {
+            logger.info(" No valid file provided to save assembly to.");
+        } else if (resAndScore == null) {
+            logger.info(" Res and score array was null.");
+        } else {
+            PDBFilter pdbFilter = new PDBFilter(file, assembly, null, null);
+            if (!pdbFilter.writeSIFTFile(file, false, resAndScore)) {
+                logger.info(String.format(" Save failed for %s", assembly.toString()));
+            }
+        }
+    }
 
     /**
      * Saves the current state of an array of MolecularAssemblys to a PDB file.
@@ -229,6 +244,19 @@ public class PotentialsUtils implements PotentialsFunctions {
             PDBFilter pdbFilter = new PDBFilter(file,
                     Arrays.asList(assemblies), null, null);
             pdbFilter.writeFile(file, false);
+        }
+    }
+    
+    public void saveAsSIFTPDB(MolecularAssembly[] assemblies, File file, String[] resAndScore) {
+        if (assemblies == null) {
+            logger.info(" Assembly to save was null.");
+        } else if (file == null) {
+            logger.info(" No valid file provided to save assembly to.");
+        } else if (resAndScore == null) {
+            logger.info(" Res and score array was null.");
+        } else {
+            PDBFilter pdbFilter = new PDBFilter(file, Arrays.asList(assemblies), null, null);
+            pdbFilter.writeSIFTFile(file, false, resAndScore);
         }
     }
 
