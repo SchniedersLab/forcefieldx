@@ -3072,7 +3072,16 @@ public final class PDBFilter extends SystemFilter {
                                 Polymer altPolymer = altMolecularAssembly.getPolymer(currentChainID,
                                         currentSegID, false);
                                 Residue altResidue = altPolymer.getResidue(resName, resID, false);
+                                backboneAtoms = altResidue.getBackboneAtoms();
                                 residueAtoms = altResidue.getAtomList();
+                                for (Atom atom : backboneAtoms) {
+                                    if (atom.getAltLoc() != null
+                                            && !atom.getAltLoc().equals(' ')
+                                            && !atom.getAltLoc().equals('A')) {
+                                        writeAtom(atom, serial++, sb, anisouSB, bw);
+                                    }
+                                    residueAtoms.remove(atom);
+                                }
                                 for (Atom atom : residueAtoms) {
                                     if (atom.getAltLoc() != null
                                             && !atom.getAltLoc().equals(' ')
