@@ -43,6 +43,7 @@ import ffx.potential.parameters.ForceField;
 
 import static ffx.utilities.HashCodeUtil.SEED;
 import static ffx.utilities.HashCodeUtil.hash;
+import java.util.List;
 
 /**
  * The Residue class represents individual amino acids or nucleic acid bases.
@@ -498,14 +499,14 @@ public class Residue extends MSGroup {
      * Returns a list of side chain atoms; for our purposes, nucleic acid side
      * chain atoms are the sugar and the phosphate.
      *
-     * @return ArrayList of side chain (or nucleobase) atoms.
+     * @return ArrayList of side chain (or nucleic backbone) atoms.
      */
     public ArrayList<Atom> getSideChainAtoms() {
         ArrayList<Atom> atoms = getAtomList();
         ArrayList<Atom> ret;
         switch (residueType) {
             case NA:
-                ret = new ArrayList<Atom>();
+                ret = new ArrayList<>();
                 for (Atom atom : atoms) {
                     String name = atom.getName().toUpperCase();
                     /*
@@ -520,7 +521,7 @@ public class Residue extends MSGroup {
                 }
                 return ret;
             case AA:
-                ret = new ArrayList<Atom>(atoms);
+                ret = new ArrayList<>(atoms);
                 for (Atom atom : atoms) {
                     String name = atom.getName().toUpperCase();
                     if (name.equals("N") || name.equals("H") || name.equals("H1") || name.equals("H2") || name.equals("H3")
@@ -532,6 +533,68 @@ public class Residue extends MSGroup {
                 return ret;
             default:
                 return null;
+        }
+    }
+    /**
+     * Returns a list of backbone atoms; for our purposes, nucleic acid backbone 
+     * atoms are those of the nucleobase. Protein backbone atoms will be ordered:
+     * 
+     *
+     * @return ArrayList of backbone (or nucleobase) atoms.
+     */
+    public ArrayList<Atom> getBackboneAtoms() {
+        ArrayList<Atom> atoms = getAtomList();
+        ArrayList<Atom> ret;
+        switch (residueType) {
+            case NA:
+                ret = new ArrayList<>(atoms);
+                for (Atom atom : atoms) {
+                    String name = atom.getName().toUpperCase();
+                    if (name.contains("\'") || name.equals("P") || name.startsWith("OP") || name.equals("H5T")
+                            || name.equals("H3T")) {
+                        ret.remove(atom);
+                    }
+                }
+                return ret;
+            case AA:
+                ret = new ArrayList<>();
+                tryAddAtom(ret, "N");
+                tryAddAtom(ret, "CA");
+                tryAddAtom(ret, "C");
+                tryAddAtom(ret, "O");
+                tryAddAtom(ret, "OXT"); // C-terminal residues
+                tryAddAtom(ret, "OT2"); // Probably alternate name for OXT.
+                tryAddAtom(ret, "H1"); // N-terminal residues
+                tryAddAtom(ret, "H2");
+                tryAddAtom(ret, "H3");
+                tryAddAtom(ret, "H");
+                tryAddAtom(ret, "HA");
+                tryAddAtom(ret, "HA2"); // Glycines
+                tryAddAtom(ret, "HA3");
+                return ret;
+            default:
+                return null;
+        }
+    }
+    
+    /**
+     * Uses a name to add an Atom to a List<Atom> if the Atom exists for this 
+     * residue.
+     * @param atList List to add to.
+     * @param name Atom to add.
+     * @return If atom exists.
+     */
+    private boolean tryAddAtom(List<Atom> atList, String name) {
+        try {
+            Atom at = (Atom) getAtomNode(name);
+            if (at != null) {
+                atList.add(at);
+                return true;
+            } else {
+                return false;
+            }
+        } catch (Exception ex) {
+            return false;
         }
     }
 

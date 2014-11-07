@@ -2881,14 +2881,17 @@ public final class PDBFilter extends SystemFilter {
         }
         return writeFile(saveFile, true);
     }
-
+    
     /**
-     * {@inheritDoc}
-     *
-     * Write out the Atomic information in PDB format.
+     * <p>
+     * writeFile</p>
+     * 
+     * @param saveFile a {@link java.io.File} object.
+     * @param append a {@link java.lang.StringBuilder} object.
+     * @param printLinear Whether to print atoms linearly or by element
+     * @return Success of writing.
      */
-    @Override
-    public boolean writeFile(File saveFile, boolean append) {
+    public boolean writeFile(File saveFile, boolean append, boolean printLinear) {
         if (saveFile == null) {
             return false;
         }
@@ -3048,7 +3051,16 @@ public final class PDBFilter extends SystemFilter {
                         sb.replace(22, 26, String.format("%4s", Hybrid36.encode(4, resID)));
                         // Loop over atoms
                         ArrayList<Atom> residueAtoms = residue.getAtomList();
+                        ArrayList<Atom> backboneAtoms = residue.getBackboneAtoms();
                         boolean altLocFound = false;
+                        for (Atom atom : backboneAtoms) {
+                            writeAtom(atom, serial++, sb, anisouSB, bw);
+                            Character altLoc = atom.getAltLoc();
+                            if (altLoc != null && !altLoc.equals(' ')) {
+                                altLocFound = true;
+                            }
+                            residueAtoms.remove(atom);
+                        }
                         for (Atom atom : residueAtoms) {
                             writeAtom(atom, serial++, sb, anisouSB, bw);
                             Character altLoc = atom.getAltLoc();
@@ -3229,6 +3241,16 @@ public final class PDBFilter extends SystemFilter {
             return false;
         }
         return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Write out the Atomic information in PDB format.
+     */
+    @Override
+    public boolean writeFile(File saveFile, boolean append) {
+        return writeFile(saveFile, append, false);
     }
 
     /**
