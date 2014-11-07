@@ -3228,7 +3228,6 @@ public final class PDBFilter extends SystemFilter {
         return true;
     }
 
-
     public boolean writeSIFTFile(File saveFile, boolean append, String[] resAndScore) {
         if (saveFile == null) {
             return false;
@@ -3389,7 +3388,12 @@ public final class PDBFilter extends SystemFilter {
                         String[] entries = null;
                         for (; i < resAndScore.length; i++) {
                             entries = resAndScore[i].split("\\t");
-                            if (entries[0].substring(1, entries[0].length()-1).equals(String.valueOf(resID))) {
+                            if (!entries[0].equals(entries[0].replaceAll("\\D+",""))) {
+                                String[] subEntries = entries[0].split("[^0-9]");
+                                entries[0] = subEntries[0];
+                            }
+                            if (entries[0].equals(String.valueOf(resID))
+                                    && !".".equals(entries[1])) {
                                 break;
                             }
                         }
@@ -3695,7 +3699,7 @@ public final class PDBFilter extends SystemFilter {
         }
         if (siftScore == null) {
             sb.replace(30, 66, String.format("%8.3f%8.3f%8.3f%6.2f%6.2f",
-                xyz[0], xyz[1], xyz[2], atom.getOccupancy(), atom.getTempFactor()));
+                xyz[0], xyz[1], xyz[2], atom.getOccupancy(), 2.00));
         } else {
             sb.replace(30, 66, String.format("%8.3f%8.3f%8.3f%6.2f%6.2f",
                 xyz[0], xyz[1], xyz[2], atom.getOccupancy(), Float.parseFloat(siftScore)));
@@ -3746,7 +3750,7 @@ public final class PDBFilter extends SystemFilter {
             }
         }
     }
-
+    
     public void setListMode(boolean set) {
         listMode = set;
         listOutput = new ArrayList<>();
