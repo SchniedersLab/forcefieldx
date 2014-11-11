@@ -369,6 +369,61 @@ public final class PDBFilter extends SystemFilter {
         try {
             for (File file : files) {
                 currentFile = file;
+                if (mutate) {
+                    List<Character> chainIDs = new ArrayList<>();
+                    try (BufferedReader cr = new BufferedReader(new FileReader(file))) {
+                        String line = cr.readLine();
+                        while (line != null) {
+                            String identity = line;
+                            if (line.length() > 6) {
+                                identity = line.substring(0, 6);
+                            }
+                            identity = identity.trim().toUpperCase();
+                            Record record;
+                            try {
+                                record = Record.valueOf(identity);
+                            } catch (Exception e) {
+                                /**
+                                 * Continue until the record is recognized.
+                                 */
+                                line = cr.readLine();
+                                continue;
+                            }
+                            switch (record) {
+                                case ANISOU:
+                                case HETATM:
+                                case ATOM:
+                                    char c22 = line.charAt(21);
+                                    boolean idFound = false;
+                                    for (Character chainID : chainIDs) {
+                                        if (c22 == chainID) {
+                                            idFound = true;
+                                            break;
+                                        }
+                                    }
+                                    if (!idFound) {
+                                        chainIDs.add(c22);
+                                    }
+                                    break;
+                            }
+                            line = cr.readLine();
+                        }
+                        if (!chainIDs.contains(mutateChainID)) {
+                            if (chainIDs.size() == 1) {
+                                logger.warning(String.format(" Chain ID %c for "
+                                        + "mutation not found: only one chain %c "
+                                        + "found.", mutateChainID, chainIDs.get(0)));
+                                mutateChainID = chainIDs.get(0);
+                            } else {
+                                logger.warning(String.format(" Chain ID %c for "
+                                        + "mutation not found: mutation will not "
+                                        + "proceed.", mutateChainID));
+                            }
+                        }
+                    } catch (IOException ex) {
+                        logger.finest(String.format(" Exception %s in parsing file to find chain IDs", ex.toString()));
+                    }
+                }
                 /**
                  * Check that the current file exists and that we can read it.
                  */
