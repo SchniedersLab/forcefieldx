@@ -5968,6 +5968,10 @@ public class ParticleMeshEwald implements LambdaInterface {
         }
         return cutoff;
     }
+    
+    public double getEwaldCutoff() {
+        return off;
+    }
 
     /**
      * Given an array of atoms (with atom types), assign multipole types and

@@ -249,7 +249,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
         sharedGKFieldCR = new SharedDoubleArray[3];
 
         probe = forceField.getDouble(ForceField.ForceFieldDouble.PROBE_RADIUS, 1.4);
-        cutoff = forceField.getDouble(ForceField.ForceFieldDouble.EWALD_CUTOFF, 7.0);;
+        /*double defaultCutoff = crystal.aperiodic() ? 100.0 : 7.0; // If an aperiodic system, the GK cutoff should be 0.
+        cutoff = forceField.getDouble(ForceField.ForceFieldDouble.EWALD_CUTOFF, defaultCutoff);*/
+        cutoff = particleMeshEwald.getEwaldCutoff();
         cut2 = cutoff * cutoff;
         lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
 
