@@ -209,11 +209,11 @@ public class ReciprocalSpace {
     private SliceRegion sliceRegion;
     private final SlicePermanentLoop slicePermanentLoops[];
     private final SliceInducedLoop sliceInducedLoops[];
-    
+
     private RowRegion rowRegion;
     private final RowPermanentLoop rowPermanentLoops[];
     private final RowInducedLoop rowInducedLoops[];
-    
+
     /**
      * Number of atoms for a given symmetry operator that a given thread is
      * responsible for applying to the FFT grid. gridAtomCount[nSymm][nThread]
@@ -343,7 +343,7 @@ public class ReciprocalSpace {
                 gridAtomCount = null;
                 gridAtomList = null;
                 break;
-            
+
             case ROW:
                 rowPermanentLoops = new RowPermanentLoop[threadCount];
                 rowInducedLoops = new RowInducedLoop[threadCount];
@@ -354,7 +354,7 @@ public class ReciprocalSpace {
                 gridAtomCount = new int[nSymm][threadCount];
                 gridAtomList = new int[nSymm][threadCount][nAtoms];
                 spatialPermanentLoops = null;
-                spatialInducedLoops = null;     
+                spatialInducedLoops = null;
                 slicePermanentLoops = null;
                 sliceInducedLoops = null;
                 break;
@@ -531,18 +531,17 @@ public class ReciprocalSpace {
                 }
                 break;
             case ROW:
-                if(rowRegion == null || dimChanged){
+                if (rowRegion == null || dimChanged) {
                     rowRegion = new RowRegion(fftX, fftY, fftZ, splineGrid, bSplineOrder, nSymm,
                             threadCount, crystal, atoms, coordinates);
-                    if(cudaFFT){
+                    if (cudaFFT) {
                         rowRegion.setGridBuffer(splineBuffer);
                     }
                 } else {
                     rowRegion.setCrystal(crystal, fftX, fftY, fftZ);
                     rowRegion.coordinates = coordinates;
                 }
-                
-                
+
                 break;
             case SLICE:
             default:
@@ -708,13 +707,13 @@ public class ReciprocalSpace {
             case ROW:
                 rowRegion.setCrystal(crystal.getUnitCell(), fftX, fftY, fftZ);
                 rowRegion.setDensityLoop(rowPermanentLoops);
-                for (int i = 0; i < threadCount; i++){
+                for (int i = 0; i < threadCount; i++) {
                     rowPermanentLoops[i].setPermanent(globalMultipoles);
                     rowPermanentLoops[i].setUse(use);
                 }
                 try {
                     parallelTeam.execute(rowRegion);
-                } catch (Exception e){
+                } catch (Exception e) {
                     String message = " Fatal exception evaluating permanent multipole density.";
                     logger.log(Level.SEVERE, message, e);
                 }
@@ -1426,14 +1425,15 @@ public class ReciprocalSpace {
         }
     }
 
-     private int RowIndexZ (int i){
-        return i/fftY;
+    private int RowIndexZ(int i) {
+        return i / fftY;
     }
-    
-    private int RowIndexY (int i) {
+
+    private int RowIndexY(int i) {
         return i % fftY;
     }
-     private class RowPermanentLoop extends RowLoop {
+
+    private class RowPermanentLoop extends RowLoop {
 
         private double globalMultipoles[][][] = null;
         private final double[] fracMPole = new double[10];
@@ -1608,7 +1608,7 @@ public class ReciprocalSpace {
             }
         }
     }
-     
+
     private class RowInducedLoop extends RowLoop {
 
         private double inducedDipole[][][] = null;
@@ -1623,7 +1623,7 @@ public class ReciprocalSpace {
         private int ubZ;
         private int lbY;
         private int ubY;
-        
+
         public RowInducedLoop(RowRegion region, BSplineRegion splines) {
             super(region.nAtoms, region.nSymm, region);
             this.bSplineRegion = splines;
@@ -1764,6 +1764,7 @@ public class ReciprocalSpace {
             }
         }
     }
+
     private class SlicePermanentLoop extends SliceLoop {
 
         private double globalMultipoles[][][] = null;

@@ -49,6 +49,8 @@ import ffx.numerics.ComplexNumber;
 import ffx.numerics.fft.Complex;
 import ffx.numerics.fft.Complex3DParallel;
 import ffx.potential.bonded.Atom;
+import ffx.potential.nonbonded.RowLoop;
+import ffx.potential.nonbonded.RowRegion;
 import ffx.potential.nonbonded.SliceLoop;
 import ffx.potential.nonbonded.SliceRegion;
 import ffx.potential.nonbonded.SpatialDensityLoop;
@@ -56,8 +58,6 @@ import ffx.potential.nonbonded.SpatialDensityRegion;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
 import static ffx.numerics.fft.Complex3D.iComplex3D;
-import ffx.potential.nonbonded.RowLoop;
-import ffx.potential.nonbonded.RowRegion;
 import static ffx.xray.CrystalReciprocalSpace.SolventModel.BINARY;
 import static ffx.xray.CrystalReciprocalSpace.SolventModel.GAUSSIAN;
 import static ffx.xray.CrystalReciprocalSpace.SolventModel.POLYNOMIAL;
@@ -158,7 +158,7 @@ public class CrystalReciprocalSpace {
     private final SliceSchedule sliceSchedule;
     private final SharedIntegerArray optRowWeight;
     private final int previousOptRowWeight[];
-    private final int previousOptRowWeightSolvent[]; 
+    private final int previousOptRowWeightSolvent[];
     private final RowSchedule rowSchedule;
     private final ParallelTeam parallelTeam;
     private final Atom atoms[];
@@ -328,10 +328,10 @@ public class CrystalReciprocalSpace {
         previousOptWeight = new int[fftZ];
         previousOptWeightSolvent = new int[fftZ];
         sliceSchedule = new SliceSchedule(threadCount, fftZ);
-        
-        optRowWeight = new SharedIntegerArray(fftZ*fftY);
-        previousOptRowWeight = new int[fftZ*fftY];
-        previousOptRowWeightSolvent = new int[fftZ*fftY];
+
+        optRowWeight = new SharedIntegerArray(fftZ * fftY);
+        previousOptRowWeight = new int[fftZ * fftY];
+        previousOptRowWeightSolvent = new int[fftZ * fftY];
         rowSchedule = new RowSchedule(threadCount, fftZ, fftY);
 
         if (solvent) {
@@ -1057,12 +1057,12 @@ public class CrystalReciprocalSpace {
                     break;
 
                 case ROW:
-                    for (int i = 0; i < fftZ*fftY; i++){
-                        optRowWeight.set(i,0);
+                    for (int i = 0; i < fftZ * fftY; i++) {
+                        optRowWeight.set(i, 0);
                     }
                     rowSchedule.updateWeights(previousOptRowWeight);
                     parallelTeam.execute(atomicRowRegion);
-                    for (int i = 0; i < fftZ*fftY; i ++){
+                    for (int i = 0; i < fftZ * fftY; i++) {
                         previousOptRowWeight[i] = optRowWeight.get(i);
                     }
                     break;
@@ -1158,11 +1158,11 @@ public class CrystalReciprocalSpace {
                     parallelTeam.execute(atomicDensityRegion);
                     break;
                 case ROW:
-                    for(int i = 0; i < fftZ*fftY; i++){
-                        optRowWeight.set(i,0);                     
+                    for (int i = 0; i < fftZ * fftY; i++) {
+                        optRowWeight.set(i, 0);
                     }
                     parallelTeam.execute(atomicRowRegion);
-                    for (int i = 0; i < fftZ * fftY; i++){
+                    for (int i = 0; i < fftZ * fftY; i++) {
                         previousOptRowWeight[i] = optRowWeight.get(i);
                     }
                     break;
@@ -1279,12 +1279,12 @@ public class CrystalReciprocalSpace {
                     break;
 
                 case ROW:
-                    for (int i = 0; i < (fftZ*fftY); i++){
-                        optRowWeight.set(i,0);
+                    for (int i = 0; i < (fftZ * fftY); i++) {
+                        optRowWeight.set(i, 0);
                     }
                     rowSchedule.updateWeights(previousOptRowWeightSolvent);
                     parallelTeam.execute(solventRowRegion);
-                    for (int i = 0; i< fftZ*fftY; i++){
+                    for (int i = 0; i < fftZ * fftY; i++) {
                         previousOptRowWeightSolvent[i] = optRowWeight.get(i);
                     }
                     break;
@@ -1552,19 +1552,19 @@ public class CrystalReciprocalSpace {
             }
         }
     }
-    
-    private int RowIndexZ (int i){
-        return i/fftY;
+
+    private int RowIndexZ(int i) {
+        return i / fftY;
     }
-    
-    private int RowIndexY (int i) {
+
+    private int RowIndexY(int i) {
         return i % fftY;
     }
-    
-    private int indexForYZ(int giy, int giz){
-        return giy + fftY*giz;
+
+    private int indexForYZ(int giy, int giz) {
+        return giy + fftY * giz;
     }
-    
+
     private class AtomicRowLoop extends RowLoop {
 
         final double xyz[] = new double[3];
@@ -1576,11 +1576,11 @@ public class CrystalReciprocalSpace {
         private int ubZ;
         private int indexY;
         final int optLocal[];
-        
+
         public AtomicRowLoop(RowRegion region) {
             super(region.getNatoms(), region.getNsymm(), region);
             grid = region.getGrid();
-            optLocal = new int[fftZ*fftY];
+            optLocal = new int[fftZ * fftY];
         }
 
         @Override
@@ -1593,23 +1593,22 @@ public class CrystalReciprocalSpace {
             fill(optLocal, 0);
         }
 
-
         @Override
         public void finish() {
-            for (int i = 0; i < fftZ*fftY; i++) {
+            for (int i = 0; i < fftZ * fftY; i++) {
                 optRowWeight.addAndGet(i, optLocal[i]);
             }
         }
-        
+
         @Override
         public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
             if (!atoms[iAtom].isActive()) {
                 return;
             }
-            
+
             this.ubZ = RowIndexZ(ub);
             this.lbZ = RowIndexZ(lb);
-            
+
             final double lambdai = atoms[iAtom].applyLambda() ? lambda : 1.0;
 
             xyz[0] = coordinates[iSymm][0][iAtom];
@@ -1638,14 +1637,14 @@ public class CrystalReciprocalSpace {
                     xf[2] = iz * ifftZ;
                     for (int iy = ifry - frad; iy <= ifryu; iy++) {
                         int giy = Crystal.mod(iy, fftY);
-                        this.indexY = indexForYZ(giy,giz);
-                        if (lb <= indexY && indexY <= ub) {   
+                        this.indexY = indexForYZ(giy, giz);
+                        if (lb <= indexY && indexY <= ub) {
                             xf[1] = iy * ifftY;
                             for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
                                 int gix = Crystal.mod(ix, fftX);
                                 xf[0] = ix * ifftX;
                                 crystal.toCartesianCoordinates(xf, xc);
-                                optLocal[indexForYZ(giy,giz)]++;
+                                optLocal[indexForYZ(giy, giz)]++;
                                 final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
                                 grid[ii] = atomff.rho(grid[ii], lambdai, xc);
                             }
