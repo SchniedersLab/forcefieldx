@@ -55,7 +55,6 @@ import static ffx.numerics.VectorMath.b2u;
 import static ffx.xray.CrystalReciprocalSpace.SolventModel.NONE;
 
 /**
- *
  * @author Timothy D. Fenn
  */
 @RunWith(Parameterized.class)

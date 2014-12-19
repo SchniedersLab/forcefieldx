@@ -26,6 +26,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.logging.Logger;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.junit.Test;
@@ -50,10 +51,12 @@ import ffx.potential.parsers.PDBFilter;
 import ffx.utilities.Keyword;
 
 /**
- * @author Timothy D. Fenn
+ * @author Timothy D. Fenn and Michael J. Schnieders
  */
 @RunWith(Parameterized.class)
-public class ScaleBulkMinimizeTest {
+public class XrayMinimizeTest {
+
+    private static final Logger logger = Logger.getLogger(XrayMinimizeTest.class.getName());
 
     @Parameters
     public static Collection<Object[]> data() {
@@ -80,6 +83,10 @@ public class ScaleBulkMinimizeTest {
     }
     private final String info;
     private final CrystalStats crystalStats;
+    private DiffractionRefinementData refinementData;
+    private ReflectionList reflectionList;
+    private ParallelTeam parallelTeam;
+
     private final double r;
     private final double rFree;
     private final double sigmaA;
@@ -87,7 +94,7 @@ public class ScaleBulkMinimizeTest {
     private final boolean ci;
     private final boolean ciOnly;
 
-    public ScaleBulkMinimizeTest(boolean ciOnly,
+    public XrayMinimizeTest(boolean ciOnly,
             String info, String pdbname, String mtzname, String cifname,
             double r, double rFree, double sigmaA, double sigmaW) {
         this.ciOnly = ciOnly;
@@ -128,7 +135,6 @@ public class ScaleBulkMinimizeTest {
         // read in Fo/sigFo/FreeR
         MTZFilter mtzFilter = new MTZFilter();
         CIFFilter cifFilter = new CIFFilter();
-        ReflectionList reflectionList;
         Crystal crystal = Crystal.checkProperties(properties);
         Resolution resolution = Resolution.checkProperties(properties);
         if (crystal == null || resolution == null) {
@@ -141,8 +147,7 @@ public class ScaleBulkMinimizeTest {
             reflectionList = new ReflectionList(crystal, resolution);
         }
 
-        DiffractionRefinementData refinementData = new DiffractionRefinementData(properties,
-                reflectionList);
+        refinementData = new DiffractionRefinementData(properties, reflectionList);
         if (mtzname != null) {
             assertTrue(info + " mtz file should be read in without errors",
                     mtzFilter.readFile(mtzFile, reflectionList, refinementData,
@@ -169,7 +174,7 @@ public class ScaleBulkMinimizeTest {
         Atom atomArray[] = atomList.toArray(new Atom[atomList.size()]);
 
         // set up FFT and run it
-        ParallelTeam parallelTeam = new ParallelTeam();
+        parallelTeam = new ParallelTeam();
         CrystalReciprocalSpace crs = new CrystalReciprocalSpace(reflectionList,
                 atomArray, parallelTeam, parallelTeam, false);
         crs.computeDensity(refinementData.fc);
@@ -214,4 +219,155 @@ public class ScaleBulkMinimizeTest {
         assertEquals(info + " sigmaA w",
                 sigmaW, crystalStats.getSigmaW(), 0.001);
     }
+
+    @Test
+    public void testScaleBulk() {
+        ScaleBulkMinimize scaleBulkMinimize
+                = new ScaleBulkMinimize(reflectionList, refinementData,
+                        refinementData.crs_fs, parallelTeam);
+        ScaleBulkEnergy scaleBulkEnergy = scaleBulkMinimize.getScaleBulkEnergy();
+        int n = scaleBulkMinimize.getNumberOfVariables();
+        double x[] = new double[n];
+        double g[] = new double[n];
+        scaleBulkMinimize.getCoordinates(x);
+        scaleBulkEnergy.energyAndGradient(x, g);
+        double delta = 1.0e-4;
+        double tolerance = 1.0e-4;
+        for (int i = 0; i < n; i++) {
+            String test = String.format(" Scale Bulk Solvent Derivative %d.", i);
+            double orig = x[i];
+            x[i] += delta;
+            double ePlus = scaleBulkEnergy.energy(x);
+            x[i] -= 2.0 * delta;
+            double eMinus = scaleBulkEnergy.energy(x);
+            x[i] = orig;
+            double fd = (ePlus - eMinus) / (2.0 * delta);
+            logger.info(String.format(" %s A %16.8f vs. FD %16.8f", test, g[i], fd));
+            assertEquals(test, g[i], fd, tolerance);
+        }
+    }
+
+    @Test
+    public void testSigmaA() {
+        SigmaAMinimize sigmaAMinimize = new SigmaAMinimize(reflectionList,
+                refinementData, parallelTeam);
+        SigmaAEnergy sigmaAEnergy = sigmaAMinimize.getSigmaAEnergy();
+        int n = sigmaAMinimize.getNumberOfVariables();
+        double x[] = new double[n];
+        double g[] = new double[n];
+        sigmaAMinimize.getCoordinates(x);
+        sigmaAEnergy.energyAndGradient(x, g);
+        double delta = 1.0e-4;
+        double tolerance = 1.0e-3;
+        for (int i = 0; i < n; i++) {
+            String test = String.format(" SigmaA Derivative %d.", i);
+            double orig = x[i];
+            x[i] += delta;
+            double ePlus = sigmaAEnergy.energy(x);
+            x[i] -= 2.0 * delta;
+            double eMinus = sigmaAEnergy.energy(x);
+            x[i] = orig;
+            double fd = (ePlus - eMinus) / (2.0 * delta);
+            logger.info(String.format(" %s A %16.8f vs. FD %16.8f", test, g[i], fd));
+            assertEquals(test, 1.0, g[i] / fd, tolerance);
+        }
+    }
+
+    @Test
+    public void testSpline() {
+        SplineMinimize splineMinimize = new SplineMinimize(reflectionList,
+                refinementData, refinementData.spline, SplineEnergy.Type.FOFC);
+
+        SplineEnergy splineEnergy = splineMinimize.getSplineEnergy();
+        int n = splineMinimize.getNumberOfVariables();
+        double x[] = new double[n];
+        double g[] = new double[n];
+        splineMinimize.getCoordinates(x);
+        splineEnergy.energyAndGradient(x, g);
+        double delta = 1.0e-4;
+        double tolerance = 1.0e-5;
+        for (int i = 0; i < n; i++) {
+            String test = String.format(" FOFC Spline Derivative %d.", i);
+            double orig = x[i];
+            x[i] += delta;
+            double ePlus = splineEnergy.energy(x);
+            x[i] -= 2.0 * delta;
+            double eMinus = splineEnergy.energy(x);
+            x[i] = orig;
+            double fd = (ePlus - eMinus) / (2.0 * delta);
+            logger.info(String.format(" %s A %16.8f vs. FD %16.8f", test, g[i], fd));
+            assertEquals(test, 1.0, g[i] / fd, tolerance);
+        }
+
+        splineMinimize = new SplineMinimize(reflectionList,
+                refinementData, refinementData.spline, SplineEnergy.Type.F1F2);
+        splineEnergy = splineMinimize.getSplineEnergy();
+        n = splineMinimize.getNumberOfVariables();
+        x = new double[n];
+        g = new double[n];
+        splineMinimize.getCoordinates(x);
+        splineEnergy.energyAndGradient(x, g);
+        delta = 1.0e-4;
+        tolerance = 1.0e-5;
+        for (int i = 0; i < n; i++) {
+            String test = String.format(" F1F2 Spline Derivative %d.", i);
+            double orig = x[i];
+            x[i] += delta;
+            double ePlus = splineEnergy.energy(x);
+            x[i] -= 2.0 * delta;
+            double eMinus = splineEnergy.energy(x);
+            x[i] = orig;
+            double fd = (ePlus - eMinus) / (2.0 * delta);
+            logger.info(String.format(" %s A %16.8f vs. FD %16.8f", test, g[i], fd));
+            assertEquals(test, 1.0,  g[i] / fd, tolerance);
+        }
+
+        splineMinimize = new SplineMinimize(reflectionList,
+                refinementData, refinementData.spline, SplineEnergy.Type.FCTOESQ);
+        splineEnergy = splineMinimize.getSplineEnergy();
+        n = splineMinimize.getNumberOfVariables();
+        x = new double[n];
+        g = new double[n];
+        splineMinimize.getCoordinates(x);
+        splineEnergy.energyAndGradient(x, g);
+        delta = 1.0e-4;
+        tolerance = 1.0e-5;
+        for (int i = 0; i < n; i++) {
+            String test = String.format(" FCTOESQ Spline Derivative %d.", i);
+            double orig = x[i];
+            x[i] += delta;
+            double ePlus = splineEnergy.energy(x);
+            x[i] -= 2.0 * delta;
+            double eMinus = splineEnergy.energy(x);
+            x[i] = orig;
+            double fd = (ePlus - eMinus) / (2.0 * delta);
+            logger.info(String.format(" %s A %16.8f vs. FD %16.8f", test, g[i], fd));
+            assertEquals(test, 1.0, g[i] / fd, tolerance);
+        }
+
+        splineMinimize = new SplineMinimize(reflectionList,
+                refinementData, refinementData.spline, SplineEnergy.Type.FOTOESQ);
+        splineEnergy = splineMinimize.getSplineEnergy();
+        n = splineMinimize.getNumberOfVariables();
+        x = new double[n];
+        g = new double[n];
+        splineMinimize.getCoordinates(x);
+        splineEnergy.energyAndGradient(x, g);
+        delta = 1.0e-4;
+        tolerance = 1.0e-5;
+        for (int i = 0; i < n; i++) {
+            String test = String.format(" FOTOESQ Spline Derivative %d.", i);
+            double orig = x[i];
+            x[i] += delta;
+            double ePlus = splineEnergy.energy(x);
+            x[i] -= 2.0 * delta;
+            double eMinus = splineEnergy.energy(x);
+            x[i] = orig;
+            double fd = (ePlus - eMinus) / (2.0 * delta);
+            logger.info(String.format(" %s A %16.8f vs. FD %16.8f", test, g[i], fd));
+            assertEquals(test, 1.0, g[i] / fd, tolerance);
+        }
+
+    }
+
 }

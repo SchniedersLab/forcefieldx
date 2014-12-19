@@ -92,6 +92,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         x = new double[n];
         grad = new double[n];
         scaling = new double[n];
+
         x[0] = refinementdata.model_k;
         if (solvent_n > 1) {
             x[1] = refinementdata.solvent_k;
@@ -109,8 +110,23 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         }
 
         bulkSolventEnergy.setScaling(scaling);
-
         setInitialScale();
+    }
+
+    public ScaleBulkEnergy getScaleBulkEnergy() {
+        return bulkSolventEnergy;
+    }
+
+    public int getNumberOfVariables() {
+        return x.length;
+    }
+
+    public double[] getCoordinates(double x[]) {
+        if (x == null) {
+            x = new double[this.x.length];
+        }
+        System.arraycopy(this.x, 0, x, 0, this.x.length);
+        return x;
     }
 
     private void setInitialScale() {

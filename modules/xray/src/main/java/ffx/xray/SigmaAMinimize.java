@@ -51,8 +51,8 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
 
     private static final Logger logger = Logger.getLogger(SplineEnergy.class.getName());
     private static final double toSeconds = 1.0e-9;
-    private final ReflectionList reflectionlist;
-    protected final DiffractionRefinementData refinementdata;
+    protected final DiffractionRefinementData refinementData;
+    private final ReflectionList reflectionList;
     private final Crystal crystal;
     private final SigmaAEnergy sigmaAEnergy;
     private final int n;
@@ -69,53 +69,57 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
      * <p>
      * Constructor for SigmaAMinimize.</p>
      *
-     * @param reflectionlist a {@link ffx.crystal.ReflectionList} object.
-     * @param refinementdata a {@link ffx.xray.DiffractionRefinementData}
+     * @param reflectionList a {@link ffx.crystal.ReflectionList} object.
+     * @param refinementData a {@link ffx.xray.DiffractionRefinementData}
      * object.
      * @param parallelTeam the ParallelTeam to execute the SigmaAMinimize.
      */
-    public SigmaAMinimize(ReflectionList reflectionlist,
-            DiffractionRefinementData refinementdata, ParallelTeam parallelTeam) {
-        this.reflectionlist = reflectionlist;
-        this.refinementdata = refinementdata;
-        this.crystal = reflectionlist.crystal;
+    public SigmaAMinimize(ReflectionList reflectionList,
+            DiffractionRefinementData refinementData, ParallelTeam parallelTeam) {
+        this.reflectionList = reflectionList;
+        this.refinementData = refinementData;
+        this.crystal = reflectionList.crystal;
 
-        n = refinementdata.nbins * 2;
-        sigmaAEnergy = new SigmaAEnergy(reflectionlist, refinementdata, parallelTeam);
+        n = refinementData.nbins * 2;
+        sigmaAEnergy = new SigmaAEnergy(reflectionList, refinementData, parallelTeam);
         x = new double[n];
         grad = new double[n];
         scaling = new double[n];
 
-        for (int i = 0; i < refinementdata.nbins; i++) {
+        for (int i = 0; i < refinementData.nbins; i++) {
             // for optimizationscaling, best to move to 0.0
-            x[i] = refinementdata.sigmaa[i] - 1.0;
+            x[i] = refinementData.sigmaa[i] - 1.0;
             scaling[i] = 1.0;
-            x[i + refinementdata.nbins] = refinementdata.sigmaw[i];
-            scaling[i + refinementdata.nbins] = 2.0;
+            x[i + refinementData.nbins] = refinementData.sigmaw[i];
+            scaling[i + refinementData.nbins] = 2.0;
         }
 
         // generate Es
         int type = SplineEnergy.Type.FCTOESQ;
-        SplineMinimize splineMinimize = new SplineMinimize(reflectionlist,
-                refinementdata, refinementdata.fcesq, type);
+        SplineMinimize splineMinimize = new SplineMinimize(reflectionList,
+                refinementData, refinementData.fcesq, type);
         splineMinimize.minimize(7, 1.0);
 
         type = SplineEnergy.Type.FOTOESQ;
-        splineMinimize = new SplineMinimize(reflectionlist,
-                refinementdata, refinementdata.foesq, type);
+        splineMinimize = new SplineMinimize(reflectionList,
+                refinementData, refinementData.foesq, type);
         splineMinimize.minimize(7, 1.0);
 
+        setWEstimate();
+    }
+
+    private void setWEstimate() {
         // generate initial w estimate
-        ReflectionSpline spline = new ReflectionSpline(reflectionlist,
-                refinementdata.nbins);
-        int nmean[] = new int[refinementdata.nbins];
-        for (int i = 0; i < refinementdata.nbins; i++) {
+        ReflectionSpline spline = new ReflectionSpline(reflectionList,
+                refinementData.nbins);
+        int nmean[] = new int[refinementData.nbins];
+        for (int i = 0; i < refinementData.nbins; i++) {
             nmean[i] = 0;
         }
         double mean = 0.0, tot = 0.0;
-        double fc[][] = refinementdata.fctot;
-        double fo[][] = refinementdata.fsigf;
-        for (HKL ih : reflectionlist.hkllist) {
+        double fc[][] = refinementData.fctot;
+        double fo[][] = refinementData.fsigf;
+        for (HKL ih : reflectionList.hkllist) {
             int i = ih.index();
             if (ih.allowed() == 0.0
                     || Double.isNaN(fc[i][0])
@@ -126,8 +130,8 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
             double s2 = Crystal.invressq(crystal, ih);
             double epsc = ih.epsilonc();
             ComplexNumber fct = new ComplexNumber(fc[i][0], fc[i][1]);
-            double ecscale = spline.f(s2, refinementdata.fcesq);
-            double eoscale = spline.f(s2, refinementdata.foesq);
+            double ecscale = spline.f(s2, refinementData.fcesq);
+            double eoscale = spline.f(s2, refinementData.foesq);
             double ec = fct.times(sqrt(ecscale)).abs();
             double eo = fo[i][0] * sqrt(eoscale);
             double wi = pow(eo - ec, 2.0) / epsc;
@@ -135,22 +139,36 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
             nmean[spline.i1()]++;
             tot++;
 
-            x[spline.i1() + refinementdata.nbins] += (wi
-                    - x[spline.i1() + refinementdata.nbins])
+            x[spline.i1() + refinementData.nbins] += (wi
+                    - x[spline.i1() + refinementData.nbins])
                     / nmean[spline.i1()];
             mean += (wi - mean) / tot;
         }
-
         logger.info(String.format(" Starting mean w:    %8.3f", mean));
         logger.info(String.format(" Starting w scaling: %8.3f", 1.0 / mean));
-        for (int i = 0; i < refinementdata.nbins; i++) {
-            x[i] -= x[i + refinementdata.nbins];
+        for (int i = 0; i < refinementData.nbins; i++) {
+            x[i] -= x[i + refinementData.nbins];
             x[i] *= scaling[i];
-            scaling[i + refinementdata.nbins] = 1.0 / mean;
-            x[i + refinementdata.nbins] *= scaling[i + refinementdata.nbins];
+            scaling[i + refinementData.nbins] = 1.0 / mean;
+            x[i + refinementData.nbins] *= scaling[i + refinementData.nbins];
         }
-
         sigmaAEnergy.setScaling(scaling);
+    }
+
+    public SigmaAEnergy getSigmaAEnergy() {
+        return sigmaAEnergy;
+    }
+
+    public int getNumberOfVariables() {
+        return x.length;
+    }
+
+    public double[] getCoordinates(double x[]) {
+        if (x == null) {
+            x = new double[this.x.length];
+        }
+        System.arraycopy(this.x, 0, x, 0, this.x.length);
+        return x;
     }
 
     /**
@@ -161,7 +179,7 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
      */
     public double calculateLikelihood() {
         sigmaAEnergy.energyAndGradient(x, grad);
-        return refinementdata.llkr;
+        return refinementData.llkr;
     }
 
     /**
@@ -224,10 +242,10 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
                 logger.warning("\n Optimization failed.\n");
         }
 
-        for (int i = 0; i < refinementdata.nbins; i++) {
-            refinementdata.sigmaa[i] = 1.0 + x[i] / scaling[i];
-            refinementdata.sigmaw[i] = x[i + refinementdata.nbins]
-                    / scaling[i + refinementdata.nbins];
+        for (int i = 0; i < refinementData.nbins; i++) {
+            refinementData.sigmaa[i] = 1.0 + x[i] / scaling[i];
+            refinementData.sigmaw[i] = x[i + refinementData.nbins]
+                    / scaling[i + refinementData.nbins];
         }
 
         if (logger.isLoggable(Level.INFO)) {
