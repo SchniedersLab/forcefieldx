@@ -25,6 +25,7 @@ package ffx.potential.bonded;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.List;
 import java.util.ListIterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -43,7 +44,6 @@ import ffx.potential.parameters.ForceField;
 
 import static ffx.utilities.HashCodeUtil.SEED;
 import static ffx.utilities.HashCodeUtil.hash;
-import java.util.List;
 
 /**
  * The Residue class represents individual amino acids or nucleic acid bases.
@@ -55,156 +55,6 @@ public class Residue extends MSGroup {
 
     private static final Logger logger = Logger.getLogger(Residue.class.getName());
 
-    /**
-     * The location of a residue within a chain.
-     */
-    public enum ResiduePosition {
-
-        FIRST_RESIDUE, MIDDLE_RESIDUE, LAST_RESIDUE
-    };
-
-    private static final long serialVersionUID = 1L;
-    private static Point3d point3d = new Point3d();
-    private static Point2d point2d = new Point2d();
-    /**
-     * Constant <code>NA1Set</code>
-     */
-    public static final EnumSet NA1Set = EnumSet.allOf(NA1.class);
-    /**
-     * Constant <code>NA3Set</code>
-     */
-    public static final EnumSet NA3Set = EnumSet.allOf(NA3.class);
-    /**
-     * Constant <code>NASet</code>
-     */
-    public static final EnumSet NASet = EnumSet.allOf(NA.class);
-    /**
-     * Constant <code>NA1toNA3</code>
-     */
-    public static final HashMap<NA1, NA3> NA1toNA3 = new HashMap<>();
-    /**
-     * Constant <code>NA3Color</code>
-     */
-    public static final HashMap<NA3, Color3f> NA3Color = new HashMap<>();
-    /**
-     * Constant <code>AA1Set</code>
-     */
-    public static final EnumSet AA1Set = EnumSet.allOf(AA1.class);
-    /**
-     * Constant <code>AA3Set</code>
-     */
-    public static final EnumSet AA3Set = EnumSet.allOf(AA3.class);
-    /**
-     * Constant <code>AASet</code>
-     */
-    public static final EnumSet AASet = EnumSet.allOf(AA.class);
-    /**
-     * Constant <code>AA1toAA3</code>
-     */
-    public static final HashMap<AA1, AA3> AA1toAA3 = new HashMap<>();
-    /**
-     * Constant <code>AA3Color</code>
-     */
-    public static final HashMap<AA3, Color3f> AA3Color = new HashMap<>();
-    /**
-     * Constant <code>SSTypeColor</code>
-     */
-    public static final HashMap<SSType, Color3f> SSTypeColor = new HashMap<>();
-    /**
-     * Constant <code>Ramachandran="new String[17]"</code>
-     */
-    public static String Ramachandran[] = new String[17];
-
-    static {
-        NA1 na1[] = NA1.values();
-        NA3 na3[] = NA3.values();
-        for (int i = 0; i < NA1.values().length; i++) {
-            NA1toNA3.put(na1[i], na3[i]);
-        }
-    }
-
-    static {
-        NA3Color.put(NA3.A, RendererCache.RED);
-        NA3Color.put(NA3.C, RendererCache.MAGENTA);
-        NA3Color.put(NA3.G, RendererCache.BLUE);
-        NA3Color.put(NA3.U, RendererCache.YELLOW);
-        NA3Color.put(NA3.DA, RendererCache.RED);
-        NA3Color.put(NA3.DC, RendererCache.MAGENTA);
-        NA3Color.put(NA3.DG, RendererCache.BLUE);
-        NA3Color.put(NA3.DT, RendererCache.ORANGE);
-        NA3Color.put(NA3.MPO, RendererCache.GREEN);
-        NA3Color.put(NA3.DPO, RendererCache.GREEN);
-        NA3Color.put(NA3.TPO, RendererCache.GREEN);
-        NA3Color.put(NA3.UNK, RendererCache.CYAN);
-    }
-
-    static {
-        AA1 aa1[] = AA1.values();
-        AA3 aa3[] = AA3.values();
-        for (int i = 0; i < AA1.values().length; i++) {
-            AA1toAA3.put(aa1[i], aa3[i]);
-        }
-    }
-
-    static {
-        AA3Color.put(AA3.ALA, RendererCache.GRAY);
-        AA3Color.put(AA3.ARG, RendererCache.BLUE);
-        AA3Color.put(AA3.ASN, RendererCache.BLUE);
-        AA3Color.put(AA3.ASP, RendererCache.RED);
-        AA3Color.put(AA3.CYS, RendererCache.YELLOW);
-        AA3Color.put(AA3.GLN, RendererCache.BLUE);
-        AA3Color.put(AA3.GLU, RendererCache.RED);
-        AA3Color.put(AA3.GLY, RendererCache.GRAY);
-        AA3Color.put(AA3.ILE, RendererCache.GRAY);
-        AA3Color.put(AA3.LEU, RendererCache.GRAY);
-        AA3Color.put(AA3.LYS, RendererCache.BLUE);
-        AA3Color.put(AA3.MET, RendererCache.YELLOW);
-        AA3Color.put(AA3.PHE, RendererCache.GREEN);
-        AA3Color.put(AA3.PRO, RendererCache.ORANGE);
-        AA3Color.put(AA3.SER, RendererCache.BLUE);
-        AA3Color.put(AA3.THR, RendererCache.BLUE);
-        AA3Color.put(AA3.TRP, RendererCache.GREEN);
-        AA3Color.put(AA3.TYR, RendererCache.GREEN);
-        AA3Color.put(AA3.VAL, RendererCache.GRAY);
-        AA3Color.put(AA3.HIS, RendererCache.BLUE);
-        AA3Color.put(AA3.HIE, RendererCache.BLUE);
-        AA3Color.put(AA3.HID, RendererCache.BLUE);
-        AA3Color.put(AA3.ORN, RendererCache.ORANGE);
-        AA3Color.put(AA3.AIB, RendererCache.ORANGE);
-        AA3Color.put(AA3.PCA, RendererCache.ORANGE);
-        AA3Color.put(AA3.FOR, RendererCache.RED);
-        AA3Color.put(AA3.ACE, RendererCache.RED);
-        AA3Color.put(AA3.NH2, RendererCache.BLUE);
-        AA3Color.put(AA3.NME, RendererCache.BLUE);
-        AA3Color.put(AA3.UNK, RendererCache.MAGENTA);
-    }
-
-    static {
-        SSTypeColor.put(SSType.NONE, RendererCache.WHITE);
-        SSTypeColor.put(SSType.SHEET, RendererCache.PINK);
-        SSTypeColor.put(SSType.HELIX, RendererCache.BLUE);
-        SSTypeColor.put(SSType.TURN, RendererCache.YELLOW);
-    }
-
-    static {
-        Ramachandran[0] = "Default (Extended)       [-135.0  135.0]";
-        Ramachandran[1] = "Alpha Helix (R)          [ -57.0  -47.0]";
-        Ramachandran[2] = "Alpha Helix (L)          [  57.0   47.0]";
-        Ramachandran[3] = "3-10 Helix               [ -49.0  -26.0]";
-        Ramachandran[4] = "Pi Helix                 [ -57.0  -70.0]";
-        Ramachandran[5] = "Polyproline II Helix     [ -79.0  149.0]";
-        Ramachandran[6] = "Parallel Beta Strand     [-119.0  113.0]";
-        Ramachandran[7] = "Antiparallel Beta Strand [-139.0  135.0]";
-        Ramachandran[8] = "Beta-Hairpin 2' (i+1)    [  90.0 -170.0]";
-        Ramachandran[9] = "Beta-Hairpin 2' (i+2)    [ -80.0  -10.0]";
-        Ramachandran[10] = "Beta-Hairpin 1' (i+1)    [  57.0   47.0]";
-        Ramachandran[11] = "Beta-Hairpin 1' (i+2)    [  57.0   47.0]";
-        Ramachandran[12] = "Beta-Hairpin 1  (i+1)    [ -57.0  -47.0]";
-        Ramachandran[13] = "Beta-Hairpin 1  (i+2)    [ -57.0  -47.0]";
-        Ramachandran[14] = "Beta-Hairpin 1  (i+3)    [  90.0 -170.0]";
-        Ramachandran[15] = "Beta-Hairpin 3' (i+1)    [  57.0   47.0]";
-        Ramachandran[16] = "Beta-Hairpin 3' (i+2)    [ -80.0  -10.0]";
-    }
     /**
      * The residue number of this atom in a chain.
      */
@@ -535,10 +385,12 @@ public class Residue extends MSGroup {
                 return null;
         }
     }
+
     /**
-     * Returns a list of backbone atoms; for our purposes, nucleic acid backbone 
-     * atoms are those of the nucleobase. Protein backbone atoms will be ordered:
-     * 
+     * Returns a list of backbone atoms; for our purposes, nucleic acid backbone
+     * atoms are those of the nucleobase. Protein backbone atoms will be
+     * ordered:
+     *
      *
      * @return ArrayList of backbone (or nucleobase) atoms.
      */
@@ -576,10 +428,11 @@ public class Residue extends MSGroup {
                 return null;
         }
     }
-    
+
     /**
-     * Uses a name to add an Atom to a List<Atom> if the Atom exists for this 
+     * Uses a name to add an Atom to a List<Atom> if the Atom exists for this
      * residue.
+     *
      * @param atList List to add to.
      * @param name Atom to add.
      * @return If atom exists.
@@ -977,6 +830,156 @@ public class Residue extends MSGroup {
         }
         return shortString;
     }
+
+    private static Point3d point3d = new Point3d();
+    private static Point2d point2d = new Point2d();
+    /**
+     * Constant <code>NA1Set</code>
+     */
+    public static final EnumSet NA1Set = EnumSet.allOf(NA1.class);
+    /**
+     * Constant <code>NA3Set</code>
+     */
+    public static final EnumSet NA3Set = EnumSet.allOf(NA3.class);
+    /**
+     * Constant <code>NASet</code>
+     */
+    public static final EnumSet NASet = EnumSet.allOf(NA.class);
+    /**
+     * Constant <code>NA1toNA3</code>
+     */
+    public static final HashMap<NA1, NA3> NA1toNA3 = new HashMap<>();
+    /**
+     * Constant <code>NA3Color</code>
+     */
+    public static final HashMap<NA3, Color3f> NA3Color = new HashMap<>();
+    /**
+     * Constant <code>AA1Set</code>
+     */
+    public static final EnumSet AA1Set = EnumSet.allOf(AA1.class);
+    /**
+     * Constant <code>AA3Set</code>
+     */
+    public static final EnumSet AA3Set = EnumSet.allOf(AA3.class);
+    /**
+     * Constant <code>AASet</code>
+     */
+    public static final EnumSet AASet = EnumSet.allOf(AA.class);
+    /**
+     * Constant <code>AA1toAA3</code>
+     */
+    public static final HashMap<AA1, AA3> AA1toAA3 = new HashMap<>();
+    /**
+     * Constant <code>AA3Color</code>
+     */
+    public static final HashMap<AA3, Color3f> AA3Color = new HashMap<>();
+    /**
+     * Constant <code>SSTypeColor</code>
+     */
+    public static final HashMap<SSType, Color3f> SSTypeColor = new HashMap<>();
+    /**
+     * Constant <code>Ramachandran="new String[17]"</code>
+     */
+    public static String Ramachandran[] = new String[17];
+
+    static {
+        NA1 na1[] = NA1.values();
+        NA3 na3[] = NA3.values();
+        for (int i = 0; i < NA1.values().length; i++) {
+            NA1toNA3.put(na1[i], na3[i]);
+        }
+    }
+
+    static {
+        NA3Color.put(NA3.A, RendererCache.RED);
+        NA3Color.put(NA3.C, RendererCache.MAGENTA);
+        NA3Color.put(NA3.G, RendererCache.BLUE);
+        NA3Color.put(NA3.U, RendererCache.YELLOW);
+        NA3Color.put(NA3.DA, RendererCache.RED);
+        NA3Color.put(NA3.DC, RendererCache.MAGENTA);
+        NA3Color.put(NA3.DG, RendererCache.BLUE);
+        NA3Color.put(NA3.DT, RendererCache.ORANGE);
+        NA3Color.put(NA3.MPO, RendererCache.GREEN);
+        NA3Color.put(NA3.DPO, RendererCache.GREEN);
+        NA3Color.put(NA3.TPO, RendererCache.GREEN);
+        NA3Color.put(NA3.UNK, RendererCache.CYAN);
+    }
+
+    static {
+        AA1 aa1[] = AA1.values();
+        AA3 aa3[] = AA3.values();
+        for (int i = 0; i < AA1.values().length; i++) {
+            AA1toAA3.put(aa1[i], aa3[i]);
+        }
+    }
+
+    static {
+        AA3Color.put(AA3.ALA, RendererCache.GRAY);
+        AA3Color.put(AA3.ARG, RendererCache.BLUE);
+        AA3Color.put(AA3.ASN, RendererCache.BLUE);
+        AA3Color.put(AA3.ASP, RendererCache.RED);
+        AA3Color.put(AA3.CYS, RendererCache.YELLOW);
+        AA3Color.put(AA3.GLN, RendererCache.BLUE);
+        AA3Color.put(AA3.GLU, RendererCache.RED);
+        AA3Color.put(AA3.GLY, RendererCache.GRAY);
+        AA3Color.put(AA3.ILE, RendererCache.GRAY);
+        AA3Color.put(AA3.LEU, RendererCache.GRAY);
+        AA3Color.put(AA3.LYS, RendererCache.BLUE);
+        AA3Color.put(AA3.MET, RendererCache.YELLOW);
+        AA3Color.put(AA3.PHE, RendererCache.GREEN);
+        AA3Color.put(AA3.PRO, RendererCache.ORANGE);
+        AA3Color.put(AA3.SER, RendererCache.BLUE);
+        AA3Color.put(AA3.THR, RendererCache.BLUE);
+        AA3Color.put(AA3.TRP, RendererCache.GREEN);
+        AA3Color.put(AA3.TYR, RendererCache.GREEN);
+        AA3Color.put(AA3.VAL, RendererCache.GRAY);
+        AA3Color.put(AA3.HIS, RendererCache.BLUE);
+        AA3Color.put(AA3.HIE, RendererCache.BLUE);
+        AA3Color.put(AA3.HID, RendererCache.BLUE);
+        AA3Color.put(AA3.ORN, RendererCache.ORANGE);
+        AA3Color.put(AA3.AIB, RendererCache.ORANGE);
+        AA3Color.put(AA3.PCA, RendererCache.ORANGE);
+        AA3Color.put(AA3.FOR, RendererCache.RED);
+        AA3Color.put(AA3.ACE, RendererCache.RED);
+        AA3Color.put(AA3.NH2, RendererCache.BLUE);
+        AA3Color.put(AA3.NME, RendererCache.BLUE);
+        AA3Color.put(AA3.UNK, RendererCache.MAGENTA);
+    }
+
+    static {
+        SSTypeColor.put(SSType.NONE, RendererCache.WHITE);
+        SSTypeColor.put(SSType.SHEET, RendererCache.PINK);
+        SSTypeColor.put(SSType.HELIX, RendererCache.BLUE);
+        SSTypeColor.put(SSType.TURN, RendererCache.YELLOW);
+    }
+
+    static {
+        Ramachandran[0] = "Default (Extended)       [-135.0  135.0]";
+        Ramachandran[1] = "Alpha Helix (R)          [ -57.0  -47.0]";
+        Ramachandran[2] = "Alpha Helix (L)          [  57.0   47.0]";
+        Ramachandran[3] = "3-10 Helix               [ -49.0  -26.0]";
+        Ramachandran[4] = "Pi Helix                 [ -57.0  -70.0]";
+        Ramachandran[5] = "Polyproline II Helix     [ -79.0  149.0]";
+        Ramachandran[6] = "Parallel Beta Strand     [-119.0  113.0]";
+        Ramachandran[7] = "Antiparallel Beta Strand [-139.0  135.0]";
+        Ramachandran[8] = "Beta-Hairpin 2' (i+1)    [  90.0 -170.0]";
+        Ramachandran[9] = "Beta-Hairpin 2' (i+2)    [ -80.0  -10.0]";
+        Ramachandran[10] = "Beta-Hairpin 1' (i+1)    [  57.0   47.0]";
+        Ramachandran[11] = "Beta-Hairpin 1' (i+2)    [  57.0   47.0]";
+        Ramachandran[12] = "Beta-Hairpin 1  (i+1)    [ -57.0  -47.0]";
+        Ramachandran[13] = "Beta-Hairpin 1  (i+2)    [ -57.0  -47.0]";
+        Ramachandran[14] = "Beta-Hairpin 1  (i+3)    [  90.0 -170.0]";
+        Ramachandran[15] = "Beta-Hairpin 3' (i+1)    [  57.0   47.0]";
+        Ramachandran[16] = "Beta-Hairpin 3' (i+2)    [ -80.0  -10.0]";
+    }
+
+    /**
+     * The location of a residue within a chain.
+     */
+    public enum ResiduePosition {
+
+        FIRST_RESIDUE, MIDDLE_RESIDUE, LAST_RESIDUE
+    };
 
     public enum AA {
 

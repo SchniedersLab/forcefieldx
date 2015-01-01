@@ -463,7 +463,6 @@ public class ParticleMeshEwald implements LambdaInterface {
      * that are 1-3 is scaled by p13scale.
      */
     private final double p13scale;
-    //private double pdamp[];
     private double ipdamp[];
     private double thole[];
     private double polarizability[];
@@ -702,7 +701,9 @@ public class ParticleMeshEwald implements LambdaInterface {
             m12scale = forceField.getDouble(ForceFieldDouble.MPOLE_12_SCALE, 0.0);
             m13scale = forceField.getDouble(ForceFieldDouble.MPOLE_13_SCALE, 0.0);
             m14scale = forceField.getDouble(ForceFieldDouble.MPOLE_14_SCALE, 0.4);
+//            m14scale = forceField.getDouble(ForceFieldDouble.MPOLE_14_SCALE, 1.0);
             m15scale = forceField.getDouble(ForceFieldDouble.MPOLE_15_SCALE, 0.8);
+//            m15scale = forceField.getDouble(ForceFieldDouble.MPOLE_15_SCALE, 1.0);
         } else {
             m12scale = forceField.getDouble(ForceFieldDouble.MPOLE_12_SCALE, 0.0);
             m13scale = forceField.getDouble(ForceFieldDouble.MPOLE_13_SCALE, 0.0);
@@ -1015,7 +1016,6 @@ public class ParticleMeshEwald implements LambdaInterface {
             ip12 = new int[nAtoms][];
             ip13 = new int[nAtoms][];
             thole = new double[nAtoms];
-            //pdamp = new double[nAtoms];
             ipdamp = new double[nAtoms];
             polarizability = new double[nAtoms];
             realSpaceSchedule = new PairwiseSchedule(maxThreads, nAtoms, realSpaceRanges);
@@ -1085,7 +1085,6 @@ public class ParticleMeshEwald implements LambdaInterface {
             }
             polarizability[index] = polarizeType.polarizability;
         }
-
     }
 
     /**
@@ -2116,7 +2115,7 @@ public class ParticleMeshEwald implements LambdaInterface {
 
         return conjugateGradientListener.event.getIterations();
     }
-    
+
     public void destroy() throws Exception {
         if (fftTeam != null) {
             try {
@@ -2356,12 +2355,12 @@ public class ParticleMeshEwald implements LambdaInterface {
 
             private class PermanentRealSpaceFieldLoop extends IntegerForLoop {
 
-                private final double mask_local[];
-                private final double maskp_local[];
                 private final double dx_local[];
                 private final double transOp[][];
                 private double fX[], fY[], fZ[];
                 private double fXCR[], fYCR[], fZCR[];
+                private double mask_local[];
+                private double maskp_local[];
                 private int count;
                 // Extra padding to avert cache interference.
                 private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
@@ -2369,12 +2368,8 @@ public class ParticleMeshEwald implements LambdaInterface {
 
                 public PermanentRealSpaceFieldLoop() {
                     super();
-                    mask_local = new double[nAtoms];
-                    maskp_local = new double[nAtoms];
                     dx_local = new double[3];
                     transOp = new double[3][3];
-                    fill(mask_local, 1.0);
-                    fill(maskp_local, 1.0);
                 }
 
                 @Override
@@ -2388,6 +2383,12 @@ public class ParticleMeshEwald implements LambdaInterface {
                     fXCR = fieldCR[threadIndex][0];
                     fYCR = fieldCR[threadIndex][1];
                     fZCR = fieldCR[threadIndex][2];
+                    if (mask_local == null || mask_local.length < nAtoms) {
+                        mask_local = new double[nAtoms];
+                        maskp_local = new double[nAtoms];
+                        fill(mask_local, 1.0);
+                        fill(maskp_local, 1.0);
+                    }
                 }
 
                 @Override
@@ -2620,6 +2621,9 @@ public class ParticleMeshEwald implements LambdaInterface {
                             Atom ak = torsion.get1_4(ai);
                             if (ak != null) {
                                 int index = ak.xyzIndex - 1;
+                                if (index < 0) {
+                                    ak.print();
+                                }
                                 maskp_local[index] = 1.0;
                             }
                         }
@@ -5968,7 +5972,7 @@ public class ParticleMeshEwald implements LambdaInterface {
         }
         return cutoff;
     }
-    
+
     public double getEwaldCutoff() {
         return off;
     }

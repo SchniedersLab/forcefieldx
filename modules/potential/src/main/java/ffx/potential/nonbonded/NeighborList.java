@@ -341,9 +341,8 @@ public class NeighborList extends ParallelRegion {
             previous = new double[3 * nAtoms];
             listCount = new int[nAtoms];
             pairwiseSchedule = new PairwiseSchedule(threadCount, nAtoms, ranges);
-            for (int i = 0; i < threadCount; i++) {
-                verletListLoop[i].init();
-            }
+        } else {
+            pairwiseSchedule.setAtoms(nAtoms);
         }
 
         /**
@@ -766,12 +765,6 @@ public class NeighborList extends ParallelRegion {
         public NeighborListLoop() {
             pairs = new int[len];
             schedule = IntegerSchedule.dynamic(10);
-            init();
-        }
-
-        public final void init() {
-            mask = new double[nAtoms];
-            fill(mask, 1.0);
         }
 
         @Override
@@ -783,6 +776,10 @@ public class NeighborList extends ParallelRegion {
         public void start() {
             xyz = coordinates[0];
             count = 0;
+            if (mask == null || mask.length < nAtoms) {
+                mask = new double[nAtoms];
+                fill(mask, 1.0);
+            }
         }
 
         @Override
@@ -999,7 +996,7 @@ public class NeighborList extends ParallelRegion {
             }
         }
     }
-    
+
     public void destroy() throws Exception {
         parallelTeam.shutdown();
     }

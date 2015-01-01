@@ -28,14 +28,14 @@ package ffx.potential.bonded;
  *
  * @author Jacob M. Litman
  */
-public class NACorrectionTooLargeException extends RuntimeException {
+public class NACorrectionException extends RuntimeException {
 
     public final double correctionThreshold;
     public final double correction;
     public final Residue residue;
     public final Rotamer rotamer;
 
-    public NACorrectionTooLargeException(double correctionThreshold, double correction, Residue residue, Rotamer rotamer) {
+    public NACorrectionException(double correctionThreshold, double correction, Residue residue, Rotamer rotamer) {
         this.correctionThreshold = correctionThreshold;
         this.correction = correction;
         this.residue = residue;

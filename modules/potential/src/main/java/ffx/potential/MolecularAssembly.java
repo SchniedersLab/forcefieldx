@@ -62,7 +62,6 @@ import org.jdesktop.j3d.loaders.vrml97.VrmlScene;
 
 import ffx.crystal.Crystal;
 import ffx.numerics.VectorMath;
-import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.MSGroup;
@@ -132,9 +131,8 @@ public class MolecularAssembly extends MSGroup {
     private File vrmlFile = null;
     private URL vrmlURL = null;
     private boolean visible = false;
-    private ArrayList<ROLS> bondList = null;
     private final ArrayList<BranchGroup> myNewShapes = new ArrayList<BranchGroup>();
-    
+
     private int numTimesDestroyed = 0;
 
     // Constructors
@@ -770,19 +768,6 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public ArrayList<ROLS> getBondList() {
-        if (bondList != null) {
-            return bondList;
-        }
-
-        bondList = super.getBondList();
-        return bondList;
-    }
-
-    /**
      * <p>
      * Getter for the field <code>branchGroup</code>.</p>
      *
@@ -1373,7 +1358,7 @@ public class MolecularAssembly extends MSGroup {
                 = new Atom[4 * numbonds];
         int i = 0;
         col[3] = 0.9f;
-        for (ListIterator li = bondList.listIterator(); li.hasNext();) {
+        for (ListIterator li = bonds.listIterator(); li.hasNext();) {
             bond = (Bond) li.next();
             bond.setWire(la, i);
             atom1

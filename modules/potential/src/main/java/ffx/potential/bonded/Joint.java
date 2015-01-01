@@ -37,10 +37,14 @@ import javax.swing.tree.TreeNode;
 public class Joint extends MSNode {
 
     private static final long serialVersionUID = 1L;
+
     /**
-     * One of two Moieties forming this Joint
+     * First group forming this Joint
      */
     protected MSGroup group1 = null;
+    /**
+     * Second group forming this Joint
+     */
     protected MSGroup group2 = null;
 
     /**
@@ -48,6 +52,11 @@ public class Joint extends MSNode {
      */
     public Joint() {
         super("Joint");
+        group1 = group2 = null;
+    }
+
+    public Joint(String name) {
+        super(name);
         group1 = group2 = null;
     }
 
@@ -357,6 +366,39 @@ public class Joint extends MSNode {
         if (torsionTorsions != null) {
             add(torsionTorsions);
         }
+    }
+
+    public void assignBonds(Atom atom) {
+        for (ROLS bond : getBondList()) {
+            Bond b = (Bond) bond;
+            if (b.containsAtom(atom)) {
+                atom.setBond(b);
+            }
+        }
+    }
+
+    public void assignAngles(Atom atom) {
+        for (ROLS angle : getAngleList()) {
+            Angle a = (Angle) angle;
+            if (a.containsAtom(atom)) {
+                atom.setAngle(a);
+            }
+        }
+    }
+
+    public void assignTorsions(Atom atom) {
+        for (ROLS torsion : getTorsionList()) {
+            Torsion t = (Torsion) torsion;
+            if (t.containsAtom(atom)) {
+                atom.setTorsion(t);
+            }
+        }
+    }
+
+    public void assignReferences(Atom atom) {
+        assignBonds(atom);
+        assignAngles(atom);
+        assignTorsions(atom);
     }
 
     /**
