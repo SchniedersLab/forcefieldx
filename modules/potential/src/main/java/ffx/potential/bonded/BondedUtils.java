@@ -357,7 +357,9 @@ public class BondedUtils {
         } else {
             bond.setBondType(bondType);
         }
-        bondList.add(bond);
+        if (bondList != null) {
+            bondList.add(bond);
+        }
         return bond;
     }
 

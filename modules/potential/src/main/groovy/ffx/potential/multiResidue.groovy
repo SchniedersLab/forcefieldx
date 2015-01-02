@@ -29,7 +29,10 @@ import groovy.util.CliBuilder;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.Residue;
+import ffx.potential.bonded.Residue.ResidueType;
+import ffx.potential.parameters.ForceField
 import ffx.potential.MolecularAssembly;
+import ffx.potential.ForceFieldEnergy;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
@@ -60,11 +63,14 @@ if (options.c) {
     chain = options.c.toCharacter();
 }
 
+// Use SOR for now.
+System.setProperty("scf-algorithm", "sor");
+
 // Read in command line.
 String filename = arguments.get(0);
-
 open(filename);
 
+ForceField forceField = active.getForceField();
 Residue residue;
 Polymer[] polymers = active.getChains();
 for (int i = 0; i < polymers.length; i++) {
@@ -72,11 +78,26 @@ for (int i = 0; i < polymers.length; i++) {
     if (chain.equals(polymer.getChainID())) {
         residue = polymer.getResidue(resID);
         if (residue != null) {
-            multiResidue = new MultiResidue(residue, active);
+            multiResidue = new MultiResidue(residue, forceField);
             polymer.addMultiResidue(multiResidue);
         }
     }
 }
 
-Residue newResidue = new Residue("ALA", residue.getResidueNumber(), residue.getResidueType());
-multiResidue.addResidue(newResidue);
+
+
+ResidueType type = residue.getResidueType();
+int resNumber = residue.getResidueNumber();
+multiResidue.addResidue(new Residue("HID", resNumber, type));
+multiResidue.addResidue(new Residue("HIE", resNumber, type));
+
+ForceFieldEnergy forceFieldEnergy = active.getPotentialEnergy();
+
+int numResidues = multiResidue.getResidueCount();
+for (int i=0; i<numResidues; i++) {
+    multiResidue.setActiveResidue(i);
+    logger.info(" Active Residue: " + multiResidue.toString());
+    forceFieldEnergy.reInit();
+    energy();
+}
+

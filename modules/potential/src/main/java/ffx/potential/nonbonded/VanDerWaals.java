@@ -560,6 +560,11 @@ public class VanDerWaals implements MaskingInterface,
         this.atoms = atoms;
         this.nAtoms = atoms.length;
         this.molecule = molecule;
+
+        if (nAtoms != molecule.length) {
+            logger.severe("atom and molecule arrays are of different lengths");
+        }
+
         initAtomArrays();
 
         /**
@@ -567,7 +572,6 @@ public class VanDerWaals implements MaskingInterface,
          */
         neighborList.setAtoms(atoms);
         neighborListOnly = true;
-        print = false;
         try {
             parallelTeam.execute(vanDerWaalsRegion);
         } catch (Exception e) {
@@ -711,7 +715,7 @@ public class VanDerWaals implements MaskingInterface,
      * @since 1.0
      */
     public double getBuffer() {
-        return this.buff;
+        return buff;
     }
 
     /**
@@ -945,7 +949,7 @@ public class VanDerWaals implements MaskingInterface,
             logger.log(Level.SEVERE, message, e);
         }
     }
-    
+
     public void destroy() throws Exception {
         if (neighborList != null) {
             neighborList.destroy();
@@ -1034,6 +1038,7 @@ public class VanDerWaals implements MaskingInterface,
                 if (neighborListOnly) {
                     forceRebuild = true;
                 }
+                print = false;
                 neighborList.buildList(reduced, neighborLists, null, forceRebuild, print);
             }
             barrier();
@@ -1292,19 +1297,17 @@ public class VanDerWaals implements MaskingInterface,
             private double lxi_local[];
             private double lyi_local[];
             private double lzi_local[];
+            private double mask[];
             private final double dx_local[];
             private final double transOp[][];
-            private final double mask[];
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
             public VanDerWaalsLoop() {
                 super();
-                mask = new double[nAtoms];
                 dx_local = new double[3];
                 transOp = new double[3][3];
-                fill(mask, 1.0);
             }
 
             public int getCount() {
@@ -1336,6 +1339,11 @@ public class VanDerWaals implements MaskingInterface,
                     lzi_local = null;
                 }
                 vdwTime[threadId] = -System.nanoTime();
+                if (mask == null || mask.length < nAtoms) {
+                    mask = new double[nAtoms];
+                    fill(mask, 1.0);
+                }
+
             }
 
             @Override

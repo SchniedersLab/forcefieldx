@@ -37,7 +37,7 @@ import edu.rit.util.Range;
 public class PairwiseSchedule extends IntegerSchedule {
 
     private static final Logger logger = Logger.getLogger(PairwiseSchedule.class.getName());
-    private final int nAtoms;
+    private int nAtoms;
     private final int nThreads;
     private final Range ranges[];
     private final boolean threadDone[];
@@ -55,6 +55,10 @@ public class PairwiseSchedule extends IntegerSchedule {
         this.nThreads = nThreads;
         this.ranges = ranges;
         threadDone = new boolean[nThreads];
+    }
+
+    public void setAtoms(int nAtoms) {
+        this.nAtoms = nAtoms;
     }
 
     /**

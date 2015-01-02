@@ -65,6 +65,8 @@ public abstract class MSGroup extends MSNode {
     private MSNode torsionTorsionNode = new MSNode("Torsion-Torsions");
     private MSNode improperTorsionNode = new MSNode("Improper Torsions");
 
+    private ArrayList<Joint> joints = new ArrayList<>();
+
     // Whether the terms are current
     private boolean finalized;
     // Center of the MultiScaleGroup
@@ -205,7 +207,7 @@ public abstract class MSGroup extends MSNode {
         MSNode newPiOrbitalTorsionNode = new MSNode("Pi-Orbital Torsions");
         MSNode newTorsionTorsionNode = new MSNode("Torsion-Torsions");
         MSNode newImproperTorsionNode = new MSNode("Improper Torsions");
-        ;
+
         // Collect all bonds for which both atoms are in this Group
         long time = System.nanoTime();
         ArrayList<Bond> bonds = new ArrayList<>();
@@ -564,10 +566,27 @@ public abstract class MSGroup extends MSNode {
 
         newTorsionTorsionNode.setName(
                 "Torsion-Torsions (" + newTorsionTorsionNode.getChildCount() + ")");
+
         Joint newJoint = new Joint(group1, group2, newBondNode, newAngleNode,
                 newStretchBendNode, newUreyBradleyNode, newOutOfPlaneNode,
                 newTorsionNode, newPiOrbitalTorsionNode, newTorsionTorsionNode);
+
+        group1.addJoint(newJoint);
+        group2.addJoint(newJoint);
+
         return newJoint;
+    }
+
+    public void addJoint(Joint newJoint) {
+        joints.add(newJoint);
+    }
+
+    public void clearJoints() {
+        joints.clear();
+    }
+
+    public ArrayList<Joint> getJoints() {
+        return joints;
     }
 
     /**
