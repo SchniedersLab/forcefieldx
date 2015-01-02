@@ -167,7 +167,11 @@ public final class PDBFilter extends SystemFilter {
      */
     private boolean listMode = false;
     private ArrayList<String> listOutput = new ArrayList<>();
-
+    /**
+     * Don't output atoms which fail Atom.isActive().
+     */
+    private boolean ignoreInactiveAtoms = false;
+    
     /**
      * Mutate a residue at the PDB file is being parsed.
      *
@@ -2982,6 +2986,10 @@ public final class PDBFilter extends SystemFilter {
     public boolean writeFile(File saveFile, boolean append) {
         return writeFile(saveFile, append, false);
     }
+    
+    public void setIgnoreInactiveAtoms(boolean ignoreInactiveAtoms) {
+        this.ignoreInactiveAtoms = ignoreInactiveAtoms;
+    }
 
     /**
      * <p>
@@ -2997,6 +3005,9 @@ public final class PDBFilter extends SystemFilter {
     public void writeAtom(Atom atom, int serial, StringBuilder sb,
             StringBuilder anisouSB, BufferedWriter bw)
             throws IOException {
+        if (ignoreInactiveAtoms && !atom.isActive()) {
+            return;
+        }
         String name = atom.getName();
         if (name.length() > 4) {
             name = name.substring(0, 4);
