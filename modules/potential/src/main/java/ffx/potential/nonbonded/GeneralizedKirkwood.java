@@ -90,12 +90,7 @@ import static ffx.potential.parameters.MultipoleType.t200;
 public class GeneralizedKirkwood implements LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(GeneralizedKirkwood.class.getName());
-    /**
-     * Some static constants.
-     */
-    private static final double third = 1.0 / 3.0;
-    private static final double pi43 = 4.0 / 3.0 * PI;
-    private static final double pi12 = PI / 12.0;
+
     /**
      * Permittivity of water at STP.
      */
@@ -114,13 +109,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * Empirical scaling of the Bondi radii.
      */
     private static final double bondiScale = 1.03;
-    private static final double dispersionOverlapScaleFactor = 0.81;
-    private static final double slevy = 1.0;
-    private static final double awater = 0.033428;
-    private static final double epso = 0.1100;
-    private static final double epsh = 0.0135;
-    private static final double rmino = 1.7025;
-    private static final double rminh = 1.3275;
+
     private final double bornaiTerm;
     private final double probe;
     private boolean use[] = null;
@@ -250,7 +239,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
         probe = forceField.getDouble(ForceField.ForceFieldDouble.PROBE_RADIUS, 1.4);
         /*double defaultCutoff = crystal.aperiodic() ? 100.0 : 7.0; // If an aperiodic system, the GK cutoff should be 0.
-        cutoff = forceField.getDouble(ForceField.ForceFieldDouble.EWALD_CUTOFF, defaultCutoff);*/
+         cutoff = forceField.getDouble(ForceField.ForceFieldDouble.EWALD_CUTOFF, defaultCutoff);*/
         cutoff = particleMeshEwald.getEwaldCutoff();
         cut2 = cutoff * cutoff;
         lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
@@ -293,8 +282,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 cavitationRegion = null;
                 break;
             case HYDROPHOBIC_PMF:
-                //hydrophobicPMFRegion = new HydrophobicPMFRegion(threadCount);
-                //volumeRegion = null;
+            //hydrophobicPMFRegion = new HydrophobicPMFRegion(threadCount);
+            //volumeRegion = null;
             case BORN_SOLV:
             default:
                 dispersionRegion = null;
@@ -405,6 +394,15 @@ public class GeneralizedKirkwood implements LambdaInterface {
             }
             baseRadius[i] *= bondiScale;
         }
+
+        if (dispersionRegion != null) {
+            dispersionRegion.init();
+        }
+
+        if (cavitationRegion != null) {
+            cavitationRegion.init();
+        }
+
     }
 
     public void setUse(boolean use[]) {
@@ -546,7 +544,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 case CAV_DISP:
                     logger.info(String.format(" Cavitation          %16.8f %10.3f",
                             cavitationRegion.getEnergy(), cavitationTime * 1e-9));
-                    // Fall through.
+                // Fall through.
                 case BORN_CAV_DISP:
                     logger.info(String.format(" Dispersion          %16.8f %10.3f",
                             dispersionRegion.getEnergy(), dispersionTime * 1e-9));
@@ -561,7 +559,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             case CAV_DISP:
                 // gk.getElectrostatic + gk.getCavitation?
                 solvationEnergy = gkEnergyRegion.getEnergy() + dispersionRegion.getEnergy()
-                    + cavitationRegion.getEnergy();
+                        + cavitationRegion.getEnergy();
                 break;
             case BORN_CAV_DISP:
                 solvationEnergy = gkEnergyRegion.getEnergy() + dispersionRegion.getEnergy();
@@ -570,7 +568,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 solvationEnergy = gkEnergyRegion.getEnergy();
                 break;
             case HYDROPHOBIC_PMF:
-                //solvationEnergy = gkEnergyRegion.getEnergy() + hydrophobicPMFRegion.getEnergy();
+            //solvationEnergy = gkEnergyRegion.getEnergy() + hydrophobicPMFRegion.getEnergy();
         }
 
         if (lambdaTerm) {
@@ -628,6 +626,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     /**
      * The 2nd derivative is 0.0. (U=Lambda*Egk, dU/dL=Egk, d2U/dL2=0.0)
+     *
      * @return 0.0 is always returned.
      */
     @Override
@@ -3611,7 +3610,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     private class BornCRRegion extends ParallelRegion {
 
         private final BornCRLoop bornCRLoop[];
-        private SharedDouble ecavTot;
+        private final SharedDouble ecavTot;
 
         public BornCRRegion(int nt) {
             bornCRLoop = new BornCRLoop[nt];
@@ -3833,6 +3832,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
         private final SharedDouble sharedDispersion;
         private boolean gradient = false;
         private double[] cdisp = null;
+        private static final double dispersionOverlapScaleFactor = 0.81;
+        private static final double slevy = 1.0;
+        private static final double awater = 0.033428;
+        private static final double epso = 0.1100;
+        private static final double epsh = 0.0135;
+        private static final double rmino = 1.7025;
+        private static final double rminh = 1.3275;
 
         public DispersionRegion(int nt) {
             dispersionLoop = new DispersionLoop[nt];
@@ -3840,6 +3846,17 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 dispersionLoop[i] = new DispersionLoop();
             }
             sharedDispersion = new SharedDouble();
+            cdisp = new double[nAtoms];
+
+            for (int i = 0; i < nAtoms; i++) {
+                VDWType type = atoms[i].getVDWType();
+                double rmini = type.radius;
+                rDisp[i] = rmini / 2.0;
+            }
+            maxDispersionEnergy();
+        }
+
+        public void init() {
             cdisp = new double[nAtoms];
 
             for (int i = 0; i < nAtoms; i++) {
@@ -4287,16 +4304,16 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 initLoop[i] = new InitLoop();
             }
             sharedCavitation = new SharedDouble();
+            init();
         }
 
         public double getEnergy() {
             return sharedCavitation.get();
         }
 
-        @Override
-        public void start() {
-            sharedCavitation.set(0.0);
+        public final void init() {
             if (count == null || count.length < nAtoms) {
+                count = new Integer[nAtoms];
                 xc1 = new double[nAtoms][maxarc];
                 yc1 = new double[nAtoms][maxarc];
                 zc1 = new double[nAtoms][maxarc];
@@ -4305,26 +4322,28 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 b1 = new double[nAtoms][maxarc];
                 gr = new IndexedDouble[nAtoms][maxarc];
                 intag1 = new int[nAtoms][maxarc];
-                count = new Integer[nAtoms];
                 buried = new boolean[nAtoms];
                 skip = new SharedBooleanArray(nAtoms);
                 area = new double[nAtoms];
                 r = new double[nAtoms];
-
-                /**
-                 * Set the sphere radii.
-                 */
-                for (int i = 0; i < nAtoms; i++) {
-                    r[i] = rDisp[i];
-                    if (r[i] != 0.0) {
-                        r[i] = r[i] + probe;
-                    }
-                }
-
-                for (int i = 0; i < nAtoms; i++) {
-                    skip.set(i, true);
+            }
+            /**
+             * Set the sphere radii.
+             */
+            for (int i = 0; i < nAtoms; i++) {
+                r[i] = rDisp[i];
+                if (r[i] != 0.0) {
+                    r[i] = r[i] + probe;
                 }
             }
+            for (int i = 0; i < nAtoms; i++) {
+                skip.set(i, true);
+            }
+        }
+
+        @Override
+        public void start() {
+            sharedCavitation.set(0.0);
         }
 
         @Override
@@ -9239,4 +9258,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
             }
         }
     }
+
+    /**
+     * Some static constants.
+     */
+    private static final double third = 1.0 / 3.0;
+    private static final double pi43 = 4.0 / 3.0 * PI;
+    private static final double pi12 = PI / 12.0;
+
 }

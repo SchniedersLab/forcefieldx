@@ -63,9 +63,6 @@ if (options.c) {
     chain = options.c.toCharacter();
 }
 
-// Use SOR for now.
-System.setProperty("scf-algorithm", "sor");
-
 // Read in command line.
 String filename = arguments.get(0);
 open(filename);
@@ -83,8 +80,6 @@ for (int i = 0; i < polymers.length; i++) {
         }
     }
 }
-
-
 
 ResidueType type = residue.getResidueType();
 int resNumber = residue.getResidueNumber();

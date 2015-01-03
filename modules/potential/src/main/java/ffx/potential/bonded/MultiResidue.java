@@ -32,11 +32,9 @@ import javax.vecmath.Color3f;
 
 import ffx.potential.bonded.BondedUtils.MissingAtomTypeException;
 import ffx.potential.bonded.BondedUtils.MissingHeavyAtomException;
-import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.parameters.ForceField;
 
 import static ffx.potential.bonded.AminoAcidUtils.assignAminoAcidAtomTypes;
-import static ffx.potential.bonded.BondedUtils.buildBond;
 
 /**
  * @author Will Tollefson and Michael J. Schnieders
