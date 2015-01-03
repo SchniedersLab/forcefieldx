@@ -31,13 +31,21 @@ import groovy.util.CliBuilder;
 import ffx.xray.DiffractionData;
 import ffx.xray.DiffractionFile;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
+import ffx.potential.MolecularAssembly
+import ffx.potential.bonded.Polymer
+import ffx.potential.bonded.Residue
+import ffx.potential.bonded.Rotamer
+import ffx.potential.bonded.RotamerLibrary
+import ffx.potential.parameters.ForceField
+import ffx.potential.parsers.ForceFieldFilter
+import ffx.potential.parsers.PDBFilter
+import org.apache.commons.configuration.CompositeConfiguration
 
 boolean writemaps = false;
 
 boolean writemtz = false;
 
 boolean timings = false;
-
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
@@ -50,6 +58,7 @@ cli.p(longOpt:'polarization', args:1, argName:'mutual', 'polarization model: [no
 cli.m(longOpt:'maps', 'set to output sigmaA weighted 2Fo-Fc and Fo-Fc electron density maps');
 cli.t(longOpt:'timings', 'set to perform FFT test timings');
 cli.w(longOpt:'mtz', 'write out MTZ containing structure factor coefficients');
+//cli.o(longOpt:'omit-mode', 'Treat all rotamer-optimizable residues as Alanine during map generation.');
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
 if (options.h) {
@@ -113,6 +122,24 @@ if (writemtz) {
 }
 
 if (writemaps) {
+//    if (options.o) {
+//        def polymers = active.getChains();
+//        int nPolymers = polymers.length;
+//        for (int p=0; p < nPolymers; p++) {
+//            Polymer polymer = polymers[p];
+//            ArrayList<Residue> residues = polymer.getResidues();
+//            for (int i=0; i < residues.size(); i++) {
+//                Residue residue = residues.get(i);
+//                Rotamer[] rotamers = RotamerLibrary.getRotamers(residue);
+//                if (rotamers != null) {
+//                    logger.info("Turning off atoms of " + residue.toString());
+//                    RotamerOptimization.turnOffAtoms(residue);
+//                    logger.info("Turning on CBeta of " + residue.toString());
+//                    RotamerOptimization.turnOnCBeta(residue);
+//                }
+//            }
+//        }
+//    }
     diffractiondata.writeMaps(FilenameUtils.removeExtension(modelfilename) + "_ffx");
 }
 

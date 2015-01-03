@@ -1763,8 +1763,8 @@ biotype   2003  NA    "Sodium Ion             "    405
 biotype   2004  K     "Potassium Ion          "    406
 biotype   2005  MG    "Magnesium Ion          "    410
 biotype   2006  CA    "Calcium Ion            "    411
-biotype   2007  ZN    "Zinc Ion (+2)          "    412
-biotype   2008  CL    "Chloride Ion           "    413
+biotype   2007  CL    "Chloride Ion           "    413
+biotype   2008  ZN    "Zinc Ion (+2)          "    412
 biotype   2009  BR    "Bromide Ion            "    414
 
 bond      1      2   375.0   1.4370
