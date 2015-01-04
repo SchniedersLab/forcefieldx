@@ -49,7 +49,7 @@ import ffx.numerics.OptimizationListener;
  */
 public class SigmaAMinimize implements OptimizationListener, Terminatable {
 
-    private static final Logger logger = Logger.getLogger(SplineEnergy.class.getName());
+    private static final Logger logger = Logger.getLogger(SigmaAMinimize.class.getName());
     private static final double toSeconds = 1.0e-9;
     protected final DiffractionRefinementData refinementData;
     private final ReflectionList reflectionList;

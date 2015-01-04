@@ -60,26 +60,52 @@ public class XrayMinimizeTest {
 
     @Parameters
     public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][]{
-            {false,
-                "NSF D2 domain test",
-                "ffx/xray/structures/1NSF.pdb",
-                "ffx/xray/structures/1NSF.mtz",
-                null,
-                25.178605682089,
-                25.448314839595,
-                0.8921390108139,
-                0.1526816244814},
-            {false,
-                "SNARE complex",
-                "ffx/xray/structures/1N7S.pdb",
-                "ffx/xray/structures/1N7S.mtz",
-                null,
-                19.412671496011,
-                21.555930987573,
-                0.9314271250347,
-                0.1361239311856}
-        });
+        String cernBessel = System.getProperty("cern.bessel");
+        Collection<Object[]> ret;
+        if (cernBessel == null || !cernBessel.equalsIgnoreCase("false")) {
+            ret = Arrays.asList(new Object[][]{
+                {false,
+                    "NSF D2 domain test",
+                    "ffx/xray/structures/1NSF.pdb",
+                    "ffx/xray/structures/1NSF.mtz",
+                    null,
+                    25.178605682089,
+                    25.448314839595,
+                    0.8939361241370969,
+                    0.14949033848514287},
+                {false,
+                    "SNARE complex",
+                    "ffx/xray/structures/1N7S.pdb",
+                    "ffx/xray/structures/1N7S.mtz",
+                    null,
+                    19.412671496011,
+                    21.555930987573,
+                    0.9336853524690557,
+                    0.13192537249786418}
+            });
+        } else {
+            ret = Arrays.asList(new Object[][]{
+                {false,
+                    "NSF D2 domain test",
+                    "ffx/xray/structures/1NSF.pdb",
+                    "ffx/xray/structures/1NSF.mtz",
+                    null,
+                    25.178605682089,
+                    25.448314839595,
+                    0.8921390108139,
+                    0.1526816244814},
+                {false,
+                    "SNARE complex",
+                    "ffx/xray/structures/1N7S.pdb",
+                    "ffx/xray/structures/1N7S.mtz",
+                    null,
+                    19.412671496011,
+                    21.555930987573,
+                    0.9314271250347,
+                    0.1361239311856}
+            });
+        }
+        return ret;
     }
     private final String info;
     private final CrystalStats crystalStats;
@@ -319,7 +345,7 @@ public class XrayMinimizeTest {
             x[i] = orig;
             double fd = (ePlus - eMinus) / (2.0 * delta);
             logger.info(String.format(" %s A %16.8f vs. FD %16.8f", test, g[i], fd));
-            assertEquals(test, 1.0,  g[i] / fd, tolerance);
+            assertEquals(test, 1.0, g[i] / fd, tolerance);
         }
 
         splineMinimize = new SplineMinimize(reflectionList,

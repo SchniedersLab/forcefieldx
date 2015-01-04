@@ -107,9 +107,9 @@ public class MolecularAssembly extends MSGroup {
     private int currentCycle = 1;
     private List<String> altLoc = null;
     // Data Nodes
-    private MSNode ions = new MSNode("Ions");
-    private MSNode water = new MSNode("Waters");
-    private MSNode molecules = new MSNode("Hetero Molecules");
+    private final MSNode ions = new MSNode("Ions");
+    private final MSNode water = new MSNode("Waters");
+    private final MSNode molecules = new MSNode("Hetero Molecules");
     // 3D Graphics Nodes - There is a diagram explaining the MolecularAssembly
     // Scenegraph below
     private BranchGroup branchGroup;
@@ -131,9 +131,7 @@ public class MolecularAssembly extends MSGroup {
     private File vrmlFile = null;
     private URL vrmlURL = null;
     private boolean visible = false;
-    private final ArrayList<BranchGroup> myNewShapes = new ArrayList<BranchGroup>();
-
-    private int numTimesDestroyed = 0;
+    private final ArrayList<BranchGroup> myNewShapes = new ArrayList<>();
 
     // Constructors
     /**
