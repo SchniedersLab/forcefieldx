@@ -39,7 +39,7 @@ import static ffx.numerics.VectorMath.scalar;
 import static ffx.numerics.VectorMath.sum;
 
 /**
- * The OutOfPlaneBend class represents an Out-Of-Plane Bend.
+ * The ImproperTorsion class represents an Improper Torsion.
  *
  * @author Michael J. Schnieders
  * @since 1.0
@@ -48,7 +48,7 @@ import static ffx.numerics.VectorMath.sum;
 public class ImproperTorsion extends BondedTerm implements
         Comparable<ImproperTorsion> {
 
-    private static final Logger logger = Logger.getLogger(OutOfPlaneBend.class.getName());
+    private static final Logger logger = Logger.getLogger(ImproperTorsion.class.getName());
     /**
      * Force field parameters to compute the ImproperTorsion energy.
      */
@@ -194,7 +194,7 @@ public class ImproperTorsion extends BondedTerm implements
     /**
      * {@inheritDoc}
      *
-     * Update recomputes OutOfPlaneBend value and energy.
+     * Update recomputes ImproperTorsion value and energy.
      */
     @Override
     public void update() {
@@ -202,7 +202,7 @@ public class ImproperTorsion extends BondedTerm implements
     }
 
     /**
-     * Evaluate this Out-of-Plane Bend energy.
+     * Evaluate this Improper Torsion energy.
      *
      * @param gradient Evaluate the gradient.
      * @return Returns the energy.

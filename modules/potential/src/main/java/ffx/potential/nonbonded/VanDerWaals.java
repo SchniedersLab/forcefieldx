@@ -506,10 +506,10 @@ public class VanDerWaals implements MaskingInterface,
                 continue;
             }
             String vdwIndex = forceField.getString(ForceField.ForceFieldString.VDWINDEX, "Class");
-            if (vdwIndex.equalsIgnoreCase("Class")) {
-                atomClass[i] = type.atomClass;
-            } else {
+            if (vdwIndex.equalsIgnoreCase("Type")) {
                 atomClass[i] = type.type;
+            } else {
+                atomClass[i] = type.atomClass;
             }
             VDWType vdwType = forceField.getVDWType(Integer.toString(atomClass[i]));
             ai.setVDWType(vdwType);
@@ -1469,8 +1469,6 @@ public class VanDerWaals implements MaskingInterface,
                             }
                             e += eij * taper;
                             count++;
-
-                            log(i, k, r, eij * taper);
 
                             if (!(gradient || (lambdaTerm && soft))) {
                                 continue;
