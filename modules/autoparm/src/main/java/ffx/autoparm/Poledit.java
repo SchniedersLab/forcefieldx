@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
  *
  * This file is part of Force Field X.
  *
@@ -19,10 +19,33 @@
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+ * Linking this library statically or dynamically with other modules is making a
+ * combined work based on this library. Thus, the terms and conditions of the
+ * GNU General Public License cover the whole combination.
+ *
+ * As a special exception, the copyright holders of this library give you
+ * permission to link this library with independent modules to produce an
+ * executable, regardless of the license terms of these independent modules, and
+ * to copy and distribute the resulting executable under terms of your choice,
+ * provided that you also meet, for each linked independent module, the terms
+ * and conditions of the license of that module. An independent module is a
+ * module which is not derived from or based on this library. If you modify this
+ * library, you may extend this exception to your version of the library, but
+ * you are not obligated to do so. If you do not wish to do so, delete this
+ * exception statement from your version.
  */
 package ffx.autoparm;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.logging.Level;
@@ -30,6 +53,7 @@ import java.util.logging.Logger;
 
 import edu.rit.pj.ParallelTeam;
 
+import ffx.autoparm.PME_2.Polarization;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.parameters.AtomType;
@@ -37,7 +61,38 @@ import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.parameters.PolarizeType;
 
-import static ffx.autoparm.PME_2.*;
+import static ffx.autoparm.PME_2.atoms;
+import static ffx.autoparm.PME_2.axisAtom;
+import static ffx.autoparm.PME_2.coordinates;
+import static ffx.autoparm.PME_2.directDipole;
+import static ffx.autoparm.PME_2.directDipolep;
+import static ffx.autoparm.PME_2.field1;
+import static ffx.autoparm.PME_2.field2;
+import static ffx.autoparm.PME_2.frame;
+import static ffx.autoparm.PME_2.globalMultipole;
+import static ffx.autoparm.PME_2.induce_pedit;
+import static ffx.autoparm.PME_2.inducedDipole;
+import static ffx.autoparm.PME_2.inducedDipolep;
+import static ffx.autoparm.PME_2.ip11;
+import static ffx.autoparm.PME_2.ip12;
+import static ffx.autoparm.PME_2.ip13;
+import static ffx.autoparm.PME_2.ip14;
+import static ffx.autoparm.PME_2.localMultipole;
+import static ffx.autoparm.PME_2.maxThreads;
+import static ffx.autoparm.PME_2.nAtoms;
+import static ffx.autoparm.PME_2.nSymm;
+import static ffx.autoparm.PME_2.neighborLists;
+import static ffx.autoparm.PME_2.off2;
+import static ffx.autoparm.PME_2.parallelTeam;
+import static ffx.autoparm.PME_2.pdamp;
+import static ffx.autoparm.PME_2.pedit;
+import static ffx.autoparm.PME_2.polargrp;
+import static ffx.autoparm.PME_2.polarizability;
+import static ffx.autoparm.PME_2.polarization;
+import static ffx.autoparm.PME_2.poleps;
+import static ffx.autoparm.PME_2.polsor;
+import static ffx.autoparm.PME_2.rotateMultipolesRegion;
+import static ffx.autoparm.PME_2.thole;
 import static ffx.potential.parameters.MultipoleType.BOHR;
 
 /**

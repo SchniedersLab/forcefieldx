@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
  *
  * This file is part of Force Field X.
  *
@@ -19,6 +19,21 @@
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+ * Linking this library statically or dynamically with other modules is making a
+ * combined work based on this library. Thus, the terms and conditions of the
+ * GNU General Public License cover the whole combination.
+ *
+ * As a special exception, the copyright holders of this library give you
+ * permission to link this library with independent modules to produce an
+ * executable, regardless of the license terms of these independent modules, and
+ * to copy and distribute the resulting executable under terms of your choice,
+ * provided that you also meet, for each linked independent module, the terms
+ * and conditions of the license of that module. An independent module is a
+ * module which is not derived from or based on this library. If you modify this
+ * library, you may extend this exception to your version of the library, but
+ * you are not obligated to do so. If you do not wish to do so, delete this
+ * exception statement from your version.
  */
 package ffx.algorithms;
 
@@ -52,8 +67,8 @@ import edu.rit.pj.Comm;
 import edu.rit.pj.cluster.JobBackend;
 
 import ffx.numerics.Potential;
-import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.parsers.PDBFilter;
 
 /**
@@ -335,7 +350,8 @@ public class OSRW implements Potential {
      *
      * @param lambdaInterface defines Lambda and dU/dL.
      * @param potential defines the Potential energy.
-     * @param lambdaFile contains the current Lambda particle position and velocity.
+     * @param lambdaFile contains the current Lambda particle position and
+     * velocity.
      * @param histogramFile contains the Lambda and dU/dL histogram.
      * @param properties defines System properties.
      * @param temperature the simulation temperature.
@@ -343,7 +359,8 @@ public class OSRW implements Potential {
      * @param printInterval number of steps between logging updates.
      * @param saveInterval number of steps between restart file updates.
      * @param asynchronous set to true if walkers run asynchronously.
-     * @param algorithmListener the AlgorithmListener to be notified of progress.
+     * @param algorithmListener the AlgorithmListener to be notified of
+     * progress.
      * @param wellTempered true for well-tempered OSRW (not implemented yet).
      */
     public OSRW(LambdaInterface lambdaInterface, Potential potential,

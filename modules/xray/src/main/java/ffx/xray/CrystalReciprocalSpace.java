@@ -402,7 +402,7 @@ public class CrystalReciprocalSpace {
             solventFormFactors = null;
         }
 
-        // determine number of grid points to sample density on
+        // Determine number of grid points to sample density on
         aRad = -1.0;
         for (Atom a : atoms) {
             double vdwr = a.getVDWType().radius * 0.5;
