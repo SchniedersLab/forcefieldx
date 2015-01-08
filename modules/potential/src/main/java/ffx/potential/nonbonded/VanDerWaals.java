@@ -321,10 +321,8 @@ public class VanDerWaals implements MaskingInterface,
                 double rj3 = rj * rj2;
                 double e2 = vdwj.wellDepth;
                 double se2 = sqrt(e2);
-
                 double radmin;
                 double eps;
-
                 switch (vdwForm) {
                     case LENNARD_JONES_6_12:
                         /**
@@ -348,10 +346,18 @@ public class VanDerWaals implements MaskingInterface,
                         eps = 4.0 * (e1 * e2) / ((se1 + se2) * (se1 + se2));
                         break;
                 }
+                if (radmin > 0) {
+                    radEps[i][j * 2 + RADMIN] = 1.0 / radmin;
+                } else {
+                    radEps[i][j * 2 + RADMIN] = 0.0;
+                }
 
-                radEps[i][j * 2 + RADMIN] = 1.0 / radmin;
                 radEps[i][j * 2 + EPS] = eps;
-                radEps[j][i * 2 + RADMIN] = 1.0 / radmin;
+                if (radmin > 0) {
+                    radEps[j][i * 2 + RADMIN] = 1.0 / radmin;
+                } else {
+                    radEps[j][i * 2 + RADMIN] = 0.0;
+                }
                 radEps[j][i * 2 + EPS] = eps;
             }
         }
@@ -499,7 +505,12 @@ public class VanDerWaals implements MaskingInterface,
                 logger.severe(ai.toString());
                 continue;
             }
-            atomClass[i] = type.atomClass;
+            String vdwIndex = forceField.getString(ForceField.ForceFieldString.VDWINDEX, "Class");
+            if (vdwIndex.equalsIgnoreCase("Type")) {
+                atomClass[i] = type.type;
+            } else {
+                atomClass[i] = type.atomClass;
+            }
             VDWType vdwType = forceField.getVDWType(Integer.toString(atomClass[i]));
             ai.setVDWType(vdwType);
             ArrayList<Bond> bonds = ai.getBonds();
@@ -1461,6 +1472,7 @@ public class VanDerWaals implements MaskingInterface,
                             log(i, k, r, eij * taper);
                            
                             count++;
+
                             if (!(gradient || (lambdaTerm && soft))) {
                                 continue;
                             }
