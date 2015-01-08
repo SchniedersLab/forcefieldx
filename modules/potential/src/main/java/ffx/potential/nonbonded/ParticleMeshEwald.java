@@ -6707,7 +6707,6 @@ public class ParticleMeshEwald implements LambdaInterface {
     }
 
     private int scfByPCG(boolean print, long startTime) {
-        print = true;
         long directTime = System.nanoTime() - startTime;
         /**
          * A request of 0 SCF cycles simplifies mutual polarization to direct
