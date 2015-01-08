@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
  *
  * This file is part of Force Field X.
  *
@@ -19,6 +19,21 @@
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+ * Linking this library statically or dynamically with other modules is making a
+ * combined work based on this library. Thus, the terms and conditions of the
+ * GNU General Public License cover the whole combination.
+ *
+ * As a special exception, the copyright holders of this library give you
+ * permission to link this library with independent modules to produce an
+ * executable, regardless of the license terms of these independent modules, and
+ * to copy and distribute the resulting executable under terms of your choice,
+ * provided that you also meet, for each linked independent module, the terms
+ * and conditions of the license of that module. An independent module is a
+ * module which is not derived from or based on this library. If you modify this
+ * library, you may extend this exception to your version of the library, but
+ * you are not obligated to do so. If you do not wish to do so, delete this
+ * exception statement from your version.
  */
 package ffx.potential.parsers;
 
@@ -98,7 +113,6 @@ import static ffx.potential.bonded.NucleicAcidUtils.pTyp;
 import static ffx.potential.bonded.Residue.ResiduePosition.FIRST_RESIDUE;
 import static ffx.potential.bonded.Residue.ResiduePosition.LAST_RESIDUE;
 import static ffx.potential.bonded.Residue.ResiduePosition.MIDDLE_RESIDUE;
-import static ffx.potential.bonded.ResidueEnumerations.aminoAcidHeavyAtoms;
 import static ffx.potential.bonded.ResidueEnumerations.aminoAcidList;
 import static ffx.potential.bonded.ResidueEnumerations.getAminoAcid;
 import static ffx.potential.bonded.ResidueEnumerations.nucleicAcidList;
@@ -171,7 +185,7 @@ public final class PDBFilter extends SystemFilter {
      * Don't output atoms which fail Atom.isActive().
      */
     private boolean ignoreInactiveAtoms = false;
-    
+
     /**
      * Mutate a residue at the PDB file is being parsed.
      *
@@ -2774,7 +2788,7 @@ public final class PDBFilter extends SystemFilter {
                         String[] entries = null;
                         for (; i < resAndScore.length; i++) {
                             entries = resAndScore[i].split("\\t");
-                            if (!entries[0].equals(entries[0].replaceAll("\\D+",""))) {
+                            if (!entries[0].equals(entries[0].replaceAll("\\D+", ""))) {
                                 String[] subEntries = entries[0].split("[^0-9]");
                                 entries[0] = subEntries[0];
                             }
@@ -2977,6 +2991,7 @@ public final class PDBFilter extends SystemFilter {
         }
         return true;
     }
+
     /**
      * {@inheritDoc}
      *
@@ -2986,7 +3001,7 @@ public final class PDBFilter extends SystemFilter {
     public boolean writeFile(File saveFile, boolean append) {
         return writeFile(saveFile, append, false);
     }
-    
+
     public void setIgnoreInactiveAtoms(boolean ignoreInactiveAtoms) {
         this.ignoreInactiveAtoms = ignoreInactiveAtoms;
     }
@@ -3102,10 +3117,10 @@ public final class PDBFilter extends SystemFilter {
         }
         if (siftScore == null) {
             sb.replace(30, 66, String.format("%8.3f%8.3f%8.3f%6.2f%6.2f",
-                xyz[0], xyz[1], xyz[2], atom.getOccupancy(), 110.0));
+                    xyz[0], xyz[1], xyz[2], atom.getOccupancy(), 110.0));
         } else {
             sb.replace(30, 66, String.format("%8.3f%8.3f%8.3f%6.2f%6.2f",
-                xyz[0], xyz[1], xyz[2], atom.getOccupancy(), (1 + (-1 * Float.parseFloat(siftScore))) * 100));
+                    xyz[0], xyz[1], xyz[2], atom.getOccupancy(), (1 + (-1 * Float.parseFloat(siftScore))) * 100));
         }
         name = Atom.ElementSymbol.values()[atom.getAtomicNumber() - 1].toString();
         name = name.toUpperCase();

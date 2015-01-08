@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
  *
  * This file is part of Force Field X.
  *
@@ -19,6 +19,21 @@
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+ * Linking this library statically or dynamically with other modules is making a
+ * combined work based on this library. Thus, the terms and conditions of the
+ * GNU General Public License cover the whole combination.
+ *
+ * As a special exception, the copyright holders of this library give you
+ * permission to link this library with independent modules to produce an
+ * executable, regardless of the license terms of these independent modules, and
+ * to copy and distribute the resulting executable under terms of your choice,
+ * provided that you also meet, for each linked independent module, the terms
+ * and conditions of the license of that module. An independent module is a
+ * module which is not derived from or based on this library. If you modify this
+ * library, you may extend this exception to your version of the library, but
+ * you are not obligated to do so. If you do not wish to do so, delete this
+ * exception statement from your version.
  */
 package ffx.potential.nonbonded;
 
@@ -1197,6 +1212,10 @@ public class ParticleMeshEwald implements LambdaInterface {
         this.molecule = molecule;
         nAtoms = atoms.length;
         initAtomArrays();
+
+        if (reciprocalSpace != null) {
+            reciprocalSpace.setAtoms(atoms);
+        }
 
         if (generalizedKirkwood != null) {
             generalizedKirkwood.setAtoms(atoms);
@@ -2829,11 +2848,8 @@ public class ParticleMeshEwald implements LambdaInterface {
 
             private class InducedRealSpaceFieldLoop extends IntegerForLoop {
 
-                private final double x[] = coordinates[0][0];
-                private final double y[] = coordinates[0][1];
-                private final double z[] = coordinates[0][2];
-                private final double ind[][] = inducedDipole[0];
-                private final double indCR[][] = inducedDipoleCR[0];
+                private double ind[][], indCR[][];
+                private double x[], y[], z[];
                 private double fX[], fY[], fZ[];
                 private double fXCR[], fYCR[], fZCR[];
 
@@ -2861,6 +2877,11 @@ public class ParticleMeshEwald implements LambdaInterface {
                     fill(fXCR, 0.0);
                     fill(fYCR, 0.0);
                     fill(fZCR, 0.0);
+                    x = coordinates[0][0];
+                    y = coordinates[0][1];
+                    z = coordinates[0][2];
+                    ind = inducedDipole[0];
+                    indCR = inducedDipoleCR[0];
                 }
 
                 @Override
@@ -3563,22 +3584,14 @@ public class ParticleMeshEwald implements LambdaInterface {
             private SymOp symOp;
             private double gX[], gY[], gZ[], tX[], tY[], tZ[];
             private double lgX[], lgY[], lgZ[], ltX[], ltY[], ltZ[];
+            private double gxk_local[], gyk_local[], gzk_local[];
+            private double txk_local[], tyk_local[], tzk_local[];
+            private double lxk_local[], lyk_local[], lzk_local[];
+            private double ltxk_local[], ltyk_local[], ltzk_local[];
+            private double masking_local[];
+            private double maskingp_local[];
+            private double maskingd_local[];
             private final double dx_local[];
-            private final double gxk_local[];
-            private final double gyk_local[];
-            private final double gzk_local[];
-            private final double txk_local[];
-            private final double tyk_local[];
-            private final double tzk_local[];
-            private final double lxk_local[];
-            private final double lyk_local[];
-            private final double lzk_local[];
-            private final double ltxk_local[];
-            private final double ltyk_local[];
-            private final double ltzk_local[];
-            private final double masking_local[];
-            private final double maskingp_local[];
-            private final double maskingd_local[];
             private final double rot_local[][];
             private final double work[][];
             // Extra padding to avert cache interference.
@@ -3587,27 +3600,32 @@ public class ParticleMeshEwald implements LambdaInterface {
 
             public RealSpaceEnergyLoop() {
                 super();
-                txk_local = new double[nAtoms];
-                tyk_local = new double[nAtoms];
-                tzk_local = new double[nAtoms];
-                gxk_local = new double[nAtoms];
-                gyk_local = new double[nAtoms];
-                gzk_local = new double[nAtoms];
-                lxk_local = new double[nAtoms];
-                lyk_local = new double[nAtoms];
-                lzk_local = new double[nAtoms];
-                ltxk_local = new double[nAtoms];
-                ltyk_local = new double[nAtoms];
-                ltzk_local = new double[nAtoms];
-                masking_local = new double[nAtoms];
-                maskingp_local = new double[nAtoms];
-                maskingd_local = new double[nAtoms];
                 dx_local = new double[3];
                 work = new double[15][3];
                 rot_local = new double[3][3];
-                fill(masking_local, 1.0);
-                fill(maskingp_local, 1.0);
-                fill(maskingd_local, 1.0);
+            }
+
+            private void init() {
+                if (masking_local == null || masking_local.length < nAtoms) {
+                    txk_local = new double[nAtoms];
+                    tyk_local = new double[nAtoms];
+                    tzk_local = new double[nAtoms];
+                    gxk_local = new double[nAtoms];
+                    gyk_local = new double[nAtoms];
+                    gzk_local = new double[nAtoms];
+                    lxk_local = new double[nAtoms];
+                    lyk_local = new double[nAtoms];
+                    lzk_local = new double[nAtoms];
+                    ltxk_local = new double[nAtoms];
+                    ltyk_local = new double[nAtoms];
+                    ltzk_local = new double[nAtoms];
+                    masking_local = new double[nAtoms];
+                    maskingp_local = new double[nAtoms];
+                    maskingd_local = new double[nAtoms];
+                    fill(masking_local, 1.0);
+                    fill(maskingp_local, 1.0);
+                    fill(maskingd_local, 1.0);
+                }
             }
 
             @Override
@@ -3617,6 +3635,7 @@ public class ParticleMeshEwald implements LambdaInterface {
 
             @Override
             public void start() {
+                init();
                 int threadIndex = getThreadIndex();
                 realSpaceEnergyTime[threadIndex] -= System.nanoTime();
                 permanentEnergy = 0.0;
@@ -6928,11 +6947,8 @@ public class ParticleMeshEwald implements LambdaInterface {
 
         private class InducedPreconditionerFieldLoop extends IntegerForLoop {
 
-            private final double x[] = coordinates[0][0];
-            private final double y[] = coordinates[0][1];
-            private final double z[] = coordinates[0][2];
-            private final double ind[][] = inducedDipole[0];
-            private final double indCR[][] = inducedDipoleCR[0];
+            private double x[], y[], z[];
+            private double ind[][], indCR[][];
             private double fX[], fY[], fZ[];
             private double fXCR[], fYCR[], fZCR[];
 
@@ -6960,6 +6976,11 @@ public class ParticleMeshEwald implements LambdaInterface {
                 fill(fXCR, 0.0);
                 fill(fYCR, 0.0);
                 fill(fZCR, 0.0);
+                x = coordinates[0][0];
+                y = coordinates[0][1];
+                z = coordinates[0][2];
+                ind = inducedDipole[0];
+                indCR = inducedDipoleCR[0];
             }
 
             @Override
