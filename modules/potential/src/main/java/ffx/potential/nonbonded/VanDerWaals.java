@@ -1468,11 +1468,7 @@ public class VanDerWaals implements MaskingInterface,
                                 dtaper = multiplicativeSwitch.dtaper(r, r2, r3, r4);
                             }
                             e += eij * taper;
-
-                            log(i, k, r, eij * taper);
-                           
                             count++;
-
                             if (!(gradient || (lambdaTerm && soft))) {
                                 continue;
                             }
