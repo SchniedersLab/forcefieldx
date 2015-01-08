@@ -6980,7 +6980,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                     logger.warning(sb.toString());
                 }
                 String message = format("Fatal SCF convergence failure: (%10.5f > %10.5f)\n", eps, previousEps);
-                logger.severe(message);
+                throw new ArithmeticException(message);
             }
             /**
              * The SCF should converge well before the max iteration check.
@@ -6991,7 +6991,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                     logger.warning(sb.toString());
                 }
                 String message = format("Maximum SCF iterations reached: (%d)\n", completedSCFCycles);
-                logger.severe(message);
+                throw new ArithmeticException(message);
             }
             /**
              * Check if the convergence criteria has been achieved.

@@ -54,6 +54,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private final Potential potential;
     private final CompositeConfiguration properties;
     private AlgorithmListener algorithmListener;
+    private MonteCarloListener monteCarloListener;
     private Thermostat thermostat;
     private Integrator integrator;
     private File archiveFile = null;
@@ -260,6 +261,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
      */
     public File getArchiveFile() {
         return archiveFile;
+    }
+    
+    public void addMCListener(MonteCarloListener monteCarloListener) {
+        this.monteCarloListener = monteCarloListener;
     }
 
     /**
@@ -704,6 +709,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
              */
             if (algorithmListener != null && step % printFrequency == 0) {
                 algorithmListener.algorithmUpdate(molecularAssembly);
+            }
+            if (monteCarloListener != null) {
+                monteCarloListener.mcUpdate(molecularAssembly);
             }
 
             /**
