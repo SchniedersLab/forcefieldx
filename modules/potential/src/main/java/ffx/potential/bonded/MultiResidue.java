@@ -50,6 +50,7 @@ import ffx.potential.bonded.BondedUtils.MissingHeavyAtomException;
 import ffx.potential.parameters.ForceField;
 
 import static ffx.potential.bonded.AminoAcidUtils.assignAminoAcidAtomTypes;
+import java.util.logging.Level;
 
 /**
  * @author Will Tollefson and Michael J. Schnieders
@@ -297,6 +298,7 @@ public class MultiResidue extends Residue {
     @Override
     public Rotamer[] getRotamers(Residue residue) {
         if (residue == null) {
+            logger.warning("Couldn't retrieve rotamers for null residue.");
             return null;
         }
         Rotamer allRotamers[];
@@ -312,19 +314,21 @@ public class MultiResidue extends Residue {
             rotamerTotal += rotamersi.length;
         }
         allRotamers = new Rotamer[rotamerTotal];
+        int shift = 0;
         for (int i = 0; i < nResidues; i++) {
             Residue residuei = residueOptions[i];
             Rotamer rotamersi[] = RotamerLibrary.getRotamers(residuei);
             if (rotamersi == null) {
                 continue;
             }
-            int shift = 0;
             for (int j = 0; j < rotamersi.length; j++) {
                 allRotamers[j + shift] = rotamersi[j];
             }
             shift += rotamersi.length;
         }
-        logger.info(consideredResidues.size() + " residue options with " + rotamerTotal + " rotamers.");
+        if (logger.isLoggable(Level.FINE)) {
+            logger.fine(consideredResidues.size() + " residue options with " + rotamerTotal + " rotamers.");
+        }
         return allRotamers;
     }
 

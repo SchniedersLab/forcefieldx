@@ -1890,7 +1890,12 @@ public class RotamerLibrary {
         if (residue == null || rotamer == null) {
             return;
         }
-        AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
+        AminoAcid3 name;
+        if (residue instanceof MultiResidue) {
+            name = AminoAcid3.valueOf(((MultiResidue) residue).getActive().getName());
+        } else {
+            name = AminoAcid3.valueOf(residue.getName());
+        }
         switch (name) {
             case VAL: {
                 Atom CA = (Atom) residue.getAtomNode("CA");
