@@ -42,6 +42,16 @@ import java.util.logging.Logger;
 import edu.rit.pj.IntegerForLoop;
 
 /**
+ * The SliceLoop class is used to parallelize placing onto a 3D grid
+ *
+ * 1) Multipoles using B-splines or
+ *
+ * 2) Diffraction form factors.
+ *
+ * Each "slice" of the grid (i.e. a fixed value of the z-coordinate) is
+ * operated on by only a single thread to logically enforce atomic updates of
+ * grid magnitudes.
+ * 
  * @author Armin Avdic
  */
 public abstract class SliceLoop extends IntegerForLoop {
@@ -50,7 +60,6 @@ public abstract class SliceLoop extends IntegerForLoop {
      * Constant <code>logger</code>
      */
     private static final Logger logger = Logger.getLogger(SliceLoop.class.getName());
-    private static final double toSeconds = 1.0e-9;
     int nAtoms;
     int nSymm;
     SliceRegion sliceRegion;
@@ -86,7 +95,6 @@ public abstract class SliceLoop extends IntegerForLoop {
         for (int iSymm = 0; iSymm < nSymm; iSymm++) {
             for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
                 if (sliceRegion.select[iSymm][iAtom]) {
-                    //logger.info(String.format(" SymOp %d Atom %d", n, i));
                     gridDensity(iSymm, iAtom, lb, ub);
                 }
             }
@@ -100,8 +108,8 @@ public abstract class SliceLoop extends IntegerForLoop {
     }
 
     /**
-     * Apply electron density "as normal", but check that the z index is greater
-     * than or equal to lb and less than or equal to ub.
+     * Apply electron density "as normal" for an atom, but check that
+     * the z index is within the supplied bounds (inclusive).
      *
      * @param iSymm the SymOp to apply.
      * @param iAtom the index of the Atom to put onto the grid.
