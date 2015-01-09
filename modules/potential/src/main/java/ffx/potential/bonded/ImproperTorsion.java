@@ -94,7 +94,7 @@ public class ImproperTorsion extends BondedTerm implements
          */
 
         setID_Key(false);
-        print();
+//        print();
     }
 
     /**
@@ -110,8 +110,8 @@ public class ImproperTorsion extends BondedTerm implements
             return null;
         }
 
-        logger.info("");
-        logger.info(atom.toString());
+//        logger.info("");
+//        logger.info(atom.toString());
 
         Atom atoms[] = new Atom[4];
         atoms[2] = atom;
@@ -130,14 +130,14 @@ public class ImproperTorsion extends BondedTerm implements
             }
         }
 
-        logger.info(atoms[0].getAtomType().toString());
-        logger.info(atoms[1].getAtomType().toString());
-        logger.info(atoms[2].getAtomType().toString());
-        logger.info(atoms[3].getAtomType().toString());
+//        logger.info(atoms[0].getAtomType().toString());
+//        logger.info(atoms[1].getAtomType().toString());
+//        logger.info(atoms[2].getAtomType().toString());
+//        logger.info(atoms[3].getAtomType().toString());
         ArrayList<ImproperTorsion> improperTorsions = new ArrayList<>();
         Collection<ImproperTorsionType> types = forceField.getImproperTypes();
         for (ImproperTorsionType type : types) {
-            type.print();
+//            type.print();
             int classes[] = new int[4];
             classes[0] = atoms[0].getAtomType().atomClass;
             classes[1] = atoms[1].getAtomType().atomClass;
