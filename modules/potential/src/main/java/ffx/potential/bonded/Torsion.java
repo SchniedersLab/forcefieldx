@@ -191,10 +191,40 @@ public class Torsion extends BondedTerm {
         String key = TorsionType.sortKey(c);
         TorsionType torsionType = forceField.getTorsionType(key);
         if (torsionType == null) {
+            c[0] = bond1.getOtherAtom(middleBond).getAtomType().atomClass;
+            c[1] = atom1.getAtomType().atomClass;
+            c[2] = atom2.getAtomType().atomClass;
+            c[3] = 0;
+            key = TorsionType.sortKey(c);
+            torsionType = forceField.getTorsionType(key);
+        }
+        if (torsionType == null) {
+            c[0] = 0;
+            c[1] = atom1.getAtomType().atomClass;
+            c[2] = atom2.getAtomType().atomClass;
+            c[3] = bond3.getOtherAtom(middleBond).getAtomType().atomClass;
+            key = TorsionType.sortKey(c);
+            torsionType = forceField.getTorsionType(key);
+        }
+        if (torsionType == null) {
+            c[0] = 0;
+            c[1] = atom1.getAtomType().atomClass;
+            c[2] = atom2.getAtomType().atomClass;
+            c[3] = 0;
+            key = TorsionType.sortKey(c);
+            torsionType = forceField.getTorsionType(key);
+        }
+        if (torsionType == null) {
+            c[0] = bond1.getOtherAtom(middleBond).getAtomType().atomClass;
+            c[1] = atom1.getAtomType().atomClass;
+            c[2] = atom2.getAtomType().atomClass;
+            c[3] = bond3.getOtherAtom(middleBond).getAtomType().atomClass;
+            key = TorsionType.sortKey(c);
             logger.severe(format("No TorsionType for key: %s\n%s\n%s\n%s\n",
                     key, bond1.toString(), middleBond.toString(), bond3.toString()));
             return null;
         }
+
         Torsion torsion = new Torsion(bond1, middleBond, bond3);
         torsion.torsionType = torsionType;
         return torsion;
