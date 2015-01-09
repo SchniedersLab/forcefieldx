@@ -55,6 +55,16 @@ import ffx.potential.bonded.Atom;
 import static ffx.potential.nonbonded.SpatialDensityRegion.logger;
 
 /**
+ * The SliceLoop class is used to parallelize placing onto a 3D grid
+ *
+ * 1) Multipoles using B-splines or
+ *
+ * 2) Diffraction form factors.
+ *
+ * Each "slice" of the grid (i.e. a fixed value of the z-coordinate) is
+ * operated on by only a single thread to logically enforce atomic updates of
+ * grid magnitudes.
+ *
  * @author Armin Avdic
  */
 public class SliceRegion extends ParallelRegion {

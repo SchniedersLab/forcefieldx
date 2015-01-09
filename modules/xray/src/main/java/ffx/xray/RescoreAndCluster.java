@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
  *
  * This file is part of Force Field X.
  *
@@ -19,27 +19,42 @@
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+ * Linking this library statically or dynamically with other modules is making a
+ * combined work based on this library. Thus, the terms and conditions of the
+ * GNU General Public License cover the whole combination.
+ *
+ * As a special exception, the copyright holders of this library give you
+ * permission to link this library with independent modules to produce an
+ * executable, regardless of the license terms of these independent modules, and
+ * to copy and distribute the resulting executable under terms of your choice,
+ * provided that you also meet, for each linked independent module, the terms
+ * and conditions of the license of that module. An independent module is a
+ * module which is not derived from or based on this library. If you modify this
+ * library, you may extend this exception to your version of the library, but
+ * you are not obligated to do so. If you do not wish to do so, delete this
+ * exception statement from your version.
  */
-
 // Copyright license for hierarchical-clustering-java
-/*******************************************************************************
+/**
+ * *****************************************************************************
  * Copyright 2013 Lars Behnke
- * 
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- ******************************************************************************/
-
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ * ****************************************************************************
+ */
 // Copyright license for BioJava
-/* 
+/*
  *                    BioJava development code
  *
  * This code may be freely distributed and modified under the
@@ -61,18 +76,8 @@
  * Created on 7/8/2014
  *
  */
-
 package ffx.xray;
 
-import com.apporiented.algorithm.clustering.Cluster;
-import ffx.algorithms.AlgorithmFunctions;
-import ffx.potential.MolecularAssembly;
-import ffx.utilities.DoubleIndexPair;
-import ffx.utilities.Keyword;
-import ffx.xray.CrystalReciprocalSpace.SolventModel;
-import ffx.xray.RefinementMinimize.RefinementMode;
-import static ffx.xray.RescoreAndCluster.ClustAlg.*;
-import static ffx.xray.RescoreAndCluster.RescoreStrategy.*;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -86,6 +91,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import com.apporiented.algorithm.clustering.Cluster;
+
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import org.biojava.bio.structure.Structure;
@@ -94,10 +102,24 @@ import org.biojava.bio.structure.align.StructurePairAligner;
 import org.biojava.bio.structure.align.pairwise.AlternativeAlignment;
 import org.biojava.bio.structure.io.PDBFileReader;
 
+import ffx.algorithms.AlgorithmFunctions;
+import ffx.potential.MolecularAssembly;
+import ffx.utilities.DoubleIndexPair;
+import ffx.utilities.Keyword;
+import ffx.xray.CrystalReciprocalSpace.SolventModel;
+import ffx.xray.RefinementMinimize.RefinementMode;
+
+import static ffx.xray.RescoreAndCluster.ClustAlg.NO_CLUSTERS;
+import static ffx.xray.RescoreAndCluster.RescoreStrategy.ENERGY_EVAL;
+import static ffx.xray.RescoreAndCluster.RescoreStrategy.MINIMIZE;
+import static ffx.xray.RescoreAndCluster.RescoreStrategy.NO_RESCORE;
+import static ffx.xray.RescoreAndCluster.RescoreStrategy.RS_MIN;
+import static ffx.xray.RescoreAndCluster.RescoreStrategy.XRAY_MIN;
+
 /**
- * This class performs rescoring and clustering on a provided list of structure 
- * files. Rescoring can be based on energy evaluations, minimization, x-ray 
- * minimization, or real-space minimization. Clustering is based on all-atom 
+ * This class performs rescoring and clustering on a provided list of structure
+ * files. Rescoring can be based on energy evaluations, minimization, x-ray
+ * minimization, or real-space minimization. Clustering is based on all-atom
  * RMSD (using BioJava libraries) and hierarchical clustering from Lars Behnke's
  * Java clustering package.
  *
@@ -106,14 +128,15 @@ import org.biojava.bio.structure.io.PDBFileReader;
  *
  */
 public class RescoreAndCluster {
+
     private static final Logger logger = Logger.getLogger(RescoreAndCluster.class.getName());
     private final RefinementMode refinementMode = RefinementMode.COORDINATES;
     private final AlgorithmFunctions utils;
     private RescoreStrategy rscType = NO_RESCORE;
     private ClustAlg clusterAlg = NO_CLUSTERS;
-    private List<DiffractionFile> diffractionFiles; 
+    private List<DiffractionFile> diffractionFiles;
     private List<RealSpaceFile> mapFiles;
-    
+
     private boolean doRescore = false; //
     private boolean doCluster = false; //
     private double eps = -1.0;
@@ -121,29 +144,29 @@ public class RescoreAndCluster {
     private double acceptThreshold = 0.0;
     private int numToAccept = 10;
     private boolean includeRejected = true;
-    
+
     private String fileSuffix = "_rsc";
     private final Path pwdPath;
     private File resultsFile;
     private File resultDir;
     private Path resultPath;
     private boolean printModels = false;
-    
+
     public RescoreAndCluster(AlgorithmFunctions utils) {
         this.pwdPath = generatePath(new File(""));
         diffractionFiles = new ArrayList<>();
         mapFiles = new ArrayList<>();
         this.utils = utils;
     }
-    
-    public void setRefineEps (double eps) {
+
+    public void setRefineEps(double eps) {
         this.eps = eps;
     }
-    
-    public void setMaxIter (int maxiter) {
+
+    public void setMaxIter(int maxiter) {
         this.maxiter = maxiter;
     }
-    
+
     public void setResultDirectory(File directory) throws IOException {
         if (directory == null) {
             resultDir = null;
@@ -155,33 +178,33 @@ public class RescoreAndCluster {
             resultPath = pwdPath.relativize(generatePath(resultDir));
         }
     }
-    
-    public void setAcceptThreshold (double acceptThreshold) {
+
+    public void setAcceptThreshold(double acceptThreshold) {
         this.acceptThreshold = acceptThreshold;
     }
-    
-    public void setNumToAccept (int numToAccept) {
+
+    public void setNumToAccept(int numToAccept) {
         this.numToAccept = numToAccept;
     }
-    
-    public void setIncludeRejected (boolean includeRejected) {
+
+    public void setIncludeRejected(boolean includeRejected) {
         this.includeRejected = includeRejected;
     }
-    
-    public void setFileSuffix (String fileSuffix) {
+
+    public void setFileSuffix(String fileSuffix) {
         this.fileSuffix = fileSuffix;
     }
-    
+
     public void setResultsFile(File resultsFile) {
         if (resultsFile != null) {
             this.resultsFile = resultsFile;
         }
     }
-    
-    public void setPrintModels (boolean printModels) {
+
+    public void setPrintModels(boolean printModels) {
         this.printModels = printModels;
     }
-    
+
     public void setRescoreStrategy(RescoreStrategy rscType) {
         this.rscType = rscType;
         if (rscType != NO_RESCORE) {
@@ -190,26 +213,27 @@ public class RescoreAndCluster {
             //rescoredFiles = modelFiles;
         }
     }
-    
+
     public void setClusterAlg(ClustAlg clusterAlg) {
         this.clusterAlg = clusterAlg;
     }
-    
+
     public void setDiffractionFiles(List<DiffractionFile> diffractionFiles) {
         this.diffractionFiles.addAll(diffractionFiles);
     }
-    
+
     public void setMapFiles(List<RealSpaceFile> mapFiles) {
         this.mapFiles.addAll(mapFiles);
     }
-    
+
     /**
      * Utility method which attempts to generate a file Path using the canonical
      * path string, else uses the absolute path.
+     *
      * @param file To find path of
      * @return Canonical or absolute path.
      */
-    private Path generatePath (File file) {
+    private Path generatePath(File file) {
         Path path;
         try {
             path = Paths.get(file.getCanonicalPath());
@@ -218,7 +242,7 @@ public class RescoreAndCluster {
         }
         return path;
     }
-    
+
     public Cluster cluster(File[] clustFiles) {
         int numFiles = clustFiles.length;
         double[][] distanceMatrix = new double[numFiles][numFiles];
@@ -240,17 +264,19 @@ public class RescoreAndCluster {
                 }
             }
         } catch (StructureException ex) {
-            
+
         } catch (IOException ex) {
             Logger.getLogger(RescoreAndCluster.class.getName()).log(Level.SEVERE, null, ex);
         }
         return null;
     }
-    
+
     /**
-     * Launch the rescoring/clustering algorithms on provided files. Assumes it 
-     * has been given valid files to be run on; use 
-     * CoordinateFileFilter.acceptDeep(File file) before sending files to this method.
+     * Launch the rescoring/clustering algorithms on provided files. Assumes it
+     * has been given valid files to be run on; use
+     * CoordinateFileFilter.acceptDeep(File file) before sending files to this
+     * method.
+     *
      * @param modelFiles Files to rescore and/or cluster.
      */
     public void runRsc(File[] modelFiles) {
@@ -273,7 +299,7 @@ public class RescoreAndCluster {
             logger.info(" No rescoring or clustering algorithm selected.");
         }
     }
-    
+
     private File rescoreSingle(File modelFile, RescoreStrategy rscType, DoubleIndexPair[] energies, int i) {
         Path filepath = generatePath(modelFile);
         if (filepath == null) {
@@ -418,7 +444,7 @@ public class RescoreAndCluster {
         }
         return retFile;
     }
-    
+
     public File[] rescore(File[] modelFiles) {
         int numFiles = modelFiles.length;
         DoubleIndexPair[] energies = new DoubleIndexPair[numFiles];
@@ -426,13 +452,13 @@ public class RescoreAndCluster {
         for (int i = 0; i < numFiles; i++) {
             rescoredFiles[i] = rescoreSingle(modelFiles[i], rscType, energies, i);
         }
-        
+
         Arrays.sort(energies);
         ArrayList<Integer> acceptedFileIndices = new ArrayList<>();
         int numAccepted = 1;
         acceptedFileIndices.add(energies[0].getIndex());
         double minEnergy = energies[0].getDoubleValue();
-        
+
         if (acceptThreshold > 0.0) {
             for (int i = 1; i < numFiles; i++) {
                 DoubleIndexPair currentPair = energies[i];
@@ -450,7 +476,7 @@ public class RescoreAndCluster {
                 acceptedFileIndices.add(energies[i].getIndex());
             }
         }
-        
+
         for (int i = 0; i < numAccepted; i++) {
             File filei = rescoredFiles[energies[i].getIndex()];
             Path pathi;
@@ -465,7 +491,7 @@ public class RescoreAndCluster {
             String relPath = pwdPath.relativize(pathi).toString();
             logger.info(String.format(" Rejected: %s at %10.6f kcal/mol", relPath, energies[i].getDoubleValue()));
         }
-        
+
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(resultsFile, true))) {
             Path rscFilePath = generatePath(resultsFile);
             String rscFileName = pwdPath.relativize(rscFilePath).toString();
@@ -490,18 +516,18 @@ public class RescoreAndCluster {
             bw.write(message);
             bw.newLine();
             logger.info(String.format(" %s", message));
-            
+
             for (int i = 0; i < numAccepted; i++) {
                 int fileIndex = energies[i].getIndex();
                 File pointedFile = rescoredFiles[fileIndex];
                 Path pointedPath = generatePath(pointedFile);
                 String relPath = pwdPath.relativize(pointedPath).toString();
                 double thisEnergy = energies[i].getDoubleValue();
-                
-                logger.info(String.format(" Accepted file %d energy %9.3f < %9.3f kcal/mol", (i+1), thisEnergy, minEnergy + acceptThreshold));
+
+                logger.info(String.format(" Accepted file %d energy %9.3f < %9.3f kcal/mol", (i + 1), thisEnergy, minEnergy + acceptThreshold));
                 logger.info(String.format(" %s", relPath));
                 try {
-                    bw.write(String.format("Accepted file: %s rank %d energy %f\n", relPath, (i+1), thisEnergy));
+                    bw.write(String.format("Accepted file: %s rank %d energy %f\n", relPath, (i + 1), thisEnergy));
                     if (printModels) {
                         bw.newLine();
                         try (BufferedReader br = new BufferedReader(new FileReader(pointedFile))) {
@@ -530,8 +556,8 @@ public class RescoreAndCluster {
                     Path pointedPath = generatePath(pointedFile);
                     String relPath = pwdPath.relativize(pointedPath).toString();
                     double thisEnergy = energies[i].getDoubleValue();
-                    
-                    message = String.format("Non-accepted file: %s rank %d energy %f", relPath, (i+1), thisEnergy);
+
+                    message = String.format("Non-accepted file: %s rank %d energy %f", relPath, (i + 1), thisEnergy);
                     logger.info(String.format(" %s", message));
                     try {
                         bw.write(message);
@@ -546,76 +572,80 @@ public class RescoreAndCluster {
         }
         return rescoredFiles;
     }
-    
+
     public enum RescoreStrategy {
+
         NO_RESCORE {
-            @Override
-            public String toString() {
-                return "none";
-            }
-        },
+                    @Override
+                    public String toString() {
+                        return "none";
+                    }
+                },
         ENERGY_EVAL {
-            @Override
-            public String toString() {
-                return "potential energy";
-            }
-        }, 
+                    @Override
+                    public String toString() {
+                        return "potential energy";
+                    }
+                },
         MINIMIZE {
-            @Override
-            public String toString() {
-                return "force field minimization";
-            }
-        },
+                    @Override
+                    public String toString() {
+                        return "force field minimization";
+                    }
+                },
         XRAY_MIN {
-            @Override
-            public String toString() {
-                return "x-ray hybrid target minimization";
-            }
-        },
+                    @Override
+                    public String toString() {
+                        return "x-ray hybrid target minimization";
+                    }
+                },
         RS_MIN {
-            @Override
-            public String toString() {
-                return "real-space hybrid target minimization";
-            }
-        };
+                    @Override
+                    public String toString() {
+                        return "real-space hybrid target minimization";
+                    }
+                };
     }
+
     public enum ClustAlg {
+
         /**
-         * All algorithms start with each point a cluster, and then join the closest
-         * clusters together until everything is one cluster. SLINK is Single 
-         * Linkage; cluster-cluster distance is defined by the nearest two points.
-         * This is vulnerable to chaining; two clusters might be joined by a handful
-         * of intermediate points. CLINK is Complete Linkage; CLINK uses the greatest
-         * distance between points in two clusters. AV_LINK (average link) is the
-         * UPGMA (Unweighted Pair Group Method with Arithmetic Mean) function, which
-         * takes the mean distance between points in a cluster.
-         * 
+         * All algorithms start with each point a cluster, and then join the
+         * closest clusters together until everything is one cluster. SLINK is
+         * Single Linkage; cluster-cluster distance is defined by the nearest
+         * two points. This is vulnerable to chaining; two clusters might be
+         * joined by a handful of intermediate points. CLINK is Complete
+         * Linkage; CLINK uses the greatest distance between points in two
+         * clusters. AV_LINK (average link) is the UPGMA (Unweighted Pair Group
+         * Method with Arithmetic Mean) function, which takes the mean distance
+         * between points in a cluster.
+         *
          * Makes me wonder if there's a WPGMA algorithm which does weight one
          * way or the other, or perhaps a RPGMA RMSD-like algorithm.
          */
         NO_CLUSTERS {
-            @Override
-            public String toString() {
-                return "none";
-            }
-        },
+                    @Override
+                    public String toString() {
+                        return "none";
+                    }
+                },
         SLINK {
-            @Override
-            public String toString() {
-                return "single linkage";
-            }
-        },
+                    @Override
+                    public String toString() {
+                        return "single linkage";
+                    }
+                },
         AV_LINK {
-            @Override
-            public String toString() {
-                return "average linkage (UPGMA)";
-            }
-        },
+                    @Override
+                    public String toString() {
+                        return "average linkage (UPGMA)";
+                    }
+                },
         CLINK {
-            @Override
-            public String toString() {
-                return "complete linkage";
-            }
-        };
+                    @Override
+                    public String toString() {
+                        return "complete linkage";
+                    }
+                };
     }
 }

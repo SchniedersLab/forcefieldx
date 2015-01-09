@@ -52,6 +52,16 @@ import ffx.potential.bonded.Atom;
 import static ffx.potential.nonbonded.SpatialDensityRegion.logger;
 
 /**
+ * The RowRegion class is used to parallelize placing onto a 3D grid
+ *
+ * 1) Multipoles using B-splines or
+ *
+ * 2) Diffraction form factors.
+ *
+ * Each "row" of 3D grid (i.e. fixed values of the z and y-coordinates) is
+ * operated on by only a single thread to logically enforce atomic updates of
+ * grid magnitudes.
+ *
  * @author Armin Avdic
  */
 public class RowRegion extends ParallelRegion {
@@ -117,6 +127,18 @@ public class RowRegion extends ParallelRegion {
         this.gY = gY;
         this.gZ = gZ;
         gridSize = gX * gY * gZ * 2;
+    }
+
+    public int zFromRowIndex(int i) {
+        return i / gY;
+    }
+
+    public int yFromRowIndex(int i) {
+        return i % gY;
+    }
+
+    public int rowIndexForYZ(int giy, int giz) {
+        return giy + gY * giz;
     }
 
     public void setAtoms(Atom atoms[]) {
