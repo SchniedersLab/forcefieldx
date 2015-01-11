@@ -693,6 +693,7 @@
         <module>modules/ui</module>
         <module>modules/utilities</module>
         <module>modules/xray</module>
+        <module>modules/pj</module>
         <!-- module>modules/binding</module -->
         <!-- module>modules/cg</module -->
         <!-- module>modules/continuum</module -->

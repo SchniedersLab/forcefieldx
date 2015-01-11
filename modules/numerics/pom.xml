@@ -106,10 +106,10 @@
             <version>${commons-io.version}</version>
         </dependency>
         <dependency>
-            <groupId>edu.rit.pj</groupId>
+            <groupId>edu.uiowa.eng.ffx</groupId>
             <artifactId>pj</artifactId>
+            <version>${project.version}</version>
             <type>jar</type>
-            <version>${parallel-java.version}</version>
         </dependency>
         <dependency>
             <groupId>jcuda</groupId>
