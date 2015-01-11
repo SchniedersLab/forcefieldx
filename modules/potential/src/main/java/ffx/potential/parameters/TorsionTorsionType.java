@@ -66,7 +66,7 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
      * @param rc
      * @param rs
      * @param c
-     * @return
+     * @return positive or negative 1.
      */
     private static int cytsy(int n, double dm[], double du[], double cr[],
             double rs[], double c[]) {
@@ -94,7 +94,7 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
      * @param dm
      * @param du
      * @param cr
-     * @return
+     * @return an integer.
      */
     private static int cytsyp(int n, double dm[], double du[], double cr[]) {
         double eps = 0.00000001;

@@ -125,8 +125,8 @@ public class SquareRoot {
      * The Mask 0x7f800000 selects the Exponent Bits 30-23, which are then
      * shifted 23 places to the right.
      *
-     * @param val
-     * @return
+     * @param val input parameter
+     * @return shifted exponent bits
      */
     private static int expAddress(int val) {
         return ((val) & 0x7f800000) >> 23;
@@ -138,8 +138,8 @@ public class SquareRoot {
      * places to the right. The shift of 12 comes from the Exponent shift (23)
      * minus the significant part of the the mantissa (11).
      *
-     * @param val
-     * @return
+     * @param val input parameter
+     * @return shifted mantissa
      */
     private static int fractAddress(int val) {
         return ((val) & (0x007fffff | 0x00800000)) >> 12;

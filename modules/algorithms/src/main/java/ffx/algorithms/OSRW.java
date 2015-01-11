@@ -974,7 +974,7 @@ public class OSRW implements Potential {
      * Eq. 7 from the Xtal Thermodynamics paper.
      *
      * @param print
-     * @return
+     * @return the current free energy.
      */
     private double updateFLambda(boolean print) {
         double freeEnergy = 0.0;

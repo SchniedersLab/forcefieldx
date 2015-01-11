@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>edu.uiowa.eng.ffx</groupId>
+        <artifactId>ffx-ext</artifactId>
+        <version>1.0.0-beta</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+    <groupId>edu.uiowa.eng.ffx</groupId>
+    <artifactId>pj</artifactId>
+    <packaging>jar</packaging>
+    <name>Parallel Java</name>
+    <description>Minor modifications to Parallel Java</description>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>truezip-maven-plugin</artifactId>
+                <version>1.1</version>
+                <executions>
+                    <execution>
+                        <id>add-parallel-java</id>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <phase>deploy</phase>
+                        <configuration>
+                            <files>
+                                <file>
+                                    <source>${basedir}/target/${project.artifactId}-${project.version}.jar</source>
+                                    <outputDirectory>${project.parent.basedir}/../ffx/bin/ffx-all.jar</outputDirectory>
+                                    <destName>edu.rit.pj/${project.artifactId}.jar</destName>
+                                </file>
+                            </files>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

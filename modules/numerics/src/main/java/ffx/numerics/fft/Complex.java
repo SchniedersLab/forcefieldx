@@ -139,7 +139,7 @@ public class Complex {
      * methods), falling back to odd primes that the general routine must
      * handle.
      *
-     * @return
+     * @return integer factors
      */
     private int[] factor() {
         if (n < 2) {

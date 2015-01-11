@@ -121,7 +121,7 @@ public class Protonate implements MonteCarloListener {
      * True if passed residue name has multiple protonation states.
      *
      * @param residueName
-     * @return
+     * @return if this residue has multiple protonation states
      */
     private boolean isTitratable(String residueName) {
         for (Titratable titrName : Titratable.values()) {
@@ -189,7 +189,7 @@ public class Protonate implements MonteCarloListener {
     /**
      * Get the current MC acceptance rate.
      *
-     * @return
+     * @return the acceptance rate.
      */
     @Override
     public double getAcceptanceRate() {

@@ -552,8 +552,8 @@ public class SpaceGroup {
      * There are 3 private "getSpaceGroupX" routines because if they are not
      * split up, a Java specification limit on method size is exceeded.
      *
-     * @param num
-     * @return
+     * @param num input parameter (between 1 and 100)
+     * @return the selected SpaceGroup
      */
     private static SpaceGroup getSpaceGroup1(int num) {
         SpaceGroup spaceGroup = null;

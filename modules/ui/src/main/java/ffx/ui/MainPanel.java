@@ -892,9 +892,9 @@ public final class MainPanel extends JPanel implements ActionListener,
      */
     public static final String version = "Version 1.0.0-BETA";
     /**
-     * Constant <code>date="March 2014"</code>
+     * Constant <code>date="January 2015"</code>
      */
-    public static final String date = "March 2014";
+    public static final String date = "January 2015";
     /**
      * Constant
      */
@@ -910,8 +910,8 @@ public final class MainPanel extends JPanel implements ActionListener,
      */
     public static final String aboutString
             = "        " + version + "  " + date + " \n"
-            + "\n        Copyright (c)  Michael J. Schnieders    2001-2014 \n"
-            + "        Portions Copyright (c)  Timothy D. Fenn 2009-2014 \n"
+            + "\n        Copyright (c)  Michael J. Schnieders    2001-2015 \n"
+            + "        Portions Copyright (c)  Timothy D. Fenn 2009-2015 \n"
             + "\n"
             + "        All Rights Reserved \n"
             + "\n"

@@ -226,7 +226,31 @@
     </contributors>
     <licenses>
         <license>
-            <name>GPL version 3</name>
+            <name>GPL version 3 with Linking Exception</name>
+            <comments>
+                Force Field X is free software; you can redistribute it and/or modify it
+                under the terms of the GNU General Public License version 3 as published by
+                the Free Software Foundation.
+
+                Force Field X is distributed in the hope that it will be useful, but WITHOUT
+                ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+                FOR A PARTICULAR PURPOSE. See the GNU General Public License below for more details.
+
+                Linking Force Field X statically or dynamically with other modules is making a
+                combined work based on this library. Thus, the terms and conditions of the
+                GNU General Public License cover the whole combination.
+
+                As a special exception, the copyright holders of this library give you
+                permission to link this library with independent modules to produce an
+                executable, regardless of the license terms of these independent modules, and
+                to copy and distribute the resulting executable under terms of your choice,
+                provided that you also meet, for each linked independent module, the terms
+                and conditions of the license of that module. An independent module is a
+                module which is not derived from or based on this library. If you modify this
+                library, you may extend this exception to your version of the library, but
+                you are not obligated to do so. If you do not wish to do so, delete this
+                exception statement from your version.
+            </comments>
             <url>http://www.gnu.org/licenses/gpl-3.0-standalone.html</url>
             <distribution>manual</distribution>
         </license>
@@ -408,6 +432,7 @@
         <plugins>
             <plugin>
                 <artifactId>maven-site-plugin</artifactId>
+                <version>3.4</version>
                 <inherited>true</inherited>
                 <dependencies>
                     <dependency>
@@ -429,118 +454,6 @@
                 </dependencies>
                 <configuration>
                     <generateSitemap>true</generateSitemap>
-                    <reportPlugins>
-                        <plugin>
-                            <artifactId>maven-project-info-reports-plugin</artifactId>
-                            <reportSets>
-                                <reportSet>
-                                    <reports>
-                                        <report>cim</report>
-                                        <report>dependencies</report>
-                                        <report>dependency-convergence</report>
-                                        <report>dependency-management</report>
-                                        <report>distribution-management</report>
-                                        <report>issue-tracking</report>
-                                        <report>license</report>
-                                        <report>mailing-list</report>
-                                        <report>modules</report>
-                                        <report>plugin-management</report>
-                                        <report>plugins</report>
-                                        <report>project-team</report>
-                                        <report>scm</report>
-                                        <report>summary</report>
-                                    </reports>
-                                </reportSet>
-                            </reportSets>
-                            <configuration>
-                                <showAvatarImages>true</showAvatarImages>
-                                <dependencyDetailsEnabled>${dependencyDetails}</dependencyDetailsEnabled>
-                                <dependencyLocationsEnabled>${dependencyDetails}</dependencyLocationsEnabled>
-                            </configuration>
-                        </plugin>
-                        <plugin>
-                            <artifactId>maven-javadoc-plugin</artifactId>
-                            <configuration>
-                                <quiet>true</quiet>
-                                <header><![CDATA[
-                    <script type=\"text/javascript\" src=\"http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML\"></script>
-                    ]]>
-                                </header>
-                            </configuration>
-                            <reportSets>
-                                <reportSet>
-                                    <id>aggregate</id>
-                                    <reports>
-                                        <report>aggregate</report>
-                                        <!--report>test-aggregate</report-->
-                                    </reports>
-                                </reportSet>
-                            </reportSets>
-                        </plugin>
-                        <plugin>
-                            <artifactId>maven-jxr-plugin</artifactId>
-                            <configuration>
-                                <goal>aggregate</goal>
-                                <goal>test-aggregate</goal>
-                            </configuration>
-                        </plugin>
-                        <plugin>
-                            <artifactId>maven-surefire-report-plugin</artifactId>
-                            <configuration>
-                                <aggregate>true</aggregate>
-                            </configuration>
-                        </plugin>
-                        <plugin>
-                            <artifactId>maven-changes-plugin</artifactId>
-                            <configuration>
-                                <aggregated>true</aggregated>
-                                <webUser>${kenai.user.name}</webUser>
-                                <webPassword>${kenai.password}</webPassword>
-                                <statusIds>Open, In Progress, Reopened, Resolved, Closed</statusIds>
-                                <resolutionIds>Unresolved, Fixed, Won't Fix, Duplicate, Incomplete, Cannot Reproduce</resolutionIds>
-                            </configuration>
-                            <reportSets>
-                                <reportSet>
-                                    <reports>
-                                        <report>jira-report</report>
-                                        <report>changes-report</report>
-                                    </reports>
-                                </reportSet>
-                            </reportSets>
-                        </plugin>
-                        <plugin>
-                            <artifactId>maven-checkstyle-plugin</artifactId>
-                            <configuration>
-                                <goal>checkstyle-aggregate</goal>
-                            </configuration>
-                        </plugin>
-                        <!-- plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-changelog-plugin</artifactId>
-                            <version>2.2</version>
-                        </plugin -->
-                        <plugin>
-                            <artifactId>maven-linkcheck-plugin</artifactId>
-                        </plugin>
-                        <plugin>
-                            <artifactId>maven-pmd-plugin</artifactId>
-                            <configuration>
-                                <linkXref>true</linkXref>
-                                <minimumTokens>500</minimumTokens>
-                                <aggregate>true</aggregate>
-                                <targetJdk>1.7</targetJdk>
-                                <minimumPriority>2</minimumPriority>
-                            </configuration>
-                            <reportSets>
-                                <reportSet>
-                                    <reports>
-                                        <report>pmd</report>
-                                        <report>cpd</report>
-                                    </reports>
-                                </reportSet>
-                            </reportSets>
-                        </plugin>
-                    </reportPlugins>
                 </configuration>
             </plugin>
             <plugin>
@@ -750,14 +663,14 @@
         <!-- Skip most website reports by default -->
         <assembly.skipAssembly>false</assembly.skipAssembly>
         <changes.jira.skip>true</changes.jira.skip>
-        <checkstyle.skip>true</checkstyle.skip>
+        <checkstyle.skip>false</checkstyle.skip>
         <dependencyDetails>false</dependencyDetails>
         <maven.javadoc.skip>false</maven.javadoc.skip>
-        <maven.jxr.skip>true</maven.jxr.skip>
+        <maven.jxr.skip>false</maven.jxr.skip>
         <linkcheck.skip>true</linkcheck.skip>
-        <pmd.skip>true</pmd.skip>
-        <skipSurefireReport>true</skipSurefireReport>
-        <skipTests>true</skipTests>
+        <pmd.skip>false</pmd.skip>
+        <skipSurefireReport>false</skipSurefireReport>
+        <skipTests>false</skipTests>
         <!-- Specify versions of Dependencies to Use -->
         <apple-java-extensions.version>1.6</apple-java-extensions.version>
         <commons-configuration.version>1.10</commons-configuration.version>
@@ -788,9 +701,121 @@
     <reporting>
         <plugins>
             <plugin>
+                <artifactId>maven-project-info-reports-plugin</artifactId>
+                <version>2.7</version>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <report>cim</report>
+                            <report>dependencies</report>
+                            <report>dependency-convergence</report>
+                            <report>dependency-management</report>
+                            <report>distribution-management</report>
+                            <report>issue-tracking</report>
+                            <report>license</report>
+                            <report>mailing-list</report>
+                            <report>modules</report>
+                            <report>plugin-management</report>
+                            <report>plugins</report>
+                            <report>project-team</report>
+                            <report>scm</report>
+                            <report>summary</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+                <configuration>
+                    <showAvatarImages>true</showAvatarImages>
+                    <dependencyDetailsEnabled>${dependencyDetails}</dependencyDetailsEnabled>
+                    <dependencyLocationsEnabled>${dependencyDetails}</dependencyLocationsEnabled>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.10.1</version>
+                <configuration>
+                    <quiet>true</quiet>
+                    <header><![CDATA[
+                    <script type=\"text/javascript\" src=\"http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML\"></script>
+                    ]]>
+                    </header>
+                </configuration>
+                <reportSets>
+                    <reportSet>
+                        <id>aggregate</id>
+                        <reports>
+                            <report>aggregate</report>
+                            <!--report>test-aggregate</report-->
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+            <plugin>
+                <artifactId>maven-jxr-plugin</artifactId>
+                <version>2.5</version>
+                <configuration>
+                    <goal>aggregate</goal>
+                    <goal>test-aggregate</goal>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-surefire-report-plugin</artifactId>
+                <version>2.18.1</version>
+                <configuration>
+                    <aggregate>true</aggregate>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-changes-plugin</artifactId>
+                <version>2.11</version>
+                <configuration>
+                    <aggregated>true</aggregated>
+                    <webUser>${kenai.user.name}</webUser>
+                    <webPassword>${kenai.password}</webPassword>
+                    <statusIds>Open, In Progress, Reopened, Resolved, Closed</statusIds>
+                    <resolutionIds>Unresolved, Fixed, Won't Fix, Duplicate, Incomplete, Cannot Reproduce</resolutionIds>
+                </configuration>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <report>jira-report</report>
+                            <report>changes-report</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+            <!-- plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-changelog-plugin</artifactId>
+                <version>2.2</version>
+            </plugin -->
+            <plugin>
+                <artifactId>maven-linkcheck-plugin</artifactId>
+                <version>1.2</version>
+            </plugin>
+            <plugin>
+                <artifactId>maven-pmd-plugin</artifactId>
+                <version>2.7.1</version>
+                <configuration>
+                    <linkXref>true</linkXref>
+                    <minimumTokens>500</minimumTokens>
+                    <aggregate>true</aggregate>
+                    <targetJdk>1.7</targetJdk>
+                    <minimumPriority>2</minimumPriority>
+                </configuration>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <report>pmd</report>
+                            <report>cpd</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+            <plugin>
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <version>2.13</version>
                 <configuration>
+                    <goal>checkstyle-aggregate</goal>
                     <configLocation>config/sun_checks.xml</configLocation>
                 </configuration>
             </plugin>

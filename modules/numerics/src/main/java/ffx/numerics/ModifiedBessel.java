@@ -54,20 +54,20 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 public class ModifiedBessel {
 
     /**
-     * Analagous to Fenn's sim_integ(x).
+     * Compute log(i0(x)).
      *
-     * @param x
-     * @return
+     * @param x input parameter
+     * @return the log(i0(x))
      */
     public static double lnI0(double x) {
         return log(i0(x));
     }
 
     /**
-     * Analagous to Fenn's sim(x).
+     * Compute the ration of i1(x) to i0(x).
      *
-     * @param x
-     * @return
+     * @param x input parameter
+     * @return i1(x) / i0(x)
      */
     public static double i1OverI0(double x) {
         return (i1(x) / i0(x));
@@ -78,8 +78,8 @@ public class ModifiedBessel {
      * J0( ix ). The range is partitioned into the two intervals [0,8] and (8,
      * infinity). Chebyshev polynomial expansions are employed in each interval.
      *
-     * @param x the value to compute the bessel function of.
-     * @return the result
+     * @param x input parameter
+     * @return i0(x)
      */
     public static double i0(double x) {
         double y;
@@ -100,8 +100,8 @@ public class ModifiedBessel {
      * [0,8] and (8, infinity). Chebyshev polynomial expansions are employed in
      * each interval.
      *
-     * @param x the value to compute the bessel function of.
-     * @return the result
+     * @param x input parameter
+     * @return i1(x)
      */
     public static double i1(double x) {
         double y, z;
@@ -124,8 +124,8 @@ public class ModifiedBessel {
      * Returns Double.MAX_VALUE in place of Double.POSITIVE_INFINITY; Returns
      * Double.MIN_VALUE in place of Double.NEGATIVE_INFINITY
      *
-     * @param x
-     * @return
+     * @param x input parameter
+     * @return exp(x)
      */
     private static double eToThe(double x) {
         double res = exp(x);

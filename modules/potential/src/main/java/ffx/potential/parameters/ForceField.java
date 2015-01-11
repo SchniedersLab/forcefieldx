@@ -381,8 +381,8 @@ public class ForceField {
      * Enums are uppercase with underscores, but property files use lower case
      * with dashes.
      *
-     * @param s
-     * @return
+     * @param s an input Enum string
+     * @return the normalized keyword
      */
     private String normalizeKey(String s) {
         if (s == null) {

@@ -1,0 +1,513 @@
+//******************************************************************************
+//
+// File:    BooleanMatrixBuf.java
+// Package: edu.rit.mp.buf
+// Unit:    Class edu.rit.matrix.BooleanMatrixBuf
+//
+// This Java source file is copyright (C) 2006 by Alan Kaminsky. All rights
+// reserved. For further information, contact the author, Alan Kaminsky, at
+// ark@cs.rit.edu.
+//
+// This Java source file is part of the Computer Science Course Library ("The
+// Library"). The Library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 2 of the License, or (at your
+// option) any later version.
+//
+// The Library is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// A copy of the GNU General Public License is provided in the file gpl.txt. You
+// may also obtain a copy of the GNU General Public License on the World Wide
+// Web at http://www.gnu.org/licenses/gpl.html or by writing to the Free
+// Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA.
+//
+//******************************************************************************
+
+package edu.rit.mp.buf;
+
+import edu.rit.mp.Buf;
+import edu.rit.mp.BooleanBuf;
+
+import edu.rit.util.Range;
+
+import java.nio.ByteBuffer;
+
+/**
+ * Class BooleanMatrixBuf provides a {@linkplain edu.rit.mp.Buf Buf} for sending
+ * or receiving all or a portion of a Boolean matrix (two-dimensional array of
+ * Booleans) in a message. To construct a Boolean matrix buffer, call one of the
+ * static factory methods.
+ * 
+ * @author  Alan Kaminsky
+ * @version 20-Nov-2006
+ */
+public class BooleanMatrixBuf
+	extends BooleanBuf
+	{
+
+// Hidden data members.
+
+	boolean[][] myElements;
+	int myLowerRow;
+	int myRowCount;
+	int myLowerCol;
+	int myColCount;
+
+// Hidden constructors.
+
+	/**
+	 * Construct a new Boolean matrix buffer. It is assumed that the rows and
+	 * columns of <TT>theMatrix</TT> are allocated and that each row of
+	 * <TT>theMatrix</TT> has the same number of columns.
+	 *
+	 * @param  theMatrix    Matrix.
+	 * @param  theRowRange  Range of rows to include.
+	 * @param  theColRange  Range of columns to include.
+	 *
+	 * @exception  NullPointerException
+	 *     (unchecked exception) Thrown if any argument is null.
+	 * @exception  IndexOutOfBoundsException
+	 *     (unchecked exception) Thrown if <TT>theMatrix</TT>'s allocation does
+	 *     not include <TT>theRowRange</TT> and <TT>theColRange</TT>.
+	 */
+	private BooleanMatrixBuf
+		(boolean[][] theMatrix,
+		 Range theRowRange,
+		 Range theColRange)
+		{
+		super (theRowRange.length() * theColRange.length());
+
+		if (! fullRowRange (theMatrix) .contains (theRowRange) ||
+				! fullColRange (theMatrix) .contains (theColRange))
+			{
+			throw new IndexOutOfBoundsException
+				("BooleanMatrixBuf: Rows " + theRowRange +
+				 " and/or columns " + theColRange + " out of bounds");
+			}
+
+		myElements = theMatrix;
+		myLowerRow = theRowRange.lb();
+		myRowCount = theRowRange.length();
+		myLowerCol = theColRange.lb();
+		myColCount = theColRange.length();
+		}
+
+// Exported operations.
+
+	/**
+	 * Construct a new Boolean matrix buffer for the entire given matrix. The
+	 * returned buffer encompasses all the rows and all the columns in
+	 * <TT>theMatrix</TT>. It is assumed that the rows and columns of
+	 * <TT>theMatrix</TT> are allocated and that each row of <TT>theMatrix</TT>
+	 * has the same number of columns.
+	 *
+	 * @param  theMatrix  Matrix.
+	 *
+	 * @return  Buffer.
+	 *
+	 * @exception  NullPointerException
+	 *     (unchecked exception) Thrown if <TT>theMatrix</TT> is null.
+	 */
+	public static BooleanMatrixBuf buffer
+		(boolean[][] theMatrix)
+		{
+		return new BooleanMatrixBuf
+			(theMatrix, fullRowRange (theMatrix), fullColRange (theMatrix));
+		}
+
+	/**
+	 * Construct a new Boolean matrix buffer for one row slice of the given
+	 * matrix. The returned buffer encompasses <TT>theRowRange</TT> of rows, and
+	 * all the columns, in <TT>theMatrix</TT>. It is assumed that the rows and
+	 * columns of <TT>theMatrix</TT> are allocated and that each row of
+	 * <TT>theMatrix</TT> has the same number of columns.
+	 *
+	 * @param  theMatrix    Matrix.
+	 * @param  theRowRange  Range of rows to include.
+	 *
+	 * @return  Buffer.
+	 *
+	 * @exception  NullPointerException
+	 *     (unchecked exception) Thrown if <TT>theMatrix</TT> is null or
+	 *     <TT>theRowRange</TT> is null.
+	 * @exception  IndexOutOfBoundsException
+	 *     (unchecked exception) Thrown if <TT>theMatrix</TT>'s allocation does
+	 *     not include <TT>theRowRange</TT>.
+	 */
+	public static BooleanMatrixBuf rowSliceBuffer
+		(boolean[][] theMatrix,
+		 Range theRowRange)
+		{
+		return new BooleanMatrixBuf
+			(theMatrix, theRowRange, fullColRange (theMatrix));
+		}
+
+	/**
+	 * Construct an array of new Boolean matrix buffers for multiple row slices
+	 * of the given matrix. Each element of the returned buffer array
+	 * encompasses the rows given in the corresponding element of
+	 * <TT>theRowRanges</TT> array, and all the columns, in <TT>theMatrix</TT>.
+	 * It is assumed that the rows and columns of <TT>theMatrix</TT> are
+	 * allocated and that each row of <TT>theMatrix</TT> has the same number of
+	 * columns.
+	 *
+	 * @param  theMatrix     Matrix.
+	 * @param  theRowRanges  Array of ranges of rows to include.
+	 *
+	 * @return  Array of buffers.
+	 *
+	 * @exception  NullPointerException
+	 *     (unchecked exception) Thrown if <TT>theMatrix</TT> is null or
+	 *     <TT>theRowRanges</TT> or any element thereof is null.
+	 * @exception  IndexOutOfBoundsException
+	 *     (unchecked exception) Thrown if <TT>theMatrix</TT>'s allocation does
+	 *     not include any element of <TT>theRowRanges</TT>.
+	 */
+	public static BooleanMatrixBuf[] rowSliceBuffers
+		(boolean[][] theMatrix,
+		 Range[] theRowRanges)
+		{
+		int n = theRowRanges.length;
+		BooleanMatrixBuf[] result = new BooleanMatrixBuf [n];
+		Range colrange = fullColRange (theMatrix);
+		for (int i = 0; i < n; ++ i)
+			{
+			result[i] =
+				new BooleanMatrixBuf (theMatrix, theRowRanges[i], colrange);
+			}
+		return result;
+		}
+
+	/**
+	 * Construct a new Boolean matrix buffer for one column slice of the given
+	 * matrix. The returned buffer encompasses all the rows, and
+	 * <TT>theColRange</TT> of columns, in <TT>theMatrix</TT>. It is assumed
+	 * that the rows and columns of <TT>theMatrix</TT> are allocated and that
+	 * each row of <TT>theMatrix</TT> has the same number of columns.
+	 *
+	 * @param  theMatrix    Matrix.
+	 * @param  theColRange  Range of columns to include.
+	 *
+	 * @return  Buffer.
+	 *
+	 * @exception  NullPointerException
+	 *     (unchecked exception) Thrown if <TT>theMatrix</TT> is null or
+	 *     <TT>theColRange</TT> is null.
+	 * @exception  IndexOutOfBoundsException
+	 *     (unchecked exception) Thrown if <TT>theMatrix</TT>'s allocation does
+	 *     not include <TT>theColRange</TT>.
+	 */
+	public static BooleanMatrixBuf colSliceBuffer
+		(boolean[][] theMatrix,
+		 Range theColRange)
+		{
+		return new BooleanMatrixBuf
+			(theMatrix, fullRowRange (theMatrix), theColRange);
+		}
+
+	/**
+	 * Construct an array of new Boolean matrix buffers for multiple column
+	 * slices of the given matrix. Each element of the returned buffer array
+	 * encompasses all the rows, and the columns given in the corresponding
+	 * element of <TT>theColRanges</TT> array, of <TT>theMatrix</TT>. It is
+	 * assumed that the rows and columns of <TT>theMatrix</TT> are allocated and
+	 * that each row of <TT>theMatrix</TT> has the same number of columns.
+	 *
+	 * @param  theMatrix     Matrix.
+	 * @param  theColRanges  Array of ranges of columns to include.
+	 *
+	 * @return  Array of buffers.
+	 *
+	 * @exception  NullPointerException
+	 *     (unchecked exception) Thrown if <TT>theMatrix</TT> is null or
+	 *     <TT>theColRanges</TT> or any element thereof is null.
+	 * @exception  IndexOutOfBoundsException
+	 *     (unchecked exception) Thrown if <TT>theMatrix</TT>'s allocation does
+	 *     not include any element of <TT>theColRanges</TT>.
+	 */
+	public static BooleanMatrixBuf[] colSliceBuffers
+		(boolean[][] theMatrix,
+		 Range[] theColRanges)
+		{
+		int n = theColRanges.length;
+		BooleanMatrixBuf[] result = new BooleanMatrixBuf [n];
+		Range rowrange = fullRowRange (theMatrix);
+		for (int i = 0; i < n; ++ i)
+			{
+			result[i] =
+				new BooleanMatrixBuf (theMatrix, rowrange, theColRanges[i]);
+			}
+		return result;
+		}
+
+	/**
+	 * Construct a new Boolean matrix buffer for one patch of the given matrix.
+	 * The returned buffer encompasses <TT>theRowRange</TT> of rows, and
+	 * <TT>theColRange</TT> of columns, in <TT>theMatrix</TT>. It is assumed
+	 * that the rows and columns of <TT>theMatrix</TT> are allocated and that
+	 * each row of <TT>theMatrix</TT> has the same number of columns.
+	 *
+	 * @param  theMatrix    Matrix.
+	 * @param  theRowRange  Range of rows to include.
+	 * @param  theColRange  Range of columns to include.
+	 *
+	 * @return  Buffer.
+	 *
+	 * @exception  NullPointerException
+	 *     (unchecked exception) Thrown if <TT>theMatrix</TT> is null,
+	 *     <TT>theRowRange</TT> is null, or <TT>theColRange</TT> is null.
+	 * @exception  IndexOutOfBoundsException
+	 *     (unchecked exception) Thrown if <TT>theMatrix</TT>'s allocation does
+	 *     not include <TT>theRowRange</TT> and <TT>theColRange</TT>.
+	 */
+	public static BooleanMatrixBuf patchBuffer
+		(boolean[][] theMatrix,
+		 Range theRowRange,
+		 Range theColRange)
+		{
+		return new BooleanMatrixBuf (theMatrix, theRowRange, theColRange);
+		}
+
+	/**
+	 * Construct an array of new Boolean matrix buffers for multiple patches of
+	 * the given matrix. The length of the returned buffer array is equal to the
+	 * length of <TT>theRowRanges</TT> times the length of
+	 * <TT>theColRanges</TT>. Each element of the returned buffer array
+	 * encompasses the rows given in one element of <TT>theRowRanges</TT> array,
+	 * and the columns given in one element of <TT>theColRanges</TT> array, in
+	 * all possible combinations, of <TT>theMatrix</TT>. It is assumed that the
+	 * rows and columns of <TT>theMatrix</TT> are allocated and that each row of
+	 * <TT>theMatrix</TT> has the same number of columns.
+	 *
+	 * @param  theMatrix     Matrix.
+	 * @param  theRowRanges  Array of ranges of rows to include.
+	 * @param  theColRanges  Array of ranges of columns to include.
+	 *
+	 * @return  Array of buffers.
+	 *
+	 * @exception  NullPointerException
+	 *     (unchecked exception) Thrown if <TT>theMatrix</TT> is null,
+	 *     <TT>theRowRanges</TT> or any element thereof is null, or
+	 *     <TT>theColRanges</TT> or any element thereof is null.
+	 * @exception  IndexOutOfBoundsException
+	 *     (unchecked exception) Thrown if <TT>theMatrix</TT>'s allocation does
+	 *     not include any element of <TT>theRowRanges</TT> or
+	 *     <TT>theColRanges</TT>.
+	 */
+	public static BooleanMatrixBuf[] patchBuffers
+		(boolean[][] theMatrix,
+		 Range[] theRowRanges,
+		 Range[] theColRanges)
+		{
+		int m = theRowRanges.length;
+		int n = theColRanges.length;
+		BooleanMatrixBuf[] result = new BooleanMatrixBuf [m*n];
+		int k = 0;
+		for (int i = 0; i < m; ++ i)
+			{
+			Range rowrange = theRowRanges[i];
+			for (int j = 0; j < n; ++ j)
+				{
+				result[k++] =
+					new BooleanMatrixBuf (theMatrix, rowrange, theColRanges[j]);
+				}
+			}
+		return result;
+		}
+
+	/**
+	 * Obtain the given item from this buffer.
+	 * <P>
+	 * The <TT>get()</TT> method must not block the calling thread; if it does,
+	 * all message I/O in MP will be blocked.
+	 *
+	 * @param  i  Item index in the range 0 .. <TT>length()</TT>-1.
+	 *
+	 * @return  Item at index <TT>i</TT>.
+	 */
+	public boolean get
+		(int i)
+		{
+		return myElements
+			[i / myColCount + myLowerRow]
+			[i % myColCount + myLowerCol];
+		}
+
+	/**
+	 * Store the given item in this buffer.
+	 * <P>
+	 * The <TT>put()</TT> method must not block the calling thread; if it does,
+	 * all message I/O in MP will be blocked.
+	 *
+	 * @param  i     Item index in the range 0 .. <TT>length()</TT>-1.
+	 * @param  item  Item to be stored at index <TT>i</TT>.
+	 */
+	public void put
+		(int i,
+		 boolean item)
+		{
+		myElements
+			[i / myColCount + myLowerRow]
+			[i % myColCount + myLowerCol] = item;
+		}
+
+	/**
+	 * Copy items from the given buffer to this buffer. The number of items
+	 * copied is this buffer's length or <TT>theSrc</TT>'s length, whichever is
+	 * smaller.
+	 * <P>
+	 * If <TT>theSrc</TT> is an instance of class BooleanMatrixBuf, the number
+	 * of rows copied is the number of rows in this buffer or the number of rows
+	 * in <TT>theSrc</TT> buffer, whichever is smaller; and within each row, the
+	 * number of columns copied is the number of columns in this buffer or the
+	 * number of columns in <TT>theSrc</TT> buffer, whichever is smaller.
+	 *
+	 * @param  theSrc  Source of items to copy into this buffer.
+	 *
+	 * @exception  ClassCastException
+	 *     (unchecked exception) Thrown if <TT>theSrc</TT>'s item data type is
+	 *     not the same as this buffer's item data type.
+	 */
+	public void copy
+		(Buf theSrc)
+		{
+		if (theSrc instanceof BooleanMatrixBuf)
+			{
+			BooleanMatrixBuf src = (BooleanMatrixBuf) theSrc;
+			if (src != this)
+				{
+				boolean[][] srcElements = src.myElements;
+				int srcLowerRow = src.myLowerRow;
+				int srcLowerCol = src.myLowerCol;
+				boolean[][] thisElements = this.myElements;
+				int thisLowerRow = this.myLowerRow;
+				int thisLowerCol = this.myLowerCol;
+				int nrows = Math.min (src.myRowCount, this.myRowCount);
+				int ncols = Math.min (src.myColCount, this.myColCount);
+				for (int r = 0; r < nrows; ++ r)
+					{
+					System.arraycopy
+						(srcElements[r+srcLowerRow], srcLowerCol,
+						 thisElements[r+thisLowerRow], thisLowerCol,
+						 ncols);
+					}
+				}
+			}
+		else
+			{
+			super.copy (theSrc);
+			}
+		}
+
+// Hidden operations.
+
+	/**
+	 * Send as many items as possible from this buffer to the given byte
+	 * buffer.
+	 * <P>
+	 * The <TT>sendItems()</TT> method must not block the calling thread; if it
+	 * does, all message I/O in MP will be blocked.
+	 *
+	 * @param  i       Index of first item to send, in the range 0 ..
+	 *                 <TT>length</TT>-1.
+	 * @param  buffer  Byte buffer.
+	 *
+	 * @return  Number of items sent.
+	 */
+	protected int sendItems
+		(int i,
+		 ByteBuffer buffer)
+		{
+		int n = 0;
+		int row = i / myColCount;
+		int col = i % myColCount;
+		int ncols = Math.min (myColCount - col, buffer.remaining());
+		while (row < myRowCount && ncols > 0)
+			{
+			boolean[] myElements_row = myElements[row+myLowerRow];
+			int off = col + myLowerCol;
+			for (int c = 0; c < ncols; ++ c)
+				{
+				buffer.put (myElements_row[off+c] ? (byte) 1 : (byte) 0);
+				}
+			n += ncols;
+			++ row;
+			col = 0;
+			ncols = Math.min (myColCount, buffer.remaining());
+			}
+		return n;
+		}
+
+	/**
+	 * Receive as many items as possible from the given byte buffer to this
+	 * buffer.
+	 * <P>
+	 * The <TT>receiveItems()</TT> method must not block the calling thread; if
+	 * it does, all message I/O in MP will be blocked.
+	 *
+	 * @param  i       Index of first item to receive, in the range 0 ..
+	 *                 <TT>length</TT>-1.
+	 * @param  num     Maximum number of items to receive.
+	 * @param  buffer  Byte buffer.
+	 *
+	 * @return  Number of items received.
+	 */
+	protected int receiveItems
+		(int i,
+		 int num,
+		 ByteBuffer buffer)
+		{
+		int n = 0;
+		int row = i / myColCount;
+		int col = i % myColCount;
+		int ncols =
+			Math.min (num, Math.min (myColCount - col, buffer.remaining()));
+		while (row < myRowCount && ncols > 0)
+			{
+			boolean[] myElements_row = myElements[row+myLowerRow];
+			int off = col + myLowerCol;
+			for (int c = 0; c < ncols; ++ c)
+				{
+				myElements_row[off+c] = buffer.get() != 0;
+				}
+			n += ncols;
+			++ row;
+			col = 0;
+			num -= ncols;
+			ncols = Math.min (num, Math.min (myColCount, buffer.remaining()));
+			}
+		return n;
+		}
+
+	/**
+	 * Obtain the full row range of the given matrix.
+	 *
+	 * @param  theMatrix  Matrix.
+	 *
+	 * @return  Full row range.
+	 */
+	private static Range fullRowRange
+		(boolean[][] theMatrix)
+		{
+		return new Range (0, theMatrix.length - 1);
+		}
+
+	/**
+	 * Obtain the full column range of the given matrix.
+	 *
+	 * @param  theMatrix  Matrix.
+	 *
+	 * @return  Full column range.
+	 */
+	private static Range fullColRange
+		(boolean[][] theMatrix)
+		{
+		return new Range
+			(0, (theMatrix.length == 0 ? 0 : theMatrix[0].length) - 1);
+		}
+
+	}

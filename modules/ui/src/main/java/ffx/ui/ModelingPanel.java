@@ -420,7 +420,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
     /**
      * Create a string representing the modeling command to execute.
      *
-     * @return
+     * @return the modeling command string.
      */
     private String createCommandInput() {
         StringBuilder commandLineParams = new StringBuilder(activeCommand + " ");
