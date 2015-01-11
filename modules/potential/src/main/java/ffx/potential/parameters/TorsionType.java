@@ -133,7 +133,9 @@ public final class TorsionType extends BaseType implements Comparator<String> {
      */
     public void incrementClasses(int increment) {
         for (int i = 0; i < atomClasses.length; i++) {
-            atomClasses[i] += increment;
+            if (atomClasses[i] != 0) {
+                atomClasses[i] += increment;
+            }
         }
         setKey(sortKey(atomClasses));
     }
@@ -207,6 +209,13 @@ public final class TorsionType extends BaseType implements Comparator<String> {
             temp = c[1];
             c[1] = c[2];
             c[2] = temp;
+        } else if (c[1] == c[2]) {
+            if (c[0] > c[3]) {
+                // Reverse the order.
+                int temp = c[0];
+                c[0] = c[3];
+                c[3] = temp;
+            }
         } else if (c[0] <= c[3]) {
             // Do nothing.
         } else {

@@ -138,33 +138,34 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
             return false;
         }
 
-        // Assign the first atom.
-        if (inputClasses[0] == atomClasses[0]) {
+        // Assign the final atom.
+        if (inputClasses[3] == atomClasses[3] || atomClasses[3] == 0) {
             // do nothing.
-        } else if (inputClasses[1] == atomClasses[0]) {
-            int temp = inputClasses[0];
-            inputClasses[0] = inputClasses[1];
+        } else if (inputClasses[1] == atomClasses[3]) {
+            int temp = inputClasses[3];
+            inputClasses[3] = inputClasses[1];
             inputClasses[1] = temp;
-        } else if (inputClasses[3] == atomClasses[0]) {
-            int temp = inputClasses[0];
-            inputClasses[0] = inputClasses[3];
-            inputClasses[3] = temp;
+        } else if (inputClasses[0] == atomClasses[3]) {
+            int temp = inputClasses[3];
+            inputClasses[3] = inputClasses[0];
+            inputClasses[0] = temp;
         } else {
             return false;
         }
 
         // Assign the second atom.
-        if (inputClasses[1] == atomClasses[1]) {
+        if (inputClasses[1] == atomClasses[1] || atomClasses[1] == 0) {
             // Do nothing.
-        } else if (inputClasses[3] == atomClasses[1]) {
+        } else if (inputClasses[0] == atomClasses[1]) {
             int temp = inputClasses[1];
-            inputClasses[1] = inputClasses[3];
-            inputClasses[3] = temp;
+            inputClasses[1] = inputClasses[0];
+            inputClasses[0] = temp;
         } else {
             return false;
         }
 
-        return inputClasses[3] == atomClasses[3];
+        // Assign the first atom.
+        return (inputClasses[0] == atomClasses[0] || atomClasses[0] == 0);
     }
 
     /**
@@ -175,7 +176,9 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
      */
     public void incrementClasses(int increment) {
         for (int i = 0; i < atomClasses.length; i++) {
-            atomClasses[i] += increment;
+            if (atomClasses[i] != 0) {
+                atomClasses[i] += increment;
+            }
         }
         setKey(sortKey(atomClasses));
     }
