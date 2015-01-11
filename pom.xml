@@ -670,7 +670,7 @@
         <linkcheck.skip>true</linkcheck.skip>
         <pmd.skip>false</pmd.skip>
         <skipSurefireReport>false</skipSurefireReport>
-        <skipTests>false</skipTests>
+        <skipTests>true</skipTests>
         <!-- Specify versions of Dependencies to Use -->
         <apple-java-extensions.version>1.6</apple-java-extensions.version>
         <commons-configuration.version>1.10</commons-configuration.version>
