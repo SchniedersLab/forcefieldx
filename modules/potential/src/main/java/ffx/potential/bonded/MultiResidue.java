@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
  *
  * This file is part of Force Field X.
  *
@@ -19,6 +19,21 @@
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+ * Linking this library statically or dynamically with other modules is making a
+ * combined work based on this library. Thus, the terms and conditions of the
+ * GNU General Public License cover the whole combination.
+ *
+ * As a special exception, the copyright holders of this library give you
+ * permission to link this library with independent modules to produce an
+ * executable, regardless of the license terms of these independent modules, and
+ * to copy and distribute the resulting executable under terms of your choice,
+ * provided that you also meet, for each linked independent module, the terms
+ * and conditions of the license of that module. An independent module is a
+ * module which is not derived from or based on this library. If you modify this
+ * library, you may extend this exception to your version of the library, but
+ * you are not obligated to do so. If you do not wish to do so, delete this
+ * exception statement from your version.
  */
 package ffx.potential.bonded;
 
@@ -30,10 +45,12 @@ import javax.media.j3d.BranchGroup;
 import javax.media.j3d.Material;
 import javax.vecmath.Color3f;
 
-import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
+import ffx.potential.bonded.BondedUtils.MissingAtomTypeException;
+import ffx.potential.bonded.BondedUtils.MissingHeavyAtomException;
 import ffx.potential.parameters.ForceField;
 
-import static ffx.potential.bonded.BondedUtils.buildBond;
+import static ffx.potential.bonded.AminoAcidUtils.assignAminoAcidAtomTypes;
+import java.util.logging.Level;
 
 /**
  * @author Will Tollefson and Michael J. Schnieders
@@ -41,20 +58,24 @@ import static ffx.potential.bonded.BondedUtils.buildBond;
 public class MultiResidue extends Residue {
 
     private static final Logger logger = Logger.getLogger(MultiResidue.class.getName());
+
     /**
-     * Which residue is active.
+     * The active residue.
      */
     private Residue activeResidue = null;
+
     /**
      * List of residues under consideration.
      */
     ArrayList<Residue> consideredResidues;
 
+    /**
+     * Force field in use.
+     */
     ForceField forceField;
 
     public MultiResidue(Residue residue, ForceField forceField) {
         super("MultiResidue", residue.getResidueNumber(), residue.residueType);
-
         this.forceField = forceField;
         activeResidue = residue;
         // Initialize consideredResidue list.
@@ -277,6 +298,7 @@ public class MultiResidue extends Residue {
     @Override
     public Rotamer[] getRotamers(Residue residue) {
         if (residue == null) {
+            logger.warning("Couldn't retrieve rotamers for null residue.");
             return null;
         }
         Rotamer allRotamers[];
@@ -292,65 +314,264 @@ public class MultiResidue extends Residue {
             rotamerTotal += rotamersi.length;
         }
         allRotamers = new Rotamer[rotamerTotal];
+        int shift = 0;
         for (int i = 0; i < nResidues; i++) {
             Residue residuei = residueOptions[i];
             Rotamer rotamersi[] = RotamerLibrary.getRotamers(residuei);
             if (rotamersi == null) {
                 continue;
             }
-            int shift = 0;
             for (int j = 0; j < rotamersi.length; j++) {
                 allRotamers[j + shift] = rotamersi[j];
             }
             shift += rotamersi.length;
         }
-        logger.info(consideredResidues.size() + " residue options with " + rotamerTotal + " rotamers.");
+        if (logger.isLoggable(Level.FINE)) {
+            logger.fine(consideredResidues.size() + " residue options with " + rotamerTotal + " rotamers.");
+        }
         return allRotamers;
     }
 
-    public void addResidue(Residue residue) {
-        int number = residue.getResidueNumber();
-        AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
-
-        // Get references to the backbone atoms
-        Atom CA = (Atom) activeResidue.getAtomNode("CA");
-        Atom HA = (Atom) activeResidue.getAtomNode("HA");
-        Atom C = (Atom) activeResidue.getAtomNode("C");
-        Atom O = (Atom) activeResidue.getAtomNode("O");
-        Atom N = (Atom) activeResidue.getAtomNode("N");
-        Atom H = (Atom) activeResidue.getAtomNode("H");
-        Atom newN = N.copy();
-        newN.setResName(residue.getName());
-        Atom newH = H.copy();
-        newH.setResName(residue.getName());
-        Atom newCA = CA.copy();
-        newCA.setResName(residue.getName());
-        Atom newHA = HA.copy();
-        newHA.setResName(residue.getName());
-        Atom newC = C.copy();
-        newC.setResName(residue.getName());
-        Atom newO = O.copy();
-        newO.setResName(residue.getName());
-        buildBond(newN, newH, forceField, null);
-        buildBond(newN, newCA, forceField, null);
-        buildBond(newCA, newHA, forceField, null);
-        buildBond(newCA, newC, forceField, null);
-        buildBond(newC, newO, forceField, null);
-        // Add them to residue
-        residue.addMSNode(newN);
-        residue.addMSNode(newH);
-        residue.addMSNode(newCA);
-        residue.addMSNode(newHA);
-        residue.addMSNode(newC);
-        residue.addMSNode(newO);
+    private void moveBackBoneAtoms(Residue fromResidue, Residue toResidue) {
         /**
-        try {
-            assignAminoAcidSideChain(position, name, residue, CA, N, C);
-            add(residue);
-            residue.finalize(true);
-        } catch (MissingHeavyAtomException missingHeavyAtomException) {
-            logger.severe(missingHeavyAtomException.toString());
-        }
-        */
+         * Get references to the backbone atoms.
+         */
+        Atom CA = (Atom) fromResidue.getAtomNode("CA");
+        Atom HA = (Atom) fromResidue.getAtomNode("HA");
+        Atom C = (Atom) fromResidue.getAtomNode("C");
+        Atom O = (Atom) fromResidue.getAtomNode("O");
+        Atom N = (Atom) fromResidue.getAtomNode("N");
+        Atom H = (Atom) fromResidue.getAtomNode("H");
+        /**
+         * Detach them from their parent Residue.
+         */
+        CA.removeFromParent();
+        HA.removeFromParent();
+        C.removeFromParent();
+        O.removeFromParent();
+        N.removeFromParent();
+        H.removeFromParent();
+        /**
+         * Clear their references to bonded geometry.
+         */
+        CA.clearGeometry();
+        HA.clearGeometry();
+        C.clearGeometry();
+        O.clearGeometry();
+        N.clearGeometry();
+        H.clearGeometry();
+        /**
+         * Change their residue name.
+         */
+        String resName = toResidue.getName();
+        CA.setResName(resName);
+        HA.setResName(resName);
+        C.setResName(resName);
+        O.setResName(resName);
+        N.setResName(resName);
+        H.setResName(resName);
+        /**
+         * Add the backbone atoms to the new Residue.
+         */
+        toResidue.addMSNode(CA);
+        toResidue.addMSNode(HA);
+        toResidue.addMSNode(C);
+        toResidue.addMSNode(O);
+        toResidue.addMSNode(N);
+        toResidue.addMSNode(H);
     }
+
+    /**
+     * Update Atom references to local geometry.
+     *
+     * @param residue
+     */
+    private void updateGeometry(Residue residue, Residue prev, Residue next,
+            Residue prev2, Residue next2) {
+        if (residue == null) {
+            return;
+        }
+        /**
+         * Update atom references to local geometry.
+         */
+        ArrayList<Atom> atoms = residue.getAtomList();
+        ArrayList<ROLS> bonds = residue.getBondList();
+        ArrayList<ROLS> angles = residue.getAngleList();
+        ArrayList<ROLS> torsions = residue.getTorsionList();
+        if (prev != null) {
+            atoms.addAll(prev.getAtomList());
+            bonds.addAll(prev.getBondList());
+            angles.addAll(prev.getAngleList());
+            torsions.addAll(prev.getTorsionList());
+            ArrayList<Joint> joints = prev.getJoints();
+            for (Joint joint : joints) {
+                bonds.addAll(joint.getBondList());
+                angles.addAll(joint.getAngleList());
+                torsions.addAll(joint.getTorsionList());
+            }
+        }
+        if (prev2 != null) {
+            bonds.addAll(prev2.getBondList());
+            angles.addAll(prev2.getAngleList());
+            torsions.addAll(prev2.getTorsionList());
+        }
+        if (next != null) {
+            atoms.addAll(next.getAtomList());
+            bonds.addAll(next.getBondList());
+            angles.addAll(next.getAngleList());
+            torsions.addAll(next.getTorsionList());
+            ArrayList<Joint> joints = next.getJoints();
+            for (Joint joint : joints) {
+                bonds.addAll(joint.getBondList());
+                angles.addAll(joint.getAngleList());
+                torsions.addAll(joint.getTorsionList());
+            }
+        }
+        if (next2 != null) {
+            bonds.addAll(next2.getBondList());
+            angles.addAll(next2.getAngleList());
+            torsions.addAll(next2.getTorsionList());
+        }
+
+        for (Atom atom : atoms) {
+            atom.clearGeometry();
+        }
+        for (Atom atom : atoms) {
+            for (ROLS bond : bonds) {
+                Bond b = (Bond) bond;
+                if (b.containsAtom(atom)) {
+                    atom.setBond(b);
+                }
+            }
+        }
+        for (Atom atom : atoms) {
+            for (ROLS angle : angles) {
+                Angle a = (Angle) angle;
+                if (a.containsAtom(atom)) {
+                    atom.setAngle(a);
+                }
+            }
+        }
+        for (Atom atom : atoms) {
+            for (ROLS torsion : torsions) {
+                Torsion t = (Torsion) torsion;
+                if (t.containsAtom(atom)) {
+                    atom.setTorsion(t);
+                }
+            }
+        }
+    }
+
+    public void addResidue(Residue newResidue) {
+        /**
+         * Add the new residue to list.
+         */
+        consideredResidues.add(newResidue);
+        /**
+         * Get references to nearby residues.
+         */
+        Residue prevResidue = activeResidue.getPreviousResidue();
+        Residue nextResidue = activeResidue.getNextResidue();
+        Residue prev2Residue = null;
+        if (prevResidue != null) {
+            prev2Residue = prevResidue.getPreviousResidue();
+        }
+        Residue next2Residue = null;
+        if (nextResidue != null) {
+            next2Residue = nextResidue.getNextResidue();
+        }
+
+        /**
+         * Move atoms from the active Residue to the new Residue.
+         */
+        moveBackBoneAtoms(activeResidue, newResidue);
+        /**
+         * Pass references of the active Residues' joints to the new Residue.
+         */
+        ArrayList<Joint> joints = activeResidue.getJoints();
+        for (Joint joint : joints) {
+            newResidue.addJoint(joint);
+        }
+        /**
+         * Make the new Residue active.
+         */
+        activeResidue.removeFromParent();
+        activeResidue = newResidue;
+        add(activeResidue);
+        /**
+         * Build side-chain atoms and assign atom types for the new Residue.
+         */
+        try {
+            assignAminoAcidAtomTypes(newResidue, prevResidue, nextResidue, forceField, null);
+            if (nextResidue != null) {
+                Atom C = (Atom) newResidue.getAtomNode("C");
+                Atom nextN = (Atom) nextResidue.getAtomNode("N");
+                for (Joint joint : joints) {
+                    Bond bond = (Bond) joint.getBondList().get(0);
+                    if (bond.containsAtom(C) && bond.containsAtom(nextN)) {
+                        C.setBond(bond);
+                    }
+                }
+            }
+        } catch (MissingHeavyAtomException | MissingAtomTypeException exception) {
+            logger.severe(exception.toString());
+        }
+        newResidue.finalize(true, forceField);
+        updateGeometry(newResidue, prevResidue, nextResidue, prev2Residue, next2Residue);
+    }
+
+    public boolean setActiveResidue(int i) {
+        if (consideredResidues == null) {
+            return false;
+        }
+        if (i >= consideredResidues.size()) {
+            return false;
+        }
+        return setActiveResidue(consideredResidues.get(i));
+    }
+
+    public boolean setActiveResidue(Residue residue) {
+        if (!consideredResidues.contains(residue)) {
+            return false;
+        }
+        Residue prevResidue = activeResidue.getPreviousResidue();
+        Residue nextResidue = activeResidue.getNextResidue();
+        Residue prev2Residue = null;
+        if (prevResidue != null) {
+            prev2Residue = prevResidue.getPreviousResidue();
+        }
+        Residue next2Residue = null;
+        if (nextResidue != null) {
+            next2Residue = nextResidue.getNextResidue();
+        }
+
+        activeResidue.removeFromParent();
+
+        /**
+         * Move backbone atoms to the new active residue.
+         */
+        moveBackBoneAtoms(activeResidue, residue);
+        updateGeometry(residue, prevResidue, nextResidue, prev2Residue, next2Residue);
+        activeResidue = residue;
+        add(activeResidue);
+
+        return true;
+    }
+
+    public int getResidueCount() {
+        if (consideredResidues == null) {
+            return 0;
+        }
+        return consideredResidues.size();
+    }
+
+    @Override
+    public String toString() {
+        if (activeResidue == null) {
+            return null;
+        } else {
+            return activeResidue.toString();
+        }
+    }
+
 }

@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
  *
  * This file is part of Force Field X.
  *
@@ -19,6 +19,21 @@
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+ * Linking this library statically or dynamically with other modules is making a
+ * combined work based on this library. Thus, the terms and conditions of the
+ * GNU General Public License cover the whole combination.
+ *
+ * As a special exception, the copyright holders of this library give you
+ * permission to link this library with independent modules to produce an
+ * executable, regardless of the license terms of these independent modules, and
+ * to copy and distribute the resulting executable under terms of your choice,
+ * provided that you also meet, for each linked independent module, the terms
+ * and conditions of the license of that module. An independent module is a
+ * module which is not derived from or based on this library. If you modify this
+ * library, you may extend this exception to your version of the library, but
+ * you are not obligated to do so. If you do not wish to do so, delete this
+ * exception statement from your version.
  */
 package ffx.potential;
 
@@ -62,7 +77,6 @@ import org.jdesktop.j3d.loaders.vrml97.VrmlScene;
 
 import ffx.crystal.Crystal;
 import ffx.numerics.VectorMath;
-import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.MSGroup;
@@ -108,9 +122,9 @@ public class MolecularAssembly extends MSGroup {
     private int currentCycle = 1;
     private List<String> altLoc = null;
     // Data Nodes
-    private MSNode ions = new MSNode("Ions");
-    private MSNode water = new MSNode("Waters");
-    private MSNode molecules = new MSNode("Hetero Molecules");
+    private final MSNode ions = new MSNode("Ions");
+    private final MSNode water = new MSNode("Waters");
+    private final MSNode molecules = new MSNode("Hetero Molecules");
     // 3D Graphics Nodes - There is a diagram explaining the MolecularAssembly
     // Scenegraph below
     private BranchGroup branchGroup;
@@ -132,10 +146,7 @@ public class MolecularAssembly extends MSGroup {
     private File vrmlFile = null;
     private URL vrmlURL = null;
     private boolean visible = false;
-    private ArrayList<ROLS> bondList = null;
-    private final ArrayList<BranchGroup> myNewShapes = new ArrayList<BranchGroup>();
-    
-    private int numTimesDestroyed = 0;
+    private final ArrayList<BranchGroup> myNewShapes = new ArrayList<>();
 
     // Constructors
     /**
@@ -770,19 +781,6 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public ArrayList<ROLS> getBondList() {
-        if (bondList != null) {
-            return bondList;
-        }
-
-        bondList = super.getBondList();
-        return bondList;
-    }
-
-    /**
      * <p>
      * Getter for the field <code>branchGroup</code>.</p>
      *
@@ -1373,7 +1371,7 @@ public class MolecularAssembly extends MSGroup {
                 = new Atom[4 * numbonds];
         int i = 0;
         col[3] = 0.9f;
-        for (ListIterator li = bondList.listIterator(); li.hasNext();) {
+        for (ListIterator li = bonds.listIterator(); li.hasNext();) {
             bond = (Bond) li.next();
             bond.setWire(la, i);
             atom1

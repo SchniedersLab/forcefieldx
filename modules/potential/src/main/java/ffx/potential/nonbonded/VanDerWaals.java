@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
  *
  * This file is part of Force Field X.
  *
@@ -19,6 +19,21 @@
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+ * Linking this library statically or dynamically with other modules is making a
+ * combined work based on this library. Thus, the terms and conditions of the
+ * GNU General Public License cover the whole combination.
+ *
+ * As a special exception, the copyright holders of this library give you
+ * permission to link this library with independent modules to produce an
+ * executable, regardless of the license terms of these independent modules, and
+ * to copy and distribute the resulting executable under terms of your choice,
+ * provided that you also meet, for each linked independent module, the terms
+ * and conditions of the license of that module. An independent module is a
+ * module which is not derived from or based on this library. If you modify this
+ * library, you may extend this exception to your version of the library, but
+ * you are not obligated to do so. If you do not wish to do so, delete this
+ * exception statement from your version.
  */
 package ffx.potential.nonbonded;
 
@@ -321,10 +336,8 @@ public class VanDerWaals implements MaskingInterface,
                 double rj3 = rj * rj2;
                 double e2 = vdwj.wellDepth;
                 double se2 = sqrt(e2);
-
                 double radmin;
                 double eps;
-
                 switch (vdwForm) {
                     case LENNARD_JONES_6_12:
                         /**
@@ -348,10 +361,18 @@ public class VanDerWaals implements MaskingInterface,
                         eps = 4.0 * (e1 * e2) / ((se1 + se2) * (se1 + se2));
                         break;
                 }
+                if (radmin > 0) {
+                    radEps[i][j * 2 + RADMIN] = 1.0 / radmin;
+                } else {
+                    radEps[i][j * 2 + RADMIN] = 0.0;
+                }
 
-                radEps[i][j * 2 + RADMIN] = 1.0 / radmin;
                 radEps[i][j * 2 + EPS] = eps;
-                radEps[j][i * 2 + RADMIN] = 1.0 / radmin;
+                if (radmin > 0) {
+                    radEps[j][i * 2 + RADMIN] = 1.0 / radmin;
+                } else {
+                    radEps[j][i * 2 + RADMIN] = 0.0;
+                }
                 radEps[j][i * 2 + EPS] = eps;
             }
         }
@@ -499,7 +520,12 @@ public class VanDerWaals implements MaskingInterface,
                 logger.severe(ai.toString());
                 continue;
             }
-            atomClass[i] = type.atomClass;
+            String vdwIndex = forceField.getString(ForceField.ForceFieldString.VDWINDEX, "Class");
+            if (vdwIndex.equalsIgnoreCase("Type")) {
+                atomClass[i] = type.type;
+            } else {
+                atomClass[i] = type.atomClass;
+            }
             VDWType vdwType = forceField.getVDWType(Integer.toString(atomClass[i]));
             ai.setVDWType(vdwType);
             ArrayList<Bond> bonds = ai.getBonds();
@@ -560,6 +586,11 @@ public class VanDerWaals implements MaskingInterface,
         this.atoms = atoms;
         this.nAtoms = atoms.length;
         this.molecule = molecule;
+
+        if (nAtoms != molecule.length) {
+            logger.severe("atom and molecule arrays are of different lengths");
+        }
+
         initAtomArrays();
 
         /**
@@ -567,7 +598,6 @@ public class VanDerWaals implements MaskingInterface,
          */
         neighborList.setAtoms(atoms);
         neighborListOnly = true;
-        print = false;
         try {
             parallelTeam.execute(vanDerWaalsRegion);
         } catch (Exception e) {
@@ -711,7 +741,7 @@ public class VanDerWaals implements MaskingInterface,
      * @since 1.0
      */
     public double getBuffer() {
-        return this.buff;
+        return buff;
     }
 
     /**
@@ -945,7 +975,7 @@ public class VanDerWaals implements MaskingInterface,
             logger.log(Level.SEVERE, message, e);
         }
     }
-    
+
     public void destroy() throws Exception {
         if (neighborList != null) {
             neighborList.destroy();
@@ -1034,6 +1064,7 @@ public class VanDerWaals implements MaskingInterface,
                 if (neighborListOnly) {
                     forceRebuild = true;
                 }
+                print = false;
                 neighborList.buildList(reduced, neighborLists, null, forceRebuild, print);
             }
             barrier();
@@ -1292,19 +1323,17 @@ public class VanDerWaals implements MaskingInterface,
             private double lxi_local[];
             private double lyi_local[];
             private double lzi_local[];
+            private double mask[];
             private final double dx_local[];
             private final double transOp[][];
-            private final double mask[];
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
             public VanDerWaalsLoop() {
                 super();
-                mask = new double[nAtoms];
                 dx_local = new double[3];
                 transOp = new double[3][3];
-                fill(mask, 1.0);
             }
 
             public int getCount() {
@@ -1336,6 +1365,11 @@ public class VanDerWaals implements MaskingInterface,
                     lzi_local = null;
                 }
                 vdwTime[threadId] = -System.nanoTime();
+                if (mask == null || mask.length < nAtoms) {
+                    mask = new double[nAtoms];
+                    fill(mask, 1.0);
+                }
+
             }
 
             @Override

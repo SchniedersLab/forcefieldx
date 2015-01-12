@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
  *
  * This file is part of Force Field X.
  *
@@ -19,6 +19,21 @@
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+ * Linking this library statically or dynamically with other modules is making a
+ * combined work based on this library. Thus, the terms and conditions of the
+ * GNU General Public License cover the whole combination.
+ *
+ * As a special exception, the copyright holders of this library give you
+ * permission to link this library with independent modules to produce an
+ * executable, regardless of the license terms of these independent modules, and
+ * to copy and distribute the resulting executable under terms of your choice,
+ * provided that you also meet, for each linked independent module, the terms
+ * and conditions of the license of that module. An independent module is a
+ * module which is not derived from or based on this library. If you modify this
+ * library, you may extend this exception to your version of the library, but
+ * you are not obligated to do so. If you do not wish to do so, delete this
+ * exception statement from your version.
  */
 
 // TEST ATOMIC COORDINATE GRADIENT
@@ -149,10 +164,10 @@ for (int i=atomID; i<n; i++) {
     double len = dx * dx + dy * dy + dz * dz;
     avLen += len;
     len = Math.sqrt(len);
-    
+
     double grad2 = analytic[i0] * analytic[i0] + analytic[i1] * analytic[i1] + analytic[i2] * analytic[i2];
     avGrad += grad2;
-    
+
     if (len > gradientTolerance) {
         logger.info(" " + a0.toShortString() + String.format(" failed: %10.6f.", len)
             + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", analytic[i0], analytic[i1], analytic[i2])
@@ -164,7 +179,7 @@ for (int i=atomID; i<n; i++) {
             + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", analytic[i0], analytic[i1], analytic[i2])
             + String.format(" Numeric:  (%12.4f, %12.4f, %12.4f)", numeric[0], numeric[1], numeric[2]));
     }
-    
+
     if (grad2 > expGrad2) {
         logger.info(String.format(" Atom %d has an unusually large gradient: %10.6f", i+1, Math.sqrt(grad2)));
     }

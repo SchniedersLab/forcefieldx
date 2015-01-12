@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
  *
  * This file is part of Force Field X.
  *
@@ -19,6 +19,21 @@
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+ * Linking this library statically or dynamically with other modules is making a
+ * combined work based on this library. Thus, the terms and conditions of the
+ * GNU General Public License cover the whole combination.
+ *
+ * As a special exception, the copyright holders of this library give you
+ * permission to link this library with independent modules to produce an
+ * executable, regardless of the license terms of these independent modules, and
+ * to copy and distribute the resulting executable under terms of your choice,
+ * provided that you also meet, for each linked independent module, the terms
+ * and conditions of the license of that module. An independent module is a
+ * module which is not derived from or based on this library. If you modify this
+ * library, you may extend this exception to your version of the library, but
+ * you are not obligated to do so. If you do not wish to do so, delete this
+ * exception statement from your version.
  */
 package ffx.potential;
 
@@ -57,7 +72,6 @@ import ffx.potential.bonded.TorsionTorsion;
 import ffx.potential.bonded.UreyBradley;
 import ffx.potential.nonbonded.COMRestraint;
 import ffx.potential.nonbonded.CoordRestraint;
-import ffx.potential.nonbonded.GeneralizedKirkwood;
 import ffx.potential.nonbonded.NCSRestraint;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.ELEC_FORM;
@@ -200,7 +214,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             int index = atoms[i].xyzIndex - 1;
             assert (i == index);
         }
-        
+
         // Check if more threads available than atoms.
         int nThreads = ParallelTeam.getDefaultThreadCount();
         nThreads = nAtoms < nThreads ? nAtoms : nThreads;
@@ -556,7 +570,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         molecularAssembly.setPotential(this);
     }
 
-    public void reInitForceFieldEnergy() {
+    public void reInit() {
 
         atoms = molecularAssembly.getAtomArray();
         nAtoms = atoms.length;
@@ -567,8 +581,10 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
         // Check that atom ordering is correct.
         for (int i = 0; i < nAtoms; i++) {
-            int index = atoms[i].xyzIndex - 1;
+            Atom atom = atoms[i];
+            int index = atom.xyzIndex - 1;
             assert (i == index);
+            atom.setXYZIndex(i + 1);
         }
 
         // Collect, count, pack and sort bonds.
@@ -581,8 +597,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             } else {
                 bonds = bond.toArray(new Bond[nBonds]);
             }
-            Arrays.sort(bonds);
-            if (nBonds > 0 && logger.isLoggable(Level.FINEST)) {
+            Arrays.sort(bonds, 0, nBonds);
+            if (nBonds > 0 && logger.isLoggable(Level.FINE)) {
                 logger.finest(format("  Bonds:                             %10d", nBonds));
             }
         } else {
@@ -600,8 +616,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             } else {
                 angles = angle.toArray(new Angle[nAngles]);
             }
-            Arrays.sort(angles);
-            if (nAngles > 0 && logger.isLoggable(Level.FINEST)) {
+            Arrays.sort(angles, 0, nAngles);
+            if (nAngles > 0 && logger.isLoggable(Level.FINE)) {
                 logger.finest(format("  Angles:                            %10d", nAngles));
             }
         } else {
@@ -619,8 +635,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             } else {
                 stretchBends = stretchBend.toArray(new StretchBend[nStretchBends]);
             }
-            Arrays.sort(stretchBends);
-            if (nStretchBends > 0 && logger.isLoggable(Level.FINEST)) {
+            Arrays.sort(stretchBends, 0, nStretchBends);
+            if (nStretchBends > 0 && logger.isLoggable(Level.FINE)) {
                 logger.finest(format("  Stretch-Bends:                     %10d", nStretchBends));
             }
         } else {
@@ -638,8 +654,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             } else {
                 ureyBradleys = ureyBradley.toArray(new UreyBradley[nUreyBradleys]);
             }
-            Arrays.sort(ureyBradleys);
-            if (nUreyBradleys > 0 && logger.isLoggable(Level.FINEST)) {
+            Arrays.sort(ureyBradleys, 0, nUreyBradleys);
+            if (nUreyBradleys > 0 && logger.isLoggable(Level.FINE)) {
                 logger.finest(format("  Urey-Bradleys:                     %10d", nUreyBradleys));
             }
         } else {
@@ -692,8 +708,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             } else {
                 outOfPlaneBends = outOfPlaneBend.toArray(new OutOfPlaneBend[nOutOfPlaneBends]);
             }
-            Arrays.sort(outOfPlaneBends);
-            if (nOutOfPlaneBends > 0 && logger.isLoggable(Level.FINEST)) {
+            Arrays.sort(outOfPlaneBends, 0, nOutOfPlaneBends);
+            if (nOutOfPlaneBends > 0 && logger.isLoggable(Level.FINE)) {
                 logger.finest(format("  Out-of-Plane Bends:                %10d", nOutOfPlaneBends));
             }
         } else {
@@ -711,8 +727,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             } else {
                 torsions = torsion.toArray(new Torsion[nTorsions]);
             }
-            Arrays.sort(torsions);
-            if (nTorsions > 0 && logger.isLoggable(Level.FINEST)) {
+            // Arrays.sort(torsions);
+            if (nTorsions > 0 && logger.isLoggable(Level.FINE)) {
                 logger.finest(format("  Torsions:                          %10d", nTorsions));
             }
         } else {
@@ -730,7 +746,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             } else {
                 piOrbitalTorsions = piOrbitalTorsion.toArray(new PiOrbitalTorsion[nPiOrbitalTorsions]);
             }
-            if (nPiOrbitalTorsions > 0 && logger.isLoggable(Level.FINEST)) {
+            if (nPiOrbitalTorsions > 0 && logger.isLoggable(Level.FINE)) {
                 logger.finest(format("  Pi-Orbital Torsions:               %10d", nPiOrbitalTorsions));
             }
         } else {
@@ -748,7 +764,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             } else {
                 torsionTorsions = torsionTorsion.toArray(new TorsionTorsion[nTorsionTorsions]);
             }
-            if (nTorsionTorsions > 0 && logger.isLoggable(Level.FINEST)) {
+            if (nTorsionTorsions > 0 && logger.isLoggable(Level.FINE)) {
                 logger.finest(format("  Torsion-Torsions:                  %10d", nTorsionTorsions));
             }
         } else {
@@ -766,7 +782,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             } else {
                 improperTorsions = improperTorsion.toArray(new ImproperTorsion[nImproperTorsions]);
             }
-            if (nImproperTorsions > 0 && logger.isLoggable(Level.FINEST)) {
+            if (nImproperTorsions > 0 && logger.isLoggable(Level.FINE)) {
                 logger.finest(format("  Improper Torsions:                 %10d", nImproperTorsions));
             }
         } else {
@@ -774,12 +790,13 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             improperTorsions = null;
         }
 
+        int molecule[] = molecularAssembly.getMoleculeNumbers();
         if (vanderWaalsTerm) {
-            vanderWaals.setAtoms(atoms, molecularAssembly.getMoleculeNumbers());
+            vanderWaals.setAtoms(atoms, molecule);
         }
 
         if (multipoleTerm) {
-            //particleMeshEwald.reInit(atoms);
+            particleMeshEwald.setAtoms(atoms, molecule);
         }
 
         if (ncsTerm) {
@@ -1260,10 +1277,10 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     nPermanentInteractions, electrostaticTime * toSeconds));
         }
         if (generalizedKirkwoodTerm && nGKIteractions > 0) {
-                    sb.append(String.format("  %s %16.8f %12d\n",
+            sb.append(String.format("  %s %16.8f %12d\n",
                     "Solvation         ", solvationEnergy, nGKIteractions));
         }
-            
+
         sb.append(String.format("  %s %16.8f  %s %12.3f (sec)\n",
                 "Total Potential   ", totalEnergy, "(Kcal/mole)", totalTime * toSeconds));
 
@@ -1719,7 +1736,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
          * operators and periodic boundary conditions.
          */
     }
-    
+
     public void destroy() throws Exception {
         if (parallelTeam != null) {
             try {

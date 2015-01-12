@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
  *
  * This file is part of Force Field X.
  *
@@ -19,6 +19,21 @@
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+ * Linking this library statically or dynamically with other modules is making a
+ * combined work based on this library. Thus, the terms and conditions of the
+ * GNU General Public License cover the whole combination.
+ *
+ * As a special exception, the copyright holders of this library give you
+ * permission to link this library with independent modules to produce an
+ * executable, regardless of the license terms of these independent modules, and
+ * to copy and distribute the resulting executable under terms of your choice,
+ * provided that you also meet, for each linked independent module, the terms
+ * and conditions of the license of that module. An independent module is a
+ * module which is not derived from or based on this library. If you modify this
+ * library, you may extend this exception to your version of the library, but
+ * you are not obligated to do so. If you do not wish to do so, delete this
+ * exception statement from your version.
  */
 package ffx.potential.nonbonded;
 
@@ -37,6 +52,16 @@ import ffx.potential.bonded.Atom;
 import static ffx.potential.nonbonded.SpatialDensityRegion.logger;
 
 /**
+ * The RowRegion class is used to parallelize placing onto a 3D grid
+ *
+ * 1) Multipoles using B-splines or
+ *
+ * 2) Diffraction form factors.
+ *
+ * Each "row" of 3D grid (i.e. fixed values of the z and y-coordinates) is
+ * operated on by only a single thread to logically enforce atomic updates of
+ * grid magnitudes.
+ *
  * @author Armin Avdic
  */
 public class RowRegion extends ParallelRegion {
@@ -69,7 +94,6 @@ public class RowRegion extends ParallelRegion {
             int threadCount, Crystal crystal,
             Atom atoms[], double coordinates[][][]) {
         weight = new int[threadCount];
-
 
         this.atoms = atoms;
         this.nAtoms = atoms.length;
@@ -105,6 +129,28 @@ public class RowRegion extends ParallelRegion {
         gridSize = gX * gY * gZ * 2;
     }
 
+    public int zFromRowIndex(int i) {
+        return i / gY;
+    }
+
+    public int yFromRowIndex(int i) {
+        return i % gY;
+    }
+
+    public int rowIndexForYZ(int giy, int giz) {
+        return giy + gY * giz;
+    }
+
+    public void setAtoms(Atom atoms[]) {
+        this.atoms = atoms;
+        nAtoms = atoms.length;
+        select = new boolean[nSymm][nAtoms];
+        for (int i = 0; i < nSymm; i++) {
+            fill(select[i], true);
+        }
+
+    }
+
     public int getNatoms() {
         return nAtoms;
     }
@@ -137,7 +183,7 @@ public class RowRegion extends ParallelRegion {
         loop.setNsymm(nSymm);
         try {
             execute(0, gridSize - 1, gridInitLoop[threadIndex]);
-            execute(0, (gY*gZ) - 1, loop);
+            execute(0, (gY * gZ) - 1, loop);
         } catch (Exception e) {
             String message = " Exception in RowRegion.";
             logger.log(Level.SEVERE, message, e);

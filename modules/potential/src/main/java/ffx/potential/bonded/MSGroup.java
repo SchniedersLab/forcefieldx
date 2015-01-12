@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
  *
  * This file is part of Force Field X.
  *
@@ -19,6 +19,21 @@
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+ * Linking this library statically or dynamically with other modules is making a
+ * combined work based on this library. Thus, the terms and conditions of the
+ * GNU General Public License cover the whole combination.
+ *
+ * As a special exception, the copyright holders of this library give you
+ * permission to link this library with independent modules to produce an
+ * executable, regardless of the license terms of these independent modules, and
+ * to copy and distribute the resulting executable under terms of your choice,
+ * provided that you also meet, for each linked independent module, the terms
+ * and conditions of the license of that module. An independent module is a
+ * module which is not derived from or based on this library. If you modify this
+ * library, you may extend this exception to your version of the library, but
+ * you are not obligated to do so. If you do not wish to do so, delete this
+ * exception statement from your version.
  */
 package ffx.potential.bonded;
 
@@ -64,6 +79,8 @@ public abstract class MSGroup extends MSNode {
     private MSNode piOrbitalTorsionNode = new MSNode("Pi-Orbital Torsions");
     private MSNode torsionTorsionNode = new MSNode("Torsion-Torsions");
     private MSNode improperTorsionNode = new MSNode("Improper Torsions");
+
+    private ArrayList<Joint> joints = new ArrayList<>();
 
     // Whether the terms are current
     private boolean finalized;
@@ -205,7 +222,7 @@ public abstract class MSGroup extends MSNode {
         MSNode newPiOrbitalTorsionNode = new MSNode("Pi-Orbital Torsions");
         MSNode newTorsionTorsionNode = new MSNode("Torsion-Torsions");
         MSNode newImproperTorsionNode = new MSNode("Improper Torsions");
-        ;
+
         // Collect all bonds for which both atoms are in this Group
         long time = System.nanoTime();
         ArrayList<Bond> bonds = new ArrayList<>();
@@ -564,10 +581,27 @@ public abstract class MSGroup extends MSNode {
 
         newTorsionTorsionNode.setName(
                 "Torsion-Torsions (" + newTorsionTorsionNode.getChildCount() + ")");
+
         Joint newJoint = new Joint(group1, group2, newBondNode, newAngleNode,
                 newStretchBendNode, newUreyBradleyNode, newOutOfPlaneNode,
                 newTorsionNode, newPiOrbitalTorsionNode, newTorsionTorsionNode);
+
+        group1.addJoint(newJoint);
+        group2.addJoint(newJoint);
+
         return newJoint;
+    }
+
+    public void addJoint(Joint newJoint) {
+        joints.add(newJoint);
+    }
+
+    public void clearJoints() {
+        joints.clear();
+    }
+
+    public ArrayList<Joint> getJoints() {
+        return joints;
     }
 
     /**

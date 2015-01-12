@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
  *
  * This file is part of Force Field X.
  *
@@ -19,6 +19,21 @@
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+ * Linking this library statically or dynamically with other modules is making a
+ * combined work based on this library. Thus, the terms and conditions of the
+ * GNU General Public License cover the whole combination.
+ *
+ * As a special exception, the copyright holders of this library give you
+ * permission to link this library with independent modules to produce an
+ * executable, regardless of the license terms of these independent modules, and
+ * to copy and distribute the resulting executable under terms of your choice,
+ * provided that you also meet, for each linked independent module, the terms
+ * and conditions of the license of that module. An independent module is a
+ * module which is not derived from or based on this library. If you modify this
+ * library, you may extend this exception to your version of the library, but
+ * you are not obligated to do so. If you do not wish to do so, delete this
+ * exception statement from your version.
  */
 package ffx.xray;
 
@@ -43,10 +58,10 @@ import ffx.xray.SplineEnergy.Type;
 public class SplineMinimize implements OptimizationListener, Terminatable {
 
     private static final Logger logger = Logger.getLogger(SplineEnergy.class.getName());
-    private final ReflectionList reflectionlist;
-    private final DiffractionRefinementData refinementdata;
+    private final ReflectionList reflectionList;
+    private final DiffractionRefinementData refinementData;
     private final Crystal crystal;
-    private final SplineEnergy splineenergy;
+    private final SplineEnergy splineEnergy;
     private final int n;
     private final double x[];
     private final double grad[];
@@ -61,21 +76,21 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
      * <p>
      * Constructor for SplineMinimize.</p>
      *
-     * @param reflectionlist a {@link ffx.crystal.ReflectionList} object.
-     * @param refinementdata a {@link ffx.xray.DiffractionRefinementData}
+     * @param reflectionList a {@link ffx.crystal.ReflectionList} object.
+     * @param refinementData a {@link ffx.xray.DiffractionRefinementData}
      * object.
      * @param x an array of double.
      * @param type a int.
      */
-    public SplineMinimize(ReflectionList reflectionlist,
-            DiffractionRefinementData refinementdata, double x[], int type) {
-        this.reflectionlist = reflectionlist;
-        this.refinementdata = refinementdata;
-        this.crystal = reflectionlist.crystal;
+    public SplineMinimize(ReflectionList reflectionList,
+            DiffractionRefinementData refinementData, double x[], int type) {
+        this.reflectionList = reflectionList;
+        this.refinementData = refinementData;
+        this.crystal = reflectionList.crystal;
         this.x = x;
 
         n = x.length;
-        splineenergy = new SplineEnergy(reflectionlist, refinementdata,
+        splineEnergy = new SplineEnergy(reflectionList, refinementData,
                 n, type);
         grad = new double[n];
         scaling = new double[n];
@@ -88,7 +103,23 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
             }
             scaling[i] = 1.0;
         }
-        splineenergy.setScaling(scaling);
+        splineEnergy.setScaling(scaling);
+    }
+
+    public SplineEnergy getSplineEnergy() {
+        return splineEnergy;
+    }
+
+    public int getNumberOfVariables() {
+        return x.length;
+    }
+
+    public double[] getCoordinates(double x[]) {
+        if (x == null) {
+            x = new double[this.x.length];
+        }
+        System.arraycopy(this.x, 0, x, 0, this.x.length);
+        return x;
     }
 
     /**
@@ -122,11 +153,11 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
      */
     public SplineEnergy minimize(int m, double eps) {
 
-        double e = splineenergy.energyAndGradient(x, grad);
+        double e = splineEnergy.energyAndGradient(x, grad);
 
         time = -System.nanoTime();
         done = false;
-        int status = LBFGS.minimize(n, m, x, e, grad, eps, splineenergy, this);
+        int status = LBFGS.minimize(n, m, x, e, grad, eps, splineEnergy, this);
         done = true;
         switch (status) {
             case 0:
@@ -138,7 +169,7 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
             default:
                 logger.warning("\n Spline Optimization failed.\n");
         }
-        return splineenergy;
+        return splineEnergy;
     }
 
     /**

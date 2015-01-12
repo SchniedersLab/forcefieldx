@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
  *
  * This file is part of Force Field X.
  *
@@ -19,31 +19,64 @@
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+ * Linking this library statically or dynamically with other modules is making a
+ * combined work based on this library. Thus, the terms and conditions of the
+ * GNU General Public License cover the whole combination.
+ *
+ * As a special exception, the copyright holders of this library give you
+ * permission to link this library with independent modules to produce an
+ * executable, regardless of the license terms of these independent modules, and
+ * to copy and distribute the resulting executable under terms of your choice,
+ * provided that you also meet, for each linked independent module, the terms
+ * and conditions of the license of that module. An independent module is a
+ * module which is not derived from or based on this library. If you modify this
+ * library, you may extend this exception to your version of the library, but
+ * you are not obligated to do so. If you do not wish to do so, delete this
+ * exception statement from your version.
  */
 package ffx.autoparm;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static org.apache.commons.math3.util.FastMath.abs;
-
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
+import static org.apache.commons.math3.util.FastMath.abs;
+
+import ffx.potential.parameters.AngleType;
+import ffx.potential.parameters.AngleType.AngleFunction;
+import ffx.potential.parameters.AtomType;
+import ffx.potential.parameters.BioType;
+import ffx.potential.parameters.BondType;
+import ffx.potential.parameters.BondType.BondFunction;
+import ffx.potential.parameters.ChargeType;
+import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldBoolean;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldInteger;
+import ffx.potential.parameters.ForceField.ForceFieldName;
 import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.parameters.ForceField.ForceFieldType;
-import ffx.potential.parameters.ForceField.ForceFieldName;
-import ffx.potential.parameters.*;
-import ffx.potential.parameters.AngleType.AngleFunction;
-import ffx.potential.parameters.BondType.BondFunction;
+import ffx.potential.parameters.MultipoleType;
+import ffx.potential.parameters.OutOfPlaneBendType;
+import ffx.potential.parameters.PiTorsionType;
+import ffx.potential.parameters.PolarizeType;
+import ffx.potential.parameters.StretchBendType;
+import ffx.potential.parameters.TorsionTorsionType;
+import ffx.potential.parameters.TorsionType;
+import ffx.potential.parameters.UreyBradleyType;
+import ffx.potential.parameters.VDWType;
 
 /*
  * @author Gaurav Chattree and Michael J. Schnieders

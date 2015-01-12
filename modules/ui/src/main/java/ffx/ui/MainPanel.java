@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
  *
  * This file is part of Force Field X.
  *
@@ -19,6 +19,21 @@
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+ * Linking this library statically or dynamically with other modules is making a
+ * combined work based on this library. Thus, the terms and conditions of the
+ * GNU General Public License cover the whole combination.
+ *
+ * As a special exception, the copyright holders of this library give you
+ * permission to link this library with independent modules to produce an
+ * executable, regardless of the license terms of these independent modules, and
+ * to copy and distribute the resulting executable under terms of your choice,
+ * provided that you also meet, for each linked independent module, the terms
+ * and conditions of the license of that module. An independent module is a
+ * module which is not derived from or based on this library. If you modify this
+ * library, you may extend this exception to your version of the library, but
+ * you are not obligated to do so. If you do not wish to do so, delete this
+ * exception statement from your version.
  */
 package ffx.ui;
 
@@ -886,9 +901,9 @@ public final class MainPanel extends JPanel implements ActionListener,
      */
     public static final String version = "Version 1.0.0-BETA";
     /**
-     * Constant <code>date="March 2014"</code>
+     * Constant <code>date="January 2015"</code>
      */
-    public static final String date = "March 2014";
+    public static final String date = "January 2015";
     /**
      * Constant
      */
@@ -904,8 +919,8 @@ public final class MainPanel extends JPanel implements ActionListener,
      */
     public static final String aboutString
             = "        " + version + "  " + date + " \n"
-            + "\n        Copyright (c)  Michael J. Schnieders    2001-2014 \n"
-            + "        Portions Copyright (c)  Timothy D. Fenn 2009-2014 \n"
+            + "\n        Copyright (c)  Michael J. Schnieders    2001-2015 \n"
+            + "        Portions Copyright (c)  Timothy D. Fenn 2009-2015 \n"
             + "\n"
             + "        All Rights Reserved \n"
             + "\n"
@@ -2071,8 +2086,8 @@ public final class MainPanel extends JPanel implements ActionListener,
      * <p>
      * saveAsPDB</p>
      *
-     * @param activeSystems an array of
-     * {@link ffx.potential.MolecularAssembly} objects.
+     * @param activeSystems an array of {@link ffx.potential.MolecularAssembly}
+     * objects.
      * @param file a {@link java.io.File} object.
      */
     public void saveAsPDB(MolecularAssembly activeSystems[], File file) {

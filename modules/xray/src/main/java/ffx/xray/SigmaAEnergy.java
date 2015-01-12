@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
  *
  * This file is part of Force Field X.
  *
@@ -19,6 +19,21 @@
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+ * Linking this library statically or dynamically with other modules is making a
+ * combined work based on this library. Thus, the terms and conditions of the
+ * GNU General Public License cover the whole combination.
+ *
+ * As a special exception, the copyright holders of this library give you
+ * permission to link this library with independent modules to produce an
+ * executable, regardless of the license terms of these independent modules, and
+ * to copy and distribute the resulting executable under terms of your choice,
+ * provided that you also meet, for each linked independent module, the terms
+ * and conditions of the license of that module. An independent module is a
+ * module which is not derived from or based on this library. If you modify this
+ * library, you may extend this exception to your version of the library, but
+ * you are not obligated to do so. If you do not wish to do so, delete this
+ * exception statement from your version.
  */
 package ffx.xray;
 
@@ -52,6 +67,8 @@ import ffx.numerics.ComplexNumber;
 import ffx.numerics.Potential;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 
+import static ffx.numerics.ModifiedBessel.i1OverI0;
+import static ffx.numerics.ModifiedBessel.lnI0;
 import static ffx.numerics.VectorMath.dot;
 import static ffx.numerics.VectorMath.mat3Mat3;
 import static ffx.numerics.VectorMath.mat3SymVec6;
@@ -60,12 +77,13 @@ import static ffx.numerics.VectorMath.vec3Mat3;
 
 /**
  *
- * Optimize sigmaA coefficients (using spline coefficients) and structure factor
- * derivatives using a likelihood target function
+ * Optimize SigmaA coefficients (using spline coefficients) and structure factor
+ * derivatives using a likelihood target function.
  *
- * this target can also be used for structure refinement
+ * This target can also be used for structure refinement.
  *
  * @author Timothy D. Fenn<br>
+ *
  * @see <a href="http://dx.doi.org/10.1107/S0021889804031474" target="_blank">
  * K. Cowtan, J. Appl. Cryst. (2005). 38, 193-198</a>
  *
@@ -121,6 +139,7 @@ public class SigmaAEnergy implements Potential {
     private final int n;
     protected double[] optimizationScaling = null;
     private double totalEnergy;
+    private final boolean useCernBessel;
 
     /**
      * <p>
@@ -132,7 +151,8 @@ public class SigmaAEnergy implements Potential {
      * @param parallelTeam the ParallelTeam to execute the SigmaAEnergy.
      */
     public SigmaAEnergy(ReflectionList reflectionList,
-            DiffractionRefinementData refinementData, ParallelTeam parallelTeam) {
+            DiffractionRefinementData refinementData,
+            ParallelTeam parallelTeam) {
         this.reflectionList = reflectionList;
         this.crystal = reflectionList.crystal;
         this.refinementData = refinementData;
@@ -158,12 +178,15 @@ public class SigmaAEnergy implements Potential {
         // parallelTeam = new ParallelTeam(1);
         this.parallelTeam = parallelTeam;
         sigmaARegion = new SigmaARegion(this.parallelTeam.getThreadCount());
+
+        String cernBessel = System.getProperty("cern.bessel");
+        useCernBessel = (cernBessel == null || !cernBessel.equalsIgnoreCase("false"));
     }
 
     /*
      * From sim and sim_integ functions in clipper utils:
-     * http://www.ysbl.york.ac.uk/~cowtan/clipper/clipper.html and from ln_of_i0
-     * and i1_over_i0 functions in bessel.h in scitbx module of cctbx:
+     * http://www.ysbl.york.ac.uk/~cowtan/clipper/clipper.html and from lnI0
+     * and i1OverI0 functions in bessel.h in scitbx module of cctbx:
      * http://cci.lbl.gov/cctbx_sources/scitbx/math/bessel.h
      */
     /**
@@ -412,9 +435,28 @@ public class SigmaAEnergy implements Potential {
                         dinot = tanh(fomx);
                         cf = 0.5;
                     } else {
-                        inot = sim_integ(fomx);
-                        dinot = sim(fomx);
+                        if (useCernBessel) {
+                            inot = lnI0(fomx);
+                            dinot = i1OverI0(fomx);
+                        } else {
+                            inot = sim_integ(fomx);
+                            dinot = sim(fomx);
+                        }
                         cf = 1.0;
+                        /*
+                         double orig_inot = sim_integ(fomx);
+                         double orig_dinot = sim(fomx);
+                         double cern_inot = ModifiedBessel.lnI0(fomx);
+                         double cern_dinot = ModifiedBessel.i1OverI0(fomx);
+                         double inot_percError = Math.abs((cern_inot - orig_inot) / orig_inot) * 100;
+                         double dinot_percError = Math.abs((cern_dinot - orig_dinot) / orig_dinot) * 100;
+                         if (inot_percError > 10) {
+                         System.out.format("inot: %1.8f\tcern: %1.8f\targs: %1.8f\n", orig_inot, cern_inot, fomx);
+                         }
+                         if (dinot_percError > 10) {
+                         System.out.format("dinot: %1.8f\tdcern: %1.8f\targ: %1.8f\n", orig_dinot, cern_dinot, fomx);
+                         }
+                         */
                     }
                     double llk = cf * log(d) + (eo2 + sa2 * kect2) * id - inot;
 

@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
  *
  * This file is part of Force Field X.
  *
@@ -19,6 +19,21 @@
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+ * Linking this library statically or dynamically with other modules is making a
+ * combined work based on this library. Thus, the terms and conditions of the
+ * GNU General Public License cover the whole combination.
+ *
+ * As a special exception, the copyright holders of this library give you
+ * permission to link this library with independent modules to produce an
+ * executable, regardless of the license terms of these independent modules, and
+ * to copy and distribute the resulting executable under terms of your choice,
+ * provided that you also meet, for each linked independent module, the terms
+ * and conditions of the license of that module. An independent module is a
+ * module which is not derived from or based on this library. If you modify this
+ * library, you may extend this exception to your version of the library, but
+ * you are not obligated to do so. If you do not wish to do so, delete this
+ * exception statement from your version.
  */
 package ffx.xray;
 
@@ -120,7 +135,6 @@ public class CrystalReciprocalSpace {
         POLYNOMIAL
     }
 
-    // NONE 1, BINARY 2, GAUSSIAN 3 and POLYNOMIAL 4
     public enum GridMethod {
 
         SPATIAL, SLICE, ROW
@@ -169,29 +183,47 @@ public class CrystalReciprocalSpace {
     private final FormFactor solventFormFactors[][];
     private final GridMethod gridMethod;
 
+    /**
+     * Parallelization of putting atomic form factors onto the 3D grid using a
+     * 3D spatial decomposition.
+     */
     private final SpatialDensityRegion atomicDensityRegion;
     private final AtomicDensityLoop atomicDensityLoops[];
     private final SpatialDensityRegion solventDensityRegion;
     private final SolventDensityLoop solventDensityLoops[];
     private final SolventDensityLoop bulkSolventDensityLoops[];
 
+    /**
+     * Parallelization of putting atomic form factors onto the 3D grid using a
+     * slice-based decomposition.
+     */
     private final SliceRegion atomicSliceRegion;
     private final AtomicSliceLoop atomicSliceLoops[];
     private final SliceRegion solventSliceRegion;
     private final SolventSliceLoop solventSliceLoops[];
     private final SolventSliceLoop bulkSolventSliceLoops[];
 
+    /**
+     * Parallelization of putting atomic form factors onto the 3D grid using a
+     * row-based decomposition.
+     */
     private final RowRegion atomicRowRegion;
     private final AtomicRowLoop atomicRowLoops[];
     private final RowRegion solventRowRegion;
     private final SolventRowLoop solventRowLoops[];
     private final SolventRowLoop bulkSolventRowLoops[];
 
+    /**
+     * Parallelization over atomic structure factor loops.
+     */
     private final InitRegion initRegion;
     private final ExtractRegion extractRegion;
     private final AtomicScaleRegion atomicScaleRegion;
     private final AtomicGradientRegion atomicGradientRegion;
 
+    /**
+     * Parallelization over solvent structure factor loops.
+     */
     private final BabinetRegion babinetRegion;
     private final SolventGridRegion solventGridRegion;
     private final SolventScaleRegion solventScaleRegion;
@@ -402,7 +434,7 @@ public class CrystalReciprocalSpace {
             solventFormFactors = null;
         }
 
-        // determine number of grid points to sample density on
+        // Determine number of grid points to sample density on
         aRad = -1.0;
         for (Atom a : atoms) {
             double vdwr = a.getVDWType().radius * 0.5;
@@ -1553,18 +1585,6 @@ public class CrystalReciprocalSpace {
         }
     }
 
-    private int RowIndexZ(int i) {
-        return i / fftY;
-    }
-
-    private int RowIndexY(int i) {
-        return i % fftY;
-    }
-
-    private int indexForYZ(int giy, int giz) {
-        return giy + fftY * giz;
-    }
-
     private class AtomicRowLoop extends RowLoop {
 
         final double xyz[] = new double[3];
@@ -1572,9 +1592,6 @@ public class CrystalReciprocalSpace {
         final double xc[] = new double[3];
         final double xf[] = new double[3];
         final double grid[];
-        private int lbZ;
-        private int ubZ;
-        private int indexY;
         final int optLocal[];
 
         public AtomicRowLoop(RowRegion region) {
@@ -1606,8 +1623,8 @@ public class CrystalReciprocalSpace {
                 return;
             }
 
-            this.ubZ = RowIndexZ(ub);
-            this.lbZ = RowIndexZ(lb);
+            int lbZ = rowRegion.zFromRowIndex(lb);
+            int ubZ = rowRegion.zFromRowIndex(ub);
 
             final double lambdai = atoms[iAtom].applyLambda() ? lambda : 1.0;
 
@@ -1633,22 +1650,24 @@ public class CrystalReciprocalSpace {
 
             for (int iz = ifrz - frad; iz <= ifrzu; iz++) {
                 int giz = Crystal.mod(iz, fftZ);
-                if (lbZ <= giz && giz <= ubZ) {
-                    xf[2] = iz * ifftZ;
-                    for (int iy = ifry - frad; iy <= ifryu; iy++) {
-                        int giy = Crystal.mod(iy, fftY);
-                        this.indexY = indexForYZ(giy, giz);
-                        if (lb <= indexY && indexY <= ub) {
-                            xf[1] = iy * ifftY;
-                            for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
-                                int gix = Crystal.mod(ix, fftX);
-                                xf[0] = ix * ifftX;
-                                crystal.toCartesianCoordinates(xf, xc);
-                                optLocal[indexForYZ(giy, giz)]++;
-                                final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
-                                grid[ii] = atomff.rho(grid[ii], lambdai, xc);
-                            }
-                        }
+                if (lbZ > giz || giz > ubZ) {
+                    continue;
+                }
+                xf[2] = iz * ifftZ;
+                for (int iy = ifry - frad; iy <= ifryu; iy++) {
+                    int giy = Crystal.mod(iy, fftY);
+                    int rowIndex = rowRegion.rowIndexForYZ(giy, giz);
+                    if (lb > rowIndex || rowIndex > ub) {
+                        continue;
+                    }
+                    xf[1] = iy * ifftY;
+                    for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
+                        int gix = Crystal.mod(ix, fftX);
+                        xf[0] = ix * ifftX;
+                        crystal.toCartesianCoordinates(xf, xc);
+                        optLocal[rowIndex]++;
+                        final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
+                        grid[ii] = atomff.rho(grid[ii], lambdai, xc);
                     }
                 }
             }
@@ -1696,6 +1715,9 @@ public class CrystalReciprocalSpace {
                     return;
             }
 
+            int ubZ = rowRegion.zFromRowIndex(ub);
+            int lbZ = rowRegion.zFromRowIndex(lb);
+
             // Logic to loop within the cutoff box.
             final double frx = fftX * uvw[0];
             final int ifrx = (int) frx;
@@ -1711,12 +1733,16 @@ public class CrystalReciprocalSpace {
 
             for (int iz = ifrz - frad; iz <= ifrzu; iz++) {
                 int giz = Crystal.mod(iz, fftZ);
-                if (lb > giz || giz > ub) {
+                if (lbZ > giz || giz > ubZ) {
                     continue;
                 }
                 xf[2] = iz * ifftZ;
                 for (int iy = ifry - frad; iy <= ifryu; iy++) {
                     int giy = Crystal.mod(iy, fftY);
+                    int rowIndex = rowRegion.rowIndexForYZ(giy, giz);
+                    if (lb > rowIndex || rowIndex > ub) {
+                        continue;
+                    }
                     xf[1] = iy * ifftY;
                     for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
                         int gix = Crystal.mod(ix, fftX);
@@ -1800,19 +1826,20 @@ public class CrystalReciprocalSpace {
 
             for (int iz = ifrz - frad; iz <= ifrzu; iz++) {
                 int giz = Crystal.mod(iz, fftZ);
-                if (lb <= giz && giz <= ub) {
-                    xf[2] = iz * ifftZ;
-                    for (int iy = ifry - frad; iy <= ifryu; iy++) {
-                        int giy = Crystal.mod(iy, fftY);
-                        xf[1] = iy * ifftY;
-                        for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
-                            int gix = Crystal.mod(ix, fftX);
-                            xf[0] = ix * ifftX;
-                            crystal.toCartesianCoordinates(xf, xc);
-                            optLocal[giz]++;
-                            final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
-                            grid[ii] = atomff.rho(grid[ii], lambdai, xc);
-                        }
+                if (lb > giz || giz > ub) {
+                    continue;
+                }
+                xf[2] = iz * ifftZ;
+                for (int iy = ifry - frad; iy <= ifryu; iy++) {
+                    int giy = Crystal.mod(iy, fftY);
+                    xf[1] = iy * ifftY;
+                    for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
+                        int gix = Crystal.mod(ix, fftX);
+                        xf[0] = ix * ifftX;
+                        crystal.toCartesianCoordinates(xf, xc);
+                        optLocal[giz]++;
+                        final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
+                        grid[ii] = atomff.rho(grid[ii], lambdai, xc);
                     }
                 }
             }

@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
  *
  * This file is part of Force Field X.
  *
@@ -19,6 +19,21 @@
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+ * Linking this library statically or dynamically with other modules is making a
+ * combined work based on this library. Thus, the terms and conditions of the
+ * GNU General Public License cover the whole combination.
+ *
+ * As a special exception, the copyright holders of this library give you
+ * permission to link this library with independent modules to produce an
+ * executable, regardless of the license terms of these independent modules, and
+ * to copy and distribute the resulting executable under terms of your choice,
+ * provided that you also meet, for each linked independent module, the terms
+ * and conditions of the license of that module. An independent module is a
+ * module which is not derived from or based on this library. If you modify this
+ * library, you may extend this exception to your version of the library, but
+ * you are not obligated to do so. If you do not wish to do so, delete this
+ * exception statement from your version.
  */
 package ffx.xray;
 
@@ -92,6 +107,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         x = new double[n];
         grad = new double[n];
         scaling = new double[n];
+
         x[0] = refinementdata.model_k;
         if (solvent_n > 1) {
             x[1] = refinementdata.solvent_k;
@@ -109,8 +125,23 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         }
 
         bulkSolventEnergy.setScaling(scaling);
-
         setInitialScale();
+    }
+
+    public ScaleBulkEnergy getScaleBulkEnergy() {
+        return bulkSolventEnergy;
+    }
+
+    public int getNumberOfVariables() {
+        return x.length;
+    }
+
+    public double[] getCoordinates(double x[]) {
+        if (x == null) {
+            x = new double[this.x.length];
+        }
+        System.arraycopy(this.x, 0, x, 0, this.x.length);
+        return x;
     }
 
     private void setInitialScale() {
