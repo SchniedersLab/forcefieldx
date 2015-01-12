@@ -571,6 +571,38 @@
             </plugin -->
         </plugins>
     </build>
+    <profiles>
+        <profile>
+            <id>ffx.jarsigner</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-jarsigner-plugin</artifactId>
+                        <version>1.3.2</version>
+                        <configuration>
+                            <alias>FFXKey</alias>
+                            <storepass>${storepass}</storepass>
+                            <keypass>${keypass}</keypass>
+                            <removeExistingSignatures>true</removeExistingSignatures>
+                            <tca>http://timestamp.digicert.com</tca>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>sign</id>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
     <repositories>
         <repository>
             <name>FFX Dependency Repository</name>
@@ -620,85 +652,11 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.11</version>
+            <version>4.12</version>
             <type>jar</type>
             <scope>test</scope>
         </dependency>
     </dependencies>
-    <distributionManagement>
-        <downloadUrl>http://ffx.eng.uiowa.edu/download.html</downloadUrl>
-        <site>
-            <id>Kenai</id>
-            <name>Force Field X Website Deploy Location</name>
-            <url>${website.repo}</url>
-        </site>
-        <snapshotRepository>
-            <uniqueVersion>false</uniqueVersion>
-            <id>Snapshots</id>
-            <name>Local Maven SNAPSHOT Repository</name>
-            <url>${snapshot.repo}</url>
-        </snapshotRepository>
-        <repository>
-            <uniqueVersion>false</uniqueVersion>
-            <id>Releases</id>
-            <name>Local Maven Release Repository</name>
-            <url>${release.repo}</url>
-        </repository>
-    </distributionManagement>
-    <properties>
-        <!-- Default locations for deploying the website, snapshot location and
-        release location. These can be over-ridden by a developer's
-        settings.xml -->
-        <website.repo>file:website</website.repo>
-        <snapshot.repo>file:lib</snapshot.repo>
-        <release.repo>file:release</release.repo>
-        <!-- Control the source version and target JRE version -->
-        <compileVersion>1.7</compileVersion>
-        <targetVersion>1.7</targetVersion>
-        <!-- Setting the source encoding is required for builds
-        that are platform independent. -->
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.build.timestamp.format>MM-dd-yyyy</maven.build.timestamp.format>
-        <timestamp>${maven.build.timestamp}</timestamp>
-        <!-- Skip most website reports by default -->
-        <assembly.skipAssembly>false</assembly.skipAssembly>
-        <changes.jira.skip>true</changes.jira.skip>
-        <checkstyle.skip>false</checkstyle.skip>
-        <dependencyDetails>false</dependencyDetails>
-        <maven.javadoc.skip>false</maven.javadoc.skip>
-        <maven.jxr.skip>false</maven.jxr.skip>
-        <linkcheck.skip>true</linkcheck.skip>
-        <pmd.skip>false</pmd.skip>
-        <skipSurefireReport>false</skipSurefireReport>
-        <skipTests>true</skipTests>
-        <!-- Specify versions of Dependencies to Use -->
-        <apple-java-extensions.version>1.6</apple-java-extensions.version>
-        <commons-configuration.version>1.10</commons-configuration.version>
-        <commons-io.version>2.4</commons-io.version>
-        <commons-lang3.version>3.3.2</commons-lang3.version>
-        <commons-math3.version>3.3</commons-math3.version>
-        <groovy-all.version>2.3.6</groovy-all.version>
-        <javahelp.version>2.0.05</javahelp.version>
-        <java3d.version>1.6.2</java3d.version>
-        <jcuda.version>6.5.0</jcuda.version>
-        <jocl.version>2.2.0</jocl.version>
-        <parallel-java.version>1.8</parallel-java.version>
-    </properties>
-    <modules>
-        <module>modules/algorithms</module>
-        <module>modules/autoparm</module>
-        <module>modules/crystal</module>
-        <module>modules/numerics</module>
-        <module>modules/potential</module>
-        <module>modules/ui</module>
-        <module>modules/utilities</module>
-        <module>modules/xray</module>
-        <module>modules/pj</module>
-        <!-- module>modules/binding</module -->
-        <!-- module>modules/cg</module -->
-        <!-- module>modules/continuum</module -->
-        <!-- module>modules/nucleic</module -->
-    </modules>
     <reporting>
         <plugins>
             <plugin>
@@ -827,36 +785,77 @@
             </plugin>
         </plugins>
     </reporting>
-    <profiles>
-        <profile>
-            <id>ffx.jarsigner</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-jarsigner-plugin</artifactId>
-                        <version>1.3.2</version>
-                        <configuration>
-                            <alias>FFXKey</alias>
-                            <storepass>${storepass}</storepass>
-                            <keypass>${keypass}</keypass>
-                            <removeExistingSignatures>true</removeExistingSignatures>
-                            <tca>http://timestamp.digicert.com</tca>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>sign</id>
-                                <phase>install</phase>
-                                <goals>
-                                    <goal>sign</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
+    <distributionManagement>
+        <downloadUrl>http://ffx.eng.uiowa.edu/download.html</downloadUrl>
+        <site>
+            <id>Kenai</id>
+            <name>Force Field X Website Deploy Location</name>
+            <url>${website.repo}</url>
+        </site>
+        <snapshotRepository>
+            <uniqueVersion>false</uniqueVersion>
+            <id>Snapshots</id>
+            <name>Local Maven SNAPSHOT Repository</name>
+            <url>${snapshot.repo}</url>
+        </snapshotRepository>
+        <repository>
+            <uniqueVersion>false</uniqueVersion>
+            <id>Releases</id>
+            <name>Local Maven Release Repository</name>
+            <url>${release.repo}</url>
+        </repository>
+    </distributionManagement>
+    <properties>
+        <!-- Default locations for deploying the website, snapshot location and
+        release location. These can be over-ridden by a developer's
+        settings.xml -->
+        <website.repo>file:website</website.repo>
+        <snapshot.repo>file:lib</snapshot.repo>
+        <release.repo>file:release</release.repo>
+        <!-- Control the source version and target JRE version -->
+        <compileVersion>1.7</compileVersion>
+        <targetVersion>1.7</targetVersion>
+        <!-- Setting the source encoding is required for builds
+        that are platform independent. -->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.build.timestamp.format>MM-dd-yyyy</maven.build.timestamp.format>
+        <timestamp>${maven.build.timestamp}</timestamp>
+        <!-- Skip most website reports by default -->
+        <assembly.skipAssembly>false</assembly.skipAssembly>
+        <changes.jira.skip>true</changes.jira.skip>
+        <checkstyle.skip>false</checkstyle.skip>
+        <dependencyDetails>false</dependencyDetails>
+        <maven.javadoc.skip>false</maven.javadoc.skip>
+        <maven.jxr.skip>false</maven.jxr.skip>
+        <linkcheck.skip>true</linkcheck.skip>
+        <pmd.skip>false</pmd.skip>
+        <skipSurefireReport>false</skipSurefireReport>
+        <skipTests>true</skipTests>
+        <!-- Specify versions of Dependencies to Use -->
+        <apple-java-extensions.version>1.6</apple-java-extensions.version>
+        <commons-configuration.version>1.10</commons-configuration.version>
+        <commons-io.version>2.4</commons-io.version>
+        <commons-lang3.version>3.3.2</commons-lang3.version>
+        <commons-math3.version>3.4.1</commons-math3.version>
+        <groovy-all.version>2.3.6</groovy-all.version>
+        <javahelp.version>2.0.05</javahelp.version>
+        <java3d.version>1.6.2</java3d.version>
+        <jcuda.version>6.5.0</jcuda.version>
+        <jocl.version>2.2.0</jocl.version>
+    </properties>
+    <modules>
+        <module>modules/algorithms</module>
+        <module>modules/autoparm</module>
+        <module>modules/crystal</module>
+        <module>modules/numerics</module>
+        <module>modules/pj</module>
+        <module>modules/potential</module>
+        <module>modules/ui</module>
+        <module>modules/utilities</module>
+        <module>modules/xray</module>
+        <!-- module>modules/binding</module -->
+        <!-- module>modules/cg</module -->
+        <!-- module>modules/continuum</module -->
+        <!-- module>modules/nucleic</module -->
+    </modules>
 </project>

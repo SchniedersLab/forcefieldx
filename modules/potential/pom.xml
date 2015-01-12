@@ -77,6 +77,12 @@
     <dependencies>
         <dependency>
             <groupId>edu.uiowa.eng.ffx</groupId>
+            <artifactId>pj</artifactId>
+            <type>jar</type>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>edu.uiowa.eng.ffx</groupId>
             <artifactId>crystal</artifactId>
             <version>${project.version}</version>
             <type>jar</type>
@@ -110,12 +116,6 @@
             <artifactId>commons-configuration</artifactId>
             <type>jar</type>
             <version>${commons-configuration.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>edu.rit.pj</groupId>
-            <artifactId>pj</artifactId>
-            <type>jar</type>
-            <version>${parallel-java.version}</version>
         </dependency>
         <dependency>
             <groupId>org.codehaus.groovy</groupId>
