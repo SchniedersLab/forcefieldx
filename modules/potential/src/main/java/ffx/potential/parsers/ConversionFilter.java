@@ -22,28 +22,61 @@
  */
 package ffx.potential.parsers;
 
+import ffx.potential.MolecularAssembly;
+import ffx.potential.Utilities;
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Bond;
+import ffx.potential.parameters.ForceField;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
-
 import org.apache.commons.configuration.CompositeConfiguration;
 
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Bond;
-import ffx.potential.MolecularAssembly;
-import ffx.potential.Utilities.FileType;
-import ffx.potential.parameters.ForceField;
-
 /**
- * The SystemFilter class is the base class for most Force Field X file parsers.
+ * The ConversionFilter class is the base class for most Force Field X parsers for
+ * non-Force Field X data structures
  *
  * @author Michael J. Schnieders
+ * @autor Jacob M. Litman
  * @since 1.0
  *
  */
-public abstract class SystemFilter {
-
+public abstract class ConversionFilter {
+    public ConversionFilter (Object structure, MolecularAssembly molecularAssembly, 
+            ForceField forcefield, CompositeConfiguration properties) {
+        this.currentStructure = structure;
+        this.structures = new ArrayList<>();
+        if (structure != null) {
+            structures.add(structure);
+        }
+        this.activeMolecularAssembly = molecularAssembly;
+        this.forceField = forcefield;
+        this.properties = properties;
+    }
+    public ConversionFilter (List<Object> structures, MolecularAssembly molecularAssembly, 
+            ForceField forcefield, CompositeConfiguration properties) {
+        this.structures = structures;
+        if (structures != null && !structures.isEmpty()) {
+            this.currentStructure = structures.get(0);
+        }
+        this.activeMolecularAssembly = molecularAssembly;
+        this.forceField = forcefield;
+        this.properties = properties;
+    }
+    public ConversionFilter (Object structure, List<MolecularAssembly> molecularAssemblies, 
+            ForceField forcefield, CompositeConfiguration properties) {
+        this.currentStructure = structure;
+        this.structures = new ArrayList<>();
+        if (structure != null) {
+            structures.add(structure);
+        }
+        this.systems = new Vector(molecularAssemblies);
+        this.activeMolecularAssembly = systems.firstElement();
+        this.forceField = forcefield;
+        this.properties = properties;
+    }
+    
     /**
      * This follows the TINKER file versioning scheme.
      *
@@ -135,12 +168,13 @@ public abstract class SystemFilter {
         }
         return previousFile;
     }
+    
     /**
-     * The atomList is filled by filters that extend SystemFilter.
+     * The atomList is filled by filters that extend ConversionFilter.
      */
     protected ArrayList<Atom> atomList = null;
     /**
-     * The bondList may be filled by the filters that extend SystemFilter.
+     * The bondList may be filled by the filters that extend ConversionFilter.
      */
     protected ArrayList<Bond> bondList = null;
     /**
@@ -155,17 +189,25 @@ public abstract class SystemFilter {
      */
     protected Vector<MolecularAssembly> systems = new Vector<MolecularAssembly>();
     /**
-     * File currently being read.
+     * Structure currently being converted.
      */
-    protected File currentFile = null;
+    protected Object currentStructure = null;
     /**
-     * Append multiple files into one MolecularAssembly.
+     * Append multiple data structures into one MolecularAssembly.
      */
-    protected List<File> files = null;
+    protected List<Object> structures = null;
+    /**
+     * Destination file when saved.
+     */
+    protected File file = null;
+    /**
+     * Format associated with saving the structure.
+     */
+    protected Utilities.FileType fileType = Utilities.FileType.UNK;
     /**
      * The file format being handled.
      */
-    protected FileType fileType = FileType.UNK;
+    protected Utilities.DataType dataType = Utilities.DataType.UNK;
     /**
      * Properties associated with this file.
      */
@@ -175,85 +217,18 @@ public abstract class SystemFilter {
      */
     protected ForceField forceField = null;
     /**
-     * True after the file has been read successfully.
+     * True after the data structure has been successfully converted to an FFX
+     * data structure.
      */
-    protected boolean fileRead = false;
+    protected boolean hasConverted = false;
 
     /**
-     * <p>
-     * Constructor for SystemFilter.</p>
-     *
-     * @param files a {@link java.util.List} object.
-     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
-     * object.
-     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param properties a
-     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
-     */
-    public SystemFilter(List<File> files, MolecularAssembly molecularAssembly,
-            ForceField forceField, CompositeConfiguration properties) {
-        this.files = files;
-        if (files != null) {
-            this.currentFile = files.get(0);
-        }
-        this.activeMolecularAssembly = molecularAssembly;
-        this.forceField = forceField;
-        this.properties = properties;
-    }
-
-    /**
-     * <p>
-     * Constructor for SystemFilter.</p>
-     *
-     * @param file a {@link java.io.File} object.
-     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
-     * object.
-     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param properties a
-     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
-     */
-    public SystemFilter(File file, MolecularAssembly molecularAssembly,
-            ForceField forceField, CompositeConfiguration properties) {
-        files = new ArrayList<File>();
-        if (file != null) {
-            files.add(file);
-        }
-        this.currentFile = file;
-        this.activeMolecularAssembly = molecularAssembly;
-        this.forceField = forceField;
-        this.properties = properties;
-    }
-
-    /**
-     * <p>
-     * Constructor for SystemFilter.</p>
-     *
-     * @param file a {@link java.io.File} object.
-     * @param molecularAssemblies a {@link java.util.List} object.
-     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param properties a
-     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
-     */
-    public SystemFilter(File file, List<MolecularAssembly> molecularAssemblies,
-            ForceField forceField, CompositeConfiguration properties) {
-        files = new ArrayList<File>();
-        if (file != null) {
-            files.add(file);
-        }
-        this.currentFile = file;
-        this.systems = new Vector(molecularAssemblies);
-        this.activeMolecularAssembly = systems.firstElement();
-        this.forceField = forceField;
-        this.properties = properties;
-    }
-
-    /**
-     * Returns true if the read was successful
+     * Returns true if the conversion was successful
      *
      * @return a boolean.
      */
-    public boolean fileRead() {
-        return fileRead;
+    public boolean converted() {
+        return hasConverted;
     }
 
     /**
@@ -320,12 +295,22 @@ public abstract class SystemFilter {
 
     /**
      * <p>
-     * getType</p>
+     * getFileType</p>
      *
      * @return a {@link ffx.potential.Utilities.FileType} object.
      */
-    public FileType getType() {
+    public Utilities.FileType getFileType() {
         return fileType;
+    }
+    
+    /**
+     * <p>
+     * getDataType</p>
+     *
+     * @return a {@link ffx.potential.Utilities.DataType} object.
+     */
+    public Utilities.DataType getDataType() {
+        return dataType;
     }
 
     /**
@@ -335,17 +320,7 @@ public abstract class SystemFilter {
      * @return a {@link java.io.File} object.
      */
     public File getFile() {
-        return currentFile;
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>files</code>.</p>
-     *
-     * @return a {@link java.util.List} object.
-     */
-    public List<File> getFiles() {
-        return files;
+        return file;
     }
 
     /**
@@ -353,16 +328,16 @@ public abstract class SystemFilter {
      *
      * @return a boolean.
      */
-    public abstract boolean readFile();
+    public abstract boolean convert();
 
     /**
      * <p>
-     * Setter for the field <code>fileRead</code>.</p>
+     * Setter for the field <code>hasConverted</code>.</p>
      *
-     * @param fileRead a boolean.
+     * @param converted a boolean.
      */
-    public void setFileRead(boolean fileRead) {
-        this.fileRead = fileRead;
+    public void setConverted(boolean converted) {
+        this.hasConverted = converted;
     }
 
     /**
@@ -399,12 +374,22 @@ public abstract class SystemFilter {
 
     /**
      * <p>
-     * setType</p>
+     * setFileType</p>
      *
      * @param fileType a {@link ffx.potential.Utilities.FileType} object.
      */
-    public void setType(FileType fileType) {
+    public void setFileType(Utilities.FileType fileType) {
         this.fileType = fileType;
+    }
+
+    /**
+     * <p>
+     * setDataType</p>
+     *
+     * @param dataType a {@link ffx.potential.Utilities.FileType} object.
+     */
+    public void setDataType(Utilities.DataType dataType) {
+        this.dataType = dataType;
     }
 
     /**
@@ -414,25 +399,35 @@ public abstract class SystemFilter {
      * @param file a {@link java.io.File} object.
      */
     public void setFile(File file) {
-        this.currentFile = file;
-        files = new ArrayList<File>();
-        if (file != null) {
-            files.add(file);
+        this.file = file;
+    }
+    
+    /**
+     * <p>
+     * setStructure</p>
+     *
+     * @param structure a {@link java.lang.Object} object.
+     */
+    public void setStructure(Object structure) {
+        this.currentStructure = structure;
+        this.structures = new ArrayList<>();
+        if (structure != null) {
+            this.structures.add(structure);
         }
     }
 
     /**
      * <p>
-     * Setter for the field <code>files</code>.</p>
+     * Setter for the field <code>structures</code>.</p>
      *
-     * @param files a {@link java.util.List} object.
+     * @param structures a {@link java.util.List} object.
      */
-    public void setFiles(List<File> files) {
-        this.files = files;
-        if (files != null && !files.isEmpty()) {
-            this.currentFile = files.get(0);
+    public void setStructures(List<Object> structures) {
+        this.structures = structures;
+        if (structures != null && !structures.isEmpty()) {
+            this.currentStructure = structures.get(0);
         } else {
-            this.currentFile = null;
+            this.currentStructure = null;
         }
     }
 

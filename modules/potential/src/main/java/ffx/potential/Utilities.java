@@ -54,6 +54,10 @@ public final class Utilities {
 
         XYZ, INT, ARC, PDB, ANY, SIM, UNK
     }
+    
+    public enum DataType {
+        BIOJAVA, UNK
+    }
 
     /**
      * An enumeration of recognized organic polymers.

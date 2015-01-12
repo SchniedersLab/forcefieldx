@@ -75,7 +75,7 @@ public class FFXSystem extends MolecularAssembly {
         commandDescription = description;
         this.properties = properties;
     }
-
+    
     /**
      * <p>
      * Getter for the field <code>properties</code>.</p>

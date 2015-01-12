@@ -46,6 +46,9 @@ import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XYZFileFilter;
 import ffx.potential.parsers.XYZFilter;
 import ffx.utilities.Keyword;
+import static java.lang.String.format;
+import java.util.logging.Logger;
+import org.apache.commons.io.FilenameUtils;
 
 /**
  * The PotentialsFileOpener class specifies a Runnable object which is
@@ -57,6 +60,7 @@ import ffx.utilities.Keyword;
  */
 public class PotentialsFileOpener implements FileOpener {
 
+    private static final Logger logger = Logger.getLogger(PotentialsFileOpener.class.getName());
     private final File file;
     private final Path filepath;
     private final File[] allFiles;
@@ -218,15 +222,57 @@ public class PotentialsFileOpener implements FileOpener {
             } else {
                 throw new IllegalArgumentException(String.format(" File %s could not be recognized as a valid PDB, XYZ, INT, or ARC file.", pathI.toString()));
             }
-            filter.readFile();
-            if (!(filter instanceof PDBFilter)) {
-                Utilities.biochemistry(assembly, filter.getAtomList());
+            if (filter.readFile()) {
+                if (!(filter instanceof PDBFilter)) {
+                    Utilities.biochemistry(assembly, filter.getAtomList());
+                }
+                assembly.finalize(true, forceField);
+                ForceFieldEnergy energy = new ForceFieldEnergy(assembly);
+                assembly.setPotential(energy);
+                assemblies.add(assembly);
+                propertyList.add(properties);
+             
+                if (filter instanceof PDBFilter) {
+                    PDBFilter pdbFilter = (PDBFilter) filter;
+                    List<Character> altLocs = pdbFilter.getAltLocs();
+                    if (altLocs.size() > 1 || altLocs.get(0) != ' ') {
+                        StringBuilder altLocString = new StringBuilder("\n Alternate locations found [ ");
+                        for (Character c : altLocs) {
+                            // Do not report the root conformer.
+                            if (c == ' ') {
+                                continue;
+                            }
+                            altLocString.append(format("(%s) ", c));
+                        }
+                        altLocString.append("]\n");
+                        logger.info(altLocString.toString());
+                    }
+
+                    /**
+                     * Alternate conformers may have different chemistry, so
+                     * they each need to be their own MolecularAssembly.
+                     */
+                    for (Character c : altLocs) {
+                        if (c.equals(' ') || c.equals('A')) {
+                            continue;
+                        }
+                        MolecularAssembly newAssembly = new MolecularAssembly(pathI.toString());
+                        newAssembly.setForceField(assembly.getForceField());
+                        pdbFilter.setAltID(assembly, c);
+                        pdbFilter.clearSegIDs();
+                        if (pdbFilter.readFile()) {
+                            String fileName = assembly.getFile().getAbsolutePath();
+                            newAssembly.setName(FilenameUtils.getBaseName(fileName) + " " + c);
+                            energy = new ForceFieldEnergy(newAssembly);
+                            newAssembly.setPotential(energy);
+                            assemblies.add(newAssembly);
+                            properties.addConfiguration(properties);
+                        }
+                    }
+                }
+            } else {
+                logger.warning(String.format(" Failed to read file %s", fileI.toString()));
             }
-            assembly.finalize(true, forceField);
-            ForceFieldEnergy energy = new ForceFieldEnergy(assembly);
-            assembly.setPotential(energy);
-            assemblies.add(assembly);
-            propertyList.add(properties);
         }
         activeAssembly = assemblies.get(0);
         activeProperties = propertyList.get(0);

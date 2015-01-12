@@ -98,6 +98,9 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.parsers.ARCFileFilter;
+import ffx.potential.parsers.BiojavaDataFilter;
+import ffx.potential.parsers.BiojavaFilter;
+import ffx.potential.parsers.ConversionFilter;
 import ffx.potential.parsers.DYNFileFilter;
 import ffx.potential.parsers.FFXFileFilter;
 import ffx.potential.parsers.ForceFieldFileFilter;
@@ -119,6 +122,7 @@ import ffx.utilities.Keyword;
 import ffx.utilities.StringUtils;
 
 import static ffx.utilities.StringUtils.pdbForID;
+import org.biojava.bio.structure.Structure;
 
 /**
  * The MainPanel class is the main container for Force Field X, handles file
@@ -172,6 +176,10 @@ public final class MainPanel extends JPanel implements ActionListener,
      * Constant <code>dynFileFilter</code>
      */
     public static final DYNFileFilter dynFileFilter = new DYNFileFilter();
+    /**
+     * Constant <code>biojavaDataFilter</code>
+     */
+    public static final BiojavaDataFilter biojavaDataFilter = new BiojavaDataFilter();
     /**
      * Constant <code>indFileFilter</code>
      */
@@ -258,6 +266,7 @@ public final class MainPanel extends JPanel implements ActionListener,
     private JTextArea aboutTextArea = null;
     private Thread openThread = null;
     private SystemFilter activeFilter = null;
+    private ConversionFilter activeConvFilter = null;
     private boolean oscillate = false;
     // TINKER Simulation Variables
     private TinkerSimulation simulation;
@@ -1236,6 +1245,14 @@ public final class MainPanel extends JPanel implements ActionListener,
         setPanel(GRAPHICS);
         return openThread;
     }
+    
+    public Thread convert(Object data, File file, String commandDescription) {
+        UIDataConverter converter = convertInit(data, file, commandDescription);
+        openThread = new Thread(converter);
+        openThread.start();
+        setPanel(GRAPHICS);
+        return openThread;
+    }
 
     /**
      * Attempts to load the supplied file
@@ -1304,6 +1321,50 @@ public final class MainPanel extends JPanel implements ActionListener,
         setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         activeFilter = systemFilter;
         return new UIFileOpener(systemFilter, this);
+    }
+    
+    /**
+     * Attempts to load from the supplied data structure
+     * @param data Data structure to load from
+     * @param file Source file
+     * @param commandDescription Description of the command that created this
+     * file.
+     * @return A thread-based UIDataConverter
+     */
+    private UIDataConverter convertInit (Object data, File file, String commandDescription) {
+        if (data == null) {
+            return null;
+        }
+        
+        // Create the CompositeConfiguration properties.
+        CompositeConfiguration properties = Keyword.loadProperties(file);
+        // Create an FFXSystem for this file.
+        FFXSystem newSystem = new FFXSystem(file, commandDescription, properties);
+        // Create a Force Field.
+        forceFieldFilter = new ForceFieldFilter(properties);
+        ForceField forceField = forceFieldFilter.parse();
+        String patches[] = properties.getStringArray("patch");
+        for (String patch : patches) {
+            logger.info(" Attempting to read force field patch from " + patch + ".");
+            CompositeConfiguration patchConfiguration = new CompositeConfiguration();
+            patchConfiguration.addProperty("parameters", patch);
+            forceFieldFilter = new ForceFieldFilter(patchConfiguration);
+            ForceField patchForceField = forceFieldFilter.parse();
+            forceField.append(patchForceField);
+        }
+        newSystem.setForceField(forceField);
+        ConversionFilter convFilter = null;
+
+        // Decide what parser to use.
+        if (biojavaDataFilter.accept(data)) {
+            convFilter = new BiojavaFilter((Structure) data, newSystem, forceField, properties);
+        } else {
+            throw new IllegalArgumentException("Not a recognized data structure.");
+        }
+
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        activeConvFilter = convFilter;
+        return new UIDataConverter(data, file, convFilter, this);
     }
 
     private UIFileOpener openFromUtils(List<File> files, String commandDescription) {
@@ -1448,7 +1509,6 @@ public final class MainPanel extends JPanel implements ActionListener,
      * @return an array of {@link ffx.ui.FFXSystem} objects.
      */
     public synchronized FFXSystem[] openWait(String files[]) {
-        logger.info(" It has come to this.");
         Thread thread = open(files);
         while (thread != null && thread.isAlive()) {
             try {
@@ -1461,6 +1521,47 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
 
         MolecularAssembly systems[] = activeFilter.getMolecularAssemblys();
+        if (systems != null) {
+            int n = systems.length;
+            FFXSystem ffxSystems[] = new FFXSystem[n];
+            FFXSystem allSystems[] = getHierarchy().getSystems();
+            int total = allSystems.length;
+            for (int i = 0; i < n; i++) {
+                ffxSystems[i] = allSystems[total - n + i];
+            }
+            return ffxSystems;
+        } else {
+            return null;
+        }
+    }
+    
+    /**
+     * Converts a non-Force Field X data structure into an array of FFXSystem[].
+     * Presently does not yet have support for array- or list-based data structures,
+     * only singular objects.
+     * @param data Outside data structure
+     * @param file Source file
+     * @return An array of FFXSystem
+     */
+    public synchronized FFXSystem[] convertWait(Object data, File file) {
+        if (file == null) {
+            logger.log(Level.WARNING, String.format("No file for %s could be found.", data.toString()));
+            return null;
+        }
+        String name = file.getName();
+        
+        Thread thread = convert(data, file, null);
+        while (thread != null && thread.isAlive()) {
+            try {
+                wait(1);
+            } catch (InterruptedException e) {
+                String message = "Exception waiting for " + name + " to open.";
+                logger.log(Level.WARNING, message, e);
+                return null;
+            }
+        }
+
+        MolecularAssembly systems[] = activeConvFilter.getMolecularAssemblys();
         if (systems != null) {
             int n = systems.length;
             FFXSystem ffxSystems[] = new FFXSystem[n];

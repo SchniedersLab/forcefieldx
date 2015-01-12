@@ -183,6 +183,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
 
         // File
         setVariable("open", new MethodClosure(mainPanel, "openWait"));
+        setVariable("convertWait", new MethodClosure(mainPanel, "convertWait"));
         setVariable("save", new MethodClosure(mainPanel, "saveAsXYZ"));
         setVariable("saveAsXYZ", new MethodClosure(mainPanel, "saveAsXYZ"));
         setVariable("saveAsP1", new MethodClosure(mainPanel, "saveAsP1"));

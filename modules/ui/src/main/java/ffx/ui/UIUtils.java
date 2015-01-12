@@ -109,4 +109,14 @@ public class UIUtils implements AlgorithmFunctions {
     public double returnEnergy(MolecularAssembly assembly) {
         return modelingShell.returnEnergy();
     }
+
+    @Override
+    public MolecularAssembly[] convertDataStructure(Object data) {
+        return mainPanel.convertWait(data, null);
+    }
+
+    @Override
+    public MolecularAssembly[] convertDataStructure(Object data, File file) {
+        return mainPanel.convertWait(data, file);
+    }
 }

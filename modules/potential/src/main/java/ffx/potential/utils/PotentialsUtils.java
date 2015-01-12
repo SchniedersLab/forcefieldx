@@ -105,6 +105,68 @@ public class PotentialsUtils implements PotentialsFunctions {
         opener.run();
         return opener.getAllAssemblies();
     }
+    
+    /**
+     * Converts a data structure (such as a Biojava Structure) into one or more
+     * MolecularAssembly objects.
+     * @param data Structure to convert
+     * @return Array of MolecularAssembly
+     */
+    @Override
+    public MolecularAssembly[] convertDataStructure(Object data) {
+        PotentialsDataConverter converter = new PotentialsDataConverter(data);
+        converter.run();
+        return converter.getAllAssemblies();
+    }
+    
+    /**
+     * Converts a data structure (such as a Biojava Structure) into one or more
+     * MolecularAssembly objects.
+     * @param data Structure to convert
+     * @param file Source file
+     * @return Array of MolecularAssembly
+     */
+    @Override
+    public MolecularAssembly[] convertDataStructure(Object data, File file) {
+        PotentialsDataConverter converter = new PotentialsDataConverter(data, file);
+        converter.run();
+        return converter.getAllAssemblies();
+    }
+    
+    // Below methods not implemented on account of needing to figure out how to
+    // distinguish an Object from an Object[].
+    
+    /**
+     * Converts a data structure (such as a Biojava Structure) into one or more
+     * MolecularAssembly objects. Not implemented, on account of trying to figure
+     * out how to get constructors to distinguish an array or list of Object from 
+     * a singular Object.
+     * @param data Structure(s) to convert
+     * @return Array of MolecularAssembly
+     */
+    /*@Override
+    public MolecularAssembly[] convertDataStructure(Object[] data) {
+        PotentialsDataConverter converter = new PotentialsDataConverter(data);
+        converter.run();
+        return converter.getAllAssemblies();
+    }*/
+    
+    /**
+     * Converts a data structure (such as a Biojava Structure) into one or more
+     * MolecularAssembly objects. Not implemented, on account of trying to figure
+     * out how to get constructors to distinguish an array or list of Object from 
+     * a singular Object.
+     * @param data Structure(s) to convert
+     * @param file File to save to
+     * @return Array of MolecularAssembly
+     */
+    /*@Override
+    public MolecularAssembly[] convertDataStructure(Object[] data, File file) {
+        PotentialsDataConverter converter = new PotentialsDataConverter(data, file);
+        converter.setFile(file);
+        converter.run();
+        return converter.getAllAssemblies();
+    }*/
 
     /**
      * Shuts down parallel teams in the force field of the provided MolecularAssembly.

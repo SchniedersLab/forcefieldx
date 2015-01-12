@@ -22,52 +22,65 @@
  */
 package ffx.ui;
 
-import java.awt.Cursor;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import static java.lang.String.format;
-
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.io.FilenameUtils;
-
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;
+import ffx.potential.parsers.BiojavaFilter;
+import ffx.potential.parsers.ConversionFilter;
 import ffx.potential.parsers.FileOpener;
-import ffx.potential.parsers.PDBFilter;
-import ffx.potential.parsers.SystemFilter;
+import java.awt.Cursor;
+//import ffx.potential.parsers.SystemFilter;
+import java.io.File;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.io.FilenameUtils;
 
 /**
- * The UIFileOpener class opens a file into Force Field X using a filter from
- * the ffx.potential.parsers package. To avoid freezing the FFX GUI, it
- * implements the FileOpener interface, which extends Runnable.
+ * The UIDataConverter class converts a data structure into a Force Field X data 
+ * structure using a filter from the ffx.potentials.parsers package. To avoid 
+ * freezing the FFX GUI, it implements the FileOpener interface, which extends Runnable.
+ * 
+ * Still need to finalize everything save the constructor.
  *
+ * @author Jacob M. Litman
  * @author Michael J. Schnieders
+ * @since 1.0
  */
-public class UIFileOpener implements FileOpener {
+public class UIDataConverter implements FileOpener {
 
-    private static final Logger logger = Logger.getLogger(UIFileOpener.class.getName());
+    private static final Logger logger = Logger.getLogger(UIDataConverter.class.getName());
     private static final long KB = 1024;
     private static final long MB = KB * KB;
-    SystemFilter systemFilter = null;
+    ConversionFilter conversionFilter = null;
     MainPanel mainPanel = null;
     private boolean timer = false;
     private boolean gc = false;
     private long occupiedMemory;
     private long time;
 
+    private final File file;
+    private final Object dataStructure;
+    
     /**
-     * <p>
-     * Constructor for UIFileOpener.</p>
-     *
-     * @param systemFilter a {@link ffx.potential.parsers.SystemFilter} object.
-     * @param mainPanel a {@link ffx.ui.MainPanel} object.
+     * Constructs an object to convert a data structure to FFX MolecularAssembly; 
+     * if data structure type is not recognized, an exception will be thrown when
+     * run.
+     * @param data 
+     * @param file 
+     * @param conversionFilter 
+     * @param mainPanel 
      */
-    public UIFileOpener(SystemFilter systemFilter, MainPanel mainPanel) {
-        this.systemFilter = systemFilter;
+    public UIDataConverter (Object data, File file, ConversionFilter conversionFilter, MainPanel mainPanel) {
+        if (conversionFilter instanceof BiojavaFilter) {
+            this.dataStructure = data;
+        } else {
+            this.dataStructure = null;
+        }
+        this.conversionFilter = conversionFilter;
         this.mainPanel = mainPanel;
+        this.file = file;
         if (System.getProperty("ffx.timer", "false").equalsIgnoreCase("true")) {
             timer = true;
             if (System.getProperty("ffx.timer.gc", "false").equalsIgnoreCase(
@@ -77,16 +90,19 @@ public class UIFileOpener implements FileOpener {
         }
     }
 
-    private void open() {
+    /**
+     * Converts the data structure to MolecularAssembly(s).
+     */
+    public void open() {
         if (timer) {
             startTimer();
         }
         FFXSystem ffxSystem = null;
         // Continue if the file was read in successfully.
-        if (systemFilter.readFile()) {
-            ffxSystem = (FFXSystem) systemFilter.getActiveMolecularSystem();
-            if (!(systemFilter instanceof PDBFilter)) {
-                Utilities.biochemistry(ffxSystem, systemFilter.getAtomList());
+        if (conversionFilter.convert()) {
+            ffxSystem = (FFXSystem) conversionFilter.getActiveMolecularSystem();
+            if (!(conversionFilter instanceof BiojavaFilter)) {
+                Utilities.biochemistry(ffxSystem, conversionFilter.getAtomList());
             }
             // Add the system to the multiscale hierarchy.
             mainPanel.getHierarchy().addSystemNode(ffxSystem);
@@ -94,9 +110,9 @@ public class UIFileOpener implements FileOpener {
             ffxSystem.setPotential(energy);
 
             // Check if there are alternate conformers
-            if (systemFilter instanceof PDBFilter) {
-                PDBFilter pdbFilter = (PDBFilter) systemFilter;
-                List<Character> altLocs = pdbFilter.getAltLocs();
+            if (conversionFilter instanceof BiojavaFilter) {
+                BiojavaFilter biojFilter = (BiojavaFilter) conversionFilter;
+                List<Character> altLocs = biojFilter.getAltLocs();
                 if (altLocs.size() > 1 || altLocs.get(0) != ' ') {
                     StringBuilder altLocString = new StringBuilder("\n Alternate locations found [ ");
                     for (Character c : altLocs) {
@@ -104,7 +120,7 @@ public class UIFileOpener implements FileOpener {
                         if (c == ' ') {
                             continue;
                         }
-                        altLocString.append(format("(%s) ", c));
+                        altLocString.append(String.format("(%s) ", c));
                     }
                     altLocString.append("]\n");
                     logger.info(altLocString.toString());
@@ -121,9 +137,9 @@ public class UIFileOpener implements FileOpener {
                     FFXSystem newSystem = new FFXSystem(ffxSystem.getFile(),
                             "Alternate Location " + c, ffxSystem.getProperties());
                     newSystem.setForceField(ffxSystem.getForceField());
-                    pdbFilter.setAltID(newSystem, c);
-                    pdbFilter.clearSegIDs();
-                    if (pdbFilter.readFile()) {
+                    biojFilter.setAltID(newSystem, c);
+                    biojFilter.clearSegIDs();
+                    if (biojFilter.convert()) {
                         String fileName = ffxSystem.getFile().getAbsolutePath();
                         newSystem.setName(FilenameUtils.getBaseName(fileName) + " " + c);
                         mainPanel.getHierarchy().addSystemNode(newSystem);
@@ -133,8 +149,7 @@ public class UIFileOpener implements FileOpener {
                 }
             }
         } else {
-            logger.warning(String.format(" Failed to read file %s", 
-                    systemFilter.getFile().getName()));
+            logger.warning(String.format(" Failed to convert structure %s", dataStructure.toString()));
         }
         mainPanel.setCursor(Cursor.getDefaultCursor());
         if (timer) {
@@ -207,11 +222,11 @@ public class UIFileOpener implements FileOpener {
      */
     @Override
     public void run() {
-        if (mainPanel != null && systemFilter != null) {
+        if (mainPanel != null && conversionFilter != null) {
             open();
         }
     }
-
+    
     /**
      * Rather verbose output for timed File Operations makes it easy to grep log
      * files for specific information.

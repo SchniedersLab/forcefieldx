@@ -22,48 +22,13 @@
  */
 package ffx.potential.parsers;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import static java.lang.String.format;
-
-import org.apache.commons.configuration.CompositeConfiguration;
-
 import ffx.crystal.Crystal;
 import ffx.crystal.SpaceGroup;
 import ffx.numerics.VectorMath;
-import ffx.potential.MolecularAssembly;
-import ffx.potential.Utilities.FileType;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Bond;
-import ffx.potential.bonded.BondedUtils;
-import ffx.potential.bonded.BondedUtils.MissingAtomTypeException;
-import ffx.potential.bonded.BondedUtils.MissingHeavyAtomException;
-import ffx.potential.bonded.MSGroup;
-import ffx.potential.bonded.MSNode;
-import ffx.potential.bonded.Molecule;
-import ffx.potential.bonded.Polymer;
-import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.Residue.ResiduePosition;
-import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
-import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
-import ffx.potential.parameters.AtomType;
-import ffx.potential.parameters.BondType;
-import ffx.potential.parameters.ForceField;
-import ffx.potential.parameters.MultipoleType;
-import ffx.utilities.Hybrid36;
-
 import static ffx.numerics.VectorMath.diff;
 import static ffx.numerics.VectorMath.r;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.Utilities;
 import static ffx.potential.bonded.AminoAcidUtils.buildAIB;
 import static ffx.potential.bonded.AminoAcidUtils.buildAlanine;
 import static ffx.potential.bonded.AminoAcidUtils.buildArginine;
@@ -113,7 +78,15 @@ import static ffx.potential.bonded.AminoAcidUtils.renameGlutamineHydrogens;
 import static ffx.potential.bonded.AminoAcidUtils.renameGlycineAlphaHydrogens;
 import static ffx.potential.bonded.AminoAcidUtils.renameIsoleucineHydrogens;
 import static ffx.potential.bonded.AminoAcidUtils.renameZetaHydrogens;
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Bond;
+import ffx.potential.bonded.BondedUtils;
+import ffx.potential.bonded.BondedUtils.MissingAtomTypeException;
+import ffx.potential.bonded.BondedUtils.MissingHeavyAtomException;
 import static ffx.potential.bonded.BondedUtils.intxyz;
+import ffx.potential.bonded.MSGroup;
+import ffx.potential.bonded.MSNode;
+import ffx.potential.bonded.Molecule;
 import static ffx.potential.bonded.NucleicAcidUtils.c1Typ;
 import static ffx.potential.bonded.NucleicAcidUtils.c2Typ;
 import static ffx.potential.bonded.NucleicAcidUtils.c3Typ;
@@ -134,43 +107,66 @@ import static ffx.potential.bonded.NucleicAcidUtils.o4Typ;
 import static ffx.potential.bonded.NucleicAcidUtils.o5Typ;
 import static ffx.potential.bonded.NucleicAcidUtils.opTyp;
 import static ffx.potential.bonded.NucleicAcidUtils.pTyp;
+import ffx.potential.bonded.Polymer;
+import ffx.potential.bonded.Residue;
+import ffx.potential.bonded.Residue.ResiduePosition;
 import static ffx.potential.bonded.Residue.ResiduePosition.FIRST_RESIDUE;
 import static ffx.potential.bonded.Residue.ResiduePosition.LAST_RESIDUE;
 import static ffx.potential.bonded.Residue.ResiduePosition.MIDDLE_RESIDUE;
+import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
+import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
 import static ffx.potential.bonded.ResidueEnumerations.aminoAcidHeavyAtoms;
 import static ffx.potential.bonded.ResidueEnumerations.aminoAcidList;
 import static ffx.potential.bonded.ResidueEnumerations.getAminoAcid;
 import static ffx.potential.bonded.ResidueEnumerations.getAminoAcidNumber;
 import static ffx.potential.bonded.ResidueEnumerations.nucleicAcidList;
+import ffx.potential.parameters.AtomType;
+import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.MultipoleType;
+import ffx.potential.parsers.PDBFilter.HetAtoms;
 import static ffx.potential.parsers.PDBFilter.PDBFileStandard.VERSION3_2;
 import static ffx.potential.parsers.PDBFilter.PDBFileStandard.VERSION3_3;
+import ffx.utilities.Hybrid36;
 import static ffx.utilities.StringUtils.padLeft;
 import static ffx.utilities.StringUtils.padRight;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import static java.lang.String.format;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.apache.commons.configuration.CompositeConfiguration;
+import org.biojava.bio.structure.AminoAcidImpl;
+import org.biojava.bio.structure.AtomImpl;
+import org.biojava.bio.structure.Chain;
+import org.biojava.bio.structure.ChainImpl;
+import org.biojava.bio.structure.Group;
+import org.biojava.bio.structure.GroupType;
+import org.biojava.bio.structure.HetatomImpl;
+import org.biojava.bio.structure.NucleotideImpl;
+import org.biojava.bio.structure.PDBCrystallographicInfo;
+import org.biojava.bio.structure.ResidueNumber;
+import org.biojava.bio.structure.SSBond;
+import org.biojava.bio.structure.Structure;
+import org.biojava.bio.structure.StructureImpl;
+import org.biojava.bio.structure.StructureTools;
 
 /**
- * The PDBFilter class parses data from a Protein DataBank (*.PDB) file. The
- * following records are recognized: ANISOU, ATOM, CONECT, CRYST1, END, HELIX,
- * HETATM, LINK, SHEET, SSBOND, REMARK. The rest are currently ignored.
- *
- * @see <a href="http://www.wwpdb.org/documentation/format32/v3.2.html"> PDB
- * format 3.2</a>
+ * The BiojavaFilter class parses data from a Biojava 3 Structure object. 
  *
  * @author Michael J. Schnieders
+ * @author Jacob M. Litman
  * @since 1.0
  *
  */
-public final class PDBFilter extends SystemFilter {
-
-    private static final Logger logger = Logger.getLogger(PDBFilter.class.getName());
-
-    /**
-     * PDB records that are recognized.
-     */
-    private enum Record {
-
-        ANISOU, ATOM, CONECT, CRYST1, END, HELIX, HETATM, LINK, SHEET,
-        SSBOND, REMARK
-    };
+public class BiojavaFilter extends ConversionFilter {
+    
+    private static final Logger logger = Logger.getLogger(BiojavaFilter.class.getName());
+    private final Structure structure;
     /**
      * List of altLoc characters seen in the PDB file.
      */
@@ -198,13 +194,42 @@ public final class PDBFilter extends SystemFilter {
     private String mutateToResname = null;
     private Character mutateChainID = null;
     private boolean print = true;
-    private PDBFileStandard fileStandard = VERSION3_3; // Assume current standard.
+    private PDBFilter.PDBFileStandard fileStandard = VERSION3_3; // Assume current standard.
     /**
      * If true, output is directed into arrayOutput instead of the file.
      */
     private boolean listMode = false;
     private ArrayList<String> listOutput = new ArrayList<>();
+    /**
+     * Don't output atoms which fail Atom.isActive().
+     */
+    private boolean ignoreInactiveAtoms = false;
 
+    public BiojavaFilter(Structure structure, MolecularAssembly molecularAssembly, ForceField forcefield, CompositeConfiguration properties) {
+        super(structure, molecularAssembly, forcefield, properties);
+        this.structure = structure;
+        this.dataType = Utilities.DataType.BIOJAVA;
+        this.fileType = Utilities.FileType.PDB;
+    }
+
+    public BiojavaFilter(List<Structure> structures, MolecularAssembly molecularAssembly, ForceField forcefield, CompositeConfiguration properties) {
+        super(structures, molecularAssembly, forcefield, properties);
+        if (structures != null && !structures.isEmpty()) {
+            this.structure = structures.get(0);
+        } else {
+            structure = null;
+        }
+        this.dataType = Utilities.DataType.BIOJAVA;
+        this.fileType = Utilities.FileType.PDB;
+    }
+
+    public BiojavaFilter(Structure structure, List<MolecularAssembly> molecularAssemblies, ForceField forcefield, CompositeConfiguration properties) {
+        super(structure, molecularAssemblies, forcefield, properties);
+        this.structure = structure;
+        this.dataType = Utilities.DataType.BIOJAVA;
+        this.fileType = Utilities.FileType.PDB;
+    }
+    
     /**
      * Mutate a residue at the PDB file is being parsed.
      *
@@ -277,57 +302,6 @@ public final class PDBFilter extends SystemFilter {
     private final HashMap<Integer, Atom> atoms = new HashMap<>();
 
     /**
-     * <p>
-     * Constructor for PDBFilter.</p>
-     *
-     * @param files a {@link java.util.List} object.
-     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
-     * object.
-     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param properties a
-     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
-     */
-    public PDBFilter(List<File> files, MolecularAssembly molecularAssembly,
-            ForceField forceField, CompositeConfiguration properties) {
-        super(files, molecularAssembly, forceField, properties);
-        bondList = new ArrayList<>();
-        this.fileType = FileType.PDB;
-    }
-
-    /**
-     * Parse the PDB File from a URL.
-     *
-     * @param file a {@link java.io.File} object.
-     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
-     * object.
-     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param properties a
-     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
-     */
-    public PDBFilter(File file, MolecularAssembly molecularAssembly,
-            ForceField forceField, CompositeConfiguration properties) {
-        super(file, molecularAssembly, forceField, properties);
-        bondList = new ArrayList<>();
-        this.fileType = FileType.PDB;
-    }
-
-    /**
-     * Parse the PDB File from a URL.
-     *
-     * @param file a {@link java.io.File} object.
-     * @param molecularAssemblies a {@link java.util.List} object.
-     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param properties a
-     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
-     */
-    public PDBFilter(File file, List<MolecularAssembly> molecularAssemblies,
-            ForceField forceField, CompositeConfiguration properties) {
-        super(file, molecularAssemblies, forceField, properties);
-        bondList = new ArrayList<>();
-        this.fileType = FileType.PDB;
-    }
-
-    /**
      * Specify the alternate location.
      *
      * @param molecularAssembly The MolecularAssembly to populate.
@@ -350,626 +324,195 @@ public final class PDBFilter extends SystemFilter {
     /**
      * {@inheritDoc}
      *
-     * Parse the PDB File
+     * Parse the Biojava Structure
      *
-     * @return true if the file is read successfully.
+     * @return true if the structure is successfully converted
      */
     @Override
-    public boolean readFile() {
+    public boolean convert() {
         // First atom is #1, to match xyz file format
         int xyzIndex = 1;
-        setFileRead(false);
+        setConverted(false);
         systems.add(activeMolecularAssembly);
+        boolean hasCrystalInfo = false;
 
-        List<String> conects = new ArrayList<>();
-        List<String> links = new ArrayList<>();
-        List<String> ssbonds = new ArrayList<>();
-        List<String> structs = new ArrayList<>();
-        BufferedReader br = null;
-        try {
-            for (File file : files) {
-                currentFile = file;
-                if (mutate) {
-                    List<Character> chainIDs = new ArrayList<>();
-                    try (BufferedReader cr = new BufferedReader(new FileReader(file))) {
-                        String line = cr.readLine();
-                        while (line != null) {
-                            String identity = line;
-                            if (line.length() > 6) {
-                                identity = line.substring(0, 6);
-                            }
-                            identity = identity.trim().toUpperCase();
-                            Record record;
-                            try {
-                                record = Record.valueOf(identity);
-                            } catch (Exception e) {
-                                /**
-                                 * Continue until the record is recognized.
-                                 */
-                                line = cr.readLine();
-                                continue;
-                            }
-                            switch (record) {
-                                case ANISOU:
-                                case HETATM:
-                                case ATOM:
-                                    char c22 = line.charAt(21);
-                                    boolean idFound = false;
-                                    for (Character chainID : chainIDs) {
-                                        if (c22 == chainID) {
-                                            idFound = true;
-                                            break;
-                                        }
-                                    }
-                                    if (!idFound) {
-                                        chainIDs.add(c22);
-                                    }
-                                    break;
-                            }
-                            line = cr.readLine();
-                        }
-                        if (!chainIDs.contains(mutateChainID)) {
-                            if (chainIDs.size() == 1) {
-                                logger.warning(String.format(" Chain ID %c for "
-                                        + "mutation not found: only one chain %c "
-                                        + "found.", mutateChainID, chainIDs.get(0)));
-                                mutateChainID = chainIDs.get(0);
-                            } else {
-                                logger.warning(String.format(" Chain ID %c for "
-                                        + "mutation not found: mutation will not "
-                                        + "proceed.", mutateChainID));
-                            }
-                        }
-                    } catch (IOException ex) {
-                        logger.finest(String.format(" Exception %s in parsing file to find chain IDs", ex.toString()));
-                    }
-                }
-                /**
-                 * Check that the current file exists and that we can read it.
-                 */
-                if (currentFile == null || !currentFile.exists() || !currentFile.canRead()) {
-                    return false;
-                }
-                /**
-                 * Open the current file for parsing.
-                 */
-                FileReader fr = new FileReader(currentFile);
-                br = new BufferedReader(fr);
-                /**
-                 * Echo the alternate location being parsed.
-                 */
-                if (currentAltLoc == 'A') {
-                    logger.info(format(" Reading %s", currentFile.getName()));
-                } else {
-                    logger.info(format(" Reading %s alternate location %s",
-                            currentFile.getName(), currentAltLoc));
-                }
-                /**
-                 * Reset the current chain and segID.
-                 */
-                currentChainID = null;
-                currentSegID = null;
-                /**
-                 * Read the first line of the file.
-                 */
-                String line = br.readLine();
-                /**
-                 * Parse until END is found or to the end of the file.
-                 */
-                while (line != null) {
-                    String identity = line;
-                    if (line.length() > 6) {
-                        identity = line.substring(0, 6);
-                    }
-                    identity = identity.trim().toUpperCase();
-                    Record record;
-                    try {
-                        record = Record.valueOf(identity);
-                    } catch (Exception e) {
-                        /**
-                         * Continue until the record is recognized.
-                         */
-                        line = br.readLine();
-                        continue;
-                    }
-                    /**
-                     * Switch on the known record.
-                     */
-                    switch (record) {
-                        case END:
-                            /**
-                             * Setting "line" to null will exit the loop.
-                             */
-                            line = null;
-                            continue;
-                        case ANISOU:
-// =============================================================================
-//  1 - 6        Record name   "ANISOU"
-//  7 - 11       Integer       serial         Atom serial number.
-// 13 - 16       Atom          name           Atom name.
-// 17            Character     altLoc         Alternate location indicator
-// 18 - 20       Residue name  resName        Residue name.
-// 22            Character     chainID        Chain identifier.
-// 23 - 26       Integer       resSeq         Residue sequence number.
-// 27            AChar         iCode          Insertion code.
-// 29 - 35       Integer       u[0][0]        U(1,1)
-// 36 - 42       Integer       u[1][1]        U(2,2)
-// 43 - 49       Integer       u[2][2]        U(3,3)
-// 50 - 56       Integer       u[0][1]        U(1,2)
-// 57 - 63       Integer       u[0][2]        U(1,3)
-// 64 - 70       Integer       u[1][2]        U(2,3)
-// 77 - 78       LString(2)    element        Element symbol, right-justified.
-// 79 - 80       LString(2)    charge         Charge on the atom.
-// =============================================================================
-                            Integer serial = Hybrid36.decode(5, line.substring(6, 11));
-                            Character altLoc = line.substring(16, 17).toUpperCase().charAt(0);
-                            if (!altLocs.contains(altLoc)) {
-                                altLocs.add(altLoc);
-                            }
-                            if (!altLoc.equals(' ') && !altLoc.equals('A')
-                                    && !altLoc.equals(currentAltLoc)) {
-                                break;
-                            }
-                            double adp[] = new double[6];
-                            adp[0] = new Integer(line.substring(28, 35).trim()) * 1.0e-4;
-                            adp[1] = new Integer(line.substring(35, 42).trim()) * 1.0e-4;
-                            adp[2] = new Integer(line.substring(42, 49).trim()) * 1.0e-4;
-                            adp[3] = new Integer(line.substring(49, 56).trim()) * 1.0e-4;
-                            adp[4] = new Integer(line.substring(56, 63).trim()) * 1.0e-4;
-                            adp[5] = new Integer(line.substring(63, 70).trim()) * 1.0e-4;
-                            if (atoms.containsKey(serial)) {
-                                Atom a = atoms.get(serial);
-                                a.setAltLoc(altLoc);
-                                a.setAnisou(adp);
-                            } else {
-                                logger.info(format(" No ATOM record for ANISOU serial number %d has been found.", serial));
-                                logger.info(format(" This ANISOU record will be ignored:\n %s", line));
-                            }
-                            break;
-                        case ATOM:
-// =============================================================================
-//  1 -  6        Record name   "ATOM  "
-//  7 - 11        Integer       serial       Atom serial number.
-// 13 - 16        Atom          name         Atom name.
-// 17             Character     altLoc       Alternate location indicator.
-// 18 - 20        Residue name  resName      Residue name.
-// 22             Character     chainID      Chain identifier.
-// 23 - 26        Integer       resSeq       Residue sequence number.
-// 27             AChar         iCode        Code for insertion of residues.
-// 31 - 38        Real(8.3)     x            Orthogonal coordinates for X in Angstroms.
-// 39 - 46        Real(8.3)     y            Orthogonal coordinates for Y in Angstroms.
-// 47 - 54        Real(8.3)     z            Orthogonal coordinates for Z in Angstroms.
-// 55 - 60        Real(6.2)     occupancy    Occupancy.
-// 61 - 66        Real(6.2)     tempFactor   Temperature factor.
-// 77 - 78        LString(2)    element      Element symbol, right-justified.
-// 79 - 80        LString(2)    charge       Charge  on the atom.
-// =============================================================================
-                            String name;
-                            String resName;
-                            Character chainID;
-                            String segID;
-                            int resSeq;
-                            boolean printAtom;
-                            double d[];
-                            double occupancy;
-                            double tempFactor;
-                            Atom newAtom;
-                            Atom returnedAtom;
-                            // If it's a misnamed water, it will fall through to HETATM.
-                            if (!line.substring(17, 20).trim().equals("HOH")) {
-                                serial = Hybrid36.decode(5, line.substring(6, 11));
-                                name = line.substring(12, 16).trim();
-                                if (name.toUpperCase().contains("1H") || name.toUpperCase().contains("2H")
-                                        || name.toUpperCase().contains("3H")) {
-                                    // VERSION3_2 is presently just a placeholder for "anything non-standard".
-                                    fileStandard = VERSION3_2;
-                                }
-                                altLoc = line.substring(16, 17).toUpperCase().charAt(0);
-                                if (!altLocs.contains(altLoc)) {
-                                    altLocs.add(altLoc);
-                                }
-                                if (!altLoc.equals(' ') && !altLoc.equals('A')
-                                        && !altLoc.equals(currentAltLoc)) {
-                                    break;
-                                }
-                                resName = line.substring(17, 20).trim();
-                                chainID = line.substring(21, 22).charAt(0);
-                                segID = getSegID(chainID);
-                                resSeq = Hybrid36.decode(4, line.substring(22, 26));
-                                printAtom = false;
-                                if (mutate && chainID.equals(mutateChainID) && mutateResID == resSeq) {
-                                    String atomName = name.toUpperCase();
-                                    if (atomName.equals("N") || atomName.equals("C")
-                                            || atomName.equals("O") || atomName.equals("CA")) {
-                                        printAtom = true;
-                                        resName = mutateToResname;
-                                    } else {
-                                        logger.info(String.format(" Deleting atom %s of %s %d",
-                                                atomName, resName, resSeq));
-                                        break;
-                                    }
-                                }
-                                d = new double[3];
-                                d[0] = new Double(line.substring(30, 38).trim());
-                                d[1] = new Double(line.substring(38, 46).trim());
-                                d[2] = new Double(line.substring(46, 54).trim());
-                                occupancy = 1.0;
-                                tempFactor = 1.0;
-                                try {
-                                    occupancy = new Double(line.substring(54, 60).trim());
-                                    tempFactor = new Double(line.substring(60, 66).trim());
-                                } catch (NumberFormatException e) {
-                                    // Use default values.
-                                    if (print) {
-                                        logger.warning(" No values for occupancy or b-factors; defaulting to 1.00 (further warnings suppressed).");
-                                        print = false;
-                                    } else if (logger.isLoggable(Level.FINE)) {
-                                        logger.fine(" No values for occupancy or b-factors; defaulting to 1.00.");
-                                    }
-                                }
-                                newAtom = new Atom(0, name, altLoc, d, resName, resSeq,
-                                        chainID, occupancy, tempFactor, segID);
-
-                                returnedAtom = (Atom) activeMolecularAssembly.addMSNode(newAtom);
-                                if (returnedAtom != newAtom) {
-                                    // A previously added atom has been retained.
-                                    atoms.put(serial, returnedAtom);
-                                    if (logger.isLoggable(Level.FINE)) {
-                                        logger.fine(returnedAtom + " has been retained over\n" + newAtom);
-                                    }
-                                } else {
-                                    // The new atom has been added.
-                                    atoms.put(serial, newAtom);
-                                    // Check if the newAtom took the xyzIndex of a previous alternate conformer.
-                                    if (newAtom.xyzIndex == 0) {
-                                        newAtom.setXYZIndex(xyzIndex++);
-                                    }
-                                    if (printAtom) {
-                                        logger.info(newAtom.toString());
-                                    }
-                                }
-                                break;
-                            }
-                        case HETATM:
-// =============================================================================
-//  1 - 6        Record name    "HETATM"
-//  7 - 11       Integer        serial        Atom serial number.
-// 13 - 16       Atom           name          Atom name.
-// 17            Character      altLoc        Alternate location indicator.
-// 18 - 20       Residue name   resName       Residue name.
-// 22            Character      chainID       Chain identifier.
-// 23 - 26       Integer        resSeq        Residue sequence number.
-// 27            AChar          iCode         Code for insertion of residues.
-// 31 - 38       Real(8.3)      x             Orthogonal coordinates for X.
-// 39 - 46       Real(8.3)      y             Orthogonal coordinates for Y.
-// 47 - 54       Real(8.3)      z             Orthogonal coordinates for Z.
-// 55 - 60       Real(6.2)      occupancy     Occupancy.
-// 61 - 66       Real(6.2)      tempFactor    Temperature factor.
-// 77 - 78       LString(2)     element       Element symbol; right-justified.
-// 79 - 80       LString(2)     charge        Charge on the atom.
-// =============================================================================
-                            serial = Hybrid36.decode(5, line.substring(6, 11));
-                            name = line.substring(12, 16).trim();
-                            altLoc = line.substring(16, 17).toUpperCase().charAt(0);
-                            if (!altLocs.contains(altLoc)) {
-                                altLocs.add(altLoc);
-                            }
-                            if (!altLoc.equals(' ') && !altLoc.equals('A')
-                                    && !altLoc.equals(currentAltLoc)) {
-                                break;
-                            }
-                            resName = line.substring(17, 20).trim();
-                            chainID = line.substring(21, 22).charAt(0);
-                            segID = getSegID(chainID);
-                            resSeq = Hybrid36.decode(4, line.substring(22, 26));
-                            d = new double[3];
-                            d[0] = new Double(line.substring(30, 38).trim());
-                            d[1] = new Double(line.substring(38, 46).trim());
-                            d[2] = new Double(line.substring(46, 54).trim());
-                            occupancy = 1.0;
-                            tempFactor = 1.0;
-                            try {
-                                occupancy = new Double(line.substring(54, 60).trim());
-                                tempFactor = new Double(line.substring(60, 66).trim());
-                            } catch (NumberFormatException e) {
-                                // Use default values.
-                                if (print) {
-                                    logger.warning(" No values for occupancy or b-factors; defaulting to 1.00 (further warnings suppressed).");
-                                    print = false;
-                                } else if (logger.isLoggable(Level.FINE)) {
-                                    logger.fine(" No values for occupancy or b-factors; defaulting to 1.00.");
-                                }
-                            }
-                            newAtom = new Atom(0, name, altLoc, d, resName, resSeq, chainID,
-                                    occupancy, tempFactor, segID);
-                            newAtom.setHetero(true);
-                            returnedAtom = (Atom) activeMolecularAssembly.addMSNode(newAtom);
-                            if (returnedAtom != newAtom) {
-                                // A previously added atom has been retained.
-                                atoms.put(serial, returnedAtom);
-                                if (logger.isLoggable(Level.FINE)) {
-                                    logger.fine(returnedAtom + " has been retained over\n" + newAtom);
-                                }
-                            } else {
-                                // The new atom has been added.
-                                atoms.put(serial, newAtom);
-                                newAtom.setXYZIndex(xyzIndex++);
-                            }
-                            break;
-                        case CRYST1:
-// =============================================================================
-// The CRYST1 record presents the unit cell parameters, space group, and Z
-// value. If the structure was not determined by crystallographic means, CRYST1
-// simply provides the unitary values, with an appropriate REMARK.
-//
-//  7 - 15       Real(9.3)     a              a (Angstroms).
-// 16 - 24       Real(9.3)     b              b (Angstroms).
-// 25 - 33       Real(9.3)     c              c (Angstroms).
-// 34 - 40       Real(7.2)     alpha          alpha (degrees).
-// 41 - 47       Real(7.2)     beta           beta (degrees).
-// 48 - 54       Real(7.2)     gamma          gamma (degrees).
-// 56 - 66       LString       sGroup         Space  group.
-// 67 - 70       Integer       z              Z value.
-// =============================================================================
-                            double aaxis = new Double(line.substring(6, 15).trim());
-                            double baxis = new Double(line.substring(15, 24).trim());
-                            double caxis = new Double(line.substring(24, 33).trim());
-                            double alpha = new Double(line.substring(33, 40).trim());
-                            double beta = new Double(line.substring(40, 47).trim());
-                            double gamma = new Double(line.substring(47, 54).trim());
-                            int limit = 66;
-                            if (line.length() < 66) {
-                                limit = line.length();
-                            }
-                            String sg = line.substring(55, limit).trim();
-                            properties.addProperty("a-axis", aaxis);
-                            properties.addProperty("b-axis", baxis);
-                            properties.addProperty("c-axis", caxis);
-                            properties.addProperty("alpha", alpha);
-                            properties.addProperty("beta", beta);
-                            properties.addProperty("gamma", gamma);
-                            properties.addProperty("spacegroup", SpaceGroup.pdb2ShortName(sg));
-                            break;
-                        case CONECT:
-// =============================================================================
-//  7 - 11        Integer        serial       Atom  serial number
-// 12 - 16        Integer        serial       Serial number of bonded atom
-// 17 - 21        Integer        serial       Serial number of bonded atom
-// 22 - 26        Integer        serial       Serial number of bonded atom
-// 27 - 31        Integer        serial       Serial number of bonded atom
-//
-// CONECT records involving atoms for which the coordinates are not present
-// in the entry (e.g., symmetry-generated) are not given.
-// CONECT records involving atoms for which the coordinates are missing due
-// to disorder, are also not provided.
-// =============================================================================
-                            conects.add(line);
-                            break;
-                        case LINK:
-// =============================================================================
-// The LINK records specify connectivity between residues that is not implied by
-// the primary structure. Connectivity is expressed in terms of the atom names.
-// They also include the distance associated with the each linkage following the
-// symmetry operations at the end of each record.
-// 13 - 16         Atom           name1           Atom name.
-// 17              Character      altLoc1         Alternate location indicator.
-// 18 - 20         Residue name   resName1        Residue  name.
-// 22              Character      chainID1        Chain identifier.
-// 23 - 26         Integer        resSeq1         Residue sequence number.
-// 27              AChar          iCode1          Insertion code.
-// 43 - 46         Atom           name2           Atom name.
-// 47              Character      altLoc2         Alternate location indicator.
-// 48 - 50         Residue name   resName2        Residue name.
-// 52              Character      chainID2        Chain identifier.
-// 53 - 56         Integer        resSeq2         Residue sequence number.
-// 57              AChar          iCode2          Insertion code.
-// 60 - 65         SymOP          sym1            Symmetry operator atom 1.
-// 67 - 72         SymOP          sym2            Symmetry operator atom 2.
-// 74 – 78         Real(5.2)      Length          Link distance
-// =============================================================================
-                            Character a1 = line.charAt(16);
-                            Character a2 = line.charAt(46);
-                            if (a1 != a2) {
-                                logger.info(format(" Ignoring LINK record as alternate locations do not match\n %s.", line));
-                                break;
-                            }
-                            if (currentAltLoc == 'A') {
-                                if ((a1 == ' ' || a1 == 'A')
-                                        && (a2 == ' ' || a2 == 'A')) {
-                                    links.add(line);
-                                }
-                            } else {
-                                if (a1 == currentAltLoc && a2 == currentAltLoc) {
-                                    links.add(line);
-                                }
-                            }
-                            break;
-                        case SSBOND:
-                            /**
-                             * SSBOND records may be invalid if chain IDs are
-                             * reused.
-                             *
-                             * They are applied to the A conformer and not
-                             * alternate conformers.
-                             */
-                            if (currentAltLoc == 'A') {
-                                ssbonds.add(line);
-                            }
-                            break;
-                        case HELIX:
-// =============================================================================
-// HELIX records are used to identify the position of helices in the molecule.
-// Helices are named, numbered, and classified by type. The residues where the
-// helix begins and ends are noted, as well as the total length.
-//
-//  8 - 10        Integer        serNum        Serial number of the helix. This starts
-//                                             at 1  and increases incrementally.
-// 12 - 14        LString(3)     helixID       Helix  identifier. In addition to a serial
-//                                             number, each helix is given an
-//                                             alphanumeric character helix identifier.
-// 16 - 18        Residue name   initResName   Name of the initial residue.
-// 20             Character      initChainID   Chain identifier for the chain containing
-//                                             this  helix.
-// 22 - 25        Integer        initSeqNum    Sequence number of the initial residue.
-// 26             AChar          initICode     Insertion code of the initial residue.
-// 28 - 30        Residue  name  endResName    Name of the terminal residue of the helix.
-// 32             Character      endChainID    Chain identifier for the chain containing
-//                                             this  helix.
-// 34 - 37        Integer        endSeqNum     Sequence number of the terminal residue.
-// 38             AChar          endICode      Insertion code of the terminal residue.
-// 39 - 40        Integer        helixClass    Helix class (see below).
-// 41 - 70        String         comment       Comment about this helix.
-// 72 - 76        Integer        length        Length of this helix.
-//
-//                                      CLASS NUMBER
-// TYPE OF  HELIX                     (COLUMNS 39 - 40)
-// --------------------------------------------------------------
-// Right-handed alpha (default)                1
-// Right-handed omega                          2
-// Right-handed pi                             3
-// Right-handed gamma                          4
-// Right-handed 3 - 10                         5
-// Left-handed alpha                           6
-// Left-handed omega                           7
-// Left-handed gamma                           8
-// 2 - 7 ribbon/helix                          9
-// Polyproline                                10
-// =============================================================================
-                        case SHEET:
-// =============================================================================
-// SHEET records are used to identify the position of sheets in the molecule.
-// Sheets are both named and numbered. The residues where the sheet begins and
-// ends are noted.
-//
-//  8 - 10        Integer       strand         Strand  number which starts at 1 for each
-//                                             strand within a sheet and increases by one.
-// 12 - 14        LString(3)    sheetID        Sheet  identifier.
-// 15 - 16        Integer       numStrands     Number  of strands in sheet.
-// 18 - 20        Residue name  initResName    Residue  name of initial residue.
-// 22             Character     initChainID    Chain identifier of initial residue
-//                                             in strand.
-// 23 - 26        Integer       initSeqNum     Sequence number of initial residue
-//                                             in strand.
-// 27             AChar         initICode      Insertion code of initial residue
-//                                             in  strand.
-// 29 - 31        Residue name  endResName     Residue name of terminal residue.
-// 33             Character     endChainID     Chain identifier of terminal residue.
-// 34 - 37        Integer       endSeqNum      Sequence number of terminal residue.
-// 38             AChar         endICode       Insertion code of terminal residue.
-// 39 - 40        Integer       sense          Sense of strand with respect to previous
-//                                             strand in the sheet. 0 if first strand,
-//                                             1 if  parallel,and -1 if anti-parallel.
-// 42 - 45        Atom          curAtom        Registration.  Atom name in current strand.
-// 46 - 48        Residue name  curResName     Registration.  Residue name in current strand
-// 50             Character     curChainId     Registration. Chain identifier in
-//                                             current strand.
-// 51 - 54        Integer       curResSeq      Registration.  Residue sequence number
-//                                             in current strand.
-// 55             AChar         curICode       Registration. Insertion code in
-//                                             current strand.
-// 57 - 60        Atom          prevAtom       Registration.  Atom name in previous strand.
-// 61 - 63        Residue name  prevResName    Registration.  Residue name in
-//                                             previous strand.
-// 65             Character     prevChainId    Registration.  Chain identifier in
-//                                             previous  strand.
-// 66 - 69        Integer       prevResSeq     Registration. Residue sequence number
-//                                             in previous strand.
-// 70             AChar         prevICode      Registration.  Insertion code in
-//                                             previous strand.
-// =============================================================================
-                            structs.add(line);
-                            break;
-                        default:
-                            break;
-                    }
-                    line = br.readLine();
-                }
-                br.close();
+        if (mutate) {
+            List<Character> chainIDs = new ArrayList<>();
+            for (Chain chain : structure.getChains()) {
+                chainIDs.add(chain.getChainID().charAt(0));
             }
-            xyzIndex--;
-            setFileRead(true);
-        } catch (IOException e) {
-            logger.exiting(PDBFilter.class.getName(), "readFile", e);
-            return false;
-        }
-// =============================================================================
-// The SSBOND record identifies each disulfide bond in protein and polypeptide
-// structures by identifying the two residues involved in the bond.
-// The disulfide bond distance is included after the symmetry operations at
-// the end of the SSBOND record.
-//
-//  8 - 10        Integer         serNum       Serial number.
-// 12 - 14        LString(3)      "CYS"        Residue name.
-// 16             Character       chainID1     Chain identifier.
-// 18 - 21        Integer         seqNum1      Residue sequence number.
-// 22             AChar           icode1       Insertion code.
-// 26 - 28        LString(3)      "CYS"        Residue name.
-// 30             Character       chainID2     Chain identifier.
-// 32 - 35        Integer         seqNum2      Residue sequence number.
-// 36             AChar           icode2       Insertion code.
-// 60 - 65        SymOP           sym1         Symmetry oper for 1st resid
-// 67 - 72        SymOP           sym2         Symmetry oper for 2nd resid
-// 74 – 78        Real(5.2)      Length        Disulfide bond distance
-//
-// If SG of cysteine is disordered then there are possible alternate linkages.
-// wwPDB practice is to put together all possible SSBOND records. This is
-// problematic because the alternate location identifier is not specified in
-// the SSBOND record.
-// =============================================================================
-        List<Bond> ssBondList = new ArrayList<>();
-        for (String ssbond : ssbonds) {
-            try {
-                Polymer c1 = activeMolecularAssembly.getChain(ssbond.substring(15, 16));
-                Polymer c2 = activeMolecularAssembly.getChain(ssbond.substring(29, 30));
-                Residue r1 = c1.getResidue(Hybrid36.decode(4, ssbond.substring(17, 21)));
-                Residue r2 = c2.getResidue(Hybrid36.decode(4, ssbond.substring(31, 35)));
-                List<Atom> atoms1 = r1.getAtomList();
-                List<Atom> atoms2 = r2.getAtomList();
-                Atom SG1 = null;
-                Atom SG2 = null;
-                for (Atom atom : atoms1) {
-                    if (atom.getName().equalsIgnoreCase("SG")) {
-                        SG1 = atom;
-                        break;
+            if (!chainIDs.contains(mutateChainID)) {
+                if (!chainIDs.contains(mutateChainID)) {
+                    if (chainIDs.size() == 1) {
+                        logger.warning(String.format(" Chain ID %c for "
+                                + "mutation not found: only one chain %c "
+                                + "found.", mutateChainID, chainIDs.get(0)));
+                        mutateChainID = chainIDs.get(0);
+                    } else {
+                        logger.warning(String.format(" Chain ID %c for "
+                                + "mutation not found: mutation will not "
+                                + "proceed.", mutateChainID));
                     }
+                }
+            }
+        }
+           /**
+         * Echo the alternate location being parsed.
+         */
+        if (currentAltLoc == 'A') {
+            logger.info(String.format(" Reading %s", structure.getName()));
+        } else {
+            logger.info(String.format(" Reading %s alternate location %s",
+                    structure.getName(), currentAltLoc));
+        }
+        
+        org.biojava.bio.structure.Atom[] bjAtoms = StructureTools.getAllAtomArray(structure);
+        int nAtoms = bjAtoms.length;
+        Atom[] ffxAtoms = new Atom[nAtoms];
+        /**
+         * Reset the current chain and segID.
+         */
+        currentChainID = null;
+        currentSegID = null;
+        PDBCrystallographicInfo cInfo = structure.getCrystallographicInfo();
+        
+        if (!hasCrystalInfo && cInfo.isCrystallographic()) {
+            properties.addProperty("a-axis", cInfo.getA());
+            properties.addProperty("b-axis", cInfo.getB());
+            properties.addProperty("c-axis", cInfo.getC());
+            properties.addProperty("alpha", cInfo.getAlpha());
+            properties.addProperty("beta", cInfo.getBeta());
+            properties.addProperty("gamma", cInfo.getGamma());
+            properties.addProperty("spacegroup", SpaceGroup.pdb2ShortName(cInfo.getSpaceGroup()));
+            hasCrystalInfo = true;
+        }
+        
+        for (org.biojava.bio.structure.Atom atom : bjAtoms) {
+            String name = atom.getName().toUpperCase();
+            double[] xyz = new double[3];
+            xyz[0] = atom.getX();
+            xyz[1] = atom.getY();
+            xyz[2] = atom.getZ();
+            char altLoc = atom.getAltLoc();
+            if (!altLocs.contains(altLoc)) {
+                altLocs.add(altLoc);
+            }
+            if (altLoc != ' ' && altLoc != 'A' && altLoc != currentAltLoc) {
+                break;
+            }
+            
+            if (name.contains("1H") || name.toUpperCase().contains("2H")
+                    || name.toUpperCase().contains("3H")) {
+                // VERSION3_2 is presently just a placeholder for "anything non-standard".
+                fileStandard = VERSION3_2;
+            }
+            
+            Group group = atom.getGroup();
+            ResidueNumber resnum = group.getResidueNumber();
+            int resSeq = resnum.getSeqNum();
+            String resName = group.getPDBName();
+            
+            Chain chain = group.getChain();
+            char chainID = chain.getChainID().charAt(0);
+            String segID = "blah";
+            
+            boolean printAtom = false;
+            if (mutate && chainID == mutateChainID && mutateResID == resSeq) {
+                if (name.equals("N") || name.equals("C") || name.equals("O") || 
+                        name.equals("CA")) {
+                    printAtom = true;
+                    name = mutateToResname;
+                } else {
+                    logger.info(String.format(" Deleting atom %s of %s %d",
+                            name, resName, resSeq));
+                    break;
+                }
+            }
+            
+            Atom newAtom = new Atom(0, 
+                    name, altLoc, xyz, resName, resSeq, chainID, atom.getOccupancy(), 
+                    atom.getTempFactor(), segID);
+            
+            newAtom.setHetero(group.getType().equals(GroupType.HETATM));
+            // Look Ma, Biojava doesn't care about anisou!
+            Atom returnedAtom = (Atom) activeMolecularAssembly.addMSNode(newAtom);
+            if (returnedAtom != newAtom) {
+                atoms.put(atom.getPDBserial(), returnedAtom);
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.fine(String.format("%s has been retained over\n%s", 
+                            returnedAtom.toString(), newAtom.toString()));
+                }
+            } else {
+                atoms.put(atom.getPDBserial(), newAtom);
+                if (newAtom.xyzIndex == 0) {
+                    newAtom.setXYZIndex(xyzIndex++);
+                }
+                if (printAtom) {
+                    logger.info(newAtom.toString());
+                }
+            }
+        }
+        
+        List<Bond> ssBondList = new ArrayList<>();
+        for (SSBond ssBond : structure.getSSBonds()) {
+            Polymer c1 = activeMolecularAssembly.getChain(ssBond.getChainID1());
+            Polymer c2 = activeMolecularAssembly.getChain(ssBond.getChainID2());
+            int rn1;
+            int rn2;
+            try {
+                rn1 = Integer.parseInt(ssBond.getResnum1());
+                rn2 = Integer.parseInt(ssBond.getResnum1());
+            } catch (NumberFormatException ex) {
+                logger.warning(String.format(" Could not parse SSbond %d", ssBond.getSerNum()));
+                continue;
+            }
+            Residue r1 = c1.getResidue(rn1);
+            Residue r2 = c2.getResidue(rn2);
+            List<Atom> atoms1 = r1.getAtomList();
+            List<Atom> atoms2 = r2.getAtomList();
+            Atom SG1 = null;
+            Atom SG2 = null;
+            
+            for (Atom atom : atoms1) {
+                if (atom.getName().equalsIgnoreCase("SG")) {
+                    SG1 = atom;
+                    break;
+                }
+            }
+            for (Atom atom : atoms2) {
+                if (atom.getName().equalsIgnoreCase("SG")) {
+                    SG2 = atom;
+                    break;
+                }
+            }
+            if (SG1 == null) {
+                logger.warning(String.format(" SG atom 1 of SS-bond %s is null", ssBond.toString()));
+            }
+            if (SG2 == null) {
+                logger.warning(String.format(" SG atom 2 of SS-bond %s is null", ssBond.toString()));
+            }
+            if (SG1 == null || SG2 == null) {
+                continue;
+            }
+            
+            double d = VectorMath.dist(SG1.getXYZ(), SG2.getXYZ());
+            if (d < 3.0) {
+                r1.setName("CYX");
+                r2.setName("CYX");
+                for (Atom atom : atoms1) {
+                    atom.setResName("CYX");
                 }
                 for (Atom atom : atoms2) {
-                    if (atom.getName().equalsIgnoreCase("SG")) {
-                        SG2 = atom;
-                        break;
-                    }
+                    atom.setResName("CYX");
                 }
-                if (SG1 == null) {
-                    logger.warning(String.format(" SG atom 1 of SS-bond %s is null", ssbond));
-                }
-                if (SG2 == null) {
-                    logger.warning(String.format(" SG atom 2 of SS-bond %s is null", ssbond));
-                }
-                if (SG1 == null || SG2 == null) {
-                    continue;
-                }
-                double d = VectorMath.dist(SG1.getXYZ(), SG2.getXYZ());
-                if (d < 3.0) {
-                    r1.setName("CYX");
-                    r2.setName("CYX");
-                    for (Atom atom : atoms1) {
-                        atom.setResName("CYX");
-                    }
-                    for (Atom atom : atoms2) {
-                        atom.setResName("CYX");
-                    }
-                    Bond bond = new Bond(SG1, SG2);
-                    ssBondList.add(bond);
-                } else {
-                    String message = format("Ignoring [%s]\n due to distance %8.3f A.", ssbond, d);
-                    logger.log(Level.WARNING, message);
-                }
-            } catch (Exception e) {
-                String message = format("Ignoring [%s]", ssbond);
-                logger.log(Level.WARNING, message, e);
+                Bond bond = new Bond(SG1, SG2);
+                ssBondList.add(bond);
+            } else {
+                String message = String.format("Ignoring [%s]\n due to distance %8.3f A.", ssBond.toString(), d);
+                logger.log(Level.WARNING, message);
             }
         }
-
+        
         int pdbAtoms = activeMolecularAssembly.getAtomArray().length;
         assignAtomTypes();
 
@@ -980,10 +523,10 @@ public final class PDBFilter extends SystemFilter {
             int c[] = new int[2];
             c[0] = a1.getAtomType().atomClass;
             c[1] = a2.getAtomType().atomClass;
-            String key = BondType.sortKey(c);
-            BondType bondType = forceField.getBondType(key);
+            String key = ffx.potential.parameters.BondType.sortKey(c);
+            ffx.potential.parameters.BondType bondType = forceField.getBondType(key);
             if (bondType == null) {
-                logger.severe(format("No BondType for key: %s\n %s\n %s", key, a1, a2));
+                logger.severe(String.format("No BondType for key: %s\n %s\n %s", key, a1, a2));
             } else {
                 bond.setBondType(bondType);
             }
@@ -992,7 +535,7 @@ public final class PDBFilter extends SystemFilter {
             Polymer c2 = activeMolecularAssembly.getChain(a2.getSegID());
             Residue r1 = c1.getResidue(a1.getResidueNumber());
             Residue r2 = c2.getResidue(a2.getResidueNumber());
-            sb.append(format("\n S-S distance of %6.2f for %s and %s.", d, r1.toString(), r2.toString()));
+            sb.append(String.format("\n S-S distance of %6.2f for %s and %s.", d, r1.toString(), r2.toString()));
             bondList.add(bond);
         }
         if (ssBondList.size() > 0) {
@@ -3306,6 +2849,43 @@ public final class PDBFilter extends SystemFilter {
         }
         return true;
     }
+    
+    /*public Structure writeToStructure(String header) {
+        return writeToStructure(activeMolecularAssembly, header);
+    }
+    
+    public static Structure writeToStructure(MolecularAssembly assembly, String header) {
+        Structure structure = new StructureImpl();
+        for (Polymer polymer : assembly.getChains()) {
+            Chain chain = new ChainImpl();
+            for (Residue residue : polymer.getResidues()) {
+                Group group;
+                switch (residue.getResidueType()) {
+                    case AA:
+                        group = new AminoAcidImpl();
+                        break;
+                    case NA:
+                        group = new NucleotideImpl();
+                        break;
+                    default:
+                        group = new HetatomImpl();
+                        break;
+                }
+                for (Atom atom : residue.getAtomList()) {
+                    org.biojava.bio.structure.Atom bjAtom = new AtomImpl();
+                    group.addAtom(bjAtom);
+                }
+                chain.addGroup(group);
+            }
+            structure.addChain(chain);
+        }
+        
+        for (Molecule molecule : assembly.getMolecules()) {
+            for (Atom atom : molecule.getAtomList()) {
+                
+            }
+        }
+    }*/
 
     public boolean writeSIFTFile(File saveFile, boolean append, String[] resAndScore) {
         if (saveFile == null) {
@@ -3853,11 +3433,6 @@ public final class PDBFilter extends SystemFilter {
         listOutput.clear();
     }
 
-    public enum HetAtoms {
-
-        HOH, H2O, WAT, NA, K, MG, MG2, CA, CA2, CL, BR, ZN, ZN2
-    };
-
     /**
      * Ensures proper naming of hydrogens according to latest PDB format.
      * Presently mostly guesses at which hydrogens to re-assign, which may cause
@@ -4380,11 +3955,5 @@ public final class PDBFilter extends SystemFilter {
      */
     private AtomType findAtomType(int key) {
         return BondedUtils.findAtomType(key, forceField);
-    }
-
-    // Presently, VERSION3_3 is default, and VERSION3_2 is anything non-standard.
-    public enum PDBFileStandard {
-
-        VERSION3_3, VERSION3_2, VERSION3_1, VERSION3_0, VERSION2_3;
     }
 }
