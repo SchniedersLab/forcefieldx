@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2014.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
  *
  * This file is part of Force Field X.
  *
@@ -19,6 +19,21 @@
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+ * Linking this library statically or dynamically with other modules is making a
+ * combined work based on this library. Thus, the terms and conditions of the
+ * GNU General Public License cover the whole combination.
+ *
+ * As a special exception, the copyright holders of this library give you
+ * permission to link this library with independent modules to produce an
+ * executable, regardless of the license terms of these independent modules, and
+ * to copy and distribute the resulting executable under terms of your choice,
+ * provided that you also meet, for each linked independent module, the terms
+ * and conditions of the license of that module. An independent module is a
+ * module which is not derived from or based on this library. If you modify this
+ * library, you may extend this exception to your version of the library, but
+ * you are not obligated to do so. If you do not wish to do so, delete this
+ * exception statement from your version.
  */
 package ffx.potential.parsers;
 
@@ -140,19 +155,13 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.configuration.CompositeConfiguration;
-import org.biojava.bio.structure.AminoAcidImpl;
-import org.biojava.bio.structure.AtomImpl;
 import org.biojava.bio.structure.Chain;
-import org.biojava.bio.structure.ChainImpl;
 import org.biojava.bio.structure.Group;
 import org.biojava.bio.structure.GroupType;
-import org.biojava.bio.structure.HetatomImpl;
-import org.biojava.bio.structure.NucleotideImpl;
 import org.biojava.bio.structure.PDBCrystallographicInfo;
 import org.biojava.bio.structure.ResidueNumber;
 import org.biojava.bio.structure.SSBond;
 import org.biojava.bio.structure.Structure;
-import org.biojava.bio.structure.StructureImpl;
 import org.biojava.bio.structure.StructureTools;
 
 /**
@@ -334,7 +343,6 @@ public class BiojavaFilter extends ConversionFilter {
         int xyzIndex = 1;
         setConverted(false);
         systems.add(activeMolecularAssembly);
-        boolean hasCrystalInfo = false;
 
         if (mutate) {
             List<Character> chainIDs = new ArrayList<>();
@@ -342,17 +350,15 @@ public class BiojavaFilter extends ConversionFilter {
                 chainIDs.add(chain.getChainID().charAt(0));
             }
             if (!chainIDs.contains(mutateChainID)) {
-                if (!chainIDs.contains(mutateChainID)) {
-                    if (chainIDs.size() == 1) {
-                        logger.warning(String.format(" Chain ID %c for "
-                                + "mutation not found: only one chain %c "
-                                + "found.", mutateChainID, chainIDs.get(0)));
-                        mutateChainID = chainIDs.get(0);
-                    } else {
-                        logger.warning(String.format(" Chain ID %c for "
-                                + "mutation not found: mutation will not "
-                                + "proceed.", mutateChainID));
-                    }
+                 if (chainIDs.size() == 1) {
+                    logger.warning(String.format(" Chain ID %c for "
+                            + "mutation not found: only one chain %c "
+                            + "found.", mutateChainID, chainIDs.get(0)));
+                    mutateChainID = chainIDs.get(0);
+                } else {
+                    logger.warning(String.format(" Chain ID %c for "
+                            + "mutation not found: mutation will not "
+                            + "proceed.", mutateChainID));
                 }
             }
         }
@@ -376,7 +382,9 @@ public class BiojavaFilter extends ConversionFilter {
         currentSegID = null;
         PDBCrystallographicInfo cInfo = structure.getCrystallographicInfo();
         
-        if (!hasCrystalInfo && cInfo.isCrystallographic()) {
+        if (cInfo.isCrystallographic()) {
+            // I do not think we need to check if it already has these properties,
+            // but it can be done.
             properties.addProperty("a-axis", cInfo.getA());
             properties.addProperty("b-axis", cInfo.getB());
             properties.addProperty("c-axis", cInfo.getC());
@@ -384,11 +392,10 @@ public class BiojavaFilter extends ConversionFilter {
             properties.addProperty("beta", cInfo.getBeta());
             properties.addProperty("gamma", cInfo.getGamma());
             properties.addProperty("spacegroup", SpaceGroup.pdb2ShortName(cInfo.getSpaceGroup()));
-            hasCrystalInfo = true;
         }
         
         for (org.biojava.bio.structure.Atom atom : bjAtoms) {
-            String name = atom.getName().toUpperCase();
+            String name = atom.getName().toUpperCase().trim();
             double[] xyz = new double[3];
             xyz[0] = atom.getX();
             xyz[1] = atom.getY();
@@ -410,11 +417,11 @@ public class BiojavaFilter extends ConversionFilter {
             Group group = atom.getGroup();
             ResidueNumber resnum = group.getResidueNumber();
             int resSeq = resnum.getSeqNum();
-            String resName = group.getPDBName();
+            String resName = group.getPDBName().trim().toUpperCase();
             
             Chain chain = group.getChain();
             char chainID = chain.getChainID().charAt(0);
-            String segID = "blah";
+            String segID = getSegID(chainID);
             
             boolean printAtom = false;
             if (mutate && chainID == mutateChainID && mutateResID == resSeq) {
@@ -433,7 +440,17 @@ public class BiojavaFilter extends ConversionFilter {
                     name, altLoc, xyz, resName, resSeq, chainID, atom.getOccupancy(), 
                     atom.getTempFactor(), segID);
             
-            newAtom.setHetero(group.getType().equals(GroupType.HETATM));
+            /* Biojava sets at least some capping groups, and possibly nonstandard
+               amino acids to be heteroatoms. */
+            boolean hetatm = true;
+            for (AminoAcid3 aa3Name : AminoAcid3.values()) {
+                if (aa3Name.name().equals(resName)) {
+                    hetatm = false;
+                    break;
+                }
+            }
+            newAtom.setHetero(hetatm);
+            
             // Look Ma, Biojava doesn't care about anisou!
             Atom returnedAtom = (Atom) activeMolecularAssembly.addMSNode(newAtom);
             if (returnedAtom != newAtom) {

@@ -1837,8 +1837,8 @@ public class RotamerLibrary {
 
     /**
      * Applies a Rotamer to a nucleic acid Residue, and throws
- NACorrectionException if the Rotamer must be corrected too far to
- correctly join to Residue i-1.
+     * NACorrectionException if the Rotamer must be corrected too far to
+     * correctly join to Residue i-1.
      *
      * @param residue Residue.
      * @param rotamer Rotamer to be applied to Residue.

@@ -3672,7 +3672,8 @@ public final class PDBFilter extends SystemFilter {
             case PCA:
             case UNK:
             default:
-                // Pray, for I have no examples to work from.
+                // I am currently unaware of how these amino acids are typically
+                // labeled under older PDB standards.
                 break;
         }
     }

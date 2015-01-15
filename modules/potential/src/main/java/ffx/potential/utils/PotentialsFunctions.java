@@ -66,6 +66,8 @@ public interface PotentialsFunctions {
     
     public MolecularAssembly[] convertDataStructure(Object data, File file);
     
+    public MolecularAssembly[] convertDataStructure(Object data, String filename);
+    
     /*public MolecularAssembly[] convertDataStructure(Object[] data);
     
     public MolecularAssembly[] convertDataStructure(Object[] data, File file);*/

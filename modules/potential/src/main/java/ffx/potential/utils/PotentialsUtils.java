@@ -148,6 +148,22 @@ public class PotentialsUtils implements PotentialsFunctions {
         return converter.getAllAssemblies();
     }
     
+    /**
+     * Converts a data structure (such as a Biojava Structure) into one or more
+     * MolecularAssembly objects.
+     * @param data Structure to convert
+     * @param filename Source file
+     * @return  Array of MolecularAssembly
+     */
+    @Override
+    public MolecularAssembly[] convertDataStructure(Object data, String filename) {
+        File file = new File(filename);
+        if (!file.exists() || file.isDirectory() || !file.canRead()) {
+            throw new IllegalArgumentException(String.format("%s not a valid file name.", filename));
+        }
+        return convertDataStructure(data, file);
+    }
+    
     // Below methods not implemented on account of needing to figure out how to
     // distinguish an Object from an Object[].
     

@@ -151,4 +151,13 @@ public class UIUtils implements AlgorithmFunctions {
     public MolecularAssembly[] convertDataStructure(Object data, File file) {
         return mainPanel.convertWait(data, file);
     }
+    
+    @Override
+    public MolecularAssembly[] convertDataStructure(Object data, String filename) {
+        File file = new File(filename);
+        if (!file.exists() || file.isDirectory() || !file.canRead()) {
+            throw new IllegalArgumentException(String.format("%s not a valid file name.", filename));
+        }
+        return mainPanel.convertWait(data, file);
+    }
 }
