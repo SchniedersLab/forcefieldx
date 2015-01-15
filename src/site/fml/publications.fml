@@ -5,9 +5,101 @@
       title="Publications"
       toplink="true">
     Tests.
+    <part id="2015">
+        <title>2015</title>
+        <faq id="19">
+            <question>
+                LuCore, S. D., Powers, K. T., Litman, J. M., Gao, S., Lynn, A. M., Tollefson, W. T. A., Fenn, T. D.,
+                Washington, M. T. and M. J. Schnieders,
+                Protein Side-Chain Global Optimization with a Polarizable Force Field and the Dead-End Elimination Theorem.
+                <b>2015</b>
+                <i>(in preparation)</i>
+                <a href="http://ffx.biochem.uiowa.edu">
+                    <img src="images/pdf.png" alt="PDF"/>
+                </a>
+            </question>
+            <answer>
+                <p>
+                    A delicate balance of van der Waals, electrostatic and hydrophobic forces drive the interactions
+                    between protein side-chains. We describe the first algorithm capable of deterministic global
+                    optimization of side-chain packing based on rigorous ‘many-body’ descriptions of these forces.
+                    The term many-body signifies that the interaction between two side-chains is not a constant function
+                    of their mutual environment (not pairwise), but depends on neighboring side-chains and solvent.
+                    For example, the attractive interaction between two oppositely charged side-chains can be diminished
+                    by the dielectric screening of nearby residues relative to its strength in a vacuum environment. The
+                    first step of our many-body global optimization procedure is discretization of side-chain conformational
+                    space into a library of low-energy conformations called rotamers. To dramatically reduce the search space
+                    of rotamer combinations, we describe rigorous inequalities that eliminate high-energy rotamers, rotamer
+                    pairs, and so on (i.e. dead-end elimination) that are provably not found in the global minimum energy
+                    conformation. Unlike previously described elimination criteria that are limited to strictly pairwise
+                    energy functions, our criteria our compatible with quantum mechanical potentials, Poisson-Boltzmann
+                    continuum electrostatics and polarizable force fields. The power of this approach is demonstrated on
+                    mid-resolution structures of proliferating cell nuclear antigen (PCNA), whereupon AMOEBA many-body
+                    rotamer optimization demonstrates marked simultaneous improvements in mean R<sub>free</sub>, Molprobity
+                    score, and force field energies relative to the PDB_REDO project and OPLS-AA pairwise rotamer optimization,
+                    yielding novel insights into the physiochemical basis for the destabilizing effect of PCNA mutations.
+                </p>
+            </answer>
+        </faq>
+        <faq id="18">
+            <question>
+                Shi, Y., Schnieders, M. J., Piquemal, J.-P., and P. Ren,
+                Polarizable Force Fields for Biomolecular Modeling.
+                <i>Reviews in Computational Chemistry</i>
+                <b>2015</b> Edition: 28, Publisher: Springer, Editors: Kenny B. Lipkowitz
+                <a href="http://dx.doi.org/10.1002/SERIES6143">
+                    <img src="images/pdf.png" alt="PDF"/>
+                </a>
+            </question>
+            <answer>
+                <p>
+                    Molecular mechanics based modeling has been widely used in the study of chemical and
+                    biological systems. The classical potential energy functions and their parameters are
+                    referred to as force fields. Empirical force fields for biomolecules emerged in the early
+                    1970's, followed by the first molecular dynamics simulations of the bovine pancreatic
+                    trypsin inhibitors (BPTI). Over the past 30 years, a great number of empirical
+                    molecular mechanics force fields, including AMBER, CHARMM, GROMOS, OPLS,
+                    and many others, have been developed. These force fields share similar functional forms,
+                    including valence interactions represented by harmonic oscillators, point dispersionrepulsion
+                    for van der Waals (vdW) interactions, and an electrostatic contribution based
+                    on fixed atomic partial charges. This generation of molecular mechanics force fields has
+                    been widely used in the study of molecular structures, dynamics, interactions, design and
+                    engineering.
+                </p>
+            </answer>
+        </faq>
+        <faq id="17">
+            <question>
+                Lipparini, F., Lagardère, L., Raynaud, C., Stamm, B., Cancès, E., Mennucci, B., Schnieders, M. J., Ren P.,
+                Maday, Y. and J.-P. Piquemal, Polarizable Molecular Dynamics in a Polarizable Continuum Solvent.
+                <i>Journal of Chemical Theory and Computation</i>
+                <b>2015</b>
+                <a href="http://dx.doi.org/10.1021/ct500998q">
+                    <img src="images/pdf.png" alt="PDF"/>
+                </a>
+            </question>
+            <answer>
+                <p>
+                    We present for the first time polarizable molecular dynamics (MD) simulations within a polarizable
+                    continuum solvent with molecular shape cavities and exact solution of the mutual polarization.
+                    The key ingredients are a very efficient algorithm for solving the equations associated with the
+                    polarizable continuum, in particular, the domain decomposition Conductor-like Screening Model (ddCOSMO),
+                    a rigorous coupling of the continuum with the polarizable force field achieved through a robust
+                    variational formulation and an effective strategy to solve the coupled equations. The coupling of
+                    ddCOSMO with non variational force fields, including AMOEBA, is also addressed. The MD simulations
+                    are feasible, for real life systems, on standard cluster nodes; a scalable parallel implementation
+                    allows for further speed up in the context of a newly developed module in Tinker, named Tinker-HP.
+                    NVE simulations are stable and long term energy conservation can be achieved. This paper is focused
+                    on the methodological developments, on the analysis of the algorithm and on the stability of the
+                    simulations; a proof-of-concept application is also presented to attest the possibilities of this
+                    newly developed technique.
+                </p>
+            </answer>
+        </faq>
+    </part>
     <part id="2014">
         <title>2014</title>
-        <faq id="17">
+        <faq id="16">
             <question>
                 Park, J., Nessler, I., McClain, B., Macikenas D., Baltrusaitis, J. and M. J. Schnieders,
                 Absolute Organic Crystal Thermodynamics: Growth of the Asymmetric Unit into a Crystal via Alchemy.
@@ -47,33 +139,6 @@
                     atomic multipole AMOEBA force field and more than a microsecond of sampling per compound. The mean signed
                     and unsigned errors were only -0.4 and 1.2 kcal/mol, respectively, which indicates that GAUCHE is capable
                     of accurately predicts sublimation thermodynamics.
-                </p>
-            </answer>
-        </faq>
-        <faq id="16">
-            <question>
-                Shi, Y., Schnieders, M. J., Piquemal, J.-P., and P. Ren,
-                Polarizable Force Fields for Biomolecular Modeling.
-                <i>Reviews in Computational Chemistry</i>
-                <b>2014</b> Edition: 28, Publisher: Springer, Editors: Kenny B. Lipkowitz
-                <a href="http://dx.doi.org/10.1002/SERIES6143">
-                    <img src="images/pdf.png" alt="PDF"/>
-                </a>
-            </question>
-            <answer>
-                <p>
-                    Molecular mechanics based modeling has been widely used in the study of chemical and
-                    biological systems. The classical potential energy functions and their parameters are
-                    referred to as force fields. Empirical force fields for biomolecules emerged in the early
-                    1970's, followed by the first molecular dynamics simulations of the bovine pancreatic
-                    trypsin inhibitors (BPTI). Over the past 30 years, a great number of empirical
-                    molecular mechanics force fields, including AMBER, CHARMM, GROMOS, OPLS,
-                    and many others, have been developed. These force fields share similar functional forms,
-                    including valence interactions represented by harmonic oscillators, point dispersionrepulsion
-                    for van der Waals (vdW) interactions, and an electrostatic contribution based
-                    on fixed atomic partial charges. This generation of molecular mechanics force fields has
-                    been widely used in the study of molecular structures, dynamics, interactions, design and
-                    engineering.
                 </p>
             </answer>
         </faq>

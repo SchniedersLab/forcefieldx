@@ -20,7 +20,7 @@
     </issueManagement>
     <ciManagement>
         <system>Jenkins</system>
-        <url>http://water.bme.utexas.edu:8080/</url>
+        <url>http://ffx.biochem.uiowa.edu:8080/</url>
         <notifiers>
             <notifier>
                 <type>mail</type>

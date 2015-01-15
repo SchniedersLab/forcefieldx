@@ -105,6 +105,7 @@ public class FFXClassLoader extends URLClassLoader {
             "edu.uiowa.eng.ffx/ui.jar",
             "edu.uiowa.eng.ffx/utilities.jar",
             "edu.uiowa.eng.ffx/xray.jar",
+            "edu.uiowa.eng.ffx/pj.jar",
             // Force Field X Extensions
             "edu.uiowa.eng.ffx/algorithms-ext.jar",
             "edu.uiowa.eng.ffx/xray-ext.jar",
@@ -112,8 +113,6 @@ public class FFXClassLoader extends URLClassLoader {
             "org.codehaus.groovy/groovy-all.jar",
             // CUDA
             "jcuda/jcuda-all.jar",
-            // Parallel Java
-            "edu.rit.pj/pj.jar",
             // Java3D 1.6.2 (depends on JOGL v. 2.2.0)
             "java3d/j3dcore.jar",
             "java3d/j3dutils.jar",
@@ -452,9 +451,7 @@ public class FFXClassLoader extends URLClassLoader {
 
     protected void listScripts() {
         if (extensionJars != null) {
-
             List<String> scripts = new ArrayList<>();
-
             for (JarFile extensionJar : extensionJars) {
                 Enumeration<JarEntry> entries = extensionJar.entries();
                 while (entries.hasMoreElements()) {
