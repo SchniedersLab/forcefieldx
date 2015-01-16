@@ -273,15 +273,15 @@ public class PotentialsFileOpener implements FileOpener {
                         }
                         MolecularAssembly newAssembly = new MolecularAssembly(pathI.toString());
                         newAssembly.setForceField(assembly.getForceField());
-                        pdbFilter.setAltID(assembly, c);
+                        pdbFilter.setAltID(newAssembly, c);
                         pdbFilter.clearSegIDs();
                         if (pdbFilter.readFile()) {
                             String fileName = assembly.getFile().getAbsolutePath();
                             newAssembly.setName(FilenameUtils.getBaseName(fileName) + " " + c);
+                            newAssembly.finalize(true, assembly.getForceField());
                             energy = new ForceFieldEnergy(newAssembly);
                             newAssembly.setPotential(energy);
                             assemblies.add(newAssembly);
-                            properties.addConfiguration(properties);
                         }
                     }
                 }

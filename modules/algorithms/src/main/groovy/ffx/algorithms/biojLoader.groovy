@@ -136,9 +136,6 @@ if (options.d) {
     biojAssemblies = functions.convertDataStructure(struct, biojFile);
 }
 MolecularAssembly bioj = biojAssemblies[0];
-if (bioj == assembly) {
-    logger.severe(" Too much equality. The old order must reign supreme");
-}
 
 double e2 = 0;
 if (options.m) {

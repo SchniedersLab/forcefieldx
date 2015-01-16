@@ -194,11 +194,12 @@ public class PotentialsDataConverter implements FileOpener {
                         }
                         MolecularAssembly newAssembly = new MolecularAssembly(name);
                         newAssembly.setForceField(assembly.getForceField());
-                        filter.setAltID(assembly, c);
+                        filter.setAltID(newAssembly, c);
                         filter.clearSegIDs();
                         if (filter.convert()) {
                             String fileName = assembly.getFile().getAbsolutePath();
                             newAssembly.setName(FilenameUtils.getBaseName(fileName) + " " + c);
+                            newAssembly.finalize(true, assembly.getForceField());
                             energy = new ForceFieldEnergy(newAssembly);
                             newAssembly.setPotential(energy);
                             assemblies.add(newAssembly);
