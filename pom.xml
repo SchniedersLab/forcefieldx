@@ -783,6 +783,15 @@
                 <artifactId>jdepend-maven-plugin</artifactId>
                 <version>2.0</version>
             </plugin>
+            <plugin>
+               <groupId>com.atlassian.maven.plugins</groupId>
+               <artifactId>maven-clover2-plugin</artifactId>
+               <version>${clover.version}</version>
+               <configuration>
+                   <maven.clover.license>${clover.license}</maven.clover.license>
+                   <maven.clover.alwaysReport>false</maven.clover.alwaysReport>
+               </configuration>
+             </plugin>
         </plugins>
     </reporting>
     <distributionManagement>
