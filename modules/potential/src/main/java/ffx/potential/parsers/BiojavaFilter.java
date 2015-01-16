@@ -362,7 +362,7 @@ public class BiojavaFilter extends ConversionFilter {
                 }
             }
         }
-           /**
+        /**
          * Echo the alternate location being parsed.
          */
         if (currentAltLoc == 'A') {

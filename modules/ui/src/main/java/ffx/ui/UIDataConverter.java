@@ -108,7 +108,7 @@ public class UIDataConverter implements FileOpener {
     /**
      * Converts the data structure to MolecularAssembly(s).
      */
-    public void open() {
+    public void convert() {
         if (timer) {
             startTimer();
         }
@@ -123,6 +123,7 @@ public class UIDataConverter implements FileOpener {
             mainPanel.getHierarchy().addSystemNode(ffxSystem);
             ForceFieldEnergy energy = new ForceFieldEnergy(ffxSystem);
             ffxSystem.setPotential(energy);
+            mainPanel.getHierarchy().setActive(ffxSystem);
 
             // Check if there are alternate conformers
             if (conversionFilter instanceof BiojavaFilter) {
@@ -238,7 +239,7 @@ public class UIDataConverter implements FileOpener {
     @Override
     public void run() {
         if (mainPanel != null && conversionFilter != null) {
-            open();
+            convert();
         }
     }
     

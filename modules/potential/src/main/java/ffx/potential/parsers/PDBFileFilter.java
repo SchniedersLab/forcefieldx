@@ -79,7 +79,7 @@ public final class PDBFileFilter extends FileFilter {
     /**
      * <p>
      * acceptDeep</p> Accepts a PDB file if it finds at least one parseable ATOM
-     * line and one parseable TER line.
+     * line.
      *
      * @param file a {@link java.io.File} object.
      * @return Whether a valid PDB file.
@@ -100,7 +100,7 @@ public final class PDBFileFilter extends FileFilter {
                     return false;
                 }
                 boolean validAtomLine = false;
-                boolean validTerLine = false;
+                boolean validTerLine = true; // Too many files lack even this.
                 while (line != null) {
                     line = line.trim();
                     if (!validAtomLine && line.startsWith("ATOM  ")) {
@@ -115,17 +115,17 @@ public final class PDBFileFilter extends FileFilter {
                         } catch (NumberFormatException | StringIndexOutOfBoundsException ex) {
                             // Do nothing.
                         }
-                    } else if (line.startsWith("TER")) {
+                    }/* else if (line.startsWith("TER")) {
                         try {
                             /* In a perfect world, every PDB file which claims to be at the 3.3 standard
                              * will actually be at the 3.3 standard.
                              Integer.parseInt(line.substring(6, 11).trim());
                              Integer.parseInt(line.substring(22, 26).trim());*/
-                            validTerLine = true;
+                            /*validTerLine = true;
                         } catch (NumberFormatException | StringIndexOutOfBoundsException ex) {
                             // Do nothing.
                         }
-                    }
+                    }*/
                     if (validAtomLine && validTerLine) {
                         return true;
                     }

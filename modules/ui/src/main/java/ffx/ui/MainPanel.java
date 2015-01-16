@@ -54,6 +54,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
@@ -132,6 +133,7 @@ import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XYZFileFilter;
 import ffx.potential.parsers.XYZFilter;
+import ffx.potential.utils.PotentialsDataConverter;
 import ffx.ui.properties.FFXLocale;
 import ffx.utilities.Keyword;
 import ffx.utilities.StringUtils;
@@ -1223,7 +1225,7 @@ public final class MainPanel extends JPanel implements ActionListener,
     }
 
     /**
-     * Trys to open a file picked from a JFileChooser
+     * Trys to convert a file picked from a JFileChooser
      */
     private Thread open() {
         if (openThread != null && openThread.isAlive()) {
@@ -1560,8 +1562,12 @@ public final class MainPanel extends JPanel implements ActionListener,
      */
     public synchronized FFXSystem[] convertWait(Object data, File file) {
         if (file == null) {
-            logger.log(Level.WARNING, String.format("No file for %s could be found.", data.toString()));
-            return null;
+            try {
+                file = PotentialsDataConverter.getDefaultFile(data);
+            } catch (FileNotFoundException|IllegalArgumentException ex) {
+                logger.warning(String.format(" Exception in finding file for data structure: %s", ex.toString()));
+                return null;
+            }
         }
         String name = file.getName();
         
@@ -1790,7 +1796,7 @@ public final class MainPanel extends JPanel implements ActionListener,
     }
 
     /**
-     * Attempt to open a TINKER *.key file
+     * Attempt to convert a TINKER *.key file
      *
      * @param newSystem FFXSystem that needs an associated Key File
      * @param createKey flag to create a key file be created

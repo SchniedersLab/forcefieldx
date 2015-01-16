@@ -46,6 +46,7 @@ import ffx.potential.parsers.FileOpener;
 import ffx.potential.parsers.ForceFieldFilter;
 import ffx.utilities.Keyword;
 import java.io.File;
+import java.io.FileNotFoundException;
 import static java.lang.String.format;
 import java.util.ArrayList;
 import java.util.List;
@@ -73,45 +74,71 @@ public class PotentialsDataConverter implements FileOpener {
     private MolecularAssembly activeAssembly; // Presently, will just be the first element of assemblies.
     private List<CompositeConfiguration> propertyList;
     private CompositeConfiguration activeProperties;
+    private final static String BIOJAVA_DEFAULT_FILENAME = "UNKNOWN_BIOJAVA_FILE";
     
-    
-    public PotentialsDataConverter (Object data) {
+    public PotentialsDataConverter (Object data) throws FileNotFoundException {
         this(data, null);
     }
     
-    public PotentialsDataConverter (Object data, File file) {
+    public PotentialsDataConverter (Object data, File file) throws FileNotFoundException {
+        /* If the file is provided, just use that. Else, use a static get<Type>File
+         * method to find the file: if that fails, or if the data object is not 
+         * of a recognized type, throws a relevant exception.
+        */
         if (data instanceof Structure) {
-            this.dataStructure = data;
-            this.dataType = Utilities.DataType.BIOJAVA;
             if (file == null) {
                 this.file = getBiojavaFile((Structure) data);
             } else {
                 this.file = file;
             }
-        } else {
-            this.dataStructure = null;
-            this.dataType = Utilities.DataType.UNK;
-            this.file = file;
+            this.dataStructure = data;
+            this.dataType = Utilities.DataType.BIOJAVA;
+        } else { // Insert else-ifs for other types here.
+            throw new IllegalArgumentException(" Data structure provided was not "
+                    + "of a recognized type: must be a Biojava structure");
         }
-        // Can add other else-ifs for other data structure types.
     }
     
     /**
-     * Attempt to get the file the Structure was loaded from.
-     * @param structure A Biojava structure
-     * @return pdbcode.pdb, name.pdb, or null
+     * Switches between various default get-file methods for different data
+     * structure types.
+     * @param data Data structure to find file file
+     * @return Source file
+     * @throws FileNotFoundException If no file could be found
      */
-    public static File getBiojavaFile(Structure structure) {
-        String filename = structure.getPDBCode() + ".pdb";
-        File file = new File(filename);
-        if (!file.exists() || file.isDirectory()) {
-            filename = structure.getName() + ".pdb";
-            file = new File(filename);
-            if (!file.exists() || file.isDirectory()) {
-                file = null;
+    public static File getDefaultFile(Object data) throws FileNotFoundException {
+        if (data instanceof Structure) {
+            return getBiojavaFile((Structure) data);
+        } // Insert else-ifs for other data structures here.
+        throw new FileNotFoundException("Could not find a file for data structure.");
+    }
+    
+    /**
+     * Attempt to get the file the Structure was loaded from. Assumes .pdb format,
+     * mostly because Biojava can only load from PDB.
+     * @param structure A Biojava structure
+     * @return pdbcode.pdb, name.pdb, or a default file
+     * @throws java.io.FileNotFoundException If no file could be found.
+     */
+    public static File getBiojavaFile(Structure structure) throws FileNotFoundException {
+        String filename = structure.getPDBCode();
+        if (filename == null || filename.trim().equals("")) {
+            filename = structure.getName();
+            if (filename == null || filename.trim().equals("")) {
+                filename = BIOJAVA_DEFAULT_FILENAME;
             }
         }
-        return file;
+        filename += ".pdb";
+        File retFile = new File(filename);
+        int counter = 1;
+        while (retFile.isDirectory() && counter < 1000) {
+            retFile = new File(String.format("%s_%d", filename, counter++));
+        }
+        if (retFile.isDirectory()) {
+            throw new FileNotFoundException(String.format(" Could not find a file "
+                    + "for structure %s", structure.toString()));
+        }
+        return retFile;
     }
 
     /**

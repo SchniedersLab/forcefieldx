@@ -107,6 +107,7 @@ public class UIFileOpener implements FileOpener {
             mainPanel.getHierarchy().addSystemNode(ffxSystem);
             ForceFieldEnergy energy = new ForceFieldEnergy(ffxSystem);
             ffxSystem.setPotential(energy);
+            mainPanel.getHierarchy().setActive(ffxSystem);
 
             // Check if there are alternate conformers
             if (systemFilter instanceof PDBFilter) {

@@ -49,6 +49,7 @@ import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.XYZFilter;
+import java.io.FileNotFoundException;
 
 /**
  * The PotentialsUtils class provides a local implementation, independent of the
@@ -129,9 +130,14 @@ public class PotentialsUtils implements PotentialsFunctions {
      */
     @Override
     public MolecularAssembly[] convertDataStructure(Object data) {
-        PotentialsDataConverter converter = new PotentialsDataConverter(data);
-        converter.run();
-        return converter.getAllAssemblies();
+        try {
+            PotentialsDataConverter converter = new PotentialsDataConverter(data);
+            converter.run();
+            return converter.getAllAssemblies();
+        } catch (FileNotFoundException|IllegalArgumentException ex) {
+            logger.warning(String.format(" Exception in data structure conversion: %s", ex.toString()));
+            return null;
+        }
     }
     
     /**
@@ -143,9 +149,14 @@ public class PotentialsUtils implements PotentialsFunctions {
      */
     @Override
     public MolecularAssembly[] convertDataStructure(Object data, File file) {
-        PotentialsDataConverter converter = new PotentialsDataConverter(data, file);
-        converter.run();
-        return converter.getAllAssemblies();
+        try {
+            PotentialsDataConverter converter = new PotentialsDataConverter(data, file);
+            converter.run();
+            return converter.getAllAssemblies();
+        } catch (FileNotFoundException|IllegalArgumentException ex) {
+            logger.warning(String.format(" Exception in data structure conversion: %s", ex.toString()));
+            return null;
+        }
     }
     
     /**
@@ -159,7 +170,8 @@ public class PotentialsUtils implements PotentialsFunctions {
     public MolecularAssembly[] convertDataStructure(Object data, String filename) {
         File file = new File(filename);
         if (!file.exists() || file.isDirectory() || !file.canRead()) {
-            throw new IllegalArgumentException(String.format("%s not a valid file name.", filename));
+            logger.warning(String.format("%s not a valid file name: file name discarded.", filename));
+            return convertDataStructure(data);
         }
         return convertDataStructure(data, file);
     }
