@@ -190,7 +190,7 @@
                             portability, and security that today’s applications require.
                         </td>
                         <td>
-                            1.8.0 or later.
+                            1.7.0 or later.
                         </td>
                     </tr>
                     <tr>
@@ -203,7 +203,7 @@
                             reporting and documentation from a central piece of information.
                         </td>
                         <td>
-                            3.2.1 or later.
+                            3.2.5 or later.
                         </td>
                     </tr>
                     <tr>
@@ -219,6 +219,19 @@
                         </td>
                         <td>
                             2014
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a target="_blank" href="http://www.atlassian.com/software/clover">
+                                <img src="images/clover.png" alt="Clover Code Coverage"/>
+                            </a>
+                        </td>
+                        <td>
+                            Clover provides the metrics you need to better balance the effort between writing code that does stuff, and code that tests stuff.
+                        </td>
+                        <td>
+                            4.0 or later.
                         </td>
                     </tr>
                     <tr>
