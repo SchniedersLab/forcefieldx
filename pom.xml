@@ -10,7 +10,7 @@
     <name>Force Field X</name>
     <version>1.0.0-beta</version>
     <description>Software for Molecular Biophysics</description>
-    <url>http://ffx.eng.uiowa.edu</url>
+    <url>http://ffx.biochem.uiowa.edu</url>
     <prerequisites>
         <maven>3.2.0</maven>
     </prerequisites>
@@ -789,7 +789,7 @@
                <version>${clover.version}</version>
                <configuration>
                    <maven.clover.license>${clover.license}</maven.clover.license>
-                   <maven.clover.alwaysReport>false</maven.clover.alwaysReport>
+                   <maven.clover.alwaysReport>true</maven.clover.alwaysReport>
                </configuration>
              </plugin>
         </plugins>
