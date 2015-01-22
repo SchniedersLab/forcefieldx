@@ -70,15 +70,6 @@ public abstract class SliceLoop extends IntegerForLoop {
         this.sliceRegion = sliceRegion;
     }
 
-    public void initTiming(String className, long time) {
-        sliceRegion.sliceLoopTime[getThreadIndex()] -= time;
-        sliceRegion.className = className;
-    }
-
-    public void finishTime(long time) {
-        sliceRegion.sliceLoopTime[getThreadIndex()] += time;
-    }
-
     /**
      * <p>
      * setNsymm</p>
@@ -100,13 +91,7 @@ public abstract class SliceLoop extends IntegerForLoop {
             }
         }
     }
-
-    public abstract void setWeight();
-
-    public void setWeightOnRegion(int[] currentWeight) {
-        sliceRegion.weight = currentWeight;
-    }
-
+    
     /**
      * Apply electron density "as normal" for an atom, but check that
      * the z index is within the supplied bounds (inclusive).

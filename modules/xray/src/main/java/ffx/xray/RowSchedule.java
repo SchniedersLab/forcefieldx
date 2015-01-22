@@ -128,8 +128,8 @@ public class RowSchedule extends IntegerSchedule {
             ranges[0] = new Range(0, fftZ * fftY - 1);
             return;
         }
-
-        double targetWeight = (totalWeight / nThreads) * .95;
+        
+        double targetWeight = (totalWeight / nThreads) * .97;
         int lastRow = fftZ * fftY - 1;
 
         int currentRow = 0;
@@ -158,6 +158,7 @@ public class RowSchedule extends IntegerSchedule {
         for (currentThread = 0; currentThread < lastThread - 1; currentThread++) {
             ranges[currentThread] = new Range(lowerBounds[currentThread], lowerBounds[currentThread + 1] - 1);
             //logger.info(String.format("Range for thread %d %s.", currentThread, ranges[currentThread]));
+               
         }
         /**
          * Final range for the last thread that will receive work.
@@ -172,14 +173,25 @@ public class RowSchedule extends IntegerSchedule {
             ranges[it] = null;
         }
     }
-
-    public int[] getWeightPerThread() {
-        if (lowerBounds != null) {
-            int[] weightToReturn = new int[nThreads];
-            for (int i = 0; i < nThreads; i++) {
-                weightToReturn[i] = lowerBounds[i + 1];
+    public int[] getThreadWeights(){
+        if(lowerBounds != null){
+            int[] weightsToReturn = new int[nThreads];
+            for (int i = 0; i<nThreads; i++){
+                weightsToReturn[i] = weights[i];
             }
-            return weightToReturn;
+            return weightsToReturn;
+        } else {
+            return null;
+        }
+    }
+
+    public int[] getLowerBounds() {
+        if (lowerBounds != null) {
+            int[] boundsToReturn = new int[nThreads];
+            for (int i = 0; i < nThreads; i++) {
+                boundsToReturn[i] = lowerBounds[i + 1];
+            }
+            return boundsToReturn;
         } else {
             return null;
         }

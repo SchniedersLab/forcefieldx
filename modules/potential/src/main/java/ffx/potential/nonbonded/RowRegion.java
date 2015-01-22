@@ -81,12 +81,10 @@ public class RowRegion extends ParallelRegion {
     double initValue = 0.0;
     int gridSize;
     double grid[];
-    String className;
 
     protected RowLoop rowLoop[];
     protected double coordinates[][][];
     protected boolean select[][];
-    private static final double toSeconds = 1.0e-9;
 
     // Constructor
     public RowRegion(int gX, int gY, int gZ, double grid[],

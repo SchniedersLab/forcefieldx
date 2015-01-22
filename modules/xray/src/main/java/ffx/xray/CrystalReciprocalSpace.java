@@ -46,6 +46,7 @@ import static java.util.Arrays.fill;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.floor;
 import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
@@ -166,14 +167,29 @@ public class CrystalReciprocalSpace {
     private final int halfFFTX, halfFFTY, halfFFTZ;
     private final int complexFFT3DSpace;
     private final int threadCount;
-    private final SharedIntegerArray optWeight;
-    private final int previousOptWeight[];
-    private final int previousOptWeightSolvent[];
-    private final SliceSchedule sliceSchedule;
-    private final SharedIntegerArray optRowWeight;
-    private final int previousOptRowWeight[];
+
+    //Slice Scheduling
+    private final SharedIntegerArray optSliceWeightAtomic;
+    private final SharedIntegerArray optSliceWeightSolvent;
+    private final SharedIntegerArray optSliceWeightBulkSolvent;
+    private final int previousOptSliceWeightAtomic[];
+    private final int previousOptSliceWeightSolvent[];
+    private final int previousOptSliceWeightBulkSolvent[];
+    private final SliceSchedule atomicSliceSchedule;
+    private final SliceSchedule solventSliceSchedule;
+    private final SliceSchedule bulkSolventSliceSchedule;
+
+    //Row Scheduling
+    private final SharedIntegerArray optRowWeightAtomic;
+    private final SharedIntegerArray optRowWeightSolvent;
+    private final SharedIntegerArray optRowWeightBulkSolvent;
+    private final int previousOptRowWeightAtomic[];
     private final int previousOptRowWeightSolvent[];
-    private final RowSchedule rowSchedule;
+    private final int previousOptRowWeightBulkSolvent[];
+    private final RowSchedule atomicRowSchedule;
+    private final RowSchedule solventRowSchedule;
+    private final RowSchedule bulkSolventRowSchedule;
+
     private final ParallelTeam parallelTeam;
     private final Atom atoms[];
     private final Crystal crystal;
@@ -201,7 +217,7 @@ public class CrystalReciprocalSpace {
     private final AtomicSliceLoop atomicSliceLoops[];
     private final SliceRegion solventSliceRegion;
     private final SolventSliceLoop solventSliceLoops[];
-    private final SolventSliceLoop bulkSolventSliceLoops[];
+    private final BulkSolventSliceLoop bulkSolventSliceLoops[];
 
     /**
      * Parallelization of putting atomic form factors onto the 3D grid using a
@@ -211,7 +227,7 @@ public class CrystalReciprocalSpace {
     private final AtomicRowLoop atomicRowLoops[];
     private final RowRegion solventRowRegion;
     private final SolventRowLoop solventRowLoops[];
-    private final SolventRowLoop bulkSolventRowLoops[];
+    private final BulkSolventRowLoop bulkSolventRowLoops[];
 
     /**
      * Parallelization over atomic structure factor loops.
@@ -356,15 +372,27 @@ public class CrystalReciprocalSpace {
         complexFFT3DSpace = fftX * fftY * fftZ * 2;
         densityGrid = new double[complexFFT3DSpace];
 
-        optWeight = new SharedIntegerArray(fftZ);
-        previousOptWeight = new int[fftZ];
-        previousOptWeightSolvent = new int[fftZ];
-        sliceSchedule = new SliceSchedule(threadCount, fftZ);
+        //Slice Method Variables
+        optSliceWeightAtomic = new SharedIntegerArray(fftZ);
+        optSliceWeightSolvent = new SharedIntegerArray(fftZ);
+        optSliceWeightBulkSolvent = new SharedIntegerArray(fftZ);
+        previousOptSliceWeightAtomic = new int[fftZ];
+        previousOptSliceWeightSolvent = new int[fftZ];
+        previousOptSliceWeightBulkSolvent = new int[fftZ];
+        atomicSliceSchedule = new SliceSchedule(threadCount, fftZ);
+        solventSliceSchedule = new SliceSchedule(threadCount, fftZ);
+        bulkSolventSliceSchedule = new SliceSchedule(threadCount, fftZ);
 
-        optRowWeight = new SharedIntegerArray(fftZ * fftY);
-        previousOptRowWeight = new int[fftZ * fftY];
+        //Row Method Variables
+        optRowWeightAtomic = new SharedIntegerArray(fftZ * fftY);
+        optRowWeightSolvent = new SharedIntegerArray(fftZ * fftY);
+        optRowWeightBulkSolvent = new SharedIntegerArray(fftZ * fftY);
+        previousOptRowWeightAtomic = new int[fftZ * fftY];
         previousOptRowWeightSolvent = new int[fftZ * fftY];
-        rowSchedule = new RowSchedule(threadCount, fftZ, fftY);
+        previousOptRowWeightBulkSolvent = new int[fftZ * fftY];
+        atomicRowSchedule = new RowSchedule(threadCount, fftZ, fftY);
+        solventRowSchedule = new RowSchedule(threadCount, fftZ, fftY);
+        bulkSolventRowSchedule = new RowSchedule(threadCount, fftZ, fftY);
 
         if (solvent) {
             bAdd = 0.0;
@@ -561,10 +589,10 @@ public class CrystalReciprocalSpace {
                             atomicRowRegion.setInitValue(1.0);
                         }
                         solventRowLoops = new SolventRowLoop[threadCount];
-                        bulkSolventRowLoops = new SolventRowLoop[threadCount];
+                        bulkSolventRowLoops = new BulkSolventRowLoop[threadCount];
                         for (int i = 0; i < threadCount; i++) {
                             solventRowLoops[i] = new SolventRowLoop(atomicRowRegion);
-                            bulkSolventRowLoops[i] = new SolventRowLoop(solventRowRegion);
+                            bulkSolventRowLoops[i] = new BulkSolventRowLoop(solventRowRegion);
                         }
                         atomicRowRegion.setDensityLoop(solventRowLoops);
                         solventRowRegion.setDensityLoop(bulkSolventRowLoops);
@@ -595,10 +623,10 @@ public class CrystalReciprocalSpace {
                             atomicSliceRegion.setInitValue(1.0);
                         }
                         solventSliceLoops = new SolventSliceLoop[threadCount];
-                        bulkSolventSliceLoops = new SolventSliceLoop[threadCount];
+                        bulkSolventSliceLoops = new BulkSolventSliceLoop[threadCount];
                         for (int i = 0; i < threadCount; i++) {
                             solventSliceLoops[i] = new SolventSliceLoop(atomicSliceRegion);
-                            bulkSolventSliceLoops[i] = new SolventSliceLoop(solventSliceRegion);
+                            bulkSolventSliceLoops[i] = new BulkSolventSliceLoop(solventSliceRegion);
                         }
                         atomicSliceRegion.setDensityLoop(solventSliceLoops);
                         solventSliceRegion.setDensityLoop(bulkSolventSliceLoops);
@@ -1064,6 +1092,7 @@ public class CrystalReciprocalSpace {
      * @see DiffractionRefinementData
      */
     public void computeAtomicDensity(double hklData[][], boolean print) {
+
         /**
          * Zero out reflection data.
          */
@@ -1090,24 +1119,25 @@ public class CrystalReciprocalSpace {
 
                 case ROW:
                     for (int i = 0; i < fftZ * fftY; i++) {
-                        optRowWeight.set(i, 0);
+                        optRowWeightAtomic.set(i, 0);
                     }
-                    rowSchedule.updateWeights(previousOptRowWeight);
+                    atomicRowSchedule.updateWeights(previousOptRowWeightAtomic);
                     parallelTeam.execute(atomicRowRegion);
                     for (int i = 0; i < fftZ * fftY; i++) {
-                        previousOptRowWeight[i] = optRowWeight.get(i);
+                        previousOptRowWeightAtomic[i] = optRowWeightAtomic.get(i);
                     }
                     break;
                 case SLICE:
                 default:
                     for (int i = 0; i < fftZ; i++) {
-                        optWeight.set(i, 0);
+                        optSliceWeightAtomic.set(i, 0);
                     }
-                    sliceSchedule.updateWeights(previousOptWeight);
+                    atomicSliceSchedule.updateWeights(previousOptSliceWeightAtomic);
                     parallelTeam.execute(atomicSliceRegion);
                     for (int i = 0; i < fftZ; i++) {
-                        previousOptWeight[i] = optWeight.get(i);
+                        previousOptSliceWeightAtomic[i] = optSliceWeightAtomic.get(i);
                     }
+                    break;
             }
         } catch (Exception e) {
             String message = "Fatal exception evaluating atomic electron density.";
@@ -1148,7 +1178,82 @@ public class CrystalReciprocalSpace {
             sb.append(String.format(" Atomic FFT:                %8.4f\n", fftTime * toSeconds));
             sb.append(String.format(" Atomic symmetry & scaling: %8.4f\n", symTime * toSeconds));
             logger.info(sb.toString());
+
+            StringBuilder ASB = new StringBuilder();
+            switch (gridMethod) {
+
+                case ROW:
+                    double atomicRowTotal = 0;
+                    double atomicRowMin = atomicRowLoops[0].getTimePerThread();
+                    double atomicRowMax = 0;
+                    double atomicRowWeightTotal = 0;
+
+                    for (int i = 0; i < threadCount; i++) {
+                        atomicRowTotal += atomicRowLoops[i].getTimePerThread();
+                        atomicRowMax = max(atomicRowLoops[i].getTimePerThread(), atomicRowMax);
+                        atomicRowMin = min(atomicRowLoops[i].getTimePerThread(), atomicRowMin);
+                        atomicRowWeightTotal += atomicRowLoops[i].getWeightPerThread()[i];
+                    }
+
+                    //Atomic timing and balance analysis
+                    ASB.append(String.format("\n RowLoop (Atomic): %7.5f (sec)                 | Total Weight: %7.0f\n", atomicRowTotal * toSeconds, atomicRowWeightTotal));
+                    ASB.append(" Thread     LoopTime    Balance(%)  Normalized   |      Rows       Weight    Balance(%)  Normalized\n");
+
+                    //check for no weights issued, then set to 1 so a 0 is printed instead of NaN
+                    if (atomicRowWeightTotal == 0) {
+                        atomicRowWeightTotal = 1;
+                    }
+
+                    for (int i = 0; i < threadCount; i++) {
+                        ASB.append(String.format("     %3d     %7.5f     %7.1f     %7.1f     |   %7d     %7d     %7.1f     %7.1f\n", i, (double) (atomicRowLoops[i].getTimePerThread() * toSeconds),
+                                ((atomicRowLoops[i].getTimePerThread()) / (atomicRowTotal)) * 100.00, ((atomicRowLoops[i].getTimePerThread()) / (atomicRowTotal)) * (100.00 * threadCount),
+                                atomicRowLoops[i].getBoundsPerThread()[i], atomicRowLoops[i].getWeightPerThread()[i], 100.00 * (atomicRowLoops[i].getWeightPerThread()[i] / atomicRowWeightTotal),
+                                (100.00 * threadCount) * (atomicRowLoops[i].getWeightPerThread()[i] / atomicRowWeightTotal)));
+                    }
+                    ASB.append(String.format("    Min      %7.5f\n", atomicRowMin * toSeconds));
+                    ASB.append(String.format("    Max      %7.5f\n", atomicRowMax * toSeconds));
+                    ASB.append(String.format("    Delta    %7.5f\n", (atomicRowMax - atomicRowMin) * toSeconds));
+                    logger.info(ASB.toString());
+
+                    break;
+                case SPATIAL:
+                    break;
+                case SLICE:
+                    double atomicSliceTotal = 0;
+                    double atomicSliceMin = atomicSliceLoops[0].getTimePerThread();
+                    double atomicSliceMax = 0;
+                    double atomicSliceWeightTotal = 0;
+
+                    for (int i = 0; i < threadCount; i++) {
+                        atomicSliceTotal += atomicSliceLoops[i].getTimePerThread();
+                        atomicSliceMax = max(atomicSliceLoops[i].getTimePerThread(), atomicSliceMax);
+                        atomicSliceMin = min(atomicSliceLoops[i].getTimePerThread(), atomicSliceMin);
+                        atomicSliceWeightTotal += atomicSliceLoops[i].getWeightPerThread()[i];
+                    }
+
+                    //Atomic timing and balance analysis
+                    ASB.append(String.format("\n SliceLoop (Atomic): %7.5f (sec)               | Total Weight: %7.0f\n", atomicSliceTotal * toSeconds, atomicSliceWeightTotal));
+                    ASB.append(" Thread     LoopTime    Balance(%)  Normalized   |      Slices    Weight    Balance(%)  Normalized\n");
+
+                    //check for no weights issued, then set to 1 so a 0 is printed instead of NaN
+                    if (atomicSliceWeightTotal == 0) {
+                        atomicSliceWeightTotal = 1;
+                    }
+
+                    for (int i = 0; i < threadCount; i++) {
+                        ASB.append(String.format("     %3d     %7.5f     %7.1f     %7.1f     |   %7d     %7d     %7.1f     %7.1f\n", i, (double) (atomicSliceLoops[i].getTimePerThread() * toSeconds),
+                                ((atomicSliceLoops[i].getTimePerThread()) / (atomicSliceTotal)) * 100.00, ((atomicSliceLoops[i].getTimePerThread()) / (atomicSliceTotal)) * (100.00 * threadCount),
+                                atomicSliceLoops[i].getBoundsPerThread()[i], atomicSliceLoops[i].getWeightPerThread()[i], 100.00 * (atomicSliceLoops[i].getWeightPerThread()[i] / atomicSliceWeightTotal),
+                                (100.00 * threadCount) * (atomicSliceLoops[i].getWeightPerThread()[i] / atomicSliceWeightTotal)));
+                    }
+                    ASB.append(String.format("    Min      %7.5f\n", atomicSliceMin * toSeconds));
+                    ASB.append(String.format("    Max      %7.5f\n", atomicSliceMax * toSeconds));
+                    ASB.append(String.format("    Delta    %7.5f\n", (atomicSliceMax - atomicSliceMin) * toSeconds));
+                    logger.info(ASB.toString());
+                default:
+            }
         }
+
     }
 
     /**
@@ -1191,23 +1296,25 @@ public class CrystalReciprocalSpace {
                     break;
                 case ROW:
                     for (int i = 0; i < fftZ * fftY; i++) {
-                        optRowWeight.set(i, 0);
+                        optRowWeightSolvent.set(i, 0);
                     }
+                    solventRowSchedule.updateWeights(previousOptRowWeightSolvent);
                     parallelTeam.execute(atomicRowRegion);
                     for (int i = 0; i < fftZ * fftY; i++) {
-                        previousOptRowWeight[i] = optRowWeight.get(i);
+                        previousOptRowWeightSolvent[i] = optRowWeightSolvent.get(i);
                     }
                     break;
                 case SLICE:
                 default:
                     for (int i = 0; i < fftZ; i++) {
-                        optWeight.set(i, 0);
+                        optSliceWeightSolvent.set(i, 0);
                     }
-                    sliceSchedule.updateWeights(previousOptWeight);
+                    solventSliceSchedule.updateWeights(previousOptSliceWeightSolvent);
                     parallelTeam.execute(atomicSliceRegion);
                     for (int i = 0; i < fftZ; i++) {
-                        previousOptWeight[i] = optWeight.get(i);
+                        previousOptSliceWeightSolvent[i] = optSliceWeightSolvent.get(i);
                     }
+                    break;
             }
         } catch (Exception e) {
             String message = "Fatal exception evaluating solvent electron density.";
@@ -1256,6 +1363,7 @@ public class CrystalReciprocalSpace {
                     }
                 }
             }
+
             // Copy the completed solvent grid back.
             System.arraycopy(solventGrid, 0, densityGrid, 0, nmap);
         }
@@ -1263,7 +1371,13 @@ public class CrystalReciprocalSpace {
         /**
          * Copy the grid over for derivatives. TODO: Parallelize.
          */
-        System.arraycopy(densityGrid, 0, solventGrid, 0, densityGrid.length);
+        ArrayCopyRegion arrayCopyRegion = new ArrayCopyRegion();
+        try {
+            parallelTeam.execute(arrayCopyRegion);
+        } catch (Exception e) {
+            logger.info(e.toString());
+        }
+        //  System.arraycopy(densityGrid, 0, solventGrid, 0, densityGrid.length);
 
         /**
          * Babinet Principle.
@@ -1312,25 +1426,26 @@ public class CrystalReciprocalSpace {
 
                 case ROW:
                     for (int i = 0; i < (fftZ * fftY); i++) {
-                        optRowWeight.set(i, 0);
+                        optRowWeightBulkSolvent.set(i, 0);
                     }
-                    rowSchedule.updateWeights(previousOptRowWeightSolvent);
+                    bulkSolventRowSchedule.updateWeights(previousOptRowWeightBulkSolvent);
                     parallelTeam.execute(solventRowRegion);
                     for (int i = 0; i < fftZ * fftY; i++) {
-                        previousOptRowWeightSolvent[i] = optRowWeight.get(i);
+                        previousOptRowWeightBulkSolvent[i] = optRowWeightBulkSolvent.get(i);
                     }
                     break;
-
                 case SLICE:
                 default:
-                    for (int i = 0; i < fftZ; i++) {
-                        optWeight.set(i, 0);
+                    for (int i = 0; i < (fftZ); i++) {
+                        optSliceWeightBulkSolvent.set(i, 0);
                     }
-                    sliceSchedule.updateWeights(previousOptWeightSolvent);
+
+                    bulkSolventSliceSchedule.updateWeights(previousOptSliceWeightBulkSolvent);
                     parallelTeam.execute(solventSliceRegion);
                     for (int i = 0; i < fftZ; i++) {
-                        previousOptWeightSolvent[i] = optWeight.get(i);
+                        previousOptSliceWeightBulkSolvent[i] = optSliceWeightBulkSolvent.get(i);
                     }
+                    break;
             }
         } catch (Exception e) {
             String message = "Fatal exception evaluating solvent electron density.";
@@ -1365,7 +1480,144 @@ public class CrystalReciprocalSpace {
                         solventExpTime * toSeconds));
             }
             logger.info(sb.toString());
+
+            StringBuilder SSB = new StringBuilder();
+            StringBuilder BSSB = new StringBuilder();
+            switch (gridMethod) {
+                case ROW:
+                    double solventRowTotal = 0;
+                    double solventRowMin = solventRowLoops[0].getTimePerThread();
+                    double solventRowMax = 0;
+                    double solventRowWeightTotal = 0;
+
+                    double bulkSolventRowTotal = 0;
+                    double bulkSolventRowMin = bulkSolventRowLoops[0].getTimePerThread();
+                    double bulkSolventRowMax = 0;
+                    double bulkSolventRowWeightTotal = 0;
+
+                    for (int i = 0; i < threadCount; i++) {
+                        solventRowTotal += solventRowLoops[i].getTimePerThread();
+                        solventRowMax = max(solventRowLoops[i].getTimePerThread(), solventRowMax);
+                        solventRowMin = min(solventRowLoops[i].getTimePerThread(), solventRowMin);
+                        solventRowWeightTotal += solventRowLoops[i].getWeightPerThread()[i];
+
+                        bulkSolventRowTotal += bulkSolventRowLoops[i].getTimePerThread();
+                        bulkSolventRowMax = max(bulkSolventRowLoops[i].getTimePerThread(), bulkSolventRowMax);
+                        bulkSolventRowMin = min(bulkSolventRowLoops[i].getTimePerThread(), bulkSolventRowMin);
+                        bulkSolventRowWeightTotal += bulkSolventRowLoops[i].getWeightPerThread()[i];
+
+                    }
+
+                    //Solvent timing and balance analysis
+                    SSB.append(String.format("\n RowLoop (Solvent): %7.5f (sec)                | Total Weight: %7.0f\n", solventRowTotal * toSeconds, solventRowWeightTotal));
+                    SSB.append(" Thread     LoopTime    Balance(%)  Normalized   |      Rows       Weight     Balance(%)  Normalized\n");
+
+                    //check for no weights issued, then set to 1 so a 0 is printed instead of NaN
+                    if (solventRowWeightTotal == 0) {
+                        solventRowWeightTotal = 1;
+                    }
+
+                    for (int i = 0; i < threadCount; i++) {
+                        SSB.append(String.format("     %3d     %7.5f     %7.1f     %7.1f     |   %7d     %7d     %7.1f     %7.1f\n", i, (double) (solventRowLoops[i].getTimePerThread() * toSeconds),
+                                ((solventRowLoops[i].getTimePerThread()) / (solventRowTotal)) * 100.00, ((solventRowLoops[i].getTimePerThread()) / (solventRowTotal)) * (100.00 * threadCount),
+                                solventRowLoops[i].getBoundsPerThread()[i], solventRowLoops[i].getWeightPerThread()[i], 100.00 * (solventRowLoops[i].getWeightPerThread()[i] / solventRowWeightTotal),
+                                (100.00 * threadCount) * (solventRowLoops[i].getWeightPerThread()[i] / solventRowWeightTotal)));
+                    }
+                    SSB.append(String.format("    Min      %7.5f\n", solventRowMin * toSeconds));
+                    SSB.append(String.format("    Max      %7.5f\n", solventRowMax * toSeconds));
+                    SSB.append(String.format("    Delta    %7.5f\n", (solventRowMax - solventRowMin) * toSeconds));
+                    logger.info(SSB.toString());
+
+                    //Bulk solvent timing and balance analysis
+                    BSSB.append(String.format("\n RowLoop (Bulk Solvent): %7.5f (sec)           | Total Weight: %7.0f\n", bulkSolventRowTotal * toSeconds, bulkSolventRowWeightTotal));
+                    BSSB.append(" Thread     LoopTime    Balance(%)  Normalized   |      Rows       Weight     Balance(%)  Normalized\n");
+
+                    //check for no weights issued, then set to 1 so a 0 is printed instead of NaN
+                    if (bulkSolventRowWeightTotal == 0) {
+                        bulkSolventRowWeightTotal = 1;
+                    }
+
+                    for (int i = 0; i < threadCount; i++) {
+                        BSSB.append(String.format("     %3d     %7.5f     %7.1f     %7.1f     |   %7d     %7d     %7.1f     %7.1f\n", i, (double) (bulkSolventRowLoops[i].getTimePerThread() * toSeconds),
+                                ((bulkSolventRowLoops[i].getTimePerThread()) / (bulkSolventRowTotal)) * 100.00, ((bulkSolventRowLoops[i].getTimePerThread()) / (bulkSolventRowTotal)) * (100.00 * threadCount),
+                                bulkSolventRowLoops[i].getBoundsPerThread()[i], bulkSolventRowLoops[i].getWeightPerThread()[i], 100.00 * (bulkSolventRowLoops[i].getWeightPerThread()[i] / bulkSolventRowWeightTotal),
+                                (100.00 * threadCount) * (bulkSolventRowLoops[i].getWeightPerThread()[i] / bulkSolventRowWeightTotal)));
+                    }
+                    BSSB.append(String.format("    Min      %7.5f\n", bulkSolventRowMin * toSeconds));
+                    BSSB.append(String.format("    Max      %7.5f\n", bulkSolventRowMax * toSeconds));
+                    BSSB.append(String.format("    Delta    %7.5f\n", (bulkSolventRowMax - bulkSolventRowMin) * toSeconds));
+                    logger.info(BSSB.toString());
+                    break;
+                case SPATIAL:
+                    break;
+                case SLICE:
+                    double solventSliceTotal = 0;
+                    double solventSliceMin = solventSliceLoops[0].getTimePerThread();
+                    double solventSliceMax = 0;
+                    double solventSliceWeightTotal = 0;
+
+                    double bulkSolventSliceTotal = 0;
+                    double bulkSolventSliceMin = bulkSolventSliceLoops[0].getTimePerThread();
+                    double bulkSolventSliceMax = 0;
+                    double bulkSolventSliceWeightTotal = 0;
+
+                    for (int i = 0; i < threadCount; i++) {
+                        solventSliceTotal += solventSliceLoops[i].getTimePerThread();
+                        solventSliceMax = max(solventSliceLoops[i].getTimePerThread(), solventSliceMax);
+                        solventSliceMin = min(solventSliceLoops[i].getTimePerThread(), solventSliceMin);
+                        solventSliceWeightTotal += solventSliceLoops[i].getWeightPerThread()[i];
+
+                        bulkSolventSliceTotal += bulkSolventSliceLoops[i].getTimePerThread();
+                        bulkSolventSliceMax = max(bulkSolventSliceLoops[i].getTimePerThread(), bulkSolventSliceMax);
+                        bulkSolventSliceMin = min(bulkSolventSliceLoops[i].getTimePerThread(), bulkSolventSliceMin);
+                        bulkSolventSliceWeightTotal += bulkSolventSliceLoops[i].getWeightPerThread()[i];
+
+                    }
+
+                    //Solvent timing and balance analysis
+                    SSB.append(String.format("\n SliceLoop (Solvent): %7.5f (sec)               | Total Weight: %7.0f\n", solventSliceTotal * toSeconds, solventSliceWeightTotal));
+                    SSB.append(" Thread     LoopTime    Balance(%)  Normalized   |      Slices    Weight     Balance(%)  Normalized\n");
+
+                    //check for no weights issued, then set to 1 so a 0 is printed instead of NaN
+                    if (solventSliceWeightTotal == 0) {
+                        solventSliceWeightTotal = 1;
+                    }
+
+                    for (int i = 0; i < threadCount; i++) {
+                        SSB.append(String.format("     %3d     %7.5f     %7.1f     %7.1f     |   %7d     %7d     %7.1f     %7.1f\n", i, (double) (solventSliceLoops[i].getTimePerThread() * toSeconds),
+                                ((solventSliceLoops[i].getTimePerThread()) / (solventSliceTotal)) * 100.00, ((solventSliceLoops[i].getTimePerThread()) / (solventSliceTotal)) * (100.00 * threadCount),
+                                solventSliceLoops[i].getBoundsPerThread()[i], solventSliceLoops[i].getWeightPerThread()[i], 100.00 * (solventSliceLoops[i].getWeightPerThread()[i] / solventSliceWeightTotal),
+                                (100.00 * threadCount) * (solventSliceLoops[i].getWeightPerThread()[i] / solventSliceWeightTotal)));
+                    }
+                    SSB.append(String.format("    Min      %7.5f\n", solventSliceMin * toSeconds));
+                    SSB.append(String.format("    Max      %7.5f\n", solventSliceMax * toSeconds));
+                    SSB.append(String.format("    Delta    %7.5f\n", (solventSliceMax - solventSliceMin) * toSeconds));
+                    logger.info(SSB.toString());
+
+                    //Bulk solvent timing and balance analysis
+                    BSSB.append(String.format("\n SliceLoop (Bulk Solvent): %7.5f (sec)          | Total Weight: %7.0f\n", bulkSolventSliceTotal * toSeconds, bulkSolventSliceWeightTotal));
+                    BSSB.append(" Thread     LoopTime    Balance(%)  Normalized   |      Slices     Weight     Balance(%)  Normalized\n");
+
+                    //check for no weights issued, then set to 1 so a 0 is printed instead of NaN
+                    if (bulkSolventSliceWeightTotal == 0) {
+                        bulkSolventSliceWeightTotal = 1;
+                    }
+
+                    for (int i = 0; i < threadCount; i++) {
+                        BSSB.append(String.format("     %3d     %7.5f     %7.1f     %7.1f     |   %7d     %7d     %7.1f     %7.1f\n", i, (double) (bulkSolventSliceLoops[i].getTimePerThread() * toSeconds),
+                                ((bulkSolventSliceLoops[i].getTimePerThread()) / (bulkSolventSliceTotal)) * 100.00, ((bulkSolventSliceLoops[i].getTimePerThread()) / (bulkSolventSliceTotal)) * (100.00 * threadCount),
+                                bulkSolventSliceLoops[i].getBoundsPerThread()[i], bulkSolventSliceLoops[i].getWeightPerThread()[i], 100.00 * (bulkSolventSliceLoops[i].getWeightPerThread()[i] / bulkSolventSliceWeightTotal),
+                                (100.00 * threadCount) * (bulkSolventSliceLoops[i].getWeightPerThread()[i] / bulkSolventSliceWeightTotal)));
+                    }
+                    BSSB.append(String.format("    Min      %7.5f\n", bulkSolventSliceMin * toSeconds));
+                    BSSB.append(String.format("    Max      %7.5f\n", bulkSolventSliceMax * toSeconds));
+                    BSSB.append(String.format("    Delta    %7.5f\n", (bulkSolventSliceMax - bulkSolventSliceMin) * toSeconds));
+                    logger.info(BSSB.toString());
+                    break;
+                default:
+            }
         }
+
     }
 
     /**
@@ -1593,6 +1845,9 @@ public class CrystalReciprocalSpace {
         final double xf[] = new double[3];
         final double grid[];
         final int optLocal[];
+        long timer;
+        int threadBounds[];
+        int threadWeights[];
 
         public AtomicRowLoop(RowRegion region) {
             super(region.getNatoms(), region.getNsymm(), region);
@@ -1600,20 +1855,40 @@ public class CrystalReciprocalSpace {
             optLocal = new int[fftZ * fftY];
         }
 
+        public double getTimePerThread() {
+            return timer;
+        }
+
+        public int[] getBoundsPerThread() {
+            return threadBounds;
+        }
+
+        public int[] getWeightPerThread() {
+            return threadWeights;
+        }
+
         @Override
         public IntegerSchedule schedule() {
-            return rowSchedule;
+            return atomicRowSchedule;
         }
 
         @Override
         public void start() {
             fill(optLocal, 0);
+            timer = -System.nanoTime();
         }
 
         @Override
         public void finish() {
             for (int i = 0; i < fftZ * fftY; i++) {
-                optRowWeight.addAndGet(i, optLocal[i]);
+                optRowWeightAtomic.addAndGet(i, optLocal[i]);
+            }
+
+            timer += System.nanoTime();
+            threadBounds = atomicRowSchedule.getLowerBounds().clone();
+            threadWeights = atomicRowSchedule.getThreadWeights().clone();
+            for (int i = threadCount - 1; i > 0; i--) {
+                threadBounds[i] -= threadBounds[i - 1];
             }
         }
 
@@ -1681,10 +1956,51 @@ public class CrystalReciprocalSpace {
         final double xc[] = new double[3];
         final double xf[] = new double[3];
         final double grid[];
+        long timer;
+        int threadBounds[];
+        int threadWeights[];
+        final int optLocal[];
 
         public SolventRowLoop(RowRegion region) {
             super(region.getNatoms(), region.getNsymm(), region);
             grid = region.getGrid();
+            optLocal = new int[fftZ * fftY];
+        }
+
+        public double getTimePerThread() {
+            return timer;
+        }
+
+        public int[] getBoundsPerThread() {
+            return threadBounds;
+        }
+
+        public int[] getWeightPerThread() {
+            return threadWeights;
+        }
+
+        @Override
+        public IntegerSchedule schedule() {
+            return solventRowSchedule;
+        }
+
+        @Override
+        public void start() {
+            fill(optLocal, 0);
+            timer = -System.nanoTime();
+        }
+
+        @Override
+        public void finish() {
+            timer += System.nanoTime();
+            for (int i = 0; i < fftZ * fftY; i++) {
+                optRowWeightSolvent.addAndGet(i, optLocal[i]);
+            }
+            threadBounds = solventRowSchedule.getLowerBounds().clone();
+            threadWeights = solventRowSchedule.getThreadWeights().clone();
+            for (int i = threadCount - 1; i > 0; i--) {
+                threadBounds[i] -= threadBounds[i - 1];
+            }
         }
 
         @Override
@@ -1748,6 +2064,131 @@ public class CrystalReciprocalSpace {
                         int gix = Crystal.mod(ix, fftX);
                         xf[0] = ix * ifftX;
                         crystal.toCartesianCoordinates(xf, xc);
+                        optLocal[rowIndex]++;
+                        final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
+                        grid[ii] = formFactor.rho(grid[ii], lambdai, xc);
+                    }
+                }
+            }
+        }
+    }
+
+    private class BulkSolventRowLoop extends RowLoop {
+
+        final double xyz[] = new double[3];
+        final double uvw[] = new double[3];
+        final double xc[] = new double[3];
+        final double xf[] = new double[3];
+        final double grid[];
+        long timer;
+        int threadWeights[];
+        int threadBounds[];
+        final int optLocal[];
+
+        public BulkSolventRowLoop(RowRegion region) {
+            super(region.getNatoms(), region.getNsymm(), region);
+            grid = region.getGrid();
+            optLocal = new int[fftZ * fftY];
+        }
+
+        public double getTimePerThread() {
+            return timer;
+        }
+
+        public int[] getBoundsPerThread() {
+            return threadBounds;
+        }
+
+        public int[] getWeightPerThread() {
+            return optLocal;
+        }
+
+        @Override
+        public IntegerSchedule schedule() {
+            return bulkSolventRowSchedule;
+        }
+
+        @Override
+        public void start() {
+            timer = -System.nanoTime();
+            fill(optLocal, 0);
+        }
+
+        @Override
+        public void finish() {
+            for (int i = 0; i < fftZ * fftY; i++) {
+                optRowWeightBulkSolvent.addAndGet(i, optLocal[i]);
+            }
+            timer += System.nanoTime();
+            threadBounds = bulkSolventRowSchedule.getLowerBounds().clone();
+            threadWeights = bulkSolventRowSchedule.getThreadWeights().clone();
+            for (int i = threadCount - 1; i > 0; i--) {
+                threadWeights[i] -= threadWeights[i - 1];
+            }
+        }
+
+        @Override
+        public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
+            if (!atoms[iAtom].isActive()) {
+                return;
+            }
+            final double lambdai = atoms[iAtom].applyLambda() ? lambda : 1.0;
+            xyz[0] = coordinates[iSymm][0][iAtom];
+            xyz[1] = coordinates[iSymm][1][iAtom];
+            xyz[2] = coordinates[iSymm][2][iAtom];
+            FormFactor formFactor = solventFormFactors[iSymm][iAtom];
+            crystal.toFractionalCoordinates(xyz, uvw);
+            double vdwr = atoms[iAtom].getVDWType().radius * 0.5;
+            int frad = aRadGrid;
+            switch (solventModel) {
+                case BINARY:
+                    frad = min(aRadGrid, (int) floor((vdwr + solventA + 0.2) * fftX / crystal.a) + 1);
+                    break;
+                case GAUSSIAN:
+                    frad = min(aRadGrid, (int) floor((vdwr * solventB + 2.0) * fftX / crystal.a) + 1);
+                    break;
+                case POLYNOMIAL:
+                    frad = min(aRadGrid, (int) floor((vdwr + solventB + 0.2) * fftX / crystal.a) + 1);
+                    break;
+                case NONE:
+                default:
+                    return;
+            }
+
+            int ubZ = rowRegion.zFromRowIndex(ub);
+            int lbZ = rowRegion.zFromRowIndex(lb);
+
+            // Logic to loop within the cutoff box.
+            final double frx = fftX * uvw[0];
+            final int ifrx = (int) frx;
+            final int ifrxu = ifrx + frad;
+
+            final double fry = fftY * uvw[1];
+            final int ifry = (int) fry;
+            final int ifryu = ifry + frad;
+
+            final double frz = fftZ * uvw[2];
+            final int ifrz = (int) frz;
+            final int ifrzu = ifrz + frad;
+
+            for (int iz = ifrz - frad; iz <= ifrzu; iz++) {
+                int giz = Crystal.mod(iz, fftZ);
+                if (lbZ > giz || giz > ubZ) {
+                    continue;
+                }
+                xf[2] = iz * ifftZ;
+                for (int iy = ifry - frad; iy <= ifryu; iy++) {
+                    int giy = Crystal.mod(iy, fftY);
+                    int rowIndex = rowRegion.rowIndexForYZ(giy, giz);
+                    if (lb > rowIndex || rowIndex > ub) {
+                        continue;
+                    }
+                    xf[1] = iy * ifftY;
+                    for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
+                        int gix = Crystal.mod(ix, fftX);
+                        xf[0] = ix * ifftX;
+                        crystal.toCartesianCoordinates(xf, xc);
+                        optLocal[rowIndex]++;
                         final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
                         grid[ii] = formFactor.rho(grid[ii], lambdai, xc);
                     }
@@ -1764,6 +2205,26 @@ public class CrystalReciprocalSpace {
         final double xf[] = new double[3];
         final double grid[];
         final int optLocal[];
+        long timer;
+        int threadWeights[];
+        int threadBounds[];
+
+        public double getTimePerThread() {
+            return timer;
+        }
+
+        public int[] getBoundsPerThread() {
+            return threadBounds;
+        }
+
+        public int[] getWeightPerThread() {
+            return threadWeights;
+        }
+
+        @Override
+        public IntegerSchedule schedule() {
+            return atomicSliceSchedule;
+        }
 
         public AtomicSliceLoop(SliceRegion region) {
             super(region.getNatoms(), region.getNsymm(), region);
@@ -1772,28 +2233,23 @@ public class CrystalReciprocalSpace {
         }
 
         @Override
-        public IntegerSchedule schedule() {
-            return sliceSchedule;
-        }
-
-        @Override
         public void start() {
             fill(optLocal, 0);
-            super.initTiming(this.getClass().getSimpleName(), System.nanoTime());
-        }
-
-        @Override
-        public void setWeight() {
-            super.setWeightOnRegion(sliceSchedule.getWeightPerThread());
+            timer = -System.nanoTime();
         }
 
         @Override
         public void finish() {
             for (int i = 0; i < fftZ; i++) {
-                optWeight.addAndGet(i, optLocal[i]);
+                optSliceWeightAtomic.addAndGet(i, optLocal[i]);
             }
-            setWeight();
-            super.finishTime(System.nanoTime());
+
+            timer += System.nanoTime();
+            threadBounds = atomicSliceSchedule.getLowerBounds().clone();
+            threadWeights = atomicSliceSchedule.getThreadWeights().clone();
+            for (int i = threadCount - 1; i > 0; i--) {
+                threadBounds[i] -= threadBounds[i - 1];
+            }
         }
 
         @Override
@@ -1854,6 +2310,9 @@ public class CrystalReciprocalSpace {
         final double xf[] = new double[3];
         final double grid[];
         final int optLocal[];
+        long timer;
+        int threadBounds[];
+        int threadWeights[];
 
         public SolventSliceLoop(SliceRegion region) {
             super(region.getNatoms(), region.getNsymm(), region);
@@ -1861,29 +2320,157 @@ public class CrystalReciprocalSpace {
             optLocal = new int[fftZ];
         }
 
+        public double getTimePerThread() {
+            return timer;
+        }
+
+        public int[] getBoundsPerThread() {
+            return threadBounds;
+        }
+
+        public int[] getWeightPerThread() {
+            return threadWeights;
+        }
+
         @Override
         public IntegerSchedule schedule() {
-            return sliceSchedule;
+            return solventSliceSchedule;
         }
 
         @Override
         public void start() {
             fill(optLocal, 0);
-            super.initTiming(this.getClass().getSimpleName(), System.nanoTime());
+            timer = -System.nanoTime();
         }
 
         @Override
         public void finish() {
+            timer += System.nanoTime();
             for (int i = 0; i < fftZ; i++) {
-                optWeight.addAndGet(i, optLocal[i]);
+                optSliceWeightSolvent.addAndGet(i, optLocal[i]);
             }
-            setWeight();
-            super.finishTime(System.nanoTime());
+            threadBounds = solventSliceSchedule.getLowerBounds().clone();
+            threadWeights = solventSliceSchedule.getThreadWeights().clone();
+            for (int i = threadCount - 1; i > 0; i--) {
+                threadBounds[i] -= threadBounds[i - 1];
+            }
         }
 
         @Override
-        public void setWeight() {
-            super.setWeightOnRegion(sliceSchedule.getWeightPerThread());
+        public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
+            if (!atoms[iAtom].isActive()) {
+                return;
+            }
+            final double lambdai = atoms[iAtom].applyLambda() ? lambda : 1.0;
+            xyz[0] = coordinates[iSymm][0][iAtom];
+            xyz[1] = coordinates[iSymm][1][iAtom];
+            xyz[2] = coordinates[iSymm][2][iAtom];
+            FormFactor formFactor = solventFormFactors[iSymm][iAtom];
+            crystal.toFractionalCoordinates(xyz, uvw);
+            double vdwr = atoms[iAtom].getVDWType().radius * 0.5;
+            int frad = aRadGrid;
+            switch (solventModel) {
+                case BINARY:
+                    frad = min(aRadGrid, (int) floor((vdwr + solventA + 0.2) * fftX / crystal.a) + 1);
+                    break;
+                case GAUSSIAN:
+                    frad = min(aRadGrid, (int) floor((vdwr * solventB + 2.0) * fftX / crystal.a) + 1);
+                    break;
+                case POLYNOMIAL:
+                    frad = min(aRadGrid, (int) floor((vdwr + solventB + 0.2) * fftX / crystal.a) + 1);
+                    break;
+                case NONE:
+                default:
+                    return;
+            }
+
+            // Logic to loop within the cutoff box.
+            final double frx = fftX * uvw[0];
+            final int ifrx = (int) frx;
+            final int ifrxu = ifrx + frad;
+
+            final double fry = fftY * uvw[1];
+            final int ifry = (int) fry;
+            final int ifryu = ifry + frad;
+
+            final double frz = fftZ * uvw[2];
+            final int ifrz = (int) frz;
+            final int ifrzu = ifrz + frad;
+
+            for (int iz = ifrz - frad; iz <= ifrzu; iz++) {
+                int giz = Crystal.mod(iz, fftZ);
+                if (lb > giz || giz > ub) {
+                    continue;
+                }
+                xf[2] = iz * ifftZ;
+                for (int iy = ifry - frad; iy <= ifryu; iy++) {
+                    int giy = Crystal.mod(iy, fftY);
+                    xf[1] = iy * ifftY;
+                    for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
+                        int gix = Crystal.mod(ix, fftX);
+                        xf[0] = ix * ifftX;
+                        crystal.toCartesianCoordinates(xf, xc);
+                        optLocal[giz]++;
+                        final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
+                        grid[ii] = formFactor.rho(grid[ii], lambdai, xc);
+                    }
+                }
+            }
+        }
+    }
+
+    private class BulkSolventSliceLoop extends SliceLoop {
+
+        final double xyz[] = new double[3];
+        final double uvw[] = new double[3];
+        final double xc[] = new double[3];
+        final double xf[] = new double[3];
+        final double grid[];
+        final int optLocal[];
+        long timer;
+        int threadBounds[];
+        int threadWeights[];
+
+        public BulkSolventSliceLoop(SliceRegion region) {
+            super(region.getNatoms(), region.getNsymm(), region);
+            grid = region.getGrid();
+            optLocal = new int[fftZ];
+        }
+
+        public double getTimePerThread() {
+            return timer;
+        }
+
+        public int[] getBoundsPerThread() {
+            return threadBounds;
+        }
+
+        public int[] getWeightPerThread() {
+            return threadWeights;
+        }
+
+        @Override
+        public IntegerSchedule schedule() {
+            return bulkSolventSliceSchedule;
+        }
+
+        @Override
+        public void start() {
+            fill(optLocal, 0);
+            timer = -System.nanoTime();
+        }
+
+        @Override
+        public void finish() {
+            timer += System.nanoTime();
+            for (int i = 0; i < fftZ; i++) {
+                optSliceWeightBulkSolvent.addAndGet(i, optLocal[i]);
+            }
+            threadBounds = bulkSolventSliceSchedule.getLowerBounds().clone();
+            threadWeights = bulkSolventSliceSchedule.getThreadWeights().clone();
+            for (int i = threadCount - 1; i > 0; i--) {
+                threadBounds[i] -= threadBounds[i - 1];
+            }
         }
 
         @Override
@@ -2511,6 +3098,38 @@ public class CrystalReciprocalSpace {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    private class ArrayCopyRegion extends ParallelRegion {
+
+        ArrayCopyLoop arrayCopyLoops[];
+
+        public ArrayCopyRegion() {
+            arrayCopyLoops = new ArrayCopyLoop[threadCount];
+        }
+
+        @Override
+        public void run() throws Exception {
+            int ti = getThreadIndex();
+
+            if (arrayCopyLoops[ti] == null) {
+                arrayCopyLoops[ti] = new ArrayCopyLoop();
+            }
+
+            try {
+                execute(0, complexFFT3DSpace - 1, arrayCopyLoops[ti]);
+            } catch (Exception e) {
+                logger.info(e.toString());
+            }
+        }
+
+        private class ArrayCopyLoop extends IntegerForLoop {
+
+            @Override
+            public void run(int lb, int ub) throws Exception {
+                System.arraycopy(densityGrid, lb, solventGrid, lb, ub - lb);
             }
         }
     }
