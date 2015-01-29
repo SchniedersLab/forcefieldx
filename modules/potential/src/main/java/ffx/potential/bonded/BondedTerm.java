@@ -158,6 +158,33 @@ public abstract class BondedTerm extends MSNode {
         }
         return null;
     }
+    
+    /**
+     * Returns all of the Atoms contained in this BondedTerm, regardless of whether
+     * they are child nodes in the tree structure. Returns a new array, not a 
+     * reference to the original array.
+     * @return Atoms in this BondedTerm
+     */
+    public Atom[] getAtomArray () {
+        return getAtomArray(true);
+    }
+    
+    /**
+     * Returns all of the Atoms contained in this BondedTerm, regardless of whether
+     * they are child nodes in the tree structure.
+     * @param returnCopy If true, return a new copy of the Atom array.
+     * @return Atoms in this BondedTerm
+     */
+    public Atom[] getAtomArray(boolean returnCopy) {
+        if (returnCopy) {
+            int nAtoms = atoms.length;
+            Atom[] retAtoms = new Atom[nAtoms];
+            System.arraycopy(atoms, 0, retAtoms, 0, nAtoms);
+            return retAtoms;
+        } else {
+            return atoms;
+        }
+    }
 
     /**
      * <p>

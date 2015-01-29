@@ -2274,6 +2274,10 @@ public final class PDBFilter extends SystemFilter {
         if (saveFile == null) {
             return false;
         }
+        
+        if (vdwH) {
+            logger.info(" Printing hydrogens to van der Waals centers instead of nuclear locations.");
+        }
 
         /**
          * Create StringBuilders for ATOM, ANISOU and TER records that can be
@@ -2634,6 +2638,10 @@ public final class PDBFilter extends SystemFilter {
     public boolean writeSIFTFile(File saveFile, boolean append, String[] resAndScore) {
         if (saveFile == null) {
             return false;
+        }
+        
+        if (vdwH) {
+            logger.info(" Printing hydrogens to van der Waals centers instead of nuclear locations.");
         }
 
         /**
@@ -3038,7 +3046,7 @@ public final class PDBFilter extends SystemFilter {
                 name = name + " ";
             }
         }
-        double xyz[] = atom.getXYZ();
+        double xyz[] = vdwH ? atom.getRedXYZ() : atom.getXYZ();
         sb.replace(6, 16, String.format("%5s " + padLeft(name.toUpperCase(), 4), Hybrid36.encode(5, serial)));
         Character altLoc = atom.getAltLoc();
         if (altLoc != null) {
@@ -3110,7 +3118,7 @@ public final class PDBFilter extends SystemFilter {
                 name = name + " ";
             }
         }
-        double xyz[] = atom.getXYZ();
+        double xyz[] = vdwH ? atom.getRedXYZ() : atom.getXYZ();
         sb.replace(6, 16, String.format("%5s " + padLeft(name.toUpperCase(), 4), Hybrid36.encode(5, serial)));
         Character altLoc = atom.getAltLoc();
         if (altLoc != null) {

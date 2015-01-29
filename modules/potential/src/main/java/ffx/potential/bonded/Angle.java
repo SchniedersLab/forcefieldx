@@ -217,7 +217,7 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
     public Atom getCentralAtom() {
         return atoms[1];
     }
-
+    
     /**
      * Finds the common bond between <b>this</b> angle and another
      *

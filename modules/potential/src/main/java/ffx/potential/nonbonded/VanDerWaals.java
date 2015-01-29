@@ -1255,6 +1255,8 @@ public class VanDerWaals implements MaskingInterface,
                         reducedXYZ[iX] = a * (x - rx) + rx;
                         reducedXYZ[iY] = a * (y - ry) + ry;
                         reducedXYZ[iZ] = a * (z - rz) + rz;
+                        double[] rxyz = {reducedXYZ[iX], reducedXYZ[iY], reducedXYZ[iZ]};
+                        atoms[i].setRedXYZ(rxyz);
                     } else {
                         reducedXYZ[iX] = x;
                         reducedXYZ[iY] = y;

@@ -229,6 +229,13 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     private double xyz[];
     /**
+     * Array of XYZ coordinates for the electron (van der Waals) centers of each
+     * atom: if null, methods will refer to xyz.
+     * 
+     * @since 1.0
+     */
+    private double redXYZ[];
+    /**
      * Array of XYZ gradients for each altLoc.
      *
      * @since 1.0
@@ -332,6 +339,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
         //this.name = name;
         currentCol = previousCol = RendererCache.toAtomColor(name);
         colorModel = ColorModel.CPK;
+        redXYZ = null;
     }
 
     /**
@@ -995,15 +1003,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * Gets the x coordinate
-     *
-     * @return x coordinate
-     */
-    public double getX() {
-        return xyz[0];
-    }
-
-    /**
      * <p>
      * getXYZ</p>
      *
@@ -1017,6 +1016,22 @@ public class Atom extends MSNode implements Comparable<Atom> {
 
     /**
      * <p>
+     * getRedXYZ</p>
+     *
+     * @param x an array of double.
+     */
+    public void getRedXYZ(double[] x) {
+        if (redXYZ != null) {
+            x[0] = redXYZ[0];
+            x[1] = redXYZ[1];
+            x[2] = redXYZ[2];
+        } else {
+            getXYZ(x);
+        }
+    }
+
+    /**
+     * <p>
      * getXYZ</p>
      *
      * @return an array of double.
@@ -1026,12 +1041,31 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
+     * <p>
+     * getRedXYZ</p>
+     *
+     * @return an array of double.
+     */
+    public double[] getRedXYZ() {
+        return redXYZ == null ? xyz : redXYZ;
+    }
+
+    /**
      * Gets the XYZ Index
      *
      * @return XYZ Index
      */
     public final int getXYZIndex() {
         return xyzIndex;
+    }
+
+    /**
+     * Gets the x coordinate
+     *
+     * @return x coordinate
+     */
+    public final double getX() {
+        return xyz[0];
     }
 
     /**
@@ -1050,6 +1084,36 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     public final double getZ() {
         return xyz[2];
+    }
+
+    /**
+     * Gets the reduced x coordinate (van der Waals center). Will refer to xyz[]
+     * if not initialized.
+     *
+     * @return Reduced x coordinate
+     */
+    public final double getRedX() {
+        return redXYZ == null ? xyz[0] : redXYZ[0];
+    }
+
+    /**
+     * Gets the reduced y coordinate (van der Waals center). Will refer to xyz[]
+     * if not initialized.
+     *
+     * @return Reduced y coordinate
+     */
+    public final double getRedY() {
+        return redXYZ == null ? xyz[1] : redXYZ[1];
+    }
+
+    /**
+     * Gets the reduced z coordinate (van der Waals center). Will refer to xyz[]
+     * if not initialized.
+     *
+     * @return Reduced z coordinate
+     */
+    public final double getRedZ() {
+        return redXYZ == null ? xyz[2] : redXYZ[2];
     }
 
     /**
@@ -1214,6 +1278,21 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     public void setXYZ(double xyz[]) {
         this.xyz = xyz;
+    }
+
+    /**
+     * <p>
+     * setXYZ</p>
+     *
+     * @param redXYZ an array of double.
+     */
+    public void setRedXYZ(double redXYZ[]) {
+        if (this.redXYZ == null) {
+            this.redXYZ = new double[3];
+        }
+        this.redXYZ[0] = redXYZ[0];
+        this.redXYZ[1] = redXYZ[1];
+        this.redXYZ[2] = redXYZ[2];
     }
 
     /**

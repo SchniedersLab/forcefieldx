@@ -2510,6 +2510,10 @@ public class BiojavaFilter extends ConversionFilter {
         if (saveFile == null) {
             return false;
         }
+        
+        if (vdwH) {
+            logger.info(" Printing hydrogens to van der Waals centers instead of nuclear locations.");
+        }
 
         /**
          * Create StringBuilders for ATOM, ANISOU and TER records that can be
@@ -2908,6 +2912,10 @@ public class BiojavaFilter extends ConversionFilter {
         if (saveFile == null) {
             return false;
         }
+        
+        if (vdwH) {
+            logger.info(" Printing hydrogens to van der Waals centers instead of nuclear locations.");
+        }
 
         /**
          * Create StringBuilders for ATOM, ANISOU and TER records that can be
@@ -3303,7 +3311,7 @@ public class BiojavaFilter extends ConversionFilter {
                 name = name + " ";
             }
         }
-        double xyz[] = atom.getXYZ();
+        double xyz[] = vdwH ? atom.getRedXYZ() : atom.getXYZ();
         sb.replace(6, 16, String.format("%5s " + padLeft(name.toUpperCase(), 4), Hybrid36.encode(5, serial)));
         Character altLoc = atom.getAltLoc();
         if (altLoc != null) {
@@ -3375,7 +3383,7 @@ public class BiojavaFilter extends ConversionFilter {
                 name = name + " ";
             }
         }
-        double xyz[] = atom.getXYZ();
+        double xyz[] = vdwH ? atom.getRedXYZ() : atom.getXYZ();
         sb.replace(6, 16, String.format("%5s " + padLeft(name.toUpperCase(), 4), Hybrid36.encode(5, serial)));
         Character altLoc = atom.getAltLoc();
         if (altLoc != null) {
