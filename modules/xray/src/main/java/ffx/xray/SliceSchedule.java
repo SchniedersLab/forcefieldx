@@ -173,14 +173,25 @@ public class SliceSchedule extends IntegerSchedule {
             ranges[it] = null;
         }
     }
-
-    public int[] getWeightPerThread() {
-        if (lowerBounds != null) {
-            int[] weightToReturn = new int[nThreads];
-            for (int i = 0; i < nThreads; i++) {
-                weightToReturn[i] = lowerBounds[i + 1];
+    public int[] getThreadWeights(){
+        if(lowerBounds != null){
+            int[] weightsToReturn = new int[nThreads];
+            for (int i = 0; i<nThreads; i++){
+                weightsToReturn[i] = weights[i];
             }
-            return weightToReturn;
+            return weightsToReturn;
+        } else {
+            return null;
+        }
+    }
+
+    public int[] getLowerBounds() {
+        if (lowerBounds != null) {
+            int[] boundsToReturn = new int[nThreads];
+            for (int i = 0; i < nThreads; i++) {
+                boundsToReturn[i] = lowerBounds[i + 1];
+            }
+            return boundsToReturn;
         } else {
             return null;
         }

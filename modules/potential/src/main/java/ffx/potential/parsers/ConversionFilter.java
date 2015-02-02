@@ -37,22 +37,20 @@
  */
 package ffx.potential.parsers;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Vector;
-
-import org.apache.commons.configuration.CompositeConfiguration;
-
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.parameters.ForceField;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Vector;
+import org.apache.commons.configuration.CompositeConfiguration;
 
 /**
- * The ConversionFilter class is the base class for most Force Field X parsers
- * for non-Force Field X data structures
+ * The ConversionFilter class is the base class for most Force Field X parsers for
+ * non-Force Field X data structures
  *
  * @author Michael J. Schnieders
  * @autor Jacob M. Litman
@@ -60,43 +58,7 @@ import ffx.potential.parameters.ForceField;
  *
  */
 public abstract class ConversionFilter {
-
-    public ConversionFilter(Object structure, MolecularAssembly molecularAssembly,
-            ForceField forcefield, CompositeConfiguration properties) {
-        this.currentStructure = structure;
-        this.structures = new ArrayList<>();
-        if (structure != null) {
-            structures.add(structure);
-        }
-        this.activeMolecularAssembly = molecularAssembly;
-        this.forceField = forcefield;
-        this.properties = properties;
-    }
-
-    public ConversionFilter(List<Object> structures, MolecularAssembly molecularAssembly,
-            ForceField forcefield, CompositeConfiguration properties) {
-        this.structures = structures;
-        if (structures != null && !structures.isEmpty()) {
-            this.currentStructure = structures.get(0);
-        }
-        this.activeMolecularAssembly = molecularAssembly;
-        this.forceField = forcefield;
-        this.properties = properties;
-    }
-
-    public ConversionFilter(Object structure, List<MolecularAssembly> molecularAssemblies,
-            ForceField forcefield, CompositeConfiguration properties) {
-        this.currentStructure = structure;
-        this.structures = new ArrayList<>();
-        if (structure != null) {
-            structures.add(structure);
-        }
-        this.systems = new Vector(molecularAssemblies);
-        this.activeMolecularAssembly = systems.firstElement();
-        this.forceField = forcefield;
-        this.properties = properties;
-    }
-
+    
     /**
      * The atomList is filled by filters that extend ConversionFilter.
      */
@@ -149,6 +111,153 @@ public abstract class ConversionFilter {
      * data structure.
      */
     protected boolean hasConverted = false;
+    /**
+     * True if atoms are to be printed to their van der Waals centers instead of
+     * nuclear centers (applies primarily to hydrogens).
+     */
+    protected boolean vdwH = false;
+    
+    
+    public ConversionFilter (Object structure, MolecularAssembly molecularAssembly, 
+            ForceField forcefield, CompositeConfiguration properties) {
+        this.currentStructure = structure;
+        this.structures = new ArrayList<>();
+        if (structure != null) {
+            structures.add(structure);
+        }
+        this.activeMolecularAssembly = molecularAssembly;
+        this.forceField = forcefield;
+        this.properties = properties;
+        
+        String vdwHydrogens = System.getProperty("vdwHydrogens");
+        if (vdwHydrogens != null && vdwHydrogens.equalsIgnoreCase("true")) {
+            vdwH = true;
+        }
+    }
+    public ConversionFilter (List<Object> structures, MolecularAssembly molecularAssembly, 
+            ForceField forcefield, CompositeConfiguration properties) {
+        this.structures = structures;
+        if (structures != null && !structures.isEmpty()) {
+            this.currentStructure = structures.get(0);
+        }
+        this.activeMolecularAssembly = molecularAssembly;
+        this.forceField = forcefield;
+        this.properties = properties;
+        
+        String vdwHydrogens = System.getProperty("vdwHydrogens");
+        if (vdwHydrogens != null && vdwHydrogens.equalsIgnoreCase("true")) {
+            vdwH = true;
+        }
+    }
+    public ConversionFilter (Object structure, List<MolecularAssembly> molecularAssemblies, 
+            ForceField forcefield, CompositeConfiguration properties) {
+        this.currentStructure = structure;
+        this.structures = new ArrayList<>();
+        if (structure != null) {
+            structures.add(structure);
+        }
+        this.systems = new Vector(molecularAssemblies);
+        this.activeMolecularAssembly = systems.firstElement();
+        this.forceField = forcefield;
+        this.properties = properties;
+        
+        String vdwHydrogens = System.getProperty("vdwHydrogens");
+        if (vdwHydrogens != null && vdwHydrogens.equalsIgnoreCase("true")) {
+            vdwH = true;
+        }
+    }
+    
+    /**
+     * This follows the TINKER file versioning scheme.
+     *
+     * @param file File to find a version for.
+     * @return File Versioned File.
+     */
+    public static File version(File file) {
+        if (file == null) {
+            return null;
+        }
+        if (!file.exists()) {
+            return file;
+        }
+        String fileName = file.getAbsolutePath();
+        int dot = file.getAbsolutePath().lastIndexOf(".");
+        int under = file.getAbsolutePath().lastIndexOf("_");
+        File newFile = file;
+        if (under > dot) {
+            String name = fileName.substring(0, under);
+            newFile = new File(name);
+        }
+        File oldFile = newFile;
+        int i = 1;
+        while (newFile.exists()) {
+            i = i + 1;
+            newFile = oldFile;
+            int thousand = i / 1000;
+            int hundred = (i - 1000 * thousand) / 100;
+            int tens = (i - 1000 * thousand - 100 * hundred) / 10;
+            int ones = i - 1000 * thousand - 100 * hundred - 10 * tens;
+            StringBuilder newFileString = new StringBuilder(oldFile.getAbsolutePath());
+            if (thousand != 0) {
+                newFileString.append('_').append(thousand).append(hundred).append(tens).append(ones);
+            } else if (hundred != 0) {
+                newFileString.append('_').append(hundred).append(tens).append(
+                        ones);
+            } else if (tens != 0) {
+                newFileString.append('_').append(tens).append(ones);
+            } else {
+                newFileString.append('_').append(ones);
+            }
+            newFile = new File(newFileString.toString());
+        }
+        return newFile;
+    }
+
+    /**
+     * <p>
+     * previousVersion</p>
+     *
+     * @param file a {@link java.io.File} object.
+     * @return a {@link java.io.File} object.
+     */
+    public static File previousVersion(File file) {
+        if (file == null) {
+            return null;
+        }
+        String fileName = file.getAbsolutePath();
+        int dot = file.getAbsolutePath().lastIndexOf(".");
+        int under = file.getAbsolutePath().lastIndexOf("_");
+        File newFile = file;
+        if (under > dot) {
+            String name = fileName.substring(0, under);
+            newFile = new File(name);
+        }
+        File baseFile = newFile;
+        File previousFile = null;
+        int i = 1;
+        while (newFile.exists()) {
+            i = i + 1;
+            previousFile = newFile;
+            newFile = baseFile;
+            int thousand = i / 1000;
+            int hundred = (i - 1000 * thousand) / 100;
+            int tens = (i - 1000 * thousand - 100 * hundred) / 10;
+            int ones = i - 1000 * thousand - 100 * hundred - 10 * tens;
+            StringBuilder newFileString = new StringBuilder(baseFile.getAbsolutePath());
+            if (thousand != 0) {
+                newFileString.append('_').append(thousand).append(hundred).append(tens).append(ones);
+            } else if (hundred != 0) {
+                newFileString.append('_').append(hundred).append(tens).append(
+                        ones);
+            } else if (tens != 0) {
+                newFileString.append('_').append(tens).append(ones);
+            } else {
+                newFileString.append('_').append(ones);
+            }
+            newFile = new File(newFileString.toString());
+        }
+        return previousFile;
+    }
 
     /**
      * Returns true if the conversion was successful
@@ -208,7 +317,8 @@ public abstract class ConversionFilter {
      * <p>
      * getMolecularAssemblys</p>
      *
-     * @return an array of {@link ffx.potential.MolecularAssembly} objects.
+     * @return an array of {@link ffx.potential.MolecularAssembly}
+     * objects.
      */
     public MolecularAssembly[] getMolecularAssemblys() {
         if (systems.size() > 0) {
@@ -229,7 +339,7 @@ public abstract class ConversionFilter {
     public Utilities.FileType getFileType() {
         return fileType;
     }
-
+    
     /**
      * <p>
      * getDataType</p>
@@ -328,7 +438,7 @@ public abstract class ConversionFilter {
     public void setFile(File file) {
         this.file = file;
     }
-
+    
     /**
      * <p>
      * setStructure</p>

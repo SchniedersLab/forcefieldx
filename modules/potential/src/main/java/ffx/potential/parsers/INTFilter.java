@@ -309,6 +309,8 @@ public class INTFilter extends SystemFilter {
     @Override
     public boolean writeFile(File saveFile, boolean append) {
         /*
+         * Would need to add something for writing reduced hydrogen coordinates.
+         *
          * File xyzfile = getFile(); if (xyzfile == null) { return false; } try
          * { FileWriter fw = new FileWriter(xyzfile); BufferedWriter bw = new
          * BufferedWriter(fw); // XYZ File First Line FSystem M = getFSystem();
