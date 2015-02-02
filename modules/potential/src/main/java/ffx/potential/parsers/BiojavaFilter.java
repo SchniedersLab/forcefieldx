@@ -37,13 +37,53 @@
  */
 package ffx.potential.parsers;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static java.lang.String.format;
+
+import org.apache.commons.configuration.CompositeConfiguration;
+import org.biojava.bio.structure.Chain;
+import org.biojava.bio.structure.Group;
+import org.biojava.bio.structure.PDBCrystallographicInfo;
+import org.biojava.bio.structure.ResidueNumber;
+import org.biojava.bio.structure.SSBond;
+import org.biojava.bio.structure.Structure;
+import org.biojava.bio.structure.StructureTools;
+
 import ffx.crystal.Crystal;
 import ffx.crystal.SpaceGroup;
 import ffx.numerics.VectorMath;
-import static ffx.numerics.VectorMath.diff;
-import static ffx.numerics.VectorMath.r;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Bond;
+import ffx.potential.bonded.BondedUtils;
+import ffx.potential.bonded.BondedUtils.MissingAtomTypeException;
+import ffx.potential.bonded.BondedUtils.MissingHeavyAtomException;
+import ffx.potential.bonded.MSGroup;
+import ffx.potential.bonded.MSNode;
+import ffx.potential.bonded.Molecule;
+import ffx.potential.bonded.Polymer;
+import ffx.potential.bonded.Residue;
+import ffx.potential.bonded.Residue.ResiduePosition;
+import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
+import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
+import ffx.potential.parameters.AtomType;
+import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.MultipoleType;
+import ffx.potential.parsers.PDBFilter.HetAtoms;
+import ffx.utilities.Hybrid36;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
 import static ffx.potential.bonded.AminoAcidUtils.buildAIB;
 import static ffx.potential.bonded.AminoAcidUtils.buildAlanine;
 import static ffx.potential.bonded.AminoAcidUtils.buildArginine;
@@ -93,15 +133,7 @@ import static ffx.potential.bonded.AminoAcidUtils.renameGlutamineHydrogens;
 import static ffx.potential.bonded.AminoAcidUtils.renameGlycineAlphaHydrogens;
 import static ffx.potential.bonded.AminoAcidUtils.renameIsoleucineHydrogens;
 import static ffx.potential.bonded.AminoAcidUtils.renameZetaHydrogens;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Bond;
-import ffx.potential.bonded.BondedUtils;
-import ffx.potential.bonded.BondedUtils.MissingAtomTypeException;
-import ffx.potential.bonded.BondedUtils.MissingHeavyAtomException;
 import static ffx.potential.bonded.BondedUtils.intxyz;
-import ffx.potential.bonded.MSGroup;
-import ffx.potential.bonded.MSNode;
-import ffx.potential.bonded.Molecule;
 import static ffx.potential.bonded.NucleicAcidUtils.c1Typ;
 import static ffx.potential.bonded.NucleicAcidUtils.c2Typ;
 import static ffx.potential.bonded.NucleicAcidUtils.c3Typ;
@@ -122,50 +154,22 @@ import static ffx.potential.bonded.NucleicAcidUtils.o4Typ;
 import static ffx.potential.bonded.NucleicAcidUtils.o5Typ;
 import static ffx.potential.bonded.NucleicAcidUtils.opTyp;
 import static ffx.potential.bonded.NucleicAcidUtils.pTyp;
-import ffx.potential.bonded.Polymer;
-import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.Residue.ResiduePosition;
 import static ffx.potential.bonded.Residue.ResiduePosition.FIRST_RESIDUE;
 import static ffx.potential.bonded.Residue.ResiduePosition.LAST_RESIDUE;
 import static ffx.potential.bonded.Residue.ResiduePosition.MIDDLE_RESIDUE;
-import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
-import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
 import static ffx.potential.bonded.ResidueEnumerations.aminoAcidHeavyAtoms;
 import static ffx.potential.bonded.ResidueEnumerations.aminoAcidList;
 import static ffx.potential.bonded.ResidueEnumerations.getAminoAcid;
 import static ffx.potential.bonded.ResidueEnumerations.getAminoAcidNumber;
 import static ffx.potential.bonded.ResidueEnumerations.nucleicAcidList;
-import ffx.potential.parameters.AtomType;
-import ffx.potential.parameters.ForceField;
-import ffx.potential.parameters.MultipoleType;
-import ffx.potential.parsers.PDBFilter.HetAtoms;
 import static ffx.potential.parsers.PDBFilter.PDBFileStandard.VERSION3_2;
 import static ffx.potential.parsers.PDBFilter.PDBFileStandard.VERSION3_3;
-import ffx.utilities.Hybrid36;
+import static ffx.potential.parsers.SystemFilter.version;
 import static ffx.utilities.StringUtils.padLeft;
 import static ffx.utilities.StringUtils.padRight;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import static java.lang.String.format;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.biojava.bio.structure.Chain;
-import org.biojava.bio.structure.Group;
-import org.biojava.bio.structure.GroupType;
-import org.biojava.bio.structure.PDBCrystallographicInfo;
-import org.biojava.bio.structure.ResidueNumber;
-import org.biojava.bio.structure.SSBond;
-import org.biojava.bio.structure.Structure;
-import org.biojava.bio.structure.StructureTools;
 
 /**
- * The BiojavaFilter class parses data from a Biojava 3 Structure object. 
+ * The BiojavaFilter class parses data from a Biojava 3 Structure object.
  *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
@@ -173,7 +177,7 @@ import org.biojava.bio.structure.StructureTools;
  *
  */
 public class BiojavaFilter extends ConversionFilter {
-    
+
     private static final Logger logger = Logger.getLogger(BiojavaFilter.class.getName());
     private final Structure structure;
     /**
@@ -238,7 +242,7 @@ public class BiojavaFilter extends ConversionFilter {
         this.dataType = Utilities.DataType.BIOJAVA;
         this.fileType = Utilities.FileType.PDB;
     }
-    
+
     /**
      * Mutate a residue at the PDB file is being parsed.
      *
@@ -350,7 +354,7 @@ public class BiojavaFilter extends ConversionFilter {
                 chainIDs.add(chain.getChainID().charAt(0));
             }
             if (!chainIDs.contains(mutateChainID)) {
-                 if (chainIDs.size() == 1) {
+                if (chainIDs.size() == 1) {
                     logger.warning(String.format(" Chain ID %c for "
                             + "mutation not found: only one chain %c "
                             + "found.", mutateChainID, chainIDs.get(0)));
@@ -371,7 +375,7 @@ public class BiojavaFilter extends ConversionFilter {
             logger.info(String.format(" Reading %s alternate location %s",
                     structure.getName(), currentAltLoc));
         }
-        
+
         org.biojava.bio.structure.Atom[] bjAtoms = StructureTools.getAllAtomArray(structure);
         int nAtoms = bjAtoms.length;
         Atom[] ffxAtoms = new Atom[nAtoms];
@@ -381,7 +385,7 @@ public class BiojavaFilter extends ConversionFilter {
         currentChainID = null;
         currentSegID = null;
         PDBCrystallographicInfo cInfo = structure.getCrystallographicInfo();
-        
+
         if (cInfo.isCrystallographic()) {
             // I do not think we need to check if it already has these properties,
             // but it can be done.
@@ -393,7 +397,7 @@ public class BiojavaFilter extends ConversionFilter {
             properties.addProperty("gamma", cInfo.getGamma());
             properties.addProperty("spacegroup", SpaceGroup.pdb2ShortName(cInfo.getSpaceGroup()));
         }
-        
+
         for (org.biojava.bio.structure.Atom atom : bjAtoms) {
             String name = atom.getName().toUpperCase().trim();
             double[] xyz = new double[3];
@@ -407,26 +411,26 @@ public class BiojavaFilter extends ConversionFilter {
             if (altLoc != ' ' && altLoc != 'A' && altLoc != currentAltLoc) {
                 break;
             }
-            
+
             if (name.contains("1H") || name.toUpperCase().contains("2H")
                     || name.toUpperCase().contains("3H")) {
                 // VERSION3_2 is presently just a placeholder for "anything non-standard".
                 fileStandard = VERSION3_2;
             }
-            
+
             Group group = atom.getGroup();
             ResidueNumber resnum = group.getResidueNumber();
             int resSeq = resnum.getSeqNum();
             String resName = group.getPDBName().trim().toUpperCase();
-            
+
             Chain chain = group.getChain();
             char chainID = chain.getChainID().charAt(0);
             String segID = getSegID(chainID);
-            
+
             boolean printAtom = false;
             if (mutate && chainID == mutateChainID && mutateResID == resSeq) {
-                if (name.equals("N") || name.equals("C") || name.equals("O") || 
-                        name.equals("CA")) {
+                if (name.equals("N") || name.equals("C") || name.equals("O")
+                        || name.equals("CA")) {
                     printAtom = true;
                     name = mutateToResname;
                 } else {
@@ -435,13 +439,13 @@ public class BiojavaFilter extends ConversionFilter {
                     break;
                 }
             }
-            
-            Atom newAtom = new Atom(0, 
-                    name, altLoc, xyz, resName, resSeq, chainID, atom.getOccupancy(), 
+
+            Atom newAtom = new Atom(0,
+                    name, altLoc, xyz, resName, resSeq, chainID, atom.getOccupancy(),
                     atom.getTempFactor(), segID);
-            
+
             /* Biojava sets at least some capping groups, and possibly nonstandard
-               amino acids to be heteroatoms. */
+             amino acids to be heteroatoms. */
             boolean hetatm = true;
             for (AminoAcid3 aa3Name : AminoAcid3.values()) {
                 if (aa3Name.name().equals(resName)) {
@@ -450,13 +454,13 @@ public class BiojavaFilter extends ConversionFilter {
                 }
             }
             newAtom.setHetero(hetatm);
-            
+
             // Look Ma, Biojava doesn't care about anisou!
             Atom returnedAtom = (Atom) activeMolecularAssembly.addMSNode(newAtom);
             if (returnedAtom != newAtom) {
                 atoms.put(atom.getPDBserial(), returnedAtom);
                 if (logger.isLoggable(Level.FINE)) {
-                    logger.fine(String.format("%s has been retained over\n%s", 
+                    logger.fine(String.format("%s has been retained over\n%s",
                             returnedAtom.toString(), newAtom.toString()));
                 }
             } else {
@@ -469,7 +473,7 @@ public class BiojavaFilter extends ConversionFilter {
                 }
             }
         }
-        
+
         List<Bond> ssBondList = new ArrayList<>();
         for (SSBond ssBond : structure.getSSBonds()) {
             Polymer c1 = activeMolecularAssembly.getChain(ssBond.getChainID1());
@@ -489,7 +493,7 @@ public class BiojavaFilter extends ConversionFilter {
             List<Atom> atoms2 = r2.getAtomList();
             Atom SG1 = null;
             Atom SG2 = null;
-            
+
             for (Atom atom : atoms1) {
                 if (atom.getName().equalsIgnoreCase("SG")) {
                     SG1 = atom;
@@ -511,7 +515,7 @@ public class BiojavaFilter extends ConversionFilter {
             if (SG1 == null || SG2 == null) {
                 continue;
             }
-            
+
             double d = VectorMath.dist(SG1.getXYZ(), SG2.getXYZ());
             if (d < 3.0) {
                 r1.setName("CYX");
@@ -529,7 +533,7 @@ public class BiojavaFilter extends ConversionFilter {
                 logger.log(Level.WARNING, message);
             }
         }
-        
+
         int pdbAtoms = activeMolecularAssembly.getAtomArray().length;
         assignAtomTypes();
 
@@ -2496,11 +2500,11 @@ public class BiojavaFilter extends ConversionFilter {
         }
         return writeFile(saveFile, true);
     }
-    
+
     /**
      * <p>
      * writeFile</p>
-     * 
+     *
      * @param saveFile a {@link java.io.File} object.
      * @param append a {@link java.lang.StringBuilder} object.
      * @param printLinear Whether to print atoms linearly or by element
@@ -2866,44 +2870,43 @@ public class BiojavaFilter extends ConversionFilter {
         }
         return true;
     }
-    
-    /*public Structure writeToStructure(String header) {
-        return writeToStructure(activeMolecularAssembly, header);
-    }
-    
-    public static Structure writeToStructure(MolecularAssembly assembly, String header) {
-        Structure structure = new StructureImpl();
-        for (Polymer polymer : assembly.getChains()) {
-            Chain chain = new ChainImpl();
-            for (Residue residue : polymer.getResidues()) {
-                Group group;
-                switch (residue.getResidueType()) {
-                    case AA:
-                        group = new AminoAcidImpl();
-                        break;
-                    case NA:
-                        group = new NucleotideImpl();
-                        break;
-                    default:
-                        group = new HetatomImpl();
-                        break;
-                }
-                for (Atom atom : residue.getAtomList()) {
-                    org.biojava.bio.structure.Atom bjAtom = new AtomImpl();
-                    group.addAtom(bjAtom);
-                }
-                chain.addGroup(group);
-            }
-            structure.addChain(chain);
-        }
-        
-        for (Molecule molecule : assembly.getMolecules()) {
-            for (Atom atom : molecule.getAtomList()) {
-                
-            }
-        }
-    }*/
 
+    /*public Structure writeToStructure(String header) {
+     return writeToStructure(activeMolecularAssembly, header);
+     }
+
+     public static Structure writeToStructure(MolecularAssembly assembly, String header) {
+     Structure structure = new StructureImpl();
+     for (Polymer polymer : assembly.getChains()) {
+     Chain chain = new ChainImpl();
+     for (Residue residue : polymer.getResidues()) {
+     Group group;
+     switch (residue.getResidueType()) {
+     case AA:
+     group = new AminoAcidImpl();
+     break;
+     case NA:
+     group = new NucleotideImpl();
+     break;
+     default:
+     group = new HetatomImpl();
+     break;
+     }
+     for (Atom atom : residue.getAtomList()) {
+     org.biojava.bio.structure.Atom bjAtom = new AtomImpl();
+     group.addAtom(bjAtom);
+     }
+     chain.addGroup(group);
+     }
+     structure.addChain(chain);
+     }
+
+     for (Molecule molecule : assembly.getMolecules()) {
+     for (Atom atom : molecule.getAtomList()) {
+
+     }
+     }
+     }*/
     public boolean writeSIFTFile(File saveFile, boolean append, String[] resAndScore) {
         if (saveFile == null) {
             return false;
@@ -3064,7 +3067,7 @@ public class BiojavaFilter extends ConversionFilter {
                         String[] entries = null;
                         for (; i < resAndScore.length; i++) {
                             entries = resAndScore[i].split("\\t");
-                            if (!entries[0].equals(entries[0].replaceAll("\\D+",""))) {
+                            if (!entries[0].equals(entries[0].replaceAll("\\D+", ""))) {
                                 String[] subEntries = entries[0].split("[^0-9]");
                                 entries[0] = subEntries[0];
                             }
@@ -3267,6 +3270,7 @@ public class BiojavaFilter extends ConversionFilter {
         }
         return true;
     }
+
     /**
      * {@inheritDoc}
      *
@@ -3385,10 +3389,10 @@ public class BiojavaFilter extends ConversionFilter {
         }
         if (siftScore == null) {
             sb.replace(30, 66, String.format("%8.3f%8.3f%8.3f%6.2f%6.2f",
-                xyz[0], xyz[1], xyz[2], atom.getOccupancy(), 110.0));
+                    xyz[0], xyz[1], xyz[2], atom.getOccupancy(), 110.0));
         } else {
             sb.replace(30, 66, String.format("%8.3f%8.3f%8.3f%6.2f%6.2f",
-                xyz[0], xyz[1], xyz[2], atom.getOccupancy(), (1 + (-1 * Float.parseFloat(siftScore))) * 100));
+                    xyz[0], xyz[1], xyz[2], atom.getOccupancy(), (1 + (-1 * Float.parseFloat(siftScore))) * 100));
         }
         name = Atom.ElementSymbol.values()[atom.getAtomicNumber() - 1].toString();
         name = name.toUpperCase();
@@ -3436,7 +3440,7 @@ public class BiojavaFilter extends ConversionFilter {
             }
         }
     }
-    
+
     public void setListMode(boolean set) {
         listMode = set;
         listOutput = new ArrayList<>();

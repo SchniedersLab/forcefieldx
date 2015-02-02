@@ -37,6 +37,18 @@
  */
 package ffx.potential.utils;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Logger;
+
+import static java.lang.String.format;
+
+import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.io.FilenameUtils;
+import org.biojava.bio.structure.Structure;
+
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;
@@ -45,27 +57,18 @@ import ffx.potential.parsers.BiojavaFilter;
 import ffx.potential.parsers.FileOpener;
 import ffx.potential.parsers.ForceFieldFilter;
 import ffx.utilities.Keyword;
-import java.io.File;
-import java.io.FileNotFoundException;
-import static java.lang.String.format;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Logger;
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.io.FilenameUtils;
-import org.biojava.bio.structure.Structure;
 
 /**
  * The PotentialsDataConverter class describes a Runnable object which converts
  * some data structure to Force Field X MolecularAssembly(s).
- * 
+ *
  * @author Jacob M. Litman
  * @author Michael J. Schnieders
  */
 public class PotentialsDataConverter implements FileOpener {
-    
+
     private static final Logger logger = Logger.getLogger(PotentialsDataConverter.class.getName());
-    
+
     private final File file; // Used to generate the Properties.
     private final Object dataStructure;
     // Should in the future allow a list of data structures.
@@ -75,16 +78,16 @@ public class PotentialsDataConverter implements FileOpener {
     private List<CompositeConfiguration> propertyList;
     private CompositeConfiguration activeProperties;
     private final static String BIOJAVA_DEFAULT_FILENAME = "UNKNOWN_BIOJAVA_FILE";
-    
-    public PotentialsDataConverter (Object data) throws FileNotFoundException {
+
+    public PotentialsDataConverter(Object data) throws FileNotFoundException {
         this(data, null);
     }
-    
-    public PotentialsDataConverter (Object data, File file) throws FileNotFoundException {
+
+    public PotentialsDataConverter(Object data, File file) throws FileNotFoundException {
         /* If the file is provided, just use that. Else, use a static get<Type>File
-         * method to find the file: if that fails, or if the data object is not 
+         * method to find the file: if that fails, or if the data object is not
          * of a recognized type, throws a relevant exception.
-        */
+         */
         if (data instanceof Structure) {
             if (file == null) {
                 this.file = getBiojavaFile((Structure) data);
@@ -98,10 +101,11 @@ public class PotentialsDataConverter implements FileOpener {
                     + "of a recognized type: must be a Biojava structure");
         }
     }
-    
+
     /**
      * Switches between various default get-file methods for different data
      * structure types.
+     *
      * @param data Data structure to find file file
      * @return Source file
      * @throws FileNotFoundException If no file could be found
@@ -112,10 +116,11 @@ public class PotentialsDataConverter implements FileOpener {
         } // Insert else-ifs for other data structures here.
         throw new FileNotFoundException("Could not find a file for data structure.");
     }
-    
+
     /**
-     * Attempt to get the file the Structure was loaded from. Assumes .pdb format,
-     * mostly because Biojava can only load from PDB.
+     * Attempt to get the file the Structure was loaded from. Assumes .pdb
+     * format, mostly because Biojava can only load from PDB.
+     *
      * @param structure A Biojava structure
      * @return pdbcode.pdb, name.pdb, or a default file
      * @throws java.io.FileNotFoundException If no file could be found.
@@ -161,7 +166,7 @@ public class PotentialsDataConverter implements FileOpener {
                 ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties);
                 ForceField forceField = forceFieldFilter.parse();
                 assembly.setForceField(forceField);
-                
+
                 BiojavaFilter filter = new BiojavaFilter(struct, assembly, forceField, properties);
                 if (filter.convert()) {
                     assembly.finalize(true, forceField);
@@ -169,7 +174,7 @@ public class PotentialsDataConverter implements FileOpener {
                     assembly.setPotential(energy);
                     assemblies.add(assembly);
                     propertyList.add(properties);
-                    
+
                     List<Character> altLocs = filter.getAltLocs();
                     if (altLocs.size() > 1 || altLocs.get(0) != ' ') {
                         StringBuilder altLocString = new StringBuilder("\n Alternate locations found [ ");
@@ -227,9 +232,10 @@ public class PotentialsDataConverter implements FileOpener {
     public MolecularAssembly getAssembly() {
         return activeAssembly;
     }
-    
+
     /**
      * Returns the i'th MolecularAssembly
+     *
      * @param i Index
      * @return The i'th MolecularAssembly
      */
@@ -256,11 +262,12 @@ public class PotentialsDataConverter implements FileOpener {
     public CompositeConfiguration getProperties() {
         return activeProperties;
     }
-    
+
     /**
      * Returns the properties associated with the i'th MolecularAssembly
+     *
      * @param i
-     * @return 
+     * @return
      */
     public CompositeConfiguration getProperties(int i) {
         return propertyList.get(i);
@@ -269,12 +276,12 @@ public class PotentialsDataConverter implements FileOpener {
     /**
      * Returns the properties of all MolecularAssembly objects created by this
      * converter.
-     * 
+     *
      * @return Array of all properties
      */
     @Override
     public CompositeConfiguration[] getAllProperties() {
         return propertyList.toArray(new CompositeConfiguration[propertyList.size()]);
     }
-    
+
 }

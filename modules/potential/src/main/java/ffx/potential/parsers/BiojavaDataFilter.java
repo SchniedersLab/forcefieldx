@@ -40,9 +40,9 @@ package ffx.potential.parsers;
 import org.biojava.bio.structure.Structure;
 
 /**
- * The BiojavaDataFilter class determines if an object is an instance of a Biojava
- * Structure object. Nothing fancy: it simply wraps "x instanceof Structure" in
- * a class similar to the PDB, INT, XYZ, etc. FileFilter classes.
+ * The BiojavaDataFilter class determines if an object is an instance of a
+ * Biojava Structure object. Nothing fancy: it simply wraps "x instanceof
+ * Structure" in a class similar to the PDB, INT, XYZ, etc. FileFilter classes.
  *
  * @author Michael J. Schnieders
  * @autor Jacob M. Litman
@@ -52,13 +52,13 @@ import org.biojava.bio.structure.Structure;
 public class BiojavaDataFilter implements DataFilter {
 
     @Override
-    public boolean accept(Object ob) {
-        return ob instanceof Structure;
+    public boolean accept(Object object) {
+        return object instanceof Structure;
     }
 
     @Override
     public String getDescription() {
         return "Biojava 3 Structure";
     }
-    
+
 }

@@ -87,7 +87,7 @@ boolean rmsd = false;
 PDBFileReader reader = new PDBFileReader();
 Structure struct = reader.getStructure(biojFile);
 /*if (options.d) {
-    biojFile = null;
+biojFile = null;
 }*/
 
 AlgorithmFunctions functions;
