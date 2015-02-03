@@ -2302,7 +2302,7 @@ public final class PDBFilter extends SystemFilter {
         }
         
         if (nSymOp != 0) {
-            logger.info(String.format(" Printing atoms with symmetry operator %s", 
+            logger.info(String.format(" Printing atoms with symmetry operator %s\n", 
                     activeMolecularAssembly.getCrystal().spaceGroup.getSymOp(nSymOp).toString()));
         }
 
