@@ -50,6 +50,7 @@ import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.XYZFilter;
 import java.io.FileNotFoundException;
+import org.apache.commons.io.FilenameUtils;
 
 /**
  * The PotentialsUtils class provides a local implementation, independent of the
@@ -121,7 +122,7 @@ public class PotentialsUtils implements PotentialsFunctions {
         opener.run();
         return opener.getAllAssemblies();
     }
-    
+
     /**
      * Converts a data structure (such as a Biojava Structure) into one or more
      * MolecularAssembly objects.
@@ -312,6 +313,66 @@ public class PotentialsUtils implements PotentialsFunctions {
             PDBFilter pdbFilter = new PDBFilter(file, assembly, null, null);
             if (!pdbFilter.writeFile(file, false)) {
                 logger.info(String.format(" Save failed for %s", assembly.toString()));
+            }
+        }
+    }
+    
+    @Override
+    public void savePDBSymMates(MolecularAssembly assembly, File file) {
+        savePDBSymMates(assembly, file, "_symMate");
+    }
+    
+    @Override
+    public void savePDBSymMates(MolecularAssembly assembly, File file, String suffix) {
+        if (assembly == null) {
+            logger.info(" Assembly to save was null.");
+        } else if (file == null) {
+            logger.info(" No valid file provided to save assembly to.");
+        } else {
+            PDBFilter pdbFilter = new PDBFilter(file, assembly, null, null);
+            if (!pdbFilter.writeFile(file, false)) {
+                logger.info(String.format(" Save failed for %s", assembly.toString()));
+            } else {
+                Crystal crystal = assembly.getCrystal();
+                int nSymOps = crystal.spaceGroup.getNumberOfSymOps();
+                String filename = FilenameUtils.removeExtension(file.getName());
+                for (int i = 1; i < nSymOps; i++) {
+                    pdbFilter.setSymOp(i);
+                    String saveFileName = filename + suffix + "_" + i + ".pdb";
+                    File saveFile = new File(saveFileName);
+                    for (int j = 1; j < 1000; j++) {
+                        if (!saveFile.exists()) {
+                            break;
+                        }
+                        saveFile = new File(saveFileName + "_" + j);
+                    }
+                    StringBuilder symSb = new StringBuilder();
+                    String[] symopLines = crystal.spaceGroup.getSymOp(i).toString().split("\\r?\\n");
+                    int nLines = symopLines.length;
+                    symSb.append("REMARK 350\nREMARK 350 SYMMETRY OPERATORS");
+                    for (int j = 0; j < nLines; j++) {
+                        symSb.append("\nREMARK 350 ").append(symopLines[j]);
+                    }
+                    
+                    symopLines = crystal.spaceGroup.getSymOp(i).toXYZString().split("\\r?\\n");
+                    nLines = symopLines.length;
+                    symSb.append("\nREMARK 350\nREMARK 350 SYMMETRY OPERATORS XYZ FORM");
+                    for (int j = 0; j < nLines; j++) {
+                        symSb.append("\nREMARK 350 ").append(symopLines[j]);
+                    }
+                    
+                    if (saveFile.exists()) {
+                        logger.warning(String.format(" Could not successfully version file "
+                                + "%s: appending to file %s", saveFileName, saveFile.getName()));
+                        if (!pdbFilter.writeFileWithHeader(saveFile, symSb, true)) {
+                            logger.info(String.format(" Save failed for %s", saveFile.getName()));
+                        }
+                    } else {
+                        if (!pdbFilter.writeFileWithHeader(saveFile, symSb, false)) {
+                            logger.info(String.format(" Save failed for %s", saveFile.getName()));
+                        }
+                    }
+                }
             }
         }
     }
