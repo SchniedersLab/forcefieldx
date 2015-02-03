@@ -52,9 +52,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.FileNotFoundException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
@@ -101,6 +101,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.SystemUtils;
+import org.biojava.bio.structure.Structure;
 
 import ffx.crystal.Crystal;
 import ffx.potential.MolecularAssembly;
@@ -139,7 +140,6 @@ import ffx.utilities.Keyword;
 import ffx.utilities.StringUtils;
 
 import static ffx.utilities.StringUtils.pdbForID;
-import org.biojava.bio.structure.Structure;
 
 /**
  * The MainPanel class is the main container for Force Field X, handles file
@@ -1262,7 +1262,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         setPanel(GRAPHICS);
         return openThread;
     }
-    
+
     public Thread convert(Object data, File file, String commandDescription) {
         UIDataConverter converter = convertInit(data, file, commandDescription);
         openThread = new Thread(converter);
@@ -1339,7 +1339,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         activeFilter = systemFilter;
         return new UIFileOpener(systemFilter, this);
     }
-    
+
     /**
      * Attempts to load from the supplied data structure
      * @param data Data structure to load from
@@ -1352,7 +1352,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         if (data == null) {
             return null;
         }
-        
+
         // Create the CompositeConfiguration properties.
         CompositeConfiguration properties = Keyword.loadProperties(file);
         // Create an FFXSystem for this file.
@@ -1551,7 +1551,7 @@ public final class MainPanel extends JPanel implements ActionListener,
             return null;
         }
     }
-    
+
     /**
      * Converts a non-Force Field X data structure into an array of FFXSystem[].
      * Presently does not yet have support for array- or list-based data structures,
@@ -1570,7 +1570,7 @@ public final class MainPanel extends JPanel implements ActionListener,
             }
         }
         String name = file.getName();
-        
+
         Thread thread = convert(data, file, null);
         while (thread != null && thread.isAlive()) {
             try {
