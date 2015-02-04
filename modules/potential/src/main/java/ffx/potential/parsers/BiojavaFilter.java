@@ -164,7 +164,6 @@ import static ffx.potential.bonded.ResidueEnumerations.getAminoAcidNumber;
 import static ffx.potential.bonded.ResidueEnumerations.nucleicAcidList;
 import static ffx.potential.parsers.PDBFilter.PDBFileStandard.VERSION3_2;
 import static ffx.potential.parsers.PDBFilter.PDBFileStandard.VERSION3_3;
-import static ffx.potential.parsers.SystemFilter.version;
 import static ffx.utilities.StringUtils.padLeft;
 import static ffx.utilities.StringUtils.padRight;
 
@@ -2514,7 +2513,7 @@ public class BiojavaFilter extends ConversionFilter {
         if (saveFile == null) {
             return false;
         }
-        
+
         if (vdwH) {
             logger.info(" Printing hydrogens to van der Waals centers instead of nuclear locations.");
         }
@@ -2915,7 +2914,7 @@ public class BiojavaFilter extends ConversionFilter {
         if (saveFile == null) {
             return false;
         }
-        
+
         if (vdwH) {
             logger.info(" Printing hydrogens to van der Waals centers instead of nuclear locations.");
         }
