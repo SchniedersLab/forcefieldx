@@ -1372,7 +1372,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                 reciprocalSpace.printTimings();
             }
         }
-
+        
         return permanentMultipoleEnergy + polarizationEnergy;
     }
 
@@ -6893,6 +6893,21 @@ public class ParticleMeshEwald implements LambdaInterface {
          * Find the final induced dipole field.
          */
         computeInduceDipoleField();
+        
+        String printDipoles = System.getProperty("printDipoles");
+        if (printDipoles != null && printDipoles.equalsIgnoreCase("true")) {
+            double totDipole[] = new double[nAtoms];
+            for (int i = 0; i < nAtoms; i++) {
+                // Dimensions of [nsymm][nAtoms][3]
+                totDipole[i] = Math.sqrt(inducedDipole[0][i][0]*inducedDipole[0][i][0]
+                                        + inducedDipole[0][i][1]*inducedDipole[0][i][1]
+                                        + inducedDipole[0][i][2]*inducedDipole[0][i][2]);
+                StringBuilder sb2 = new StringBuilder();
+                sb2.append(String.format("(ID) %s: (%.8f %.8f %.8f)", atoms[i],
+                        inducedDipole[0][i][0], inducedDipole[0][i][1], inducedDipole[0][i][2]));
+                logger.info(sb2.toString());
+            }
+        }
 
         return completedSCFCycles;
     }
