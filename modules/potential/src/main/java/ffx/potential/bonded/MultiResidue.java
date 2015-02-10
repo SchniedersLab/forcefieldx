@@ -37,6 +37,7 @@
  */
 package ffx.potential.bonded;
 
+import ffx.potential.ForceFieldEnergy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -50,6 +51,9 @@ import ffx.potential.bonded.BondedUtils.MissingHeavyAtomException;
 import ffx.potential.parameters.ForceField;
 
 import static ffx.potential.bonded.AminoAcidUtils.assignAminoAcidAtomTypes;
+import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
+import static ffx.utilities.HashCodeUtil.SEED;
+import static ffx.utilities.HashCodeUtil.hash;
 import java.util.logging.Level;
 
 /**
@@ -73,10 +77,12 @@ public class MultiResidue extends Residue {
      * Force field in use.
      */
     ForceField forceField;
+    ForceFieldEnergy forceFieldEnergy;
 
-    public MultiResidue(Residue residue, ForceField forceField) {
+    public MultiResidue(Residue residue, ForceField forceField, ForceFieldEnergy forceFieldEnergy) {
         super("MultiResidue", residue.getResidueNumber(), residue.residueType);
         this.forceField = forceField;
+        this.forceFieldEnergy = forceFieldEnergy;
         activeResidue = residue;
         // Initialize consideredResidue list.
         consideredResidues = new ArrayList<>();
@@ -93,7 +99,7 @@ public class MultiResidue extends Residue {
             return null;
         }
     }
-
+    
     @Override
     public void assignBondedTerms(ForceField forceField) {
         activeResidue.assignBondedTerms(forceField);
@@ -193,6 +199,17 @@ public class MultiResidue extends Residue {
         return activeResidue.getTorsions();
     }
 
+    /**
+     * {@inheritDoc}
+     * @return 
+     */
+    @Override
+    public int hashCode() {
+        int hash = hash(SEED, getParent().hashCode());
+        hash = hash(hash, getResidueNumber());
+        return hash(hash, getName());
+    }
+    
     @Override
     public boolean isFinalized() {
         return activeResidue.isFinalized();
@@ -519,6 +536,19 @@ public class MultiResidue extends Residue {
         newResidue.finalize(true, forceField);
         updateGeometry(newResidue, prevResidue, nextResidue, prev2Residue, next2Residue);
     }
+    
+    public boolean requestSetActiveResidue(AminoAcid3 aa) {
+        if (aa == AminoAcid3.valueOf(activeResidue.getName())) {
+            return true;
+        }
+        for (Residue res : consideredResidues) {
+            if (aa == AminoAcid3.valueOf(res.getName())) {
+                return setActiveResidue(res);
+            }
+        }
+        logger.warning(String.format("Couldn't assign residue %s to MultiResidue %s.", aa.toString(), this.toString()));
+        return false;
+    }
 
     public boolean setActiveResidue(int i) {
         if (consideredResidues == null) {
@@ -555,6 +585,7 @@ public class MultiResidue extends Residue {
         activeResidue = residue;
         add(activeResidue);
 
+        forceFieldEnergy.reInit();
         return true;
     }
 
@@ -567,11 +598,25 @@ public class MultiResidue extends Residue {
 
     @Override
     public String toString() {
-        if (activeResidue == null) {
-            return null;
-        } else {
-            return activeResidue.toString();
+        StringBuilder sb = new StringBuilder();
+        sb.append("MultiRes-");
+        for (Residue res : consideredResidues) {
+            int num = ResidueEnumerations.getAminoAcidNumber(res.getName());
+            String aa1 = ResidueEnumerations.AminoAcid1.values()[num].toString();
+            if (res == activeResidue) {
+                sb.append("[" + aa1 + "]");
+            } else {
+                sb.append(aa1);
+            }
+//            sb.append(res.getResidueNumber() + "-" + res.getName() + ", ");
         }
+//        sb.delete(sb.lastIndexOf(","), sb.length());
+        return sb.toString();
+//        if (activeResidue == null) {
+//            return null;
+//        } else {
+//            return activeResidue.toString();
+//        }
     }
 
 }

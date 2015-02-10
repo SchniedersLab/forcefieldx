@@ -45,8 +45,12 @@ import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.random;
 
 import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
+import ffx.potential.bonded.Residue.ResidueType;
+import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
+import java.util.List;
 
 /**
  * @author S. LuCore
@@ -83,9 +87,9 @@ public class Protonate implements MonteCarloListener {
      */
     private int numMovesAccepted;
     /**
-     * Titratable residues in the system.
+     * MultiResidue forms of entities from titratableResidues; ready to be (de-/)protonated.
      */
-    private ArrayList<Residue> titratableResidues;
+    private ArrayList<MultiResidue> titratingResidues;
     private Random rng = new Random();
 
     /**
@@ -106,14 +110,33 @@ public class Protonate implements MonteCarloListener {
         systemReferenceEnergy = molAss.getPotentialEnergy().getTotalEnergy();
 
         // Identify titratable residues.
+        List<Residue> titratableResidues = new ArrayList<>();
         Polymer polymers[] = molAss.getChains();
         for (int i = 0; i < polymers.length; i++) {
             ArrayList<Residue> residues = polymers[i].getResidues();
             for (int j = 0; j < residues.size(); j++) {
                 if (isTitratable(residues.get(j).getName())) {
                     titratableResidues.add(residues.get(j));
+                    logger.info(String.format(" Titratable: %s", residues.get(j)));
                 }
             }
+        }
+        
+        // Create MultiResidue objects to wrap titratables.
+        for (Residue res : titratableResidues) {
+            MultiResidue multiRes = new MultiResidue(res, molAss.getForceField(), molAss.getPotentialEnergy());
+            Residue resi = new Residue("ALA", 41, res.getResidueType());
+            String protFormName = Titratable.valueOf(res.getName()).protForm.toString();
+            String deprotFormName = Titratable.valueOf(res.getName()).deprotForm.toString();
+            int resNumber = res.getResidueNumber();
+            ResidueType resType = res.getResidueType();
+            if (!res.getName().equalsIgnoreCase(protFormName)) {
+                multiRes.addResidue(new Residue(protFormName, resNumber, resType));
+            } else {
+                multiRes.addResidue(new Residue(deprotFormName, resNumber, resType));
+            }
+            titratingResidues.add(multiRes);
+            logger.info(String.format(" Titrating: %s", multiRes));
         }
     }
 
@@ -140,13 +163,13 @@ public class Protonate implements MonteCarloListener {
         }
 
         // Randomly choose a target titratable residue to attempt protonation switch.
-        int random = rng.nextInt(titratableResidues.size());
-        Residue targetResidue = titratableResidues.get(random);
+        int random = rng.nextInt(titratingResidues.size());
+        MultiResidue targetResidue = titratingResidues.get(random);
 
         // Switch titration state for chosen residue.
         switchProtonationState(targetResidue);
 
-        String name = (titratableResidues.get(random)).getName();
+        String name = (titratingResidues.get(random)).getName();
         double pKaref = Titratable.valueOf(name).pKa;
         double dG_ref = Titratable.valueOf(name).refEnergy;
         double temperature = thermostat.getCurrentTemperature();
@@ -182,7 +205,8 @@ public class Protonate implements MonteCarloListener {
      *
      * @param residue
      */
-    private void switchProtonationState(Residue residue) {
+    private void switchProtonationState(MultiResidue residue) {
+        
         return;
     }
 
@@ -203,20 +227,33 @@ public class Protonate implements MonteCarloListener {
      */
     public enum Titratable {
 
-        ARG(12.48, 1.00),
-        ASP(4.00, 1.00),
-        CYS(8.18, 1.00),
-        GLU(4.25, 1.00),
-        HIS(6.00, 1.00),
-        LYS(10.53, 1.00),
-        TYR(10.07, 1.00);
+//        ARG(12.48, 1.00, AminoAcid3.ARD),
+        // Standard Forms
+        ASP(4.00, 1.00, AminoAcid3.ASH, AminoAcid3.ASP),
+        GLU(4.25, 1.00, AminoAcid3.GLH, AminoAcid3.GLU),
+        CYS(8.18, 1.00, AminoAcid3.CYS, AminoAcid3.CYD),
+        HIS(6.00, 1.00, AminoAcid3.HIS, AminoAcid3.HID),
+        LYS(10.53, 1.00, AminoAcid3.LYS, AminoAcid3.LYD),
+        TYR(10.07, 1.00, AminoAcid3.TYR, AminoAcid3.TYD),
+        // Protonated Forms
+        ASH(4.00, 1.00, AminoAcid3.ASH, AminoAcid3.ASP),
+        GLH(4.25, 1.00, AminoAcid3.GLH, AminoAcid3.GLU),
+        // Deprotonated Forms
+        CYD(8.18, 1.00, AminoAcid3.CYS, AminoAcid3.CYD),
+        HID(6.00, 1.00, AminoAcid3.HIS, AminoAcid3.HID),
+        LYD(10.53, 1.00, AminoAcid3.LYS, AminoAcid3.LYD),
+        TYD(10.07, 1.00, AminoAcid3.TYR, AminoAcid3.TYD);
 
         public final double pKa;
         public final double refEnergy;
+        public final AminoAcid3 protForm;
+        public final AminoAcid3 deprotForm;
 
-        Titratable(double pKa, double refEnergy) {
+        Titratable(double pKa, double refEnergy, AminoAcid3 protForm, AminoAcid3 deprotForm) {
             this.pKa = pKa;
             this.refEnergy = refEnergy;
+            this.protForm = protForm;
+            this.deprotForm = deprotForm;
         }
     };
 }

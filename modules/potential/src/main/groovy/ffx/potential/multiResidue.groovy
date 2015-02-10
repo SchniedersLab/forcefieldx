@@ -55,12 +55,14 @@ import ffx.potential.ForceFieldEnergy;
 int resID = 1;
 Character chain = ' ';
 MultiResidue multiResidue;
+String name = "ALA";
 
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc multiResidue [options] <filename>');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.r(longOpt:'resID', args:1, argName:'1', 'Residue number.');
 cli.c(longOpt:'chain', args:1, argName:' ', 'Single character chain name (default is \' \').');
+cli.n(longOpt:'name', args:1, argName:'ALA', 'Name of residue to switch to.');
 def options = cli.parse(args);
 
 List<String> arguments = options.arguments();
@@ -78,11 +80,16 @@ if (options.c) {
     chain = options.c.toCharacter();
 }
 
+if (options.n) {
+    name = options.n;
+}
+
 // Read in command line.
 String filename = arguments.get(0);
 open(filename);
 
 ForceField forceField = active.getForceField();
+ForceFieldEnergy forceFieldEnergy = active.getPotentialEnergy();
 Residue residue;
 Polymer[] polymers = active.getChains();
 for (int i = 0; i < polymers.length; i++) {
@@ -90,7 +97,7 @@ for (int i = 0; i < polymers.length; i++) {
     if (chain.equals(polymer.getChainID())) {
         residue = polymer.getResidue(resID);
         if (residue != null) {
-            multiResidue = new MultiResidue(residue, forceField);
+            multiResidue = new MultiResidue(residue, forceField, forceFieldEnergy);
             polymer.addMultiResidue(multiResidue);
         }
     }
@@ -102,16 +109,12 @@ if (residue == null) {
 
 ResidueType type = residue.getResidueType();
 int resNumber = residue.getResidueNumber();
-multiResidue.addResidue(new Residue("HID", resNumber, type));
-multiResidue.addResidue(new Residue("HIE", resNumber, type));
-
-ForceFieldEnergy forceFieldEnergy = active.getPotentialEnergy();
+multiResidue.addResidue(new Residue(name, resNumber, type));
 
 int numResidues = multiResidue.getResidueCount();
 for (int i=0; i<numResidues; i++) {
     multiResidue.setActiveResidue(i);
     logger.info(" Active Residue: " + multiResidue.toString());
-    forceFieldEnergy.reInit();
     energy();
 }
 
