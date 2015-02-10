@@ -203,12 +203,12 @@ public class MultiResidue extends Residue {
      * {@inheritDoc}
      * @return 
      */
-    @Override
-    public int hashCode() {
-        int hash = hash(SEED, getParent().hashCode());
-        hash = hash(hash, getResidueNumber());
-        return hash(hash, getName());
-    }
+//    @Override
+//    public int hashCode() {
+//        int hash = hash(SEED, getParent().hashCode());
+//        hash = hash(hash, getResidueNumber());
+//        return hash(hash, getName());
+//    }
     
     @Override
     public boolean isFinalized() {
@@ -598,8 +598,9 @@ public class MultiResidue extends Residue {
 
     @Override
     public String toString() {
+        int resNum = consideredResidues.get(0).getResidueNumber();
         StringBuilder sb = new StringBuilder();
-        sb.append("MultiRes-");
+        sb.append("Multi-" + resNum + "-");
         for (Residue res : consideredResidues) {
             int num = ResidueEnumerations.getAminoAcidNumber(res.getName());
             String aa1 = ResidueEnumerations.AminoAcid1.values()[num].toString();
