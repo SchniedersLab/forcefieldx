@@ -46,6 +46,7 @@ import groovy.util.CliBuilder;
 
 // Force Field X Imports
 import ffx.algorithms.MolecularDynamics;
+import ffx.algorithms.Protonate;
 import ffx.algorithms.Integrator.Integrators;
 import ffx.algorithms.Thermostat.Thermostats;
 
@@ -71,7 +72,7 @@ Thermostats thermostat = null;
 Integrators integrator = null;
 
 // Reset velocities (ignored if a restart file is given)
-boolean initVelocities = true;
+boolean initVelocities = false;
 
 // Interval to write out restart file (psec)
 double restartFrequency = 1000;
@@ -102,10 +103,15 @@ cli.w(longOpt:'save', args:1, argName:'0.1', 'Interval to write out coordinates 
 cli.s(longOpt:'restart', args:1, argName:'0.1', 'Interval to write out restart file (psec).');
 cli.f(longOpt:'file', args:1, argName:'PDB', 'Choose file type to write to [PDB/XYZ]');
 cli.r(longOpt:'residue', args:1, argName:'-1', 'Residue number of which to optimize protonation state.');
+cli.pH(longOpt:'pH', args:1, argName:'7.4', 'Constant simulation pH.');
 def options = cli.parse(args);
 
 if (options.h) {
     return cli.usage();
+}
+
+if (options.pH) {
+    pH = Double.parseDouble(options.pH);
 }
 
 // Load the number of molecular dynamics steps.
@@ -176,7 +182,7 @@ if (arguments != null && arguments.size() > 0) {
     modelfilename = active.getFile();
 }
 
-logger.info("\n Running molecular dynmaics on " + modelfilename);
+logger.info("\n Running molecular dynamics on " + modelfilename);
 
 // Restart File
 File dyn = new File(FilenameUtils.removeExtension(modelfilename) + ".dyn");
@@ -190,5 +196,6 @@ molDyn.setRestartFrequency(restartFrequency);
 
 Protonate mcProt = new Protonate(active, mcStepFrequency, pH, molDyn.getThermostat());
 molDyn.addMCListener(mcProt);
+molDyn.reInit();
 
 molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);

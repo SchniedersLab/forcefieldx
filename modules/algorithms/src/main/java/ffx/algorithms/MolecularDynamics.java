@@ -86,13 +86,20 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private boolean initialized = false;
     private boolean done = true;
     private boolean terminate = false;
-    private final int numberOfVariables;
-    private final double[] x;
-    private final double[] v;
-    private final double[] a;
-    private final double[] aPrevious;
-    private final double[] grad;
-    private final double[] mass;
+//    private final int numberOfVariables;
+//    private final double[] x;
+//    private final double[] v;
+//    private final double[] a;
+//    private final double[] aPrevious;
+//    private final double[] grad;
+//    private final double[] mass;
+    private int numberOfVariables;
+    private double[] x;
+    private double[] v;
+    private double[] a;
+    private double[] aPrevious;
+    private double[] grad;
+    private double[] mass;
     private int nSteps = 1000;
     private double targetTemperature = 298.15;
     private double dt = 1.0;
@@ -215,6 +222,56 @@ public class MolecularDynamics implements Runnable, Terminatable {
             thermostat.removingCenterOfMassMotion(false);
         }
 
+        done = true;
+    }
+    
+    public void reInit() {
+        done = false;
+        
+        // Initialize all arrays with new numberOfVariables.
+        mass = potential.getMass();
+        numberOfVariables = potential.getNumberOfVariables();
+        x = new double[numberOfVariables];
+        v = new double[numberOfVariables];
+        a = new double[numberOfVariables];
+        aPrevious = new double[numberOfVariables];
+        grad = new double[numberOfVariables];
+
+        // Recreate integrator with new numberOfVariables.
+        if (integrator instanceof Respa) {
+            integrator = new Respa(numberOfVariables, x, v, a, aPrevious, mass);
+        } else if (integrator instanceof Stochastic) {
+            double friction = properties.getDouble("friction", 91.0);
+            integrator = new Stochastic(friction, numberOfVariables, x, v, a, mass);
+            if (properties.containsKey("randomseed")) {
+                ((Stochastic) integrator).setRandomSeed(properties.getInt("randomseed", 0));
+            }
+        } else if (integrator instanceof VelocityVerlet) {
+            integrator = new VelocityVerlet(numberOfVariables, x, v, a, mass);
+        } else {
+            integrator = new BetterBeeman(numberOfVariables, x, v, a, aPrevious, mass);
+        }
+        
+        // Recreate thermostat with new numberOfVariables.
+        if (thermostat instanceof Berendsen) {
+            double tau = properties.getDouble("tau-temperature", 0.2);
+            thermostat = new Berendsen(numberOfVariables, x, v, mass, potential.getVariableTypes(), 300.0, tau);
+        } else if (thermostat instanceof Bussi) {
+            double tau = properties.getDouble("tau-temperature", 0.2);
+            thermostat = new Bussi(numberOfVariables, x, v, mass, potential.getVariableTypes(), 300.0, tau);
+        } else {
+            thermostat = new Adiabatic(numberOfVariables, x, v, mass, potential.getVariableTypes());
+        }
+
+        if (properties.containsKey("randomseed")) {
+            thermostat.setRandomSeed(properties.getInt("randomseed", 0));
+        }
+
+        // For StochasticDynamics, center of mass motion will not be removed.
+        if (integrator instanceof Stochastic) {
+            thermostat.removingCenterOfMassMotion(false);
+        }
+        
         done = true;
     }
 

@@ -84,6 +84,7 @@ public class MultiResidue extends Residue {
         this.forceField = forceField;
         this.forceFieldEnergy = forceFieldEnergy;
         activeResidue = residue;
+        setName(activeResidue.getName());
         // Initialize consideredResidue list.
         consideredResidues = new ArrayList<>();
         consideredResidues.add(residue);
@@ -188,6 +189,15 @@ public class MultiResidue extends Residue {
     public double[] getMultiScaleCenter(boolean w) {
         return activeResidue.getMultiScaleCenter(w);
     }
+    
+//    @Override
+//    public String getName() {
+//        if (activeResidue != null) {
+//            return activeResidue.getName();
+//        }
+//        logger.info("Returning super.");
+//        return super.getName();
+//    }
 
     @Override
     public MSNode getTerms() {
@@ -198,17 +208,6 @@ public class MultiResidue extends Residue {
     public MSNode getTorsions() {
         return activeResidue.getTorsions();
     }
-
-    /**
-     * {@inheritDoc}
-     * @return 
-     */
-//    @Override
-//    public int hashCode() {
-//        int hash = hash(SEED, getParent().hashCode());
-//        hash = hash(hash, getResidueNumber());
-//        return hash(hash, getName());
-//    }
     
     @Override
     public boolean isFinalized() {
@@ -583,6 +582,7 @@ public class MultiResidue extends Residue {
         moveBackBoneAtoms(activeResidue, residue);
         updateGeometry(residue, prevResidue, nextResidue, prev2Residue, next2Residue);
         activeResidue = residue;
+        setName(activeResidue.getName());
         add(activeResidue);
 
         forceFieldEnergy.reInit();
