@@ -87,6 +87,13 @@ public interface PotentialsFunctions {
     public void saveAsPDB(MolecularAssembly assembly, File file);
 
     public void saveAsPDB(MolecularAssembly[] assemblies, File file);
+    
+    // public void saveXYZSymMates(MolecularAssembly assembly, File file);
+    
+    public void savePDBSymMates(MolecularAssembly assembly, File file);
+    // Will use default suffix of _symMate
+    
+    public void savePDBSymMates(MolecularAssembly assembly, File file, String suffix);
 
     public ForceFieldEnergy energy(MolecularAssembly assembly);
 

@@ -55,6 +55,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.SpaceGroup;
+import ffx.crystal.SymOp;
 import ffx.numerics.VectorMath;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities.FileType;
@@ -172,6 +173,7 @@ public final class PDBFilter extends SystemFilter {
     private String mutateToResname = null;
     private Character mutateChainID = null;
     private boolean print = true;
+    private int nSymOp = 0;
     /**
      * Assume current standard.
      */
@@ -317,6 +319,10 @@ public final class PDBFilter extends SystemFilter {
     public void setAltID(MolecularAssembly molecularAssembly, Character altLoc) {
         setMolecularSystem(molecularAssembly);
         currentAltLoc = altLoc;
+    }
+    
+    public void setSymOp(int symOp) {
+        this.nSymOp = symOp;
     }
 
     /**
@@ -2243,14 +2249,30 @@ public final class PDBFilter extends SystemFilter {
      * @return a boolean.
      */
     public boolean writeFileWithHeader(File saveFile, StringBuilder header) {
+        return writeFileWithHeader(saveFile, header, true);
+    }
+
+    /**
+     * <p>
+     * writeFileWithHeader</p>
+     *
+     * @param saveFile a {@link java.io.File} object.
+     * @param header a {@link java.lang.StringBuilder} object.
+     * @param append a boolean.
+     * @return a boolean.
+     */
+    public boolean writeFileWithHeader(File saveFile, StringBuilder header, boolean append) {
         FileWriter fw;
         BufferedWriter bw;
+        if (header.charAt(header.length() - 1) != '\n') {
+            header.append("\n");
+        }
         try {
             File newFile = saveFile;
             activeMolecularAssembly.setFile(newFile);
             activeMolecularAssembly.setName(newFile.getName());
             if (!listMode) {
-                fw = new FileWriter(newFile, false);
+                fw = new FileWriter(newFile, append);
                 bw = new BufferedWriter(fw);
                 bw.write(header.toString());
                 bw.close();
@@ -2281,6 +2303,11 @@ public final class PDBFilter extends SystemFilter {
 
         if (vdwH) {
             logger.info(" Printing hydrogens to van der Waals centers instead of nuclear locations.");
+        }
+        
+        if (nSymOp != 0) {
+            logger.info(String.format(" Printing atoms with symmetry operator %s\n", 
+                    activeMolecularAssembly.getCrystal().spaceGroup.getSymOp(nSymOp).toString()));
         }
 
         /**
@@ -2646,6 +2673,11 @@ public final class PDBFilter extends SystemFilter {
 
         if (vdwH) {
             logger.info(" Printing hydrogens to van der Waals centers instead of nuclear locations.");
+        }
+        
+        if (nSymOp != 0) {
+            logger.info(String.format(" Printing atoms with symmetry operator %s", 
+                    activeMolecularAssembly.getCrystal().spaceGroup.getSymOp(nSymOp).toString()));
         }
 
         /**
@@ -3051,6 +3083,13 @@ public final class PDBFilter extends SystemFilter {
             }
         }
         double xyz[] = vdwH ? atom.getRedXYZ() : atom.getXYZ();
+        if (nSymOp != 0) {
+            Crystal crystal = activeMolecularAssembly.getCrystal();
+            SymOp symOp = crystal.spaceGroup.getSymOp(nSymOp);
+            double[] newXYZ = new double[xyz.length];
+            crystal.applySymOp(xyz, newXYZ, symOp);
+            xyz = newXYZ;
+        }
         sb.replace(6, 16, String.format("%5s " + padLeft(name.toUpperCase(), 4), Hybrid36.encode(5, serial)));
         Character altLoc = atom.getAltLoc();
         if (altLoc != null) {
@@ -3123,6 +3162,13 @@ public final class PDBFilter extends SystemFilter {
             }
         }
         double xyz[] = vdwH ? atom.getRedXYZ() : atom.getXYZ();
+        if (nSymOp != 0) {
+            Crystal crystal = activeMolecularAssembly.getCrystal();
+            SymOp symOp = crystal.spaceGroup.getSymOp(nSymOp);
+            double[] newXYZ = new double[xyz.length];
+            crystal.applySymOp(xyz, newXYZ, symOp);
+            xyz = newXYZ;
+        }
         sb.replace(6, 16, String.format("%5s " + padLeft(name.toUpperCase(), 4), Hybrid36.encode(5, serial)));
         Character altLoc = atom.getAltLoc();
         if (altLoc != null) {

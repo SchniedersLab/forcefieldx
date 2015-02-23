@@ -143,7 +143,7 @@ double maxSideMove = 0.25;
 double maxAngleMove = 1.0;
 
 // Write traversal snapshots
-boolean writeTraversals = true;
+boolean writeTraversals = false;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
@@ -335,7 +335,7 @@ if (options.mi) {
 }
 // Traversal snapshots
 if (options.W) {
-    writeTraversals = false;
+    writeTraversals = true;
 }
 
 println("\n Running Orthogonal Space Random Walk on " + filename);

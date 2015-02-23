@@ -82,8 +82,9 @@ public class ResidueEnumerations {
     };
     
     public enum CommonAminoAcid3 {
-        GLY, ALA, VAL, LEU, ILE, SER, THR, CYS, PRO, PHE,
-        TYR, TRP, HIS, ASP, ASN, GLU, GLN, MET, LYS, ARG
+        ALA, VAL, LEU, ILE, CYS, PHE, TYR, TRP, HIS, ASP,
+        ASN, GLU, GLN, MET, LYS, ARG
+//        PRO, GLY, SER, THR
     }
 
     public static final List<AminoAcid3> aminoAcidList = Arrays.asList(AminoAcid3.values());

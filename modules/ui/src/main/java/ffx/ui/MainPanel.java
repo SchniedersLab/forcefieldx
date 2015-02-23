@@ -2087,6 +2087,84 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
 
     }
+    
+    public void savePDBSymMates(File file, String suffix) {
+        FFXSystem system = hierarchy.getActive();
+        if (system == null) {
+            logger.log(Level.INFO, " No active system to save.");
+            return;
+        }
+        if (system.isClosing()) {
+            logger.log(Level.INFO, " {0} is being closed and can no longer be saved.", system);
+            return;
+        }
+        File saveFile = file;
+        if (saveFile == null) {
+            resetFileChooser();
+            fileChooser.setCurrentDirectory(pwd);
+            fileChooser.setFileFilter(pdbFileFilter);
+            fileChooser.setAcceptAllFileFilterUsed(false);
+            int result = fileChooser.showSaveDialog(this);
+            if (result == JFileChooser.APPROVE_OPTION) {
+                saveFile = fileChooser.getSelectedFile();
+                pwd = saveFile.getParentFile();
+            }
+        }
+        if (saveFile == null) {
+            logger.log(Level.INFO, " No filename is defined for {0}.", system);
+            return;
+        }
+        String filename = FilenameUtils.removeExtension(file.getName());
+        PDBFilter pdbFilter = new PDBFilter(saveFile, system, null, null);
+        if (pdbFilter.writeFile(saveFile, false)) {
+            // Refresh Panels with the new System name
+            hierarchy.setActive(system);
+        } else {
+            logger.log(Level.INFO, " Save failed for: {0}", system);
+        }
+        
+        Crystal crystal = system.getCrystal();
+        int nSymOps = crystal.spaceGroup.getNumberOfSymOps();
+        logger.info(String.format(" Writing %d symmetry mates for %s", nSymOps, system.toString()));
+        for (int i = 1; i < nSymOps; i++) {
+            pdbFilter.setSymOp(i);
+            String saveFileName = filename + suffix + "_" + i + ".pdb";
+            saveFile = new File(saveFileName);
+            for (int j = 1; j < 1000; j++) {
+                if (!saveFile.exists()) {
+                    break;
+                }
+                saveFile = new File(saveFileName + "_" + j);
+            }
+            
+            StringBuilder symSb = new StringBuilder();
+            String[] symopLines = crystal.spaceGroup.getSymOp(i).toString().split("\\r?\\n");
+            int nLines = symopLines.length;
+            symSb.append("REMARK 350\nREMARK 350 SYMMETRY OPERATORS");
+            for (int j = 0; j < nLines; j++) {
+                symSb.append("\nREMARK 350 ").append(symopLines[j]);
+            }
+
+            symopLines = crystal.spaceGroup.getSymOp(i).toXYZString().split("\\r?\\n");
+            nLines = symopLines.length;
+            symSb.append("\nREMARK 350\nREMARK 350 SYMMETRY OPERATORS XYZ FORM");
+            for (int j = 0; j < nLines; j++) {
+                symSb.append("\nREMARK 350 ").append(symopLines[j]);
+            }
+            
+            if (saveFile.exists()) {
+                logger.warning(String.format(" Could not successfully version file "
+                        + "%s: appending to file %s", saveFileName, saveFile.getName()));
+                if (!pdbFilter.writeFileWithHeader(saveFile, symSb, true)) {
+                    logger.log(Level.INFO, " Save failed for: {0}", system);
+                }
+            } else {
+                if (!pdbFilter.writeFileWithHeader(saveFile, symSb, false)) {
+                    logger.log(Level.INFO, " Save failed for: {0}", system);
+                }
+            }
+        }
+    }
 
     /**
      * <p>

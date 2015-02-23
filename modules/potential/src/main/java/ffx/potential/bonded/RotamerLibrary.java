@@ -1124,7 +1124,16 @@ public class RotamerLibrary {
      * @param print Verbosity flag.
      */
     private static void measureAARotamer(Residue residue, double chi[], boolean print) {
-        AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
+        if (residue instanceof MultiResidue) {
+            residue = ((MultiResidue) residue).getActive();
+        }
+        AminoAcid3 name;
+        try {
+            name = AminoAcid3.valueOf(residue.getName());
+        } catch (IllegalArgumentException ex) {
+            logger.info(String.format("(IAE) valueOf(%s)", residue.getName()));
+            throw ex;
+        }
         switch (name) {
             case VAL: {
                 ArrayList<ROLS> torsions = residue.getTorsionList();

@@ -1,3 +1,4 @@
+
 /**
  * Title: Force Field X.
  *
@@ -36,100 +37,64 @@
  * exception statement from your version.
  */
 
-// ORTHOGONAL SPACE RANDOM WALK
+// SAVE SYMMETRY MATES
 
 // Apache Imports
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.FileUtils;
 
 // Groovy Imports
 import groovy.util.CliBuilder;
 
-// Paralle Java Imports
-import edu.rit.pj.Comm;
+// FFX Imports
+import ffx.potential.utils.PotentialsFunctions;
+import ffx.potential.utils.PotentialsUtils;
+import ffx.potential.MolecularAssembly;
 
-// Force Field X Imports
-import ffx.algorithms.OSRW;
-import ffx.potential.ForceFieldEnergy;
-
-// Printing out PMF information.
-boolean pmf = false;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc osrwHistogram [options] <filename>');
+def cli = new CliBuilder(usage:' ffxc saveSymMates [options] <filename>');
 cli.h(longOpt:'help', 'Print this help message.');
-cli.p(longOpt:'PMF', args:0, 'Print out potential of mean force information.');
+//cli.f(longOpt:'format', args:1, argName:'PDB', 'Save files as PDB or XYZ');
 
 def options = cli.parse(args);
+
 List<String> arguments = options.arguments();
 if (options.h || arguments == null || arguments.size() != 1) {
     return cli.usage();
 }
 
-// Read in command line file.
+/*String format = "PDB";
+if (options.f) {
+    String formatOption = options.f.toUpperCase();
+    switch (formatOption) {
+    case "PDB":
+        format = "PDB";
+        break;
+    case "XYZ":
+        format = "XYZ";
+        break;
+    default:
+        format = "PDB";
+        logger.warning(String.format(" Could not successfully interpret %s: saving as PDB files.", options.f));
+        break;
+    }
+}*/
+
+// Read in command line.
 String filename = arguments.get(0);
 
-// PMF?
-if (options.p) {
-    pmf = true;
+logger.info("\n Writing out symmetry mates for " + filename);
+
+PotentialsFunctions utils;
+try {
+    utils = getPotentialsUtils();
+} catch (MissingMethodException ex) {
+    utils = new PotentialsUtils();
 }
+MolecularAssembly[] systems = utils.open(filename);
+utils.savePDBSymMates(systems[0], new File(filename));
 
-println("\n Evaluating OSRW Histogram for " + filename);
-
-File structureFile = new File(FilenameUtils.normalize(filename));
-structureFile = new File(structureFile.getAbsolutePath());
-String baseFilename = FilenameUtils.removeExtension(structureFile.getName());
-File histogramRestart = new File(baseFilename + ".his");
-File lambdaRestart = null;
-
-Comm world = Comm.world();
-int size = world.size();
-
-// For a multi-process job, try to get the restart files from rank sub-directories.
-if (size > 1) {
-    int rank = world.rank();
-    File rankDirectory = new File(structureFile.getParent() + File.separator
-        + Integer.toString(rank));
-    lambdaRestart = new File(rankDirectory.getPath() + File.separator + baseFilename + ".lam");
-    structureFile = new File(rankDirectory.getPath() + File.separator + structureFile.getName());
-} else {
-    // For a single process job, try to get the restart files from the current directory.
-    lambdaRestart = new File(baseFilename + ".lam");
-}
-
-open(filename);
-
-// Get a reference to the active system's ForceFieldEnergy and atom array.
-ForceFieldEnergy energy = active.getPotentialEnergy();
-
-// Print the current energy
-energy.energy(true, true);
-
-// Asychronous communication between walkers.
-boolean asynchronous = false;
-
-// Time step in femtoseconds.
-double timeStep = 1.0;
-
-// Frequency to log thermodynamics information in picoseconds.
-double printInterval = 1.0;
-
-// Frequency to write out coordinates in picoseconds.
-double saveInterval = 100.0;
-
-// Temperture in degrees Kelvin.
-double temperature = 298.15;
-
-boolean wellTempered = false;
-
-// Wrap the potential energy inside an OSRW instance.
-OSRW osrw = new OSRW(energy, energy, lambdaRestart, histogramRestart, active.getProperties(),
-    temperature, timeStep, printInterval, saveInterval, asynchronous, sh, wellTempered);
-
-if (pmf){
-    osrw.evaluatePMF();
-}
-
+//saveAsPDB();

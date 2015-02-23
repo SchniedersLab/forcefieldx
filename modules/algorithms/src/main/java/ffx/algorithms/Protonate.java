@@ -37,6 +37,7 @@
  */
 package ffx.algorithms;
 
+import ffx.potential.ForceFieldEnergy;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.logging.Logger;
@@ -45,8 +46,14 @@ import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.random;
 
 import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
+import ffx.potential.bonded.Residue.ResidueType;
+import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
+import ffx.potential.parameters.ForceField;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * @author S. LuCore
@@ -83,10 +90,12 @@ public class Protonate implements MonteCarloListener {
      */
     private int numMovesAccepted;
     /**
-     * Titratable residues in the system.
+     * MultiResidue forms of entities from titratableResidues; ready to be (de-/)protonated.
      */
-    private ArrayList<Residue> titratableResidues;
+    private ArrayList<MultiResidue> titratingResidues = new ArrayList<>();
     private Random rng = new Random();
+    private final ForceField forceField;
+    private final ForceFieldEnergy forceFieldEnergy;
 
     /**
      * Construct a Monte-Carlo protonation state switching mechanism.
@@ -100,21 +109,54 @@ public class Protonate implements MonteCarloListener {
         //initialize stepcount and the number of accepted moves
         numMovesAccepted = 0;
 
+        this.forceField = molAss.getForceField();
+        this.forceFieldEnergy = molAss.getPotentialEnergy();
         this.mcStepFrequency = mcStepFrequency;
         this.pH = pH;
         this.thermostat = thermostat;
         systemReferenceEnergy = molAss.getPotentialEnergy().getTotalEnergy();
+        
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format(" Running Protonate:\n"));
+        sb.append(String.format("     mcStepFrequency: %4d\n", mcStepFrequency));
+        sb.append(String.format("     referenceEnergy: %7.2f\n", systemReferenceEnergy));
+        sb.append(String.format("     system pH:       %7.2f", pH));
+        logger.info(sb.toString());
 
         // Identify titratable residues.
+        List<Residue> titratableResidues = new ArrayList<>();
         Polymer polymers[] = molAss.getChains();
         for (int i = 0; i < polymers.length; i++) {
             ArrayList<Residue> residues = polymers[i].getResidues();
             for (int j = 0; j < residues.size(); j++) {
                 if (isTitratable(residues.get(j).getName())) {
                     titratableResidues.add(residues.get(j));
+                    logger.info(String.format(" Titratable: %s", residues.get(j)));
                 }
             }
         }
+        
+        // Create MultiResidue objects to wrap titratables.
+        for (Residue res : titratableResidues) {
+            MultiResidue multiRes = new MultiResidue(res, forceField, forceFieldEnergy);
+            Polymer polymer = findResiduePolymer(res, molAss);
+            polymer.addMultiResidue(multiRes);
+            String protFormName = Titratable.valueOf(res.getName()).protForm.toString();
+            String deprotFormName = Titratable.valueOf(res.getName()).deprotForm.toString();
+            int resNumber = res.getResidueNumber();
+            ResidueType resType = res.getResidueType();
+            if (!res.getName().equalsIgnoreCase(protFormName)) {
+                multiRes.addResidue(new Residue(protFormName, resNumber, resType));
+            } else {
+                multiRes.addResidue(new Residue(deprotFormName, resNumber, resType));
+            }
+            multiRes.requestSetActiveResidue(AminoAcid3.valueOf(protFormName));
+            forceFieldEnergy.reInit();
+            titratingResidues.add(multiRes);
+            logger.info(String.format(" Titrating: %s", multiRes));
+        }
+        
+        forceFieldEnergy.reInit();
     }
 
     /**
@@ -137,21 +179,22 @@ public class Protonate implements MonteCarloListener {
         stepCount++;
         if (stepCount % mcStepFrequency != 0) {
             return false;
-        }
-
+        }        
+        double referenceEnergy = molAss.getPotentialEnergy().getTotalEnergy();
+        
         // Randomly choose a target titratable residue to attempt protonation switch.
-        int random = rng.nextInt(titratableResidues.size());
-        Residue targetResidue = titratableResidues.get(random);
+        int random = rng.nextInt(titratingResidues.size());
+        MultiResidue targetResidue = titratingResidues.get(random);
 
         // Switch titration state for chosen residue.
         switchProtonationState(targetResidue);
 
-        String name = (titratableResidues.get(random)).getName();
+        String name = (titratingResidues.get(random)).getActive().getName();
         double pKaref = Titratable.valueOf(name).pKa;
         double dG_ref = Titratable.valueOf(name).refEnergy;
         double temperature = thermostat.getCurrentTemperature();
         double kT = boltzmann * temperature;
-        double dG_elec = molAss.getPotentialEnergy().getTotalEnergy() - systemReferenceEnergy;
+        double dG_elec = molAss.getPotentialEnergy().getTotalEnergy() - referenceEnergy;
 
         /**
          * dG_elec = electrostatic energy component of the titratable residue
@@ -159,19 +202,34 @@ public class Protonate implements MonteCarloListener {
          * reference compound
          */
         double dG_MC = kT * (pH - pKaref) * Math.log(10) + dG_elec - dG_ref;
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format(" Assessing possible MC protonation step:\n"));
+        sb.append(String.format("     pKaref:  %7.2f\n", pKaref));
+        sb.append(String.format("     dG_ref:  %7.2f\n", dG_ref));
+        sb.append(String.format("     dG_elec: %9.4f\n", dG_elec));
+        sb.append(String.format("     dG_MC:   %9.4f\n", dG_MC));
+        sb.append(String.format("     -----\n"));
 
         // Test Monte-Carlo criterion.
         if (dG_MC < 0) {
+            sb.append(String.format("     Accepted!"));
+            logger.info(sb.toString());
             numMovesAccepted++;
             return true;
         }
         double boltzmann = exp(-dG_MC / kT);
         double metropolis = random();
+        sb.append(String.format("     boltzmann:  %9.4f\n", boltzmann));
+        sb.append(String.format("     metropolis: %9.4f\n", metropolis));
         if (metropolis < boltzmann) {
+            sb.append(String.format("     Accepted!"));
+            logger.info(sb.toString());
             numMovesAccepted++;
             return true;
         }
-
+        
+        sb.append(String.format("     Denied."));
+        logger.info(sb.toString());
         // Undo titration state change if criterion was not accepted.
         switchProtonationState(targetResidue);
         return false;
@@ -182,7 +240,15 @@ public class Protonate implements MonteCarloListener {
      *
      * @param residue
      */
-    private void switchProtonationState(Residue residue) {
+    private void switchProtonationState(MultiResidue multiRes) {
+        String protFormName = Titratable.valueOf(multiRes.getActive().getName()).protForm.toString();
+        String deprotFormName = Titratable.valueOf(multiRes.getActive().getName()).deprotForm.toString();
+        if (multiRes.getName().equalsIgnoreCase(protFormName)) {
+            multiRes.requestSetActiveResidue(AminoAcid3.valueOf(deprotFormName));
+        } else {
+            multiRes.requestSetActiveResidue(AminoAcid3.valueOf(protFormName));
+        }
+        forceFieldEnergy.reInit();            
         return;
     }
 
@@ -197,26 +263,62 @@ public class Protonate implements MonteCarloListener {
         int numTries = stepCount / mcStepFrequency;
         return (double) numMovesAccepted / numTries;
     }
+    
+    /**
+     * Locate to which Polymer in the MolecularAssembly a given Residue belongs.
+     * @param res
+     * @param molAss
+     * @return 
+     */
+    private Polymer findResiduePolymer(Residue res, MolecularAssembly molAss) {
+        if (res.getChainID() == null) {
+            logger.severe("No chain ID for residue " + res);
+        }
+        Polymer polymers[] = molAss.getChains();
+        Polymer location = null;
+        for (Polymer p : polymers) {
+            if (p.getChainID() == res.getChainID()) {
+                location = p;
+            }
+        }
+        if (location == null) {
+            logger.severe("Couldn't find polymer for residue " + res);
+        }
+        return location;
+    }
 
     /**
      * Constant values for intrinsic pKa and reference energy of deprotonation.
      */
     public enum Titratable {
 
-        ARG(12.48, 1.00),
-        ASP(4.00, 1.00),
-        CYS(8.18, 1.00),
-        GLU(4.25, 1.00),
-        HIS(6.00, 1.00),
-        LYS(10.53, 1.00),
-        TYR(10.07, 1.00);
+//        ARG(12.48, 1.00, AminoAcid3.ARD),
+        // Standard Forms
+        ASP(4.00, 1.00, AminoAcid3.ASH, AminoAcid3.ASP),
+        GLU(4.25, 1.00, AminoAcid3.GLH, AminoAcid3.GLU),
+        CYS(8.18, 1.00, AminoAcid3.CYS, AminoAcid3.CYD),
+        HIS(6.00, 1.00, AminoAcid3.HIS, AminoAcid3.HID),
+        LYS(10.53, 1.00, AminoAcid3.LYS, AminoAcid3.LYD),
+        TYR(10.07, 1.00, AminoAcid3.TYR, AminoAcid3.TYD),
+        // Protonated Forms
+        ASH(4.00, 1.00, AminoAcid3.ASH, AminoAcid3.ASP),
+        GLH(4.25, 1.00, AminoAcid3.GLH, AminoAcid3.GLU),
+        // Deprotonated Forms
+        CYD(8.18, 1.00, AminoAcid3.CYS, AminoAcid3.CYD),
+        HID(6.00, 1.00, AminoAcid3.HIS, AminoAcid3.HID),
+        LYD(10.53, 1.00, AminoAcid3.LYS, AminoAcid3.LYD),
+        TYD(10.07, 1.00, AminoAcid3.TYR, AminoAcid3.TYD);
 
         public final double pKa;
         public final double refEnergy;
+        public final AminoAcid3 protForm;
+        public final AminoAcid3 deprotForm;
 
-        Titratable(double pKa, double refEnergy) {
+        Titratable(double pKa, double refEnergy, AminoAcid3 protForm, AminoAcid3 deprotForm) {
             this.pKa = pKa;
             this.refEnergy = refEnergy;
+            this.protForm = protForm;
+            this.deprotForm = deprotForm;
         }
     };
 }
