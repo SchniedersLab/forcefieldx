@@ -46,8 +46,12 @@ public class SSETest {
 
     public static void main(String args[]) {
 
-        int m = Integer.parseInt(args[0]);
-        int n = Integer.parseInt(args[1]);
+        int m = 500;
+        int n = 500;
+        if (args != null && args.length > 0) {
+            m = Integer.parseInt(args[0]);
+            n = Integer.parseInt(args[1]);
+        }
 
         SSETest test = new SSETest(m, n);
 

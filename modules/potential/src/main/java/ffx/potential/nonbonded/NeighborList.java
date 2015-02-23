@@ -57,6 +57,7 @@ import edu.rit.util.Range;
 
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Atom.Resolution;
 
 /**
  * The NeighborList class builds Verlet lists in parallel via a spatial

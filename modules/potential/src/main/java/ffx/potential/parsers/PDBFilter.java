@@ -482,6 +482,10 @@ public final class PDBFilter extends SystemFilter {
 // 77 - 78       LString(2)    element        Element symbol, right-justified.
 // 79 - 80       LString(2)    charge         Charge on the atom.
 // =============================================================================
+                            boolean deleteAnisou = properties.getBoolean("delete-anisou", false);
+                            if (deleteAnisou) {
+                                break;
+                            }
                             Integer serial = Hybrid36.decode(5, line.substring(6, 11));
                             Character altLoc = line.substring(16, 17).toUpperCase().charAt(0);
                             if (!altLocs.contains(altLoc)) {
@@ -2274,7 +2278,7 @@ public final class PDBFilter extends SystemFilter {
         if (saveFile == null) {
             return false;
         }
-        
+
         if (vdwH) {
             logger.info(" Printing hydrogens to van der Waals centers instead of nuclear locations.");
         }
@@ -2639,7 +2643,7 @@ public final class PDBFilter extends SystemFilter {
         if (saveFile == null) {
             return false;
         }
-        
+
         if (vdwH) {
             logger.info(" Printing hydrogens to van der Waals centers instead of nuclear locations.");
         }
