@@ -72,7 +72,7 @@ Thermostats thermostat = null;
 Integrators integrator = null;
 
 // Reset velocities (ignored if a restart file is given)
-boolean initVelocities = false;
+boolean initVelocities = true;
 
 // Interval to write out restart file (psec)
 double restartFrequency = 1000;
@@ -104,10 +104,15 @@ cli.s(longOpt:'restart', args:1, argName:'0.1', 'Interval to write out restart f
 cli.f(longOpt:'file', args:1, argName:'PDB', 'Choose file type to write to [PDB/XYZ]');
 cli.r(longOpt:'residue', args:1, argName:'-1', 'Residue number of which to optimize protonation state.');
 cli.pH(longOpt:'pH', args:1, argName:'7.4', 'Constant simulation pH.');
+cli.mc(longOpt:'mcStepFreq', args:1, argName:'10', 'Number of MD steps between Monte-Carlo protonation changes.')
 def options = cli.parse(args);
 
 if (options.h) {
     return cli.usage();
+}
+
+if (options.mc) {
+    mcStepFrequency = Integer.parseInt(options.mc);
 }
 
 if (options.pH) {
@@ -196,6 +201,6 @@ molDyn.setRestartFrequency(restartFrequency);
 
 Protonate mcProt = new Protonate(active, mcStepFrequency, pH, molDyn.getThermostat());
 molDyn.addMCListener(mcProt);
-molDyn.reInit();
+mcProt.addMolDyn(molDyn);
 
 molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
