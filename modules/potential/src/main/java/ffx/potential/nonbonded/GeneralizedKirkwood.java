@@ -71,6 +71,7 @@ import ffx.crystal.Crystal;
 import ffx.numerics.VectorMath;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Atom.Resolution;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.Torsion;

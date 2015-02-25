@@ -80,6 +80,18 @@ import static ffx.utilities.HashCodeUtil.hash;
  */
 public class Atom extends MSNode implements Comparable<Atom> {
 
+    public enum Resolution { FIXEDCHARGE, AMOEBA }
+
+    private Resolution resolution = Resolution.AMOEBA;
+
+    public void setResolution(Resolution resolution) {
+        this.resolution = resolution;
+    }
+
+    public Resolution getResolution() {
+        return resolution;
+    }
+
     private static final Logger logger = Logger.getLogger(Atom.class.getName());
     private static Point3d point3d = new Point3d();
     private static Point2d point2d = new Point2d();
@@ -231,7 +243,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     /**
      * Array of XYZ coordinates for the electron (van der Waals) centers of each
      * atom: if null, methods will refer to xyz.
-     * 
+     *
      * @since 1.0
      */
     private double redXYZ[];

@@ -76,6 +76,7 @@ import ffx.numerics.TensorRecursion;
 import ffx.numerics.VectorMath;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Atom.Resolution;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.Torsion;
@@ -151,8 +152,6 @@ import static ffx.potential.parameters.MultipoleType.t300;
  * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
  * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
  * (1998)</a>
- *
- *
  */
 public class ParticleMeshEwald implements LambdaInterface {
 
@@ -172,6 +171,9 @@ public class ParticleMeshEwald implements LambdaInterface {
 
         MUTUAL, DIRECT, NONE
     }
+
+    private Resolution resolution = Resolution.AMOEBA;
+
     /**
      * Polarization mode.
      */
@@ -363,18 +365,25 @@ public class ParticleMeshEwald implements LambdaInterface {
      * Specify intermolecularSoftcore.
      */
     private boolean intermolecularSoftcore = false;
-    private int molecule[] = null;
     /**
-     * When computing the polarization energy at L there are 3 pieces. 1.)
-     * Upol(1) = The polarization energy computed normally (ie. system with
-     * ligand). 2.) Uenv = The polarization energy of the system without the
-     * ligand. 3.) Uligand = The polarization energy of the ligand by itself.
+     * Molecule number for each atom.
+     */
+    private int molecule[] = null;
+
+    /**
+     * When computing the polarization energy at L there are 3 pieces.
+     *
+     * 1.) Upol(1) = The polarization energy computed normally (ie. system with
+     * ligand).
+     *
+     * 2.) Uenv = The polarization energy of the system without the ligand.
+     *
+     * 3.) Uligand = The polarization energy of the ligand by itself.
      *
      * Upol(L) = L*Upol(1) + (1-L)*(Uenv + Uligand)
      *
      * Set polarizationScale to L for part 1. Set polarizationScale to (1-L) for
      * parts 2 & 3.
-     *
      */
     private double polarizationScale = 1.0;
     /**
@@ -638,7 +647,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     private final ParallelTeam fftTeam;
     private final boolean cudaFFT;
     private IntegerSchedule permanentSchedule;
-    private final NeighborList neighborList;
+    private NeighborList neighborList;
     private final InitializationRegion initializationRegion;
     private final PermanentFieldRegion permanentFieldRegion;
     private final InducedDipoleFieldRegion inducedDipoleFieldRegion;
@@ -1107,6 +1116,31 @@ public class ParticleMeshEwald implements LambdaInterface {
     }
 
     /**
+     * Pass in atoms that have been assigned electrostatics from a fixed
+     * charge force field.
+     *
+     * @param atoms
+     */
+    public void setFixedCharges(Atom atoms[]) {
+        for (Atom ai : atoms) {
+            if (ai.getResolution() == Resolution.FIXEDCHARGE) {
+                int index = ai.xyzIndex - 1;
+                polarizability[index] = 0.0;
+                localMultipole[index][t000] = ai.getMultipoleType().charge;
+                localMultipole[index][t100] = 0.0;
+                localMultipole[index][t010] = 0.0;
+                localMultipole[index][t001] = 0.0;
+                localMultipole[index][t200] = 0.0;
+                localMultipole[index][t020] = 0.0;
+                localMultipole[index][t002] = 0.0;
+                localMultipole[index][t110] = 0.0;
+                localMultipole[index][t011] = 0.0;
+                localMultipole[index][t101] = 0.0;
+            }
+        }
+    }
+
+    /**
      * Initialize a boolean array of soft atoms and, if requested, ligand vapor
      * electrostatics.
      */
@@ -1202,6 +1236,10 @@ public class ParticleMeshEwald implements LambdaInterface {
          * Set this flag to true to avoid re-initialization.
          */
         initSoftCore = true;
+    }
+
+    public void setResolution(Resolution resolution) {
+        this.resolution = resolution;
     }
 
     public void setAtoms(Atom atoms[], int molecule[]) {
@@ -1372,7 +1410,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                 reciprocalSpace.printTimings();
             }
         }
-        
+
         return permanentMultipoleEnergy + polarizationEnergy;
     }
 
@@ -5982,6 +6020,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             logger.severe(message);
             return false;
         }
+
         PolarizeType polarizeType = forceField.getPolarizeType(atomType.getKey());
         if (polarizeType != null) {
             atom.setPolarizeType(polarizeType);
@@ -5996,11 +6035,11 @@ public class ParticleMeshEwald implements LambdaInterface {
             forceField.addForceFieldType(polarizeType);
             atom.setPolarizeType(polarizeType);
         }
-        MultipoleType multipoleType;
+
         String key;
         // No reference atoms.
         key = atomType.getKey() + " 0 0";
-        multipoleType = forceField.getMultipoleType(key);
+        MultipoleType multipoleType = forceField.getMultipoleType(key);
         if (multipoleType != null) {
             atom.setMultipoleType(multipoleType, null);
             localMultipole[i][t000] = multipoleType.charge;
@@ -6024,6 +6063,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             String message = "Multipoles can only be assigned after bonded relationships are defined.\n";
             logger.severe(message);
         }
+
         // 1 reference atom.
         for (Bond b : bonds) {
             Atom atom2 = b.get1_2(atom);
@@ -6048,6 +6088,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                 return true;
             }
         }
+
         // 2 reference atoms.
         for (Bond b : bonds) {
             Atom atom2 = b.get1_2(atom);
@@ -6081,7 +6122,10 @@ public class ParticleMeshEwald implements LambdaInterface {
                 }
             }
         }
-        // 3 reference atoms.
+
+        /**
+         * 3 reference atoms.
+         */
         for (Bond b : bonds) {
             Atom atom2 = b.get1_2(atom);
             String key2 = atom2.getAtomType().getKey();
@@ -6151,8 +6195,11 @@ public class ParticleMeshEwald implements LambdaInterface {
                 }
             }
         }
-        // Revert to a 2 reference atom definition that may include a 1-3 site.
-        // For example a hydrogen on water.
+
+        /**
+         * Revert to a 2 reference atom definition that may include a 1-3 site.
+         * For example a hydrogen on water.
+         */
         for (Bond b : bonds) {
             Atom atom2 = b.get1_2(atom);
             String key2 = atom2.getAtomType().getKey();
@@ -6893,21 +6940,6 @@ public class ParticleMeshEwald implements LambdaInterface {
          * Find the final induced dipole field.
          */
         computeInduceDipoleField();
-        
-        String printDipoles = System.getProperty("printDipoles");
-        if (printDipoles != null && printDipoles.equalsIgnoreCase("true")) {
-            double totDipole[] = new double[nAtoms];
-            for (int i = 0; i < nAtoms; i++) {
-                // Dimensions of [nsymm][nAtoms][3]
-                totDipole[i] = Math.sqrt(inducedDipole[0][i][0]*inducedDipole[0][i][0]
-                                        + inducedDipole[0][i][1]*inducedDipole[0][i][1]
-                                        + inducedDipole[0][i][2]*inducedDipole[0][i][2]);
-                StringBuilder sb2 = new StringBuilder();
-                sb2.append(String.format("(ID) %s: (%.8f %.8f %.8f)", atoms[i],
-                        inducedDipole[0][i][0], inducedDipole[0][i][1], inducedDipole[0][i][2]));
-                logger.info(sb2.toString());
-            }
-        }
 
         return completedSCFCycles;
     }

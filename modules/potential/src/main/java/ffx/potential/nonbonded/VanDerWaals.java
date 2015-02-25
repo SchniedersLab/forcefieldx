@@ -64,6 +64,7 @@ import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Atom.Resolution;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.Torsion;
@@ -90,6 +91,8 @@ public class VanDerWaals implements MaskingInterface,
 
         BUFFERED_14_7, LENNARD_JONES_6_12
     };
+
+    private Resolution resolution = null;
 
     /**
      * Crystal parameters.
@@ -582,6 +585,10 @@ public class VanDerWaals implements MaskingInterface,
         }
     }
 
+    public void setResolution(Resolution resolution) {
+        this.resolution = resolution;
+    }
+
     public void setAtoms(Atom atoms[], int molecule[]) {
         this.atoms = atoms;
         this.nAtoms = atoms.length;
@@ -979,6 +986,22 @@ public class VanDerWaals implements MaskingInterface,
     public void destroy() throws Exception {
         if (neighborList != null) {
             neighborList.destroy();
+        }
+    }
+
+    private boolean include(Atom atom1, Atom atom2) {
+        if (resolution == null) {
+            return true;
+        }
+        switch (resolution) {
+            case AMOEBA:
+                return (atom1.getResolution() == Resolution.AMOEBA
+                        && atom2.getResolution() == Resolution.AMOEBA);
+            case FIXEDCHARGE:
+                return (atom1.getResolution() == Resolution.FIXEDCHARGE
+                        || atom2.getResolution() == Resolution.FIXEDCHARGE);
+            default:
+                return true;
         }
     }
 
@@ -1398,6 +1421,7 @@ public class VanDerWaals implements MaskingInterface,
                     if (!use[i]) {
                         continue;
                     }
+                    Atom atomi = atoms[i];
                     int i3 = i * 3;
                     final double xi = reducedXYZ[i3++];
                     final double yi = reducedXYZ[i3++];
@@ -1433,7 +1457,8 @@ public class VanDerWaals implements MaskingInterface,
                     final int npair = neighbors.length;
                     for (int j = 0; j < npair; j++) {
                         final int k = neighbors[j];
-                        if (!use[k]) {
+                        Atom atomk = atoms[k];
+                        if (!use[k] || !include(atomi, atomk)) {
                             continue;
                         }
                         int k3 = k * 3;
@@ -1581,7 +1606,6 @@ public class VanDerWaals implements MaskingInterface,
                     removeMask(mask, i);
                 }
                 energy += e;
-
                 List<SymOp> symOps = crystal.spaceGroup.symOps;
                 for (int iSymOp = 1; iSymOp < nSymm; iSymOp++) {
                     e = 0.0;
@@ -1595,6 +1619,10 @@ public class VanDerWaals implements MaskingInterface,
                     list = neighborLists[iSymOp];
                     for (int i = lb; i <= ub; i++) {
                         int i3 = i * 3;
+                        if (!use[i]) {
+                            continue;
+                        }
+                        Atom atomi = atoms[i];
                         final double xi = reducedXYZ[i3++];
                         final double yi = reducedXYZ[i3++];
                         final double zi = reducedXYZ[i3];
@@ -1627,6 +1655,10 @@ public class VanDerWaals implements MaskingInterface,
                         final int npair = neighbors.length;
                         for (int j = 0; j < npair; j++) {
                             final int k = neighbors[j];
+                            Atom atomk = atoms[k];
+                            if (!use[k] || !include(atomi, atomk)) {
+                                continue;
+                            }
                             int k3 = k * 3;
                             final double xk = xyzS[k3++];
                             final double yk = xyzS[k3++];
