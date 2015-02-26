@@ -9,35 +9,29 @@
         <title>2015</title>
         <faq id="19">
             <question>
-                LuCore, S. D., Powers, K. T., Litman, J. M., Gao, S., Lynn, A. M., Tollefson, W. T. A., Fenn, T. D.,
+                LuCore, S. D., Litman, J. M., Powers, K. T., Gao, S., Lynn, A. M., Tollefson, W. T. A., Fenn, T. D.,
                 Washington, M. T. and M. J. Schnieders,
-                Protein Side-Chain Global Optimization with a Polarizable Force Field and the Dead-End Elimination Theorem.
+                Dead-End Elimination with a Polarizable Force Field Repacks PCNA Models from Low-Resolution X-ray Diffraction into Atomic Resolution Structures.
                 <b>2015</b>
-                <i>(in preparation)</i>
+                <i>(submitted)</i>
                 <a href="http://ffx.biochem.uiowa.edu">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
             </question>
             <answer>
                 <p>
-                    A delicate balance of van der Waals, electrostatic and hydrophobic forces drive the interactions
-                    between protein side-chains. We describe the first algorithm capable of deterministic global
-                    optimization of side-chain packing based on rigorous ‘many-body’ descriptions of these forces.
-                    The term many-body signifies that the interaction between two side-chains is not a constant function
-                    of their mutual environment (not pairwise), but depends on neighboring side-chains and solvent.
-                    For example, the attractive interaction between two oppositely charged side-chains can be diminished
-                    by the dielectric screening of nearby residues relative to its strength in a vacuum environment. The
-                    first step of our many-body global optimization procedure is discretization of side-chain conformational
-                    space into a library of low-energy conformations called rotamers. To dramatically reduce the search space
-                    of rotamer combinations, we describe rigorous inequalities that eliminate high-energy rotamers, rotamer
-                    pairs, and so on (i.e. dead-end elimination) that are provably not found in the global minimum energy
-                    conformation. Unlike previously described elimination criteria that are limited to strictly pairwise
-                    energy functions, our criteria our compatible with quantum mechanical potentials, Poisson-Boltzmann
-                    continuum electrostatics and polarizable force fields. The power of this approach is demonstrated on
-                    mid-resolution structures of proliferating cell nuclear antigen (PCNA), whereupon AMOEBA many-body
-                    rotamer optimization demonstrates marked simultaneous improvements in mean R<sub>free</sub>, Molprobity
-                    score, and force field energies relative to the PDB_REDO project and OPLS-AA pairwise rotamer optimization,
-                    yielding novel insights into the physiochemical basis for the destabilizing effect of PCNA mutations.
+                    A balance of van der Waals, electrostatic, and hydrophobic forces drive the folding and packing of
+                    protein side-chains. Although residue interactions are often approximated as being pairwise additive,
+                    in reality higher order ‘many-body’ contributions that depend on environment drive hydrophobic collapse
+                    and cooperative electrostatics. Beginning from dead-end elimination (DEE), we derive the first algorithm
+                    capable of deterministic repacking of side-chains compatible with ‘many-body’ energy functions. The
+                    approach is applied to seven PCNA X-ray crystallographic data sets with resolutions 2.5-3.8 Å
+                    (mean 3.0 Å). While PDB_Redo models average an R<sub>free</sub> value of 29.5% and MolProbity score
+                    of 2.71 Å (77<sup>th</sup> percentile), DEE with the polarizable AMOEBA force field lowered
+                    R<sub>free</sub> by 2.8% to 26.7% and improved mean MolProbity score to atomic resolution at 1.25 Å
+                    (100<sup>th</sup> percentile). For applications that depend on side-chain repacking, including structure
+                    refinement and protein design, the accuracy limitations of pairwise additivity can now be eliminated
+                    via polarizable or quantum mechanical potentials.
                 </p>
             </answer>
         </faq>
