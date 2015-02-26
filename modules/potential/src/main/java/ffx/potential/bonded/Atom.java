@@ -2046,6 +2046,10 @@ public class Atom extends MSNode implements Comparable<Atom> {
         }
     }
 
+    public String toNameNumberString() {
+        return String.format("%s %d", getName(), resSeq);
+    }
+
     /**
      * <p>
      * toShortString</p>
