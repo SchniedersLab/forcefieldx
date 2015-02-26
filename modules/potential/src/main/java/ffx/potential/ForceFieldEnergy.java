@@ -581,10 +581,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             vanderWaals.setResolution(resolution);
         }
 
-        if (particleMeshEwald != null) {
-            particleMeshEwald.setResolution(resolution);
-        }
-
         if (resolution == Resolution.FIXEDCHARGE) {
             multipoleTerm = false;
             polarizationTerm = false;

@@ -920,6 +920,9 @@ public class VanDerWaals implements MaskingInterface,
      */
     @Override
     public double getdEdL() {
+        if (shareddEdL == null || !lambdaTerm) {
+            return 0.0;
+        }
         return shareddEdL.get();
     }
 
@@ -930,6 +933,9 @@ public class VanDerWaals implements MaskingInterface,
      */
     @Override
     public void getdEdXdL(double[] lambdaGradient) {
+        if (lambdaGradX == null || !lambdaTerm) {
+            return;
+        }
         int index = 0;
         double lgx[] = lambdaGradX[0];
         double lgy[] = lambdaGradY[0];
@@ -946,6 +952,9 @@ public class VanDerWaals implements MaskingInterface,
      */
     @Override
     public double getd2EdL2() {
+        if (sharedd2EdL2 == null || !lambdaTerm) {
+            return 0.0;
+        }
         return sharedd2EdL2.get();
     }
 

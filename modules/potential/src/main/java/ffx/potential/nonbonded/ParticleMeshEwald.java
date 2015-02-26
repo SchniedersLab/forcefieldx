@@ -172,8 +172,6 @@ public class ParticleMeshEwald implements LambdaInterface {
         MUTUAL, DIRECT, NONE
     }
 
-    private Resolution resolution = Resolution.AMOEBA;
-
     /**
      * Polarization mode.
      */
@@ -1238,12 +1236,8 @@ public class ParticleMeshEwald implements LambdaInterface {
         initSoftCore = true;
     }
 
-    public void setResolution(Resolution resolution) {
-        this.resolution = resolution;
-    }
-
     public void setAtoms(Atom atoms[], int molecule[]) {
-        if (lambdaTerm) {
+        if (lambdaTerm && atoms.length != nAtoms) {
             logger.severe(" Changing the number of atoms is not compatible with use of Lambda.");
         }
         this.atoms = atoms;
@@ -6703,6 +6697,9 @@ public class ParticleMeshEwald implements LambdaInterface {
      */
     @Override
     public double getdEdL() {
+        if (shareddEdLambda == null || !lambdaTerm) {
+            return 0.0;
+        }
         double dEdL = shareddEdLambda.get();
         if (generalizedKirkwoodTerm) {
             dEdL += generalizedKirkwood.getdEdL();
@@ -6715,6 +6712,9 @@ public class ParticleMeshEwald implements LambdaInterface {
      */
     @Override
     public double getd2EdL2() {
+        if (sharedd2EdLambda2 == null || !lambdaTerm) {
+            return 0.0;
+        }
         double d2EdL2 = sharedd2EdLambda2.get();
         if (generalizedKirkwoodTerm) {
             d2EdL2 += generalizedKirkwood.getd2EdL2();
@@ -6727,8 +6727,7 @@ public class ParticleMeshEwald implements LambdaInterface {
      */
     @Override
     public void getdEdXdL(double[] gradient) {
-        if (!lambdaTerm) {
-            logger.warning(" The lambdaterm property is false.");
+        if (lambdaGrad == null || !lambdaTerm) {
             return;
         }
         /**

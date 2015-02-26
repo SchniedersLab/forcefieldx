@@ -257,6 +257,22 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
      */
     private final double rgl2[];
     /**
+     * Topology 1 Potential.
+     */
+    private final Potential potential1;
+    /**
+     * Topology 2 Potential.
+     */
+    private final Potential potential2;
+    /**
+     * Topology 1 LambdaInterface.
+     */
+    private final LambdaInterface lambdaInterface1;
+    /**
+     * Topology 2 LambdaInterface.
+     */
+    private final LambdaInterface lambdaInterface2;
+    /**
      * Topology 1 ForceFieldEnergy.
      */
     private final ForceFieldEnergy forceFieldEnergy1;
@@ -265,11 +281,136 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
      */
     private final ForceFieldEnergy forceFieldEnergy2;
 
+    public DualTopologyEnergy(Potential topology1, Atom atoms1[], Potential topology2, Atom atoms2[]) {
+        potential1 = topology1;
+        potential2 = topology2;
+        lambdaInterface1 = (LambdaInterface) potential1;
+        lambdaInterface2 = (LambdaInterface) potential2;
+        this.atoms1 = atoms1;
+        this.atoms2 = atoms2;
+        nAtoms1 = atoms1.length;
+        nAtoms2 = atoms2.length;
+
+        forceFieldEnergy1 = null;
+        forceFieldEnergy2 = null;
+        doValenceRestraint1 = false;
+        doValenceRestraint2 = false;
+
+        x1 = new double[nAtoms1 * 3];
+        x2 = new double[nAtoms2 * 3];
+        g1 = new double[nAtoms1 * 3];
+        g2 = new double[nAtoms2 * 3];
+        rg1 = new double[nAtoms1 * 3];
+        rg2 = new double[nAtoms2 * 3];
+        gl1 = new double[nAtoms1 * 3];
+        gl2 = new double[nAtoms2 * 3];
+        rgl1 = new double[nAtoms1 * 3];
+        rgl2 = new double[nAtoms2 * 3];
+
+        /**
+         * Check that all atoms that are not undergoing alchemy are common to
+         * both topologies.
+         */
+        int atomCount1 = 0;
+        int atomCount2 = 0;
+        for (int i = 0; i < nAtoms1; i++) {
+            Atom a1 = atoms1[i];
+            if (!a1.applyLambda()) {
+                atomCount1++;
+            }
+        }
+        for (int i = 0; i < nAtoms2; i++) {
+            Atom a2 = atoms2[i];
+            if (!a2.applyLambda()) {
+                atomCount2++;
+            }
+        }
+
+        assert (atomCount1 == atomCount2);
+        nShared = atomCount1;
+        nSoftCore1 = nAtoms1 - nShared;
+        nSoftCore2 = nAtoms2 - nShared;
+        nTotal = nShared + nSoftCore1 + nSoftCore2;
+        nVariables = 3 * nTotal;
+
+        /**
+         * Check that all Dual-Topology atoms start with identical coordinates.
+         */
+        int i1 = 0;
+        int i2 = 0;
+        for (int i = 0; i < nShared; i++) {
+            Atom a1 = atoms1[i1++];
+            while (a1.applyLambda()) {
+                a1 = atoms1[i1++];
+            }
+            Atom a2 = atoms2[i2++];
+            while (a2.applyLambda()) {
+                a2 = atoms2[i2++];
+            }
+            assert (a1.getX() == a2.getX());
+            assert (a1.getY() == a2.getY());
+            assert (a1.getZ() == a2.getZ());
+        }
+
+        /**
+         * All variables are coordinates.
+         */
+        int index = 0;
+        variableTypes = new VARIABLE_TYPE[nVariables];
+        for (int i = 0; i < nTotal; i++) {
+            variableTypes[index++] = VARIABLE_TYPE.X;
+            variableTypes[index++] = VARIABLE_TYPE.Y;
+            variableTypes[index++] = VARIABLE_TYPE.Z;
+        }
+
+        /**
+         * Fill the mass array.
+         */
+        int commonIndex = 0;
+        int softcoreIndex = 3 * nShared;
+        mass = new double[nVariables];
+        for (int i = 0; i < nAtoms1; i++) {
+            Atom a = atoms1[i];
+            double m = a.getMass();
+            if (!a.applyLambda()) {
+                mass[commonIndex++] = m;
+                mass[commonIndex++] = m;
+                mass[commonIndex++] = m;
+            } else {
+                mass[softcoreIndex++] = m;
+                mass[softcoreIndex++] = m;
+                mass[softcoreIndex++] = m;
+            }
+        }
+        for (int i = 0; i < nAtoms2; i++) {
+            Atom a = atoms2[i];
+            if (a.applyLambda()) {
+                double m = a.getMass();
+                mass[softcoreIndex++] = m;
+                mass[softcoreIndex++] = m;
+                mass[softcoreIndex++] = m;
+            }
+        }
+    }
+
     public DualTopologyEnergy(MolecularAssembly topology1, MolecularAssembly topology2) {
         forceFieldEnergy1 = topology1.getPotentialEnergy();
         forceFieldEnergy2 = topology2.getPotentialEnergy();
+        potential1 = forceFieldEnergy1;
+        potential2 = forceFieldEnergy2;
+        lambdaInterface1 = forceFieldEnergy1;
+        lambdaInterface2 = forceFieldEnergy2;
+
         atoms1 = topology1.getAtomArray();
         atoms2 = topology2.getAtomArray();
+
+        ForceField forceField1 = topology1.getForceField();
+        this.doValenceRestraint1 = forceField1.getBoolean(
+                ForceField.ForceFieldBoolean.LAMBDA_VALENCE_RESTRAINTS, true);
+        ForceField forceField2 = topology2.getForceField();
+        this.doValenceRestraint2 = forceField2.getBoolean(
+                ForceField.ForceFieldBoolean.LAMBDA_VALENCE_RESTRAINTS, true);
+
         nAtoms1 = atoms1.length;
         nAtoms2 = atoms2.length;
         x1 = new double[nAtoms1 * 3];
@@ -282,13 +423,6 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
         gl2 = new double[nAtoms2 * 3];
         rgl1 = new double[nAtoms1 * 3];
         rgl2 = new double[nAtoms2 * 3];
-
-        ForceField forceField1 = topology1.getForceField();
-        this.doValenceRestraint1 = forceField1.getBoolean(
-                ForceField.ForceFieldBoolean.LAMBDA_VALENCE_RESTRAINTS, true);
-        ForceField forceField2 = topology2.getForceField();
-        this.doValenceRestraint2 = forceField2.getBoolean(
-                ForceField.ForceFieldBoolean.LAMBDA_VALENCE_RESTRAINTS, true);
 
         /**
          * Check that all atoms that are not undergoing alchemy are common to
@@ -386,11 +520,12 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
         /**
          * Compute the energy of topology 1.
          */
-        energy1 = forceFieldEnergy1.energy(x1);
-        if (doValenceRestraint1) {
-            forceFieldEnergy1.setLambdaBondedTerms(true);
-            restraintEnergy1 = forceFieldEnergy1.energy(x1);
-            forceFieldEnergy1.setLambdaBondedTerms(false);
+        energy1 = potential1.energy(x1);
+        if (doValenceRestraint1 && potential1 instanceof ForceFieldEnergy) {
+            ForceFieldEnergy ffE1 = (ForceFieldEnergy) potential1;
+            ffE1.setLambdaBondedTerms(true);
+            restraintEnergy1 = potential1.energy(x1);
+            ffE1.setLambdaBondedTerms(false);
         } else {
             restraintEnergy1 = 0.0;
         }
@@ -402,11 +537,12 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
         /**
          * Compute the energy of topology 2.
          */
-        energy2 = forceFieldEnergy2.energy(x2);
-        if (doValenceRestraint2) {
-            forceFieldEnergy2.setLambdaBondedTerms(true);
-            restraintEnergy2 = forceFieldEnergy2.energy(x2);
-            forceFieldEnergy2.setLambdaBondedTerms(false);
+        energy2 = potential2.energy(x2);
+        if (doValenceRestraint2 && potential2 instanceof ForceFieldEnergy) {
+            ForceFieldEnergy ffE2 = (ForceFieldEnergy) potential2;
+            ffE2.setLambdaBondedTerms(true);
+            restraintEnergy2 = potential2.energy(x2);
+            ffE2.setLambdaBondedTerms(false);
         } else {
             restraintEnergy2 = 0.0;
         }
@@ -455,10 +591,10 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
         /**
          * Compute the energy and gradient of topology 1.
          */
-        energy1 = forceFieldEnergy1.energyAndGradient(x1, g1);
-        dEdL_1 = forceFieldEnergy1.getdEdL();
-        d2EdL2_1 = forceFieldEnergy1.getd2EdL2();
-        forceFieldEnergy1.getdEdXdL(gl1);
+        energy1 = potential1.energyAndGradient(x1, g1);
+        dEdL_1 = lambdaInterface1.getdEdL();
+        d2EdL2_1 = lambdaInterface1.getd2EdL2();
+        lambdaInterface1.getdEdXdL(gl1);
 
         if (doValenceRestraint1) {
             forceFieldEnergy1.setLambdaBondedTerms(true);
@@ -480,10 +616,10 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
         /**
          * Compute the energy and gradient of topology 2.
          */
-        energy2 = forceFieldEnergy2.energyAndGradient(x2, g2);
-        dEdL_2 = -forceFieldEnergy2.getdEdL();
-        d2EdL2_2 = forceFieldEnergy2.getd2EdL2();
-        forceFieldEnergy2.getdEdXdL(gl2);
+        energy2 = potential2.energyAndGradient(x2, g2);
+        dEdL_2 = -lambdaInterface2.getdEdL();
+        d2EdL2_2 = lambdaInterface2.getd2EdL2();
+        lambdaInterface2.getdEdXdL(gl2);
 
         if (doValenceRestraint2) {
             forceFieldEnergy2.setLambdaBondedTerms(true);
@@ -680,8 +816,8 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
 
     @Override
     public void setEnergyTermState(STATE state) {
-        forceFieldEnergy1.setEnergyTermState(state);
-        forceFieldEnergy2.setEnergyTermState(state);
+        potential1.setEnergyTermState(state);
+        potential2.setEnergyTermState(state);
     }
 
     @Override
@@ -689,8 +825,8 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
         if (lambda <= 1.0 && lambda >= 0.0) {
             this.lambda = lambda;
             oneMinusLambda = 1.0 - lambda;
-            forceFieldEnergy1.setLambda(lambda);
-            forceFieldEnergy2.setLambda(oneMinusLambda);
+            lambdaInterface1.setLambda(lambda);
+            lambdaInterface2.setLambda(oneMinusLambda);
 
             lambdaPow = pow(lambda, lambdaExponent);
             dLambdaPow = lambdaExponent * pow(lambda, lambdaExponent - 1.0);
