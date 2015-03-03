@@ -555,8 +555,13 @@ public class XYZFilter extends SystemFilter {
             ArrayList<Atom> atoms = activeMolecularAssembly.getAtomList();
             Vector3d offset = activeMolecularAssembly.getOffset();
             for (Atom a : atoms) {
-                line = new StringBuilder(format(
-                        "%7d %3s%14.8f%14.8f%14.8f%6d", a.getXYZIndex(), a.getAtomType().name, a.getX() - offset.x, a.getY() - offset.y, a.getZ() - offset.z, a.getType()));
+                if (vdwH) {
+                    line = new StringBuilder(String.format(
+                            "%7d %3s%14.8f%14.8f%14.8f%6d", a.getXYZIndex(), a.getAtomType().name, a.getRedX() - offset.x, a.getRedY() - offset.y, a.getRedZ() - offset.z, a.getType()));
+                } else {
+                    line = new StringBuilder(String.format(
+                            "%7d %3s%14.8f%14.8f%14.8f%6d", a.getXYZIndex(), a.getAtomType().name, a.getX() - offset.x, a.getY() - offset.y, a.getZ() - offset.z, a.getType()));
+                }
                 for (Bond b : a.getBonds()) {
                     a2 = b.get1_2(a);
                     line.append(format("%8d", a2.xyzIndex));
@@ -621,9 +626,13 @@ public class XYZFilter extends SystemFilter {
                 for (Atom a : atoms) {
                     int index = a.getXYZIndex() + indexOffset;
                     String id = a.getAtomType().name;
-                    xyz[0] = a.getX();
-                    xyz[1] = a.getY();
-                    xyz[2] = a.getZ();
+                    if (vdwH) {
+                        a.getRedXYZ(xyz);
+                    } else {
+                        xyz[0] = a.getX();
+                        xyz[1] = a.getY();
+                        xyz[2] = a.getZ();
+                    }
                     crystal.applySymOp(xyz, xyz, symOp);
                     int type = a.getType();
                     line = new StringBuilder(format(
@@ -642,7 +651,7 @@ public class XYZFilter extends SystemFilter {
                 }
             } catch (Exception e) {
                 logger.severe(
-                        "Their was an unexpected error writing to " + getActiveMolecularSystem().toString() + "\n" + e + "\nForce Field X will continue...");
+                        "There was an unexpected error writing to " + getActiveMolecularSystem().toString() + "\n" + e + "\nForce Field X will not continue...");
                 return false;
             }
             bw.close();

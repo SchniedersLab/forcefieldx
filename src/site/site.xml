@@ -71,9 +71,9 @@
                 <column>Modules</column>
                 <column>Algorithms|Crystal|Numerics|Potential|User Interfaces|Utilities|X-Ray Refinement</column>
             </bottomNav>
-            <bottomDescription>
+            <!-- bottomDescription>
                 <script type="text/javascript" src="js/search.js"></script>
-            </bottomDescription>
+            </bottomDescription -->
             <pages>
                 <index project="ffx">
                     <toc>false</toc>

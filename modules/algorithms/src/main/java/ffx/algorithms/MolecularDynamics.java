@@ -51,9 +51,13 @@ import ffx.algorithms.Integrator.Integrators;
 import ffx.algorithms.Thermostat.Thermostats;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Bond;
 import ffx.potential.parsers.DYNFilter;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.XYZFilter;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Run NVE or NVT molecular dynamics.
@@ -86,13 +90,20 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private boolean initialized = false;
     private boolean done = true;
     private boolean terminate = false;
-    private final int numberOfVariables;
-    private final double[] x;
-    private final double[] v;
-    private final double[] a;
-    private final double[] aPrevious;
-    private final double[] grad;
-    private final double[] mass;
+//    private final int numberOfVariables;
+//    private final double[] x;
+//    private final double[] v;
+//    private final double[] a;
+//    private final double[] aPrevious;
+//    private final double[] grad;
+//    private final double[] mass;
+    private int numberOfVariables;
+    private double[] x;
+    private double[] v;
+    private double[] a;
+    private double[] aPrevious;
+    private double[] grad;
+    private double[] mass;
     private int nSteps = 1000;
     private double targetTemperature = 298.15;
     private double dt = 1.0;
@@ -216,6 +227,119 @@ public class MolecularDynamics implements Runnable, Terminatable {
         }
 
         done = true;
+    }
+    
+    public void reInit(Atom oldAtomArray[]) {
+        logger.info(String.format(" ---------\n REINIT MD\n ---------"));
+        done = false;
+        if (oldAtomArray == null) {
+            logger.severe("Old atom array was null.");
+        }
+        
+        mass = potential.getMass();
+        int oldVars = numberOfVariables;
+        int newVars = potential.getNumberOfVariables();
+        int numOldAtoms = oldVars / 3;
+        int numNewAtoms = newVars / 3;
+        
+        // Initialize all arrays with new numberOfVariables.
+        double xNew[] = new double[newVars];
+        double vNew[] = new double[newVars];
+        double aNew[] = new double[newVars];
+        double aPreviousNew[] = new double[newVars];
+        double gradNew[] = new double[newVars];
+
+        Atom newAtomArray[] = molecularAssembly.getAtomArray();
+        if (numNewAtoms != newAtomArray.length) {
+            logger.warning(String.format("numNewAtoms: %d\tnewAtomArray.length: %d", numNewAtoms, newAtomArray.length));
+        }
+        
+        List<Atom> haltedAtoms = new ArrayList<>();
+        int oldIndex, newIndex;
+        for (newIndex = 0; newIndex < numNewAtoms; newIndex++) {
+            Atom newAtom = newAtomArray[newIndex];
+            String newString = newAtom.toNameNumberString();
+            boolean found = false;
+            for (oldIndex = 0; oldIndex < numOldAtoms; oldIndex++) {
+                Atom oldAtom = oldAtomArray[oldIndex];
+                String oldString = oldAtom.toNameNumberString();
+                if (newAtom == oldAtom || newString.equals(oldString)) {
+                    found = true;
+                    int newPosition = newIndex*3, oldPosition = oldIndex*3;
+                    /*
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(String.format(" old:%d  new:%d  atom:%s\n", oldIndex, newIndex, oldAtom));
+                    sb.append(String.format("   xva: [%.2g %.2g %.2g] [%.2g %.2g %.2g] [%.2g %.2g %.2g]",
+                            x[oldPosition], x[oldPosition+1], x[oldPosition+2],
+                            v[oldPosition], v[oldPosition+1], v[oldPosition+2],
+                            a[oldPosition], a[oldPosition+1], a[oldPosition+2]));
+                    if (newIndex <= 20) {
+                        logger.info(sb.toString());
+                    }*/                    
+                    xNew[newPosition] = x[oldPosition];
+                    xNew[newPosition+1] = x[oldPosition+1];
+                    xNew[newPosition+2] = x[oldPosition+2];
+                    vNew[newPosition] = v[oldPosition];
+                    vNew[newPosition+1] = v[oldPosition+1];
+                    vNew[newPosition+2] = v[oldPosition+2];
+                    aNew[newPosition] = a[oldPosition];
+                    aNew[newPosition+1] = a[oldPosition+1];
+                    aNew[newPosition+2] = a[oldPosition+2];
+                    aPreviousNew[newPosition] = aPrevious[oldPosition];
+                    aPreviousNew[newPosition+1] = aPrevious[oldPosition+1];
+                    aPreviousNew[newPosition+2] = aPrevious[oldPosition+2];
+                    gradNew[newPosition] = grad[oldPosition];
+                    gradNew[newPosition+1] = grad[oldPosition+1];
+                    gradNew[newPosition+2] = grad[oldPosition+2];
+                }
+            }
+            if (!found) {
+                logger.info(String.format(" No previous record of atom: %s.", newAtom));
+                haltedAtoms.add(newAtom);
+            }
+        }
+        
+        for (Atom halted : haltedAtoms) {
+            // Using a maxwell distribution.
+            int haltedPosition = (halted.getXYZIndex() - 1) * 3;
+            double maxwell[] = thermostat.maxwellIndividual(halted.getMass());
+            vNew[haltedPosition] = maxwell[0];
+            vNew[haltedPosition+1] = maxwell[1];
+            vNew[haltedPosition+2] = maxwell[2];
+            logger.info("Assigned maxwell velocity for new atom " + halted);
+            
+            /* Using a nearby bonded atom (not stat-mech rigorous).
+            try {
+                Bond bond = (Bond) halted.getBondList().get(0);
+                Atom mate = bond.get1_2(halted);
+                int matePosition = (mate.getXYZIndex() - 1) * 3;
+                int haltedPosition = (halted.getXYZIndex() - 1) * 3;
+                vNew[haltedPosition] = vNew[matePosition];
+                vNew[haltedPosition+1] = vNew[matePosition+1];
+                vNew[haltedPosition+2] = vNew[matePosition+2];
+                aNew[haltedPosition] = aNew[matePosition];
+                aNew[haltedPosition+1] = aNew[matePosition+1];
+                aNew[haltedPosition+2] = aNew[matePosition+2];
+                logger.info("Assigned velocity for new atom " + halted + " using bond with " + mate);
+            } catch (IndexOutOfBoundsException ex) {
+                logger.info("No bond available to init velocity for atom " + halted);
+            }
+            */
+        }
+        
+        numberOfVariables = newVars;
+        x = xNew;
+        v = vNew;
+        a = aNew;
+        aPrevious = aPreviousNew;
+        grad = gradNew;
+        
+        potential.getCoordinates(x);
+        thermostat.setNumberOfVariables(newVars, x, v, mass);
+        ((BetterBeeman) integrator).setNumberOfVariables(newVars, x, v, a, aPrevious, mass);
+
+        done = true;
+        return;
     }
 
     /**
@@ -620,7 +744,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
          */
         long time = System.nanoTime();
         for (int step = 1; step <= nSteps; step++) {
-
+            
             /**
              * Do the half-step thermostat operation.
              */
@@ -727,6 +851,17 @@ public class MolecularDynamics implements Runnable, Terminatable {
             }
             if (monteCarloListener != null) {
                 monteCarloListener.mcUpdate(molecularAssembly);
+                potential.getCoordinates(x);
+                
+                // TESTING
+                for (Atom atom : molecularAssembly.getAtomArray()) {
+                    if (atom.toString().contains("HE2 GLH 27")) {
+                        int index = (atom.getXYZIndex() - 1)*3;
+                        logger.info(String.format(" xyz: %d    %s\n     [%g %g %g] [%g %g %g]\n", 
+                                atom.xyzIndex, atom, v[index], v[index+1], v[index+2],
+                                a[index], a[index+1], a[index+2]));
+                    }
+                }
             }
 
             /**

@@ -58,6 +58,66 @@ import org.apache.commons.configuration.CompositeConfiguration;
  *
  */
 public abstract class ConversionFilter {
+    
+    /**
+     * The atomList is filled by filters that extend ConversionFilter.
+     */
+    protected ArrayList<Atom> atomList = null;
+    /**
+     * The bondList may be filled by the filters that extend ConversionFilter.
+     */
+    protected ArrayList<Bond> bondList = null;
+    /**
+     * The current MolecularAssembly being populated. Note that more than one
+     * MolecularAssembly should be defined for PDB files with alternate
+     * locations.
+     */
+    protected MolecularAssembly activeMolecularAssembly = null;
+    /**
+     * All MolecularAssembly instances defined. More than one MolecularAssembly
+     * should be defined for PDB entries with alternate locations.
+     */
+    protected Vector<MolecularAssembly> systems = new Vector<MolecularAssembly>();
+    /**
+     * Structure currently being converted.
+     */
+    protected Object currentStructure = null;
+    /**
+     * Append multiple data structures into one MolecularAssembly.
+     */
+    protected List<Object> structures = null;
+    /**
+     * Destination file when saved.
+     */
+    protected File file = null;
+    /**
+     * Format associated with saving the structure.
+     */
+    protected Utilities.FileType fileType = Utilities.FileType.UNK;
+    /**
+     * The file format being handled.
+     */
+    protected Utilities.DataType dataType = Utilities.DataType.UNK;
+    /**
+     * Properties associated with this file.
+     */
+    protected CompositeConfiguration properties;
+    /**
+     * The molecular mechanics force field being used.
+     */
+    protected ForceField forceField = null;
+    /**
+     * True after the data structure has been successfully converted to an FFX
+     * data structure.
+     */
+    protected boolean hasConverted = false;
+    /**
+     * True if atoms are to be printed to their van der Waals centers instead of
+     * nuclear centers (applies primarily to hydrogens).
+     */
+    protected boolean vdwH = false;
+    
+    
     public ConversionFilter (Object structure, MolecularAssembly molecularAssembly, 
             ForceField forcefield, CompositeConfiguration properties) {
         this.currentStructure = structure;
@@ -68,6 +128,11 @@ public abstract class ConversionFilter {
         this.activeMolecularAssembly = molecularAssembly;
         this.forceField = forcefield;
         this.properties = properties;
+        
+        String vdwHydrogens = System.getProperty("vdwHydrogens");
+        if (vdwHydrogens != null && vdwHydrogens.equalsIgnoreCase("true")) {
+            vdwH = true;
+        }
     }
     public ConversionFilter (List<Object> structures, MolecularAssembly molecularAssembly, 
             ForceField forcefield, CompositeConfiguration properties) {
@@ -78,6 +143,11 @@ public abstract class ConversionFilter {
         this.activeMolecularAssembly = molecularAssembly;
         this.forceField = forcefield;
         this.properties = properties;
+        
+        String vdwHydrogens = System.getProperty("vdwHydrogens");
+        if (vdwHydrogens != null && vdwHydrogens.equalsIgnoreCase("true")) {
+            vdwH = true;
+        }
     }
     public ConversionFilter (Object structure, List<MolecularAssembly> molecularAssemblies, 
             ForceField forcefield, CompositeConfiguration properties) {
@@ -90,6 +160,11 @@ public abstract class ConversionFilter {
         this.activeMolecularAssembly = systems.firstElement();
         this.forceField = forcefield;
         this.properties = properties;
+        
+        String vdwHydrogens = System.getProperty("vdwHydrogens");
+        if (vdwHydrogens != null && vdwHydrogens.equalsIgnoreCase("true")) {
+            vdwH = true;
+        }
     }
     
     /**
@@ -183,59 +258,6 @@ public abstract class ConversionFilter {
         }
         return previousFile;
     }
-    
-    /**
-     * The atomList is filled by filters that extend ConversionFilter.
-     */
-    protected ArrayList<Atom> atomList = null;
-    /**
-     * The bondList may be filled by the filters that extend ConversionFilter.
-     */
-    protected ArrayList<Bond> bondList = null;
-    /**
-     * The current MolecularAssembly being populated. Note that more than one
-     * MolecularAssembly should be defined for PDB files with alternate
-     * locations.
-     */
-    protected MolecularAssembly activeMolecularAssembly = null;
-    /**
-     * All MolecularAssembly instances defined. More than one MolecularAssembly
-     * should be defined for PDB entries with alternate locations.
-     */
-    protected Vector<MolecularAssembly> systems = new Vector<MolecularAssembly>();
-    /**
-     * Structure currently being converted.
-     */
-    protected Object currentStructure = null;
-    /**
-     * Append multiple data structures into one MolecularAssembly.
-     */
-    protected List<Object> structures = null;
-    /**
-     * Destination file when saved.
-     */
-    protected File file = null;
-    /**
-     * Format associated with saving the structure.
-     */
-    protected Utilities.FileType fileType = Utilities.FileType.UNK;
-    /**
-     * The file format being handled.
-     */
-    protected Utilities.DataType dataType = Utilities.DataType.UNK;
-    /**
-     * Properties associated with this file.
-     */
-    protected CompositeConfiguration properties;
-    /**
-     * The molecular mechanics force field being used.
-     */
-    protected ForceField forceField = null;
-    /**
-     * True after the data structure has been successfully converted to an FFX
-     * data structure.
-     */
-    protected boolean hasConverted = false;
 
     /**
      * Returns true if the conversion was successful

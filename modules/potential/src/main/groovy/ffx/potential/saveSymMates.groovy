@@ -1,3 +1,4 @@
+
 /**
  * Title: Force Field X.
  *
@@ -35,30 +36,65 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.potential.parsers;
 
-import org.biojava.bio.structure.Structure;
+// SAVE SYMMETRY MATES
 
-/**
- * The BiojavaDataFilter class determines if an object is an instance of a
- * Biojava Structure object. Nothing fancy: it simply wraps "x instanceof
- * Structure" in a class similar to the PDB, INT, XYZ, etc. FileFilter classes.
- *
- * @author Michael J. Schnieders
- * @autor Jacob M. Litman
- * @since 1.0
- *
- */
-public class BiojavaDataFilter implements DataFilter {
+// Apache Imports
+import org.apache.commons.io.FilenameUtils;
 
-    @Override
-    public boolean accept(Object object) {
-        return object instanceof Structure;
-    }
+// Groovy Imports
+import groovy.util.CliBuilder;
 
-    @Override
-    public String getDescription() {
-        return "Biojava 3 Structure";
-    }
+// FFX Imports
+import ffx.potential.utils.PotentialsFunctions;
+import ffx.potential.utils.PotentialsUtils;
+import ffx.potential.MolecularAssembly;
 
+
+// Things below this line normally do not need to be changed.
+// ===============================================================================================
+
+// Create the command line parser.
+def cli = new CliBuilder(usage:' ffxc saveSymMates [options] <filename>');
+cli.h(longOpt:'help', 'Print this help message.');
+//cli.f(longOpt:'format', args:1, argName:'PDB', 'Save files as PDB or XYZ');
+
+def options = cli.parse(args);
+
+List<String> arguments = options.arguments();
+if (options.h || arguments == null || arguments.size() != 1) {
+    return cli.usage();
 }
+
+/*String format = "PDB";
+if (options.f) {
+    String formatOption = options.f.toUpperCase();
+    switch (formatOption) {
+    case "PDB":
+        format = "PDB";
+        break;
+    case "XYZ":
+        format = "XYZ";
+        break;
+    default:
+        format = "PDB";
+        logger.warning(String.format(" Could not successfully interpret %s: saving as PDB files.", options.f));
+        break;
+    }
+}*/
+
+// Read in command line.
+String filename = arguments.get(0);
+
+logger.info("\n Writing out symmetry mates for " + filename);
+
+PotentialsFunctions utils;
+try {
+    utils = getPotentialsUtils();
+} catch (MissingMethodException ex) {
+    utils = new PotentialsUtils();
+}
+MolecularAssembly[] systems = utils.open(filename);
+utils.savePDBSymMates(systems[0], new File(filename));
+
+//saveAsPDB();

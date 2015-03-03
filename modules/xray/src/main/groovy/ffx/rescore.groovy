@@ -36,7 +36,7 @@
  * exception statement from your version.
  */
 
-package ffx;
+package ffx.xray;
 
 // Apache Commons Imports
 import org.apache.commons.io.FilenameUtils;

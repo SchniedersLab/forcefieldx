@@ -298,7 +298,7 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
         }
         return null;
     }
-
+    
     /**
      * Create the Bond Scenegraph Objects.
      *

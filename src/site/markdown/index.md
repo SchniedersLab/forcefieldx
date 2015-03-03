@@ -1,3 +1,14 @@
+
+
+#### [Dead-End Elimination with a Polarizable Force Field Repacks PCNA Models][xtaltherm]
+
+<p align="center">
+<a href="download.html"><img src="images/pcna.png" alt="Download"/></a>
+</p>
+LuCore, S., Litman, J., Powers, K., Gao, S., Lynn, A., Tollefson, W., Fenn, T., Washington, M. and M. Schnieders
+<i>submitted</i>
+<b>2015</b>
+
 #### [Absolute Organic Crystal Thermodynamics: Growth of the Asymmetric Unit into a Crystal via Alchemy][xtaltherm]
 
 <p align="center">
@@ -63,4 +74,4 @@ Fenn, T. D. and M. J. Schnieders, <i>Acta Crystallographica Section D</i>
   to <a href="source.html">GIT and build the code</a>. We also provide instructions for
   how to use its <a href="modules.html">modules</a> in your own programs.
 
-  <script type="text/javascript" src="js/factoids.js"></script>
+  <!-- script type="text/javascript" src="js/factoids.js"></script -->

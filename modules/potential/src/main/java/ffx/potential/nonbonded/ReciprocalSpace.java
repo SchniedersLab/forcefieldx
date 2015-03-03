@@ -65,6 +65,7 @@ import ffx.numerics.fft.Complex3DCuda;
 import ffx.numerics.fft.Complex3DParallel;
 import ffx.numerics.fft.Real3DParallel;
 import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Atom.Resolution;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldInteger;
@@ -120,6 +121,7 @@ public class ReciprocalSpace {
     private static final Logger logger = Logger.getLogger(ReciprocalSpace.class.getName());
     private final ParticleMeshEwald particleMeshEwald;
     private final ForceField forceField;
+
     /**
      * The unit cell for the simulation. A ReplicatesCrystal will give
      * equivalent results up to the limits of double precision, but is more

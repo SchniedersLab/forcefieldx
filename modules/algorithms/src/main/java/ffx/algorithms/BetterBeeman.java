@@ -82,6 +82,20 @@ public class BetterBeeman extends Integrator {
         dt_8 = 0.125 * dt;
         dt2_8 = dt * dt_8;
     }
+    
+    /**
+     * To allow chemical perturbations during MD.
+     * @param nVariables 
+     */
+    public void setNumberOfVariables(int nVariables, double x[], double v[], 
+            double a[], double aPrevious[], double mass[]) {
+        this.nVariables = nVariables;
+        this.x = x;
+        this.v = v;
+        this.a = a;
+        this.aPrevious = aPrevious;
+        this.mass = mass;
+    }
 
     /**
      * Store the current atom positions, then find new atom positions and

@@ -73,7 +73,7 @@ if (options.h || arguments == null || arguments.size() != 1) {
 String filename = arguments.get(0);
 
 // PMF?
-if (options.a) {
+if (options.p) {
     pmf = true;
 }
 

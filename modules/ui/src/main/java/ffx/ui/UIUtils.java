@@ -131,6 +131,16 @@ public class UIUtils implements AlgorithmFunctions {
     public void saveAsPDB(MolecularAssembly[] assemblies, File file) {
         mainPanel.saveAsPDB(assemblies, file);
     }
+    
+    @Override
+    public void savePDBSymMates(MolecularAssembly assembly, File file) {
+        mainPanel.savePDBSymMates(file, "_symMate");
+    }
+    
+    @Override
+    public void savePDBSymMates(MolecularAssembly assembly, File file, String suffix) {
+        mainPanel.savePDBSymMates(file, suffix);
+    }
 
     @Override
     public ForceFieldEnergy energy(MolecularAssembly assembly) {

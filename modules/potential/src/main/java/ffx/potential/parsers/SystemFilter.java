@@ -193,6 +193,11 @@ public abstract class SystemFilter {
      * True after the file has been read successfully.
      */
     protected boolean fileRead = false;
+    /**
+     * True if atoms are to be printed to their van der Waals centers instead of
+     * nuclear centers (applies primarily to hydrogens).
+     */
+    protected boolean vdwH = false;
 
     /**
      * <p>
@@ -214,6 +219,11 @@ public abstract class SystemFilter {
         this.activeMolecularAssembly = molecularAssembly;
         this.forceField = forceField;
         this.properties = properties;
+        
+        String vdwHydrogens = System.getProperty("vdwHydrogens");
+        if (vdwHydrogens != null && vdwHydrogens.equalsIgnoreCase("true")) {
+            vdwH = true;
+        }
     }
 
     /**
@@ -237,6 +247,11 @@ public abstract class SystemFilter {
         this.activeMolecularAssembly = molecularAssembly;
         this.forceField = forceField;
         this.properties = properties;
+        
+        String vdwHydrogens = System.getProperty("vdwHydrogens");
+        if (vdwHydrogens != null && vdwHydrogens.equalsIgnoreCase("true")) {
+            vdwH = true;
+        }
     }
 
     /**
@@ -260,6 +275,11 @@ public abstract class SystemFilter {
         this.activeMolecularAssembly = systems.firstElement();
         this.forceField = forceField;
         this.properties = properties;
+        
+        String vdwHydrogens = System.getProperty("vdwHydrogens");
+        if (vdwHydrogens != null && vdwHydrogens.equalsIgnoreCase("true")) {
+            vdwH = true;
+        }
     }
 
     /**

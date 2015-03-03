@@ -52,9 +52,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.FileNotFoundException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
@@ -101,6 +101,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.SystemUtils;
+import org.biojava.bio.structure.Structure;
 
 import ffx.crystal.Crystal;
 import ffx.potential.MolecularAssembly;
@@ -139,7 +140,6 @@ import ffx.utilities.Keyword;
 import ffx.utilities.StringUtils;
 
 import static ffx.utilities.StringUtils.pdbForID;
-import org.biojava.bio.structure.Structure;
 
 /**
  * The MainPanel class is the main container for Force Field X, handles file
@@ -1262,7 +1262,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         setPanel(GRAPHICS);
         return openThread;
     }
-    
+
     public Thread convert(Object data, File file, String commandDescription) {
         UIDataConverter converter = convertInit(data, file, commandDescription);
         openThread = new Thread(converter);
@@ -1339,7 +1339,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         activeFilter = systemFilter;
         return new UIFileOpener(systemFilter, this);
     }
-    
+
     /**
      * Attempts to load from the supplied data structure
      * @param data Data structure to load from
@@ -1352,7 +1352,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         if (data == null) {
             return null;
         }
-        
+
         // Create the CompositeConfiguration properties.
         CompositeConfiguration properties = Keyword.loadProperties(file);
         // Create an FFXSystem for this file.
@@ -1551,7 +1551,7 @@ public final class MainPanel extends JPanel implements ActionListener,
             return null;
         }
     }
-    
+
     /**
      * Converts a non-Force Field X data structure into an array of FFXSystem[].
      * Presently does not yet have support for array- or list-based data structures,
@@ -1570,7 +1570,7 @@ public final class MainPanel extends JPanel implements ActionListener,
             }
         }
         String name = file.getName();
-        
+
         Thread thread = convert(data, file, null);
         while (thread != null && thread.isAlive()) {
             try {
@@ -2086,6 +2086,84 @@ public final class MainPanel extends JPanel implements ActionListener,
             logger.log(Level.INFO, " Save failed for: {0}", system);
         }
 
+    }
+    
+    public void savePDBSymMates(File file, String suffix) {
+        FFXSystem system = hierarchy.getActive();
+        if (system == null) {
+            logger.log(Level.INFO, " No active system to save.");
+            return;
+        }
+        if (system.isClosing()) {
+            logger.log(Level.INFO, " {0} is being closed and can no longer be saved.", system);
+            return;
+        }
+        File saveFile = file;
+        if (saveFile == null) {
+            resetFileChooser();
+            fileChooser.setCurrentDirectory(pwd);
+            fileChooser.setFileFilter(pdbFileFilter);
+            fileChooser.setAcceptAllFileFilterUsed(false);
+            int result = fileChooser.showSaveDialog(this);
+            if (result == JFileChooser.APPROVE_OPTION) {
+                saveFile = fileChooser.getSelectedFile();
+                pwd = saveFile.getParentFile();
+            }
+        }
+        if (saveFile == null) {
+            logger.log(Level.INFO, " No filename is defined for {0}.", system);
+            return;
+        }
+        String filename = FilenameUtils.removeExtension(file.getName());
+        PDBFilter pdbFilter = new PDBFilter(saveFile, system, null, null);
+        if (pdbFilter.writeFile(saveFile, false)) {
+            // Refresh Panels with the new System name
+            hierarchy.setActive(system);
+        } else {
+            logger.log(Level.INFO, " Save failed for: {0}", system);
+        }
+        
+        Crystal crystal = system.getCrystal();
+        int nSymOps = crystal.spaceGroup.getNumberOfSymOps();
+        logger.info(String.format(" Writing %d symmetry mates for %s", nSymOps, system.toString()));
+        for (int i = 1; i < nSymOps; i++) {
+            pdbFilter.setSymOp(i);
+            String saveFileName = filename + suffix + "_" + i + ".pdb";
+            saveFile = new File(saveFileName);
+            for (int j = 1; j < 1000; j++) {
+                if (!saveFile.exists()) {
+                    break;
+                }
+                saveFile = new File(saveFileName + "_" + j);
+            }
+            
+            StringBuilder symSb = new StringBuilder();
+            String[] symopLines = crystal.spaceGroup.getSymOp(i).toString().split("\\r?\\n");
+            int nLines = symopLines.length;
+            symSb.append("REMARK 350\nREMARK 350 SYMMETRY OPERATORS");
+            for (int j = 0; j < nLines; j++) {
+                symSb.append("\nREMARK 350 ").append(symopLines[j]);
+            }
+
+            symopLines = crystal.spaceGroup.getSymOp(i).toXYZString().split("\\r?\\n");
+            nLines = symopLines.length;
+            symSb.append("\nREMARK 350\nREMARK 350 SYMMETRY OPERATORS XYZ FORM");
+            for (int j = 0; j < nLines; j++) {
+                symSb.append("\nREMARK 350 ").append(symopLines[j]);
+            }
+            
+            if (saveFile.exists()) {
+                logger.warning(String.format(" Could not successfully version file "
+                        + "%s: appending to file %s", saveFileName, saveFile.getName()));
+                if (!pdbFilter.writeFileWithHeader(saveFile, symSb, true)) {
+                    logger.log(Level.INFO, " Save failed for: {0}", system);
+                }
+            } else {
+                if (!pdbFilter.writeFileWithHeader(saveFile, symSb, false)) {
+                    logger.log(Level.INFO, " Save failed for: {0}", system);
+                }
+            }
+        }
     }
 
     /**
