@@ -77,6 +77,8 @@ import static ffx.numerics.fft.Complex3D.iComplex3D;
 import static ffx.xray.CrystalReciprocalSpace.SolventModel.BINARY;
 import static ffx.xray.CrystalReciprocalSpace.SolventModel.GAUSSIAN;
 import static ffx.xray.CrystalReciprocalSpace.SolventModel.POLYNOMIAL;
+import java.util.ArrayList;
+import static org.apache.commons.math3.util.FastMath.abs;
 
 /**
  * Structure factor calculation (including bulk solvent structure factors)
@@ -167,6 +169,7 @@ public class CrystalReciprocalSpace {
     private final int halfFFTX, halfFFTY, halfFFTZ;
     private final int complexFFT3DSpace;
     private final int threadCount;
+    private final int bufferSize = 3;
 
     //Slice Scheduling
     private final SharedIntegerArray optSliceWeightAtomic;
@@ -1092,7 +1095,6 @@ public class CrystalReciprocalSpace {
      * @see DiffractionRefinementData
      */
     public void computeAtomicDensity(double hklData[][], boolean print) {
-
         /**
          * Zero out reflection data.
          */
@@ -1196,7 +1198,8 @@ public class CrystalReciprocalSpace {
                     }
 
                     //Atomic timing and balance analysis
-                    ASB.append(String.format("\n RowLoop (Atomic): %7.5f (sec)                 | Total Weight: %7.0f\n", atomicRowTotal * toSeconds, atomicRowWeightTotal));
+                    ASB.append(String.format("\n RowLoop (Atomic): %7.5f (sec)                 | Total Weight: %7.0f\n", 
+                            atomicGridTime * toSeconds, atomicRowWeightTotal));
                     ASB.append(" Thread     LoopTime    Balance(%)  Normalized   |      Rows       Weight    Balance(%)  Normalized\n");
 
                     //check for no weights issued, then set to 1 so a 0 is printed instead of NaN
@@ -1220,19 +1223,20 @@ public class CrystalReciprocalSpace {
                     break;
                 case SLICE:
                     double atomicSliceTotal = 0;
-                    double atomicSliceMin = atomicSliceLoops[0].getTimePerThread();
+                    double atomicSliceMin = atomicSliceLoops[0].getThreadTime();
                     double atomicSliceMax = 0;
                     double atomicSliceWeightTotal = 0;
 
                     for (int i = 0; i < threadCount; i++) {
-                        atomicSliceTotal += atomicSliceLoops[i].getTimePerThread();
-                        atomicSliceMax = max(atomicSliceLoops[i].getTimePerThread(), atomicSliceMax);
-                        atomicSliceMin = min(atomicSliceLoops[i].getTimePerThread(), atomicSliceMin);
-                        atomicSliceWeightTotal += atomicSliceLoops[i].getWeightPerThread()[i];
+                        atomicSliceTotal += atomicSliceLoops[i].getThreadTime();
+                        atomicSliceMax = max(atomicSliceLoops[i].getThreadTime(), atomicSliceMax);
+                        atomicSliceMin = min(atomicSliceLoops[i].getThreadTime(), atomicSliceMin);
+                        atomicSliceWeightTotal += atomicSliceLoops[i].getThreadWeight();
                     }
 
                     //Atomic timing and balance analysis
-                    ASB.append(String.format("\n SliceLoop (Atomic): %7.5f (sec)               | Total Weight: %7.0f\n", atomicSliceTotal * toSeconds, atomicSliceWeightTotal));
+                    ASB.append(String.format("\n SliceLoop (Atomic): %7.5f (sec)               | Total Weight: %7.0f\n", 
+                            atomicGridTime * toSeconds, atomicSliceWeightTotal));
                     ASB.append(" Thread     LoopTime    Balance(%)  Normalized   |      Slices    Weight    Balance(%)  Normalized\n");
 
                     //check for no weights issued, then set to 1 so a 0 is printed instead of NaN
@@ -1241,10 +1245,14 @@ public class CrystalReciprocalSpace {
                     }
 
                     for (int i = 0; i < threadCount; i++) {
-                        ASB.append(String.format("     %3d     %7.5f     %7.1f     %7.1f     |   %7d     %7d     %7.1f     %7.1f\n", i, (double) (atomicSliceLoops[i].getTimePerThread() * toSeconds),
-                                ((atomicSliceLoops[i].getTimePerThread()) / (atomicSliceTotal)) * 100.00, ((atomicSliceLoops[i].getTimePerThread()) / (atomicSliceTotal)) * (100.00 * threadCount),
-                                atomicSliceLoops[i].getBoundsPerThread()[i], atomicSliceLoops[i].getWeightPerThread()[i], 100.00 * (atomicSliceLoops[i].getWeightPerThread()[i] / atomicSliceWeightTotal),
-                                (100.00 * threadCount) * (atomicSliceLoops[i].getWeightPerThread()[i] / atomicSliceWeightTotal)));
+                        ASB.append(String.format("     %3d     %7.5f     %7.1f     %7.1f     |   %7d     %7d     %7.1f     %7.1f\n", i,
+                                (double) (atomicSliceLoops[i].getThreadTime() * toSeconds),
+                                ((atomicSliceLoops[i].getThreadTime()) / (atomicSliceTotal)) * 100.00, 
+                                ((atomicSliceLoops[i].getThreadTime()) / (atomicSliceTotal)) * (100.00 * threadCount),
+                                atomicSliceLoops[i].getNumberofSlices(),
+                                atomicSliceLoops[i].getThreadWeight(),
+                                100.00 * (atomicSliceLoops[i].getThreadWeight() / atomicSliceWeightTotal),
+                                (100.00 * threadCount) * (atomicSliceLoops[i].getThreadWeight() / atomicSliceWeightTotal)));
                     }
                     ASB.append(String.format("    Min      %7.5f\n", atomicSliceMin * toSeconds));
                     ASB.append(String.format("    Max      %7.5f\n", atomicSliceMax * toSeconds));
@@ -1509,7 +1517,7 @@ public class CrystalReciprocalSpace {
                     }
 
                     //Solvent timing and balance analysis
-                    SSB.append(String.format("\n RowLoop (Solvent): %7.5f (sec)                | Total Weight: %7.0f\n", solventRowTotal * toSeconds, solventRowWeightTotal));
+                    SSB.append(String.format("\n RowLoop (Solvent): %7.5f (sec)                | Total Weight: %7.0f\n", solventGridTime * toSeconds, solventRowWeightTotal));
                     SSB.append(" Thread     LoopTime    Balance(%)  Normalized   |      Rows       Weight     Balance(%)  Normalized\n");
 
                     //check for no weights issued, then set to 1 so a 0 is printed instead of NaN
@@ -1552,7 +1560,7 @@ public class CrystalReciprocalSpace {
                     break;
                 case SLICE:
                     double solventSliceTotal = 0;
-                    double solventSliceMin = solventSliceLoops[0].getTimePerThread();
+                    double solventSliceMin = solventSliceLoops[0].getThreadTime();
                     double solventSliceMax = 0;
                     double solventSliceWeightTotal = 0;
 
@@ -1562,10 +1570,10 @@ public class CrystalReciprocalSpace {
                     double bulkSolventSliceWeightTotal = 0;
 
                     for (int i = 0; i < threadCount; i++) {
-                        solventSliceTotal += solventSliceLoops[i].getTimePerThread();
-                        solventSliceMax = max(solventSliceLoops[i].getTimePerThread(), solventSliceMax);
-                        solventSliceMin = min(solventSliceLoops[i].getTimePerThread(), solventSliceMin);
-                        solventSliceWeightTotal += solventSliceLoops[i].getWeightPerThread()[i];
+                        solventSliceTotal += solventSliceLoops[i].getThreadTime();
+                        solventSliceMax = max(solventSliceLoops[i].getThreadTime(), solventSliceMax);
+                        solventSliceMin = min(solventSliceLoops[i].getThreadTime(), solventSliceMin);
+                        solventSliceWeightTotal += solventSliceLoops[i].getThreadWeight();
 
                         bulkSolventSliceTotal += bulkSolventSliceLoops[i].getTimePerThread();
                         bulkSolventSliceMax = max(bulkSolventSliceLoops[i].getTimePerThread(), bulkSolventSliceMax);
@@ -1575,7 +1583,7 @@ public class CrystalReciprocalSpace {
                     }
 
                     //Solvent timing and balance analysis
-                    SSB.append(String.format("\n SliceLoop (Solvent): %7.5f (sec)               | Total Weight: %7.0f\n", solventSliceTotal * toSeconds, solventSliceWeightTotal));
+                    SSB.append(String.format("\n SliceLoop (Solvent): %7.5f (sec)               | Total Weight: %7.0f\n", solventGridTime * toSeconds, solventSliceWeightTotal));
                     SSB.append(" Thread     LoopTime    Balance(%)  Normalized   |      Slices    Weight     Balance(%)  Normalized\n");
 
                     //check for no weights issued, then set to 1 so a 0 is printed instead of NaN
@@ -1584,10 +1592,13 @@ public class CrystalReciprocalSpace {
                     }
 
                     for (int i = 0; i < threadCount; i++) {
-                        SSB.append(String.format("     %3d     %7.5f     %7.1f     %7.1f     |   %7d     %7d     %7.1f     %7.1f\n", i, (double) (solventSliceLoops[i].getTimePerThread() * toSeconds),
-                                ((solventSliceLoops[i].getTimePerThread()) / (solventSliceTotal)) * 100.00, ((solventSliceLoops[i].getTimePerThread()) / (solventSliceTotal)) * (100.00 * threadCount),
-                                solventSliceLoops[i].getBoundsPerThread()[i], solventSliceLoops[i].getWeightPerThread()[i], 100.00 * (solventSliceLoops[i].getWeightPerThread()[i] / solventSliceWeightTotal),
-                                (100.00 * threadCount) * (solventSliceLoops[i].getWeightPerThread()[i] / solventSliceWeightTotal)));
+                        SSB.append(String.format("     %3d     %7.5f     %7.1f     %7.1f     |   %7d     %7d     %7.1f     %7.1f\n", i,
+                                (double) (solventSliceLoops[i].getThreadTime() * toSeconds),
+                                ((solventSliceLoops[i].getThreadTime()) / (solventSliceTotal)) * 100.00,
+                                ((solventSliceLoops[i].getThreadTime()) / (solventSliceTotal)) * (100.00 * threadCount),
+                                solventSliceLoops[i].getNumberofSlices(), solventSliceLoops[i].getThreadWeight(),
+                                100.00 * (solventSliceLoops[i].getThreadWeight() / solventSliceWeightTotal),
+                                (100.00 * threadCount) * (solventSliceLoops[i].getThreadWeight() / solventSliceWeightTotal)));
                     }
                     SSB.append(String.format("    Min      %7.5f\n", solventSliceMin * toSeconds));
                     SSB.append(String.format("    Max      %7.5f\n", solventSliceMax * toSeconds));
@@ -2005,9 +2016,11 @@ public class CrystalReciprocalSpace {
 
         @Override
         public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
+
             if (!atoms[iAtom].isActive()) {
                 return;
             }
+
             final double lambdai = atoms[iAtom].applyLambda() ? lambda : 1.0;
             xyz[0] = coordinates[iSymm][0][iAtom];
             xyz[1] = coordinates[iSymm][1][iAtom];
@@ -2206,19 +2219,19 @@ public class CrystalReciprocalSpace {
         final double grid[];
         final int optLocal[];
         long timer;
-        int threadWeights[];
-        int threadBounds[];
+        int previousUB, previousLB;
+        int actualWeight;
 
-        public double getTimePerThread() {
+        public double getThreadTime() {
             return timer;
         }
 
-        public int[] getBoundsPerThread() {
-            return threadBounds;
+        public int getNumberofSlices() {
+            return (previousUB - previousLB + 1);
         }
 
-        public int[] getWeightPerThread() {
-            return threadWeights;
+        public int getThreadWeight() {
+            return actualWeight;
         }
 
         @Override
@@ -2235,6 +2248,7 @@ public class CrystalReciprocalSpace {
         @Override
         public void start() {
             fill(optLocal, 0);
+            actualWeight = 0;
             timer = -System.nanoTime();
         }
 
@@ -2243,12 +2257,105 @@ public class CrystalReciprocalSpace {
             for (int i = 0; i < fftZ; i++) {
                 optSliceWeightAtomic.addAndGet(i, optLocal[i]);
             }
-
             timer += System.nanoTime();
-            threadBounds = atomicSliceSchedule.getLowerBounds().clone();
-            threadWeights = atomicSliceSchedule.getThreadWeights().clone();
-            for (int i = threadCount - 1; i > 0; i--) {
-                threadBounds[i] -= threadBounds[i - 1];
+        }
+
+        @Override
+        public boolean checkList(int zAtListBuild[][], int buff) {
+            for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+                for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
+                    if (sliceRegion.select[iSymm][iAtom]) {
+                        if (!atoms[iAtom].isActive()) {
+                            continue;
+                        }
+                        xyz[0] = coordinates[iSymm][0][iAtom];
+                        xyz[1] = coordinates[iSymm][1][iAtom];
+                        xyz[2] = coordinates[iSymm][2][iAtom];
+                        crystal.toFractionalCoordinates(xyz, uvw);
+                        final double frz = fftZ * uvw[2];
+                        final int ifrz = (int) frz;
+                        final int previousZ = zAtListBuild[iSymm][iAtom];
+                        if (abs(ifrz - previousZ) >= buff) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public void saveZValues(int zAtListBuild[][]) {
+            for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+                for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
+                    zAtListBuild[iSymm][iAtom] = 0;
+                    if (sliceRegion.select[iSymm][iAtom]) {
+                        if (!atoms[iAtom].isActive()) {
+                            continue;
+                        }
+                        xyz[0] = coordinates[iSymm][0][iAtom];
+                        xyz[1] = coordinates[iSymm][1][iAtom];
+                        xyz[2] = coordinates[iSymm][2][iAtom];
+                        crystal.toFractionalCoordinates(xyz, uvw);
+                        final double frz = fftZ * uvw[2];
+                        final int ifrz = (int) frz;
+                        zAtListBuild[iSymm][iAtom] = ifrz;
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void run(int lb, int ub) throws Exception {
+            boolean boundsChange = false;
+            if (previousLB != lb || previousUB != ub) {
+                boundsChange = true;
+            }
+            previousLB = lb;
+            previousUB = ub;
+            if (rebuildList || boundsChange) {
+                buildListA = new ArrayList<>();
+                buildListS = new ArrayList<>();
+                for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+                    for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
+                        if (sliceRegion.select[iSymm][iAtom]) {
+                            buildList(iSymm, iAtom, lb, ub);
+                        }
+                    }
+                }
+            }
+            for (int i = 0; i < buildListA.size(); i++) {
+                if (sliceRegion.select[buildListS.get(i)][buildListA.get(i)]) {
+                    gridDensity(buildListS.get(i), buildListA.get(i), lb, ub);
+                }
+            }
+        }
+
+        public void buildList(int iSymm, int iAtom, int lb, int ub) {
+            if (!atoms[iAtom].isActive()) {
+                return;
+            }
+            xyz[0] = coordinates[iSymm][0][iAtom];
+            xyz[1] = coordinates[iSymm][1][iAtom];
+            xyz[2] = coordinates[iSymm][2][iAtom];
+            crystal.toFractionalCoordinates(xyz, uvw);
+            final int frad = min(aRadGrid, (int) floor(atoms[iAtom].getFormFactorWidth() * fftX / crystal.a) + 1);
+            final double frz = fftZ * uvw[2];
+            final int ifrz = (int) frz;
+            final int ifrzu = ifrz + frad;
+            final int ifrzl = ifrz - frad;
+            // Loop over allowed z coordinates for this Loop
+            // Check if the current atom is close enough
+            // If so, add to list.
+            int buff = bufferSize;
+            for (int iz = ifrzl - buff; iz <= ifrzu + buff; iz++) {
+                int giz = Crystal.mod(iz, fftZ);
+                if (lb > giz || giz > ub) {
+                    continue;
+                }
+                buildListA.add(iAtom);
+                buildListS.add(iSymm);
+                break;
             }
         }
 
@@ -2257,9 +2364,7 @@ public class CrystalReciprocalSpace {
             if (!atoms[iAtom].isActive()) {
                 return;
             }
-
             final double lambdai = atoms[iAtom].applyLambda() ? lambda : 1.0;
-
             xyz[0] = coordinates[iSymm][0][iAtom];
             xyz[1] = coordinates[iSymm][1][iAtom];
             xyz[2] = coordinates[iSymm][2][iAtom];
@@ -2294,6 +2399,7 @@ public class CrystalReciprocalSpace {
                         xf[0] = ix * ifftX;
                         crystal.toCartesianCoordinates(xf, xc);
                         optLocal[giz]++;
+                        actualWeight++;
                         final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
                         grid[ii] = atomff.rho(grid[ii], lambdai, xc);
                     }
@@ -2311,8 +2417,8 @@ public class CrystalReciprocalSpace {
         final double grid[];
         final int optLocal[];
         long timer;
-        int threadBounds[];
-        int threadWeights[];
+        int previousUB, previousLB;
+        int actualWeight;
 
         public SolventSliceLoop(SliceRegion region) {
             super(region.getNatoms(), region.getNsymm(), region);
@@ -2320,16 +2426,16 @@ public class CrystalReciprocalSpace {
             optLocal = new int[fftZ];
         }
 
-        public double getTimePerThread() {
+        public double getThreadTime() {
             return timer;
         }
 
-        public int[] getBoundsPerThread() {
-            return threadBounds;
+        public int getNumberofSlices() {
+            return (previousUB - previousLB + 1);
         }
 
-        public int[] getWeightPerThread() {
-            return threadWeights;
+        public int getThreadWeight() {
+            return actualWeight;
         }
 
         @Override
@@ -2337,22 +2443,117 @@ public class CrystalReciprocalSpace {
             return solventSliceSchedule;
         }
 
+        public void buildList(int iSymm, int iAtom, int lb, int ub) {
+            if (!atoms[iAtom].isActive()) {
+                return;
+            }
+            xyz[0] = coordinates[iSymm][0][iAtom];
+            xyz[1] = coordinates[iSymm][1][iAtom];
+            xyz[2] = coordinates[iSymm][2][iAtom];
+            crystal.toFractionalCoordinates(xyz, uvw);
+            final int frad = min(aRadGrid, (int) floor(atoms[iAtom].getFormFactorWidth() * fftX / crystal.a) + 1);
+            final double frz = fftZ * uvw[2];
+            final int ifrz = (int) frz;
+            final int ifrzu = ifrz + frad;
+            final int ifrzl = ifrz - frad;
+            // Loop over allowed z coordinates for this Loop
+            // Check if the current atom is close enough
+            // If so, add to list.
+            int buff = bufferSize;
+            for (int iz = ifrzl - buff; iz <= ifrzu + buff; iz++) {
+                int giz = Crystal.mod(iz, fftZ);
+                if (lb > giz || giz > ub) {
+                    continue;
+                }
+                buildListA.add(iAtom);
+                buildListS.add(iSymm);
+                break;
+            }
+        }
+        
+        @Override
+        public boolean checkList(int zAtListBuild[][], int buff) {
+            for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+                for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
+                    if (sliceRegion.select[iSymm][iAtom]) {
+                        if (!atoms[iAtom].isActive()) {
+                            continue;
+                        }
+                        xyz[0] = coordinates[iSymm][0][iAtom];
+                        xyz[1] = coordinates[iSymm][1][iAtom];
+                        xyz[2] = coordinates[iSymm][2][iAtom];
+                        crystal.toFractionalCoordinates(xyz, uvw);
+                        final double frz = fftZ * uvw[2];
+                        final int ifrz = (int) frz;
+                        final int previousZ = zAtListBuild[iSymm][iAtom];
+                        if (abs(ifrz - previousZ) >= buff) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public void saveZValues(int zAtListBuild[][]) {
+            for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+                for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
+                    zAtListBuild[iSymm][iAtom] = 0;
+                    if (sliceRegion.select[iSymm][iAtom]) {
+                        if (!atoms[iAtom].isActive()) {
+                            continue;
+                        }
+                        xyz[0] = coordinates[iSymm][0][iAtom];
+                        xyz[1] = coordinates[iSymm][1][iAtom];
+                        xyz[2] = coordinates[iSymm][2][iAtom];
+                        crystal.toFractionalCoordinates(xyz, uvw);
+                        final double frz = fftZ * uvw[2];
+                        final int ifrz = (int) frz;
+                        zAtListBuild[iSymm][iAtom] = ifrz;
+                    }
+                }
+            }
+        }
+        
         @Override
         public void start() {
             fill(optLocal, 0);
+            actualWeight = 0;
             timer = -System.nanoTime();
         }
 
+        @Override
+        public void run(int lb, int ub) throws Exception {
+            boolean boundsChange = false;
+            if (previousLB != lb || previousUB != ub) {
+                boundsChange = true;
+            }
+            previousLB = lb;
+            previousUB = ub;
+            if (rebuildList || boundsChange) {
+                buildListA = new ArrayList<>();
+                buildListS = new ArrayList<>();
+                for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+                    for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
+                        if (sliceRegion.select[iSymm][iAtom]) {
+                            buildList(iSymm, iAtom, lb, ub);
+                        }
+                    }
+                }
+            }
+            for (int i = 0; i < buildListA.size(); i++) {
+                if (sliceRegion.select[buildListS.get(i)][buildListA.get(i)]) {
+                    gridDensity(buildListS.get(i), buildListA.get(i), lb, ub);
+                }
+            }
+        }
+        
         @Override
         public void finish() {
             timer += System.nanoTime();
             for (int i = 0; i < fftZ; i++) {
                 optSliceWeightSolvent.addAndGet(i, optLocal[i]);
-            }
-            threadBounds = solventSliceSchedule.getLowerBounds().clone();
-            threadWeights = solventSliceSchedule.getThreadWeights().clone();
-            for (int i = threadCount - 1; i > 0; i--) {
-                threadBounds[i] -= threadBounds[i - 1];
             }
         }
 
@@ -2411,6 +2612,7 @@ public class CrystalReciprocalSpace {
                         xf[0] = ix * ifftX;
                         crystal.toCartesianCoordinates(xf, xc);
                         optLocal[giz]++;
+                        actualWeight++;
                         final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
                         grid[ii] = formFactor.rho(grid[ii], lambdai, xc);
                     }

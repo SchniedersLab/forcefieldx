@@ -130,7 +130,7 @@ public class SliceSchedule extends IntegerSchedule {
             return;
         }
 
-        double targetWeight = (totalWeight / nThreads) * .95;
+        double targetWeight = (totalWeight / nThreads) * .96;
         int lastSlice = fftZ - 1;
 
         int currentSlice = 0;

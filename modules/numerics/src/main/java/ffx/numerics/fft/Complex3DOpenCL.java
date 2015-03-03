@@ -40,6 +40,7 @@ package ffx.numerics.fft;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.util.Random;
 import java.util.logging.Logger;
@@ -49,7 +50,8 @@ import com.jogamp.opencl.CLCommandQueue;
 import com.jogamp.opencl.CLContext;
 import com.jogamp.opencl.CLDevice;
 import com.jogamp.opencl.CLKernel;
-import com.jogamp.opencl.CLMemory;
+import com.jogamp.opencl.CLMemory.Map;
+import com.jogamp.opencl.CLMemory.Mem;
 import com.jogamp.opencl.CLPlatform;
 import com.jogamp.opencl.CLProgram;
 
@@ -57,7 +59,9 @@ import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelTeam;
 
 /**
- * This class implements a Java wrapper for calling clMath functions.
+ * This class implements a Java wrapper for calling clMath FFT.
+ *
+ * @since 1.0
  *
  * @author Michael J. Schnieders
  * @author Stephen LuCore
@@ -79,8 +83,11 @@ public final class Complex3DOpenCL implements Runnable {
     boolean free;
     boolean dead;
 
-    public CLBuffer<DoubleBuffer> dataBuffer;
-    public CLBuffer<DoubleBuffer> recipBuffer;
+    public CLBuffer<DoubleBuffer> pinnedData;
+    public CLBuffer<DoubleBuffer> pinnedRecip;
+    public CLBuffer<DoubleBuffer> deviceData;
+    public CLBuffer<DoubleBuffer> deviceRecip;
+
     public boolean transferOnly = false;
     private PlanHandle planHandle;
 
@@ -172,7 +179,7 @@ public final class Complex3DOpenCL implements Runnable {
 
         free = true;
 
-        // Notify the CUDA thread and then block until it notifies us back.
+        // Notify the OpenCL thread and then block until it notifies us back.
         synchronized (this) {
             notify();
             while (!dead) {
@@ -193,23 +200,30 @@ public final class Complex3DOpenCL implements Runnable {
         try {
             // Initialize the OpenCL Context
             context = CLContext.create();
+            CLDevice devices[] = context.getDevices();
+            logger.info(String.format(" Available OpenCL Devices\n"));
+            for (CLDevice device : devices) {
+                logger.info(String.format(" %s", device));
+            }
             CLDevice device = context.getMaxFlopsDevice();
-            logger.info(String.format(" Using device: %s\n", device));
+            logger.info(String.format("\n Using device:\n %s\n", device));
             CLPlatform platform = device.getPlatform();
             CLCommandQueue queue = device.createCommandQueue();
 
             // Allocate memory on the device.
             int bufferSize = len * 2;
             int dims[] = {nX, nY, nZ};
-            dataBuffer = context.createDoubleBuffer(bufferSize, CLMemory.Mem.READ_WRITE);
-            DoubleBuffer doubleBuffer = dataBuffer.getBuffer();
+            pinnedData = context.createDoubleBuffer(bufferSize, Mem.READ_WRITE, Mem.ALLOCATE_BUFFER);
+            deviceData = context.createDoubleBuffer(bufferSize, Mem.READ_WRITE);
+            DoubleBuffer doubleBuffer = pinnedData.getBuffer();
             int MB = 1024 * 1024;
             logger.info(String.format(" FFT data buffer        [direct: %b, write: %b, size: %d MB]",
-                    doubleBuffer.isDirect(), !doubleBuffer.isReadOnly(), dataBuffer.getCLSize() / MB));
-            recipBuffer = context.createDoubleBuffer(len, CLMemory.Mem.READ_WRITE);
-            doubleBuffer = recipBuffer.getBuffer();
+                    doubleBuffer.isDirect(), !doubleBuffer.isReadOnly(), pinnedData.getCLSize() / MB));
+            pinnedRecip = context.createDoubleBuffer(len, Mem.READ_WRITE, Mem.ALLOCATE_BUFFER);
+            deviceRecip = context.createDoubleBuffer(len, Mem.READ_WRITE);
+            doubleBuffer = pinnedRecip.getBuffer();
             logger.info(String.format(" Reciprocal data buffer [direct: %b, write: %b, size: %d MB]",
-                    doubleBuffer.isDirect(), !doubleBuffer.isReadOnly(), recipBuffer.getCLSize() / MB));
+                    doubleBuffer.isDirect(), !doubleBuffer.isReadOnly(), pinnedRecip.getCLSize() / MB));
 
             // Initialize the OpenCL FFT library.
             setup();
@@ -225,71 +239,76 @@ public final class Complex3DOpenCL implements Runnable {
 
             // Get a reference to the kernel function with the name 'VectorMultiply'
             CLKernel kernel = program.createCLKernel("VectorMultiply");
-            int localWorkSize = Math.min(device.getMaxWorkGroupSize(), 256);
+
+            int localWorkSize = Math.min(device.getMaxWorkGroupSize(), 128);
             int globalWorkSize = roundUp(localWorkSize, len);
+            logger.info(String.format(" Max Workgroup %d Local %d Global %d",
+                    device.getMaxWorkGroupSize(), localWorkSize, globalWorkSize));
 
             synchronized (this) {
                 while (!free) {
                     if (mode != null) {
                         switch (mode) {
                             case RECIP:
-                                doubleBuffer = recipBuffer.getBuffer();
-                                doubleBuffer.rewind();
-                                doubleBuffer.put(recip);
-                                doubleBuffer.rewind();
-                                queue.putWriteBuffer(recipBuffer, true);
+                                ByteBuffer hostBuffer = queue.putMapBuffer(pinnedRecip, Map.READ_WRITE, true);
+                                fillBuffer(hostBuffer, recip);
+                                deviceRecip = deviceRecip.cloneWith(hostBuffer.asDoubleBuffer());
+                                queue.putWriteBuffer(deviceRecip, true);
+                                queue.putUnmapMemory(pinnedRecip, hostBuffer);
+                                queue.finish();
                                 break;
                             case FFT:
-                                doubleBuffer = dataBuffer.getBuffer();
-                                doubleBuffer.rewind();
-                                doubleBuffer.put(data);
-                                doubleBuffer.rewind();
-                                queue.putWriteBuffer(dataBuffer, false);
-                                queue.putBarrier();
-                                if (!transferOnly) {
-                                    executeTransform(Complex3DOpenCL_DIRECTION.FORWARD, queue, dataBuffer, dataBuffer);
-                                }
+                                hostBuffer = queue.putMapBuffer(pinnedData, Map.READ_WRITE, true);
+                                fillBuffer(hostBuffer, data);
+                                deviceData = deviceData.cloneWith(hostBuffer.asDoubleBuffer());
+                                queue.putWriteBuffer(deviceData, true);
                                 queue.finish();
-                                queue.putReadBuffer(dataBuffer, true);
-                                doubleBuffer.rewind();
-                                doubleBuffer.get(data);
+                                if (!transferOnly) {
+                                    executeTransform(Complex3DOpenCL_DIRECTION.FORWARD, queue, deviceData, deviceData);
+                                }
+                                ByteBuffer deviceBuffer = queue.putMapBuffer(deviceData, Map.READ_WRITE, true);
+                                readBuffer(deviceBuffer.asDoubleBuffer(), data);
+                                queue.putUnmapMemory(pinnedData, hostBuffer);
+                                queue.putUnmapMemory(deviceData, deviceBuffer);
+                                queue.finish();
                                 break;
                             case CONVOLUTION:
-                                doubleBuffer = dataBuffer.getBuffer();
-                                doubleBuffer.rewind();
-                                doubleBuffer.put(data);
-                                doubleBuffer.rewind();
-                                queue.putWriteBuffer(dataBuffer, false);
-                                queue.putBarrier();
+                                hostBuffer = queue.putMapBuffer(pinnedData, Map.READ_WRITE, true);
+                                fillBuffer(hostBuffer, data);
+                                deviceData = deviceData.cloneWith(hostBuffer.asDoubleBuffer());
+                                queue.putWriteBuffer(deviceData, true);
+                                queue.finish();
                                 // Forward FFT
                                 if (!transferOnly) {
-                                executeTransform(Complex3DOpenCL_DIRECTION.FORWARD, queue, dataBuffer, dataBuffer);
-                                // Reciprocal Space Multiply
-                                kernel.rewind().putArgs(dataBuffer, recipBuffer).putArg(len);
-                                queue.put1DRangeKernel(kernel, 0, globalWorkSize, localWorkSize);
-                                queue.putBarrier();
-                                // Backward FFT
-                                executeTransform(Complex3DOpenCL_DIRECTION.BACKWARD, queue, dataBuffer, dataBuffer);
+                                    executeTransform(Complex3DOpenCL_DIRECTION.FORWARD, queue, deviceData, deviceData);
+                                    // Reciprocal Space Multiply
+                                    kernel.rewind().putArgs(deviceData, deviceRecip).putArg(len);
+                                    queue.put1DRangeKernel(kernel, 0, globalWorkSize, localWorkSize);
+                                    queue.putBarrier();
+                                    // Backward FFT
+                                    executeTransform(Complex3DOpenCL_DIRECTION.BACKWARD, queue, deviceData, deviceData);
+                                    queue.finish();
                                 }
+                                deviceBuffer = queue.putMapBuffer(deviceData, Map.READ_WRITE, true);
+                                readBuffer(deviceBuffer.asDoubleBuffer(), data);
+                                queue.putUnmapMemory(pinnedData, hostBuffer);
+                                queue.putUnmapMemory(deviceData, deviceBuffer);
                                 queue.finish();
-                                queue.putReadBuffer(dataBuffer, true);
-                                doubleBuffer.rewind();
-                                doubleBuffer.get(data);
                                 break;
                             case IFFT:
-                                doubleBuffer = dataBuffer.getBuffer();
-                                doubleBuffer.rewind();
-                                doubleBuffer.put(data);
-                                doubleBuffer.rewind();
-                                queue.putWriteBuffer(dataBuffer, true);
-                                if (!transferOnly) {
-                                    executeTransform(Complex3DOpenCL_DIRECTION.BACKWARD, queue, dataBuffer, dataBuffer);
-                                }
+                                hostBuffer = queue.putMapBuffer(pinnedData, Map.READ_WRITE, true);
+                                fillBuffer(hostBuffer, data);
+                                deviceData = deviceData.cloneWith(hostBuffer.asDoubleBuffer());
+                                queue.putWriteBuffer(deviceData, true);
                                 queue.finish();
-                                queue.putReadBuffer(dataBuffer, true);
-                                doubleBuffer.rewind();
-                                doubleBuffer.get(data);
-                                break;
+                                if (!transferOnly) {
+                                    executeTransform(Complex3DOpenCL_DIRECTION.BACKWARD, queue, deviceData, deviceData);
+                                }
+                                deviceBuffer = queue.putMapBuffer(deviceData, Map.READ_WRITE, true);
+                                readBuffer(deviceBuffer.asDoubleBuffer(), data);
+                                queue.putUnmapMemory(pinnedData, hostBuffer);
+                                queue.putUnmapMemory(deviceData, deviceBuffer);
+                                queue.finish();
                         }
                         // Reset the mode to null and notify the calling thread.
                         mode = null;
@@ -302,6 +321,10 @@ public final class Complex3DOpenCL implements Runnable {
                         logger.severe(e.toString());
                     }
                 }
+                pinnedData.release();
+                pinnedRecip.release();
+                deviceData.release();
+                deviceRecip.release();
                 destroyPlan();
                 teardown();
                 dead = true;
@@ -315,6 +338,18 @@ public final class Complex3DOpenCL implements Runnable {
             }
         }
         logger.info(" OpenCL FFT/convolution thread is done.");
+    }
+
+    private void fillBuffer(ByteBuffer byteBuffer, double input[]) {
+        DoubleBuffer doubleBuffer = byteBuffer.asDoubleBuffer();
+        doubleBuffer.rewind();
+        doubleBuffer.put(input);
+        doubleBuffer.rewind();
+    }
+
+    private void readBuffer(DoubleBuffer doubleBuffer, double output[]) {
+        doubleBuffer.rewind();
+        doubleBuffer.get(output);
     }
 
     private enum MODE {
@@ -514,7 +549,6 @@ public final class Complex3DOpenCL implements Runnable {
         Thread openCLThread = new Thread(complex3DOpenCL);
         openCLThread.setPriority(Thread.MAX_PRIORITY);
         openCLThread.start();
-
 
         double toSeconds = 0.000000001;
         long parTime = Long.MAX_VALUE;

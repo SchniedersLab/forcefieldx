@@ -58,9 +58,9 @@ import static ffx.potential.nonbonded.SpatialDensityRegion.logger;
  *
  * 2) Diffraction form factors.
  *
- * Each "slice" of the grid (i.e. a fixed value of the z-coordinate) is
- * operated on by only a single thread to logically enforce atomic updates of
- * grid magnitudes.
+ * Each "slice" of the grid (i.e. a fixed value of the z-coordinate) is operated
+ * on by only a single thread to logically enforce atomic updates of grid
+ * magnitudes.
  *
  * @author Armin Avdic
  */
@@ -81,10 +81,12 @@ public class SliceRegion extends ParallelRegion {
     double initValue = 0.0;
     int gridSize;
     double grid[];
-
+    boolean rebuildList = true;
     protected SliceLoop sliceLoop[];
     protected double coordinates[][][];
-    protected boolean select[][];
+    public boolean select[][];
+    public int zAtListBuild[][];
+    public int buff = 3;
 
     // Constructor
     public SliceRegion(int gX, int gY, int gZ, double grid[],
@@ -116,6 +118,8 @@ public class SliceRegion extends ParallelRegion {
         for (int i = 0; i < nSymm; i++) {
             fill(select[i], true);
         }
+        zAtListBuild = new int[nSymm][nAtoms];
+        rebuildList = true;
     }
 
     public final void setCrystal(Crystal crystal, int gX, int gY, int gZ) {
@@ -131,9 +135,11 @@ public class SliceRegion extends ParallelRegion {
         this.atoms = atoms;
         nAtoms = atoms.length;
         select = new boolean[nSymm][nAtoms];
+        zAtListBuild = new int[nSymm][nAtoms];
         for (int i = 0; i < nSymm; i++) {
             fill(select[i], true);
         }
+        rebuildList = true;
     }
 
     public int getNatoms() {
@@ -155,6 +161,15 @@ public class SliceRegion extends ParallelRegion {
     @Override
     public void start() {
         selectAtoms();
+        rebuildList = (rebuildList || sliceLoop[0].checkList(zAtListBuild, buff));
+    }
+
+    @Override
+    public void finish() {
+        if (rebuildList) {
+            sliceLoop[0].saveZValues(zAtListBuild);
+        }
+        rebuildList = false;
     }
 
     @Override
@@ -166,6 +181,7 @@ public class SliceRegion extends ParallelRegion {
          * SpatialDensityRegions.
          */
         loop.setNsymm(nSymm);
+        loop.setRebuildList(rebuildList);
         try {
             execute(0, gridSize - 1, gridInitLoop[threadIndex]);
             execute(0, gZ - 1, loop);
@@ -174,6 +190,7 @@ public class SliceRegion extends ParallelRegion {
             logger.log(Level.SEVERE, message, e);
         }
     }
+
     /**
      * <p>
      * Setter for the field <code>initValue</code>.</p>

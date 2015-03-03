@@ -84,7 +84,7 @@ public class RowRegion extends ParallelRegion {
 
     protected RowLoop rowLoop[];
     protected double coordinates[][][];
-    protected boolean select[][];
+    public boolean select[][];
 
     // Constructor
     public RowRegion(int gX, int gY, int gZ, double grid[],

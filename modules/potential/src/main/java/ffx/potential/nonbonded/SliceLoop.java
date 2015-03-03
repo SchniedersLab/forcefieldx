@@ -40,6 +40,7 @@ package ffx.potential.nonbonded;
 import java.util.logging.Logger;
 
 import edu.rit.pj.IntegerForLoop;
+import java.util.ArrayList;
 
 /**
  * The SliceLoop class is used to parallelize placing onto a 3D grid
@@ -48,10 +49,10 @@ import edu.rit.pj.IntegerForLoop;
  *
  * 2) Diffraction form factors.
  *
- * Each "slice" of the grid (i.e. a fixed value of the z-coordinate) is
- * operated on by only a single thread to logically enforce atomic updates of
- * grid magnitudes.
- * 
+ * Each "slice" of the grid (i.e. a fixed value of the z-coordinate) is operated
+ * on by only a single thread to logically enforce atomic updates of grid
+ * magnitudes.
+ *
  * @author Armin Avdic
  */
 public abstract class SliceLoop extends IntegerForLoop {
@@ -62,7 +63,22 @@ public abstract class SliceLoop extends IntegerForLoop {
     private static final Logger logger = Logger.getLogger(SliceLoop.class.getName());
     int nAtoms;
     int nSymm;
-    SliceRegion sliceRegion;
+    public SliceRegion sliceRegion;
+    public boolean rebuildList = false;
+    public ArrayList<Integer> buildListA = new ArrayList<>();
+    public ArrayList<Integer> buildListS = new ArrayList<>();
+
+    public void setRebuildList(boolean rebuildList) {
+        this.rebuildList = rebuildList;
+    }
+    
+    public void saveZValues(int zAtListBuild[][]) {
+        
+    }
+    
+    public boolean checkList(int zAtListBuild[][], int buff) {
+        return false;
+    }
 
     public SliceLoop(int nAtoms, int nSymm, SliceRegion sliceRegion) {
         this.nAtoms = nAtoms;
@@ -91,10 +107,10 @@ public abstract class SliceLoop extends IntegerForLoop {
             }
         }
     }
-    
+
     /**
-     * Apply electron density "as normal" for an atom, but check that
-     * the z index is within the supplied bounds (inclusive).
+     * Apply electron density "as normal" for an atom, but check that the z
+     * index is within the supplied bounds (inclusive).
      *
      * @param iSymm the SymOp to apply.
      * @param iAtom the index of the Atom to put onto the grid.

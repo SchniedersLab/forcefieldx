@@ -131,6 +131,17 @@ public abstract class Thermostat {
         removingCenterOfMassMotion = true;
         dof = nVariables - 3;
     }
+    
+    /**
+     * To allow chemical perturbations during MD.
+     * @param nVariables 
+     */
+    public void setNumberOfVariables(int nVariables, double x[], double v[], double mass[]) {
+        this.nVariables = nVariables;
+        this.x = x;
+        this.v = v;
+        this.mass = mass;
+    }
 
     /**
      * If center of mass motion is being removed, then the mean kinetic energy
@@ -228,6 +239,14 @@ public abstract class Thermostat {
         kT = t * kB;
     }
 
+    public double[] maxwellIndividual(double mass) {
+        double v[] = new double[3];
+        for (int i = 0; i < v.length; i++) {
+            v[i] = random.nextGaussian() * sqrt(kB * targetTemperature / mass);
+        }
+        return v;
+    }
+    
     /**
      * Reset velocities from a Maxwell-Boltzmann distribution of momenta. The
      * variance of each independent momentum component is kT * mass.

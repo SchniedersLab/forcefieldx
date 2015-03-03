@@ -190,14 +190,13 @@ public class MultiResidue extends Residue {
         return activeResidue.getMultiScaleCenter(w);
     }
     
-//    @Override
-//    public String getName() {
-//        if (activeResidue != null) {
-//            return activeResidue.getName();
-//        }
-//        logger.info("Returning super.");
-//        return super.getName();
-//    }
+    @Override
+    public String getName() {
+        if (activeResidue != null) {
+            return activeResidue.getName();
+        }
+        return super.getName();
+    }
 
     @Override
     public MSNode getTerms() {
@@ -534,6 +533,34 @@ public class MultiResidue extends Residue {
         }
         newResidue.finalize(true, forceField);
         updateGeometry(newResidue, prevResidue, nextResidue, prev2Residue, next2Residue);
+    }
+
+    /**
+     * Returns a list of this MultiResidue's inactive residues.
+     * Adding/removing from the returned list does nothing.
+     * @return 
+     */
+    public List<Residue> getInactive() {
+        List<Residue> ret = new ArrayList<>();
+        for (Residue res : consideredResidues) {
+            if (res != activeResidue) {
+                ret.add(res);
+            }
+        }
+        return ret;
+    }
+    
+    /**
+     * Returns a COPY of this MultiResidue's consideredResidues array.
+     * Adding/removing from the returned list does nothing.
+     * @return 
+     */
+    public List<Residue> getConsideredResidues() {
+        List<Residue> consideredCopy = new ArrayList<>();
+        for (Residue res : consideredResidues) {
+            consideredCopy.add(res);
+        }
+        return consideredCopy;
     }
     
     public boolean requestSetActiveResidue(AminoAcid3 aa) {
