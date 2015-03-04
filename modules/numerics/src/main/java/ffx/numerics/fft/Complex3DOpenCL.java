@@ -85,8 +85,6 @@ public final class Complex3DOpenCL implements Runnable {
 
     public CLBuffer<DoubleBuffer> pinnedData;
     public CLBuffer<DoubleBuffer> pinnedRecip;
-    public CLBuffer<DoubleBuffer> deviceData;
-    public CLBuffer<DoubleBuffer> deviceRecip;
 
     public boolean transferOnly = false;
     private PlanHandle planHandle;
@@ -205,6 +203,7 @@ public final class Complex3DOpenCL implements Runnable {
             for (CLDevice device : devices) {
                 logger.info(String.format(" %s", device));
             }
+            //CLDevice device = devices[1];
             CLDevice device = context.getMaxFlopsDevice();
             logger.info(String.format("\n Using device:\n %s\n", device));
             CLPlatform platform = device.getPlatform();
@@ -214,13 +213,11 @@ public final class Complex3DOpenCL implements Runnable {
             int bufferSize = len * 2;
             int dims[] = {nX, nY, nZ};
             pinnedData = context.createDoubleBuffer(bufferSize, Mem.READ_WRITE, Mem.ALLOCATE_BUFFER);
-            deviceData = context.createDoubleBuffer(bufferSize, Mem.READ_WRITE);
             DoubleBuffer doubleBuffer = pinnedData.getBuffer();
             int MB = 1024 * 1024;
             logger.info(String.format(" FFT data buffer        [direct: %b, write: %b, size: %d MB]",
                     doubleBuffer.isDirect(), !doubleBuffer.isReadOnly(), pinnedData.getCLSize() / MB));
             pinnedRecip = context.createDoubleBuffer(len, Mem.READ_WRITE, Mem.ALLOCATE_BUFFER);
-            deviceRecip = context.createDoubleBuffer(len, Mem.READ_WRITE);
             doubleBuffer = pinnedRecip.getBuffer();
             logger.info(String.format(" Reciprocal data buffer [direct: %b, write: %b, size: %d MB]",
                     doubleBuffer.isDirect(), !doubleBuffer.isReadOnly(), pinnedRecip.getCLSize() / MB));
@@ -250,65 +247,38 @@ public final class Complex3DOpenCL implements Runnable {
                     if (mode != null) {
                         switch (mode) {
                             case RECIP:
-                                ByteBuffer hostBuffer = queue.putMapBuffer(pinnedRecip, Map.READ_WRITE, true);
-                                fillBuffer(hostBuffer, recip);
-                                deviceRecip = deviceRecip.cloneWith(hostBuffer.asDoubleBuffer());
-                                queue.putWriteBuffer(deviceRecip, true);
-                                queue.putUnmapMemory(pinnedRecip, hostBuffer);
-                                queue.finish();
+                                fillBuffer(queue, pinnedRecip, recip);
                                 break;
                             case FFT:
-                                hostBuffer = queue.putMapBuffer(pinnedData, Map.READ_WRITE, true);
-                                fillBuffer(hostBuffer, data);
-                                deviceData = deviceData.cloneWith(hostBuffer.asDoubleBuffer());
-                                queue.putWriteBuffer(deviceData, true);
-                                queue.finish();
+                                fillBuffer(queue, pinnedData, data);
                                 if (!transferOnly) {
-                                    executeTransform(Complex3DOpenCL_DIRECTION.FORWARD, queue, deviceData, deviceData);
+                                    executeTransform(Complex3DOpenCL_DIRECTION.FORWARD, queue, pinnedData, pinnedData);
                                 }
-                                ByteBuffer deviceBuffer = queue.putMapBuffer(deviceData, Map.READ_WRITE, true);
-                                readBuffer(deviceBuffer.asDoubleBuffer(), data);
-                                queue.putUnmapMemory(pinnedData, hostBuffer);
-                                queue.putUnmapMemory(deviceData, deviceBuffer);
-                                queue.finish();
+                                readBuffer(queue, pinnedData, data);
                                 break;
                             case CONVOLUTION:
-                                hostBuffer = queue.putMapBuffer(pinnedData, Map.READ_WRITE, true);
-                                fillBuffer(hostBuffer, data);
-                                deviceData = deviceData.cloneWith(hostBuffer.asDoubleBuffer());
-                                queue.putWriteBuffer(deviceData, true);
-                                queue.finish();
+                                fillBuffer(queue, pinnedData, data);
                                 // Forward FFT
                                 if (!transferOnly) {
-                                    executeTransform(Complex3DOpenCL_DIRECTION.FORWARD, queue, deviceData, deviceData);
+                                    //long time = -System.nanoTime();
+                                    executeTransform(Complex3DOpenCL_DIRECTION.FORWARD, queue, pinnedData, pinnedData);
                                     // Reciprocal Space Multiply
-                                    kernel.rewind().putArgs(deviceData, deviceRecip).putArg(len);
+                                    kernel.rewind().putArgs(pinnedData, pinnedRecip).putArg(len);
                                     queue.put1DRangeKernel(kernel, 0, globalWorkSize, localWorkSize);
                                     queue.putBarrier();
                                     // Backward FFT
-                                    executeTransform(Complex3DOpenCL_DIRECTION.BACKWARD, queue, deviceData, deviceData);
-                                    queue.finish();
+                                    executeTransform(Complex3DOpenCL_DIRECTION.BACKWARD, queue, pinnedData, pinnedData);
+                                    //time += System.nanoTime();
+                                    //logger.info(String.format(" Compute Time %6.3f sec", time * 1.0e-9));
                                 }
-                                deviceBuffer = queue.putMapBuffer(deviceData, Map.READ_WRITE, true);
-                                readBuffer(deviceBuffer.asDoubleBuffer(), data);
-                                queue.putUnmapMemory(pinnedData, hostBuffer);
-                                queue.putUnmapMemory(deviceData, deviceBuffer);
-                                queue.finish();
+                                readBuffer(queue, pinnedData, data);
                                 break;
                             case IFFT:
-                                hostBuffer = queue.putMapBuffer(pinnedData, Map.READ_WRITE, true);
-                                fillBuffer(hostBuffer, data);
-                                deviceData = deviceData.cloneWith(hostBuffer.asDoubleBuffer());
-                                queue.putWriteBuffer(deviceData, true);
-                                queue.finish();
+                                fillBuffer(queue, pinnedData, data);
                                 if (!transferOnly) {
-                                    executeTransform(Complex3DOpenCL_DIRECTION.BACKWARD, queue, deviceData, deviceData);
+                                    executeTransform(Complex3DOpenCL_DIRECTION.BACKWARD, queue, pinnedData, pinnedData);
                                 }
-                                deviceBuffer = queue.putMapBuffer(deviceData, Map.READ_WRITE, true);
-                                readBuffer(deviceBuffer.asDoubleBuffer(), data);
-                                queue.putUnmapMemory(pinnedData, hostBuffer);
-                                queue.putUnmapMemory(deviceData, deviceBuffer);
-                                queue.finish();
+                                readBuffer(queue, pinnedData, data);
                         }
                         // Reset the mode to null and notify the calling thread.
                         mode = null;
@@ -321,10 +291,9 @@ public final class Complex3DOpenCL implements Runnable {
                         logger.severe(e.toString());
                     }
                 }
+                queue.finish();
                 pinnedData.release();
                 pinnedRecip.release();
-                deviceData.release();
-                deviceRecip.release();
                 destroyPlan();
                 teardown();
                 dead = true;
@@ -340,16 +309,26 @@ public final class Complex3DOpenCL implements Runnable {
         logger.info(" OpenCL FFT/convolution thread is done.");
     }
 
-    private void fillBuffer(ByteBuffer byteBuffer, double input[]) {
+    private void fillBuffer(CLCommandQueue queue, CLBuffer clBuffer, double input[]) {
+        //long time = -System.nanoTime();
+        ByteBuffer byteBuffer = queue.putMapBuffer(clBuffer, Map.READ_WRITE, true);
         DoubleBuffer doubleBuffer = byteBuffer.asDoubleBuffer();
         doubleBuffer.rewind();
         doubleBuffer.put(input);
-        doubleBuffer.rewind();
+        queue.putUnmapMemory(clBuffer, byteBuffer);
+        //time += System.nanoTime();
+        //logger.info(String.format(" Buffer fill %6.3f sec", time * 1.0e-9));
     }
 
-    private void readBuffer(DoubleBuffer doubleBuffer, double output[]) {
+    private void readBuffer(CLCommandQueue queue, CLBuffer clBuffer, double output[]) {
+        //long time = -System.nanoTime();
+        ByteBuffer byteBuffer = queue.putMapBuffer(clBuffer, Map.READ, true);
+        DoubleBuffer doubleBuffer = byteBuffer.asDoubleBuffer();
         doubleBuffer.rewind();
         doubleBuffer.get(output);
+        queue.putUnmapMemory(clBuffer, byteBuffer);
+        //time += System.nanoTime();
+        //logger.info(String.format(" Buffer read %6.3f sec", time * 1.0e-9));
     }
 
     private enum MODE {
@@ -621,7 +600,8 @@ public final class Complex3DOpenCL implements Runnable {
         double avg = 0.0;
         rmse = 0.0;
         for (int i = 0; i < dimCubed; i++) {
-            double error = Math.abs(answer[i] / dimCubed - data[2 * i]);
+            //double error = Math.abs(answer[i] - data[2 * i]);
+            double error = Math.abs(answer[i] - data[2 * i] * dimCubed);
             avg += error;
             if (error > maxError) {
                 maxError = error;
@@ -636,16 +616,11 @@ public final class Complex3DOpenCL implements Runnable {
         complex3DOpenCL.free();
         complex3DOpenCL = null;
 
-        System.out.println(String.format(" Best Sequential Time:  %8.3f",
-                toSeconds * seqTime));
-        System.out.println(String.format(" Best Parallel Time:    %8.3f",
-                toSeconds * parTime));
-        System.out.println(String.format(" Best OpenCL Time:      %8.3f",
-                toSeconds * clTime));
-        System.out.println(String.format(" Parallel Speedup: %15.5f", (double) seqTime
-                / parTime));
-        System.out.println(String.format(" OpenCL Speedup:   %15.5f", (double) seqTime
-                / clTime));
+        System.out.println(String.format(" Best Sequential Time:  %8.3f", toSeconds * seqTime));
+        System.out.println(String.format(" Best Parallel Time:    %8.3f", toSeconds * parTime));
+        System.out.println(String.format(" Best OpenCL Time:      %8.3f", toSeconds * clTime));
+        System.out.println(String.format(" Parallel Speedup:      %8.3fx", (double) seqTime / parTime));
+        System.out.println(String.format(" OpenCL Speedup:        %8.3fx", (double) seqTime / clTime));
     }
 
 }
