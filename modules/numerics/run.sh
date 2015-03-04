@@ -10,6 +10,6 @@ export CP="$MVN/edu/rit/pj/pj/1.8/pj-1.8.jar:$MVN/commons-math/commons-math3/3.4
 export LP="$SOFT/ffx/modules/numerics/src/main/java/ffx/numerics/fft:$SOFT/clMath/clFFT-nVidia/src/library"
 export LD_PRELOAD="/Dedicated/schnieders/programs/clMath/clFFT-nVidia/src/library/libclFFT.so"
 
-java -cp $CP -Djava.library.path=$LP ffx.numerics.fft.Complex3DOpenCL 128 10
+java -cp $CP -Djava.library.path=$LP ffx.numerics.fft.Complex3DOpenCL 256 20
 
 export LD_PRELOAD=""

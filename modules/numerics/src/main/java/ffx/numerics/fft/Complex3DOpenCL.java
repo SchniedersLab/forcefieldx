@@ -197,16 +197,21 @@ public final class Complex3DOpenCL implements Runnable {
         CLContext context = null;
         try {
             // Initialize the OpenCL Context
-            context = CLContext.create();
-            CLDevice devices[] = context.getDevices();
-            logger.info(String.format(" Available OpenCL Devices\n"));
-            for (CLDevice device : devices) {
-                logger.info(String.format(" %s", device));
-            }
-            //CLDevice device = devices[1];
-            CLDevice device = context.getMaxFlopsDevice();
+            CLPlatform[] platforms = CLPlatform.listCLPlatforms();
+            CLPlatform platform = platforms[0];
+
+            // Prefer NV
+           for (CLPlatform p : platforms) {
+              System.out.println(p);
+              if (p.getICDSuffix().equals("NV")) {
+                  platform = p;
+                  break;
+              }
+            } 
+
+            CLDevice device = platform.getMaxFlopsDevice();
             logger.info(String.format("\n Using device:\n %s\n", device));
-            CLPlatform platform = device.getPlatform();
+            context = CLContext.create(device);
             CLCommandQueue queue = device.createCommandQueue();
 
             // Allocate memory on the device.
