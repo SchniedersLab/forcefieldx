@@ -326,7 +326,7 @@ public class XrayMinimizeTest {
         splineMinimize.getCoordinates(x);
         splineEnergy.energyAndGradient(x, g);
         double delta = 1.0e-4;
-        double tolerance = 1.0e-5;
+        double tolerance = 1.0e-4;
         for (int i = 0; i < n; i++) {
             String test = String.format(" FOFC Spline Derivative %d.", i);
             double orig = x[i];
@@ -349,7 +349,7 @@ public class XrayMinimizeTest {
         splineMinimize.getCoordinates(x);
         splineEnergy.energyAndGradient(x, g);
         delta = 1.0e-4;
-        tolerance = 1.0e-5;
+        tolerance = 1.0e-4;
         for (int i = 0; i < n; i++) {
             String test = String.format(" F1F2 Spline Derivative %d.", i);
             double orig = x[i];
@@ -372,7 +372,7 @@ public class XrayMinimizeTest {
         splineMinimize.getCoordinates(x);
         splineEnergy.energyAndGradient(x, g);
         delta = 1.0e-4;
-        tolerance = 1.0e-5;
+        tolerance = 1.0e-4;
         for (int i = 0; i < n; i++) {
             String test = String.format(" FCTOESQ Spline Derivative %d.", i);
             double orig = x[i];
@@ -395,7 +395,7 @@ public class XrayMinimizeTest {
         splineMinimize.getCoordinates(x);
         splineEnergy.energyAndGradient(x, g);
         delta = 1.0e-4;
-        tolerance = 1.0e-5;
+        tolerance = 1.0e-4;
         for (int i = 0; i < n; i++) {
             String test = String.format(" FOTOESQ Spline Derivative %d.", i);
             double orig = x[i];
