@@ -515,7 +515,8 @@ public class Complex3DCuda implements Runnable {
                 data[j * 2 + 1] = 0.0;
             }
             long time = System.nanoTime();
-            complex3D.convolution(data);
+            //complex3D.convolution(data);
+            complex3D.fft(data);
             time = (System.nanoTime() - time);
             System.out.println(String.format(" %2d Sequential: %8.3f", i + 1, toSeconds * time));
             if (time < seqTime) {
@@ -533,7 +534,8 @@ public class Complex3DCuda implements Runnable {
                 data[j * 2 + 1] = 0.0;
             }
             long time = System.nanoTime();
-            complex3DParallel.convolution(data);
+            //complex3DParallel.convolution(data);
+            complex3DParallel.fft(data);
             time = (System.nanoTime() - time);
             System.out.println(String.format(" %2d Parallel:   %8.3f", i + 1, toSeconds * time));
             if (time < parTime) {
@@ -563,7 +565,8 @@ public class Complex3DCuda implements Runnable {
                 cudaBuffer.put(j * 2 + 1, 0.0);
             }
             long time = System.nanoTime();
-            complex3DCUDA.convolution(data);
+            //complex3DCUDA.convolution(data);
+            complex3DCUDA.fft(data);
             time = (System.nanoTime() - time);
             System.out.println(String.format(" %2d CUDA:     %8.3f", i + 1, toSeconds * time));
             if (time < clTime) {
@@ -575,7 +578,7 @@ public class Complex3DCuda implements Runnable {
         double avg = 0.0;
         rmse = 0.0;
         for (int i = 0; i < dimCubed; i++) {
-            double error = Math.abs(answer[i] - cudaBuffer.get(2*i));
+            double error = Math.abs(answer[i] - cudaBuffer.get(2 * i));
             // double error = Math.abs(answer[i] / dimCubed -  data[2 * i]);
             avg += error;
             if (error > maxError) {

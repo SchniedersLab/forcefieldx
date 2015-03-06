@@ -27,6 +27,8 @@ JNIEXPORT jlong JNICALL Java_ffx_numerics_fft_Complex3DOpenCL_createDefaultPlanN
     clfftDim dim;
     clfftPlanHandle planHandle;
     size_t clLengths[(int) dimension];
+    size_t clStrides[(int) dimension];
+    cl_float scale = 1.0;
     cl_context context = (cl_context) jContext;
 
     switch ((int) dimension) {
@@ -35,21 +37,39 @@ JNIEXPORT jlong JNICALL Java_ffx_numerics_fft_Complex3DOpenCL_createDefaultPlanN
             clLengths[0] = (size_t) dimX;
             clLengths[1] = (size_t) dimY;
             clLengths[2] = (size_t) dimZ;
+            clStrides[0] = (size_t) 1;
+            clStrides[1] = (size_t) dimX;
+            clStrides[2] = (size_t) dimX * dimY;
             break;
         case 2:
             dim = CLFFT_2D;
             clLengths[0] = (size_t) dimX;
             clLengths[1] = (size_t) dimY;
+            clStrides[0] = (size_t) 1;
+            clStrides[1] = (size_t) dimX;
             break;
         case 1:
         default:
             dim = CLFFT_1D;
             clLengths[0] = (size_t) dimX;
+            clStrides[0] = (size_t) 1;
             break;
     }
 
     err = clfftCreateDefaultPlan(&planHandle, context, dim, clLengths);
-    //printf(" Create %zd %d\n", planHandle, err);
+    //printf(" Lengths %zd %d\n", planHandle, err);
+    err = clfftSetPlanInStride(planHandle, dim, clStrides);
+    //printf(" In Strides %zd %d\n", planHandle, err);
+    err = clfftSetPlanOutStride(planHandle, dim, clStrides);
+    //printf(" Out Strides %zd %d\n", planHandle, err);
+    err = clfftSetPlanScale(planHandle, CLFFT_FORWARD, scale);
+    //printf(" Forward Scale %zd %d\n", planHandle, err);
+    err = clfftSetPlanScale(planHandle, CLFFT_BACKWARD, scale);
+    //printf(" Backward Scale %zd %d\n", planHandle, err);
+    err = clfftSetPlanPrecision(planHandle, CLFFT_DOUBLE);
+    //printf(" Precision %zd %d\n", planHandle, err);
+    err = clfftSetLayout(planHandle,  CLFFT_COMPLEX_INTERLEAVED,  CLFFT_COMPLEX_INTERLEAVED);
+    //printf(" Layout %zd %d\n", planHandle, err);
     return ((jlong) planHandle);
 }
 
@@ -118,7 +138,7 @@ JNIEXPORT jint JNICALL Java_ffx_numerics_fft_Complex3DOpenCL_executeTransformNat
     cl_command_queue queue = (cl_command_queue) jQueue;
     cl_mem rBuffer = (cl_mem) jrBuffer;
     cl_mem cBuffer = (cl_mem) jcBuffer;
-    cl_mem buffers[] = {rBuffer, cBuffer};
+    cl_mem buffers[] = {rBuffer};
     clfftDirection dir;
 
     switch ((int) direction) {
@@ -130,8 +150,8 @@ JNIEXPORT jint JNICALL Java_ffx_numerics_fft_Complex3DOpenCL_executeTransformNat
             dir = CLFFT_BACKWARD;
             break;
     }
-    err = clfftBakePlan(planHandle, 1, &queue, NULL, NULL);
-    //printf(" Bake %zd %d\n", planHandle, err);
+    // err = clfftBakePlan(planHandle, 1, &queue, NULL, NULL);
+    // printf(" Bake %zd %d\n", planHandle, err);
     err = clfftEnqueueTransform(planHandle, dir, 1, &queue, 0, NULL, NULL, buffers, NULL, NULL);
     //printf(" Enqueue %zd %d\n", planHandle, err);
     status = clFinish(queue);

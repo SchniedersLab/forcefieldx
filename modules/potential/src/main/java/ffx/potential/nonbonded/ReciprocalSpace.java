@@ -62,10 +62,10 @@ import ffx.crystal.Crystal;
 import ffx.numerics.TensorRecursion;
 import ffx.numerics.fft.Complex;
 import ffx.numerics.fft.Complex3DCuda;
+import ffx.numerics.fft.Complex3DOpenCL;
 import ffx.numerics.fft.Complex3DParallel;
 import ffx.numerics.fft.Real3DParallel;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Atom.Resolution;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldInteger;
@@ -245,7 +245,6 @@ public class ReciprocalSpace {
 
     private final PermanentPhiRegion permanentPhiRegion;
     private final InducedPhiRegion polarizationPhiRegion;
-    private Complex3DParallel complexFFT3D;
     private final IntegerSchedule recipSchedule;
 
     /**
@@ -260,14 +259,21 @@ public class ReciprocalSpace {
     private long bSplineTotal, splinePermanentTotal, splineInducedTotal;
     private long permanentPhiTotal, inducedPhiTotal, convTotal;
     /**
-     * CUDA convolution variables.
+     * Convolution variables.
      */
-    private final boolean cudaFFT;
-    private Thread cudaThread;
+    private final FFTMethod fftMethod;
+    private Thread gpuThread;
     private Complex3DCuda cudaFFT3D;
+    private Complex3DOpenCL clFFT3D;
+    private Complex3DParallel pjFFT3D;
     private GridMethod gridMethod = GridMethod.SPATIAL;
 
-    enum GridMethod {
+    public enum FFTMethod {
+
+        CUDA, OPENCL, PJ
+    }
+
+    public enum GridMethod {
 
         SPATIAL, SLICE, ROW
     };
@@ -319,7 +325,15 @@ public class ReciprocalSpace {
         } else {
             recipSchedule = IntegerSchedule.fixed();
         }
-        cudaFFT = forceField.getBoolean(ForceField.ForceFieldBoolean.CUDAFFT, false);
+        String temp = forceField.getString(ForceField.ForceFieldString.FFT_METHOD, "PJ");
+        FFTMethod method;
+        try {
+            method = FFTMethod.valueOf(temp.toUpperCase().trim());
+        } catch (Exception e) {
+            method = FFTMethod.PJ;
+        }
+        fftMethod = method;
+
         bSplineOrder = forceField.getInteger(ForceFieldInteger.PME_ORDER, 5);
 
         /**
@@ -523,30 +537,50 @@ public class ReciprocalSpace {
         fftSpace = fftX * fftY * fftZ * 2;
         boolean dimChanged = fftX != fftXCurrent || fftY != fftYCurrent || fftZ != fftZCurrent;
 
-        if (!cudaFFT) {
-            if (complexFFT3D == null || dimChanged) {
-                complexFFT3D = new Complex3DParallel(fftX, fftY, fftZ, fftTeam, recipSchedule);
-                if (splineGrid == null || splineGrid.length < fftSpace) {
-                    splineGrid = new double[fftSpace];
+        switch (fftMethod) {
+            case PJ:
+                if (pjFFT3D == null || dimChanged) {
+                    pjFFT3D = new Complex3DParallel(fftX, fftY, fftZ, fftTeam, recipSchedule);
+                    if (splineGrid == null || splineGrid.length < fftSpace) {
+                        splineGrid = new double[fftSpace];
+                    }
+                    splineBuffer = DoubleBuffer.wrap(splineGrid);
                 }
-                splineBuffer = DoubleBuffer.wrap(splineGrid);
-            }
-            complexFFT3D.setRecip(generalizedInfluenceFunction());
-            cudaFFT3D = null;
-            cudaThread = null;
-        } else {
-            if (cudaFFT3D == null || dimChanged) {
-                if (cudaFFT3D != null) {
-                    cudaFFT3D.free();
+                pjFFT3D.setRecip(generalizedInfluenceFunction());
+                cudaFFT3D = null;
+                clFFT3D = null;
+                gpuThread = null;
+                break;
+            case CUDA:
+                if (cudaFFT3D == null || dimChanged) {
+                    if (cudaFFT3D != null) {
+                        cudaFFT3D.free();
+                    }
+                    cudaFFT3D = new Complex3DCuda(fftX, fftY, fftZ);
+                    gpuThread = new Thread(cudaFFT3D);
+                    gpuThread.setPriority(Thread.MAX_PRIORITY);
+                    gpuThread.start();
+                    splineBuffer = cudaFFT3D.getDoubleBuffer();
                 }
-                cudaFFT3D = new Complex3DCuda(fftX, fftY, fftZ);
-                cudaThread = new Thread(cudaFFT3D);
-                cudaThread.setPriority(Thread.MAX_PRIORITY);
-                cudaThread.start();
-                splineBuffer = cudaFFT3D.getDoubleBuffer();
-            }
-            cudaFFT3D.setRecip(generalizedInfluenceFunction());
-            complexFFT3D = null;
+                cudaFFT3D.setRecip(generalizedInfluenceFunction());
+                pjFFT3D = null;
+                clFFT3D = null;
+                break;
+            case OPENCL:
+                if (clFFT3D == null || dimChanged) {
+                    if (clFFT3D != null) {
+                        clFFT3D.free();
+                    }
+                    clFFT3D = new Complex3DOpenCL(fftX, fftY, fftZ);
+                    gpuThread = new Thread(clFFT3D);
+                    gpuThread.setPriority(Thread.MAX_PRIORITY);
+                    gpuThread.start();
+                    splineBuffer = clFFT3D.getDoubleBuffer();
+                }
+                clFFT3D.setRecip(generalizedInfluenceFunction());
+                pjFFT3D = null;
+                cudaFFT3D = null;
+                break;
         }
 
         switch (gridMethod) {
@@ -554,7 +588,7 @@ public class ReciprocalSpace {
                 if (spatialDensityRegion == null || dimChanged) {
                     spatialDensityRegion = new SpatialDensityRegion(fftX, fftY, fftZ, splineGrid, bSplineOrder, nSymm,
                             10, threadCount, crystal, atoms, coordinates);
-                    if (cudaFFT) {
+                    if (fftMethod != FFTMethod.PJ) {
                         spatialDensityRegion.setGridBuffer(splineBuffer);
                     }
                 } else {
@@ -566,7 +600,7 @@ public class ReciprocalSpace {
                 if (rowRegion == null || dimChanged) {
                     rowRegion = new RowRegion(fftX, fftY, fftZ, splineGrid, bSplineOrder, nSymm,
                             threadCount, crystal, atoms, coordinates);
-                    if (cudaFFT) {
+                    if (fftMethod != FFTMethod.PJ) {
                         rowRegion.setGridBuffer(splineBuffer);
                     }
                 } else {
@@ -580,7 +614,7 @@ public class ReciprocalSpace {
                 if (sliceRegion == null || dimChanged) {
                     sliceRegion = new SliceRegion(fftX, fftY, fftZ, splineGrid, bSplineOrder, nSymm,
                             threadCount, crystal, atoms, coordinates);
-                    if (cudaFFT) {
+                    if (fftMethod != FFTMethod.PJ) {
                         sliceRegion.setGridBuffer(splineBuffer);
                     }
                 } else {
@@ -593,12 +627,12 @@ public class ReciprocalSpace {
 
     public void printTimings() {
         if (logger.isLoggable(Level.FINE)) {
-            if (complexFFT3D != null) {
+            if (pjFFT3D != null) {
                 double total = (bSplineTotal + convTotal + splinePermanentTotal + permanentPhiTotal
                         + splineInducedTotal + inducedPhiTotal) * toSeconds;
 
                 logger.fine(String.format("\n Reciprocal Space: %7.4f (sec)", total));
-                long convTime[] = complexFFT3D.getTimings();
+                long convTime[] = pjFFT3D.getTimings();
                 logger.fine("                           Direct Field    SCF Field");
                 logger.fine(" Thread  B-Spline  3DConv  Spline  Phi     Spline  Phi      Count");
 
@@ -684,8 +718,8 @@ public class ReciprocalSpace {
         /**
          * Reset 3D convolution timing.
          */
-        if (complexFFT3D != null) {
-            complexFFT3D.initTiming();
+        if (pjFFT3D != null) {
+            pjFFT3D.initTiming();
         }
     }
 
@@ -714,9 +748,17 @@ public class ReciprocalSpace {
     public void splinePermanentMultipoles(double globalMultipoles[][][], boolean use[]) {
         splinePermanentTotal -= System.nanoTime();
 
-        if (cudaFFT) {
-            splineBuffer = cudaFFT3D.getDoubleBuffer();
-            spatialDensityRegion.setGridBuffer(splineBuffer);
+        switch (fftMethod) {
+            case OPENCL:
+                splineBuffer = clFFT3D.getDoubleBuffer();
+                spatialDensityRegion.setGridBuffer(splineBuffer);
+                break;
+            case CUDA:
+                splineBuffer = cudaFFT3D.getDoubleBuffer();
+                spatialDensityRegion.setGridBuffer(splineBuffer);
+                break;
+            case PJ:
+                break;
         }
 
         switch (gridMethod) {
@@ -777,10 +819,16 @@ public class ReciprocalSpace {
     public void permanentMultipoleConvolution() {
         convTotal -= System.nanoTime();
         try {
-            if (cudaFFT) {
-                cudaFFT3D.convolution(splineGrid);
-            } else {
-                complexFFT3D.convolution(splineGrid);
+            switch (fftMethod) {
+                case OPENCL:
+                    clFFT3D.convolution(splineGrid);
+                    break;
+                case CUDA:
+                    cudaFFT3D.convolution(splineGrid);
+                    break;
+                case PJ:
+                    pjFFT3D.convolution(splineGrid);
+                    break;
             }
         } catch (Exception e) {
             String message = " Fatal exception evaluating permanent convolution.";
@@ -818,9 +866,17 @@ public class ReciprocalSpace {
             boolean use[]) {
         splineInducedTotal -= System.nanoTime();
 
-        if (cudaFFT) {
-            splineBuffer = cudaFFT3D.getDoubleBuffer();
-            spatialDensityRegion.setGridBuffer(splineBuffer);
+        switch (fftMethod) {
+            case OPENCL:
+                splineBuffer = clFFT3D.getDoubleBuffer();
+                spatialDensityRegion.setGridBuffer(splineBuffer);
+                break;
+            case CUDA:
+                splineBuffer = cudaFFT3D.getDoubleBuffer();
+                spatialDensityRegion.setGridBuffer(splineBuffer);
+                break;
+            case PJ:
+                break;
         }
 
         switch (gridMethod) {
@@ -880,10 +936,16 @@ public class ReciprocalSpace {
     public void inducedDipoleConvolution() {
         convTotal -= System.nanoTime();
         try {
-            if (cudaFFT) {
-                cudaFFT3D.convolution(splineGrid);
-            } else {
-                complexFFT3D.convolution(splineGrid);
+            switch (fftMethod) {
+                case OPENCL:
+                    clFFT3D.convolution(splineGrid);
+                    break;
+                case CUDA:
+                    cudaFFT3D.convolution(splineGrid);
+                    break;
+                case PJ:
+                    pjFFT3D.convolution(splineGrid);
+                    break;
             }
         } catch (Exception e) {
             String message = "Fatal exception evaluating induced convolution.";

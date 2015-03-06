@@ -40,7 +40,6 @@ package ffx.numerics.fft;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.util.Random;
 import java.util.logging.Logger;
@@ -50,7 +49,6 @@ import com.jogamp.opencl.CLCommandQueue;
 import com.jogamp.opencl.CLContext;
 import com.jogamp.opencl.CLDevice;
 import com.jogamp.opencl.CLKernel;
-import com.jogamp.opencl.CLMemory.Map;
 import com.jogamp.opencl.CLMemory.Mem;
 import com.jogamp.opencl.CLPlatform;
 import com.jogamp.opencl.CLProgram;
@@ -79,14 +77,14 @@ public final class Complex3DOpenCL implements Runnable {
     private final int len;
     private double data[];
     private double recip[];
-    MODE mode;
-    boolean free;
-    boolean dead;
+    private MODE mode;
+    private boolean free;
+    private boolean dead;
 
-    public CLBuffer<DoubleBuffer> pinnedData;
-    public CLBuffer<DoubleBuffer> pinnedRecip;
+    private CLBuffer<DoubleBuffer> clData;
+    private CLBuffer<DoubleBuffer> clRecip;
 
-    public boolean transferOnly = false;
+    private boolean transferOnly = false;
     private PlanHandle planHandle;
 
     /**
@@ -174,10 +172,8 @@ public final class Complex3DOpenCL implements Runnable {
         if (dead || mode != null) {
             return -1;
         }
-
-        free = true;
-
         // Notify the OpenCL thread and then block until it notifies us back.
+        free = true;
         synchronized (this) {
             notify();
             while (!dead) {
@@ -188,51 +184,74 @@ public final class Complex3DOpenCL implements Runnable {
                 }
             }
         }
-
         return 0;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void finalize() throws Throwable {
+        try {
+            free();
+        } finally {
+            super.finalize();
+        }
     }
 
     @Override
     public void run() {
         CLContext context = null;
         try {
-            // Initialize the OpenCL Context
+            // Choose a platform.
             CLPlatform[] platforms = CLPlatform.listCLPlatforms();
             CLPlatform platform = platforms[0];
-
             // Prefer NV
-           for (CLPlatform p : platforms) {
-              System.out.println(p);
-              if (p.getICDSuffix().equals("NV")) {
-                  platform = p;
-                  break;
-              }
-            } 
+            try {
+                for (CLPlatform p : platforms) {
+                    if (p.getICDSuffix().equals("NV")) {
+                        platform = p;
+                        break;
+                    }
+                }
+            } catch (Exception e) {
+                // ignore.
+            }
 
-            CLDevice device = platform.getMaxFlopsDevice();
-            logger.info(String.format("\n Using device:\n %s\n", device));
+            logger.info(String.format("   Platform: %s", platform));
+            // Choose a device.
+            CLDevice devices[] = platform.listCLDevices(CLDevice.Type.ACCELERATOR, CLDevice.Type.GPU);
+            CLDevice device = devices[0];
+            for (CLDevice dev : devices) {
+                if (dev.getVendor().startsWith("NV")) {
+                    device = dev;
+                    break;
+                }
+            }
+            logger.info(String.format("   Device:   %s", device));
+
+            // Initialize the OpenCL Context
             context = CLContext.create(device);
             CLCommandQueue queue = device.createCommandQueue();
 
             // Allocate memory on the device.
             int bufferSize = len * 2;
-            int dims[] = {nX, nY, nZ};
-            pinnedData = context.createDoubleBuffer(bufferSize, Mem.READ_WRITE, Mem.ALLOCATE_BUFFER);
-            DoubleBuffer doubleBuffer = pinnedData.getBuffer();
+            clData = context.createDoubleBuffer(bufferSize, Mem.READ_WRITE);
+
+            DoubleBuffer doubleBuffer = clData.getBuffer();
             int MB = 1024 * 1024;
-            logger.info(String.format(" FFT data buffer        [direct: %b, write: %b, size: %d MB]",
-                    doubleBuffer.isDirect(), !doubleBuffer.isReadOnly(), pinnedData.getCLSize() / MB));
-            pinnedRecip = context.createDoubleBuffer(len, Mem.READ_WRITE, Mem.ALLOCATE_BUFFER);
-            doubleBuffer = pinnedRecip.getBuffer();
-            logger.info(String.format(" Reciprocal data buffer [direct: %b, write: %b, size: %d MB]",
-                    doubleBuffer.isDirect(), !doubleBuffer.isReadOnly(), pinnedRecip.getCLSize() / MB));
+            logger.info(String.format("   FFT data buffer        [direct: %b, write: %b, size: %d MB]",
+                    doubleBuffer.isDirect(), !doubleBuffer.isReadOnly(), clData.getCLSize() / MB));
+            clRecip = context.createDoubleBuffer(len, Mem.READ_WRITE);
+
+            doubleBuffer = clRecip.getBuffer();
+            logger.info(String.format("   Reciprocal data buffer [direct: %b, write: %b, size: %d MB]",
+                    doubleBuffer.isDirect(), !doubleBuffer.isReadOnly(), clRecip.getCLSize() / MB));
 
             // Initialize the OpenCL FFT library.
             setup();
+            int dims[] = {nX, nY, nZ};
             planHandle = createDefaultPlan(context, Complex3DOpenCL_DIMENSION.Complex3DOpenCL_3D, dims);
-            setPlanPrecision(Complex3DOpenCL_PRECISION.DOUBLE);
-            setLayout(Complex3DOpenCL_LAYOUT.Complex3DOpenCL_COMPLEX_INTERLEAVED,
-                    Complex3DOpenCL_LAYOUT.Complex3DOpenCL_COMPLEX_INTERLEAVED);
 
             // Initialize the Reciprocal Space Multitply Kernal
             URL source = getClass().getClassLoader().getResource("ffx/numerics/fft/VectorMultiply.cl");
@@ -241,49 +260,52 @@ public final class Complex3DOpenCL implements Runnable {
 
             // Get a reference to the kernel function with the name 'VectorMultiply'
             CLKernel kernel = program.createCLKernel("VectorMultiply");
-
             int localWorkSize = Math.min(device.getMaxWorkGroupSize(), 128);
             int globalWorkSize = roundUp(localWorkSize, len);
-            logger.info(String.format(" Max Workgroup %d Local %d Global %d",
-                    device.getMaxWorkGroupSize(), localWorkSize, globalWorkSize));
 
             synchronized (this) {
                 while (!free) {
                     if (mode != null) {
                         switch (mode) {
                             case RECIP:
-                                fillBuffer(queue, pinnedRecip, recip);
+                                clRecip.getBuffer().put(recip).rewind();
+                                queue.putWriteBuffer(clRecip, true);
                                 break;
                             case FFT:
-                                fillBuffer(queue, pinnedData, data);
+                                clData.getBuffer().rewind();
+                                queue.putWriteBuffer(clData, true);
                                 if (!transferOnly) {
-                                    executeTransform(Complex3DOpenCL_DIRECTION.FORWARD, queue, pinnedData, pinnedData);
+                                    executeTransform(Complex3DOpenCL_DIRECTION.FORWARD, queue, clData, clData);
+                                    queue.finish();
                                 }
-                                readBuffer(queue, pinnedData, data);
+                                clData.getBuffer().rewind();
+                                queue.putReadBuffer(clData, true);
+                                clData.getBuffer().rewind();
+                                queue.finish();
                                 break;
                             case CONVOLUTION:
-                                fillBuffer(queue, pinnedData, data);
+                                queue.putWriteBuffer(clData, true);
                                 // Forward FFT
                                 if (!transferOnly) {
                                     //long time = -System.nanoTime();
-                                    executeTransform(Complex3DOpenCL_DIRECTION.FORWARD, queue, pinnedData, pinnedData);
+                                    executeTransform(Complex3DOpenCL_DIRECTION.FORWARD, queue, clData, clData);
                                     // Reciprocal Space Multiply
-                                    kernel.rewind().putArgs(pinnedData, pinnedRecip).putArg(len);
+                                    kernel.rewind().putArgs(clData, clRecip).putArg(len);
                                     queue.put1DRangeKernel(kernel, 0, globalWorkSize, localWorkSize);
                                     queue.putBarrier();
                                     // Backward FFT
-                                    executeTransform(Complex3DOpenCL_DIRECTION.BACKWARD, queue, pinnedData, pinnedData);
+                                    executeTransform(Complex3DOpenCL_DIRECTION.BACKWARD, queue, clData, clData);
                                     //time += System.nanoTime();
                                     //logger.info(String.format(" Compute Time %6.3f sec", time * 1.0e-9));
                                 }
-                                readBuffer(queue, pinnedData, data);
+                                queue.putReadBuffer(clData, true);
                                 break;
                             case IFFT:
-                                fillBuffer(queue, pinnedData, data);
+                                queue.putWriteBuffer(clData, true);
                                 if (!transferOnly) {
-                                    executeTransform(Complex3DOpenCL_DIRECTION.BACKWARD, queue, pinnedData, pinnedData);
+                                    executeTransform(Complex3DOpenCL_DIRECTION.BACKWARD, queue, clData, clData);
                                 }
-                                readBuffer(queue, pinnedData, data);
+                                queue.putReadBuffer(clData, true);
                         }
                         // Reset the mode to null and notify the calling thread.
                         mode = null;
@@ -297,8 +319,8 @@ public final class Complex3DOpenCL implements Runnable {
                     }
                 }
                 queue.finish();
-                pinnedData.release();
-                pinnedRecip.release();
+                clData.release();
+                clRecip.release();
                 destroyPlan();
                 teardown();
                 dead = true;
@@ -314,26 +336,11 @@ public final class Complex3DOpenCL implements Runnable {
         logger.info(" OpenCL FFT/convolution thread is done.");
     }
 
-    private void fillBuffer(CLCommandQueue queue, CLBuffer clBuffer, double input[]) {
-        //long time = -System.nanoTime();
-        ByteBuffer byteBuffer = queue.putMapBuffer(clBuffer, Map.READ_WRITE, true);
-        DoubleBuffer doubleBuffer = byteBuffer.asDoubleBuffer();
-        doubleBuffer.rewind();
-        doubleBuffer.put(input);
-        queue.putUnmapMemory(clBuffer, byteBuffer);
-        //time += System.nanoTime();
-        //logger.info(String.format(" Buffer fill %6.3f sec", time * 1.0e-9));
-    }
-
-    private void readBuffer(CLCommandQueue queue, CLBuffer clBuffer, double output[]) {
-        //long time = -System.nanoTime();
-        ByteBuffer byteBuffer = queue.putMapBuffer(clBuffer, Map.READ, true);
-        DoubleBuffer doubleBuffer = byteBuffer.asDoubleBuffer();
-        doubleBuffer.rewind();
-        doubleBuffer.get(output);
-        queue.putUnmapMemory(clBuffer, byteBuffer);
-        //time += System.nanoTime();
-        //logger.info(String.format(" Buffer read %6.3f sec", time * 1.0e-9));
+    public DoubleBuffer getDoubleBuffer() {
+        if (clData == null) {
+            return null;
+        }
+        return clData.getBuffer();
     }
 
     private enum MODE {
@@ -515,8 +522,8 @@ public final class Complex3DOpenCL implements Runnable {
             for (int j = 0; j < dim; j++) {
                 for (int i = 0; i < dim; i++) {
                     orig[index] = random.nextDouble();
-                    //recip[index] = orig[index];
-                    recip[index] = 1.0;
+                    recip[index] = orig[index];
+                    //recip[index] = 1.0;
                     index++;
                 }
             }
@@ -547,6 +554,7 @@ public final class Complex3DOpenCL implements Runnable {
             }
             long time = System.nanoTime();
             complex3D.convolution(data);
+            //complex3D.fft(data);
             time = (System.nanoTime() - time);
             System.out.println(String.format(" %2d Sequential: %8.3f", i + 1, toSeconds * time));
             if (time < seqTime) {
@@ -565,6 +573,7 @@ public final class Complex3DOpenCL implements Runnable {
             }
             long time = System.nanoTime();
             complex3DParallel.convolution(data);
+            //complex3DParallel.fft(data);
             time = (System.nanoTime() - time);
             System.out.println(String.format(" %2d Parallel:   %8.3f", i + 1, toSeconds * time));
             if (time < parTime) {
@@ -586,11 +595,15 @@ public final class Complex3DOpenCL implements Runnable {
         logger.info(String.format(" Parallel RMSE:   %12.10f, Max: %12.10f", rmse, maxError));
 
         complex3DOpenCL.setRecip(recip);
+        DoubleBuffer doubleBuffer = complex3DOpenCL.getDoubleBuffer();
         for (int i = 0; i < reps; i++) {
             for (int j = 0; j < dimCubed; j++) {
-                data[j * 2] = orig[j];
-                data[j * 2 + 1] = 0.0;
+                doubleBuffer.put(j * 2, orig[j]);
+                doubleBuffer.put(j * 2 + 1, 0.0);
+                // data[j * 2] = orig[j];
+                // data[j * 2 + 1] = 0.0;
             }
+            doubleBuffer.rewind();
             long time = System.nanoTime();
             complex3DOpenCL.convolution(data);
             //complex3DOpenCL.fft(data);
@@ -605,8 +618,12 @@ public final class Complex3DOpenCL implements Runnable {
         double avg = 0.0;
         rmse = 0.0;
         for (int i = 0; i < dimCubed; i++) {
-            //double error = Math.abs(answer[i] - data[2 * i]);
-            double error = Math.abs(answer[i] - data[2 * i] * dimCubed);
+            /*
+             if (i < 10) {
+             System.out.println(String.format(" %8.3f %8.3f %8.3f", orig[i], answer[i], doubleBuffer.get(2 * i)));
+             }
+             */
+            double error = Math.abs(answer[i] - doubleBuffer.get(2 * i));
             avg += error;
             if (error > maxError) {
                 maxError = error;

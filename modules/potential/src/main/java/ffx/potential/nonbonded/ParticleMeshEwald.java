@@ -80,6 +80,7 @@ import ffx.potential.bonded.Atom.Resolution;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.Torsion;
+import ffx.potential.nonbonded.ReciprocalSpace.FFTMethod;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldBoolean;
@@ -643,7 +644,7 @@ public class ParticleMeshEwald implements LambdaInterface {
      * parallelTeam.
      */
     private final ParallelTeam fftTeam;
-    private final boolean cudaFFT;
+    private final boolean gpuFFT;
     private IntegerSchedule permanentSchedule;
     private NeighborList neighborList;
     private final InitializationRegion initializationRegion;
@@ -878,7 +879,14 @@ public class ParticleMeshEwald implements LambdaInterface {
             polarization = Polarization.MUTUAL;
         }
 
-        cudaFFT = forceField.getBoolean(ForceField.ForceFieldBoolean.CUDAFFT, false);
+        String temp = forceField.getString(ForceField.ForceFieldString.FFT_METHOD, "PJ");
+        FFTMethod method;
+        try {
+            method = ReciprocalSpace.FFTMethod.valueOf(temp.toUpperCase().trim());
+        } catch (Exception e) {
+            method = ReciprocalSpace.FFTMethod.PJ;
+        }
+        gpuFFT = method != FFTMethod.PJ;
 
         if (lambdaTerm) {
             shareddEdLambda = new SharedDouble();
@@ -919,7 +927,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             logger.info(sb.toString());
         }
 
-        if (cudaFFT) {
+        if (gpuFFT) {
             sectionThreads = 2;
             realSpaceThreads = parallelTeam.getThreadCount();
             reciprocalThreads = 1;

@@ -71,6 +71,7 @@ import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.nonbonded.NeighborList;
 import ffx.potential.nonbonded.ReciprocalSpace;
+import ffx.potential.nonbonded.ReciprocalSpace.FFTMethod;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldBoolean;
@@ -411,7 +412,7 @@ public class PME_2 implements Potential {
     public static IntegerSchedule pairWiseSchedule;
     private final SharedDoubleArray sharedGrad[];
     private final SharedDoubleArray sharedTorque[];
-    private final boolean cudaFFT;
+    private final boolean gpuFFT;
     private long realSpaceTime;
     //private long reciprocalSpaceTime;
     //private long bsplineTime, densityTime, realAndFFTTime, phiTime;
@@ -498,7 +499,15 @@ public class PME_2 implements Potential {
 
         polarization = initPolarization;
         poleps = forceField.getDouble(ForceFieldDouble.POLAR_EPS, 1e-6);
-        cudaFFT = forceField.getBoolean(ForceField.ForceFieldBoolean.CUDAFFT, false);
+
+        String temp = forceField.getString(ForceField.ForceFieldString.FFT_METHOD, "PJ");
+        FFTMethod method;
+        try {
+            method = ReciprocalSpace.FFTMethod.valueOf(temp.toUpperCase().trim());
+        } catch (Exception e) {
+            method = ReciprocalSpace.FFTMethod.PJ;
+        }
+        gpuFFT = method != ReciprocalSpace.FFTMethod.PJ;
 
         localMultipole = new double[nAtoms][10];
         frame = new MultipoleType.MultipoleFrameDefinition[nAtoms];
@@ -550,7 +559,7 @@ public class PME_2 implements Potential {
             logger.info(sb.toString());
         }
 
-        if (cudaFFT) {
+        if (gpuFFT) {
             sectionThreads = 2;
             realSpaceThreads = parallelTeam.getThreadCount();
             fftThreads = 1;

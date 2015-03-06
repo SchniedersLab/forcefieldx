@@ -6,5 +6,5 @@ export CP="$MVN/edu/rit/pj/pj/1.8/pj-1.8.jar:$MVN/commons-math/commons-math3/3.4
 export SOFT="/Data/opencl/clFFT/src/library"
 export LP="/Data/ffx-project/ffx/modules/numerics/src/main/java/ffx/numerics/fft:$SOFT"
 
-java -Xmx6G -cp $CP -Djava.library.path=$LP ffx.numerics.fft.Complex3DOpenCL 256 5
+java -Xmx6G -cp $CP -Djava.library.path=$LP ffx.numerics.fft.Complex3DOpenCL 128 20
 
