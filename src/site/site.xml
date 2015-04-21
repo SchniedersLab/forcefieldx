@@ -125,7 +125,7 @@
         </breadcrumbs>
         <menu name="Overview" inherit="top">
             <item name="Welcome" href="/index.html"/>
-            <item name="Scope" href="/scope.html"/>
+            <item name="Scope and Collaborations" href="/scope.html"/>
             <item name="Manual" href="/download.html"/>
             <item name="Modules" href="/modules.html"/>
             <item name="License" href="/license.html"/>

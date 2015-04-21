@@ -320,12 +320,15 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             /**
              * Turn off reciprocal space calculations.
              */
+
             forceField.addForceFieldDouble(ForceFieldDouble.EWALD_ALPHA, 0.0);
+
+
             // Specify some dummy values for the crystal.
             spacegroup = "P1";
-            a = 4.0 * maxr;
-            b = 4.0 * maxr;
-            c = 4.0 * maxr;
+            a = 2.0 * maxr;
+            b = 2.0 * maxr;
+            c = 2.0 * maxr;
             alpha = 90.0;
             beta = 90.0;
             gamma = 90.0;
@@ -628,7 +631,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     nBonds++;
                 }
             }
-            if (nBonds < bonds.length) {
+            if (nBonds > bonds.length) {
                 bonds = new Bond[nBonds];
             }
             Arrays.fill(bonds, null);
@@ -656,7 +659,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     nAngles++;
                 }
             }
-            if (nAngles < angles.length) {
+            if (nAngles > angles.length) {
                 angles = new Angle[nAngles];
             }
             Arrays.fill(angles, null);
@@ -685,7 +688,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     nStretchBends++;
                 }
             }
-            if (nStretchBends < stretchBends.length) {
+            if (nStretchBends > stretchBends.length) {
                 stretchBends = new StretchBend[nStretchBends];
             }
             Arrays.fill(stretchBends, null);
@@ -713,7 +716,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     nUreyBradleys++;
                 }
             }
-            if (nUreyBradleys < ureyBradleys.length) {
+            if (nUreyBradleys > ureyBradleys.length) {
                 ureyBradleys = new UreyBradley[nUreyBradleys];
             }
             fill(ureyBradleys, null);
@@ -776,7 +779,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     nOutOfPlaneBends++;
                 }
             }
-            if (nOutOfPlaneBends < outOfPlaneBends.length) {
+            if (nOutOfPlaneBends > outOfPlaneBends.length) {
                 outOfPlaneBends = new OutOfPlaneBend[nOutOfPlaneBends];
             }
             fill(outOfPlaneBends, null);
@@ -804,7 +807,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     nTorsions++;
                 }
             }
-            if (nTorsions <= torsions.length) {
+            if (nTorsions >= torsions.length) {
                 torsions = new Torsion[nTorsions];
             }
             fill(torsions, null);
@@ -832,7 +835,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     nPiOrbitalTorsions++;
                 }
             }
-            if (nPiOrbitalTorsions <= piOrbitalTorsions.length) {
+            if (nPiOrbitalTorsions >= piOrbitalTorsions.length) {
                 piOrbitalTorsions = new PiOrbitalTorsion[nPiOrbitalTorsions];
             }
             fill(piOrbitalTorsions, null);
@@ -859,7 +862,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     nTorsionTorsions++;
                 }
             }
-            if (nTorsionTorsions <= torsionTorsions.length) {
+            if (nTorsionTorsions >= torsionTorsions.length) {
                 torsionTorsions = new TorsionTorsion[nTorsionTorsions];
             }
             fill(torsionTorsions, null);
@@ -886,7 +889,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     nImproperTorsions++;
                 }
             }
-            if (nImproperTorsions <= improperTorsions.length) {
+            if (nImproperTorsions >= improperTorsions.length) {
                 improperTorsions = new ImproperTorsion[nImproperTorsions];
             }
             fill(improperTorsions, null);
@@ -1959,6 +1962,10 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
     public double getPolarizationEnergy() {
         return polarizationEnergy;
+    }
+    
+    public double getTotalElectrostaticEnergy() {
+        return totalElectrostaticEnergy + solvationEnergy;
     }
 
 }
