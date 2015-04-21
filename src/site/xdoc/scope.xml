@@ -5,40 +5,50 @@
     xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
     http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
-        <title>Scope</title>
+        <title>Scope and Collaborations</title>
         <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
     </properties>
     <body>
-        <section name="Scope">
+        <section name="Scope and Collaborations">
             <p> Molecular biophysics tools may be of use to scientists or teachers
-                working in a range of fields and at a variety of length scales
-                including (bio)chemistry, molecular biology and (bio)molecular engineering.
-                Shown below is an overview of systems that have been investigated using classical
-                potentials. Click on the images to see more detail.
+                working on a variety of genes including cancer, inherited deafness
+                and vision loss related proteins. Shown below is an overview of 
+                protein homology models that have been studied and refined using
+                both local and global optimization algorithms. 
+                Click on the images to enhance the size.
             </p>
         </section>
-        <section name="(Bio)Chemistry">
+        <section name="Holden Comprehensive Cancer Genes">
             <table>
+                <p> The refining algorithms used often result in lengthening of 
+                        secondary structure in proteins and increased stability. 
+                        A small portion of the extracellular domain of Kit 
+                        is shown below with some secondary structured highlighted in boxes.
+                        The images demonstrate an increase in secondary structure. 
+                        Structures of additional Holden Comprehensive Cancer Center
+                        proteins can be found online at
+                        <a href="https://github.com/rcorrigan/holden-structures">https://github.com/rcorrigan/holden-structures. </a>
+                    </p>
                 <tr>
                     <td>
-                        <a href="images/trpcage.png">
-                            <img src="images/trpcage_small.png" />
+                        <a href="images/KitOriginal.png">
+                            <img src="images/KitOriginal_small.png" />
                         </a>
                     </td>
                     <td>
-                        <a href="images/heme.png">
-                            <img src="images/heme_small.png" />
+                        <a href="images/KitRefined.png">
+                            <img src="images/KitRefined_small.png" />
                         </a>
                     </td>
                 </tr>
                 <tr>
-                    <td>Trp-Cage</td>
-                    <td>Heme Prosthetic Group</td>
+                    <td>Original Kit</td>
+                    <td>Refined Kit</td>
                 </tr>
-                <tr>
-                    <td>
-                        <a href="images/enk.png">
-                            <img src="images/enk_small.png" />
+                <!-- <tr>
+                    <td> 
+                        <a href="images/KitRefined.png">
+                            <img src="images/KitRefined_small.png" />
                         </a>
                     </td>
                     <td>
@@ -66,31 +76,37 @@
                 <tr>
                     <td>Lipid</td>
                     <td>Retinoic Acid</td>
-                </tr>
+                </tr> -->
             </table>
         </section>
-        <section name="Molecular Biology">
+        <section name="Inherited Deafness">
             <table>
+                <p>Shown below are a refined GJB2 Hexamer and a portion of 
+                        the GIPC3 protein. The GIPC3 structure is displayed from
+                        residues 108 to 196. Structures of other proteins related 
+                        to inherited deafness can be found online at
+                    <a href="https://github.com/wtollefson/dvd-structures">https://github.com/wtollefson/dvd-structures. </a>
+                </p>
                 <tr>
                     <td>
-                        <a href="images/bdna.png">
-                            <img src="images/bdna_small.png" />
+                        <a href="images/GJB2Hexamer_Large.png">
+                            <img src="images/GJB2Hexamer_Small.png" />
                         </a>
                     </td>
                     <td>
-                        <a href="images/crambin.png">
-                            <img src="images/crambin_small.png" />
+                        <a href="images/GIPC3.png">
+                            <img src="images/GIPC3_small.png" />
                         </a>
                     </td>
                 </tr>
                 <tr>
-                    <td>DNA B-Form Dodecamer</td>
-                    <td>Crambin</td>
+                    <td>GJB2Hexamer</td>
+                    <td>GIPC3</td>
                 </tr>
-                <tr>
+                <!-- <tr>
                     <td>
-                        <a href="images/membrane.png">
-                            <img src="images/membrane_small.png" />
+                        <a href="images/GJB2Hexamer_Large.png">
+                            <img src="images/GJB2Hexamet_Small.png" />
                         </a>
                     </td>
                     <td>
@@ -118,26 +134,33 @@
                 <tr>
                     <td>Docked Polyalanines</td>
                     <td>Calmodulin</td>
-                </tr>
+                </tr> -->
             </table>
         </section>
-        <section name="(Bio)Molecular Engineering">
+        <section name="Inherited Vision Loss">
             <table>
+                <p>The vision variation related proteins MAK and PAX6 are 
+                        shown below. MAK is diplayed from residue one to 284, and PAX6 is
+                        displayed in complex with DNA. A database of the original
+                        and refined models of vision variation proteins can be
+                        found online at
+                    <a href="https://github.com/avlynn/VVD-structures">https://github.com/avlynn/VVD-structures. </a>
+                    </p>
                 <tr>
                     <td>
-                        <a href="images/bucky.png">
-                            <img src="images/bucky_small.png" />
+                        <a href="images/MAK_FFX_LARGE.png">
+                            <img src="images/MAK_FFX_SMALL.png" />
                         </a>
                     </td>
                     <td>
-                        <a href="images/bearing.png">
-                            <img src="images/bearing_small.png" />
+                        <a href="images/PAX6.png">
+                            <img src="images/PAX6_small.png" />
                         </a>
                     </td>
                 </tr>
                 <tr>
-                    <td>Small Bearing</td>
-                    <td>Large Bearing</td>
+                    <td>MAK</td>
+                    <td>PAX6</td>
                 </tr>
             </table>
         </section>

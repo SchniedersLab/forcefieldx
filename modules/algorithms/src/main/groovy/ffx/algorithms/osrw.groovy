@@ -173,7 +173,7 @@ cli.m(longOpt:'mass', args:1, argName:'1e-18', 'Lambda particle mass.');
 cli.e(longOpt:'elec', args:0, 'No electrostatics on ligand 1.');
 cli.e2(longOpt:'elec2', args:0, 'No electrostatics on ligand 2.');
 cli.x(longOpt:'friction', args:1, argName:'1e-18', 'Lambda particle friction.');
-cli.W(longOpt:'notraversals', args:0, 'Don\'t write out lambda-traversal snapshots.');
+cli.W(longOpt:'traversals', args:0, 'Write out lambda-traversal snapshots.');
 //cli.ld(longOpt:'minDensity', args:1, argName:'0.5', 'Minimum density allowed by the barostat.');
 //cli.hd(longOpt:'maxDensity', args:1, argName:'1.5', 'Maximum density allowed by the barostat.');
 //cli.sm(longOpt:'maxSideMove', args:1, argName:'0.25', 'Maximum side move allowed by the barostat.');

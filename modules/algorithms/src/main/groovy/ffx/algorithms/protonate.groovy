@@ -86,6 +86,11 @@ int mcStepFrequency = 10;
 // Simulation pH
 double pH = 7.4;
 
+// Single-residue titration option.
+Character chainID = ' ';
+int resID = -1;
+boolean titrateAll;
+
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
@@ -102,13 +107,21 @@ cli.t(longOpt:'temperature', args:1, argName:'298.15', 'Temperature in degrees K
 cli.w(longOpt:'save', args:1, argName:'0.1', 'Interval to write out coordinates (psec).');
 cli.s(longOpt:'restart', args:1, argName:'0.1', 'Interval to write out restart file (psec).');
 cli.f(longOpt:'file', args:1, argName:'PDB', 'Choose file type to write to [PDB/XYZ]');
-cli.r(longOpt:'residue', args:1, argName:'-1', 'Residue number of which to optimize protonation state.');
+cli.r(longOpt:'resid', args:1, argName:'-1', 'Residue (e.g. A4) to optimize protonation state [blank for all].');
 cli.pH(longOpt:'pH', args:1, argName:'7.4', 'Constant simulation pH.');
 cli.mc(longOpt:'mcStepFreq', args:1, argName:'10', 'Number of MD steps between Monte-Carlo protonation changes.')
 def options = cli.parse(args);
 
 if (options.h) {
     return cli.usage();
+}
+
+if (options.r) {
+    titrateAll = false;
+    chainID = (options.r).charAt(0);
+    resID = Integer.parseInt((options.r).substring(1));
+} else {
+    titrateAll = true;
 }
 
 if (options.mc) {
@@ -195,12 +208,25 @@ if (!dyn.exists()) {
     dyn = null;
 }
 
+// create the MD object
 MolecularDynamics molDyn = new MolecularDynamics(active, active.getPotentialEnergy(), active.getProperties(), sh, thermostat, integrator);
 molDyn.setFileType(fileType);
 molDyn.setRestartFrequency(restartFrequency);
 
+// create the Monte-Carlo listener and connect it to the MD
 Protonate mcProt = new Protonate(active, mcStepFrequency, pH, molDyn.getThermostat());
 molDyn.addMCListener(mcProt);
 mcProt.addMolDyn(molDyn);
 
+// set residues to be titrated
+if (titrateAll) {
+    mcProt.chooseAllTitratables();
+} else {
+    mcProt.chooseResID(chainID, resID);
+}
+
+// finalize the Multi-Residue machinery
+mcProt.readyUp();
+
+// and away we go!
 molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);

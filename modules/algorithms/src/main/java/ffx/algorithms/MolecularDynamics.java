@@ -53,11 +53,15 @@ import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
+import ffx.potential.bonded.MultiResidue;
 import ffx.potential.parsers.DYNFilter;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.XYZFilter;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Run NVE or NVT molecular dynamics.
@@ -229,12 +233,21 @@ public class MolecularDynamics implements Runnable, Terminatable {
         done = true;
     }
     
-    public void reInit(Atom oldAtomArray[]) {
-        logger.info(String.format(" ---------\n REINIT MD\n ---------"));
-        done = false;
-        if (oldAtomArray == null) {
-            logger.severe("Old atom array was null.");
+    /**
+     * Reinitialize the MD engine after a chemical change by specifying the inserted/removed atoms (fast).
+     * Currently only works for a SINGLE-ATOM insertion OR deletion.
+     * @param insertedAtoms
+     * @param removedAtoms 
+     */
+    public void reInit(List<Atom> insertedAtoms, List<Atom> removedAtoms) {
+        int debugLogLevel = 0;
+        String debugLogString = System.getProperty("debug");
+        if (debugLogString != null) {
+            debugLogLevel = Integer.parseInt(debugLogString);
         }
+        long startTime = System.nanoTime();
+        
+        done = false;
         
         mass = potential.getMass();
         int oldVars = numberOfVariables;
@@ -254,6 +267,137 @@ public class MolecularDynamics implements Runnable, Terminatable {
             logger.warning(String.format("numNewAtoms: %d\tnewAtomArray.length: %d", numNewAtoms, newAtomArray.length));
         }
         
+        if (insertedAtoms.isEmpty() && !removedAtoms.isEmpty()) {
+            if (removedAtoms.size() > 1) {
+                logger.severe("MD reInit(): option not yet implemented.");
+            }
+            // We lost one atom from the system.
+            // Locate its position and shift all x,v,etc. array elements up from that point on.
+            Atom removed = removedAtoms.get(0);
+            int remPosition = (removed.getXYZIndex() - 1) * 3;
+            for (int i = 0; i < newVars; i++) {
+                if (i < remPosition) {
+                    xNew[i] = x[i];
+                    vNew[i] = v[i];
+                    aNew[i] = a[i];
+                    aPreviousNew[i] = aPrevious[i];
+                    gradNew[i] = grad[i];
+                } else {
+                    xNew[i] = x[i+3];
+                    vNew[i] = v[i+3];
+                    aNew[i] = a[i+3];
+                    aPreviousNew[i] = aPrevious[i+3];
+                    gradNew[i] = grad[i+3];
+                }
+            }            
+        } else if (!insertedAtoms.isEmpty() && removedAtoms.isEmpty()) {
+            if (insertedAtoms.size() > 1) {
+                logger.severe("MD reInit(): option not yet implemented.");
+            }
+            // We gained one new atom in the system.
+            // Locate its position and insert its x,v,etc. array elements there, shifting all others' down.
+            Atom inserted = insertedAtoms.get(0);
+            int insPosition = (inserted.getXYZIndex() - 1) * 3;
+            for (int i = 0; i < oldVars; i++) {
+                if (i < insPosition) {
+                    xNew[i] = x[i];
+                    vNew[i] = v[i];
+                    aNew[i] = a[i];
+                    aPreviousNew[i] = aPrevious[i];
+                    gradNew[i] = grad[i];
+                } else {
+                    xNew[i+3] = x[i];
+                    vNew[i+3] = v[i];
+                    aNew[i+3] = a[i];
+                    aPreviousNew[i+3] = aPrevious[i];
+                    gradNew[i+3] = grad[i];
+                }
+            }
+        } else {
+            // Not yet implemented.
+            logger.severe("MD reInit() can't yet handle adding and removing atoms simultaneously.");
+        }
+        
+        // Initialize new-atom velocities from a Maxwell distribution.
+        for (Atom inserted : insertedAtoms) {
+            int insPosition = (inserted.getXYZIndex()-1) * 3;
+            double maxwell[] = thermostat.maxwellIndividual(inserted.getMass());
+            vNew[insPosition] = maxwell[0];
+            vNew[insPosition+1] = maxwell[1];
+            vNew[insPosition+2] = maxwell[2];
+            logger.info(" Assigned maxwell velocity for new atom " + inserted);
+        }
+        
+        numberOfVariables = newVars;
+        x = xNew;
+        v = vNew;
+        a = aNew;
+        aPrevious = aPreviousNew;
+        grad = gradNew;
+        
+        potential.getCoordinates(x);
+        thermostat.setNumberOfVariables(newVars, x, v, mass);
+        ((BetterBeeman) integrator).setNumberOfVariables(newVars, x, v, a, aPrevious, mass);
+
+        long took = (long) ((System.nanoTime() - startTime) * 1e-6);
+        // logger.info(String.format(" MD reInit(): %d ms", took));
+        
+        done = true;
+        return;
+    }
+    
+    /**
+     * Reinitialize the MD engine after an arbitrary chemical change.
+     * WARNING: this works but it's god-awful slow (like two-minutes-per slow).
+     * @param oldAtomArray a deep copy of the all-atom array from before you made a change
+     */
+    public void reInit(Atom oldAtomArray[]) {
+        long startTime = System.nanoTime();
+        int debugLogLevel = 0;
+        String debugLogString = System.getProperty("debug");
+        if (debugLogString != null) {
+            debugLogLevel = Integer.parseInt(debugLogString);
+        }
+        if (debugLogLevel > 0) {
+            logger.info(String.format(" ---------\n REINIT MD\n ---------"));
+        }
+        
+        done = false;
+        if (oldAtomArray == null) {
+            logger.severe("Old atom array was null.");
+        }
+        
+        mass = potential.getMass();
+        int oldVars = numberOfVariables;
+        int newVars = potential.getNumberOfVariables();
+        int numOldAtoms = oldVars / 3;
+        int numNewAtoms = newVars / 3;
+        
+        // Initialize all arrays with new numberOfVariables.
+        double xNew[] = new double[newVars];
+        double vNew[] = new double[newVars];
+        double aNew[] = new double[newVars];
+        double aPreviousNew[] = new double[newVars];
+        double gradNew[] = new double[newVars];
+        
+        int smallVars = (oldVars < newVars ? oldVars : newVars);
+        for (int i = 0; i < smallVars; i++) {
+            xNew[i] = x[i];
+            vNew[i] = v[i];
+            aNew[i] = a[i];
+            aPreviousNew[i] = aPrevious[i];
+            gradNew[i] = grad[i];
+        }
+
+        Atom newAtomArray[] = molecularAssembly.getAtomArray();
+        if (numNewAtoms != newAtomArray.length) {
+            logger.warning(String.format("numNewAtoms: %d\tnewAtomArray.length: %d", numNewAtoms, newAtomArray.length));
+        }
+        
+        // for each new atom: for each old atom: if they match, copy the x v a aPrev grad arrays from old to new;
+        //      flag those new atoms which don't have an old component as 'halted' (to be given maxwell velocity);
+        //      keep track of oldIndex values which have already been match for quicker looping
+        List<Atom> matchedAtoms = new ArrayList<>();
         List<Atom> haltedAtoms = new ArrayList<>();
         int oldIndex, newIndex;
         for (newIndex = 0; newIndex < numNewAtoms; newIndex++) {
@@ -266,6 +410,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 if (newAtom == oldAtom || newString.equals(oldString)) {
                     found = true;
                     int newPosition = newIndex*3, oldPosition = oldIndex*3;
+                    if (newPosition == oldPosition) {
+                        break;
+                    }
                     /*
                     StringBuilder sb = new StringBuilder();
                     sb.append(String.format(" old:%d  new:%d  atom:%s\n", oldIndex, newIndex, oldAtom));
@@ -291,6 +438,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
                     gradNew[newPosition] = grad[oldPosition];
                     gradNew[newPosition+1] = grad[oldPosition+1];
                     gradNew[newPosition+2] = grad[oldPosition+2];
+                    break;
                 }
             }
             if (!found) {
@@ -306,7 +454,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
             vNew[haltedPosition] = maxwell[0];
             vNew[haltedPosition+1] = maxwell[1];
             vNew[haltedPosition+2] = maxwell[2];
-            logger.info("Assigned maxwell velocity for new atom " + halted);
+            logger.info(" Assigned maxwell velocity for new atom " + halted);
             
             /* Using a nearby bonded atom (not stat-mech rigorous).
             try {
@@ -320,9 +468,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 aNew[haltedPosition] = aNew[matePosition];
                 aNew[haltedPosition+1] = aNew[matePosition+1];
                 aNew[haltedPosition+2] = aNew[matePosition+2];
-                logger.info("Assigned velocity for new atom " + halted + " using bond with " + mate);
+                logger.info(" Assigned velocity for new atom " + halted + " using bond with " + mate);
             } catch (IndexOutOfBoundsException ex) {
-                logger.info("No bond available to init velocity for atom " + halted);
+                logger.info(" No bond available to init velocity for atom " + halted);
             }
             */
         }
@@ -338,6 +486,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
         thermostat.setNumberOfVariables(newVars, x, v, mass);
         ((BetterBeeman) integrator).setNumberOfVariables(newVars, x, v, a, aPrevious, mass);
 
+        long took = (long) ((System.nanoTime() - startTime) * 1e-6);
+        logger.info(String.format(" MD reInit(): %d ms", took));
+        
         done = true;
         return;
     }
@@ -850,10 +1001,13 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 algorithmListener.algorithmUpdate(molecularAssembly);
             }
             if (monteCarloListener != null) {
+                long startTime = System.nanoTime();
                 monteCarloListener.mcUpdate(molecularAssembly);
                 potential.getCoordinates(x);
+                long took = (long) ((System.nanoTime() - startTime) * 1e-6);
+//                logger.info(String.format(" mcUpdate() took: %d ms", took));
                 
-                // TESTING
+                /* TESTING
                 for (Atom atom : molecularAssembly.getAtomArray()) {
                     if (atom.toString().contains("HE2 GLH 27")) {
                         int index = (atom.getXYZIndex() - 1)*3;
@@ -861,7 +1015,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
                                 atom.xyzIndex, atom, v[index], v[index+1], v[index+2],
                                 a[index], a[index+1], a[index+2]));
                     }
-                }
+                } */
             }
 
             /**
