@@ -40,6 +40,9 @@ package ffx.numerics;
 import java.util.Random;
 
 /**
+ * java -cp target/numerics-1.0.0-beta.jar -XX:+UnlockDiagnosticVMOptions
+ * -XX:+PrintAssembly -Djava.libraryath=hsdis-amd64.dylib ffx.numerics.SSETest
+ *
  * @author M. J. Schnieders
  */
 public class SSETest {

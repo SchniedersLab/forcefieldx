@@ -320,12 +320,15 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             /**
              * Turn off reciprocal space calculations.
              */
+
             forceField.addForceFieldDouble(ForceFieldDouble.EWALD_ALPHA, 0.0);
+
+
             // Specify some dummy values for the crystal.
             spacegroup = "P1";
-            a = 4.0 * maxr;
-            b = 4.0 * maxr;
-            c = 4.0 * maxr;
+            a = 2.0 * maxr;
+            b = 2.0 * maxr;
+            c = 2.0 * maxr;
             alpha = 90.0;
             beta = 90.0;
             gamma = 90.0;
