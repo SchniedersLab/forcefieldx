@@ -1963,7 +1963,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     public double getPolarizationEnergy() {
         return polarizationEnergy;
     }
-    
+
     public double getTotalElectrostaticEnergy() {
         return totalElectrostaticEnergy + solvationEnergy;
     }
