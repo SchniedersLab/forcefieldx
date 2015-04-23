@@ -422,16 +422,16 @@ public class VanDerWaals implements MaskingInterface,
         /**
          * Set up the cutoff and polynomial switch.
          */
+        buff = 2.0;
         double vdwcut;
         if (!crystal.aperiodic()) {
             vdwcut = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 9.0);
         } else {
-            vdwcut = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, crystal.a / 2.0 - 3.0);
+            vdwcut = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, crystal.a / 2.0 - (buff + 1.0) );
         }
         double vdwtaper = 0.9 * vdwcut;
         cut = vdwtaper;
         off = vdwcut;
-        buff = 2.0;
         cut2 = cut * cut;
         off2 = off * off;
         multiplicativeSwitch = new MultiplicativeSwitch(off, cut);
