@@ -336,7 +336,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         grad = gradNew;
         
         potential.getCoordinates(x);
-        thermostat.setNumberOfVariables(newVars, x, v, mass);
+        thermostat.setNumberOfVariables(newVars, x, v, mass, potential.getVariableTypes());
         ((BetterBeeman) integrator).setNumberOfVariables(newVars, x, v, a, aPrevious, mass);
 
         long took = (long) ((System.nanoTime() - startTime) * 1e-6);
@@ -483,7 +483,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         grad = gradNew;
         
         potential.getCoordinates(x);
-        thermostat.setNumberOfVariables(newVars, x, v, mass);
+        thermostat.setNumberOfVariables(newVars, x, v, mass, potential.getVariableTypes());
         ((BetterBeeman) integrator).setNumberOfVariables(newVars, x, v, a, aPrevious, mass);
 
         long took = (long) ((System.nanoTime() - startTime) * 1e-6);

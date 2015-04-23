@@ -97,7 +97,15 @@ public class Protonate implements MonteCarloListener {
     /**
      * Number of simulation steps between MC move attempts.
      */
-    private static int mcStepFrequency;
+    private int mcStepFrequency;
+    /**
+     * The ratio of rotamer moves to titration moves.
+     * e.g.   0 = no rotamer moves
+     *      0.5 = average a rotamer move every two titrations
+     *      1.0 = average a rotamer move per mcStepFreq
+     *       10 = average a titration every 10 rotamer moves
+     */
+    private double rotamerStepRelativeRatio = 0.0;
     /**
      * Number of accepted MD moves.
      */
@@ -110,11 +118,29 @@ public class Protonate implements MonteCarloListener {
      * MultiResidue forms of entities from chosenResidues; ready to be (de-/)protonated.
      */
     private List<MultiResidue> titratingResidues = new ArrayList<>();
+    /**
+     * Everyone's favorite.
+     */
     private Random rng = new Random();
+    /**
+     * The forcefield being used.
+     * Needed by MultiResidue constructor.
+     */
     private final ForceField forceField;
+    /**
+     * The ForceFieldEnergy object being used by MD.
+     * Needed by MultiResidue constructor and for reinitializing after a chemical change.
+     */
     private final ForceFieldEnergy forceFieldEnergy;
+    /**
+     * Enum type to specify global override of MC acceptance criteria.
+     */
     private MCOverride mcOverride = MCOverride.NONE;
-    private boolean writeBeforeAfterSnapshots = false;
+    /**
+     * Writes .s-[num] and .f-[num] files representing before/after MC move structures.
+     * Note: The 'after' snapshot represents the change that was PROPOSED, regardless of accept/reject.
+     */
+    private SnapshotsType snapshotsType = SnapshotsType.NONE;
     /**
      * True once the titratingResidues list is ready.
      */
@@ -143,10 +169,15 @@ public class Protonate implements MonteCarloListener {
             logger.info(" OVERRIDE: Rejecting all MC moves.");
             mcOverride = MCOverride.REJECT;
         }
-        String beforeAfter = System.getProperty("MCbeforeafter");
-        if (beforeAfter != null && beforeAfter.equalsIgnoreCase("true")) {
-            logger.info(" DEBUG: Writing before-and-after MC snapshots.");
-            writeBeforeAfterSnapshots = true;
+        String beforeAfter = System.getProperty("MCsnapshots");
+        if (beforeAfter != null) {
+            if (beforeAfter.equalsIgnoreCase("true") || beforeAfter.equalsIgnoreCase("separate")) {
+                logger.info(" DEBUG: Writing before-and-after MC snapshots.");
+                snapshotsType = SnapshotsType.SEPARATE;
+            } else if (beforeAfter.equalsIgnoreCase("interleave") || beforeAfter.equalsIgnoreCase("interleaved")) {
+                logger.info(" DEBUG: Writing interleaved MC snapshots.");
+                snapshotsType = SnapshotsType.INTERLEAVED;
+            }
         }
 
         //initialize stepcount and the number of accepted moves
@@ -263,23 +294,60 @@ public class Protonate implements MonteCarloListener {
         MultiResidue targetMulti = titratingResidues.get(random);
         String startingName = targetMulti.toString();
         
-        if (writeBeforeAfterSnapshots) {
+        // Write the before-step snapshot.
+        if (snapshotsType != SnapshotsType.NONE) {
             String beforeFilename = FilenameUtils.removeExtension(molAss.getFile().toString()) + ".s-" + snapshotIndex;
-            String afterFilename = FilenameUtils.removeExtension(molAss.getFile().toString()) + ".f-" + snapshotIndex;
+            if (snapshotsType == SnapshotsType.INTERLEAVED) {
+                beforeFilename = molAss.getFile().getAbsolutePath();
+                if (!beforeFilename.contains("dyn")) {
+                    beforeFilename = FilenameUtils.removeExtension(beforeFilename) + "_dyn.pdb";
+                }
+            }
             File beforeFile = new File(beforeFilename);
-            File afterFile = new File(afterFilename);
             PDBFilter beforeWriter = new PDBFilter(beforeFile, molAss, null, null);
-            PDBFilter afterWriter = new PDBFilter(afterFile, molAss, null, null);
             beforeWriter.writeFile(beforeFile, false);
-            
-            // Switch titration state for chosen residue.
-            switchProtonationState(targetMulti);
-            afterWriter.writeFile(afterFile, false);
-        } else {
-            // Switch titration state for chosen residue.
-            switchProtonationState(targetMulti);
         }
-        snapshotIndex++;
+        
+        /*
+        // Decide on the type of step to be taken.
+        StepType stepType;
+        if (rotamerStepRelativeRatio == 0.0) {
+            stepType = StepType.TITRATE;
+        } else if (rotamerStepRelativeRatio < 1.0) {
+            double typeRand = rng.nextDouble();
+            if (typeRand < rotamerStepRelativeRatio) {
+                stepType = StepType.COMBO;
+            } else {
+                stepType = StepType.TITRATE;
+            }
+        } else if (rotamerStepRelativeRatio > 1.0) {
+            double typeRand = rng.nextDouble();
+            double titrationStepRelativeRatio = 1 / rotamerStepRelativeRatio;
+            if (typeRand < titrationStepRelativeRatio) {
+                // Think about splitting the rand (ie. allowing combo and BOTH individuals).
+                stepType = StepType.
+            }
+        }
+        double typeRand = rng.nextDouble();
+        */
+        
+        // Switch titration state for chosen residue.
+        switchProtonationState(targetMulti);
+        
+        // Write the after-step snapshot.
+        if (snapshotsType != SnapshotsType.NONE) {
+            String afterFilename = FilenameUtils.removeExtension(molAss.getFile().toString()) + ".f-" + snapshotIndex;
+            if (snapshotsType == SnapshotsType.INTERLEAVED) {
+                afterFilename = molAss.getFile().getAbsolutePath();
+                if (!afterFilename.contains("dyn")) {
+                    afterFilename = FilenameUtils.removeExtension(afterFilename) + "_dyn.pdb";
+                }
+            }
+            File afterFile = new File(afterFilename);
+            PDBFilter afterWriter = new PDBFilter(afterFile, molAss, null, null);
+            afterWriter.writeFile(afterFile, false);
+            snapshotIndex++;
+        }
 
         String name = targetMulti.getActive().getName();
         double pKaref = Titratable.valueOf(name).pKa;
@@ -418,6 +486,7 @@ public class Protonate implements MonteCarloListener {
      * @param multiResidues 
      */
     private void propagateInactiveResidues(List<MultiResidue> multiResidues) {
+        long startTime = System.nanoTime();
 //        debug(3, " Begin multiResidue atomic coordinate propagation:");
 //        debug(3, String.format(" multiResidues.size() = %d", multiResidues.size()));
         // Propagate all atom coordinates from active residues to their inactive counterparts.
@@ -571,6 +640,9 @@ public class Protonate implements MonteCarloListener {
                 }
             }
         }
+        
+        long took = System.nanoTime() - startTime;
+//        logger.info(String.format(" Propagating inactive residues took: %d ms", (long) (took * 1e-6)));
     }
 
     /**
@@ -657,5 +729,13 @@ public class Protonate implements MonteCarloListener {
     
     private enum MCOverride {
         ACCEPT, REJECT, NONE;
+    }
+    
+    private enum StepType {
+        TITRATE, ROTAMER, COMBO;
+    }
+    
+    private enum SnapshotsType {
+        NONE, SEPARATE, INTERLEAVED;
     }
 }
