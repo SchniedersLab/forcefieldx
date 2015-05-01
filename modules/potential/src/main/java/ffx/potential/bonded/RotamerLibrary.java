@@ -975,7 +975,7 @@ public class RotamerLibrary {
      * @param chi Array to be filled with torsion values.
      * @param print Verbosity flag.
      */
-    private static void measureNARotamer(Residue residue, double chi[], boolean print) {
+    public static void measureNARotamer(Residue residue, double chi[], boolean print) {
         NucleicAcid3 name = NucleicAcid3.valueOf(residue.getName());
         Residue prevResidue = residue.getPreviousResidue();
         Torsion torsion;
@@ -1123,7 +1123,7 @@ public class RotamerLibrary {
      * @param chi Array to be filled with torsion values.
      * @param print Verbosity flag.
      */
-    private static void measureAARotamer(Residue residue, double chi[], boolean print) {
+    public static void measureAARotamer(Residue residue, double chi[], boolean print) {
         if (residue instanceof MultiResidue) {
             residue = ((MultiResidue) residue).getActive();
         }
