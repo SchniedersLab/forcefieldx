@@ -56,6 +56,8 @@ import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Residue.ResidueType;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
+import ffx.potential.bonded.Rotamer;
+import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.PDBFilter;
 import java.io.File;
@@ -73,7 +75,11 @@ public class Protonate implements MonteCarloListener {
     /**
      * The MoleularAssembly.
      */
-    private final MolecularAssembly molAss;    
+    private final MolecularAssembly molAss;
+    /**
+     * The MolecularDynamics object controlling the simulation.
+     */
+    private MolecularDynamics molDyn;
     /**
      * The MD thermostat.
      */
@@ -97,7 +103,11 @@ public class Protonate implements MonteCarloListener {
     /**
      * Number of simulation steps between MC move attempts.
      */
-    private static int mcStepFrequency;
+    private int mcStepFrequency;
+    /**
+     * Number of simulation steps between rotamer move attempts.
+     */
+    private int rotamerStepFrequency = 0;
     /**
      * Number of accepted MD moves.
      */
@@ -110,11 +120,29 @@ public class Protonate implements MonteCarloListener {
      * MultiResidue forms of entities from chosenResidues; ready to be (de-/)protonated.
      */
     private List<MultiResidue> titratingResidues = new ArrayList<>();
+    /**
+     * Everyone's favorite.
+     */
     private Random rng = new Random();
+    /**
+     * The forcefield being used.
+     * Needed by MultiResidue constructor.
+     */
     private final ForceField forceField;
+    /**
+     * The ForceFieldEnergy object being used by MD.
+     * Needed by MultiResidue constructor and for reinitializing after a chemical change.
+     */
     private final ForceFieldEnergy forceFieldEnergy;
-    private MCOverride mcOverride = MCOverride.NONE;
-    private boolean writeBeforeAfterSnapshots = false;
+    /**
+     * Enum type to specify global override of MC acceptance criteria.
+     */
+    private MCOverride mcTitrationOverride = MCOverride.NONE;
+    /**
+     * Writes .s-[num] and .f-[num] files representing before/after MC move structures.
+     * Note: The 'after' snapshot represents the change that was PROPOSED, regardless of accept/reject.
+     */
+    private SnapshotsType snapshotsType = SnapshotsType.NONE;
     /**
      * True once the titratingResidues list is ready.
      */
@@ -128,7 +156,7 @@ public class Protonate implements MonteCarloListener {
      * @param pH the simulation pH
      * @param thermostat the MD thermostat
      */
-    Protonate(MolecularAssembly molAss, int mcStepFrequency, double pH, Thermostat thermostat) {
+    Protonate(MolecularAssembly molAss, int mcStepFrequency, int rotamerStepFrequency, double pH, Thermostat thermostat) {
         // process system flags
         String debugLogLevel = System.getProperty("debug");
         if (debugLogLevel != null) {
@@ -137,25 +165,33 @@ public class Protonate implements MonteCarloListener {
         String overrideFlag = System.getProperty("MCoverride");
         if (overrideFlag != null && overrideFlag.equalsIgnoreCase("accept")) {
             logger.info(" OVERRIDE: Accepting all MC moves.");
-            mcOverride = MCOverride.ACCEPT;
+            mcTitrationOverride = MCOverride.ACCEPT;
         }
         if (overrideFlag != null && overrideFlag.equalsIgnoreCase("reject")) {
             logger.info(" OVERRIDE: Rejecting all MC moves.");
-            mcOverride = MCOverride.REJECT;
+            mcTitrationOverride = MCOverride.REJECT;
         }
-        String beforeAfter = System.getProperty("MCbeforeafter");
-        if (beforeAfter != null && beforeAfter.equalsIgnoreCase("true")) {
-            logger.info(" DEBUG: Writing before-and-after MC snapshots.");
-            writeBeforeAfterSnapshots = true;
+        String beforeAfter = System.getProperty("MCsnapshots");
+        if (beforeAfter != null) {
+            if (beforeAfter.equalsIgnoreCase("true") || beforeAfter.equalsIgnoreCase("separate")) {
+                logger.info(" DEBUG: Writing before-and-after MC snapshots.");
+                snapshotsType = SnapshotsType.SEPARATE;
+            } else if (beforeAfter.equalsIgnoreCase("interleave") || beforeAfter.equalsIgnoreCase("interleaved")) {
+                logger.info(" DEBUG: Writing interleaved MC snapshots.");
+                snapshotsType = SnapshotsType.INTERLEAVED;
+            }
         }
 
-        //initialize stepcount and the number of accepted moves
         numMovesAccepted = 0;
+        // Set the rotamer library in case we do rotamer MC moves.
+        RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
+        RotamerLibrary.setUseOrigCoordsRotamer(false);
 
         this.molAss = molAss;
         this.forceField = molAss.getForceField();
         this.forceFieldEnergy = molAss.getPotentialEnergy();
-        this.mcStepFrequency = mcStepFrequency;
+        this.mcStepFrequency = (mcStepFrequency == 0) ? Integer.MAX_VALUE : mcStepFrequency;
+        this.rotamerStepFrequency = (rotamerStepFrequency == 0) ? Integer.MAX_VALUE : rotamerStepFrequency;
         this.pH = pH;
         this.thermostat = thermostat;
         systemReferenceEnergy = molAss.getPotentialEnergy().getTotalEnergy();
@@ -253,40 +289,68 @@ public class Protonate implements MonteCarloListener {
         propagateInactiveResidues(titratingResidues);
         
         stepCount++;
-        if (stepCount % mcStepFrequency != 0) {
+        // Decide on the type of step to be taken.
+        StepType stepType;
+        if (stepCount % mcStepFrequency == 0 && stepCount % rotamerStepFrequency == 0) {
+            stepType = StepType.COMBO;
+        } else if (stepCount % mcStepFrequency == 0) {
+            stepType = StepType.TITRATE;
+        } else if (stepCount % rotamerStepFrequency == 0) {
+            stepType = StepType.ROTAMER;
+        } else {
+            // Not yet time for an MC step, return to MD.
             return false;
-        }        
-        double preChangeEnergy = currentEnergy();
+        }
         
         // Randomly choose a target titratable residue to attempt protonation switch.
         int random = rng.nextInt(titratingResidues.size());
         MultiResidue targetMulti = titratingResidues.get(random);
-        String startingName = targetMulti.toString();
         
-        if (writeBeforeAfterSnapshots) {
-            String beforeFilename = FilenameUtils.removeExtension(molAss.getFile().toString()) + ".s-" + snapshotIndex;
-            String afterFilename = FilenameUtils.removeExtension(molAss.getFile().toString()) + ".f-" + snapshotIndex;
-            File beforeFile = new File(beforeFilename);
-            File afterFile = new File(afterFilename);
-            PDBFilter beforeWriter = new PDBFilter(beforeFile, molAss, null, null);
-            PDBFilter afterWriter = new PDBFilter(afterFile, molAss, null, null);
-            beforeWriter.writeFile(beforeFile, false);
-            
-            // Switch titration state for chosen residue.
-            switchProtonationState(targetMulti);
-            afterWriter.writeFile(afterFile, false);
-        } else {
-            // Switch titration state for chosen residue.
-            switchProtonationState(targetMulti);
+        // Perform the MC move.
+        boolean accepted = false;
+        switch (stepType) {
+            case TITRATE:
+                accepted = tryTitrationStep(targetMulti);
+                break;
+            case ROTAMER:
+                accepted = tryRotamerStep(targetMulti);
+                break;
+            case COMBO:
+                accepted = tryComboStep(targetMulti);
+                break;
         }
+        
+        // Increment the shared snapshot counter.
         snapshotIndex++;
+        return accepted;
+    }
 
+    /**
+     * Perform a titration MC move.
+     * @param targetMulti
+     * @return accept/reject
+     */
+    private boolean tryTitrationStep(MultiResidue targetMulti) {
+        // Record the pre-change electrostatic energy.
+        double previousElectrostaticEnergy = currentElectrostaticEnergy();
+        
+        // Write the pre-titration change snapshot.
+        writeSnapshot(true, StepType.TITRATE, snapshotsType);
+
+        // Switch titration state for chosen residue.
+        String startingName = targetMulti.toString();
+        switchProtonationState(targetMulti);
+
+        // Write the post-titration change snapshot.
+        writeSnapshot(true, StepType.TITRATE, snapshotsType);
+        
+        // Test the MC criterion for a titration step.
         String name = targetMulti.getActive().getName();
         double pKaref = Titratable.valueOf(name).pKa;
         double dG_ref = Titratable.valueOf(name).refEnergy;
         double temperature = thermostat.getCurrentTemperature();
         double kT = boltzmann * temperature;
-        double dG_elec = currentEnergy() - preChangeEnergy;
+        double dG_elec = currentElectrostaticEnergy() - previousElectrostaticEnergy;
 
         /**
          * dG_elec = electrostatic energy component of the titratable residue
@@ -303,40 +367,198 @@ public class Protonate implements MonteCarloListener {
         sb.append(String.format("     -----\n"));
 
         // Test Monte-Carlo criterion.
-        if (dG_MC < 0 && mcOverride != MCOverride.REJECT) {
+        if (dG_MC < 0 && mcTitrationOverride != MCOverride.REJECT) {
             sb.append(String.format("     Accepted!"));
             logger.info(sb.toString());
             numMovesAccepted++;
             return true;
         }
-        double boltzmann = exp(-dG_MC / kT);
+        double criterion = exp(-dG_MC / kT);
         double metropolis = random();
-        sb.append(String.format("     boltzmann:  %9.4f\n", boltzmann));
-        sb.append(String.format("     metropolis: %9.4f\n", metropolis));
-        if ((metropolis < boltzmann && mcOverride != MCOverride.REJECT) || mcOverride == MCOverride.ACCEPT) {
+        sb.append(String.format("     criterion:  %9.4f\n", criterion));
+        sb.append(String.format("     rng:        %9.4f\n", metropolis));
+        if ((metropolis < criterion && mcTitrationOverride != MCOverride.REJECT) || mcTitrationOverride == MCOverride.ACCEPT) {
             sb.append(String.format("     Accepted!"));
             logger.info(sb.toString());
             numMovesAccepted++;
             return true;
         }
-        
         sb.append(String.format("     Denied."));
         logger.info(sb.toString());
-        // Undo titration state change if criterion was not accepted.
+        
+        // Move was rejected, undo the titration state change.
         switchProtonationState(targetMulti);
         return false;
     }
+    
+    private boolean tryRotamerStep(MultiResidue targetMulti) {
+        // Record the pre-change total energy.
+        double previousTotalEnergy = currentTotalEnergy();
+        
+        // Write the before-step snapshot.
+        writeSnapshot(true, StepType.ROTAMER, snapshotsType);
 
-    // TESTING ONLY
-    private MolecularDynamics molDyn;
-    private void addMolDyn(MolecularDynamics molDyn) {
-        this.molDyn = molDyn;
+        // Save coordinates so we can return to them if move is rejected.
+        Residue residue = targetMulti.getActive();
+        ArrayList<Atom> atoms = residue.getAtomList();
+        double[][] origCoordinates = new double[atoms.size()][];
+        for (int i = 0; i < atoms.size(); i++) {
+            Atom atomi = atoms.get(i);
+            origCoordinates[i] = new double[atomi.getXYZ().length];
+            atomi.getXYZ(origCoordinates[i]);
+        }
+        double chi[] = new double[4];
+        RotamerLibrary.measureAARotamer(residue, chi, false);
+        AminoAcid3 aa = AminoAcid3.valueOf(residue.getName());
+        Rotamer origCoordsRotamer = new Rotamer(aa, origCoordinates, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0);
+        // Select a new rotamer and swap to it.
+        Rotamer rotamers[] = RotamerLibrary.getRotamers(residue);
+        int rotaRand = rng.nextInt(rotamers.length);
+        RotamerLibrary.applyRotamer(residue, rotamers[rotaRand]);
+
+        // Write the post-rotamer change snapshot.
+        writeSnapshot(false, StepType.ROTAMER, snapshotsType);
+
+        // Check the MC criterion.
+        double temperature = thermostat.getCurrentTemperature();
+        double kT = boltzmann * temperature;
+        double postTotalEnergy = currentTotalEnergy();
+        double dG_tot = postTotalEnergy - previousTotalEnergy;
+        double criterion = exp(-dG_tot / kT);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format(" Assessing possible MC rotamer step:\n"));
+        sb.append(String.format("     prev:   %16.8f\n", previousTotalEnergy));
+        sb.append(String.format("     post:   %16.8f\n", postTotalEnergy));
+        sb.append(String.format("     dG_tot: %16.8f\n", dG_tot));
+        sb.append(String.format("     -----\n"));
+
+        // Automatic acceptance if energy change is favorable.
+        if (dG_tot < 0) {
+            sb.append(String.format("     Accepted!"));
+            logger.info(sb.toString());
+            numMovesAccepted++;
+            propagateInactiveResidues(titratingResidues);
+            return true;
+        } else {
+            // Conditional acceptance if energy change is positive.
+            double metropolis = random();
+            sb.append(String.format("     criterion:  %9.4f\n", criterion));
+            sb.append(String.format("     rng:        %9.4f\n", metropolis));
+            if (metropolis < criterion) {
+                sb.append(String.format("     Accepted!"));
+                logger.info(sb.toString());
+                numMovesAccepted++;
+                propagateInactiveResidues(titratingResidues);
+                return true;
+            } else {
+                // Move was denied.
+                sb.append(String.format("     Denied."));
+                logger.info(sb.toString());
+
+                // Undo the rejected move.
+                RotamerLibrary.applyRotamer(residue, origCoordsRotamer);
+                return false;
+            }
+        }
     }
     
-    private static int debugLogLevel = 0;
-    private static void debug(int level, String message) {
-        if (debugLogLevel >= level) {
-            logger.info(message);
+    private boolean tryComboStep(MultiResidue targetMulti) {
+        // Record the pre-change total energy.
+        double previousTotalEnergy = currentTotalEnergy();
+        double previousElectrostaticEnergy = currentElectrostaticEnergy();
+        
+        // Write the pre-combo snapshot.
+        writeSnapshot(true, StepType.COMBO, snapshotsType);
+
+        // Change titration state.
+        switchProtonationState(targetMulti);
+        
+        // Change rotamer state, but first save coordinates so we can return to them if rejected.
+        Residue residue = targetMulti.getActive();
+        ArrayList<Atom> atoms = residue.getAtomList();
+        double[][] origCoordinates = new double[atoms.size()][];
+        for (int i = 0; i < atoms.size(); i++) {
+            Atom atomi = atoms.get(i);
+            origCoordinates[i] = new double[atomi.getXYZ().length];
+            atomi.getXYZ(origCoordinates[i]);
+        }
+        double chi[] = new double[4];
+        RotamerLibrary.measureAARotamer(residue, chi, false);
+        AminoAcid3 aa = AminoAcid3.valueOf(residue.getName());
+        Rotamer origCoordsRotamer = new Rotamer(aa, origCoordinates, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0);
+        
+        // Swap to the new rotamer.
+        Rotamer rotamers[] = RotamerLibrary.getRotamers(residue);
+        int rotaRand = rng.nextInt(rotamers.length);
+        RotamerLibrary.applyRotamer(residue, rotamers[rotaRand]);
+        
+        // Write the post-combo snapshot.
+        writeSnapshot(false, StepType.COMBO, snapshotsType);
+        
+        // Evaluate both MC criteria.
+        // Evaluate the titration probability of the step.
+        String name = targetMulti.getActive().getName();
+        double pKaref = Titratable.valueOf(name).pKa;
+        double dG_ref = Titratable.valueOf(name).refEnergy;
+        double temperature = thermostat.getCurrentTemperature();
+        double kT = boltzmann * temperature;
+        double dG_elec = currentElectrostaticEnergy() - previousElectrostaticEnergy;
+        double dG_titr = Math.log(10) * kT * (pH - pKaref) + dG_elec - dG_ref;
+        double titrCriterion = exp(-dG_titr / kT);
+        
+        // Evaluate the rotamer probability of the step.
+        double dG_rota = currentTotalEnergy() - previousTotalEnergy;
+        double rotaCriterion = exp(-dG_rota / kT);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format(" Assessing possible MC combo step:\n"));
+        sb.append(String.format("     dG_elec: %16.8f\n", dG_elec));
+        sb.append(String.format("     dG_titr: %16.8f\n", dG_titr));
+        sb.append(String.format("     dG_rota: %16.8f\n", dG_rota));
+        sb.append(String.format("     -----\n"));
+        
+        // Test the combined probability of this move.
+        // Automatic acceptance if both energy changes are favorable.
+        if (dG_titr < 0 && dG_rota < 0) {
+            sb.append(String.format("     Accepted!"));
+            logger.info(sb.toString());
+            numMovesAccepted++;
+            propagateInactiveResidues(titratingResidues);
+            return true;
+        } else {
+            // Conditionally accept based on combined probabilities.
+            if (dG_titr < 0 || mcTitrationOverride == MCOverride.ACCEPT) {
+                titrCriterion = 1.0;
+            }
+            if (dG_rota < 0) {
+                rotaCriterion = 1.0;
+            }
+            if (mcTitrationOverride == MCOverride.REJECT) {
+                titrCriterion = 0.0;
+            }
+            double metropolis = random();
+            double comboCriterion = titrCriterion * rotaCriterion;
+            sb.append(String.format("     titrCrit:   %9.4f\n", titrCriterion));
+            sb.append(String.format("     rotaCrit:   %9.4f\n", rotaCriterion));
+            sb.append(String.format("     criterion:  %9.4f\n", comboCriterion));
+            sb.append(String.format("     rng:        %9.4f\n", metropolis));
+            if (metropolis < comboCriterion) {
+                sb.append(String.format("     Accepted!"));
+                logger.info(sb.toString());
+                numMovesAccepted++;
+                propagateInactiveResidues(titratingResidues);
+                return true;
+            } else {
+                // Move was denied.
+                sb.append(String.format("     Denied."));
+                logger.info(sb.toString());
+
+                // Undo both pieces of the rejected move IN THE RIGHT ORDER.
+                RotamerLibrary.applyRotamer(residue, origCoordsRotamer);
+                switchProtonationState(targetMulti);                
+                return false;
+            }
         }
     }
     
@@ -418,6 +640,7 @@ public class Protonate implements MonteCarloListener {
      * @param multiResidues 
      */
     private void propagateInactiveResidues(List<MultiResidue> multiResidues) {
+        long startTime = System.nanoTime();
 //        debug(3, " Begin multiResidue atomic coordinate propagation:");
 //        debug(3, String.format(" multiResidues.size() = %d", multiResidues.size()));
         // Propagate all atom coordinates from active residues to their inactive counterparts.
@@ -571,11 +794,13 @@ public class Protonate implements MonteCarloListener {
                 }
             }
         }
+        
+        long took = System.nanoTime() - startTime;
+//        logger.info(String.format(" Propagating inactive residues took: %d ms", (long) (took * 1e-6)));
     }
 
     /**
      * Get the current MC acceptance rate.
-     *
      * @return the acceptance rate.
      */
     @Override
@@ -609,15 +834,54 @@ public class Protonate implements MonteCarloListener {
     }
 
     /**
-     * Calculates the energy at the current state.
-     *
+     * Calculates the electrostatic energy at the current state.
      * @return Energy of the current state.
      */
-    private double currentEnergy() {
+    private double currentElectrostaticEnergy() {
         double x[] = new double[forceFieldEnergy.getNumberOfVariables() * 3];
         forceFieldEnergy.getCoordinates(x);
         forceFieldEnergy.energy(x);
         return forceFieldEnergy.getTotalElectrostaticEnergy();
+    }
+    
+    /**
+     * Calculates the total energy at the current state.
+     * @return Energy of the current state.
+     */
+    private double currentTotalEnergy() {
+        double x[] = new double[forceFieldEnergy.getNumberOfVariables() * 3];
+        forceFieldEnergy.getCoordinates(x);
+        forceFieldEnergy.energy(x);
+        return forceFieldEnergy.getTotalEnergy();
+    }
+    
+    private void writeSnapshot(boolean beforeChange, StepType stepType, SnapshotsType snapshotsType) {
+        // Write the after-step snapshot.
+        if (snapshotsType != SnapshotsType.NONE) {
+            String postfixA = (stepType == StepType.ROTAMER) ? ".rot" : ".pro";
+            String postfixB = (beforeChange) ? "S-" : "F-";
+            String filename = FilenameUtils.removeExtension(molAss.getFile().toString()) + postfixA + postfixB + snapshotIndex;
+            if (snapshotsType == SnapshotsType.INTERLEAVED) {
+                filename = molAss.getFile().getAbsolutePath();
+                if (!filename.contains("dyn")) {
+                    filename = FilenameUtils.removeExtension(filename) + "_dyn.pdb";
+                }
+            }
+            File afterFile = new File(filename);
+            PDBFilter afterWriter = new PDBFilter(afterFile, molAss, null, null);
+            afterWriter.writeFile(afterFile, false);
+        }
+    }
+    
+    private void addMolDyn(MolecularDynamics molDyn) {
+        this.molDyn = molDyn;
+    }
+    
+    private static int debugLogLevel = 0;
+    private static void debug(int level, String message) {
+        if (debugLogLevel >= level) {
+            logger.info(message);
+        }
     }
     
     /**
@@ -627,7 +891,7 @@ public class Protonate implements MonteCarloListener {
 
 //        ARG(12.48, 1.00, AminoAcid3.ARD),
         // Standard Forms
-        ASP(4.00, 0.00, AminoAcid3.ASH, AminoAcid3.ASP),
+        ASP(4.00, 53.53784, AminoAcid3.ASH, AminoAcid3.ASP),    // FALSE PARAM: fit to d->D only
         GLU(4.25, 0.00, AminoAcid3.GLH, AminoAcid3.GLU),
         CYS(8.18, 0.00, AminoAcid3.CYS, AminoAcid3.CYD),
         HIS(6.00, 0.00, AminoAcid3.HIS, AminoAcid3.HID),
@@ -657,5 +921,13 @@ public class Protonate implements MonteCarloListener {
     
     private enum MCOverride {
         ACCEPT, REJECT, NONE;
+    }
+    
+    private enum StepType {
+        TITRATE, ROTAMER, COMBO;
+    }
+    
+    private enum SnapshotsType {
+        NONE, SEPARATE, INTERLEAVED;
     }
 }
