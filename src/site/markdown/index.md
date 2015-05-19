@@ -42,10 +42,8 @@ Fenn, T. D. and M. J. Schnieders, <i>Acta Crystallographica Section D</i>
 
 ### Overview
 
-  Force Field<span style="color:yellow"> X</span>
-  is based on accurate polarizable atomic multipole force fields,
-  local and global optimization algorithms,
-  and rigorous statistical mechanics sampling.
+  Force Field X is based on accurate polarizable atomic multipole force fields,
+  local and global optimization algorithms, and rigorous statistical mechanics sampling.
   The FFX code is parallelized for clusters of many-core nodes with coprocessors
   using an open (GPL v. 3), modular and platform independent approach.
 
@@ -63,15 +61,16 @@ Fenn, T. D. and M. J. Schnieders, <i>Acta Crystallographica Section D</i>
   * Real space refinement for CryoEM
   * Methods for structure based drug design
 
-  See the Force Field<span style="color:yellow"> X</span>
-  online manual for instructions on how to <a href="download.html">download and install</a> the program.
+  See the Force Field X online manual for instructions on how to
+  <a href="download.html">download and install</a> the program.
   The manual also describes available <a href="commands.html">modeling commands and properties</a>,
   and provides a few <a href="examples.html">examples</a> with more on the way.
 
 ### Development
 
-  Contribute to Force Field<span style="color:yellow"> X</span> by learning how
-  to <a href="source.html">GIT and build the code</a>. We also provide instructions for
-  how to use its <a href="modules.html">modules</a> in your own programs.
+  Contribute to Force Field X by learning how to
+  <a href="source.html">GIT and build the code</a>.
+  We also provide instructions for how to use its
+  <a href="modules.html">modules</a> in your own programs.
 
-  <!-- script type="text/javascript" src="js/factoids.js"></script -->
+  <script type="text/javascript" src="js/factoids.js"></script>

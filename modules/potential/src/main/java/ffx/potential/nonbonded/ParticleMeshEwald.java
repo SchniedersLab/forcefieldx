@@ -390,7 +390,7 @@ public class ParticleMeshEwald implements LambdaInterface {
      */
     private boolean isSoft[];
     /**
-     * Flag indicating if softcore variables have been initalized.
+     * Flag indicating if softcore variables have been initialized.
      */
     private boolean initSoftCore = false;
     /**
