@@ -297,11 +297,21 @@ if (options.f2) {
 }
 
 // No electrostatics on Topology 1.
+if (options.es) {
+    noElecStart = Integer.parseInt(options.es);
+}
+
+// First atom from Topology 1 with no electrostatics.
+if (options.ef) {
+    noElecStop = Integer.parseInt(options.ef);
+}
+
+// No electrostatics on Topology 2.
 if (options.es2) {
     noElecStart2 = Integer.parseInt(options.es2);
 }
 
-// First atom from Topology 1 with no electrostatics.
+// First atom from Topology 2 with no electrostatics.
 if (options.ef2) {
     noElecStop2 = Integer.parseInt(options.ef2);
 }
