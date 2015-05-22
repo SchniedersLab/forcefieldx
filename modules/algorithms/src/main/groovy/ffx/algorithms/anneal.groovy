@@ -46,6 +46,9 @@ import ffx.algorithms.SimulatedAnnealing;
 import ffx.algorithms.Integrator.Integrators;
 import ffx.algorithms.Thermostat.Thermostats;
 
+// Apache Commons Imports
+import org.apache.commons.io.FilenameUtils;
+
 // High temperature starting point.
 double high = 1000.0;
 
@@ -159,5 +162,5 @@ modelfilename = FilenameUtils.removeExtension(modelfilename);
 if (ext.toUpperCase().contains("XYZ")) {
     saveAsXYZ(new File(modelfilename + ".xyz"));
 } else {
-    saveAsPDB(systems, new File(modelfilename + ".pdb"));
+    saveAsPDB(new File(modelfilename + ".pdb"));
 }

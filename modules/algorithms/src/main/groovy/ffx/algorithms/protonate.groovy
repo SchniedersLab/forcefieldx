@@ -80,8 +80,9 @@ double restartFrequency = 1000;
 // File type of snapshots.
 String fileType = "PDB";
 
-// Monte-Carlo step frequency
+// Monte-Carlo step frequencies for titration and rotamer moves.
 int mcStepFrequency = 10;
+int rotamerStepFrequency = 0;
 
 // Simulation pH
 double pH = 7.4;
@@ -110,6 +111,7 @@ cli.f(longOpt:'file', args:1, argName:'PDB', 'Choose file type to write to [PDB/
 cli.r(longOpt:'resid', args:1, argName:'-1', 'Residue (e.g. A4) to optimize protonation state [blank for all].');
 cli.pH(longOpt:'pH', args:1, argName:'7.4', 'Constant simulation pH.');
 cli.mc(longOpt:'mcStepFreq', args:1, argName:'10', 'Number of MD steps between Monte-Carlo protonation changes.')
+cli.mcr(longOpt: 'rotamerStepFreq', args:1, argName:'0', 'Number of MD steps between Monte-Carlo rotamer changes.')
 def options = cli.parse(args);
 
 if (options.h) {
@@ -126,6 +128,10 @@ if (options.r) {
 
 if (options.mc) {
     mcStepFrequency = Integer.parseInt(options.mc);
+}
+
+if (options.mcr) {
+    rotamerStepFrequency = Integer.parseInt(options.mcr);
 }
 
 if (options.pH) {
@@ -214,7 +220,7 @@ molDyn.setFileType(fileType);
 molDyn.setRestartFrequency(restartFrequency);
 
 // create the Monte-Carlo listener and connect it to the MD
-Protonate mcProt = new Protonate(active, mcStepFrequency, pH, molDyn.getThermostat());
+Protonate mcProt = new Protonate(active, mcStepFrequency, rotamerStepFrequency, pH, molDyn.getThermostat());
 molDyn.addMCListener(mcProt);
 mcProt.addMolDyn(molDyn);
 

@@ -136,11 +136,12 @@ public abstract class Thermostat {
      * To allow chemical perturbations during MD.
      * @param nVariables 
      */
-    public void setNumberOfVariables(int nVariables, double x[], double v[], double mass[]) {
+    public void setNumberOfVariables(int nVariables, double x[], double v[], double mass[], VARIABLE_TYPE type[]) {
         this.nVariables = nVariables;
         this.x = x;
         this.v = v;
         this.mass = mass;
+        this.type = type;
     }
 
     /**

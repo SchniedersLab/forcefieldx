@@ -290,9 +290,15 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     private double anisouGradient[];
     /**
-     * If the atom is active, it should be included in target functions.
+     * If active is true, this atom should be included in target functions.
      */
     private boolean active = true;
+
+    /**
+     * If electrostatics is true, include the charge, multipole and/or
+     * polarizability in electrostatics calculations.
+     */
+    private boolean electrostatics = true;
     private String segID = null;
     private double formFactorWidth = 3.5;
     private double formFactorWidth2 = formFactorWidth * formFactorWidth;
@@ -484,10 +490,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
         if (atomType == null) {
             return false;
         }
-        if (atomType.atomicNumber == 1) {
-            return true;
-        }
-        return false;
+        return atomType.atomicNumber == 1;
     }
 
     public boolean isActive() {
@@ -497,6 +500,15 @@ public class Atom extends MSNode implements Comparable<Atom> {
     public void setActive(boolean active) {
         this.active = active;
     }
+
+    public void setElectrostatics(boolean electrostatics) {
+        this.electrostatics = electrostatics;
+    }
+
+    public boolean getElectrostatics() {
+        return electrostatics;
+    }
+
 
     /**
      * <p>
