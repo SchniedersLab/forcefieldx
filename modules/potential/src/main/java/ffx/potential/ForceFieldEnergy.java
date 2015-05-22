@@ -940,12 +940,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         this.lambdaBondedTerms = lambdaBondedTerms;
     }
 
-    public void setNoSoftCoreElectrostatics(boolean noElec) {
-        if (particleMeshEwald != null) {
-            particleMeshEwald.setNoSoftCoreElectrostatics(noElec);
-        }
-    }
-
     /**
      * <p>
      * energy</p>

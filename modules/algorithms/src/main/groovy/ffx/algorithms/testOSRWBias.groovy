@@ -71,12 +71,6 @@ int ligandStart2 = 1;
 // Last atom of the ligand for the 2nd topology.
 int ligandStop2 = -1;
 
-// No electrostatics for ligand 1
-boolean noElec = false;
-
-// No electrostatics for ligand 2
-boolean noElec2 = false;
-
 // Initial lambda value (0 is ligand in vacuum; 1 is ligand in PBC).
 double initiaLambda = 0.0;
 
@@ -91,10 +85,6 @@ cli.s2(longOpt:'start2', args:1, argName:'1', 'Starting ligand atom for the 2nd 
 cli.f(longOpt:'final', args:1, argName:'-1', 'Final ligand atom.');
 cli.f2(longOpt:'final2', args:1, argName:'-1', 'Final ligand atom for the 2nd topology.');
 cli.l(longOpt:'lambda', args:1, argName:'0.0', 'Initial lambda value (> 1.0 distributes lambda across walkers)');
-cli.e(longOpt:'elec', args:0, 'No electrostatics on ligand 1.');
-cli.e2(longOpt:'elec2', args:0, 'No electrostatics on ligand 2.');
-cli.S1(longOpt:'scale1', args:1, argName:'1', 'Energy scale factor for Topology 1.');
-cli.S2(longOpt:'scale2', args:1, argName:'1', 'Energy scale factor for Topology 2.');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -196,8 +186,6 @@ for (int i = ligandStart; i <= ligandStop; i++) {
 
 // Turn off checks for overlapping atoms, which is expected for lambda=0.
 energy.getCrystal().setSpecialPositionCutoff(0.0);
-// Turn off ligand electrostatics if requested.
-energy.setNoSoftCoreElectrostatics(noElec);
 // OSRW will be configured for either single or dual topology.
 OSRW osrw = null;
 // Save a reference to the first topology.
@@ -223,8 +211,6 @@ if (arguments.size() == 1) {
     topology2 = active;
     // Turn off checks for overlapping atoms, which is expected for lambda=0.
     energy.getCrystal().setSpecialPositionCutoff(0.0);
-    // Turn off ligand electrostatics if requested.
-    energy.setNoSoftCoreElectrostatics(noElec2);
     // Create the DualTopology potential energy.
     DualTopologyEnergy dualTopologyEnergy = new DualTopologyEnergy(topology1, active);
     // Wrap the DualTopology potential energy inside an OSRW instance.

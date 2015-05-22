@@ -58,17 +58,11 @@ int ligandStart = 1;
 // Last ligand atom.
 int ligandStop = -1;
 
-// Use electrostatics for the first ligand
-boolean noElec = false;
-
 // First ligand atom of the 2nd topology.
 int ligandStart2 = 1;
 
 // Last ligand atom of the 2nd topology.
 int ligandStop2 = -1;
-
-// Use electrostatics for the second ligand
-boolean noElec2 = false;
 
 // Initial lambda value.
 double initialLambda = 0.5;
@@ -86,8 +80,6 @@ cli.s(longOpt:'start', args:1, argName:'1', 'Starting ligand atom.');
 cli.s2(longOpt:'start2', args:1, argName:'1', 'Starting ligand atom for the 2nd topology.');
 cli.f(longOpt:'final', args:1, argName:'n', 'Final ligand atom.');
 cli.f2(longOpt:'final2', args:1, argName:'n', 'Final ligand atom for the 2nd topology.');
-cli.e(longOpt:'elec', args:0, 'No electrostatics on the ligand atoms.');
-cli.e2(longOpt:'elec2', args:0, 'No electrostatics on ligand atoms for the 2nd topology.');
 cli.l(longOpt:'lambda', args:1, argName:'0.5', 'Lambda value to test.');
 cli.v(longOpt:'verbose', 'Print out the energy for each step.');
 
@@ -183,8 +175,6 @@ potential = active.getPotentialEnergy();
 ForceFieldEnergy forceFieldEnergy = active.getPotentialEnergy();
 // Turn off checks for overlapping atoms, which is expected for lambda=0.
 forceFieldEnergy.getCrystal().setSpecialPositionCutoff(0.0);
-// Turn off ligand electrostatics if requested.
-forceFieldEnergy.setNoSoftCoreElectrostatics(noElec);
 
 LambdaInterface lambdaInterface = active.getPotentialEnergy();
 
@@ -209,8 +199,6 @@ if (arguments.size() > 1) {
     forceFieldEnergy = active.getPotentialEnergy();
     // Turn off checks for overlapping atoms, which is expected for lambda=0.
     forceFieldEnergy.getCrystal().setSpecialPositionCutoff(0.0);
-    // Turn off ligand electrostatics if requested.
-    forceFieldEnergy.setNoSoftCoreElectrostatics(noElec2);
 
     DualTopologyEnergy dualTopologyEnergy = new DualTopologyEnergy(topology1, active);
     potential = dualTopologyEnergy;

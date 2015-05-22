@@ -77,11 +77,17 @@ int ligandStart2 = 1;
 // Last atom of the ligand for the 2nd topology.
 int ligandStop2 = -1;
 
-// No electrostatics for ligand 1
-boolean noElec = false;
+// First atom for no electrostatics.
+int noElecStart = 1;
 
-// No electrostatics for ligand 2
-boolean noElec2 = false;
+// Last atom for no electrostatics.
+int noElecStop = -1;
+
+// First atom of the 2nd topology for no electrostatics.
+int noElecStart2 = 1;
+
+// Last atom of the 2nd topology for no electrostatics.
+int noElecStop2 = -1;
 
 // Initial lambda value (0 is ligand in vacuum; 1 is ligand in PBC).
 double lambda = 0.0;
@@ -165,13 +171,15 @@ cli.s(longOpt:'start', args:1, argName:'1', 'Starting ligand atom.');
 cli.s2(longOpt:'start2', args:1, argName:'1', 'Starting ligand atom for the 2nd topology.');
 cli.f(longOpt:'final', args:1, argName:'-1', 'Final ligand atom.');
 cli.f2(longOpt:'final2', args:1, argName:'-1', 'Final ligand atom for the 2nd topology.');
+cli.es(longOpt:'noElecStart', args:1, argName:'1', 'No Electrostatics Starting Atom.');
+cli.es2(longOpt:'noElecStart2', args:1, argName:'1', 'No Electrostatics Starting Atom for the 2nd Topology.');
+cli.ef(longOpt:'noElecFinal', args:1, argName:'-1', 'No Electrostatics Final Atom.');
+cli.ef2(longOpt:'noElecfinal2', args:1, argName:'-1', 'No Electrostatics Final Atom for the 2nd topology.');
 cli.l(longOpt:'lambda', args:1, argName:'0.0', 'Initial lambda value (> 1.0 distributes lambda across walkers)');
 cli.c(longOpt:'count', args:1, argName:'10', 'Time steps between OSRW counts.');
 cli.g(longOpt:'bias', args:1, argName:'0.002', 'Gaussian bias magnitude (kcal/mol).');
 cli.m(longOpt:'mass', args:1, argName:'1e-18', 'Lambda particle mass.');
 //cli.p(longOpt:'npt', args:0, 'Constant pressure MD (1 atm).');
-cli.e(longOpt:'elec', args:0, 'No electrostatics on ligand 1.');
-cli.e2(longOpt:'elec2', args:0, 'No electrostatics on ligand 2.');
 cli.x(longOpt:'friction', args:1, argName:'1e-18', 'Lambda particle friction.');
 cli.W(longOpt:'traversals', args:0, 'Write out lambda-traversal snapshots.');
 //cli.ld(longOpt:'minDensity', args:1, argName:'0.5', 'Minimum density allowed by the barostat.');
@@ -268,24 +276,34 @@ if (options.f) {
     ligandStop = Integer.parseInt(options.f);
 }
 
-// No electrostatics on ligand 1.
-if (options.e) {
-    noElec = true;
+// No electrostatics on Topology 1.
+if (options.es) {
+    noElecStart = Integer.parseInt(options.es);
 }
 
-// Starting ligand atom for the 2nd topology.
+// First atom from Topology 1 with no electrostatics.
+if (options.ef) {
+    noElecStop = Integer.parseInt(options.ef);
+}
+
+// Starting ligand atom.
 if (options.s2) {
     ligandStart2 = Integer.parseInt(options.s2);
 }
 
-// Final ligand atom for the 2nd topology.
+// Final ligand atom.
 if (options.f2) {
     ligandStop2 = Integer.parseInt(options.f2);
 }
 
-// No electrostatics on ligand 2.
-if (options.e2) {
-    noElec2 = true;
+// No electrostatics on Topology 1.
+if (options.es2) {
+    noElecStart2 = Integer.parseInt(options.es2);
+}
+
+// First atom from Topology 1 with no electrostatics.
+if (options.ef2) {
+    noElecStop2 = Integer.parseInt(options.ef2);
 }
 
 // Starting lambda value.
@@ -410,13 +428,25 @@ Atom[] atoms = active.getAtomArray();
 for (int i = ligandStart; i <= ligandStop; i++) {
     Atom ai = atoms[i - 1];
     ai.setApplyLambda(true);
+    ai.setElectrostatics(!noElec1);
+    ai.print();
+}
+
+// Apply the no electrostatics atom selection
+if (noElecStart < 1) {
+    noElecStart = 1;
+}
+if (noElecStop > atoms.length) {
+    noElecStop = atoms.length;
+}
+for (int i = noElecStart; i <= noElecStop; i++) {
+    Atom ai = atoms[i - 1];
+    ai.setElectrostatics(false);
     ai.print();
 }
 
 // Turn off checks for overlapping atoms, which is expected for lambda=0.
 energy.getCrystal().setSpecialPositionCutoff(0.0);
-// Turn off ligand electrostatics if requested.
-energy.setNoSoftCoreElectrostatics(noElec);
 // OSRW will be configured for either single or dual topology.
 OSRW osrw = null;
 // Save a reference to the first topology.
@@ -464,14 +494,27 @@ if (arguments.size() == 1) {
     for (int i = ligandStart2; i <= ligandStop2; i++) {
         Atom ai = atoms[i - 1];
         ai.setApplyLambda(true);
+        ai.setElectrostatics(!noElec2);
         ai.print();
     }
+
+    // Apply the no electrostatics atom selection
+    if (noElecStart2 < 1) {
+        noElecStart2 = 1;
+    }
+    if (noElecStop2 > atoms.length) {
+        noElecStop2 = atoms.length;
+    }
+    for (int i = noElecStart2; i <= noElecStop2; i++) {
+        Atom ai = atoms[i - 1];
+        ai.setElectrostatics(false);
+        ai.print();
+    }
+
     // Save a reference to the second topology.
     topology2 = active;
     // Turn off checks for overlapping atoms, which is expected for lambda=0.
     energy.getCrystal().setSpecialPositionCutoff(0.0);
-    // Turn off ligand electrostatics if requested.
-    energy.setNoSoftCoreElectrostatics(noElec2);
     // Create the DualTopology potential energy.
     DualTopologyEnergy dualTopologyEnergy = new DualTopologyEnergy(topology1, active);
     // Wrap the DualTopology potential energy inside an OSRW instance.
