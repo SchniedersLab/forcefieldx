@@ -83,6 +83,7 @@ import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldBoolean;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
+//import ffx.potential.parameters.ForceField.ForceFieldInteger;
 import ffx.potential.parameters.ForceField.ForceFieldString;
 
 /**
@@ -210,7 +211,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         atoms = molecularAssembly.getAtomArray();
         xyz = new double[nAtoms * 3];
         nAtoms = atoms.length;
-
+        
         // Check that atom ordering is correct.
         for (int i = 0; i < nAtoms; i++) {
             int index = atoms[i].xyzIndex - 1;
@@ -224,6 +225,14 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
         ForceField forceField = molecularAssembly.getForceField();
         String name = forceField.toString().toUpperCase();
+
+        /*// nThreads is minimum of FF_THREADS, ParallelTeam.getDefaultThreadCount, and nAtoms.
+        int defaultThreads = ParallelTeam.getDefaultThreadCount();
+        int nThreads = forceField.getInteger(ForceFieldInteger.FF_THREADS, defaultThreads);
+        nThreads = defaultThreads < nThreads ? defaultThreads : nThreads;
+        nThreads = nAtoms < nThreads ? nAtoms : nThreads;
+        
+        parallelTeam = new ParallelTeam(nThreads);*/
 
         logger.info(format(" Constructing Force Field %s", name));
         logger.info(format("\n SMP threads:                        %10d", nThreads));
@@ -929,7 +938,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
 
     }
-
+    
     public void setFixedCharges(Atom atoms[]) {
         if (particleMeshEwald != null) {
             particleMeshEwald.setFixedCharges(atoms);

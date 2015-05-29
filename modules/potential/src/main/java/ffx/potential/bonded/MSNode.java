@@ -199,6 +199,17 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
         Collections.sort(arrayList);
         return arrayList;
     }
+    
+    public ArrayList<Atom> getAtomList(boolean originalOrder) {
+        // As of now, for generic MSNode objects, atoms remain in their original
+        // order. It is presently only a concern for MultiResidue.
+        return getAtomList();
+    }
+    
+    public void reInitOriginalAtomList() {
+        // There is no list to re-init; it just helps keep rotamer optimization
+        // blind as to whether it's working on a Residue or MultiResidue.
+    }
 
     /**
      * If <code>this</code> MSNode or any MSNode below it <code>equals</code>
