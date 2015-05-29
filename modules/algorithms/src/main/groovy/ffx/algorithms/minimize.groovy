@@ -67,6 +67,18 @@ double f = -1;
 // Last softcore atom for topology 2.
 double f2 = -1;
 
+// First atom for no electrostatics.
+int noElecStart = 1;
+
+// Last atom for no electrostatics.
+int noElecStop = -1;
+
+// First atom of the 2nd topology for no electrostatics.
+int noElecStart2 = 1;
+
+// Last atom of the 2nd topology for no electrostatics.
+int noElecStop2 = -1;
+
 // Fixed lambda value.
 double lambda = -1;
 
@@ -84,6 +96,10 @@ cli.s(longOpt:'start', args:1, argName:'0', 'Starting ligand atom.');
 cli.s2(longOpt:'start2', args:1, argName:'0', 'Starting ligand atom for the 2nd topology.');
 cli.f(longOpt:'final', args:1, argName:'0', 'Final ligand atom.');
 cli.f2(longOpt:'final2', args:1, argName:'0', 'Final ligand atom for the 2nd topology.');
+cli.es(longOpt:'noElecStart', args:1, argName:'1', 'No Electrostatics Starting Atom.');
+cli.es2(longOpt:'noElecStart2', args:1, argName:'1', 'No Electrostatics Starting Atom for the 2nd Topology.');
+cli.ef(longOpt:'noElecFinal', args:1, argName:'-1', 'No Electrostatics Final Atom.');
+cli.ef2(longOpt:'noElecfinal2', args:1, argName:'-1', 'No Electrostatics Final Atom for the 2nd topology.');
 cli.l(longOpt:'lambda', args:1, argName:'0.0', 'Initial lambda value.');
 cli.e(longOpt:'eps', args:1, argName:'1.0', 'RMS gradient convergence criteria');
 cli.p(longOpt:'polarization', args:1, 'polarization model: [none / direct / mutual]');
@@ -111,6 +127,26 @@ if (options.s2) {
 // Final ligand atom for the 2nd topology.
 if (options.f2) {
     f2 = Integer.parseInt(options.f2);
+}
+
+// No electrostatics on Topology 1.
+if (options.es) {
+    noElecStart = Integer.parseInt(options.es);
+}
+
+// First atom from Topology 1 with no electrostatics.
+if (options.ef) {
+    noElecStop = Integer.parseInt(options.ef);
+}
+
+// No electrostatics on Topology 2.
+if (options.es2) {
+    noElecStart2 = Integer.parseInt(options.es2);
+}
+
+// First atom from Topology 2 with no electrostatics.
+if (options.ef2) {
+    noElecStop2 = Integer.parseInt(options.ef2);
 }
 
 // Starting lambda value.
@@ -166,6 +202,20 @@ if (lambdaTerm) {
         ai.setApplyLambda(true);
         ai.print();
     }
+
+    // Apply the no electrostatics atom selection
+if (noElecStart < 1) {
+    noElecStart = 1;
+}
+if (noElecStop > atoms.length) {
+    noElecStop = atoms.length;
+}
+for (int i = noElecStart; i <= noElecStop; i++) {
+    Atom ai = atoms[i - 1];
+    ai.setElectrostatics(false);
+    ai.print();
+}
+
     // Turn off checks for overlapping atoms, which is expected for lambda=0.
     energy.getCrystal().setSpecialPositionCutoff(0.0);
 }
@@ -201,6 +251,20 @@ if (filename2 == null) {
         ai.setApplyLambda(true);
         ai.print();
     }
+
+        // Apply the no electrostatics atom selection
+    if (noElecStart2 < 1) {
+        noElecStart2 = 1;
+    }
+    if (noElecStop2 > atoms.length) {
+        noElecStop2 = atoms.length;
+    }
+    for (int i = noElecStart2; i <= noElecStop2; i++) {
+        Atom ai = atoms[i - 1];
+        ai.setElectrostatics(false);
+        ai.print();
+    }
+
     // Turn off checks for overlapping atoms, which is expected for lambda=0.
     energy.getCrystal().setSpecialPositionCutoff(0.0);
 

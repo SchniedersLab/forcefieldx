@@ -302,10 +302,6 @@ public class ParticleMeshEwald implements LambdaInterface {
      */
     private double lambda = 1.0;
     /**
-     * No electrostatics on softcore atoms.
-     */
-    private boolean noSoftcoreElectrostatics = false;
-    /**
      * The polarization Lambda value goes from 0.0 .. 1.0 as the global lambda
      * value varies between polarizationLambdaStart .. 1.0.
      */
@@ -1122,8 +1118,8 @@ public class ParticleMeshEwald implements LambdaInterface {
     }
 
     /**
-     * Pass in atoms that have been assigned electrostatics from a fixed
-     * charge force field.
+     * Pass in atoms that have been assigned electrostatics from a fixed charge
+     * force field.
      *
      * @param atoms
      */
@@ -5284,11 +5280,12 @@ public class ParticleMeshEwald implements LambdaInterface {
                     final double y[] = coordinates[iSymm][1];
                     final double z[] = coordinates[iSymm][2];
                     for (int ii = lb; ii <= ub; ii++) {
+                        Atom atom = atoms[ii];
                         final double in[] = localMultipole[ii];
                         final double out[] = globalMultipole[iSymm][ii];
-                        double softcoreScale = 1.0;
-                        if (isSoft[ii] && noSoftcoreElectrostatics) {
-                            softcoreScale = 0.0;
+                        double elecScale = 1.0;
+                        if (!atom.getElectrostatics()) {
+                            elecScale = 0.0;
                         }
                         if (rotateMultipoles) {
                             localOrigin[0] = x[ii];
@@ -5304,7 +5301,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 }
                             }
                             if (referenceSites == null || referenceSites.length < 2) {
-                                out[t000] = in[0] * chargeScale * softcoreScale;
+                                out[t000] = in[0] * chargeScale * elecScale;
                                 out[t100] = 0.0;
                                 out[t010] = 0.0;
                                 out[t001] = 0.0;
@@ -5315,7 +5312,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 out[t101] = 0.0;
                                 out[t011] = 0.0;
                                 PolarizeType polarizeType = atoms[ii].getPolarizeType();
-                                polarizability[ii] = polarizeType.polarizability * softcoreScale;
+                                polarizability[ii] = polarizeType.polarizability * elecScale;
                                 continue;
                             }
                             switch (frame[ii]) {
@@ -5471,35 +5468,35 @@ public class ParticleMeshEwald implements LambdaInterface {
                                     }
                                 }
                             }
-                            out[t000] = in[0] * chargeScale * softcoreScale;
-                            out[t100] = dipole[0] * dipoleScale * softcoreScale;
-                            out[t010] = dipole[1] * dipoleScale * softcoreScale;
-                            out[t001] = dipole[2] * dipoleScale * softcoreScale;
-                            out[t200] = quadrupole[0][0] * quadrupoleScale * softcoreScale;
-                            out[t020] = quadrupole[1][1] * quadrupoleScale * softcoreScale;
-                            out[t002] = quadrupole[2][2] * quadrupoleScale * softcoreScale;
-                            out[t110] = quadrupole[0][1] * quadrupoleScale * softcoreScale;
-                            out[t101] = quadrupole[0][2] * quadrupoleScale * softcoreScale;
-                            out[t011] = quadrupole[1][2] * quadrupoleScale * softcoreScale;
+                            out[t000] = in[0] * chargeScale * elecScale;
+                            out[t100] = dipole[0] * dipoleScale * elecScale;
+                            out[t010] = dipole[1] * dipoleScale * elecScale;
+                            out[t001] = dipole[2] * dipoleScale * elecScale;
+                            out[t200] = quadrupole[0][0] * quadrupoleScale * elecScale;
+                            out[t020] = quadrupole[1][1] * quadrupoleScale * elecScale;
+                            out[t002] = quadrupole[2][2] * quadrupoleScale * elecScale;
+                            out[t110] = quadrupole[0][1] * quadrupoleScale * elecScale;
+                            out[t101] = quadrupole[0][2] * quadrupoleScale * elecScale;
+                            out[t011] = quadrupole[1][2] * quadrupoleScale * elecScale;
                         } else {
                             /**
                              * No multipole rotation for isolating torque vs.
                              * non-torque pieces of the multipole energy
                              * gradient.
                              */
-                            out[t000] = in[t000] * chargeScale * softcoreScale;
-                            out[t100] = in[t100] * dipoleScale * softcoreScale;
-                            out[t010] = in[t010] * dipoleScale * softcoreScale;
-                            out[t001] = in[t001] * dipoleScale * softcoreScale;
-                            out[t200] = in[t200] * quadrupoleScale * softcoreScale;
-                            out[t020] = in[t020] * quadrupoleScale * softcoreScale;
-                            out[t002] = in[t002] * quadrupoleScale * softcoreScale;
-                            out[t110] = in[t110] * quadrupoleScale * softcoreScale;
-                            out[t101] = in[t101] * quadrupoleScale * softcoreScale;
-                            out[t011] = in[t011] * quadrupoleScale * softcoreScale;
+                            out[t000] = in[t000] * chargeScale * elecScale;
+                            out[t100] = in[t100] * dipoleScale * elecScale;
+                            out[t010] = in[t010] * dipoleScale * elecScale;
+                            out[t001] = in[t001] * dipoleScale * elecScale;
+                            out[t200] = in[t200] * quadrupoleScale * elecScale;
+                            out[t020] = in[t020] * quadrupoleScale * elecScale;
+                            out[t002] = in[t002] * quadrupoleScale * elecScale;
+                            out[t110] = in[t110] * quadrupoleScale * elecScale;
+                            out[t101] = in[t101] * quadrupoleScale * elecScale;
+                            out[t011] = in[t011] * quadrupoleScale * elecScale;
                         }
                         PolarizeType polarizeType = atoms[ii].getPolarizeType();
-                        polarizability[ii] = polarizeType.polarizability * softcoreScale;
+                        polarizability[ii] = polarizeType.polarizability * elecScale;
                     }
                 }
             }
@@ -6609,15 +6606,6 @@ public class ParticleMeshEwald implements LambdaInterface {
     }
 
     /**
-     * Should softcore atoms include electrostatic moments and polarizability.
-     *
-     * @param noElec true means moments and polarizability set to zero.
-     */
-    public void setNoSoftCoreElectrostatics(boolean noElec) {
-        noSoftcoreElectrostatics = noElec;
-    }
-
-    /**
      * {@inheritDoc}
      *
      * Set the electrostatic lambda scaling factor.
@@ -7425,13 +7413,23 @@ public class ParticleMeshEwald implements LambdaInterface {
                     /**
                      * Set initial conjugate gradient residual (a field).
                      */
-                    double ipolar = 1.0 / polarizability[i];
-                    rsd[0][i] = (directDipole[i][0] - inducedDipole[0][i][0]) * ipolar + field[0][0][i];
-                    rsd[1][i] = (directDipole[i][1] - inducedDipole[0][i][1]) * ipolar + field[0][1][i];
-                    rsd[2][i] = (directDipole[i][2] - inducedDipole[0][i][2]) * ipolar + field[0][2][i];
-                    rsdCR[0][i] = (directDipoleCR[i][0] - inducedDipoleCR[0][i][0]) * ipolar + fieldCR[0][0][i];
-                    rsdCR[1][i] = (directDipoleCR[i][1] - inducedDipoleCR[0][i][1]) * ipolar + fieldCR[0][1][i];
-                    rsdCR[2][i] = (directDipoleCR[i][2] - inducedDipoleCR[0][i][2]) * ipolar + fieldCR[0][2][i];
+                    double ipolar;
+                    if (polarizability[i] > 0) {
+                        ipolar = 1.0 / polarizability[i];
+                        rsd[0][i] = (directDipole[i][0] - inducedDipole[0][i][0]) * ipolar + field[0][0][i];
+                        rsd[1][i] = (directDipole[i][1] - inducedDipole[0][i][1]) * ipolar + field[0][1][i];
+                        rsd[2][i] = (directDipole[i][2] - inducedDipole[0][i][2]) * ipolar + field[0][2][i];
+                        rsdCR[0][i] = (directDipoleCR[i][0] - inducedDipoleCR[0][i][0]) * ipolar + fieldCR[0][0][i];
+                        rsdCR[1][i] = (directDipoleCR[i][1] - inducedDipoleCR[0][i][1]) * ipolar + fieldCR[0][1][i];
+                        rsdCR[2][i] = (directDipoleCR[i][2] - inducedDipoleCR[0][i][2]) * ipolar + fieldCR[0][2][i];
+                    } else {
+                        rsd[0][i] = 0.0;
+                        rsd[1][i] = 0.0;
+                        rsd[2][i] = 0.0;
+                        rsdCR[0][i] = 0.0;
+                        rsdCR[1][i] = 0.0;
+                        rsdCR[2][i] = 0.0;
+                    }
                     /**
                      * Store the current induced dipoles and load the residual
                      * induced dipole
@@ -7602,21 +7600,35 @@ public class ParticleMeshEwald implements LambdaInterface {
 
             @Override
             public void run(int lb, int ub) throws Exception {
-
                 for (int i = lb; i <= ub; i++) {
-                    double ipolar = 1.0 / polarizability[i];
-                    inducedDipole[0][i][0] = vec[0][i];
-                    inducedDipole[0][i][1] = vec[1][i];
-                    inducedDipole[0][i][2] = vec[2][i];
-                    vec[0][i] = conj[0][i] * ipolar - field[0][0][i];
-                    vec[1][i] = conj[1][i] * ipolar - field[0][1][i];
-                    vec[2][i] = conj[2][i] * ipolar - field[0][2][i];
-                    inducedDipoleCR[0][i][0] = vecCR[0][i];
-                    inducedDipoleCR[0][i][1] = vecCR[1][i];
-                    inducedDipoleCR[0][i][2] = vecCR[2][i];
-                    vecCR[0][i] = conjCR[0][i] * ipolar - fieldCR[0][0][i];
-                    vecCR[1][i] = conjCR[1][i] * ipolar - fieldCR[0][1][i];
-                    vecCR[2][i] = conjCR[2][i] * ipolar - fieldCR[0][2][i];
+                    if (polarizability[i] > 0) {
+                        double ipolar = 1.0 / polarizability[i];
+                        inducedDipole[0][i][0] = vec[0][i];
+                        inducedDipole[0][i][1] = vec[1][i];
+                        inducedDipole[0][i][2] = vec[2][i];
+                        vec[0][i] = conj[0][i] * ipolar - field[0][0][i];
+                        vec[1][i] = conj[1][i] * ipolar - field[0][1][i];
+                        vec[2][i] = conj[2][i] * ipolar - field[0][2][i];
+                        inducedDipoleCR[0][i][0] = vecCR[0][i];
+                        inducedDipoleCR[0][i][1] = vecCR[1][i];
+                        inducedDipoleCR[0][i][2] = vecCR[2][i];
+                        vecCR[0][i] = conjCR[0][i] * ipolar - fieldCR[0][0][i];
+                        vecCR[1][i] = conjCR[1][i] * ipolar - fieldCR[0][1][i];
+                        vecCR[2][i] = conjCR[2][i] * ipolar - fieldCR[0][2][i];
+                    } else {
+                        inducedDipole[0][i][0] = 0.0;
+                        inducedDipole[0][i][1] = 0.0;
+                        inducedDipole[0][i][2] = 0.0;
+                        vec[0][i] = 0.0;
+                        vec[1][i] = 0.0;
+                        vec[2][i] = 0.0;
+                        inducedDipoleCR[0][i][0] = 0.0;
+                        inducedDipoleCR[0][i][1] = 0.0;
+                        inducedDipoleCR[0][i][2] = 0.0;
+                        vecCR[0][i] = 0.0;
+                        vecCR[1][i] = 0.0;
+                        vecCR[2][i] = 0.0;
+                    }
 
                     // Compute dot product of the conjugate vector and new residual.
                     dot += conj[0][i] * vec[0][i]
