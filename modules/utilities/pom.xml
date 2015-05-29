@@ -40,9 +40,11 @@
             <version>${commons-configuration.version}</version>
         </dependency>
         <dependency>
-            <artifactId>groovy-all</artifactId>
-            <groupId>org.codehaus.groovy</groupId>
-            <version>${groovy-all.version}</version>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
+            <type>jar</type>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

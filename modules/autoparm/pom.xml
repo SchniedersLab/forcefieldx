@@ -39,27 +39,52 @@
     <dependencies>
         <dependency>
             <groupId>edu.uiowa.eng.ffx</groupId>
-            <artifactId>potential</artifactId>
-            <version>${project.version}</version>
-            <type>jar</type>
-        </dependency>
-        <dependency>
-            <groupId>edu.uiowa.eng.ffx</groupId>
             <artifactId>algorithms</artifactId>
             <version>${project.version}</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>edu.uiowa.eng.ffx</groupId>
-            <artifactId>utilities</artifactId>
+            <artifactId>crystal</artifactId>
             <version>${project.version}</version>
             <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>edu.uiowa.eng.ffx</groupId>
+            <artifactId>numerics</artifactId>
+            <version>${project.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>edu.uiowa.eng.ffx</groupId>
+            <artifactId>pj</artifactId>
+            <version>${project.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>edu.uiowa.eng.ffx</groupId>
+            <artifactId>potential</artifactId>
+            <version>${project.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>commons-configuration</groupId>
+            <artifactId>commons-configuration</artifactId>
+            <type>jar</type>
+            <version>${commons-configuration.version}</version>
         </dependency>
         <dependency>
             <groupId>commons-math</groupId>
             <artifactId>commons-math3</artifactId>
             <type>jar</type>
             <version>${commons-math3.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
+            <type>jar</type>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

@@ -31,7 +31,7 @@
     <dependencies>
         <dependency>
             <groupId>edu.uiowa.eng.ffx</groupId>
-            <artifactId>potential</artifactId>
+            <artifactId>crystal</artifactId>
             <version>${project.version}</version>
             <type>jar</type>
         </dependency>
@@ -42,16 +42,40 @@
             <type>jar</type>
         </dependency>
         <dependency>
+            <groupId>edu.uiowa.eng.ffx</groupId>
+            <artifactId>pj</artifactId>
+            <version>${project.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>edu.uiowa.eng.ffx</groupId>
+            <artifactId>potential</artifactId>
+            <version>${project.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>edu.uiowa.eng.ffx</groupId>
+            <artifactId>utilities</artifactId>
+            <version>${project.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <type>jar</type>
+            <version>${commons-io.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-configuration</groupId>
+            <artifactId>commons-configuration</artifactId>
+            <type>jar</type>
+            <version>${commons-configuration.version}</version>
+        </dependency>
+        <dependency>
             <groupId>commons-math</groupId>
             <artifactId>commons-math3</artifactId>
             <type>jar</type>
             <version>${commons-math3.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.codehaus.groovy</groupId>
-            <artifactId>groovy-all</artifactId>
-            <type>jar</type>
-            <version>${groovy-all.version}</version>
         </dependency>
     </dependencies>
 </project>
