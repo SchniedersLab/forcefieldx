@@ -1901,7 +1901,8 @@ public class RotamerLibrary {
         }
         AminoAcid3 name;
         if (residue instanceof MultiResidue) {
-            name = AminoAcid3.valueOf(((MultiResidue) residue).getActive().getName());
+            name = rotamer.name;
+            ((MultiResidue) residue).setActiveResidue(name);
         } else {
             name = AminoAcid3.valueOf(residue.getName());
         }
