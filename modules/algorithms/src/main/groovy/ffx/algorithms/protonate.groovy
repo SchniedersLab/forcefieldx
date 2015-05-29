@@ -90,13 +90,15 @@ double pH = 7.4;
 // Single-residue titration option.
 Character chainID = ' ';
 int resID = -1;
-boolean titrateAll;
+List<String> resList = new ArrayList<>();
+double window = 2.0;
+
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc md [options] <filename>');
+def cli = new CliBuilder(usage:' ffxc protonate [options] <filename>');
 cli.h(longOpt:'help', 'Print this message.');
 cli.b(longOpt:'thermostat', args:1, argName:'Berendsen', 'Thermostat: [Adiabatic / Berendsen / Bussi]');
 cli.d(longOpt:'dt', args:1, argName:'1.0', 'Time discretization (fsec).');
@@ -108,7 +110,9 @@ cli.t(longOpt:'temperature', args:1, argName:'298.15', 'Temperature in degrees K
 cli.w(longOpt:'save', args:1, argName:'0.1', 'Interval to write out coordinates (psec).');
 cli.s(longOpt:'restart', args:1, argName:'0.1', 'Interval to write out restart file (psec).');
 cli.f(longOpt:'file', args:1, argName:'PDB', 'Choose file type to write to [PDB/XYZ]');
-cli.r(longOpt:'resid', args:1, argName:'-1', 'Residue (e.g. A4) to optimize protonation state [blank for all].');
+cli.ra(longOpt:'resAll', 'Titrate all residues.');
+cli.rl(longOpt:'resList', args:1, 'Titrate a list of residues (eg A4.A8.B2.B34)');
+cli.rw(longOpt:'resWindow', args:1, 'Titrate all residues with intrinsic pKa within [arg] units of simulation pH.');
 cli.pH(longOpt:'pH', args:1, argName:'7.4', 'Constant simulation pH.');
 cli.mc(longOpt:'mcStepFreq', args:1, argName:'10', 'Number of MD steps between Monte-Carlo protonation changes.')
 cli.mcr(longOpt: 'rotamerStepFreq', args:1, argName:'0', 'Number of MD steps between Monte-Carlo rotamer changes.')
@@ -118,12 +122,30 @@ if (options.h) {
     return cli.usage();
 }
 
-if (options.r) {
-    titrateAll = false;
-    chainID = (options.r).charAt(0);
-    resID = Integer.parseInt((options.r).substring(1));
-} else {
-    titrateAll = true;
+if ((options.rw && (options.ra || options.rl)) || (options.ra && options.rl)) {
+    return cli.usage();
+    logger.info(" Must specify one of the following: -ra, -rl, or -rw.");
+}
+
+if (!options.ra && !options.rl && !options.rw) {
+    return cli.usage();
+    logger.info(" Must specify one of the following: -ra, -rl, or -rw.");
+}
+
+if (!options.pH) {
+    return cli.usage();
+    logger.info(" Must specify a solution pH.");
+}
+
+if (options.rl) {
+    def tok = (options.rl).tokenize('.');
+    for (String t : tok) {
+        resList.add(t);
+    }
+}
+
+if (options.rw) {
+    window = Double.parseDouble(options.rw);
 }
 
 if (options.mc) {
@@ -225,10 +247,12 @@ molDyn.addMCListener(mcProt);
 mcProt.addMolDyn(molDyn);
 
 // set residues to be titrated
-if (titrateAll) {
+if (options.ra) {
     mcProt.chooseAllTitratables();
-} else {
-    mcProt.chooseResID(chainID, resID);
+} else if (options.rl) {
+    mcProt.chooseResID(resList);
+} else if (options.rw) {
+    mcProt.chooseTitratablesInWindow(pH, window);
 }
 
 // finalize the Multi-Residue machinery
