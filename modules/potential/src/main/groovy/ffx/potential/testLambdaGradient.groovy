@@ -51,6 +51,7 @@ import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.DualTopologyEnergy;
 import ffx.potential.ForceFieldEnergy;
+//import edu.rit.pj.ParallelTeam;
 
 // First ligand atom.
 int ligandStart = 1;
@@ -158,6 +159,9 @@ if (options.v) {
     print = true;
 }
 
+/*int nThreads = ParallelTeam.getDefaultThreadCount() / 2;
+System.setProperty("FF_THREADS", String.valueOf(nThreads));*/
+
 if (arguments.size() == 1) {
     logger.info("\n Testing lambda derivatives for " + filename);
 } else {
@@ -217,6 +221,12 @@ ForceFieldEnergy forceFieldEnergy = active.getPotentialEnergy();
 forceFieldEnergy.getCrystal().setSpecialPositionCutoff(0.0);
 
 LambdaInterface lambdaInterface = active.getPotentialEnergy();
+
+/*if (nThreads % 2 == 1) {
+    // Second topology gets the leftover thread.
+    nThreads++;
+    System.setProperty("FF_THREADS", String.valueOf(nThreads));
+}*/
 
 // Check for a 2nd topology.
 if (arguments.size() > 1) {
