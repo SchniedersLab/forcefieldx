@@ -380,6 +380,26 @@ public class MultiResidue extends Residue {
         }
         return allRotamers;
     }
+    
+    @Override
+    public ResidueState storeCoordinates() {
+        return new ResidueState(this, activeResidue);
+    }
+
+    @Override
+    public void revertCoordinates(ResidueState state) {
+        Residue res = state.getResidue();
+        //if (!res.equals(activeResidue)) {
+            if (!setActiveResidue(res)) {
+                throw new IllegalArgumentException(String.format(" Could not revert "
+                        + "multi-residue %s to residue identity %s", this.toString(),
+                        state.getResidue().toString()));
+            }
+        //}
+        for (Atom atom : getAtomList()) {
+            atom.moveTo(state.getAtomCoords(atom));
+        }
+    }
 
     private void moveBackBoneAtoms(Residue fromResidue, Residue toResidue) {
         Residue prevRes = this.getPreviousResidue();
@@ -716,6 +736,10 @@ public class MultiResidue extends Residue {
     
     public boolean setToDefaultResidue() {
         return setActiveResidue(defaultResidue);
+    }
+    
+    public Residue getDefaultResidue() {
+        return defaultResidue;
     }
 
     public int getResidueCount() {

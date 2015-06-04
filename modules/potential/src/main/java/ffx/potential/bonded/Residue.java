@@ -71,7 +71,7 @@ public class Residue extends MSGroup {
     private static final Logger logger = Logger.getLogger(Residue.class.getName());
 
     /**
-     * The residue number of this atom in a chain.
+     * The residue number of this residue in a chain.
      */
     private int resNumber;
     /**
@@ -313,6 +313,28 @@ public class Residue extends MSGroup {
             atom = (Atom) this.getAtomNode(0);
         }
         return atom;
+    }
+    
+    public ResidueState storeCoordinates() {
+        return new ResidueState(this, this);
+    }
+    
+    public void revertCoordinates(ResidueState state) {
+        List<Atom> atomList = getAtomList();
+        for (Atom atom : atomList) {
+            atom.moveTo(state.getAtomCoords(atom));
+        }
+    }
+    
+    public double[][] storeCoordinateArray() {
+        List<Atom> atomList = getAtomList();
+        int nAtoms = atomList.size();
+        double[][] coords = new double[nAtoms][3];
+        int i = 0;
+        for (Atom atom : atomList) {
+            atom.getXYZ(coords[i++]);
+        }
+        return coords;
     }
 
     /**
