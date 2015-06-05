@@ -75,6 +75,7 @@ import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
+import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.VDWType;
 
@@ -89,6 +90,7 @@ import static ffx.potential.parameters.MultipoleType.t100;
 import static ffx.potential.parameters.MultipoleType.t101;
 import static ffx.potential.parameters.MultipoleType.t110;
 import static ffx.potential.parameters.MultipoleType.t200;
+import java.util.HashMap;
 
 /**
  * This Generalized Kirkwood class implements GK for the AMOEBA polarizable
@@ -184,6 +186,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
     private long pmfTime = 0;
     private long dispersionTime = 0;
     private long cavitationTime = 0;
+    /**
+     * Use base radii defined by AtomType rather than by atomic number.
+     */
+    private final boolean useAtomTypeRadii = true;
 
     /**
      * <p>
@@ -346,6 +352,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
             baseRadius[i] = 2.0;
             overlapScale[i] = 0.69;
             int atomicNumber = atoms[i].getAtomicNumber();
+            AtomType atomType = atoms[i].getAtomType();
+            
             switch (atomicNumber) {
                 case 0:
                     baseRadius[i] = 0.0;
@@ -407,6 +415,97 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 default:
                     baseRadius[i] = 2.00;
             }
+
+            /* Allow overriding base radius on an AtomType basis.
+                DEFAULTS:
+                    Hydrogen 1.20
+                    Carbon   1.70
+                    Nitrogen 1.55
+                    Oxygen   1.52
+                    Sulfur   1.80
+            */
+            if (useAtomTypeRadii) {
+                switch (atomType.type) {
+                    // Cysteine
+                    case 47:    // CYS SG
+                        break;
+                    case 48:    // CYS HG
+                        break;
+                    case 52:    // CYD SG
+                        break;
+                    // Tyrosine
+                    case 81:    // TYR OH
+                        break;
+                    case 82:    // TYR HH
+                        break;
+                    case 91:    // TYD OH
+                        break;
+                    // Histidine
+                    case 112:   // HIS ND1
+                        break;
+                    case 113:   // HIS HD1
+                        break;
+                    case 118:   // HIS NE2
+                        break;
+                    case 119:   // HIS HE2
+                        break;
+                    case 123:   // HID ND1
+                        break;
+                    case 124:   // HID HD1
+                        break;
+                    case 129:   // HID NE2
+                        break;
+                    case 133:   // HIE ND1
+                        break;
+                    case 138:   // HIE NE2
+                        break;
+                    case 139:   // HIE HE2
+                        break;
+                    // Aspartate
+                    case 143:   // ASP OD1,OD2
+                        break;
+                    case 147:   // ASH OD1
+                        break;
+                    case 148:   // ASH OD2
+                        break;
+                    case 149:   // ASH HD2
+                        break;
+                    // Glutamate
+                    case 161:   // GLU OE1,OE2
+                        break;
+                    case 167:   // GLH OE1
+                        break;
+                    case 168:   // GLH OE2
+                        break;
+                    case 169:   // GLH HE2
+                        break;
+                    // Lysine
+                    case 193:   // LYS NZ
+                        break;
+                    case 194:   // LYS HZ3
+                        break;
+                    case 203:   // LYD NZ
+                        break;
+                    default:
+                        break;
+                }
+                
+                String radiusOverride = System.getProperty("gk-radiusOverride");
+                if (radiusOverride != null) {
+                    if (!radiusOverride.contains("r")) {
+                        logger.severe("Invalid radius override.");
+                    }
+                    int separator = radiusOverride.indexOf("r");
+                    int type = Integer.parseInt(radiusOverride.substring(0, separator));
+                    double radius = Double.parseDouble(radiusOverride.substring(separator + 1));
+                    if (atomType.type == type) {
+                        baseRadius[i] = radius;
+                        logger.info(String.format(" (GK) Atom %s-%s with AtomType %d given a base radius of %.2f",
+                                atoms[i].getResidueName(), atoms[i].getName(), atomType.type, baseRadius[i]));
+                    }
+                }
+            }
+            
             baseRadius[i] *= bondiScale;
         }
 
@@ -419,7 +518,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         }
 
     }
-
+    
     public void setUse(boolean use[]) {
         this.use = use;
     }
