@@ -767,7 +767,12 @@ public class MolecularAssembly extends MSGroup {
      */
     public ArrayList<Atom> getBackBoneAtoms() {
         ArrayList<Atom> backbone = new ArrayList<Atom>();
-        Atom ca = new Atom("CA");
+        List<Residue> residues = getResidueList();
+        for (Residue residue : residues) {
+            backbone.addAll(residue.getBackboneAtoms());
+        }
+        
+        /*Atom ca = new Atom("CA");
         ArrayList<ROLS> atoms = this.getList(Atom.class, new ArrayList<ROLS>());
         for (ROLS m : atoms) {
             Atom atom = (Atom) m;
@@ -776,7 +781,7 @@ public class MolecularAssembly extends MSGroup {
                 // else if (a.equals(new Atom("C"))) backbone.add(a);
                 // else if (a.equals(new Atom("N"))) backbone.add(a);
             }
-        }
+        }*/
         return backbone;
     }
 
