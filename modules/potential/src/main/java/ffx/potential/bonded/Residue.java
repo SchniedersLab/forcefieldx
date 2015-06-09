@@ -111,6 +111,8 @@ public class Residue extends MSGroup {
     private double[] C1sCoords = null;
     private double[] O4sCoords = null;
     private double[] C4sCoords = null;
+    
+    private Rotamer currentRotamer = null;
 
     /**
      * Default Constructor where num is this Residue's position in the Polymer.
@@ -336,6 +338,14 @@ public class Residue extends MSGroup {
         }
         return coords;
     }
+    
+    public void setRotamer(Rotamer rotamer) {
+        this.currentRotamer = rotamer;
+    }
+    
+    public Rotamer getRotamer() {
+        return currentRotamer;
+    }
 
     /**
      * {@inheritDoc}
@@ -551,8 +561,8 @@ public class Residue extends MSGroup {
      * {@inheritDoc}
      *
      * Overidden equals method that return true if object is not equals to this,
-     * is of the same class, has the same parent Polymer and the same sequence
-     * number.
+     * is of the same class, has the same parent Polymer, the same sequence
+     * number, the same ResidueType, and the same AA3/NA3.
      */
     @Override
     public boolean equals(Object object) {
@@ -562,6 +572,27 @@ public class Residue extends MSGroup {
             return false;
         }
         Residue other = (Residue) object;
+        ResidueType otherType = other.getResidueType();
+        if (residueType != otherType) {
+            return false;
+        }
+        switch (residueType) {
+            case AA:
+                if (aa != other.aa) {
+                    return false;
+                }
+                break;
+            case NA:
+                if (na != other.na) {
+                    return false;
+                }
+                break;
+            default:
+                break;
+        }
+        if (!getName().equals(other.getName())) {
+            return false;
+        }
         if (getParent() == null || other.getParent() == null) {
             return (getResidueNumber() == other.getResidueNumber());
         } else if (getParent() == other.getParent()) {
@@ -748,9 +779,15 @@ public class Residue extends MSGroup {
      * {@inheritDoc}
      */
     @Override
-    public final int hashCode() {
+    public int hashCode() {
         int hash = hash(SEED, getParent().hashCode());
         hash = hash(hash, getResidueNumber());
+        hash = hash(hash, residueType);
+        if (residueType == ResidueType.AA) {
+            hash = hash(hash, aa);
+        } else if (residueType == ResidueType.NA) {
+            hash = hash(hash, na);
+        }
         return hash(hash, getName());
     }
 
