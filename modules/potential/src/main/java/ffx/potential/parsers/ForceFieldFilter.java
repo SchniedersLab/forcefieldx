@@ -178,7 +178,9 @@ public class ForceFieldFilter {
                 ForceFieldName ff;
                 try {
                     ff = ForceField.ForceFieldName.valueOf(forceFieldString.toUpperCase().replace('-', '_'));
+                    logger.info(" Attempting to load forcefield: " + ff.toString());
                 } catch (Exception e) {
+                    logger.warning("Defaulting to forcefield: AMOEBA_BIO_2009");
                     ff = ForceField.ForceFieldName.AMOEBA_BIO_2009;
                 }
                 URL url = ForceField.getForceFieldURL(ff);

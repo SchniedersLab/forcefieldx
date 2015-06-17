@@ -433,7 +433,7 @@ Atom[] atoms = active.getAtomArray();
 for (int i = ligandStart; i <= ligandStop; i++) {
     Atom ai = atoms[i - 1];
     ai.setApplyLambda(true);
-    ai.setElectrostatics(!noElec1);
+//    ai.setElectrostatics(!noElec1);
     ai.print();
 }
 
