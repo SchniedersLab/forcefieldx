@@ -79,9 +79,9 @@ public class CoordRestraint implements LambdaInterface {
     private final double lambdaGradient[];
     private boolean lambdaTerm = false;
 
-    private AtomType definePlane1 = null;
-    private AtomType definePlane2 = null;
-    private AtomType definePlane3 = null;
+//    private AtomType definePlane1 = null;
+//    private AtomType definePlane2 = null;
+//    private AtomType definePlane3 = null;
 
     /**
      * This CoordRestraint is based on the unit cell parameters and symmetry
@@ -119,10 +119,9 @@ public class CoordRestraint implements LambdaInterface {
             initialCoordinates[2][i] = a.getZ();
             a.print();
         }
-        if (System.getProperty("atomrestraint1") != null) {
-            setPlaneAtoms();
-        }
-
+//        if (System.getProperty("atomrestraint1") != null) {
+//            setPlaneAtoms();
+//        }
     }
 
     public double residual(boolean gradient, boolean print) {
@@ -132,28 +131,28 @@ public class CoordRestraint implements LambdaInterface {
             d2EdL2 = 0.0;
             fill(lambdaGradient, 0.0);
         }
-
+        int atomIndex;
         double residual = 0.0;
         double fx2 = forceConstant * 2.0;
         for (int i = 0; i < nAtoms; i++) {
             // Current atomic coordinates.
             Atom atom = atoms[i];
 
-            if (definePlane1 != null) {
-                AtomType atomType = atom.getAtomType();
-                if (atomType.equals(definePlane1)) {
+            if (System.getProperty("atomrestraint1") != null) {
+                atomIndex = atom.getXYZIndex();
+                if (atomIndex == Integer.parseInt(System.getProperty("atomrestraint1"))) {
                     atom.getXYZ(a1);
                     // Compute their separation.
                     dx[0] = a1[0] - initialCoordinates[0][i];
                     dx[1] = a1[1] - initialCoordinates[1][i];
                     dx[2] = a1[2] - initialCoordinates[2][i];
-                } else if (atomType.equals(definePlane2)) {
+                } else if (atomIndex == Integer.parseInt(System.getProperty("atomrestraint2"))) {
                     atom.getXYZ(a1);
                     // Compute their separation.
                     dx[0] = a1[0] - initialCoordinates[0][i];
                     dx[1] = a1[1] - initialCoordinates[1][i];
                     dx[2] = a1[2] - initialCoordinates[2][i];
-                } else if (atomType.equals(definePlane3)) {
+                } else if (atomIndex == Integer.parseInt(System.getProperty("atomrestraint3"))) {
                     atom.getXYZ(a1);
                     // Compute their separation.
                     dx[0] = a1[0] - initialCoordinates[0][i];
@@ -222,22 +221,25 @@ public class CoordRestraint implements LambdaInterface {
         return forceConstant * residual * lambdaPow;
     }
 
-    public final void setPlaneAtoms() {
-        int planeAtom1 = Integer.parseInt(System.getProperty("atomrestraint1"));
-        int planeAtom2 = Integer.parseInt(System.getProperty("atomrestraint2"));
-        int planeAtom3 = Integer.parseInt(System.getProperty("atomrestraint3"));
-        for (int i = 0; i < nAtoms; i++) {
-            // Current atomic coordinates.
-            Atom atom = atoms[i];
-            if (atom.getXYZIndex() == planeAtom1) {
-                definePlane1 = atom.getAtomType();
-            } else if (atom.getXYZIndex() == planeAtom2) {
-                definePlane2 = atom.getAtomType();
-            } else if (atom.getXYZIndex() == planeAtom1) {
-                definePlane3 = atom.getAtomType();
-            }
-        }
-    }
+//    public final void setPlaneAtoms() {
+//        int planeAtom1 = Integer.parseInt(System.getProperty("atomrestraint1"));
+//        int planeAtom2 = Integer.parseInt(System.getProperty("atomrestraint2"));
+//        int planeAtom3 = Integer.parseInt(System.getProperty("atomrestraint3"));
+//        for (int i = 0; i < nAtoms; i++) {
+//            // Current atomic coordinates.
+//            Atom atom = atoms[i];
+//            if (atom.getXYZIndex() == planeAtom1) {
+//                definePlane1 = atom.getAtomType();
+//            } else if (atom.getXYZIndex() == planeAtom2) {
+//                definePlane2 = atom.getAtomType();
+//                
+//                //Should the following else if statetment be == planeAtom3??
+//
+//            } else if (atom.getXYZIndex() == planeAtom3) {
+//                definePlane3 = atom.getAtomType();
+//            }
+//        }
+//    }
 
     @Override
     public void setLambda(double lambda) {

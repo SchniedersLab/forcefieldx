@@ -1300,6 +1300,21 @@ public class Atom extends MSNode implements Comparable<Atom> {
         stale = true;
     }
 
+    public void rotate(double[][] d) {
+        int rowsInA = xyz.length;
+        double columnsInA = d.length; // same as rows in d
+        int columnsInB = d[0].length;
+        double[][] c = new double[rowsInA][columnsInB];
+        for (int i = 0; i < rowsInA; i++) {
+            for (int j = 0; j < columnsInB; j++) {
+                for (int k = 0; k < columnsInA; k++) {
+                    c[i][j] = c[i][j] + xyz[k] * d[k][j];
+                }
+            }
+        }
+        stale = true;
+    }
+
     /**
      * <p>
      * moveTo</p>
@@ -2139,7 +2154,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
             transformGroup.setTransform(transform3D);
         }
     }
-
+    
     /**
      * Element symbols for the first 109 elements.
      */
