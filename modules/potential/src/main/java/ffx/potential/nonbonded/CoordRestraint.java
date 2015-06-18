@@ -78,11 +78,16 @@ public class CoordRestraint implements LambdaInterface {
     private double d2EdL2 = 0.0;
     private final double lambdaGradient[];
     private boolean lambdaTerm = false;
+    private int atom1Index;
+    private int atom2Index;
+    private int atom3Index;
+    private AtomType atom1Type;
+    private AtomType atom2Type;
+    private AtomType atom3Type;
 
 //    private AtomType definePlane1 = null;
 //    private AtomType definePlane2 = null;
 //    private AtomType definePlane3 = null;
-
     /**
      * This CoordRestraint is based on the unit cell parameters and symmetry
      * operators of the supplied crystal.
@@ -125,40 +130,87 @@ public class CoordRestraint implements LambdaInterface {
     }
 
     public double residual(boolean gradient, boolean print) {
-
+        //pdbAtomRestraints uses atom indexes to restrain specific atoms
+        String atomIndexRestraints = System.getProperty("pdbAtomRestraints");
+        if (atomIndexRestraints != null) {
+            String tokens[] = atomIndexRestraints.split(",");
+        //Pick up atom index for reference when looking at muliple molecules
+            atom1Index = Integer.parseInt(tokens[0]);
+            atom2Index = Integer.parseInt(tokens[1]);
+            atom3Index = Integer.parseInt(tokens[2]);
+        }
+        
+        //xyzAtomRestraints uses atom types to restrain specific atoms. This can result in more
+        //atoms being restrained than desired since atom types are not unique to each atom.
+        String atomTypeRestraints = System.getProperty("xyzAtomRestraints");
+        if (atomTypeRestraints != null) {
+            String tokens[] = atomTypeRestraints.split(",");
+        //Pick up atom type for reference when looking at muliple molecules
+            atom1Type = atoms[Integer.parseInt(tokens[0])].getAtomType();
+            atom2Type = atoms[Integer.parseInt(tokens[1])].getAtomType();
+            atom3Type = atoms[Integer.parseInt(tokens[2])].getAtomType();
+        }
         if (lambdaTerm) {
             dEdL = 0.0;
             d2EdL2 = 0.0;
             fill(lambdaGradient, 0.0);
         }
-        int atomIndex;
+        int atomIndex = 0;
+        //Assuming that the first molecule in pdb is labeled as 1.
+        int moleculeNumber = 1;
         double residual = 0.0;
         double fx2 = forceConstant * 2.0;
         for (int i = 0; i < nAtoms; i++) {
             // Current atomic coordinates.
             Atom atom = atoms[i];
-
-            if (System.getProperty("atomrestraint1") != null) {
-                atomIndex = atom.getXYZIndex();
-                if (atomIndex == Integer.parseInt(System.getProperty("atomrestraint1"))) {
+            logger.info("Number of atoms in atoms[] = " + atom.getResidueNumber());
+            if (atomTypeRestraints != null) {
+                if (atom.getAtomType() == atom1Type || atom.getAtomType() == atom2Type || atom.getAtomType() == atom3Type) {
                     atom.getXYZ(a1);
                     // Compute their separation.
                     dx[0] = a1[0] - initialCoordinates[0][i];
                     dx[1] = a1[1] - initialCoordinates[1][i];
                     dx[2] = a1[2] - initialCoordinates[2][i];
-                } else if (atomIndex == Integer.parseInt(System.getProperty("atomrestraint2"))) {
+                    logger.info(String.format("restrained atom = %d", atom.getXYZIndex()));
+                }
+                else {
+                    continue;
+                }
+                double r2 = rsq(dx);
+                // Apply the minimum image convention.
+                // double r2 = crystal.image(dx);
+                //logger.info(String.format(" %d %16.8f", j, Math.sqrt(r2)));
+                residual += r2;
+                if (gradient || lambdaTerm) {
+                    final double dedx = dx[0] * fx2;
+                    final double dedy = dx[1] * fx2;
+                    final double dedz = dx[2] * fx2;
+                    if (gradient) {
+                        atom.addToXYZGradient(lambdaPow * dedx, lambdaPow * dedy, lambdaPow * dedz);
+                    }
+                    if (lambdaTerm) {
+                        int j3 = i * 3;
+                        lambdaGradient[j3] = dLambdaPow * dedx;
+                        lambdaGradient[j3 + 1] = dLambdaPow * dedy;
+                        lambdaGradient[j3 + 2] = dLambdaPow * dedz;
+                    }
+                }
+            } else if (atomIndexRestraints != null) {
+                atomIndex += 1;
+                // Following if statement works only for .pdb files since they give residueNumber
+                if (atom.getResidueNumber() != moleculeNumber) {
+                    atomIndex = 1;
+                    moleculeNumber = atom.getResidueNumber();
+                }
+                if (atomIndex == atom1Index || atomIndex == atom2Index || atomIndex == atom3Index) {
                     atom.getXYZ(a1);
                     // Compute their separation.
                     dx[0] = a1[0] - initialCoordinates[0][i];
                     dx[1] = a1[1] - initialCoordinates[1][i];
                     dx[2] = a1[2] - initialCoordinates[2][i];
-                } else if (atomIndex == Integer.parseInt(System.getProperty("atomrestraint3"))) {
-                    atom.getXYZ(a1);
-                    // Compute their separation.
-                    dx[0] = a1[0] - initialCoordinates[0][i];
-                    dx[1] = a1[1] - initialCoordinates[1][i];
-                    dx[2] = a1[2] - initialCoordinates[2][i];
-                } else {
+                    logger.info(String.format("restrained atom = %d", atom.getXYZIndex()));
+                }
+                else {
                     continue;
                 }
                 double r2 = rsq(dx);
@@ -240,7 +292,6 @@ public class CoordRestraint implements LambdaInterface {
 //            }
 //        }
 //    }
-
     @Override
     public void setLambda(double lambda) {
         if (lambdaTerm) {

@@ -273,38 +273,38 @@ for (int i=0; i<nTrials; i++) {
      ***********************************************/
 
     // Generate random Quaternion. In order to be random it can not be evenly distributed along the angle due to spherical rotation pattern.    
-//    s = random.nextDouble();
-//    σ1 = Math.sqrt(1 - s);
-//    σ2 = Math.sqrt(s);
-//    θ1 = 2 * Math.PI * random.nextDouble();
-//    θ2 = 2 * Math.PI * random.nextDouble();
-//    w = Math.cos(θ2) * σ2 ;
-//    x = Math.sin(θ1) * σ1 ;
-//    y = Math.cos(θ1) * σ1 ;
-//    z = Math.sin(θ2) * σ2 ;
-//
-//    // Create object for rotation of molecule based on quaternion
-//    Rotation rotation = new Rotation(w, x, y, z, true)
-//    
-//    // Apply rotation to atoms
-//    for (j=0; j<nAtoms; j++) {
-//        atoms[j].rotate(rotation.getMatrix());
-//    }
-//
-//    /************************************************************************
-//      Generate a random TRANSLATION vector i times for the a, b, and c axis
-//    ************************************************************************/
-//   
-//    double d = getRandomNumber(max, min, random);
-//    double e = getRandomNumber(max, min, random);
-//    double f = getRandomNumber(max, min, random);
-//    
-//    double[] translation = [d, e, f];
-//    
-//    // Apply the translation to each atom in the molecule
-//    for (k=0; k<nAtoms; k++) {
-//        atoms[k].move(translation);
-//    }
+    s = random.nextDouble();
+    σ1 = Math.sqrt(1 - s);
+    σ2 = Math.sqrt(s);
+    θ1 = 2 * Math.PI * random.nextDouble();
+    θ2 = 2 * Math.PI * random.nextDouble();
+    w = Math.cos(θ2) * σ2 ;
+    x = Math.sin(θ1) * σ1 ;
+    y = Math.cos(θ1) * σ1 ;
+    z = Math.sin(θ2) * σ2 ;
+
+    // Create object for rotation of molecule based on quaternion
+    Rotation rotation = new Rotation(w, x, y, z, true)
+    
+    // Apply rotation to atoms
+    for (j=0; j<nAtoms; j++) {
+        atoms[j].rotate(rotation.getMatrix());
+    }
+
+    /************************************************************************
+      Generate a random TRANSLATION vector i times for the a, b, and c axis
+    ************************************************************************/
+   
+    double d = getRandomNumber(max, min, random);
+    double e = getRandomNumber(max, min, random);
+    double f = getRandomNumber(max, min, random);
+    
+    double[] translation = [d, e, f];
+    
+    // Apply the translation to each atom in the molecule
+    for (k=0; k<nAtoms; k++) {
+        atoms[k].move(translation);
+    }
     
     // Minimize the current atom configuration
     g = minimize.minimize(eps);
