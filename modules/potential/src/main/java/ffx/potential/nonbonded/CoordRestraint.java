@@ -163,7 +163,6 @@ public class CoordRestraint implements LambdaInterface {
         for (int i = 0; i < nAtoms; i++) {
             // Current atomic coordinates.
             Atom atom = atoms[i];
-            logger.info("Number of atoms in atoms[] = " + atom.getResidueNumber());
             if (atomTypeRestraints != null) {
                 if (atom.getAtomType() == atom1Type || atom.getAtomType() == atom2Type || atom.getAtomType() == atom3Type) {
                     atom.getXYZ(a1);
@@ -171,7 +170,6 @@ public class CoordRestraint implements LambdaInterface {
                     dx[0] = a1[0] - initialCoordinates[0][i];
                     dx[1] = a1[1] - initialCoordinates[1][i];
                     dx[2] = a1[2] - initialCoordinates[2][i];
-                    logger.info(String.format("restrained atom = %d", atom.getXYZIndex()));
                 }
                 else {
                     continue;
@@ -208,7 +206,6 @@ public class CoordRestraint implements LambdaInterface {
                     dx[0] = a1[0] - initialCoordinates[0][i];
                     dx[1] = a1[1] - initialCoordinates[1][i];
                     dx[2] = a1[2] - initialCoordinates[2][i];
-                    logger.info(String.format("restrained atom = %d", atom.getXYZIndex()));
                 }
                 else {
                     continue;
