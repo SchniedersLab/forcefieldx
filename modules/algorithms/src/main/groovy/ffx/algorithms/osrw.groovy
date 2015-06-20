@@ -171,7 +171,7 @@ cli.s(longOpt:'start', args:1, argName:'1', 'Starting ligand atom.');
 cli.s2(longOpt:'start2', args:1, argName:'1', 'Starting ligand atom for the 2nd topology.');
 cli.f(longOpt:'final', args:1, argName:'-1', 'Final ligand atom.');
 cli.f2(longOpt:'final2', args:1, argName:'-1', 'Final ligand atom for the 2nd topology.');
-cli.es(longOpt:'noElecStart', args:1, argName:'1', 'No Electrostatics Starting Atom.');
+cli.es1(longOpt:'noElecStart1', args:1, argName:'1', 'No Electrostatics Starting Atom.');
 cli.es2(longOpt:'noElecStart2', args:1, argName:'1', 'No Electrostatics Starting Atom for the 2nd Topology.');
 cli.ef(longOpt:'noElecFinal', args:1, argName:'-1', 'No Electrostatics Final Atom.');
 cli.ef2(longOpt:'noElecfinal2', args:1, argName:'-1', 'No Electrostatics Final Atom for the 2nd topology.');
@@ -277,8 +277,8 @@ if (options.f) {
 }
 
 // No electrostatics on Topology 1.
-if (options.es) {
-    noElecStart = Integer.parseInt(options.es);
+if (options.es1) {
+    noElecStart = Integer.parseInt(options.es1);
 }
 
 // First atom from Topology 1 with no electrostatics.
@@ -294,11 +294,6 @@ if (options.s2) {
 // Final ligand atom.
 if (options.f2) {
     ligandStop2 = Integer.parseInt(options.f2);
-}
-
-// No electrostatics on Topology 1.
-if (options.es) {
-    noElecStart = Integer.parseInt(options.es);
 }
 
 // First atom from Topology 1 with no electrostatics.
@@ -438,7 +433,7 @@ Atom[] atoms = active.getAtomArray();
 for (int i = ligandStart; i <= ligandStop; i++) {
     Atom ai = atoms[i - 1];
     ai.setApplyLambda(true);
-    ai.setElectrostatics(!noElec1);
+//    ai.setElectrostatics(!noElec1);
     ai.print();
 }
 

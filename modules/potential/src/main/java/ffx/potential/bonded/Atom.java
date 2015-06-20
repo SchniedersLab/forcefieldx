@@ -42,6 +42,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.String.format;
 
@@ -111,6 +112,11 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * Constant <code>hybridTable</code>
      */
     public static final Map<String, Integer> hybridTable;
+    
+    /**
+     * Constant <code>atomSerialCount</code>
+     */
+    //private static AtomicInteger atomSerialCount = new AtomicInteger();
 
     static {
         // Initialize HashMaps
@@ -204,6 +210,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @since 1.0
      */
     //private String name = null;
+    //private final int atomSerial;
     /**
      * Contiguous atom index ranging from 0..nAtoms.
      *
@@ -358,6 +365,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
         currentCol = previousCol = RendererCache.toAtomColor(name);
         colorModel = ColorModel.CPK;
         redXYZ = null;
+        //this.atomSerial = atomSerialCount.getAndIncrement();
     }
 
     /**
@@ -1145,8 +1153,21 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     @Override
     public final int hashCode() {
-        return hash(SEED, xyzIndex);
+        //return hash(SEED, xyzIndex);
+        int hash = hash(SEED, resName);
+        hash = hash(hash, resSeq);
+        hash = hash(hash, getName());
+        return hash(hash, segID);
     }
+    
+    /**
+     * Gets the unique atomic serial number referring to this Atom object.
+     * 
+     * @return A unique ID number
+     */
+    /*public final int getAtomSerial() {
+        return atomSerial;
+    }*/
 
     /**
      * Create the Sphere Java3D objects.
@@ -1276,6 +1297,21 @@ public class Atom extends MSNode implements Comparable<Atom> {
         xyz[0] += d[0];
         xyz[1] += d[1];
         xyz[2] += d[2];
+        stale = true;
+    }
+
+    public void rotate(double[][] d) {
+        int rowsInA = xyz.length;
+        double columnsInA = d.length; // same as rows in d
+        int columnsInB = d[0].length;
+        double[][] c = new double[rowsInA][columnsInB];
+        for (int i = 0; i < rowsInA; i++) {
+            for (int j = 0; j < columnsInB; j++) {
+                for (int k = 0; k < columnsInA; k++) {
+                    c[i][j] = c[i][j] + xyz[k] * d[k][j];
+                }
+            }
+        }
         stale = true;
     }
 
@@ -2061,7 +2097,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     public String toNameNumberString() {
         return String.format("%s %d", getName(), resSeq);
     }
-
+    
     /**
      * <p>
      * toShortString</p>
@@ -2118,7 +2154,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
             transformGroup.setTransform(transform3D);
         }
     }
-
+    
     /**
      * Element symbols for the first 109 elements.
      */

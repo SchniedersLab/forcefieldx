@@ -72,18 +72,31 @@ public class MultiResidue extends Residue {
      * List of residues under consideration.
      */
     ArrayList<Residue> consideredResidues;
+    
+    /**
+     * List of Atoms in the zero'th residue; should be (mostly) immutable.
+     */
+    private ArrayList<Atom> defaultAtomList;
+    
+    /**
+     * The "default" residue, particularly for purposes of rotamer optimization.
+     */
+    private Residue defaultResidue;
 
     /**
      * Force field in use.
      */
     ForceField forceField;
     ForceFieldEnergy forceFieldEnergy;
-
+    
     public MultiResidue(Residue residue, ForceField forceField, ForceFieldEnergy forceFieldEnergy) {
         super("MultiResidue", residue.getResidueNumber(), residue.residueType);
         this.forceField = forceField;
         this.forceFieldEnergy = forceFieldEnergy;
         activeResidue = residue;
+        defaultResidue = residue;
+        defaultAtomList = new ArrayList<>(activeResidue.getAtomList());
+        // Creates a shallow copy of the zero'th residue's atom list.
         setName(activeResidue.getName());
         // Initialize consideredResidue list.
         consideredResidues = new ArrayList<>();
@@ -138,6 +151,29 @@ public class MultiResidue extends Residue {
     @Override
     public MSNode getAngles() {
         return activeResidue.getAngles();
+    }
+    
+    @Override
+    public ArrayList<Atom> getAtomList(boolean originalOrder) {
+        return originalOrder ? defaultAtomList : getAtomList();
+    }
+    
+    @Override
+    public void reInitOriginalAtomList() {
+        defaultAtomList = new ArrayList<>(defaultResidue.getAtomList());
+    }
+    
+    public void setDefaultResidue() {
+        defaultResidue = activeResidue;
+    }
+    
+    public void setDefaultResidue(Residue residue) throws IllegalArgumentException {
+        if (consideredResidues.contains(residue)) {
+            activeResidue = residue;
+        } else {
+            throw new IllegalArgumentException(String.format(" MultiResidue %s does "
+                    + "not contain residue %s", this.toString(), residue.toString()));
+        }
     }
 
     @Override
@@ -323,40 +359,63 @@ public class MultiResidue extends Residue {
         for (int i = 0; i < nResidues; i++) {
             Residue residuei = residueOptions[i];
             Rotamer rotamersi[] = RotamerLibrary.getRotamers(residuei);
-            if (rotamersi == null) {
-                continue;
+            if (rotamersi != null) {
+                rotamerTotal += rotamersi.length;
             }
-            rotamerTotal += rotamersi.length;
         }
         allRotamers = new Rotamer[rotamerTotal];
         int shift = 0;
         for (int i = 0; i < nResidues; i++) {
             Residue residuei = residueOptions[i];
             Rotamer rotamersi[] = RotamerLibrary.getRotamers(residuei);
-            if (rotamersi == null) {
-                continue;
+            if (rotamersi != null) {
+                for (int j = 0; j < rotamersi.length; j++) {
+                    allRotamers[j + shift] = rotamersi[j];
+                }
+                shift += rotamersi.length;
             }
-            for (int j = 0; j < rotamersi.length; j++) {
-                allRotamers[j + shift] = rotamersi[j];
-            }
-            shift += rotamersi.length;
         }
         if (logger.isLoggable(Level.FINE)) {
             logger.fine(consideredResidues.size() + " residue options with " + rotamerTotal + " rotamers.");
         }
         return allRotamers;
     }
+    
+    @Override
+    public ResidueState storeCoordinates() {
+        return new ResidueState(this, activeResidue);
+    }
+
+    @Override
+    public void revertCoordinates(ResidueState state) {
+        Residue res = state.getResidue();
+        //if (!res.equals(activeResidue)) {
+            if (!setActiveResidue(res)) {
+                throw new IllegalArgumentException(String.format(" Could not revert "
+                        + "multi-residue %s to residue identity %s", this.toString(),
+                        state.getResidue().toString()));
+            }
+        //}
+        for (Atom atom : getAtomList()) {
+            atom.moveTo(state.getAtomCoords(atom));
+        }
+    }
 
     private void moveBackBoneAtoms(Residue fromResidue, Residue toResidue) {
+        Residue prevRes = this.getPreviousResidue();
+        Residue nextRes = this.getNextResidue();
+        
+        // Begin with atoms common to all residues
+        
         /**
          * Get references to the backbone atoms.
          */
         Atom CA = (Atom) fromResidue.getAtomNode("CA");
-        Atom HA = (Atom) fromResidue.getAtomNode("HA");
         Atom C = (Atom) fromResidue.getAtomNode("C");
-        Atom O = (Atom) fromResidue.getAtomNode("O");
+        Atom HA = (Atom) fromResidue.getAtomNode("HA");
         Atom N = (Atom) fromResidue.getAtomNode("N");
-        Atom H = (Atom) fromResidue.getAtomNode("H");
+        Atom O = (Atom) fromResidue.getAtomNode("O");
+
         /**
          * Detach them from their parent Residue.
          */
@@ -365,7 +424,6 @@ public class MultiResidue extends Residue {
         C.removeFromParent();
         O.removeFromParent();
         N.removeFromParent();
-        H.removeFromParent();
         /**
          * Clear their references to bonded geometry.
          */
@@ -374,7 +432,6 @@ public class MultiResidue extends Residue {
         C.clearGeometry();
         O.clearGeometry();
         N.clearGeometry();
-        H.clearGeometry();
         /**
          * Change their residue name.
          */
@@ -384,7 +441,6 @@ public class MultiResidue extends Residue {
         C.setResName(resName);
         O.setResName(resName);
         N.setResName(resName);
-        H.setResName(resName);
         /**
          * Add the backbone atoms to the new Residue.
          */
@@ -393,7 +449,49 @@ public class MultiResidue extends Residue {
         toResidue.addMSNode(C);
         toResidue.addMSNode(O);
         toResidue.addMSNode(N);
-        toResidue.addMSNode(H);
+            
+        if (prevRes == null) {
+            Atom H1 = (Atom) fromResidue.getAtomNode("H1");
+            Atom H2 = (Atom) fromResidue.getAtomNode("H2");
+            Atom H3 = (Atom) fromResidue.getAtomNode("H3");
+            if (nextRes == null) { // If both are null
+                Atom OXT = (Atom) fromResidue.getAtomNode("OXT");
+                OXT.removeFromParent();
+                OXT.clearGeometry();
+                OXT.setResName(resName);
+                toResidue.addMSNode(OXT);
+            }
+            
+            H1.removeFromParent();
+            H2.removeFromParent();
+            H3.removeFromParent();
+            
+            H1.clearGeometry();
+            H2.clearGeometry();
+            H3.clearGeometry();
+            
+            H1.setResName(resName);
+            H2.setResName(resName);
+            H3.setResName(resName);
+            
+            toResidue.addMSNode(H1);
+            toResidue.addMSNode(H2);
+            toResidue.addMSNode(H3);
+        } else {
+            Atom H = (Atom) fromResidue.getAtomNode("H");
+            H.removeFromParent();
+            H.clearGeometry();
+            H.setResName(resName);
+            toResidue.addMSNode(H);
+            
+            if (nextRes == null) {
+                Atom OXT = (Atom) fromResidue.getAtomNode("OXT");
+                OXT.removeFromParent();
+                OXT.clearGeometry();
+                OXT.setResName(resName);
+                toResidue.addMSNode(OXT);
+            }
+        }
     }
 
     /**
@@ -590,6 +688,9 @@ public class MultiResidue extends Residue {
         if (!consideredResidues.contains(residue)) {
             return false;
         }
+        if (residue == activeResidue) {
+            return true;
+        }
         Residue prevResidue = activeResidue.getPreviousResidue();
         Residue nextResidue = activeResidue.getNextResidue();
         Residue prev2Residue = null;
@@ -615,12 +716,77 @@ public class MultiResidue extends Residue {
         forceFieldEnergy.reInit();
         return true;
     }
+    
+    /**
+     * Method may be redundant with requestSetActiveResidue. Will need to check 
+     * when it is not Friday afternoon.
+     * @param aa
+     * @return 
+     */
+    public boolean setActiveResidue(AminoAcid3 aa) {
+        Residue residue = null;
+        for (Residue res : consideredResidues) {
+            if (AminoAcid3.valueOf(res.getName()) == aa) {
+                residue = res;
+                break;
+            }
+        }
+        if (residue == null) {
+            return false;
+        }
+        return setActiveResidue(residue);
+    }
+    
+    public boolean setToDefaultResidue() {
+        return setActiveResidue(defaultResidue);
+    }
+    
+    public Residue getDefaultResidue() {
+        return defaultResidue;
+    }
 
     public int getResidueCount() {
         if (consideredResidues == null) {
             return 0;
         }
         return consideredResidues.size();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Overidden equals method that return true if object is not equals to this,
+     * is of the same class, has the same parent Polymer, the same sequence
+     * number, the same ResidueType, and the same AA3/NA3.
+     * @param object
+     * @return Object equality
+     */
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) {
+            return true;
+        } else if (object == null || getClass() != object.getClass()) {
+            return false;
+        }
+        MultiResidue other = (MultiResidue) object;
+        if (consideredResidues.size() != other.getResidueCount()) {
+            return false;
+        }
+        if (getParent() == null || other.getParent() == null) {
+            return getResidueNumber() == other.getResidueNumber();
+        } else if (getParent() == other.getParent()) {
+            return getResidueNumber() == other.getResidueNumber();
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = hash(SEED, getParent().hashCode());
+        hash = hash(hash, consideredResidues.size());
+        // Use of consideredResidues.size() MAY BE DANGEROUS if people start to muck
+        // with the considered residues list after construction.
+        return hash(hash, getResidueNumber());
     }
 
     @Override
