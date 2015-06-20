@@ -46,7 +46,6 @@ import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.random;
 
 import ffx.potential.MolecularAssembly;
-import static ffx.potential.bonded.AminoAcidUtils.cbType;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.BondedUtils;
 import static ffx.potential.bonded.BondedUtils.buildHydrogen;
@@ -63,7 +62,6 @@ import ffx.potential.parsers.PDBFilter;
 import java.io.File;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
 import java.util.logging.Level;
 import org.apache.commons.io.FilenameUtils;
 
@@ -178,10 +176,8 @@ public class Protonate implements MonteCarloListener {
         // process system flags
         String zeroReferenceEnergies = System.getProperty("mc-zeroReferences");
         if (zeroReferenceEnergies != null) {
-            this.zeroReferenceEnergies = Boolean.parseBoolean(zeroReferenceEnergies);
-            if (this.zeroReferenceEnergies) {
-                logger.info(" DEBUG: Zero-ing all reference energies.");
-            }
+            this.zeroReferenceEnergies = true;
+            logger.info(" OVERRIDE: Zero-ing all reference energies.");
         }
         String debugLogLevel = System.getProperty("debug");
         if (debugLogLevel != null) {
@@ -259,7 +255,7 @@ public class Protonate implements MonteCarloListener {
             }
         }
     }
-    
+        
     /**
      * Choose titratables with intrinsic pKa inside (pH-window,pH+window).
      * @param pH
@@ -449,6 +445,11 @@ public class Protonate implements MonteCarloListener {
         AminoAcid3 source = AminoAcid3.valueOf(res.getName());
         List<Titration> avail = new ArrayList<>();
         for (Titration titr : Titration.values()) {
+            // Allow manual override of Histidine treatment.
+            if ((titr.target == AminoAcid3.HID && histidineMode == HistidineMode.HIE_ONLY)
+                    || (titr.target == AminoAcid3.HIE && histidineMode == HistidineMode.HID_ONLY)) {
+                continue;
+            }
             if (titr.source == source) {
                 avail.add(titr);
             }
