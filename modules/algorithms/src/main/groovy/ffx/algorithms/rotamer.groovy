@@ -170,6 +170,9 @@ if (options.sO) {
         logger.info(" Sequence optimizing " + t);
         sequenceOptimizationList.add(t);
     }
+    if (System.getProperty("RELATIVE_SOLVATION") == null) {
+        System.setProperty("RELATIVE_SOLVATION", "AUTO");
+    }
 }
 
 if (options.vw) {
