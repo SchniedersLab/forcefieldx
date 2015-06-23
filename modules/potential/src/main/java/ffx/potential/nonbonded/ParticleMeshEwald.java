@@ -2820,7 +2820,7 @@ public class ParticleMeshEwald implements LambdaInterface {
         @Override
         public void run() {
             try {
-                if (aewald > 0.0) {
+                if (reciprocalSpaceTerm && aewald > 0.0) {
                     execute(inducedRealSpaceFieldSection, inducedReciprocalFieldSection);
                 } else {
                     execute(inducedRealSpaceFieldSection);
