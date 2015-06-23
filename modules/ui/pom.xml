@@ -217,6 +217,12 @@
         </dependency>
         <dependency>
             <groupId>edu.uiowa.eng.ffx</groupId>
+            <artifactId>xray</artifactId>
+            <version>${project.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>edu.uiowa.eng.ffx</groupId>
             <artifactId>utilities</artifactId>
             <version>${project.version}</version>
             <type>jar</type>
