@@ -118,14 +118,20 @@
             <version>${commons-configuration.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.codehaus.groovy</groupId>
-            <artifactId>groovy-all</artifactId>
+            <groupId>java3d</groupId>
+            <artifactId>j3dcore</artifactId>
             <type>jar</type>
-            <version>${groovy-all.version}</version>
+            <version>${java3d.version}</version>
         </dependency>
         <dependency>
             <groupId>java3d</groupId>
-            <artifactId>j3dcore</artifactId>
+            <artifactId>j3dutils</artifactId>
+            <type>jar</type>
+            <version>${java3d.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>java3d</groupId>
+            <artifactId>vecmath</artifactId>
             <type>jar</type>
             <version>${java3d.version}</version>
         </dependency>
@@ -137,20 +143,16 @@
         </dependency>
         <dependency>
             <groupId>org.biojava</groupId>
-            <artifactId>biojava3-core</artifactId>
-            <type>jar</type>
-            <version>3.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.biojava</groupId>
-            <artifactId>core</artifactId>
-            <type>jar</type>
-            <version>1.9.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.biojava</groupId>
             <artifactId>biojava3-structure</artifactId>
             <version>3.0.8</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
+            <type>jar</type>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

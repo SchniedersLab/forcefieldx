@@ -264,7 +264,7 @@
         <!-- This is used to generate the Copyright on the website.
         Module authors can use their name. -->
         <name>Michael J. Schnieders</name>
-        <url>http://ffx.eng.uiowa.edu</url>
+        <url>http://ffx.biochem.uiowa.edu</url>
     </organization>
     <build>
         <defaultGoal>deploy</defaultGoal>
@@ -275,18 +275,22 @@
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>jdepend-maven-plugin</artifactId>
                     <version>2.0</version>
+                    <inherited>true</inherited>
                 </plugin>
                 <plugin>
                     <artifactId>maven-assembly-plugin</artifactId>
-                    <version>2.5.3</version>
+                    <version>2.5.4</version>
+                    <inherited>true</inherited>
                 </plugin>
                 <plugin>
                     <artifactId>maven-changes-plugin</artifactId>
                     <version>2.11</version>
+                    <inherited>true</inherited>
                 </plugin>
                 <plugin>
                     <artifactId>maven-checkstyle-plugin</artifactId>
-                    <version>2.13</version>
+                    <version>2.15</version>
+                    <inherited>true</inherited>
                 </plugin>
                 <plugin>
                     <artifactId>maven-clean-plugin</artifactId>
@@ -302,7 +306,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.2</version>
+                    <version>3.3</version>
                     <inherited>true</inherited>
                     <configuration>
                         <debug>true</debug>
@@ -334,16 +338,18 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-jar-plugin</artifactId>
-                    <version>2.5</version>
+                    <version>2.6</version>
+                    <inherited>true</inherited>
                 </plugin>
                 <plugin>
                     <artifactId>maven-jarsigner-plugin</artifactId>
-                    <version>1.3.2</version>
+                    <version>1.4</version>
                     <inherited>true</inherited>
                 </plugin>
                 <plugin>
                     <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>2.10.1</version>
+                    <version>2.10.3</version>
+                    <inherited>true</inherited>
                 </plugin>
                 <plugin>
                     <artifactId>maven-jxr-plugin</artifactId>
@@ -355,15 +361,15 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-pmd-plugin</artifactId>
-                    <version>3.3</version>
+                    <version>3.4</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-project-info-reports-plugin</artifactId>
-                    <version>2.7</version>
+                    <version>2.8</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-scm-plugin</artifactId>
-                    <version>1.9.2</version>
+                    <version>1.9.4</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-source-plugin</artifactId>
@@ -425,20 +431,19 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>exec-maven-plugin</artifactId>
-                    <version>1.3.2</version>
+                    <version>1.4.0</version>
                 </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
             <plugin>
                 <artifactId>maven-site-plugin</artifactId>
-                <version>3.4</version>
                 <inherited>true</inherited>
                 <dependencies>
                     <dependency>
                         <groupId>org.apache.maven.wagon</groupId>
                         <artifactId>wagon-webdav-jackrabbit</artifactId>
-                        <version>2.6</version>
+                        <version>2.9</version>
                     </dependency>
                     <dependency>
                         <groupId>lt.velykis.maven.skins</groupId>
@@ -581,7 +586,6 @@
                 <plugins>
                     <plugin>
                         <artifactId>maven-jarsigner-plugin</artifactId>
-                        <version>1.3.2</version>
                         <configuration>
                             <alias>FFXKey</alias>
                             <storepass>${storepass}</storepass>
@@ -648,20 +652,11 @@
             </releases>
         </repository>
     </repositories>
-    <dependencies>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.12</version>
-            <type>jar</type>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
     <reporting>
         <plugins>
             <plugin>
                 <artifactId>maven-project-info-reports-plugin</artifactId>
-                <version>2.7</version>
+                <version>2.8</version>
                 <reportSets>
                     <reportSet>
                         <reports>
@@ -690,7 +685,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.10.1</version>
+                <version>2.10.3</version>
                 <configuration>
                     <quiet>true</quiet>
                     <header><![CDATA[
@@ -772,7 +767,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>2.13</version>
+                <version>2.15</version>
                 <configuration>
                     <goal>checkstyle-aggregate</goal>
                     <configLocation>config/sun_checks.xml</configLocation>
@@ -784,14 +779,14 @@
                 <version>2.0</version>
             </plugin>
             <!-- plugin>
-               <groupId>com.atlassian.maven.plugins</groupId>
-               <artifactId>maven-clover2-plugin</artifactId>
-               <version>${clover.version}</version>
-               <configuration>
-                   <maven.clover.license>${clover.license}</maven.clover.license>
-                   <maven.clover.alwaysReport>true</maven.clover.alwaysReport>
-               </configuration>
-             </plugin -->
+              <groupId>com.atlassian.maven.plugins</groupId>
+              <artifactId>maven-clover2-plugin</artifactId>
+              <version>${clover.version}</version>
+              <configuration>
+                  <maven.clover.license>${clover.license}</maven.clover.license>
+                  <maven.clover.alwaysReport>true</maven.clover.alwaysReport>
+              </configuration>
+            </plugin -->
         </plugins>
     </reporting>
     <distributionManagement>
@@ -844,13 +839,15 @@
         <apple-java-extensions.version>1.6</apple-java-extensions.version>
         <commons-configuration.version>1.10</commons-configuration.version>
         <commons-io.version>2.4</commons-io.version>
-        <commons-lang3.version>3.3.2</commons-lang3.version>
-        <commons-math3.version>3.4.1</commons-math3.version>
+        <commons-lang3.version>3.4</commons-lang3.version>
+        <commons-math3.version>3.5</commons-math3.version>
+        <commons-cli.version>1.3</commons-cli.version>
         <groovy-all.version>2.3.6</groovy-all.version>
         <javahelp.version>2.0.05</javahelp.version>
-        <java3d.version>1.6.2</java3d.version>
+        <java3d.version>1.6.4</java3d.version>
         <jcuda.version>6.5.0</jcuda.version>
-        <jocl.version>2.2.0</jocl.version>
+        <jocl.version>2.3.1</jocl.version>
+        <junit.version>4.12</junit.version>
     </properties>
     <modules>
         <module>modules/algorithms</module>

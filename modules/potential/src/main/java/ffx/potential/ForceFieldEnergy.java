@@ -63,10 +63,13 @@ import ffx.potential.bonded.ImproperTorsion;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.Molecule;
+import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.OutOfPlaneBend;
 import ffx.potential.bonded.PiOrbitalTorsion;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.ROLS;
+import ffx.potential.bonded.RelativeSolvation;
+import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.RestraintBond;
 import ffx.potential.bonded.StretchBend;
 import ffx.potential.bonded.Torsion;
@@ -111,6 +114,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private TorsionTorsion torsionTorsions[];
     private ImproperTorsion improperTorsions[];
     private RestraintBond restraintBonds[];
+    private RelativeSolvation relativeSolvation;
     private final VanDerWaals vanderWaals;
     private final ParticleMeshEwald particleMeshEwald;
     private final NCSRestraint ncsRestraint;
@@ -130,6 +134,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private int nVanDerWaalInteractions;
     private int nPermanentInteractions;
     private int nGKIteractions;
+    private int nRelativeSolvations;
     private boolean bondTerm;
     private boolean angleTerm;
     private boolean stretchBendTerm;
@@ -148,6 +153,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private boolean restrainTerm;
     private boolean comTerm;
     private boolean lambdaBondedTerms = false;
+    private boolean relativeSolvationTerm;
     private boolean rigidHydrogens = false;
     private double rigidScale = 1.0;
     private boolean bondTermOrig;
@@ -167,6 +173,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private boolean ncsTermOrig;
     private boolean restrainTermOrig;
     private boolean comTermOrig;
+    private boolean relativeSolvationTermOrig;
     private double bondEnergy, bondRMSD;
     private double angleEnergy, angleRMSD;
     private double stretchBendEnergy;
@@ -184,6 +191,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private double totalElectrostaticEnergy;
     private double totalNonBondedEnergy;
     private double solvationEnergy;
+    private double relativeSolvationEnergy;
     private double ncsEnergy;
     private double restrainEnergy;
     private double comRestraintEnergy;
@@ -365,6 +373,49 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
         rigidHydrogens = forceField.getBoolean(ForceFieldBoolean.RIGID_HYDROGENS, false);
         rigidScale = forceField.getDouble(ForceFieldDouble.RIGID_SCALE, 10.0);
+        
+        String relSolvationType = forceField.getString(ForceFieldString.RELATIVE_SOLVATION, "NONE").toUpperCase();
+        relativeSolvationTerm = true;
+        nRelativeSolvations = 0;
+        switch (relSolvationType) {
+            case "AUTO":
+                if (generalizedKirkwoodTerm) {
+                    if (name.toUpperCase().contains("OPLS")) {
+                        relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.MACCALLUM_TIP4P);
+                        // Change when we have good Generalized Born numbers of our own for OPLS.
+                    } else {
+                        relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.GK);
+                    }
+                } else {
+                    relativeSolvationTerm = false;
+                    relativeSolvation = null;
+                }
+                break;
+            case "GK":
+                relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.GK);
+                break;
+            case "EXPLICIT":
+                relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.EXPLICIT);
+                break;
+            case "WOLFENDEN":
+                relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.WOLFENDEN);
+                break;
+            case "CABANI":
+                relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.CABANI);
+                break;
+            case "MACCALLUM_SPC":
+                relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.MACCALLUM_SPC);
+                break;
+            case "MACCALLUM_TIP4P":
+                relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.MACCALLUM_TIP4P);
+                break;
+            case "NONE":
+            default:
+                relativeSolvationTerm = false;
+                relativeSolvation = null;
+                break;
+        }
+        relativeSolvationTermOrig = relativeSolvationTerm;
 
         if (rigidScale <= 1.0) {
             rigidScale = 1.0;
@@ -582,7 +633,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         } else {
             comRestraint = null;
         }
-
+        
         molecularAssembly.setPotential(this);
     }
 
@@ -1004,6 +1055,10 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
         // Zero out the solvation energy.
         solvationEnergy = 0.0;
+        
+        // Zero out the relative solvation energy (sequence optimization)
+        relativeSolvationEnergy = 0.0;
+        nRelativeSolvations = 0;
 
         // Zero out the total potential energy.
         totalEnergy = 0.0;
@@ -1182,6 +1237,27 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 electrostaticTime = System.nanoTime() - electrostaticTime;
             }
         }
+        
+        if (relativeSolvationTerm) {
+            List<Residue> residuesList = molecularAssembly.getResidueList();
+            for (Residue residue : residuesList) {
+                if (residue instanceof MultiResidue) {
+                    Atom refAtom = residue.getSideChainAtoms().get(0);
+                    if (refAtom != null && refAtom.isActive()) {
+                        /**
+                         * Reasonably confident that it should be -=, as we are
+                         * trying to penalize residues with strong solvation
+                         * energy.
+                         */
+                        double thisSolvation = relativeSolvation.getSolvationEnergy(residue, false);
+                        relativeSolvationEnergy -= thisSolvation;
+                        if (thisSolvation != 0) {
+                            nRelativeSolvations++;
+                        }
+                    }
+                }
+            }
+        }
 
         totalTime = System.nanoTime() - totalTime;
 
@@ -1189,7 +1265,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 + stretchBendEnergy + ureyBradleyEnergy + outOfPlaneBendEnergy
                 + torsionEnergy + piOrbitalTorsionEnergy + improperTorsionEnergy
                 + torsionTorsionEnergy + ncsEnergy + restrainEnergy;
-        totalNonBondedEnergy = vanDerWaalsEnergy + totalElectrostaticEnergy;
+        totalNonBondedEnergy = vanDerWaalsEnergy + totalElectrostaticEnergy + relativeSolvationEnergy;
         totalEnergy = totalBondedEnergy + totalNonBondedEnergy + solvationEnergy;
 
         if (print) {
@@ -1405,6 +1481,11 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         if (generalizedKirkwoodTerm && nGKIteractions > 0) {
             sb.append(String.format("  %s %16.8f %12d\n",
                     "Solvation         ", solvationEnergy, nGKIteractions));
+        }
+        
+        if (relativeSolvationTerm) {
+            sb.append(String.format("  %s %16.8f %12d\n", 
+                    "Relative Solvation", relativeSolvationEnergy, nRelativeSolvations));
         }
 
         sb.append(String.format("  %s %16.8f  %s %12.3f (sec)\n",
@@ -1969,6 +2050,10 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
     public double getTotalElectrostaticEnergy() {
         return totalElectrostaticEnergy + solvationEnergy;
+    }
+    
+    public double getRelativeSolvationEnergy() {
+        return relativeSolvationEnergy;
     }
 
 }
