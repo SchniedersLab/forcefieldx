@@ -103,7 +103,7 @@ if (options.h) {
 
 // Load the number of molecular dynamics steps.
 if (options.n) {
-    nSteps = Integer.parseInt(options.n.toString());
+    nSteps = Integer.parseInt(options.n);
 }
 
 // Write dyn interval in picoseconds
@@ -117,26 +117,26 @@ if (options.f) {
 }
 // Load the time steps in femtoseconds.
 if (options.d) {
-    timeStep = Double.parseDouble(options.d.toString());
+    timeStep = Double.parseDouble(options.d);
 }
 
 // Report interval in picoseconds.
 if (options.l) {
-    printInterval = Double.parseDouble(options.l.toString());
+    printInterval = Double.parseDouble(options.l);
 }
 
 // Write snapshot interval in picoseconds.
 if (options.w) {
-    saveInterval = Double.parseDouble(options.w.toString());
+    saveInterval = Double.parseDouble(options.w);
 }
 
 // Temperature in degrees Kelvin.
 if (options.t) {
-    temperature = Double.parseDouble(options.t.toString());
+    temperature = Double.parseDouble(options.t);
 }
 
 if (options.p) {
-    System.setProperty("polarization", options.p.toString());
+    System.setProperty("polarization", options.p);
 }
 
 // Thermostat.
