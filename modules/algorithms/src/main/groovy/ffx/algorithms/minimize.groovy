@@ -82,24 +82,9 @@ int noElecStop2 = -1;
 // Fixed lambda value.
 double lambda = -1;
 
-//Used to initialize length of optionsJNLP.
-final int argLength= args.size();
- 
-// Work around for JNLP needs to convert from [[]] to string[].
-String[] optionsJNLP = new String[argLength];
-
-//set up indexing for optionsJNLP array.
-int argIndex = -1;
-
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
-if (args.size()==1 && args[0] != '-h') {
-    String delims = "[ ]+";
-    optionsJNLP = args.split(delims);
-}
 for (String arg : args) {
-    argIndex = argIndex + 1;
-    optionsJNLP[argIndex] = arg;
     logger.info(arg);
 }
 
@@ -117,7 +102,7 @@ cli.ef2(longOpt:'noElecfinal2', args:1, argName:'-1', 'No Electrostatics Final A
 cli.l(longOpt:'lambda', args:1, argName:'0.0', 'Initial lambda value.');
 cli.e(longOpt:'eps', args:1, argName:'1.0', 'RMS gradient convergence criteria');
 cli.p(longOpt:'polarization', args:1, 'polarization model: [none / direct / mutual]');
-def options = cli.parse(optionsJNLP); 
+def options = cli.parse(args); 
     
 if (options.h) {
     return cli.usage();
