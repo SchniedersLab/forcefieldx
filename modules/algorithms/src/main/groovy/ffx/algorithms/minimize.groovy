@@ -82,13 +82,21 @@ int noElecStop2 = -1;
 // Fixed lambda value.
 double lambda = -1;
 
-// Work around for JNLP needs to convert from [[x]] to string[]
-List<String> optionsJNLP = new ArrayList<String>();
+//Used to initialize length of optionsJNLP.
+final int argLength= args.size();
+ 
+// Work around for JNLP needs to convert from [[]] to string[].
+String[] optionsJNLP = new String[argLength];
+
+//set up indexing for optionsJNLP array.
+int argIndex = -1;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
 for (String arg : args) {
+    argIndex = argIndex + 1;
+    optionsJNLP[argIndex] = arg;
     logger.info(arg);
 }
 
@@ -106,7 +114,7 @@ cli.ef2(longOpt:'noElecfinal2', args:1, argName:'-1', 'No Electrostatics Final A
 cli.l(longOpt:'lambda', args:1, argName:'0.0', 'Initial lambda value.');
 cli.e(longOpt:'eps', args:1, argName:'1.0', 'RMS gradient convergence criteria');
 cli.p(longOpt:'polarization', args:1, 'polarization model: [none / direct / mutual]');
-def options = cli.parse(args); 
+def options = cli.parse(optionsJNLP); 
     
 if (options.h) {
     return cli.usage();
@@ -114,22 +122,22 @@ if (options.h) {
 
 // Starting ligand atom.
 if (options.s) {
-    s = Integer.parseInt(options.s.toString());
+    s = Integer.parseInt(options.s);
 }
 
 // Final ligand atom.
 if (options.f) {
-    f = Integer.parseInt(options.f.toString());
+    f = Integer.parseInt(options.f);
 }
 
 // Starting ligand atom for the 2nd topology.
 if (options.s2) {
-    s2 = Integer.parseInt(options.s2.toString());
+    s2 = Integer.parseInt(options.s2);
 }
 
 // Final ligand atom for the 2nd topology.
 if (options.f2) {
-    f2 = Integer.parseInt(options.f2.toString());
+    f2 = Integer.parseInt(options.f2);
 }
 
 // No electrostatics on Topology 1.
@@ -154,12 +162,12 @@ if (options.ef2) {
 
 // Starting lambda value.
 if (options.l) {
-    lambda = Double.parseDouble(options.l.toString());
+    lambda = Double.parseDouble(options.l);
 }
 
 // Load convergence criteria.
 if (options.e) {
-    eps = Double.parseDouble(options.e.toString());    
+    eps = Double.parseDouble(options.e);    
 }
 
 if (options.p) {
