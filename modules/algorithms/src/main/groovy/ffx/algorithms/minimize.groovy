@@ -93,7 +93,10 @@ int argIndex = -1;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
-
+if (args.size()==1 && args[0] != '-h') {
+    String delims = "[ ]+";
+    optionsJNLP = args.split(delims);
+}
 for (String arg : args) {
     argIndex = argIndex + 1;
     optionsJNLP[argIndex] = arg;
