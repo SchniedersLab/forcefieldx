@@ -114,22 +114,22 @@ if (options.h) {
 
 // Starting ligand atom.
 if (options.s) {
-    s = Integer.parseInt(options.s);
+    s = Integer.parseInt(options.s.toString());
 }
 
 // Final ligand atom.
 if (options.f) {
-    f = Integer.parseInt(options.f);
+    f = Integer.parseInt(options.f.toString());
 }
 
 // Starting ligand atom for the 2nd topology.
 if (options.s2) {
-    s2 = Integer.parseInt(options.s2);
+    s2 = Integer.parseInt(options.s2.toString());
 }
 
 // Final ligand atom for the 2nd topology.
 if (options.f2) {
-    f2 = Integer.parseInt(options.f2);
+    f2 = Integer.parseInt(options.f2.toString());
 }
 
 // No electrostatics on Topology 1.
@@ -154,15 +154,12 @@ if (options.ef2) {
 
 // Starting lambda value.
 if (options.l) {
-    lambda = Double.parseDouble(options.l);
+    lambda = Double.parseDouble(options.l.toString());
 }
 
 // Load convergence criteria.
 if (options.e) {
     eps = Double.parseDouble(options.e.toString());    
-}
-else if (System.getProperty("eps")) {
-    eps = Double.parseDouble(System.getProperty("eps"));
 }
 
 if (options.p) {

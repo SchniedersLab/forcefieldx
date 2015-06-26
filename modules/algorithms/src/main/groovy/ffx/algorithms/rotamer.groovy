@@ -156,7 +156,7 @@ if (options.h || arguments == null || arguments.size() != 1) {
 
 List<String> resList = new ArrayList<>();
 if (options.lR) {
-    def tok = (options.lR).tokenize('.');
+    def tok = (options.lR.toString()).tokenize('.');
     for (String t : tok) {
         logger.info(" Adding " + t);
         resList.add(t);
@@ -187,7 +187,7 @@ if (options.pE) {
 }
 
 if (options.e) {
-    ensemble = Integer.parseInt(options.e);
+    ensemble = Integer.parseInt(options.e.toString());
     buffer = 5.0;
 }
 
@@ -207,13 +207,13 @@ if (options.l) {
 
 // Algorithm.
 if (options.a) {
-    algorithm = Integer.parseInt(options.a);
+    algorithm = Integer.parseInt(options.a.toString());
 }
 
 // Implements different start/stop behavior for box, non-box optimizations.
 if (algorithm == 5) {
     if (options.x) {
-        boxStart = Integer.parseInt(options.x);
+        boxStart = Integer.parseInt(options.x.toString());
         --boxStart; // Internal machinery indexed 0 to (n-1)
         if (boxStart < 0) {
             logger.warning(" FFX shutting down: Invalid input for box selection: index begins at 1 (or start must be less than finish).");
@@ -221,7 +221,7 @@ if (algorithm == 5) {
         }
     } else {
         if (options.s) {
-            boxStart = Integer.parseInt(options.s);
+            boxStart = Integer.parseInt(options.s.toString());
             --boxStart; // Internal machinery indexed 0 to (n-1)
         }
         if (options.f) {
@@ -237,14 +237,14 @@ if (algorithm == 5) {
 } else {
     // Starting residue.
     if (options.s) {
-        startResID = Integer.parseInt(options.s);
+        startResID = Integer.parseInt(options.s.toString());
     }
     // Load the number iterations.
     if (options.f) {
-        finalResID = Integer.parseInt(options.f);
+        finalResID = Integer.parseInt(options.f.toString());
     }
     if (options.x) {
-        allStartResID = Integer.parseInt(options.x);
+        allStartResID = Integer.parseInt(options.x.toString());
     } else if (!options.lR) {
         if (finalResID < startResID || startResID < 0 || finalResID < 0) {
             return;
@@ -254,7 +254,7 @@ if (algorithm == 5) {
 
 // Sliding window size.
 if (options.w) {
-    windowSize = Integer.parseInt(options.w);
+    windowSize = Integer.parseInt(options.w.toString());
 }
 
 // Distance sliding window moves.
@@ -264,7 +264,7 @@ if (options.i) {
 
 // Amount of space distance matrix checks for.
 if (options.r) {
-    distance = Double.parseDouble(options.r);
+    distance = Double.parseDouble(options.r.toString());
 }
 
 // Direction of sliding window.
@@ -283,11 +283,11 @@ if (options.z) {
 
 if (options.m) {
     min = true;
-    eps = Double.parseDouble(options.m);
+    eps = Double.parseDouble(options.m.toString());
 }
 
 if (options.t) {
-    threeBodyTerm = Boolean.parseBoolean(options.t);
+    threeBodyTerm = Boolean.parseBoolean(options.t.toString());
 }
 
 /*if (options.td) {
@@ -299,7 +299,7 @@ if (options.g) {
 }
 
 if (options.p) {
-    pruningType = Integer.parseInt(options.p);
+    pruningType = Integer.parseInt(options.p.toString());
 }
 
 // Read in command line.
@@ -338,7 +338,7 @@ if (options.v) {
 }
 
 if (options.o) {
-    useOrigCoordsRotamer = Boolean.parseBoolean(options.o);
+    useOrigCoordsRotamer = Boolean.parseBoolean(options.o.toString());
 }
 
 if (options.dO) {
@@ -430,10 +430,10 @@ if (options.bC) {
 }
 
 if (options.bB) {
-    boxBorderSize = Double.parseDouble(options.bB);
+    boxBorderSize = Double.parseDouble(options.bB.toString());
 }
 if (options.bL) {
-    approxBoxLength = Double.parseDouble(options.bL);
+    approxBoxLength = Double.parseDouble(options.bL.toString());
     if (approxBoxLength < 0) {
         logger.info(" Negative box length value inputted; changing to -1 * input.")
         approxBoxLength *= -1;
