@@ -35,24 +35,6 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-// Copyright license for hierarchical-clustering-java
-/**
- * *****************************************************************************
- * Copyright 2013 Lars Behnke
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not
- * use this file except in compliance with the License. You may obtain a copy of
- * the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
- * the License.
- * ****************************************************************************
- */
 // Copyright license for BioJava
 /*
  *                    BioJava development code
@@ -89,56 +71,43 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import com.apporiented.algorithm.clustering.Cluster;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
-import org.biojava.bio.structure.Structure;
-import org.biojava.bio.structure.StructureException;
-import org.biojava.bio.structure.align.StructurePairAligner;
-import org.biojava.bio.structure.align.pairwise.AlternativeAlignment;
-import org.biojava.bio.structure.io.PDBFileReader;
 
 import ffx.algorithms.AlgorithmFunctions;
+import static ffx.algorithms.ClusterStructures.generatePath;
 import ffx.potential.MolecularAssembly;
 import ffx.utilities.DoubleIndexPair;
 import ffx.utilities.Keyword;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
-import static ffx.xray.RescoreAndCluster.ClustAlg.NO_CLUSTERS;
-import static ffx.xray.RescoreAndCluster.RescoreStrategy.ENERGY_EVAL;
-import static ffx.xray.RescoreAndCluster.RescoreStrategy.MINIMIZE;
-import static ffx.xray.RescoreAndCluster.RescoreStrategy.NO_RESCORE;
-import static ffx.xray.RescoreAndCluster.RescoreStrategy.RS_MIN;
-import static ffx.xray.RescoreAndCluster.RescoreStrategy.XRAY_MIN;
+import static ffx.xray.Rescore.RescoreStrategy.ENERGY_EVAL;
+import static ffx.xray.Rescore.RescoreStrategy.MINIMIZE;
+import static ffx.xray.Rescore.RescoreStrategy.NO_RESCORE;
+import static ffx.xray.Rescore.RescoreStrategy.RS_MIN;
+import static ffx.xray.Rescore.RescoreStrategy.XRAY_MIN;
 
 /**
- * This class performs rescoring and clustering on a provided list of structure
- * files. Rescoring can be based on energy evaluations, minimization, x-ray
- * minimization, or real-space minimization. Clustering is based on all-atom
- * RMSD (using BioJava libraries) and hierarchical clustering from Lars Behnke's
- * Java clustering package.
+ * This class performs rescoring on a provided list of structure files. Rescoring 
+ * can be based on energy evaluations, minimization, x-ray minimization, or 
+ * real-space minimization.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  *
  */
-public class RescoreAndCluster {
+public class Rescore {
 
-    private static final Logger logger = Logger.getLogger(RescoreAndCluster.class.getName());
+    private static final Logger logger = Logger.getLogger(Rescore.class.getName());
     private final RefinementMode refinementMode = RefinementMode.COORDINATES;
     private final AlgorithmFunctions utils;
     private RescoreStrategy rscType = NO_RESCORE;
-    private ClustAlg clusterAlg = NO_CLUSTERS;
     private List<DiffractionFile> diffractionFiles;
     private List<RealSpaceFile> mapFiles;
 
-    private boolean doRescore = false; //
-    private boolean doCluster = false; //
     private double eps = -1.0;
     private int maxiter = 1000;
     private double acceptThreshold = 0.0;
@@ -152,7 +121,7 @@ public class RescoreAndCluster {
     private Path resultPath;
     private boolean printModels = false;
 
-    public RescoreAndCluster(AlgorithmFunctions utils) {
+    public Rescore(AlgorithmFunctions utils) {
         this.pwdPath = generatePath(new File(""));
         diffractionFiles = new ArrayList<>();
         mapFiles = new ArrayList<>();
@@ -214,10 +183,6 @@ public class RescoreAndCluster {
         }
     }
 
-    public void setClusterAlg(ClustAlg clusterAlg) {
-        this.clusterAlg = clusterAlg;
-    }
-
     public void setDiffractionFiles(List<DiffractionFile> diffractionFiles) {
         this.diffractionFiles.addAll(diffractionFiles);
     }
@@ -227,77 +192,17 @@ public class RescoreAndCluster {
     }
 
     /**
-     * Utility method which attempts to generate a file Path using the canonical
-     * path string, else uses the absolute path.
+     * Launch the rescoring algorithm on provided files. Assumes it has been given 
+     * valid files to be run on; use CoordinateFileFilter.acceptDeep(File file) 
+     * before sending files to this method.
      *
-     * @param file To find path of
-     * @return Canonical or absolute path.
-     */
-    private Path generatePath(File file) {
-        Path path;
-        try {
-            path = Paths.get(file.getCanonicalPath());
-        } catch (IOException ex) {
-            path = Paths.get(file.getAbsolutePath());
-        }
-        return path;
-    }
-
-    public Cluster cluster(File[] clustFiles) {
-        int numFiles = clustFiles.length;
-        double[][] distanceMatrix = new double[numFiles][numFiles];
-        PDBFileReader reader = new PDBFileReader();
-        StructurePairAligner aligner = new StructurePairAligner();
-        try {
-            for (int i = 0; i < numFiles; i++) {
-                Structure strucI = reader.getStructure(clustFiles[i]);
-                for (int j = i + 1; j < numFiles; j++) {
-                    Structure strucJ = reader.getStructure(clustFiles[j]);
-                    aligner.align(strucI, strucJ);
-                    AlternativeAlignment[] alignments = aligner.getAlignments();
-                    double bestRMSD = alignments[0].getRmsd();
-                    for (int k = 1; k < alignments.length; k++) {
-                        double alignRMSD = alignments[k].getRmsd();
-                        bestRMSD = alignRMSD < bestRMSD ? alignRMSD : bestRMSD;
-                    }
-                    distanceMatrix[i][j] = bestRMSD;
-                }
-            }
-        } catch (StructureException ex) {
-
-        } catch (IOException ex) {
-            Logger.getLogger(RescoreAndCluster.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        return null;
-    }
-
-    /**
-     * Launch the rescoring/clustering algorithms on provided files. Assumes it
-     * has been given valid files to be run on; use
-     * CoordinateFileFilter.acceptDeep(File file) before sending files to this
-     * method.
-     *
-     * @param modelFiles Files to rescore and/or cluster.
+     * @param modelFiles Files to rescore.
      */
     public void runRsc(File[] modelFiles) {
         int numFiles = modelFiles.length;
-        if (rscType != NO_RESCORE) {
-            if (clusterAlg != NO_CLUSTERS) {
-                logger.info(String.format(" Rescoring and clustering %d files", numFiles));
-                logger.info(String.format(" Rescore algorithm: %s, clustering algorithm: %s", rscType.toString(), clusterAlg.toString()));
-                cluster(rescore(modelFiles)); // Cluster the files returned by rescore.
-            } else {
-                logger.info(String.format(" Rescoring %d files", numFiles));
-                logger.info(String.format(" Rescore algorithm: %s", rscType.toString()));
-                rescore(modelFiles);
-            }
-        } else if (clusterAlg != NO_CLUSTERS) {
-            logger.info(String.format(" Clustering %d files", numFiles));
-            logger.info(String.format(" Clustering algorithm: %s", clusterAlg.toString()));
-            cluster(modelFiles);
-        } else {
-            logger.info(" No rescoring or clustering algorithm selected.");
-        }
+        logger.info(String.format(" Rescoring %d files", numFiles));
+        logger.info(String.format(" Rescore algorithm: %s", rscType.toString()));
+        rescore(modelFiles);
     }
 
     private File rescoreSingle(File modelFile, RescoreStrategy rscType, DoubleIndexPair[] energies, int i) {
@@ -603,48 +508,6 @@ public class RescoreAndCluster {
                     @Override
                     public String toString() {
                         return "real-space hybrid target minimization";
-                    }
-                };
-    }
-
-    public enum ClustAlg {
-
-        /**
-         * All algorithms start with each point a cluster, and then join the
-         * closest clusters together until everything is one cluster. SLINK is
-         * Single Linkage; cluster-cluster distance is defined by the nearest
-         * two points. This is vulnerable to chaining; two clusters might be
-         * joined by a handful of intermediate points. CLINK is Complete
-         * Linkage; CLINK uses the greatest distance between points in two
-         * clusters. AV_LINK (average link) is the UPGMA (Unweighted Pair Group
-         * Method with Arithmetic Mean) function, which takes the mean distance
-         * between points in a cluster.
-         *
-         * Makes me wonder if there's a WPGMA algorithm which does weight one
-         * way or the other, or perhaps a RPGMA RMSD-like algorithm.
-         */
-        NO_CLUSTERS {
-                    @Override
-                    public String toString() {
-                        return "none";
-                    }
-                },
-        SLINK {
-                    @Override
-                    public String toString() {
-                        return "single linkage";
-                    }
-                },
-        AV_LINK {
-                    @Override
-                    public String toString() {
-                        return "average linkage (UPGMA)";
-                    }
-                },
-        CLINK {
-                    @Override
-                    public String toString() {
-                        return "complete linkage";
                     }
                 };
     }
