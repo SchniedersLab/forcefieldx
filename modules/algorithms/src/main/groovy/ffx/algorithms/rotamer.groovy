@@ -182,9 +182,9 @@ if (options.vw) {
 }
 
 // Ensemble.
-if (options.pE) {
+/*if (options.pE) {
     parallelEnergies = Boolean.parseBoolean(options.pE);
-}
+}*/
 
 if (options.e) {
     ensemble = Integer.parseInt(options.e);
@@ -350,9 +350,9 @@ if (options.dO) {
 }
 
 if (options.eR) {
-    if (!parallelEnergies || algorithm == 4) {
+    /*if (!parallelEnergies || algorithm == 4) {
         logger.severe(" FFX shutting down: energy restart only implemented for parallelized global optimizations.");
-    }
+    }*/
     useEnergyRestart = true;
     energyRestartFile = new File(options.eR);
 }

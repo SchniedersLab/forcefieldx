@@ -156,7 +156,7 @@ cli.X(longOpt:'suffix', args:1, argName:'_rsrefine', 'output suffix');
 cli.o(longOpt:'includeOriginal', args:1, argName:'true', 'Include starting coordinates as their own rotamer.');
 cli.td(longOpt:'threeBodyCutoffDist', args:1, argName: '9.0', 'Angstrom distance beyond which three-body interactions will be truncated (-1 for no cutoff).');
 cli.dO(longOpt:'decomposeOriginal', args: 1, argName:'false', 'Only print energy decomposition of original-coordinates rotamers; overrides other flags!');
-cli.pE(longOpt:'parallelEnergies', args: 1, argName:'true', 'Compute rotamer energies in parallel.');
+//cli.pE(longOpt:'parallelEnergies', args: 1, argName:'true', 'Compute rotamer energies in parallel.');
 cli.pP(longOpt:'parallelPermutations', args: 1, argName:'false', 'Enumerate permutations remaining after DEE in parallel.');
 cli.eR(longOpt:'energyRestart', args: 1, argName:'filename', 'Load energy restart file from a previous run. Ensure that all parameters are the same!');
 cli.nB(longOpt:'numXYZBoxes', args:1, argName: '3,3,3', 'Specify number of boxes along X, Y, and Z');
@@ -188,9 +188,9 @@ if (options.lR) {
 }
 
 // Ensemble.
-if (options.pE) {
+/*if (options.pE) {
     parallelEnergies = Boolean.parseBoolean(options.pE);
-}
+}*/
 
 if (options.pP) {
     parallelPermutations = Boolean.parseBoolean(options.pP);
@@ -408,9 +408,9 @@ if (options.dO) {
 }
 
 if (options.eR) {
-    if (!parallelEnergies || algorithm == 4) {
+    /*if (!parallelEnergies || algorithm == 4) {
         logger.severe(" FFX shutting down: energy restart only implemented for parallelized global optimizations.");
-    }
+    }*/
     useEnergyRestart = true;
     energyRestartFile = new File(options.eR);
 }
