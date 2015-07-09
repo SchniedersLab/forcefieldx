@@ -77,5 +77,10 @@
             <type>jar</type>
             <version>${commons-math3.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.apporiented</groupId>
+            <artifactId>hierarchical-clustering</artifactId>
+            <version>1.0</version>
+        </dependency>
     </dependencies>
 </project>

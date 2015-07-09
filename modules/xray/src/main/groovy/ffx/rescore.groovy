@@ -56,7 +56,6 @@ import ffx.xray.DiffractionFile;
 import ffx.xray.RefinementMinimize;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import ffx.xray.RescoreAndCluster.RescoreStrategy;
-import ffx.xray.RescoreAndCluster.ClustAlg;
 
 // Force Field X Minimize imports
 import ffx.algorithms.Minimize;
@@ -103,12 +102,11 @@ boolean printModels = false;
 boolean includeRejected = true;
 Path pwdPath;
 RescoreStrategy rscType = RescoreStrategy.NO_RESCORE;
-ClustAlg clusterAlg = ClustAlg.NO_CLUSTERS;
 
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc rescore [options] <modelfilename> [datafilename]');
 cli.h(longOpt:'help', 'Print this help message.');
-cli.m(longOpt: 'minimize', args: 1, argName:'0', 'Do not rescore (0), rescore on energy evaluation (1), minimization (2), minimization with X-ray target (3), or minimization with real-space target (4).');
+cli.m(longOpt: 'minimize', args: 1, argName:'1', 'Rescore on energy evaluation (1), minimization (2), minimization with X-ray target (3), or minimization with real-space target (4).');
 cli.e(longOpt:'eps', args:1, argName:'-1.0', 'RMS gradient convergence criteria (negative: automatically determine based on refinement type)');
 cli.xd(longOpt:'xrayData', args:3, valueSeparator:',', argName:'data,1.0,false', 'specify input xray data filename or filenames (or simply provide the datafilename argument after the PDB file), weight applied to the data (wA) and if the data is from a neutron experiment.');
 cli.rd(longOpt:'realspaceData', args:2, valueSeparator:',', argName:'data,1.0', 'specify input map data filename or filenames (or simply provide the datafilename argument after the PDB file) and weight applied to the data.');
@@ -121,8 +119,6 @@ cli.t(longOpt:'acceptThreshold', args:1, argName:'0.0', 'Accepts models within t
 cli.n(longOpt:'numberToAccept', args:1, argName:'10', 'Accepts this many of the best structures.');
 cli.dr(longOpt:'directory', args:1, argName:'directory', 'If set, rescore files are written to this directory: is made if it does not exist.');
 cli.ir(longOpt:'includeRejected', args:1, argName:'true', 'If set, includes names of files not accepted.');
-cli.c(longOpt:'clustering', args:1, argName:'none', 'Final structures will be clustered on single linkage, average linkage (UPGMA), or complete linkage (options single/average/complete).');
-cli.cp(longOpt:'clusterParallel', args:1, argName:'false', 'Generation of distance matrix for clustering will occur in parallel');
 //cli.dt(longOpt:'dataType', args:1, argName:'false', 'If true, refine modes 2 and 3 will parse data arguments as a line-separated list of {pdbfile,datafile} to match data files to PDBs. Preferred meth.');
 
 def options = cli.parse(args);
@@ -142,12 +138,6 @@ try {
 if (options.m) {
     refineMode = Integer.parseInt(options.m);
     switch (refineMode) {
-    case 0:
-        if (arguments.size() != 1) {
-            logger.warning(" Only one argument accepted for clustering-only runs.");
-            return cli.usage();
-        }
-        break;
     case 1:
         rscType = RescoreStrategy.ENERGY_EVAL;
         if (arguments.size() != 1) {
@@ -177,32 +167,8 @@ if (options.m) {
         }
         break;
     default:
-        logger.warning(" Improper use of -m flag: must be 0, 1, 2, 3, or 4.");
+        logger.warning(" Improper use of -m flag: must be 1, 2, 3, or 4.");
         return cli.usage();
-    }
-}
-
-if (options.c) {
-    String clusterString = options.c.toUpperCase();
-    switch (clusterString) {
-    case "SINGLE":
-    case "SLINK":
-        clusterAlg = ClustAlg.SLINK;
-        break;
-    case "AVERAGE":
-    case "UPGMA":
-    case "AVLINK":
-    case "AV_LINK":
-        clusterAlg = ClustAlg.AV_LINK;
-        break;
-    case "COMPLETE":
-    case "CLINK":
-        clusterAlg = ClustAlg.CLINK;
-        break;
-    default:
-        clusterAlg = ClusterAlg.NO_CLUSTERS;
-        logger.warning(" No valid cluster algorithm selected. Enter single, average, or complete.");
-        break;
     }
 }
 
@@ -258,8 +224,6 @@ if (/*!matchDataFiles && */options.xd) {
     if (options.rd) { // At present, double-minimization not allowed.
         logger.warning(String.format(" Only one refinement mode (%d) will be used.", refineMode));
         switch (refineMode) {
-        case 0:
-            logger.info(" No rescoring will take place.");
         case 1:
             logger.info(" No minimization will be applied.");
             break;
@@ -273,7 +237,7 @@ if (/*!matchDataFiles && */options.xd) {
             logger.info(" Real space refinement will be applied.");
             break;
         default:
-            throw new IllegalArgumentException(" Program should already have returned usage due to invalid -m flag.");
+            logger.severe(String.format(" Invalid -m flag %d", refineMode));
         }
     }
     switch (refineMode) {
@@ -401,7 +365,6 @@ File[] modelFileArray = new File[modelFiles.size()];
 modelFiles.toArray(modelFileArray);
 RescoreAndCluster rescorer = new RescoreAndCluster(utils);
 rescorer.setAcceptThreshold(acceptThreshold);
-rescorer.setClusterAlg(clusterAlg);
 rescorer.setDiffractionFiles(diffractionFiles);
 rescorer.setFileSuffix(suffix);
 rescorer.setIncludeRejected(includeRejected);

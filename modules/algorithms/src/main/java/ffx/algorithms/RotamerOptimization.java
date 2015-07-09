@@ -249,9 +249,18 @@ public class RotamerOptimization implements Terminatable {
      */
     private double clashThreshold = 20.0;
     /**
+     * Clash energy threshold (kcal/mol) for MultiResidues, which can have much
+     * more variation in self and pair energies.
+     */
+    private double multiResClashThreshold = 80.0;
+    /**
      * Clash energy threshold (kcal/mole).
      */
     private double pairClashThreshold = 50.0;
+    /**
+     * Pair clash energy threshold (kcal/mol) for MultiResidues.
+     */
+    private double multiResPairClashAddn = 80.0;
     /**
      * Flag to control use of 3-body terms.
      */
@@ -418,7 +427,9 @@ public class RotamerOptimization implements Terminatable {
         String nucleicCorrectionThreshold = System.getProperty("ro-nucleicCorrectionThreshold");
         String minimumNumberAcceptedNARotamers = System.getProperty("ro-minimumNumberAcceptedNARotamers");
         String singletonClashThreshold = System.getProperty("ro-singletonClashThreshold");
+        String multiResClashThreshold = System.getProperty("ro-multiResClashThreshold");
         String pairClashThreshold = System.getProperty("ro-pairClashThreshold");
+        String multiResPairClashAddition = System.getProperty("ro-multiResPairClashAddition");
         String boxDimensions = System.getProperty("ro-boxDimensions");
         String computeQuads = System.getProperty("ro-computeQuads");
         String quadCutoffDist = System.getProperty("ro-quadCutoffDist");
@@ -529,10 +540,20 @@ public class RotamerOptimization implements Terminatable {
             this.clashThreshold = value;
             logger.info(String.format(" (KEY) singletonClashThreshold: %.2f", this.clashThreshold));
         }
+        if (multiResClashThreshold != null) {
+            double value = Double.parseDouble(multiResClashThreshold);
+            this.multiResClashThreshold = value;
+            logger.info(String.format(" (KEY) multiResClashThreshold: %.2f", this.multiResClashThreshold));
+        }
         if (pairClashThreshold != null) {
             double value = Double.parseDouble(pairClashThreshold);
             this.pairClashThreshold = value;
             logger.info(String.format(" (KEY) pairClashThreshold: %.2f", this.pairClashThreshold));
+        }
+        if (multiResPairClashAddition != null) {
+            double value = Double.parseDouble(multiResPairClashAddition);
+            this.multiResPairClashAddn = value;
+            logger.info(String.format(" (KEY) multiResPairClashAddition: %.2f", this.multiResPairClashAddn));
         }
         if (boxDimensions != null) {
             // String should be in format (buffer,xmin,xmax,ymin,ymax,zmin,zmax)
@@ -7059,7 +7080,8 @@ public class RotamerOptimization implements Terminatable {
     /**
      * Uses calculated energies to prune rotamers based on a threshold distance
      * from that residue's minimum energy rotamer (by default 20 kcal/mol). The
-     * threshold can be modulated by presence of nucleic acids.
+     * threshold can be modulated by presence of nucleic acids or MultiResidues,
+     * which require more generous pruning criteria.
      *
      * @param residues Residues to prune rotamers over.
      */
@@ -7077,22 +7099,24 @@ public class RotamerOptimization implements Terminatable {
                     minEnergy = self(i, ri);
                 }
             }
+            /**
+             * Regular: ep = minEnergy + clashThreshold
+             * Nucleic acids: ep = minEnergy + (clashThreshold * factor * factor)
+             * MultiResidues: ep = minEnergy + multiResClashThreshold
+             * 
+             * Nucleic acids are bigger than amino acids, and MultiResidues can 
+             * have wild swings in energy on account of chemical perturbation.
+             */
+            double energyToPrune = (residue instanceof MultiResidue) ? multiResClashThreshold : clashThreshold;
+            energyToPrune = (residue.getResidueType() == NA) ? energyToPrune * singletonNAPruningFactor * pruningFactor : energyToPrune;
+            energyToPrune += minEnergy;
+            
             for (int ri = 0; ri < nrot; ri++) {
-                if (residue.getResidueType() == NA) {
-                    if (!check(i, ri) && (self(i, ri) > (minEnergy + (clashThreshold * pruningFactor * singletonNAPruningFactor)))) {
-                        if (ri != 0 || !RotamerLibrary.getUsingOrigCoordsRotamer()) {
-                            eliminateRotamer(residues, i, ri, print);
-                            logIfMaster(String.format(" Clash for rotamer %s %d: %16.8f >> %16.8f",
-                                    residue, ri, self(i, ri), minEnergy));
-                        }
-                    }
-                } else {
-                    if (!check(i, ri) && (self(i, ri) > (minEnergy + clashThreshold))) {
-                        if (ri != 0 || !RotamerLibrary.getUsingOrigCoordsRotamer()) {
-                            eliminateRotamer(residues, i, ri, print);
-                            logIfMaster(String.format(" Clash for rotamer %s %d: %16.8f >> %16.8f",
-                                    residue, ri, self(i, ri), minEnergy));
-                        }
+                if (!check(i, ri) && (self(i, ri) > energyToPrune)) {
+                    if (ri != 0 || !RotamerLibrary.getUsingOrigCoordsRotamer()) {
+                        eliminateRotamer(residues, i, ri, print);
+                        logIfMaster(String.format(" Clash for rotamer %s %d: %16.8f >> %16.8f",
+                                residue, ri, self(i, ri), minEnergy));
                     }
                 }
             }
@@ -7134,25 +7158,34 @@ public class RotamerOptimization implements Terminatable {
                         }
                     }
                 }
-                double pruneThreshold = pairClashThreshold;
+                //double pruneThreshold = pairClashThreshold;
+                double threshold = pairClashThreshold;
+                if (resi instanceof MultiResidue) {
+                    threshold += multiResPairClashAddn;
+                }
+                if (resj instanceof MultiResidue) {
+                    threshold += multiResPairClashAddn;
+                }
+                
                 int numNARes = (resi.getResidueType() == NA ? 1 : 0) + (resj.getResidueType() == NA ? 1 : 0);
                 switch (numNARes) {
                     case 0:
                         break;
                     case 1:
-                        pruneThreshold *= pairHalfPruningFactor;
+                        threshold *= pairHalfPruningFactor;
+                        //pruneThreshold *= pairHalfPruningFactor;
                         break;
                     case 2:
-                        pruneThreshold *= pruningFactor;
+                        threshold *= pruningFactor;
+                        //pruneThreshold *= pruningFactor;
                         break;
                     default:
                         throw new ArithmeticException(" RotamerOptimization.prunePairClashes() has somehow "
                                 + "found less than zero or more than two nucleic acid residues in a pair of"
                                 + " residues. This result should be impossible.");
                 }
-                double indivPruneThreshold = pruneThreshold * indivPairFactor;
-                pruneThreshold += minPair;
-                indivPruneThreshold += minPair;
+                threshold += minPair;
+                
                 // Check for elimination of any rotamer ri.
                 for (int ri = 0; ri < ni; ri++) {
                     if (check(i, ri)) {
@@ -7170,7 +7203,16 @@ public class RotamerOptimization implements Terminatable {
                     // Prune based on clash threshold and the appropriate
                     // pruning factor (1.0 for AA pairs, pF for NA pairs,
                     // arithmetic mean for AA-NA pairs).
-                    if (resi.getResidueType() == NA && resj.getResidueType() == NA) {
+                    if (eliminate > threshold) {
+                        // don't prune orig-coords rotamers
+                        if (ri != 0 || !RotamerLibrary.getUsingOrigCoordsRotamer()) {
+                            eliminateRotamer(residues, i, ri, print);
+                            logIfMaster(String.format(
+                                    " Pruning rotamer %s %d that clashes with all %s rotamers %16.8f >> %16.8f.",
+                                    resi, ri, resj, eliminate, threshold));
+                        }
+                    }
+                    /*if (resi.getResidueType() == NA && resj.getResidueType() == NA) {
                         if (eliminate > (minPair + (pairClashThreshold * pruningFactor))) {
                             if (ri != 0 || !RotamerLibrary.getUsingOrigCoordsRotamer()) {
                                 eliminateRotamer(residues, i, ri, print);
@@ -7198,7 +7240,7 @@ public class RotamerOptimization implements Terminatable {
                                         resi, ri, resj, eliminate, minPair + pairClashThreshold));
                             }
                         }
-                    }
+                    }*/
                 }
                 // Check for elimination of any rotamer rj.
                 for (int rj = 0; rj < nj; rj++) {
@@ -7214,7 +7256,15 @@ public class RotamerOptimization implements Terminatable {
                             eliminate = (pair(i, ri, j, rj) + self(i, ri) + self(j, rj));
                         }
                     }
-                    if (resi.getResidueType() == NA && resj.getResidueType() == NA) {
+                    if (eliminate > threshold) {
+                        if (rj != 0 || !RotamerLibrary.getUsingOrigCoordsRotamer()) {
+                            eliminateRotamer(residues, j, rj, print);
+                            logIfMaster(String.format(
+                                    " Pruning rotamer %s %d that clashes with all %s rotamers %16.8f >> %16.8f.",
+                                    resj, rj, resi, eliminate, threshold));
+                        }
+                    }
+                    /*if (resi.getResidueType() == NA && resj.getResidueType() == NA) {
                         if (eliminate > (minPair + (pairClashThreshold * pruningFactor))) {
                             if (rj != 0 || !RotamerLibrary.getUsingOrigCoordsRotamer()) {
                                 eliminateRotamer(residues, j, rj, print);
@@ -7242,9 +7292,9 @@ public class RotamerOptimization implements Terminatable {
                                         resj, rj, resi, eliminate, minPair + pairClashThreshold));
                             }
                         }
-                    }
+                    }*/
                 }
-                // Presently consitutively false
+                /* Presently consitutively false
                 if (pruneIndivPairs) {
                     for (int ri = 0; ri < ni; ni++) {
                         if (check(i, ri)) {
@@ -7263,7 +7313,7 @@ public class RotamerOptimization implements Terminatable {
                             }
                         }
                     }
-                }
+                }*/
             }
         }
     }
