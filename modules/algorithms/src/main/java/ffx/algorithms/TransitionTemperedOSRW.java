@@ -325,16 +325,20 @@ public class TransitionTemperedOSRW implements Potential {
      */
     private final boolean asynchronous;
     /**
-     * A flag to indicate if the transition has been crossed and
-     * Dama et al. transition-tempering should begin.
+     * A flag to indicate if the transition has been crossed and Dama et al.
+     * transition-tempering should begin.
      */
     private boolean tempering = false;
     /**
-     * The Dama et al. transition-tempering rate parameter.
+     * The Dama et al. transition-tempering rate parameter. A reasonable value
+     * is about 2 kT.
      */
-    private double deltaT = 1.0;
+    private double deltaT = 2.0 * R * 298.0;
     /**
-     * The Dama et al. transition-tempering weight.
+     * The Dama et al. transition-tempering weight: temperingWeight =
+     * exp(-max(F_lambda array)/deltaT)
+     *
+     * This assumes that the initial F_lambda bias array is 0.
      */
     private double temperingWeight = 1.0;
 
@@ -982,6 +986,7 @@ public class TransitionTemperedOSRW implements Potential {
      */
     private double updateFLambda(boolean print) {
         double freeEnergy = 0.0;
+        double maxDiff = 0.0;
         totalCounts = 0;
         if (print) {
             logger.info(" Count   Lambda Bins    F_Lambda Bins   <   F_L  >       dG        G");
@@ -1008,7 +1013,7 @@ public class TransitionTemperedOSRW implements Potential {
                 }
             }
 
-            int lambdaCount = 0;
+            double lambdaCount = 0;
             // The FL range sampled for lambda bin [iL*dL .. (iL+1)*dL]
             double lla = 0.0;
             double ula = 0.0;
@@ -1051,9 +1056,15 @@ public class TransitionTemperedOSRW implements Potential {
                         lambdaCount, llL, ulL, lla, ula,
                         FLambda[iL], deltaFreeEnergy, freeEnergy));
             }
+            if (maxDiff > FLambda[iL]) {
+                maxDiff = FLambda[iL];
+            }
         }
-        logger.info(String.format(" The free energy is %12.4f kcal/mol from %d counts.",
-                freeEnergy, totalCounts));
+        if (tempering) {
+            temperingWeight = exp(-maxDiff / deltaT);
+            logger.info(String.format(" The free energy is %12.4f kcal/mol from %d counts.",
+                    freeEnergy, totalCounts));
+        }
 
         return freeEnergy;
     }
@@ -1288,7 +1299,7 @@ public class TransitionTemperedOSRW implements Potential {
 
     @Override
     public double energy(double[] x) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     private class TTOSRWHistogramWriter extends PrintWriter {
