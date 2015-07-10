@@ -1060,11 +1060,13 @@ public class TransitionTemperedOSRW implements Potential {
                 maxDiff = FLambda[iL];
             }
         }
+        
         if (tempering) {
             temperingWeight = exp(-maxDiff / deltaT);
-            logger.info(String.format(" The free energy is %12.4f kcal/mol from %d counts.",
-                    freeEnergy, totalCounts));
         }
+
+        logger.info(String.format(" The free energy is %12.4f kcal/mol from %d counts.",
+                freeEnergy, totalCounts));
 
         return freeEnergy;
     }
