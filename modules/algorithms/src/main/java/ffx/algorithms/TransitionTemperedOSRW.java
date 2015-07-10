@@ -986,7 +986,7 @@ public class TransitionTemperedOSRW implements Potential {
      */
     private double updateFLambda(boolean print) {
         double freeEnergy = 0.0;
-        double maxDiff = 0.0;
+        double minFL = Double.MAX_VALUE;
         totalCounts = 0;
         if (print) {
             logger.info(" Count   Lambda Bins    F_Lambda Bins   <   F_L  >       dG        G");
@@ -1056,13 +1056,13 @@ public class TransitionTemperedOSRW implements Potential {
                         lambdaCount, llL, ulL, lla, ula,
                         FLambda[iL], deltaFreeEnergy, freeEnergy));
             }
-            if (maxDiff > FLambda[iL]) {
-                maxDiff = FLambda[iL];
+            if (minFL > FLambda[iL]) {
+                minFL = FLambda[iL];
             }
         }
-        
+
         if (tempering) {
-            temperingWeight = exp(-maxDiff / deltaT);
+            temperingWeight = exp(-minFL / deltaT);
         }
 
         logger.info(String.format(" The free energy is %12.4f kcal/mol from %d counts.",
