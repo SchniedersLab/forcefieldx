@@ -6,42 +6,49 @@
 package ffx.potential.utils;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
 
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.nonbonded.ParticleMeshEwald;
-import ffx.potential.parameters.ForceField;
 import java.io.File;
 import java.util.logging.Logger;
+import static org.junit.Assert.fail;
+import org.junit.Before;
 
 /**
  *
  * @author slucore
  */
-public class TimerTest {
+public class TTest {
     
-    private static final Logger logger = Logger.getLogger(TimerTest.class.getName());
+    private static final Logger logger = Logger.getLogger(TTest.class.getName());
     
-    private final File structure;
-    private final MolecularAssembly molecularAssembly;
+    private File structure;
+    private MolecularAssembly molecularAssembly;
     private final double tolerance = 1.0e-3;
     private final double gradientTolerance = 1.0e-4;
     private ParticleMeshEwald.Polarization polarization;
-    private final ForceFieldEnergy forceFieldEnergy;
-    private final int nAtoms;
+    private ForceFieldEnergy forceFieldEnergy;
+    private int nAtoms;
     
-    public TimerTest() {
+    public TTest() {}
+    
+    @Before
+    public void setup() {
+        String filename = System.getProperty("testFile");
+        if (filename == null) {
+            logger.warning("Couldn't find file: " + filename);
+        }
+        
         /**
          * Load the test system.
          */
         ClassLoader cl = this.getClass().getClassLoader();
-        structure = new File(cl.getResource("ffx/potential/structures/dhfr.xyz").getPath());
-        PotentialsUtils potentialUtils = new PotentialsUtils();
-        molecularAssembly = potentialUtils.open(structure.getAbsolutePath())[0];
-
+        structure = new File(filename);        
+        PotentialsFileOpener opener = new PotentialsFileOpener(structure);
+        opener.run();
+        
+        molecularAssembly = opener.getAssembly();
         nAtoms = molecularAssembly.getAtomArray().length;
         forceFieldEnergy = molecularAssembly.getPotentialEnergy();
     }
@@ -49,7 +56,7 @@ public class TimerTest {
     @Test
     public void testTimer() {
         logger.info(String.format("\n N-Body Test: "));
-        int nEvals = 5;
+        int nEvals = 10;
         boolean gradient = true;
         boolean print = true;
         
