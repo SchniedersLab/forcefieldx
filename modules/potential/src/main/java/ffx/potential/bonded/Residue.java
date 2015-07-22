@@ -484,7 +484,7 @@ public class Residue extends MSGroup {
                 return null;
         }
     }
-
+    
     /**
      * Uses a name to add an Atom to a List<Atom> if the Atom exists for this
      * residue.
