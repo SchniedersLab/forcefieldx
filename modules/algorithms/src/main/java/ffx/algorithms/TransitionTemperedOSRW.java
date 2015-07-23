@@ -506,7 +506,7 @@ public class TransitionTemperedOSRW implements Potential {
             /**
              * Use synchronous communication.
              */
-            recursionCounts = new double[numProc][2];
+            recursionCounts = new double[numProc][3];
             recursionCountsBuf = new DoubleBuf[numProc];
             for (int i = 0; i < numProc; i++) {
                 recursionCountsBuf[i] = DoubleBuf.buffer(recursionCounts[i]);
