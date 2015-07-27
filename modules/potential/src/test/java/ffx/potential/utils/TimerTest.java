@@ -20,8 +20,7 @@ import ffx.potential.nonbonded.ParticleMeshEwald;
  */
 public class TimerTest {
 
-    private static final Logger logger = Logger.getLogger(PotentialEnergyTest.class.getName());
-
+    private static final Logger logger = Logger.getLogger(TimerTest.class.getName());
     private final File structure;
     private final MolecularAssembly molecularAssembly;
     private final double tolerance = 1.0e-3;

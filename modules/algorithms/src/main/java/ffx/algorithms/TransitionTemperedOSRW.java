@@ -496,8 +496,10 @@ public class TransitionTemperedOSRW implements Potential {
             /**
              * Use asynchronous communication.
              */
+
             myRecursionWeight = new double[3];
             myRecursionWeightBuf = DoubleBuf.buffer(myRecursionWeight);
+
             receiveThread = new ReceiveThread();
             receiveThread.start();
             recursionWeights = null;
@@ -1060,7 +1062,7 @@ public class TransitionTemperedOSRW implements Potential {
                 if (ulL > 1.0) {
                     ulL = 1.0;
                 }
-                logger.info(String.format(" %6d  %5.3f %5.3f   %7.1f %7.1f   %8.3f  %8.3f %8.3f",
+                logger.info(String.format(" %6f  %5.3f %5.3f   %7.1f %7.1f   %8.3f  %8.3f %8.3f",
                         lambdaCount, llL, ulL, lla, ula,
                         FLambda[iL], deltaFreeEnergy, freeEnergy));
             }
