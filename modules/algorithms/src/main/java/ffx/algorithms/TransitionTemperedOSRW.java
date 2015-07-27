@@ -75,7 +75,7 @@ import ffx.potential.parsers.PDBFilter;
  * An implementation of Transition-Tempered Orthogonal Space Random Walk
  * algorithm.
  *
- * @author Michael J. Schnieders, Wei Yang and Pengyu Ren
+ * @author Michael J. Schnieders, James Dama, Wei Yang and Pengyu Ren
  */
 public class TransitionTemperedOSRW implements Potential {
 
@@ -138,18 +138,18 @@ public class TransitionTemperedOSRW implements Potential {
      */
     private double recursionKernel[][];
     /**
-     * The recursionCount stores the [Lambda, FLambda] count for each process.
+     * The recursionWeights stores the [Lambda, FLambda] weight for each process.
      * Therefore the array is of size [number of Processes][2]. Each 2 entry
      * array must be wrapped inside a Parallel Java IntegerBuf for the
      * All-Gather communication calls.
      */
-    private final double recursionCounts[][];
-    private final double myRecursionCount[];
+    private final double recursionWeights[][];
+    private final double myRecursionWeight[];
     /**
-     * These DoubleBufs wrap the recusionCount arrays.
+     * These DoubleBufs wrap the recusionWeight arrays.
      */
-    private final DoubleBuf recursionCountsBuf[];
-    private final DoubleBuf myRecursionCountBuf;
+    private final DoubleBuf recursionWeightsBuf[];
+    private final DoubleBuf myRecursionWeightBuf;
     /**
      * Parallel Java world communicator.
      */
@@ -270,11 +270,13 @@ public class TransitionTemperedOSRW implements Potential {
     private MolecularAssembly lambdaZeroAssembly;
     private PDBFilter lambdaZeroFilter;
     /**
-     * Once the lambda reset value is reached, OSRW statistics are reset.
+     * Once the lambda reset value is reached,
+     * Transition-Tempered OSRW statistics are reset.
      */
     private final double lambdaResetValue = 0.99;
     /**
-     * Flag set to false once OSRW statistics are reset at lambdaResetValue.
+     * Flag set to false once Transition-Tempered
+     * OSRW statistics are reset at lambdaResetValue.
      */
     private boolean resetStatistics = false;
     /**
@@ -288,7 +290,7 @@ public class TransitionTemperedOSRW implements Potential {
     private final int fLambdaPrintInterval = 10;
     private int fLambdaUpdates = 0;
     /**
-     * Interval between writing an OSRW restart file in steps.
+     * Interval between writing an TT-OSRW restart file in steps.
      */
     private int saveFrequency = 1000;
     /**
@@ -300,7 +302,7 @@ public class TransitionTemperedOSRW implements Potential {
      */
     private double totalEnergy;
     /**
-     * Free energy at Lambda=1.
+     * Thermodynamic integration from Lambda=0 to Lambda=1.
      */
     private double totalFreeEnergy;
     /**
@@ -313,7 +315,7 @@ public class TransitionTemperedOSRW implements Potential {
     private int equilibrationCounts = 0;
     /**
      * Are FAST varying energy terms being computed, SLOW varying energy terms,
-     * or BOTH. OSRW is not active when only FAST varying energy terms are being
+     * or BOTH. TT-OSRW is not active when only FAST varying energy terms are being
      * propagated.
      */
     private STATE state = STATE.BOTH;
@@ -335,10 +337,8 @@ public class TransitionTemperedOSRW implements Potential {
      */
     private double deltaT = 2.0 * R * 298.0;
     /**
-     * The Dama et al. transition-tempering weight: temperingWeight =
-     * exp(-max(F_lambda array)/deltaT)
-     *
-     * This assumes that the initial F_lambda bias array is 0.
+     * The Dama et al. transition-tempering weight:
+     * temperingWeight = exp(-max(G(L,F_L))/deltaT)
      */
     private double temperingWeight = 1.0;
 
@@ -496,23 +496,23 @@ public class TransitionTemperedOSRW implements Potential {
             /**
              * Use asynchronous communication.
              */
-            myRecursionCount = new double[2];
-            myRecursionCountBuf = DoubleBuf.buffer(myRecursionCount);
+            myRecursionWeight = new double[3];
+            myRecursionWeightBuf = DoubleBuf.buffer(myRecursionWeight);
             receiveThread = new ReceiveThread();
             receiveThread.start();
-            recursionCounts = null;
-            recursionCountsBuf = null;
+            recursionWeights = null;
+            recursionWeightsBuf = null;
         } else {
             /**
              * Use synchronous communication.
              */
-            recursionCounts = new double[numProc][2];
-            recursionCountsBuf = new DoubleBuf[numProc];
+            recursionWeights = new double[numProc][3];
+            recursionWeightsBuf = new DoubleBuf[numProc];
             for (int i = 0; i < numProc; i++) {
-                recursionCountsBuf[i] = DoubleBuf.buffer(recursionCounts[i]);
+                recursionWeightsBuf[i] = DoubleBuf.buffer(recursionWeights[i]);
             }
-            myRecursionCount = recursionCounts[rank];
-            myRecursionCountBuf = recursionCountsBuf[rank];
+            myRecursionWeight = recursionWeights[rank];
+            myRecursionWeightBuf = recursionWeightsBuf[rank];
             receiveThread = null;
         }
 
@@ -745,7 +745,8 @@ public class TransitionTemperedOSRW implements Potential {
                         traversalSnapshotTarget = 1 - traversalSnapshotTarget;
                     }
                 }
-                if (((lambda < 0.1 && traversalInHand.isEmpty()) || (lambda < heldTraversalLambda - 0.025 && !traversalInHand.isEmpty()))
+                if (((lambda < 0.1 && traversalInHand.isEmpty())
+                        || (lambda < heldTraversalLambda - 0.025 && !traversalInHand.isEmpty()))
                         && (traversalSnapshotTarget == 0 || traversalSnapshotTarget == -1)) {
                     if (lambdaZeroFilter == null) {
                         lambdaZeroFilter = new PDBFilter(lambdaZeroFile, lambdaZeroAssembly, null, null);
@@ -848,11 +849,11 @@ public class TransitionTemperedOSRW implements Potential {
         /**
          * All-Gather counts from each walker.
          */
-        myRecursionCount[0] = lambda;
-        myRecursionCount[1] = dEdU;
-        myRecursionCount[2] = temperingWeight;
+        myRecursionWeight[0] = lambda;
+        myRecursionWeight[1] = dEdU;
+        myRecursionWeight[2] = temperingWeight;
         try {
-            world.allGather(myRecursionCountBuf, recursionCountsBuf);
+            world.allGather(myRecursionWeightBuf, recursionWeightsBuf);
         } catch (IOException ex) {
             String message = " Multi-walker OSRW allGather failed.";
             logger.log(Level.SEVERE, message, ex);
@@ -864,8 +865,8 @@ public class TransitionTemperedOSRW implements Potential {
         double minRequired = Double.MAX_VALUE;
         double maxRequired = Double.MIN_VALUE;
         for (int i = 0; i < numProc; i++) {
-            minRequired = Math.min(minRequired, recursionCounts[i][1]);
-            maxRequired = Math.max(maxRequired, recursionCounts[i][1]);
+            minRequired = Math.min(minRequired, recursionWeights[i][1]);
+            maxRequired = Math.max(maxRequired, recursionWeights[i][1]);
         }
 
         /**
@@ -879,14 +880,14 @@ public class TransitionTemperedOSRW implements Potential {
          * Increment the Recursion Kernel based on the input of each walker.
          */
         for (int i = 0; i < numProc; i++) {
-            int walkerLambda = binForLambda(recursionCounts[i][0]);
-            int walkerFLambda = binForFLambda(recursionCounts[i][1]);
-            double weight = recursionCounts[i][2];
+            int walkerLambda = binForLambda(recursionWeights[i][0]);
+            int walkerFLambda = binForFLambda(recursionWeights[i][1]);
+            double weight = recursionWeights[i][2];
 
-            if (resetStatistics && recursionCounts[i][0] > lambdaResetValue) {
+            if (resetStatistics && recursionWeights[i][0] > lambdaResetValue) {
                 recursionKernel = new double[lambdaBins][FLambdaBins];
                 resetStatistics = false;
-                logger.info(String.format(" Cleared OSRW histogram (Lambda = %6.4f).", recursionCounts[i][0]));
+                logger.info(String.format(" Cleared OSRW histogram (Lambda = %6.4f).", recursionWeights[i][0]));
             }
 
             recursionKernel[walkerLambda][walkerFLambda] += weight;
@@ -900,13 +901,13 @@ public class TransitionTemperedOSRW implements Potential {
      * @param dEdU
      */
     private void asynchronousSend(double lambda, double dEdU) {
-        myRecursionCount[0] = lambda;
-        myRecursionCount[1] = dEdU;
-        myRecursionCount[2] = temperingWeight;
+        myRecursionWeight[0] = lambda;
+        myRecursionWeight[1] = dEdU;
+        myRecursionWeight[2] = temperingWeight;
 
         for (int i = 0; i < numProc; i++) {
             try {
-                world.send(i, myRecursionCountBuf);
+                world.send(i, myRecursionWeightBuf);
             } catch (Exception ex) {
                 String message = " Asynchronous Multiwalker OSRW send failed.";
                 logger.log(Level.SEVERE, message, ex);
@@ -1012,7 +1013,6 @@ public class TransitionTemperedOSRW implements Potential {
                     break;
                 }
             }
-
             double lambdaCount = 0;
             // The FL range sampled for lambda bin [iL*dL .. (iL+1)*dL]
             double lla = 0.0;
@@ -1022,12 +1022,20 @@ public class TransitionTemperedOSRW implements Potential {
             } else {
                 double ensembleAverageFLambda = 0.0;
                 double partitionFunction = 0.0;
+                double maxBias = 0;
                 for (int jFL = llFL; jFL <= ulFL; jFL++) {
                     double currentFLambda = minFLambda + jFL * dFL + dFL_2;
-                    double weight = exp(evaluateKernel(iL, jFL) / (R * temperature));
+                    double kernel = evaluateKernel(iL, jFL);
+                    if (kernel > maxBias) {
+                        maxBias = kernel;
+                    }
+                    double weight = exp(kernel / (R * temperature));
                     ensembleAverageFLambda += currentFLambda * weight;
                     partitionFunction += weight;
                     lambdaCount += recursionKernel[iL][jFL];
+                }
+                if (minFL > maxBias) {
+                    minFL = maxBias;
                 }
                 FLambda[iL] = ensembleAverageFLambda / partitionFunction;
                 lla = minFLambda + llFL * dFL;
@@ -1055,9 +1063,6 @@ public class TransitionTemperedOSRW implements Potential {
                 logger.info(String.format(" %6d  %5.3f %5.3f   %7.1f %7.1f   %8.3f  %8.3f %8.3f",
                         lambdaCount, llL, ulL, lla, ula,
                         FLambda[iL], deltaFreeEnergy, freeEnergy));
-            }
-            if (minFL > FLambda[iL]) {
-                minFL = FLambda[iL];
             }
         }
 
