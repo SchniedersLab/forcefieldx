@@ -65,11 +65,21 @@ int end_res = -1;
 if (options.s) {
     stt_res = Integer.parseInt(options.s);
 }
+else
+{
+    stt_res = 1;
+}
 
 // Finish point
 if (options.f) {
     end_res = Integer.parseInt(options.f);
 } 
+else
+{
+    end_res = 5;
+}
+
+
 if (end_res - stt_res != 4)
 {
     logger.info("\n\nInvalid residue range. Residue range must consist of only 5 residues.\n\n");
@@ -88,9 +98,9 @@ if (arguments != null && arguments.size() > 0) {
 }
 
 logger.info("\n Running loopClosure on " + modelfilename);
+boolean writeFile = true;
 
-
-Loop loop = new Loop(active, stt_res, end_res);
+Loop loop = new Loop(active, stt_res, end_res, writeFile);
 
 /*
  * Example of using the new PotentialsFunctions interface instead of Groovy method

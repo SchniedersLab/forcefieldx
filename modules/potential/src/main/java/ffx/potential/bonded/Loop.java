@@ -41,6 +41,7 @@ import ffx.numerics.VectorMath;
 import ffx.potential.MolecularAssembly;
 import java.io.File;
 import java.util.Arrays;
+import java.util.logging.Logger;
 
 /**
  *
@@ -50,6 +51,7 @@ public class Loop
 {
     private static final LoopClosure loopClosure = new LoopClosure();
     private static final SturmMethod sturmMethod = new SturmMethod();
+    private Logger logger = Logger.getLogger(Loop.class.getName());
     
     int max_soln = 16;
     char[] in_pdb = new char [100];
@@ -84,7 +86,7 @@ public class Loop
     boolean bool=false;
     int counter = 0;
     
-    public Loop (MolecularAssembly molAss, int stt_res, int end_res)
+    public Loop (MolecularAssembly molAss, int stt_res, int end_res, boolean writeFile)
     {
         this.molAss=molAss;
         
@@ -234,15 +236,14 @@ public class Loop
                 }
             }
             
-            //SEARCH1
-            //Method that solves the 3 peptide polynomial
+            //Method that solves the 16th degree, 3 peptide polynomial
             loopClosure.solve_3pep_poly(r_n[1], r_a[1], r_a[3], r_c[3], r_soln_n, r_soln_a, r_soln_c, n_soln);
             
-            System.out.println("Starting res.: " +n0+"\n");
-            
-            System.out.println("Ending res.: " +(n0+2)+"\n");
-            
-            System.out.println("No. of solutions: "+n_soln[0]+"\n");
+            StringBuilder sb = new StringBuilder();
+            sb.append(String.format("Starting res.:             %d\n", n0));
+            sb.append(String.format("Ending res.:               %d\n", (n0+2)));
+            sb.append(String.format("No. of solutions:          %d\n", n_soln[0]));
+            logger.info(sb.toString());
             
             //print statements for debugging purposes
             //System.out.println("Final Coordinates:\n ");
@@ -287,16 +288,21 @@ public class Loop
                     }
                     rmsd = Math.sqrt(sum/9.0e0);
                     
-                    System.out.println("Rmsd for solution #"+(k+1)+" is "+rmsd+"\n");
+                    StringBuilder string = new StringBuilder();
+                    string.append(String.format("Rmsd for solution #"+(k+1)+" is "+rmsd+"\n"));
+                    logger.info(string.toString());
                                                       
                     /* if(write_out_pdb)
                     {
                      sprintf(out_pdb, "%s_%d.pdb", out_prefix, k+1);
                     */
-                    
                        counter++;
-                       File fileName = sturmMethod.write_pdb_backbone(out_pdb, res_name, r_n, r_a, r_c, n0-1, n0+3, chain_n, chain_a, chain_c,molAss,counter);
-                       System.out.println("Recording the solution #"+(k+1)+" in "+fileName+".\n");
+                       if(writeFile)
+                       {
+                            File fileName = sturmMethod.write_pdb_backbone(out_pdb, res_name, r_n, r_a, r_c, n0-1, n0+3, chain_n, chain_a, chain_c,molAss,counter, writeFile);
+                            StringBuilder string1 = new StringBuilder();
+                            string.append(String.format("Recording the solution #"+(k+1)+" in "+fileName+".\n"));
+                       }
                     //write_pdb_backbone(out_pdb, res_name, r_n, r_a, r_c, n0-1, n0+3);
                     
                     /*
@@ -318,7 +324,21 @@ public class Loop
                 }
             }
         }  
-    } 
+    }
+    
+    // Only for JUnit testing.
+    public double[][] getr_n() 
+    {
+        return r_n;
+    }
+    public double[][] getr_a() 
+    {
+        return r_a;
+    }
+     public double[][] getr_c() 
+    {
+        return r_c;
+    }
 }
 
 

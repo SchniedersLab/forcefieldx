@@ -145,8 +145,8 @@ public class LoopClosure {
         
         
         if (n_soln[0] == 0) {
-            System.out.println("Loop failed");
-            //logger.severe("Loop building failed.");
+            //System.out.println("Loop failed");
+            logger.severe("Loop building failed.");
         }
 
         coord_from_poly_roots(n_soln, roots, r_n1, r_a1, r_a3, r_c3, r_soln_n, r_soln_a, r_soln_c);
@@ -434,12 +434,14 @@ public class LoopClosure {
         sin_alpha[2] = sin(alpha[2]);
 
         //if (print_level > 0)
-        //{
-        logger.info(String.format("xi = %9.4f%9.4f%9.4f\\n", toDegrees(xi[0][0]), toDegrees(xi[1][0]), toDegrees(xi[2][0])));
-        logger.info(String.format("eta = %9.4f%9.4f%9.4f\n", toDegrees(eta[0][0]), toDegrees(eta[1][0]), toDegrees(eta[2][0])));
-        logger.info(String.format("delta = %9.4f%9.4f%9.4f\n", toDegrees(delta[1][0]), toDegrees(delta[2][0]), toDegrees(delta[3][0])));
-        logger.info(String.format("theta = %9.4f%9.4f%9.4f\n", toDegrees(theta[0]), toDegrees(theta[1]), toDegrees(theta[2])));
-        logger.info(String.format("alpha = %9.4f%9.4f%9.4f\n", toDegrees(alpha[0]), toDegrees(alpha[1]), toDegrees(alpha[2])));
+        //{    
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("xi = %9.4f%9.4f%9.4f\n", toDegrees(xi[0][0]), toDegrees(xi[1][0]), toDegrees(xi[2][0])));
+        sb.append(String.format("eta = %9.4f%9.4f%9.4f\n", toDegrees(eta[0][0]), toDegrees(eta[1][0]), toDegrees(eta[2][0])));
+        sb.append(String.format("delta = %9.4f%9.4f%9.4f\n", toDegrees(delta[1][0]), toDegrees(delta[2][0]), toDegrees(delta[3][0])));
+        sb.append(String.format("theta = %9.4f%9.4f%9.4f\n", toDegrees(theta[0]), toDegrees(theta[1]), toDegrees(theta[2])));
+        sb.append(String.format("alpha = %9.4f%9.4f%9.4f\n", toDegrees(alpha[0]), toDegrees(alpha[1]), toDegrees(alpha[2])));
+        logger.info(sb.toString());
        // }
 
         for (i = 0; i < 3; i++) {
@@ -785,7 +787,7 @@ public class LoopClosure {
         //System.out.println("p_f2: "+Arrays.toString(p_f2));
 
         if (p_final[0] != 16) {
-            System.out.println("Error. Degree of polynomial is not 16!\n");
+            logger.info(String.format("Error. Degree of polynomial is not 16!"));
             return;
         }
 
@@ -796,10 +798,13 @@ public class LoopClosure {
         }
 
         if (print_level > 0) {
-            System.out.println("poly_coeff\n");
+            StringBuilder string = new StringBuilder();
+            string.append(String.format("poly_coeff\n"));
             for (i = 0; i < 17; i++) {
-                logger.info(String.format("%5d%15.6f\n", i, poly_coeff[i]));
+                string.append(String.format("%5d%15.6f\n", i, poly_coeff[i]));
             }
+            string.append(String.format("\n"));
+            logger.info(string.toString());
         }
 
         /* System.out.println("R: "+Arrays.deepToString(R)+"\n");
@@ -1206,8 +1211,10 @@ public class LoopClosure {
             }
 
             if (print_level > 0) {
-                logger.info(String.format("roots: t0, t2, t1 %d\n", i_soln));
-                logger.info(String.format("%15.6f %15.6f %15.6f\n", half_tan[2], half_tan[1], half_tan[0]));
+                StringBuilder string1 = new StringBuilder();
+                string1.append(String.format("roots: t0\t\t t2\t\t t1\t\t %d\n", i_soln));
+                string1.append(String.format("%15.6f %15.6f %15.6f\n", half_tan[2], half_tan[1], half_tan[0]));
+                logger.info(string1.toString());
             }
 
             for (i = 0; i < 3; i++) {
@@ -1230,11 +1237,13 @@ public class LoopClosure {
             a1a2 = sqrt(dot(rr_a1a2, rr_a1a2));
             a2a3 = sqrt(dot(rr_a2a3, rr_a2a3));
 
-            logger.info(String.format("na: n2a2, n3a3 = %9.3f%9.3f%9.3f%9.3f\n", len0[2], n2a2, len0[5], n3a3));
-            logger.info(String.format("ac: a1c1, a2c2 = %9.3f%9.3f%9.3f%9.3f\n", len0[0], a1c1, len0[3], a2c2));
-            logger.info(String.format("cn: c1n2, c2n3 = %9.3f%9.3f%9.3f%9.3f\n", len0[1], c1n2, len0[4], c2n3));
-            logger.info(String.format("aa: a1a2, a2a3 = %9.3f%9.3f%9.3f%9.3f\n", len_aa[1], a1a2, len_aa[2], a2a3));
-
+            StringBuilder string2 = new StringBuilder();
+            string2.append(String.format("na: n2a2, n3a3 = %9.3f%9.3f%9.3f%9.3f\n", len0[2], n2a2, len0[5], n3a3));
+            string2.append(String.format("ac: a1c1, a2c2 = %9.3f%9.3f%9.3f%9.3f\n", len0[0], a1c1, len0[3], a2c2));
+            string2.append(String.format("cn: c1n2, c2n3 = %9.3f%9.3f%9.3f%9.3f\n", len0[1], c1n2, len0[4], c2n3));
+            string2.append(String.format("aa: a1a2, a2a3 = %9.3f%9.3f%9.3f%9.3f\n", len_aa[1], a1a2, len_aa[2], a2a3));
+            logger.info(string2.toString());
+            
             for (i = 0; i < 3; i++) {
                 tmp_array[i] = rr_a1a2[i] / a1a2;
             }
@@ -1261,10 +1270,12 @@ public class LoopClosure {
             }
 
             calc_bnd_ang(tmp_array1, tmp_array2, n2a2c2);
-
-            logger.info(String.format("ang_nac = %9.3f%9.3f\n", toDegrees(b_ang0[0]), toDegrees(n1a1c1[0])));
-            logger.info(String.format("ang_nac = %9.3f%9.3f\n", toDegrees(b_ang0[3]), toDegrees(n2a2c2[0])));
-            logger.info(String.format("ang_nac = %9.3f%9.3f\n", toDegrees(b_ang0[6]), toDegrees(n3a3c3[0])));
+            
+            StringBuilder string3 = new StringBuilder();
+            string3.append(String.format("ang_nac = %9.3f%9.3f\n", toDegrees(b_ang0[0]), toDegrees(n1a1c1[0])));
+            string3.append(String.format("ang_nac = %9.3f%9.3f\n", toDegrees(b_ang0[3]), toDegrees(n2a2c2[0])));
+            string3.append(String.format("ang_nac = %9.3f%9.3f\n", toDegrees(b_ang0[6]), toDegrees(n3a3c3[0])));
+            logger.info(string3.toString());
 
             for (i = 0; i < 3; i++) {
                 tmp_array1[i] = rr_a1c1[i] / a1c1;
@@ -1282,8 +1293,10 @@ public class LoopClosure {
 
             calc_dih_ang(tmp_array1, tmp_array2, tmp_array3, a2c2n3a3);
 
-            logger.info(String.format("t_ang1 = %9.3f%9.3f\n", toDegrees(t_ang0[0]), toDegrees(a1c1n2a2[0])));
-            logger.info(String.format("t_ang2 = %9.3f%9.3f\n", toDegrees(t_ang0[1]), toDegrees(a2c2n3a3[0])));
+            StringBuilder string4 = new StringBuilder();
+            string4.append(String.format("t_ang1 = %9.3f%9.3f\n", toDegrees(t_ang0[0]), toDegrees(a1c1n2a2[0])));
+            string4.append(String.format("t_ang2 = %9.3f%9.3f\n", toDegrees(t_ang0[1]), toDegrees(a2c2n3a3[0])));
+            logger.info(string4.toString());
         }
     }
 
