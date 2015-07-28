@@ -97,11 +97,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
 import org.apache.commons.io.FileUtils;
-import org.biojava.bio.structure.Structure;
-import org.biojava.bio.structure.StructureException;
-import org.biojava.bio.structure.align.StructurePairAligner;
-import org.biojava.bio.structure.align.pairwise.AlternativeAlignment;
-import org.biojava.bio.structure.io.PDBFileReader;
+import org.biojava.nbio.structure.Structure;
+import org.biojava.nbio.structure.StructureException;
+import org.biojava.nbio.structure.align.StructurePairAligner;
+import org.biojava.nbio.structure.align.pairwise.AlternativeAlignment;
+import org.biojava.nbio.structure.io.PDBFileReader;
 
 /**
  *

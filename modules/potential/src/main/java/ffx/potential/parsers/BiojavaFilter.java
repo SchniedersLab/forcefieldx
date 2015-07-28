@@ -50,13 +50,13 @@ import java.util.logging.Logger;
 import static java.lang.String.format;
 
 import org.apache.commons.configuration.CompositeConfiguration;
-import org.biojava.bio.structure.Chain;
-import org.biojava.bio.structure.Group;
-import org.biojava.bio.structure.PDBCrystallographicInfo;
-import org.biojava.bio.structure.ResidueNumber;
-import org.biojava.bio.structure.SSBond;
-import org.biojava.bio.structure.Structure;
-import org.biojava.bio.structure.StructureTools;
+import org.biojava.nbio.structure.Chain;
+import org.biojava.nbio.structure.Group;
+import org.biojava.nbio.structure.PDBCrystallographicInfo;
+import org.biojava.nbio.structure.ResidueNumber;
+import org.biojava.nbio.structure.SSBond;
+import org.biojava.nbio.structure.Structure;
+import org.biojava.nbio.structure.StructureTools;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.SpaceGroup;
@@ -166,6 +166,8 @@ import static ffx.potential.parsers.PDBFilter.PDBFileStandard.VERSION3_2;
 import static ffx.potential.parsers.PDBFilter.PDBFileStandard.VERSION3_3;
 import static ffx.utilities.StringUtils.padLeft;
 import static ffx.utilities.StringUtils.padRight;
+import org.biojava.nbio.structure.xtal.BravaisLattice;
+import org.biojava.nbio.structure.xtal.CrystalCell;
 
 /**
  * The BiojavaFilter class parses data from a Biojava 3 Structure object.
@@ -375,7 +377,7 @@ public class BiojavaFilter extends ConversionFilter {
                     structure.getName(), currentAltLoc));
         }
 
-        org.biojava.bio.structure.Atom[] bjAtoms = StructureTools.getAllAtomArray(structure);
+        org.biojava.nbio.structure.Atom[] bjAtoms = StructureTools.getAllAtomArray(structure);
         int nAtoms = bjAtoms.length;
         Atom[] ffxAtoms = new Atom[nAtoms];
         /**
@@ -383,21 +385,22 @@ public class BiojavaFilter extends ConversionFilter {
          */
         currentChainID = null;
         currentSegID = null;
-        PDBCrystallographicInfo cInfo = structure.getCrystallographicInfo();
+        
 
-        if (cInfo.isCrystallographic()) {
+        if (structure.isCrystallographic()) {
             // I do not think we need to check if it already has these properties,
             // but it can be done.
+            PDBCrystallographicInfo cInfo = structure.getCrystallographicInfo();
             properties.addProperty("a-axis", cInfo.getA());
             properties.addProperty("b-axis", cInfo.getB());
             properties.addProperty("c-axis", cInfo.getC());
             properties.addProperty("alpha", cInfo.getAlpha());
             properties.addProperty("beta", cInfo.getBeta());
             properties.addProperty("gamma", cInfo.getGamma());
-            properties.addProperty("spacegroup", SpaceGroup.pdb2ShortName(cInfo.getSpaceGroup()));
+            properties.addProperty("spacegroup", SpaceGroup.pdb2ShortName(cInfo.getSpaceGroup().getShortSymbol()));
         }
 
-        for (org.biojava.bio.structure.Atom atom : bjAtoms) {
+        for (org.biojava.nbio.structure.Atom atom : bjAtoms) {
             String name = atom.getName().toUpperCase().trim();
             double[] xyz = new double[3];
             xyz[0] = atom.getX();
@@ -454,7 +457,7 @@ public class BiojavaFilter extends ConversionFilter {
             }
             newAtom.setHetero(hetatm);
 
-            // Look Ma, Biojava doesn't care about anisou!
+            // Biojava essentially ignores ANISOU records.
             Atom returnedAtom = (Atom) activeMolecularAssembly.addMSNode(newAtom);
             if (returnedAtom != newAtom) {
                 atoms.put(atom.getPDBserial(), returnedAtom);
@@ -571,6 +574,49 @@ public class BiojavaFilter extends ConversionFilter {
 
         return true;
     }
+    
+    public static Atom readAtom(org.biojava.nbio.structure.Atom atom, String segID) {
+        String name = atom.getName().toUpperCase().trim();
+        double[] xyz = new double[3];
+        xyz[0] = atom.getX();
+        xyz[1] = atom.getY();
+        xyz[2] = atom.getZ();
+        char altLoc = atom.getAltLoc();
+
+        Group group = atom.getGroup();
+        ResidueNumber resnum = group.getResidueNumber();
+        int resSeq = resnum.getSeqNum();
+        String resName = group.getPDBName().trim().toUpperCase();
+
+        Chain chain = group.getChain();
+        char chainID = chain.getChainID().charAt(0);
+
+        boolean printAtom = false;
+
+        Atom newAtom = new Atom(0,
+                name, altLoc, xyz, resName, resSeq, chainID, atom.getOccupancy(),
+                atom.getTempFactor(), segID);
+
+        /* Biojava sets at least some capping groups, and possibly nonstandard
+         amino acids to be heteroatoms. */
+        boolean hetatm = true;
+        for (AminoAcid3 aa3Name : AminoAcid3.values()) {
+            if (aa3Name.name().equals(resName)) {
+                hetatm = false;
+                break;
+            }
+        }
+        newAtom.setHetero(hetatm);
+        return newAtom;
+    }
+    
+    public static void addAtomToAssembly(org.biojava.nbio.structure.Atom atom, String segID, MolecularAssembly assembly) {
+        Atom newAtom = readAtom(atom, segID);
+        Atom returnedAtom = (Atom) assembly.addMSNode(newAtom);
+        if (returnedAtom == newAtom) {
+            returnedAtom.setXYZIndex(assembly.getMaxXYZIndex() + 1);
+        }
+    }
 
     /**
      * <p>
@@ -586,7 +632,7 @@ public class BiojavaFilter extends ConversionFilter {
             logger.info(String.format(" Total number of atoms: %d\n", index));
         }
 
-        Polymer[] polymers = activeMolecularAssembly.getChains();
+        Polymer[] polymers = activeMolecularAssembly.getPolymers();
         if (polymers != null) {
             for (Polymer p : polymers) {
                 List<Residue> residues = p.getResidues();
@@ -625,7 +671,7 @@ public class BiojavaFilter extends ConversionFilter {
         /**
          * To Do: Look for cyclic peptides and disulfides.
          */
-        Polymer[] polymers = activeMolecularAssembly.getChains();
+        Polymer[] polymers = activeMolecularAssembly.getPolymers();
 
         /**
          * Loop over chains.
@@ -857,7 +903,7 @@ public class BiojavaFilter extends ConversionFilter {
                     String bonds[] = forceField.getBonds(moleculeName, atomName);
                     if (bonds != null) {
                         for (String name : bonds) {
-                            Atom atom2 = molecule.getAtom(name);
+                            Atom atom2 = molecule.getMoleculeAtom(name);
                             if (atom2 != null && !atom.isBonded(atom2)) {
                                 buildBond(atom, atom2);
                             }
@@ -890,7 +936,7 @@ public class BiojavaFilter extends ConversionFilter {
                     hydrogen.setHetero(true);
                     molecule.addMSNode(hydrogen);
                     int valence = ia.getAtomType().valence;
-                    List<Bond> aBonds = ia.getBonds();
+                    List<Bond> aBonds = ia.getFFXBonds();
                     int numBonds = aBonds.size();
                     /**
                      * Try to find the following configuration: ib-ia-ic
@@ -2325,7 +2371,7 @@ public class BiojavaFilter extends ConversionFilter {
                             hydrogen.setHetero(true);
                             residue.addMSNode(hydrogen);
                             int valence = ia.getAtomType().valence;
-                            List<Bond> aBonds = ia.getBonds();
+                            List<Bond> aBonds = ia.getFFXBonds();
                             int numBonds = aBonds.size();
                             /**
                              * Try to find the following configuration: ib-ia-ic
@@ -2592,7 +2638,7 @@ public class BiojavaFilter extends ConversionFilter {
 // the SSBOND record.
 // =============================================================================
             int serNum = 1;
-            Polymer polymers[] = activeMolecularAssembly.getChains();
+            Polymer polymers[] = activeMolecularAssembly.getPolymers();
             if (polymers != null) {
                 for (Polymer polymer : polymers) {
                     ArrayList<Residue> residues = polymer.getResidues();
@@ -2606,7 +2652,7 @@ public class BiojavaFilter extends ConversionFilter {
                                     break;
                                 }
                             }
-                            List<Bond> bonds = SG1.getBonds();
+                            List<Bond> bonds = SG1.getFFXBonds();
                             for (Bond bond : bonds) {
                                 Atom SG2 = bond.get1_2(SG1);
                                 if (SG2.getName().equalsIgnoreCase("SG")) {
@@ -2659,7 +2705,7 @@ public class BiojavaFilter extends ConversionFilter {
             if (polymers != null) {
                 for (Polymer polymer : polymers) {
                     currentSegID = polymer.getName();
-                    currentChainID = polymer.getChainID();
+                    currentChainID = polymer.getChainIDChar();
                     sb.setCharAt(21, currentChainID);
                     // Loop over residues
                     ArrayList<Residue> residues = polymer.getResidues();
@@ -2668,7 +2714,7 @@ public class BiojavaFilter extends ConversionFilter {
                         if (resName.length() > 3) {
                             resName = resName.substring(0, 3);
                         }
-                        int resID = residue.getResidueNumber();
+                        int resID = residue.getResidueIndex();
                         sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
                         sb.replace(22, 26, String.format("%4s", Hybrid36.encode(4, resID)));
                         // Loop over atoms
@@ -2735,7 +2781,7 @@ public class BiojavaFilter extends ConversionFilter {
             if (polymer != null) {
                 ArrayList<Residue> residues = polymer.getResidues();
                 for (Residue residue : residues) {
-                    int resID2 = residue.getResidueNumber();
+                    int resID2 = residue.getResidueIndex();
                     if (resID2 >= resID) {
                         resID = resID2 + 1;
                     }
@@ -2896,7 +2942,7 @@ public class BiojavaFilter extends ConversionFilter {
      break;
      }
      for (Atom atom : residue.getAtomList()) {
-     org.biojava.bio.structure.Atom bjAtom = new AtomImpl();
+     org.biojava.nbio.structure.Atom bjAtom = new AtomImpl();
      group.addAtom(bjAtom);
      }
      chain.addGroup(group);
@@ -2993,7 +3039,7 @@ public class BiojavaFilter extends ConversionFilter {
 // the SSBOND record.
 // =============================================================================
             int serNum = 1;
-            Polymer polymers[] = activeMolecularAssembly.getChains();
+            Polymer polymers[] = activeMolecularAssembly.getPolymers();
             if (polymers != null) {
                 for (Polymer polymer : polymers) {
                     ArrayList<Residue> residues = polymer.getResidues();
@@ -3007,7 +3053,7 @@ public class BiojavaFilter extends ConversionFilter {
                                     break;
                                 }
                             }
-                            List<Bond> bonds = SG1.getBonds();
+                            List<Bond> bonds = SG1.getFFXBonds();
                             for (Bond bond : bonds) {
                                 Atom SG2 = bond.get1_2(SG1);
                                 if (SG2.getName().equalsIgnoreCase("SG")) {
@@ -3060,7 +3106,7 @@ public class BiojavaFilter extends ConversionFilter {
             if (polymers != null) {
                 for (Polymer polymer : polymers) {
                     currentSegID = polymer.getName();
-                    currentChainID = polymer.getChainID();
+                    currentChainID = polymer.getChainIDChar();
                     sb.setCharAt(21, currentChainID);
                     // Loop over residues
                     ArrayList<Residue> residues = polymer.getResidues();
@@ -3069,7 +3115,7 @@ public class BiojavaFilter extends ConversionFilter {
                         if (resName.length() > 3) {
                             resName = resName.substring(0, 3);
                         }
-                        int resID = residue.getResidueNumber();
+                        int resID = residue.getResidueIndex();
                         int i = 0;
                         String[] entries = null;
                         for (; i < resAndScore.length; i++) {
@@ -3139,7 +3185,7 @@ public class BiojavaFilter extends ConversionFilter {
             if (polymer != null) {
                 ArrayList<Residue> residues = polymer.getResidues();
                 for (Residue residue : residues) {
-                    int resID2 = residue.getResidueNumber();
+                    int resID2 = residue.getResidueIndex();
                     if (resID2 >= resID) {
                         resID = resID2 + 1;
                     }
@@ -3287,6 +3333,37 @@ public class BiojavaFilter extends ConversionFilter {
     public boolean writeFile(File saveFile, boolean append) {
         return writeFile(saveFile, append, false);
     }
+    
+    /*public static PDBCrystallographicInfo generateCrystalInfo(MolecularAssembly assembly) {
+        Crystal crystal = assembly.getCrystal();
+        if (crystal.aperiodic()) {
+            return null;
+        } else {
+            PDBCrystallographicInfo cInfo = new PDBCrystallographicInfo();
+            CrystalCell cell = new CrystalCell(crystal.a, crystal.b, crystal.c, 
+                    crystal.alpha, crystal.beta, crystal.gamma);
+            cInfo.setCrystalCell(cell);
+            SpaceGroup sgroup = crystal.spaceGroup;
+            int id = sgroup.number;
+            int multiplicity = sgroup.getNumberOfSymOps();
+        }
+        if (structure.isCrystallographic()) {
+            // I do not think we need to check if it already has these properties,
+            // but it can be done.
+            PDBCrystallographicInfo cInfo = structure.getCrystallographicInfo();
+            properties.addProperty("a-axis", cInfo.getA());
+            properties.addProperty("b-axis", cInfo.getB());
+            properties.addProperty("c-axis", cInfo.getC());
+            properties.addProperty("alpha", cInfo.getAlpha());
+            properties.addProperty("beta", cInfo.getBeta());
+            properties.addProperty("gamma", cInfo.getGamma());
+            properties.addProperty("spacegroup", SpaceGroup.pdb2ShortName(cInfo.getSpaceGroup().getShortSymbol()));
+        }
+    }
+    
+    public static void setCrystalProperties(MolecularAssembly assembly, PDBCrystallographicInfo cInfo) {
+        
+    }*/
 
     /**
      * <p>

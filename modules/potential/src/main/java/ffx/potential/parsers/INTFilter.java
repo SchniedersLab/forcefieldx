@@ -332,7 +332,7 @@ public class INTFilter extends SystemFilter {
          * line.append(blanks.substring(0, 12 - yS.length()) + yS);
          * line.append(blanks.substring(0, 12 - zS.length()) + zS); type = new
          * String("" + a.getAtomType()); line.append(blanks.substring(0, 6 -
-         * type.length()) + type); bonds = a.getBonds(); if (bonds != null) {
+         * type.length()) + type); bonds = a.getFFXBonds(); if (bonds != null) {
          * for (ListIterator lj = bonds.listIterator(); lj.hasNext(); ) { b =
          * (Bond) lj.next(); a2 = b.getOtherAtom(a); xS =
          * formatBond.format(a2.xyzindex); line.append(blanks.substring(0, 6 -

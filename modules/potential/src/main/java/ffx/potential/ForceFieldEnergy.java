@@ -625,7 +625,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
 
         if (comTerm) {
-            Polymer polymers[] = molecularAssembly.getChains();
+            Polymer polymers[] = molecularAssembly.getPolymers();
             List<Molecule> molecules = molecularAssembly.getMolecules();
             List<MSNode> waters = molecularAssembly.getWaters();
             List<MSNode> ions = molecularAssembly.getIons();

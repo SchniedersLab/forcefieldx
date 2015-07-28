@@ -60,6 +60,7 @@ import javax.vecmath.Color3f;
 import javax.vecmath.Point2d;
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
+import javax.swing.tree.TreeNode;
 
 import ffx.potential.bonded.RendererCache.ColorModel;
 import ffx.potential.bonded.RendererCache.ViewModel;
@@ -71,6 +72,14 @@ import ffx.potential.parameters.VDWType;
 import static ffx.utilities.HashCodeUtil.SEED;
 import static ffx.utilities.HashCodeUtil.hash;
 
+import org.apache.commons.io.IOUtils;
+
+import org.biojava.nbio.structure.Element;
+import org.biojava.nbio.structure.Group;
+import org.biojava.nbio.structure.io.mmcif.ChemCompGroupFactory;
+import org.biojava.nbio.structure.io.mmcif.model.ChemComp;
+import org.biojava.nbio.structure.io.mmcif.model.ChemCompAtom;
+
 /**
  * The Atom class represents a single atom and defines its alternate
  * conformations and molecular mechanics atom type.
@@ -79,7 +88,7 @@ import static ffx.utilities.HashCodeUtil.hash;
  * @since 1.0
  *
  */
-public class Atom extends MSNode implements Comparable<Atom> {
+public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.structure.Atom {
 
     public enum Resolution { FIXEDCHARGE, AMOEBA }
 
@@ -230,6 +239,14 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     private int resSeq = -1;
     /**
+     * PDB "serial" record.
+     */
+    private int pdbSerial = -1;
+    /**
+     * The Group to which this belongs.
+     */
+    private Group parentGroup;
+    /**
      * PDB "chainID" or "segID" record.
      *
      * @since 1.0
@@ -289,6 +306,10 @@ public class Atom extends MSNode implements Comparable<Atom> {
      *
      * @since 1.0
      */
+    /**
+     * Formal charge as determined by Chemical Component Dictionary
+     */
+    private int formalCharge = Integer.MAX_VALUE;
     private double anisou[];
     /**
      * List of anisou tensors for each altLoc.
@@ -320,6 +341,10 @@ public class Atom extends MSNode implements Comparable<Atom> {
     private double globalDipole[] = null;
     private double globalQuadrupole[][] = null;
     private boolean applyState = false;
+    // Biojava-related information
+    private Element element;
+    private char insCode;
+    private final List<org.biojava.nbio.structure.Bond> allBonds = new ArrayList<>();
     // solvation
     private double bornRadius;
     // Connectivity information.
@@ -387,6 +412,9 @@ public class Atom extends MSNode implements Comparable<Atom> {
         setAllowsChildren(false);
         if (atomType != null) {
             currentCol = previousCol = AtomColor.get(atomType.atomicNumber);
+            String elementName = Atom.ElementSymbol.values()[getAtomicNumber() - 1].toString();
+            element = Element.valueOf(elementName);
+            logger.info(String.format("Atom %s element %s", this.toString(), element.toString()));
         }
     }
 
@@ -485,7 +513,22 @@ public class Atom extends MSNode implements Comparable<Atom> {
                 getResidueName(), getResidueNumber(), getChainID(),
                 getOccupancy(), getTempFactor(), getSegID());
         atom.setAtomType(getAtomType());
+        atom.setActive(active);
+        atom.setAnisou(anisou);
+        atom.setApplyLambda(applyState);
+        atom.setBornRadius(bornRadius);
+        atom.setElement(element);
+        atom.setFormalCharge(formalCharge);
+        atom.setGroup(parentGroup);
+        atom.setHetero(hetatm);
+        atom.setInsCode(insCode);
+        atom.setRedXYZ(getRedXYZ());
         return atom;
+    }
+    
+    @Override
+    public Atom clone() {
+        return copy();
     }
 
     /**
@@ -671,12 +714,24 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * Gets the list of the Bonds <b>this</b> Atom helps to form
+     * Gets the list of the Bonds <b>this</b> Atom helps to form. Had to be named
+     * this way to avoid namespace conflict with Biojava interface.
      *
      * @return A list of the bonds this atom helps to form
      */
-    public ArrayList<Bond> getBonds() {
+    public ArrayList<Bond> getFFXBonds() {
         return bonds;
+    }
+    
+    /**
+     * Gets the list of the Bonds <b>this</b> Atom helps to form, as the Biojava
+     * interface.
+     * 
+     * @return A list of the bonds this atom helps to form
+     */
+    @Override
+    public List<org.biojava.nbio.structure.Bond> getBonds() {
+        return new ArrayList<org.biojava.nbio.structure.Bond>(bonds);
     }
 
     /**
@@ -1020,6 +1075,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      *
      * @param a a {@link java.lang.Character} object.
      */
+    @Override
     public void setAltLoc(Character a) {
         altLoc = a;
     }
@@ -1030,6 +1086,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      *
      * @return a {@link java.lang.Character} object.
      */
+    @Override
     public Character getAltLoc() {
         return altLoc;
     }
@@ -1096,6 +1153,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      *
      * @return x coordinate
      */
+    @Override
     public final double getX() {
         return xyz[0];
     }
@@ -1105,6 +1163,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      *
      * @return y coordinate
      */
+    @Override
     public final double getY() {
         return xyz[1];
     }
@@ -1114,6 +1173,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      *
      * @return z coordinate
      */
+    @Override
     public final double getZ() {
         return xyz[2];
     }
@@ -1329,6 +1389,33 @@ public class Atom extends MSNode implements Comparable<Atom> {
         xyz[2] = c;
         stale = true;
     }
+    
+    /**
+     * Sets x-coordinate.
+     * @param x 
+     */
+    @Override
+    public void setX(double x) {
+        xyz[0] = x;
+    }
+    
+    /**
+     * Sets y-coordinate.
+     * @param y 
+     */
+    @Override
+    public void setY(double y) {
+        xyz[1] = y;
+    }
+    
+    /**
+     * Sets z-coordinate.
+     * @param z 
+     */
+    @Override
+    public void setZ(double z) {
+        xyz[2] = z;
+    }
 
     /**
      * <p>
@@ -1447,6 +1534,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      *
      * @param tempFactor a double.
      */
+    @Override
     public void setTempFactor(double tempFactor) {
         this.tempFactor = tempFactor;
     }
@@ -1457,6 +1545,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      *
      * @return a double.
      */
+    @Override
     public double getTempFactor() {
         return tempFactor;
     }
@@ -1497,6 +1586,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      *
      * @param occupancy a double.
      */
+    @Override
     public void setOccupancy(double occupancy) {
         this.occupancy = occupancy;
     }
@@ -1507,6 +1597,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      *
      * @return a double.
      */
+    @Override
     public double getOccupancy() {
         return occupancy;
     }
@@ -1670,13 +1761,13 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     public void setBond(Bond b) {
         if (b != null && b.containsAtom(this)) {
-
             for (Bond bond : bonds) {
                 if (bond == b) {
                     return;
                 }
             }
             bonds.add(b);
+            allBonds.add(b);
         }
     }
 
@@ -1832,8 +1923,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
         Atom a14 = torsion.get1_4(this);
         if (a14 != null) {
             // 1-5 atoms will be bonded to the 1-4 atom.
-            if (a14.getBonds() != null) {
-                for (Bond b : a14.getBonds()) {
+            if (a14.getFFXBonds() != null) {
+                for (Bond b : a14.getFFXBonds()) {
                     Atom a15 = b.get1_2(a14);
                     // Do not include the 1-3 atom
                     if (!torsion.containsAtom(a15)) {
@@ -1948,6 +2039,169 @@ public class Atom extends MSNode implements Comparable<Atom> {
     @Override
     public void setSelected(boolean b) {
         selected = b;
+    }
+    
+    /**
+     * Finds the parent Residue in the FFX tree structure; if not attached to
+     * an FFX data structure, parentGroup will remain unchanged (possibly null).
+     */
+    public void findParentResidue() {
+        TreeNode parentNode = getParent();
+        while (parentNode != null) {
+            if (parentNode instanceof Residue) {
+                this.parentGroup = (Group) parentNode;
+                break;
+            } else {
+                parentNode = parentNode.getParent();
+            }
+        }
+    }
+    
+    @Override
+    public Group getGroup() {
+        if (parentGroup == null) {
+            findParentResidue();
+        }
+        return parentGroup;
+    }
+    
+    /**
+     * Sets the parent Group; detaching and attaching from FFX data structure as
+     * necessary.
+     * @param group Group to attach to. 
+     */
+    @Override
+    public void setGroup(Group group) {
+        if (parentGroup instanceof MSGroup) {
+            ((MSNode) getParent()).remove(this);
+        }
+        if (group instanceof MSGroup) {
+            ((MSGroup) group).add(this);
+        }
+        parentGroup = group;
+    }
+
+    @Override
+    public void setElement(Element e) {
+        this.element = e;
+    }
+
+    /**
+     * Returns the Atom's Element; seems to be working so far.
+     * @return The atom's Element.
+     */
+    @Override
+    public Element getElement() {
+        if (element == null) {
+            String elementName = Atom.ElementSymbol.values()[this.getAtomicNumber() - 1].toString();
+            element = Element.valueOf(elementName);
+            logger.info(String.format("Atom %s element %s", this.toString(), element.toString()));
+        }
+        return element;
+    }
+
+    @Override
+    public void setPDBserial(int i) {
+        pdbSerial = i;
+    }
+
+    @Override
+    public int getPDBserial() {
+        return pdbSerial;
+    }
+
+    @Override
+    public void setCoords(double[] c) {
+        this.moveTo(c);
+    }
+
+    @Override
+    public double[] getCoords() {
+        double[] xyz = new double[3];
+        this.getXYZ(xyz);
+        return xyz;
+    }
+    
+    /**
+     * Sets the parent group; if detach is false, it does not remove it from the 
+     * underlying FFX data structure (and thus now belongs to two data structures).
+     * 
+     * @param parent Group to attach to
+     * @param detach If false, retains its link to FFX data structure
+     */
+    public void setGroup(Group parent, boolean detach) {
+        if (detach) {
+            setGroup(parent);
+        } else {
+            this.parentGroup = parent;
+        }
+    }
+    
+    /**
+     * Adds a generic Biojava Bond to this Atom.
+     * @param bond Bond to add.
+     */
+    @Override
+    public void addBond(org.biojava.nbio.structure.Bond bond) {
+        if (bond instanceof Bond) {
+            setBond((Bond) bond);
+        } else {
+            boolean hasBond = false;
+            for (org.biojava.nbio.structure.Bond b : allBonds) {
+                org.biojava.nbio.structure.Atom atomA = b.getAtomA();
+                org.biojava.nbio.structure.Atom atomB = b.getAtomB();
+                if (bond.getAtomA().equals(atomA) && bond.getAtomB().equals(atomB)) {
+                    hasBond = true;
+                    break;
+                } else if (bond.getAtomA().equals(atomB) && bond.getAtomB().equals(atomA)) {
+                    hasBond = true;
+                    break;
+                }
+            }
+            if (!hasBond) {
+                allBonds.add(bond);
+            }
+        }
+    }
+    
+    public void setInsCode(char insCode) {
+        this.insCode = insCode;
+    }
+    
+    public char getInsertionCode() {
+        return insCode;
+    }
+    
+    public void setFormalCharge(int formalCharge) {
+        this.formalCharge = formalCharge;
+    }
+    
+    public int getFormalCharge() {
+        if (formalCharge == Integer.MAX_VALUE) {
+            determineFormalCharge();
+        }
+        return formalCharge;
+    }
+    
+    /**
+     * Uses the Chemical Component Dictionary to find the Atom's formal charge.
+     */
+    private void determineFormalCharge() {
+        ChemComp chemComp = ChemCompGroupFactory.getChemComp(resName);
+        if (chemComp != null) {
+            List<ChemCompAtom> ccAtoms = chemComp.getAtoms();
+            for (ChemCompAtom ccAtom : ccAtoms) {
+                String ccName = ccAtom.getAtom_id();
+                if (ccName.equalsIgnoreCase(getName())) {
+                    String formalChargeStr = ccAtom.getCharge();
+                    formalCharge = Integer.parseInt(formalChargeStr);
+                    break;
+                }
+            }
+        } else {
+            logger.fine(String.format(" Could not find chemical component definition for Atom %s", toString()));
+            formalCharge = 0;
+        }
     }
 
     // Vector Methods
@@ -2125,6 +2379,74 @@ public class Atom extends MSNode implements Comparable<Atom> {
         }
         return String.format("%7d-%s %s %d (%7.2f,%7.2f,%7.2f) %s", xyzIndex, getName(), resName, resSeq,
                 xyz[0], xyz[1], xyz[2], segID);
+    }
+    
+    @Override
+    public String toPDB() {
+        StringBuffer buf = new StringBuffer();
+        toPDB(buf);
+        return buf.toString();
+    }
+
+    @Override
+    public void toPDB(StringBuffer buf) {
+        String pdbString = "";
+        if (this.isHetero()) {
+            pdbString = ("HETATM");
+        } else {
+            pdbString = "ATOM  ";
+        }
+        String name = this.getName();
+        int nameLen = name.length();
+        if (nameLen > 4) {
+            name = name.substring(0, 4);
+        } else if (nameLen == 3) {
+            name = " " + name;
+        } else if (nameLen == 2) {
+            switch (element) {
+                case C:
+                case N:
+                case O:
+                case P:
+                case S:
+                    name = " " + name + " ";
+                    break;
+                default:
+                    name = name + "  ";
+            }
+        } else if (nameLen == 1) {
+            name = " " + name + "  ";
+        }
+        String vdwHydrogens = System.getProperty("vdwHydrogens");
+        boolean vdwH = Boolean.parseBoolean(vdwHydrogens);
+        double[] xyz = vdwH ? this.getRedXYZ() : this.getXYZ();
+        
+        
+        String resSeqString = String.format("%4s", resSeq);
+        if (resSeqString.length() > 4) {
+            resSeqString = resSeqString.substring(0, 4);
+        }
+        String shortResName = resName;
+        if (shortResName.length() > 3) {
+            shortResName = shortResName.substring(0, 3);
+        }
+        
+        pdbString = (String.format("%s%5d %s%c%s %c%s%c   %8.3f%8.3f%8.3f%6.2f%6.2f", 
+                pdbString, pdbSerial, name, altLoc, shortResName, chainID, resSeq, 
+                insCode, xyz[0], xyz[1], xyz[2], occupancy, tempFactor));
+        Element e = getElement();
+        String eString = e.toString().toUpperCase();
+        if (e.equals(Element.R)) {
+            eString = "X";
+        }
+        if (formalCharge == Integer.MAX_VALUE) {
+            determineFormalCharge();
+        }
+        String chargeString = String.format("%2d", formalCharge);
+        // Alternate option: chargeString = " 0";
+        
+        buf.append(String.format("%-76s%2s%2s", pdbString, eString, chargeString));
+        buf.append(IOUtils.LINE_SEPARATOR);
     }
 
     /**

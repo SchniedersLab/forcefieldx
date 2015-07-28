@@ -531,7 +531,7 @@ public class VanDerWaals implements MaskingInterface,
             }
             VDWType vdwType = forceField.getVDWType(Integer.toString(atomClass[i]));
             ai.setVDWType(vdwType);
-            ArrayList<Bond> bonds = ai.getBonds();
+            ArrayList<Bond> bonds = ai.getFFXBonds();
             int numBonds = bonds.size();
             if (vdwType.reductionFactor > 0.0 && numBonds == 1) {
                 Bond bond = bonds.get(0);

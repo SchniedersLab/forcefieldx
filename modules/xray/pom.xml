@@ -157,8 +157,8 @@
         </dependency>
         <dependency>
             <groupId>org.biojava</groupId>
-            <artifactId>biojava3-structure</artifactId>
-            <version>3.0.8</version>
+            <artifactId>biojava-structure</artifactId>
+            <version>${biojava.version}</version>
         </dependency>
         <dependency>
             <groupId>com.apporiented</groupId>

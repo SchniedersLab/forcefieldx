@@ -43,8 +43,8 @@ import ffx.algorithms.AlgorithmUtils;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.parsers.PDBFileFilter;
-import org.biojava.bio.structure.Structure;
-import org.biojava.bio.structure.io.PDBFileReader;
+import org.biojava.nbio.structure.Structure;
+import org.biojava.nbio.structure.io.PDBFileReader;
 
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc biojLoader [options] <PDB> <Biojava PDB>');

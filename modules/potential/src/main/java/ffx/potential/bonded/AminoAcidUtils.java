@@ -1438,7 +1438,7 @@ public class AminoAcidUtils {
                             hydrogen.setHetero(true);
                             residue.addMSNode(hydrogen);
                             int valence = ia.getAtomType().valence;
-                            List<Bond> aBonds = ia.getBonds();
+                            List<Bond> aBonds = ia.getFFXBonds();
                             int numBonds = aBonds.size();
                             /**
                              * Try to find the following configuration: ib-ia-ic

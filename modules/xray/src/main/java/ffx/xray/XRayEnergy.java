@@ -689,7 +689,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
         // set hydrogen based on bonded atom
         for (Atom a : atomarray) {
             if (a.getAtomicNumber() == 1) {
-                Atom b = a.getBonds().get(0).get1_2(a);
+                Atom b = a.getFFXBonds().get(0).get1_2(a);
                 a.setTempFactor(b.getTempFactor());
             }
         }
@@ -775,7 +775,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
                 a.addToTempFactorGradient(gradb);
 
                 // similarity harmonic restraint
-                ArrayList<Bond> bonds = a.getBonds();
+                ArrayList<Bond> bonds = a.getFFXBonds();
                 for (Bond b : bonds) {
                     if (a.compareTo(b.getAtom(0)) == 0) {
                         a1 = b.getAtom(0);
@@ -821,7 +821,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
                 a.addToAnisouGradient(gradu);
 
                 // similarity harmonic restraint based on determinants
-                ArrayList<Bond> bonds = a.getBonds();
+                ArrayList<Bond> bonds = a.getFFXBonds();
                 for (Bond b : bonds) {
                     if (a.compareTo(b.getAtom(0)) == 0) {
                         a1 = b.getAtom(0);

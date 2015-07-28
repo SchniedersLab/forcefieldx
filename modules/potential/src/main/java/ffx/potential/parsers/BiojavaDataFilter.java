@@ -37,7 +37,7 @@
  */
 package ffx.potential.parsers;
 
-import org.biojava.bio.structure.Structure;
+import org.biojava.nbio.structure.Structure;
 
 /**
  * The BiojavaDataFilter class determines if an object is an instance of a

@@ -40,6 +40,17 @@ package ffx.potential.bonded;
 import java.util.logging.Logger;
 
 import ffx.potential.parameters.ForceField;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import javax.swing.tree.TreeNode;
+import org.biojava.nbio.structure.Chain;
+import org.biojava.nbio.structure.Group;
+import org.biojava.nbio.structure.GroupType;
+import org.biojava.nbio.structure.ResidueNumber;
+import org.biojava.nbio.structure.StructureTools;
+import org.biojava.nbio.structure.io.mmcif.model.ChemComp;
 
 /**
  * The Molecule class is a general container used for simple compounds or in
@@ -48,7 +59,7 @@ import ffx.potential.parameters.ForceField;
  * @author Michael J. Schnieders
  *
  */
-public class Molecule extends MSGroup {
+public class Molecule extends MSGroup implements Group {
 
     private Logger logger = Logger.getLogger(Molecule.class.getName());
     private static final long serialVersionUID = 1L;
@@ -72,6 +83,26 @@ public class Molecule extends MSGroup {
      * Unique segID.
      */
     private String segID = null;
+    /**
+     * The Chain to which this Molecule belongs.
+     */
+    private Chain parentChain;
+    /**
+     * String-mapped Biojava-related properties.
+     */
+    private Map<String, Object> properties;
+    /**
+     * List of Molecules matching alternative locations.
+     */
+    private Map<Character, Group> altLocGroups;
+    /**
+     * Biojava residue identifier.
+     */
+    private ResidueNumber resNum;
+    /**
+     * Chemical component definition.
+     */
+    private ChemComp chemComp;
 
     /**
      * <p>
@@ -139,7 +170,7 @@ public class Molecule extends MSGroup {
      *
      * @return a int.
      */
-    public int getResidueNumber() {
+    public int getResidueIndex() {
         return residueNum;
     }
 
@@ -170,7 +201,7 @@ public class Molecule extends MSGroup {
      * @param name a {@link java.lang.String} object.
      * @return a {@link ffx.potential.bonded.Atom} object.
      */
-    public Atom getAtom(String name) {
+    public Atom getMoleculeAtom(String name) {
         for (Atom a : getAtomList()) {
             if (a.getName().equalsIgnoreCase(name)) {
                 return a;
@@ -232,5 +263,295 @@ public class Molecule extends MSGroup {
         // findDangelingAtoms();
         setCenter(getMultiScaleCenter(false));
         setFinalized(true);
+    }
+    
+    @Override
+    public void setChain(Chain polymer) {
+        if (parentChain instanceof Polymer) {
+            ((MSNode) getParent()).remove(this);
+        }
+        if (polymer instanceof Polymer) {
+            ((Polymer) polymer).addMSNode(this);
+        }
+        this.parentChain = polymer;
+    }
+    
+    public void findParentPolymer() {
+        TreeNode parentNode = getParent();
+        while (parentNode != null) {
+            if (parentNode instanceof Polymer) {
+                this.parentChain = (Chain) parentChain;
+                break;
+            } else {
+                parentNode = parentNode.getParent();
+            }
+        }
+    }
+    
+    public Chain getParentChain() {
+        if (parentChain == null) {
+            findParentPolymer();
+        }
+        return parentChain;
+    }
+    
+    @Override
+    public int size() {
+        return getAtomList().size();
+    }
+
+    @Override
+    public boolean has3D() {
+        return true;
+    }
+
+    @Override
+    public void setPDBFlag(boolean bln) {
+        logger.fine(" FFX atoms always have coordinates; setPDBFlag is meaningless.");
+        // throw new UnsupportedOperationException("Force Field X atoms always have coordinates");
+    }
+
+    @Override
+    public GroupType getType() {
+        return org.biojava.nbio.structure.GroupType.HETATM;
+    }
+
+    @Override
+    public void addAtom(org.biojava.nbio.structure.Atom atom) {
+        if (atom instanceof Atom) {
+            addMSNode((Atom) atom);
+        } else if (parentChain instanceof Polymer) {
+            Polymer parentPolymer = (Polymer) parentChain;
+            if (parentPolymer.hasFFXParents()) {
+                parentPolymer.addExteriorAtom(atom);
+            }
+        }
+    }
+
+    @Override
+    public List<org.biojava.nbio.structure.Atom> getAtoms() {
+        List<org.biojava.nbio.structure.Atom> retList = new ArrayList<>();
+        retList.addAll(getAtomList());
+        return retList;
+    }
+
+    @Override
+    public void setAtoms(List<org.biojava.nbio.structure.Atom> list) {
+        clearAtoms();
+        for (org.biojava.nbio.structure.Atom atom : list) {
+            try {
+                this.addAtom(atom);
+            } catch (IllegalArgumentException ex) {
+                logger.fine(String.format(" Failure to add atom %s", atom.toString()));
+            }
+        }
+    }
+
+    @Override
+    public void clearAtoms() {
+        List<Atom> atoms = this.getAtomList();
+        for (Atom atom : atoms) {
+            this.remove(atom);
+        }
+    }
+
+    @Override
+    public org.biojava.nbio.structure.Atom getAtom(String string) {
+        Atom atom = (Atom) this.getAtomNode(string);
+        if (atom != null) {
+            return (org.biojava.nbio.structure.Atom) atom;
+        }
+        return null;
+    }
+
+    @Override
+    public org.biojava.nbio.structure.Atom getAtom(int i) {
+        return (org.biojava.nbio.structure.Atom) this.getAtomNode(i);
+    }
+
+    @Override
+    public boolean hasAtom(String string) {
+        return (getMoleculeAtom(string) != null);
+    }
+
+    @Override
+    public String getPDBName() {
+        return getName();
+    }
+
+    @Override
+    public void setPDBName(String string) {
+        setName(string);
+    }
+
+    @Override
+    public boolean hasAminoAtoms() {
+		// if this method call is performed too often, it should become a
+        // private method and provide a flag for Group object ...
+
+        return hasAtom(StructureTools.CA_ATOM_NAME)
+                && hasAtom(StructureTools.C_ATOM_NAME)
+                && hasAtom(StructureTools.N_ATOM_NAME)
+                && hasAtom(StructureTools.O_ATOM_NAME);
+
+    }
+
+    @Override
+    public void setProperties(Map<String, Object> map) {
+        this.properties = map;
+    }
+
+    @Override
+    public Map<String, Object> getProperties() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void setProperty(String string, Object o) {
+        properties.put(string, o);
+    }
+
+    @Override
+    public Object getProperty(String string) {
+        return properties.get(string);
+    }
+
+    @Override
+    public Iterator<org.biojava.nbio.structure.Atom> iterator() {
+        return getAtoms().iterator();
+    }
+    
+    @Override
+    public Chain getChain() {
+        return parentChain;
+    }
+
+    /*@Override
+    public ResidueNumber getResidueNumber() {
+        if (resNum == null) {
+            generateResNum();
+        }
+        return resNum;
+    }*/
+    
+    private void generateResNum() {
+        char insCode = ' ';
+        for (Atom atom : getAtomList()) {
+            if (atom.getInsertionCode() != ' ') {
+                insCode = atom.getInsertionCode();
+                break;
+            }
+        }
+        resNum = new ResidueNumber("" + chainID, residueNum, insCode);
+    }
+
+    @Override
+    public void setResidueNumber(ResidueNumber rn) {
+        this.resNum = rn;
+    }
+
+    @Override
+    public void setResidueNumber(String chnID, Integer rNum, Character iCode) {
+        resNum = new ResidueNumber(chnID, rNum, iCode);
+    }
+
+    @Override
+    public String getChainId() {
+        return "" + chainID;
+    }
+
+    @Override
+    public void setChemComp(ChemComp cc) {
+        this.chemComp = cc;
+    }
+
+    @Override
+    public ChemComp getChemComp() {
+        return chemComp;
+    }
+
+    @Override
+    public boolean hasAltLoc() {
+        if (altLocGroups == null) {
+            findAltLocs();
+        }
+        return !(altLocGroups.isEmpty());
+    }
+    
+    private void findAltLocs() {
+        // TO BE IMPLEMENTAZORLALIZATIONED
+    }
+
+    @Override
+    public List<Group> getAltLocs() {
+        List<Group> altLocs = new ArrayList<>();
+        if (altLocGroups == null) {
+            findAltLocs();
+        }
+        altLocs.addAll(altLocGroups.values());
+        return altLocs;
+    }
+
+    @Override
+    public void addAltLoc(Group group) {
+        if (altLocGroups == null) {
+            findAltLocs();
+        }
+        boolean altLocFound = false;
+        for (org.biojava.nbio.structure.Atom atom : group.getAtoms()) {
+            char aLoc = atom.getAltLoc();
+            if (atom.getAltLoc() != ' ' && !altLocGroups.containsKey(aLoc)) {
+                altLocGroups.put(aLoc, group);
+                altLocFound = true;
+                break;
+            }
+        }
+        if (!altLocFound) {
+            for (char alpha = 'A'; alpha <= 'Z'; alpha++) {
+                if (!altLocGroups.containsKey(alpha)) {
+                    altLocGroups.put(alpha, group);
+                    for (org.biojava.nbio.structure.Atom atom : group.getAtoms()) {
+                        atom.setAltLoc(alpha);
+                    }
+                    logger.info(String.format(" Alternate location group %s does "
+                            + "not have a unique alternate location code; setting"
+                            + "the group to altloc %c", group.toString(), alpha));
+                }
+            }
+        }
+    }
+
+    @Override
+    public boolean isWater() {
+        return GroupType.WATERNAMES.contains(getName());
+    }
+
+    @Override
+    public Group getAltLocGroup(Character aLoc) {
+        if (altLocGroups == null) {
+            findAltLocs();
+        }
+        return altLocGroups.get(aLoc);
+    }
+
+    @Override
+    public void trimToSize() {
+        logger.fine(" Operation trimToSize() not yet supported.");
+    }
+
+    @Override
+    public ResidueNumber getResidueNumber() {
+        if (resNum == null) {
+            char insCode = ' ';
+            for (Atom atom : getAtomList()) {
+                Character icode = atom.getInsertionCode();
+                if (icode != null && icode != ' ') {
+                    insCode = icode;
+                    break;
+                }
+            }
+            resNum = new ResidueNumber(parentChain.getChainID(), residueNum, insCode);
+        }
+        return resNum;
     }
 }

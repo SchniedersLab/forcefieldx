@@ -367,7 +367,7 @@ public class GraphicsPicking extends PickMouseBehavior {
                         case PICKDIHEDRAL:
                             ArrayList terms = null;
                             if (pickLevel == PickLevel.PICKBOND) {
-                                terms = a.getBonds();
+                                terms = a.getFFXBonds();
                             } else if (pickLevel == PickLevel.PICKANGLE) {
                                 terms = a.getAngles();
                             } else if (pickLevel == PickLevel.PICKDIHEDRAL) {

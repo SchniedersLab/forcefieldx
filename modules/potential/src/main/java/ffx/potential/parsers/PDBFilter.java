@@ -546,6 +546,7 @@ public final class PDBFilter extends SystemFilter {
                             double tempFactor;
                             Atom newAtom;
                             Atom returnedAtom;
+                            char insCode;
                             // If it's a misnamed water, it will fall through to HETATM.
                             if (!line.substring(17, 20).trim().equals("HOH")) {
                                 serial = Hybrid36.decode(5, line.substring(6, 11));
@@ -567,6 +568,7 @@ public final class PDBFilter extends SystemFilter {
                                 chainID = line.substring(21, 22).charAt(0);
                                 segID = getSegID(chainID);
                                 resSeq = Hybrid36.decode(4, line.substring(22, 26));
+                                insCode = line.charAt(26);
                                 printAtom = false;
                                 if (mutate && chainID.equals(mutateChainID) && mutateResID == resSeq) {
                                     String atomName = name.toUpperCase();
@@ -600,6 +602,7 @@ public final class PDBFilter extends SystemFilter {
                                 }
                                 newAtom = new Atom(0, name, altLoc, d, resName, resSeq,
                                         chainID, occupancy, tempFactor, segID);
+                                newAtom.setInsCode(insCode);
 
                                 returnedAtom = (Atom) activeMolecularAssembly.addMSNode(newAtom);
                                 if (returnedAtom != newAtom) {
@@ -653,6 +656,7 @@ public final class PDBFilter extends SystemFilter {
                             chainID = line.substring(21, 22).charAt(0);
                             segID = getSegID(chainID);
                             resSeq = Hybrid36.decode(4, line.substring(22, 26));
+                            insCode = line.charAt(26);
                             d = new double[3];
                             d[0] = new Double(line.substring(30, 38).trim());
                             d[1] = new Double(line.substring(38, 46).trim());
@@ -673,6 +677,7 @@ public final class PDBFilter extends SystemFilter {
                             }
                             newAtom = new Atom(0, name, altLoc, d, resName, resSeq, chainID,
                                     occupancy, tempFactor, segID);
+                            newAtom.setInsCode(insCode);
                             newAtom.setHetero(true);
                             returnedAtom = (Atom) activeMolecularAssembly.addMSNode(newAtom);
                             if (returnedAtom != newAtom) {
@@ -1014,7 +1019,7 @@ public final class PDBFilter extends SystemFilter {
             logger.info(String.format(" Total number of atoms: %d\n", index));
         }
 
-        Polymer[] polymers = activeMolecularAssembly.getChains();
+        Polymer[] polymers = activeMolecularAssembly.getPolymers();
         if (polymers != null) {
             for (Polymer p : polymers) {
                 List<Residue> residues = p.getResidues();
@@ -1053,7 +1058,7 @@ public final class PDBFilter extends SystemFilter {
         /**
          * To Do: Look for cyclic peptides and disulfides.
          */
-        Polymer[] polymers = activeMolecularAssembly.getChains();
+        Polymer[] polymers = activeMolecularAssembly.getPolymers();
 
         /**
          * Loop over chains.
@@ -1285,7 +1290,7 @@ public final class PDBFilter extends SystemFilter {
                     String bonds[] = forceField.getBonds(moleculeName, atomName);
                     if (bonds != null) {
                         for (String name : bonds) {
-                            Atom atom2 = molecule.getAtom(name);
+                            Atom atom2 = molecule.getMoleculeAtom(name);
                             if (atom2 != null && !atom.isBonded(atom2)) {
                                 buildBond(atom, atom2);
                             }
@@ -1318,7 +1323,7 @@ public final class PDBFilter extends SystemFilter {
                     hydrogen.setHetero(true);
                     molecule.addMSNode(hydrogen);
                     int valence = ia.getAtomType().valence;
-                    List<Bond> aBonds = ia.getBonds();
+                    List<Bond> aBonds = ia.getFFXBonds();
                     int numBonds = aBonds.size();
                     /**
                      * Try to find the following configuration: ib-ia-ic
@@ -2384,7 +2389,7 @@ public final class PDBFilter extends SystemFilter {
 // the SSBOND record.
 // =============================================================================
             int serNum = 1;
-            Polymer polymers[] = activeMolecularAssembly.getChains();
+            Polymer polymers[] = activeMolecularAssembly.getPolymers();
             if (polymers != null) {
                 for (Polymer polymer : polymers) {
                     ArrayList<Residue> residues = polymer.getResidues();
@@ -2398,7 +2403,7 @@ public final class PDBFilter extends SystemFilter {
                                     break;
                                 }
                             }
-                            List<Bond> bonds = SG1.getBonds();
+                            List<Bond> bonds = SG1.getFFXBonds();
                             for (Bond bond : bonds) {
                                 Atom SG2 = bond.get1_2(SG1);
                                 if (SG2.getName().equalsIgnoreCase("SG")) {
@@ -2451,7 +2456,7 @@ public final class PDBFilter extends SystemFilter {
             if (polymers != null) {
                 for (Polymer polymer : polymers) {
                     currentSegID = polymer.getName();
-                    currentChainID = polymer.getChainID();
+                    currentChainID = polymer.getChainIDChar();
                     sb.setCharAt(21, currentChainID);
                     // Loop over residues
                     ArrayList<Residue> residues = polymer.getResidues();
@@ -2460,7 +2465,7 @@ public final class PDBFilter extends SystemFilter {
                         if (resName.length() > 3) {
                             resName = resName.substring(0, 3);
                         }
-                        int resID = residue.getResidueNumber();
+                        int resID = residue.getResidueIndex();
                         sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
                         sb.replace(22, 26, String.format("%4s", Hybrid36.encode(4, resID)));
                         // Loop over atoms
@@ -2527,7 +2532,7 @@ public final class PDBFilter extends SystemFilter {
             if (polymer != null) {
                 ArrayList<Residue> residues = polymer.getResidues();
                 for (Residue residue : residues) {
-                    int resID2 = residue.getResidueNumber();
+                    int resID2 = residue.getResidueIndex();
                     if (resID2 >= resID) {
                         resID = resID2 + 1;
                     }
@@ -2754,7 +2759,7 @@ public final class PDBFilter extends SystemFilter {
 // the SSBOND record.
 // =============================================================================
             int serNum = 1;
-            Polymer polymers[] = activeMolecularAssembly.getChains();
+            Polymer polymers[] = activeMolecularAssembly.getPolymers();
             if (polymers != null) {
                 for (Polymer polymer : polymers) {
                     ArrayList<Residue> residues = polymer.getResidues();
@@ -2768,7 +2773,7 @@ public final class PDBFilter extends SystemFilter {
                                     break;
                                 }
                             }
-                            List<Bond> bonds = SG1.getBonds();
+                            List<Bond> bonds = SG1.getFFXBonds();
                             for (Bond bond : bonds) {
                                 Atom SG2 = bond.get1_2(SG1);
                                 if (SG2.getName().equalsIgnoreCase("SG")) {
@@ -2821,7 +2826,7 @@ public final class PDBFilter extends SystemFilter {
             if (polymers != null) {
                 for (Polymer polymer : polymers) {
                     currentSegID = polymer.getName();
-                    currentChainID = polymer.getChainID();
+                    currentChainID = polymer.getChainIDChar();
                     sb.setCharAt(21, currentChainID);
                     // Loop over residues
                     ArrayList<Residue> residues = polymer.getResidues();
@@ -2830,7 +2835,7 @@ public final class PDBFilter extends SystemFilter {
                         if (resName.length() > 3) {
                             resName = resName.substring(0, 3);
                         }
-                        int resID = residue.getResidueNumber();
+                        int resID = residue.getResidueIndex();
                         int i = 0;
                         String[] entries = null;
                         for (; i < resAndScore.length; i++) {
@@ -2900,7 +2905,7 @@ public final class PDBFilter extends SystemFilter {
             if (polymer != null) {
                 ArrayList<Residue> residues = polymer.getResidues();
                 for (Residue residue : residues) {
-                    int resID2 = residue.getResidueNumber();
+                    int resID2 = residue.getResidueIndex();
                     if (resID2 >= resID) {
                         resID = resID2 + 1;
                     }
@@ -3082,6 +3087,7 @@ public final class PDBFilter extends SystemFilter {
                 name = name + " ";
             }
         }
+        activeMolecularAssembly.getPotentialEnergy();
         double xyz[] = vdwH ? atom.getRedXYZ() : atom.getXYZ();
         if (nSymOp != 0) {
             Crystal crystal = activeMolecularAssembly.getCrystal();
@@ -3105,7 +3111,8 @@ public final class PDBFilter extends SystemFilter {
             name = "D";
         }
         sb.replace(76, 78, padLeft(name, 2));
-        sb.replace(78, 80, String.format("%2d", 0));
+        //sb.replace(78, 80, String.format("%2d", 0));
+        sb.replace(78, 80, String.format("%2d", atom.getFormalCharge()));
         if (!listMode) {
             bw.write(sb.toString());
             bw.newLine();

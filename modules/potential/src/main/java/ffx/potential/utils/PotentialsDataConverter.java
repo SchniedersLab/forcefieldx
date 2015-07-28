@@ -47,7 +47,7 @@ import static java.lang.String.format;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
-import org.biojava.bio.structure.Structure;
+import org.biojava.nbio.structure.Structure;
 
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;

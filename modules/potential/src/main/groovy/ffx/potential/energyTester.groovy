@@ -1,3 +1,4 @@
+
 /**
  * Title: Force Field X.
  *
@@ -36,54 +37,64 @@
  * exception statement from your version.
  */
 
-// Apache Imports
-import org.apache.commons.io.FilenameUtils;
+// ENERGY
 
 // Groovy Imports
-import groovy.util.CliBuilder;
+import ffx.potential.utils.PotentialsFunctions;
+import ffx.potential.utils.PotentialsUtils;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.Atom
 
-// Force Field X Imports
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Molecule;
-import ffx.potential.bonded.MSNode;
+//import groovy.lang.MissingMethodException;
+import groovy.util.CliBuilder;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc deuterate [options] <pdbfilename>');
+def cli = new CliBuilder(usage:' ffxc energy [options] <filename>');
 cli.h(longOpt:'help', 'Print this help message.');
 def options = cli.parse(args);
-List<String> arguments = options.arguments();
-if (options.h || arguments == null || arguments.size() != 1) {
+
+if (options.h) {
     return cli.usage();
 }
 
-// Name of the PDB with crystal header information
-String modelfilename = arguments.get(0);
-
-systems = open(modelfilename);
-
-for (int i=0; i<systems.length; i++) {
-    Atom[] atoms = systems[i].getAtomArray();
-    for (Atom a : atoms) {
-	if (a.getAtomicNumber() == 1) {
-	    Atom b = a.getFFXBonds().get(0).get1_2(a);
-
-	    // criteria for converting H to D
-	    if (b.getAtomicNumber() == 7
-		|| b.getAtomicNumber() == 8) {
-		String name = a.getName().replaceFirst("H", "D");
-		a.setName(name);
-	    }
-	}
-    }
-
-    ArrayList<MSNode> waters = systems[i].getWaters();
-    for (MSNode node : waters) {
-    	Molecule water = (Molecule) node;
-	water.setName("DOD");
-    }
+List<String> arguments = options.arguments();
+String modelfilename = null;
+if (arguments != null && arguments.size() > 0) {
+    // Read in command line.
+    modelfilename = arguments.get(0);
+    open(modelfilename);
+} else if (active == null) {
+    return cli.usage();
+} else {
+    modelfilename = active.getFile();
 }
 
-saveAsPDB(systems, new File(FilenameUtils.removeExtension(modelfilename) + "_deuterate.pdb"));
+logger.info("\n Running energy on " + modelfilename);
+
+//energy();
+
+
+ /* Example of using the new PotentialsFunctions interface instead of Groovy method
+ * closures:*/
+
+logger.info("\n Running energy on " + modelfilename);
+PotentialsFunctions functions; // This is an interface specifying the closure-like methods.
+try {
+    // Use a method closure to try to get an instance of UIUtils (the User Interfaces
+    // implementation, which interfaces with the GUI, etc.).
+    functions = getPotentialsFunctions();
+} catch (MissingMethodException ex) {
+    // If Groovy can't find the appropriate closure, catch the exception and build
+    // an instance of the local implementation.
+    functions = new PotentialsUtils();
+}
+
+// Use PotentialsFunctions methods instead of Groovy method closures to do work.
+MolecularAssembly[] assemblies = functions.open(modelfilename);
+MolecularAssembly activeAssembly = assemblies[0];
+logger.info(activeAssembly.toPDB());
+functions.energy(activeAssembly);
+

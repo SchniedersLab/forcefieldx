@@ -562,7 +562,7 @@ public class XYZFilter extends SystemFilter {
                     line = new StringBuilder(String.format(
                             "%7d %3s%14.8f%14.8f%14.8f%6d", a.getXYZIndex(), a.getAtomType().name, a.getX() - offset.x, a.getY() - offset.y, a.getZ() - offset.z, a.getType()));
                 }
-                for (Bond b : a.getBonds()) {
+                for (Bond b : a.getFFXBonds()) {
                     a2 = b.get1_2(a);
                     line.append(format("%8d", a2.xyzIndex));
                 }
@@ -638,7 +638,7 @@ public class XYZFilter extends SystemFilter {
                     line = new StringBuilder(format(
                             "%7d %3s%14.8f%14.8f%14.8f%6d", index, id, xyz[0],
                             xyz[1], xyz[2], type));
-                    for (Bond b : a.getBonds()) {
+                    for (Bond b : a.getFFXBonds()) {
                         a2 = b.get1_2(a);
                         line.append(format("%8d", a2.xyzIndex + indexOffset));
                     }

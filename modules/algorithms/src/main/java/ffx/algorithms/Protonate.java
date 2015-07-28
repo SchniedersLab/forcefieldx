@@ -242,7 +242,7 @@ public class Protonate implements MonteCarloListener {
      */
     private void chooseAllTitratables() {
         chosenResidues = new ArrayList<>();
-        Polymer polymers[] = molAss.getChains();
+        Polymer polymers[] = molAss.getPolymers();
         for (int i = 0; i < polymers.length; i++) {
             ArrayList<Residue> residues = polymers[i].getResidues();
             for (int j = 0; j < residues.size(); j++) {
@@ -263,7 +263,7 @@ public class Protonate implements MonteCarloListener {
      */
     private void chooseTitratablesInWindow(double pH, double window) {
         chosenResidues = new ArrayList<>();
-        Polymer polymers[] = molAss.getChains();
+        Polymer polymers[] = molAss.getPolymers();
         for (int i = 0; i < polymers.length; i++) {
             ArrayList<Residue> residues = polymers[i].getResidues();
             for (int j = 0; j < residues.size(); j++) {
@@ -281,16 +281,16 @@ public class Protonate implements MonteCarloListener {
     }
         
     private void chooseResID(ArrayList<String> crIDs) {
-        Polymer[] polymers = molAss.getChains();
+        Polymer[] polymers = molAss.getPolymers();
         int n = 0;
         for (String s : crIDs) {
             Character chainID = s.charAt(0);
             int i = Integer.parseInt(s.substring(1));
             for (Polymer p : polymers) {
-                if (p.getChainID() == chainID) {
+                if (p.getChainIDChar() == chainID) {
                     List<Residue> rs = p.getResidues();
                     for (Residue r : rs) {
-                        if (r.getResidueNumber() == i) {
+                        if (r.getResidueIndex() == i) {
                             chosenResidues.add(r);
                             // logger.info(String.format(" Chosen: %s", r));
                         }
@@ -301,12 +301,12 @@ public class Protonate implements MonteCarloListener {
     }
     
     private void chooseResID(char chain, int resID) {
-        Polymer polymers[] = molAss.getChains();
+        Polymer polymers[] = molAss.getPolymers();
         for (Polymer polymer : polymers) {
-            if (polymer.getChainID() == chain) {
+            if (polymer.getChainIDChar() == chain) {
                 ArrayList<Residue> residues = polymer.getResidues();
                 for (Residue residue : residues) {
-                    if (residue.getResidueNumber() == resID) {
+                    if (residue.getResidueIndex() == resID) {
                         chosenResidues.add(residue);
                         logger.info(String.format(" Chosen: %s", residue));
                     }
@@ -326,7 +326,7 @@ public class Protonate implements MonteCarloListener {
             polymer.addMultiResidue(multiRes);
             String protFormName = Titratable.valueOf(res.getName()).protForm.toString();
             String deprotFormName = Titratable.valueOf(res.getName()).deprotForm.toString();
-            int resNumber = res.getResidueNumber();
+            int resNumber = res.getResidueIndex();
             ResidueType resType = res.getResidueType();
             if (!res.getName().equalsIgnoreCase(protFormName)) {
                 multiRes.addResidue(new Residue(protFormName, resNumber, resType));
@@ -418,7 +418,7 @@ public class Protonate implements MonteCarloListener {
             // If this Titration target is not a choice for the MultiResidue, then add it.
             String targetName = titr.target.toString();
             if (!choices.contains(targetName)) {
-                int resNumber = member.getResidueNumber();
+                int resNumber = member.getResidueIndex();
                 ResidueType resType = member.getResidueType();
                 Residue newChoice = new Residue(targetName, resNumber, resType);
                 multiRes.addResidue(newChoice);
@@ -1078,10 +1078,10 @@ public class Protonate implements MonteCarloListener {
         if (res.getChainID() == null) {
             logger.severe("No chain ID for residue " + res);
         }
-        Polymer polymers[] = molAss.getChains();
+        Polymer polymers[] = molAss.getPolymers();
         Polymer location = null;
         for (Polymer p : polymers) {
-            if (p.getChainID() == res.getChainID()) {
+            if (p.getChainIDChar() == res.getChainID()) {
                 location = p;
             }
         }

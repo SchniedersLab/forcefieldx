@@ -2434,7 +2434,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 maskp_local[index] = p13scale;
                             }
                         }
-                        for (Bond bond : ai.getBonds()) {
+                        for (Bond bond : ai.getFFXBonds()) {
                             int index = bond.get1_2(ai).xyzIndex - 1;
                             maskp_local[index] = p12scale;
                         }
@@ -2608,7 +2608,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 maskp_local[index] = 1.0;
                             }
                         }
-                        for (Bond bond : ai.getBonds()) {
+                        for (Bond bond : ai.getFFXBonds()) {
                             int index = bond.get1_2(ai).xyzIndex - 1;
                             maskp_local[index] = 1.0;
                         }
@@ -3829,7 +3829,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 maskingp_local[index] = p13scale;
                             }
                         }
-                        for (Bond bond : ai.getBonds()) {
+                        for (Bond bond : ai.getFFXBonds()) {
                             int index = bond.get1_2(ai).xyzIndex - 1;
                             masking_local[index] = m12scale;
                             maskingp_local[index] = p12scale;
@@ -4080,7 +4080,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 maskingp_local[index] = 1.0;
                             }
                         }
-                        for (Bond bond : ai.getBonds()) {
+                        for (Bond bond : ai.getFFXBonds()) {
                             int index = bond.get1_2(ai).xyzIndex - 1;
                             masking_local[index] = 1.0;
                             maskingp_local[index] = 1.0;
@@ -6060,7 +6060,7 @@ public class ParticleMeshEwald implements LambdaInterface {
         }
 
         // No bonds.
-        List<Bond> bonds = atom.getBonds();
+        List<Bond> bonds = atom.getFFXBonds();
         if (bonds == null || bonds.size() < 1) {
             String message = "Multipoles can only be assigned after bonded relationships are defined.\n";
             logger.severe(message);
@@ -6326,7 +6326,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             keep.clear();
             for (int j : list) {
                 Atom aj = atoms[j];
-                ArrayList<Bond> bonds = aj.getBonds();
+                ArrayList<Bond> bonds = aj.getFFXBonds();
                 for (Bond b : bonds) {
                     Atom ak = b.get1_2(aj);
                     int k = ak.getXYZIndex() - 1;
@@ -6392,7 +6392,7 @@ public class ParticleMeshEwald implements LambdaInterface {
      */
     private void growGroup(List<Integer> polarizationGroup,
             List<Integer> group, Atom seed) {
-        List<Bond> bonds = seed.getBonds();
+        List<Bond> bonds = seed.getFFXBonds();
         for (Bond bi : bonds) {
             Atom aj = bi.get1_2(seed);
             int tj = aj.getType();

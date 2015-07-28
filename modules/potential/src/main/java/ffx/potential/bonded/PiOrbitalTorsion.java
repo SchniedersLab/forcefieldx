@@ -82,7 +82,7 @@ public class PiOrbitalTorsion extends BondedTerm {
         bonds = new Bond[5];
         bonds[2] = middleBond;
         int i = 0;
-        for (Bond b : atoms[2].getBonds()) {
+        for (Bond b : atoms[2].getFFXBonds()) {
             if (b != middleBond) {
                 atoms[i] = b.get1_2(atoms[2]);
                 bonds[i] = b;
@@ -90,7 +90,7 @@ public class PiOrbitalTorsion extends BondedTerm {
             }
         }
         i = 4;
-        for (Bond b : atoms[3].getBonds()) {
+        for (Bond b : atoms[3].getFFXBonds()) {
             if (b != middleBond) {
                 atoms[i] = b.get1_2(atoms[3]);
                 bonds[i - 1] = b;

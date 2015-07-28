@@ -90,7 +90,7 @@ public class MultiResidue extends Residue {
     ForceFieldEnergy forceFieldEnergy;
     
     public MultiResidue(Residue residue, ForceField forceField, ForceFieldEnergy forceFieldEnergy) {
-        super("MultiResidue", residue.getResidueNumber(), residue.residueType);
+        super("MultiResidue", residue.getResidueIndex(), residue.residueType);
         this.forceField = forceField;
         this.forceFieldEnergy = forceFieldEnergy;
         activeResidue = residue;
@@ -773,9 +773,9 @@ public class MultiResidue extends Residue {
             return false;
         }
         if (getParent() == null || other.getParent() == null) {
-            return getResidueNumber() == other.getResidueNumber();
+            return getResidueIndex() == other.getResidueIndex();
         } else if (getParent() == other.getParent()) {
-            return getResidueNumber() == other.getResidueNumber();
+            return getResidueIndex() == other.getResidueIndex();
         }
         return false;
     }
@@ -786,12 +786,12 @@ public class MultiResidue extends Residue {
         hash = hash(hash, consideredResidues.size());
         // Use of consideredResidues.size() MAY BE DANGEROUS if people start to muck
         // with the considered residues list after construction.
-        return hash(hash, getResidueNumber());
+        return hash(hash, getResidueIndex());
     }
 
     @Override
     public String toString() {
-        int resNum = consideredResidues.get(0).getResidueNumber();
+        int resNum = consideredResidues.get(0).getResidueIndex();
         StringBuilder sb = new StringBuilder();
         sb.append("Multi-" + resNum + "-");
         for (Residue res : consideredResidues) {

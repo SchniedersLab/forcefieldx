@@ -443,7 +443,7 @@ public class TorsionTorsion extends BondedTerm {
      * inverted.
      */
     protected double chktor() {
-        ArrayList<Bond> bnds = atoms[2].getBonds();
+        ArrayList<Bond> bnds = atoms[2].getFFXBonds();
         /**
          * To be chiral, the central atom must have 4 bonds.
          */

@@ -101,7 +101,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.SystemUtils;
-import org.biojava.bio.structure.Structure;
+import org.biojava.nbio.structure.Structure;
 
 import ffx.crystal.Crystal;
 import ffx.potential.MolecularAssembly;

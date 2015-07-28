@@ -47,23 +47,24 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.FilenameUtils;
-import org.biojava.bio.structure.Atom;
-import org.biojava.bio.structure.Chain;
-import org.biojava.bio.structure.Group;
-import org.biojava.bio.structure.GroupType;
-import org.biojava.bio.structure.PDBCrystallographicInfo;
-import org.biojava.bio.structure.ResidueNumber;
-import org.biojava.bio.structure.SSBond;
-import org.biojava.bio.structure.Structure;
-import org.biojava.bio.structure.StructureException;
-import org.biojava.bio.structure.StructureTools;
-import org.biojava.bio.structure.align.StructurePairAligner;
-import org.biojava.bio.structure.align.pairwise.AlternativeAlignment;
-import org.biojava.bio.structure.io.PDBFileReader;
+import org.biojava.nbio.structure.Atom;
+import org.biojava.nbio.structure.Chain;
+import org.biojava.nbio.structure.Group;
+import org.biojava.nbio.structure.GroupType;
+import org.biojava.nbio.structure.PDBCrystallographicInfo;
+import org.biojava.nbio.structure.ResidueNumber;
+import org.biojava.nbio.structure.SSBond;
+import org.biojava.nbio.structure.Structure;
+import org.biojava.nbio.structure.StructureException;
+import org.biojava.nbio.structure.StructureTools;
+import org.biojava.nbio.structure.align.StructurePairAligner;
+import org.biojava.nbio.structure.align.pairwise.AlternativeAlignment;
+import org.biojava.nbio.structure.io.PDBFileReader;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
+import org.biojava.nbio.structure.xtal.CrystalCell;
 
 /**
  * Aligns a list of files with a list of source files by RMSD, and can use the
@@ -425,16 +426,13 @@ public class PDBFileMatcher {
         try {
             Chain chain2 = structure2.getChainByPDB(chainID);
             Group group2 = chain2.getGroupByPDB(res1);
-            try {
-                atom2 = group2.getAtom(atom1.getName());
-            } catch (StructureException ex) {
-                if (atom1.getName().equalsIgnoreCase("H")) {
-                    atom2 = group2.getAtom("H1");
-                } else if (atom1.getName().equalsIgnoreCase("H1")) {
-                    atom2 = group2.getAtom("H");
+            atom2 = group2.getAtom(atom1.getName());
+            if (atom1.getName().equalsIgnoreCase("H")) {
+                atom2 = group2.getAtom("H1");
+            } else if (atom1.getName().equalsIgnoreCase("H1")) {
+                atom2 = group2.getAtom("H");
                 }
                 atom2 = group2.getAtom(atom1.getPDBserial());
-            }
         } catch (StructureException ex) {
             if (!searchAll) {
                 throw new IllegalArgumentException("Matching atom not found.");
@@ -466,7 +464,7 @@ public class PDBFileMatcher {
      */
     private Atom getMatchingAtom(Atom atom1, Atom[] atoms2) throws IllegalArgumentException {
         Atom atom2 = atoms2[0];
-        Structure structure2 = atom2.getGroup().getChain().getParent();
+        Structure structure2 = atom2.getGroup().getChain().getStructure();
         try {
             atom2 = getMatchingAtom(atom1, structure2, false);
             return atom2;
@@ -528,16 +526,14 @@ public class PDBFileMatcher {
      */
     private Atom getReferenceAtom(Group group) throws StructureException {
         switch (group.getType()) {
-            case GroupType.AMINOACID:
-                return group.getAtomByPDBname("CA");
-            case GroupType.NUCLEOTIDE:
-                Atom retAtom;
-                try {
-                    retAtom = group.getAtomByPDBname("N1");
-                    return retAtom;
-                } catch (StructureException ex) {
-                    return group.getAtomByPDBname("N9");
+            case AMINOACID:
+                return group.getAtom("CA");
+            case NUCLEOTIDE:
+                Atom retAtom = group.getAtom("N1");
+                if (retAtom == null) {
+                    retAtom = group.getAtom("N9");
                 }
+                return retAtom;
             default:
                 return group.getAtoms().get(0);
         }
@@ -620,22 +616,22 @@ public class PDBFileMatcher {
      */
     private PDBCrystallographicInfo cloneCrystalInfo(PDBCrystallographicInfo sourceInfo)
             throws IllegalArgumentException {
-        if (!sourceInfo.isCrystallographic()) {
-            throw new IllegalArgumentException(" Source structure has no meaningful "
-                    + "crystallographic information.");
-        }
 
         PDBCrystallographicInfo retInfo = new PDBCrystallographicInfo();
         retInfo.setSpaceGroup(sourceInfo.getSpaceGroup());
 
         // Newer versions of BioJava can use the CrystalCell object.
-        retInfo.setA(sourceInfo.getA());
-        retInfo.setAlpha(sourceInfo.getAlpha());
-        retInfo.setB(sourceInfo.getB());
-        retInfo.setBeta(sourceInfo.getBeta());
-        retInfo.setC(sourceInfo.getC());
-        retInfo.setGamma(sourceInfo.getGamma());
-        retInfo.setZ(sourceInfo.getZ());
+        CrystalCell cell;
+        cell = new CrystalCell();
+        
+        cell.setA(sourceInfo.getA());
+        cell.setAlpha(sourceInfo.getAlpha());
+        cell.setB(sourceInfo.getB());
+        cell.setBeta(sourceInfo.getBeta());
+        cell.setC(sourceInfo.getC());
+        cell.setGamma(sourceInfo.getGamma());
+        
+        retInfo.setCrystalCell(cell);
 
         return retInfo;
     }

@@ -610,8 +610,8 @@ public class Poledit {
             bw.write(String.format("%5d\n", atoms.length));
             for (Atom a : atoms) {
                 String output = String.format("%6d", a.getAtomType().type) + "  " + a.getAtomType().name + " " + String.format("%12s %12s %12s", myFormatter.format(a.getX()), myFormatter.format(a.getY()), myFormatter.format(a.getZ())) + " " + String.format("%6d", a.getAtomType().atomClass);
-                for (int i = 0; i < a.getBonds().size(); i++) {
-                    output += String.format("%6d", a.getBonds().get(i).get1_2(a).getAtomType().type);
+                for (int i = 0; i < a.getFFXBonds().size(); i++) {
+                    output += String.format("%6d", a.getFFXBonds().get(i).get1_2(a).getAtomType().type);
                 }
                 bw.write(output + "\n");
             }
@@ -634,20 +634,20 @@ public class Poledit {
             int[] multipoleFrameTypes = new int[3];
             MultipoleFrameDefinition frameDefinition = null;
             Atom a = atoms[i];
-            int j = a.getBonds().size();
+            int j = a.getFFXBonds().size();
             if (j == 0) {
                 multipoleFrameTypes[0] = 0;
                 multipoleFrameTypes[1] = 0;
                 multipoleFrameTypes[2] = 0;
             } else if (j == 1) {
-                Atom ia = a.getBonds().get(0).get1_2(a);
+                Atom ia = a.getFFXBonds().get(0).get1_2(a);
                 multipoleFrameTypes[2] = ia.getType();
-                if (ia.getBonds().size() == 1) {
+                if (ia.getFFXBonds().size() == 1) {
                     multipoleFrameTypes[0] = 0;
                 } else {
                     int m = 0;
-                    for (int k = 0; k < ia.getBonds().size(); k++) {
-                        Atom kb = ia.getBonds().get(k).get1_2(ia);
+                    for (int k = 0; k < ia.getFFXBonds().size(); k++) {
+                        Atom kb = ia.getFFXBonds().get(k).get1_2(ia);
                         if (kb.getAtomicNumber() > m && kb.xyzIndex != a.xyzIndex) {
                             multipoleFrameTypes[0] = kb.getType();
                             m = kb.getAtomicNumber();
@@ -656,8 +656,8 @@ public class Poledit {
                 }
                 multipoleFrameTypes[1] = 0;
             } else if (j == 2) {
-                Atom ia = a.getBonds().get(0).get1_2(a);
-                Atom ib = a.getBonds().get(1).get1_2(a);
+                Atom ia = a.getFFXBonds().get(0).get1_2(a);
+                Atom ib = a.getFFXBonds().get(1).get1_2(a);
                 Atom kab = priority(a, ia, ib);
                 if (kab.xyzIndex == ia.xyzIndex) {
                     multipoleFrameTypes[2] = ia.getType();
@@ -672,9 +672,9 @@ public class Poledit {
                 }
                 multipoleFrameTypes[1] = 0;
             } else if (j == 3) {
-                Atom ia = a.getBonds().get(0).get1_2(a);
-                Atom ib = a.getBonds().get(1).get1_2(a);
-                Atom ic = a.getBonds().get(2).get1_2(a);
+                Atom ia = a.getFFXBonds().get(0).get1_2(a);
+                Atom ib = a.getFFXBonds().get(1).get1_2(a);
+                Atom ic = a.getFFXBonds().get(2).get1_2(a);
                 Atom kab = priority(a, ia, ib);
                 Atom kac = priority(a, ia, ic);
                 Atom kbc = priority(a, ib, ic);
@@ -705,10 +705,10 @@ public class Poledit {
                 }
 
             } else if (j == 4) {
-                Atom ia = a.getBonds().get(0).get1_2(a);
-                Atom ib = a.getBonds().get(1).get1_2(a);
-                Atom ic = a.getBonds().get(2).get1_2(a);
-                Atom id = a.getBonds().get(3).get1_2(a);
+                Atom ia = a.getFFXBonds().get(0).get1_2(a);
+                Atom ib = a.getFFXBonds().get(1).get1_2(a);
+                Atom ic = a.getFFXBonds().get(2).get1_2(a);
+                Atom id = a.getFFXBonds().get(3).get1_2(a);
                 Atom kab = priority(a, ia, ib);
                 Atom kac = priority(a, ia, ic);
                 Atom kad = priority(a, ia, id);
@@ -814,7 +814,7 @@ public class Poledit {
                     }
 //                    if(ia > 0 && ib == 0){
 //                    	for(int r = 0; r < atoms[index].getNumBonds(); r++){
-//                        	Atom b = atoms[index].getBonds().get(r).get1_2(atoms[index]);
+//                        	Atom b = atoms[index].getFFXBonds().get(r).get1_2(atoms[index]);
 //                        	if(b.xyzIndex != Math.abs(ia)){
 //                        		ib = b.xyzIndex;
 //                        		axisAtom[index][1] = ib - 1;
@@ -844,7 +844,7 @@ public class Poledit {
                     Atom a = atoms[i];
                     int[] polgrp = new int[a.getNumBonds()];
                     for (int j = 0; j < a.getNumBonds(); j++) {
-                        polgrp[j] = a.getBonds().get(j).get1_2(a).xyzIndex;
+                        polgrp[j] = a.getFFXBonds().get(j).get1_2(a).xyzIndex;
                     }
                     PolarizeType p = new PolarizeType(a.getType(), polarizability[i], thole[i], polgrp.clone());
                     a.setPolarizeType(p);
@@ -924,8 +924,8 @@ public class Poledit {
             return b;
         } else {
             ka = 0;
-            for (int i = 0; i < a.getBonds().size(); i++) {
-                Atom m = a.getBonds().get(i).get1_2(a);
+            for (int i = 0; i < a.getFFXBonds().size(); i++) {
+                Atom m = a.getFFXBonds().get(i).get1_2(a);
                 if (o.xyzIndex != m.xyzIndex) {
                     if (m.getAtomicNumber() > ka) {
                         ka = m.getAtomicNumber();
@@ -933,17 +933,17 @@ public class Poledit {
                 }
             }
             kb = 0;
-            for (int i = 0; i < b.getBonds().size(); i++) {
-                Atom m = b.getBonds().get(i).get1_2(b);
+            for (int i = 0; i < b.getFFXBonds().size(); i++) {
+                Atom m = b.getFFXBonds().get(i).get1_2(b);
                 if (o.xyzIndex != m.xyzIndex) {
                     if (m.getAtomicNumber() > kb) {
                         kb = m.getAtomicNumber();
                     }
                 }
             }
-            if (a.getBonds().size() > b.getBonds().size()) {
+            if (a.getFFXBonds().size() > b.getFFXBonds().size()) {
                 return a;
-            } else if (b.getBonds().size() > a.getBonds().size()) {
+            } else if (b.getFFXBonds().size() > a.getFFXBonds().size()) {
                 return b;
             } else if (ka > kb) {
                 return a;

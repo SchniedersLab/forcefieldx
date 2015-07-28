@@ -85,6 +85,11 @@ public class FFXClassLoader extends URLClassLoader {
         "org.apache.commons.lang",
         "org.apache.commons.lang3",
         "org.apache.commons.math3",
+        "org.apache.logging.log4j",
+        "org.apache.logging.log4j.log4j-core",
+        "org.apache.logging.log4j.log4j-api",
+        "org.apache.logging.log4j.log4j-slf4j-impl",
+        "org.slf4j",
         "org.jogamp",
         "edu.rit.pj",
         "jcuda"};
@@ -96,6 +101,10 @@ public class FFXClassLoader extends URLClassLoader {
 
     static {
         FFX_FILES = new ArrayList<>(Arrays.asList(new String[]{
+            "org.apache.logging.log4j/log4j-slf4j-impl.jar",
+            "org.apache.logging.log4j/log4j-api.jar",
+            "org.apache.logging.log4j/log4j-core.jar",
+            "org.slf4j/slf4j-api.jar",
             "edu.uiowa.eng.ffx/algorithms.jar",
             "edu.uiowa.eng.ffx/autoparm.jar",
             "edu.uiowa.eng.ffx/binding.jar",
@@ -141,12 +150,19 @@ public class FFXClassLoader extends URLClassLoader {
             // Java Help
             "javax.help/javahelp.jar",
             // BioJava
+            /* Old Biojava jars (version 3)
             "org.biojava/biojava3-core.jar",
             "org.biojava/core.jar",
             "org.biojava/bytecode.jar",
             "org.biojava/biojava3-structure.jar",
             "org.biojava/biojava3-alignment.jar",
             "org.biojava/biojava3-phylo.jar",
+            */
+            "org.biojava/biojava-structure.jar",
+            "org.biojava/biojava-core.jar",
+            "org.biojava/biojava-alignment.jar",
+            "org.biojava/biojava-phylo.jar",
+            "org.biojava.thirdparty/forester.jar",
             // Lars Behnke's hierarchical-clustering-java
             "com.apporiented/hierarchical-clustering.jar"
         }));
