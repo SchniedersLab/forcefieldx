@@ -48,13 +48,15 @@ import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.math3.util.FastMath;
-import static org.biojava.bio.structure.StructureTools.logger;
+import java.util.logging.Logger;
 
 /**
  *
  * @author mrtollefson
  */
 public class SturmMethod {
+    
+    private static final Logger logger = Logger.getLogger(SturmMethod.class.getName());
     
     final int PRINT_LEVEL = 0;
     final int MAX_ORDER = 16;
@@ -124,11 +126,13 @@ public class SturmMethod {
         }*/
         if (PRINT_LEVEL > 0) 
         {
+            StringBuilder string = new StringBuilder();
             for (i = order; i >= 0; i--) 
             {
-                System.out.println("coefficients in Sturm solver\n");
-                logger.info(String.format("%d %f\n", i, sseq[0].coef[i]));
+                string.append(String.format("coefficients in Sturm solver\n"));
+                string.append(String.format("%d %f\n", i, sseq[0].coef[i]));
             }
+            logger.info(string.toString());
         }
         
         //System.out.println("SSEQ: "+Arrays.deepToString(sseq)+"\n\n\n\n");
@@ -158,24 +162,23 @@ public class SturmMethod {
         //System.out.println("NP: "+np);
         if (PRINT_LEVEL > 0) 
         {   
-            System.out.println("Sturm sequence for:\n");
+            StringBuilder string1 = new StringBuilder();
+            string1.append(String.format("Sturm sequence for:\n"));
             for (i = order; i >= 0; i--)
             {
-                logger.info(String.format("%f ", sseq[0].coef[i]));
-                System.out.println("\n\n");
+                string1.append(String.format("%f ", sseq[0].coef[i]));
+                string1.append("\n");
             }    
             for (i = 0; i <= np; i++) 
             {   
                 for (j = sseq[i].ord; j >= 0; j--)
                 {
-                    logger.info(String.format("%f ", sseq[i].coef[j]));
-                    System.out.println("\n");
+                    string1.append(String.format("%f ", sseq[i].coef[j]));
+                    string1.append("\n");
                 }
             }
+            logger.info(string1.toString());
 	}
-        
-        System.out.println("\n");
-        
 
         //get the number of real roots
         nroots = numroots(np, sseq, atmin, atmax);
@@ -229,7 +232,7 @@ public class SturmMethod {
         }
         if (nchanges != atmax[0]) 
         {
-          System.out.println("solve: unable to bracket all positive roots\n");
+          logger.info(String.format("solve: unable to bracket all positive roots\n"));
           atmax[0] = nchanges;
         }
         
@@ -260,11 +263,13 @@ public class SturmMethod {
             } 
             else 
             {
-                logger.info(String.format("\n%d distinct real roots for x: \n", nroots));
+                StringBuilder string2 = new StringBuilder();
+                string2.append(String.format("\n%d distinct real roots for x: \n", nroots));
                 for (i = 0; i != nroots; i++)
                   {
-                    logger.info(String.format("%f\n", this.roots[i]));
+                    string2.append(String.format("%f\n", this.roots[i]));
                   }
+                logger.info(string2.toString());
             }
         }
     }
@@ -647,7 +652,7 @@ public class SturmMethod {
                 }
                 if (its==MAXIT)
                 {
-                    logger.info(String.format("sbisect: overflow min %f max %f diff %f nroot %d n1 %d n2 %d", min, max, max - min, nroot, n1, n2));
+                    logger.info(String.format("sbisect: overflow min %f max %f diff %f nroot %d n1 %d n2 %d\n", min, max, max - min, nroot, n1, n2));
                     roots[0]=mid;
                 }
                 
@@ -802,7 +807,7 @@ public class SturmMethod {
         return(false);   
     }
     
-    File write_pdb_backbone(char[] pdb_name, String[] res_name, double[][] r_n, double[][] r_a, double[][] r_c, int stt_res, int end_res, char[] chain_n, char[] chain_a, char[] chain_c,MolecularAssembly molAss, int counter)
+    File write_pdb_backbone(char[] pdb_name, String[] res_name, double[][] r_n, double[][] r_a, double[][] r_c, int stt_res, int end_res, char[] chain_n, char[] chain_a, char[] chain_c,MolecularAssembly molAss, int counter, boolean writeFile)
     {
         Polymer[] newChain = molAss.getChains();
         ArrayList<Atom> backBoneAtoms;
@@ -822,12 +827,10 @@ public class SturmMethod {
                         xyz_c[0] = r_c[i-stt_res][0]; 
                         xyz_c[1] = r_c[i-stt_res][1]; 
                         xyz_c[2] = r_c[i-stt_res][2]; 
-                        //System.out.println("C coordinates: "+Arrays.toString(xyz_c)+"\n");
+                       //System.out.println("C coordinates: "+Arrays.toString(xyz_c)+"\n");
                         
                         backBoneAtom.moveTo(xyz_c);
                         
-                        
-
                         //System.out.println("C coordinates: "+Arrays.toString(backBoneAtom.getXYZ())+"\n");
                         break;
                     case "N":
@@ -835,6 +838,7 @@ public class SturmMethod {
                         xyz_n[1] = r_n[i-stt_res][1];
                         xyz_n[2] = r_n[i-stt_res][2];
                         //molAss.getBackBoneAtoms().get(i).setXYZ(xyz_n);
+                        //System.out.println("N coordinates: "+Arrays.toString(xyz_n)+"\n");
                         backBoneAtom.moveTo(xyz_n);
                         break;
                     case "CA":
@@ -842,6 +846,7 @@ public class SturmMethod {
                         xyz_a[1] = r_a[i-stt_res][1];
                         xyz_a[2] = r_a[i-stt_res][2];
                         backBoneAtom.moveTo(xyz_a);
+                        //System.out.println("A coordinates: "+Arrays.toString(xyz_a)+"\n");
                         //molAss.getBackBoneAtoms().get(i).setXYZ(xyz_a);
                         break;
                     case "HA":
@@ -863,11 +868,7 @@ public class SturmMethod {
                 newResidue.deleteAtom(sideChainAtom);
             }
         }
-        
-        
-        
-      
-        
+ 
         File file = molAss.getFile();
         
         for(int i = stt_res; i <= end_res; i++)
@@ -875,7 +876,7 @@ public class SturmMethod {
            // if(molAss.getBackBoneAtoms().get(i).getAtomType().name.equals("C"))
           //  {
                 double[] xyz = molAss.getBackBoneAtoms().get(i).getXYZ();
-                System.out.println(Arrays.toString(xyz)+"\n");
+                //System.out.println(Arrays.toString(xyz)+"\n");
           //  }
         }
         
@@ -886,7 +887,11 @@ public class SturmMethod {
         
         File modifiedFile = new File(filename + ".pdb_"+counter);
         PDBFilter modFilter = new PDBFilter(modifiedFile,molAss,null,null);
-        modFilter.writeFile(modifiedFile, true);
+        
+        if(writeFile)
+        {
+            modFilter.writeFile(modifiedFile, true);
+        }
         
         /*int res_no, ir, k=0;
         for(res_no=stt_res;res_no<=end_res;res_no++)
