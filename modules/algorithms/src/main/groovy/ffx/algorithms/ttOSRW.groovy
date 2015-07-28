@@ -479,7 +479,7 @@ if (arguments.size() == 1) {
     } else {
         // Wrap the single topology ForceFieldEnergy inside an OSRW instance.
         osrw = new TransitionTemperedOSRW(energy, energy, lambdaRestart, histogramRestart, active.getProperties(),
-            temperature, timeStep, printInterval, saveInterval, asynchronous, sh, wellTempered);
+            temperature, timeStep, printInterval, saveInterval, asynchronous, sh);
         osrw.setResetStatistics(resetStatistics);
         if (writeTraversals) {
             osrw.setTraversalOutput(lambdaOneFile, topology1, lambdaZeroFile, topology1);
@@ -525,7 +525,7 @@ if (arguments.size() == 1) {
     // Wrap the DualTopology potential energy inside an OSRW instance.
     osrw = new TransitionTemperedOSRW(dualTopologyEnergy, dualTopologyEnergy, lambdaRestart,
         histogramRestart, active.getProperties(), temperature, timeStep, printInterval,
-        saveInterval, asynchronous, sh, wellTempered);
+        saveInterval, asynchronous, sh);
     osrw.setResetStatistics(resetStatistics);
     if (writeTraversals) {
         osrw.setTraversalOutput(lambdaOneFile, topology1, lambdaZeroFile, topology2);
