@@ -148,6 +148,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
     private double rDisp[];
     private double born[];
     private int nAtoms;
+    /**
+     * This field is because re-initializing the force field resizes some arrays 
+     * but not others; that second category must, when called on, be resized not 
+     * to the current number of atoms but to the maximum number of atoms (and thus 
+     * to the size of the first category of arrays). 
+    */
+    private int maxNumAtoms;
     private final ParticleMeshEwald particleMeshEwald;
     private final ParallelTeam parallelTeam;
     private final Crystal crystal;
@@ -314,6 +321,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         
         this.parallelTeam = parallelTeam;
         nAtoms = atoms.length;
+        maxNumAtoms = nAtoms;
         this.particleMeshEwald = particleMeshEwald;
         polarization = particleMeshEwald.polarization;
         neighborLists = particleMeshEwald.neighborLists;
@@ -423,6 +431,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     public void setAtoms(Atom atoms[]) {
         this.atoms = atoms;
         nAtoms = atoms.length;
+        maxNumAtoms = nAtoms > maxNumAtoms ? nAtoms : maxNumAtoms;
         initAtomArrays();
     }
 
@@ -1634,10 +1643,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
             @Override
             public void start() {
-                if (fx_local == null || fx_local.length < nAtoms) {
-                    fx_local = new double[nAtoms];
-                    fy_local = new double[nAtoms];
-                    fz_local = new double[nAtoms];
+                if (fx_local == null || fx_local.length < maxNumAtoms) {
+                    fx_local = new double[maxNumAtoms];
+                    fy_local = new double[maxNumAtoms];
+                    fz_local = new double[maxNumAtoms];
                 }
                 fill(fx_local, 0.0);
                 fill(fy_local, 0.0);
@@ -1969,13 +1978,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
             @Override
             public void start() {
-                if (fx_local == null || fx_local.length < nAtoms) {
-                    fx_local = new double[nAtoms];
-                    fy_local = new double[nAtoms];
-                    fz_local = new double[nAtoms];
-                    fxCR_local = new double[nAtoms];
-                    fyCR_local = new double[nAtoms];
-                    fzCR_local = new double[nAtoms];
+                if (fx_local == null || fx_local.length < maxNumAtoms) {
+                    fx_local = new double[maxNumAtoms];
+                    fy_local = new double[maxNumAtoms];
+                    fz_local = new double[maxNumAtoms];
+                    fxCR_local = new double[maxNumAtoms];
+                    fyCR_local = new double[maxNumAtoms];
+                    fzCR_local = new double[maxNumAtoms];
                 }
                 fill(fx_local, 0.0);
                 fill(fy_local, 0.0);

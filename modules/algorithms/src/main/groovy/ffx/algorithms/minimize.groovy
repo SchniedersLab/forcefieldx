@@ -84,7 +84,6 @@ double lambda = -1;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
-
 for (String arg : args) {
     logger.info(arg);
 }
@@ -103,8 +102,8 @@ cli.ef2(longOpt:'noElecfinal2', args:1, argName:'-1', 'No Electrostatics Final A
 cli.l(longOpt:'lambda', args:1, argName:'0.0', 'Initial lambda value.');
 cli.e(longOpt:'eps', args:1, argName:'1.0', 'RMS gradient convergence criteria');
 cli.p(longOpt:'polarization', args:1, 'polarization model: [none / direct / mutual]');
-def options = cli.parse(args);
-
+def options = cli.parse(args); 
+    
 if (options.h) {
     return cli.usage();
 }
@@ -156,7 +155,7 @@ if (options.l) {
 
 // Load convergence criteria.
 if (options.e) {
-    eps = Double.parseDouble(options.e);
+    eps = Double.parseDouble(options.e);    
 }
 
 if (options.p) {
@@ -204,17 +203,17 @@ if (lambdaTerm) {
     }
 
     // Apply the no electrostatics atom selection
-if (noElecStart < 1) {
-    noElecStart = 1;
-}
-if (noElecStop > atoms.length) {
-    noElecStop = atoms.length;
-}
-for (int i = noElecStart; i <= noElecStop; i++) {
-    Atom ai = atoms[i - 1];
-    ai.setElectrostatics(false);
-    ai.print();
-}
+    if (noElecStart < 1) {
+        noElecStart = 1;
+    }
+    if (noElecStop > atoms.length) {
+        noElecStop = atoms.length;
+    }
+    for (int i = noElecStart; i <= noElecStop; i++) {
+        Atom ai = atoms[i - 1];
+        ai.setElectrostatics(false);
+        ai.print();
+    }
 
     // Turn off checks for overlapping atoms, which is expected for lambda=0.
     energy.getCrystal().setSpecialPositionCutoff(0.0);
@@ -252,7 +251,7 @@ if (filename2 == null) {
         ai.print();
     }
 
-        // Apply the no electrostatics atom selection
+    // Apply the no electrostatics atom selection
     if (noElecStart2 < 1) {
         noElecStart2 = 1;
     }

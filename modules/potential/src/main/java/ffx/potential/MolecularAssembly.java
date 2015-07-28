@@ -784,7 +784,7 @@ public class MolecularAssembly extends MSGroup {
         }*/
         return backbone;
     }
-
+    
     /**
      * <p>
      * Getter for the field <code>branchGroup</code>.</p>
