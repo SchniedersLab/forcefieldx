@@ -6,7 +6,7 @@
 <a href="download.html"><img src="images/pcna.png" alt="Download"/></a>
 </p>
 LuCore, S., Litman, J., Powers, K., Gao, S., Lynn, A., Tollefson, W., Fenn, T., Washington, M. and M. Schnieders
-<i>submitted</i>
+<i>to appear</i>
 <b>2015</b>
 
 #### [Absolute Organic Crystal Thermodynamics: Growth of the Asymmetric Unit into a Crystal via Alchemy][xtaltherm]
