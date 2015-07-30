@@ -1406,9 +1406,9 @@ public class TransitionTemperedOSRW implements Potential {
             }
             printf("Tempering       %15d\n", flag);
             for (int i = 0; i < lambdaBins; i++) {
-                printf("%d", recursionKernel[i][0]);
+                printf("%g", recursionKernel[i][0]);
                 for (int j = 1; j < FLambdaBins; j++) {
-                    printf(" %d", recursionKernel[i][j]);
+                    printf(" %g", recursionKernel[i][j]);
                 }
                 println();
             }

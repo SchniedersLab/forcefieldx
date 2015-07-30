@@ -41,6 +41,8 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Residue.ResidueType;
 import ffx.potential.bonded.AminoAcidUtils;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
+import ffx.potential.parameters.AtomType;
+
 import ffx.potential.parsers.PDBFilter;
 import java.io.File;
 import java.util.ArrayList;
@@ -814,7 +816,7 @@ public class SturmMethod {
         double[] xyz_n = new double[3];
         double[] xyz_a = new double[3];
         double[] xyz_c = new double[3];
-        //start position = start position of loop, same for end
+        ArrayList<Atom> OAtoms = new ArrayList<Atom>();
         
         for(int i = stt_res + 1; i < end_res; i++){
             Residue newResidue = newChain[0].getResidue(i);
@@ -828,10 +830,8 @@ public class SturmMethod {
                         xyz_c[1] = r_c[i-stt_res][1]; 
                         xyz_c[2] = r_c[i-stt_res][2]; 
                        //System.out.println("C coordinates: "+Arrays.toString(xyz_c)+"\n");
-                        
                         backBoneAtom.moveTo(xyz_c);
-                        
-                        //System.out.println("C coordinates: "+Arrays.toString(backBoneAtom.getXYZ())+"\n");
+                         //System.out.println("C coordinates: "+Arrays.toString(backBoneAtom.getXYZ())+"\n");
                         break;
                     case "N":
                         xyz_n[0] = r_n[i-stt_res][0];
@@ -856,6 +856,10 @@ public class SturmMethod {
                         //System.out.println("ATOM:"+backBoneAtom.getAtomType().name);
                         newResidue.deleteAtom(backBoneAtom);
                         break;
+                    case "O":
+                        OAtoms.add(backBoneAtom);
+                        //System.out.println("Added O");
+                        break;
                     default:
                         newResidue.deleteAtom(backBoneAtom);
                         break;
@@ -869,6 +873,47 @@ public class SturmMethod {
             }
         }
  
+        int oCount = 0;
+        for(int i = stt_res + 1; i < end_res; i++){
+            Residue newResidue = newChain[0].getResidue(i);
+            backBoneAtoms = newResidue.getBackboneAtoms();
+            Atom CA = new Atom("CA");
+            Atom N = new Atom("N");
+            Atom C = new Atom("C");
+            
+            System.out.printf("\nAdded %d\n",oCount);
+            //System.out.println(OAtoms);
+            //System.out.println("\n\n\n");
+            Atom O = OAtoms.get(oCount);
+            //System.out.println("O Atom: "+O);
+            //System.out.println("\n\n\n");
+            
+            for (Atom backBoneAtom : backBoneAtoms) {
+                switch(backBoneAtom.getAtomType().name)
+                {
+                    case "C":
+                        C = backBoneAtom;
+                        break;
+                    case "N":
+                        N = backBoneAtom;
+                        break;
+                    case "CA":
+                        CA = backBoneAtom;
+                        break;
+                    default:
+                        break;
+                }
+            }
+            BondedUtils.intxyz(O, C, 1.2255, CA, 122.4, N, 180, 0);
+            
+            oCount++;
+        }
+        
+        
+        
+        
+        
+        
         File file = molAss.getFile();
         
         for(int i = stt_res; i <= end_res; i++)
