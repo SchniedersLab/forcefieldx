@@ -44,6 +44,8 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Iterator;
+import java.util.Map;
 
 import javax.media.j3d.Canvas3D;
 import javax.media.j3d.J3DGraphics2D;
@@ -53,15 +55,15 @@ import javax.vecmath.Color3f;
 import javax.vecmath.Point2d;
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
+import javax.swing.tree.TreeNode;
 
 import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
 import ffx.potential.parameters.ForceField;
+import ffx.potential.parsers.BiojavaFilter;
 
 import static ffx.utilities.HashCodeUtil.SEED;
 import static ffx.utilities.HashCodeUtil.hash;
-import java.util.Iterator;
-import java.util.Map;
-import javax.swing.tree.TreeNode;
+
 import org.biojava.nbio.structure.Chain;
 import org.biojava.nbio.structure.Group;
 import org.biojava.nbio.structure.GroupType;
@@ -98,7 +100,7 @@ public class Residue extends MSGroup implements Group {
     /**
      * List of Residues matching alternative locations.
      */
-    private Map<Character, Group> altLocGroups;
+    //private Map<Character, Group> altLocGroups;
     /**
      * Biojava residue identifier.
      */
@@ -224,6 +226,16 @@ public class Residue extends MSGroup implements Group {
 
     public ResidueType getResidueType() {
         return residueType;
+    }
+    
+    public boolean isDeoxy() {
+        if (getResidueType() == ResidueType.NA) {
+            Atom HOs = (Atom) getAtomNode("HO\'");
+            if (HOs == null) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -377,14 +389,28 @@ public class Residue extends MSGroup implements Group {
     }
     
     @Override
-    public void setChain(Chain polymer) {
+    public void setChain(Chain chain) {
         if (parentChain instanceof Polymer) {
-            ((MSNode) getParent()).remove(this);
+            removeFromParent();
         }
-        if (polymer instanceof Polymer) {
-            ((Polymer) polymer).addMSNode(this);
+        if (chain instanceof Polymer) {
+            ((Polymer) chain).addMSNode(this);
         }
-        this.parentChain = polymer;
+        this.parentChain = chain;
+    }
+    
+    /**
+     * Sets the parent Chain; if onlySetRef is true, does not detach or attach to
+     * FFX data structure.
+     * @param chain Chain to set parentChain reference to
+     * @param onlySetRef If true, only shallowly sets reference
+     */
+    public void setChain(Chain chain, boolean onlySetRef) {
+        if (onlySetRef) {
+            this.parentChain = chain;
+        } else {
+            setChain(chain);
+        }
     }
     
     public void findParentPolymer() {
@@ -411,11 +437,19 @@ public class Residue extends MSGroup implements Group {
         return getAtomList().size();
     }
 
+    /**
+     * FFX data structures have 3D coordinates by default.
+     * @return Always true.
+     */
     @Override
     public boolean has3D() {
         return true;
     }
 
+    /**
+     * Does nothing (FFX data structures have 3D coordinates by default).
+     * @param bln Discarded.
+     */
     @Override
     public void setPDBFlag(boolean bln) {
         logger.fine(" FFX atoms always have coordinates; setPDBFlag is meaningless.");
@@ -438,11 +472,13 @@ public class Residue extends MSGroup implements Group {
     public void addAtom(org.biojava.nbio.structure.Atom atom) {
         if (atom instanceof Atom) {
             addMSNode((Atom) atom);
-        } else if (parentChain instanceof Polymer) {
-            Polymer parentPolymer = (Polymer) parentChain;
+        } else {
+            Atom at = BiojavaFilter.readAtom(atom, segID);
+            addMSNode(at);
+            /*Polymer parentPolymer = (Polymer) parentChain;
             if (parentPolymer.hasFFXParents()) {
                 parentPolymer.addExteriorAtom(atom);
-            }
+            }*/
         }
     }
 
@@ -469,6 +505,7 @@ public class Residue extends MSGroup implements Group {
     public void clearAtoms() {
         List<Atom> atoms = this.getAtomList();
         for (Atom atom : atoms) {
+            atom.setGroup(null, true);
             this.remove(atom);
         }
     }
@@ -477,14 +514,20 @@ public class Residue extends MSGroup implements Group {
     public org.biojava.nbio.structure.Atom getAtom(String string) {
         Atom atom = (Atom) this.getAtomNode(string);
         if (atom != null) {
-            return (org.biojava.nbio.structure.Atom) atom;
+            return atom;
         }
         return null;
     }
 
+    /**
+     * May not be reliable, as FFX data structure may reorder atoms.
+     * @param i
+     * @return 
+     */
     @Override
     public org.biojava.nbio.structure.Atom getAtom(int i) {
-        return (org.biojava.nbio.structure.Atom) this.getAtomNode(i);
+        return this.getAtomList().get(i);
+        //return (org.biojava.nbio.structure.Atom) this.getAtomNode(i);
     }
 
     @Override
@@ -503,16 +546,16 @@ public class Residue extends MSGroup implements Group {
     }
 
     @Override
-	public boolean hasAminoAtoms(){
+    public boolean hasAminoAtoms() {
 		// if this method call is performed too often, it should become a
-		// private method and provide a flag for Group object ...
+        // private method and provide a flag for Group object ...
 
-		return hasAtom(StructureTools.CA_ATOM_NAME) &&
-				hasAtom(StructureTools.C_ATOM_NAME) &&
-				hasAtom(StructureTools.N_ATOM_NAME) &&
-				hasAtom(StructureTools.O_ATOM_NAME);
+        return hasAtom(StructureTools.CA_ATOM_NAME)
+                && hasAtom(StructureTools.C_ATOM_NAME)
+                && hasAtom(StructureTools.N_ATOM_NAME)
+                && hasAtom(StructureTools.O_ATOM_NAME);
 
-	}
+    }
 
     @Override
     public void setProperties(Map<String, Object> map) {
@@ -521,7 +564,7 @@ public class Residue extends MSGroup implements Group {
 
     @Override
     public Map<String, Object> getProperties() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return properties;
     }
 
     @Override
@@ -536,7 +579,7 @@ public class Residue extends MSGroup implements Group {
 
     @Override
     public Iterator<org.biojava.nbio.structure.Atom> iterator() {
-        return getAtoms().iterator();
+        return new AtomIterator(this);
     }
     
     @Override
@@ -552,6 +595,9 @@ public class Residue extends MSGroup implements Group {
         return resNum;
     }
     
+    /**
+     * Generates a ResidueNumber object to act as unique identifier.
+     */
     private void generateResNum() {
         char insCode = ' ';
         for (Atom atom : getAtomList()) {
@@ -590,10 +636,13 @@ public class Residue extends MSGroup implements Group {
 
     @Override
     public boolean hasAltLoc() {
-        if (altLocGroups == null) {
+        /*if (altLocGroups == null) {
             findAltLocs();
         }
-        return !(altLocGroups.isEmpty());
+        return !(altLocGroups.isEmpty());*/
+        /*throw new UnsupportedOperationException("FFX does not yet support references"
+                + " to alternate locations.");*/
+        return false;
     }
     
     private void findAltLocs() {
@@ -652,17 +701,19 @@ public class Residue extends MSGroup implements Group {
 
     @Override
     public List<Group> getAltLocs() {
-        List<Group> altLocs = new ArrayList<>();
+        /*List<Group> altLocs = new ArrayList<>();
         if (altLocGroups == null) {
             findAltLocs();
         }
         altLocs.addAll(altLocGroups.values());
-        return altLocs;
+        return altLocs;*/
+        throw new UnsupportedOperationException("FFX does not yet support references"
+                + " to alternate locations.");
     }
 
     @Override
     public void addAltLoc(Group group) {
-        if (altLocGroups == null) {
+        /*if (altLocGroups == null) {
             findAltLocs();
         }
         boolean altLocFound = false;
@@ -686,7 +737,9 @@ public class Residue extends MSGroup implements Group {
                             + "the group to altloc %c", group.toString(), alpha));
                 }
             }
-        }
+        }*/
+        throw new UnsupportedOperationException("FFX does not yet support references"
+                + " to alternate locations.");
     }
 
     @Override
@@ -696,54 +749,18 @@ public class Residue extends MSGroup implements Group {
 
     @Override
     public Group getAltLocGroup(Character aLoc) {
-        if (altLocGroups == null) {
+        /*if (altLocGroups == null) {
             findAltLocs();
         }
-        return altLocGroups.get(aLoc);
+        return altLocGroups.get(aLoc);*/
+        throw new UnsupportedOperationException("FFX does not yet support references"
+                + " to alternate locations.");
     }
 
     @Override
     public void trimToSize() {
         logger.fine(" Operation trimToSize() not yet supported.");
     }
-    
-    /**
-     * Simple array-based Iterator over atoms. Might have worked; realized it was
-     * infinitely simpler just to call getAtoms().iterator().
-     */
-    /*private class ResidueIterator implements Iterator {
-        
-        private final Atom[] atoms;
-        private int count;
-        private final Residue residue;
-        
-        public ResidueIterator(Residue residue) {
-            List<Atom> atList = residue.getAtomList();
-            atoms = new Atom[atList.size()];
-            atList.toArray(atoms);
-            count = 0;
-            this.residue = residue;
-        }
-        
-        @Override
-        public boolean hasNext() throws NoSuchElementException {
-            return count < atoms.length;
-        }
-
-        @Override
-        public Object next() {
-            return atoms[count++];
-        }
-        
-        @Override
-        public void remove() throws IllegalArgumentException {
-            if (count == 0 || atoms[count-1] == null) {
-                throw new IllegalStateException("Illegal call to remove in iterator.");
-            }
-            residue.remove(atoms[count-1]);
-            atoms[count-1] = null;
-        }
-    }*/
 
     /**
      * {@inheritDoc}
@@ -759,6 +776,7 @@ public class Residue extends MSGroup implements Group {
             MSNode atoms = getAtomNode();
             currentAtom = (Atom) atoms.contains(newAtom);
             if (currentAtom == null) {
+                newAtom.setGroup(this, true);
                 currentAtom = newAtom;
                 atoms.add(newAtom);
                 setFinalized(false);

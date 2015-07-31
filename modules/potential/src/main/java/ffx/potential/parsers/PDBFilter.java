@@ -603,6 +603,7 @@ public final class PDBFilter extends SystemFilter {
                                 newAtom = new Atom(0, name, altLoc, d, resName, resSeq,
                                         chainID, occupancy, tempFactor, segID);
                                 newAtom.setInsCode(insCode);
+                                newAtom.setPDBserial(serial);
 
                                 returnedAtom = (Atom) activeMolecularAssembly.addMSNode(newAtom);
                                 if (returnedAtom != newAtom) {
@@ -678,6 +679,7 @@ public final class PDBFilter extends SystemFilter {
                             newAtom = new Atom(0, name, altLoc, d, resName, resSeq, chainID,
                                     occupancy, tempFactor, segID);
                             newAtom.setInsCode(insCode);
+                            newAtom.setPDBserial(serial);
                             newAtom.setHetero(true);
                             returnedAtom = (Atom) activeMolecularAssembly.addMSNode(newAtom);
                             if (returnedAtom != newAtom) {

@@ -414,7 +414,6 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
             currentCol = previousCol = AtomColor.get(atomType.atomicNumber);
             String elementName = Atom.ElementSymbol.values()[getAtomicNumber() - 1].toString();
             element = Element.valueOf(elementName);
-            logger.info(String.format("Atom %s element %s", this.toString(), element.toString()));
         }
     }
 
@@ -2073,12 +2072,26 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
     @Override
     public void setGroup(Group group) {
         if (parentGroup instanceof MSGroup) {
-            ((MSNode) getParent()).remove(this);
+            removeFromParent();
         }
         if (group instanceof MSGroup) {
             ((MSGroup) group).add(this);
         }
         parentGroup = group;
+    }
+    
+    /**
+     * Sets the parent Group; if onlySetRef is true, does not detach or attach to
+     * FFX data structure.
+     * @param group Group to set parentGroup reference to
+     * @param onlySetRef If true, only shallowly sets reference
+     */
+    public void setGroup(Group group, boolean onlySetRef) {
+        if (onlySetRef) {
+            parentGroup = group;
+        } else {
+            setGroup(group);
+        }
     }
 
     @Override
@@ -2095,7 +2108,6 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
         if (element == null) {
             String elementName = Atom.ElementSymbol.values()[this.getAtomicNumber() - 1].toString();
             element = Element.valueOf(elementName);
-            logger.info(String.format("Atom %s element %s", this.toString(), element.toString()));
         }
         return element;
     }
@@ -2120,21 +2132,6 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
         double[] xyz = new double[3];
         this.getXYZ(xyz);
         return xyz;
-    }
-    
-    /**
-     * Sets the parent group; if detach is false, it does not remove it from the 
-     * underlying FFX data structure (and thus now belongs to two data structures).
-     * 
-     * @param parent Group to attach to
-     * @param detach If false, retains its link to FFX data structure
-     */
-    public void setGroup(Group parent, boolean detach) {
-        if (detach) {
-            setGroup(parent);
-        } else {
-            this.parentGroup = parent;
-        }
     }
     
     /**
@@ -2185,6 +2182,7 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
     
     /**
      * Uses the Chemical Component Dictionary to find the Atom's formal charge.
+     * Does not seem to function perfectly yet.
      */
     private void determineFormalCharge() {
         ChemComp chemComp = ChemCompGroupFactory.getChemComp(resName);
@@ -2201,6 +2199,10 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
         } else {
             logger.fine(String.format(" Could not find chemical component definition for Atom %s", toString()));
             formalCharge = 0;
+        }
+        if (Math.abs(formalCharge) > 9) {
+            formalCharge = 0;
+            // Been getting some ridiculous results.
         }
     }
 
@@ -2420,7 +2422,6 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
         String vdwHydrogens = System.getProperty("vdwHydrogens");
         boolean vdwH = Boolean.parseBoolean(vdwHydrogens);
         double[] xyz = vdwH ? this.getRedXYZ() : this.getXYZ();
-        
         
         String resSeqString = String.format("%4s", resSeq);
         if (resSeqString.length() > 4) {

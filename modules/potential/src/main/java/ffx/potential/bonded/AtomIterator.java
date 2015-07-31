@@ -35,30 +35,60 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.potential.parsers;
+package ffx.potential.bonded;
 
-import org.biojava.nbio.structure.Structure;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
 
 /**
- * The BiojavaDataFilter class determines if an object is an instance of a
- * Biojava Structure object. Nothing fancy: it simply wraps "x instanceof
- * Structure" in a class similar to the PDB, INT, XYZ, etc. FileFilter classes.
+ * The AtomIterator class provides an Iterator over an MSNode's Atoms, so as to
+ * fulfill Biojava API. Intended to be used with classes which implement the
+ * Biojava Group interface.
  *
  * @author Michael J. Schnieders
- * @autor Jacob M. Litman
+ * @author Jacob M. Litman
  * @since 1.0
  *
  */
-public class BiojavaDataFilter implements DataFilter {
+public class AtomIterator implements Iterator<org.biojava.nbio.structure.Atom> {
+        
+        private final Atom[] atoms;
+        private final int nAtoms;
+        private int count;
+        
+        public AtomIterator(MSNode node) {
+            List<Atom> atList = node.getAtomList();
+            nAtoms = atList.size();
+            atoms = new Atom[nAtoms];
+            atList.toArray(atoms);
+            count = 0;
+        }
+        
+        @Override
+        public boolean hasNext() {
+            return count < nAtoms;
+        }
 
-    @Override
-    public boolean accept(Object object) {
-        return object instanceof Structure;
+        @Override
+        public org.biojava.nbio.structure.Atom next() throws NoSuchElementException {
+            if (count >= nAtoms) {
+                throw new NoSuchElementException("End of Residue atoms reached.");
+            }
+            return atoms[count++];
+        }
+        
+        @Override
+        public void remove() throws IllegalArgumentException {
+            if (count == 0) {
+                throw new IllegalStateException("No atoms returned yet; cannot remove!");
+            }
+            if (atoms[count-1] == null) {
+                throw new IllegalStateException("Last atom already removed!");
+            }
+            atoms[count-1].removeFromParent();
+            atoms[count-1].setGroup(null, true);
+            atoms[count-1] = null;
+        }
     }
 
-    @Override
-    public String getDescription() {
-        return "Biojava Structure";
-    }
-
-}

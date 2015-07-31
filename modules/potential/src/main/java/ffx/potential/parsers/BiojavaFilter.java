@@ -428,6 +428,8 @@ public class BiojavaFilter extends ConversionFilter {
             Chain chain = group.getChain();
             char chainID = chain.getChainID().charAt(0);
             String segID = getSegID(chainID);
+            Character insCode = atom.getGroup().getResidueNumber().getInsCode();
+            int pdbSer = atom.getPDBserial();
 
             boolean printAtom = false;
             if (mutate && chainID == mutateChainID && mutateResID == resSeq) {
@@ -445,6 +447,10 @@ public class BiojavaFilter extends ConversionFilter {
             Atom newAtom = new Atom(0,
                     name, altLoc, xyz, resName, resSeq, chainID, atom.getOccupancy(),
                     atom.getTempFactor(), segID);
+            if (insCode != null) {
+                newAtom.setInsCode(insCode);
+            }
+            newAtom.setPDBserial(pdbSer);
 
             /* Biojava sets at least some capping groups, and possibly nonstandard
              amino acids to be heteroatoms. */

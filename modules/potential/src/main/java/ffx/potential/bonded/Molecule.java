@@ -40,11 +40,15 @@ package ffx.potential.bonded;
 import java.util.logging.Logger;
 
 import ffx.potential.parameters.ForceField;
+import ffx.potential.parsers.BiojavaFilter;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
 import javax.swing.tree.TreeNode;
+
 import org.biojava.nbio.structure.Chain;
 import org.biojava.nbio.structure.Group;
 import org.biojava.nbio.structure.GroupType;
@@ -224,6 +228,7 @@ public class Molecule extends MSGroup implements Group {
             MSNode atoms = getAtomNode();
             currentAtom = (Atom) atoms.contains(newAtom);
             if (currentAtom == null) {
+                newAtom.setGroup(this, true);
                 currentAtom = newAtom;
                 atoms.add(newAtom);
                 setFinalized(false);
@@ -266,14 +271,28 @@ public class Molecule extends MSGroup implements Group {
     }
     
     @Override
-    public void setChain(Chain polymer) {
+    public void setChain(Chain chain) {
         if (parentChain instanceof Polymer) {
-            ((MSNode) getParent()).remove(this);
+            removeFromParent();
         }
-        if (polymer instanceof Polymer) {
-            ((Polymer) polymer).addMSNode(this);
+        if (chain instanceof Polymer) {
+            ((Polymer) chain).addMSNode(this);
         }
-        this.parentChain = polymer;
+        this.parentChain = chain;
+    }
+    
+    /**
+     * Sets the parent Chain; if onlySetRef is true, does not detach or attach to
+     * FFX data structure.
+     * @param chain Chain to set parentChain reference to
+     * @param onlySetRef If true, only shallowly sets reference
+     */
+    public void setChain(Chain chain, boolean onlySetRef) {
+        if (onlySetRef) {
+            this.parentChain = chain;
+        } else {
+            setChain(chain);
+        }
     }
     
     public void findParentPolymer() {
@@ -300,11 +319,19 @@ public class Molecule extends MSGroup implements Group {
         return getAtomList().size();
     }
 
+    /**
+     * FFX data structures have 3D coordinates by default.
+     * @return Always true.
+     */
     @Override
     public boolean has3D() {
         return true;
     }
 
+    /**
+     * Does nothing (FFX data structures have 3D coordinates by default).
+     * @param bln Discarded.
+     */
     @Override
     public void setPDBFlag(boolean bln) {
         logger.fine(" FFX atoms always have coordinates; setPDBFlag is meaningless.");
@@ -320,11 +347,13 @@ public class Molecule extends MSGroup implements Group {
     public void addAtom(org.biojava.nbio.structure.Atom atom) {
         if (atom instanceof Atom) {
             addMSNode((Atom) atom);
-        } else if (parentChain instanceof Polymer) {
-            Polymer parentPolymer = (Polymer) parentChain;
+        } else {
+            Atom at = BiojavaFilter.readAtom(atom, segID);
+            addMSNode(at);
+            /*Polymer parentPolymer = (Polymer) parentChain;
             if (parentPolymer.hasFFXParents()) {
                 parentPolymer.addExteriorAtom(atom);
-            }
+            }*/
         }
     }
 
@@ -351,6 +380,7 @@ public class Molecule extends MSGroup implements Group {
     public void clearAtoms() {
         List<Atom> atoms = this.getAtomList();
         for (Atom atom : atoms) {
+            atom.setGroup(null, true);
             this.remove(atom);
         }
     }
@@ -359,7 +389,7 @@ public class Molecule extends MSGroup implements Group {
     public org.biojava.nbio.structure.Atom getAtom(String string) {
         Atom atom = (Atom) this.getAtomNode(string);
         if (atom != null) {
-            return (org.biojava.nbio.structure.Atom) atom;
+            return atom;
         }
         return null;
     }
@@ -418,7 +448,7 @@ public class Molecule extends MSGroup implements Group {
 
     @Override
     public Iterator<org.biojava.nbio.structure.Atom> iterator() {
-        return getAtoms().iterator();
+        return new AtomIterator(this);
     }
     
     @Override
@@ -426,13 +456,13 @@ public class Molecule extends MSGroup implements Group {
         return parentChain;
     }
 
-    /*@Override
+    @Override
     public ResidueNumber getResidueNumber() {
         if (resNum == null) {
             generateResNum();
         }
         return resNum;
-    }*/
+    }
     
     private void generateResNum() {
         char insCode = ' ';
@@ -472,10 +502,11 @@ public class Molecule extends MSGroup implements Group {
 
     @Override
     public boolean hasAltLoc() {
-        if (altLocGroups == null) {
+        /*if (altLocGroups == null) {
             findAltLocs();
         }
-        return !(altLocGroups.isEmpty());
+        return !(altLocGroups.isEmpty());*/
+        return false;
     }
     
     private void findAltLocs() {
@@ -484,17 +515,19 @@ public class Molecule extends MSGroup implements Group {
 
     @Override
     public List<Group> getAltLocs() {
-        List<Group> altLocs = new ArrayList<>();
+        /*List<Group> altLocs = new ArrayList<>();
         if (altLocGroups == null) {
             findAltLocs();
         }
         altLocs.addAll(altLocGroups.values());
-        return altLocs;
+        return altLocs;*/
+        throw new UnsupportedOperationException("FFX does not yet support references"
+                + " to alternate locations.");
     }
 
     @Override
     public void addAltLoc(Group group) {
-        if (altLocGroups == null) {
+        /*if (altLocGroups == null) {
             findAltLocs();
         }
         boolean altLocFound = false;
@@ -518,7 +551,9 @@ public class Molecule extends MSGroup implements Group {
                             + "the group to altloc %c", group.toString(), alpha));
                 }
             }
-        }
+        }*/
+        throw new UnsupportedOperationException("FFX does not yet support references"
+                + " to alternate locations.");
     }
 
     @Override
@@ -528,30 +563,16 @@ public class Molecule extends MSGroup implements Group {
 
     @Override
     public Group getAltLocGroup(Character aLoc) {
-        if (altLocGroups == null) {
+        /*if (altLocGroups == null) {
             findAltLocs();
         }
-        return altLocGroups.get(aLoc);
+        return altLocGroups.get(aLoc);*/
+        throw new UnsupportedOperationException("FFX does not yet support references"
+                + " to alternate locations.");
     }
 
     @Override
     public void trimToSize() {
         logger.fine(" Operation trimToSize() not yet supported.");
-    }
-
-    @Override
-    public ResidueNumber getResidueNumber() {
-        if (resNum == null) {
-            char insCode = ' ';
-            for (Atom atom : getAtomList()) {
-                Character icode = atom.getInsertionCode();
-                if (icode != null && icode != ' ') {
-                    insCode = icode;
-                    break;
-                }
-            }
-            resNum = new ResidueNumber(parentChain.getChainID(), residueNum, insCode);
-        }
-        return resNum;
     }
 }

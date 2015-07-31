@@ -119,7 +119,7 @@ public class PotentialsDataConverter implements FileOpener {
 
     /**
      * Attempt to get the file the Structure was loaded from. Assumes .pdb
-     * format, mostly because Biojava can only load from PDB.
+     * format, though PDB/Biojava now supports other formats (mmCIF, etc).
      *
      * @param structure A Biojava structure
      * @return pdbcode.pdb, name.pdb, or a default file

@@ -297,6 +297,8 @@ public class Bond extends BondedTerm implements Comparable<Bond>, org.biojava.nb
             viewModel = RendererCache.ViewModel.WIREFRAME;
             a1.setBond(this);
             a2.setBond(this);
+        } else {
+            throw new IllegalArgumentException("FFX Bonds must be constructed with FFX Atoms.");
         }
     }
 

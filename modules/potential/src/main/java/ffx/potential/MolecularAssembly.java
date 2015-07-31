@@ -47,6 +47,7 @@ import java.util.ListIterator;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Map;
 
 import javax.media.j3d.Appearance;
 import javax.media.j3d.BoundingSphere;
@@ -89,17 +90,17 @@ import ffx.potential.bonded.RendererCache;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Residue.ResiduePosition;
 import ffx.potential.parameters.ForceField;
+import ffx.potential.parsers.PDBFilter;
+import ffx.potential.utils.PotentialsUtils;
+import ffx.utilities.Keyword;
 
 import static ffx.potential.bonded.Residue.ResiduePosition.FIRST_RESIDUE;
 import static ffx.potential.bonded.Residue.ResiduePosition.LAST_RESIDUE;
 import static ffx.potential.bonded.Residue.ResiduePosition.MIDDLE_RESIDUE;
 import ffx.potential.parsers.BiojavaFilter;
-import ffx.potential.parsers.PDBFilter;
-import ffx.potential.utils.PotentialsUtils;
-import ffx.utilities.Keyword;
-import java.util.HashMap;
-import java.util.Map;
+
 import org.apache.commons.configuration.CompositeConfiguration;
+
 import org.biojava.nbio.structure.Chain;
 import org.biojava.nbio.structure.Compound;
 import org.biojava.nbio.structure.DBRef;
@@ -108,7 +109,6 @@ import org.biojava.nbio.structure.GroupType;
 import org.biojava.nbio.structure.JournalArticle;
 import org.biojava.nbio.structure.PDBCrystallographicInfo;
 import org.biojava.nbio.structure.PDBHeader;
-import org.biojava.nbio.structure.ResidueNumber;
 import org.biojava.nbio.structure.ResidueRange;
 import org.biojava.nbio.structure.SSBond;
 import org.biojava.nbio.structure.Site;
@@ -172,11 +172,10 @@ public class MolecularAssembly extends MSGroup implements Structure {
     private final ArrayList<BranchGroup> myNewShapes = new ArrayList<>();
     private JournalArticle journalArticle;
     private List<Compound> compounds = new ArrayList<>();
-    private Map<Character, MolecularAssembly> altLocAssemblies = new HashMap<>();
+    //private Map<Character, MolecularAssembly> altLocAssemblies = new HashMap<>();
     private String pdbCode;
     private PDBHeader pdbHeader;
     private boolean nmrFlag = false;
-    private boolean crystalFlag = false;
     List<Map<String, Integer>> connections;
     List<SSBond> ssBonds;
     private long hibID;
@@ -326,7 +325,7 @@ public class MolecularAssembly extends MSGroup implements Structure {
                 return c.addMSNode(residue);
             } else {
                 Polymer newc = new Polymer(chainID, segID);
-                newc.setAssembly(this);
+                newc.setStructure(this, true);
                 getAtomNode().add(newc);
                 setFinalized(false);
                 return newc.addMSNode(residue);
@@ -1011,7 +1010,7 @@ public class MolecularAssembly extends MSGroup implements Structure {
         if (create) {
             Polymer polymer = new Polymer(chainID, segID, true);
             addMSNode(polymer);
-            polymer.setAssembly(this);
+            polymer.setStructure(this);
             return polymer;
         }
 
@@ -1879,17 +1878,17 @@ public class MolecularAssembly extends MSGroup implements Structure {
 
     @Override
     public void addModel(List<Chain> model) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException("FFX does not currently support alternative models.");
     }
 
     @Override
     public void setModel(int position, List<Chain> model) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException("FFX does not currently support alternative models.");
     }
 
     @Override
     public List<Chain> getModel(int modelnr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException("FFX does not currently support alternative models."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
@@ -1902,7 +1901,13 @@ public class MolecularAssembly extends MSGroup implements Structure {
 
     @Override
     public void setChains(List<Chain> chains) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        for (Polymer polymer : getPolymers()) {
+            polymer.setStructure(null, true);
+            polymer.removeFromParent();
+        }
+        for (Chain chain : chains) {
+            addChain(chain);
+        }
     }
 
     @Override
@@ -1912,17 +1917,54 @@ public class MolecularAssembly extends MSGroup implements Structure {
 
     @Override
     public void setChains(int modelnr, List<Chain> chains) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        setChains(chains);
     }
 
     @Override
     public void addChain(Chain chain) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        //String chainID = chain.getChainID();
+        String segID = getSegID(chain.getChainID());
+        if (chain instanceof Polymer) {
+            addMSNode((Polymer) chain);
+        } else {
+            for (org.biojava.nbio.structure.Group group : chain.getAtomGroups()) {
+                for (org.biojava.nbio.structure.Atom atom : group.getAtoms()) {
+                    Atom at = BiojavaFilter.readAtom(atom, segID);
+                    this.addMSNode(at);
+                }
+            }
+        }
+    }
+    
+
+    /**
+     * Converts potentially duplicate chain ID to unique segID.
+     * @param chainID Chain ID
+     * @return Unique segID
+     */
+    private String getSegID(String chainID) {
+        if (chainID.equals(" ")) {
+            chainID = "A";
+        }
+        
+        int count = 0;
+        for (Polymer polymer : getPolymers()) {
+            String polyID = polymer.getName();
+            if (polyID.endsWith(chainID)) {
+                ++count;
+            }
+        }
+        
+        if (count == 0) {
+            return chainID;
+        } else {
+            return String.format("%d%s", count, chainID);
+        }
     }
 
     @Override
     public void addChain(Chain chain, int modelnr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        addChain(chain);
     }
 
     @Override
@@ -1990,7 +2032,21 @@ public class MolecularAssembly extends MSGroup implements Structure {
     public Chain getChainByPDB(String chainId, int modelnr) throws StructureException {
         return getChainByPDB (chainId);
     }
+    
+    public String toPDB(boolean biojFormatting) {
+        if (biojFormatting) {
+            FileConvert f = new FileConvert(this);
+            return f.toPDB();
+        } else {
+            return this.toPDB();
+        }
+    }
 
+    /**
+     * Writes to PDB using FFX formatting (use toPDB(true) to format Biojava style).
+     * 
+     * @return String representing PDB content.
+     */
     @Override
     public String toPDB() {
         CompositeConfiguration properties = Keyword.loadProperties(file);
@@ -2156,7 +2212,7 @@ public class MolecularAssembly extends MSGroup implements Structure {
 
     @Override
     public void resetModels() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override

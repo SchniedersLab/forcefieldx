@@ -421,7 +421,7 @@ public final class Utilities {
             Character chainID = getChainID(num);
             String segID = getSegID(chainID, segIDs);
             Polymer c = new Polymer(chainID, segID, true);
-            c.setAssembly(molecularAssembly);
+            c.setStructure(molecularAssembly);
             if (backbone.size() > 2 && divideBackbone(backbone, c)) {
                 for (Atom a : c.getAtomList()) {
                     atoms.remove(a);
