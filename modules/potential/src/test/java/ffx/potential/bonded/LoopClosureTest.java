@@ -61,6 +61,7 @@ import org.junit.runners.Parameterized;
 public class LoopClosureTest 
 {
     private static final Logger logger = Logger.getLogger(TimerTest.class.getName());
+    private static final SturmMethod sturmMethod = new SturmMethod();
     private MolecularAssembly molecularAssembly;
     private File structure;
     private Loop loop;
@@ -69,6 +70,7 @@ public class LoopClosureTest
     double[][] xyz_n_test = new double[3][3];
     double[][] xyz_c_test = new double[3][3];
     double[][] xyz_a_test = new double[3][3];
+    double[][] xyz_o_test = new double[3][3];
     
     @Parameters
     public static Collection<Object[]> data() 
@@ -77,6 +79,7 @@ public class LoopClosureTest
         double xyz_n_test[][] = new double[3][3];
         double xyz_a_test[][] = new double[3][3];
         double xyz_c_test[][] = new double[3][3];
+        double xyz_o_test[][] = new double [3][3];
         //residue 1
         xyz_n_test[0][0] = 7.773;
         xyz_n_test[0][1] = -9.71;
@@ -87,6 +90,9 @@ public class LoopClosureTest
         xyz_c_test[0][0] = 5.886372894231285;
         xyz_c_test[0][1] = -10.55641925089512;
         xyz_c_test[0][2] = -5.994873283542817; 
+        xyz_o_test[0][0] = 4.65995464026174;
+        xyz_o_test[0][1] = -10.15991477265667;
+        xyz_o_test[0][2] = -5.552217997042944;
         //residue 2
         xyz_n_test[1][0] = 6.267265566616004;
         xyz_n_test[1][1] = -11.821304411459156;
@@ -97,6 +103,9 @@ public class LoopClosureTest
         xyz_c_test[1][0] = 4.522327673119161;
         xyz_c_test[1][1] = -13.229312851952344;
         xyz_c_test[1][2] = -4.836181407502477;
+        xyz_o_test[1][0] = 3.2366148632444856;
+        xyz_o_test[1][1] = -12.591267247014322;
+        xyz_o_test[1][2] = -3.0315275516235816;
         //residue 3
         xyz_n_test[2][0] = 3.9321584783416297;
         xyz_n_test[2][1] = -13.724556941299172;
@@ -107,15 +116,18 @@ public class LoopClosureTest
         xyz_c_test[2][0] = 1.658;
         xyz_c_test[2][1] = -13.856;
         xyz_c_test[2][2] = -2.821;
+        xyz_o_test[2][0] = 0.561537177764718;
+        xyz_o_test[2][1] = -14.371724425862004;
+        xyz_o_test[2][2] = -2.637566507896874;
               
         return Arrays.asList(
             new Object[][]{
-                {xyz_n_test, xyz_a_test, xyz_c_test},     // constructor arguments for test set 1
+                {xyz_n_test, xyz_a_test, xyz_c_test, xyz_o_test},     // constructor arguments for test set 1
                             });
     }
     
     
-    public LoopClosureTest(double[][] xyz_n_test,double[][] xyz_a_test,double[][] xyz_c_test)
+    public LoopClosureTest(double[][] xyz_n_test,double[][] xyz_a_test,double[][] xyz_c_test, double[][] xyz_o_test)
     {
         int stt_res = 1;
         int end_res = 5;
@@ -129,12 +141,13 @@ public class LoopClosureTest
         this.xyz_n_test = xyz_n_test;
         this.xyz_a_test = xyz_a_test;
         this.xyz_c_test = xyz_c_test;
+        this.xyz_o_test = xyz_o_test;
     }
     
     @Before
     public void setUp() 
     {
-        //logger.info("\n\n\n\n\n\n\n\n\n\n\nHi, this is Mallory's Test!");
+//        logger.info("\n\n\n\n\n\n\n\n\n\n\nHi, this is Mallory's Test!");
 //        int stt_res = 1;
 //        int end_res = 5;
 //        ClassLoader cl = this.getClass().getClassLoader();
@@ -149,11 +162,17 @@ public class LoopClosureTest
     {
         double[][] r_a = new double [5][3]; 
         double[][] r_c = new double [5][3]; 
-        double[][] r_n = new double [5][3]; 
+        double[][] r_n = new double [5][3];
+        double[][] r_o = new double [5][3];
 
         r_a = loop.getr_a();
         r_c = loop.getr_c();
         r_n = loop.getr_n();
+        r_o = sturmMethod.getr_o();
+        
+        System.out.println("R_O:\n");
+        //System.out.println(r_o+"\n\n\n\n");
+        System.out.println(r_o);
         
         int j = 0;
        
@@ -170,6 +189,11 @@ public class LoopClosureTest
         for(j = 0; j<3; j++)
         {
             assertArrayEquals(r_n[j+1], xyz_n_test[j], 1e-8);
+        }
+        
+        for(j = 0; j<3; j++)
+        {
+            assertArrayEquals(r_o[j+1], xyz_o_test[j], 1e-8);
         }
         
     }
