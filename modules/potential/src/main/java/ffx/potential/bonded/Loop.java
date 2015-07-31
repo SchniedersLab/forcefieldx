@@ -50,7 +50,7 @@ import java.util.logging.Logger;
 public class Loop
 {
     private static final LoopClosure loopClosure = new LoopClosure();
-    private static final SturmMethod sturmMethod = new SturmMethod();
+    public static final SturmMethod sturmMethod = new SturmMethod();
     private Logger logger = Logger.getLogger(Loop.class.getName());
     
     int max_soln = 16;

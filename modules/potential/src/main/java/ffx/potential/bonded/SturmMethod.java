@@ -917,11 +917,6 @@ public class SturmMethod {
             xyz_o[i-stt_res][0] = O.getX();
             xyz_o[i-stt_res][1] = O.getY();
             xyz_o[i-stt_res][2] = O.getZ();
-            System.out.println(xyz_o[i-stt_res][0]);
-            System.out.println(xyz_o[i-stt_res][1]);
-            System.out.println(xyz_o[i-stt_res][2]);
-            System.out.println("INDEX: "+(i-stt_res));
-            System.out.println("\n");
             
             oCount++;
         }
@@ -972,16 +967,6 @@ public class SturmMethod {
     //used only in JUnit testing
     public double[][] getr_o() 
     {
-        System.out.println("HERE:");
-        int i; 
-        int j;
-        for(i = 0; i<5; i++)
-        {
-            for(j=0; j<3; j++)
-            {
-                System.out.println(xyz_o[i][j]);
-            }
-        }
         return xyz_o;
     }
 }
