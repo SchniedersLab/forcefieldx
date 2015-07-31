@@ -67,6 +67,7 @@ public class SturmMethod {
     double RELERROR;
     int MAXIT, MAX_ITER_SECANT;
     double[] roots;
+    double[][] xyz_o = new double[5][3];
     
     /*Class that holds polynomial information.
     Poly objects have one position that holds the order of a polynomial in
@@ -816,6 +817,14 @@ public class SturmMethod {
         double[] xyz_n = new double[3];
         double[] xyz_a = new double[3];
         double[] xyz_c = new double[3];
+        
+        xyz_o[0][0] = 0.0;
+        xyz_o[0][1] = 0.0;
+        xyz_o[0][2] = 0.0;
+        xyz_o[4][0] = 0.0;
+        xyz_o[4][1] = 0.0;
+        xyz_o[4][2] = 0.0;
+        
         ArrayList<Atom> OAtoms = new ArrayList<Atom>();
         
         for(int i = stt_res + 1; i < end_res; i++){
@@ -881,7 +890,7 @@ public class SturmMethod {
             Atom N = new Atom("N");
             Atom C = new Atom("C");
             
-            System.out.printf("\nAdded %d\n",oCount);
+            //System.out.printf("\nAdded %d\n",oCount);
             //System.out.println(OAtoms);
             //System.out.println("\n\n\n");
             Atom O = OAtoms.get(oCount);
@@ -905,15 +914,18 @@ public class SturmMethod {
                 }
             }
             BondedUtils.intxyz(O, C, 1.2255, CA, 122.4, N, 180, 0);
+            xyz_o[i-stt_res][0] = O.getX();
+            xyz_o[i-stt_res][1] = O.getY();
+            xyz_o[i-stt_res][2] = O.getZ();
+            System.out.println(xyz_o[i-stt_res][0]);
+            System.out.println(xyz_o[i-stt_res][1]);
+            System.out.println(xyz_o[i-stt_res][2]);
+            System.out.println("INDEX: "+(i-stt_res));
+            System.out.println("\n");
             
             oCount++;
         }
-        
-        
-        
-        
-        
-        
+  
         File file = molAss.getFile();
         
         for(int i = stt_res; i <= end_res; i++)
@@ -955,5 +967,21 @@ public class SturmMethod {
         System.out.println("\n\n\n"); */
         
         return (modifiedFile);
+    }
+    
+    //used only in JUnit testing
+    public double[][] getr_o() 
+    {
+        System.out.println("HERE:");
+        int i; 
+        int j;
+        for(i = 0; i<5; i++)
+        {
+            for(j=0; j<3; j++)
+            {
+                System.out.println(xyz_o[i][j]);
+            }
+        }
+        return xyz_o;
     }
 }

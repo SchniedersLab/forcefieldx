@@ -297,12 +297,12 @@ public class Loop
                      sprintf(out_pdb, "%s_%d.pdb", out_prefix, k+1);
                     */
                        counter++;
-                       if(writeFile)
-                       {
+                       //if(writeFile)
+                       //{
                             File fileName = sturmMethod.write_pdb_backbone(out_pdb, res_name, r_n, r_a, r_c, n0-1, n0+3, chain_n, chain_a, chain_c,molAss,counter, writeFile);
                             StringBuilder string1 = new StringBuilder();
                             string.append(String.format("Recording the solution #"+(k+1)+" in "+fileName+".\n"));
-                       }
+                       //}
                     //write_pdb_backbone(out_pdb, res_name, r_n, r_a, r_c, n0-1, n0+3);
                     
                     /*
@@ -335,7 +335,7 @@ public class Loop
     {
         return r_a;
     }
-     public double[][] getr_c() 
+    public double[][] getr_c() 
     {
         return r_c;
     }
