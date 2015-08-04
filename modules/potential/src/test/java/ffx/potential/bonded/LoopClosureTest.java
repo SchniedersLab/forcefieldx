@@ -157,9 +157,9 @@ public class LoopClosureTest {
         double[][] r_n = new double[5][3];
         double[][] r_o = new double[5][3];
 
-        r_a = loop.getr_a();
-        r_c = loop.getr_c();
-        r_n = loop.getr_n();
+        r_a = loop.getRA();
+        r_c = loop.getRC();
+        r_n = loop.getRN();
         r_o = Loop.sturmMethod.getr_o();
 
         //System.out.println("R_O:\n");
