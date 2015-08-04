@@ -289,9 +289,92 @@
         </dependency>
         <dependency>
             <groupId>org.biojava</groupId>
+            <artifactId>biojava-aa-prop</artifactId>
+            <version>${biojava.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.biojava</groupId>
+            <artifactId>biojava-alignment</artifactId>
+            <version>${biojava.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.biojava</groupId>
+            <artifactId>biojava-core</artifactId>
+            <version>${biojava.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.biojava</groupId>
+            <artifactId>biojava-genome</artifactId>
+            <version>${biojava.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.biojava</groupId>
+            <artifactId>biojava-integrationtest</artifactId>
+            <version>${biojava.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.biojava</groupId>
+            <artifactId>biojava-modfinder</artifactId>
+            <version>${biojava.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.biojava</groupId>
+            <artifactId>biojava-ontology</artifactId>
+            <version>${biojava.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.biojava</groupId>
+            <artifactId>biojava-phylo</artifactId>
+            <version>${biojava.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.biojava</groupId>
+            <artifactId>biojava-protein-disorder</artifactId>
+            <version>${biojava.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.biojava</groupId>
+            <artifactId>biojava-sequencing</artifactId>
+            <version>${biojava.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.biojava</groupId>
             <artifactId>biojava-structure</artifactId>
             <version>${biojava.version}</version>
             <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.biojava</groupId>
+            <artifactId>biojava-structure-gui</artifactId>
+            <version>${biojava.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.biojava</groupId>
+            <artifactId>biojava-survival</artifactId>
+            <version>${biojava.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.biojava</groupId>
+            <artifactId>biojava-ws</artifactId>
+            <version>${biojava.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.biojava</groupId>
+            <artifactId>jcolorbrewer</artifactId>
+            <version>5.2</version>
         </dependency>
     </dependencies>
 </project>

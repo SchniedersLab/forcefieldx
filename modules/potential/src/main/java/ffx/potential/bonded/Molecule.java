@@ -295,6 +295,22 @@ public class Molecule extends MSGroup implements Group {
         }
     }
     
+    /**
+     * Returns a copy with basic information (force field information generally
+     * not copied).
+     * @return 
+     */
+    public Molecule clone() {
+        Molecule ret = new Molecule(getName(), residueNum, chainID, segID);
+        for (Atom atom : getAtomList()) {
+            Atom newAtom = atom.clone();
+            ret.addMSNode(newAtom);
+        }
+        ret.setChemComp(chemComp);
+        ret.setResidueNumber(copyResNum());
+        return ret;
+    }
+    
     public void findParentPolymer() {
         TreeNode parentNode = getParent();
         while (parentNode != null) {
@@ -453,6 +469,9 @@ public class Molecule extends MSGroup implements Group {
     
     @Override
     public Chain getChain() {
+        if (parentChain == null) {
+            findParentPolymer();
+        }
         return parentChain;
     }
 
@@ -473,6 +492,13 @@ public class Molecule extends MSGroup implements Group {
             }
         }
         resNum = new ResidueNumber("" + chainID, residueNum, insCode);
+    }
+    
+    private ResidueNumber copyResNum() {
+        if (resNum == null) {
+            generateResNum();
+        }
+        return new ResidueNumber(resNum.getChainId(), resNum.getSeqNum(), resNum.getInsCode());
     }
 
     @Override

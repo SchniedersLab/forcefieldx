@@ -848,7 +848,7 @@
         <jcuda.version>6.5.0</jcuda.version>
         <jocl.version>2.3.1</jocl.version>
         <junit.version>4.12</junit.version>
-        <biojava.version>4.1.0</biojava.version>
+        <biojava.version>0.0.1</biojava.version>
         <slf4j.version>1.7.12</slf4j.version>
         <log4j.version>2.3</log4j.version>
     </properties>

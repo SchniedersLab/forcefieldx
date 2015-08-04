@@ -88,7 +88,7 @@ import org.biojava.nbio.structure.io.mmcif.model.ChemCompAtom;
  * @since 1.0
  *
  */
-public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.structure.Atom {
+public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.structure.Atom, Cloneable {
 
     public enum Resolution { FIXEDCHARGE, AMOEBA }
 
@@ -522,6 +522,7 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
         atom.setHetero(hetatm);
         atom.setInsCode(insCode);
         atom.setRedXYZ(getRedXYZ());
+        //atom.setGroup(getGroup(), true);
         return atom;
     }
     

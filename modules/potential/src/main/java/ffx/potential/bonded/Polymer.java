@@ -328,6 +328,18 @@ public class Polymer extends MSGroup implements Chain {
             }
         }
     }
+    
+    public Polymer clone() {
+        Polymer polymer = new Polymer(chainID, getName(), link);
+        polymer.setCompound(compound);
+        polymer.setId(hibID);
+        polymer.setInternalChainID(asym_id);
+        polymer.setSwissprotId(swissprotID);
+        for (Group group : getAtomGroups()) {
+            polymer.addGroup((Group) group.clone());
+        }
+        return polymer;
+    }
 
     @Override
     public Long getId() {
@@ -873,6 +885,7 @@ public class Polymer extends MSGroup implements Chain {
                     chainID, getName());
         }
         addMSNode(residue);
+        residue.setChain(this, true);
         return residue;
     }
     

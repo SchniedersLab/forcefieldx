@@ -327,7 +327,7 @@ public final class Utilities {
         if (residue == null) {
             residue = new Residue(resname, Residue.ResidueType.UNK);
         }
-        residue.findParentPolymer();
+        //residue.findParentPolymer();
         // Create the Residue group
         for (ListIterator li = atoms.listIterator(); li.hasNext();) {
             a = (Atom) li.next();

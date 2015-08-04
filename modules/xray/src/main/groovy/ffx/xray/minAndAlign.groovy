@@ -50,6 +50,7 @@ import org.biojava.nbio.structure.align.ce.CeCPMain;
 import org.biojava.nbio.structure.align.model.AFPChain;
 import org.biojava.nbio.structure.align.StructureAlignment;
 import org.biojava.nbio.structure.Atom;
+import org.biojava.nbio.structure.align.ce.GuiWrapper;
 import ffx.potential.MolecularAssembly;
 
 // Groovy Imports
@@ -62,27 +63,41 @@ import groovy.util.CliBuilder;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
-boolean xray = false;
-int cycles = 2; // Only meaningful for X-ray refinement.
-double eps = -1.0;
-double beps = -1.0;
-int maxiter = 1000;
-
+//boolean xray = false;
+//int cycles = 2; // Only meaningful for X-ray refinement.
+double eps = 1.0;
+//double beps = -1.0;
+//int maxiter = 1000;
+boolean display = false;
+boolean allAtom = false;
 
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc xray.minAndAlign <pdb code 1> <pdb code 2>');
 cli.h(longOpt:'help', 'Print this help message.');
-cli.x(longOpt:'xray', 'Minimize using X-ray target');
-cli.c(longOpt:'cycles', args:1, argName:'2', 'Cycles of refinement to get to final convergence criteria (only meaningful for X-ray).');
-cli.e(longOpt:'eps', args:1, argName:'-1.0', 'RMS gradient convergence criteria for coordinates (negative: automatically determine).');
-cli.be(longOpt:'bfac-eps', args:1, argName:'-1.0', 'RMS gradient convergence criteria for B-factors (negative: automatically determine).')
-cli.m(longOpt:'maxiter', args:1, argName:'1000', 'maximum number of allowed refinement iterations.');
-cli.a(longOpt:'allAtom', args:1, argName:'false', '')
+//cli.x(longOpt:'xray', 'Minimize using X-ray target');
+//cli.c(longOpt:'cycles', args:1, argName:'2', 'Cycles of refinement to get to final convergence criteria (only meaningful for X-ray).');
+cli.e(longOpt:'eps', args:1, argName:'1.0', 'RMS gradient convergence criteria for coordinates.');
+//cli.be(longOpt:'bfac-eps', args:1, argName:'-1.0', 'RMS gradient convergence criteria for B-factors (negative: automatically determine).')
+//cli.i(longOpt:'maxiter', args:1, argName:'1000', 'maximum number of allowed refinement iterations.');
+cli.a(longOpt:'allAtom', args:1, argName:'false', 'Use all atoms (true) or alpha carbons only (false) for alignment.');
+cli.d(longOpt:'display', args:1, argName:'false', 'Display final alignment in Jmol session.');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
 if (options.h) {
     return cli.usage();
+}
+
+if (options.e) {
+    eps = Double.parseDouble(options.e);
+}
+
+if (options.d) {
+    display = Boolean.parseBoolean(options.d);
+}
+
+if (options.a) {
+    allAtom = Boolean.parseBoolean(options.a);
 }
 
 String pdbcode1;
@@ -96,13 +111,21 @@ if (arguments != null && arguments.size() == 2) {
 
 Structure struct1 = StructureIO.getStructure(pdbcode1);
 Structure struct2 = StructureIO.getStructure(pdbcode2);
-org.biojava.nbio.structure.Atom[] atoms1 = StructureTools.getAtomCAArray(struct1);
-org.biojava.nbio.structure.Atom[] atoms2 = StructureTools.getAtomCAArray(struct2);
+org.biojava.nbio.structure.Atom[] atoms1;
+org.biojava.nbio.structure.Atom[] atoms2;
+if (allAtom) {
+    atoms1 = StructureTools.getAllAtomArray(struct1);
+    atoms2 = StructureTools.getAllAtomArray(struct2);
+} else {
+    atoms1 = StructureTools.getAtomCAArray(struct1);
+    atoms2 = StructureTools.getAtomCAArray(struct2);
+}
 
-StructureAlignment algorithm = StructureAlignmentFactory.getAlgorithm(CeCPMain.algorithmName);
+StructureAlignment algorithm = StructureAlignmentFactory.getAlgorithm(CeMain.algorithmName);
 AFPChain afpChain;
-//afpChain = algorithm.align(atoms1, atoms2);
-//logger.info(afpChain.toCE(atoms1, atoms2));
+logger.info(" Aligning original structures.");
+afpChain = algorithm.align(atoms1, atoms2);
+logger.info(afpChain.toCE(atoms1, atoms2));
 
 
 AlgorithmFunctions functions;
@@ -113,11 +136,46 @@ try {
 }
 
 MolecularAssembly[] mas1 = functions.convertDataStructure(struct1);
-MolecularAssembly[] mas2 = functions.convertDataStructure(struct2);
 MolecularAssembly assem1 = mas1[0];
+
+functions.minimize(assem1, eps);
+logger.info(" Aligning structure 1 with minimized structure 1.");
+org.biojava.nbio.structure.Atom[] newAtoms1;
+if (allAtom) {
+    newAtoms1 = StructureTools.getAllAtomArray(assem1);
+} else {
+    newAtoms1 = StructureTools.getAtomCAArray(assem1);
+}
+
+afpChain = algorithm.align(newAtoms1, atoms1);
+logger.info(afpChain.toCE(newAtoms1, atoms1));
+
+MolecularAssembly[] mas2 = functions.convertDataStructure(struct2);
 MolecularAssembly assem2 = mas2[0];
 
-org.biojava.nbio.structure.Atom[] newAtoms1 = StructureTools.getAtomCAArray(assem1);
+functions.minimize(assem2, eps);
+logger.info(" Aligning structure 2 with minimized structure 2.");
+org.biojava.nbio.structure.Atom[] newAtoms2;
+if (allAtom) {
+    newAtoms2 = StructureTools.getAllAtomArray(assem2);
+} else {
+    newAtoms2 = StructureTools.getAtomCAArray(assem2);
+}
 
-afpChain = algorithm.align(newAtoms1, atoms2);
-logger.info(afpChain.toCE(newAtoms1, atoms2));
+afpChain = algorithm.align(newAtoms2, atoms2);
+logger.info(afpChain.toCE(newAtoms2, atoms2));
+
+logger.info(" Aligning minimized structures.");
+afpChain = algorithm.align(newAtoms1, newAtoms2);
+logger.info(afpChain.toCE(newAtoms1, newAtoms2));
+
+if (display) {
+    String headlessString = System.getProperty("java.awt.headless");
+    boolean isHeadless = Boolean.parseBoolean(headlessString);
+    
+    if (!isHeadless) {
+        GuiWrapper.display(afpChain, newAtoms1, newAtoms2);
+    } else {
+        logger.info(" Cannot display alignment; currently running a headless JVM (run using ffx, not ffxc to enable GUI)");
+    }
+}

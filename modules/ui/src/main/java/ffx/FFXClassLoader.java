@@ -92,6 +92,8 @@ public class FFXClassLoader extends URLClassLoader {
         "org.slf4j",
         "org.jogamp",
         "edu.rit.pj",
+        "net.sourceforge.jmol",
+        "org.biojava",
         "jcuda"};
     static final List<String> FFX_FILES;
     private static String gluegen = null;
@@ -158,11 +160,23 @@ public class FFXClassLoader extends URLClassLoader {
             "org.biojava/biojava3-alignment.jar",
             "org.biojava/biojava3-phylo.jar",
             */
-            "org.biojava/biojava-structure.jar",
-            "org.biojava/biojava-core.jar",
+            "org.biojava/biojava-aa-prop.jar",
             "org.biojava/biojava-alignment.jar",
+            "org.biojava/biojava-core.jar",
+            "org.biojava/biojava-genome.jar",
+            "org.biojava/biojava-integrationtest.jar",
+            "org.biojava/biojava-modfinder.jar",
+            "org.biojava/biojava-ontology.jar",
             "org.biojava/biojava-phylo.jar",
+            "org.biojava/biojava-protein-disorder.jar",
+            "org.biojava/biojava-sequencing.jar",
+            "org.biojava/biojava-structure.jar",
+            "org.biojava/biojava-structure-gui.jar",
+            "org.biojava/biojava-survival.jar",
+            "org.biojava/biojava-ws.jar",
+            "org.biojava/jcolorbrewer.jar",
             "org.biojava.thirdparty/forester.jar",
+            "net.sourceforge.jmol/jmol.jar",
             // Lars Behnke's hierarchical-clustering-java
             "com.apporiented/hierarchical-clustering.jar"
         }));
