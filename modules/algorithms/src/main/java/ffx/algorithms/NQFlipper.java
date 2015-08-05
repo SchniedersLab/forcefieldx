@@ -234,7 +234,7 @@ public class NQFlipper {
         double dOE1_CD = OE1_CD.getLength();
         double dOE1_CD_CG = calculateAngle(OE1, CD, CG);
         double dOE1_CD_CG_CB = OE1_CD_CG_CB.getValue();
-
+        
         Bond NE2_CD = NE2.getBond(CD);
         Torsion NE2_CD_CG_CB = NE2.getTorsion(CD, CG, CB);
         double dNE2_CD = NE2_CD.getLength();

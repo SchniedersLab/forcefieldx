@@ -84,7 +84,7 @@
         </dependency>
         <dependency>
             <groupId>org.biojava</groupId>
-            <artifactId>biojava-structure</artifactId>
+            <artifactId>biojava-structure-ffx</artifactId>
             <version>${biojava.version}</version>
             <type>jar</type>
         </dependency>

@@ -157,13 +157,13 @@
         </dependency>
         <dependency>
             <groupId>org.biojava</groupId>
-            <artifactId>biojava-structure</artifactId>
+            <artifactId>biojava-structure-ffx</artifactId>
             <version>${biojava.version}</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.biojava</groupId>
-            <artifactId>biojava-structure-gui</artifactId>
+            <artifactId>biojava-structure-gui-ffx</artifactId>
             <version>${biojava.version}</version>
             <type>jar</type>
         </dependency>

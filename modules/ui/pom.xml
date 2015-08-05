@@ -289,85 +289,85 @@
         </dependency>
         <dependency>
             <groupId>org.biojava</groupId>
-            <artifactId>biojava-aa-prop</artifactId>
+            <artifactId>biojava-aa-prop-ffx</artifactId>
             <version>${biojava.version}</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.biojava</groupId>
-            <artifactId>biojava-alignment</artifactId>
+            <artifactId>biojava-alignment-ffx</artifactId>
             <version>${biojava.version}</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.biojava</groupId>
-            <artifactId>biojava-core</artifactId>
+            <artifactId>biojava-core-ffx</artifactId>
             <version>${biojava.version}</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.biojava</groupId>
-            <artifactId>biojava-genome</artifactId>
+            <artifactId>biojava-genome-ffx</artifactId>
             <version>${biojava.version}</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.biojava</groupId>
-            <artifactId>biojava-integrationtest</artifactId>
+            <artifactId>biojava-integrationtest-ffx</artifactId>
             <version>${biojava.version}</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.biojava</groupId>
-            <artifactId>biojava-modfinder</artifactId>
+            <artifactId>biojava-modfinder-ffx</artifactId>
             <version>${biojava.version}</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.biojava</groupId>
-            <artifactId>biojava-ontology</artifactId>
+            <artifactId>biojava-ontology-ffx</artifactId>
             <version>${biojava.version}</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.biojava</groupId>
-            <artifactId>biojava-phylo</artifactId>
+            <artifactId>biojava-phylo-ffx</artifactId>
             <version>${biojava.version}</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.biojava</groupId>
-            <artifactId>biojava-protein-disorder</artifactId>
+            <artifactId>biojava-protein-disorder-ffx</artifactId>
             <version>${biojava.version}</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.biojava</groupId>
-            <artifactId>biojava-sequencing</artifactId>
+            <artifactId>biojava-sequencing-ffx</artifactId>
             <version>${biojava.version}</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.biojava</groupId>
-            <artifactId>biojava-structure</artifactId>
+            <artifactId>biojava-structure-ffx</artifactId>
             <version>${biojava.version}</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.biojava</groupId>
-            <artifactId>biojava-structure-gui</artifactId>
+            <artifactId>biojava-structure-gui-ffx</artifactId>
             <version>${biojava.version}</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.biojava</groupId>
-            <artifactId>biojava-survival</artifactId>
+            <artifactId>biojava-survival-ffx</artifactId>
             <version>${biojava.version}</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.biojava</groupId>
-            <artifactId>biojava-ws</artifactId>
+            <artifactId>biojava-ws-ffx</artifactId>
             <version>${biojava.version}</version>
             <type>jar</type>
         </dependency>
@@ -376,5 +376,26 @@
             <artifactId>jcolorbrewer</artifactId>
             <version>5.2</version>
         </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <version>${log4j.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>	
     </dependencies>
 </project>
