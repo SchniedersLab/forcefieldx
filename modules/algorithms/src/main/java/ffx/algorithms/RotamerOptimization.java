@@ -883,7 +883,7 @@ public class RotamerOptimization implements Terminatable {
                     algorithmListener.algorithmUpdate(molecularAssembly);
                 }
 
-                if (master && ensembleNumber > 1) {
+                if (master && (ensembleNumber > 1 || ensembleEnergy > 0)) {
                     try {
                         FileWriter fw = new FileWriter(ensembleFile, true);
                         BufferedWriter bw = new BufferedWriter(fw);
