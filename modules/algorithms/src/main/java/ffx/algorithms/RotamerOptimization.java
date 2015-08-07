@@ -660,8 +660,7 @@ public class RotamerOptimization implements Terminatable {
             for (int ri = 0; ri < lenri; ri++) {
                 applyRotamer(current, rotamers[ri]);
 
-                potential.getCoordinates(x);
-                double rotEnergy = potential.energy(x);
+                double rotEnergy = currentEnergy();
                 logger.info(String.format(" %d Energy: %16.8f", ++evaluatedPermutations, rotEnergy));
                 if (algorithmListener != null) {
                     algorithmListener.algorithmUpdate(molecularAssembly);
@@ -859,8 +858,7 @@ public class RotamerOptimization implements Terminatable {
                 evaluatedPermutations++;
                 // Compute the AMOEBA energy
                 if (useFullAMOEBAEnergy) {
-                    potential.getCoordinates(x);
-                    double amoebaEnergy = potential.energy(x);
+                    double amoebaEnergy = currentEnergy();
                     if (permutationEnergies != null) {
                         permutationEnergies[evaluatedPermutations - 1] = amoebaEnergy;
                     }
@@ -885,7 +883,7 @@ public class RotamerOptimization implements Terminatable {
                     algorithmListener.algorithmUpdate(molecularAssembly);
                 }
 
-                if (master && ensembleNumber > 1) {
+                if (master && (ensembleNumber > 1 || ensembleEnergy > 0)) {
                     try {
                         FileWriter fw = new FileWriter(ensembleFile, true);
                         BufferedWriter bw = new BufferedWriter(fw);
@@ -1149,7 +1147,7 @@ public class RotamerOptimization implements Terminatable {
         distanceMatrix();
 
         double totalEnergy;
-        double localBackboneEnergy;
+        double localBackboneEnergy = 0; // Dummy value to keep compiler from complaining.
         double localSelfEnergy[] = new double[nRes];
         double pairEnergy[][] = new double[nRes][nRes];
         double triEnergy[][][] = new double[nRes][nRes][nRes];
@@ -1164,7 +1162,11 @@ public class RotamerOptimization implements Terminatable {
         for (int i = 0; i < nRes; i++) {
             turnOffAtoms(residues[i]);
         }
-        localBackboneEnergy = currentEnergy();
+        try {
+            localBackboneEnergy = currentEnergy(false);
+        } catch (ArithmeticException ex) {
+            logger.severe(String.format("FFX shutting down: error in calculation of backbone energy %s", ex.getMessage()));
+        }
         for (int i = 0; i < nRes; i++) {
             turnOnAtoms(residues[i]);
             localSelfEnergy[i] = currentEnergy() - localBackboneEnergy;
@@ -1257,7 +1259,7 @@ public class RotamerOptimization implements Terminatable {
         distanceMatrix();
 
         double totalEnergy;
-        double localBackboneEnergy;
+        double localBackboneEnergy = 0; // Dummy value to keep compiler from complaining.
         double localSelfEnergy[] = new double[nRes];
         double pairEnergy[][] = new double[nRes][nRes];
         double triEnergy[][][] = new double[nRes][nRes][nRes];
@@ -1273,7 +1275,11 @@ public class RotamerOptimization implements Terminatable {
         for (int i = 0; i < nRes; i++) {
             turnOffAtoms(residues[i]);
         }
-        localBackboneEnergy = currentEnergy();
+        try {
+            localBackboneEnergy = currentEnergy(false);
+        } catch (ArithmeticException ex) {
+            logger.severe(String.format("FFX shutting down: error in calculation of backbone energy %s", ex.getMessage()));
+        }
         logIfMaster(String.format(" Backbone: %16.5f", localBackboneEnergy));
 
         decomposeOriginal = true;
@@ -1367,7 +1373,7 @@ public class RotamerOptimization implements Terminatable {
         distanceMatrix();
 
         double totalEnergy;
-        double localBackboneEnergy;
+        double localBackboneEnergy = 0; // Dummy value to keep compiler from complaining.
         double localSelfEnergy[] = new double[nRes];
         double pairEnergy[][] = new double[nRes][nRes];
         double triEnergy[][][] = new double[nRes][nRes][nRes];
@@ -1384,7 +1390,11 @@ public class RotamerOptimization implements Terminatable {
         for (int i = 0; i < nRes; i++) {
             turnOffAtoms(residues[i]);
         }
-        localBackboneEnergy = currentEnergy();
+        try {
+            localBackboneEnergy = currentEnergy(false);
+        } catch (ArithmeticException ex) {
+            logger.severe(String.format("FFX shutting down: error in calculation of backbone energy %s", ex.getMessage()));
+        }
         for (int i = 0; i < nRes; i++) {
             turnOnAtoms(residues[i]);
             localSelfEnergy[i] = currentEnergy() - localBackboneEnergy;
@@ -1540,7 +1550,7 @@ public class RotamerOptimization implements Terminatable {
         distanceMatrix();
 
         double totalEnergy;
-        double localBackboneEnergy;
+        double localBackboneEnergy = 0; // Dummy value to keep compiler from complaining.
         double localSelfEnergy[] = new double[nRes];
         double pairEnergy[][] = new double[nRes][nRes];
         double triEnergy[][][] = new double[nRes][nRes][nRes];
@@ -1556,7 +1566,11 @@ public class RotamerOptimization implements Terminatable {
         for (int i = 0; i < nRes; i++) {
             turnOffAtoms(residues[i]);
         }
-        localBackboneEnergy = currentEnergy();
+        try {
+            localBackboneEnergy = currentEnergy(false);
+        } catch (ArithmeticException ex) {
+            logger.severe(String.format("FFX shutting down: error in calculation of backbone energy %s", ex.getMessage()));
+        }
         for (int i = 0; i < nRes; i++) {
             turnOnAtoms(residues[i]);
             localSelfEnergy[i] = currentEnergy() - localBackboneEnergy;
@@ -2280,8 +2294,7 @@ public class RotamerOptimization implements Terminatable {
                 if (algorithmListener != null) {
                     algorithmListener.algorithmUpdate(molecularAssembly);
                 }
-                potential.getCoordinates(x);
-                double newE = potential.energy(x);
+                double newE = currentEnergy();
                 if (newE < e) {
                     bestRotamer = j;
                 }
@@ -2613,8 +2626,7 @@ public class RotamerOptimization implements Terminatable {
             }
         }
 
-        potential.getCoordinates(x);
-        double e = potential.energy(x);
+        double e = currentEnergy();
         logIfMaster(String.format(" Self Energy:   %16.8f", sumSelfEnergy));
         logIfMaster(String.format(" Pair Energy:   %16.8f", sumPairEnergy));
 
@@ -3062,8 +3074,7 @@ public class RotamerOptimization implements Terminatable {
                             int nAtoms = atoms.length;
                             x = new double[nAtoms * 3];
                         }
-                        potential.getCoordinates(x);
-                        double startingEnergy = potential.energy(x);
+                        double startingEnergy = currentEnergy();
                         if (useForcedResidues) {
                             if (onlyRotameric.size() < 1) {
                                 logger.info(" Window has no rotameric residues.");
@@ -3840,8 +3851,23 @@ public class RotamerOptimization implements Terminatable {
             return potential.energy(x);
         } catch (ArithmeticException ex) {
             logger.warning(ex.getMessage());
-            return Double.MAX_VALUE;
+            return 1e100;
         }
+    }
+    
+    /**
+     * Calculates the energy at the current state, with the option to throw instead
+     * of catching exceptions in the energy calculation.
+     * 
+     * @param catchError If true, catch force field exceptions.
+     * @return Energy of the current state.
+     */
+    private double currentEnergy(boolean catchError) {
+        if (catchError) {
+            return currentEnergy();
+        }
+        potential.getCoordinates(x);
+        return potential.energy(x);
     }
 
     /**
@@ -4165,7 +4191,11 @@ public class RotamerOptimization implements Terminatable {
          */
         boolean useOrigCoordsRot = RotamerLibrary.getUsingOrigCoordsRotamer();
         // Compute the backbone energy.
-        backboneEnergy = currentEnergy();
+        try {
+            backboneEnergy = currentEnergy(false);
+        } catch (ArithmeticException ex) {
+            logger.severe(String.format("FFX shutting down: error in calculation of backbone energy %s", ex.getMessage()));
+        }
         logger.info(String.format(" Backbone energy:  %16.8f\n", backboneEnergy));
         // Compute the self-energy for each rotamer of each residue
         selfEnergy = new double[nResidues][];
@@ -7453,7 +7483,11 @@ public class RotamerOptimization implements Terminatable {
                 }
                 turnOffAtoms(residue);
             }
-            backboneEnergy = currentEnergy();
+            try {
+                backboneEnergy = currentEnergy(false);
+            } catch (ArithmeticException ex) {
+                logger.severe(String.format("FFX shutting down: error in calculation of backbone energy %s", ex.getMessage()));
+            }
             logIfMaster(String.format(" Backbone energy:  %16.8f\n", backboneEnergy));
         }
 

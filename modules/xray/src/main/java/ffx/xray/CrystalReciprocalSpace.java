@@ -64,7 +64,7 @@ import ffx.crystal.SymOp;
 import ffx.numerics.ComplexNumber;
 import ffx.numerics.fft.Complex;
 import ffx.numerics.fft.Complex3DParallel;
-import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Atom; 
 import ffx.potential.nonbonded.RowLoop;
 import ffx.potential.nonbonded.RowRegion;
 import ffx.potential.nonbonded.SliceLoop;
@@ -1124,6 +1124,10 @@ public class CrystalReciprocalSpace {
                         optRowWeightAtomic.set(i, 0);
                     }
                     atomicRowSchedule.updateWeights(previousOptRowWeightAtomic);
+                    int atomicRowTotal = 0;
+                    for (int i = 0; i < threadCount; i++) {
+                        atomicRowTotal += atomicRowLoops[i].getThreadTime();
+                    }        
                     parallelTeam.execute(atomicRowRegion);
                     for (int i = 0; i < fftZ * fftY; i++) {
                         previousOptRowWeightAtomic[i] = optRowWeightAtomic.get(i);
@@ -1186,15 +1190,15 @@ public class CrystalReciprocalSpace {
 
                 case ROW:
                     double atomicRowTotal = 0;
-                    double atomicRowMin = atomicRowLoops[0].getTimePerThread();
+                    double atomicRowMin = atomicRowLoops[0].getThreadTime();
                     double atomicRowMax = 0;
                     double atomicRowWeightTotal = 0;
 
                     for (int i = 0; i < threadCount; i++) {
-                        atomicRowTotal += atomicRowLoops[i].getTimePerThread();
-                        atomicRowMax = max(atomicRowLoops[i].getTimePerThread(), atomicRowMax);
-                        atomicRowMin = min(atomicRowLoops[i].getTimePerThread(), atomicRowMin);
-                        atomicRowWeightTotal += atomicRowLoops[i].getWeightPerThread()[i];
+                        atomicRowTotal += atomicRowLoops[i].getThreadTime();
+                        atomicRowMax = max(atomicRowLoops[i].getThreadTime(), atomicRowMax);
+                        atomicRowMin = min(atomicRowLoops[i].getThreadTime(), atomicRowMin);
+                        atomicRowWeightTotal += atomicRowLoops[i].getThreadWeight();
                     }
 
                     //Atomic timing and balance analysis
@@ -1208,10 +1212,13 @@ public class CrystalReciprocalSpace {
                     }
 
                     for (int i = 0; i < threadCount; i++) {
-                        ASB.append(String.format("     %3d     %7.5f     %7.1f     %7.1f     |   %7d     %7d     %7.1f     %7.1f\n", i, (double) (atomicRowLoops[i].getTimePerThread() * toSeconds),
-                                ((atomicRowLoops[i].getTimePerThread()) / (atomicRowTotal)) * 100.00, ((atomicRowLoops[i].getTimePerThread()) / (atomicRowTotal)) * (100.00 * threadCount),
-                                atomicRowLoops[i].getBoundsPerThread()[i], atomicRowLoops[i].getWeightPerThread()[i], 100.00 * (atomicRowLoops[i].getWeightPerThread()[i] / atomicRowWeightTotal),
-                                (100.00 * threadCount) * (atomicRowLoops[i].getWeightPerThread()[i] / atomicRowWeightTotal)));
+                        ASB.append(String.format("     %3d     %7.5f     %7.1f     %7.1f     |   %7d     %7d     %7.1f     %7.1f\n", i,
+                                (double) (atomicRowLoops[i].getThreadTime() * toSeconds),
+                                ((atomicRowLoops[i].getThreadTime()) / (atomicRowTotal)) * 100.00, 
+                                ((atomicRowLoops[i].getThreadTime()) / (atomicRowTotal)) * (100.00 * threadCount),
+                                atomicRowLoops[i].getNumberofSlices(), atomicRowLoops[i].getThreadWeight(), 
+                                100.00 * (atomicRowLoops[i].getThreadWeight() / atomicRowWeightTotal),
+                                (100.00 * threadCount) * (atomicRowLoops[i].getThreadWeight() / atomicRowWeightTotal)));
                     }
                     ASB.append(String.format("    Min      %7.5f\n", atomicRowMin * toSeconds));
                     ASB.append(String.format("    Max      %7.5f\n", atomicRowMax * toSeconds));
@@ -1494,7 +1501,7 @@ public class CrystalReciprocalSpace {
             switch (gridMethod) {
                 case ROW:
                     double solventRowTotal = 0;
-                    double solventRowMin = solventRowLoops[0].getTimePerThread();
+                    double solventRowMin = solventRowLoops[0].getThreadTime();
                     double solventRowMax = 0;
                     double solventRowWeightTotal = 0;
 
@@ -1504,10 +1511,10 @@ public class CrystalReciprocalSpace {
                     double bulkSolventRowWeightTotal = 0;
 
                     for (int i = 0; i < threadCount; i++) {
-                        solventRowTotal += solventRowLoops[i].getTimePerThread();
-                        solventRowMax = max(solventRowLoops[i].getTimePerThread(), solventRowMax);
-                        solventRowMin = min(solventRowLoops[i].getTimePerThread(), solventRowMin);
-                        solventRowWeightTotal += solventRowLoops[i].getWeightPerThread()[i];
+                        solventRowTotal += solventRowLoops[i].getThreadTime();
+                        solventRowMax = max(solventRowLoops[i].getThreadTime(), solventRowMax);
+                        solventRowMin = min(solventRowLoops[i].getThreadTime(), solventRowMin);
+                        solventRowWeightTotal += solventRowLoops[i].getThreadWeight();
 
                         bulkSolventRowTotal += bulkSolventRowLoops[i].getTimePerThread();
                         bulkSolventRowMax = max(bulkSolventRowLoops[i].getTimePerThread(), bulkSolventRowMax);
@@ -1526,10 +1533,10 @@ public class CrystalReciprocalSpace {
                     }
 
                     for (int i = 0; i < threadCount; i++) {
-                        SSB.append(String.format("     %3d     %7.5f     %7.1f     %7.1f     |   %7d     %7d     %7.1f     %7.1f\n", i, (double) (solventRowLoops[i].getTimePerThread() * toSeconds),
-                                ((solventRowLoops[i].getTimePerThread()) / (solventRowTotal)) * 100.00, ((solventRowLoops[i].getTimePerThread()) / (solventRowTotal)) * (100.00 * threadCount),
-                                solventRowLoops[i].getBoundsPerThread()[i], solventRowLoops[i].getWeightPerThread()[i], 100.00 * (solventRowLoops[i].getWeightPerThread()[i] / solventRowWeightTotal),
-                                (100.00 * threadCount) * (solventRowLoops[i].getWeightPerThread()[i] / solventRowWeightTotal)));
+                        SSB.append(String.format("     %3d     %7.5f     %7.1f     %7.1f     |   %7d     %7d     %7.1f     %7.1f\n", i, (double) (solventRowLoops[i].getThreadTime() * toSeconds),
+                                ((solventRowLoops[i].getThreadTime()) / (solventRowTotal)) * 100.00, ((solventRowLoops[i].getThreadTime()) / (solventRowTotal)) * (100.00 * threadCount),
+                                solventRowLoops[i].getNumberofSlices(), solventRowLoops[i].getThreadWeight(), 100.00 * (solventRowLoops[i].getThreadWeight() / solventRowWeightTotal),
+                                (100.00 * threadCount) * (solventRowLoops[i].getThreadWeight() / solventRowWeightTotal)));
                     }
                     SSB.append(String.format("    Min      %7.5f\n", solventRowMin * toSeconds));
                     SSB.append(String.format("    Max      %7.5f\n", solventRowMax * toSeconds));
@@ -1857,25 +1864,25 @@ public class CrystalReciprocalSpace {
         final double grid[];
         final int optLocal[];
         long timer;
-        int threadBounds[];
-        int threadWeights[];
-
+        int previousUB, previousLB;
+        int actualWeight;
+        
         public AtomicRowLoop(RowRegion region) {
             super(region.getNatoms(), region.getNsymm(), region);
             grid = region.getGrid();
             optLocal = new int[fftZ * fftY];
         }
 
-        public double getTimePerThread() {
+        public double getThreadTime() {
             return timer;
         }
 
-        public int[] getBoundsPerThread() {
-            return threadBounds;
+        public int getNumberofSlices() {
+            return (previousUB - previousLB + 1);
         }
 
-        public int[] getWeightPerThread() {
-            return threadWeights;
+        public int getThreadWeight() {
+            return actualWeight;
         }
 
         @Override
@@ -1886,6 +1893,7 @@ public class CrystalReciprocalSpace {
         @Override
         public void start() {
             fill(optLocal, 0);
+            actualWeight = 0;
             timer = -System.nanoTime();
         }
 
@@ -1894,15 +1902,135 @@ public class CrystalReciprocalSpace {
             for (int i = 0; i < fftZ * fftY; i++) {
                 optRowWeightAtomic.addAndGet(i, optLocal[i]);
             }
-
             timer += System.nanoTime();
-            threadBounds = atomicRowSchedule.getLowerBounds().clone();
-            threadWeights = atomicRowSchedule.getThreadWeights().clone();
-            for (int i = threadCount - 1; i > 0; i--) {
-                threadBounds[i] -= threadBounds[i - 1];
+        }
+
+        @Override
+        public boolean checkList(int zyAtListBuild[][][], int buff) {
+            for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+                for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
+                    if (rowRegion.select[iSymm][iAtom]) {
+                        if (!atoms[iAtom].isActive()) {
+                            continue;
+                        }
+                        xyz[0] = coordinates[iSymm][0][iAtom];
+                        xyz[1] = coordinates[iSymm][1][iAtom];
+                        xyz[2] = coordinates[iSymm][2][iAtom];
+                        crystal.toFractionalCoordinates(xyz, uvw);
+                        final double frz = fftZ * uvw[2];
+                        final int ifrz = (int) frz;
+                        final int previousZ = zyAtListBuild[iSymm][iAtom][0];
+                        
+                        final double fry = fftY * uvw[1];
+                        final int ifry = (int) fry;
+                        final int previousY = zyAtListBuild[iSymm][iAtom][1];
+                        if (abs(ifrz - previousZ) >= buff || abs(ifry - previousY) >=buff ) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+        
+        @Override
+        public void saveZYValues(int zyAtListBuild[][][]) {
+            for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+                for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
+                    zyAtListBuild[iSymm][iAtom][0] = 0;
+                    zyAtListBuild[iSymm][iAtom][1] = 0;
+                    if (rowRegion.select[iSymm][iAtom]) {
+                        if (!atoms[iAtom].isActive()) {
+                            continue;
+                        }
+                        xyz[0] = coordinates[iSymm][0][iAtom];
+                        xyz[1] = coordinates[iSymm][1][iAtom];
+                        xyz[2] = coordinates[iSymm][2][iAtom];
+                        crystal.toFractionalCoordinates(xyz, uvw);
+                        final double frz = fftZ * uvw[2];
+                        final int ifrz = (int) frz;
+                        
+                        final double fry = fftY * uvw[1];
+                        final int ifry = (int) fry;
+                        zyAtListBuild[iSymm][iAtom][0] = ifrz;
+                        zyAtListBuild[iSymm][iAtom][1] = ifry;
+                    }
+                }
             }
         }
 
+        @Override
+        public void run(int lb, int ub) throws Exception {
+            boolean boundsChange = false;
+            if (previousLB != lb || previousUB != ub) {
+                boundsChange = true;
+            }
+            previousLB = lb;
+            previousUB = ub;
+            if (rebuildList || boundsChange) {
+                buildListA = new ArrayList<>();
+                buildListS = new ArrayList<>();
+                for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+                    for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
+                        if (rowRegion.select[iSymm][iAtom]) {
+                            buildList(iSymm, iAtom, lb, ub);
+                        }
+                    }
+                }
+            }
+            for (int i = 0; i < buildListA.size(); i++) {
+                if (rowRegion.select[buildListS.get(i)][buildListA.get(i)]) {
+                    gridDensity(buildListS.get(i), buildListA.get(i), lb, ub);
+                }
+            }
+        }
+
+        public void buildList(int iSymm, int iAtom, int lb, int ub) {
+            if (!atoms[iAtom].isActive()) {
+                return;
+            }
+            xyz[0] = coordinates[iSymm][0][iAtom];
+            xyz[1] = coordinates[iSymm][1][iAtom];
+            xyz[2] = coordinates[iSymm][2][iAtom];
+            crystal.toFractionalCoordinates(xyz, uvw);
+            final int frad = min(aRadGrid, (int) floor(atoms[iAtom].getFormFactorWidth() * fftX / crystal.a) + 1);
+            
+            final double frz = fftZ * uvw[2];
+            final int ifrz = (int) frz;
+            final int ifrzu = ifrz + frad;
+            final int ifrzl = ifrz - frad;
+            
+            final double fry = fftY * uvw[1];
+            final int ifry = (int) fry;
+            final int ifryu = ifry + frad;
+            final int ifryl = ifry - frad;
+            
+            // Loop over allowed z coordinates for this Loop
+            // Check if the current atom is close enough
+            // If so, add to list.
+            int buff = bufferSize;
+            
+            int lbZ = rowRegion.zFromRowIndex(lb);
+            int ubZ = rowRegion.zFromRowIndex(ub);
+            
+            for (int iz = ifrzl - buff; iz <= ifrzu + buff; iz++) {
+                int giz = Crystal.mod(iz, fftZ);
+                if (lbZ > giz || giz > ubZ) {
+                    continue;
+                } 
+                int rowLB = rowRegion.rowIndexForYZ(Crystal.mod(ifryl - buff, fftY),giz);
+                int rowUB = rowRegion.rowIndexForYZ(Crystal.mod(ifryu + buff, fftY),giz);
+                if (lb >= rowLB || rowUB <= ub){
+                    buildListA.add(iAtom);
+                    buildListS.add(iSymm);
+                } else{
+                    continue;
+                }
+                break;
+            }
+        }
+
+        
         @Override
         public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
             if (!atoms[iAtom].isActive()) {
@@ -1952,6 +2080,7 @@ public class CrystalReciprocalSpace {
                         xf[0] = ix * ifftX;
                         crystal.toCartesianCoordinates(xf, xc);
                         optLocal[rowIndex]++;
+                        actualWeight++;
                         final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
                         grid[ii] = atomff.rho(grid[ii], lambdai, xc);
                     }
@@ -1968,9 +2097,9 @@ public class CrystalReciprocalSpace {
         final double xf[] = new double[3];
         final double grid[];
         long timer;
-        int threadBounds[];
-        int threadWeights[];
         final int optLocal[];
+        int previousUB, previousLB;
+        int actualWeight;
 
         public SolventRowLoop(RowRegion region) {
             super(region.getNatoms(), region.getNsymm(), region);
@@ -1978,18 +2107,145 @@ public class CrystalReciprocalSpace {
             optLocal = new int[fftZ * fftY];
         }
 
-        public double getTimePerThread() {
+        public double getThreadTime() {
             return timer;
         }
 
-        public int[] getBoundsPerThread() {
-            return threadBounds;
+        public int getNumberofSlices() {
+            return (previousUB - previousLB + 1);
         }
 
-        public int[] getWeightPerThread() {
-            return threadWeights;
+        public int getThreadWeight() {
+            return actualWeight;
         }
 
+        
+               @Override
+        public boolean checkList(int zyAtListBuild[][][], int buff) {
+            for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+                for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
+                    if (rowRegion.select[iSymm][iAtom]) {
+                        if (!atoms[iAtom].isActive()) {
+                            continue;
+                        }
+                        xyz[0] = coordinates[iSymm][0][iAtom];
+                        xyz[1] = coordinates[iSymm][1][iAtom];
+                        xyz[2] = coordinates[iSymm][2][iAtom];
+                        crystal.toFractionalCoordinates(xyz, uvw);
+                        final double frz = fftZ * uvw[2];
+                        final int ifrz = (int) frz;
+                        final int previousZ = zyAtListBuild[iSymm][iAtom][0];
+                        
+                        final double fry = fftY * uvw[1];
+                        final int ifry = (int) fry;
+                        final int previousY = zyAtListBuild[iSymm][iAtom][1];
+                        if (abs(ifrz - previousZ) >= buff || abs(ifry - previousY) >=buff ) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+        
+        @Override
+        public void saveZYValues(int zyAtListBuild[][][]) {
+            for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+                for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
+                    zyAtListBuild[iSymm][iAtom][0] = 0;
+                    zyAtListBuild[iSymm][iAtom][1] = 0;
+                    if (rowRegion.select[iSymm][iAtom]) {
+                        if (!atoms[iAtom].isActive()) {
+                            continue;
+                        }
+                        xyz[0] = coordinates[iSymm][0][iAtom];
+                        xyz[1] = coordinates[iSymm][1][iAtom];
+                        xyz[2] = coordinates[iSymm][2][iAtom];
+                        crystal.toFractionalCoordinates(xyz, uvw);
+                        final double frz = fftZ * uvw[2];
+                        final int ifrz = (int) frz;
+                        
+                        final double fry = fftY * uvw[1];
+                        final int ifry = (int) fry;
+                        zyAtListBuild[iSymm][iAtom][0] = ifrz;
+                        zyAtListBuild[iSymm][iAtom][1] = ifry;
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void run(int lb, int ub) throws Exception {
+            boolean boundsChange = false;
+            if (previousLB != lb || previousUB != ub) {
+                boundsChange = true;
+            }
+            previousLB = lb;
+            previousUB = ub;
+            if (rebuildList || boundsChange) {
+                buildListA = new ArrayList<>();
+                buildListS = new ArrayList<>();
+                for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+                    for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
+                        if (rowRegion.select[iSymm][iAtom]) {
+                            buildList(iSymm, iAtom, lb, ub);
+                        }
+                    }
+                }
+            }
+            for (int i = 0; i < buildListA.size(); i++) {
+                if (rowRegion.select[buildListS.get(i)][buildListA.get(i)]) {
+                    gridDensity(buildListS.get(i), buildListA.get(i), lb, ub);
+                }
+            }
+        }
+
+        public void buildList(int iSymm, int iAtom, int lb, int ub) {
+            if (!atoms[iAtom].isActive()) {
+                return;
+            }
+            xyz[0] = coordinates[iSymm][0][iAtom];
+            xyz[1] = coordinates[iSymm][1][iAtom];
+            xyz[2] = coordinates[iSymm][2][iAtom];
+            crystal.toFractionalCoordinates(xyz, uvw);
+            final int frad = min(aRadGrid, (int) floor(atoms[iAtom].getFormFactorWidth() * fftX / crystal.a) + 1);
+            
+            final double frz = fftZ * uvw[2];
+            final int ifrz = (int) frz;
+            final int ifrzu = ifrz + frad;
+            final int ifrzl = ifrz - frad;
+            
+            final double fry = fftY * uvw[1];
+            final int ifry = (int) fry;
+            final int ifryu = ifry + frad;
+            final int ifryl = ifry - frad;
+            
+            // Loop over allowed z coordinates for this Loop
+            // Check if the current atom is close enough
+            // If so, add to list.
+            int buff = bufferSize;
+            
+            int lbZ = rowRegion.zFromRowIndex(lb);
+            int ubZ = rowRegion.zFromRowIndex(ub);
+            
+            for (int iz = ifrzl - buff; iz <= ifrzu + buff; iz++) {
+                int giz = Crystal.mod(iz, fftZ);
+                if (lbZ > giz || giz > ubZ) {
+                    continue;
+                } 
+                int rowLB = rowRegion.rowIndexForYZ(Crystal.mod(ifryl - buff, fftY),giz);
+                int rowUB = rowRegion.rowIndexForYZ(Crystal.mod(ifryu + buff, fftY),giz);
+                if (lb >= rowLB || rowUB <= ub){
+                    buildListA.add(iAtom);
+                    buildListS.add(iSymm);
+                } else{
+                    continue;
+                }
+                break;
+            }
+        }
+
+        
         @Override
         public IntegerSchedule schedule() {
             return solventRowSchedule;
@@ -2006,11 +2262,6 @@ public class CrystalReciprocalSpace {
             timer += System.nanoTime();
             for (int i = 0; i < fftZ * fftY; i++) {
                 optRowWeightSolvent.addAndGet(i, optLocal[i]);
-            }
-            threadBounds = solventRowSchedule.getLowerBounds().clone();
-            threadWeights = solventRowSchedule.getThreadWeights().clone();
-            for (int i = threadCount - 1; i > 0; i--) {
-                threadBounds[i] -= threadBounds[i - 1];
             }
         }
 
@@ -2078,6 +2329,7 @@ public class CrystalReciprocalSpace {
                         xf[0] = ix * ifftX;
                         crystal.toCartesianCoordinates(xf, xc);
                         optLocal[rowIndex]++;
+                        actualWeight++;
                         final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
                         grid[ii] = formFactor.rho(grid[ii], lambdai, xc);
                     }
