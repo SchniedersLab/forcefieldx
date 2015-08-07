@@ -37,15 +37,19 @@
  */
 package ffx.potential.utils;
 
-import ffx.crystal.Crystal;
 import java.io.File;
 import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
+
+import static java.lang.String.format;
 
 import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.io.FilenameUtils;
 
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
@@ -62,10 +66,6 @@ import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XYZFileFilter;
 import ffx.potential.parsers.XYZFilter;
 import ffx.utilities.Keyword;
-import java.io.FileNotFoundException;
-import static java.lang.String.format;
-import java.util.logging.Logger;
-import org.apache.commons.io.FilenameUtils;
 
 /**
  * The PotentialsFileOpener class specifies a Runnable object which is
@@ -87,9 +87,9 @@ public class PotentialsFileOpener implements FileOpener {
     private List<CompositeConfiguration> propertyList;
     private CompositeConfiguration activeProperties;
 
-    public PotentialsFileOpener(File file) throws FileNotFoundException {
+    public PotentialsFileOpener(File file) throws IllegalArgumentException {
         if (!file.exists() || !file.isFile()) {
-            throw new FileNotFoundException(String.format(" File %s either did not exist or was not a file.", file.getName()));
+            throw new IllegalArgumentException(String.format(" File %s either did not exist or was not a file.", file.getName()));
         }
         this.file = file;
         Path pwdPath;
@@ -113,15 +113,15 @@ public class PotentialsFileOpener implements FileOpener {
         propertyList = new ArrayList<>();
     }
 
-    public PotentialsFileOpener(String filename) throws FileNotFoundException {
+    public PotentialsFileOpener(String filename) throws IllegalArgumentException {
         this(new File(filename));
     }
 
-    public PotentialsFileOpener(Path filepath) throws FileNotFoundException {
+    public PotentialsFileOpener(Path filepath) throws IllegalArgumentException {
         this(filepath.toString());
     }
 
-    public PotentialsFileOpener(File[] files) throws FileNotFoundException {
+    public PotentialsFileOpener(File[] files) throws IllegalArgumentException {
         if (files == null) {
             throw new IllegalArgumentException(" Array of files to be opened was null.");
         }
@@ -153,7 +153,7 @@ public class PotentialsFileOpener implements FileOpener {
         }
         int numAccepted = fileList.size();
         if (numAccepted < 1) {
-            throw new FileNotFoundException(" No valid files could be found to open.");
+            throw new IllegalArgumentException(" No valid files could be found to open.");
         }
         allFiles = fileList.toArray(new File[numAccepted]);
         allPaths = pathList.toArray(new Path[numAccepted]);
@@ -163,7 +163,7 @@ public class PotentialsFileOpener implements FileOpener {
         propertyList = new ArrayList<>();
     }
 
-    public PotentialsFileOpener(String[] filenames) throws FileNotFoundException {
+    public PotentialsFileOpener(String[] filenames) throws IllegalArgumentException {
         if (filenames == null) {
             throw new IllegalArgumentException(" Array of files to be opened was null.");
         }
@@ -201,7 +201,7 @@ public class PotentialsFileOpener implements FileOpener {
         }
         int numAccepted = fileList.size();
         if (numAccepted < 1) {
-            throw new FileNotFoundException(" No valid files could be found to open.");
+            throw new IllegalArgumentException(" No valid files could be found to open.");
         }
         allFiles = fileList.toArray(new File[numAccepted]);
         allPaths = pathList.toArray(new Path[numAccepted]);
@@ -248,7 +248,7 @@ public class PotentialsFileOpener implements FileOpener {
                 assembly.setPotential(energy);
                 assemblies.add(assembly);
                 propertyList.add(properties);
-             
+
                 if (filter instanceof PDBFilter) {
                     PDBFilter pdbFilter = (PDBFilter) filter;
                     List<Character> altLocs = pdbFilter.getAltLocs();

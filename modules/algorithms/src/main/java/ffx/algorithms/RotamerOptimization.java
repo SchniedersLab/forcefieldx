@@ -89,6 +89,7 @@ import ffx.utilities.IndexIndexPair;
 
 import static ffx.potential.bonded.Residue.ResidueType.AA;
 import static ffx.potential.bonded.Residue.ResidueType.NA;
+import ffx.potential.bonded.ResidueEnumerations;
 import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
 
 /**
@@ -659,8 +660,7 @@ public class RotamerOptimization implements Terminatable {
             for (int ri = 0; ri < lenri; ri++) {
                 applyRotamer(current, rotamers[ri]);
 
-                potential.getCoordinates(x);
-                double rotEnergy = potential.energy(x);
+                double rotEnergy = currentEnergy();
                 logger.info(String.format(" %d Energy: %16.8f", ++evaluatedPermutations, rotEnergy));
                 if (algorithmListener != null) {
                     algorithmListener.algorithmUpdate(molecularAssembly);
@@ -858,8 +858,7 @@ public class RotamerOptimization implements Terminatable {
                 evaluatedPermutations++;
                 // Compute the AMOEBA energy
                 if (useFullAMOEBAEnergy) {
-                    potential.getCoordinates(x);
-                    double amoebaEnergy = potential.energy(x);
+                    double amoebaEnergy = currentEnergy();
                     if (permutationEnergies != null) {
                         permutationEnergies[evaluatedPermutations - 1] = amoebaEnergy;
                     }
@@ -884,7 +883,7 @@ public class RotamerOptimization implements Terminatable {
                     algorithmListener.algorithmUpdate(molecularAssembly);
                 }
 
-                if (master && ensembleNumber > 1) {
+                if (master && (ensembleNumber > 1 || ensembleEnergy > 0)) {
                     try {
                         FileWriter fw = new FileWriter(ensembleFile, true);
                         BufferedWriter bw = new BufferedWriter(fw);
@@ -1148,7 +1147,7 @@ public class RotamerOptimization implements Terminatable {
         distanceMatrix();
 
         double totalEnergy;
-        double localBackboneEnergy;
+        double localBackboneEnergy = 0; // Dummy value to keep compiler from complaining.
         double localSelfEnergy[] = new double[nRes];
         double pairEnergy[][] = new double[nRes][nRes];
         double triEnergy[][][] = new double[nRes][nRes][nRes];
@@ -1163,7 +1162,11 @@ public class RotamerOptimization implements Terminatable {
         for (int i = 0; i < nRes; i++) {
             turnOffAtoms(residues[i]);
         }
-        localBackboneEnergy = currentEnergy();
+        try {
+            localBackboneEnergy = currentEnergy(false);
+        } catch (ArithmeticException ex) {
+            logger.severe(String.format("FFX shutting down: error in calculation of backbone energy %s", ex.getMessage()));
+        }
         for (int i = 0; i < nRes; i++) {
             turnOnAtoms(residues[i]);
             localSelfEnergy[i] = currentEnergy() - localBackboneEnergy;
@@ -1256,7 +1259,7 @@ public class RotamerOptimization implements Terminatable {
         distanceMatrix();
 
         double totalEnergy;
-        double localBackboneEnergy;
+        double localBackboneEnergy = 0; // Dummy value to keep compiler from complaining.
         double localSelfEnergy[] = new double[nRes];
         double pairEnergy[][] = new double[nRes][nRes];
         double triEnergy[][][] = new double[nRes][nRes][nRes];
@@ -1272,7 +1275,11 @@ public class RotamerOptimization implements Terminatable {
         for (int i = 0; i < nRes; i++) {
             turnOffAtoms(residues[i]);
         }
-        localBackboneEnergy = currentEnergy();
+        try {
+            localBackboneEnergy = currentEnergy(false);
+        } catch (ArithmeticException ex) {
+            logger.severe(String.format("FFX shutting down: error in calculation of backbone energy %s", ex.getMessage()));
+        }
         logIfMaster(String.format(" Backbone: %16.5f", localBackboneEnergy));
 
         decomposeOriginal = true;
@@ -1366,7 +1373,7 @@ public class RotamerOptimization implements Terminatable {
         distanceMatrix();
 
         double totalEnergy;
-        double localBackboneEnergy;
+        double localBackboneEnergy = 0; // Dummy value to keep compiler from complaining.
         double localSelfEnergy[] = new double[nRes];
         double pairEnergy[][] = new double[nRes][nRes];
         double triEnergy[][][] = new double[nRes][nRes][nRes];
@@ -1383,7 +1390,11 @@ public class RotamerOptimization implements Terminatable {
         for (int i = 0; i < nRes; i++) {
             turnOffAtoms(residues[i]);
         }
-        localBackboneEnergy = currentEnergy();
+        try {
+            localBackboneEnergy = currentEnergy(false);
+        } catch (ArithmeticException ex) {
+            logger.severe(String.format("FFX shutting down: error in calculation of backbone energy %s", ex.getMessage()));
+        }
         for (int i = 0; i < nRes; i++) {
             turnOnAtoms(residues[i]);
             localSelfEnergy[i] = currentEnergy() - localBackboneEnergy;
@@ -1539,7 +1550,7 @@ public class RotamerOptimization implements Terminatable {
         distanceMatrix();
 
         double totalEnergy;
-        double localBackboneEnergy;
+        double localBackboneEnergy = 0; // Dummy value to keep compiler from complaining.
         double localSelfEnergy[] = new double[nRes];
         double pairEnergy[][] = new double[nRes][nRes];
         double triEnergy[][][] = new double[nRes][nRes][nRes];
@@ -1555,7 +1566,11 @@ public class RotamerOptimization implements Terminatable {
         for (int i = 0; i < nRes; i++) {
             turnOffAtoms(residues[i]);
         }
-        localBackboneEnergy = currentEnergy();
+        try {
+            localBackboneEnergy = currentEnergy(false);
+        } catch (ArithmeticException ex) {
+            logger.severe(String.format("FFX shutting down: error in calculation of backbone energy %s", ex.getMessage()));
+        }
         for (int i = 0; i < nRes; i++) {
             turnOnAtoms(residues[i]);
             localSelfEnergy[i] = currentEnergy() - localBackboneEnergy;
@@ -1698,6 +1713,105 @@ public class RotamerOptimization implements Terminatable {
         }
     }
 
+    /**
+     * Identify titratable residues and choose them all.
+     */
+    private void titrationSetResidues(ArrayList<Residue> residueList) {
+        String histidineModeProp = System.getProperty("histidineMode");
+        Protonate.HistidineMode histidineMode = Protonate.HistidineMode.ALL;
+        if (histidineModeProp != null) {
+            if (histidineModeProp.equalsIgnoreCase("HIE_ONLY")) {
+                histidineMode = Protonate.HistidineMode.HIE_ONLY;
+            } else if (histidineModeProp.equalsIgnoreCase("HID_ONLY")) {
+                histidineMode = Protonate.HistidineMode.HID_ONLY;
+            }
+        }
+        
+        ArrayList<Residue> titratables = new ArrayList<>();
+        for (Residue res : residueList) {
+            ResidueEnumerations.AminoAcid3 source = ResidueEnumerations.AminoAcid3.valueOf(res.getName());
+            List<Protonate.Titration> avail = new ArrayList<>();
+            for (Protonate.Titration titr : Protonate.Titration.values()) {
+                // Allow manual override of Histidine treatment.
+                if ((titr.target == ResidueEnumerations.AminoAcid3.HID && histidineMode == Protonate.HistidineMode.HIE_ONLY)
+                        || (titr.target == ResidueEnumerations.AminoAcid3.HIE && histidineMode == Protonate.HistidineMode.HID_ONLY)) {
+                    continue;
+                }
+                if (titr.source == source) {
+                    avail.add(titr);
+                }
+            }
+            if (avail.size() > 0) {
+                titratables.add(res);
+                // logger.info(String.format(" Titratable: %s", residues.get(j)));
+            }
+        }
+        
+        Polymer polymers[] = molecularAssembly.getPolymers();
+        for (Residue res : titratables) {
+            MultiResidue multiRes = new MultiResidue(res, molecularAssembly.getForceField(), molecularAssembly.getPotentialEnergy());
+            Polymer polymer = null;
+            for (Polymer p : polymers) {
+                if (p.getChainIDChar().equals(res.getChainID())) {
+                    polymer = p;
+                }
+            }
+            polymer.addMultiResidue(multiRes);
+            titrationRecursiveBuild(res, multiRes, histidineMode);
+            
+            // Switch back to the original form and ready the ForceFieldEnergy.
+            multiRes.setActiveResidue(res);
+            molecularAssembly.getPotentialEnergy().reInit();
+            this.residueList.add(multiRes);
+            logger.info(String.format(" Titrating: %s", multiRes));
+        }
+    }
+    
+    /**
+     * Recursively maps Titration events and adds target Residues to a MultiResidue object.
+     * @param member
+     * @param multiRes 
+     */
+    private void titrationRecursiveBuild(Residue member, MultiResidue multiRes, Protonate.HistidineMode histidineMode) {
+        // Map titrations for this member.
+        ResidueEnumerations.AminoAcid3 source = ResidueEnumerations.AminoAcid3.valueOf(member.getName());
+        List<Protonate.Titration> avail = new ArrayList<>();
+        for (Protonate.Titration titr : Protonate.Titration.values()) {
+            // Allow manual override of Histidine treatment.
+            if ((titr.target == ResidueEnumerations.AminoAcid3.HID && histidineMode == Protonate.HistidineMode.HIE_ONLY)
+                    || (titr.target == ResidueEnumerations.AminoAcid3.HIE && histidineMode == Protonate.HistidineMode.HID_ONLY)) {
+                continue;
+            }
+            if (titr.source == source) {
+                avail.add(titr);
+            }
+        }
+        
+        // For each titration, check whether it needs added as a MultiResidue option.
+        for (Protonate.Titration titr : avail) {
+            // Allow manual override of Histidine treatment.
+            if ((titr.target == ResidueEnumerations.AminoAcid3.HID && histidineMode == Protonate.HistidineMode.HIE_ONLY)
+                    || (titr.target == ResidueEnumerations.AminoAcid3.HIE && histidineMode == Protonate.HistidineMode.HID_ONLY)) {
+                continue;
+            }
+            // Find all the choices currently available to this MultiResidue.
+            List<String> choices = new ArrayList<>();
+            for (Residue choice : multiRes.getConsideredResidues()) {
+                choices.add(choice.getName());
+            }
+            // If this Titration target is not a choice for the MultiResidue, then add it.
+            String targetName = titr.target.toString();
+            if (!choices.contains(targetName)) {
+                int resNumber = member.getResidueIndex();
+                Residue.ResidueType resType = member.getResidueType();
+                Residue newChoice = new Residue(targetName, resNumber, resType);
+                multiRes.addResidue(newChoice);
+                // Recursively call this method on each added choice.
+                titrationRecursiveBuild(newChoice, multiRes, histidineMode);
+            }
+        }
+    }
+    
     public double optimize() {
         boolean ignoreNA = false;
         String ignoreNAProp = System.getProperty("ignoreNA");
@@ -2180,8 +2294,7 @@ public class RotamerOptimization implements Terminatable {
                 if (algorithmListener != null) {
                     algorithmListener.algorithmUpdate(molecularAssembly);
                 }
-                potential.getCoordinates(x);
-                double newE = potential.energy(x);
+                double newE = currentEnergy();
                 if (newE < e) {
                     bestRotamer = j;
                 }
@@ -2513,8 +2626,7 @@ public class RotamerOptimization implements Terminatable {
             }
         }
 
-        potential.getCoordinates(x);
-        double e = potential.energy(x);
+        double e = currentEnergy();
         logIfMaster(String.format(" Self Energy:   %16.8f", sumSelfEnergy));
         logIfMaster(String.format(" Pair Energy:   %16.8f", sumPairEnergy));
 
@@ -2962,8 +3074,7 @@ public class RotamerOptimization implements Terminatable {
                             int nAtoms = atoms.length;
                             x = new double[nAtoms * 3];
                         }
-                        potential.getCoordinates(x);
-                        double startingEnergy = potential.energy(x);
+                        double startingEnergy = currentEnergy();
                         if (useForcedResidues) {
                             if (onlyRotameric.size() < 1) {
                                 logger.info(" Window has no rotameric residues.");
@@ -3740,8 +3851,23 @@ public class RotamerOptimization implements Terminatable {
             return potential.energy(x);
         } catch (ArithmeticException ex) {
             logger.warning(ex.getMessage());
-            return Double.MAX_VALUE;
+            return 1e100;
         }
+    }
+    
+    /**
+     * Calculates the energy at the current state, with the option to throw instead
+     * of catching exceptions in the energy calculation.
+     * 
+     * @param catchError If true, catch force field exceptions.
+     * @return Energy of the current state.
+     */
+    private double currentEnergy(boolean catchError) {
+        if (catchError) {
+            return currentEnergy();
+        }
+        potential.getCoordinates(x);
+        return potential.energy(x);
     }
 
     /**
@@ -4065,7 +4191,11 @@ public class RotamerOptimization implements Terminatable {
          */
         boolean useOrigCoordsRot = RotamerLibrary.getUsingOrigCoordsRotamer();
         // Compute the backbone energy.
-        backboneEnergy = currentEnergy();
+        try {
+            backboneEnergy = currentEnergy(false);
+        } catch (ArithmeticException ex) {
+            logger.severe(String.format("FFX shutting down: error in calculation of backbone energy %s", ex.getMessage()));
+        }
         logger.info(String.format(" Backbone energy:  %16.8f\n", backboneEnergy));
         // Compute the self-energy for each rotamer of each residue
         selfEnergy = new double[nResidues][];
@@ -7353,7 +7483,11 @@ public class RotamerOptimization implements Terminatable {
                 }
                 turnOffAtoms(residue);
             }
-            backboneEnergy = currentEnergy();
+            try {
+                backboneEnergy = currentEnergy(false);
+            } catch (ArithmeticException ex) {
+                logger.severe(String.format("FFX shutting down: error in calculation of backbone energy %s", ex.getMessage()));
+            }
             logIfMaster(String.format(" Backbone energy:  %16.8f\n", backboneEnergy));
         }
 
@@ -7440,7 +7574,7 @@ public class RotamerOptimization implements Terminatable {
 //                            continue;
 //                        }
                     }
-
+                    
                     double selfEnergy;
                     if (writeVideo || skipEnergies) {
                         selfEnergy = 0;
@@ -7629,7 +7763,7 @@ public class RotamerOptimization implements Terminatable {
                     commEnergy[4] = twoBodyEnergy;
                     DoubleBuf commEnergyBuf = DoubleBuf.buffer(commEnergy);
                     multicastBuf(commEnergyBuf);
-
+                    
                     // move back, turn off
                     if (resi.getResidueType() == NA) {
                         //revertSingleResidueCoordinates(resi, resiOriginalCoordinates);

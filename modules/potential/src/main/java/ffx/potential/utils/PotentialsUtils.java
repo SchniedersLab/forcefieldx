@@ -112,7 +112,7 @@ public class PotentialsUtils implements PotentialsFunctions {
             PotentialsFileOpener opener = new PotentialsFileOpener(file);
             opener.run();
             return opener.getAllAssemblies();
-        } catch (FileNotFoundException e) {
+        } catch (IllegalArgumentException e) {
             try {
                 Structure struct = StructureIO.getStructure(file);
                 return convertDataStructure(struct);
@@ -135,7 +135,7 @@ public class PotentialsUtils implements PotentialsFunctions {
             PotentialsFileOpener opener = new PotentialsFileOpener(files);
             opener.run();
             return opener.getAllAssemblies();
-        } catch (FileNotFoundException e) {
+        } catch (IllegalArgumentException e) {
             try {
                 int nfiles = files.length;
                 Structure[] structs = new Structure[nfiles];

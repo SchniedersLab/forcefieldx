@@ -345,7 +345,7 @@ public class Protonate implements MonteCarloListener {
     /**
      * Must be called after all titratable residues have been chosen, but before beginning MD.
      */
-    private void readyUp() {
+    public void readyUp() {
         // Create MultiResidue objects to wrap titratables.
         for (Residue res : chosenResidues) {
             MultiResidue multiRes = new MultiResidue(res, forceField, forceFieldEnergy);
@@ -409,7 +409,7 @@ public class Protonate implements MonteCarloListener {
             if ((titr.target == AminoAcid3.HID && histidineMode == HistidineMode.HIE_ONLY)
                     || (titr.target == AminoAcid3.HIE && histidineMode == HistidineMode.HID_ONLY)) {
                 continue;
-            }            
+            }
             // Find all the choices currently available to this MultiResidue.
             List<String> choices = new ArrayList<>();
             for (Residue choice : multiRes.getConsideredResidues()) {
@@ -1142,7 +1142,7 @@ public class Protonate implements MonteCarloListener {
         }
     }
     
-    private void addMolDyn(MolecularDynamics molDyn) {
+    public void addMolDyn(MolecularDynamics molDyn) {
         this.molDyn = molDyn;
     }
     
@@ -1151,7 +1151,7 @@ public class Protonate implements MonteCarloListener {
      * Constant values for intrinsic pKa and reference energy of a CHANGE IN protonation.
      * NOTE: refEnergy is the energy you should subtract if this form is your PROPOSED TARGET.
      */
-    public enum Titratable {
+    private enum Titratable {
         // Standard Forms
         ASP(3.90, -53.188, AminoAcid3.ASH, AminoAcid3.ASP),
         GLU(4.25, -59.390, AminoAcid3.GLH, AminoAcid3.GLU),
@@ -1184,7 +1184,7 @@ public class Protonate implements MonteCarloListener {
     /**
      * Enumerated titration reactions for source/target amino acid pairs.
      */
-    private enum Titration {
+    public enum Titration {
         Ctoc( 8.18, -60.168, TitrationType.DEP,  AminoAcid3.CYS, AminoAcid3.CYD),
         ctoC( 8.18, +60.168, TitrationType.PROT, AminoAcid3.CYD, AminoAcid3.CYS),
         Dtod( 3.90, +53.188, TitrationType.PROT, AminoAcid3.ASP, AminoAcid3.ASH),
@@ -1252,7 +1252,7 @@ public class Protonate implements MonteCarloListener {
         PROT, DEP;
     }
     
-    private enum HistidineMode {
+    public enum HistidineMode {
         ALL, HID_ONLY, HIE_ONLY;
     }
     
