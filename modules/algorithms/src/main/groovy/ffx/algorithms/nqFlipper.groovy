@@ -35,6 +35,7 @@ import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.bonded.Rotamer;
 import groovy.util.CliBuilder;
+import org.apache.commons.io.FilenameUtils;
 
 // FFX Imports
 
@@ -47,9 +48,14 @@ int end = -1;
 int allStart = 1;
 double radius = 4.0;
 String chain = "A";
+boolean rotopt = false;
+boolean original = true;
+boolean threebody = true;
+boolean useEnergyRestart = false;
+File energyRestartFile;
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc rotamer [options] <filename>');
+def cli = new CliBuilder(usage:' ffxc nqFlipper [options] <filename>');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.a(longOpt:'algorithm', args:1, argName:'1', 'Only try a simple flip (1), allow all rotamers (2), or repack around each NQ (3)');
 cli.l(longOpt:'library', args:1, argName:'2', 'Available rotamer libraries are Ponder and Richards (1) or Richardson (2).');
@@ -58,6 +64,10 @@ cli.s(longOpt:'start', args:1, argName:'-1', 'Starting residue to perform the NQ
 cli.f(longOpt:'finish', args:1, argName:'-1', 'Final residue to perform the NQ search on (-1 exits).');
 cli.r(longOpt:'radius', args:1, argName:'4.0', 'Radius around NQ residues to repack.');
 cli.c(longOpt:'chain', args:1, argName:'A', 'Chain the residue selection belongs to.');
+cli.o(longOpt:'includeOriginal', args:1, argName:'true', 'Include starting coordinates as their own rotamer.');
+cli.eR(longOpt:'energyRestart', args: 1, argName:'filename', 'Load energy restart file from a previous run. Ensure that all parameters are the same!');
+cli.t(longOpt:'threeBody', args:1, argName:'true', 'Include 3-Body interactions in elimination criteria.');
+
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -67,6 +77,7 @@ if (options.h || arguments == null || arguments.size() != 1) {
 
 if (options.a) {
     algorithm = Integer.parseInt(options.a);
+    rotopt = (algorithm > 1);
 }
 if (options.l) {
     library = Integer.parseInt(options.l);
@@ -86,6 +97,17 @@ if (options.x) {
 if (options.c) {
     chain = options.c;
 }
+if (options.t) {
+    threebody = Boolean.parseBoolean(options.t);
+}
+if (options.o) {
+    original = Boolean.parseBoolean(options.o);
+}
+
+if (options.eR) {
+    useEnergyRestart = true;
+    energyRestartFile = new File(options.eR);
+}
 
 if (!options.x) {
     logger.info("\n Flipping NQ for residues " + start + " to " + end);
@@ -93,14 +115,16 @@ if (!options.x) {
     logger.info("\n Flipping NQ for all residues beginning at " + allStart);
 }
 
-AlgorithmFunctions functions;
+/*AlgorithmFunctions functions;
 try {
-    functions = getAlgorithmUtils();
+functions = getAlgorithmUtils();
 } catch (MissingMethodException e) {
-    functions = new AlgorithmUtils();
+functions = new AlgorithmUtils();
 }
 MolecularAssembly[] systems = functions.open(arguments.get(0));
-MolecularAssembly active = systems[0];
+MolecularAssembly active = systems[0];*/
+String filename = arguments.get(0);
+open(filename);
 
 int counter = 1;
 List<Residue> residueList = new ArrayList<>();
@@ -120,24 +144,83 @@ if (options.x) {
                     RotamerLibrary.applyRotamer(residue, rotamers[0]);
                 } else if (nrot > 1) {
                     if (counter >= allStart) {
-                        residueList.add(residue);
+                        String resName = residue.getName().toUpperCase();
+                        if (resName.equals("ASN") || resName.equals("GLN")) {
+                            residueList.add(residue);
+                        }
                     }
                 }
             }
             counter++;
         }
     }
+} else {
+    Polymer polymer;
+    if (options.c) {
+        polymer = active.getChain(chain);
+    } else {
+        Polymer[] polymers = active.getPolymers();
+        polymer = polymers[0];
+    }
+    for (int i = start; i <= end; i++) {
+        Residue residue = polymer.getResidue(i);
+        if (residue != null) {
+            Rotamer[] rotamers = residue.getRotamers(residue);
+            if (rotamers != null) {
+                if (rotamers.length == 1) {
+                    switch (residue.getResidueType()) {
+                    case NA:
+                        residue.initializeDefaultAtomicCoordinates();
+                        break;
+                    case AA:
+                    default:
+                        RotamerLibrary.applyRotamer(residue, rotamers[0]);
+                        break;
+                    }
+                } else {
+                    String resName = residue.getName.toUpperCase();
+                    if (resName.equals("ASN") || resName.equals("GLN")) {
+                        residueList.add(residue);
+                    }
+                }
+            }
+        }
+    }
 }
 
 if (algorithm == 1) {
     NQFlipper flipper = new NQFlipper(active, active.getPotentialEnergy());
-    if (options.x) {
-        flipper.setResidues(residueList);
-    } else if (options.c) {
-        flipper.setResidues(chain, start, end);
-    } else {
-        flipper.setResidues(start, end);
-    }
+    flipper.setResidues(residueList);
     flipper.flipNQs();
-    functions.saveAsPDB(active, active.getFile());
+    saveAsPDB(active.getFile());
+} else if (algorithm < 1 || algorithm > 3) {
+    logger.severe(" Algorithm for NQ flipping must be in the range 1-3");
+} else {
+    RotamerOptimization rotamerOptimization = new RotamerOptimization(active, active.getPotentialEnergy(), sh);
+    rotamerOptimization.setResidues(residueList);
+    rotamerOptimization.setWindowSize(1);
+    rotamerOptimization.setIncrement(1);
+    
+    if (useEnergyRestart) {
+        rotamerOptimization.setEnergyRestartFile(energyRestartFile);
+    }
+    if (algorithm == 3) {
+        rotamerOptimization.setDistanceCutoff(radius);
+    } else {
+        rotamerOptimization.setDistanceCutoff(0.0);
+    }
+    
+    energy();
+    RotamerLibrary.measureRotamers(residueList, false);
+    rotamerOptimization.optimize(RotamerOptimization.Algorithm.SLIDING_WINDOW);
+    
+    logger.info(" Final Minimum Energy");
+    energy();
+    String ext = FilenameUtils.getExtension(filename);
+    filename = FilenameUtils.removeExtension(filename);
+    if (ext.toUpperCase().contains("XYZ")) {
+        saveAsXYZ(new File(filename + ".xyz"));
+    } else {
+        saveAsPDB(new File(filename + ".pdb"));
+    }
 }

@@ -57,6 +57,10 @@ import ffx.potential.parsers.BiojavaFilter;
 import ffx.potential.parsers.FileOpener;
 import ffx.potential.parsers.ForceFieldFilter;
 import ffx.utilities.Keyword;
+import java.io.IOException;
+import org.biojava.nbio.structure.StructureException;
+import org.biojava.nbio.structure.StructureIO;
+import org.biojava.nbio.structure.align.util.AtomCache;
 
 /**
  * The PotentialsDataConverter class describes a Runnable object which converts
@@ -78,6 +82,8 @@ public class PotentialsDataConverter implements FileOpener {
     private List<CompositeConfiguration> propertyList;
     private CompositeConfiguration activeProperties;
     private final static String BIOJAVA_DEFAULT_FILENAME = "UNKNOWN_BIOJAVA_FILE";
+    private final static AtomCache atomCache;
+    private final static boolean downloadChemComp; // By default false.
 
     public PotentialsDataConverter(Object data) throws FileNotFoundException {
         this(data, null);
@@ -100,6 +106,25 @@ public class PotentialsDataConverter implements FileOpener {
             throw new IllegalArgumentException(" Data structure provided was not "
                     + "of a recognized type: must be a Biojava structure");
         }
+    }
+    
+    /**
+     * Read system properties to determine whether to download chemical components.
+     */
+    static {
+        atomCache = new AtomCache();
+        String downloadChemCompStr = System.getProperty("downloadChemComp");
+        if (downloadChemCompStr != null) {
+            downloadChemComp = Boolean.parseBoolean(downloadChemCompStr);
+            atomCache.getFileParsingParams().setLoadChemCompInfo(downloadChemComp);
+        } else {
+            downloadChemComp = false;
+        }
+        StructureIO.setAtomCache(atomCache);
+    }
+    
+    public static Structure loadFromPDB(String name) throws IOException, StructureException {
+        return StructureIO.getStructure(name);
     }
 
     /**

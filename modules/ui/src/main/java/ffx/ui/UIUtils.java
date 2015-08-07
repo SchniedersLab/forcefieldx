@@ -43,6 +43,13 @@ import ffx.algorithms.AlgorithmFunctions;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Logger;
+import org.biojava.nbio.structure.Structure;
+import org.biojava.nbio.structure.StructureException;
+import org.biojava.nbio.structure.StructureIO;
 
 /**
  * The UIUtils class implements all Function interfaces, enabling lower modules
@@ -59,6 +66,7 @@ import ffx.potential.MolecularAssembly;
  */
 public class UIUtils implements AlgorithmFunctions {
 
+    private static final Logger logger = Logger.getLogger(UIUtils.class.getName());
     private final ModelingShell modelingShell;
     private final MainPanel mainPanel;
 
@@ -83,13 +91,47 @@ public class UIUtils implements AlgorithmFunctions {
     }
 
     @Override
-    public FFXSystem[] open(String file) {
-        return mainPanel.openWait(file);
+    public MolecularAssembly[] open(String file) {
+        File fileopen = new File(file);
+        if (fileopen.exists() && fileopen.isFile()) {
+            return mainPanel.openWait(file);
+        } else {
+            try {
+                Structure struct = StructureIO.getStructure(file);
+                return convertDataStructure(struct);
+            } catch (IOException | StructureException e) {
+                return null;
+            }
+        }
     }
 
+    /**
+     * Opens an array of filenames. TODO: Fully support opening an array of PDB ID
+     * codes.
+     * @param files
+     * @return 
+     */
     @Override
-    public FFXSystem[] open(String[] files) {
-        return mainPanel.openWait(files);
+    public MolecularAssembly[] open(String[] files) {
+        List<String> acceptedFiles = new ArrayList<>();
+        for (String filename : files) {
+            File file = new File(filename);
+            if (file.exists() && file.isFile()) {
+                acceptedFiles.add(filename);
+            }
+        }
+        if (acceptedFiles.isEmpty()) {
+            logger.warning(" Only partial support for converting an array of data "
+                    + "structures or PDB codes to FFX standard: opening only first structure.");
+            try {
+                Structure struct = StructureIO.getStructure(files[0]);
+                return convertDataStructure(struct);
+            } catch (IOException | StructureException e) {
+                return null;
+            }
+        } else {
+            return mainPanel.openWait(files);
+        }
     }
 
     @Override

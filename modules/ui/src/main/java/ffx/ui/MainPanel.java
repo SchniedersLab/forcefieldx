@@ -140,6 +140,7 @@ import ffx.utilities.Keyword;
 import ffx.utilities.StringUtils;
 
 import static ffx.utilities.StringUtils.pdbForID;
+import org.biojava.nbio.structure.StructureException;
 
 /**
  * The MainPanel class is the main container for Force Field X, handles file
@@ -1491,30 +1492,44 @@ public final class MainPanel extends JPanel implements ActionListener,
      * @return an array of {@link ffx.ui.FFXSystem} objects.
      */
     public synchronized FFXSystem[] openWait(String file) {
-        Thread thread = open(file);
-        while (thread != null && thread.isAlive()) {
-            try {
-                wait(1);
-            } catch (InterruptedException e) {
-                String message = "Exception waiting for " + file + " to open.";
-                logger.log(Level.WARNING, message, e);
+        File fileopen = new File(file);
+        if (fileopen.exists() && fileopen.isFile()) {
+            Thread thread = open(file);
+            while (thread != null && thread.isAlive()) {
+                try {
+                    wait(1);
+                } catch (InterruptedException e) {
+                    String message = "Exception waiting for " + file + " to open.";
+                    logger.log(Level.WARNING, message, e);
+                    return null;
+                }
+
+            }
+
+            MolecularAssembly systems[] = activeFilter.getMolecularAssemblys();
+            if (systems != null) {
+                int n = systems.length;
+                FFXSystem ffxSystems[] = new FFXSystem[n];
+                FFXSystem allSystems[] = getHierarchy().getSystems();
+                int total = allSystems.length;
+                for (int i = 0; i < n; i++) {
+                    ffxSystems[i] = allSystems[total - n + i];
+                }
+                return ffxSystems;
+            } else {
                 return null;
             }
-
-        }
-
-        MolecularAssembly systems[] = activeFilter.getMolecularAssemblys();
-        if (systems != null) {
-            int n = systems.length;
-            FFXSystem ffxSystems[] = new FFXSystem[n];
-            FFXSystem allSystems[] = getHierarchy().getSystems();
-            int total = allSystems.length;
-            for (int i = 0; i < n; i++) {
-                ffxSystems[i] = allSystems[total - n + i];
-            }
-            return ffxSystems;
         } else {
-            return null;
+            try {
+                /*AtomCache cache = new AtomCache();
+                cache.getFileParsingParams().setLoadChemCompInfo(true);
+                StructureIO.setAtomCache(cache);
+                Structure struct = StructureIO.getStructure(file);*/
+                Structure struct = PotentialsDataConverter.loadFromPDB(file);
+                return convertWait(struct, null);
+            } catch (IOException | StructureException ex) {
+                return null;
+            }
         }
     }
 

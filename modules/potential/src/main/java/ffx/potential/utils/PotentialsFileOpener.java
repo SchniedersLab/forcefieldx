@@ -62,6 +62,7 @@ import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XYZFileFilter;
 import ffx.potential.parsers.XYZFilter;
 import ffx.utilities.Keyword;
+import java.io.FileNotFoundException;
 import static java.lang.String.format;
 import java.util.logging.Logger;
 import org.apache.commons.io.FilenameUtils;
@@ -86,9 +87,9 @@ public class PotentialsFileOpener implements FileOpener {
     private List<CompositeConfiguration> propertyList;
     private CompositeConfiguration activeProperties;
 
-    public PotentialsFileOpener(File file) {
+    public PotentialsFileOpener(File file) throws FileNotFoundException {
         if (!file.exists() || !file.isFile()) {
-            throw new IllegalArgumentException(String.format(" File %s either did not exist or was not a file.", file.getName()));
+            throw new FileNotFoundException(String.format(" File %s either did not exist or was not a file.", file.getName()));
         }
         this.file = file;
         Path pwdPath;
@@ -112,15 +113,15 @@ public class PotentialsFileOpener implements FileOpener {
         propertyList = new ArrayList<>();
     }
 
-    public PotentialsFileOpener(String filename) {
+    public PotentialsFileOpener(String filename) throws FileNotFoundException {
         this(new File(filename));
     }
 
-    public PotentialsFileOpener(Path filepath) {
+    public PotentialsFileOpener(Path filepath) throws FileNotFoundException {
         this(filepath.toString());
     }
 
-    public PotentialsFileOpener(File[] files) {
+    public PotentialsFileOpener(File[] files) throws FileNotFoundException {
         if (files == null) {
             throw new IllegalArgumentException(" Array of files to be opened was null.");
         }
@@ -152,7 +153,7 @@ public class PotentialsFileOpener implements FileOpener {
         }
         int numAccepted = fileList.size();
         if (numAccepted < 1) {
-            throw new IllegalArgumentException(" No valid files could be found to open.");
+            throw new FileNotFoundException(" No valid files could be found to open.");
         }
         allFiles = fileList.toArray(new File[numAccepted]);
         allPaths = pathList.toArray(new Path[numAccepted]);
@@ -162,7 +163,7 @@ public class PotentialsFileOpener implements FileOpener {
         propertyList = new ArrayList<>();
     }
 
-    public PotentialsFileOpener(String[] filenames) {
+    public PotentialsFileOpener(String[] filenames) throws FileNotFoundException {
         if (filenames == null) {
             throw new IllegalArgumentException(" Array of files to be opened was null.");
         }
@@ -200,7 +201,7 @@ public class PotentialsFileOpener implements FileOpener {
         }
         int numAccepted = fileList.size();
         if (numAccepted < 1) {
-            throw new IllegalArgumentException(" No valid files could be found to open.");
+            throw new FileNotFoundException(" No valid files could be found to open.");
         }
         allFiles = fileList.toArray(new File[numAccepted]);
         allPaths = pathList.toArray(new Path[numAccepted]);
