@@ -77,12 +77,15 @@ public class PotentialsMain {
             filename = args[0];
         }
         potentialsMain.setup(filename);
-        potentialsMain.timer();
+        int nEvals = 10;
+        if (args != null && args.length > 1) {
+            nEvals = Integer.parseInt(args[1]);
+        }
+        potentialsMain.timer(nEvals);
     }
 
-    public void timer() {
+    public void timer(int nEvals) {
         logger.info(String.format("\n N-Body Test: "));
-        int nEvals = 10;
         boolean gradient = true;
         boolean print = true;
 
