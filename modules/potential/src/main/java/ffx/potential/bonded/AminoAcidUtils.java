@@ -1331,9 +1331,23 @@ public class AminoAcidUtils {
         for (Atom atom : resAtoms) {
             atomType = atom.getAtomType();
             if (atomType == null) {
-                MissingAtomTypeException missingAtomTypeException
-                        = new MissingAtomTypeException(residue, atom);
-                throw missingAtomTypeException;
+                /**
+                 * Sometimes, with deuterons, a proton has been constructed in
+                 * its place, so we have a "dummy" deuteron still hanging around.
+                 */
+                String protonEq = atom.getName().replaceFirst("D", "H");
+                Atom correspH = (Atom) residue.getAtomNode(protonEq);
+                if (correspH == null || correspH.getAtomType() == null) {
+                    MissingAtomTypeException missingAtomTypeException
+                            = new MissingAtomTypeException(residue, atom);
+                    throw missingAtomTypeException;
+                } else {
+                    correspH.setName(atom.getName());
+                    atom.removeFromParent();
+                    atom = correspH;
+                    atomType = atom.getAtomType();
+                }
+
             }
             int numberOfBonds = atom.getNumBonds();
             if (numberOfBonds != atomType.valence) {
