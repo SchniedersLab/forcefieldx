@@ -150,7 +150,7 @@ public class SliceSchedule extends IntegerSchedule {
                 break;
             }
         }
-
+    
         int lastThread = currentThread;
 
         /**

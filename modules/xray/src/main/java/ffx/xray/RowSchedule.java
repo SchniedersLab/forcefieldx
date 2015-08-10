@@ -55,7 +55,7 @@ public class RowSchedule extends IntegerSchedule {
     private final int fftZ;
     private final int fftY;
     private int weights[];
-
+    
     protected RowSchedule(int nThreads, int fftZ, int fftY) {
         this.nThreads = nThreads;
         threadDone = new boolean[nThreads];
@@ -68,6 +68,7 @@ public class RowSchedule extends IntegerSchedule {
     public void updateWeights(int weights[]) {
         this.weights = weights;
     }
+   
 
     @Override
     public boolean isFixedSchedule() {
@@ -129,7 +130,7 @@ public class RowSchedule extends IntegerSchedule {
             return;
         }
         
-        double targetWeight = (totalWeight / nThreads) * .97;
+        double targetWeight = (totalWeight / nThreads);
         int lastRow = fftZ * fftY - 1;
 
         int currentRow = 0;
@@ -149,7 +150,9 @@ public class RowSchedule extends IntegerSchedule {
                 break;
             }
         }
+        
 
+        
         int lastThread = currentThread;
 
         /**
@@ -196,4 +199,5 @@ public class RowSchedule extends IntegerSchedule {
             return null;
         }
     }
+
 }

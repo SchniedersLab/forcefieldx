@@ -51,7 +51,7 @@ import edu.rit.pj.Comm;
 // Force Field X Imports
 //import ffx.algorithms.Barostat;
 import ffx.algorithms.MolecularDynamics;
-import ffx.algorithms.OSRW;
+import ffx.algorithms.TransitionTemperedOSRW;
 import ffx.algorithms.Integrator.Integrators;
 import ffx.algorithms.Thermostat.Thermostats;
 import ffx.potential.DualTopologyEnergy;
@@ -61,9 +61,6 @@ import ffx.potential.MolecularAssembly;
 
 // Asychronous communication between walkers.
 boolean asynchronous = false;
-
-// Well-Tempered Metadynamics.
-boolean wellTempered = false;
 
 // First atom of the ligand.
 int ligandStart = 1;
@@ -155,10 +152,9 @@ boolean writeTraversals = false;
 // ===============================================================================================
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc osrw [options] <filename> [filename]');
+def cli = new CliBuilder(usage:' ffxc ttOSRW [options] <filename> [filename]');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.a(longOpt:'async', args:0, 'Walker communication is asynchronous.');
-cli.wt(longOpt:'wellTempered', args:0, 'Use Well-Tempered Metadynamics.');
 cli.n(longOpt:'steps', args:1, argName:'10000000', 'Number of molecular dynamics steps.');
 cli.q(longOpt:'equilibrate', args:1, argName:'1000', 'Equilibration steps prior to OSRW counts.');
 cli.d(longOpt:'dt', args:1, argName:'1.0', 'Time discretization step (fsec).');
@@ -201,11 +197,6 @@ String filename = arguments.get(0);
 // Asynchronous?
 if (options.a) {
     asynchronous = true;
-}
-
-// Well-Tempered?
-if (options.wt) {
-    wellTempered = true;
 }
 
 // Constant Pressue?
@@ -361,7 +352,7 @@ if (options.W) {
     writeTraversals = true;
 }
 
-println("\n Running Orthogonal Space Random Walk on " + filename);
+println("\n Running Transition-Tempered Orthogonal Space Random Walk on " + filename);
 
 File structureFile = new File(FilenameUtils.normalize(filename));
 structureFile = new File(structureFile.getAbsolutePath());
@@ -453,7 +444,7 @@ for (int i = noElecStart; i <= noElecStop; i++) {
 // Turn off checks for overlapping atoms, which is expected for lambda=0.
 energy.getCrystal().setSpecialPositionCutoff(0.0);
 // OSRW will be configured for either single or dual topology.
-OSRW osrw = null;
+TransitionTemperedOSRW osrw = null;
 // Save a reference to the first topology.
 topology1 = active;
 
@@ -478,8 +469,8 @@ if (arguments.size() == 1) {
         }
     } else {
         // Wrap the single topology ForceFieldEnergy inside an OSRW instance.
-        osrw = new OSRW(energy, energy, lambdaRestart, histogramRestart, active.getProperties(),
-            temperature, timeStep, printInterval, saveInterval, asynchronous, sh, wellTempered);
+        osrw = new TransitionTemperedOSRW(energy, energy, lambdaRestart, histogramRestart, active.getProperties(),
+            temperature, timeStep, printInterval, saveInterval, asynchronous, sh);
         osrw.setResetStatistics(resetStatistics);
         if (writeTraversals) {
             osrw.setTraversalOutput(lambdaOneFile, topology1, lambdaZeroFile, topology1);
@@ -523,8 +514,9 @@ if (arguments.size() == 1) {
     // Create the DualTopology potential energy.
     DualTopologyEnergy dualTopologyEnergy = new DualTopologyEnergy(topology1, active);
     // Wrap the DualTopology potential energy inside an OSRW instance.
-    osrw = new OSRW(dualTopologyEnergy, dualTopologyEnergy, lambdaRestart, histogramRestart, active.getProperties(),
-        temperature, timeStep, printInterval, saveInterval, asynchronous, sh, wellTempered);
+    osrw = new TransitionTemperedOSRW(dualTopologyEnergy, dualTopologyEnergy, lambdaRestart,
+        histogramRestart, active.getProperties(), temperature, timeStep, printInterval,
+        saveInterval, asynchronous, sh);
     osrw.setResetStatistics(resetStatistics);
     if (writeTraversals) {
         osrw.setTraversalOutput(lambdaOneFile, topology1, lambdaZeroFile, topology2);
@@ -572,12 +564,12 @@ if (eSteps > 0) {
     logger.info(" Beginning equilibration");
     osrw.setPropagateLambda(false);
     molDyn.dynamic(eSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
-    logger.info(" Beginning OSRW sampling");
+    logger.info(" Beginning Transition-Tempered OSRW sampling");
     osrw.setPropagateLambda(true);
     molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, false,
         fileType, restartInterval, dyn);
 } else {
-    logger.info(" Beginning OSRW sampling without equilibration");
+    logger.info(" Beginning Transition-Tempered OSRW sampling without equilibration");
     molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities,
         fileType, restartInterval, dyn);
 }

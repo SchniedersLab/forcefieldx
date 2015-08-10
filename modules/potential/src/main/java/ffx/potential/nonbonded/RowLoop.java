@@ -40,6 +40,7 @@ package ffx.potential.nonbonded;
 import java.util.logging.Logger;
 
 import edu.rit.pj.IntegerForLoop;
+import java.util.ArrayList;
 
 /**
  * The RowLoop class is used to parallelize placing onto a 3D grid
@@ -63,6 +64,21 @@ public abstract class RowLoop extends IntegerForLoop {
     private int nAtoms;
     private int nSymm;
     public RowRegion rowRegion;
+    public boolean rebuildList = false;
+    public ArrayList<Integer> buildListA = new ArrayList<>();
+    public ArrayList<Integer> buildListS = new ArrayList<>();
+
+    public void setRebuildList(boolean rebuildList) {
+        this.rebuildList = rebuildList;
+    }
+
+    public void saveZYValues(int zAtListBuild[][][]) {
+
+    }
+
+    public boolean checkList(int zAtListBuild[][][], int buff) {
+        return false;
+    }
 
     public RowLoop(int nAtoms, int nSymm, RowRegion rowRegion) {
         this.nAtoms = nAtoms;
@@ -93,8 +109,8 @@ public abstract class RowLoop extends IntegerForLoop {
     }
 
     /**
-     * Apply electron density "as normal" for an atom, but check that
-     * the y and z indeces are within the supplied bounds (inclusive).
+     * Apply electron density "as normal" for an atom, but check that the y and
+     * z indeces are within the supplied bounds (inclusive).
      *
      * @param iSymm the SymOp to apply.
      * @param iAtom the index of the Atom to put onto the grid.

@@ -132,7 +132,7 @@ JNIEXPORT jint JNICALL Java_ffx_numerics_fft_Complex3DOpenCL_setLayoutNative
 
 JNIEXPORT jint JNICALL Java_ffx_numerics_fft_Complex3DOpenCL_executeTransformNative
 (JNIEnv *env, jclass object, jlong jPlanHandle, int direction, jlong jQueue, jlong jrBuffer, jlong jcBuffer) {
-    clfftStatus_ err;
+    int err;
     int status;
     clfftPlanHandle planHandle = (clfftPlanHandle) jPlanHandle;
     cl_command_queue queue = (cl_command_queue) jQueue;
@@ -153,7 +153,7 @@ JNIEXPORT jint JNICALL Java_ffx_numerics_fft_Complex3DOpenCL_executeTransformNat
     // err = clfftBakePlan(planHandle, 1, &queue, NULL, NULL);
     // printf(" Bake %zd %d\n", planHandle, err);
     err = clfftEnqueueTransform(planHandle, dir, 1, &queue, 0, NULL, NULL, buffers, NULL, NULL);
-    //printf(" Enqueue %zd %d\n", planHandle, err);
+    printf(" Enqueue %zd %d\n", planHandle, err);
     status = clFinish(queue);
     //printf(" Finish %zd %d\n", planHandle, status);
     return (int) err;

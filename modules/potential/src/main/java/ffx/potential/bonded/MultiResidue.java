@@ -688,6 +688,9 @@ public class MultiResidue extends Residue {
         if (!consideredResidues.contains(residue)) {
             return false;
         }
+        if (residue == activeResidue) {
+            return true;
+        }
         Residue prevResidue = activeResidue.getPreviousResidue();
         Residue nextResidue = activeResidue.getNextResidue();
         Residue prev2Residue = null;
@@ -747,6 +750,43 @@ public class MultiResidue extends Residue {
             return 0;
         }
         return consideredResidues.size();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Overidden equals method that return true if object is not equals to this,
+     * is of the same class, has the same parent Polymer, the same sequence
+     * number, the same ResidueType, and the same AA3/NA3.
+     * @param object
+     * @return Object equality
+     */
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) {
+            return true;
+        } else if (object == null || getClass() != object.getClass()) {
+            return false;
+        }
+        MultiResidue other = (MultiResidue) object;
+        if (consideredResidues.size() != other.getResidueCount()) {
+            return false;
+        }
+        if (getParent() == null || other.getParent() == null) {
+            return getResidueNumber() == other.getResidueNumber();
+        } else if (getParent() == other.getParent()) {
+            return getResidueNumber() == other.getResidueNumber();
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = hash(SEED, getParent().hashCode());
+        hash = hash(hash, consideredResidues.size());
+        // Use of consideredResidues.size() MAY BE DANGEROUS if people start to muck
+        // with the considered residues list after construction.
+        return hash(hash, getResidueNumber());
     }
 
     @Override

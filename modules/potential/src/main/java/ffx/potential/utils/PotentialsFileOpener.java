@@ -37,15 +37,18 @@
  */
 package ffx.potential.utils;
 
-import ffx.crystal.Crystal;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
+
+import static java.lang.String.format;
 
 import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.io.FilenameUtils;
 
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
@@ -62,9 +65,6 @@ import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XYZFileFilter;
 import ffx.potential.parsers.XYZFilter;
 import ffx.utilities.Keyword;
-import static java.lang.String.format;
-import java.util.logging.Logger;
-import org.apache.commons.io.FilenameUtils;
 
 /**
  * The PotentialsFileOpener class specifies a Runnable object which is
@@ -247,7 +247,7 @@ public class PotentialsFileOpener implements FileOpener {
                 assembly.setPotential(energy);
                 assemblies.add(assembly);
                 propertyList.add(properties);
-             
+
                 if (filter instanceof PDBFilter) {
                     PDBFilter pdbFilter = (PDBFilter) filter;
                     List<Character> altLocs = pdbFilter.getAltLocs();

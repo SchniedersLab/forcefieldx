@@ -656,9 +656,10 @@ public class ParticleMeshEwald implements LambdaInterface {
     private final PCGIterRegion1 pcgIterRegion1;
     private final PCGIterRegion2 pcgIterRegion2;
 
-    private final RealSpaceEnergyRegion realSpaceEnergyRegion;
+    private final boolean reciprocalSpaceTerm;
     private final ReciprocalSpace reciprocalSpace;
     private final ReciprocalEnergyRegion reciprocalEnergyRegion;
+    private final RealSpaceEnergyRegion realSpaceEnergyRegion;
     private final ReduceRegion reduceRegion;
     private final GeneralizedKirkwood generalizedKirkwood;
     /**
@@ -730,9 +731,11 @@ public class ParticleMeshEwald implements LambdaInterface {
         } else {
             off = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, 1000.0);
         }
-        double ewald_precision = forceField.getDouble(ForceFieldDouble.EWALD_PRECISION, 1.0e-8);
-        aewald = forceField.getDouble(ForceFieldDouble.EWALD_ALPHA, ewaldCoefficient(off, ewald_precision));
+        double ewaldPrecision = forceField.getDouble(ForceFieldDouble.EWALD_PRECISION, 1.0e-8);
+        aewald = forceField.getDouble(ForceFieldDouble.EWALD_ALPHA, ewaldCoefficient(off, ewaldPrecision));
         setEwaldParameters(off, aewald);
+
+        reciprocalSpaceTerm = forceField.getBoolean(ForceFieldBoolean.RECIPTERM, true);
 
         String predictor = forceField.getString(ForceFieldString.SCF_PREDICTOR, "NONE");
         try {
@@ -973,7 +976,7 @@ public class ParticleMeshEwald implements LambdaInterface {
          * instance even if the real space calculations require a
          * ReplicatesCrystal.
          */
-        if (aewald > 0.0) {
+        if (aewald > 0.0 && reciprocalSpaceTerm) {
             reciprocalSpace = new ReciprocalSpace(this, crystal.getUnitCell(), forceField,
                     atoms, aewald, fftTeam, parallelTeam);
             reciprocalEnergyRegion = new ReciprocalEnergyRegion(maxThreads);
@@ -1404,7 +1407,7 @@ public class ParticleMeshEwald implements LambdaInterface {
          */
         if (logger.isLoggable(Level.FINE)) {
             printRealSpaceTimings();
-            if (aewald > 0.0) {
+            if (aewald > 0.0 && reciprocalSpaceTerm) {
                 reciprocalSpace.printTimings();
             }
         }
@@ -1676,7 +1679,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             /**
              * Compute b-Splines and permanent density.
              */
-            if (aewald > 0.0) {
+            if (reciprocalSpaceTerm && aewald > 0.0) {
                 reciprocalSpace.computeBSplines();
                 reciprocalSpace.splinePermanentMultipoles(globalMultipole, use);
             }
@@ -1690,7 +1693,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             /**
              * Collect the reciprocal space field.
              */
-            if (aewald > 0.0) {
+            if (reciprocalSpaceTerm && aewald > 0.0) {
                 reciprocalSpace.computePermanentPhi(cartMultipolePhi);
             }
         } catch (Exception e) {
@@ -1713,7 +1716,7 @@ public class ParticleMeshEwald implements LambdaInterface {
          */
         if (polarization != Polarization.NONE && doPolarization) {
             selfConsistentField(logger.isLoggable(Level.FINE));
-            if (aewald > 0.0) {
+            if (reciprocalSpaceTerm && aewald > 0.0) {
                 if (gradient && polarization == Polarization.DIRECT) {
                     try {
                         reciprocalSpace.splineInducedDipoles(inducedDipole, inducedDipoleCR, use);
@@ -1740,7 +1743,7 @@ public class ParticleMeshEwald implements LambdaInterface {
          * Then compute the permanent and reciprocal space energy.
          */
         try {
-            if (aewald > 0.0) {
+            if (reciprocalSpaceTerm && aewald > 0.0) {
                 parallelTeam.execute(reciprocalEnergyRegion);
                 interactions += nAtoms;
                 eself = reciprocalEnergyRegion.getPermanentSelfEnergy();
@@ -2014,11 +2017,11 @@ public class ParticleMeshEwald implements LambdaInterface {
         while (!done) {
             long cycleTime = -System.nanoTime();
             try {
-                if (aewald > 0.0) {
+                if (reciprocalSpaceTerm && aewald > 0.0) {
                     reciprocalSpace.splineInducedDipoles(inducedDipole, inducedDipoleCR, use);
                 }
                 sectionTeam.execute(inducedDipoleFieldRegion);
-                if (aewald > 0.0) {
+                if (reciprocalSpaceTerm && aewald > 0.0) {
                     reciprocalSpace.computeInducedPhi(cartesianDipolePhi, cartesianDipolePhiCR);
                 }
 
@@ -2173,7 +2176,7 @@ public class ParticleMeshEwald implements LambdaInterface {
 
             @Override
             public void run() {
-                if (aewald > 0.0) {
+                if (reciprocalSpaceTerm && aewald > 0.0) {
                     reciprocalSpace.permanentMultipoleConvolution();
                 }
             }
@@ -2817,7 +2820,7 @@ public class ParticleMeshEwald implements LambdaInterface {
         @Override
         public void run() {
             try {
-                if (aewald > 0.0) {
+                if (reciprocalSpaceTerm && aewald > 0.0) {
                     execute(inducedRealSpaceFieldSection, inducedReciprocalFieldSection);
                 } else {
                     execute(inducedRealSpaceFieldSection);
@@ -6744,11 +6747,11 @@ public class ParticleMeshEwald implements LambdaInterface {
                 parallelTeam.execute(expandInducedDipolesRegion);
             }
 
-            if (aewald > 0.0) {
+            if (reciprocalSpaceTerm && aewald > 0.0) {
                 reciprocalSpace.splineInducedDipoles(inducedDipole, inducedDipoleCR, use);
             }
             sectionTeam.execute(inducedDipoleFieldRegion);
-            if (aewald > 0.0) {
+            if (reciprocalSpaceTerm && aewald > 0.0) {
                 reciprocalSpace.computeInducedPhi(cartesianDipolePhi, cartesianDipolePhiCR);
             }
             if (generalizedKirkwoodTerm) {

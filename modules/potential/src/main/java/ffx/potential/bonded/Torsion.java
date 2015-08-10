@@ -351,11 +351,13 @@ public class Torsion extends BondedTerm {
                 double sinn = sine * cosprev + cosine * sinprev;
                 double phi = 1.0 + cosn * tcos[i] + sinn * tsin[i];
                 double dphi = (1.0 + i) * (cosn * tsin[i] - sinn * tcos[i]);
+//                logger.info(String.format(" For loop Amplitude %10.4f", amp[i]));
                 energy = energy + amp[i] * phi;
                 dedphi = dedphi + amp[i] * dphi;
                 cosprev = cosn;
                 sinprev = sinn;
             }
+//            logger.info(String.format(" Amplitude %10.4f %10.4f", amp[0], n));
             energy = units * energy;
             if (gradient) {
                 dedphi = units * dedphi;
@@ -379,6 +381,7 @@ public class Torsion extends BondedTerm {
                 atoms[3].addToXYZGradient(g3[0], g3[1], g3[2]);
             }
         }
+//        log();
         return energy;
     }
 

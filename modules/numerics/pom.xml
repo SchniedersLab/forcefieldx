@@ -118,8 +118,15 @@
         </dependency>
         <dependency>
             <groupId>org.jogamp.jocl</groupId>
-            <artifactId>jocl-main</artifactId>
+            <artifactId>jocl</artifactId>
             <version>${jocl.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
+            <type>jar</type>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

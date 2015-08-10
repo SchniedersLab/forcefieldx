@@ -61,12 +61,14 @@ import static ffx.potential.bonded.BondedUtils.buildHydrogen;
 import static ffx.potential.bonded.BondedUtils.buildHydrogenAtom;
 import static ffx.potential.bonded.BondedUtils.findAtomType;
 import static ffx.potential.bonded.BondedUtils.intxyz;
+import ffx.potential.bonded.Residue.AA3;
 import static ffx.potential.bonded.Residue.ResiduePosition.FIRST_RESIDUE;
 import static ffx.potential.bonded.Residue.ResiduePosition.LAST_RESIDUE;
 import static ffx.potential.bonded.Residue.ResiduePosition.MIDDLE_RESIDUE;
 import static ffx.potential.bonded.ResidueEnumerations.aminoAcidHeavyAtoms;
 import static ffx.potential.bonded.ResidueEnumerations.getAminoAcid;
 import static ffx.potential.bonded.ResidueEnumerations.getAminoAcidNumber;
+import java.util.Arrays;
 
 /**
  * Utilities for creating Amino Acid residues.
@@ -114,6 +116,137 @@ public class AminoAcidUtils {
         Atom OT2 = (Atom) residue.getAtomNode("OT2");
         if (OT2 != null) {
             residue.deleteAtom(OT2);
+        }
+    }
+
+    private static void copyCoordinates(Residue fromResidue, Residue toResidue, String atomName) {
+        Atom fromAtom;
+        if(fromResidue.getAtomNode(atomName) != null){
+            fromAtom = (Atom) fromResidue.getAtomNode(atomName);
+        } else {
+            fromAtom = (Atom) fromResidue.getAtomNode("H1");
+        }
+        Atom toAtom = (Atom) toResidue.getAtomNode(atomName);
+        toAtom.setXYZ(fromAtom.getXYZ());
+    }
+
+    public static final String nCapBackboneAtoms[] = {"N","H1","H2","H3","CA","HA","C","O"};
+    
+    public static final String backboneAtoms[] = {"N", "H", "CA", "HA", "C", "O"};
+    public static final String glycineBackboneAtoms[] = {"N", "H", "CA", "HA2","HA3", "C", "O"};
+    public static final String prolineBackboneAtoms[] = {"N", "CA", "HA", "C", "O"};
+    
+    public static final String alanineAtoms[] = {"CB", "HB1", "HB2", "HB3"};
+    public static final String glycineAtoms[] = {"HA2"};
+    public static final String valineAtoms[] = {"CB","HB","CG1","HG11","HG12","HG13", "CG2","HG21","HG22","HG23"};
+    public static final String leucineAtoms[] = {"CB","HB2","HB3","CG","HG", "CD1","HD11","HD12","HD13", "CD2","HD21","HD22","HD23"};   
+    public static final String isoleucineAtoms[] = {"CB","HB", "CG1","HG12","HG13", "CG2","HG21","HG22","HG23", "CD1","HD11","HD12","HD13"}; 
+    public static final String serineAtoms[] = {"CB","HB2", "HB3", "OG", "HG" };
+    public static final String threonineAtoms[] = {"CB", "HB","OG1","HG1","CG2","HG21","HG22","HG23"}; 
+    public static final String cysteineAtoms[] = {"CB","HB2","HB3","SG","HG"};
+    public static final String prolineAtoms[] = {"CB","HB2","HB3","CG","HG2","HG3","CD","HD2","HD3"};
+    public static final String phenylalanineAtoms[] = {"CB","HB2","HB3", "CG","CD1","HD1","CD2","HD2","CE1","HE1","CE2","HE2","CZ","HZ"};
+    public static final String tyrosineAtoms[] = {"CB","HB2","HB3", "CG","CD1","HD1","CD2","HD2","CE1","HE1","CE2","HE2","CZ","OH","HH"};
+    public static final String tryptophanAtoms[] = {"CB","HB2","HB3","CG","CD1","HD1","CD2","NE1","HE1","CE2","CE3","HE3","CZ2","HZ2","CZ3","HZ3","CH2","HH2"};
+    public static final String histidineAtoms[] = {"CB", "HB2", "HB3","CG","ND1","HD1","CD2","HD2","CE1","HE1","NE2","HE2"};   
+    public static final String aspartateAtoms[] = {"CB","HB2","HB3","CG","OD1","OD2"};
+    public static final String asparagineAtoms[] = {"CB","HB2","HB3","CG","OD1","ND2","HD21","HD22"};    
+    public static final String glutamateAtoms[] = {"CB","HB2","HB3","CG","HG2","HG3","CD","OE1","OE2"};
+    public static final String glutamineAtoms[] = {"CB","HB2","HB3","CG","HG2","HG3","CD","OE1","NE2","HE21","HE22"};
+    public static final String methionineAtoms[] = {"CB","HB2","HB3","CG","HG2","HG3","SD","CE","HE1","HE2","HE3"};
+    public static final String lysineAtoms[] = {"CB","HB2","HB3","CG","HG2","HG3","CD","HD2","HD3","CE","HE2","HE3","NZ","HZ1","HZ2","HZ3"};
+    public static final String arginineAtoms[] = {"CB","HB2","HB3","CG","HG2","HG3","CD","HD2","HD3","NE","HE","CZ","NH1","HH11","HH12","NH2","HH21","HH22"};
+
+    public static void copyResidue(Residue fromResidue, Residue toResidue) {
+        String resName = fromResidue.getName();
+        AA3 res = AA3.valueOf(resName);
+        ArrayList<String> atomNames = new ArrayList<>();
+        switch (res) {
+            case ALA:
+                atomNames.addAll(Arrays.asList(alanineAtoms));
+                atomNames.addAll(Arrays.asList(backboneAtoms));
+                break;
+            case GLY:
+                atomNames.addAll(Arrays.asList(glycineAtoms));
+                atomNames.addAll(Arrays.asList(glycineBackboneAtoms));
+                break;
+            case PRO:
+                atomNames.addAll(Arrays.asList(prolineAtoms));
+                atomNames.addAll(Arrays.asList(prolineBackboneAtoms));
+                break;
+            case VAL:
+                atomNames.addAll(Arrays.asList(valineAtoms));
+                atomNames.addAll(Arrays.asList(backboneAtoms));
+                break;   
+            case LEU:
+                atomNames.addAll(Arrays.asList(leucineAtoms));
+                atomNames.addAll(Arrays.asList(backboneAtoms));
+                break;
+            case ILE:
+                atomNames.addAll(Arrays.asList(isoleucineAtoms));
+                atomNames.addAll(Arrays.asList(backboneAtoms));
+                break;
+            case SER:
+                atomNames.addAll(Arrays.asList(serineAtoms));
+                atomNames.addAll(Arrays.asList(backboneAtoms));
+                break;
+            case THR:
+                atomNames.addAll(Arrays.asList(threonineAtoms));
+                atomNames.addAll(Arrays.asList(backboneAtoms));
+                break;
+            case CYS:
+                atomNames.addAll(Arrays.asList(cysteineAtoms));
+                atomNames.addAll(Arrays.asList(backboneAtoms));
+                break;
+            case PHE:
+                atomNames.addAll(Arrays.asList(phenylalanineAtoms));
+                atomNames.addAll(Arrays.asList(backboneAtoms));
+                break;
+            case TYR:
+                atomNames.addAll(Arrays.asList(tyrosineAtoms));
+                atomNames.addAll(Arrays.asList(backboneAtoms));
+                break;
+            case TRP:
+                atomNames.addAll(Arrays.asList(tryptophanAtoms));
+                atomNames.addAll(Arrays.asList(backboneAtoms));
+                break;
+            case HIS:
+                atomNames.addAll(Arrays.asList(histidineAtoms));
+                atomNames.addAll(Arrays.asList(backboneAtoms));
+                break;
+            case ASP:
+                atomNames.addAll(Arrays.asList(aspartateAtoms));
+                atomNames.addAll(Arrays.asList(backboneAtoms));
+                break;
+            case ASN:
+                atomNames.addAll(Arrays.asList(asparagineAtoms));
+                atomNames.addAll(Arrays.asList(backboneAtoms));
+                break;
+            case GLU:
+                atomNames.addAll(Arrays.asList(glutamateAtoms));
+                atomNames.addAll(Arrays.asList(backboneAtoms));
+                break;
+            case GLN:
+                atomNames.addAll(Arrays.asList(glutamineAtoms));
+                atomNames.addAll(Arrays.asList(backboneAtoms));
+                break;
+            case MET:
+                atomNames.addAll(Arrays.asList(methionineAtoms));
+                atomNames.addAll(Arrays.asList(backboneAtoms));
+                break;                
+            case LYS:
+                atomNames.addAll(Arrays.asList(lysineAtoms));
+                atomNames.addAll(Arrays.asList(backboneAtoms));
+                break;                
+            case ARG:
+                atomNames.addAll(Arrays.asList(arginineAtoms));
+                atomNames.addAll(Arrays.asList(backboneAtoms));
+                break;                
+            default:
+                atomNames = null;
+        }
+        for(String atomName: atomNames){
+            copyCoordinates(fromResidue, toResidue, atomName);
         }
     }
 
@@ -1198,9 +1331,23 @@ public class AminoAcidUtils {
         for (Atom atom : resAtoms) {
             atomType = atom.getAtomType();
             if (atomType == null) {
-                MissingAtomTypeException missingAtomTypeException
-                        = new MissingAtomTypeException(residue, atom);
-                throw missingAtomTypeException;
+                /**
+                 * Sometimes, with deuterons, a proton has been constructed in
+                 * its place, so we have a "dummy" deuteron still hanging around.
+                 */
+                String protonEq = atom.getName().replaceFirst("D", "H");
+                Atom correspH = (Atom) residue.getAtomNode(protonEq);
+                if (correspH == null || correspH.getAtomType() == null) {
+                    MissingAtomTypeException missingAtomTypeException
+                            = new MissingAtomTypeException(residue, atom);
+                    throw missingAtomTypeException;
+                } else {
+                    correspH.setName(atom.getName());
+                    atom.removeFromParent();
+                    atom = correspH;
+                    atomType = atom.getAtomType();
+                }
+
             }
             int numberOfBonds = atom.getNumBonds();
             if (numberOfBonds != atomType.valence) {

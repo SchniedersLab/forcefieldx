@@ -46,7 +46,6 @@ import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.random;
 
 import ffx.potential.MolecularAssembly;
-import static ffx.potential.bonded.AminoAcidUtils.cbType;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.BondedUtils;
 import static ffx.potential.bonded.BondedUtils.buildHydrogen;
@@ -63,7 +62,6 @@ import ffx.potential.parsers.PDBFilter;
 import java.io.File;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
 import java.util.logging.Level;
 import org.apache.commons.io.FilenameUtils;
 
@@ -178,10 +176,8 @@ public class Protonate implements MonteCarloListener {
         // process system flags
         String zeroReferenceEnergies = System.getProperty("mc-zeroReferences");
         if (zeroReferenceEnergies != null) {
-            this.zeroReferenceEnergies = Boolean.parseBoolean(zeroReferenceEnergies);
-            if (this.zeroReferenceEnergies) {
-                logger.info(" DEBUG: Zero-ing all reference energies.");
-            }
+            this.zeroReferenceEnergies = true;
+            logger.info(" OVERRIDE: Zero-ing all reference energies.");
         }
         String debugLogLevel = System.getProperty("debug");
         if (debugLogLevel != null) {
@@ -259,7 +255,7 @@ public class Protonate implements MonteCarloListener {
             }
         }
     }
-    
+        
     /**
      * Choose titratables with intrinsic pKa inside (pH-window,pH+window).
      * @param pH
@@ -284,7 +280,7 @@ public class Protonate implements MonteCarloListener {
         }
     }
         
-    private void chooseResID(ArrayList<String> crIDs) {
+    public void chooseResID(ArrayList<String> crIDs) {
         Polymer[] polymers = molAss.getChains();
         int n = 0;
         for (String s : crIDs) {
@@ -304,7 +300,7 @@ public class Protonate implements MonteCarloListener {
         }
     }
     
-    private void chooseResID(char chain, int resID) {
+    public void chooseResID(char chain, int resID) {
         Polymer polymers[] = molAss.getChains();
         for (Polymer polymer : polymers) {
             if (polymer.getChainID() == chain) {
@@ -349,7 +345,7 @@ public class Protonate implements MonteCarloListener {
     /**
      * Must be called after all titratable residues have been chosen, but before beginning MD.
      */
-    private void readyUp() {
+    public void readyUp() {
         // Create MultiResidue objects to wrap titratables.
         for (Residue res : chosenResidues) {
             MultiResidue multiRes = new MultiResidue(res, forceField, forceFieldEnergy);
@@ -413,7 +409,7 @@ public class Protonate implements MonteCarloListener {
             if ((titr.target == AminoAcid3.HID && histidineMode == HistidineMode.HIE_ONLY)
                     || (titr.target == AminoAcid3.HIE && histidineMode == HistidineMode.HID_ONLY)) {
                 continue;
-            }            
+            }
             // Find all the choices currently available to this MultiResidue.
             List<String> choices = new ArrayList<>();
             for (Residue choice : multiRes.getConsideredResidues()) {
@@ -449,6 +445,11 @@ public class Protonate implements MonteCarloListener {
         AminoAcid3 source = AminoAcid3.valueOf(res.getName());
         List<Titration> avail = new ArrayList<>();
         for (Titration titr : Titration.values()) {
+            // Allow manual override of Histidine treatment.
+            if ((titr.target == AminoAcid3.HID && histidineMode == HistidineMode.HIE_ONLY)
+                    || (titr.target == AminoAcid3.HIE && histidineMode == HistidineMode.HID_ONLY)) {
+                continue;
+            }
             if (titr.source == source) {
                 avail.add(titr);
             }
@@ -1141,7 +1142,7 @@ public class Protonate implements MonteCarloListener {
         }
     }
     
-    private void addMolDyn(MolecularDynamics molDyn) {
+    public void addMolDyn(MolecularDynamics molDyn) {
         this.molDyn = molDyn;
     }
     
@@ -1150,7 +1151,7 @@ public class Protonate implements MonteCarloListener {
      * Constant values for intrinsic pKa and reference energy of a CHANGE IN protonation.
      * NOTE: refEnergy is the energy you should subtract if this form is your PROPOSED TARGET.
      */
-    public enum Titratable {
+    private enum Titratable {
         // Standard Forms
         ASP(3.90, -53.188, AminoAcid3.ASH, AminoAcid3.ASP),
         GLU(4.25, -59.390, AminoAcid3.GLH, AminoAcid3.GLU),
@@ -1183,7 +1184,7 @@ public class Protonate implements MonteCarloListener {
     /**
      * Enumerated titration reactions for source/target amino acid pairs.
      */
-    private enum Titration {
+    public enum Titration {
         Ctoc( 8.18, -60.168, TitrationType.DEP,  AminoAcid3.CYS, AminoAcid3.CYD),
         ctoC( 8.18, +60.168, TitrationType.PROT, AminoAcid3.CYD, AminoAcid3.CYS),
         Dtod( 3.90, +53.188, TitrationType.PROT, AminoAcid3.ASP, AminoAcid3.ASH),
@@ -1251,7 +1252,7 @@ public class Protonate implements MonteCarloListener {
         PROT, DEP;
     }
     
-    private enum HistidineMode {
+    public enum HistidineMode {
         ALL, HID_ONLY, HIE_ONLY;
     }
     

@@ -86,6 +86,7 @@ public class RotamerLibrary {
      */
     private static final Rotamer[][] nucleicAcidRotamerCache = new Rotamer[numberOfNucleicAcids][];
     private static ProteinLibrary proteinLibrary = ProteinLibrary.PonderAndRichards;
+    // Can easily add an naSolvationLibrary when we want to do NA sequence optimization.
     private static boolean useOrigCoordsRotamer = false;
     private static final HashMap<Residue, Rotamer[]> origCoordsCache = new HashMap<>();
 
@@ -251,7 +252,7 @@ public class RotamerLibrary {
             }
         }
     }
-
+    
     /**
      * TODO: Add reference to Ponder & Richard's original paper.
      *
@@ -1801,6 +1802,7 @@ public class RotamerLibrary {
      * @param rotamer the Rotamer defining the move.
      */
     public static void applyRotamer(Residue residue, Rotamer rotamer) {
+        residue.setRotamer(rotamer);
         if (rotamer.isCoordinates) {
             applyCoordinates(residue, rotamer);
         } else {
@@ -1827,6 +1829,7 @@ public class RotamerLibrary {
      * @param independent Whether to draw Rotamer independent of chain context.
      */
     public static void applyRotamer(Residue residue, Rotamer rotamer, boolean independent) {
+        residue.setRotamer(rotamer);
         if (rotamer.isCoordinates) {
             applyCoordinates(residue, rotamer);
         } else {
@@ -1856,6 +1859,7 @@ public class RotamerLibrary {
      * correctionThreshold.
      */
     public static void applyRotamer(Residue residue, Rotamer rotamer, double correctionThreshold) throws NACorrectionException {
+        residue.setRotamer(rotamer);
         if (rotamer.isCoordinates) {
             applyCoordinates(residue, rotamer);
         } else {
