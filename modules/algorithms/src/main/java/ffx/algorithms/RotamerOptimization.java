@@ -462,32 +462,32 @@ public class RotamerOptimization implements Terminatable {
         if (undo != null) {
             boolean value = Boolean.parseBoolean(undo);
             this.revert = value;
-            logger.info(String.format(" (KEY) ensembleNumber: %b", this.revert));
+            logger.info(String.format(" (KEY) undo: %b", this.revert));
         }
         if (direction != null) {
             Direction value = Direction.valueOf(direction);
             this.direction = value;
-            logger.info(String.format(" (KEY) ensembleNumber: %s", this.direction.toString()));
+            logger.info(String.format(" (KEY) direction: %s", this.direction.toString()));
         }
         if (increment != null) {
             int value = Integer.parseInt(increment);
             this.increment = value;
-            logger.info(String.format(" (KEY) ensembleNumber: %d", this.increment));
+            logger.info(String.format(" (KEY) increment: %d", this.increment));
         }
         if (goldstein != null) {
             boolean value = Boolean.parseBoolean(goldstein);
             this.useGoldstein = value;
-            logger.info(String.format(" (KEY) ensembleNumber: %b", this.useGoldstein));
+            logger.info(String.format(" (KEY) goldstein: %b", this.useGoldstein));
         }
         if (parallelEnergies != null) {
             boolean value = Boolean.parseBoolean(parallelEnergies);
             this.parallelEnergies = value;
-            logger.info(String.format(" (KEY) ensembleNumber: %b", this.parallelEnergies));
+            logger.info(String.format(" (KEY) parallelEnergies: %b", this.parallelEnergies));
         }
         if (superpositionThreshold != null) {
             Double value = Double.parseDouble(superpositionThreshold);
             this.superpositionThreshold = value;
-            logger.info(String.format(" (KEY) ensembleNumber: %.2f", this.superpositionThreshold));
+            logger.info(String.format(" (KEY) superpositionThreshold: %.2f", this.superpositionThreshold));
         }
         if (ensembleNumber != null) {
             int value = Integer.parseInt(ensembleNumber);
@@ -585,7 +585,7 @@ public class RotamerOptimization implements Terminatable {
         if (lazyMatrix != null) {
             boolean value = Boolean.parseBoolean(lazyMatrix);
             this.lazyMatrix = value;
-            logger.info(String.format(" (KEY) distMatrix: %b", lazyMatrix));
+            logger.info(String.format(" (KEY) lazyMatrix: %b", lazyMatrix));
         }
     }
 
@@ -3799,8 +3799,8 @@ public class RotamerOptimization implements Terminatable {
                 }
                 break;
             default:
-                ArrayList<Atom> naList = residue.getAtomList();
-                for (Atom atom : naList) {
+                atomList = residue.getAtomList();
+                for (Atom atom : atomList) {
                     atom.setActive(true);
                 }
         }
@@ -3816,8 +3816,8 @@ public class RotamerOptimization implements Terminatable {
                 }
                 break;
             default:
-                ArrayList<Atom> naList = residue.getAtomList();
-                for (Atom atom : naList) {
+                atomList = residue.getAtomList();
+                for (Atom atom : atomList) {
                     atom.setActive(false);
                 }
         }

@@ -97,7 +97,7 @@ double pruningFactor = 1.0;
 double singletonNAPruningFactor = 1.5;
 boolean verboseEnergies = true;
 boolean useOrigCoordsRotamer = true;
-double threeBodyCutoffDist = 9.0;
+//double threeBodyCutoffDist = 9.0;
 boolean decomposeOriginal = false;
 boolean parallelEnergies = true;
 boolean useEnergyRestart = false;
@@ -117,7 +117,11 @@ double superpositionThreshold = 0.1;
 double singletonClashThreshold = 20.0;
 double pairClashThreshold = 50.0;
 
-boolean parallelPermutations = false;
+// prototype
+boolean video_writeVideo = false;
+boolean video_ignoreInactiveAtoms = false;
+boolean video_skipEnergies = false;
+
 // maximum number of refinement cycles
 int maxiter = 1000;
 
@@ -130,47 +134,50 @@ cli.h(longOpt:'help', 'Print this help message.');
 cli.l(longOpt:'library', args:1, argName:'2', 'Available rotamer libraries are Ponder and Richards (1) or Richardson (2).');
 cli.a(longOpt:'algorithm', args:1, argName:'1', 'Choices are independent residues (1), all with rotamer elimination (2), all brute force (3), sliding window (4), or box optimization (5).');
 cli.w(longOpt:'window', args:1, argName:'7', 'Size of the sliding window with respect to adjacent residues');
-cli.i(longOpt:'increment', args:1, argName:'3', 'Distance sliding window shifts with respect to adjacent residues');
 cli.r(longOpt:'cutoff', args:1, argName:'2.0', 'The sliding window cutoff radius (Angstroms).')
-cli.d(longOpt:'direction', args:1, argName:'Forward', 'Direction of the sliding window or box optimization (boxes indexed by increasing Z,Y,X): [Forward / Backward]');
-cli.z(longOpt:'undo', args:1, argName:'false', 'Window optimizations that do not lower the energy are discarded.');
 cli.s(longOpt:'start', args:1, argName:'-1', 'Starting residue to perform the rotamer search on (-1 exits). For box optimization, first box to optimize.');
 cli.f(longOpt:'finish', args:1, argName:'-1', 'Final residue to perform the rotamer search on (-1 exits). For box optimization, last box to optimize.');
 cli.c(longOpt:'chain', args:1, argName:'A', 'Chain the residue selection belongs to.');
 cli.m(longOpt:'minimize', args:1, argName:'0.01', 'Minimize the final structure to the given RMS gradient (Kcal/mole/A).');
 cli.t(longOpt:'threeBody', args:1, argName:'true', 'Include 3-Body interactions in elimination criteria.');
-cli.g(longOpt:'Goldstein', args:1, argName:'true', 'True to use Goldstein Criteria, False to use DEE');
 cli.p(longOpt:'pruning', args:1, argName:'2', 'Prune no clashes (0), only single clashes (1), or all clashes (2).');
-cli.e(longOpt:'ensemble', args:1, argName:'1', 'Produce an ensemble of this many of the most favorable structures.');
-cli.eT(longOpt: 'ensembleTarget', args:1, argName:'0.0', 'Produces an ensemble of structures with energies between GMEC and GMEC + value (kcal/mol).');
-cli.b(longOpt:'buffer', args:1, argName:'0.0/5.0', 'Sets a starting energy buffer value for use with ensemble search.');
 cli.x(longOpt:'all', args:1, argName:'1', 'Optimize all residues in the system beginning from the passed residue number (overrides other options); for box optimization, optimizes all boxes from the passed index.');
-cli.nt(longOpt:'nucleicCorrectionThreshold', args:1, argName: '0', 'Nucleic acid Rotamers adjusted by more than a threshold distance (A) are discarded (0 disables this function).');
-cli.mn(longOpt:'minimumAcceptedNARotamers', args:1, argName: '10', 'Minimum number of NA rotamers to be accepted if a threshold distance is enabled.');
-cli.pf(longOpt:'pruningFactor', args:1, argName: '1.0', 'Multiplier of pruning constraints for nucleic acids.');
-cli.sf(longOpt:'nucleicSinglesPruningFactor', args:1, argName: '1.5', 'Constant multiplier of singleton pruning constraint for nucleic acids');
 cli.v(longOpt:'verboseEnergies', args:1, argName: 'true', 'Calculates and prints beginning and default-conformation energies not necessary for the DEE algorithm');
 cli.dt(longOpt:'data', args:2, valueSeparator:',', argName:'data.map,1.0', 'specify input data filename (or simply provide the datafilename argument after the PDB file) and weight to apply to the data (wA)');
 cli.I(longOpt:'maxiter', args:1, argName:'1000', 'maximum number of allowed refinement iterations');
 cli.X(longOpt:'suffix', args:1, argName:'_rsrefine', 'output suffix');
 cli.o(longOpt:'includeOriginal', args:1, argName:'true', 'Include starting coordinates as their own rotamer.');
-cli.td(longOpt:'threeBodyCutoffDist', args:1, argName: '9.0', 'Angstrom distance beyond which three-body interactions will be truncated (-1 for no cutoff).');
 cli.dO(longOpt:'decomposeOriginal', args: 1, argName:'false', 'Only print energy decomposition of original-coordinates rotamers; overrides other flags!');
-//cli.pE(longOpt:'parallelEnergies', args: 1, argName:'true', 'Compute rotamer energies in parallel.');
-cli.pP(longOpt:'parallelPermutations', args: 1, argName:'false', 'Enumerate permutations remaining after DEE in parallel.');
 cli.eR(longOpt:'energyRestart', args: 1, argName:'filename', 'Load energy restart file from a previous run. Ensure that all parameters are the same!');
 cli.nB(longOpt:'numXYZBoxes', args:1, argName: '3,3,3', 'Specify number of boxes along X, Y, and Z');
 cli.bB(longOpt:'boxBorderSize', args: 1, argName: '3.0', 'Extent of overlap between optimization boxes (Angstroms).');
 cli.bL(longOpt:'approxBoxLength', args: 1, argName: '0.0', 'Approximate side lengths of boxes to be constructed (over-rides numXYZBoxes). Box sizes rounded up to make whole number of boxes along each axis. 0 disables this function.');
 //cli.bO(longOpt: 'boxOrder', args: 1, argName: 'IncreasingZYX', 'Order of boxes optimized. Options: Random, IncreasingZYX, DecreasingZYX, IncreasingXYZ, DecreasingXYZ, File (specify file name). Presently, always uses default behavior.');
 cli.bC(longOpt:'boxInclusionCriterion', args: 1, argName: '1', 'Criterion to use for adding residues to boxes. (1) uses C alpha only (N1/9 for nucleic acids). (2) uses any atom. (3) uses any rotamer');
-/*/ bD is used as a single string argument to allow for easier argument size checking.
-cli.bD(longOpt:'boxDimensions', args:1, argName:'buffer,xmin,xmax,ymin,ymax,zmin,zmax', 'If set, box optimization only uses supplied coordinates plus buffer.');*/
 cli.fR(longOpt:'forceResidues', args: 1, argName: '-1,-1', 'Force residues in this range to be considered for sliding window radii, regardless of whether they lack rotamers.');
+cli.lR(longOpt:'listResidues', args: 1, argName: '-1', 'Choose a list of individual residues to optimize (eg. A11,A24,B40).');
+cli.vw(longOpt:'videoWriter', args: 0, 'Prototype video snapshot output; skips energy calculation.');
+cli.nt(longOpt:'nucleicCorrectionThreshold', args:1, argName: '0', 'Nucleic acid Rotamers adjusted by more than a threshold distance (A) are discarded (0 disables this function).');
+cli.mn(longOpt:'minimumAcceptedNARotamers', args:1, argName: '10', 'Minimum number of NA rotamers to be accepted if a threshold distance is enabled.');
+/**
+ * Now handled by system keys.
+// bD is used as a single string argument to allow for easier argument size checking.
+cli.bD(longOpt:'boxDimensions', args:1, argName:'buffer,xmin,xmax,ymin,ymax,zmin,zmax', 'If set, box optimization only uses supplied coordinates plus buffer.');
+cli.i(longOpt:'increment', args:1, argName:'3', 'Distance sliding window shifts with respect to adjacent residues');
+cli.d(longOpt:'direction', args:1, argName:'Forward', 'Direction of the sliding window or box optimization (boxes indexed by increasing Z,Y,X): [Forward / Backward]');
+cli.z(longOpt:'undo', args:1, argName:'false', 'Window optimizations that do not lower the energy are discarded.');
+cli.g(longOpt:'Goldstein', args:1, argName:'true', 'True to use Goldstein Criteria, False to use DEE');
+cli.pE(longOpt:'parallelEnergies', args: 1, argName:'true', 'Compute rotamer energies in parallel.');
 cli.sT(longOpt:'superpositionThreshold', args: 1, argName: '0.1', 'Sets the maximum atom-atom distance (Angstroms) which will cause a pair or triple energy to be defaulted to 1.0E100 kcal/mol.');
+cli.e(longOpt:'ensemble', args:1, argName:'1', 'Produce an ensemble of this many of the most favorable structures.');
+cli.eT(longOpt: 'ensembleTarget', args:1, argName:'0.0', 'Produces an ensemble of structures with energies between GMEC and GMEC + value (kcal/mol).');
+cli.b(longOpt:'buffer', args:1, argName:'0.0/5.0', 'Sets a starting energy buffer value for use with ensemble search.');
+cli.td(longOpt:'threeBodyCutoffDist', args:1, argName: '9.0', 'Angstrom distance beyond which three-body interactions will be truncated (-1 for no cutoff).');
+cli.pf(longOpt:'pruningFactor', args:1, argName: '1.0', 'Multiplier of pruning constraints for nucleic acids.');
+cli.sf(longOpt:'nucleicSinglesPruningFactor', args:1, argName: '1.5', 'Constant multiplier of singleton pruning constraint for nucleic acids');
 cli.sC(longOpt:'singletonClashThreshold', args: 1, argName: '20.0', 'Sets the threshold for singleton pruning.');
 cli.pC(longOpt:'pairClashThreshold', args: 1, argName: '50.0', 'Sets the threshold for pair pruning');
-cli.lR(longOpt:'listResidues', args: 1, argName: '-1', 'Choose a list of individual residues to optimize (eg. A11,A24,B40).');
+*/
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -187,14 +194,16 @@ if (options.lR) {
     }
 }
 
+if (options.vw) {
+    video_writeVideo = true;
+    video_ignoreInactiveAtoms = true;
+    video_skipEnergies = true;
+}
+
 // Ensemble.
 /*if (options.pE) {
     parallelEnergies = Boolean.parseBoolean(options.pE);
 }*/
-
-if (options.pP) {
-    parallelPermutations = Boolean.parseBoolean(options.pP);
-}
 
 if (options.e) {
     ensemble = Integer.parseInt(options.e);
@@ -204,10 +213,6 @@ if (options.e) {
 // Buffer.
 if (options.b) {
     buffer = Double.parseDouble(options.b);
-}
-
-if (options.eT) {
-    ensembleTarget = Double.parseDouble(options.eT);
 }
 
 // Rotamer Library.
@@ -300,9 +305,9 @@ if (options.t) {
     threeBodyTerm = Boolean.parseBoolean(options.t);
 }
 
-if (options.td) {
+/*if (options.td) {
     threeBodyCutoffDist = Double.parseDouble(options.td);
-}
+}*/
 
 if (options.g) {
     useGoldstein = Boolean.parseBoolean(options.g);
@@ -383,8 +388,8 @@ if (options.sT) {
     superpositionThreshold = Double.parseDouble(options.sT);
 }
 
-if (options.sP) {
-    singletonClashThreshold = Double.parseDouble(options.sP);
+if (options.sC) {
+    singletonClashThreshold = Double.parseDouble(options.sC);
 }
 
 if (options.pP) {
@@ -478,7 +483,7 @@ if (algorithm == 5 && options.nB) {
             useBoxDimensions = true;
         }
     } catch (Exception ex) {
-        logger.warning(String.format(" Error in parsing box dimensions: input discarded and defaults used: %s.", ex.toString()));
+        logger.warning(String.format(" Error in parsing box dimensions: input discarded and defaults used: %s.", ex));
         useBoxDimensions = false;
     }
 }*/
@@ -553,7 +558,9 @@ if (minimumNumberAcceptedNARotamers < 1) {
     logger.warning("\n Minimum number of accepted NA rotamers must be a positive integer.\n Setting to default value 10.\n");
     minimumNumberAcceptedNARotamers = 10;
 }
-
+/**
+ * Now handled by system keys.
+ * 
 if (pruningFactor < 0) {
     logger.warning("\n Pruning factor must be >= 0.  Setting to default of 1.0.\n");
     pruningFactor = 1;
@@ -563,6 +570,7 @@ if (singletonNAPruningFactor < 0) {
     logger.warning("\n Pruning factor must be >= 0.  Setting to default of 1.5.\n");
     singletonNAPruningFactor = 1.5;
 }
+*/
 
 if (mapFiles.size() == 0) {
     RealSpaceFile realspacefile = new RealSpaceFile(systems);
@@ -579,37 +587,42 @@ refinementEnergy.energy(x);
 
 RotamerOptimization rotamerOptimization = new RotamerOptimization(active, refinementEnergy, sh);
 rotamerOptimization.setThreeBodyEnergy(threeBodyTerm);
-rotamerOptimization.setThreeBodyCutoffDist(threeBodyCutoffDist);
-rotamerOptimization.setGoldstein(useGoldstein);
 rotamerOptimization.setPruning(pruningType);
-rotamerOptimization.setEnsemble(ensemble, buffer);
 rotamerOptimization.setWindowSize(windowSize);
-rotamerOptimization.setDirection(direction);
 rotamerOptimization.setDistanceCutoff(distance);
-rotamerOptimization.setIncrement(increment);
-rotamerOptimization.setRevert(revert);
 rotamerOptimization.setNucleicCorrectionThreshold(nucleicCorrectionThreshold);
 rotamerOptimization.setMinimumNumberAcceptedNARotamers(minimumNumberAcceptedNARotamers);
+/**
+ * Now handled by system keys.
+rotamerOptimization.setIncrement(increment);
+rotamerOptimization.setDirection(direction);
+rotamerOptimization.setRevert(revert);
+rotamerOptimization.setGoldstein(useGoldstein);
+rotamerOptimization.setEnsemble(ensemble, buffer);
+rotamerOptimization.setEnsembleTarget(ensembleTarget);
+rotamerOptimization.setThreeBodyCutoffDist(threeBodyCutoffDist);
 rotamerOptimization.setPruningFactor(pruningFactor);
 rotamerOptimization.setSingletonNAPruningFactor(singletonNAPruningFactor);
-rotamerOptimization.setVerboseEnergies(verboseEnergies);
+rotamerOptimization.setSingletonClashThreshold(singletonClashThreshold);
+rotamerOptimization.setPairClashThreshold(pairClashThreshold);
 rotamerOptimization.setParallelEnergies(parallelEnergies);
+rotamerOptimization.setSuperpositionThreshold(superpositionThreshold);
+*/
+rotamerOptimization.setVerboseEnergies(verboseEnergies);
 rotamerOptimization.setBoxBorderSize(boxBorderSize);
 rotamerOptimization.setApproxBoxLength(approxBoxLength);
 rotamerOptimization.setNumXYZBoxes(numXYZBoxes);
 rotamerOptimization.setBoxInclusionCriterion(boxInclusionCriterion);
 rotamerOptimization.setForcedResidues(forceResiduesStart, forceResiduesEnd);
-//rotamerOptimization.setParallelPermutations(parallelPermutations);
-rotamerOptimization.setSuperpositionThreshold(superpositionThreshold);
-rotamerOptimization.setSingletonClashThreshold(singletonClashThreshold);
-rotamerOptimization.setPairClashThreshold(pairClashThreshold);
-rotamerOptimization.setEnsembleTarget(ensembleTarget);
 if (useEnergyRestart) {
     rotamerOptimization.setEnergyRestartFile(energyRestartFile);
 }
 /*if (useBoxDimensions) {
     rotamerOptimization.setBoxDimensions(boxDimensions, superboxBuffer);
 }*/
+if (options.vw) {
+    rotamerOptimization.setVideoWriter(video_writeVideo, video_ignoreInactiveAtoms, video_skipEnergies);
+}
 
 /*if (useBoxFile) {
 rotamerOptimization.setBoxOrder(boxFile);
@@ -691,6 +704,11 @@ if (algorithm != 5) {
         rotamerOptimization.setResidues(startResID, finalResID);
     }
 } else {
+    boolean ignoreNA = false;
+    String ignoreNAProp = System.getProperty("ignoreNA");
+    if (ignoreNAProp != null && ignoreNAProp.equalsIgnoreCase("true")) {
+        ignoreNA = true;
+    }
     ArrayList<Residue> residueList = new ArrayList<Residue>();
     Polymer[] polymers = active.getChains();
     int nPolymers = polymers.length;
@@ -700,6 +718,9 @@ if (algorithm != 5) {
         int nResidues = residues.size();
         for (int i=0; i<nResidues; i++) {
             Residue residue = residues.get(i);
+            if (ignoreNA && residue.getResidueType() == ResidueType.NA) {
+                continue;
+            }
             Rotamer[] rotamers = RotamerLibrary.getRotamers(residue);
             if (rotamers != null) {
                 int nrot = rotamers.length;
@@ -738,7 +759,37 @@ RotamerLibrary.measureRotamers(residueList, false);
 
 if (decomposeOriginal) {
     RotamerLibrary.setUseOrigCoordsRotamer(true);
-    if (options.x) {
+    boolean doQuadsInParallel = true;
+    if (!doQuadsInParallel) {
+        String quadsProp = System.getProperty("evalQuad");
+        if (quadsProp != null && quadsProp.equalsIgnoreCase("true")) {
+            Residue[] residueArray = residueList.toArray(new Residue[residueList.size()]);
+
+            String quadsCutoffProp = System.getProperty("quadCutoff");
+            double quadsCutoff = 5.0;
+            if (quadsCutoffProp != null) {
+                try {
+                    quadsCutoff = Double.parseDouble(quadsCutoffProp);
+                } catch (Exception ex) {
+                    logger.warning(String.format(" Exception in parsing quads cutoff: %s", ex));
+                }
+                quadsCutoff = quadsCutoff <= 0 ? 5.0 : quadsCutoff;
+            }
+
+            String quadsEvalProperty = System.getProperty("numQuads");
+            int numQuads = 1000000;
+            if (quadsEvalProperty != null) {
+                try {
+                    numQuads = Integer.parseInt(System.getProperty("numQuads"));
+                } catch (Exception ex) {
+                    logger.warning(String.format(" Exception in parsing number of quads to evaluate: %s", ex));
+                }
+                numQuads = numQuads <= 0 ? 1000000 : numQuads;
+            }
+
+            rotamerOptimization.decomposeOriginalQuads(quadsCutoff, numQuads);
+        }
+    } else if (options.x) {
         rotamerOptimization.decomposeOriginalParallel();
     } else {
         Residue[] residueArray = residueList.toArray(new Residue[residueList.size()]);
