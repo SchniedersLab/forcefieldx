@@ -47,6 +47,8 @@ import static org.apache.commons.io.FilenameUtils.isExtension;
 import static org.apache.commons.io.FilenameUtils.removeExtension;
 
 import ffx.potential.MolecularAssembly;
+import ffx.utilities.DownloadUtilities;
+import ffx.utilities.StringUtils;
 
 /**
  * <p>
@@ -217,8 +219,14 @@ public class DiffractionFile {
                                 //logger.info("\n Data file: " + tmp.getName());
                                 diffractionfilter = new CNSFilter();
                             } else {
-                                logger.severe("no input data found!");
-                                diffractionfilter = null;
+                                String cifURL = StringUtils.cifForID(name);
+                                tmp = DownloadUtilities.downloadURL(cifURL);
+                                if (tmp.exists()) {
+                                    diffractionfilter = new CIFFilter();
+                                } else {
+                                    logger.severe("no input data found!");
+                                    diffractionfilter = null;
+                                }
                             }
                         }
                     }

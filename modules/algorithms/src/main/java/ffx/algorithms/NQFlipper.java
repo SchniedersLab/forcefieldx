@@ -533,7 +533,7 @@ public class NQFlipper {
     private double currentEnergy() {
         if (x == null) {
             int nVar = potential.getNumberOfVariables();
-            x = new double[nVar];
+            x = new double[nVar * 3];
         }
         try {
             potential.getCoordinates(x);

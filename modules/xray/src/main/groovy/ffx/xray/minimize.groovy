@@ -153,7 +153,12 @@ logger.info("\n Running x-ray minimize on " + modelfilename);
 systems = open(modelfilename);
 
 if (diffractionfiles.size() == 0) {
-    DiffractionFile diffractionfile = new DiffractionFile(systems, 1.0, false);
+    boolean isNeutron = false;
+    String neutronProperty = System.getProperty("neutronData");
+    if (neutronProperty != null) {
+        isNeutron = Boolean.parseBoolean(neutronProperty);
+    }
+    DiffractionFile diffractionfile = new DiffractionFile(systems, 1.0, isNeutron);
     diffractionfiles.add(diffractionfile);
 }
 
