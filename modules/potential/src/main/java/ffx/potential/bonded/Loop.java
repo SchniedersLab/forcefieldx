@@ -54,34 +54,17 @@ public class Loop {
     public static final SturmMethod sturmMethod = new SturmMethod();
 
     int max_soln = 16;
-    char[] in_pdb = new char[100];
-    char[] out_prefix = new char[100];
     char[] out_pdb = new char[100];
-    String[] res_name = new String[5];
-    int n0, i, j, k, n1, n2;
+    int i, j, k;
     int[] n_soln = new int[1];
     double[][] r_n = new double[5][3];
-    double[][] r_a = new double[5][3];
+    double[][] r_a = new double[5][3];  
     double[][] r_c = new double[5][3];
-    char[] chain_a = new char[5];
-    char[] chain_n = new char[5];
-    char[] chain_c = new char[5];
     double[][][] r_soln_n = new double[max_soln][3][3];
     double[][][] r_soln_a = new double[max_soln][3][3];
     double[][][] r_soln_c = new double[max_soln][3][3];
-    double rmsd, sum;
+    double sum;
     double[] dr = new double[3];
-    double[][] r0_n = new double[3][3];
-    double[][] r0_a = new double[3][3];
-    double[][] r0_c = new double[3][3];
-    boolean calc_rmsd;
-    int write_out_pdb;
-    double[] b_len = new double[6];
-    double[] b_ang = new double[7];
-    double[] t_ang = new double[2];
-    double b_na = 1.45e0, b_ac = 1.52e0, b_cn = 1.33e0;
-    double ang_nac = Math.toRadians(111.6), ang_acn = Math.toRadians(117.5);
-    double ang_cna = Math.toRadians(120.0);
     MolecularAssembly molAss;
     boolean bool = false;
     int counter = 0;
@@ -89,36 +72,9 @@ public class Loop {
     public Loop(MolecularAssembly molAss, int stt_res, int end_res, boolean writeFile) {
         this.molAss = molAss;
 
-        //initialize bond lengths based on known constants
-        b_len[0] = b_ac;
-        b_len[1] = b_cn;
-        b_len[2] = b_na;
-        b_len[3] = b_ac;
-        b_len[4] = b_cn;
-        b_len[5] = b_na;
+        loopClosure.initializeLoopClosure();
 
-        //initialize bond angles based on known constants
-        b_ang[0] = ang_nac;
-        b_ang[1] = ang_acn;
-        b_ang[2] = ang_cna;
-        b_ang[3] = ang_nac;
-        b_ang[4] = ang_acn;
-        b_ang[5] = ang_cna;
-        b_ang[6] = ang_nac;
-
-        //initialize peptide torsion angles based on known constants
-        t_ang[0] = Math.PI;
-        t_ang[1] = Math.PI;
-
-        loopClosure.initializeLoopClosure(b_len, b_ang, t_ang);
-
-        calc_rmsd = true;
-
-        //N1 and n2 are essentially useless for validated test cases, consider revising.
-        n1 = 2;
-        n2 = 2;
-
-        for (n0 = n1; n0 <= n2; n0++) {
+        for (i = 0; i < 1; i++) {
             int res_no;
             int ir;
             boolean bool1 = true;
@@ -141,7 +97,6 @@ public class Loop {
 
                     String atmname;
                     atmname = molAss.getBackBoneAtoms().get(i).getAtomType().name;
-                    char chainID = molAss.getBackBoneAtoms().get(i).getChainID();
 
                     String ca = "CA";
                     String c = "C";
@@ -156,40 +111,18 @@ public class Loop {
                         r_n[ir][0] = coordinateArray[0];
                         r_n[ir][1] = coordinateArray[1];
                         r_n[ir][2] = coordinateArray[2];
-
-                        //get chain ID
-                        chain_n[ir] = chainID;
-
                     } else if (atmname.contentEquals(ca)) {
                         //Backbone alpha carbon coordinates are stored in r_a[]
                         r_a[ir][0] = coordinateArray[0];
                         r_a[ir][1] = coordinateArray[1];
                         r_a[ir][2] = coordinateArray[2];
-
-                        //set res_name array
-                        res_name[ir] = molAss.getBackBoneAtoms().get(i).getResidueName();
-
-                        //get chain ID
-                        chain_a[ir] = chainID;
-
                     } else if (atmname.contentEquals(c)) {
                         //Backbone carbon coordinates are stored in r_c[]
                         r_c[ir][0] = coordinateArray[0];
                         r_c[ir][1] = coordinateArray[1];
                         r_c[ir][2] = coordinateArray[2];
-
-                        chain_c[ir] = chainID;
                     }
                     i++;
-                }
-            }
-
-            for (i = 0; i < 3; i++) {
-                for (j = 0; j < 3; j++) {
-                    //initialize the r0 arrays
-                    r0_n[i][j] = r_n[i + 1][j];
-                    r0_a[i][j] = r_a[i + 1][j];
-                    r0_c[i][j] = r_c[i + 1][j];
                 }
             }
 
@@ -202,7 +135,6 @@ public class Loop {
             sb.append(String.format("No. of solutions:          %d\n", n_soln[0]));
             logger.info(sb.toString());
 
-            if (calc_rmsd) {
                 for (k = 0; k < n_soln[0]; k++) {
                     for (i = 0; i < 3; i++) {
                         for (j = 0; j < 3; j++) {
@@ -215,31 +147,33 @@ public class Loop {
 
                     for (i = 0; i < 3; i++) {
                         for (j = 0; j < 3; j++) {
-                            dr[j] = r_soln_n[k][i][j] - r0_n[i][j];
+                            dr[j] = r_soln_n[k][i][j] - r_n[i+1][j];
                         }
                         sum += VectorMath.dot(dr, dr);
                         for (j = 0; j < 3; j++) {
-                            dr[j] = r_soln_a[k][i][j] - r0_a[i][j];
+                            dr[j] = r_soln_a[k][i][j] - r_a[i+1][j];
                         }
                         sum += VectorMath.dot(dr, dr);
                         for (j = 0; j < 3; j++) {
-                            dr[j] = r_soln_c[k][i][j] - r0_c[i][j];
+                            dr[j] = r_soln_c[k][i][j] - r_c[i+1][j];
                         }
                         sum += VectorMath.dot(dr, dr);
                     }
-                    rmsd = Math.sqrt(sum / 9.0e0);
+                    
+                    //Here the sum is now equal to the rmsd.
+                    sum = Math.sqrt(sum / 9.0e0);
 
                     StringBuilder string = new StringBuilder();
-                    string.append(String.format("Rmsd for solution #" + (k + 1) + " is " + rmsd + "\n"));
+                    string.append(String.format("Rmsd for solution #" + (k + 1) + " is " + sum + "\n"));
                     logger.info(string.toString());
 
                     counter++;
 
-                    File fileName = sturmMethod.writePDBBackbone(out_pdb, res_name, r_n, r_a, r_c, stt_res, end_res, chain_n, chain_a, chain_c, molAss, counter, writeFile);
+                    File fileName = sturmMethod.writePDBBackbone(r_n, r_a, r_c, stt_res, end_res, molAss, counter, writeFile);
                     StringBuilder string1 = new StringBuilder();
                     string.append(String.format("Recording the solution #" + (k + 1) + " in " + fileName + ".\n"));
                 }
-            }
+            
         }
     }
 
