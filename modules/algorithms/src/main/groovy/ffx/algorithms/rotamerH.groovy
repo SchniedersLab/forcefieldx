@@ -100,7 +100,7 @@ boolean video_ignoreInactiveAtoms = false;
 boolean video_skipEnergies = false;
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc rotamer [options] <filename>');
+def cli = new CliBuilder(usage:' ffxc rotamerH [options] <filename>');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.l(longOpt:'library', args:1, argName:'2', 'Available rotamer libraries are Ponder and Richards (1) or Richardson (2).');
 cli.a(longOpt:'algorithm', args:1, argName:'1', 'Choices are independent residues (1), all with rotamer elimination (2), all brute force (3), sliding window (4), or box optimization (5).');
@@ -125,7 +125,7 @@ cli.bC(longOpt:'boxInclusionCriterion', args: 1, argName: '1', 'Criterion to use
 cli.fR(longOpt:'forceResidues', args: 1, argName: '-1,-1', 'Force residues in this range to be considered for sliding window radii, regardless of whether they lack rotamers.');
 cli.lR(longOpt:'listResidues', args: 1, argName: '-1', 'Choose a list of individual residues to optimize (eg. A11,A24,B40).');
 cli.vw(longOpt:'videoWriter', args: 0, 'Prototype video snapshot output; skips energy calculation.');
-cli.sO(longOpt:'sequenceOptimization', args:1, argName: '-1', 'Choose a list of individual residues to sequence optimize.');
+cli.tO(longOpt:'titrationOptimization', args:1, argName: '-1', 'Choose a list of individual residues to titrate (protonation state optimization).');
 cli.nt(longOpt:'nucleicCorrectionThreshold', args:1, argName: '0', 'Nucleic acid Rotamers adjusted by more than a threshold distance (A) are discarded (0 disables this function).');
 cli.mn(longOpt:'minimumAcceptedNARotamers', args:1, argName: '10', 'Minimum number of NA rotamers to be accepted if a threshold distance is enabled.');
 /**
@@ -164,8 +164,8 @@ if (options.lR) {
 }
 
 List<String> sequenceOptimizationList = new ArrayList<>();
-if (options.sO) {
-    def tok = (options.sO).tokenize('.');
+if (options.tO) {
+    def tok = (options.tO).tokenize('.');
     for (String t : tok) {
         logger.info(" Protonation state optimizing " + t);
         sequenceOptimizationList.add(t);
@@ -668,7 +668,7 @@ if (algorithm != 5) {
 
 ArrayList<Residue> residueList = rotamerOptimization.getResidues();
 
-if (options.sO) {
+if (options.tO) {
     ArrayList<Residue> titrating = new ArrayList<>();
     for (String s : sequenceOptimizationList) {
         Character chainID = s.charAt(0);
