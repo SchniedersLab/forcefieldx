@@ -132,7 +132,7 @@ systems = open(filename);
 
 MolecularAssembly molecularAssembly = (MolecularAssembly) active;
 RotamerLibrary.initializeDefaultAtomicCoordinates(molecularAssembly);
-Polymer polymer = molecularAssembly.getChain(chain);
+Polymer polymer = molecularAssembly.getPolymer(chain);
 if (polymer == null) {
     logger.info(" Polymer + " + chain + " does not exist.");
     return;

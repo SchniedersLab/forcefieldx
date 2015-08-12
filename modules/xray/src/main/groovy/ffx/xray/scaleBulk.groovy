@@ -138,7 +138,7 @@ if (writemtz) {
 
 if (writemaps) {
 //    if (options.o) {
-//        def polymers = active.getChains();
+//        def polymers = active.getPolymers();
 //        int nPolymers = polymers.length;
 //        for (int p=0; p < nPolymers; p++) {
 //            Polymer polymer = polymers[p];

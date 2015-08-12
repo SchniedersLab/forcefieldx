@@ -81,7 +81,7 @@ for (int i=0; i<systems.length; i++) {
     double[] translate = new double[3];
 
     // Move the polymers together
-    List<Polymer> polymers = system.getChains();
+    List<Polymer> polymers = system.getPolymers();
     if (polymers != null && polymers.size() > 0) {
 
         // Find the center of mass

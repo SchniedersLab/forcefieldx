@@ -91,10 +91,10 @@ open(filename);
 ForceField forceField = active.getForceField();
 ForceFieldEnergy forceFieldEnergy = active.getPotentialEnergy();
 Residue residue;
-Polymer[] polymers = active.getChains();
+Polymer[] polymers = active.getPolymers();
 for (int i = 0; i < polymers.length; i++) {
     Polymer polymer = polymers[i];
-    if (chain.equals(polymer.getChainID())) {
+    if (chain.equals(polymer.getChainIDChar())) {
         residue = polymer.getResidue(resID);
         if (residue != null) {
             multiResidue = new MultiResidue(residue, forceField, forceFieldEnergy);
@@ -108,7 +108,7 @@ if (residue == null) {
 }
 
 ResidueType type = residue.getResidueType();
-int resNumber = residue.getResidueNumber();
+int resNumber = residue.getResidueIndex();
 multiResidue.addResidue(new Residue(name, resNumber, type));
 
 int numResidues = multiResidue.getResidueCount();

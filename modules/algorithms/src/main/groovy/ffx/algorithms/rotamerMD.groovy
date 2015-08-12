@@ -547,7 +547,7 @@ if (useOrigCoordsRotamer) {
 if (algorithm != 5) {
     if (options.x) {
         ArrayList<Residue> residueList = new ArrayList<Residue>();
-        Polymer[] polymers = active.getChains();
+        Polymer[] polymers = active.getPolymers();
         int nPolymers = polymers.length;
         for (int p=0; p<nPolymers; p++) {
             Polymer polymer = polymers[p];
@@ -582,7 +582,7 @@ if (algorithm != 5) {
     }
 } else {
     ArrayList<Residue> residueList = new ArrayList<Residue>();
-    Polymer[] polymers = active.getChains();
+    Polymer[] polymers = active.getPolymers();
     int nPolymers = polymers.length;
     for (int p=0; p<nPolymers; p++) {
         Polymer polymer = polymers[p];

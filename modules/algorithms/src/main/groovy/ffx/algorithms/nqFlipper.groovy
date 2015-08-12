@@ -129,7 +129,7 @@ open(filename);
 int counter = 1;
 List<Residue> residueList = new ArrayList<>();
 if (options.x) {
-    Polymer[] polymers = active.getChains();
+    Polymer[] polymers = active.getPolymers();
     int nPolymers = polymers.length;
     for (int p = 0; p < nPolymers; p++) {
         Polymer polymer = polymers[p];
@@ -157,7 +157,7 @@ if (options.x) {
 } else {
     Polymer polymer;
     if (options.c) {
-        polymer = active.getChain(chain);
+        polymer = active.getPolymer(chain);
     } else {
         Polymer[] polymers = active.getPolymers();
         polymer = polymers[0];
