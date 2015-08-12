@@ -780,7 +780,7 @@ public class Residue extends MSGroup {
      */
     @Override
     public int hashCode() {
-        int hash = hash(SEED, getParent().hashCode());
+        int hash = hash(SEED, segID);
         hash = hash(hash, getResidueNumber());
         hash = hash(hash, residueType);
         if (residueType == ResidueType.AA) {
