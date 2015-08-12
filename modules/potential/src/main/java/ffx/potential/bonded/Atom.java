@@ -427,7 +427,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
         this.built = built;
     }
 
-
     /**
      * {@inheritDoc}
      *
@@ -517,6 +516,15 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     public boolean getUse() {
         return use;
+    }
+
+    /**
+     * If true, this atom was built during PDB file parsing.
+     *
+     * @return
+     */
+    public boolean getBuilt() {
+        return built;
     }
 
     /**
