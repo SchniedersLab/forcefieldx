@@ -280,7 +280,7 @@ public class Protonate implements MonteCarloListener {
         }
     }
         
-    private void chooseResID(ArrayList<String> crIDs) {
+    public void chooseResID(ArrayList<String> crIDs) {
         Polymer[] polymers = molAss.getPolymers();
         int n = 0;
         for (String s : crIDs) {
@@ -300,7 +300,7 @@ public class Protonate implements MonteCarloListener {
         }
     }
     
-    private void chooseResID(char chain, int resID) {
+    public void chooseResID(char chain, int resID) {
         Polymer polymers[] = molAss.getPolymers();
         for (Polymer polymer : polymers) {
             if (polymer.getChainIDChar() == chain) {

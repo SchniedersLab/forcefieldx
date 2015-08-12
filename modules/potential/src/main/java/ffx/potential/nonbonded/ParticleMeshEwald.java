@@ -1984,13 +1984,16 @@ public class ParticleMeshEwald implements LambdaInterface {
                 break;
         }
 
-        /**
-         * for (int i = 0; i < nAtoms; i++) { logger.info(format(" %d ID (%8.3f
-         * %8.3f %8.3f) CR (%8.3f %8.3f %8.3f)", i, inducedDipole[0][i][0],
-         * inducedDipole[0][i][1], inducedDipole[0][i][2],
-         * inducedDipoleCR[0][i][0], inducedDipoleCR[0][i][1],
-         * inducedDipoleCR[0][i][2])); }
-         */
+        if (System.getProperty("printInducedDipoles") != null) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("     Atom                                         Induced Dipole \n");
+            sb.append("    ======                                       ================\n");
+            for (int i = 0; i < nAtoms; i++) {
+                sb.append(format("%-47s: (%+8.6f %+8.6f %+8.6f)\n", atoms[i],
+                        inducedDipole[0][i][0], inducedDipole[0][i][1], inducedDipole[0][i][2]));
+            }
+            logger.info(sb.toString());
+        }
         return iterations;
     }
 
@@ -5192,7 +5195,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                     x[i] = xyz[0];
                     y[i] = xyz[1];
                     z[i] = xyz[2];
-                    use[i] = atom.isActive();
+                    use[i] = atom.getUse();
 
                     /**
                      * Real space Ewald is cutoff at ~7 A, compared to ~12 A for

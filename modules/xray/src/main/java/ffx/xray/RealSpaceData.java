@@ -263,7 +263,7 @@ public class RealSpaceData implements DataContainer {
                     continue;
                 }
 
-                if (!a.isActive()) {
+                if (!a.getUse()) {
                     continue;
                 }
 

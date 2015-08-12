@@ -66,8 +66,6 @@ public class LoopClosure {
     private static final Logger logger = Logger.getLogger(LoopClosure.class.getName());
     private static final SturmMethod sturmMethod = new SturmMethod();
 
-    //The initial C files from the Dill group utilize global variables.
-    //These variables should eventually be moved.
     private int max_soln = 16;
     private int[] deg_pol = new int[1];
     private double[] len0 = new double[6];
@@ -103,8 +101,7 @@ public class LoopClosure {
     private double[][] C2 = new double[3][3];
     private double[][] Q = new double[5][17];
     private double[][] R = new double[3][17];
-    //boolean bool = true;
-
+    
     /**
      * LoopClosure Constructor.
      */
@@ -151,12 +148,8 @@ public class LoopClosure {
 
     /**
      * Initialize Loop Closure.
-     *
-     * @param b_len
-     * @param b_ang
-     * @param t_ang
      */
-    public void initializeLoopClosure(double[] b_len, double[] b_ang, double[] t_ang) {
+    public void initializeLoopClosure() {
         double[] axis = new double[3];
         double[] rr_a1 = new double[3];
         double[] rr_c1 = new double[3];
@@ -186,17 +179,23 @@ public class LoopClosure {
         sturmMethod.initializeSturm(tol_secant, max_iter_sturm, max_iter_secant);
 
         //initializing initial length, angle, and torsion arrays
-        for (int i = 0; i < 6; i++) {
-            len0[i] = b_len[i];
-        }
+        len0[0] = 1.52;
+        len0[1] = 1.33;
+        len0[2] = 1.45;
+        len0[3] = 1.52;
+        len0[4] = 1.33;
+        len0[5] = 1.45;
 
-        for (int i = 0; i < 7; i++) {
-            b_ang0[i] = b_ang[i];
-        }
+        b_ang0[0] = Math.toRadians(111.6);
+        b_ang0[1] = Math.toRadians(117.5);
+        b_ang0[2] = Math.toRadians(120.0);
+        b_ang0[3] = Math.toRadians(111.6);
+        b_ang0[4] = Math.toRadians(117.5);
+        b_ang0[5] = Math.toRadians(120.0);
+        b_ang0[6] = Math.toRadians(111.6);
 
-        for (int i = 0; i < 2; i++) {
-            t_ang0[i] = t_ang[i];
-        }
+        t_ang0[0] = Math.PI;
+        t_ang0[1] = Math.PI;
 
         for (int i = 0; i < 3; i++) {
             rr_c1[i] = 0.0;
@@ -254,8 +253,8 @@ public class LoopClosure {
             delta[i + 1][0] = PI - delta[i + 1][0];
         }
 
-        double a_min = b_ang[3] - (xi[1][0] + eta[1][0]);
-        double a_max = min((b_ang[3] + (xi[1][0] + eta[1][0])), PI);
+        double a_min = b_ang0[3] - (xi[1][0] + eta[1][0]);
+        double a_max = min((b_ang0[3] + (xi[1][0] + eta[1][0])), PI);
         aa13_min_sqr = pow(len_aa[1], 2) + pow(len_aa[2], 2) - 2.0 * len_aa[1] * len_aa[2] * cos(a_min);
         aa13_max_sqr = pow(len_aa[1], 2) + pow(len_aa[2], 2) - 2.0 * len_aa[1] * len_aa[2] * cos(a_max);
     }
@@ -547,7 +546,7 @@ public class LoopClosure {
         double[] f24 = new double[17];
         double[] f25 = new double[17];
         double[] f26 = new double[17];
-
+        
         for (int i = 0; i < 3; i++) {
             double A0 = cos_alpha[i] * cos_xi[i] * cos_eta[i] - cos_theta[i];
             double A1 = -sin_alpha[i] * cos_xi[i] * sin_eta[i];

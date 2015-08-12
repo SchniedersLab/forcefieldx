@@ -202,6 +202,11 @@ public class CrystalReciprocalSpace {
     private final FormFactor solventFormFactors[][];
     private final GridMethod gridMethod;
 
+    private final SharedIntegerArray optAtomicGradientWeight;
+    private final int previousOptAtomicGradientWeight[];
+    private final GradientSchedule atomicGradientSchedule;
+    
+    
     /**
      * Parallelization of putting atomic form factors onto the 3D grid using a
      * 3D spatial decomposition.
@@ -397,6 +402,10 @@ public class CrystalReciprocalSpace {
         solventRowSchedule = new RowSchedule(threadCount, fftZ, fftY);
         bulkSolventRowSchedule = new RowSchedule(threadCount, fftZ, fftY);
 
+        optAtomicGradientWeight = new SharedIntegerArray(nAtoms);
+        previousOptAtomicGradientWeight = new int[nAtoms];
+        atomicGradientSchedule = new GradientSchedule(threadCount,nAtoms);
+        
         if (solvent) {
             bAdd = 0.0;
             atomFormFactors = null;
@@ -1049,8 +1058,15 @@ public class CrystalReciprocalSpace {
                 solventGradientRegion.setRefinementMode(refinementMode);
                 parallelTeam.execute(solventGradientRegion);
             } else {
+                for (int i = 0; i < nAtoms; i++){
+                    optAtomicGradientWeight.set(i, 0);
+                }
+                atomicGradientSchedule.updateWeights(previousOptAtomicGradientWeight);
                 atomicGradientRegion.setRefinementMode(refinementMode);
                 parallelTeam.execute(atomicGradientRegion);
+                for (int i = 0; i < nAtoms; i++){
+                    previousOptAtomicGradientWeight[i] = optAtomicGradientWeight.get(i);
+                }
             }
             permanentDensityTime = System.nanoTime() - startTime;
         } catch (Exception e) {
@@ -1736,7 +1752,7 @@ public class CrystalReciprocalSpace {
 
         @Override
         public void gridDensity(int iSymm, int n) {
-            if (!atoms[n].isActive()) {
+            if (!atoms[n].getUse()) {
                 return;
             }
 
@@ -1795,7 +1811,7 @@ public class CrystalReciprocalSpace {
 
         @Override
         public void gridDensity(int iSymm, int n) {
-            if (!atoms[n].isActive()) {
+            if (!atoms[n].getUse()) {
                 return;
             }
             final double lambdai = atoms[n].applyLambda() ? lambda : 1.0;
@@ -1910,7 +1926,7 @@ public class CrystalReciprocalSpace {
             for (int iSymm = 0; iSymm < nSymm; iSymm++) {
                 for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
                     if (rowRegion.select[iSymm][iAtom]) {
-                        if (!atoms[iAtom].isActive()) {
+                        if (!atoms[iAtom].getUse()) {
                             continue;
                         }
                         xyz[0] = coordinates[iSymm][0][iAtom];
@@ -1940,7 +1956,7 @@ public class CrystalReciprocalSpace {
                     zyAtListBuild[iSymm][iAtom][0] = 0;
                     zyAtListBuild[iSymm][iAtom][1] = 0;
                     if (rowRegion.select[iSymm][iAtom]) {
-                        if (!atoms[iAtom].isActive()) {
+                        if (!atoms[iAtom].getUse()) {
                             continue;
                         }
                         xyz[0] = coordinates[iSymm][0][iAtom];
@@ -1986,7 +2002,7 @@ public class CrystalReciprocalSpace {
         }
 
         public void buildList(int iSymm, int iAtom, int lb, int ub) {
-            if (!atoms[iAtom].isActive()) {
+            if (!atoms[iAtom].getUse()) {
                 return;
             }
             xyz[0] = coordinates[iSymm][0][iAtom];
@@ -2033,7 +2049,7 @@ public class CrystalReciprocalSpace {
         
         @Override
         public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
-            if (!atoms[iAtom].isActive()) {
+            if (!atoms[iAtom].getUse()) {
                 return;
             }
 
@@ -2125,7 +2141,7 @@ public class CrystalReciprocalSpace {
             for (int iSymm = 0; iSymm < nSymm; iSymm++) {
                 for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
                     if (rowRegion.select[iSymm][iAtom]) {
-                        if (!atoms[iAtom].isActive()) {
+                        if (!atoms[iAtom].getUse()) {
                             continue;
                         }
                         xyz[0] = coordinates[iSymm][0][iAtom];
@@ -2155,7 +2171,7 @@ public class CrystalReciprocalSpace {
                     zyAtListBuild[iSymm][iAtom][0] = 0;
                     zyAtListBuild[iSymm][iAtom][1] = 0;
                     if (rowRegion.select[iSymm][iAtom]) {
-                        if (!atoms[iAtom].isActive()) {
+                        if (!atoms[iAtom].getUse()) {
                             continue;
                         }
                         xyz[0] = coordinates[iSymm][0][iAtom];
@@ -2201,7 +2217,7 @@ public class CrystalReciprocalSpace {
         }
 
         public void buildList(int iSymm, int iAtom, int lb, int ub) {
-            if (!atoms[iAtom].isActive()) {
+            if (!atoms[iAtom].getUse()) {
                 return;
             }
             xyz[0] = coordinates[iSymm][0][iAtom];
@@ -2268,7 +2284,7 @@ public class CrystalReciprocalSpace {
         @Override
         public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
 
-            if (!atoms[iAtom].isActive()) {
+            if (!atoms[iAtom].getUse()) {
                 return;
             }
 
@@ -2394,7 +2410,7 @@ public class CrystalReciprocalSpace {
 
         @Override
         public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
-            if (!atoms[iAtom].isActive()) {
+            if (!atoms[iAtom].getUse()) {
                 return;
             }
             final double lambdai = atoms[iAtom].applyLambda() ? lambda : 1.0;
@@ -2517,7 +2533,7 @@ public class CrystalReciprocalSpace {
             for (int iSymm = 0; iSymm < nSymm; iSymm++) {
                 for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
                     if (sliceRegion.select[iSymm][iAtom]) {
-                        if (!atoms[iAtom].isActive()) {
+                        if (!atoms[iAtom].getUse()) {
                             continue;
                         }
                         xyz[0] = coordinates[iSymm][0][iAtom];
@@ -2542,7 +2558,7 @@ public class CrystalReciprocalSpace {
                 for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
                     zAtListBuild[iSymm][iAtom] = 0;
                     if (sliceRegion.select[iSymm][iAtom]) {
-                        if (!atoms[iAtom].isActive()) {
+                        if (!atoms[iAtom].getUse()) {
                             continue;
                         }
                         xyz[0] = coordinates[iSymm][0][iAtom];
@@ -2584,7 +2600,7 @@ public class CrystalReciprocalSpace {
         }
 
         public void buildList(int iSymm, int iAtom, int lb, int ub) {
-            if (!atoms[iAtom].isActive()) {
+            if (!atoms[iAtom].getUse()) {
                 return;
             }
             xyz[0] = coordinates[iSymm][0][iAtom];
@@ -2613,7 +2629,7 @@ public class CrystalReciprocalSpace {
 
         @Override
         public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
-            if (!atoms[iAtom].isActive()) {
+            if (!atoms[iAtom].getUse()) {
                 return;
             }
             final double lambdai = atoms[iAtom].applyLambda() ? lambda : 1.0;
@@ -2696,7 +2712,7 @@ public class CrystalReciprocalSpace {
         }
 
         public void buildList(int iSymm, int iAtom, int lb, int ub) {
-            if (!atoms[iAtom].isActive()) {
+            if (!atoms[iAtom].getUse()) {
                 return;
             }
             xyz[0] = coordinates[iSymm][0][iAtom];
@@ -2728,7 +2744,7 @@ public class CrystalReciprocalSpace {
             for (int iSymm = 0; iSymm < nSymm; iSymm++) {
                 for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
                     if (sliceRegion.select[iSymm][iAtom]) {
-                        if (!atoms[iAtom].isActive()) {
+                        if (!atoms[iAtom].getUse()) {
                             continue;
                         }
                         xyz[0] = coordinates[iSymm][0][iAtom];
@@ -2753,7 +2769,7 @@ public class CrystalReciprocalSpace {
                 for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
                     zAtListBuild[iSymm][iAtom] = 0;
                     if (sliceRegion.select[iSymm][iAtom]) {
-                        if (!atoms[iAtom].isActive()) {
+                        if (!atoms[iAtom].getUse()) {
                             continue;
                         }
                         xyz[0] = coordinates[iSymm][0][iAtom];
@@ -2811,7 +2827,7 @@ public class CrystalReciprocalSpace {
 
         @Override
         public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
-            if (!atoms[iAtom].isActive()) {
+            if (!atoms[iAtom].getUse()) {
                 return;
             }
             final double lambdai = atoms[iAtom].applyLambda() ? lambda : 1.0;
@@ -2929,7 +2945,7 @@ public class CrystalReciprocalSpace {
 
         @Override
         public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
-            if (!atoms[iAtom].isActive()) {
+            if (!atoms[iAtom].getUse()) {
                 return;
             }
             final double lambdai = atoms[iAtom].applyLambda() ? lambda : 1.0;
@@ -3027,14 +3043,36 @@ public class CrystalReciprocalSpace {
             final double uvw[] = new double[3];
             final double xc[] = new double[3];
             final double xf[] = new double[3];
+            final int optLocal[] = new int[nAtoms];
+            long timer;
+            
             // Extra padding to avert cache interference.
             long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
             @Override
+            public void start() {
+                fill(optLocal, 0);
+                timer = -System.nanoTime();
+            }            
+            
+            @Override
+            public void finish() {
+                timer += System.nanoTime();
+                for (int i = 0; i < nAtoms; i++){
+                    optAtomicGradientWeight.addAndGet(i, optLocal[i]);
+                }
+            }
+            
+            @Override
+            public IntegerSchedule schedule() {
+                return atomicGradientSchedule;
+            }
+            
+            @Override
             public void run(final int lb, final int ub) {
                 for (int n = lb; n <= ub; n++) {
-                    if (!atoms[n].isActive()) {
+                    if (!atoms[n].getUse()) {
                         continue;
                     }
                     if (lambdaTerm) {
@@ -3071,8 +3109,10 @@ public class CrystalReciprocalSpace {
                                 int giz = Crystal.mod(iz, fftZ);
                                 xf[2] = iz * ifftZ;
                                 crystal.toCartesianCoordinates(xf, xc);
+                                optLocal[n]++;
                                 final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
                                 atomff.rhoGrad(xc, weight * densityGrid[ii], refinementmode);
+                                
                             }
                         }
                     }
@@ -3124,7 +3164,7 @@ public class CrystalReciprocalSpace {
             @Override
             public void run(final int lb, final int ub) {
                 for (int n = lb; n <= ub; n++) {
-                    if (!atoms[n].isActive()) {
+                    if (!atoms[n].getUse()) {
                         continue;
                     }
                     if (lambdaTerm) {

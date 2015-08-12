@@ -149,7 +149,7 @@ public class BiojavaFilter extends ConversionFilter {
     private boolean listMode = false;
     private ArrayList<String> listOutput = new ArrayList<>();
     /**
-     * Don't output atoms which fail Atom.isActive().
+     * Don't output atoms which fail Atom.getUse().
      */
     private boolean ignoreInactiveAtoms = false;
 
@@ -380,7 +380,7 @@ public class BiojavaFilter extends ConversionFilter {
 
             Atom newAtom = new Atom(0,
                     name, altLoc, xyz, resName, resSeq, chainID, atom.getOccupancy(),
-                    atom.getTempFactor(), segID);
+                    atom.getTempFactor(), segID, true);
             if (insCode != null) {
                 newAtom.setInsCode(insCode);
             }
@@ -543,7 +543,7 @@ public class BiojavaFilter extends ConversionFilter {
 
         Atom newAtom = new Atom(0,
                 name, altLoc, xyz, resName, resSeq, chainID, atom.getOccupancy(),
-                atom.getTempFactor(), segID);
+                atom.getTempFactor(), segID, true);
 
         /* Biojava sets at least some capping groups, and possibly nonstandard
          amino acids to be heteroatoms. */
@@ -879,7 +879,7 @@ public class BiojavaFilter extends ConversionFilter {
                     Atom ia = atomMap.get(bonds[0].toUpperCase());
                     Atom hydrogen = new Atom(0, atomName, ia.getAltLoc(), new double[3],
                             ia.getResidueName(), ia.getResidueNumber(), ia.getChainID(),
-                            ia.getOccupancy(), ia.getTempFactor(), ia.getSegID());
+                            ia.getOccupancy(), ia.getTempFactor(), ia.getSegID(), true);
                     logger.fine(" Created hydrogen " + atomName + ".");
                     hydrogen.setAtomType(type);
                     hydrogen.setHetero(true);

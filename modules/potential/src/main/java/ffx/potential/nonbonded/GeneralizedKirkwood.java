@@ -38,6 +38,7 @@
 package ffx.potential.nonbonded;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -90,7 +91,6 @@ import static ffx.potential.parameters.MultipoleType.t100;
 import static ffx.potential.parameters.MultipoleType.t101;
 import static ffx.potential.parameters.MultipoleType.t110;
 import static ffx.potential.parameters.MultipoleType.t200;
-import java.util.HashMap;
 
 /**
  * This Generalized Kirkwood class implements GK for the AMOEBA polarizable
@@ -149,11 +149,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
     private double born[];
     private int nAtoms;
     /**
-     * This field is because re-initializing the force field resizes some arrays 
-     * but not others; that second category must, when called on, be resized not 
-     * to the current number of atoms but to the maximum number of atoms (and thus 
-     * to the size of the first category of arrays). 
-    */
+     * This field is because re-initializing the force field resizes some arrays
+     * but not others; that second category must, when called on, be resized not
+     * to the current number of atoms but to the maximum number of atoms (and
+     * thus to the size of the first category of arrays).
+     */
     private int maxNumAtoms;
     private final ParticleMeshEwald particleMeshEwald;
     private final ParallelTeam parallelTeam;
@@ -204,8 +204,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * Use base radii defined by AtomType rather than by atomic number.
      */
     private boolean verboseRadii = false;
-    private final HashMap<Integer,Double> radiiOverride = new HashMap<>();
-    private static final HashMap<Integer,Double> typeToBondi = new HashMap<>();
+    private final HashMap<Integer, Double> radiiOverride = new HashMap<>();
+    private static final HashMap<Integer, Double> typeToBondi = new HashMap<>();
+
     static {
         // ARG: NE, CZ, NH1, NH2, HE, HH11, HH12, HH21, HH22
         typeToBondi.put(211, 1.240);
@@ -222,7 +223,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         typeToBondi.put(142, 0.950);
         typeToBondi.put(143, 0.950);
         // CYD: SG
-        typeToBondi.put( 52, 0.950);
+        typeToBondi.put(52, 0.950);
         // GLH: CD, OE1, OE2, HE2
         typeToBondi.put(166, 1.110);
         typeToBondi.put(167, 1.110);
@@ -257,7 +258,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         typeToBondi.put(193, 1.300);
         typeToBondi.put(194, 1.300);
         // TYD: OH
-        typeToBondi.put( 91, 0.850);
+        typeToBondi.put(91, 0.850);
     }
 
     /**
@@ -280,13 +281,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
             this.verboseRadii = true;
             logger.info(" (GK) Verbose radii enabled.");
         }
-        
+
         String epsilonProp = System.getProperty("gk-epsilon");
         if (epsilonProp != null) {
             this.epsilon = Double.parseDouble(epsilonProp);
             logger.info(String.format(" (GK) GLOBAL dielectric constant set to %.2f", epsilon));
         }
-        
+
         String bondiOverride = System.getProperty("gk-bondiOverride");
         if (bondiOverride != null) {
             double scale = Double.parseDouble(bondiOverride);
@@ -298,7 +299,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 logger.info(String.format(" (GK) Scaling GLOBAL bondi radii by factor: %.2f", bondiScale));
             }
         }
-        
+
         String radiiProp = System.getProperty("gk-radiiOverride");
         if (radiiProp != null) {
             String tokens[] = radiiProp.split(",");
@@ -318,7 +319,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         fc = 1.0 * (1.0 - epsilon) / (0.0 + 1.0 * epsilon);
         fd = 2.0 * (1.0 - epsilon) / (1.0 + 2.0 * epsilon);
         fq = 3.0 * (1.0 - epsilon) / (2.0 + 3.0 * epsilon);
-        
+
         this.parallelTeam = parallelTeam;
         nAtoms = atoms.length;
         maxNumAtoms = nAtoms;
@@ -468,7 +469,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             overlapScale[i] = 0.69;
             int atomicNumber = atoms[i].getAtomicNumber();
             AtomType atomType = atoms[i].getAtomType();
-            
+
             switch (atomicNumber) {
                 case 0:
                     baseRadius[i] = 0.0;
@@ -532,14 +533,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
             }
 
             double bondiFactor = bondiScale;
-            
+
             // Check for hard-coded AtomType bondi factor.
             if (typeToBondi.containsKey(atomType.type)) {
                 double factor = typeToBondi.get(atomType.type);
                 bondiFactor = factor;
                 if (verboseRadii) {
                     logger.info(String.format(" (GK) TypeToBondi: Atom %3s-%-3s with AtomType %d to %.2f (bondi factor %.2f)",
-                            atoms[i].getResidueName(), atoms[i].getName(), atomType.type, baseRadius[i]*bondiFactor, bondiFactor));
+                            atoms[i].getResidueName(), atoms[i].getName(), atomType.type, baseRadius[i] * bondiFactor, bondiFactor));
                 }
             }
             // Check for command-line bondi factor override.
@@ -547,7 +548,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 double factor = radiiOverride.get(atomType.type);
                 bondiFactor = factor;
                 logger.info(String.format(" (GK) Scaling Atom %3s-%-3s with AtomType %d to %.2f (bondi factor %.2f)",
-                        atoms[i].getResidueName(), atoms[i].getName(), atomType.type, baseRadius[i]*bondiFactor, bondiFactor));
+                        atoms[i].getResidueName(), atoms[i].getName(), atomType.type, baseRadius[i] * bondiFactor, bondiFactor));
             }
             // Testing.
             String scaleEnv = System.getProperty("gk-scaleEnv");
@@ -560,21 +561,21 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 double factor = Double.parseDouble(scaleEnv.substring(separator + 1));
                 if (atomType.environment.contains(env)) {
                     // Don't scale backbone atoms.
-                    if ( ! (atomType.environment.endsWith(" N") ||
-                            atomType.environment.endsWith(" CA") || 
-                            atomType.environment.endsWith(" C") || 
-                            atomType.environment.endsWith(" O") || 
-                            atomType.environment.endsWith(" HN") || 
-                            atomType.environment.endsWith(" HA"))) {
+                    if (!(atomType.environment.endsWith(" N")
+                            || atomType.environment.endsWith(" CA")
+                            || atomType.environment.endsWith(" C")
+                            || atomType.environment.endsWith(" O")
+                            || atomType.environment.endsWith(" HN")
+                            || atomType.environment.endsWith(" HA"))) {
                         bondiFactor = factor;
                         logger.info(String.format(" (GK) Scaling Atom %3s-%-3s with AtomType %d to %.2f (bondi factor %.2f)",
-                                atoms[i].getResidueName(), atoms[i].getName(), atomType.type, baseRadius[i]*bondiFactor, bondiFactor));
+                                atoms[i].getResidueName(), atoms[i].getName(), atomType.type, baseRadius[i] * bondiFactor, bondiFactor));
                     }
                 }
             }
-            
+
             baseRadius[i] *= bondiFactor;
-            
+
         }
 
         if (dispersionRegion != null) {
@@ -586,7 +587,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         }
 
     }
-    
+
     public void setUse(boolean use[]) {
         this.use = use;
     }

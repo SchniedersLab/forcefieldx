@@ -164,8 +164,26 @@ public class Polymer extends MSGroup implements Chain {
      */
     @Override
     public MSNode addMSNode(MSNode msNode) {
-        assert (msNode instanceof Residue || msNode instanceof Molecule);
-        getAtomNode().add(msNode);
+        /*assert (msNode instanceof Residue || msNode instanceof Molecule);
+        getAtomNode().add(msNode);*/
+        assert (msNode instanceof Residue);
+
+        Residue residue = (Residue) msNode;
+        int resNumber = residue.getResidueIndex();
+
+        MSNode residueNode = getAtomNode();
+        int n = residueNode.getChildCount();
+        int childIndex = n;
+
+        for (int i=0; i<n; i++) {
+            Residue current = (Residue) residueNode.getChildAt(i);
+            if (current.getResidueIndex() > resNumber) {
+                childIndex = i;
+                break;
+            }
+        }
+
+        getAtomNode().insert(residue, childIndex);
         return msNode;
     }
 
@@ -228,12 +246,12 @@ public class Polymer extends MSGroup implements Chain {
     @Override
     public void finalize(boolean finalizeGroups, ForceField forceField) {
         ListIterator li;
-        ArrayList res = getAtomNodeList();
+        List<MSNode> residues = getAtomNodeList();
         setFinalized(false);
 
         // Finalize the residues in the Polymer
         if (finalizeGroups) {
-            for (li = res.listIterator(); li.hasNext();) {
+            for (li = residues.listIterator(); li.hasNext();) {
                 ((Residue) li.next()).finalize(true, forceField);
             }
         }
@@ -241,11 +259,11 @@ public class Polymer extends MSGroup implements Chain {
         if (link) {
             Residue residue = getFirstResidue();
             if (residue.residueType == ResidueType.AA) {
-                getAtomNode().setName("Amino Acids " + "(" + res.size() + ")");
+                getAtomNode().setName("Amino Acids " + "(" + residues.size() + ")");
             } else if (residue.residueType == ResidueType.NA) {
-                getAtomNode().setName("Nucleic Acids " + "(" + res.size() + ")");
+                getAtomNode().setName("Nucleic Acids " + "(" + residues.size() + ")");
             } else {
-                getAtomNode().setName("Residues " + "(" + res.size() + ")");
+                getAtomNode().setName("Residues " + "(" + residues.size() + ")");
             }
             Joint j;
             MSNode joints = getTerms();
@@ -279,7 +297,7 @@ public class Polymer extends MSGroup implements Chain {
                         "Linkages " + "(" + joints.getChildCount() + ")");
             }
         } else {
-            getAtomNode().setName("Sub-Groups " + "(" + res.size() + ")");
+            getAtomNode().setName("Sub-Groups " + "(" + residues.size() + ")");
             if (getTerms().getParent() != null) {
                 remove(getTerms());
             }

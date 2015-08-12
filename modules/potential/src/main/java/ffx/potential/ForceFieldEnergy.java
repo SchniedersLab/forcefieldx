@@ -1243,7 +1243,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             for (Residue residue : residuesList) {
                 if (residue instanceof MultiResidue) {
                     Atom refAtom = residue.getSideChainAtoms().get(0);
-                    if (refAtom != null && refAtom.isActive()) {
+                    if (refAtom != null && refAtom.getUse()) {
                         /**
                          * Reasonably confident that it should be -=, as we are
                          * trying to penalize residues with strong solvation
