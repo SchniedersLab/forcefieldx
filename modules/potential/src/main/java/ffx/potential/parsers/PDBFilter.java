@@ -1156,6 +1156,9 @@ public final class PDBFilter extends SystemFilter {
                     continue;
                 }
                 Residue previousResidue = polymer.getResidue(currentID - 1);
+                if (previousResidue == null) {
+                    continue;
+                }
                 currentResidue = polymer.getResidue(resNames[i], currentID, true);
                 Residue nextResidue = null;
                 for (int j = currentID + 1; j < seqEnd; j++) {
@@ -1709,7 +1712,10 @@ public final class PDBFilter extends SystemFilter {
                         break;
                     }
                 }
-
+                if (N == null) {
+                    subChain.add(residue);
+                    continue;
+                }
                 /**
                  * Compute the distance between the previous carbonyl carbon and
                  * the current nitrogen.

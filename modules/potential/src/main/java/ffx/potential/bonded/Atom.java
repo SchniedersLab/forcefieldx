@@ -454,7 +454,6 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
         this.loaded = loaded;
     }
 
-
     /**
      * {@inheritDoc}
      *
@@ -560,6 +559,15 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
      */
     public boolean getUse() {
         return use;
+    }
+
+    /**
+     * If true, this atom was built during PDB file parsing.
+     *
+     * @return
+     */
+    public boolean getLoaded() {
+        return loaded;
     }
 
     /**

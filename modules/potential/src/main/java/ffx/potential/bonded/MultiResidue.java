@@ -90,7 +90,7 @@ public class MultiResidue extends Residue {
     ForceFieldEnergy forceFieldEnergy;
     
     public MultiResidue(Residue residue, ForceField forceField, ForceFieldEnergy forceFieldEnergy) {
-        super("MultiResidue", residue.getResidueIndex(), residue.residueType);
+        super("MultiResidue", residue.getResidueIndex(), residue.residueType, residue.getChainID(), residue.getChainID().toString());
         this.forceField = forceField;
         this.forceFieldEnergy = forceFieldEnergy;
         activeResidue = residue;
