@@ -67,7 +67,7 @@ public class TimerTest {
     @Test
     public void testTimer() {
         logger.info(String.format("\n N-Body Test: "));
-        int nEvals = 5;
+        int nEvals = 1;
         boolean gradient = true;
         boolean print = true;
 
