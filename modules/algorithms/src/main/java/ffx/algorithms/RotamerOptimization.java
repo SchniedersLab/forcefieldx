@@ -1753,9 +1753,12 @@ public class RotamerOptimization implements Terminatable {
             MultiResidue multiRes = new MultiResidue(res, molecularAssembly.getForceField(), molecularAssembly.getPotentialEnergy());
             Polymer polymer = null;
             for (Polymer p : polymers) {
-                if (p.getChainID() == res.getChainID()) {
+                if (p.getChainID().equals(res.getChainID())) {
                     polymer = p;
                 }
+            }
+            if (polymer == null) {
+                logger.warning("Couldn't find parent chain while building MultiResidue for res: " + res);
             }
             polymer.addMultiResidue(multiRes);
             titrationRecursiveBuild(res, multiRes, histidineMode);
@@ -1763,6 +1766,7 @@ public class RotamerOptimization implements Terminatable {
             // Switch back to the original form and ready the ForceFieldEnergy.
             multiRes.setActiveResidue(res);
             molecularAssembly.getPotentialEnergy().reInit();
+            this.residueList.remove(res);
             this.residueList.add(multiRes);
             logger.info(String.format(" Titrating: %s", multiRes));
         }
