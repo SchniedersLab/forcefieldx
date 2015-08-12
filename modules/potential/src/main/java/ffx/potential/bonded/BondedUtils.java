@@ -409,7 +409,7 @@ public class BondedUtils {
             double occupancy = ia.getOccupancy();
             double tempFactor = ia.getTempFactor();
             atom = new Atom(0, atomName, altLoc, new double[3], resName, resSeq, chainID,
-                    occupancy, tempFactor, segID);
+                    occupancy, tempFactor, segID, true);
             residue.addMSNode(atom);
             intxyz(atom, ia, bond, ib, angle1, ic, angle2, chiral);
         }
@@ -450,7 +450,7 @@ public class BondedUtils {
             double occupancy = ia.getOccupancy();
             double tempFactor = ia.getTempFactor();
             atom = new Atom(0, atomName, altLoc, new double[3], resName, resSeq, chainID,
-                    occupancy, tempFactor, segID);
+                    occupancy, tempFactor, segID, true);
             residue.addMSNode(atom);
             intxyz(atom, ia, bond, ib, angle1, ic, angle2, chiral);
         }

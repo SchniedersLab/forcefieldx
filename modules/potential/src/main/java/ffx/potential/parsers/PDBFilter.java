@@ -862,13 +862,34 @@ public final class PDBFilter extends SystemFilter {
                             }
                             break;
                         case SSBOND:
-                            /**
-                             * SSBOND records may be invalid if chain IDs are
-                             * reused.
-                             *
-                             * They are applied to the A conformer and not
-                             * alternate conformers.
-                             */
+// =============================================================================
+// The SSBOND record identifies each disulfide bond in protein and polypeptide
+// structures by identifying the two residues involved in the bond.
+// The disulfide bond distance is included after the symmetry operations at
+// the end of the SSBOND record.
+//
+//  8 - 10        Integer         serNum       Serial number.
+// 12 - 14        LString(3)      "CYS"        Residue name.
+// 16             Character       chainID1     Chain identifier.
+// 18 - 21        Integer         seqNum1      Residue sequence number.
+// 22             AChar           icode1       Insertion code.
+// 26 - 28        LString(3)      "CYS"        Residue name.
+// 30             Character       chainID2     Chain identifier.
+// 32 - 35        Integer         seqNum2      Residue sequence number.
+// 36             AChar           icode2       Insertion code.
+// 60 - 65        SymOP           sym1         Symmetry oper for 1st resid
+// 67 - 72        SymOP           sym2         Symmetry oper for 2nd resid
+// 74 – 78        Real(5.2)      Length        Disulfide bond distance
+//
+// If SG of cysteine is disordered then there are possible alternate linkages.
+// wwPDB practice is to put together all possible SSBOND records. This is
+// problematic because the alternate location identifier is not specified in
+// the SSBOND record.
+//
+// Notes:
+// SSBOND records may be invalid if chain IDs are reused.
+// SSBOND records are applied by FFX to the A conformer (not alternate conformers).
+// =============================================================================
                             if (currentAltLoc == 'A') {
                                 ssbonds.add(line);
                             }
@@ -969,30 +990,51 @@ public final class PDBFilter extends SystemFilter {
             logger.exiting(PDBFilter.class.getName(), "readFile", e);
             return false;
         }
-// =============================================================================
-// The SSBOND record identifies each disulfide bond in protein and polypeptide
-// structures by identifying the two residues involved in the bond.
-// The disulfide bond distance is included after the symmetry operations at
-// the end of the SSBOND record.
-//
-//  8 - 10        Integer         serNum       Serial number.
-// 12 - 14        LString(3)      "CYS"        Residue name.
-// 16             Character       chainID1     Chain identifier.
-// 18 - 21        Integer         seqNum1      Residue sequence number.
-// 22             AChar           icode1       Insertion code.
-// 26 - 28        LString(3)      "CYS"        Residue name.
-// 30             Character       chainID2     Chain identifier.
-// 32 - 35        Integer         seqNum2      Residue sequence number.
-// 36             AChar           icode2       Insertion code.
-// 60 - 65        SymOP           sym1         Symmetry oper for 1st resid
-// 67 - 72        SymOP           sym2         Symmetry oper for 2nd resid
-// 74 – 78        Real(5.2)      Length        Disulfide bond distance
-//
-// If SG of cysteine is disordered then there are possible alternate linkages.
-// wwPDB practice is to put together all possible SSBOND records. This is
-// problematic because the alternate location identifier is not specified in
-// the SSBOND record.
-// =============================================================================
+
+        /**
+         * Locate disulfide bonds; bond parameters are assigned below.
+         */
+        List<Bond> ssBondList = locateDisulfideBonds(ssbonds);
+
+        /**
+         * Record the number of atoms read in from the PDB file before applying
+         * algorithms that may build new atoms.
+         */
+        int pdbAtoms = activeMolecularAssembly.getAtomArray().length;
+
+        /**
+         * Build missing backbone atoms in loops.
+         */
+        buildMissingResidues(xyzIndex);
+
+        /**
+         * Assign atom types. Missing side-chains atoms and missing hydrogens
+         * will be built in.
+         */
+        assignAtomTypes();
+
+        /**
+         * Assign disulfide bonds parameters and log their creation.
+         */
+        buildDisulfideBonds(ssBondList);
+
+        /**
+         * Finally, re-number the atoms if missing atoms were created.
+         */
+        if (pdbAtoms != activeMolecularAssembly.getAtomArray().length) {
+            numberAtoms();
+        }
+
+        return true;
+    }
+
+    /**
+     * Locate disulfide bonds based on SSBOND records.
+     *
+     * @param ssbonds
+     * @return
+     */
+    private List<Bond> locateDisulfideBonds(List<String> ssbonds) {
         List<Bond> ssBondList = new ArrayList<>();
         for (String ssbond : ssbonds) {
             try {
@@ -1046,23 +1088,15 @@ public final class PDBFilter extends SystemFilter {
                 logger.log(Level.WARNING, message, e);
             }
         }
+        return ssBondList;
+    }
 
-        /**
-         * Record the number of atoms read in from the PDB before any algorithms
-         * that create new atoms.
-         */
-        int pdbAtoms = activeMolecularAssembly.getAtomArray().length;
-
-        /**
-         * Build missing backbone atoms
-         */
-        buildMissingResidues(xyzIndex);
-
-        /**
-         * Assign atom types.
-         */
-        assignAtomTypes();
-
+    /**
+     * Assign parameters to disulfide bonds.
+     *
+     * @param ssBondList
+     */
+    private void buildDisulfideBonds(List<Bond> ssBondList) {
         StringBuilder sb = new StringBuilder(" Disulfide Bonds:");
         for (Bond bond : ssBondList) {
             Atom a1 = bond.getAtom(0);
@@ -1088,15 +1122,6 @@ public final class PDBFilter extends SystemFilter {
         if (ssBondList.size() > 0) {
             logger.info(sb.toString());
         }
-
-        /**
-         * Finally, re-number the atoms if missing atoms were created.
-         */
-        if (pdbAtoms != activeMolecularAssembly.getAtomArray().length) {
-            numberAtoms();
-        }
-
-        return true;
     }
 
     /**
@@ -1110,7 +1135,7 @@ public final class PDBFilter extends SystemFilter {
      * @param xyzIndex
      * @return
      */
-    public int buildMissingResidues(int xyzIndex) {
+    private int buildMissingResidues(int xyzIndex) {
 
         /**
          * Only build loops if the buildLoops flag is true.
@@ -1172,45 +1197,45 @@ public final class PDBFilter extends SystemFilter {
 
                 double nXYZ[] = new double[3];
                 VectorMath.sum(C.getXYZ(), vector, nXYZ);
-                nXYZ[0] += Math.random() - 0.05;
-                nXYZ[1] += Math.random() - 0.05;
-                nXYZ[2] += Math.random() - 0.05;
+                nXYZ[0] += Math.random() - 0.5;
+                nXYZ[1] += Math.random() - 0.5;
+                nXYZ[2] += Math.random() - 0.5;
                 Atom newN = new Atom(xyzIndex++, "N", C.getAltLoc(), nXYZ, resNames[i], currentID,
-                        chainID, 1.0, C.getTempFactor(), C.getSegID());
+                        chainID, 1.0, C.getTempFactor(), C.getSegID(), true);
                 currentResidue.addMSNode(newN);
 
                 double caXYZ[] = new double[3];
                 VectorMath.scalar(vector, 2.0, vector);
                 VectorMath.sum(C.getXYZ(), vector, caXYZ);
-                caXYZ[0] += Math.random() - 0.05;
-                caXYZ[1] += Math.random() - 0.05;
-                caXYZ[2] += Math.random() - 0.05;
+                caXYZ[0] += Math.random() - 0.5;
+                caXYZ[1] += Math.random() - 0.5;
+                caXYZ[2] += Math.random() - 0.5;
                 Atom newCA = new Atom(xyzIndex++, "CA", C.getAltLoc(), caXYZ, resNames[i], currentID,
-                        chainID, 1.0, C.getTempFactor(), C.getSegID());
+                        chainID, 1.0, C.getTempFactor(), C.getSegID(), true);
                 currentResidue.addMSNode(newCA);
 
                 double cXYZ[] = new double[3];
                 VectorMath.scalar(vector, 1.5, vector);
                 VectorMath.sum(C.getXYZ(), vector, cXYZ);
-                cXYZ[0] += Math.random() - 0.05;
-                cXYZ[1] += Math.random() - 0.05;
-                cXYZ[2] += Math.random() - 0.05;
+                cXYZ[0] += Math.random() - 0.5;
+                cXYZ[1] += Math.random() - 0.5;
+                cXYZ[2] += Math.random() - 0.5;
                 Atom newC = new Atom(xyzIndex++, "C", C.getAltLoc(), cXYZ, resNames[i], currentID,
-                        chainID, 1.0, C.getTempFactor(), C.getSegID());
+                        chainID, 1.0, C.getTempFactor(), C.getSegID(), true);
                 currentResidue.addMSNode(newC);
 
                 double oXYZ[] = new double[3];
-                vector[0] = Math.random() - 0.05;
-                vector[1] = Math.random() - 0.05;
-                vector[2] = Math.random() - 0.05;
+                vector[0] = Math.random() - 0.5;
+                vector[1] = Math.random() - 0.5;
+                vector[2] = Math.random() - 0.5;
                 VectorMath.sum(cXYZ, vector, oXYZ);
                 Atom newO = new Atom(xyzIndex++, "O", C.getAltLoc(), oXYZ, resNames[i], currentID,
-                        chainID, 1.0, C.getTempFactor(), C.getSegID());
+                        chainID, 1.0, C.getTempFactor(), C.getSegID(), true);
                 currentResidue.addMSNode(newO);
                 if (lastBuiltResidue != currentID - 1) {
                     stringBuilder.append("\n");
                 }
-                stringBuilder.append(String.format(" %8s",currentResidue.toString()));
+                stringBuilder.append(String.format(" %8s", currentResidue.toString()));
                 builtResidues = true;
                 lastBuiltResidue = currentID;
             }
@@ -1225,7 +1250,7 @@ public final class PDBFilter extends SystemFilter {
      * <p>
      * numberAtoms</p>
      */
-    public void numberAtoms() {
+    private void numberAtoms() {
         int index = 1;
         for (Atom a : activeMolecularAssembly.getAtomArray()) {
             a.xyzIndex = index++;
@@ -1265,7 +1290,7 @@ public final class PDBFilter extends SystemFilter {
      * Assign force field atoms types to common chemistries using "biotype"
      * records.
      */
-    public void assignAtomTypes() {
+    private void assignAtomTypes() {
         /**
          * Create a new List to store bonds determined based on PDB atom names.
          */
@@ -3285,7 +3310,7 @@ public final class PDBFilter extends SystemFilter {
      * @param bw a {@link java.io.BufferedWriter} object.
      * @throws java.io.IOException if any.
      */
-    public void writeAtom(Atom atom, int serial, StringBuilder sb,
+    private void writeAtom(Atom atom, int serial, StringBuilder sb,
             StringBuilder anisouSB, BufferedWriter bw)
             throws IOException {
         if (ignoreUnusedAtoms && !atom.getUse()) {
@@ -3367,7 +3392,7 @@ public final class PDBFilter extends SystemFilter {
         }
     }
 
-    public void writeSIFTAtom(Atom atom, int serial, StringBuilder sb,
+    private void writeSIFTAtom(Atom atom, int serial, StringBuilder sb,
             StringBuilder anisouSB, BufferedWriter bw, String siftScore)
             throws IOException {
         String name = atom.getName();
@@ -3973,7 +3998,7 @@ public final class PDBFilter extends SystemFilter {
         return BondedUtils.buildHydrogen(residue, atomName, ia, bond, ib, angle1, ic, angle2, chiral, lookUp, forceField, bondList);
     }
 
-    public Bond buildBond(Atom a1, Atom a2) {
+    private Bond buildBond(Atom a1, Atom a2) {
         return BondedUtils.buildBond(a1, a2, forceField, bondList);
     }
 

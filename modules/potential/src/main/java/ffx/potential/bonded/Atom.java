@@ -115,10 +115,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     public static final Map<String, Integer> hybridTable;
 
-    /**
-     * Constant <code>atomSerialCount</code>
-     */
-    //private static AtomicInteger atomSerialCount = new AtomicInteger();
     static {
         // Initialize HashMaps
         AtomColor = new HashMap<>();
@@ -204,14 +200,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
         hybridTable.put("26", 8);
     }
 
-    private boolean hetatm;
-    /**
-     * Either the PDB "name" record or the molecular mechanics atom type name.
-     *
-     * @since 1.0
-     */
-    //private String name = null;
-    //private final int atomSerial;
     /**
      * Contiguous atom index ranging from 0..nAtoms.
      *
@@ -305,7 +293,14 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * If active is true, the coordinates of this atom can be modified.
      */
     private boolean active = true;
-
+    /**
+     * If built is true, this atom was built during the parsing of a file.
+     */
+    private boolean built = false;
+    /**
+     * True if this Atom is a HETATM.
+     */
+    private boolean hetatm;
     /**
      * If electrostatics is true, include the charge, multipole and/or
      * polarizability in electrostatics calculations.
@@ -423,6 +418,15 @@ public class Atom extends MSNode implements Comparable<Atom> {
         this.tempFactor = tempFactor;
         this.segID = segID;
     }
+
+    public Atom(int xyzIndex, String name,
+            Character altLoc, double[] xyz, String resName, int resSeq,
+            Character chainID, double occupancy, double tempFactor,
+            String segID, boolean built) {
+        this(xyzIndex, name, altLoc, xyz, resName, resSeq, chainID, occupancy, tempFactor, segID);
+        this.built = built;
+    }
+
 
     /**
      * {@inheritDoc}
