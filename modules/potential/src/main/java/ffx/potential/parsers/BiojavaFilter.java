@@ -213,7 +213,7 @@ public class BiojavaFilter extends ConversionFilter {
     private boolean listMode = false;
     private ArrayList<String> listOutput = new ArrayList<>();
     /**
-     * Don't output atoms which fail Atom.isActive().
+     * Don't output atoms which fail Atom.getUse().
      */
     private boolean ignoreInactiveAtoms = false;
 

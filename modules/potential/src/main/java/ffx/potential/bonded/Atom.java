@@ -42,7 +42,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.String.format;
 
@@ -76,12 +75,15 @@ import static ffx.utilities.HashCodeUtil.hash;
  * conformations and molecular mechanics atom type.
  *
  * @author Michael J. Schnieders
- * @since 1.0
  *
+ * @since 1.0
  */
 public class Atom extends MSNode implements Comparable<Atom> {
 
-    public enum Resolution { FIXEDCHARGE, AMOEBA }
+    public enum Resolution {
+
+        FIXEDCHARGE, AMOEBA
+    }
 
     private Resolution resolution = Resolution.AMOEBA;
 
@@ -112,12 +114,11 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * Constant <code>hybridTable</code>
      */
     public static final Map<String, Integer> hybridTable;
-    
+
     /**
      * Constant <code>atomSerialCount</code>
      */
     //private static AtomicInteger atomSerialCount = new AtomicInteger();
-
     static {
         // Initialize HashMaps
         AtomColor = new HashMap<>();
@@ -297,7 +298,11 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     private double anisouGradient[];
     /**
-     * If active is true, this atom should be included in target functions.
+     * If use is true, this atom should be included in target functions.
+     */
+    private boolean use = true;
+    /**
+     * If active is true, the coordinates of this atom can be modified.
      */
     private boolean active = true;
 
@@ -501,10 +506,34 @@ public class Atom extends MSNode implements Comparable<Atom> {
         return atomType.atomicNumber == 1;
     }
 
+    /**
+     * If true, this atom should be used in potential energy functions.
+     *
+     * @return
+     */
+    public boolean getUse() {
+        return use;
+    }
+
+    /**
+     * If true, this atom should be used in potential energy functions.
+     */
+    public void setUse(boolean use) {
+        this.use = use;
+    }
+
+    /**
+     * If active, the coordinates of this atom can be modified.
+     *
+     * @return
+     */
     public boolean isActive() {
         return active;
     }
 
+    /**
+     * If active, the coordinates of this atom can be modified.
+     */
     public void setActive(boolean active) {
         this.active = active;
     }
@@ -516,7 +545,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
     public boolean getElectrostatics() {
         return electrostatics;
     }
-
 
     /**
      * <p>
@@ -1159,16 +1187,15 @@ public class Atom extends MSNode implements Comparable<Atom> {
         hash = hash(hash, getName());
         return hash(hash, segID);
     }
-    
+
     /**
      * Gets the unique atomic serial number referring to this Atom object.
-     * 
+     *
      * @return A unique ID number
      */
     /*public final int getAtomSerial() {
-        return atomSerial;
-    }*/
-
+     return atomSerial;
+     }*/
     /**
      * Create the Sphere Java3D objects.
      *
@@ -1294,10 +1321,12 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @param d Vector to add to the current position
      */
     public void move(double[] d) {
-        xyz[0] += d[0];
-        xyz[1] += d[1];
-        xyz[2] += d[2];
-        stale = true;
+        if (active) {
+            xyz[0] += d[0];
+            xyz[1] += d[1];
+            xyz[2] += d[2];
+            stale = true;
+        }
     }
 
     public void rotate(double[][] d) {
@@ -1324,10 +1353,12 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @param c a double.
      */
     public void moveTo(double a, double b, double c) {
-        xyz[0] = a;
-        xyz[1] = b;
-        xyz[2] = c;
-        stale = true;
+        if (active) {
+            xyz[0] = a;
+            xyz[1] = b;
+            xyz[2] = c;
+            stale = true;
+        }
     }
 
     /**
@@ -1337,7 +1368,9 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @param xyz an array of double.
      */
     public void setXYZ(double xyz[]) {
-        this.xyz = xyz;
+        if (active) {
+            this.xyz = xyz;
+        }
     }
 
     /**
@@ -1347,12 +1380,14 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @param redXYZ an array of double.
      */
     public void setRedXYZ(double redXYZ[]) {
-        if (this.redXYZ == null) {
-            this.redXYZ = new double[3];
+        if (active) {
+            if (this.redXYZ == null) {
+                this.redXYZ = new double[3];
+            }
+            this.redXYZ[0] = redXYZ[0];
+            this.redXYZ[1] = redXYZ[1];
+            this.redXYZ[2] = redXYZ[2];
         }
-        this.redXYZ[0] = redXYZ[0];
-        this.redXYZ[1] = redXYZ[1];
-        this.redXYZ[2] = redXYZ[2];
     }
 
     /**
@@ -1361,7 +1396,9 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @param d Location to move <b>this</b> Atom to
      */
     public void moveTo(double[] d) {
-        moveTo(d[0], d[1], d[2]);
+        if (active) {
+            moveTo(d[0], d[1], d[2]);
+        }
     }
 
     /**
@@ -1371,7 +1408,9 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @param v a {@link javax.vecmath.Vector3d} object.
      */
     public void moveTo(Vector3d v) {
-        moveTo(v.x, v.y, v.z);
+        if (active) {
+            moveTo(v.x, v.y, v.z);
+        }
     }
 
     /**
@@ -1448,7 +1487,9 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @param tempFactor a double.
      */
     public void setTempFactor(double tempFactor) {
-        this.tempFactor = tempFactor;
+        if (active) {
+            this.tempFactor = tempFactor;
+        }
     }
 
     /**
@@ -1468,7 +1509,9 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @param tempFactorGradient a double.
      */
     public void setTempFactorGradient(double tempFactorGradient) {
-        this.tempFactorGradient = tempFactorGradient;
+        if (active) {
+            this.tempFactorGradient = tempFactorGradient;
+        }
     }
 
     /**
@@ -1478,7 +1521,9 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @param tempFactorGradient a double.
      */
     public void addToTempFactorGradient(double tempFactorGradient) {
-        this.tempFactorGradient += tempFactorGradient;
+        if (active) {
+            this.tempFactorGradient += tempFactorGradient;
+        }
     }
 
     /**
@@ -1498,7 +1543,9 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @param occupancy a double.
      */
     public void setOccupancy(double occupancy) {
-        this.occupancy = occupancy;
+        if (active) {
+            this.occupancy = occupancy;
+        }
     }
 
     /**
@@ -1528,7 +1575,9 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @param occupancyGradient a double.
      */
     public void addToOccupancyGradient(double occupancyGradient) {
-        this.occupancyGradient += occupancyGradient;
+        if (active) {
+            this.occupancyGradient += occupancyGradient;
+        }
     }
 
     /**
@@ -1548,7 +1597,9 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @param anisou an array of double.
      */
     public void setAnisou(double[] anisou) {
-        this.anisou = anisou;
+        if (active) {
+            this.anisou = anisou;
+        }
     }
 
     /**
@@ -1559,17 +1610,18 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     public double[] getAnisou() {
         return anisou;
-
     }
 
     /**
      * <p>
      * Setter for the field <code>anisouGradient</code>.</p>
      *
-     * @param anisou an array of double.
+     * @param anisouGradient an array of double.
      */
-    public void setAnisouGradient(double[] anisou) {
-        this.anisouGradient = anisou;
+    public void setAnisouGradient(double[] anisouGradient) {
+        if (active) {
+            this.anisouGradient = anisouGradient;
+        }
     }
 
     /**
@@ -1579,11 +1631,13 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @param anisouGradient an array of double.
      */
     public void addToAnisouGradient(double[] anisouGradient) {
-        if (this.anisouGradient == null) {
-            this.anisouGradient = new double[6];
-        }
-        for (int i = 0; i < 6; i++) {
-            this.anisouGradient[i] += anisouGradient[i];
+        if (active) {
+            if (this.anisouGradient == null) {
+                this.anisouGradient = new double[6];
+            }
+            for (int i = 0; i < 6; i++) {
+                this.anisouGradient[i] += anisouGradient[i];
+            }
         }
     }
 
@@ -1863,9 +1917,11 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @param z a double.
      */
     public void setXYZGradient(double x, double y, double z) {
-        xyzGradient[0] = x;
-        xyzGradient[1] = y;
-        xyzGradient[2] = z;
+        if (active) {
+            xyzGradient[0] = x;
+            xyzGradient[1] = y;
+            xyzGradient[2] = z;
+        }
     }
 
     /**
@@ -1877,9 +1933,11 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @param z a double.
      */
     public void addToXYZGradient(double x, double y, double z) {
-        xyzGradient[0] += x;
-        xyzGradient[1] += y;
-        xyzGradient[2] += z;
+        if (active) {
+            xyzGradient[0] += x;
+            xyzGradient[1] += y;
+            xyzGradient[2] += z;
+        }
     }
 
     /**
@@ -1946,8 +2004,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * {@inheritDoc}
      */
     @Override
-    public void setSelected(boolean b) {
-        selected = b;
+    public void setSelected(boolean selected) {
+        this.selected = selected;
     }
 
     // Vector Methods
@@ -2097,7 +2155,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     public String toNameNumberString() {
         return String.format("%s %d", getName(), resSeq);
     }
-    
+
     /**
      * <p>
      * toShortString</p>
@@ -2154,7 +2212,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
             transformGroup.setTransform(transform3D);
         }
     }
-    
+
     /**
      * Element symbols for the first 109 elements.
      */

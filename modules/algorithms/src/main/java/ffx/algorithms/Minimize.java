@@ -64,7 +64,7 @@ public class Minimize implements OptimizationListener, Terminatable {
     private final double[] scaling;
     private final MolecularAssembly molecularAssembly;
     private final Potential potential;
-    private AlgorithmListener algorithmListener;
+    private final AlgorithmListener algorithmListener;
     private boolean done = false;
     private boolean terminate = false;
     private long time;

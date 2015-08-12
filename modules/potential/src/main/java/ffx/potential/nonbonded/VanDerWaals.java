@@ -1214,7 +1214,7 @@ public class VanDerWaals implements MaskingInterface,
                     coordinates[i3 + XX] = xyz[XX];
                     coordinates[i3 + YY] = xyz[YY];
                     coordinates[i3 + ZZ] = xyz[ZZ];
-                    use[i] = atom.isActive();
+                    use[i] = atom.getUse();
                 }
 
                 int threadIndex = getThreadIndex();

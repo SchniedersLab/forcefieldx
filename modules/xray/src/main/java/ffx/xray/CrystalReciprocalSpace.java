@@ -1736,7 +1736,7 @@ public class CrystalReciprocalSpace {
 
         @Override
         public void gridDensity(int iSymm, int n) {
-            if (!atoms[n].isActive()) {
+            if (!atoms[n].getUse()) {
                 return;
             }
 
@@ -1795,7 +1795,7 @@ public class CrystalReciprocalSpace {
 
         @Override
         public void gridDensity(int iSymm, int n) {
-            if (!atoms[n].isActive()) {
+            if (!atoms[n].getUse()) {
                 return;
             }
             final double lambdai = atoms[n].applyLambda() ? lambda : 1.0;
@@ -1910,7 +1910,7 @@ public class CrystalReciprocalSpace {
             for (int iSymm = 0; iSymm < nSymm; iSymm++) {
                 for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
                     if (rowRegion.select[iSymm][iAtom]) {
-                        if (!atoms[iAtom].isActive()) {
+                        if (!atoms[iAtom].getUse()) {
                             continue;
                         }
                         xyz[0] = coordinates[iSymm][0][iAtom];
@@ -1940,7 +1940,7 @@ public class CrystalReciprocalSpace {
                     zyAtListBuild[iSymm][iAtom][0] = 0;
                     zyAtListBuild[iSymm][iAtom][1] = 0;
                     if (rowRegion.select[iSymm][iAtom]) {
-                        if (!atoms[iAtom].isActive()) {
+                        if (!atoms[iAtom].getUse()) {
                             continue;
                         }
                         xyz[0] = coordinates[iSymm][0][iAtom];
@@ -1986,7 +1986,7 @@ public class CrystalReciprocalSpace {
         }
 
         public void buildList(int iSymm, int iAtom, int lb, int ub) {
-            if (!atoms[iAtom].isActive()) {
+            if (!atoms[iAtom].getUse()) {
                 return;
             }
             xyz[0] = coordinates[iSymm][0][iAtom];
@@ -2033,7 +2033,7 @@ public class CrystalReciprocalSpace {
         
         @Override
         public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
-            if (!atoms[iAtom].isActive()) {
+            if (!atoms[iAtom].getUse()) {
                 return;
             }
 
@@ -2125,7 +2125,7 @@ public class CrystalReciprocalSpace {
             for (int iSymm = 0; iSymm < nSymm; iSymm++) {
                 for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
                     if (rowRegion.select[iSymm][iAtom]) {
-                        if (!atoms[iAtom].isActive()) {
+                        if (!atoms[iAtom].getUse()) {
                             continue;
                         }
                         xyz[0] = coordinates[iSymm][0][iAtom];
@@ -2155,7 +2155,7 @@ public class CrystalReciprocalSpace {
                     zyAtListBuild[iSymm][iAtom][0] = 0;
                     zyAtListBuild[iSymm][iAtom][1] = 0;
                     if (rowRegion.select[iSymm][iAtom]) {
-                        if (!atoms[iAtom].isActive()) {
+                        if (!atoms[iAtom].getUse()) {
                             continue;
                         }
                         xyz[0] = coordinates[iSymm][0][iAtom];
@@ -2201,7 +2201,7 @@ public class CrystalReciprocalSpace {
         }
 
         public void buildList(int iSymm, int iAtom, int lb, int ub) {
-            if (!atoms[iAtom].isActive()) {
+            if (!atoms[iAtom].getUse()) {
                 return;
             }
             xyz[0] = coordinates[iSymm][0][iAtom];
@@ -2268,7 +2268,7 @@ public class CrystalReciprocalSpace {
         @Override
         public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
 
-            if (!atoms[iAtom].isActive()) {
+            if (!atoms[iAtom].getUse()) {
                 return;
             }
 
@@ -2394,7 +2394,7 @@ public class CrystalReciprocalSpace {
 
         @Override
         public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
-            if (!atoms[iAtom].isActive()) {
+            if (!atoms[iAtom].getUse()) {
                 return;
             }
             final double lambdai = atoms[iAtom].applyLambda() ? lambda : 1.0;
@@ -2517,7 +2517,7 @@ public class CrystalReciprocalSpace {
             for (int iSymm = 0; iSymm < nSymm; iSymm++) {
                 for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
                     if (sliceRegion.select[iSymm][iAtom]) {
-                        if (!atoms[iAtom].isActive()) {
+                        if (!atoms[iAtom].getUse()) {
                             continue;
                         }
                         xyz[0] = coordinates[iSymm][0][iAtom];
@@ -2542,7 +2542,7 @@ public class CrystalReciprocalSpace {
                 for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
                     zAtListBuild[iSymm][iAtom] = 0;
                     if (sliceRegion.select[iSymm][iAtom]) {
-                        if (!atoms[iAtom].isActive()) {
+                        if (!atoms[iAtom].getUse()) {
                             continue;
                         }
                         xyz[0] = coordinates[iSymm][0][iAtom];
@@ -2584,7 +2584,7 @@ public class CrystalReciprocalSpace {
         }
 
         public void buildList(int iSymm, int iAtom, int lb, int ub) {
-            if (!atoms[iAtom].isActive()) {
+            if (!atoms[iAtom].getUse()) {
                 return;
             }
             xyz[0] = coordinates[iSymm][0][iAtom];
@@ -2613,7 +2613,7 @@ public class CrystalReciprocalSpace {
 
         @Override
         public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
-            if (!atoms[iAtom].isActive()) {
+            if (!atoms[iAtom].getUse()) {
                 return;
             }
             final double lambdai = atoms[iAtom].applyLambda() ? lambda : 1.0;
@@ -2696,7 +2696,7 @@ public class CrystalReciprocalSpace {
         }
 
         public void buildList(int iSymm, int iAtom, int lb, int ub) {
-            if (!atoms[iAtom].isActive()) {
+            if (!atoms[iAtom].getUse()) {
                 return;
             }
             xyz[0] = coordinates[iSymm][0][iAtom];
@@ -2728,7 +2728,7 @@ public class CrystalReciprocalSpace {
             for (int iSymm = 0; iSymm < nSymm; iSymm++) {
                 for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
                     if (sliceRegion.select[iSymm][iAtom]) {
-                        if (!atoms[iAtom].isActive()) {
+                        if (!atoms[iAtom].getUse()) {
                             continue;
                         }
                         xyz[0] = coordinates[iSymm][0][iAtom];
@@ -2753,7 +2753,7 @@ public class CrystalReciprocalSpace {
                 for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
                     zAtListBuild[iSymm][iAtom] = 0;
                     if (sliceRegion.select[iSymm][iAtom]) {
-                        if (!atoms[iAtom].isActive()) {
+                        if (!atoms[iAtom].getUse()) {
                             continue;
                         }
                         xyz[0] = coordinates[iSymm][0][iAtom];
@@ -2811,7 +2811,7 @@ public class CrystalReciprocalSpace {
 
         @Override
         public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
-            if (!atoms[iAtom].isActive()) {
+            if (!atoms[iAtom].getUse()) {
                 return;
             }
             final double lambdai = atoms[iAtom].applyLambda() ? lambda : 1.0;
@@ -2929,7 +2929,7 @@ public class CrystalReciprocalSpace {
 
         @Override
         public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
-            if (!atoms[iAtom].isActive()) {
+            if (!atoms[iAtom].getUse()) {
                 return;
             }
             final double lambdai = atoms[iAtom].applyLambda() ? lambda : 1.0;
@@ -3034,7 +3034,7 @@ public class CrystalReciprocalSpace {
             @Override
             public void run(final int lb, final int ub) {
                 for (int n = lb; n <= ub; n++) {
-                    if (!atoms[n].isActive()) {
+                    if (!atoms[n].getUse()) {
                         continue;
                     }
                     if (lambdaTerm) {
@@ -3124,7 +3124,7 @@ public class CrystalReciprocalSpace {
             @Override
             public void run(final int lb, final int ub) {
                 for (int n = lb; n <= ub; n++) {
-                    if (!atoms[n].isActive()) {
+                    if (!atoms[n].getUse()) {
                         continue;
                     }
                     if (lambdaTerm) {

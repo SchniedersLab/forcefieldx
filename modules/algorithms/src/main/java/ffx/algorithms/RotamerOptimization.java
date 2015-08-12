@@ -3795,13 +3795,13 @@ public class RotamerOptimization implements Terminatable {
             case AA:
                 ArrayList<Atom> atomList = residue.getSideChainAtoms();
                 for (Atom atom : atomList) {
-                    atom.setActive(true);
+                    atom.setUse(true);
                 }
                 break;
             default:
                 ArrayList<Atom> naList = residue.getAtomList();
                 for (Atom atom : naList) {
-                    atom.setActive(true);
+                    atom.setUse(true);
                 }
         }
     }
@@ -3812,13 +3812,13 @@ public class RotamerOptimization implements Terminatable {
             case AA:
                 ArrayList<Atom> atomList = residue.getSideChainAtoms();
                 for (Atom atom : atomList) {
-                    atom.setActive(false);
+                    atom.setUse(false);
                 }
                 break;
             default:
                 ArrayList<Atom> naList = residue.getAtomList();
                 for (Atom atom : naList) {
-                    atom.setActive(false);
+                    atom.setUse(false);
                 }
         }
     }
@@ -3829,7 +3829,7 @@ public class RotamerOptimization implements Terminatable {
                 ArrayList<Atom> atomList = residue.getSideChainAtoms();
                 for (Atom atom : atomList) {
                     if (atom.getName().equals("CB")) {
-                        atom.setActive(true);
+                        atom.setUse(true);
                     }
                 }
             default:
@@ -3890,7 +3890,7 @@ public class RotamerOptimization implements Terminatable {
          * Initialize all atoms to be used.
          */
         for (int i = 0; i < nAtoms; i++) {
-            atoms[i].setActive(true);
+            atoms[i].setUse(true);
         }
 
         if (parallelEnergies) {
@@ -4136,7 +4136,7 @@ public class RotamerOptimization implements Terminatable {
 
             // Turn on all atoms.
             for (int i = 0; i < atoms.length; i++) {
-                atoms[i].setActive(true);
+                atoms[i].setUse(true);
             }
             // Print the energy with all rotamers in their default conformation.
             if (verboseEnergies && master) {
@@ -4597,7 +4597,7 @@ public class RotamerOptimization implements Terminatable {
 
         // Turn on all atoms.
         for (int i = 0; i < nAtoms; i++) {
-            atoms[i].setActive(true);
+            atoms[i].setUse(true);
         }
 
         // Print the energy with all rotamers in their default conformation.
@@ -8161,7 +8161,7 @@ public class RotamerOptimization implements Terminatable {
                                     sb.append(String.format("     --s--\n"));
                                     sb.append(String.format("     Active residues:\n"));
                                     for (int debug = 0; debug < residues.length; debug++) {
-                                        if (residues[debug].getSideChainAtoms().get(0).isActive()) {
+                                        if (residues[debug].getSideChainAtoms().get(0).getUse()) {
                                             sb.append(String.format("       %s\n", residues[debug].toString()));
                                         }
                                     }

@@ -46,6 +46,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -143,9 +144,17 @@ public final class PDBFilter extends SystemFilter {
      */
     private enum Record {
 
-        ANISOU, ATOM, CONECT, CRYST1, END, HELIX, HETATM, LINK, SHEET,
-        SSBOND, REMARK
+        ANISOU, ATOM, CONECT, CRYST1, DBREF, END, HELIX, HETATM, LINK, SEQRES,
+        SHEET, SSBOND, REMARK
     };
+    /**
+     * Map of SEQRES entries.
+     */
+    private final Map<Character, String[]> seqres = new HashMap<>();
+    /**
+     * Map of DBREF entries.
+     */
+    private final Map<Character, int[]> dbref = new HashMap<>();
     /**
      * List of altLoc characters seen in the PDB file.
      */
@@ -158,7 +167,7 @@ public final class PDBFilter extends SystemFilter {
      * List of segIDs defined for the PDB file.
      *
      * The expectation is for chain naming from A-Z, then from 0-9. For large
-     * systems, chain names are sometimes reused due to limitations in the PBD
+     * systems, chain names are sometimes reused due to limitations in the PDB
      * format.
      *
      * However, we define segIDs to always be unique. For the first A-Z,0-9
@@ -184,9 +193,9 @@ public final class PDBFilter extends SystemFilter {
     private boolean listMode = false;
     private ArrayList<String> listOutput = new ArrayList<>();
     /**
-     * Don't output atoms which fail Atom.isActive().
+     * Don't output atoms which fail Atom.getUse().
      */
-    private boolean ignoreInactiveAtoms = false;
+    private boolean ignoreUnusedAtoms = false;
 
     /**
      * Mutate a residue at the PDB file is being parsed.
@@ -320,7 +329,7 @@ public final class PDBFilter extends SystemFilter {
         setMolecularSystem(molecularAssembly);
         currentAltLoc = altLoc;
     }
-    
+
     public void setSymOp(int symOp) {
         this.nSymOp = symOp;
     }
@@ -469,6 +478,84 @@ public final class PDBFilter extends SystemFilter {
                              */
                             line = null;
                             continue;
+                        case DBREF:
+// =============================================================================
+//  1 -  6       Record name   "DBREF "
+//  8 - 11       IDcode        idCode             ID code of this entry.
+// 13            Character     chainID            Chain  identifier.
+// 15 - 18       Integer       seqBegin           Initial sequence number of the
+//                                                PDB sequence segment.
+// 19            AChar         insertBegin        Initial  insertion code of the
+//                                                PDB  sequence segment.
+// 21 - 24       Integer       seqEnd             Ending sequence number of the
+//                                                PDB  sequence segment.
+// 25            AChar         insertEnd          Ending insertion code of the
+//                                                PDB  sequence segment.
+// 27 - 32       LString       database           Sequence database name.
+// 34 - 41       LString       dbAccession        Sequence database accession code.
+// 43 - 54       LString       dbIdCode           Sequence  database identification code.
+// 56 - 60       Integer       dbseqBegin         Initial sequence number of the
+//                                                database seqment.
+// 61            AChar         idbnsBeg           Insertion code of initial residue of the
+//                                                segment, if PDB is the reference.
+// 63 - 67       Integer       dbseqEnd           Ending sequence number of the
+//                                                database segment.
+// 68            AChar         dbinsEnd           Insertion code of the ending residue of
+//                                                the segment, if PDB is the reference.
+// =============================================================================
+                            Character chainID = line.substring(12, 13).toUpperCase().charAt(0);
+                            int seqBegin = Integer.parseInt(line.substring(14, 18).trim());
+                            int seqEnd = Integer.parseInt(line.substring(20, 24).trim());
+                            int[] seqRange = dbref.get(chainID);
+                            if (seqRange == null) {
+                                seqRange = new int[2];
+                                dbref.put(chainID, seqRange);
+                            }
+                            seqRange[0] = seqBegin;
+                            seqRange[1] = seqEnd;
+                            break;
+                        case SEQRES:
+// =============================================================================
+//  1 -  6        Record name    "SEQRES"
+//  8 - 10        Integer        serNum       Serial number of the SEQRES record for  the
+//                                            current  chain. Starts at 1 and increments
+//                                            by one  each line. Reset to 1 for each chain.
+// 12             Character      chainID      Chain identifier. This may be any single
+//                                            legal  character, including a blank which is
+//                                            is used if there is only one chain.
+// 14 - 17        Integer        numRes       Number of residues in the chain.
+//                                            This  value is repeated on every record.
+// 20 - 22        Residue name   resName      Residue name.
+// 24 - 26        Residue name   resName      Residue name.
+// 28 - 30        Residue name   resName      Residue name.
+// 32 - 34        Residue name   resName      Residue name.
+// 36 - 38        Residue name   resName      Residue name.
+// 40 - 42        Residue name   resName      Residue name.
+// 44 - 46        Residue name   resName      Residue name.
+// 48 - 50        Residue name   resName      Residue name.
+// 52 - 54        Residue name   resName      Residue name.
+// 56 - 58        Residue name   resName      Residue name.
+// 60 - 62        Residue name   resName      Residue name.
+// 64 - 66        Residue name   resName      Residue name.
+// 68 - 70        Residue name   resName      Residue name.
+// =============================================================================
+                            chainID = line.substring(11, 12).toUpperCase().charAt(0);
+                            int serNum = Integer.parseInt(line.substring(7, 10).trim());
+                            String[] chain = seqres.get(chainID);
+                            int numRes = Integer.parseInt(line.substring(13, 17).trim());
+                            if (chain == null) {
+                                chain = new String[numRes];
+                                seqres.put(chainID, chain);
+                            }
+                            int resID = (serNum - 1) * 13;
+                            for (int start = 19; start < 68; start += 4) {
+                                String res = line.substring(start, start + 3).trim();
+                                if (res == null || res.length() < 1) {
+                                    break;
+                                }
+                                chain[resID++] = res;
+                            }
+                            break;
                         case ANISOU:
 // =============================================================================
 //  1 - 6        Record name   "ANISOU"
@@ -537,7 +624,6 @@ public final class PDBFilter extends SystemFilter {
 // =============================================================================
                             String name;
                             String resName;
-                            Character chainID;
                             String segID;
                             int resSeq;
                             boolean printAtom;
@@ -961,7 +1047,20 @@ public final class PDBFilter extends SystemFilter {
             }
         }
 
+        /**
+         * Record the number of atoms read in from the PDB before any algorithms
+         * that create new atoms.
+         */
         int pdbAtoms = activeMolecularAssembly.getAtomArray().length;
+
+        /**
+         * Build missing backbone atoms
+         */
+        buildMissingResidues(xyzIndex);
+
+        /**
+         * Assign atom types.
+         */
         assignAtomTypes();
 
         StringBuilder sb = new StringBuilder(" Disulfide Bonds:");
@@ -998,6 +1097,128 @@ public final class PDBFilter extends SystemFilter {
         }
 
         return true;
+    }
+
+    /**
+     * Currently builds missing internal loops based on information in DBREF and
+     * SEQRES records.
+     *
+     * Known limitations include: 1) No building n- and c-terminal loops. 2) No
+     * support for DBREF1 or DBREF2 records. 3) Incomplete optimization scheme
+     * to position the loops.
+     *
+     * @param xyzIndex
+     * @return
+     */
+    public int buildMissingResidues(int xyzIndex) {
+
+        /**
+         * Only build loops if the buildLoops flag is true.
+         */
+        if (!properties.getBoolean("buildLoops", false)) {
+            return xyzIndex;
+        }
+
+        Polymer polymers[] = activeMolecularAssembly.getChains();
+        for (Polymer polymer : polymers) {
+
+            Character chainID = polymer.getChainID();
+            String resNames[] = seqres.get(chainID);
+            int seqRange[] = dbref.get(chainID);
+            int seqBegin = seqRange[0];
+            int seqEnd = seqRange[1];
+
+            StringBuilder stringBuilder = new StringBuilder(
+                    String.format("\n Building missing loops for chain %c between residues %d and %d.",
+                            chainID, seqBegin, seqEnd));
+
+            int firstResID = polymer.getFirstResidue().getResidueNumber();
+            int lastBuiltResidue = -1;
+            boolean builtResidues = false;
+            for (int i = 0; i < resNames.length; i++) {
+                int currentID = seqBegin + i;
+                if (currentID <= firstResID) {
+                    continue;
+                }
+                Residue currentResidue = polymer.getResidue(resNames[i], currentID, false);
+                if (currentResidue != null) {
+                    continue;
+                }
+                Residue previousResidue = polymer.getResidue(currentID - 1);
+                currentResidue = polymer.getResidue(resNames[i], currentID, true);
+                Residue nextResidue = null;
+                for (int j = currentID + 1; j < seqEnd; j++) {
+                    nextResidue = polymer.getResidue(j);
+                    if (nextResidue != null) {
+                        break;
+                    }
+                }
+                /**
+                 * Residues at the end of the chain are not currently built.
+                 */
+                if (nextResidue == null) {
+                    break;
+                }
+                Atom C = (Atom) previousResidue.getAtomNode("C");
+                Atom N = (Atom) nextResidue.getAtomNode("N");
+                if (C == null || N == null) {
+                    continue;
+                }
+
+                double vector[] = new double[3];
+                int count = 3 * (nextResidue.getResidueNumber() - previousResidue.getResidueNumber());
+                VectorMath.diff(N.getXYZ(), C.getXYZ(), vector);
+                VectorMath.scalar(vector, 1.0 / count, vector);
+
+                double nXYZ[] = new double[3];
+                VectorMath.sum(C.getXYZ(), vector, nXYZ);
+                nXYZ[0] += Math.random() - 0.05;
+                nXYZ[1] += Math.random() - 0.05;
+                nXYZ[2] += Math.random() - 0.05;
+                Atom newN = new Atom(xyzIndex++, "N", C.getAltLoc(), nXYZ, resNames[i], currentID,
+                        chainID, 1.0, C.getTempFactor(), C.getSegID());
+                currentResidue.addMSNode(newN);
+
+                double caXYZ[] = new double[3];
+                VectorMath.scalar(vector, 2.0, vector);
+                VectorMath.sum(C.getXYZ(), vector, caXYZ);
+                caXYZ[0] += Math.random() - 0.05;
+                caXYZ[1] += Math.random() - 0.05;
+                caXYZ[2] += Math.random() - 0.05;
+                Atom newCA = new Atom(xyzIndex++, "CA", C.getAltLoc(), caXYZ, resNames[i], currentID,
+                        chainID, 1.0, C.getTempFactor(), C.getSegID());
+                currentResidue.addMSNode(newCA);
+
+                double cXYZ[] = new double[3];
+                VectorMath.scalar(vector, 1.5, vector);
+                VectorMath.sum(C.getXYZ(), vector, cXYZ);
+                cXYZ[0] += Math.random() - 0.05;
+                cXYZ[1] += Math.random() - 0.05;
+                cXYZ[2] += Math.random() - 0.05;
+                Atom newC = new Atom(xyzIndex++, "C", C.getAltLoc(), cXYZ, resNames[i], currentID,
+                        chainID, 1.0, C.getTempFactor(), C.getSegID());
+                currentResidue.addMSNode(newC);
+
+                double oXYZ[] = new double[3];
+                vector[0] = Math.random() - 0.05;
+                vector[1] = Math.random() - 0.05;
+                vector[2] = Math.random() - 0.05;
+                VectorMath.sum(cXYZ, vector, oXYZ);
+                Atom newO = new Atom(xyzIndex++, "O", C.getAltLoc(), oXYZ, resNames[i], currentID,
+                        chainID, 1.0, C.getTempFactor(), C.getSegID());
+                currentResidue.addMSNode(newO);
+                if (lastBuiltResidue != currentID - 1) {
+                    stringBuilder.append("\n");
+                }
+                stringBuilder.append(String.format(" %8s",currentResidue.toString()));
+                builtResidues = true;
+                lastBuiltResidue = currentID;
+            }
+            if (builtResidues) {
+                logger.info(stringBuilder.toString());
+            }
+        }
+        return xyzIndex;
     }
 
     /**
@@ -2304,9 +2525,9 @@ public final class PDBFilter extends SystemFilter {
         if (vdwH) {
             logger.info(" Printing hydrogens to van der Waals centers instead of nuclear locations.");
         }
-        
+
         if (nSymOp != 0) {
-            logger.info(String.format(" Printing atoms with symmetry operator %s\n", 
+            logger.info(String.format(" Printing atoms with symmetry operator %s\n",
                     activeMolecularAssembly.getCrystal().spaceGroup.getSymOp(nSymOp).toString()));
         }
 
@@ -2674,9 +2895,9 @@ public final class PDBFilter extends SystemFilter {
         if (vdwH) {
             logger.info(" Printing hydrogens to van der Waals centers instead of nuclear locations.");
         }
-        
+
         if (nSymOp != 0) {
-            logger.info(String.format(" Printing atoms with symmetry operator %s", 
+            logger.info(String.format(" Printing atoms with symmetry operator %s",
                     activeMolecularAssembly.getCrystal().spaceGroup.getSymOp(nSymOp).toString()));
         }
 
@@ -3050,7 +3271,7 @@ public final class PDBFilter extends SystemFilter {
     }
 
     public void setIgnoreInactiveAtoms(boolean ignoreInactiveAtoms) {
-        this.ignoreInactiveAtoms = ignoreInactiveAtoms;
+        this.ignoreUnusedAtoms = ignoreInactiveAtoms;
     }
 
     /**
@@ -3067,7 +3288,7 @@ public final class PDBFilter extends SystemFilter {
     public void writeAtom(Atom atom, int serial, StringBuilder sb,
             StringBuilder anisouSB, BufferedWriter bw)
             throws IOException {
-        if (ignoreInactiveAtoms && !atom.isActive()) {
+        if (ignoreUnusedAtoms && !atom.getUse()) {
             return;
         }
         String name = atom.getName();

@@ -5192,7 +5192,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                     x[i] = xyz[0];
                     y[i] = xyz[1];
                     z[i] = xyz[2];
-                    use[i] = atom.isActive();
+                    use[i] = atom.getUse();
 
                     /**
                      * Real space Ewald is cutoff at ~7 A, compared to ~12 A for

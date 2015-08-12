@@ -111,7 +111,7 @@ public class Residue extends MSGroup {
     private double[] C1sCoords = null;
     private double[] O4sCoords = null;
     private double[] C4sCoords = null;
-    
+
     private Rotamer currentRotamer = null;
 
     /**
@@ -316,18 +316,18 @@ public class Residue extends MSGroup {
         }
         return atom;
     }
-    
+
     public ResidueState storeCoordinates() {
         return new ResidueState(this, this);
     }
-    
+
     public void revertCoordinates(ResidueState state) {
         List<Atom> atomList = getAtomList();
         for (Atom atom : atomList) {
             atom.moveTo(state.getAtomCoords(atom));
         }
     }
-    
+
     public double[][] storeCoordinateArray() {
         List<Atom> atomList = getAtomList();
         int nAtoms = atomList.size();
@@ -338,11 +338,11 @@ public class Residue extends MSGroup {
         }
         return coords;
     }
-    
+
     public void setRotamer(Rotamer rotamer) {
         this.currentRotamer = rotamer;
     }
-    
+
     public Rotamer getRotamer() {
         return currentRotamer;
     }
@@ -484,7 +484,7 @@ public class Residue extends MSGroup {
                 return null;
         }
     }
-    
+
     /**
      * Uses a name to add an Atom to a List<Atom> if the Atom exists for this
      * residue.
@@ -798,8 +798,11 @@ public class Residue extends MSGroup {
      */
     @Override
     public void print() {
-        logger.info(toString());
-        super.print();
+        logger.info(" " + toString());
+        for (Atom a : getAtomNode().getAtomList()) {
+            a.print();
+        }
+
     }
 
     public double[] getSideChainCOM() {
