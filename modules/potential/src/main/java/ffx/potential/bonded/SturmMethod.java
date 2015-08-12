@@ -606,22 +606,17 @@ public class SturmMethod {
     /**
      * Write out loop coordinates and determine oxygen placement.
      *
-     * @param pdb_name
-     * @param res_name
      * @param r_n
      * @param r_a
      * @param r_c
      * @param stt_res
      * @param end_res
-     * @param chain_n
-     * @param chain_a
-     * @param chain_c
      * @param molAss
      * @param counter
      * @param writeFile
      * @return
      */
-    File writePDBBackbone(char[] pdb_name, String[] res_name, double[][] r_n, double[][] r_a, double[][] r_c, int stt_res, int end_res, char[] chain_n, char[] chain_a, char[] chain_c, MolecularAssembly molAss, int counter, boolean writeFile) {
+    File writePDBBackbone(double[][] r_n, double[][] r_a, double[][] r_c, int stt_res, int end_res, MolecularAssembly molAss, int counter, boolean writeFile) {
 
         Polymer[] newChain = molAss.getChains();
         ArrayList<Atom> backBoneAtoms;
