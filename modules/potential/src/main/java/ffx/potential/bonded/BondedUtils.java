@@ -435,11 +435,25 @@ public class BondedUtils {
         if (atomType == null) {
             return null;
         }
-        Atom atom = (Atom) residue.getAtomNode(atomName);
+        Atom atom = (Atom) residue.getAtomNode(atomName, true);
         // It may be a Deuterium
         if (atom == null) {
             String dAtomName = atomName.replaceFirst("H", "D");
-            atom = (Atom) residue.getAtomNode(dAtomName);
+            atom = (Atom) residue.getAtomNode(dAtomName, true);
+        }
+        // Basic error checking for malformed H1/D1 names.
+        if (residue instanceof Residue && atom == null && atomName.equals("H1")) {
+            atom = (Atom) residue.getAtomNode("H", true);
+            if (atom != null) {
+                atom.setName("H1");
+            } else {
+                // Deuteron-parsing is only robust when the element (and thus atom 
+                // type) has been initialized.
+                atom = (Atom) residue.getAtomNode("D", true);
+                if (atom != null) {
+                    atom.setName("D1");
+                }
+            }
         }
         if (atom == null) {
             String resName = ia.getResidueName();

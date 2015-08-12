@@ -1149,6 +1149,7 @@ public class MolecularAssembly extends MSGroup implements Structure {
         if (create) {
             Molecule m = new Molecule(resName, resNum, chainID, segID);
             m.addMSNode(atom);
+            // Can be changed to GroupType.WATERNAMES.contains(resName.toUpperCase()
             if (resName.equalsIgnoreCase("DOD")
                     || resName.equalsIgnoreCase("HOH")
                     || resName.equalsIgnoreCase("WAT")) {

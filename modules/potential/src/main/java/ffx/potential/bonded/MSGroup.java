@@ -49,6 +49,8 @@ import javax.vecmath.Color3f;
 import ffx.numerics.VectorMath;
 import ffx.potential.parameters.ForceField;
 
+import org.biojava.nbio.structure.Element;
+
 /**
  * The MSGroup class has one subnode containing atoms, and one that contains
  * molecular mechanics/geometry terms.
@@ -700,7 +702,57 @@ public abstract class MSGroup extends MSNode {
                 return msNode;
             }
         }
+        return getDeuteronNode(n, list);
+    }
+    
+    /**
+     * Attempts to return a deuteron equivalent to the name specified by the 
+     * String n (for example, uses "HD21" to try to find "DD21").
+     *
+     * @param n a {@link java.lang.String} object.
+     * @param list List of MSnodes associated with this MSGroup.
+     * @return a {@link ffx.potential.bonded.MSNode} object.
+     */
+    private MSNode getDeuteronNode(String n, List<MSNode> list) {
+        // If method ever made public, should generate MSNode list as above.
+        
+        String deuteronName = n.replaceFirst("H", "D");
+        for (MSNode msNode : list) {
+            if (msNode instanceof Atom) {
+                Atom atom = (Atom) msNode;
+                Element element = atom.getElement();
+                // At this point, we are not correctly assigning the D element to deuterons.
+                if (element != null && (element.equals(Element.H) || element.equals(Element.D))) {
+                    if (msNode.getName().compareTo(deuteronName) == 0) {
+                        return msNode;
+                    }
+                }
+            }
+
+        }
         return null;
+    }
+    
+    /**
+     * Returns the AtomNode specified by the String n, with the option to fail 
+     * even if an equivalent deuterium could be found (hydrogens only).
+     *
+     * @param n a {@link java.lang.String} object.
+     * @param failOnDeuterium If true, do not check for deuterium.
+     * @return a {@link ffx.potential.bonded.MSNode} object.
+     */
+    public MSNode getAtomNode(String n, boolean failOnDeuterium) {
+        if (failOnDeuterium) {
+            List<MSNode> list = getAtomNodeList();
+            for (MSNode msNode : list) {
+                if (msNode.getName().compareTo(n) == 0) {
+                    return msNode;
+                }
+            }
+            return null;
+        } else {
+            return getAtomNode(n);
+        }
     }
 
     /**

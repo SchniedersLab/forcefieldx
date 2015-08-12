@@ -37,6 +37,7 @@
  */
 package ffx.potential.bonded;
 
+import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -553,7 +554,25 @@ public class Residue extends MSGroup implements Group {
 
     @Override
     public String getPDBName() {
-        return getName();
+        String name = getName();
+        AminoAcid3 aa3 = AminoAcid3.valueOf(name);
+        switch (aa3) {
+            case GLH:
+                return "GLU";
+            case HIE:
+            case HID:
+                return "HIS";
+            case CYD:
+                return "CYS";
+            case TYD:
+                return "TYR";
+            case ASH:
+                return "ASP";
+            case LYD:
+                return "LYS";
+            default:
+                return name;
+        }
     }
 
     @Override
@@ -768,9 +787,14 @@ public class Residue extends MSGroup implements Group {
                 + " to alternate locations.");
     }
 
+    /**
+     * Always returns false (a Residue is never a water; only a Molecule can be 
+     * a water).
+     * @return False.
+     */
     @Override
     public boolean isWater() {
-        return GroupType.WATERNAMES.contains(getName());
+        return false;
     }
 
     @Override

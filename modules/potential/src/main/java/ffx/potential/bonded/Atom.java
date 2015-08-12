@@ -2106,7 +2106,7 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
      */
     @Override
     public Element getElement() {
-        if (element == null) {
+        if (element == null && atomType != null) {
             String elementName = Atom.ElementSymbol.values()[this.getAtomicNumber() - 1].toString();
             element = Element.valueOf(elementName);
         }
