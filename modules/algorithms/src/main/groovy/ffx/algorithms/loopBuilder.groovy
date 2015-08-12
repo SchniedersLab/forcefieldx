@@ -61,9 +61,6 @@ double eps = 1.0;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
-for (String arg : args) {
-    logger.info(arg);
-}
 
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc loopBuilder [options] <filename1>');
@@ -82,7 +79,6 @@ if (options.e) {
 }
 
 System.setProperty("buildLoops", "true");
-System.setProperty("polarization", "direct");
 System.setProperty("vdwterm", "false");
 
 List<String> arguments = options.arguments();
@@ -114,14 +110,17 @@ for (int i = 0; i <= atoms.length; i++) {
 logger.info("\n Running minimize on built atoms of " + active.getName());
 logger.info(" RMS gradient convergence criteria: " + eps);
 
-// Do the minimization without vdW.
-// energy.setVDW(false);
-
+// Minimization without vdW.
 e = minimize(eps);
-// Run SA with vdW.
 
+// Minimize with vdW.
+System.setProperty("vdwterm", "true");
+System.setProperty("mpoleterm", "false");
+energy = new ForceFieldEnergy(active);
+e = minimize(eps);
+
+// SA with vdW.
 logger.info("\n Running simulated annealing on " + active.getName());
-// energy.setVDW(true);
 
 // High temperature starting point.
 double high = 1000.0;
@@ -130,7 +129,7 @@ double low = 10.0;
 // Number of annealing steps.
 int windows = 10;
 // Number of molecular dynamics steps at each temperature.
-int steps = 1000;
+int steps = 100;
 // Time step in femtoseconds.
 double timeStep = 1.0;
 // Thermostats [ ADIABATIC, BERENDSEN, BUSSI ]
@@ -138,18 +137,28 @@ Thermostats thermostat = Thermostats.BERENDSEN;
 // Integrators [ BEEMAN, RESPA, STOCHASTIC]
 Integrators integrator = null;
 
-SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(active, energy, active.getProperties(), null, thermostat, integrator);
+SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(active, energy,
+    active.getProperties(), null, thermostat, integrator);
 simulatedAnnealing.anneal(high, low, windows, steps, timeStep);
 
+/**
 for (int i = 0; i <= atoms.length; i++) {
     Atom ai = atoms[i - 1];
     ai.setUse(true);
-}
+} */
 
-// Do the minimization
-e = minimize(0.1);
+// Optimize with the full AMOEBA potential energy.
+System.setProperty("vdwterm", "true");
+System.setProperty("mpoleterm", "true");
+System.setProperty("polarization", "direct");
+energy = new ForceFieldEnergy(active);
+e = minimize(eps);
 
 // MD, SA, OSRW and/or Side-Chain DEE
+simulatedAnnealing = new SimulatedAnnealing(active, energy, active.getProperties(), null, thermostat, integrator);
+simulatedAnnealing.anneal(high, low, windows, steps, timeStep);
+
+e = minimize(0.1);
 
 String ext = FilenameUtils.getExtension(filename);
 filename = FilenameUtils.removeExtension(filename);
