@@ -141,6 +141,7 @@ cli.fR(longOpt:'forceResidues', args: 1, argName: '-1,-1', 'Force residues in th
 cli.lR(longOpt:'listResidues', args: 1, argName: '-1', 'Choose a list of individual residues to optimize (eg. A11,A24,B40).');
 cli.vw(longOpt:'videoWriter', args: 0, 'Prototype video snapshot output; skips energy calculation.');
 cli.sO(longOpt:'sequenceOptimization', args:1, argName: '-1', 'Choose a list of individual residues to sequence optimize.');
+cli.tO(longOpt:'titrationOptimization', args:1, argName: '-1', 'Choose a list of individual residues to titrate (protonation state optimization).');
 cli.nt(longOpt:'nucleicCorrectionThreshold', args:1, argName: '0', 'Nucleic acid Rotamers adjusted by more than a threshold distance (A) are discarded (0 disables this function).');
 cli.mn(longOpt:'minimumAcceptedNARotamers', args:1, argName: '10', 'Minimum number of NA rotamers to be accepted if a threshold distance is enabled.');
 /**
@@ -187,6 +188,15 @@ if (options.sO) {
     }
     if (System.getProperty("RELATIVE_SOLVATION") == null) {
         System.setProperty("RELATIVE_SOLVATION", "AUTO");
+    }
+}
+
+List<String> titrationOptimizationList = new ArrayList<>();
+if (options.tO) {
+    def tok = (options.tO).tokenize('.');
+    for (String t : tok) {
+        logger.info(" Protonation state optimizing " + t);
+        titrationOptimizationList.add(t);
     }
 }
 
@@ -710,6 +720,21 @@ if (options.sO) {
             }
         }
     }
+}
+
+if (options.tO) {
+    ArrayList<Residue> titrating = new ArrayList<>();
+    for (String s : titrationOptimizationList) {
+        Character chainID = s.charAt(0);
+        int num = Integer.parseInt(s.substring(1));
+        for (int i = 0; i < residueList.size(); i++) {
+            Residue res = residueList.get(i);
+            if (res.getChainID() == chainID && res.getResidueNumber() == num) {
+                titrating.add(res);
+            }
+        }
+    }
+    rotamerOptimization.titrationSetResidues(titrating);
 }
 
 boolean master = true;

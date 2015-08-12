@@ -46,9 +46,12 @@ import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
+import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.ResidueEnumerations;
+import ffx.potential.bonded.ResidueEnumerations.CommonAminoAcid3;
+import ffx.potential.bonded.Residue.ResidueType;
 
 // X-Ray imports
 import ffx.xray.RealSpaceData;
@@ -157,6 +160,8 @@ cli.bC(longOpt:'boxInclusionCriterion', args: 1, argName: '1', 'Criterion to use
 cli.fR(longOpt:'forceResidues', args: 1, argName: '-1,-1', 'Force residues in this range to be considered for sliding window radii, regardless of whether they lack rotamers.');
 cli.lR(longOpt:'listResidues', args: 1, argName: '-1', 'Choose a list of individual residues to optimize (eg. A11,A24,B40).');
 cli.vw(longOpt:'videoWriter', args: 0, 'Prototype video snapshot output; skips energy calculation.');
+cli.sO(longOpt:'sequenceOptimization', args:1, argName: '-1', 'Choose a list of individual residues to sequence optimize.');
+cli.tO(longOpt:'titrationOptimization', args:1, argName: '-1', 'Choose a list of individual residues to titrate (protonation state optimization).');
 cli.nt(longOpt:'nucleicCorrectionThreshold', args:1, argName: '0', 'Nucleic acid Rotamers adjusted by more than a threshold distance (A) are discarded (0 disables this function).');
 cli.mn(longOpt:'minimumAcceptedNARotamers', args:1, argName: '10', 'Minimum number of NA rotamers to be accepted if a threshold distance is enabled.');
 /**
@@ -191,6 +196,27 @@ if (options.lR) {
     for (String t : tok) {
         logger.info("Adding " + t);
         resList.add(t);
+    }
+}
+
+List<String> sequenceOptimizationList = new ArrayList<>();
+if (options.sO) {
+    def tok = (options.sO).tokenize('.');
+    for (String t : tok) {
+        logger.info(" Sequence optimizing " + t);
+        sequenceOptimizationList.add(t);
+    }
+    if (System.getProperty("RELATIVE_SOLVATION") == null) {
+        System.setProperty("RELATIVE_SOLVATION", "AUTO");
+    }
+}
+
+List<String> titrationOptimizationList = new ArrayList<>();
+if (options.tO) {
+    def tok = (options.tO).tokenize('.');
+    for (String t : tok) {
+        logger.info(" Protonation state optimizing " + t);
+        titrationOptimizationList.add(t);
     }
 }
 
@@ -741,6 +767,54 @@ if (algorithm != 5) {
 }
 
 ArrayList<Residue> residueList = rotamerOptimization.getResidues();
+
+if (options.sO) {
+    for (String s : sequenceOptimizationList) {
+        Character chainID = s.charAt(0);
+        int num = Integer.parseInt(s.substring(1));
+        for (int i = 0; i < residueList.size(); i++) {
+            Residue res = residueList.get(i);
+            if (res.getChainID() == chainID && res.getResidueNumber() == num) {
+                MultiResidue multiRes = new MultiResidue(res, active.getForceField(), active.getPotentialEnergy());
+                for (Polymer polymer : active.getChains()) {
+                    if (polymer.getChainID() == chainID) {
+                        logger.info(String.format(" Adding multiresidue %s to chain %c.", multiRes, chainID));
+                        polymer.addMultiResidue(multiRes);
+                    }
+                }
+                for (CommonAminoAcid3 aa : CommonAminoAcid3.values()) {
+                    if (aa.toString().equals("PRO") || aa.toString().equals("GLY")) {
+                        continue;
+                    }
+                    if (!aa.toString().equalsIgnoreCase(res.getName())) {
+                        logger.info(String.format(" Adding %s to residue %s.", aa.toString(), multiRes.toString()));
+                        multiRes.addResidue(new Residue(aa.toString(), res.getResidueNumber(), ResidueType.AA));
+                    }
+                }
+                multiRes.finalize();
+                multiRes.requestSetActiveResidue(ResidueEnumerations.AminoAcid3.valueOf(res.getName()));
+                active.getPotentialEnergy().reInit();
+                residueList.remove(i);
+                residueList.add(i, multiRes);
+            }
+        }
+    }
+}
+
+if (options.tO) {
+    ArrayList<Residue> titrating = new ArrayList<>();
+    for (String s : titrationOptimizationList) {
+        Character chainID = s.charAt(0);
+        int num = Integer.parseInt(s.substring(1));
+        for (int i = 0; i < residueList.size(); i++) {
+            Residue res = residueList.get(i);
+            if (res.getChainID() == chainID && res.getResidueNumber() == num) {
+                titrating.add(res);
+            }
+        }
+    }
+    rotamerOptimization.titrationSetResidues(titrating);
+}
 
 boolean master = true;
 if (Comm.world().size() > 1) {
