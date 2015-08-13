@@ -138,6 +138,7 @@ if (repack) {
     
     RotamerOptimization rotamerOptimization = new RotamerOptimization(molecularAssembly, forceFieldEnergy, null);
     rotamerOptimization.setThreeBodyEnergy(threeBodyRepack);
+    rotamerOptimization.setForcedResidues(resID, resID);
     rotamerOptimization.setWindowSize(1);
     rotamerOptimization.setDistanceCutoff(repackDistance);
     
