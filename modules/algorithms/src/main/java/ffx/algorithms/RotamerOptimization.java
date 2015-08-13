@@ -4801,7 +4801,12 @@ public class RotamerOptimization implements Terminatable {
              * for sequence optimization: if > 1 residue optimized, run on only
              * one thread.
              */
-            int nThreads = (nMultiRes > 1) ? 1 : molecularAssembly.getPotentialEnergy().getParallelTeam().getThreadCount();
+            int nThreads = 1;
+            if (molecularAssembly.getPotentialEnergy().getParallelTeam() != null) {
+                nThreads = (nMultiRes > 1) ? 1 : molecularAssembly.getPotentialEnergy().getParallelTeam().getThreadCount();
+            } else {
+                nThreads = 16;
+            }
             ParallelTeam parallelTeam = new ParallelTeam(nThreads);
             Crystal crystal = molecularAssembly.getCrystal();
             int nSymm = crystal.spaceGroup.getNumberOfSymOps();
