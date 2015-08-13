@@ -141,11 +141,10 @@ SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(active, energy,
     active.getProperties(), null, thermostat, integrator);
 simulatedAnnealing.anneal(high, low, windows, steps, timeStep);
 
-/**
 for (int i = 0; i <= atoms.length; i++) {
     Atom ai = atoms[i - 1];
     ai.setUse(true);
-} */
+}
 
 // Optimize with the full AMOEBA potential energy.
 System.setProperty("vdwterm", "true");
