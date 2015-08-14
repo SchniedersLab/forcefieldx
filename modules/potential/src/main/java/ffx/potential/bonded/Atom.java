@@ -1571,6 +1571,14 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
      */
     public void setAtomType(AtomType atomType) {
         this.atomType = atomType;
+        Element element = getElement();
+        if (element.equals(Element.H) || element.equals(Element.D)) {
+            if (getName().startsWith("H")) {
+                setElement(Element.H);
+            } else if (getName().startsWith("D")) {
+                setElement(Element.D);
+            }
+        }
     }
 
     /**

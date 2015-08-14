@@ -353,7 +353,7 @@ public class BiojavaFilter extends ConversionFilter {
                 // VERSION3_2 is presently just a placeholder for "anything non-standard".
                 fileStandard = VERSION3_2;
             }
-
+            
             Group group = atom.getGroup();
             ResidueNumber resnum = group.getResidueNumber();
             int resSeq = resnum.getSeqNum();
