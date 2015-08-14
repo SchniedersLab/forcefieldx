@@ -543,7 +543,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
                     continue;
                 }
                 if (a.getAnisou(null) != null) {
-                    a.getAnisou(anisou);
+                    anisou = a.getAnisou(anisou);
                     x[index++] = anisou[0];
                     x[index++] = anisou[1];
                     x[index++] = anisou[2];
