@@ -40,6 +40,11 @@ package ffx.potentials;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 
+import ffx.algorithms.RotamerOptimization;
+import ffx.algorithms.RotamerOptimization.Algorithm;
+import ffx.potential.bonded.RotamerLibrary;
+import ffx.potential.bonded.RotamerLibrary.ProteinLibrary;
+
 import ffx.potential.MolecularAssembly;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.ForceFieldFilter;
@@ -47,7 +52,12 @@ import ffx.potential.parsers.PDBFilter;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Atom;
+import ffx.potential.utils.PotentialsUtils;
+import ffx.potential.ForceFieldEnergy;
 import ffx.utilities.Keyword;
+
+// Groovy Imports
+import groovy.util.CliBuilder;
 
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc mutatePDB [options] <PDB>');
@@ -55,6 +65,12 @@ cli.h(longOpt:'help', 'Print this help message.');
 cli.r(longOpt:'resid', args:1, argName:'1', 'Residue number.');
 cli.n(longOpt:'resname', args:1, argName:'ALA', 'New residue name.');
 cli.c(longOpt:'chain', args:1, argName:' ', 'Single character chain name (default is \' \').');
+cli.p(longOpt:'repack', args:1, argName:'7.0', 'After mutation, repack all residues within # Angstroms.');
+cli.pt(longOpt:'threeBodyRepack', args:1, argName:'true', 'Include three-body energies in repacking.');
+
+boolean repack = false;
+double repackDistance = 7.0;
+boolean threeBodyRepack = true;
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -81,6 +97,15 @@ if (options.c) {
     chain = options.c.toCharacter();
 }
 
+if (options.p) {
+    repack = true;
+    repackDistance = Double.parseDouble(options.p);
+}
+
+if (options.pt) {
+    threeBodyRepack = Boolean.parseBoolean(options.pt);
+}
+
 // Read in command line.
 String filename = arguments.get(0);
 
@@ -101,5 +126,35 @@ PDBFilter pdbFilter = new PDBFilter(structure, molecularAssembly, forceField, pr
 pdbFilter.mutate(chain,resID,resName);
 pdbFilter.readFile();
 molecularAssembly.finalize(true, forceField);
-pdbFilter.writeFile(structure, false);
 
+if (repack) {
+    logger.info("\n Repacking... \n");
+    ForceFieldEnergy forceFieldEnergy = new ForceFieldEnergy(molecularAssembly);
+    molecularAssembly.setPotential(forceFieldEnergy);
+    
+    // Do a sliding-window rotamer optimization on a single one-residue window with a radius-inclusion criterion.
+    RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
+    RotamerLibrary.setUseOrigCoordsRotamer(true);
+    
+    RotamerOptimization rotamerOptimization = new RotamerOptimization(molecularAssembly, forceFieldEnergy, null);
+    rotamerOptimization.setThreeBodyEnergy(threeBodyRepack);
+    rotamerOptimization.setForcedResidues(resID, resID);
+    rotamerOptimization.setWindowSize(1);
+    rotamerOptimization.setDistanceCutoff(repackDistance);
+    
+    startResID = resID;
+    finalResID = resID;
+    if (options.c) {
+        rotamerOptimization.setResidues(options.c, startResID, finalResID);
+    } else {
+        rotamerOptimization.setResidues(startResID, finalResID);
+    }    
+    
+    residueList = rotamerOptimization.getResidues();
+    energy();
+    RotamerLibrary.measureRotamers(residueList, false);
+    rotamerOptimization.optimize(RotamerOptimization.Algorithm.SLIDING_WINDOW);
+    logger.info("\n Repacking successful.\n");
+}
+
+pdbFilter.writeFile(structure, false);
