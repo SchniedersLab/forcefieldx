@@ -564,7 +564,6 @@ public final class NeutronFormFactor implements FormFactor {
                 uaniso[0] = uaniso[1] = uaniso[2] = b2u(biso);
             }
             uaniso[3] = uaniso[4] = uaniso[5] = 0.0;
-            atom.setAnisou(uaniso);
         }
 
         u[0][0][0] = uaniso[0] + uadd;

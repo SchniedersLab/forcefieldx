@@ -535,7 +535,6 @@ public final class XRayFormFactor implements FormFactor {
             }
             anisou[0] = anisou[1] = anisou[2] = b2u(bIso);
             anisou[3] = anisou[4] = anisou[5] = 0.0;
-            atom.setAnisou(anisou);
         }
 
         for (int i = 0; i < nGaussians; i++) {
