@@ -279,7 +279,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      *
      * @since 1.0
      */
-    //private double anisou[];
+    private double anisou[];
     /**
      * List of anisou tensors for each altLoc.
      *
