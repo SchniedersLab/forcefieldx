@@ -1652,6 +1652,15 @@ public class Atom extends MSNode implements Comparable<Atom> {
             } else {
                 System.arraycopy(anisouGradient, 0, this.anisouGradient, 0, 6);
             }
+        } else {
+            if (anisouGradient == null) {
+                this.anisouGradient = null;
+            } else {
+                if (this.anisouGradient == null) {
+                    this.anisouGradient = new double[6];
+                }
+                Arrays.fill(anisouGradient, 0.0);
+            }
         }
     }
 
