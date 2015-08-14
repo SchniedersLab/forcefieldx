@@ -516,9 +516,9 @@ public class Potential2 implements OptimizationListener {
             double xr[] = new double[3];
             double maxr = 0.0;
             for (int i = 0; i < nAtoms - 1; i++) {
-                double[] xi = atoms[i].getXYZ();
+                double[] xi = atoms[i].getXYZ(null);
                 for (int j = i + 1; j < nAtoms; j++) {
-                    double[] xj = atoms[j].getXYZ();
+                    double[] xj = atoms[j].getXYZ(null);
                     diff(xi, xj, xr);
                     double r = r(xr);
                     if (r > maxr) {

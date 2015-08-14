@@ -244,10 +244,6 @@ public class FiniteDifferenceTest {
             System.out.println(" " + i + ": " + atom.toString());
             atom.getXYZGradient(gxyz);
             double bg = atom.getTempFactorGradient();
-            double anisouG[] = null;
-            if (atom.getAnisou() != null) {
-                anisouG = atom.getAnisouGradient();
-            }
 
             refinementData.crs_fc.deltaX(index, delta);
             refinementData.crs_fc.computeDensity(refinementData.fc);
@@ -288,7 +284,7 @@ public class FiniteDifferenceTest {
             nmean++;
             mean += (gxyz[2] / fd - mean) / nmean;
 
-            if (atom.getAnisou() == null) {
+            if (atom.getAnisou(null) == null) {
                 double b = atom.getTempFactor();
                 atom.setTempFactor(b + delta);
                 refinementData.crs_fc.computeDensity(refinementData.fc);
@@ -303,20 +299,24 @@ public class FiniteDifferenceTest {
                 nmean++;
                 mean += (bg / fd - mean) / nmean;
             } else {
-                double anisou[] = atom.getAnisou();
+                double anisou[] = atom.getAnisou(null);
+                double anisouG[] = atom.getAnisouGradient(null);
                 for (int j = 0; j < 6; j++) {
                     double tmpu = anisou[j];
                     anisou[j] = tmpu + b2u(delta);
+                    atom.setAnisou(anisou);
                     refinementData.crs_fc.computeDensity(refinementData.fc);
                     llk1 = sigmaAMinimize.calculateLikelihood();
                     anisou[j] = tmpu - b2u(delta);
+                    atom.setAnisou(anisou);
                     refinementData.crs_fc.computeDensity(refinementData.fc);
                     llk2 = sigmaAMinimize.calculateLikelihood();
                     fd = (llk1 - llk2) / (2.0 * b2u(delta));
+                    atom.getAnisouGradient(anisouG);
                     System.out.print(String.format(" %d A: %16.8f FD: %16.8f Error: %16.8f\n",
                             j, anisouG[j], fd, anisouG[j] - fd));
                     anisou[j] = tmpu;
-
+                    atom.setAnisou(anisou);
                     nmean++;
                     mean += (anisouG[j] / fd - mean) / nmean;
                 }

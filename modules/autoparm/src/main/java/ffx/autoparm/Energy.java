@@ -214,9 +214,9 @@ public class Energy {
                 double xr[] = new double[3];
                 double maxr = 0.0;
                 for (int i = 0; i < nAtoms - 1; i++) {
-                    double[] xi = atoms[i].getXYZ();
+                    double[] xi = atoms[i].getXYZ(null);
                     for (int j = i + 1; j < nAtoms; j++) {
-                        double[] xj = atoms[j].getXYZ();
+                        double[] xj = atoms[j].getXYZ(null);
                         diff(xi, xj, xr);
                         double r = r(xr);
                         if (r > maxr) {
@@ -289,8 +289,9 @@ public class Energy {
         double xyzcm[][] = new double[nAtoms][3];
         for (int i = 0; i < nAtoms; i++) {
             weigh = weigh + atoms[i].getMass();
+            double coords[] = atoms[i].getXYZ(null);
             for (int j = 0; j < 3; j++) {
-                xyzmid[j] = xyzmid[j] + atoms[i].getXYZ()[j] * atoms[i].getMass();
+                xyzmid[j] = xyzmid[j] + coords[j] * atoms[i].getMass();
             }
         }
         if (weigh != 0) {
@@ -301,7 +302,8 @@ public class Energy {
 
         for (int i = 0; i < nAtoms; i++) {
             for (int j = 0; j < 3; j++) {
-                xyzcm[i][j] = atoms[i].getXYZ()[j] - xyzmid[j];
+                double coords[] = atoms[i].getXYZ(null);
+                xyzcm[i][j] = coords[j] - xyzmid[j];
             }
         }
         addInducedToGlobal();

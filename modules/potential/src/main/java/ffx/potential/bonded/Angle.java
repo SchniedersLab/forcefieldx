@@ -217,7 +217,7 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
     public Atom getCentralAtom() {
         return atoms[1];
     }
-    
+
     /**
      * Finds the common bond between <b>this</b> angle and another
      *
@@ -300,12 +300,15 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
         energy = 0.0;
         value = 0.0;
         double prefactor = units * rigidScale * angleType.forceConstant;
+        atoms[0].getXYZ(a0);
+        atoms[1].getXYZ(a1);
+        atoms[2].getXYZ(a2);
         switch (angleType.angleFunction) {
             case SEXTIC:
                 switch (angleMode) {
                     case NORMAL:
-                        diff(atoms[0].getXYZ(), atoms[1].getXYZ(), v10);
-                        diff(atoms[2].getXYZ(), atoms[1].getXYZ(), v12);
+                        diff(a0, a1, v10);
+                        diff(a2, a1, v12);
                         double rab2 = dot(v10, v10);
                         double rcb2 = dot(v12, v12);
                         if (rab2 != 0.0 && rcb2 != 0.0) {
@@ -339,9 +342,10 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
                         }
                         break;
                     case IN_PLANE:
-                        diff(atoms[0].getXYZ(), atom4.getXYZ(), v10);
-                        diff(atoms[1].getXYZ(), atom4.getXYZ(), v20);
-                        diff(atoms[2].getXYZ(), atom4.getXYZ(), v30);
+                        atom4.getXYZ(a4);
+                        diff(a0, a4, v10);
+                        diff(a1, a4, v20);
+                        diff(a2, a4, v30);
                         cross(v10, v30, p);
                         double rp2 = dot(p, p);
                         double delta = -dot(p, v20) / rp2;
@@ -411,8 +415,8 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
             default:
                 switch (angleMode) {
                     case NORMAL:
-                        diff(atoms[0].getXYZ(), atoms[1].getXYZ(), v10);
-                        diff(atoms[2].getXYZ(), atoms[1].getXYZ(), v12);
+                        diff(a0, a1, v10);
+                        diff(a2, a1, v12);
                         double rab2 = dot(v10, v10);
                         double rcb2 = dot(v12, v12);
                         if (rab2 != 0.0 && rcb2 != 0.0) {
@@ -443,9 +447,10 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
                         }
                         break;
                     case IN_PLANE:
-                        diff(atoms[0].getXYZ(), atom4.getXYZ(), v10);
-                        diff(atoms[1].getXYZ(), atom4.getXYZ(), v20);
-                        diff(atoms[2].getXYZ(), atom4.getXYZ(), v30);
+                        atom4.getXYZ(a4);
+                        diff(a0, a4, v10);
+                        diff(a1, a4, v20);
+                        diff(a2, a4, v30);
                         cross(v10, v30, p);
                         double rp2 = dot(p, p);
                         double delta = -dot(p, v20) / rp2;
@@ -586,6 +591,10 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
         assert (!(this0 == a0 && this1 == a1 && this2 == a2));
         return 0;
     }
+    protected static final double a0[] = new double[3];
+    protected static final double a1[] = new double[3];
+    protected static final double a2[] = new double[3];
+    protected static final double a4[] = new double[3];
     /**
      * Vector from Atom 1 to Atom 0.
      */

@@ -615,6 +615,9 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
             cy2tg.setTransform(cy2t3d);
         }
     }
+
+    protected static final double a0[] = new double[3];
+    protected static final double a1[] = new double[3];
     /**
      * The vector from Atom 1 to Atom 0.
      */
@@ -635,7 +638,11 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
      * @return Returns the energy.
      */
     public double energy(boolean gradient) {
-        diff(atoms[0].getXYZ(), atoms[1].getXYZ(), v10);
+
+        atoms[0].getXYZ(a0);
+        atoms[1].getXYZ(a1);
+
+        diff(a0, a1, v10);
 
         if (crystal != null) {
             crystal.image(v10);

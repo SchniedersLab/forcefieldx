@@ -123,7 +123,7 @@ public final class XRayFormFactor implements FormFactor {
      * @param atom a {@link ffx.potential.bonded.Atom} object.
      */
     public XRayFormFactor(Atom atom) {
-        this(atom, true, 0.0, atom.getXYZ());
+        this(atom, true, 0.0, atom.getXYZ(null));
     }
 
     /**
@@ -134,7 +134,7 @@ public final class XRayFormFactor implements FormFactor {
      * @param use3G a boolean.
      */
     public XRayFormFactor(Atom atom, boolean use3G) {
-        this(atom, use3G, 0.0, atom.getXYZ());
+        this(atom, use3G, 0.0, atom.getXYZ(null));
     }
 
     /**
@@ -146,7 +146,7 @@ public final class XRayFormFactor implements FormFactor {
      * @param badd a double.
      */
     public XRayFormFactor(Atom atom, boolean use3G, double badd) {
-        this(atom, use3G, badd, atom.getXYZ());
+        this(atom, use3G, badd, atom.getXYZ(null));
     }
 
     /**
@@ -500,7 +500,7 @@ public final class XRayFormFactor implements FormFactor {
         }
 
         // check if anisou changed
-        if (atom.getAnisou() == null) {
+        if (atom.getAnisou(null) == null) {
             if (anisou == null) {
                 anisou = new double[6];
             }
@@ -511,7 +511,7 @@ public final class XRayFormFactor implements FormFactor {
 
         if (hasAnisou) {
             // first check the ANISOU is valid
-            anisou = atom.getAnisou();
+            anisou = atom.getAnisou(null);
             double det = determinant3(anisou);
 
             if (det <= 1e-14) {
@@ -522,6 +522,7 @@ public final class XRayFormFactor implements FormFactor {
 
                 anisou[0] = anisou[1] = anisou[2] = b2u(bIso);
                 anisou[3] = anisou[4] = anisou[5] = 0.0;
+                atom.setAnisou(anisou);
             }
         } else {
             if (bIso < 0.0) {
@@ -534,6 +535,7 @@ public final class XRayFormFactor implements FormFactor {
             }
             anisou[0] = anisou[1] = anisou[2] = b2u(bIso);
             anisou[3] = anisou[4] = anisou[5] = 0.0;
+            atom.setAnisou(anisou);
         }
 
         for (int i = 0; i < nGaussians; i++) {

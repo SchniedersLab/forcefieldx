@@ -155,7 +155,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
                             if (a.getAtomicNumber() == 1) {
                                 continue;
                             }
-                            if (a.getAnisou() == null) {
+                            if (a.getAnisou(null) == null) {
                                 if (diffractiondata.addanisou) {
                                     double anisou[] = new double[6];
                                     double u = b2u(a.getTempFactor());

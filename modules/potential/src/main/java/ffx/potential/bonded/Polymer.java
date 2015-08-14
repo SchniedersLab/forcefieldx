@@ -401,12 +401,6 @@ public class Polymer extends MSGroup {
      * @return a {@link ffx.potential.bonded.Residue} object.
      */
     public Residue getResidue(String resName, int resNum, boolean create) {
-        if (resNum > 0 && getAtomNode().getChildCount() >= resNum) {
-            Residue r = (Residue) getAtomNode().getChildAt(resNum - 1);
-            if (r.getResidueNumber() == resNum && r.getName().equalsIgnoreCase(resName)) {
-                return r;
-            }
-        }
         for (Enumeration e = getAtomNode().children(); e.hasMoreElements();) {
             Residue r = (Residue) e.nextElement();
             if (r.getResidueNumber() == resNum && r.getName().equalsIgnoreCase(resName)) {

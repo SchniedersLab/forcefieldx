@@ -132,6 +132,8 @@ public class UreyBradley extends BondedTerm implements Comparable<UreyBradley> {
     public void update() {
         energy(false);
     }
+    protected static final double a0[] = new double[3];
+    protected static final double a2[] = new double[3];
     /**
      * The vector from Atom 2 to Atom 0.
      */
@@ -152,7 +154,9 @@ public class UreyBradley extends BondedTerm implements Comparable<UreyBradley> {
      * @return Returns the energy.
      */
     public double energy(boolean gradient) {
-        diff(atoms[0].getXYZ(), atoms[2].getXYZ(), v20);
+        atoms[0].getXYZ(a0);
+        atoms[2].getXYZ(a2);
+        diff(a0, a2, v20);
         value = r(v20);
         double dv = value - ureyBradleyType.distance;
         double dv2 = dv * dv;

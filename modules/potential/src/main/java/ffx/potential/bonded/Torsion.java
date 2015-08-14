@@ -255,6 +255,12 @@ public class Torsion extends BondedTerm {
     public void update() {
         energy(false);
     }
+
+    protected static final double a0[] = new double[3];
+    protected static final double a1[] = new double[3];
+    protected static final double a2[] = new double[3];
+    protected static final double a3[] = new double[3];
+
     /**
      * Vector from Atom 0 to Atom 1.
      */
@@ -321,9 +327,15 @@ public class Torsion extends BondedTerm {
     public double energy(boolean gradient) {
         energy = 0.0;
         value = 0.0;
-        diff(atoms[1].getXYZ(), atoms[0].getXYZ(), v01);
-        diff(atoms[2].getXYZ(), atoms[1].getXYZ(), v12);
-        diff(atoms[3].getXYZ(), atoms[2].getXYZ(), v23);
+
+        atoms[0].getXYZ(a0);
+        atoms[1].getXYZ(a1);
+        atoms[2].getXYZ(a2);
+        atoms[3].getXYZ(a3);
+
+        diff(a1, a0, v01);
+        diff(a2, a1, v12);
+        diff(a3, a2, v23);
         cross(v01, v12, x0112);
         cross(v12, v23, x1223);
         cross(x0112, x1223, x);
@@ -361,8 +373,8 @@ public class Torsion extends BondedTerm {
             energy = units * energy;
             if (gradient) {
                 dedphi = units * dedphi;
-                diff(atoms[2].getXYZ(), atoms[0].getXYZ(), v02);
-                diff(atoms[3].getXYZ(), atoms[1].getXYZ(), v13);
+                diff(a2, a0, v02);
+                diff(a3, a1, v13);
                 cross(x0112, v12, x1);
                 cross(x1223, v12, x2);
                 scalar(x1, dedphi / (r01_12 * r12), x1);

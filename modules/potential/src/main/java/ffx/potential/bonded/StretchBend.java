@@ -156,6 +156,10 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
     public void update() {
         energy(false);
     }
+
+    protected static final double a0[] = new double[3];
+    protected static final double a1[] = new double[3];
+    protected static final double a2[] = new double[3];
     /**
      * Constant <code>v10=new double[3]</code>
      */
@@ -198,8 +202,11 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
     public double energy(boolean gradient) {
         energy = 0.0;
         value = 0.0;
-        diff(atoms[0].getXYZ(), atoms[1].getXYZ(), v10);
-        diff(atoms[2].getXYZ(), atoms[1].getXYZ(), v12);
+        atoms[0].getXYZ(a0);
+        atoms[1].getXYZ(a1);
+        atoms[2].getXYZ(a2);
+        diff(a0, a1, v10);
+        diff(a2, a1, v12);
         double rab2 = dot(v10, v10);
         double rcb2 = dot(v12, v12);
         if (rab2 != 0.0 && rcb2 != 0.0) {

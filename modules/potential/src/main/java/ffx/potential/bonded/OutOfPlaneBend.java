@@ -151,11 +151,15 @@ public class OutOfPlaneBend extends BondedTerm implements
     public double energy(boolean gradient) {
         energy = 0.0;
         value = 0.0;
-        diff(atoms[0].getXYZ(), atoms[1].getXYZ(), v10);
-        diff(atoms[2].getXYZ(), atoms[1].getXYZ(), v12);
-        diff(atoms[3].getXYZ(), atoms[1].getXYZ(), v13);
-        diff(atoms[0].getXYZ(), atoms[3].getXYZ(), v30);
-        diff(atoms[2].getXYZ(), atoms[3].getXYZ(), v32);
+        atoms[0].getXYZ(a0);
+        atoms[1].getXYZ(a1);
+        atoms[2].getXYZ(a2);
+        atoms[3].getXYZ(a3);
+        diff(a0, a1, v10);
+        diff(a2, a1, v12);
+        diff(a3, a1, v13);
+        diff(a0, a3, v30);
+        diff(a2, a3, v32);
         double rdb2 = dot(v13, v13);
         double rad2 = dot(v30, v30);
         double rcd2 = dot(v32, v32);
@@ -272,6 +276,11 @@ public class OutOfPlaneBend extends BondedTerm implements
         }
         return 0;
     }
+
+    protected static final double a0[] = new double[3];
+    protected static final double a1[] = new double[3];
+    protected static final double a2[] = new double[3];
+    protected static final double a3[] = new double[3];
     /**
      * Vector from Atom 1 to Atom 0.
      */
