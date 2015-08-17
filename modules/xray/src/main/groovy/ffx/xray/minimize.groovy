@@ -109,7 +109,8 @@ if (neutronProperty != null) {
 // set up diffraction data (can be multiple files)
 List diffractionfiles = new ArrayList();
 if (arguments.size() > 1) {
-    DiffractionFile diffractionfile = new DiffractionFile(arguments.get(1), 1.0, isNeutron);
+    //DiffractionFile diffractionfile = new DiffractionFile(arguments.get(1), 1.0, isNeutron);
+    DiffractionFile diffractionfile = new DiffractionFile(arguments.get(1), isNeutron);
     diffractionfiles.add(diffractionfile);
 }
 if (options.dt) {

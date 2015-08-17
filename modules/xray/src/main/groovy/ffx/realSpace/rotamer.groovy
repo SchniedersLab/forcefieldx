@@ -774,7 +774,7 @@ if (options.sO) {
         int num = Integer.parseInt(s.substring(1));
         for (int i = 0; i < residueList.size(); i++) {
             Residue res = residueList.get(i);
-            if (res.getChainIDChar() == chainID && res.getResidueIndex() == num) {
+            if (res.getChainID() == chainID && res.getResidueIndex() == num) {
                 MultiResidue multiRes = new MultiResidue(res, active.getForceField(), active.getPotentialEnergy());
                 for (Polymer polymer : active.getPolymers()) {
                     if (polymer.getChainIDChar() == chainID) {
@@ -808,7 +808,7 @@ if (options.tO) {
         int num = Integer.parseInt(s.substring(1));
         for (int i = 0; i < residueList.size(); i++) {
             Residue res = residueList.get(i);
-            if (res.getChainIDChar() == chainID && res.getResidueIndex() == num) {
+            if (res.getChainID() == chainID && res.getResidueIndex() == num) {
                 titrating.add(res);
             }
         }

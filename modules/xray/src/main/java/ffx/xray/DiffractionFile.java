@@ -64,14 +64,37 @@ public class DiffractionFile {
     protected final double weight;
     protected final boolean neutron;
     protected final DiffractionFileFilter diffractionfilter;
+    private static final double defaultWeight; // Defaults to 1.0.
+    
+    /**
+     * Instead of using a hardcoded 1.0 as a default xweight, check the xweight
+     * system property.
+     */
+    static {
+        String weightStr = System.getProperty("xweight");
+        double setWeight = 1.0;
+        if (weightStr != null) {
+            try {
+                double xweight = Double.parseDouble(weightStr);
+                if (xweight >= 0) {
+                    setWeight = xweight;
+                } else {
+                    logger.info(String.format(" The xweight property %s was negative; setting default X-weight to 1.0", weightStr));
+                }
+            } catch (NumberFormatException ex) {
+                logger.info(String.format(" Could not parse xweight property %s as double.", weightStr));
+            }
+        }
+        defaultWeight = setWeight;
+    }
 
     /**
-     * read in a diffraction file, weight set to 1.0 and neutron value of false
+     * read in a diffraction file, weight set to default and neutron value of false
      *
      * @param filename file name to read in
      */
     public DiffractionFile(String filename) {
-        this(filename, 1.0, false);
+        this(filename, defaultWeight, false);
     }
 
     /**
@@ -82,6 +105,16 @@ public class DiffractionFile {
      */
     public DiffractionFile(String filename, double weight) {
         this(filename, weight, false);
+    }
+    
+    /**
+     * read in a diffraction file, weight set to default.
+     * 
+     * @param filename file name to read in
+     * @param neutron if true, this is a neutron data set
+     */
+    public DiffractionFile(String filename, boolean neutron) {
+        this(filename, defaultWeight, neutron);
     }
 
     /**
@@ -118,13 +151,13 @@ public class DiffractionFile {
 
     /**
      * read in a diffraction file based on the molecular assembly filename,
-     * using a weight of 1.0 and neutron value of false
+     * using the default weight and neutron value of false
      *
      * @param assembly {@link ffx.potential.MolecularAssembly} from which a
      * filename will be determined
      */
     public DiffractionFile(MolecularAssembly assembly[]) {
-        this(assembly[0], 1.0, false);
+        this(assembly[0], defaultWeight, false);
     }
 
     /**
@@ -145,6 +178,18 @@ public class DiffractionFile {
      *
      * @param assembly an array of {@link ffx.potential.MolecularAssembly}
      * objects.
+     * @param neutron a boolean.
+     */
+    public DiffractionFile(MolecularAssembly assembly[], boolean neutron) {
+        this(assembly[0], defaultWeight, neutron);
+    }
+
+    /**
+     * <p>
+     * Constructor for DiffractionFile.</p>
+     *
+     * @param assembly an array of {@link ffx.potential.MolecularAssembly}
+     * objects.
      * @param weight a double.
      * @param neutron a boolean.
      */
@@ -155,13 +200,13 @@ public class DiffractionFile {
 
     /**
      * read in a diffraction file based on the molecular assembly filename,
-     * using a weight of 1.0 and neutron value of false
+     * using the default weight and neutron value of false
      *
      * @param assembly {@link ffx.potential.MolecularAssembly} from which a
      * filename will be determined
      */
     public DiffractionFile(MolecularAssembly assembly) {
-        this(assembly, 1.0, false);
+        this(assembly, defaultWeight, false);
     }
 
     /**
@@ -178,7 +223,19 @@ public class DiffractionFile {
 
     /**
      * read in a diffraction file based on the molecular assembly filename,
-     * using a weight of 1.0 and neutron value of false
+     * using a neutron value of false
+     *
+     * @param assembly {@link ffx.potential.MolecularAssembly} from which a
+     * filename will be determined
+     * @param neutron if true, this is a neutron data set
+     */
+    public DiffractionFile(MolecularAssembly assembly, boolean neutron) {
+        this(assembly, defaultWeight, neutron);
+    }
+
+    /**
+     * read in a diffraction file based on the molecular assembly filename,
+     * using the default weight and neutron value of false
      *
      * @param assembly {@link ffx.potential.MolecularAssembly} from which a
      * filename will be determined
