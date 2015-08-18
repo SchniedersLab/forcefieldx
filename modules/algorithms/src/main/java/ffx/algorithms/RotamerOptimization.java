@@ -1773,40 +1773,6 @@ public class RotamerOptimization implements Terminatable {
             logger.info(String.format(" Titrating: %s", multiRes));
         }
     }
-    
-    private void titrationBuild(MultiResidue multiRes, Protonate.HistidineMode histidineMode) {
-        Residue activeRes = multiRes.getActive();
-        ResidueEnumerations.AminoAcid3 source = ResidueEnumerations.AminoAcid3.valueOf(activeRes.getName());
-        List<Protonate.Titration> avail = new ArrayList<>(Arrays.asList(Protonate.Titration.values()));
-        
-        if (histidineMode == Protonate.HistidineMode.HID_ONLY) {
-            for (Iterator<Protonate.Titration> iterator = avail.iterator(); iterator.hasNext();) {
-                Protonate.Titration titr = iterator.next();
-                if (titr.target == ResidueEnumerations.AminoAcid3.HIE) {
-                    iterator.remove();
-                }
-            }
-        } else if (histidineMode == Protonate.HistidineMode.HIE_ONLY) {
-            for (Iterator<Protonate.Titration> iterator = avail.iterator(); iterator.hasNext();) {
-                Protonate.Titration titr = iterator.next();
-                if (titr.target == ResidueEnumerations.AminoAcid3.HID) {
-                    iterator.remove();
-                }
-            }
-        }
-        
-        String activeName = activeRes.getName();
-        ResidueEnumerations.AminoAcid3 activeAA3 = ResidueEnumerations.AminoAcid3.valueOf(activeName);
-        for (Protonate.Titration titr : avail) {
-            if (titr.target.equals(activeAA3)) {
-                int resNumber = activeRes.getResidueIndex();
-                Residue.ResidueType resType = activeRes.getResidueType();
-                String newName = titr.target.toString();
-                Residue newRes = new Residue(newName, resNumber, resType);
-                multiRes.addResidue(newRes);
-            }
-        }
-    }
 
     /**
      * Recursively maps Titration events and adds target Residues to a
