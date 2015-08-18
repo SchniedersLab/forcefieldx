@@ -91,6 +91,7 @@ import static ffx.potential.bonded.Residue.ResidueType.AA;
 import static ffx.potential.bonded.Residue.ResidueType.NA;
 import ffx.potential.bonded.ResidueEnumerations;
 import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
+import java.util.Iterator;
 
 /**
  * Optimize protein side-chain conformations and nucleic acid backbone
@@ -1755,6 +1756,7 @@ public class RotamerOptimization implements Terminatable {
             for (Polymer p : polymers) {
                 if (p.getChainIDChar().equals(res.getChainID())) {
                     polymer = p;
+                    break;
                 }
             }
             if (polymer == null) {
@@ -1769,6 +1771,40 @@ public class RotamerOptimization implements Terminatable {
             this.residueList.remove(res);
             this.residueList.add(multiRes);
             logger.info(String.format(" Titrating: %s", multiRes));
+        }
+    }
+    
+    private void titrationBuild(MultiResidue multiRes, Protonate.HistidineMode histidineMode) {
+        Residue activeRes = multiRes.getActive();
+        ResidueEnumerations.AminoAcid3 source = ResidueEnumerations.AminoAcid3.valueOf(activeRes.getName());
+        List<Protonate.Titration> avail = new ArrayList<>(Arrays.asList(Protonate.Titration.values()));
+        
+        if (histidineMode == Protonate.HistidineMode.HID_ONLY) {
+            for (Iterator<Protonate.Titration> iterator = avail.iterator(); iterator.hasNext();) {
+                Protonate.Titration titr = iterator.next();
+                if (titr.target == ResidueEnumerations.AminoAcid3.HIE) {
+                    iterator.remove();
+                }
+            }
+        } else if (histidineMode == Protonate.HistidineMode.HIE_ONLY) {
+            for (Iterator<Protonate.Titration> iterator = avail.iterator(); iterator.hasNext();) {
+                Protonate.Titration titr = iterator.next();
+                if (titr.target == ResidueEnumerations.AminoAcid3.HID) {
+                    iterator.remove();
+                }
+            }
+        }
+        
+        String activeName = activeRes.getName();
+        ResidueEnumerations.AminoAcid3 activeAA3 = ResidueEnumerations.AminoAcid3.valueOf(activeName);
+        for (Protonate.Titration titr : avail) {
+            if (titr.target.equals(activeAA3)) {
+                int resNumber = activeRes.getResidueIndex();
+                Residue.ResidueType resType = activeRes.getResidueType();
+                String newName = titr.target.toString();
+                Residue newRes = new Residue(newName, resNumber, resType);
+                multiRes.addResidue(newRes);
+            }
         }
     }
 
@@ -3800,7 +3836,7 @@ public class RotamerOptimization implements Terminatable {
         switch (residue.getResidueType()) {
             case NA:
             case AA:
-                ArrayList<Atom> atomList = residue.getSideChainAtoms();
+                List<Atom> atomList = residue.getVariableAtoms();
                 for (Atom atom : atomList) {
                     atom.setUse(true);
                 }
@@ -3817,7 +3853,7 @@ public class RotamerOptimization implements Terminatable {
         switch (residue.getResidueType()) {
             case NA:
             case AA:
-                ArrayList<Atom> atomList = residue.getSideChainAtoms();
+                List<Atom> atomList = residue.getVariableAtoms();
                 for (Atom atom : atomList) {
                     atom.setUse(false);
                 }
@@ -3834,7 +3870,7 @@ public class RotamerOptimization implements Terminatable {
     private static void turnOnCBeta(Residue residue) {
         switch (residue.getResidueType()) {
             case AA:
-                ArrayList<Atom> atomList = residue.getSideChainAtoms();
+                List<Atom> atomList = residue.getVariableAtoms();
                 for (Atom atom : atomList) {
                     if (atom.getName().equals("CB")) {
                         atom.setUse(true);
@@ -8169,7 +8205,7 @@ public class RotamerOptimization implements Terminatable {
                                     sb.append(String.format("     --s--\n"));
                                     sb.append(String.format("     Active residues:\n"));
                                     for (int debug = 0; debug < residues.length; debug++) {
-                                        if (residues[debug].getSideChainAtoms().get(0).getUse()) {
+                                        if (residues[debug].getVariableAtoms().get(0).getUse()) {
                                             sb.append(String.format("       %s\n", residues[debug].toString()));
                                         }
                                     }

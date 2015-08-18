@@ -907,6 +907,18 @@ public class Residue extends MSGroup implements Group {
                 return null;
         }
     }
+    
+    /**
+     * Returns a list of atoms liable to change during dead-end elimination repacking.
+     * For ordinary amino acids: side chain atoms. For ordinary nucleic acids:
+     * sugar/phosphate backbone atoms. MultiResidue over-rides this to return all
+     * atoms (as backbone atom types are nonconstant).
+     * 
+     * @return Atoms changeable during DEE.
+     */
+    public List<Atom> getVariableAtoms() {
+        return getSideChainAtoms();
+    }
 
     /**
      * Returns a list of backbone atoms; for our purposes, nucleic acid backbone

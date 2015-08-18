@@ -751,7 +751,22 @@ public class MultiResidue extends Residue {
         }
         return consideredResidues.size();
     }
-
+    
+    @Override
+    public ArrayList<Atom> getSideChainAtoms() {
+        return activeResidue.getSideChainAtoms();
+    }
+    
+    /**
+     * Returns all atoms (all atoms are variable during DEE).
+     * 
+     * @return All atoms.
+     */
+    @Override
+    public List<Atom> getVariableAtoms() {
+        return activeResidue.getAtomList();
+    }
+    
     /**
      * {@inheritDoc}
      *
