@@ -145,7 +145,7 @@ if (writemaps) {
 //            ArrayList<Residue> residues = polymer.getResidues();
 //            for (int i=0; i < residues.size(); i++) {
 //                Residue residue = residues.get(i);
-//                Rotamer[] rotamers = RotamerLibrary.getRotamers(residue);
+//                Rotamer[] rotamers = residue.getRotamers();
 //                if (rotamers != null) {
 //                    logger.info("Turning off atoms of " + residue.toString());
 //                    RotamerOptimization.turnOffAtoms(residue);

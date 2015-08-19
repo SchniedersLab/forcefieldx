@@ -2032,7 +2032,7 @@ public class RotamerOptimization implements Terminatable {
         int[] numEliminatedRotamers = new int[residues.length];
         for (int i = 0; i < residues.length; i++) {
             Residue residuei = residues[i];
-            //Rotamer[] rotamers = RotamerLibrary.getRotamers(residuei);
+            //Rotamer[] rotamers = residuei.getRotamers();
             Rotamer[] rotamers = residuei.getRotamers(residuei);
             if (rotamers == null || residuei.getResidueType() != NA) {
                 continue;
@@ -2101,7 +2101,7 @@ public class RotamerOptimization implements Terminatable {
             Residue residuei = residues[i];
             switch (residuei.getResidueType()) {
                 case NA:
-                    //Rotamer[] rotamers = RotamerLibrary.getRotamers(residues[i]);
+                    //Rotamer[] rotamers = residues[i].getRotamers();
                     Rotamer[] rotamers = residues[i].getRotamers(residues[i]);
                     Residue nextResidue = residuei.getNextResidue();
                     if (rotamers == null || nextResidue == null) {
