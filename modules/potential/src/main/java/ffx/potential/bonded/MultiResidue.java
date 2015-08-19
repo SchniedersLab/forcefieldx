@@ -52,6 +52,7 @@ import ffx.potential.parameters.ForceField;
 
 import static ffx.potential.bonded.AminoAcidUtils.assignAminoAcidAtomTypes;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
+import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
 import static ffx.utilities.HashCodeUtil.SEED;
 import static ffx.utilities.HashCodeUtil.hash;
 import java.util.logging.Level;
@@ -88,6 +89,7 @@ public class MultiResidue extends Residue {
      */
     ForceField forceField;
     ForceFieldEnergy forceFieldEnergy;
+    private Rotamer originalRotamer;
     
     public MultiResidue(Residue residue, ForceField forceField, ForceFieldEnergy forceFieldEnergy) {
         super("MultiResidue", residue.getResidueIndex(), residue.residueType, residue.getChainID(), residue.getChainID().toString());
@@ -344,6 +346,75 @@ public class MultiResidue extends Residue {
     @Override
     public void updateBonds() {
         activeResidue.updateBonds();
+    }
+    
+    public Rotamer[] getRotamers() {
+        List<Rotamer[]> usualRotamers = new ArrayList<>();
+        int nRots = 0;
+        
+        for (Residue residue : consideredResidues) {
+            Rotamer[] rotamers = RotamerLibrary.getRotamers(residue);
+            if (rotamers != null && rotamers.length > 0) {
+                usualRotamers.add(rotamers);
+                nRots += rotamers.length;
+            }
+        }
+        
+        if (RotamerLibrary.getUsingOrigCoordsRotamer()) {
+            if (originalRotamer == null) {
+                double[][] origCoordinates = storeCoordinateArray();
+                double[] chi = RotamerLibrary.measureRotamer(this, false);
+                switch (residueType) {
+                    case AA:
+                        AminoAcid3 aa = AminoAcid3.valueOf(getName());
+                        originalRotamer = new Rotamer(aa, origCoordinates, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0);
+                        break;
+                    case NA:
+                        NucleicAcid3 na = NucleicAcid3.valueOf(getName());
+                        originalRotamer = new Rotamer(na, origCoordinates, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0, chi[4], 0, chi[5], 0);
+                        break;
+                    default:
+                        originalRotamer = null;
+                        break;
+                }
+            }
+            Rotamer[] allRotamers;
+            if (originalRotamer != null) {
+                allRotamers = new Rotamer[nRots + 1];
+                int index;
+                
+                if (origAtEnd) {
+                    index = 0;
+                    allRotamers[allRotamers.length - 1] = originalRotamer;
+                } else {
+                    index = 1;
+                    allRotamers[0] = originalRotamer;
+                }
+                
+                for (Rotamer[] rotamersI : usualRotamers) {
+                    int nrotamers = rotamersI.length;
+                    System.arraycopy(rotamersI, 0, allRotamers, nrotamers, index);
+                    index += nrotamers;
+                }
+                
+            } else {
+                allRotamers = getDefaultRotamers(usualRotamers, nRots);
+            }
+            return allRotamers;
+        } else {
+            return getDefaultRotamers(usualRotamers, nRots);
+        }
+    }
+    
+    private Rotamer[] getDefaultRotamers(List<Rotamer[]> usual, int nRots) {
+        Rotamer[] allRotamers = new Rotamer[nRots];
+        int index = 0;
+        for (Rotamer[] rotamers : usual) {
+            int nrotamers = rotamers.length;
+            System.arraycopy(rotamers, 0, allRotamers, nrotamers, index);
+            index += nrotamers;
+        }
+        return allRotamers;
     }
 
     @Override

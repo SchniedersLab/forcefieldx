@@ -118,14 +118,16 @@ public class RotamerLibrary {
     public static ProteinLibrary getLibrary() {
         return proteinLibrary;
     }
-
+    
     /**
      * Return rotamer array for the given AA or NA residue.
      *
      * @param residue the Residue to examine.
      * @return Array of Rotamers for Residue's type.
      */
-    public static Rotamer[] getRotamers(Residue residue) {
+    static Rotamer[] getRotamers(Residue residue) {
+        // Package-private; intended to be accessed only by Residue and extensions
+        // thereof. Otherwise, use Residue.getRotamers().
         if (residue == null) {
             return null;
         }
@@ -929,6 +931,34 @@ public class RotamerLibrary {
                     break;
             }
         }
+    }
+    
+    public static double[] measureRotamer(Residue residue, boolean print) {
+        if (residue != null) {
+            switch (residue.getResidueType()) {
+                case AA:
+                    double[] chi = new double[4];
+                    try {
+                        measureAARotamer(residue, chi, print);
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                        String message = " Array passed to measureRotamer was not of sufficient size.";
+                        logger.log(Level.WARNING, message, e);
+                    }
+                    return chi;
+                case NA:
+                    chi = new double[6];
+                    try {
+                        measureNARotamer(residue, chi, print);
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                        String message = " Array passed to measureRotamer was not of sufficient size.";
+                        logger.log(Level.WARNING, message, e);
+                    }
+                    return chi;
+                default:
+                    return null;
+            }
+        }
+        return null;
     }
 
     /**

@@ -145,6 +145,17 @@ public class Residue extends MSGroup implements Group {
     private double[] C4sCoords = null;
 
     private Rotamer currentRotamer = null;
+    private Rotamer originalRotamer = null;
+    protected static final boolean origAtEnd;
+    
+    static {
+        String origAtEndStr = System.getProperty("ro-origAtEnd");
+        if (origAtEndStr != null) {
+            origAtEnd = Boolean.parseBoolean(origAtEndStr);
+        } else {
+            origAtEnd = false;
+        }
+    }
 
     /**
      * Default Constructor where num is this Residue's position in the Polymer.
@@ -223,6 +234,41 @@ public class Residue extends MSGroup implements Group {
 
     public Rotamer[] getRotamers(Residue residue) {
         return RotamerLibrary.getRotamers(residue);
+    }
+    
+    public Rotamer[] getRotamers() {
+        if (RotamerLibrary.getUsingOrigCoordsRotamer()) {
+            Rotamer[] libRotamers = RotamerLibrary.getRotamers(this);
+            int nRots = libRotamers.length;
+            Rotamer[] rotamers = new Rotamer[nRots + 1];
+            if (originalRotamer == null) {
+                double[][] origCoordinates = storeCoordinateArray();
+                double[] chi = RotamerLibrary.measureRotamer(this, false);
+                switch (residueType) {
+                    case AA:
+                        AminoAcid3 aa = AminoAcid3.valueOf(getName());
+                        originalRotamer = new Rotamer(aa, origCoordinates, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0);
+                        break;
+                    case NA:
+                        NucleicAcid3 na = NucleicAcid3.valueOf(getName());
+                        originalRotamer = new Rotamer(na, origCoordinates, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0, chi[4], 0, chi[5], 0);
+                        break;
+                    default:
+                        originalRotamer = null;
+                        return libRotamers;
+                }
+            }
+            if (origAtEnd) {
+                System.arraycopy(libRotamers, 0, rotamers, 0, nRots);
+                rotamers[rotamers.length - 1] = originalRotamer;
+            } else {
+                System.arraycopy(libRotamers, 0, rotamers, 1, nRots);
+                rotamers[0] = originalRotamer;
+            }
+            return rotamers;
+        } else {
+            return RotamerLibrary.getRotamers(this);
+        }
     }
 
     public ResidueType getResidueType() {
