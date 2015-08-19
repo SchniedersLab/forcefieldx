@@ -494,7 +494,7 @@ public class Protonate implements MonteCarloListener {
         
         // Check whether rotamer moves are possible for the selected residue.
         Residue targetMultiActive = targetMulti.getActive();
-        Rotamer[] targetMultiRotamers = targetMultiActive.getRotamers(targetMultiActive);
+        Rotamer[] targetMultiRotamers = targetMultiActive.getRotamers();
         if (targetMultiRotamers == null || targetMultiRotamers.length <= 1) {
             if (stepType == StepType.ROTAMER) {
                 return false;
@@ -632,7 +632,7 @@ public class Protonate implements MonteCarloListener {
         Rotamer origCoordsRotamer = new Rotamer(aa, origCoordinates, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0);
         // Select a new rotamer and swap to it.
         //Rotamer rotamers[] = residue.getRotamers();
-        Rotamer[] rotamers = residue.getRotamers(residue);
+        Rotamer[] rotamers = residue.getRotamers();
         int rotaRand = rng.nextInt(rotamers.length);
         RotamerLibrary.applyRotamer(residue, rotamers[rotaRand]);
 
@@ -722,7 +722,7 @@ public class Protonate implements MonteCarloListener {
         
         // Swap to the new rotamer.
         //Rotamer rotamers[] = residue.getRotamers();
-        Rotamer[] rotamers = residue.getRotamers(residue);
+        Rotamer[] rotamers = residue.getRotamers();
         int rotaRand = rng.nextInt(rotamers.length);
         RotamerLibrary.applyRotamer(residue, rotamers[rotaRand]);
         

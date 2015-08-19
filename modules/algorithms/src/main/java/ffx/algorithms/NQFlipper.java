@@ -123,7 +123,7 @@ public class NQFlipper {
         for (int i = startResID; i <= finalResID; i++) {
             Residue residue = polymer.getResidue(i);
             if (residue != null) {
-                Rotamer[] rotamers = residue.getRotamers(residue);
+                Rotamer[] rotamers = residue.getRotamers();
                 if (rotamers != null) {
                     if (rotamers.length == 1) {
                         switch (residue.getResidueType()) {
