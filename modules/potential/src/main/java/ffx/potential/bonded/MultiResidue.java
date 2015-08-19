@@ -393,7 +393,7 @@ public class MultiResidue extends Residue {
                 
                 for (Rotamer[] rotamersI : usualRotamers) {
                     int nrotamers = rotamersI.length;
-                    System.arraycopy(rotamersI, 0, allRotamers, nrotamers, index);
+                    System.arraycopy(rotamersI, 0, allRotamers, index, nrotamers);
                     index += nrotamers;
                 }
                 
@@ -411,13 +411,13 @@ public class MultiResidue extends Residue {
         int index = 0;
         for (Rotamer[] rotamers : usual) {
             int nrotamers = rotamers.length;
-            System.arraycopy(rotamers, 0, allRotamers, nrotamers, index);
+            System.arraycopy(rotamers, 0, allRotamers, index, nrotamers);
             index += nrotamers;
         }
         return allRotamers;
     }
 
-    @Override
+    /*@Override
     public Rotamer[] getRotamers(Residue residue) {
         if (residue == null) {
             logger.warning("Couldn't retrieve rotamers for null residue.");
@@ -450,7 +450,7 @@ public class MultiResidue extends Residue {
             logger.fine(consideredResidues.size() + " residue options with " + rotamerTotal + " rotamers.");
         }
         return allRotamers;
-    }
+    }*/
     
     @Override
     public ResidueState storeCoordinates() {

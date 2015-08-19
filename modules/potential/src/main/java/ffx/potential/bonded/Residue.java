@@ -232,13 +232,16 @@ public class Residue extends MSGroup implements Group {
         finalize(true, forceField);
     }
 
-    public Rotamer[] getRotamers(Residue residue) {
+    /*public Rotamer[] getRotamers(Residue residue) {
         return RotamerLibrary.getRotamers(residue);
-    }
+    }*/
     
     public Rotamer[] getRotamers() {
         if (RotamerLibrary.getUsingOrigCoordsRotamer()) {
             Rotamer[] libRotamers = RotamerLibrary.getRotamers(this);
+            if (libRotamers == null) {
+                return null;
+            }
             int nRots = libRotamers.length;
             Rotamer[] rotamers = new Rotamer[nRots + 1];
             if (originalRotamer == null) {
