@@ -91,6 +91,7 @@ import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.RendererCache.ColorModel;
 import ffx.potential.bonded.RendererCache.ViewModel;
 import ffx.potential.utils.PotentialsFunctions;
+import ffx.utilities.LoggerSevereError;
 
 /**
  * The ModelingShell is used to script Multiscale Modeling Routines via the
@@ -296,7 +297,11 @@ public final class ModelingShell extends Console implements AlgorithmListener {
     public void runFFXScript(File file) {
         try {
             before();
-            getShell().evaluate(file);
+            try {
+                getShell().evaluate(file);
+            } catch (LoggerSevereError ex) {
+                logger.log(Level.SEVERE, " Uncaught severe error: FFX shutting down", ex);
+            }
             after();
         } catch (IOException | CompilationFailedException e) {
             String message = "Error evaluating script.";

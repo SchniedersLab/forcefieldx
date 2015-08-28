@@ -2914,11 +2914,11 @@ public class RotamerOptimization implements Terminatable {
      *
      * @param i Index to check
      * @return If forced
-     * @throws RuntimeException If useForcedResidues not true.
+     * @throws IllegalStateException If useForcedResidues not true.
      */
-    private boolean checkIfForced(int i) throws RuntimeException {
+    private boolean checkIfForced(int i) throws IllegalStateException {
         if (!useForcedResidues) {
-            throw new RuntimeException("checkForcedResidues being called without useForcedResidues.");
+            throw new IllegalStateException("checkForcedResidues being called without useForcedResidues.");
         }
         return (startForcedResidues <= i && i <= endForcedResidues);
     }
