@@ -107,7 +107,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
         this.diffractiondata = diffractiondata;
         this.refinementmodel = diffractiondata.getRefinementModel();
         this.refinementMode = refinementmode;
-        this.atomarray = refinementmodel.atomArray;
+        this.atomarray = refinementmodel.getAtomArray();
         this.nAtoms = atomarray.length;
         this.nxyz = nxyz;
         this.nb = nb;
@@ -520,6 +520,10 @@ public class XRayEnergy implements LambdaInterface, Potential {
         assert (x != null);
         double xyz[] = new double[3];
         int index = 0;
+        int nVar = getNumberOfVariables();
+        if (x.length < nVar) {
+            x = new double[nVar];
+        }
         fill(x, 0.0);
 
         if (refinexyz) {
@@ -1043,5 +1047,10 @@ public class XRayEnergy implements LambdaInterface, Potential {
                 xrayterms = true;
                 restraintterms = true;
         }
+    }
+    
+    @Override
+    public void reInit() {
+        //logger.warning(String.format(" No reInit method defined for %s", XRayEnergy.class.toString()));
     }
 }

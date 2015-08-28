@@ -348,7 +348,8 @@ public class DiffractionData implements DataContainer {
         refinementModel = new RefinementModel(assembly, refinemolocc);
 
         // initialize atomic form factors
-        for (Atom a : refinementModel.atomArray) {
+        Atom[] refinementAtoms = refinementModel.getAtomArray();
+        for (Atom a : refinementAtoms) {
             a.setFormFactorIndex(-1);
             XRayFormFactor atomff
                     = new XRayFormFactor(a, use_3g, 2.0);
@@ -380,14 +381,14 @@ public class DiffractionData implements DataContainer {
         parallelTeam = new ParallelTeam();
         for (int i = 0; i < n; i++) {
             crs_fc[i] = new CrystalReciprocalSpace(reflectionList[i],
-                    refinementModel.atomArray, parallelTeam, parallelTeam,
+                    refinementAtoms, parallelTeam, parallelTeam,
                     false, dataFiles[i].neutron);
             refinementData[i].setCrystalReciprocalSpace_fc(crs_fc[i]);
             crs_fc[i].setUse3G(use_3g);
             crs_fc[i].setWeight(dataFiles[i].weight);
             crs_fc[i].lambdaTerm = lambdaTerm;
             crs_fs[i] = new CrystalReciprocalSpace(reflectionList[i],
-                    refinementModel.atomArray, parallelTeam, parallelTeam,
+                    refinementAtoms, parallelTeam, parallelTeam,
                     true, dataFiles[i].neutron, solventmodel);
             refinementData[i].setCrystalReciprocalSpace_fs(crs_fs[i]);
             crs_fs[i].setUse3G(use_3g);
@@ -414,8 +415,9 @@ public class DiffractionData implements DataContainer {
     public void AverageFc(MolecularAssembly assembly[], int index) {
         RefinementModel tmprefinementmodel = new RefinementModel(assembly, refinemolocc);
 
+        Atom[] tmpRefinementAtoms = tmprefinementmodel.getAtomArray();
         // initialize atomic form factors
-        for (Atom a : tmprefinementmodel.atomArray) {
+        for (Atom a : tmpRefinementAtoms) {
             a.setFormFactorIndex(-1);
             XRayFormFactor atomff
                     = new XRayFormFactor(a, use_3g, 2.0);
@@ -444,11 +446,11 @@ public class DiffractionData implements DataContainer {
         // set up FFT and run it
         for (int i = 0; i < n; i++) {
             crs_fc[i] = new CrystalReciprocalSpace(reflectionList[i],
-                    tmprefinementmodel.atomArray, parallelTeam, parallelTeam,
+                    tmpRefinementAtoms, parallelTeam, parallelTeam,
                     false, dataFiles[i].neutron);
             refinementData[i].setCrystalReciprocalSpace_fc(crs_fc[i]);
             crs_fs[i] = new CrystalReciprocalSpace(reflectionList[i],
-                    tmprefinementmodel.atomArray, parallelTeam, parallelTeam,
+                    tmpRefinementAtoms, parallelTeam, parallelTeam,
                     true, dataFiles[i].neutron, solventModel);
             refinementData[i].setCrystalReciprocalSpace_fs(crs_fs[i]);
         }
@@ -554,7 +556,7 @@ public class DiffractionData implements DataContainer {
      */
     @Override
     public Atom[] getAtomArray() {
-        return refinementModel.atomArray;
+        return refinementModel.getAtomArray();
     }
 
     /**

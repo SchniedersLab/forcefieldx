@@ -665,8 +665,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
     }
 
+    @Override
     public void reInit() {
-
+        
         atoms = molecularAssembly.getAtomArray();
         nAtoms = atoms.length;
 
@@ -987,7 +988,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         if (comTerm) {
             logger.severe(" COM restrain energy term cannot be used with variable systems sizes.");
         }
-
+        
+        molecularAssembly.reinitPotentials();
     }
     
     public void setFixedCharges(Atom atoms[]) {

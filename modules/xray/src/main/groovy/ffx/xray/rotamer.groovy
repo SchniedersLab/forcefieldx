@@ -581,7 +581,7 @@ if (diffractionfiles.size() == 0) {
 }
 
 DiffractionData diffractiondata = new DiffractionData(systems[0], systems[0].getProperties(), SolventModel.POLYNOMIAL, diffractionfiles.toArray(new DiffractionFile[diffractionfiles.size()]));
-RefinementEnergy refinementEnergy = new RefinementEnergy(diffractiondata, RefinementMode.COORDINATES, null);
+RefinementEnergy refinementEnergy = RefinementEnergy.refinementEnergyFactory(diffractiondata, RefinementMode.COORDINATES, null);
 
 int nVar = refinementEnergy.getNumberOfVariables();
 double [] x = new double[nVar];

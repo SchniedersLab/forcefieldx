@@ -258,7 +258,8 @@ public class RealSpaceData implements DataContainer {
         for (int i = 0; i < n; i++) {
             sum = 0.0;
             TriCubicSpline spline = new TriCubicSpline();
-            for (Atom a : refinementmodel.atomArray) {
+            Atom[] refinementAtoms = refinementmodel.getAtomArray();
+            for (Atom a : refinementAtoms) {
                 if (dLambda && !a.applyLambda()) {
                     continue;
                 }
@@ -357,7 +358,7 @@ public class RealSpaceData implements DataContainer {
      */
     @Override
     public Atom[] getAtomArray() {
-        return refinementmodel.atomArray;
+        return refinementmodel.getAtomArray();
     }
 
     /**

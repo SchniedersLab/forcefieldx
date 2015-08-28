@@ -646,8 +646,7 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
         }
         Atom other = (Atom) object;
 
-        return (other.resName != null && other.resName.equals(resName)
-                && other.resSeq == resSeq
+        return (other.resSeq == resSeq
                 && other.getName() != null && other.getName().equals(getName())
                 && other.segID != null && other.segID.equals(segID));
     }
@@ -1256,8 +1255,7 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
     @Override
     public final int hashCode() {
         //return hash(SEED, xyzIndex);
-        int hash = hash(SEED, resName);
-        hash = hash(hash, resSeq);
+        int hash = hash(SEED, resSeq);
         hash = hash(hash, getName());
         return hash(hash, segID);
     }

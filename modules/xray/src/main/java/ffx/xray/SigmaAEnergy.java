@@ -729,4 +729,9 @@ public class SigmaAEnergy implements Potential {
     @Override
     public void setEnergyTermState(STATE state) {
     }
+    
+    @Override
+    public void reInit() {
+        //logger.warning(String.format(" No reInit method defined for %s", SigmaAEnergy.class.toString()));
+    }
 }

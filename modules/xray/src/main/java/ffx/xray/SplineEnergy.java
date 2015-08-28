@@ -367,4 +367,9 @@ public class SplineEnergy implements Potential {
         public static final int FCTOESQ = 3;
         public static final int FOTOESQ = 4;
     }
+    
+    @Override
+    public void reInit() {
+        //logger.warning(String.format(" No reInit method defined for %s", SplineEnergy.class.toString()));
+    }
 }

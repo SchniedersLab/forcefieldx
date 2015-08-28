@@ -613,4 +613,9 @@ public class ScaleBulkEnergy implements Potential {
     @Override
     public void setEnergyTermState(Potential.STATE state) {
     }
+    
+    @Override
+    public void reInit() {
+        //logger.warning(String.format(" No reInit method defined for %s", ScaleBulkEnergy.class.toString()));
+    }
 }

@@ -371,14 +371,15 @@ public class PDBFileMatcher {
         return rmsd;
     }
 
-    private double getSqDistance(Atom a1, Atom a2) {
+    public static double getSqDistance(Atom a1, Atom a2) {
         double dx = a1.getX();
-        dx -= a2.getX();
         double dy = a1.getY();
-        dy -= a2.getY();
         double dz = a2.getZ();
+        dx -= a2.getX();
+        dy -= a2.getY();
         dz -= a2.getZ();
         return dx * dx + dy * dy + dz * dz;
+        // I wonder if the JIT would compile this to fused multiply-add.
     }
 
     private double getDistance(Atom a1, Atom a2) {
@@ -394,7 +395,7 @@ public class PDBFileMatcher {
      * @return atom1's match in atoms2.
      * @throws IllegalArgumentException If no match can be found.
      */
-    private Atom getMatchingAtom(Atom atom1, Atom[] atoms2, int i) throws IllegalArgumentException {
+    public static Atom getMatchingAtom(Atom atom1, Atom[] atoms2, int i) throws IllegalArgumentException {
         Atom atom2;
         try {
             atom2 = atoms2[i];
@@ -410,7 +411,7 @@ public class PDBFileMatcher {
 
     /**
      * Finds atom1's match in structure2; uses atom1's residue number, atom
-     * type, and PDB serial number as a guess; if robustMatch is set true, will
+     * type, and PDB serial number as a guess; if searchAll is set true, will
      * search all Atoms in structure2.
      *
      * @param atom1 An Atom
@@ -419,7 +420,7 @@ public class PDBFileMatcher {
      * @return atom1's match in structure2
      * @throws IllegalArgumentException If no match can be found.
      */
-    private Atom getMatchingAtom(Atom atom1, Structure structure2, boolean searchAll) throws IllegalArgumentException {
+    public static Atom getMatchingAtom(Atom atom1, Structure structure2, boolean searchAll) throws IllegalArgumentException {
         ResidueNumber res1 = atom1.getGroup().getResidueNumber();
         String chainID = res1.getChainId();
         Atom atom2 = null;
@@ -462,7 +463,7 @@ public class PDBFileMatcher {
      * @return atom1's match in atom2.
      * @throws IllegalArgumentException If no match could be found.
      */
-    private Atom getMatchingAtom(Atom atom1, Atom[] atoms2) throws IllegalArgumentException {
+    public static Atom getMatchingAtom(Atom atom1, Atom[] atoms2) throws IllegalArgumentException {
         Atom atom2 = atoms2[0];
         Structure structure2 = atom2.getGroup().getChain().getStructure();
         try {
@@ -488,7 +489,7 @@ public class PDBFileMatcher {
      * @param a2
      * @return if considered equivalent.
      */
-    private boolean compareAtoms(Atom a1, Atom a2) {
+    public static boolean compareAtoms(Atom a1, Atom a2) {
         if (!a1.getElement().equals(a2.getElement())) {
             return false;
         }

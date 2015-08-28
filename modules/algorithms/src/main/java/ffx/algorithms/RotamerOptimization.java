@@ -91,7 +91,6 @@ import static ffx.potential.bonded.Residue.ResidueType.AA;
 import static ffx.potential.bonded.Residue.ResidueType.NA;
 import ffx.potential.bonded.ResidueEnumerations;
 import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
-import java.util.Iterator;
 
 /**
  * Optimize protein side-chain conformations and nucleic acid backbone
@@ -2004,7 +2003,7 @@ public class RotamerOptimization implements Terminatable {
                         logIfMaster(String.format(" Correction magnitude was %6.4f A > %5.3f A", rotToReject.getDoubleValue(), nucleicCorrectionThreshold));
                     }
                 }
-                nucleicResidue.revertCoordinates(origCoordinates[j]);
+                nucleicResidue.revertState(origCoordinates[j]);
                 //revertSingleResidueCoordinates(nucleicResidue, originalCoordinates[j]);
                 /*
                  for (int i = 0; i < nAtoms; i++) {
@@ -2885,10 +2884,10 @@ public class RotamerOptimization implements Terminatable {
         if (roti.equals(resi.getRotamer())) {
             xi = resi.storeCoordinateArray();
         } else {
-            ResidueState origI = resi.storeCoordinates();
+            ResidueState origI = resi.storeState();
             RotamerLibrary.applyRotamer(resi, roti);
             xi = resi.storeCoordinateArray();
-            resi.revertCoordinates(origI);
+            resi.revertState(origI);
         }
 
         Residue resj = allResiduesArray[j];
@@ -2898,10 +2897,10 @@ public class RotamerOptimization implements Terminatable {
         if (rotj.equals(resj.getRotamer())) {
             xj = resj.storeCoordinateArray();
         } else {
-            ResidueState origJ = resj.storeCoordinates();
+            ResidueState origJ = resj.storeState();
             RotamerLibrary.applyRotamer(resj, rotj);
             xj = resj.storeCoordinateArray();
-            resj.revertCoordinates(origJ);
+            resj.revertState(origJ);
         }
 
         for (int iSymOp = 0; iSymOp < nSymm; iSymOp++) {
@@ -3158,12 +3157,12 @@ public class RotamerOptimization implements Terminatable {
                     windowTime += currentTime;
                     logIfMaster(String.format(" Time elapsed for this iteration: %11.3f sec", windowTime * 1.0E-9));
                     logIfMaster(String.format(" Overall time elapsed: %11.3f sec", (currentTime + beginTime) * 1.0E-9));
-                    for (Residue residue : residueList) {
+                    /*for (Residue residue : residueList) {
                         if (residue instanceof MultiResidue) {
                             ((MultiResidue) residue).setDefaultResidue();
                             residue.reInitOriginalAtomList();
                         }
-                    }
+                    }*/
                 }
                 break;
 
@@ -3389,12 +3388,12 @@ public class RotamerOptimization implements Terminatable {
                         logger.warning(String.format("Exception writing to file: %s", file.getName()));
                     }
                 }
-                for (Residue residue : residueList) {
+                /*for (Residue residue : residueList) {
                     if (residue instanceof MultiResidue) {
                         ((MultiResidue) residue).setDefaultResidue();
                         residue.reInitOriginalAtomList();
                     }
-                }
+                }*/
             } else {
                 logIfMaster(String.format(" Empty box: no residues found."));
             }
@@ -3547,7 +3546,7 @@ public class RotamerOptimization implements Terminatable {
                 case 3:
                     // Residue coordinates defined by any atomic coordinate in any rotamer.
                     //originalCoordinates = storeSingleCoordinates(residuei, true);
-                    ResidueState origState = residuei.storeCoordinates();
+                    ResidueState origState = residuei.storeState();
                     contained = new boolean[numCells];
                     fill(contained, false);
                     Rotamer[] rotamersi = residuei.getRotamers();
@@ -3565,7 +3564,7 @@ public class RotamerOptimization implements Terminatable {
                             }
                         }
                     }
-                    residuei.revertCoordinates(origState);
+                    residuei.revertState(origState);
                     //revertSingleResidueCoordinates(residuei, originalCoordinates, true);
                     break;
                 case 1:
@@ -3859,7 +3858,7 @@ public class RotamerOptimization implements Terminatable {
             x = new double[nVar * 3];
         }
         try {
-            potential.getCoordinates(x);
+            x = potential.getCoordinates(x);
             return potential.energy(x);
         } catch (ArithmeticException ex) {
             logger.warning(ex.getMessage());
@@ -3878,7 +3877,7 @@ public class RotamerOptimization implements Terminatable {
         if (catchError) {
             return currentEnergy();
         }
-        potential.getCoordinates(x);
+        x = potential.getCoordinates(x);
         return potential.energy(x);
     }
 
@@ -4258,7 +4257,7 @@ public class RotamerOptimization implements Terminatable {
             }
             // Reset the residue to its default conformation.
             if (residue.getResidueType() == NA) {
-                residue.revertCoordinates(origCoordinates[i]);
+                residue.revertState(origCoordinates[i]);
                 //revertSingleResidueCoordinates(residue, originalAtomicCoordinates[i]);
             } else {
                 RotamerLibrary.applyRotamer(residue, rotamers[0]);
@@ -4324,7 +4323,7 @@ public class RotamerOptimization implements Terminatable {
                     }
                     // Reset the residue to its default conformation.
                     if (residuej.getResidueType() == NA) {
-                        residuej.revertCoordinates(origCoordinates[j]);
+                        residuej.revertState(origCoordinates[j]);
                         //revertSingleResidueCoordinates(residuej, originalAtomicCoordinates[j]);
                     } else {
                         RotamerLibrary.applyRotamer(residuej, rotamersj[0]);
@@ -4335,7 +4334,7 @@ public class RotamerOptimization implements Terminatable {
             }
             // Reset the residue to its default conformation.
             if (residuei.getResidueType() == NA) {
-                residuei.revertCoordinates(origCoordinates[i]);
+                residuei.revertState(origCoordinates[i]);
                 //revertSingleResidueCoordinates(residuei, originalAtomicCoordinates[i]);
             } else {
                 RotamerLibrary.applyRotamer(residuei, rotamersi[0]);
@@ -4578,7 +4577,7 @@ public class RotamerOptimization implements Terminatable {
                                 }
                                 // Reset the residue to its default conformation.
                                 if (residuek.getResidueType() == NA) {
-                                    residuek.revertCoordinates(origCoordinates[k]);
+                                    residuek.revertState(origCoordinates[k]);
                                     //revertSingleResidueCoordinates(residuek, originalAtomicCoordinates[k]);
                                 } else {
                                     RotamerLibrary.applyRotamer(residuek, rotamersk[0]);
@@ -4588,7 +4587,7 @@ public class RotamerOptimization implements Terminatable {
                         }
                         // Reset the residue to its default conformation.
                         if (residuej.getResidueType() == NA) {
-                            residuej.revertCoordinates(origCoordinates[j]);
+                            residuej.revertState(origCoordinates[j]);
                             //revertSingleResidueCoordinates(residuej, originalAtomicCoordinates[j]);
                         } else {
                             RotamerLibrary.applyRotamer(residuej, rotamersj[0]);
@@ -4598,7 +4597,7 @@ public class RotamerOptimization implements Terminatable {
                 }
                 // Reset the residue to its default conformation.
                 if (residuei.getResidueType() == NA) {
-                    residuei.revertCoordinates(origCoordinates[i]);
+                    residuei.revertState(origCoordinates[i]);
                     //revertSingleResidueCoordinates(residuei, originalAtomicCoordinates[i]);
                 } else {
                     RotamerLibrary.applyRotamer(residuei, rotamersi[0]);
@@ -7576,9 +7575,10 @@ public class RotamerOptimization implements Terminatable {
                     Residue resi = residues[i];
                     Rotamer roti = resi.getRotamers()[ri];
                     //double[][] resiOriginalCoordinates = (resi.getResidueType() == NA ? storeSingleCoordinates(resi) : null);
-                    ResidueState resiOriginal = (resi.getResidueType() == NA ? resi.storeCoordinates() : null);
+                    ResidueState resiOriginal = (resi.getResidueType() == NA ? resi.storeState() : null);
                     turnOnAtoms(resi);
                     RotamerLibrary.applyRotamer(resi, roti);
+                    algorithmListener.algorithmUpdate(molecularAssembly);
                     if (writeVideo) {
                         videoWriter.write(String.format("%03d-%03d", i, ri));
 //                        if (videoWriter.skipEnergies) {
@@ -7604,7 +7604,7 @@ public class RotamerOptimization implements Terminatable {
                     logger.info(String.format(" Self %7s %-2d: %16.8f", resi, ri, selfEnergy));
                     if (resi.getResidueType() == NA) {
                         //revertSingleResidueCoordinates(resi, resiOriginalCoordinates);
-                        resi.revertCoordinates(resiOriginal);
+                        resi.revertState(resiOriginal);
                     } else {
                         RotamerLibrary.applyRotamer(resi, resi.getRotamers()[0]);
                     }
@@ -7727,14 +7727,15 @@ public class RotamerOptimization implements Terminatable {
                     Rotamer rotj = resj.getRotamers()[rj];
                     /*double[][] resiOriginalCoordinates = (resi.getResidueType() == NA ? storeSingleCoordinates(resi) : null);
                      double[][] resjOriginalCoordinates = (resj.getResidueType() == NA ? storeSingleCoordinates(resj) : null);*/
-                    ResidueState resiOriginal = resi.getResidueType() == NA ? resi.storeCoordinates() : null;
-                    ResidueState resjOriginal = resj.getResidueType() == NA ? resj.storeCoordinates() : null;
+                    ResidueState resiOriginal = resi.getResidueType() == NA ? resi.storeState() : null;
+                    ResidueState resjOriginal = resj.getResidueType() == NA ? resj.storeState() : null;
 
                     // turn on, apply rot
                     turnOnAtoms(resi);
                     turnOnAtoms(resj);
                     RotamerLibrary.applyRotamer(resi, roti);
                     RotamerLibrary.applyRotamer(resj, rotj);
+                    algorithmListener.algorithmUpdate(molecularAssembly);
                     if (writeVideo) {
                         videoWriter.write(String.format("%03d-%03d_%03d-%03d", i, ri, j, rj));
 //                        if (videoWriter.skipEnergies) {
@@ -7779,13 +7780,13 @@ public class RotamerOptimization implements Terminatable {
                     // move back, turn off
                     if (resi.getResidueType() == NA) {
                         //revertSingleResidueCoordinates(resi, resiOriginalCoordinates);
-                        resi.revertCoordinates(resiOriginal);
+                        resi.revertState(resiOriginal);
                     } else {
                         RotamerLibrary.applyRotamer(resi, resi.getRotamers()[0]);
                     }
                     if (resj.getResidueType() == NA) {
                         //revertSingleResidueCoordinates(resj, resjOriginalCoordinates);
-                        resj.revertCoordinates(resjOriginal);
+                        resj.revertState(resjOriginal);
                     } else {
                         RotamerLibrary.applyRotamer(resj, resj.getRotamers()[0]);
                     }
@@ -7920,9 +7921,9 @@ public class RotamerOptimization implements Terminatable {
                     /*double[][] resiOriginalCoordinates = (resi.getResidueType() == NA ? storeSingleCoordinates(resi) : null);
                      double[][] resjOriginalCoordinates = (resj.getResidueType() == NA ? storeSingleCoordinates(resj) : null);
                      double[][] reskOriginalCoordinates = (resk.getResidueType() == NA ? storeSingleCoordinates(resk) : null);*/
-                    ResidueState resiOriginal = resi.getResidueType() == NA ? resi.storeCoordinates() : null;
-                    ResidueState resjOriginal = resj.getResidueType() == NA ? resj.storeCoordinates() : null;
-                    ResidueState reskOriginal = resk.getResidueType() == NA ? resk.storeCoordinates() : null;
+                    ResidueState resiOriginal = resi.getResidueType() == NA ? resi.storeState() : null;
+                    ResidueState resjOriginal = resj.getResidueType() == NA ? resj.storeState() : null;
+                    ResidueState reskOriginal = resk.getResidueType() == NA ? resk.storeState() : null;
 
                     int indexOfI = allResiduesList.indexOf(resi);
                     int indexOfJ = allResiduesList.indexOf(resj);
@@ -7953,6 +7954,7 @@ public class RotamerOptimization implements Terminatable {
                             RotamerLibrary.applyRotamer(resi, roti);
                             RotamerLibrary.applyRotamer(resj, rotj);
                             RotamerLibrary.applyRotamer(resk, rotk);
+                            algorithmListener.algorithmUpdate(molecularAssembly);
                             if (writeVideo) {
                                 videoWriter.write(String.format("%03d-%03d_%03d-%03d_%03d-%03d", i, ri, j, rj, k, rk));
 //                                if (videoWriter.skipEnergies) {
@@ -7978,19 +7980,19 @@ public class RotamerOptimization implements Terminatable {
                             // revert rotamers, turn off
                             if (resi.getResidueType() == NA) {
                                 //revertSingleResidueCoordinates(resi, resiOriginalCoordinates);
-                                resi.revertCoordinates(resiOriginal);
+                                resi.revertState(resiOriginal);
                             } else {
                                 RotamerLibrary.applyRotamer(resi, resi.getRotamers()[0]);
                             }
                             if (resj.getResidueType() == NA) {
                                 //revertSingleResidueCoordinates(resj, resjOriginalCoordinates);
-                                resj.revertCoordinates(resjOriginal);
+                                resj.revertState(resjOriginal);
                             } else {
                                 RotamerLibrary.applyRotamer(resj, resj.getRotamers()[0]);
                             }
                             if (resk.getResidueType() == NA) {
                                 //revertSingleResidueCoordinates(resk, reskOriginalCoordinates);
-                                resk.revertCoordinates(reskOriginal);
+                                resk.revertState(reskOriginal);
                             } else {
                                 RotamerLibrary.applyRotamer(resk, resk.getRotamers()[0]);
                             }
@@ -8090,10 +8092,10 @@ public class RotamerOptimization implements Terminatable {
                     Rotamer rotk = resk.getRotamers()[rk];
                     Residue resl = residues[l];
                     Rotamer rotl = resl.getRotamers()[rl];
-                    ResidueState resiOriginalCoordinates = (resi.getResidueType() == NA ? resi.storeCoordinates() : null);
-                    ResidueState resjOriginalCoordinates = (resj.getResidueType() == NA ? resj.storeCoordinates() : null);
-                    ResidueState reskOriginalCoordinates = (resk.getResidueType() == NA ? resk.storeCoordinates() : null);
-                    ResidueState reslOriginalCoordinates = (resl.getResidueType() == NA ? resl.storeCoordinates() : null);
+                    ResidueState resiOriginalCoordinates = (resi.getResidueType() == NA ? resi.storeState() : null);
+                    ResidueState resjOriginalCoordinates = (resj.getResidueType() == NA ? resj.storeState() : null);
+                    ResidueState reskOriginalCoordinates = (resk.getResidueType() == NA ? resk.storeState() : null);
+                    ResidueState reslOriginalCoordinates = (resl.getResidueType() == NA ? resl.storeState() : null);
                     /*double[][] resiOriginalCoordinates = (resi.getResidueType() == NA ? storeSingleCoordinates(resi) : null);
                      double[][] resjOriginalCoordinates = (resj.getResidueType() == NA ? storeSingleCoordinates(resj) : null);
                      double[][] reskOriginalCoordinates = (resk.getResidueType() == NA ? storeSingleCoordinates(resk) : null);
@@ -8137,6 +8139,7 @@ public class RotamerOptimization implements Terminatable {
                             RotamerLibrary.applyRotamer(resj, rotj);
                             RotamerLibrary.applyRotamer(resk, rotk);
                             RotamerLibrary.applyRotamer(resl, rotl);
+                    algorithmListener.algorithmUpdate(molecularAssembly);
 
                             // compute quad and broadcast it
                             if (writeVideo || skipEnergies) {
@@ -8191,25 +8194,25 @@ public class RotamerOptimization implements Terminatable {
 
                             // revert rotamers, turn off
                             if (resi.getResidueType() == NA) {
-                                resi.revertCoordinates(resiOriginalCoordinates);
+                                resi.revertState(resiOriginalCoordinates);
                                 //revertSingleResidueCoordinates(resi, resiOriginalCoordinates);
                             } else {
                                 RotamerLibrary.applyRotamer(resi, resi.getRotamers()[0]);
                             }
                             if (resj.getResidueType() == NA) {
-                                resj.revertCoordinates(resjOriginalCoordinates);
+                                resj.revertState(resjOriginalCoordinates);
                                 //revertSingleResidueCoordinates(resj, resjOriginalCoordinates);
                             } else {
                                 RotamerLibrary.applyRotamer(resj, resj.getRotamers()[0]);
                             }
                             if (resk.getResidueType() == NA) {
-                                resk.revertCoordinates(reskOriginalCoordinates);
+                                resk.revertState(reskOriginalCoordinates);
                                 //revertSingleResidueCoordinates(resk, reskOriginalCoordinates);
                             } else {
                                 RotamerLibrary.applyRotamer(resk, resk.getRotamers()[0]);
                             }
                             if (resl.getResidueType() == NA) {
-                                resl.revertCoordinates(reslOriginalCoordinates);
+                                resl.revertState(reslOriginalCoordinates);
                                 //revertSingleResidueCoordinates(resl, reslOriginalCoordinates);
                             } else {
                                 RotamerLibrary.applyRotamer(resl, resl.getRotamers()[0]);

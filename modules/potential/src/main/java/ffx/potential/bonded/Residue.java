@@ -231,11 +231,13 @@ public class Residue extends MSGroup implements Group {
         assignResidueType();
         finalize(true, forceField);
     }
-
-    /*public Rotamer[] getRotamers(Residue residue) {
-        return RotamerLibrary.getRotamers(residue);
-    }*/
     
+    /**
+     * Gets the Rotamers for this residue, potentially incorporating the original
+     * coordinates if RotamerLibrary's original coordinates rotamer flag has been 
+     * set.
+     * @return An array of Rotamer.
+     */
     public Rotamer[] getRotamers() {
         if (RotamerLibrary.getUsingOrigCoordsRotamer()) {
             Rotamer[] libRotamers = RotamerLibrary.getRotamers(this);
@@ -245,16 +247,16 @@ public class Residue extends MSGroup implements Group {
             int nRots = libRotamers.length;
             Rotamer[] rotamers = new Rotamer[nRots + 1];
             if (originalRotamer == null) {
-                double[][] origCoordinates = storeCoordinateArray();
+                ResidueState origState = storeState();
                 double[] chi = RotamerLibrary.measureRotamer(this, false);
                 switch (residueType) {
                     case AA:
-                        AminoAcid3 aa = AminoAcid3.valueOf(getName());
-                        originalRotamer = new Rotamer(aa, origCoordinates, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0);
+                        AminoAcid3 aa3 = AminoAcid3.valueOf(getName());
+                        originalRotamer = new Rotamer(aa3, origState, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0);
                         break;
                     case NA:
-                        NucleicAcid3 na = NucleicAcid3.valueOf(getName());
-                        originalRotamer = new Rotamer(na, origCoordinates, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0, chi[4], 0, chi[5], 0);
+                        NucleicAcid3 na3 = NucleicAcid3.valueOf(getName());
+                        originalRotamer = new Rotamer(na3, origState, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0, chi[4], 0, chi[5], 0);
                         break;
                     default:
                         originalRotamer = null;
@@ -408,11 +410,11 @@ public class Residue extends MSGroup implements Group {
         return atom;
     }
 
-    public ResidueState storeCoordinates() {
+    public ResidueState storeState() {
         return new ResidueState(this, this);
     }
 
-    public void revertCoordinates(ResidueState state) {
+    public void revertState(ResidueState state) {
         List<Atom> atomList = getAtomList();
         for (Atom atom : atomList) {
             atom.moveTo(state.getAtomCoords(atom));

@@ -77,6 +77,7 @@ import org.jdesktop.j3d.loaders.vrml97.VrmlLoader;
 import org.jdesktop.j3d.loaders.vrml97.VrmlScene;
 
 import ffx.crystal.Crystal;
+import ffx.numerics.Potential;
 import ffx.numerics.VectorMath;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
@@ -140,6 +141,7 @@ public class MolecularAssembly extends MSGroup implements Structure {
     private File file;
     protected ForceField forceField;
     private ForceFieldEnergy potentialEnergy;
+    private final List<Potential> potentials;
     private Vector3d offset;
     private int cycles = 1;
     private int currentCycle = 1;
@@ -176,13 +178,13 @@ public class MolecularAssembly extends MSGroup implements Structure {
     private String pdbCode;
     private PDBHeader pdbHeader;
     private boolean nmrFlag = false;
-    List<Map<String, Integer>> connections;
-    List<SSBond> ssBonds;
+    private List<Map<String, Integer>> connections;
+    private List<SSBond> ssBonds;
     private long hibID;
     private List<Site> sites;
     private boolean biologicalAssembly = false;
-    List<DBRef> dbRefs;
-    PDBCrystallographicInfo pdbCrystalInfo;
+    private List<DBRef> dbRefs;
+    private PDBCrystallographicInfo pdbCrystalInfo;
 
     // Constructors
     /**
@@ -197,6 +199,7 @@ public class MolecularAssembly extends MSGroup implements Structure {
         add(molecules);
         add(ions);
         add(water);
+        potentials = new ArrayList<>();
     }
 
     /**
@@ -208,6 +211,7 @@ public class MolecularAssembly extends MSGroup implements Structure {
      */
     public MolecularAssembly(String name, MSNode Polymers) {
         super(name, Polymers);
+        potentials = new ArrayList<>();
     }
 
     /**
@@ -227,7 +231,11 @@ public class MolecularAssembly extends MSGroup implements Structure {
      * @param potentialEnergy a {@link ffx.potential.ForceFieldEnergy} object.
      */
     public void setPotential(ForceFieldEnergy potentialEnergy) {
+        if (this.potentialEnergy != null) {
+            potentials.remove(this.potentialEnergy);
+        }
         this.potentialEnergy = potentialEnergy;
+        potentials.add(potentialEnergy);
     }
 
     /**
@@ -238,6 +246,42 @@ public class MolecularAssembly extends MSGroup implements Structure {
      */
     public ForceFieldEnergy getPotentialEnergy() {
         return potentialEnergy;
+    }
+    
+    public List<Potential> getPotentials() {
+        return new ArrayList<>(potentials);
+    }
+    
+    public void addPotential(Potential potential) {
+        potentials.add(potential);
+    }
+    
+    public boolean removePotential(Potential potential) {
+        return potentials.remove(potential);
+    }
+    
+    public void reinitPotentials() {
+        List<Potential> pots = getPotentials();
+        
+        // Remove potentialEnergy from the list of potentials so that we can 
+        // guarantee it is the first to be re-initialized. Possibly unnecessary.
+        /*for (Iterator<Potential> iter = pots.iterator(); iter.hasNext();) {
+            Potential pot = iter.next();
+            if (pot == potentialEnergy) {
+                iter.remove();
+                break;
+            } else {
+                
+            logger.info(" A schlocky merc.");
+            }
+        }*/
+        
+        //potentialEnergy.reInit();
+        for (Potential pot : pots) {
+            if (pot != potentialEnergy) {
+                pot.reInit();
+            }
+        }
     }
 
     public ResiduePosition getResiduePosition(int residueNumber) {

@@ -85,10 +85,7 @@ import com.apporiented.algorithm.clustering.CompleteLinkageStrategy;
 import com.apporiented.algorithm.clustering.DefaultClusteringAlgorithm;
 import com.apporiented.algorithm.clustering.LinkageStrategy;
 import com.apporiented.algorithm.clustering.SingleLinkageStrategy;
-import edu.rit.pj.ParallelTeam;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -96,12 +93,20 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
-import org.apache.commons.io.FileUtils;
+import org.biojava.nbio.structure.Atom;
+import org.biojava.nbio.structure.Chain;
+import org.biojava.nbio.structure.GroupType;
 import org.biojava.nbio.structure.Structure;
 import org.biojava.nbio.structure.StructureException;
+import org.biojava.nbio.structure.StructureTools;
+import org.biojava.nbio.structure.align.StrucAligParameters;
 import org.biojava.nbio.structure.align.StructurePairAligner;
 import org.biojava.nbio.structure.align.pairwise.AlternativeAlignment;
 import org.biojava.nbio.structure.io.PDBFileReader;
+import ffx.potential.parsers.PDBFileMatcher;
+import java.util.logging.Level;
+import org.apache.commons.math3.util.FastMath;
+import org.biojava.nbio.structure.Group;
 
 /**
  *
@@ -115,7 +120,7 @@ public class ClusterStructures {
     private File[] files;
     private Structure[] structureCache;
     private ClusterDistanceFunction distFunction = ClusterDistanceFunction.RMSD;
-    private ClustAlg algorithm = ClustAlg.AV_LINK;
+    private Linkage linkage = Linkage.AV_LINK;
     private int numClusters = 0; // Over-rides rmsdCutoff if > 0.
     private int cacheSize = 1000;
     private int cacheStart = 0; // First structure to be cached.
@@ -124,10 +129,13 @@ public class ClusterStructures {
     private double rmsdCutoff = 1.0;
     private boolean copyFiles = true;
     private boolean parallel = true;
+    private boolean alignment = true;
+    // Biojava complains about aligning very short structures.
+    // private final boolean suppressLengthWarning;
     private final Path pwdPath;
     private String outputPrefix = "ffx_cluster_";
-    private File[] outputDirectories;
-    private Path[] outputPaths;
+    /*private File[] outputDirectories;
+    private Path[] outputPaths;*/
     
     /**
      * Default constructor for ClusterStructures
@@ -140,6 +148,15 @@ public class ClusterStructures {
             this.utils = new AlgorithmUtils();
         }
         pwdPath = generatePath(new File(""));
+        
+        /*String suppressLengthWarning = System.getProperty("cluster-suppressLengthWarning");
+        if (suppressLengthWarning != null) {
+            boolean suppress = Boolean.parseBoolean(suppressLengthWarning);
+            this.suppressLengthWarning = suppress;
+            logger.info(String.format(" (KEY) suppressLengthWarning: %b", this.suppressLengthWarning));
+        } else {
+            this.suppressLengthWarning = false;
+        }*/
     }
     
     /**
@@ -166,8 +183,8 @@ public class ClusterStructures {
         this.distFunction = distFunction;
     }
     
-    public void setAlgorithm(ClustAlg algorithm) {
-        this.algorithm = algorithm;
+    public void setLinkage(Linkage linkage) {
+        this.linkage = linkage;
     }
     
     public void setOutputDirectoryPrefix(String prefix) {
@@ -190,16 +207,20 @@ public class ClusterStructures {
         this.rmsdCutoff = rmsdCutoff;
     }
     
+    public void setAlignment(boolean alignment) {
+        this.alignment = alignment;
+    }
+    
     /**
      * Generate directories to output cluster info
      * @param nClusters Number of directories to generate.
      */
-    private void generateOutputDirectories(int nClusters) {
+    /*private void generateOutputDirectories(int nClusters) {
         File outDir = new File(String.format("%s%d", outputPrefix, 1));
         Path relPath = pwdPath;
-        outputDirectories = new File[nClusters];
-        outputPaths = new Path[nClusters];
-        if (outDir.exists()) {
+        /*outputDirectories = new File[nClusters];
+        outputPaths = new Path[nClusters];*/
+        /*if (outDir.exists()) {
             for (int i = 2; i < 1000; i++) {
                 outDir = new File(String.format("ffx_clusters_%d", i));
                 if (!outDir.exists()) {
@@ -217,10 +238,10 @@ public class ClusterStructures {
             String namei = String.format("%s%s_%d", relPath.toString(), outputPrefix, i);
             File diri = new File(namei);
             diri.mkdirs();
-            outputDirectories[i-1] = diri;
-            outputPaths[i-1] = pwdPath.relativize(generatePath(diri));
-        }
-    }
+            /*outputDirectories[i-1] = diri;
+            outputPaths[i-1] = pwdPath.relativize(generatePath(diri));*/
+        /*}
+    }*/
     
     /**
      * Gets the specified structure, either from the array of stored Structures,
@@ -244,6 +265,7 @@ public class ClusterStructures {
      */
     public List<Cluster> cluster() {
         cacheStart = nFiles - cacheSize;
+        structureCache = new Structure[cacheSize];
         List<Cluster> clusters;
         if (parallel) {
             clusters = clusterParallel();
@@ -252,10 +274,35 @@ public class ClusterStructures {
         }
         
         int nClusters = clusters.size();
-        generateOutputDirectories(nClusters);
+        
         for (int i = 0; i < nClusters; i++) {
             Cluster cluster = clusters.get(i);
-            String filename = String.format("%sffx_cluster_%d_summary", outputPaths[i].toString(), i);
+            String dirname = String.format("%s_%d", outputPrefix, i);
+            File directory = new File(dirname);
+            if (directory.exists()) {
+                logger.warning(String.format(" Directory already exists: skipping cluster! %s", directory.getName()));
+                continue;
+            }
+            if (!directory.mkdirs()) {
+                logger.warning(String.format(" Could not make directory %s", directory.getName()));
+                continue;
+            }
+            Path dirPath = generatePath(directory);
+            
+            List<Cluster> leafClusters = getLeafClusters(cluster);
+            int nLeaves = leafClusters.size();
+            assert (nLeaves == cluster.countLeafs()) : " Number of leaf clusters found != number from API.";
+            for (int j = 0; j < nLeaves; j++) {
+                Cluster leaf = leafClusters.get(j);
+                String name = leaf.getName();
+            }
+        }
+        
+        
+        /*generateOutputDirectories(nClusters);
+        for (int i = 0; i < nClusters; i++) {
+            Cluster cluster = clusters.get(i);
+            //String filename = String.format("%sffx_cluster_%d_summary", outputPaths[i].toString(), i);
             File summaryFile = new File(filename.concat(".txt"));
             
             for (int j = 1; j < 1000; j++) {
@@ -301,6 +348,11 @@ public class ClusterStructures {
                         + "file for cluster %d", i));
             }
         }
+        int count = 1;
+        for (Cluster cluster : clusters) {
+            
+            logger.info(String.format(" Saving cluster %d to directory %s", ))
+        }*/
         return clusters;
     }
     
@@ -334,7 +386,7 @@ public class ClusterStructures {
         double[][] rmsdDistances = new double[nFiles][nFiles];
         PDBFileReader fileReader = new PDBFileReader();
         LinkageStrategy ls;
-        switch (algorithm) {
+        switch (linkage) {
             case CLINK:
                 ls = new CompleteLinkageStrategy();
                 break;
@@ -360,7 +412,8 @@ public class ClusterStructures {
             }
         }
         
-        StructurePairAligner aligner = new StructurePairAligner();
+        StructurePairAligner aligner = generateAligner(fileReader);
+        
         for (int i = 0; i < nFiles; i++) {
             Structure structI = null;
             try {
@@ -379,19 +432,13 @@ public class ClusterStructures {
                 }
                 
                 try {
-                    aligner.align(structI, structJ);
+                    double minRMSD = getRMSD(structI, structJ, aligner);
+                    rmsdDistances[i][j] = minRMSD;
+                    rmsdDistances[j][i] = minRMSD;
                 } catch (StructureException ex) {
                     logger.severe(String.format(" Exception aligning structures "
                             + "%d and %d: %s", i, j, ex.toString()));
                 }
-                AlternativeAlignment[] alignments = aligner.getAlignments();
-                double minRMSD = alignments[0].getRmsd();
-                for (int k = 1; k < alignments.length; k++) {
-                    double rmsdK = alignments[k].getRmsd();
-                    minRMSD = rmsdK < minRMSD ? rmsdK : minRMSD;
-                }
-                rmsdDistances[i][j] = minRMSD;
-                rmsdDistances[j][i] = minRMSD;
             }
         }
         
@@ -404,23 +451,34 @@ public class ClusterStructures {
             subClusters = new ArrayList<>(Arrays.asList(cluster));
             
             while (nClusters < numClusters) {
-                double maxDist = subClusters.get(0).getDistance();
+                double maxDist = subClusters.get(0).getDistanceValue();
                 Cluster maxCluster = subClusters.get(0);
                 
                 for (Cluster subcluster : subClusters) {
-                    double dist = subcluster.getDistance();
+                    if (subcluster.isLeaf()) {
+                        continue;
+                    }
+                    double dist = subcluster.getDistanceValue();
                     if (dist > maxDist) {
                         maxDist = dist;
                         maxCluster = subcluster;
                     }
                 }
                 
-                List<Cluster> newClusters = maxCluster.getChildren();
-                nClusters += (newClusters.size() - 1);
-                subClusters.addAll(newClusters);
-                subClusters.remove(maxCluster);
+                List<Cluster> childClusters = maxCluster.getChildren();
+                List<Cluster> newClusters = new ArrayList<>(childClusters.size());
+                for (Cluster subCluster : childClusters) {
+                    if (subCluster != null) {
+                        newClusters.add(subCluster);
+                    }
+                }
+                if (newClusters.isEmpty()) {
+                } else {
+                    nClusters += (newClusters.size() - 1);
+                    subClusters.addAll(newClusters);
+                    subClusters.remove(maxCluster);
+                }
             }
-            logger.severe(" Num clusters not implemented yet.");
         } else {
             subClusters = getSubclusters(cluster, rmsdCutoff);
             nClusters = subClusters.size();
@@ -431,6 +489,75 @@ public class ClusterStructures {
         return subClusters;
     }
     
+    private double getRMSD(Structure str1, Structure str2, StructurePairAligner aligner) throws StructureException {
+        if (alignment) {
+            aligner.align(str1, str2);
+            AlternativeAlignment[] alignments = aligner.getAlignments();
+            double minRMSD = alignments[0].getRmsd();
+            for (int k = 1; k < alignments.length; k++) {
+                double rmsdK = alignments[k].getRmsd();
+                minRMSD = rmsdK < minRMSD ? rmsdK : minRMSD;
+            }
+            return minRMSD;
+        } else {
+            boolean ca = (distFunction == ClusterDistanceFunction.CA_RMSD);
+            return getNaiveRMSD(str1, str2, ca);
+        }
+    }
+    
+    /**
+     * Checks for a few things, primarily related to sequence length, before
+     * returning a StructurePairAligner.
+     * @param fileReader Necessary to check a test Structure.
+     * @return A configured StructurePairAligner.
+     */
+    private StructurePairAligner generateAligner(PDBFileReader fileReader) {
+        StructurePairAligner aligner = new StructurePairAligner();
+        if (false) {
+            StrucAligParameters params = new StrucAligParameters();
+            try {
+                Structure lastStruct = accessStructure(nFiles - 1, fileReader);
+                int nRes = getNumResidues(lastStruct);
+                
+                params.setFragmentLength(nRes-1);
+                params.setDiagonalDistance(nRes-2);
+                params.setDiagonalDistance2(nRes-2);
+                aligner.setParams(params);
+            } catch (IOException ex) {
+                logger.severe(String.format(" IOException %s in accessing last structure", ex.toString()));
+            }
+        } else if (alignment == true) {
+            try {
+                Structure lastStruct = accessStructure(nFiles - 1, fileReader);
+                int nRes = getNumResidues(lastStruct);
+                
+                if (nRes <= 10) {
+                    logger.warning(" Less than 11 residues in final structure: "
+                            + "may need to set -Dcluster-suppressLengthWarning=true "
+                            + "to avoid fatal alignment errors");
+                }
+            } catch (IOException ex) {
+                logger.severe(String.format(" IOException %s in accessing last structure", ex.toString()));
+            }
+        }
+        return aligner;
+    }
+    
+    private int getNumResidues(Structure structure) {
+        int nRes = 0;
+        for (Chain chain : structure.getChains()) {
+            for (Group group : chain.getAtomGroups()) {
+                GroupType gtype = group.getType();
+                if (gtype.equals(GroupType.AMINOACID) || gtype.equals(GroupType.NUCLEOTIDE)) {
+                    ++nRes;
+                }
+            }
+            //nRes += chain.getAtomGroups(GroupType.AMINOACID).size();
+            //nRes += chain.getAtomGroups(GroupType.NUCLEOTIDE).size();
+        }
+        return nRes;
+    }
+    
     /**
      * Recursively returns all subclusters in this Cluster with a distance greater
      * than RMSD cutoff.
@@ -439,7 +566,7 @@ public class ClusterStructures {
      * @return 
      */
     private List<Cluster> getSubclusters(Cluster cluster, double cutoff) {
-        if (cluster.getDistance() < cutoff || cluster.isLeaf()) {
+        if (cluster.getDistanceValue() < cutoff || cluster.isLeaf()) {
             return Arrays.asList(cluster);
         } else {
             List<Cluster> clusters = new ArrayList<>();
@@ -466,6 +593,49 @@ public class ClusterStructures {
             return clusters;
         }
     }
+    
+    /**
+     * Calculates RMSD based on current atomic locations purely by matching equivalent
+     * Atoms. Does not do any alignment, is not guaranteed to be robust to any 
+     * chemical differences (or even just different file formats).
+     * @param str1
+     * @param str2
+     * @param ca Whether to use CA RMSD instead of all-atom RMSD.
+     * @return RMSD double-precision atomic RMSD.
+     */
+    private double getNaiveRMSD(Structure str1, Structure str2, boolean ca) {
+        Atom[] ats1;
+        Atom[] ats2;
+        if (ca) {
+            ats1 = StructureTools.getAtomCAArray(str1);
+            ats2 = StructureTools.getAtomCAArray(str2);
+        } else {
+            ats1 = StructureTools.getAllAtomArray(str1);
+            ats2 = StructureTools.getAllAtomArray(str2);
+        }
+        // Will be based on number of matching atoms, so init to 0.
+        int nAtoms = 0;
+        double sqDist = 0;
+        for (Atom atom1 : ats1) {
+            try {
+                Atom atom2 = PDBFileMatcher.getMatchingAtom(atom1, str2, true);
+                sqDist += PDBFileMatcher.getSqDistance(atom1, atom2);
+                ++nAtoms;
+            } catch (IllegalArgumentException ex) {
+                // Generally, want to silently ignore this.
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.log(Level.FINE, String.format(" Could not match at1, "
+                            + "str2 %s %s", atom1.toString(), str2.toString()));
+                }
+            }
+        }
+        if (nAtoms == 0) {
+            throw new IllegalArgumentException(String.format(" No matching atoms "
+                    + "were found between %s and %s", str1.toString(), str2.toString()));
+        }
+        sqDist /= nAtoms;
+        return FastMath.sqrt(sqDist);
+    }
 
     /**
      * Utility method which attempts to generate a file Path using the canonical
@@ -488,7 +658,7 @@ public class ClusterStructures {
         RMSD, CA_RMSD, DIHEDRALS, BACKBONE_DIHEDRALS
     }
     
-    public enum ClustAlg {
+    public enum Linkage {
 
         /**
          * All algorithms start with each point a cluster, and then join the

@@ -171,7 +171,7 @@ public class NQFlipper {
                 
                 double initialEnergy = currentEnergy();
                 logger.info(String.format(" Initial energy for %7s: %16.8f", residue, initialEnergy));
-                ResidueState orig = residue.storeCoordinates();
+                ResidueState orig = residue.storeState();
                 
                 try {
                     applyIdealGeometry(residue, resName, false);
@@ -182,28 +182,28 @@ public class NQFlipper {
                 }
                 double origGeoEnergy = currentEnergy();
                 logger.info(String.format(" Ideal-geometry energy for %7s: %16.8f", residue, origGeoEnergy));
-                ResidueState origGeo = residue.storeCoordinates();
+                ResidueState origGeo = residue.storeState();
                 
                 applyIdealGeometry(residue, resName, true);
                 double flippedEnergy = currentEnergy();
                 logger.info(String.format(" Flipped energy for %7s: %16.8f", residue, flippedEnergy));
-                ResidueState flipped = residue.storeCoordinates();
+                ResidueState flipped = residue.storeState();
                 
                 if (flippedEnergy < initialEnergy && flippedEnergy < origGeoEnergy) {
                     logger.info(String.format(" Flipping %s with flipped energy %16.8f "
                             + "< %16.8f", residue.toString(), flippedEnergy, initialEnergy));
                     applyIdealGeometry(residue, resName, true);
-                    residue.revertCoordinates(flipped);
+                    residue.revertState(flipped);
                 } else if (origGeoEnergy < initialEnergy) {
                     logger.info(String.format(" Applying ideal geometry to %s with "
                             + "energy %16.8f < %16.8f", residue, origGeoEnergy, initialEnergy));
                     applyIdealGeometry(residue, resName, false);
-                    residue.revertCoordinates(origGeo);
+                    residue.revertState(origGeo);
                 } else {
                     logger.info(String.format(" Retaining conformation for %s "
                             + "with energy %16.8f", residue.toString(), initialEnergy));
                     originalResidues.add(residue);
-                    residue.revertCoordinates(orig);
+                    residue.revertState(orig);
                 }
             }
         }
@@ -346,7 +346,7 @@ public class NQFlipper {
                 double initialEnergy = currentEnergy();
                 logger.info(String.format(" Initial energy for %7s: %16.8f", residue, initialEnergy));
                 
-                ResidueState orig = residue.storeCoordinates();
+                ResidueState orig = residue.storeState();
                 try {
                     flipRes(residue);
                 } catch (IllegalArgumentException ex) {
@@ -364,7 +364,7 @@ public class NQFlipper {
                     logger.info(String.format(" Retaining conformation for %s "
                             + "with flipped energy %16.8f > %16.8f", residue.toString(), 
                             flippedEnergy, initialEnergy));
-                    residue.revertCoordinates(orig);
+                    residue.revertState(orig);
                     originalResidues.add(residue);
                 }
             }

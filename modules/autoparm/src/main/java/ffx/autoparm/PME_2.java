@@ -6629,4 +6629,9 @@ public class PME_2 implements Potential {
 
     public void setEnergyTermState(STATE state) {
     }
+    
+    @Override
+    public void reInit() {
+        //logger.warning(String.format(" No reInit method defined for %s", PME_2.class.toString()));
+    }
 }

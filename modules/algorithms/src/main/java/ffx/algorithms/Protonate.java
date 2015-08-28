@@ -48,13 +48,12 @@ import static org.apache.commons.math3.util.FastMath.random;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.BondedUtils;
-import static ffx.potential.bonded.BondedUtils.buildHydrogen;
-import static ffx.potential.bonded.BondedUtils.intxyz;
 import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Residue.ResidueType;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
+import ffx.potential.bonded.ResidueState;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.parameters.ForceField;
@@ -62,7 +61,6 @@ import ffx.potential.parsers.PDBFilter;
 import java.io.File;
 import java.util.HashMap;
 import java.util.List;
-import java.util.logging.Level;
 import org.apache.commons.io.FilenameUtils;
 
 /**
@@ -620,16 +618,11 @@ public class Protonate implements MonteCarloListener {
         // Save coordinates so we can return to them if move is rejected.
         Residue residue = targetMulti.getActive();
         ArrayList<Atom> atoms = residue.getAtomList();
-        double[][] origCoordinates = new double[atoms.size()][];
-        for (int i = 0; i < atoms.size(); i++) {
-            Atom atomi = atoms.get(i);
-            origCoordinates[i] = new double[atomi.getXYZ().length];
-            atomi.getXYZ(origCoordinates[i]);
-        }
+        ResidueState origState = residue.storeState();
         double chi[] = new double[4];
         RotamerLibrary.measureAARotamer(residue, chi, false);
         AminoAcid3 aa = AminoAcid3.valueOf(residue.getName());
-        Rotamer origCoordsRotamer = new Rotamer(aa, origCoordinates, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0);
+        Rotamer origCoordsRotamer = new Rotamer(aa, origState, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0);
         // Select a new rotamer and swap to it.
         //Rotamer rotamers[] = residue.getRotamers();
         Rotamer[] rotamers = residue.getRotamers();
@@ -709,16 +702,11 @@ public class Protonate implements MonteCarloListener {
         // Change rotamer state, but first save coordinates so we can return to them if rejected.
         Residue residue = targetMulti.getActive();
         ArrayList<Atom> atoms = residue.getAtomList();
-        double[][] origCoordinates = new double[atoms.size()][];
-        for (int i = 0; i < atoms.size(); i++) {
-            Atom atomi = atoms.get(i);
-            origCoordinates[i] = new double[atomi.getXYZ().length];
-            atomi.getXYZ(origCoordinates[i]);
-        }
+        ResidueState origState = residue.storeState();
         double chi[] = new double[4];
         RotamerLibrary.measureAARotamer(residue, chi, false);
         AminoAcid3 aa = AminoAcid3.valueOf(residue.getName());
-        Rotamer origCoordsRotamer = new Rotamer(aa, origCoordinates, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0);
+        Rotamer origCoordsRotamer = new Rotamer(aa, origState, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0);
         
         // Swap to the new rotamer.
         //Rotamer rotamers[] = residue.getRotamers();

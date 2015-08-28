@@ -88,7 +88,7 @@ public class RotamerLibrary {
     private static ProteinLibrary proteinLibrary = ProteinLibrary.PonderAndRichards;
     // Can easily add an naSolvationLibrary when we want to do NA sequence optimization.
     private static boolean useOrigCoordsRotamer = false;
-    private static final HashMap<Residue, Rotamer[]> origCoordsCache = new HashMap<>();
+    //private static final HashMap<Residue, Rotamer[]> origCoordsCache = new HashMap<>();
 
     /**
      * Set the protein rotamer library to use.
@@ -134,7 +134,8 @@ public class RotamerLibrary {
         switch (residue.getResidueType()) {
             case AA:
                 AminoAcid3 aa = AminoAcid3.valueOf(residue.getName());
-                if (useOrigCoordsRotamer) {
+                return getRotamers(aa);
+                /*if (useOrigCoordsRotamer) {
                     if (origCoordsCache.containsKey(residue)) {
                         return origCoordsCache.get(residue);
                     }
@@ -143,26 +144,21 @@ public class RotamerLibrary {
                         return null;
                     }
                     List<Rotamer> allRotamers = new ArrayList<>(Arrays.asList(usual));
-                    ArrayList<Atom> atoms = residue.getAtomList();
-                    double[][] origCoordinates = new double[atoms.size()][];
-                    for (int i = 0; i < atoms.size(); i++) {
-                        Atom atomi = atoms.get(i);
-                        origCoordinates[i] = new double[atomi.getXYZ().length];
-                        atomi.getXYZ(origCoordinates[i]);
-                    }
+                    ResidueState originalState = residue.storeState();
                     double chi[] = new double[4];
                     measureAARotamer(residue, chi, false);
-                    Rotamer origCoordsRotamer = new Rotamer(aa, origCoordinates, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0);
+                    Rotamer origCoordsRotamer = new Rotamer(aa, originalState, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0);
                     allRotamers.add(0, origCoordsRotamer);
                     Rotamer ret[] = allRotamers.toArray(new Rotamer[1]);
                     origCoordsCache.put(residue, ret);
                     return ret;
                 } else {
                     return getRotamers(aa);
-                }
+                }*/
             case NA:
                 NucleicAcid3 na = NucleicAcid3.valueOf(residue.getName());
-                if (useOrigCoordsRotamer) {
+                return getRotamers(na);
+                /*if (useOrigCoordsRotamer) {
                     if (origCoordsCache.containsKey(residue)) {
                         return origCoordsCache.get(residue);
                     }
@@ -171,23 +167,17 @@ public class RotamerLibrary {
                         return null;
                     }
                     List<Rotamer> allRotamers = new ArrayList<>(Arrays.asList(usual));
-                    ArrayList<Atom> atoms = residue.getAtomList();
-                    double[][] origCoordinates = new double[atoms.size()][];
-                    for (int i = 0; i < atoms.size(); i++) {
-                        Atom atomi = atoms.get(i);
-                        origCoordinates[i] = new double[atomi.getXYZ().length];
-                        atomi.getXYZ(origCoordinates[i]);
-                    }
+                    ResidueState originalState = residue.storeState();
                     double chi[] = new double[7];
                     measureNARotamer(residue, chi, false);
-                    Rotamer origCoordsRotamer = new Rotamer(na, origCoordinates, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0, chi[4], 0, chi[5], 0, chi[6], 0);
+                    Rotamer origCoordsRotamer = new Rotamer(na, originalState, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0, chi[4], 0, chi[5], 0, chi[6], 0);
                     allRotamers.add(0, origCoordsRotamer);
                     Rotamer ret[] = allRotamers.toArray(new Rotamer[1]);
                     origCoordsCache.put(residue, ret);
                     return ret;
                 } else {
                     return getRotamers(na);
-                }
+                }*/
             default:
                 return null;
         }
@@ -1833,8 +1823,8 @@ public class RotamerLibrary {
      */
     public static void applyRotamer(Residue residue, Rotamer rotamer) {
         residue.setRotamer(rotamer);
-        if (rotamer.isCoordinates) {
-            applyCoordinates(residue, rotamer);
+        if (rotamer.isState) {
+            applyState(residue, rotamer);
         } else {
             switch (residue.getResidueType()) {
                 case AA:
@@ -1860,8 +1850,8 @@ public class RotamerLibrary {
      */
     public static void applyRotamer(Residue residue, Rotamer rotamer, boolean independent) {
         residue.setRotamer(rotamer);
-        if (rotamer.isCoordinates) {
-            applyCoordinates(residue, rotamer);
+        if (rotamer.isState) {
+            applyState(residue, rotamer);
         } else {
             switch (residue.getResidueType()) {
                 case AA:
@@ -1890,8 +1880,8 @@ public class RotamerLibrary {
      */
     public static void applyRotamer(Residue residue, Rotamer rotamer, double correctionThreshold) throws NACorrectionException {
         residue.setRotamer(rotamer);
-        if (rotamer.isCoordinates) {
-            applyCoordinates(residue, rotamer);
+        if (rotamer.isState) {
+            applyState(residue, rotamer);
         } else {
             switch (residue.getResidueType()) {
                 case AA:
@@ -1914,12 +1904,12 @@ public class RotamerLibrary {
      * @param residue Residue to apply Rotamer for
      * @param rotamer Coordinates-based Rotamer
      */
-    private static void applyCoordinates(Residue residue, Rotamer rotamer) {
-        ArrayList<Atom> atoms = residue.getAtomList();
-        double[][] coordinates = rotamer.atomicCoordinates;
-        for (int i = 0; i < atoms.size(); i++) {
-            Atom atom = atoms.get(i);
-            atom.moveTo(coordinates[i][0], coordinates[i][1], coordinates[i][2]);
+    private static void applyState(Residue residue, Rotamer rotamer) {
+        if (rotamer.isState) {
+            residue.revertState(rotamer.originalState);
+        } else {
+            logger.warning(String.format(" Attempting to apply a ResidueState for "
+                    + "a torsion-based rotamer %s for residue %s", rotamer, residue));
         }
     }
 
@@ -1936,7 +1926,9 @@ public class RotamerLibrary {
         AminoAcid3 name;
         if (residue instanceof MultiResidue) {
             name = rotamer.name;
-            ((MultiResidue) residue).setActiveResidue(name);
+            if (!((MultiResidue) residue).setActiveResidue(name)) {
+                logger.warning(String.format(" Could not set residue %s for multi-residue %s", name, residue));
+            }
         } else {
             name = AminoAcid3.valueOf(residue.getName());
         }
