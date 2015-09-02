@@ -8139,7 +8139,7 @@ public class RotamerOptimization implements Terminatable {
                             RotamerLibrary.applyRotamer(resj, rotj);
                             RotamerLibrary.applyRotamer(resk, rotk);
                             RotamerLibrary.applyRotamer(resl, rotl);
-                    algorithmListener.algorithmUpdate(molecularAssembly);
+                            algorithmListener.algorithmUpdate(molecularAssembly);
 
                             // compute quad and broadcast it
                             if (writeVideo || skipEnergies) {
