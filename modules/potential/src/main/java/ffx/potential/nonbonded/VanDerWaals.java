@@ -513,7 +513,7 @@ public class VanDerWaals implements MaskingInterface,
         for (int i = 0; i < nAtoms; i++) {
             Atom ai = atoms[i];
             assert (i == ai.xyzIndex - 1);
-            double xyz[] = ai.getXYZ();
+            double xyz[] = ai.getXYZ(null);
             int i3 = i * 3;
             coordinates[i3 + XX] = xyz[XX];
             coordinates[i3 + YY] = xyz[YY];
@@ -1210,10 +1210,9 @@ public class VanDerWaals implements MaskingInterface,
 
                 for (int i = lb, i3 = 3 * lb; i <= ub; i++, i3 += 3) {
                     Atom atom = atoms[i];
-                    final double xyz[] = atom.getXYZ();
-                    coordinates[i3 + XX] = xyz[XX];
-                    coordinates[i3 + YY] = xyz[YY];
-                    coordinates[i3 + ZZ] = xyz[ZZ];
+                    coordinates[i3 + XX] = atom.getX();
+                    coordinates[i3 + YY] = atom.getY();
+                    coordinates[i3 + ZZ] = atom.getZ();
                     use[i] = atom.getUse();
                 }
 

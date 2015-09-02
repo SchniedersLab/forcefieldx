@@ -64,7 +64,7 @@ import ffx.crystal.SymOp;
 import ffx.numerics.ComplexNumber;
 import ffx.numerics.fft.Complex;
 import ffx.numerics.fft.Complex3DParallel;
-import ffx.potential.bonded.Atom; 
+import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.RowLoop;
 import ffx.potential.nonbonded.RowRegion;
 import ffx.potential.nonbonded.SliceLoop;
@@ -205,8 +205,8 @@ public class CrystalReciprocalSpace {
     private final SharedIntegerArray optAtomicGradientWeight;
     private final int previousOptAtomicGradientWeight[];
     private final GradientSchedule atomicGradientSchedule;
-    
-    
+
+
     /**
      * Parallelization of putting atomic form factors onto the 3D grid using a
      * 3D spatial decomposition.
@@ -405,7 +405,7 @@ public class CrystalReciprocalSpace {
         optAtomicGradientWeight = new SharedIntegerArray(nAtoms);
         previousOptAtomicGradientWeight = new int[nAtoms];
         atomicGradientSchedule = new GradientSchedule(threadCount,nAtoms);
-        
+
         if (solvent) {
             bAdd = 0.0;
             atomFormFactors = null;
@@ -509,7 +509,7 @@ public class CrystalReciprocalSpace {
             double z[] = coordinates[i][2];
             for (int j = 0; j < nAtoms; j++) {
                 Atom aj = atoms[j];
-                crystal.applySymOp(aj.getXYZ(), xyz, symops.get(i));
+                crystal.applySymOp(aj.getXYZ(null), xyz, symops.get(i));
                 x[j] = xyz[0];
                 y[j] = xyz[1];
                 z[j] = xyz[2];
@@ -1143,7 +1143,7 @@ public class CrystalReciprocalSpace {
                     int atomicRowTotal = 0;
                     for (int i = 0; i < threadCount; i++) {
                         atomicRowTotal += atomicRowLoops[i].getThreadTime();
-                    }        
+                    }
                     parallelTeam.execute(atomicRowRegion);
                     for (int i = 0; i < fftZ * fftY; i++) {
                         previousOptRowWeightAtomic[i] = optRowWeightAtomic.get(i);
@@ -1218,7 +1218,7 @@ public class CrystalReciprocalSpace {
                     }
 
                     //Atomic timing and balance analysis
-                    ASB.append(String.format("\n RowLoop (Atomic): %7.5f (sec)                 | Total Weight: %7.0f\n", 
+                    ASB.append(String.format("\n RowLoop (Atomic): %7.5f (sec)                 | Total Weight: %7.0f\n",
                             atomicGridTime * toSeconds, atomicRowWeightTotal));
                     ASB.append(" Thread     LoopTime    Balance(%)  Normalized   |      Rows       Weight    Balance(%)  Normalized\n");
 
@@ -1230,9 +1230,9 @@ public class CrystalReciprocalSpace {
                     for (int i = 0; i < threadCount; i++) {
                         ASB.append(String.format("     %3d     %7.5f     %7.1f     %7.1f     |   %7d     %7d     %7.1f     %7.1f\n", i,
                                 (double) (atomicRowLoops[i].getThreadTime() * toSeconds),
-                                ((atomicRowLoops[i].getThreadTime()) / (atomicRowTotal)) * 100.00, 
+                                ((atomicRowLoops[i].getThreadTime()) / (atomicRowTotal)) * 100.00,
                                 ((atomicRowLoops[i].getThreadTime()) / (atomicRowTotal)) * (100.00 * threadCount),
-                                atomicRowLoops[i].getNumberofSlices(), atomicRowLoops[i].getThreadWeight(), 
+                                atomicRowLoops[i].getNumberofSlices(), atomicRowLoops[i].getThreadWeight(),
                                 100.00 * (atomicRowLoops[i].getThreadWeight() / atomicRowWeightTotal),
                                 (100.00 * threadCount) * (atomicRowLoops[i].getThreadWeight() / atomicRowWeightTotal)));
                     }
@@ -1258,7 +1258,7 @@ public class CrystalReciprocalSpace {
                     }
 
                     //Atomic timing and balance analysis
-                    ASB.append(String.format("\n SliceLoop (Atomic): %7.5f (sec)               | Total Weight: %7.0f\n", 
+                    ASB.append(String.format("\n SliceLoop (Atomic): %7.5f (sec)               | Total Weight: %7.0f\n",
                             atomicGridTime * toSeconds, atomicSliceWeightTotal));
                     ASB.append(" Thread     LoopTime    Balance(%)  Normalized   |      Slices    Weight    Balance(%)  Normalized\n");
 
@@ -1270,7 +1270,7 @@ public class CrystalReciprocalSpace {
                     for (int i = 0; i < threadCount; i++) {
                         ASB.append(String.format("     %3d     %7.5f     %7.1f     %7.1f     |   %7d     %7d     %7.1f     %7.1f\n", i,
                                 (double) (atomicSliceLoops[i].getThreadTime() * toSeconds),
-                                ((atomicSliceLoops[i].getThreadTime()) / (atomicSliceTotal)) * 100.00, 
+                                ((atomicSliceLoops[i].getThreadTime()) / (atomicSliceTotal)) * 100.00,
                                 ((atomicSliceLoops[i].getThreadTime()) / (atomicSliceTotal)) * (100.00 * threadCount),
                                 atomicSliceLoops[i].getNumberofSlices(),
                                 atomicSliceLoops[i].getThreadWeight(),
@@ -1882,7 +1882,7 @@ public class CrystalReciprocalSpace {
         long timer;
         int previousUB, previousLB;
         int actualWeight;
-        
+
         public AtomicRowLoop(RowRegion region) {
             super(region.getNatoms(), region.getNsymm(), region);
             grid = region.getGrid();
@@ -1936,7 +1936,7 @@ public class CrystalReciprocalSpace {
                         final double frz = fftZ * uvw[2];
                         final int ifrz = (int) frz;
                         final int previousZ = zyAtListBuild[iSymm][iAtom][0];
-                        
+
                         final double fry = fftY * uvw[1];
                         final int ifry = (int) fry;
                         final int previousY = zyAtListBuild[iSymm][iAtom][1];
@@ -1948,7 +1948,7 @@ public class CrystalReciprocalSpace {
             }
             return false;
         }
-        
+
         @Override
         public void saveZYValues(int zyAtListBuild[][][]) {
             for (int iSymm = 0; iSymm < nSymm; iSymm++) {
@@ -1965,7 +1965,7 @@ public class CrystalReciprocalSpace {
                         crystal.toFractionalCoordinates(xyz, uvw);
                         final double frz = fftZ * uvw[2];
                         final int ifrz = (int) frz;
-                        
+
                         final double fry = fftY * uvw[1];
                         final int ifry = (int) fry;
                         zyAtListBuild[iSymm][iAtom][0] = ifrz;
@@ -2010,30 +2010,30 @@ public class CrystalReciprocalSpace {
             xyz[2] = coordinates[iSymm][2][iAtom];
             crystal.toFractionalCoordinates(xyz, uvw);
             final int frad = min(aRadGrid, (int) floor(atoms[iAtom].getFormFactorWidth() * fftX / crystal.a) + 1);
-            
+
             final double frz = fftZ * uvw[2];
             final int ifrz = (int) frz;
             final int ifrzu = ifrz + frad;
             final int ifrzl = ifrz - frad;
-            
+
             final double fry = fftY * uvw[1];
             final int ifry = (int) fry;
             final int ifryu = ifry + frad;
             final int ifryl = ifry - frad;
-            
+
             // Loop over allowed z coordinates for this Loop
             // Check if the current atom is close enough
             // If so, add to list.
             int buff = bufferSize;
-            
+
             int lbZ = rowRegion.zFromRowIndex(lb);
             int ubZ = rowRegion.zFromRowIndex(ub);
-            
+
             for (int iz = ifrzl - buff; iz <= ifrzu + buff; iz++) {
                 int giz = Crystal.mod(iz, fftZ);
                 if (lbZ > giz || giz > ubZ) {
                     continue;
-                } 
+                }
                 int rowLB = rowRegion.rowIndexForYZ(Crystal.mod(ifryl - buff, fftY),giz);
                 int rowUB = rowRegion.rowIndexForYZ(Crystal.mod(ifryu + buff, fftY),giz);
                 if (lb >= rowLB || rowUB <= ub){
@@ -2046,7 +2046,7 @@ public class CrystalReciprocalSpace {
             }
         }
 
-        
+
         @Override
         public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
             if (!atoms[iAtom].getUse()) {
@@ -2135,7 +2135,7 @@ public class CrystalReciprocalSpace {
             return actualWeight;
         }
 
-        
+
                @Override
         public boolean checkList(int zyAtListBuild[][][], int buff) {
             for (int iSymm = 0; iSymm < nSymm; iSymm++) {
@@ -2151,7 +2151,7 @@ public class CrystalReciprocalSpace {
                         final double frz = fftZ * uvw[2];
                         final int ifrz = (int) frz;
                         final int previousZ = zyAtListBuild[iSymm][iAtom][0];
-                        
+
                         final double fry = fftY * uvw[1];
                         final int ifry = (int) fry;
                         final int previousY = zyAtListBuild[iSymm][iAtom][1];
@@ -2163,7 +2163,7 @@ public class CrystalReciprocalSpace {
             }
             return false;
         }
-        
+
         @Override
         public void saveZYValues(int zyAtListBuild[][][]) {
             for (int iSymm = 0; iSymm < nSymm; iSymm++) {
@@ -2180,7 +2180,7 @@ public class CrystalReciprocalSpace {
                         crystal.toFractionalCoordinates(xyz, uvw);
                         final double frz = fftZ * uvw[2];
                         final int ifrz = (int) frz;
-                        
+
                         final double fry = fftY * uvw[1];
                         final int ifry = (int) fry;
                         zyAtListBuild[iSymm][iAtom][0] = ifrz;
@@ -2225,30 +2225,30 @@ public class CrystalReciprocalSpace {
             xyz[2] = coordinates[iSymm][2][iAtom];
             crystal.toFractionalCoordinates(xyz, uvw);
             final int frad = min(aRadGrid, (int) floor(atoms[iAtom].getFormFactorWidth() * fftX / crystal.a) + 1);
-            
+
             final double frz = fftZ * uvw[2];
             final int ifrz = (int) frz;
             final int ifrzu = ifrz + frad;
             final int ifrzl = ifrz - frad;
-            
+
             final double fry = fftY * uvw[1];
             final int ifry = (int) fry;
             final int ifryu = ifry + frad;
             final int ifryl = ifry - frad;
-            
+
             // Loop over allowed z coordinates for this Loop
             // Check if the current atom is close enough
             // If so, add to list.
             int buff = bufferSize;
-            
+
             int lbZ = rowRegion.zFromRowIndex(lb);
             int ubZ = rowRegion.zFromRowIndex(ub);
-            
+
             for (int iz = ifrzl - buff; iz <= ifrzu + buff; iz++) {
                 int giz = Crystal.mod(iz, fftZ);
                 if (lbZ > giz || giz > ubZ) {
                     continue;
-                } 
+                }
                 int rowLB = rowRegion.rowIndexForYZ(Crystal.mod(ifryl - buff, fftY),giz);
                 int rowUB = rowRegion.rowIndexForYZ(Crystal.mod(ifryu + buff, fftY),giz);
                 if (lb >= rowLB || rowUB <= ub){
@@ -2261,7 +2261,7 @@ public class CrystalReciprocalSpace {
             }
         }
 
-        
+
         @Override
         public IntegerSchedule schedule() {
             return solventRowSchedule;
@@ -2738,7 +2738,7 @@ public class CrystalReciprocalSpace {
                 break;
             }
         }
-        
+
         @Override
         public boolean checkList(int zAtListBuild[][], int buff) {
             for (int iSymm = 0; iSymm < nSymm; iSymm++) {
@@ -2783,7 +2783,7 @@ public class CrystalReciprocalSpace {
                 }
             }
         }
-        
+
         @Override
         public void start() {
             fill(optLocal, 0);
@@ -2816,7 +2816,7 @@ public class CrystalReciprocalSpace {
                 }
             }
         }
-        
+
         @Override
         public void finish() {
             timer += System.nanoTime();
@@ -3045,7 +3045,7 @@ public class CrystalReciprocalSpace {
             final double xf[] = new double[3];
             final int optLocal[] = new int[nAtoms];
             long timer;
-            
+
             // Extra padding to avert cache interference.
             long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             long pad8, pad9, pada, padb, padc, padd, pade, padf;
@@ -3054,8 +3054,8 @@ public class CrystalReciprocalSpace {
             public void start() {
                 fill(optLocal, 0);
                 timer = -System.nanoTime();
-            }            
-            
+            }
+
             @Override
             public void finish() {
                 timer += System.nanoTime();
@@ -3063,12 +3063,12 @@ public class CrystalReciprocalSpace {
                     optAtomicGradientWeight.addAndGet(i, optLocal[i]);
                 }
             }
-            
+
             @Override
             public IntegerSchedule schedule() {
                 return atomicGradientSchedule;
             }
-            
+
             @Override
             public void run(final int lb, final int ub) {
                 for (int n = lb; n <= ub; n++) {
@@ -3112,7 +3112,7 @@ public class CrystalReciprocalSpace {
                                 optLocal[n]++;
                                 final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
                                 atomff.rhoGrad(xc, weight * densityGrid[ii], refinementmode);
-                                
+
                             }
                         }
                     }

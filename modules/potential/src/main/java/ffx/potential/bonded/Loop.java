@@ -14,7 +14,7 @@
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details. 
+ * details.
  *
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
@@ -58,7 +58,7 @@ public class Loop {
     int i, j, k;
     int[] n_soln = new int[1];
     double[][] r_n = new double[5][3];
-    double[][] r_a = new double[5][3];  
+    double[][] r_a = new double[5][3];
     double[][] r_c = new double[5][3];
     double[][][] r_soln_n = new double[max_soln][3][3];
     double[][][] r_soln_a = new double[max_soln][3][3];
@@ -104,7 +104,7 @@ public class Loop {
 
                     //coordinateArray temporarily holds the coordinates of a
                     //      specific atom from the pdb file
-                    double[] coordinateArray = molAss.getBackBoneAtoms().get(i).getXYZ();
+                    double[] coordinateArray = molAss.getBackBoneAtoms().get(i).getXYZ(null);
 
                     if (atmname.contentEquals(n)) {
                         //Backbone nitrogen coordinates are stored in r_n[]
@@ -159,7 +159,7 @@ public class Loop {
                         }
                         sum += VectorMath.dot(dr, dr);
                     }
-                    
+
                     //Here the sum is now equal to the rmsd.
                     sum = Math.sqrt(sum / 9.0e0);
 
@@ -173,7 +173,7 @@ public class Loop {
                     StringBuilder string1 = new StringBuilder();
                     string.append(String.format("Recording the solution #" + (k + 1) + " in " + fileName + ".\n"));
                 }
-            
+
         }
     }
 

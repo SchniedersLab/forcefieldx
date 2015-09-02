@@ -72,7 +72,7 @@ public final class SolventPolyFormFactor implements FormFactor {
      * @param w a double.
      */
     public SolventPolyFormFactor(Atom atom, double arad, double w) {
-        this(atom, arad, w, atom.getXYZ());
+        this(atom, arad, w, atom.getXYZ(null));
     }
 
     /**

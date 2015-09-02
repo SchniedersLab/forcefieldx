@@ -462,7 +462,7 @@ public class PME_2 implements Potential {
         double z[] = coordinates[0][2];
         for (int i = 0; i < nAtoms; i++) {
             Atom ai = atoms[i];
-            double xyz[] = ai.getXYZ();
+            double xyz[] = ai.getXYZ(null);
             x[i] = xyz[0];
             y[i] = xyz[1];
             z[i] = xyz[2];
@@ -647,7 +647,7 @@ public class PME_2 implements Potential {
 //        double y[] = coordinates[0][1];
 //        double z[] = coordinates[0][2];
         for (int i = 0; i < nAtoms; i++) {
-            double xyz2[] = atoms[i].getXYZ();
+            double xyz2[] = atoms[i].getXYZ(null);
             x[i] = xyz2[0];
             y[i] = xyz2[1];
             z[i] = xyz2[2];
@@ -2160,7 +2160,7 @@ public class PME_2 implements Potential {
             for (int i = 0; i < (nAtoms - 1); i++) {
                 double ind[] = induced0[i];
                 double indp[] = inducedp0[i];
-                double xyzi[] = atoms[i].getXYZ();
+                double xyzi[] = atoms[i].getXYZ(null);
                 double pdi = pdamp[i];
                 double pti = thole[i];
                 double duix = ind[0];
@@ -2205,7 +2205,7 @@ public class PME_2 implements Potential {
                 for (int k = i + 1; k < nAtoms; k++) {
                     double indk[] = induced0[k];
                     double indkp[] = inducedp0[k];
-                    double xyzk[] = atoms[k].getXYZ();
+                    double xyzk[] = atoms[k].getXYZ(null);
                     dx_local[0] = xyzk[0] - xyzi[0];
                     dx_local[1] = xyzk[1] - xyzi[1];
                     dx_local[2] = xyzk[2] - xyzi[2];
@@ -2285,7 +2285,7 @@ public class PME_2 implements Potential {
                 for (int i = 0; i < (nAtoms - 1); i++) {
                     double ind[] = induced0[i];
                     double indp[] = inducedp0[i];
-                    double xyzi[] = atoms[i].getXYZ();
+                    double xyzi[] = atoms[i].getXYZ(null);
                     double pdi = pdamp[i];
                     double pti = thole[i];
                     double duix = ind[0];
@@ -2313,7 +2313,7 @@ public class PME_2 implements Potential {
                     for (int k = i + 1; k < nAtoms; k++) {
                         double indk[] = induced0[k];
                         double indkp[] = inducedp0[k];
-                        double xyzk[] = atoms[k].getXYZ();
+                        double xyzk[] = atoms[k].getXYZ(null);
                         dx_local[0] = xyzk[0] - xyzi[0];
                         dx_local[1] = xyzk[1] - xyzi[1];
                         dx_local[2] = xyzk[2] - xyzi[2];
@@ -2555,7 +2555,7 @@ public class PME_2 implements Potential {
         double[] xyza;
 
         for (int i = 0; i < mpole.length; i++) {
-            xyza = atoms[i].getXYZ();
+            xyza = atoms[i].getXYZ(null);
             xr = xyza[0] - xi;
             yr = xyza[1] - yi;
             zr = xyza[2] - zi;

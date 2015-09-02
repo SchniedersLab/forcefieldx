@@ -53,7 +53,6 @@ import static org.junit.Assert.assertEquals;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
-import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
 import ffx.potential.parameters.ForceField;
 
 /**
@@ -158,7 +157,6 @@ public class PotentialEnergyTest {
     private final double gradientTolerance = 1.0e-4;
     private final boolean ci;
     private final boolean ciOnly;
-    private Polarization polarization;
     private boolean mpoleTerm;
     private final ForceFieldEnergy forceFieldEnergy;
 
@@ -282,10 +280,9 @@ public class PotentialEnergyTest {
             assertEquals(info + " Permanent Multipole Count", nPermanent, forceFieldEnergy.getPermanentInteractions());
         }
         // Polarization
-        if (polarization == Polarization.MUTUAL) {
-            assertEquals(info + " Polarization Energy", polarizationEnergy, forceFieldEnergy.getPolarizationEnergy(), tolerance);
-            assertEquals(info + " Polarization Count", nPolar, forceFieldEnergy.getPermanentInteractions());
-        }
+        assertEquals(info + " Polarization Energy", polarizationEnergy, forceFieldEnergy.getPolarizationEnergy(), tolerance);
+        assertEquals(info + " Polarization Count", nPolar, forceFieldEnergy.getPermanentInteractions());
+
     }
 
     /**

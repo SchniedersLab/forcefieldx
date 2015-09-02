@@ -130,7 +130,7 @@ public class PMEWisdom {
          * Update the local coordinate array.
          */
         for (int i = 0; i < nAtoms; i++) {
-            final double xyz[] = atoms[i].getXYZ();
+            final double xyz[] = atoms[i].getXYZ(null);
             int i3 = i * 3;
             coordinates[0][i3++] = xyz[0];
             coordinates[0][i3++] = xyz[1];

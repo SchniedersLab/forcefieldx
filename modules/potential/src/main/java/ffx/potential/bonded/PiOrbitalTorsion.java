@@ -135,6 +135,12 @@ public class PiOrbitalTorsion extends BondedTerm {
     public void update() {
         energy(false);
     }
+    protected static final double a0[] = new double[3];
+    protected static final double a1[] = new double[3];
+    protected static final double a2[] = new double[3];
+    protected static final double a3[] = new double[3];
+    protected static final double a4[] = new double[3];
+    protected static final double a5[] = new double[3];
     /**
      * Vector from Atom 3 to Atom 0.
      */
@@ -257,17 +263,23 @@ public class PiOrbitalTorsion extends BondedTerm {
     public double energy(boolean gradient) {
         energy = 0.0;
         value = 0.0;
-        diff(atoms[0].getXYZ(), atoms[3].getXYZ(), v30);
-        diff(atoms[1].getXYZ(), atoms[3].getXYZ(), v31);
-        diff(atoms[3].getXYZ(), atoms[2].getXYZ(), v23);
-        diff(atoms[4].getXYZ(), atoms[2].getXYZ(), v24);
-        diff(atoms[5].getXYZ(), atoms[2].getXYZ(), v25);
+        atoms[0].getXYZ(a0);
+        atoms[1].getXYZ(a1);
+        atoms[2].getXYZ(a2);
+        atoms[3].getXYZ(a3);
+        atoms[4].getXYZ(a4);
+        atoms[5].getXYZ(a5);
+        diff(a0, a3, v30);
+        diff(a1, a3, v31);
+        diff(a3, a2, v23);
+        diff(a4, a2, v24);
+        diff(a5, a2, v25);
         cross(v30, v31, vp);
         cross(v24, v25, vq);
-        sum(vp, atoms[2].getXYZ(), vp);
-        sum(vq, atoms[3].getXYZ(), vq);
-        diff(atoms[2].getXYZ(), vp, vpc);
-        diff(vq, atoms[3].getXYZ(), vdq);
+        sum(vp, a2, vp);
+        sum(vq, a3, vq);
+        diff(a2, vp, vpc);
+        diff(vq, a3, vdq);
         cross(vpc, v23, xt);
         cross(v23, vdq, xu);
         cross(xt, xu, xtu);
@@ -296,8 +308,8 @@ public class PiOrbitalTorsion extends BondedTerm {
                 double sine2 = 2.0 * cosine * sine;
                 double dphi2 = 2.0 * sine2;
                 double dedphi = units * piTorsionType.forceConstant * dphi2;
-                diff(atoms[3].getXYZ(), vp, vpd);
-                diff(vq, atoms[2].getXYZ(), vcq);
+                diff(a3, vp, vpd);
+                diff(vq, a2, vcq);
                 cross(xt, v23, dedt);
                 cross(xu, v23, dedu);
                 scalar(dedt, dedphi / (rt2 * r23), dedt);

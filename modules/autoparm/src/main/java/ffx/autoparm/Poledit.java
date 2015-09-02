@@ -384,9 +384,9 @@ public class Poledit {
         }
         coordinates = new double[nSymm][3][atomslist.size()];
         for (int i = 0; i < atomslist.size(); i++) {
-            coordinates[0][0][i] = atoms[i].getXYZ()[0];
-            coordinates[0][1][i] = atoms[i].getXYZ()[1];
-            coordinates[0][2][i] = atoms[i].getXYZ()[2];
+            coordinates[0][0][i] = atoms[i].getX();
+            coordinates[0][1][i] = atoms[i].getY();
+            coordinates[0][2][i] = atoms[i].getZ();
         }
         pdamp = new double[atomslist.size()];
         for (int i = 0; i < atomslist.size(); i++) {

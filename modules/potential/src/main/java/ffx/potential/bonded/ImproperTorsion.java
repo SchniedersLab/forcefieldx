@@ -112,7 +112,6 @@ public class ImproperTorsion extends BondedTerm implements
 
 //        logger.info("");
 //        logger.info(atom.toString());
-
         Atom atoms[] = new Atom[4];
         atoms[2] = atom;
         ArrayList<Bond> bonds = atom.getFFXBonds();
@@ -249,9 +248,13 @@ public class ImproperTorsion extends BondedTerm implements
     public double energy(boolean gradient) {
         energy = 0.0;
         value = 0.0;
-        diff(atoms[1].getXYZ(), atoms[0].getXYZ(), v10);
-        diff(atoms[2].getXYZ(), atoms[1].getXYZ(), v21);
-        diff(atoms[3].getXYZ(), atoms[2].getXYZ(), v32);
+        atoms[0].getXYZ(a0);
+        atoms[1].getXYZ(a1);
+        atoms[2].getXYZ(a2);
+        atoms[3].getXYZ(a3);
+        diff(a1, a0, v10);
+        diff(a2, a1, v21);
+        diff(a3, a2, v32);
         cross(v10, v21, t);
         cross(v21, v32, u);
         cross(t, u, tu);
@@ -297,8 +300,8 @@ public class ImproperTorsion extends BondedTerm implements
                 /**
                  * Chain rule terms for first derivative components.
                  */
-                diff(atoms[2].getXYZ(), atoms[0].getXYZ(), v20);
-                diff(atoms[3].getXYZ(), atoms[1].getXYZ(), v31);
+                diff(a2, a0, v20);
+                diff(a3, a1, v31);
                 cross(t, v21, dedt);
                 cross(u, v21, dedu);
                 scalar(dedt, dedphi / (rt2 * rcb), dedt);
@@ -378,6 +381,10 @@ public class ImproperTorsion extends BondedTerm implements
         }
         return 0;
     }
+    protected static final double a0[] = new double[3];
+    protected static final double a1[] = new double[3];
+    protected static final double a2[] = new double[3];
+    protected static final double a3[] = new double[3];
     /**
      * Vector from Atom 1 to Atom 0.
      */

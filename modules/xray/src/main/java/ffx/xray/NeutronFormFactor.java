@@ -241,7 +241,7 @@ public final class NeutronFormFactor implements FormFactor {
     private double uadd;
     private double uaniso[] = null;
     private double occ;
-    private boolean hasanisou;
+    private boolean hasAnisou;
 
     /**
      * <p>
@@ -250,7 +250,7 @@ public final class NeutronFormFactor implements FormFactor {
      * @param atom a {@link ffx.potential.bonded.Atom} object.
      */
     public NeutronFormFactor(Atom atom) {
-        this(atom, 0.0, atom.getXYZ());
+        this(atom, 0.0, atom.getXYZ(null));
     }
 
     /**
@@ -261,7 +261,7 @@ public final class NeutronFormFactor implements FormFactor {
      * @param badd a double.
      */
     public NeutronFormFactor(Atom atom, double badd) {
-        this(atom, badd, atom.getXYZ());
+        this(atom, badd, atom.getXYZ(null));
     }
 
     /**
@@ -420,7 +420,7 @@ public final class NeutronFormFactor implements FormFactor {
                 || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS
                 || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
             refineb = true;
-            if (hasanisou) {
+            if (hasAnisou) {
                 refineanisou = true;
             }
         }
@@ -488,7 +488,7 @@ public final class NeutronFormFactor implements FormFactor {
         if (refineb) {
             atom.addToTempFactorGradient(dfc * b2u(occ * twopi32 * gradp[4]));
             // Uaniso
-            if (hasanisou) {
+            if (hasAnisou) {
                 for (int i = 0; i < 6; i++) {
                     gradu[i] = dfc * occ * twopi32 * gradu[i];
                 }
@@ -528,18 +528,18 @@ public final class NeutronFormFactor implements FormFactor {
         }
 
         // check if anisou changed
-        if (atom.getAnisou() == null) {
+        if (atom.getAnisou(null) == null) {
             if (uaniso == null) {
                 uaniso = new double[6];
             }
-            hasanisou = false;
+            hasAnisou = false;
         } else {
-            hasanisou = true;
+            hasAnisou = true;
         }
 
-        if (hasanisou) {
+        if (hasAnisou) {
             // first check the ANISOU is valid
-            uaniso = atom.getAnisou();
+            uaniso = atom.getAnisou(null);
             double det = determinant3(uaniso);
 
             if (det <= 1e-14) {
@@ -550,6 +550,7 @@ public final class NeutronFormFactor implements FormFactor {
 
                 uaniso[0] = uaniso[1] = uaniso[2] = b2u(biso);
                 uaniso[3] = uaniso[4] = uaniso[5] = 0.0;
+                atom.setAnisou(uaniso);
             }
         } else {
             if (biso < 0.0) {

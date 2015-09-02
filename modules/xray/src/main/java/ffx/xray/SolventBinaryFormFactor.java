@@ -63,7 +63,7 @@ public final class SolventBinaryFormFactor implements FormFactor {
      * @param proberad a double.
      */
     public SolventBinaryFormFactor(Atom atom, double proberad) {
-        this(atom, proberad, atom.getXYZ());
+        this(atom, proberad, atom.getXYZ(null));
     }
 
     /**

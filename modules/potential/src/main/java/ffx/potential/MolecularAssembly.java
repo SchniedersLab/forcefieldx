@@ -925,7 +925,7 @@ public class MolecularAssembly extends MSGroup implements Structure {
 
     /**
      * <p>
-     * getChains</p>
+     * getPolymers</p>
      *
      * @return an array of {@link ffx.potential.bonded.Polymer} objects.
      */

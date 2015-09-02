@@ -2917,11 +2917,11 @@ public class RotamerOptimization implements Terminatable {
      *
      * @param i Index to check
      * @return If forced
-     * @throws RuntimeException If useForcedResidues not true.
+     * @throws IllegalStateException If useForcedResidues not true.
      */
-    private boolean checkIfForced(int i) throws RuntimeException {
+    private boolean checkIfForced(int i) throws IllegalStateException {
         if (!useForcedResidues) {
-            throw new RuntimeException("checkForcedResidues being called without useForcedResidues.");
+            throw new IllegalStateException("checkForcedResidues being called without useForcedResidues.");
         }
         return (startForcedResidues <= i && i <= endForcedResidues);
     }
@@ -4804,7 +4804,12 @@ public class RotamerOptimization implements Terminatable {
              * for sequence optimization: if > 1 residue optimized, run on only
              * one thread.
              */
-            int nThreads = (nMultiRes > 1) ? 1 : molecularAssembly.getPotentialEnergy().getParallelTeam().getThreadCount();
+            int nThreads = 1;
+            if (molecularAssembly.getPotentialEnergy().getParallelTeam() != null) {
+                nThreads = (nMultiRes > 1) ? 1 : molecularAssembly.getPotentialEnergy().getParallelTeam().getThreadCount();
+            } else {
+                nThreads = 16;
+            }
             ParallelTeam parallelTeam = new ParallelTeam(nThreads);
             Crystal crystal = molecularAssembly.getCrystal();
             int nSymm = crystal.spaceGroup.getNumberOfSymOps();

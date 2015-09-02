@@ -423,7 +423,7 @@ public class Bond extends BondedTerm implements Comparable<Bond>, org.biojava.nb
         }
         return null;
     }
-    
+
     /**
      * Create the Bond Scenegraph Objects.
      *
@@ -745,6 +745,8 @@ public class Bond extends BondedTerm implements Comparable<Bond>, org.biojava.nb
     /**
      * The vector from Atom 1 to Atom 0.
      */
+    protected static final double a0[] = new double[3];
+    protected static final double a1[] = new double[3];
     protected static final double v10[] = new double[3];
     /**
      * Atom 0 gradient.
@@ -760,7 +762,7 @@ public class Bond extends BondedTerm implements Comparable<Bond>, org.biojava.nb
     public double energy(boolean gradient) {
         Atom atom0 = atoms[0];
         Atom atom1 = atoms[1];
-        diff(atom0.getXYZ(), atom1.getXYZ(), v10);
+        diff(atom0.getXYZ(a0), atom1.getXYZ(a1), v10);
         value = r(v10);
         double dv = value - bondType.distance;
         double dv2 = dv * dv;

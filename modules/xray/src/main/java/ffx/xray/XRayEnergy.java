@@ -213,14 +213,15 @@ public class XRayEnergy implements LambdaInterface, Potential {
         if (refineb) {
             for (Atom a : atomarray) {
                 a.setTempFactorGradient(0.0);
-                if (a.getAnisou() != null) {
-                    if (a.getAnisouGradient() == null) {
+                if (a.getAnisou(null) != null) {
+                    if (a.getAnisouGradient(null) == null) {
                         double ganisou[] = new double[6];
                         a.setAnisouGradient(ganisou);
                     } else {
-                        double ganisou[] = a.getAnisouGradient();
+                        double ganisou[] = a.getAnisouGradient(null);
                         ganisou[0] = ganisou[1] = ganisou[2] = 0.0;
                         ganisou[3] = ganisou[4] = ganisou[5] = 0.0;
+                        a.setAnisouGradient(ganisou);
                     }
                 }
             }
@@ -398,7 +399,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
      */
     public void getBFactorGradients(double g[]) {
         assert (g != null);
-        double grad[];
+        double grad[] = null;
         int index = nxyz;
         int resnum = -1;
         int nres = diffractiondata.nresiduebfactor + 1;
@@ -407,8 +408,8 @@ public class XRayEnergy implements LambdaInterface, Potential {
             if (a.getAtomicNumber() == 1) {
                 continue;
             }
-            if (a.getAnisou() != null) {
-                grad = a.getAnisouGradient();
+            if (a.getAnisou(null) != null) {
+                grad = a.getAnisouGradient(grad);
                 g[index++] = grad[0];
                 g[index++] = grad[1];
                 g[index++] = grad[2];
@@ -536,7 +537,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
         }
 
         if (refineb) {
-            double anisou[];
+            double anisou[] = null;
             int resnum = -1;
             int nat = 0;
             int nres = diffractiondata.nresiduebfactor + 1;
@@ -545,8 +546,8 @@ public class XRayEnergy implements LambdaInterface, Potential {
                 if (a.getAtomicNumber() == 1) {
                     continue;
                 }
-                if (a.getAnisou() != null) {
-                    anisou = a.getAnisou();
+                if (a.getAnisou(null) != null) {
+                    anisou = a.getAnisou(anisou);
                     x[index++] = anisou[0];
                     x[index++] = anisou[1];
                     x[index++] = anisou[2];
@@ -627,7 +628,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
             if (a.getAtomicNumber() == 1) {
                 continue;
             }
-            if (a.getAnisou() == null) {
+            if (a.getAnisou(null) == null) {
                 double biso = x[index];
                 if (diffractiondata.residuebfactor) {
                     if (resnum != a.getResidueNumber()) {
@@ -657,7 +658,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
                     }
                 }
             } else {
-                double anisou[] = a.getAnisou();
+                double anisou[] = a.getAnisou(null);
                 tmpanisou[0] = x[index++];
                 tmpanisou[1] = x[index++];
                 tmpanisou[2] = x[index++];
@@ -667,6 +668,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
                 double det = determinant3(tmpanisou);
                 if (det > 0.0) {
                     System.arraycopy(tmpanisou, 0, anisou, 0, 6);
+                    a.setAnisou(anisou);
                     det = Math.pow(det, 0.3333);
                     a.setTempFactor(u2b(det));
                 } else {
@@ -674,6 +676,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
                     a.setTempFactor(0.01);
                     anisou[0] = anisou[1] = anisou[2] = b2u(0.01);
                     anisou[3] = anisou[4] = anisou[5] = 0.0;
+                    a.setAnisou(anisou);
                     if (nneg < 5) {
                         logger.info("anisotropic atom: " + a.toString() + " negative ANISOU");
                     }
@@ -756,8 +759,8 @@ public class XRayEnergy implements LambdaInterface, Potential {
     public double getBFactorRestraints() {
         Atom a1, a2;
         double b1, b2, bdiff;
-        double anisou1[];
-        double anisou2[];
+        double anisou1[] = null;
+        double anisou2[] = null;
         double gradb;
         double det1, det2;
         double gradu[] = new double[6];
@@ -770,7 +773,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
                 continue;
             }
 
-            if (a.getAnisou() == null) {
+            if (a.getAnisou(null) == null) {
                 // isotropic B restraint
 
                 // non-zero restraint: -kTln[Z], Z is ADP partition function
@@ -811,7 +814,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
                 }
             } else {
                 // anisotropic B restraint
-                anisou1 = a.getAnisou();
+                anisou1 = a.getAnisou(anisou1);
                 det1 = determinant3(anisou1);
 
                 // non-zero restraint: -kTln[Z], Z is ADP partition function
@@ -840,7 +843,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
                     if (a2.xyzIndex < a1.xyzIndex) {
                         continue;
                     }
-                    if (a2.getAnisou() == null) {
+                    if (a2.getAnisou(null) == null) {
                         continue;
                     }
                     if (!a1.getAltLoc().equals(' ')
@@ -849,7 +852,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
                         continue;
                     }
 
-                    anisou2 = a2.getAnisou();
+                    anisou2 = a2.getAnisou(anisou2);
                     det2 = determinant3(anisou2);
                     bdiff = det1 - det2;
                     e += eightpi23 * kTbsim * Math.pow(bdiff, 2.0);

@@ -244,7 +244,7 @@ public class RotamerLibrary {
             }
         }
     }
-    
+
     /**
      * TODO: Add reference to Ponder & Richard's original paper.
      *
@@ -3812,7 +3812,8 @@ public class RotamerLibrary {
         double dP_O3sPrev = P_O3sPrev.bondType.distance;
         Angle O5s_P_O3sPrev = O5s.getAngle(P, O3sPrev);
         double dO5s_P_O3sPrev = O5s_P_O3sPrev.angleType.angle[O5s_P_O3sPrev.nh];
-        double[] O3sHypCoords = determineIntxyz(P.getXYZ(), dP_O3sPrev, O5s.getXYZ(), dO5s_P_O3sPrev, C5s.getXYZ(), rotamer.chi4, 0);
+        double[] O3sHypCoords = determineIntxyz(P.getXYZ(null), dP_O3sPrev, O5s.getXYZ(null), dO5s_P_O3sPrev,
+                C5s.getXYZ(null), rotamer.chi4, 0);
 
         // Index 5 will be full correction, and indices 0-4 will be 1/6 to 5/6
         // of the full correction in increasing order.  Index 6 is a 1/12

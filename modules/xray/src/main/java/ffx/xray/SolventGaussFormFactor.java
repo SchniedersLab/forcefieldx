@@ -66,7 +66,7 @@ public final class SolventGaussFormFactor implements FormFactor {
      * @param sd a double.
      */
     public SolventGaussFormFactor(Atom atom, double sd) {
-        this(atom, sd, atom.getXYZ());
+        this(atom, sd, atom.getXYZ(null));
     }
 
     /**

@@ -5191,10 +5191,9 @@ public class ParticleMeshEwald implements LambdaInterface {
                  */
                 for (int i = lb; i <= ub; i++) {
                     Atom atom = atoms[i];
-                    double xyz[] = atom.getXYZ();
-                    x[i] = xyz[0];
-                    y[i] = xyz[1];
-                    z[i] = xyz[2];
+                    x[i] = atom.getX();
+                    y[i] = atom.getY();
+                    z[i] = atom.getZ();
                     use[i] = atom.getUse();
 
                     /**

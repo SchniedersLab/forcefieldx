@@ -466,7 +466,7 @@ public class BiojavaFilter extends ConversionFilter {
                 continue;
             }
 
-            double d = VectorMath.dist(SG1.getXYZ(), SG2.getXYZ());
+            double d = VectorMath.dist(SG1.getXYZ(null), SG2.getXYZ(null));
             if (d < 3.0) {
                 r1.setName("CYX");
                 r2.setName("CYX");
@@ -501,7 +501,7 @@ public class BiojavaFilter extends ConversionFilter {
             } else {
                 bond.setBondType(bondType);
             }
-            double d = VectorMath.dist(a1.getXYZ(), a2.getXYZ());
+            double d = VectorMath.dist(a1.getXYZ(null), a2.getXYZ(null));
             Polymer c1 = activeMolecularAssembly.getChain(a1.getSegID());
             Polymer c2 = activeMolecularAssembly.getChain(a2.getSegID());
             Residue r1 = c1.getResidue(a1.getResidueNumber());
@@ -917,9 +917,9 @@ public class BiojavaFilter extends ConversionFilter {
                             switch (numBonds) {
                                 case 3:
                                     // Find the average coordinates of atoms ib, ic and id.
-                                    double b[] = ib.getXYZ();
-                                    double c[] = ib.getXYZ();
-                                    double d[] = ib.getXYZ();
+                                    double b[] = ib.getXYZ(null);
+                                    double c[] = ib.getXYZ(null);
+                                    double d[] = ib.getXYZ(null);
                                     double a[] = new double[3];
                                     a[0] = (b[0] + c[0] + d[0]) / 3.0;
                                     a[1] = (b[1] + c[1] + d[1]) / 3.0;
@@ -1048,7 +1048,7 @@ public class BiojavaFilter extends ConversionFilter {
                  * Compute the distance between the previous carbonyl carbon and
                  * the current nitrogen.
                  */
-                double r = VectorMath.dist(pC.getXYZ(), N.getXYZ());
+                double r = VectorMath.dist(pC.getXYZ(null), N.getXYZ(null));
                 if (r > cutoff) {
                     /**
                      * Start a new chain.
@@ -1125,7 +1125,7 @@ public class BiojavaFilter extends ConversionFilter {
     public boolean writeFileWithHeader(File saveFile, StringBuilder header) {
         return writeFileWithHeader(saveFile, header, true);
     }
-
+    
     /**
      * <p>
      * writeFileWithHeader</p>
@@ -2013,8 +2013,7 @@ public class BiojavaFilter extends ConversionFilter {
                 name = name + " ";
             }
         }
-        activeMolecularAssembly.getPotentialEnergy();
-        double xyz[] = vdwH ? atom.getRedXYZ() : atom.getXYZ();
+        double xyz[] = vdwH ? atom.getRedXYZ() : atom.getXYZ(null);
         sb.replace(6, 16, String.format("%5s " + padLeft(name.toUpperCase(), 4), Hybrid36.encode(5, serial)));
         Character altLoc = atom.getAltLoc();
         if (altLoc != null) {
@@ -2056,7 +2055,7 @@ public class BiojavaFilter extends ConversionFilter {
 // 77 - 78       LString(2)    element        Element symbol, right-justified.
 // 79 - 80       LString(2)    charge         Charge on the atom.
 // =============================================================================
-        double[] anisou = atom.getAnisou();
+        double[] anisou = atom.getAnisou(null);
         if (anisou != null) {
             anisouSB.replace(6, 80, sb.substring(6, 80));
             anisouSB.replace(28, 70, String.format("%7d%7d%7d%7d%7d%7d",
@@ -2087,7 +2086,7 @@ public class BiojavaFilter extends ConversionFilter {
                 name = name + " ";
             }
         }
-        double xyz[] = vdwH ? atom.getRedXYZ() : atom.getXYZ();
+        double xyz[] = vdwH ? atom.getRedXYZ() : atom.getXYZ(null);
         sb.replace(6, 16, String.format("%5s " + padLeft(name.toUpperCase(), 4), Hybrid36.encode(5, serial)));
         Character altLoc = atom.getAltLoc();
         if (altLoc != null) {
@@ -2133,7 +2132,7 @@ public class BiojavaFilter extends ConversionFilter {
 // 77 - 78       LString(2)    element        Element symbol, right-justified.
 // 79 - 80       LString(2)    charge         Charge on the atom.
 // =============================================================================
-        double[] anisou = atom.getAnisou();
+        double[] anisou = atom.getAnisou(null);
         if (anisou != null) {
             anisouSB.replace(6, 80, sb.substring(6, 80));
             anisouSB.replace(28, 70, String.format("%7d%7d%7d%7d%7d%7d",

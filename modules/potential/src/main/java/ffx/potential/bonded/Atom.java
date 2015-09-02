@@ -38,6 +38,7 @@
 package ffx.potential.bonded;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -252,7 +253,7 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
      *
      * @since 1.0
      */
-    private double xyz[];
+    private final double xyz[] = new double[3];
     /**
      * Array of XYZ coordinates for the electron (van der Waals) centers of each
      * atom: if null, methods will refer to xyz.
@@ -265,7 +266,7 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
      *
      * @since 1.0
      */
-    private double xyzGradient[];
+    private final double xyzGradient[] = new double[3];
     /**
      * Array of occupancy values for each altLoc.
      *
@@ -407,8 +408,7 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
         this(name);
         this.xyzIndex = xyzIndex;
         this.atomType = atomType;
-        this.xyz = xyz;
-        this.xyzGradient = new double[3];
+        System.arraycopy(xyz, 0, this.xyz, 0, 3);
         setAllowsChildren(false);
         if (atomType != null) {
             currentCol = previousCol = AtomColor.get(atomType.atomicNumber);
@@ -1134,18 +1134,6 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
 
     /**
      * <p>
-     * getXYZ</p>
-     *
-     * @param x an array of double.
-     */
-    public void getXYZ(double[] x) {
-        x[0] = xyz[0];
-        x[1] = xyz[1];
-        x[2] = xyz[2];
-    }
-
-    /**
-     * <p>
      * getRedXYZ</p>
      *
      * @param x an array of double.
@@ -1164,9 +1152,15 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
      * <p>
      * getXYZ</p>
      *
-     * @return an array of double.
+     * @param xyz an array of double.
+     * @return Filled array of double.
      */
-    public double[] getXYZ() {
+    public double[] getXYZ(double xyz[]) {
+        if (xyz == null) {
+            xyz = Arrays.copyOf(this.xyz, 3);
+        } else {
+            System.arraycopy(this.xyz, 0, xyz, 0, 3);
+        }
         return xyz;
     }
 
@@ -1177,7 +1171,13 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
      * @return an array of double.
      */
     public double[] getRedXYZ() {
-        return redXYZ == null ? xyz : redXYZ;
+        if (active) {
+            return redXYZ == null ? xyz : redXYZ;
+        }
+        if (redXYZ != null) {
+            return Arrays.copyOf(redXYZ, 3);
+        }
+        return Arrays.copyOf(xyz, 3);
     }
 
     /**
@@ -1479,8 +1479,8 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
      * @param xyz an array of double.
      */
     public void setXYZ(double xyz[]) {
-        if (active) {
-            this.xyz = xyz;
+        if (active && xyz != null) {
+            System.arraycopy(xyz, 0, this.xyz, 0, 3);
         }
     }
 
@@ -1721,7 +1721,13 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
      */
     public void setAnisou(double[] anisou) {
         if (active) {
-            this.anisou = anisou;
+            if (anisou == null) {
+                this.anisou = null;
+            } else if (this.anisou == null) {
+                this.anisou = Arrays.copyOf(anisou, 6);
+            } else {
+                System.arraycopy(anisou, 0, this.anisou, 0, 6);
+            }
         }
     }
 
@@ -1729,9 +1735,17 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
      * <p>
      * Getter for the field <code>anisou</code>.</p>
      *
+     * @param anisou
      * @return an array of double.
      */
-    public double[] getAnisou() {
+    public double[] getAnisou(double[] anisou) {
+        if (this.anisou == null) {
+            return null;
+        } else if (anisou == null) {
+            anisou = Arrays.copyOf(this.anisou, 6);
+        } else {
+            System.arraycopy(this.anisou, 0, anisou, 0, 6);
+        }
         return anisou;
     }
 
@@ -1743,7 +1757,22 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
      */
     public void setAnisouGradient(double[] anisouGradient) {
         if (active) {
-            this.anisouGradient = anisouGradient;
+            if (anisouGradient == null) {
+                this.anisouGradient = null;
+            } else if (this.anisouGradient == null) {
+                this.anisouGradient = Arrays.copyOf(anisouGradient, 6);
+            } else {
+                System.arraycopy(anisouGradient, 0, this.anisouGradient, 0, 6);
+            }
+        } else {
+            if (anisouGradient == null) {
+                this.anisouGradient = null;
+            } else {
+                if (this.anisouGradient == null) {
+                    this.anisouGradient = new double[6];
+                }
+                Arrays.fill(anisouGradient, 0.0);
+            }
         }
     }
 
@@ -1755,11 +1784,13 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
      */
     public void addToAnisouGradient(double[] anisouGradient) {
         if (active) {
-            if (this.anisouGradient == null) {
-                this.anisouGradient = new double[6];
-            }
-            for (int i = 0; i < 6; i++) {
-                this.anisouGradient[i] += anisouGradient[i];
+            if (anisouGradient == null) {
+            } else if (this.anisouGradient == null) {
+                this.anisouGradient = Arrays.copyOf(anisouGradient, 6);
+            } else {
+                for (int i = 0; i < 6; i++) {
+                    this.anisouGradient[i] += anisouGradient[i];
+                }
             }
         }
     }
@@ -1768,9 +1799,17 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
      * <p>
      * Getter for the field <code>anisouGradient</code>.</p>
      *
+     * @param anisouGradient
      * @return an array of double.
      */
-    public double[] getAnisouGradient() {
+    public double[] getAnisouGradient(double[] anisouGradient) {
+        if (this.anisouGradient == null) {
+            return null;
+        } else if (anisouGradient == null) {
+            anisouGradient = Arrays.copyOf(this.anisouGradient, 6);
+        } else {
+            System.arraycopy(this.anisouGradient, 0, anisouGradient, 0, 6);
+        }
         return anisouGradient;
     }
 
@@ -2516,7 +2555,7 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
         }
         String vdwHydrogens = System.getProperty("vdwHydrogens");
         boolean vdwH = Boolean.parseBoolean(vdwHydrogens);
-        double[] xyz = vdwH ? this.getRedXYZ() : this.getXYZ();
+        double[] atXYZ = vdwH ? this.getRedXYZ() : this.getXYZ(new double[3]);
         
         String resSeqString = String.format("%4s", resSeq);
         if (resSeqString.length() > 4) {
@@ -2529,7 +2568,7 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
         
         pdbString = (String.format("%s%5d %s%c%s %c%s%c   %8.3f%8.3f%8.3f%6.2f%6.2f", 
                 pdbString, pdbSerial, name, altLoc, shortResName, chainID, resSeq, 
-                insCode, xyz[0], xyz[1], xyz[2], occupancy, tempFactor));
+                insCode, atXYZ[0], atXYZ[1], atXYZ[2], occupancy, tempFactor));
         Element e = getElement();
         String eString = e.toString().toUpperCase();
         if (e.equals(Element.R)) {

@@ -155,6 +155,12 @@ public class TorsionTorsion extends BondedTerm {
     public void update() {
         energy(false);
     }
+
+    protected static final double a0[] = new double[3];
+    protected static final double a1[] = new double[3];
+    protected static final double a2[] = new double[3];
+    protected static final double a3[] = new double[3];
+    protected static final double a4[] = new double[3];
     /**
      * Constant <code>v01=new double[3]</code>
      */
@@ -261,10 +267,15 @@ public class TorsionTorsion extends BondedTerm {
     public double energy(boolean gradient) {
         energy = 0.0;
         value = 0.0;
-        diff(atoms[1].getXYZ(), atoms[0].getXYZ(), v01);
-        diff(atoms[2].getXYZ(), atoms[1].getXYZ(), v12);
-        diff(atoms[3].getXYZ(), atoms[2].getXYZ(), v23);
-        diff(atoms[4].getXYZ(), atoms[3].getXYZ(), v34);
+        atoms[0].getXYZ(a0);
+        atoms[1].getXYZ(a1);
+        atoms[2].getXYZ(a2);
+        atoms[3].getXYZ(a3);
+        atoms[4].getXYZ(a4);
+        diff(a1, a0, v01);
+        diff(a2, a1, v12);
+        diff(a3, a2, v23);
+        diff(a4, a3, v34);
         cross(v01, v12, t);
         cross(v12, v23, u);
         cross(v23, v34, v);
@@ -356,8 +367,8 @@ public class TorsionTorsion extends BondedTerm {
                 /**
                  * Derivative components for the first angle.
                  */
-                diff(atoms[2].getXYZ(), atoms[0].getXYZ(), v02);
-                diff(atoms[3].getXYZ(), atoms[1].getXYZ(), v13);
+                diff(a2, a0, v02);
+                diff(a3, a1, v13);
                 cross(t, v12, x1);
                 cross(u, v12, x2);
                 scalar(x1, dedang1 / (rt2 * r12), x1);
@@ -377,7 +388,7 @@ public class TorsionTorsion extends BondedTerm {
                 /**
                  * Derivative components for the 2nd angle.
                  */
-                diff(atoms[4].getXYZ(), atoms[2].getXYZ(), v24);
+                diff(a4, a2, v24);
                 cross(u, v23, x1);
                 cross(v, v23, x2);
                 scalar(x1, dedang2 / (ru2 * r23), x1);
@@ -484,9 +495,13 @@ public class TorsionTorsion extends BondedTerm {
              * Compute the signed parallelpiped volume at the central site.
              */
             if (atom != null) {
-                diff(atom.getXYZ(), atoms[2].getXYZ(), vc0);
-                diff(atoms[1].getXYZ(), atoms[2].getXYZ(), vc1);
-                diff(atoms[3].getXYZ(), atoms[2].getXYZ(), vc2);
+                atom.getXYZ(a0);
+                atoms[1].getXYZ(a1);
+                atoms[2].getXYZ(a2);
+                atoms[3].getXYZ(a3);
+                diff(a0, a2, vc0);
+                diff(a1, a2, vc1);
+                diff(a3, a2, vc2);
                 double volume = vc0[0] * (vc1[1] * vc2[2] - vc1[2] * vc2[1]) + vc1[0] * (vc2[1] * vc0[2] - vc2[2] * vc0[1]) + vc2[0] * (vc0[1] * vc1[2] - vc0[2] * vc1[1]);
                 if (volume < 0.0) {
                     return -1.0;

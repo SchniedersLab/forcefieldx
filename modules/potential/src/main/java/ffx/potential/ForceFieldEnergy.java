@@ -86,7 +86,6 @@ import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldBoolean;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
-//import ffx.potential.parameters.ForceField.ForceFieldInteger;
 import ffx.potential.parameters.ForceField.ForceFieldString;
 
 /**
@@ -219,7 +218,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         atoms = molecularAssembly.getAtomArray();
         xyz = new double[nAtoms * 3];
         nAtoms = atoms.length;
-        
+
         // Check that atom ordering is correct.
         for (int i = 0; i < nAtoms; i++) {
             int index = atoms[i].xyzIndex - 1;
@@ -235,13 +234,12 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         String name = forceField.toString().toUpperCase();
 
         /*// nThreads is minimum of FF_THREADS, ParallelTeam.getDefaultThreadCount, and nAtoms.
-        int defaultThreads = ParallelTeam.getDefaultThreadCount();
-        int nThreads = forceField.getInteger(ForceFieldInteger.FF_THREADS, defaultThreads);
-        nThreads = defaultThreads < nThreads ? defaultThreads : nThreads;
-        nThreads = nAtoms < nThreads ? nAtoms : nThreads;
-        
-        parallelTeam = new ParallelTeam(nThreads);*/
+         int defaultThreads = ParallelTeam.getDefaultThreadCount();
+         int nThreads = forceField.getInteger(ForceFieldInteger.FF_THREADS, defaultThreads);
+         nThreads = defaultThreads < nThreads ? defaultThreads : nThreads;
+         nThreads = nAtoms < nThreads ? nAtoms : nThreads;
 
+         parallelTeam = new ParallelTeam(nThreads);*/
         logger.info(format(" Constructing Force Field %s", name));
         logger.info(format("\n SMP threads:                        %10d", nThreads));
 
@@ -337,9 +335,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             /**
              * Turn off reciprocal space calculations.
              */
-
             forceField.addForceFieldDouble(ForceFieldDouble.EWALD_ALPHA, 0.0);
-
 
             // Specify some dummy values for the crystal.
             spacegroup = "P1";
@@ -373,7 +369,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
         rigidHydrogens = forceField.getBoolean(ForceFieldBoolean.RIGID_HYDROGENS, false);
         rigidScale = forceField.getDouble(ForceFieldDouble.RIGID_SCALE, 10.0);
-        
+
         String relSolvationType = forceField.getString(ForceFieldString.RELATIVE_SOLVATION, "NONE").toUpperCase();
         relativeSolvationTerm = true;
         nRelativeSolvations = 0;
@@ -633,7 +629,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         } else {
             comRestraint = null;
         }
-        
+
         molecularAssembly.setPotential(this);
     }
 
@@ -991,7 +987,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         
         molecularAssembly.reinitPotentials();
     }
-    
+
     public void setFixedCharges(Atom atoms[]) {
         if (particleMeshEwald != null) {
             particleMeshEwald.setFixedCharges(atoms);
@@ -1057,7 +1053,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
         // Zero out the solvation energy.
         solvationEnergy = 0.0;
-        
+
         // Zero out the relative solvation energy (sequence optimization)
         relativeSolvationEnergy = 0.0;
         nRelativeSolvations = 0;
@@ -1239,7 +1235,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 electrostaticTime = System.nanoTime() - electrostaticTime;
             }
         }
-        
+
         if (relativeSolvationTerm) {
             List<Residue> residuesList = molecularAssembly.getResidueList();
             for (Residue residue : residuesList) {
@@ -1484,9 +1480,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             sb.append(String.format("  %s %16.8f %12d\n",
                     "Solvation         ", solvationEnergy, nGKIteractions));
         }
-        
+
         if (relativeSolvationTerm) {
-            sb.append(String.format("  %s %16.8f %12d\n", 
+            sb.append(String.format("  %s %16.8f %12d\n",
                     "Relative Solvation", relativeSolvationEnergy, nRelativeSolvations));
         }
 
@@ -2053,7 +2049,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     public double getTotalElectrostaticEnergy() {
         return totalElectrostaticEnergy + solvationEnergy;
     }
-    
+
     public double getRelativeSolvationEnergy() {
         return relativeSolvationEnergy;
     }

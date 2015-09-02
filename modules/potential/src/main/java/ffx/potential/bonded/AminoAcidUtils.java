@@ -128,30 +128,30 @@ public class AminoAcidUtils {
             fromAtom = (Atom) fromResidue.getAtomNode("H1");
         }
         Atom toAtom = (Atom) toResidue.getAtomNode(atomName);
-        toAtom.setXYZ(fromAtom.getXYZ());
+        toAtom.setXYZ(fromAtom.getXYZ(null));
     }
 
     public static final String nCapBackboneAtoms[] = {"N","H1","H2","H3","CA","HA","C","O"};
-    
+
     public static final String backboneAtoms[] = {"N", "H", "CA", "HA", "C", "O"};
     public static final String glycineBackboneAtoms[] = {"N", "H", "CA", "HA2","HA3", "C", "O"};
     public static final String prolineBackboneAtoms[] = {"N", "CA", "HA", "C", "O"};
-    
+
     public static final String alanineAtoms[] = {"CB", "HB1", "HB2", "HB3"};
     public static final String glycineAtoms[] = {"HA2"};
     public static final String valineAtoms[] = {"CB","HB","CG1","HG11","HG12","HG13", "CG2","HG21","HG22","HG23"};
-    public static final String leucineAtoms[] = {"CB","HB2","HB3","CG","HG", "CD1","HD11","HD12","HD13", "CD2","HD21","HD22","HD23"};   
-    public static final String isoleucineAtoms[] = {"CB","HB", "CG1","HG12","HG13", "CG2","HG21","HG22","HG23", "CD1","HD11","HD12","HD13"}; 
+    public static final String leucineAtoms[] = {"CB","HB2","HB3","CG","HG", "CD1","HD11","HD12","HD13", "CD2","HD21","HD22","HD23"};
+    public static final String isoleucineAtoms[] = {"CB","HB", "CG1","HG12","HG13", "CG2","HG21","HG22","HG23", "CD1","HD11","HD12","HD13"};
     public static final String serineAtoms[] = {"CB","HB2", "HB3", "OG", "HG" };
-    public static final String threonineAtoms[] = {"CB", "HB","OG1","HG1","CG2","HG21","HG22","HG23"}; 
+    public static final String threonineAtoms[] = {"CB", "HB","OG1","HG1","CG2","HG21","HG22","HG23"};
     public static final String cysteineAtoms[] = {"CB","HB2","HB3","SG","HG"};
     public static final String prolineAtoms[] = {"CB","HB2","HB3","CG","HG2","HG3","CD","HD2","HD3"};
     public static final String phenylalanineAtoms[] = {"CB","HB2","HB3", "CG","CD1","HD1","CD2","HD2","CE1","HE1","CE2","HE2","CZ","HZ"};
     public static final String tyrosineAtoms[] = {"CB","HB2","HB3", "CG","CD1","HD1","CD2","HD2","CE1","HE1","CE2","HE2","CZ","OH","HH"};
     public static final String tryptophanAtoms[] = {"CB","HB2","HB3","CG","CD1","HD1","CD2","NE1","HE1","CE2","CE3","HE3","CZ2","HZ2","CZ3","HZ3","CH2","HH2"};
-    public static final String histidineAtoms[] = {"CB", "HB2", "HB3","CG","ND1","HD1","CD2","HD2","CE1","HE1","NE2","HE2"};   
+    public static final String histidineAtoms[] = {"CB", "HB2", "HB3","CG","ND1","HD1","CD2","HD2","CE1","HE1","NE2","HE2"};
     public static final String aspartateAtoms[] = {"CB","HB2","HB3","CG","OD1","OD2"};
-    public static final String asparagineAtoms[] = {"CB","HB2","HB3","CG","OD1","ND2","HD21","HD22"};    
+    public static final String asparagineAtoms[] = {"CB","HB2","HB3","CG","OD1","ND2","HD21","HD22"};
     public static final String glutamateAtoms[] = {"CB","HB2","HB3","CG","HG2","HG3","CD","OE1","OE2"};
     public static final String glutamineAtoms[] = {"CB","HB2","HB3","CG","HG2","HG3","CD","OE1","NE2","HE21","HE22"};
     public static final String methionineAtoms[] = {"CB","HB2","HB3","CG","HG2","HG3","SD","CE","HE1","HE2","HE3"};
@@ -178,7 +178,7 @@ public class AminoAcidUtils {
             case VAL:
                 atomNames.addAll(Arrays.asList(valineAtoms));
                 atomNames.addAll(Arrays.asList(backboneAtoms));
-                break;   
+                break;
             case LEU:
                 atomNames.addAll(Arrays.asList(leucineAtoms));
                 atomNames.addAll(Arrays.asList(backboneAtoms));
@@ -234,15 +234,15 @@ public class AminoAcidUtils {
             case MET:
                 atomNames.addAll(Arrays.asList(methionineAtoms));
                 atomNames.addAll(Arrays.asList(backboneAtoms));
-                break;                
+                break;
             case LYS:
                 atomNames.addAll(Arrays.asList(lysineAtoms));
                 atomNames.addAll(Arrays.asList(backboneAtoms));
-                break;                
+                break;
             case ARG:
                 atomNames.addAll(Arrays.asList(arginineAtoms));
                 atomNames.addAll(Arrays.asList(backboneAtoms));
-                break;                
+                break;
             default:
                 atomNames = null;
         }
@@ -1490,7 +1490,7 @@ public class AminoAcidUtils {
      * exception is thrown if when heavy is atom is missing that cannot be
      * built.
      */
-    public static void assignAminoAcidSideChain(ResiduePosition position, AminoAcid3 aminoAcid, Residue residue,
+    private static void assignAminoAcidSideChain(ResiduePosition position, AminoAcid3 aminoAcid, Residue residue,
             Atom CA, Atom N, Atom C, ForceField forceField, ArrayList<Bond> bondList)
             throws MissingHeavyAtomException {
         int k = cbType[aminoAcid.ordinal()];
@@ -1731,9 +1731,9 @@ public class AminoAcidUtils {
                                     switch (numBonds) {
                                         case 3:
                                             // Find the average coordinates of atoms ib, ic and id.
-                                            double b[] = ib.getXYZ();
-                                            double c[] = ib.getXYZ();
-                                            double d[] = ib.getXYZ();
+                                            double b[] = ib.getXYZ(null);
+                                            double c[] = ib.getXYZ(null);
+                                            double d[] = ib.getXYZ(null);
                                             double a[] = new double[3];
                                             a[0] = (b[0] + c[0] + d[0]) / 3.0;
                                             a[1] = (b[1] + c[1] + d[1]) / 3.0;
@@ -1741,14 +1741,14 @@ public class AminoAcidUtils {
 
                                             // Place the hydrogen at chiral position #1.
                                             intxyz(hydrogen, ia, 1.0, ib, 109.5, ic, 109.5, 0);
-                                            double e1[] = hydrogen.getXYZ();
+                                            double e1[] = hydrogen.getXYZ(null);
                                             double ret[] = new double[3];
                                             diff(a, e1, ret);
                                             double l1 = r(ret);
 
                                             // Place the hydrogen at chiral position #2.
                                             intxyz(hydrogen, ia, 1.0, ib, 109.5, ic, 109.5, 1);
-                                            double e2[] = hydrogen.getXYZ();
+                                            double e2[] = hydrogen.getXYZ(null);
                                             diff(a, e2, ret);
                                             double l2 = r(ret);
 

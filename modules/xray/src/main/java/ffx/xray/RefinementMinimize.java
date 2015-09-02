@@ -213,7 +213,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                     if (a.getAtomicNumber() == 1) {
                         continue;
                     }
-                    if (a.getAnisou() != null) {
+                    if (a.getAnisou(null) != null) {
                         for (int j = 0; j < 6; j++) {
                             scaling[i + j] = anisouscale;
                         }
@@ -284,7 +284,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
             if (a.getAtomicNumber() == 1) {
                 continue;
             }
-            if (a.getAnisou() != null) {
+            if (a.getAnisou(null) != null) {
                 hasaniso = true;
                 break;
             }
