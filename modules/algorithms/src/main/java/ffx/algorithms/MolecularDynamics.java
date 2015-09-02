@@ -38,8 +38,6 @@
 package ffx.algorithms;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -53,7 +51,6 @@ import ffx.algorithms.Integrator.Integrators;
 import ffx.algorithms.Thermostat.Thermostats;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.Atom;
 import ffx.potential.parsers.DYNFilter;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.XYZFilter;
@@ -698,7 +695,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
             currentKineticEnergy = thermostat.getKineticEnergy();
             currentTemperature = thermostat.getCurrentTemperature();
             currentTotalEnergy = currentKineticEnergy + currentPotentialEnergy;
-
 
             /**
              * Update atomic velocity, acceleration and previous acceleration.
