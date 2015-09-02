@@ -207,7 +207,8 @@ public class Minimize implements OptimizationListener, Terminatable {
      * @since 1.0
      */
     @Override
-    public boolean optimizationUpdate(int iter, int nfun, double grms, double xrms, double f, double df, double angle, LineSearchResult info) {
+    public boolean optimizationUpdate(int iter, int nfun, double grms, double xrms, double f, double df,
+            double angle, LineSearchResult info) {
         long currentTime = System.nanoTime();
         Double seconds = (currentTime - time) * 1.0e-9;
         time = currentTime;

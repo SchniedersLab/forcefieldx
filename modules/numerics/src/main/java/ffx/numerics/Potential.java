@@ -132,6 +132,18 @@ public interface Potential {
      */
     public abstract VARIABLE_TYPE[] getVariableTypes();
 
+    public abstract void setVelocity(double velocity[]);
+
+    public abstract void setAcceleration(double acceleration[]);
+
+    public abstract void setPreviousAcceleration(double previousAcceleration[]);
+
+    public abstract double[] getVelocity(double velocity[]);
+
+    public abstract double[] getAcceleration(double acceleration[]);
+
+    public abstract double[] getPreviousAcceleration(double previousAcceleration[]);
+
     /**
      * Set the state of the Potential to include FAST varying energy terms, SLOW
      * varying energy terms or BOTH.
@@ -144,8 +156,8 @@ public interface Potential {
     /**
      * Set the Potential Energy terms that should be active.
      *
-     * @param state include FAST varying energy terms, SLOW
-     * varying energy terms or BOTH.
+     * @param state include FAST varying energy terms, SLOW varying energy terms
+     * or BOTH.
      */
     public abstract void setEnergyTermState(STATE state);
 }

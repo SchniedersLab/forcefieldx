@@ -48,24 +48,24 @@ import ffx.numerics.Potential;
  * Stochastic dynamics time step via a velocity Verlet integration algorithm.
  *
  * @author Michael J. Schnieders
- * @since 1.0
  *
+ * @since 1.0
  */
 public class Stochastic extends Integrator {
 
-    private final int numberOfVariables;
-    private final double x[];
-    private final double v[];
-    private final double a[];
-    private final double mass[];
+    private int numberOfVariables;
+    private double x[];
+    private double v[];
+    private double a[];
+    private double mass[];
+    private double vfric[];
+    private double vrand[];
     private double dt;
     private final double friction;
     private double inverseFriction;
     private double fdt;
     private double efdt;
     private double temperature;
-    private final double vfric[];
-    private final double vrand[];
     private final Random random;
 
     /**
@@ -154,9 +154,9 @@ public class Stochastic extends Integrator {
                 prand = 0.0;
                 vrand[i] = 0.0;
             } else {
-                double pterm = 0.0;
-                double vterm = 0.0;
-                double rho = 0.0;
+                double pterm;
+                double vterm;
+                double rho;
                 if (fdt >= 0.05) {
                     /**
                      * Analytical expressions when the friction coefficient is
@@ -236,4 +236,30 @@ public class Stochastic extends Integrator {
             v[i] += (0.5 * a[i] * vfric[i] + vrand[i]);
         }
     }
+
+    /**
+     * To allow chemical perturbations during MD.
+     *
+     * @param nVariables
+     * @param x
+     * @param v
+     * @param a
+     * @param aPrevious
+     * @param mass
+     */
+    @Override
+    public void setNumberOfVariables(int nVariables, double x[], double v[],
+            double a[], double aPrevious[], double mass[]) {
+        this.numberOfVariables = nVariables;
+        this.x = x;
+        this.v = v;
+        this.a = a;
+        this.mass = mass;
+
+        if (nVariables > vfric.length) {
+            vfric = new double[nVariables];
+            vrand = new double[nVariables];
+        }
+    }
+
 }

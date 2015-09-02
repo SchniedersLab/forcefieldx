@@ -37,19 +37,22 @@
  */
 package ffx.algorithms;
 
-import ffx.potential.ForceFieldEnergy;
+import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Random;
 import java.util.logging.Logger;
+
+import org.apache.commons.io.FilenameUtils;
 
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.random;
 
+import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.BondedUtils;
-import static ffx.potential.bonded.BondedUtils.buildHydrogen;
-import static ffx.potential.bonded.BondedUtils.intxyz;
 import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
@@ -59,11 +62,6 @@ import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.PDBFilter;
-import java.io.File;
-import java.util.HashMap;
-import java.util.List;
-import java.util.logging.Level;
-import org.apache.commons.io.FilenameUtils;
 
 /**
  * @author S. LuCore
@@ -116,14 +114,15 @@ public class Protonate implements MonteCarloListener {
      */
     private List<Residue> chosenResidues = new ArrayList<>();
     /**
-     * MultiResidue forms of entities from chosenResidues; ready to be (de-/)protonated.
+     * MultiResidue forms of entities from chosenResidues; ready to be
+     * (de-/)protonated.
      */
     private List<MultiResidue> titratingResidues = new ArrayList<>();
     /**
-     * Maps Residue objects to their available Titration enumerations.
-     * Filled by the readyUp() method during MultiResidue creation.
+     * Maps Residue objects to their available Titration enumerations. Filled by
+     * the readyUp() method during MultiResidue creation.
      */
-    private HashMap<Residue,List<Titration>> titrationMap = new HashMap<>();
+    private HashMap<Residue, List<Titration>> titrationMap = new HashMap<>();
     /**
      * Whether to model histidine titration as three states or only two.
      */
@@ -133,13 +132,12 @@ public class Protonate implements MonteCarloListener {
      */
     private final Random rng = new Random();
     /**
-     * The forcefield being used.
-     * Needed by MultiResidue constructor.
+     * The forcefield being used. Needed by MultiResidue constructor.
      */
     private final ForceField forceField;
     /**
-     * The ForceFieldEnergy object being used by MD.
-     * Needed by MultiResidue constructor and for reinitializing after a chemical change.
+     * The ForceFieldEnergy object being used by MD. Needed by MultiResidue
+     * constructor and for reinitializing after a chemical change.
      */
     private final ForceFieldEnergy forceFieldEnergy;
     /**
@@ -147,8 +145,9 @@ public class Protonate implements MonteCarloListener {
      */
     private MCOverride mcTitrationOverride = MCOverride.NONE;
     /**
-     * Writes .s-[num] and .f-[num] files representing before/after MC move structures.
-     * Note: The 'after' snapshot represents the change that was PROPOSED, regardless of accept/reject.
+     * Writes .s-[num] and .f-[num] files representing before/after MC move
+     * structures. Note: The 'after' snapshot represents the change that was
+     * PROPOSED, regardless of accept/reject.
      */
     private SnapshotsType snapshotsType = SnapshotsType.NONE;
     /**
@@ -258,6 +257,7 @@ public class Protonate implements MonteCarloListener {
 
     /**
      * Choose titratables with intrinsic pKa inside (pH-window,pH+window).
+     *
      * @param pH
      * @param window
      */
@@ -343,7 +343,8 @@ public class Protonate implements MonteCarloListener {
     }
 
     /**
-     * Must be called after all titratable residues have been chosen, but before beginning MD.
+     * Must be called after all titratable residues have been chosen, but before
+     * beginning MD.
      */
     public void readyUp() {
         // Create MultiResidue objects to wrap titratables.
@@ -353,31 +354,30 @@ public class Protonate implements MonteCarloListener {
             polymer.addMultiResidue(multiRes);
 
             /* OLD WAY
-            int resNumber = res.getResidueNumber();
-            ResidueType resType = res.getResidueType();
-            AminoAcid3 resAA = AminoAcid3.valueOf(res.getName());
-            List<Titration> titrs = mapTitrations(res, true);
+             int resNumber = res.getResidueNumber();
+             ResidueType resType = res.getResidueType();
+             AminoAcid3 resAA = AminoAcid3.valueOf(res.getName());
+             List<Titration> titrs = mapTitrations(res, true);
 
-            // For each available titration, add a target to this MultiResidue.
-            for (Titration titr : titrs) {
-                String targetName = titr.target.toString();
-                Residue targetRes = new Residue(targetName, resNumber, resType);
-                multiRes.addResidue(targetRes);
-                // Also map the reverse titration.
-                List<Titration> reversals = mapTitrations(targetRes, true);
-                //  For Histidine, if the original residue was U then mapping titrations
-                //  for the reversal will yield H->Z as well as H->U.
-                //  We have to make sure that Z gets added as a MultiResidue option in this case.
-                for (Titration reversal : reversals) {
-                    if (reversal.target != resAA) {
-                        String altReversalName = reversal.target.toString();
-                        Residue altReversalRes = new Residue(altReversalName, resNumber, resType);
-                        multiRes.addResidue(altReversalRes);
-                    }
-                }
-            }
-            */
-
+             // For each available titration, add a target to this MultiResidue.
+             for (Titration titr : titrs) {
+             String targetName = titr.target.toString();
+             Residue targetRes = new Residue(targetName, resNumber, resType);
+             multiRes.addResidue(targetRes);
+             // Also map the reverse titration.
+             List<Titration> reversals = mapTitrations(targetRes, true);
+             //  For Histidine, if the original residue was U then mapping titrations
+             //  for the reversal will yield H->Z as well as H->U.
+             //  We have to make sure that Z gets added as a MultiResidue option in this case.
+             for (Titration reversal : reversals) {
+             if (reversal.target != resAA) {
+             String altReversalName = reversal.target.toString();
+             Residue altReversalRes = new Residue(altReversalName, resNumber, resType);
+             multiRes.addResidue(altReversalRes);
+             }
+             }
+             }
+             */
             // NEW WAY USING RECURSIVE CALL
             recursiveMap(res, multiRes);
 
@@ -392,7 +392,9 @@ public class Protonate implements MonteCarloListener {
     }
 
     /**
-     * Recursively maps Titration events and adds target Residues to a MultiResidue object.
+     * Recursively maps Titration events and adds target Residues to a
+     * MultiResidue object.
+     *
      * @param member
      * @param multiRes
      */
@@ -429,7 +431,9 @@ public class Protonate implements MonteCarloListener {
     }
 
     /**
-     * Maps available Titration enums to a given Residue; used to fill the titrationMap field.
+     * Maps available Titration enums to a given Residue; used to fill the
+     * titrationMap field.
+     *
      * @param res
      * @param store add identified Titrations to the HashMap
      * @return list of Titrations available for the given residue
@@ -523,6 +527,7 @@ public class Protonate implements MonteCarloListener {
 
     /**
      * Perform a titration MC move.
+     *
      * @param targetMulti
      * @return accept/reject
      */
@@ -560,7 +565,8 @@ public class Protonate implements MonteCarloListener {
 
         /**
          * dG_elec = electrostatic energy component of the titratable residue
-         * dG_ref = electrostatic component of the transition energy for the reference compound
+         * dG_ref = electrostatic component of the transition energy for the
+         * reference compound
          */
         double prefix = Math.log(10) * kT * (pH - pKaref);
         if (type == TitrationType.DEP) {
@@ -606,6 +612,7 @@ public class Protonate implements MonteCarloListener {
 
     /**
      * Attempt a rotamer MC move.
+     *
      * @param targetMulti
      * @return accept/reject
      */
@@ -683,6 +690,7 @@ public class Protonate implements MonteCarloListener {
 
     /**
      * Attempt a combination titration/rotamer MC move.
+     *
      * @param targetMulti
      * @return accept/reject
      */
@@ -805,7 +813,9 @@ public class Protonate implements MonteCarloListener {
     }
 
     /**
-     * Perform the requested titration on the given MultiResidue and reinitialize the FF.
+     * Perform the requested titration on the given MultiResidue and
+     * reinitialize the FF.
+     *
      * @param multiRes
      * @param titration
      */
@@ -853,7 +863,7 @@ public class Protonate implements MonteCarloListener {
         }
 
         forceFieldEnergy.reInit();
-        molDyn.reInit(insertedAtoms, removedAtoms);
+        molDyn.reInit();
 
         StringBuilder sb = new StringBuilder();
         sb.append("Active:\n");
@@ -870,9 +880,11 @@ public class Protonate implements MonteCarloListener {
     }
 
     /**
-     * Copies atomic coordinates from each active residue to its inactive counterparts.
-     * Assumes that these residues differ by only a hydrogen. If said hydrogen is
-     * in an inactive form, its coordinates are updated by geometry with the propagated heavies.
+     * Copies atomic coordinates from each active residue to its inactive
+     * counterparts. Assumes that these residues differ by only a hydrogen. If
+     * said hydrogen is in an inactive form, its coordinates are updated by
+     * geometry with the propagated heavies.
+     *
      * @param multiResidues
      */
     private void propagateInactiveResidues(List<MultiResidue> multiResidues) {
@@ -1060,6 +1072,7 @@ public class Protonate implements MonteCarloListener {
 
     /**
      * Get the current MC acceptance rate.
+     *
      * @return the acceptance rate.
      */
     @Override
@@ -1071,6 +1084,7 @@ public class Protonate implements MonteCarloListener {
 
     /**
      * Locate to which Polymer in the MolecularAssembly a given Residue belongs.
+     *
      * @param res
      * @param molAss
      * @return
@@ -1094,6 +1108,7 @@ public class Protonate implements MonteCarloListener {
 
     /**
      * Calculates the electrostatic energy at the current state.
+     *
      * @return Energy of the current state.
      */
     private double currentElectrostaticEnergy() {
@@ -1105,6 +1120,7 @@ public class Protonate implements MonteCarloListener {
 
     /**
      * Calculates the total energy at the current state.
+     *
      * @return Energy of the current state.
      */
     private double currentTotalEnergy() {
@@ -1148,12 +1164,14 @@ public class Protonate implements MonteCarloListener {
     }
 
     /**
-     * DEPRECATED.
-     * Constant values for intrinsic pKa and reference energy of a CHANGE IN protonation.
-     * NOTE: refEnergy is the energy you should subtract if this form is your PROPOSED TARGET.
+     * DEPRECATED. Constant values for intrinsic pKa and reference energy of a
+     * CHANGE IN protonation. NOTE: refEnergy is the energy you should subtract
+     * if this form is your PROPOSED TARGET.
      */
     private enum Titratable {
+
         // Standard Forms
+
         ASP(3.90, -53.188, AminoAcid3.ASH, AminoAcid3.ASP),
         GLU(4.25, -59.390, AminoAcid3.GLH, AminoAcid3.GLU),
         CYS(8.18, 60.834, AminoAcid3.CYS, AminoAcid3.CYD),
@@ -1186,21 +1204,21 @@ public class Protonate implements MonteCarloListener {
      * Enumerated titration reactions for source/target amino acid pairs.
      */
     public enum Titration {
-        Ctoc( 8.18, -60.168, TitrationType.DEP,  AminoAcid3.CYS, AminoAcid3.CYD),
-        ctoC( 8.18, +60.168, TitrationType.PROT, AminoAcid3.CYD, AminoAcid3.CYS),
-        Dtod( 3.90, +53.188, TitrationType.PROT, AminoAcid3.ASP, AminoAcid3.ASH),
-        dtoD( 3.90, -53.188, TitrationType.DEP,  AminoAcid3.ASH, AminoAcid3.ASP),
-        Etoe( 4.25, +59.390, TitrationType.PROT, AminoAcid3.GLU, AminoAcid3.GLH),
-        etoE( 4.25, -59.390, TitrationType.DEP,  AminoAcid3.GLH, AminoAcid3.GLU),
-        Ktok(10.53, +50.440, TitrationType.DEP,  AminoAcid3.LYS, AminoAcid3.LYD),
-        ktoK(10.53, -50.440, TitrationType.PROT, AminoAcid3.LYD, AminoAcid3.LYS),
-        Ytoy(10.07, -34.961, TitrationType.DEP,  AminoAcid3.TYR, AminoAcid3.TYD),
-        ytoY(10.07, +34.961, TitrationType.PROT, AminoAcid3.TYD, AminoAcid3.TYR),
 
-        HtoU( 6.00, +42.923, TitrationType.DEP,  AminoAcid3.HIS, AminoAcid3.HID),
-        UtoH( 6.00, -42.923, TitrationType.PROT, AminoAcid3.HID, AminoAcid3.HIS),
-        HtoZ( 6.00, +00.000, TitrationType.DEP,  AminoAcid3.HIS, AminoAcid3.HIE),
-        ZtoH( 6.00, +00.000, TitrationType.PROT, AminoAcid3.HIE, AminoAcid3.HIS);
+        Ctoc(8.18, -60.168, TitrationType.DEP, AminoAcid3.CYS, AminoAcid3.CYD),
+        ctoC(8.18, +60.168, TitrationType.PROT, AminoAcid3.CYD, AminoAcid3.CYS),
+        Dtod(3.90, +53.188, TitrationType.PROT, AminoAcid3.ASP, AminoAcid3.ASH),
+        dtoD(3.90, -53.188, TitrationType.DEP, AminoAcid3.ASH, AminoAcid3.ASP),
+        Etoe(4.25, +59.390, TitrationType.PROT, AminoAcid3.GLU, AminoAcid3.GLH),
+        etoE(4.25, -59.390, TitrationType.DEP, AminoAcid3.GLH, AminoAcid3.GLU),
+        Ktok(10.53, +50.440, TitrationType.DEP, AminoAcid3.LYS, AminoAcid3.LYD),
+        ktoK(10.53, -50.440, TitrationType.PROT, AminoAcid3.LYD, AminoAcid3.LYS),
+        Ytoy(10.07, -34.961, TitrationType.DEP, AminoAcid3.TYR, AminoAcid3.TYD),
+        ytoY(10.07, +34.961, TitrationType.PROT, AminoAcid3.TYD, AminoAcid3.TYR),
+        HtoU(6.00, +42.923, TitrationType.DEP, AminoAcid3.HIS, AminoAcid3.HID),
+        UtoH(6.00, -42.923, TitrationType.PROT, AminoAcid3.HID, AminoAcid3.HIS),
+        HtoZ(6.00, +00.000, TitrationType.DEP, AminoAcid3.HIS, AminoAcid3.HIE),
+        ZtoH(6.00, +00.000, TitrationType.PROT, AminoAcid3.HIE, AminoAcid3.HIS);
 
         public final double pKa, refEnergy;
         public final TitrationType type;
@@ -1217,9 +1235,11 @@ public class Protonate implements MonteCarloListener {
     }
 
     /**
-     * Maps each Titration reaction to its inverse for the purpose of reverting failed MC steps.
+     * Maps each Titration reaction to its inverse for the purpose of reverting
+     * failed MC steps.
      */
-    private static final HashMap<Titration,Titration> inverseReactions = new HashMap<>();
+    private static final HashMap<Titration, Titration> inverseReactions = new HashMap<>();
+
     static {
         inverseReactions.put(Titration.Ctoc, Titration.ctoC);
         inverseReactions.put(Titration.ctoC, Titration.Ctoc);
@@ -1238,26 +1258,32 @@ public class Protonate implements MonteCarloListener {
     }
 
     private enum MCOverride {
+
         ACCEPT, REJECT, NONE;
     }
 
     private enum StepType {
+
         TITRATE, ROTAMER, COMBO;
     }
 
     private enum SnapshotsType {
+
         NONE, SEPARATE, INTERLEAVED;
     }
 
     private enum TitrationType {
+
         PROT, DEP;
     }
 
     public enum HistidineMode {
+
         ALL, HID_ONLY, HIE_ONLY;
     }
 
     private static int debugLogLevel = 0;
+
     private static void debug(int level, String message) {
         if (debugLogLevel >= level) {
             logger.info(message);

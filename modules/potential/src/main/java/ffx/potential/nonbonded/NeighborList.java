@@ -971,7 +971,8 @@ public class NeighborList extends ParallelRegion {
                 if (use != null && !use[aj]) {
                     continue;
                 }
-                if (!intermolecular && (molecules[atomIndex] != molecules[aj])) {
+                if (!intermolecular
+                        && (molecules[atomIndex] != molecules[aj])) {
                     continue;
                 }
                 if (mask[aj] > 0 && (iSymm == 0 || aj >= atomIndex)) {

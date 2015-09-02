@@ -44,6 +44,7 @@ import ffx.numerics.Potential.VARIABLE_TYPE;
  * velocities.
  *
  * @author Michael J. Schnieders
+ *
  * @since 1.0
  */
 public class Adiabatic extends Thermostat {

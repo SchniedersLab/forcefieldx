@@ -68,7 +68,7 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
     private final double[] scaling;
     private final MolecularAssembly molecularAssembly;
     private final XtalEnergy potential;
-    private AlgorithmListener algorithmListener;
+    private final AlgorithmListener algorithmListener;
     private boolean done = false;
     private boolean terminate = false;
     private long time;
@@ -235,7 +235,8 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
      * @since 1.0
      */
     @Override
-    public boolean optimizationUpdate(int iter, int nfun, double grms, double xrms, double f, double df, double angle, LineSearchResult info) {
+    public boolean optimizationUpdate(int iter, int nfun, double grms, double xrms,
+            double f, double df, double angle, LineSearchResult info) {
         long currentTime = System.nanoTime();
         Double seconds = (currentTime - time) * 1.0e-9;
         time = currentTime;

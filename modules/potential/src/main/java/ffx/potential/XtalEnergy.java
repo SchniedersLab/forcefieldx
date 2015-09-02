@@ -59,38 +59,60 @@ import static ffx.crystal.SpaceGroup.CrystalSystem.TRIGONAL;
  */
 public class XtalEnergy implements Potential {
 
-    private final ForceFieldEnergy forceFieldEnergy;
-    private double scaling[];
-    private double xyz[];
-    private double gr[];
-    private int nAtoms;
-    private int nParams;
-    private Atom atoms[];
-    private Crystal crystal;
-    private VARIABLE_TYPE type[];
-    private double mass[];
-    private double totalEnergy;
-    private Crystal unitCell;
     /**
      * The logger.
      */
     private static final Logger logger = Logger.getLogger(XtalEnergy.class.getName());
 
+    private final ForceFieldEnergy forceFieldEnergy;
+    private final Atom activeAtoms[];
+    private final int nActive;
+
+    private final double xyz[];
+    private final double gr[];
+    private final int nParams;
+
+    private final Crystal crystal;
+    private final VARIABLE_TYPE type[];
+    private final double mass[];
+    private final Crystal unitCell;
+    private double scaling[];
+    private double totalEnergy;
+
     public XtalEnergy(ForceFieldEnergy forceFieldEnergy, MolecularAssembly molecularAssembly) {
         this.forceFieldEnergy = forceFieldEnergy;
-        nAtoms = forceFieldEnergy.getNumberofAtoms();
-        nParams = 3 * nAtoms + 6;
-        atoms = molecularAssembly.getAtomArray();
+        Atom atoms[] = molecularAssembly.getAtomArray();
+        int nAtoms = atoms.length;
+
+        int n = 0;
+        for (int i = 0; i < nAtoms; i++) {
+            Atom a = atoms[i];
+            if (a.isActive()) {
+                n++;
+            }
+        }
+        nActive = n;
+
+        activeAtoms = new Atom[nActive];
+        int index = 0;
+        for (int i = 0; i < nAtoms; i++) {
+            Atom a = atoms[i];
+            if (a.isActive()) {
+                activeAtoms[index++] = a;
+            }
+        }
+
+        nParams = 3 * nActive + 6;
         crystal = forceFieldEnergy.getCrystal();
         unitCell = crystal.getUnitCell();
-        xyz = new double[3 * nAtoms];
-        gr = new double[3 * nAtoms];
+        xyz = new double[3 * nActive];
+        gr = new double[3 * nActive];
         type = new VARIABLE_TYPE[nParams];
         mass = new double[nParams];
 
-        int index = 0;
-        for (int i = 0; i < nAtoms; i++) {
-            double m = atoms[i].getMass();
+        index = 0;
+        for (int i = 0; i < nActive; i++) {
+            double m = activeAtoms[i].getMass();
             mass[index] = m;
             mass[index + 1] = m;
             mass[index + 2] = m;
@@ -99,7 +121,7 @@ public class XtalEnergy implements Potential {
             type[index + 2] = VARIABLE_TYPE.Z;
             index += 3;
         }
-        for (int i = nAtoms * 3; i < nAtoms * 3 + 6; i++) {
+        for (int i = nActive * 3; i < nActive * 3 + 6; i++) {
             mass[i] = 1.0;
             type[i] = VARIABLE_TYPE.OTHER;
         }
@@ -118,17 +140,11 @@ public class XtalEnergy implements Potential {
 
         /**
          * Set atomic coordinates & lattice parameters.
-         *
-         * setCoordinates assumes atomic coordinates are fractional.
-         *
-         * The x array still contains Fractional coordinates upon return; and
-         * the xyz array contain Cartesian coordinates.
          */
         setCoordinates(x);
 
         totalEnergy = forceFieldEnergy.energy(false, false);
 
-        //logger.info(String.format(" Energy %16.8f", totalEnergy));
         /**
          * Scale coordinates if applicable.
          */
@@ -155,11 +171,6 @@ public class XtalEnergy implements Potential {
 
         /**
          * Set atomic coordinates & lattice parameters.
-         *
-         * setCoordinates assumes atomic coordinates are fractional.
-         *
-         * The x array still contains Fractional coordinates upon return; and
-         * the xyz array contain Cartesian coordinates.
          */
         setCoordinates(x);
 
@@ -168,10 +179,7 @@ public class XtalEnergy implements Potential {
          */
         double e = forceFieldEnergy.energyAndGradient(xyz, gr);
 
-        //logger.info(String.format("getCoordinate %16.8f", x[1]));
         /**
-         * Fractionalize Cartesian coordinate gradient from "gr" into g.
-         *
          * Both coordinates and gradient are scaled if applicable.
          */
         packGradient(x, g);
@@ -188,6 +196,11 @@ public class XtalEnergy implements Potential {
 
     }
 
+    /**
+     *
+     * @param x
+     * @param g
+     */
     private void unitCellParameterDerivatives(double x[], double g[]) {
 
         double eps = 1.0e-5;
@@ -200,7 +213,7 @@ public class XtalEnergy implements Potential {
         double beta = unitCell.beta;
         double gamma = unitCell.gamma;
 
-        int index = 3 * nAtoms;
+        int index = 3 * nActive;
         switch (crystal.spaceGroup.crystalSystem) {
             case TRICLINIC:
                 g[index] = finiteDifference(x, index, eps);
@@ -321,7 +334,7 @@ public class XtalEnergy implements Potential {
          * Scale finite-difference partial derivatives of lattice parameters.
          */
         if (scaling != null) {
-            index = 3 * nAtoms;
+            index = 3 * nActive;
             g[index] /= scaling[index];
             index++;
             g[index] /= scaling[index];
@@ -334,14 +347,9 @@ public class XtalEnergy implements Potential {
             index++;
             g[index] /= scaling[index];
         }
-        /*index = 3 * nAtoms;
-         logger.info(String.format("getGradient %16.8f %16.8f %16.8f %16.8f %16.8f %16.8f",
-         g[index], g[index+1], g[index+2], g[index+3], g[index+4], g[index+5]));
-         * */
-
     }
 
-    /*
+    /**
      * Calculate finite-difference derivative for any parameter.
      */
     private double finiteDifference(double[] x, int index, double eps) {
@@ -362,6 +370,14 @@ public class XtalEnergy implements Potential {
         return (ePlus - eMinus) / eps;
     }
 
+    /**
+     *
+     * @param x
+     * @param index1
+     * @param index2
+     * @param eps
+     * @return
+     */
     private double finiteDifference2(double[] x, int index1, int index2, double eps) {
         double scale1 = 1.0;
         double scale2 = 1.0;
@@ -387,6 +403,15 @@ public class XtalEnergy implements Potential {
         return (ePlus - eMinus) / eps;
     }
 
+    /**
+     *
+     * @param x
+     * @param index1
+     * @param index2
+     * @param index3
+     * @param eps
+     * @return
+     */
     private double finiteDifference3(double[] x, int index1, int index2, int index3, double eps) {
         double scale1 = 1.0;
         double scale2 = 1.0;
@@ -419,16 +444,12 @@ public class XtalEnergy implements Potential {
     }
 
     /**
-     * Fractionalize gradient (g). Then apply scaling for the optimizer if
-     * applicable.
+     * Apply scaling for the optimizer if applicable.
      *
      * @param x
      * @param g
      */
     private void packGradient(double x[], double g[]) {
-        // Fractionalize Cartesian gradient.
-        //unitCell.toFractionalCoordinates(nAtoms, gr, g);
-
         // Scale fractional coordinates and gradient.
         if (scaling != null) {
             int len = x.length;
@@ -441,24 +462,22 @@ public class XtalEnergy implements Potential {
     }
 
     /**
-     * Sets atomic coordinates and lattice parameters
+     * Sets atomic coordinates and lattice parameters.
      *
-     * @param coords First 3*nAtoms parameters are fractional coordinates, next
-     * 6 are lattice parameters.
+     * @param x First 3*nActive parameters are coordinates, next 6 are x
+     * parameters.
      */
-    private void setCoordinates(double coords[]) {
-        assert (coords != null);
+    private void setCoordinates(double x[]) {
+        assert (x != null);
 
-        int index = nAtoms * 3;
-        double a = coords[index];
-        double b = coords[index + 1];
-        double c = coords[index + 2];
-        double alpha = coords[index + 3];
-        double beta = coords[index + 4];
-        double gamma = coords[index + 5];
-        /*
-         * logger.info(String.format("getOptimizedUCParams %16.8f %16.8f %16.8f %16.8f %16.8f %16.8f",
-         a, b, c, alpha, beta, gamma));*/
+        int index = nActive * 3;
+        double a = x[index];
+        double b = x[index + 1];
+        double c = x[index + 2];
+        double alpha = x[index + 3];
+        double beta = x[index + 4];
+        double gamma = x[index + 5];
+
         switch (crystal.spaceGroup.crystalSystem) {
             case TRICLINIC:
                 break;
@@ -523,24 +542,20 @@ public class XtalEnergy implements Potential {
                 break;
         }
         crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma);
-        //logger.info(crystal.toString());
-        //crystal.toCartesianCoordinates(nAtoms, coords, coords);
         forceFieldEnergy.setCrystal(crystal);
 
         index = 0;
-        int len = atoms.length;
-        for (int i = 0; i < len; i++) {
-            Atom atom = atoms[i];
-            double x = coords[index];
-            double y = coords[index + 1];
-            double z = coords[index + 2];
-            xyz[index] = x;
-            xyz[index + 1] = y;
-            xyz[index + 2] = z;
+        for (int i = 0; i < nActive; i++) {
+            Atom atom = activeAtoms[i];
+            double xx = x[index];
+            double yy = x[index + 1];
+            double zz = x[index + 2];
+            xyz[index] = xx;
+            xyz[index + 1] = yy;
+            xyz[index + 2] = zz;
             index += 3;
-            atom.moveTo(x, y, z);
+            atom.moveTo(xx, yy, zz);
         }
-        //unitCell.toFractionalCoordinates(nAtoms, coords, coords);
     }
 
     @Override
@@ -559,17 +574,14 @@ public class XtalEnergy implements Potential {
         if (x == null || x.length < n) {
             x = new double[n];
         }
-        double coords[] = new double[3];
         int index = 0;
-        int len = atoms.length;
-        for (int i = 0; i < len; i++) {
-            Atom a = atoms[i];
-            a.getXYZ(coords);
-            x[index] = coords[0];
+        for (int i = 0; i < nActive; i++) {
+            Atom a = activeAtoms[i];
+            x[index] = a.getX();
             index++;
-            x[index] = coords[1];
+            x[index] = a.getY();
             index++;
-            x[index] = coords[2];
+            x[index] = a.getZ();
             index++;
         }
         x[index] = unitCell.a;
@@ -583,10 +595,6 @@ public class XtalEnergy implements Potential {
         x[index] = unitCell.beta;
         index++;
         x[index] = unitCell.gamma;
-        /*
-         logger.info(String.format("getUCParams %16.8f %16.8f %16.8f %16.8f %16.8f %16.8f",
-         unitCell.a, unitCell.b, unitCell.c, unitCell.alpha, unitCell.beta, unitCell.gamma));
-         logger.info(String.format("getCoordinate %16.8f", x[1])); */
         return x;
     }
 
@@ -613,5 +621,35 @@ public class XtalEnergy implements Potential {
     @Override
     public void setEnergyTermState(STATE state) {
         forceFieldEnergy.setEnergyTermState(state);
+    }
+
+    @Override
+    public void setVelocity(double[] velocity) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void setAcceleration(double[] acceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void setPreviousAcceleration(double[] previousAcceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public double[] getVelocity(double[] velocity) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public double[] getAcceleration(double[] acceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public double[] getPreviousAcceleration(double[] previousAcceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }

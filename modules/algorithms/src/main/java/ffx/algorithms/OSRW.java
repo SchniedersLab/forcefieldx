@@ -1282,9 +1282,39 @@ public class OSRW implements Potential {
         potential.setEnergyTermState(state);
     }
 
+        @Override
+    public void setVelocity(double[] velocity) {
+        potential.setVelocity(velocity);
+    }
+
+    @Override
+    public void setAcceleration(double[] acceleration) {
+        potential.setAcceleration(acceleration);
+    }
+
+    @Override
+    public void setPreviousAcceleration(double[] previousAcceleration) {
+        potential.setPreviousAcceleration(previousAcceleration);
+    }
+
+    @Override
+    public double[] getVelocity(double[] velocity) {
+        return potential.getVelocity(velocity);
+    }
+
+    @Override
+    public double[] getAcceleration(double[] acceleration) {
+        return potential.getAcceleration(acceleration);
+    }
+
+    @Override
+    public double[] getPreviousAcceleration(double[] previousAcceleration) {
+        return potential.getPreviousAcceleration(previousAcceleration);
+    }
+
     @Override
     public double energy(double[] x) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     private class OSRWHistogramWriter extends PrintWriter {
@@ -1423,4 +1453,5 @@ public class OSRW implements Potential {
             }
         }
     }
+
 }

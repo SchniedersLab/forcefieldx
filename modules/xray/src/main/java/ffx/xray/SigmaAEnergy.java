@@ -221,6 +221,36 @@ public class SigmaAEnergy implements Potential {
                 + sim_r * atan(z) + x + 1.0;
     }
 
+    @Override
+    public void setVelocity(double[] velocity) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void setAcceleration(double[] acceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void setPreviousAcceleration(double[] previousAcceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public double[] getVelocity(double[] velocity) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public double[] getAcceleration(double[] acceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public double[] getPreviousAcceleration(double[] previousAcceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
     private class SigmaARegion extends ParallelRegion {
 
         boolean gradient = true;

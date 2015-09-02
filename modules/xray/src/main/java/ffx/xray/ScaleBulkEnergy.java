@@ -153,6 +153,36 @@ public class ScaleBulkEnergy implements Potential {
         scaleBulkEnergyRegion = new ScaleBulkEnergyRegion(threadCount);
     }
 
+    @Override
+    public void setVelocity(double[] velocity) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void setAcceleration(double[] acceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void setPreviousAcceleration(double[] previousAcceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public double[] getVelocity(double[] velocity) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public double[] getAcceleration(double[] acceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public double[] getPreviousAcceleration(double[] previousAcceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
     private class ScaleBulkEnergyRegion extends ParallelRegion {
 
         boolean gradient = true;

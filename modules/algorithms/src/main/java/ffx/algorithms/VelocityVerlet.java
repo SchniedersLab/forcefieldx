@@ -108,4 +108,25 @@ public class VelocityVerlet extends Integrator {
         this.dt = dt;
         dt_2 = dt * .5;
     }
+
+    /**
+     * To allow chemical perturbations during MD.
+     *
+     * @param nVariables
+     * @param x
+     * @param v
+     * @param a
+     * @param aPrevious
+     * @param mass
+     */
+    @Override
+    public void setNumberOfVariables(int nVariables, double x[], double v[],
+            double a[], double aPrevious[], double mass[]) {
+        this.nVariables = nVariables;
+        this.x = x;
+        this.v = v;
+        this.a = a;
+        this.mass = mass;
+    }
+
 }
