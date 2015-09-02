@@ -51,6 +51,7 @@ import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.ResidueEnumerations;
 import ffx.potential.bonded.ResidueEnumerations.CommonAminoAcid3;
 import ffx.potential.bonded.Residue.ResidueType;
+import ffx.utilities.LoggerSevereError;
 
 // Groovy Imports
 import groovy.util.CliBuilder;

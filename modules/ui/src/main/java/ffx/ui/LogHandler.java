@@ -37,11 +37,13 @@
  */
 package ffx.ui;
 
+import ffx.utilities.LoggerSevereError;
 import java.awt.GraphicsEnvironment;
 import java.util.logging.ErrorManager;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 /**
  * The default ConsoleHanlder publishes logging to System.err. This class
@@ -55,9 +57,19 @@ import java.util.logging.LogRecord;
 public class LogHandler extends Handler {
 
     private static final boolean headless = GraphicsEnvironment.isHeadless();
+    private static final boolean tryCatchSevere;
     private MainPanel mainPanel = null;
     private boolean fatal = false;
 
+    static {
+        String tryCatchSevereStr = System.getProperty("tryCatchSevere");
+        if (tryCatchSevereStr != null) {
+            tryCatchSevere = Boolean.parseBoolean(tryCatchSevereStr);
+        } else {
+            tryCatchSevere = false;
+        }
+    }
+    
     /**
      * A reference to the Force Field X MainPanel container to shut down if we
      * encounter a fatal (SEVERE) exception. If we are not in Headless mode,
@@ -111,6 +123,24 @@ public class LogHandler extends Handler {
             if (record.getLevel() == Level.SEVERE) {
                 fatal = true;
                 System.err.println(msg);
+                
+                Throwable throwable = record.getThrown();
+                if (throwable != null) {
+                    System.err.println(String.format(" Exception %s logged.", throwable));
+                }
+                
+                // If tryCatchSevere, and the throwable (if it exists) is not an Error, then...
+                if (tryCatchSevere && (throwable == null || !(throwable instanceof Error))) {
+                    System.err.println(" Force Field X may not continue.");
+                    System.err.println(" Throwing new error...");
+                    fatal = false;
+                    if (throwable != null) {
+                        throw new LoggerSevereError(throwable);
+                    } else {
+                        throw new LoggerSevereError(" Unknown exception");
+                    }
+                }
+                
                 System.err.println(" Force Field X will not continue.");
                 System.err.println(" Shutting down...");
                 flush();

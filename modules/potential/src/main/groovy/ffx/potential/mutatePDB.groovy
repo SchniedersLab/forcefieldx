@@ -67,10 +67,12 @@ cli.n(longOpt:'resname', args:1, argName:'ALA', 'New residue name.');
 cli.c(longOpt:'chain', args:1, argName:' ', 'Single character chain name (default is \' \').');
 cli.p(longOpt:'repack', args:1, argName:'7.0', 'After mutation, repack all residues within # Angstroms.');
 cli.pt(longOpt:'threeBodyRepack', args:1, argName:'true', 'Include three-body energies in repacking.');
+cli.eR(longOpt:'energyRestart', args: 1, argName:'filename', 'Load energy restart file from a previous run. Ensure that all parameters are the same!');
 
 boolean repack = false;
 double repackDistance = 7.0;
 boolean threeBodyRepack = true;
+boolean useEnergyRestart = false;
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -104,6 +106,14 @@ if (options.p) {
 
 if (options.pt) {
     threeBodyRepack = Boolean.parseBoolean(options.pt);
+}
+
+if (options.eR) {
+    /*if (!parallelEnergies || algorithm == 4) {
+        logger.severe(" FFX shutting down: energy restart only implemented for parallelized global optimizations.");
+    }*/
+    useEnergyRestart = true;
+    energyRestartFile = new File(options.eR);
 }
 
 // Read in command line.
@@ -141,6 +151,9 @@ if (repack) {
     rotamerOptimization.setForcedResidues(resID, resID);
     rotamerOptimization.setWindowSize(1);
     rotamerOptimization.setDistanceCutoff(repackDistance);
+    if (useEnergyRestart) {
+    rotamerOptimization.setEnergyRestartFile(energyRestartFile);
+    }
     
     startResID = resID;
     finalResID = resID;
