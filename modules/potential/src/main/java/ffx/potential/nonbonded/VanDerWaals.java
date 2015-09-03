@@ -141,6 +141,7 @@ public class VanDerWaals implements MaskingInterface,
     private static final byte SOFT = 1;
     private int molecule[];
     private boolean intermolecularSoftcore = false;
+    private boolean intramolecularSoftcore = false;
     private double lambda = 1.0;
     private double vdwLambdaExponent = 1.0;
     private double vdwLambdaAlpha = 0.05;
@@ -397,6 +398,8 @@ public class VanDerWaals implements MaskingInterface,
             }
             intermolecularSoftcore = forceField.getBoolean(
                     ForceField.ForceFieldBoolean.INTERMOLECULAR_SOFTCORE, false);
+            intramolecularSoftcore = forceField.getBoolean(
+                    ForceField.ForceFieldBoolean.INTRAMOLECULAR_SOFTCORE, false);
         } else {
             shareddEdL = null;
             sharedd2EdL2 = null;
@@ -427,7 +430,7 @@ public class VanDerWaals implements MaskingInterface,
         if (!crystal.aperiodic()) {
             vdwcut = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 9.0);
         } else {
-            vdwcut = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, crystal.a / 2.0 - (buff + 1.0) );
+            vdwcut = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, crystal.a / 2.0 - (buff + 1.0));
         }
         double vdwtaper = 0.9 * vdwcut;
         cut = vdwtaper;
@@ -907,6 +910,10 @@ public class VanDerWaals implements MaskingInterface,
         this.intermolecularSoftcore = intermolecularSoftcore;
     }
 
+    public void setIntramolecularSoftcore(boolean intramolecularSoftcore) {
+        this.intramolecularSoftcore = intramolecularSoftcore;
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -941,9 +948,11 @@ public class VanDerWaals implements MaskingInterface,
         double lgy[] = lambdaGradY[0];
         double lgz[] = lambdaGradZ[0];
         for (int i = 0; i < nAtoms; i++) {
-            lambdaGradient[index++] += lgx[i];
-            lambdaGradient[index++] += lgy[i];
-            lambdaGradient[index++] += lgz[i];
+            if (atoms[i].isActive()) {
+                lambdaGradient[index++] += lgx[i];
+                lambdaGradient[index++] += lgy[i];
+                lambdaGradient[index++] += lgz[i];
+            }
         }
     }
 
@@ -1483,7 +1492,10 @@ public class VanDerWaals implements MaskingInterface,
                             final double r = sqrt(r2);
                             double alpha = 0.0;
                             double lambda5 = 1.0;
-                            boolean soft = softCorei[k] || (intermolecularSoftcore && (moleculei != molecule[k]));
+                            boolean sameMolecule = (moleculei == molecule[k]);
+                            boolean soft = softCorei[k]
+                                    || (intermolecularSoftcore && !sameMolecule)
+                                    || (intramolecularSoftcore && sameMolecule);
                             if (soft) {
                                 alpha = sc1;
                                 lambda5 = sc2;

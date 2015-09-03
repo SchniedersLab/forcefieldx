@@ -70,4 +70,17 @@ public abstract class Integrator {
      * @param gradient the gradient for the post-force operation.
      */
     abstract public void postForce(double gradient[]);
+
+    /**
+     * Update the Integrator to be consistent with chemical perturbations.
+     *
+     * @param nVariables
+     * @param x
+     * @param v
+     * @param a
+     * @param aPrevious
+     * @param mass
+     */
+    abstract public void setNumberOfVariables(int nVariables, double x[], double v[],
+            double a[], double aPrevious[], double mass[]);
 }

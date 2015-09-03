@@ -360,6 +360,36 @@ public class SplineEnergy implements Potential {
     public void setEnergyTermState(STATE state) {
     }
 
+    @Override
+    public void setVelocity(double[] velocity) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void setAcceleration(double[] acceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void setPreviousAcceleration(double[] previousAcceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public double[] getVelocity(double[] velocity) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public double[] getAcceleration(double[] acceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public double[] getPreviousAcceleration(double[] previousAcceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
     public static interface Type {
 
         public static final int FOFC = 1;
@@ -370,6 +400,6 @@ public class SplineEnergy implements Potential {
     
     @Override
     public void reInit() {
-        //logger.warning(String.format(" No reInit method defined for %s", SplineEnergy.class.toString()));
+        throw new UnsupportedOperationException(String.format(" No reInit method defined for %s", SplineEnergy.class.toString()));
     }
 }

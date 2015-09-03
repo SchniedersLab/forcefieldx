@@ -50,8 +50,8 @@ import ffx.xray.RefinementMinimize.RefinementMode;
  * Combine the Real Space target and chemical potential energy.
  *
  * @author Timothy D. Fenn and Michael J. Schnieders
- * @since 1.0
  *
+ * @since 1.0
  */
 public class RealSpaceEnergy implements LambdaInterface, Potential {
 
@@ -412,6 +412,36 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
     
     @Override
     public void reInit() {
-        //logger.warning(String.format(" No reInit method defined for %s", RealSpaceEnergy.class.toString()));
+        throw new UnsupportedOperationException(String.format(" No reInit method defined for %s", RealSpaceEnergy.class.toString()));
+    }
+
+    @Override
+    public void setVelocity(double[] velocity) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void setAcceleration(double[] acceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void setPreviousAcceleration(double[] previousAcceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public double[] getVelocity(double[] velocity) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public double[] getAcceleration(double[] acceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public double[] getPreviousAcceleration(double[] previousAcceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }

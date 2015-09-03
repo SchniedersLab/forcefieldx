@@ -35,47 +35,6 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-// Copyright license for hierarchical-clustering-java
-/**
- * *****************************************************************************
- * Copyright 2013 Lars Behnke
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not
- * use this file except in compliance with the License. You may obtain a copy of
- * the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
- * the License.
- * ****************************************************************************
- */
-// Copyright license for BioJava
-/*
- *                    BioJava development code
- *
- * This code may be freely distributed and modified under the
- * terms of the GNU Lesser General Public Licence.  This should
- * be distributed with the code.  If you do not have a copy,
- * see:
- *
- *      http://www.gnu.org/copyleft/lesser.html
- *
- * Copyright for this code is held jointly by the individual
- * authors.  These should be listed in @author doc comments.
- *
- * For more information on the BioJava project and its aims,
- * or to join the biojava-l mailing list, visit the home page
- * at:
- *
- *      http://www.biojava.org/
- *
- * Created on 7/8/2014
- *
- */
 package ffx.algorithms;
 
 import com.apporiented.algorithm.clustering.AverageLinkageStrategy;
@@ -113,7 +72,7 @@ import org.biojava.nbio.structure.Group;
  * @author JacobLitman
  */
 public class ClusterStructures {
-    
+
     private static final Logger logger = Logger.getLogger(ClusterStructures.class.getName());
     private final AlgorithmFunctions utils;
     private PDBFileReader[] fileReaders;
@@ -136,9 +95,9 @@ public class ClusterStructures {
     private String outputPrefix = "ffx_cluster_";
     /*private File[] outputDirectories;
     private Path[] outputPaths;*/
-    
     /**
      * Default constructor for ClusterStructures
+     *
      * @param utils AlgorithmFunctions object to use
      */
     public ClusterStructures(AlgorithmFunctions utils) {
@@ -158,9 +117,10 @@ public class ClusterStructures {
             this.suppressLengthWarning = false;
         }*/
     }
-    
+
     /**
      * Constructor, including files, for ClusterStructures
+     *
      * @param utils AlgorithmFunctions object to use
      * @param files Files to cluster
      */
@@ -169,16 +129,16 @@ public class ClusterStructures {
         this.files = files;
         nFiles = files.length;
     }
-    
+
     public void setFiles(File[] files) {
         this.files = files;
         nFiles = files.length;
     }
-    
+
     public void setNumClusters(int numClusters) {
         this.numClusters = numClusters;
     }
-    
+
     public void setDistanceFunction(ClusterDistanceFunction distFunction) {
         this.distFunction = distFunction;
     }
@@ -186,23 +146,23 @@ public class ClusterStructures {
     public void setLinkage(Linkage linkage) {
         this.linkage = linkage;
     }
-    
+
     public void setOutputDirectoryPrefix(String prefix) {
         this.outputPrefix = prefix;
     }
-    
+
     public void setCopyFiles(boolean copyFiles) {
         this.copyFiles = copyFiles;
     }
-    
+
     public void setClusterParallel(boolean parallel) {
         this.parallel = parallel;
     }
-    
+
     public void setCacheSize(int cacheSize) {
         this.cacheSize = cacheSize;
     }
-    
+
     public void setRmsdCutoff(double rmsdCutoff) {
         this.rmsdCutoff = rmsdCutoff;
     }
@@ -210,9 +170,9 @@ public class ClusterStructures {
     public void setAlignment(boolean alignment) {
         this.alignment = alignment;
     }
-    
     /**
      * Generate directories to output cluster info
+     *
      * @param nClusters Number of directories to generate.
      */
     /*private void generateOutputDirectories(int nClusters) {
@@ -238,6 +198,7 @@ public class ClusterStructures {
             String namei = String.format("%s%s_%d", relPath.toString(), outputPrefix, i);
             File diri = new File(namei);
             diri.mkdirs();
+<<<<<<< HEAD
             /*outputDirectories[i-1] = diri;
             outputPaths[i-1] = pwdPath.relativize(generatePath(diri));*/
         /*}
@@ -246,21 +207,23 @@ public class ClusterStructures {
     /**
      * Gets the specified structure, either from the array of stored Structures,
      * or by reading from disk (depending on array size).
+     *
      * @param index Structure index
      * @param reader PDB file reader to use
      * @return the corresponding Structure
      * @throws IOException If the PDBFileReader encounters an error
      */
-    private Structure accessStructure (int index, PDBFileReader reader) throws IOException {
+    private Structure accessStructure(int index, PDBFileReader reader) throws IOException {
         if (index < cacheStart) {
             return reader.getStructure(files[index]);
         } else {
             return structureCache[index - cacheStart];
         }
     }
-    
+
     /**
      * Main execution method for ClusterStructures.
+     *
      * @return A list of the final clusters
      */
     public List<Cluster> cluster() {
@@ -272,7 +235,7 @@ public class ClusterStructures {
         } else {
             clusters = clusterSequential();
         }
-        
+
         int nClusters = clusters.size();
         
         for (int i = 0; i < nClusters; i++) {
@@ -304,7 +267,7 @@ public class ClusterStructures {
             Cluster cluster = clusters.get(i);
             //String filename = String.format("%sffx_cluster_%d_summary", outputPaths[i].toString(), i);
             File summaryFile = new File(filename.concat(".txt"));
-            
+
             for (int j = 1; j < 1000; j++) {
                 if (summaryFile.exists()) {
                     summaryFile = new File(String.format("%s_%d.txt", filename, j));
@@ -317,19 +280,19 @@ public class ClusterStructures {
                         + "file name for %s", filename));
                 continue;
             }
-            
+
             try (BufferedWriter bw = new BufferedWriter(new FileWriter(summaryFile))) {
                 bw.write(String.format("PDB files for cluster %d", i));
                 bw.newLine();
                 bw.newLine();
-                
+
                 List<Cluster> childClusters = getSubclusters(cluster, 0);
                 for (Cluster child : childClusters) {
                     int index = Integer.parseInt(child.getName());
                     bw.write(files[index].getName());
                     bw.newLine();
                 }
-                
+
                 if (copyFiles) {
                     for (Cluster child : childClusters) {
                         int index = Integer.parseInt(child.getName());
@@ -355,30 +318,32 @@ public class ClusterStructures {
         }*/
         return clusters;
     }
-    
+
     /**
      * Performs clustering in parallel.
+     *
      * @return Final clusters.
      */
     private List<Cluster> clusterParallel() {
         String[] names = new String[nFiles];
         double[][] rmsdDistances = new double[nFiles][nFiles];
-        
+
         for (int i = 0; i < nFiles; i++) {
             rmsdDistances[i][i] = 0.0; // Ensure the diagonal is filled.
             names[i] = String.format("%d", i);
         }
         /* This stuff should go in the ParallelRegion start() method.
-        nThreads = ParallelTeam.getDefaultThreadCount();
-        fileReaders = new PDBFileReader[nThreads];
-        for (int i = 0; i < nThreads; i++) {
-            fileReaders[i] = new PDBFileReader();
-        }*/
+         nThreads = ParallelTeam.getDefaultThreadCount();
+         fileReaders = new PDBFileReader[nThreads];
+         for (int i = 0; i < nThreads; i++) {
+         fileReaders[i] = new PDBFileReader();
+         }*/
         return null;
     }
-    
+
     /**
      * Performs clustering
+     *
      * @return Final clusters.
      */
     private List<Cluster> clusterSequential() {
@@ -398,7 +363,7 @@ public class ClusterStructures {
                 ls = new AverageLinkageStrategy();
                 break;
         }
-        
+
         for (int i = 0; i < nFiles; i++) {
             rmsdDistances[i][i] = 0.0; // Ensure the diagonal is filled.
             names[i] = String.format("%d", i);
@@ -406,31 +371,30 @@ public class ClusterStructures {
                 try {
                     structureCache[i - cacheStart] = fileReader.getStructure(files[i]);
                 } catch (IOException ex) {
-                    logger.severe(String.format(" Error in reading file %s: %s", 
+                    logger.severe(String.format(" Error in reading file %s: %s",
                             files[i].getName(), ex.toString()));
                 }
             }
         }
         
         StructurePairAligner aligner = generateAligner(fileReader);
-        
         for (int i = 0; i < nFiles; i++) {
             Structure structI = null;
             try {
                 structI = accessStructure(i, fileReader);
             } catch (IOException ex) {
-                logger.severe(String.format(" Error in reading file %s: %s", 
-                            files[i].getName(), ex.toString()));
+                logger.severe(String.format(" Error in reading file %s: %s",
+                        files[i].getName(), ex.toString()));
             }
             for (int j = i; j < nFiles; j++) {
                 Structure structJ = null;
                 try {
                     structJ = accessStructure(j, fileReader);
                 } catch (IOException ex) {
-                    logger.severe(String.format(" Error in reading file %s: %s", 
+                    logger.severe(String.format(" Error in reading file %s: %s",
                             files[j].getName(), ex.toString()));
                 }
-                
+
                 try {
                     double minRMSD = getRMSD(structI, structJ, aligner);
                     rmsdDistances[i][j] = minRMSD;
@@ -441,19 +405,19 @@ public class ClusterStructures {
                 }
             }
         }
-        
+
         ClusteringAlgorithm alg = new DefaultClusteringAlgorithm();
         Cluster cluster = alg.performClustering(rmsdDistances, names, ls);
         List<Cluster> subClusters;
         int nClusters = 1;
-        
+
         if (numClusters > 0) {
             subClusters = new ArrayList<>(Arrays.asList(cluster));
-            
+
             while (nClusters < numClusters) {
                 double maxDist = subClusters.get(0).getDistanceValue();
                 Cluster maxCluster = subClusters.get(0);
-                
+
                 for (Cluster subcluster : subClusters) {
                     if (subcluster.isLeaf()) {
                         continue;
@@ -483,9 +447,9 @@ public class ClusterStructures {
             subClusters = getSubclusters(cluster, rmsdCutoff);
             nClusters = subClusters.size();
         }
-        
+
         assert nClusters == subClusters.size() : " nClusters != subClusters.size()";
-        
+
         return subClusters;
     }
     
@@ -557,13 +521,13 @@ public class ClusterStructures {
         }
         return nRes;
     }
-    
     /**
-     * Recursively returns all subclusters in this Cluster with a distance greater
-     * than RMSD cutoff.
+     * Recursively returns all subclusters in this Cluster with a distance
+     * greater than RMSD cutoff.
+     *
      * @param cluster
      * @param cutoff
-     * @return 
+     * @return
      */
     private List<Cluster> getSubclusters(Cluster cluster, double cutoff) {
         if (cluster.getDistanceValue() < cutoff || cluster.isLeaf()) {
@@ -576,9 +540,10 @@ public class ClusterStructures {
             return clusters;
         }
     }
-    
+
     /**
      * Recursively returns all leaf clusters under this cluster.
+     *
      * @param cluster Cluster to search under
      * @return All child leaves
      */
@@ -653,8 +618,9 @@ public class ClusterStructures {
         }
         return path;
     }
-    
+
     public enum ClusterDistanceFunction {
+
         RMSD, CA_RMSD, DIHEDRALS, BACKBONE_DIHEDRALS
     }
     
@@ -693,4 +659,47 @@ public class ClusterStructures {
                     }
                 };
     }
+
+    // Copyright license for hierarchical-clustering-java
+    /**
+     * *****************************************************************************
+     * Copyright 2013 Lars Behnke
+     *
+     * Licensed under the Apache License, Version 2.0 (the "License"); you may
+     * not use this file except in compliance with the License. You may obtain a
+     * copy of the License at
+     *
+     * http://www.apache.org/licenses/LICENSE-2.0
+     *
+     * Unless required by applicable law or agreed to in writing, software
+     * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+     * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+     * License for the specific language governing permissions and limitations
+     * under the License.
+     * ****************************************************************************
+     */
+
+    // Copyright license for BioJava
+    /*
+     *                    BioJava development code
+     *
+     * This code may be freely distributed and modified under the
+     * terms of the GNU Lesser General Public Licence.  This should
+     * be distributed with the code.  If you do not have a copy,
+     * see:
+     *
+     *      http://www.gnu.org/copyleft/lesser.html
+     *
+     * Copyright for this code is held jointly by the individual
+     * authors.  These should be listed in @author doc comments.
+     *
+     * For more information on the BioJava project and its aims,
+     * or to join the biojava-l mailing list, visit the home page
+     * at:
+     *
+     *      http://www.biojava.org/
+     *
+     * Created on 7/8/2014
+     *
+     */
 }

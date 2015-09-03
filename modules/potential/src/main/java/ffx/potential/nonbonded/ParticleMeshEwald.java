@@ -360,6 +360,7 @@ public class ParticleMeshEwald implements LambdaInterface {
      * Specify intermolecularSoftcore.
      */
     private boolean intermolecularSoftcore = false;
+    private boolean intramolecularSoftcore = false;
     /**
      * Molecule number for each atom.
      */
@@ -863,6 +864,8 @@ public class ParticleMeshEwald implements LambdaInterface {
              */
             intermolecularSoftcore = forceField.getBoolean(
                     ForceField.ForceFieldBoolean.INTERMOLECULAR_SOFTCORE, false);
+            intramolecularSoftcore = forceField.getBoolean(
+                    ForceField.ForceFieldBoolean.INTRAMOLECULAR_SOFTCORE, false);
         }
 
         String polar = forceField.getString(ForceFieldString.POLARIZATION, "MUTUAL");
@@ -2458,11 +2461,15 @@ public class ParticleMeshEwald implements LambdaInterface {
                         int preList[] = preLists[i];
                         for (int j = 0; j < npair; j++) {
                             int k = list[j];
-                            if (!use[k]
-                                    || // No intermolecular electrostatics
-                                    (lambdaMode == LambdaMode.VAPOR && intermolecularSoftcore
-                                    && moleculei != molecule[k])) {
+                            if (!use[k]) {
                                 continue;
+                            }
+                            boolean sameMolecule = (moleculei == molecule[k]);
+                            if (lambdaMode == LambdaMode.VAPOR) {
+                                if ((intermolecularSoftcore && !sameMolecule)
+                                        || (intramolecularSoftcore && sameMolecule)) {
+                                    continue;
+                                }
                             }
                             final double xk = x[k];
                             final double yk = y[k];
@@ -2518,7 +2525,6 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 double scale5 = 1.0;
                                 double scale7 = 1.0;
                                 double damp = pdi * pdk;
-                                //if (damp != 0.0) {
                                 final double pgamma = min(pti, ptk);
                                 final double rdamp = r * damp;
                                 damp = -pgamma * rdamp * rdamp * rdamp;
@@ -2528,7 +2534,6 @@ public class ParticleMeshEwald implements LambdaInterface {
                                     scale5 = 1.0 - expdamp * (1.0 - damp);
                                     scale7 = 1.0 - expdamp * (1.0 - damp + 0.6 * damp * damp);
                                 }
-                                //}
                                 final double scale = mask_local[k];
                                 final double scalep = maskp_local[k];
                                 final double dsc3 = scale3 * scale;
@@ -2972,11 +2977,15 @@ public class ParticleMeshEwald implements LambdaInterface {
                         final int npair = counts[i];
                         for (int j = 0; j < npair; j++) {
                             final int k = list[j];
-                            if (!use[k]
-                                    || // No intermolecular electrostatics
-                                    (lambdaMode == LambdaMode.VAPOR && intermolecularSoftcore
-                                    && moleculei != molecule[k])) {
+                            if (!use[k]) {
                                 continue;
+                            }
+                            boolean sameMolecule = (moleculei == molecule[k]);
+                            if (lambdaMode == LambdaMode.VAPOR) {
+                                if ((intermolecularSoftcore && !sameMolecule)
+                                        || (intramolecularSoftcore && sameMolecule)) {
+                                    continue;
+                                }
                             }
                             final double pdk = ipdamp[k];
                             final double ptk = thole[k];
@@ -3870,11 +3879,15 @@ public class ParticleMeshEwald implements LambdaInterface {
                     final int npair = realSpaceCounts[iSymm][i];
                     for (int j = 0; j < npair; j++) {
                         k = list[j];
-                        if (!use[k]
-                                || // No intermolecular electrostatics
-                                (lambdaMode == LambdaMode.VAPOR && intermolecularSoftcore
-                                && moleculei != molecule[k])) {
+                        if (!use[k]) {
                             continue;
+                        }
+                        boolean sameMolecule = (moleculei == molecule[k]);
+                        if (lambdaMode == LambdaMode.VAPOR) {
+                            if ((intermolecularSoftcore && !sameMolecule)
+                                    || (intramolecularSoftcore && sameMolecule)) {
+                                continue;
+                            }
                         }
                         selfScale = 1.0;
                         if (i == k) {
@@ -3952,7 +3965,6 @@ public class ParticleMeshEwald implements LambdaInterface {
                         ddsc7y = 0.0;
                         ddsc7z = 0.0;
                         double damp = pdi * pdk;
-                        //if (damp != 0.0) {
                         double pgamma = min(pti, ptk);
                         double rdamp = r * damp;
                         damp = -pgamma * rdamp * rdamp * rdamp;
@@ -3974,7 +3986,6 @@ public class ParticleMeshEwald implements LambdaInterface {
                             ddsc7y = temp7 * ddsc5y;
                             ddsc7z = temp7 * ddsc5z;
                         }
-                        //}
                         if (doPermanentRealSpace) {
                             double ei = permanentPair();
                             //log(i,k,r,ei);
@@ -6737,9 +6748,11 @@ public class ParticleMeshEwald implements LambdaInterface {
          */
         int index = 0;
         for (int i = 0; i < nAtoms; i++) {
-            gradient[index++] += lambdaGrad[0][0][i];
-            gradient[index++] += lambdaGrad[0][1][i];
-            gradient[index++] += lambdaGrad[0][2][i];
+            if (atoms[i].isActive()) {
+                gradient[index++] += lambdaGrad[0][0][i];
+                gradient[index++] += lambdaGrad[0][1][i];
+                gradient[index++] += lambdaGrad[0][2][i];
+            }
         }
     }
 

@@ -80,23 +80,26 @@ public abstract class Thermostat {
 
         ADIABATIC, BERENDSEN, BUSSI;
     };
+    protected Thermostats name;
     protected double targetTemperature;
     protected double currentTemperature;
     protected double kT;
     protected double currentKineticEnergy;
+
     protected int nVariables;
     protected int dof;
-    protected boolean removingCenterOfMassMotion;
     protected double x[];
     protected double v[];
     protected double mass[];
     protected VARIABLE_TYPE type[];
     protected double totalMass;
+
     protected final double centerOfMass[] = new double[3];
     protected final double linearMomentum[] = new double[3];
     protected final double angularMomentum[] = new double[3];
+    protected boolean removingCenterOfMassMotion;
+
     protected Random random;
-    protected Thermostats name;
 
     /**
      * <p>
@@ -131,17 +134,25 @@ public abstract class Thermostat {
         removingCenterOfMassMotion = true;
         dof = nVariables - 3;
     }
-    
+
     /**
      * To allow chemical perturbations during MD.
-     * @param nVariables 
+     *
+     * @param nVariables
+     * @param x
+     * @param v
+     * @param mass
+     * @param type
      */
-    public void setNumberOfVariables(int nVariables, double x[], double v[], double mass[], VARIABLE_TYPE type[]) {
+    public void setNumberOfVariables(int nVariables, double x[], double v[],
+            double mass[], VARIABLE_TYPE type[]) {
         this.nVariables = nVariables;
         this.x = x;
         this.v = v;
         this.mass = mass;
         this.type = type;
+
+        removingCenterOfMassMotion(removingCenterOfMassMotion);
     }
 
     /**
@@ -241,13 +252,13 @@ public abstract class Thermostat {
     }
 
     public double[] maxwellIndividual(double mass) {
-        double v[] = new double[3];
-        for (int i = 0; i < v.length; i++) {
-            v[i] = random.nextGaussian() * sqrt(kB * targetTemperature / mass);
+        double vv[] = new double[3];
+        for (int i = 0; i < 3; i++) {
+            vv[i] = random.nextGaussian() * sqrt(kB * targetTemperature / mass);
         }
-        return v;
+        return vv;
     }
-    
+
     /**
      * Reset velocities from a Maxwell-Boltzmann distribution of momenta. The
      * variance of each independent momentum component is kT * mass.

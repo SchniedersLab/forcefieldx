@@ -101,6 +101,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private static final double toSeconds = 0.000000001;
     private final MolecularAssembly molecularAssembly;
     private Atom[] atoms;
+    private Atom[] activeAtoms;
     private Crystal crystal;
     private final ParallelTeam parallelTeam;
     private Bond bonds[];
@@ -120,6 +121,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private final CoordRestraint coordRestraint;
     private final COMRestraint comRestraint;
     private int nAtoms;
+    private int nActive;
     private int nBonds;
     private int nAngles;
     private int nStretchBends;
@@ -205,6 +207,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private VARIABLE_TYPE[] variableTypes = null;
     private double xyz[] = null;
 
+    private Resolution resolution = Resolution.AMOEBA;
+
     /**
      * <p>
      * Constructor for ForceFieldEnergy.</p>
@@ -219,27 +223,34 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         xyz = new double[nAtoms * 3];
         nAtoms = atoms.length;
 
-        // Check that atom ordering is correct.
+        // Check that atom ordering is correct and count the number of active atoms.
+        nActive = 0;
         for (int i = 0; i < nAtoms; i++) {
             int index = atoms[i].xyzIndex - 1;
             assert (i == index);
+            if (atoms[i].isActive()) {
+                nActive++;
+            }
         }
 
-        // Check if more threads available than atoms.
+        activeAtoms = new Atom[nActive];
+        // Load an array with active atoms.
+        int index = 0;
+        for (int i = 0; i < nAtoms; i++) {
+            Atom a = atoms[i];
+            if (a.isActive()) {
+                activeAtoms[index++] = a;
+            }
+        }
+
+        // Enforce that the number of threads be less than or equal to the number of atoms.
         int nThreads = ParallelTeam.getDefaultThreadCount();
-        nThreads = nAtoms < nThreads ? nAtoms : nThreads;
+        nThreads = nActive < nThreads ? nActive : nThreads;
         parallelTeam = new ParallelTeam(nThreads);
 
         ForceField forceField = molecularAssembly.getForceField();
         String name = forceField.toString().toUpperCase();
 
-        /*// nThreads is minimum of FF_THREADS, ParallelTeam.getDefaultThreadCount, and nAtoms.
-         int defaultThreads = ParallelTeam.getDefaultThreadCount();
-         int nThreads = forceField.getInteger(ForceFieldInteger.FF_THREADS, defaultThreads);
-         nThreads = defaultThreads < nThreads ? defaultThreads : nThreads;
-         nThreads = nAtoms < nThreads ? nAtoms : nThreads;
-
-         parallelTeam = new ParallelTeam(nThreads);*/
         logger.info(format(" Constructing Force Field %s", name));
         logger.info(format("\n SMP threads:                        %10d", nThreads));
 
@@ -278,7 +289,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         restrainTerm = forceField.getBoolean(ForceFieldBoolean.RESTRAINTERM, false);
         comTerm = forceField.getBoolean(ForceFieldBoolean.COMRESTRAINTERM, false);
 
-        //For respa
+        // For RESPA
         bondTermOrig = bondTerm;
         angleTermOrig = angleTerm;
         stretchBendTermOrig = stretchBendTerm;
@@ -648,8 +659,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
     }
 
-    private Resolution resolution = Resolution.AMOEBA;
-
     private boolean keep(BondedTerm term) {
         switch (resolution) {
             case AMOEBA:
@@ -671,12 +680,28 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             xyz = new double[nAtoms * 3];
         }
 
-        // Check that atom ordering is correct.
+        // Check that atom ordering is correct and count number of Active atoms.
+        nActive = 0;
         for (int i = 0; i < nAtoms; i++) {
             Atom atom = atoms[i];
             int index = atom.xyzIndex - 1;
             assert (i == index);
             atom.setXYZIndex(i + 1);
+            if (atom.isActive()) {
+                nActive++;
+            }
+        }
+
+        // Lengthen the activeAtom array if necessary, then load it.
+        if (activeAtoms.length < nActive) {
+            activeAtoms = new Atom[nActive];
+        }
+        int index = 0;
+        for (int i = 0; i < nAtoms; i++) {
+            Atom atom = atoms[i];
+            if (atom.isActive()) {
+                activeAtoms[index++] = atom;
+            }
         }
 
         // Collect, count, pack and sort bonds.
@@ -1064,8 +1089,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         // Zero out the Cartesian coordinate gradient for each atom.
         if (gradient) {
             for (int i = 0; i < nAtoms; i++) {
-                Atom atom = atoms[i];
-                atom.setXYZGradient(0.0, 0.0, 0.0);
+                atoms[i].setXYZGradient(0.0, 0.0, 0.0);
             }
         }
 
@@ -1576,7 +1600,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         int n = getNumberOfVariables();
         VARIABLE_TYPE type[] = new VARIABLE_TYPE[n];
         int i = 0;
-        for (int j = 0; j < nAtoms; j++) {
+        for (int j = 0; j < nActive; j++) {
             type[i++] = VARIABLE_TYPE.X;
             type[i++] = VARIABLE_TYPE.Y;
             type[i++] = VARIABLE_TYPE.Z;
@@ -1649,9 +1673,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         assert (g != null);
         double grad[] = new double[3];
         int index = 0;
-        int len = atoms.length;
-        for (int i = 0; i < len; i++) {
-            Atom a = atoms[i];
+        for (int i = 0; i < nActive; i++) {
+            Atom a = activeAtoms[i];
             a.getXYZGradient(grad);
             double gx = grad[0];
             double gy = grad[1];
@@ -1669,12 +1692,17 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
     }
 
+    /**
+     *
+     * @param coords
+     */
     private void setCoordinates(double coords[]) {
-        assert (coords != null);
+        if (coords == null) {
+            return;
+        }
         int index = 0;
-        int len = atoms.length;
-        for (int i = 0; i < len; i++) {
-            Atom a = atoms[i];
+        for (int i = 0; i < nActive; i++) {
+            Atom a = activeAtoms[i];
             double x = coords[index++];
             double y = coords[index++];
             double z = coords[index++];
@@ -1684,6 +1712,46 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
     /**
      * {@inheritDoc}
+     *
+     * @param x
+     */
+    public void checkAtoms() {
+        int n = getNumberOfVariables();
+        //int index = 0;
+        double vel[] = new double[3];
+        double accel[] = new double[3];
+        double grad[] = new double[3];
+        StringBuilder sb;
+        for (int i = 0; i < nActive; i++) {
+            Atom a = activeAtoms[i];
+            sb = new StringBuilder();
+            sb.append("Atom: " + a + "\n");
+            try {
+                sb.append("   XYZ :  " + a.getX() + ", " + a.getY() + ", " + a.getZ() + "\n");
+            } catch (Exception e) {}
+            try {
+                a.getVelocity(vel);
+                sb.append("   Vel:   " + vel[0] + ", " + vel[1] + ", " + vel[2] + "\n");
+            } catch (Exception e) {}
+            try {
+                a.getVelocity(accel);
+                sb.append("   Accel: " + accel[0] + ", " + accel[1] + ", " + accel[2] + "\n");
+            } catch (Exception e) {}
+            try {
+                a.getXYZGradient(grad);
+                sb.append("   Grad:  " + grad[0] + ", " + grad[1] + ", " + grad[2] + "\n");
+            } catch (Exception e) {}
+            try {
+                sb.append("   Mass:  " + a.getMass() + "\n");
+            } catch (Exception e) {}
+            logger.info(sb.toString());
+        }
+    }
+    
+    /**
+     * {@inheritDoc}
+     *
+     * @param x
      */
     @Override
     public double[] getCoordinates(double x[]) {
@@ -1691,15 +1759,12 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         if (x == null || x.length < n) {
             x = new double[n];
         }
-        double xi[] = new double[3];
         int index = 0;
-        int len = atoms.length;
-        for (int i = 0; i < len; i++) {
-            Atom a = atoms[i];
-            a.getXYZ(xi);
-            x[index++] = xi[0];
-            x[index++] = xi[1];
-            x[index++] = xi[2];
+        for (int i = 0; i < nActive; i++) {
+            Atom a = activeAtoms[i];
+            x[index++] = a.getX();
+            x[index++] = a.getY();
+            x[index++] = a.getZ();
         }
         return x;
     }
@@ -1711,12 +1776,13 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     public double[] getMass() {
         int n = getNumberOfVariables();
         double mass[] = new double[n];
-        int i = 0;
-        for (Atom a : atoms) {
+        int index = 0;
+        for (int i = 0; i < nActive; i++) {
+            Atom a = activeAtoms[i];
             double m = a.getMass();
-            mass[i++] = m;
-            mass[i++] = m;
-            mass[i++] = m;
+            mass[index++] = m;
+            mass[index++] = m;
+            mass[index++] = m;
         }
         return mass;
     }
@@ -1726,7 +1792,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
      */
     @Override
     public int getNumberOfVariables() {
-        return nAtoms * 3;
+        return nActive * 3;
     }
 
     /**
@@ -1763,6 +1829,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
     /**
      * {@inheritDoc}
+     *
+     * @param gradients
      */
     @Override
     public void getdEdXdL(double gradients[]) {
@@ -1851,7 +1919,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     /**
-     * This method is for Respa integrator only.
+     * This method is for the RESPA integrator only.
      *
      * @param state The STATE is FAST, SLOW or BOTH.
      */
@@ -1947,7 +2015,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             try {
                 parallelTeam.shutdown();
             } catch (Exception ex) {
-                logger.warning(" Error in shutting down the FFE team.");
+                String message = " Error in shutting down the ParallelTeam.";
+                logger.log(Level.WARNING, message, ex);
             }
         }
         if (vanderWaals != null) {
@@ -2052,6 +2121,103 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
     public double getRelativeSolvationEnergy() {
         return relativeSolvationEnergy;
+    }
+
+    @Override
+    public void setVelocity(double[] velocity) {
+        if (velocity == null) {
+            return;
+        }
+        int index = 0;
+        double vel[] = new double[3];
+        for (int i = 0; i < nActive; i++) {
+            vel[0] = velocity[index++];
+            vel[1] = velocity[index++];
+            vel[2] = velocity[index++];
+            activeAtoms[i].setVelocity(vel);
+        }
+    }
+
+    @Override
+    public void setAcceleration(double[] acceleration) {
+        if (acceleration == null) {
+            return;
+        }
+        int index = 0;
+        double accel[] = new double[3];
+        for (int i = 0; i < nActive; i++) {
+            accel[0] = acceleration[index++];
+            accel[1] = acceleration[index++];
+            accel[2] = acceleration[index++];
+            activeAtoms[i].setAcceleration(accel);
+        }
+    }
+
+    @Override
+    public void setPreviousAcceleration(double[] previousAcceleration) {
+        if (previousAcceleration == null) {
+            return;
+        }
+        int index = 0;
+        double prev[] = new double[3];
+        for (int i = 0; i < nActive; i++) {
+            prev[0] = previousAcceleration[index++];
+            prev[1] = previousAcceleration[index++];
+            prev[2] = previousAcceleration[index++];
+            activeAtoms[i].setPreviousAcceleration(prev);
+        }
+    }
+
+    @Override
+    public double[] getVelocity(double[] velocity) {
+        int n = getNumberOfVariables();
+        if (velocity == null || velocity.length < n) {
+            velocity = new double[n];
+        }
+        int index = 0;
+        double v[] = new double[3];
+        for (int i = 0; i < nActive; i++) {
+            Atom a = activeAtoms[i];
+            a.getVelocity(v);
+            velocity[index++] = v[0];
+            velocity[index++] = v[1];
+            velocity[index++] = v[2];
+        }
+        return velocity;
+    }
+
+    @Override
+    public double[] getAcceleration(double[] acceleration) {
+        int n = getNumberOfVariables();
+        if (acceleration == null || acceleration.length < n) {
+            acceleration = new double[n];
+        }
+        int index = 0;
+        double a[] = new double[3];
+        for (int i = 0; i < nActive; i++) {
+            activeAtoms[i].getAcceleration(a);
+            acceleration[index++] = a[0];
+            acceleration[index++] = a[1];
+            acceleration[index++] = a[2];
+        }
+        return acceleration;
+    }
+
+    @Override
+    public double[] getPreviousAcceleration(double[] previousAcceleration) {
+        int n = getNumberOfVariables();
+        if (previousAcceleration == null || previousAcceleration.length < n) {
+            previousAcceleration = new double[n];
+        }
+        int index = 0;
+        double a[] = new double[3];
+        for (int i = 0; i < nActive; i++) {
+            activeAtoms[i].getPreviousAcceleration(a);
+            previousAcceleration[index++] = a[0];
+            previousAcceleration[index++] = a[1];
+            previousAcceleration[index++] = a[2];
+        }
+        return previousAcceleration;
     }
 
 }

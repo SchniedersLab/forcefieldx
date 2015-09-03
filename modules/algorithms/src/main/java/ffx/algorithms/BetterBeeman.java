@@ -44,8 +44,8 @@ import ffx.numerics.Potential;
  * formula; the actual coefficients are Brooks' "Better Beeman" values.
  *
  * @author Michael J. Schnieders
- * @since 1.0
  *
+ * @since 1.0
  */
 public class BetterBeeman extends Integrator {
 
@@ -82,12 +82,19 @@ public class BetterBeeman extends Integrator {
         dt_8 = 0.125 * dt;
         dt2_8 = dt * dt_8;
     }
-    
+
     /**
      * To allow chemical perturbations during MD.
-     * @param nVariables 
+     *
+     * @param nVariables
+     * @param x
+     * @param v
+     * @param a
+     * @param aPrevious
+     * @param mass
      */
-    public void setNumberOfVariables(int nVariables, double x[], double v[], 
+    @Override
+    public void setNumberOfVariables(int nVariables, double x[], double v[],
             double a[], double aPrevious[], double mass[]) {
         this.nVariables = nVariables;
         this.x = x;

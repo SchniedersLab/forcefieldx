@@ -151,7 +151,6 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
      * End-state restraint d2EdL2 of topology 2 (kcal/mol).
      */
     private double restraintd2EdL2_2 = 0;
-
     /**
      * Total energy of the dual topology, including lambda scaling.
      */
@@ -287,7 +286,13 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
     /*private final ParallelTeam dualTopologyTeam;
     private final EnergyRegion energyRegion;*/
 
-    public DualTopologyEnergy(Potential topology1, Atom atoms1[], Potential topology2, Atom atoms2[]) {
+    private final int nActive1;
+    private final int nActive2;
+    private final Atom activeAtoms1[];
+    private final Atom activeAtoms2[];
+
+    public DualTopologyEnergy(Potential topology1, Atom atoms1[],
+            Potential topology2, Atom atoms2[]) {
         potential1 = topology1;
         potential2 = topology2;
         lambdaInterface1 = (LambdaInterface) potential1;
@@ -296,46 +301,60 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
         this.atoms2 = atoms2;
         nAtoms1 = atoms1.length;
         nAtoms2 = atoms2.length;
-
         forceFieldEnergy1 = null;
         forceFieldEnergy2 = null;
         doValenceRestraint1 = false;
         doValenceRestraint2 = false;
 
-        x1 = new double[nAtoms1 * 3];
-        x2 = new double[nAtoms2 * 3];
-        g1 = new double[nAtoms1 * 3];
-        g2 = new double[nAtoms2 * 3];
-        rg1 = new double[nAtoms1 * 3];
-        rg2 = new double[nAtoms2 * 3];
-        gl1 = new double[nAtoms1 * 3];
-        gl2 = new double[nAtoms2 * 3];
-        rgl1 = new double[nAtoms1 * 3];
-        rgl2 = new double[nAtoms2 * 3];
-
         /**
          * Check that all atoms that are not undergoing alchemy are common to
          * both topologies.
          */
-        int atomCount1 = 0;
-        int atomCount2 = 0;
+        int shared1 = 0;
+        int shared2 = 0;
+        int activeCount1 = 0;
+        int activeCount2 = 0;
         for (int i = 0; i < nAtoms1; i++) {
             Atom a1 = atoms1[i];
-            if (!a1.applyLambda()) {
-                atomCount1++;
+            if (a1.isActive()) {
+                activeCount1++;
+                if (!a1.applyLambda()) {
+                    shared1++;
+                }
             }
         }
         for (int i = 0; i < nAtoms2; i++) {
             Atom a2 = atoms2[i];
-            if (!a2.applyLambda()) {
-                atomCount2++;
+            if (a2.isActive()) {
+                activeCount2++;
+                if (!a2.applyLambda()) {
+                    shared2++;
+                }
+            }
+        }
+        nActive1 = activeCount1;
+        nActive2 = activeCount2;
+        activeAtoms1 = new Atom[activeCount1];
+        activeAtoms2 = new Atom[activeCount2];
+        int index = 0;
+        for (int i = 0; i < nAtoms1; i++) {
+            Atom a1 = atoms1[i];
+            if (a1.isActive()) {
+                activeAtoms1[index++] = a1;
+            }
+        }
+        index = 0;
+        for (int i = 0; i < nAtoms2; i++) {
+            Atom a2 = atoms2[i];
+            if (a2.isActive()) {
+                activeAtoms2[index++] = a2;
             }
         }
 
-        assert (atomCount1 == atomCount2);
-        nShared = atomCount1;
-        nSoftCore1 = nAtoms1 - nShared;
-        nSoftCore2 = nAtoms2 - nShared;
+        assert (shared1 == shared2);
+        nShared = shared1;
+        nSoftCore1 = nActive1 - nShared;
+        nSoftCore2 = nActive2 - nShared;
         nTotal = nShared + nSoftCore1 + nSoftCore2;
         nVariables = 3 * nTotal;
 
@@ -359,9 +378,23 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
         }
 
         /**
+         * Allocate memory for coordinates and derivatives.
+         */
+        x1 = new double[nActive1 * 3];
+        x2 = new double[nActive2 * 3];
+        g1 = new double[nActive1 * 3];
+        g2 = new double[nActive2 * 3];
+        rg1 = new double[nActive1 * 3];
+        rg2 = new double[nActive2 * 3];
+        gl1 = new double[nActive1 * 3];
+        gl2 = new double[nActive2 * 3];
+        rgl1 = new double[nActive1 * 3];
+        rgl2 = new double[nActive2 * 3];
+
+        /**
          * All variables are coordinates.
          */
-        int index = 0;
+        index = 0;
         variableTypes = new VARIABLE_TYPE[nVariables];
         for (int i = 0; i < nTotal; i++) {
             variableTypes[index++] = VARIABLE_TYPE.X;
@@ -375,8 +408,8 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
         int commonIndex = 0;
         int softcoreIndex = 3 * nShared;
         mass = new double[nVariables];
-        for (int i = 0; i < nAtoms1; i++) {
-            Atom a = atoms1[i];
+        for (int i = 0; i < nActive1; i++) {
+            Atom a = activeAtoms1[i];
             double m = a.getMass();
             if (!a.applyLambda()) {
                 mass[commonIndex++] = m;
@@ -388,8 +421,8 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
                 mass[softcoreIndex++] = m;
             }
         }
-        for (int i = 0; i < nAtoms2; i++) {
-            Atom a = atoms2[i];
+        for (int i = 0; i < nActive2; i++) {
+            Atom a = activeAtoms2[i];
             if (a.applyLambda()) {
                 double m = a.getMass();
                 mass[softcoreIndex++] = m;
@@ -409,9 +442,10 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
         potential2 = forceFieldEnergy2;
         lambdaInterface1 = forceFieldEnergy1;
         lambdaInterface2 = forceFieldEnergy2;
-
         atoms1 = topology1.getAtomArray();
         atoms2 = topology2.getAtomArray();
+        nAtoms1 = atoms1.length;
+        nAtoms2 = atoms2.length;
 
         ForceField forceField1 = topology1.getForceField();
         this.doValenceRestraint1 = forceField1.getBoolean(
@@ -420,44 +454,71 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
         this.doValenceRestraint2 = forceField2.getBoolean(
                 ForceField.ForceFieldBoolean.LAMBDA_VALENCE_RESTRAINTS, true);
 
-        nAtoms1 = atoms1.length;
-        nAtoms2 = atoms2.length;
-        x1 = new double[nAtoms1 * 3];
-        x2 = new double[nAtoms2 * 3];
-        g1 = new double[nAtoms1 * 3];
-        g2 = new double[nAtoms2 * 3];
-        rg1 = new double[nAtoms1 * 3];
-        rg2 = new double[nAtoms2 * 3];
-        gl1 = new double[nAtoms1 * 3];
-        gl2 = new double[nAtoms2 * 3];
-        rgl1 = new double[nAtoms1 * 3];
-        rgl2 = new double[nAtoms2 * 3];
-
         /**
          * Check that all atoms that are not undergoing alchemy are common to
          * both topologies.
          */
-        int atomCount1 = 0;
-        int atomCount2 = 0;
+        int shared1 = 0;
+        int shared2 = 0;
+        int activeCount1 = 0;
+        int activeCount2 = 0;
         for (int i = 0; i < nAtoms1; i++) {
             Atom a1 = atoms1[i];
-            if (!a1.applyLambda()) {
-                atomCount1++;
+            if (a1.isActive()) {
+                activeCount1++;
+                if (!a1.applyLambda()) {
+                    shared1++;
+                }
             }
         }
         for (int i = 0; i < nAtoms2; i++) {
             Atom a2 = atoms2[i];
-            if (!a2.applyLambda()) {
-                atomCount2++;
+            if (a2.isActive()) {
+                activeCount2++;
+                if (!a2.applyLambda()) {
+                    shared2++;
+                }
+            }
+        }
+        nActive1 = activeCount1;
+        nActive2 = activeCount2;
+        activeAtoms1 = new Atom[activeCount1];
+        activeAtoms2 = new Atom[activeCount2];
+        int index = 0;
+        for (int i = 0; i < nAtoms1; i++) {
+            Atom a1 = atoms1[i];
+            if (a1.isActive()) {
+                activeAtoms1[index++] = a1;
+            }
+        }
+        index = 0;
+        for (int i = 0; i < nAtoms2; i++) {
+            Atom a2 = atoms2[i];
+            if (a2.isActive()) {
+                activeAtoms2[index++] = a2;
             }
         }
 
-        assert (atomCount1 == atomCount2);
-        nShared = atomCount1;
-        nSoftCore1 = nAtoms1 - nShared;
-        nSoftCore2 = nAtoms2 - nShared;
+        assert (shared1 == shared2);
+        nShared = shared1;
+        nSoftCore1 = nActive1 - nShared;
+        nSoftCore2 = nActive2 - nShared;
         nTotal = nShared + nSoftCore1 + nSoftCore2;
         nVariables = 3 * nTotal;
+
+        /**
+         * Allocate memory for coordinates and derivatives.
+         */
+        x1 = new double[nActive1 * 3];
+        x2 = new double[nActive2 * 3];
+        g1 = new double[nActive1 * 3];
+        g2 = new double[nActive2 * 3];
+        rg1 = new double[nActive1 * 3];
+        rg2 = new double[nActive2 * 3];
+        gl1 = new double[nActive1 * 3];
+        gl2 = new double[nActive2 * 3];
+        rgl1 = new double[nActive1 * 3];
+        rgl2 = new double[nActive2 * 3];
 
         /**
          * Check that all Dual-Topology atoms start with identical coordinates.
@@ -481,7 +542,7 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
         /**
          * All variables are coordinates.
          */
-        int index = 0;
+        index = 0;
         variableTypes = new VARIABLE_TYPE[nVariables];
         for (int i = 0; i < nTotal; i++) {
             variableTypes[index++] = VARIABLE_TYPE.X;
@@ -495,8 +556,8 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
         int commonIndex = 0;
         int softcoreIndex = 3 * nShared;
         mass = new double[nVariables];
-        for (int i = 0; i < nAtoms1; i++) {
-            Atom a = atoms1[i];
+        for (int i = 0; i < nActive1; i++) {
+            Atom a = activeAtoms1[i];
             double m = a.getMass();
             if (!a.applyLambda()) {
                 mass[commonIndex++] = m;
@@ -507,9 +568,10 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
                 mass[softcoreIndex++] = m;
                 mass[softcoreIndex++] = m;
             }
+
         }
-        for (int i = 0; i < nAtoms2; i++) {
-            Atom a = atoms2[i];
+        for (int i = 0; i < nActive2; i++) {
+            Atom a = activeAtoms2[i];
             if (a.applyLambda()) {
                 double m = a.getMass();
                 mass[softcoreIndex++] = m;
@@ -706,8 +768,8 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
          * Coordinate Gradient from Topology 1.
          */
         int index = 0;
-        for (int i = 0; i < nAtoms1; i++) {
-            Atom a = atoms1[i];
+        for (int i = 0; i < nActive1; i++) {
+            Atom a = activeAtoms1[i];
             if (!a.applyLambda()) {
                 g[indexCommon++] = lambdaPow * g1[index] + oneMinusLambdaPow * rg1[index++];
                 g[indexCommon++] = lambdaPow * g1[index] + oneMinusLambdaPow * rg1[index++];
@@ -723,8 +785,8 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
          */
         indexCommon = 0;
         index = 0;
-        for (int i = 0; i < nAtoms2; i++) {
-            Atom a = atoms2[i];
+        for (int i = 0; i < nActive2; i++) {
+            Atom a = activeAtoms2[i];
             if (!a.applyLambda()) {
                 g[indexCommon++] += oneMinusLambdaPow * g2[index] + lambdaPow * rg2[index++];
                 g[indexCommon++] += oneMinusLambdaPow * g2[index] + lambdaPow * rg2[index++];
@@ -747,7 +809,7 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
     
     @Override
     public void reInit() {
-        //logger.warning(String.format(" No reInit method defined for %s", DualTopologyEnergy.class.toString()));
+        throw new UnsupportedOperationException(String.format(" No reInit method defined for %s", DualTopologyEnergy.class.toString()));
     }
 
     private void unpackCoordinates(double x[]) {
@@ -765,8 +827,8 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
         int index = 0;
         int indexCommon = 0;
         int indexUnique = 3 * nShared;
-        for (int i = 0; i < nAtoms1; i++) {
-            Atom a = atoms1[i];
+        for (int i = 0; i < nActive1; i++) {
+            Atom a = activeAtoms1[i];
             if (!a.applyLambda()) {
                 x1[index++] = x[indexCommon++];
                 x1[index++] = x[indexCommon++];
@@ -780,8 +842,8 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
 
         index = 0;
         indexCommon = 0;
-        for (int i = 0; i < nAtoms2; i++) {
-            Atom a = atoms2[i];
+        for (int i = 0; i < nActive2; i++) {
+            Atom a = activeAtoms2[i];
             if (!a.applyLambda()) {
                 x2[index++] = x[indexCommon++];
                 x2[index++] = x[indexCommon++];
@@ -801,8 +863,9 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
         }
         int indexCommon = 0;
         int indexUnique = nShared * 3;
-        for (int i = 0; i < nAtoms1; i++) {
-            Atom a = atoms1[i];
+        for (int i = 0; i < nActive1; i++) {
+            Atom a = activeAtoms1[i];
+
             if (!a.applyLambda()) {
                 x[indexCommon++] = a.getX();
                 x[indexCommon++] = a.getY();
@@ -812,9 +875,10 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
                 x[indexUnique++] = a.getY();
                 x[indexUnique++] = a.getZ();
             }
+
         }
-        for (int i = 0; i < nAtoms2; i++) {
-            Atom a = atoms2[i];
+        for (int i = 0; i < nActive2; i++) {
+            Atom a = activeAtoms2[i];
             if (a.applyLambda()) {
                 x[indexUnique++] = a.getX();
                 x[indexUnique++] = a.getY();
@@ -916,8 +980,8 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
         /**
          * Coordinate Gradient from Topology 1.
          */
-        for (int i = 0; i < nAtoms1; i++) {
-            Atom a = atoms1[i];
+        for (int i = 0; i < nActive1; i++) {
+            Atom a = activeAtoms1[i];
             if (!a.applyLambda()) {
                 g[indexCommon++] = lambdaPow * gl1[index] + dLambdaPow * g1[index]
                         + oneMinusLambdaPow * rgl1[index] + dOneMinusLambdaPow * rg1[index++];
@@ -940,24 +1004,234 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
          */
         index = 0;
         indexCommon = 0;
-        for (int i = 0; i < nAtoms2; i++) {
-            Atom a = atoms2[i];
-            if (!a.applyLambda()) {
-                g[indexCommon++] += (-oneMinusLambdaPow * gl2[index] + dOneMinusLambdaPow * g2[index]
-                        - lambdaPow * rgl2[index] + dLambdaPow * rg2[index++]);
-                g[indexCommon++] += (-oneMinusLambdaPow * gl2[index] + dOneMinusLambdaPow * g2[index]
-                        - lambdaPow * rgl2[index] + dLambdaPow * rg2[index++]);
-                g[indexCommon++] += (-oneMinusLambdaPow * gl2[index] + dOneMinusLambdaPow * g2[index]
-                        - lambdaPow * rgl2[index] + dLambdaPow * rg2[index++]);
-            } else {
-                g[indexUnique++] = (-oneMinusLambdaPow * gl2[index] + dOneMinusLambdaPow * g2[index]
-                        - lambdaPow * rgl2[index] + dLambdaPow * rg2[index++]);
-                g[indexUnique++] = (-oneMinusLambdaPow * gl2[index] + dOneMinusLambdaPow * g2[index]
-                        - lambdaPow * rgl2[index] + dLambdaPow * rg2[index++]);
-                g[indexUnique++] = (-oneMinusLambdaPow * gl2[index] + dOneMinusLambdaPow * g2[index]
-                        - lambdaPow * rgl2[index] + dLambdaPow * rg2[index++]);
+        for (int i = 0; i < nActive2; i++) {
+            Atom a = activeAtoms2[i];
+            if (a.isActive()) {
+                if (!a.applyLambda()) {
+                    g[indexCommon++] += (-oneMinusLambdaPow * gl2[index] + dOneMinusLambdaPow * g2[index]
+                            - lambdaPow * rgl2[index] + dLambdaPow * rg2[index++]);
+                    g[indexCommon++] += (-oneMinusLambdaPow * gl2[index] + dOneMinusLambdaPow * g2[index]
+                            - lambdaPow * rgl2[index] + dLambdaPow * rg2[index++]);
+                    g[indexCommon++] += (-oneMinusLambdaPow * gl2[index] + dOneMinusLambdaPow * g2[index]
+                            - lambdaPow * rgl2[index] + dLambdaPow * rg2[index++]);
+                } else {
+                    g[indexUnique++] = (-oneMinusLambdaPow * gl2[index] + dOneMinusLambdaPow * g2[index]
+                            - lambdaPow * rgl2[index] + dLambdaPow * rg2[index++]);
+                    g[indexUnique++] = (-oneMinusLambdaPow * gl2[index] + dOneMinusLambdaPow * g2[index]
+                            - lambdaPow * rgl2[index] + dLambdaPow * rg2[index++]);
+                    g[indexUnique++] = (-oneMinusLambdaPow * gl2[index] + dOneMinusLambdaPow * g2[index]
+                            - lambdaPow * rgl2[index] + dLambdaPow * rg2[index++]);
+                }
             }
         }
+    }
+
+    @Override
+    public void setVelocity(double[] velocity) {
+        double vel[] = new double[3];
+        int indexCommon = 0;
+        int indexUnique = 3 * nShared;
+        for (int i = 0; i < nActive1; i++) {
+            Atom atom = activeAtoms1[i];
+            if (!atom.applyLambda()) {
+                vel[0] = velocity[indexCommon++];
+                vel[1] = velocity[indexCommon++];
+                vel[2] = velocity[indexCommon++];
+            } else {
+                vel[0] = velocity[indexUnique++];
+                vel[1] = velocity[indexUnique++];
+                vel[2] = velocity[indexUnique++];
+            }
+            atom.setVelocity(vel);
+        }
+
+        indexCommon = 0;
+        for (int i = 0; i < nActive2; i++) {
+            Atom atom = activeAtoms2[i];
+            if (!atom.applyLambda()) {
+                vel[0] = velocity[indexCommon++];
+                vel[1] = velocity[indexCommon++];
+                vel[2] = velocity[indexCommon++];
+            } else {
+                vel[0] = velocity[indexUnique++];
+                vel[1] = velocity[indexUnique++];
+                vel[2] = velocity[indexUnique++];
+            }
+            atom.setVelocity(vel);
+        }
+    }
+
+    @Override
+    public void setAcceleration(double[] acceleration) {
+        double accel[] = new double[3];
+        int indexCommon = 0;
+        int indexUnique = 3 * nShared;
+        for (int i = 0; i < nActive1; i++) {
+            Atom atom = activeAtoms1[i];
+            if (!atom.applyLambda()) {
+                accel[0] = acceleration[indexCommon++];
+                accel[1] = acceleration[indexCommon++];
+                accel[2] = acceleration[indexCommon++];
+            } else {
+                accel[0] = acceleration[indexUnique++];
+                accel[1] = acceleration[indexUnique++];
+                accel[2] = acceleration[indexUnique++];
+            }
+            atom.setAcceleration(accel);
+        }
+        indexCommon = 0;
+        for (int i = 0; i < nActive2; i++) {
+            Atom atom = activeAtoms2[i];
+            if (!atom.applyLambda()) {
+                accel[0] = acceleration[indexCommon++];
+                accel[1] = acceleration[indexCommon++];
+                accel[2] = acceleration[indexCommon++];
+            } else {
+                accel[0] = acceleration[indexUnique++];
+                accel[1] = acceleration[indexUnique++];
+                accel[2] = acceleration[indexUnique++];
+            }
+            atom.setAcceleration(accel);
+        }
+    }
+
+    @Override
+    public void setPreviousAcceleration(double[] previousAcceleration) {
+        double prev[] = new double[3];
+        int indexCommon = 0;
+        int indexUnique = 3 * nShared;
+        for (int i = 0; i < nActive1; i++) {
+            Atom atom = activeAtoms1[i];
+            if (!atom.applyLambda()) {
+                prev[0] = previousAcceleration[indexCommon++];
+                prev[1] = previousAcceleration[indexCommon++];
+                prev[2] = previousAcceleration[indexCommon++];
+            } else {
+                prev[0] = previousAcceleration[indexUnique++];
+                prev[1] = previousAcceleration[indexUnique++];
+                prev[2] = previousAcceleration[indexUnique++];
+            }
+            atom.setPreviousAcceleration(prev);
+        }
+        indexCommon = 0;
+        for (int i = 0; i < nActive2; i++) {
+            Atom atom = activeAtoms2[i];
+            if (!atom.applyLambda()) {
+                prev[0] = previousAcceleration[indexCommon++];
+                prev[1] = previousAcceleration[indexCommon++];
+                prev[2] = previousAcceleration[indexCommon++];
+            } else {
+                prev[0] = previousAcceleration[indexUnique++];
+                prev[1] = previousAcceleration[indexUnique++];
+                prev[2] = previousAcceleration[indexUnique++];
+            }
+            atom.setPreviousAcceleration(prev);
+        }
+    }
+
+    @Override
+    public double[] getVelocity(double[] velocity) {
+        if (velocity == null || velocity.length < nVariables) {
+            velocity = new double[nVariables];
+        }
+        int indexCommon = 0;
+        int indexUnique = nShared * 3;
+        double vel[] = new double[3];
+        for (int i = 0; i < nActive1; i++) {
+            Atom atom = activeAtoms1[i];
+            atom.getVelocity(vel);
+            if (!atom.applyLambda()) {
+                velocity[indexCommon++] = vel[0];
+                velocity[indexCommon++] = vel[1];
+                velocity[indexCommon++] = vel[2];
+            } else {
+                velocity[indexUnique++] = vel[0];
+                velocity[indexUnique++] = vel[1];
+                velocity[indexUnique++] = vel[2];
+            }
+
+        }
+        for (int i = 0; i < nActive2; i++) {
+            Atom atom = activeAtoms2[i];
+            if (atom.applyLambda()) {
+                atom.getVelocity(vel);
+                velocity[indexUnique++] = vel[0];
+                velocity[indexUnique++] = vel[1];
+                velocity[indexUnique++] = vel[2];
+            }
+        }
+
+        return velocity;
+    }
+
+    @Override
+    public double[] getAcceleration(double[] acceleration) {
+        if (acceleration == null || acceleration.length < nVariables) {
+            acceleration = new double[nVariables];
+        }
+        int indexCommon = 0;
+        int indexUnique = nShared * 3;
+        double accel[] = new double[3];
+        for (int i = 0; i < nActive1; i++) {
+            Atom atom = activeAtoms1[i];
+            atom.getAcceleration(accel);
+            if (!atom.applyLambda()) {
+                acceleration[indexCommon++] = accel[0];
+                acceleration[indexCommon++] = accel[1];
+                acceleration[indexCommon++] = accel[2];
+            } else {
+                acceleration[indexUnique++] = accel[0];
+                acceleration[indexUnique++] = accel[1];
+                acceleration[indexUnique++] = accel[2];
+            }
+
+        }
+        for (int i = 0; i < nActive2; i++) {
+            Atom atom = activeAtoms2[i];
+            if (atom.applyLambda()) {
+                atom.getAcceleration(accel);
+                acceleration[indexUnique++] = accel[0];
+                acceleration[indexUnique++] = accel[1];
+                acceleration[indexUnique++] = accel[2];
+            }
+        }
+
+        return acceleration;
+    }
+
+    @Override
+    public double[] getPreviousAcceleration(double[] previousAcceleration) {
+        if (previousAcceleration == null || previousAcceleration.length < nVariables) {
+            previousAcceleration = new double[nVariables];
+        }
+        int indexCommon = 0;
+        int indexUnique = nShared * 3;
+        double prev[] = new double[3];
+        for (int i = 0; i < nActive1; i++) {
+            Atom atom = activeAtoms1[i];
+            atom.getPreviousAcceleration(prev);
+            if (!atom.applyLambda()) {
+                previousAcceleration[indexCommon++] = prev[0];
+                previousAcceleration[indexCommon++] = prev[1];
+                previousAcceleration[indexCommon++] = prev[2];
+            } else {
+                previousAcceleration[indexUnique++] = prev[0];
+                previousAcceleration[indexUnique++] = prev[1];
+                previousAcceleration[indexUnique++] = prev[2];
+            }
+
+        }
+        for (int i = 0; i < nActive2; i++) {
+            Atom atom = activeAtoms2[i];
+            if (atom.applyLambda()) {
+                atom.getPreviousAcceleration(prev);
+                previousAcceleration[indexUnique++] = prev[0];
+                previousAcceleration[indexUnique++] = prev[1];
+                previousAcceleration[indexUnique++] = prev[2];
+            }
+        }
+
+        return previousAcceleration;
     }
 
     /*private class EnergyRegion extends ParallelRegion {

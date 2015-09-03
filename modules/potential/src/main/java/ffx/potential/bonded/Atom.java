@@ -255,6 +255,12 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
      */
     private final double xyz[] = new double[3];
     /**
+     * Array of velocities
+     */
+    private final double velocity[] = new double[3];
+    private final double acceleration[] = new double[3];
+    private final double previousAcceleration[] = new double[3];
+    /**
      * Array of XYZ coordinates for the electron (van der Waals) centers of each
      * atom: if null, methods will refer to xyz.
      *
@@ -279,6 +285,10 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
      * @since 1.0
      */
     private double occupancyGradient;
+    private double occupancyVelocity;
+    private double occupancyAcceleration;
+    private double occupancyPreviousAcceleration;
+
     /**
      * Array of tempFactor values for each altLoc.
      *
@@ -291,6 +301,10 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
      * @since 1.0
      */
     private double tempFactorGradient;
+    private double tempFactorVelocity;
+    private double tempFactorAcceleration;
+    private double tempFactorPreviousAcceleration;
+
     /**
      * List of anisou tensors for each altLoc.
      *
@@ -307,6 +321,10 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
      * @since 1.0
      */
     private double anisouGradient[];
+    private double anisouVelocity[];
+    private double anisouAcceleration[];
+    private double anisouPreviousAcceleration[];
+
     /**
      * If use is true, this atom should be included in target functions.
      */
@@ -572,6 +590,7 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
 
     /**
      * If true, this atom should be used in potential energy functions.
+     * 
      * @param use
      */
     public void setUse(boolean use) {
@@ -589,6 +608,7 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
 
     /**
      * If active, the coordinates of this atom can be modified.
+     * 
      * @param active
      */
     public void setActive(boolean active) {
@@ -1261,14 +1281,6 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
     }
 
     /**
-     * Gets the unique atomic serial number referring to this Atom object.
-     *
-     * @return A unique ID number
-     */
-    /*public final int getAtomSerial() {
-     return atomSerial;
-     }*/
-    /**
      * Create the Sphere Java3D objects.
      *
      * @param newShapes List
@@ -1485,6 +1497,36 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
     }
 
     /**
+     *
+     * @param velocity an array of double.
+     */
+    public void setVelocity(double velocity[]) {
+        if (active && velocity != null) {
+            System.arraycopy(velocity, 0, this.velocity, 0, 3);
+        }
+    }
+
+    /**
+     *
+     * @param acceleration an array of double.
+     */
+    public void setAcceleration(double acceleration[]) {
+        if (active && acceleration != null) {
+            System.arraycopy(acceleration, 0, this.acceleration, 0, 3);
+        }
+    }
+
+    /**
+     *
+     * @param previousAcceleration an array of double.
+     */
+    public void setPreviousAcceleration(double previousAcceleration[]) {
+        if (active && previousAcceleration != null) {
+            System.arraycopy(previousAcceleration, 0, this.previousAcceleration, 0, 3);
+        }
+    }
+
+    /**
      * <p>
      * setXYZ</p>
      *
@@ -1625,6 +1667,46 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
 
     /**
      * <p>
+     * Getter for the field <code>tempFactorGradient</code>.</p>
+     *
+     * @return a double.
+     */
+    public double getTempFactorGradient() {
+        return tempFactorGradient;
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>tempFactorVelocity</code>.</p>
+     *
+     * @return a double.
+     */
+    public double getTempFactorVelocity() {
+        return tempFactorVelocity;
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>tempFactorAcceleration</code>.</p>
+     *
+     * @return a double.
+     */
+    public double getTempFactorAcceleration() {
+        return tempFactorAcceleration;
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>tempFactorPreviousAcceleration</code>.</p>
+     *
+     * @return a double.
+     */
+    public double getTempFactorPreviousAcceleration() {
+        return tempFactorPreviousAcceleration;
+    }
+
+    /**
+     * <p>
      * Setter for the field <code>tempFactorGradient</code>.</p>
      *
      * @param tempFactorGradient a double.
@@ -1649,12 +1731,38 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
 
     /**
      * <p>
-     * Getter for the field <code>tempFactorGradient</code>.</p>
+     * Setter for the field <code>tempFactorVelocity</code>.</p>
      *
-     * @return a double.
+     * @param tempFactorVelocity a double.
      */
-    public double getTempFactorGradient() {
-        return tempFactorGradient;
+    public void setTempFactorVelocity(double tempFactorVelocity) {
+        if (active) {
+            this.tempFactorVelocity = tempFactorVelocity;
+        }
+    }
+
+    /**
+     * <p>
+     * Setter for the field <code>tempFactorAcceleration</code>.</p>
+     *
+     * @param tempFactorAcceleration a double.
+     */
+    public void setTempFactorAcceleration(double tempFactorAcceleration) {
+        if (active) {
+            this.tempFactorAcceleration = tempFactorAcceleration;
+        }
+    }
+
+    /**
+     * <p>
+     * Setter for the field <code>tempFactorPreviousAcceleration</code>.</p>
+     *
+     * @param tempFactorPreviousAcceleration a double.
+     */
+    public void setTempFactorPreviousAcceleration(double tempFactorPreviousAcceleration) {
+        if (active) {
+            this.tempFactorPreviousAcceleration = tempFactorPreviousAcceleration;
+        }
     }
 
     /**
@@ -1667,6 +1775,36 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
     public void setOccupancy(double occupancy) {
         if (active) {
             this.occupancy = occupancy;
+        }
+    }
+
+    /**
+     *
+     * @param occupancyVelocity a double.
+     */
+    public void setOccupancyVelocity(double occupancyVelocity) {
+        if (active) {
+            this.occupancyVelocity = occupancyVelocity;
+        }
+    }
+
+    /**
+     *
+     * @param occupancyAcceleration a double.
+     */
+    public void setOccupancyAcceleration(double occupancyAcceleration) {
+        if (active) {
+            this.occupancyAcceleration = occupancyAcceleration;
+        }
+    }
+
+    /**
+     *
+     * @param occupancyPreviousAcceleration a double.
+     */
+    public void setOccupancyPreviousAcceleration(double occupancyPreviousAcceleration) {
+        if (active) {
+            this.occupancyPreviousAcceleration = occupancyPreviousAcceleration;
         }
     }
 
@@ -1688,7 +1826,9 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
      * @param occupancyGradient a double.
      */
     public void setOccupancyGradient(double occupancyGradient) {
-        this.occupancyGradient = occupancyGradient;
+        if (active) {
+            this.occupancyGradient = occupancyGradient;
+        }
     }
 
     /**
@@ -1715,20 +1855,32 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
 
     /**
      * <p>
-     * Setter for the field <code>anisou</code>.</p>
+     * Getter for the field <code>occupancyVelocity</code>.</p>
      *
-     * @param anisou an array of double.
+     * @return a double.
      */
-    public void setAnisou(double[] anisou) {
-        if (active) {
-            if (anisou == null) {
-                this.anisou = null;
-            } else if (this.anisou == null) {
-                this.anisou = Arrays.copyOf(anisou, 6);
-            } else {
-                System.arraycopy(anisou, 0, this.anisou, 0, 6);
-            }
-        }
+    public double getOccupancyVelocity() {
+        return occupancyVelocity;
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>occupancyAccelerationy</code>.</p>
+     *
+     * @return a double.
+     */
+    public double getOccupancyAcceleration() {
+        return occupancyAcceleration;
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>occupancyPreviousAccelerationy</code>.</p>
+     *
+     * @return a double.
+     */
+    public double getOccupancyPreviousAcceleration() {
+        return occupancyPreviousAcceleration;
     }
 
     /**
@@ -1747,6 +1899,96 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
             System.arraycopy(this.anisou, 0, anisou, 0, 6);
         }
         return anisou;
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>anisouGradient</code>.</p>
+     *
+     * @param anisouGradient
+     * @return an array of double.
+     */
+    public double[] getAnisouGradient(double[] anisouGradient) {
+        if (this.anisouGradient == null) {
+            return null;
+        } else if (anisouGradient == null) {
+            anisouGradient = Arrays.copyOf(this.anisouGradient, 6);
+        } else {
+            System.arraycopy(this.anisouGradient, 0, anisouGradient, 0, 6);
+        }
+        return anisouGradient;
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>anisouVelocity</code>.</p>
+     *
+     * @param anisouVelocity
+     * @return an array of double.
+     */
+    public double[] getAnisouVelocity(double[] anisouVelocity) {
+        if (this.anisouVelocity == null) {
+            return null;
+        } else if (anisouVelocity == null) {
+            anisouVelocity = Arrays.copyOf(this.anisouVelocity, 6);
+        } else {
+            System.arraycopy(this.anisouVelocity, 0, anisouVelocity, 0, 6);
+        }
+        return anisouVelocity;
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>anisouAcceleration</code>.</p>
+     *
+     * @param anisouAcceleration
+     * @return an array of double.
+     */
+    public double[] getAnisouAcceleration(double[] anisouAcceleration) {
+        if (this.anisouAcceleration == null) {
+            return null;
+        } else if (anisouAcceleration == null) {
+            anisouAcceleration = Arrays.copyOf(this.anisouAcceleration, 6);
+        } else {
+            System.arraycopy(this.anisouAcceleration, 0, anisouAcceleration, 0, 6);
+        }
+        return anisouAcceleration;
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>anisouPreviousAcceleration</code>.</p>
+     *
+     * @param anisouPreviousAcceleration
+     * @return an array of double.
+     */
+    public double[] getAnisouPreviousAcceleration(double[] anisouPreviousAcceleration) {
+        if (this.anisouPreviousAcceleration == null) {
+            return null;
+        } else if (anisouPreviousAcceleration == null) {
+            anisouPreviousAcceleration = Arrays.copyOf(this.anisouPreviousAcceleration, 6);
+        } else {
+            System.arraycopy(this.anisouPreviousAcceleration, 0, anisouPreviousAcceleration, 0, 6);
+        }
+        return anisouPreviousAcceleration;
+    }
+
+    /**
+     * <p>
+     * Setter for the field <code>anisou</code>.</p>
+     *
+     * @param anisou an array of double.
+     */
+    public void setAnisou(double[] anisou) {
+        if (active) {
+            if (anisou == null) {
+                this.anisou = null;
+            } else if (this.anisou == null) {
+                this.anisou = Arrays.copyOf(anisou, 6);
+            } else {
+                System.arraycopy(anisou, 0, this.anisou, 0, 6);
+            }
+        }
     }
 
     /**
@@ -1778,6 +2020,87 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
 
     /**
      * <p>
+     * Setter for the field <code>anisouVelocity</code>.</p>
+     *
+     * @param anisouVelocity an array of double.
+     */
+    public void setAnisouVelocity(double[] anisouVelocity) {
+        if (active) {
+            if (anisouVelocity == null) {
+                this.anisouVelocity = null;
+            } else if (this.anisouVelocity == null) {
+                this.anisouVelocity = Arrays.copyOf(anisouVelocity, 6);
+            } else {
+                System.arraycopy(anisouVelocity, 0, this.anisouVelocity, 0, 6);
+            }
+        } else {
+            if (anisouVelocity == null) {
+                this.anisouVelocity = null;
+            } else {
+                if (this.anisouVelocity == null) {
+                    this.anisouVelocity = new double[6];
+                }
+                Arrays.fill(anisouVelocity, 0.0);
+            }
+        }
+    }
+
+    /**
+     * <p>
+     * Setter for the field <code>anisouAcceleration</code>.</p>
+     *
+     * @param anisouAcceleration an array of double.
+     */
+    public void setAnisouAcceleration(double[] anisouAcceleration) {
+        if (active) {
+            if (anisouAcceleration == null) {
+                this.anisouAcceleration = null;
+            } else if (this.anisouAcceleration == null) {
+                this.anisouAcceleration = Arrays.copyOf(anisouAcceleration, 6);
+            } else {
+                System.arraycopy(anisouAcceleration, 0, this.anisouAcceleration, 0, 6);
+            }
+        } else {
+            if (anisouAcceleration == null) {
+                this.anisouAcceleration = null;
+            } else {
+                if (this.anisouAcceleration == null) {
+                    this.anisouAcceleration = new double[6];
+                }
+                Arrays.fill(anisouAcceleration, 0.0);
+            }
+        }
+    }
+
+    /**
+     * <p>
+     * Setter for the field <code>anisouPreviousAcceleration</code>.</p>
+     *
+     * @param anisouPreviousAcceleration an array of double.
+     */
+    public void setAnisouPreviousAcceleration(double[] anisouPreviousAcceleration) {
+        if (active) {
+            if (anisouPreviousAcceleration == null) {
+                this.anisouPreviousAcceleration = null;
+            } else if (this.anisouPreviousAcceleration == null) {
+                this.anisouPreviousAcceleration = Arrays.copyOf(anisouPreviousAcceleration, 6);
+            } else {
+                System.arraycopy(anisouPreviousAcceleration, 0, this.anisouPreviousAcceleration, 0, 6);
+            }
+        } else {
+            if (anisouPreviousAcceleration == null) {
+                this.anisouPreviousAcceleration = null;
+            } else {
+                if (this.anisouPreviousAcceleration == null) {
+                    this.anisouPreviousAcceleration = new double[6];
+                }
+                Arrays.fill(anisouPreviousAcceleration, 0.0);
+            }
+        }
+    }
+
+    /**
+     * <p>
      * addToAnisouGradient</p>
      *
      * @param anisouGradient an array of double.
@@ -1793,24 +2116,6 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
                 }
             }
         }
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>anisouGradient</code>.</p>
-     *
-     * @param anisouGradient
-     * @return an array of double.
-     */
-    public double[] getAnisouGradient(double[] anisouGradient) {
-        if (this.anisouGradient == null) {
-            return null;
-        } else if (anisouGradient == null) {
-            anisouGradient = Arrays.copyOf(this.anisouGradient, 6);
-        } else {
-            System.arraycopy(this.anisouGradient, 0, anisouGradient, 0, 6);
-        }
-        return anisouGradient;
     }
 
     /**
@@ -2115,6 +2420,42 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
         x[0] = xyzGradient[0];
         x[1] = xyzGradient[1];
         x[2] = xyzGradient[2];
+    }
+
+    /**
+     * @param velocity an array of double.
+     */
+    public void getVelocity(double velocity[]) {
+        if (velocity == null) {
+            velocity = new double[3];
+        }
+        velocity[0] = this.velocity[0];
+        velocity[1] = this.velocity[1];
+        velocity[2] = this.velocity[2];
+    }
+
+    /**
+     * @param acceleration an array of double.
+     */
+    public void getAcceleration(double acceleration[]) {
+        if (acceleration == null) {
+            acceleration = new double[3];
+        }
+        acceleration[0] = this.acceleration[0];
+        acceleration[1] = this.acceleration[1];
+        acceleration[2] = this.acceleration[2];
+    }
+
+    /**
+     * @param previousAcceleration an array of double.
+     */
+    public void getPreviousAcceleration(double previousAcceleration[]) {
+        if (previousAcceleration == null) {
+            previousAcceleration = new double[3];
+        }
+        previousAcceleration[0] = this.previousAcceleration[0];
+        previousAcceleration[1] = this.previousAcceleration[1];
+        previousAcceleration[2] = this.previousAcceleration[2];
     }
 
     /**
