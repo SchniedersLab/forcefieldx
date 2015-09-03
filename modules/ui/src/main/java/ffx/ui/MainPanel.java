@@ -296,6 +296,8 @@ public final class MainPanel extends JPanel implements ActionListener,
      * Initialize all the sub-Panels and put them together
      */
     private boolean init = false;
+    // Indicates how FFX is terminating.
+    private ExitStatus exitType = ExitStatus.NORMAL;
 
     /**
      * MainPanel Constructor
@@ -725,11 +727,32 @@ public final class MainPanel extends JPanel implements ActionListener,
 
     /**
      * <p>
-     * exit</p>
+     * exit with current exit code (default: 0 (ExitStatus.NORMAL))</p>
      */
     public void exit() {
+        exit(exitType);
+    }
+    
+    /**
+     * <p>
+     * exit with a target ExitStatus</p>
+     * 
+     * @param exitStatus How FFX has closed.
+     */
+    void exit (ExitStatus exitStatus) {
+        // Package-private out of conservatism; may be safe to make public.
         savePrefs();
-        System.exit(0);
+        System.exit(exitStatus.getExitCode());
+    }
+    
+    /**
+     * Set the current exit code.
+     * 
+     * @param exitType Enumerated type for exit codes.
+     */
+    void setExitType(ExitStatus exitType) {
+        // Package-private out of conservatism; may be safe to make public.
+        this.exitType = exitType;
     }
 
     /**
@@ -2473,5 +2496,39 @@ public final class MainPanel extends JPanel implements ActionListener,
     @Override
     public String toString() {
         return "Program Control";
+    }
+    
+    /**
+     * Enumerates the exit status codes FFX may terminate with.
+     */
+    enum ExitStatus {
+        // Normal termination.
+        NORMAL (0),
+        // Indicates some uncaught Exception, Error, or Throwable. As of now, 
+        // this enum value is unused, and we rely on the JVM automatically exiting
+        // with a system code of 1 under these circumstances.
+        EXCEPTION (1),
+        // A call to logger.severe() resulted in program termination.
+        SEVERE (2),
+        // Algorithm did not complete properly (a minimization had a bad 
+        // interpolation, etc).
+        ALGORITHM_FAILURE (3),
+        // Some issue not listed here.
+        OTHER (4);
+        
+        // This gets sent to System.exit().
+        private final int exitCode;
+        
+        ExitStatus(int exitCode) {
+            this.exitCode = exitCode;
+        }
+        
+        /**
+         * Gets the exit code associated with this exit status.
+         * @return JVM exit code.
+         */
+        int getExitCode() {
+            return exitCode;
+        }
     }
 }

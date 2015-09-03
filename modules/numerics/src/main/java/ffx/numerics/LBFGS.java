@@ -48,6 +48,7 @@ import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.numerics.LineSearch.LineSearchResult;
+import java.util.logging.Level;
 
 /**
  * This class implements the limited-memory Broyden-Fletcher-Goldfarb-Shanno
@@ -369,6 +370,7 @@ public class LBFGS {
                     || info[0] == LineSearchResult.IntplnErr) {
                 nErrors++;
                 if (nErrors >= maxErrors) {
+                    logger.log(Level.OFF, " Algorithm failure: bad interpolation.");
                     done = true;
                 }
             } else {
