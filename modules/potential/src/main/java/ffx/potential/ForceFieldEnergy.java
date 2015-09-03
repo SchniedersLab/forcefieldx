@@ -239,7 +239,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         for (int i = 0; i < nAtoms; i++) {
             Atom a = atoms[i];
             if (a.isActive()) {
-                activeAtoms[index] = a;
+                activeAtoms[index++] = a;
             }
         }
 
@@ -1708,6 +1708,44 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @param x
+     */
+    public void checkAtoms() {
+        int n = getNumberOfVariables();
+        int index = 0;
+        double vel[] = new double[3];
+        double accel[] = new double[3];
+        double grad[] = new double[3];
+        StringBuilder sb;
+        for (int i = 0; i < nActive; i++) {
+            Atom a = activeAtoms[i];
+            sb = new StringBuilder();
+            sb.append("Atom: " + a + "\n");
+            try {
+                sb.append("   XYZ :  " + a.getX() + ", " + a.getY() + ", " + a.getZ() + "\n");
+            } catch (Exception e) {}
+            try {
+                a.getVelocity(vel);
+                sb.append("   Vel:   " + vel[0] + ", " + vel[1] + ", " + vel[2] + "\n");
+            } catch (Exception e) {}
+            try {
+                a.getVelocity(accel);
+                sb.append("   Accel: " + accel[0] + ", " + accel[1] + ", " + accel[2] + "\n");
+            } catch (Exception e) {}
+            try {
+                a.getXYZGradient(grad);
+                sb.append("   Grad:  " + grad[0] + ", " + grad[1] + ", " + grad[2] + "\n");
+            } catch (Exception e) {}
+            try {
+                sb.append("   Mass:  " + a.getMass() + "\n");
+            } catch (Exception e) {}
+            logger.info(sb.toString());
+        }
+    }
+    
     /**
      * {@inheritDoc}
      *
