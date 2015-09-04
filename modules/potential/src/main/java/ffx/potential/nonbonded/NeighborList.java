@@ -57,7 +57,6 @@ import edu.rit.util.Range;
 
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Atom.Resolution;
 
 /**
  * The NeighborList class builds Verlet lists in parallel via a spatial
@@ -290,6 +289,10 @@ public class NeighborList extends ParallelRegion {
      * Molecule number for each atom.
      */
     private int molecules[] = null;
+    /**
+     * Inactive interactions.
+     */
+    boolean inactiveInteractions = false;
 
     /**
      * Constructor for the NeighborList class.
@@ -769,6 +772,7 @@ public class NeighborList extends ParallelRegion {
         private int n;
         private int iSymm;
         private int atomIndex;
+        private boolean iactive = true;
         private int count;
         private int asymmetricIndex[];
         private double xyz[];
@@ -818,6 +822,8 @@ public class NeighborList extends ParallelRegion {
                     }
 
                     if (use == null || use[atomIndex]) {
+
+                        iactive = atoms[atomIndex].isActive();
 
                         final int a = cellA[atomIndex];
                         final int b = cellB[atomIndex];
@@ -969,6 +975,10 @@ public class NeighborList extends ParallelRegion {
             for (int j = start; j < pairStop; j++) {
                 final int aj = pairCellAtoms[j];
                 if (use != null && !use[aj]) {
+                    continue;
+                }
+                boolean jactive = atoms[aj].isActive();
+                if (!iactive && !jactive && !inactiveInteractions) {
                     continue;
                 }
                 if (!intermolecular

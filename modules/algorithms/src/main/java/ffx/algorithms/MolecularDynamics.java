@@ -222,7 +222,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * Reinitialize the MD engine after a chemical change.
      */
     public void reInit() {
-        done = false;
         potential.getCoordinates(x);
         mass = potential.getMass();
         numberOfVariables = potential.getNumberOfVariables();
@@ -231,7 +230,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
         aPrevious = potential.getPreviousAcceleration(aPrevious);
         thermostat.setNumberOfVariables(numberOfVariables, x, v, mass, potential.getVariableTypes());
         integrator.setNumberOfVariables(numberOfVariables, x, v, a, aPrevious, mass);
-        done = true;
     }
 
     /**
