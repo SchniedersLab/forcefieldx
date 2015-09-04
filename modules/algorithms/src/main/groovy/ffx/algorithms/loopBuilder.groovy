@@ -57,7 +57,6 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.MolecularAssembly;
 import ffx.algorithms.RotamerOptimization
 import ffx.algorithms.RotamerOptimization.Direction;
-import ffx.potential.MolecularAssembly;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
@@ -286,14 +285,12 @@ if(runOSRW){
     molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities,
         fileType, restartInterval, dyn);
 
+    int lambdaTarget = 1;
+    forceFieldEnergy.setCoordinates(osrw.getLowEnergyCoordinates(lambdaTarget));
     energy();
 }
 
-if (runSimulatedAnnealing) {
-    if(runOSRW){
-       e = minimize(eps); 
-    }
-    
+if (runSimulatedAnnealing) {   
     // Minimize with vdW.
     System.setProperty("vdwterm", "true");
     System.setProperty("mpoleterm", "false");
