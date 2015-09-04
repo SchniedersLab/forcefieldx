@@ -64,10 +64,10 @@ double eps = 1.0;
 double temperature = 298.15;
 
 // Time step in femtoseconds.
-double timeStep = 1.0;
+double timeStep = 2.5;
 
 // Frequency to log thermodynamics information in picoseconds.
-double printInterval = 1.0;
+double printInterval = 0.01;
 
 // Frequency to write out coordinates in picoseconds.
 double saveInterval = 100.0;
@@ -82,13 +82,16 @@ int nSteps = 10000;
 Thermostats thermostat = Thermostats.BERENDSEN;
 
 // Integrators [ BEEMAN, RESPA, STOCHASTIC ]
-Integrators integrator = Integrators.BEEMAN;
+Integrators integrator = Integrators.RESPA;
 
 // Reset velocities (ignored if a restart file is given)
 boolean initVelocities = true;
 
 // File type of coordinate snapshots to write out.
 String fileType = "PDB";
+
+// Value of Lambda.
+double lambda = 0.0;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
@@ -97,12 +100,11 @@ String fileType = "PDB";
 def cli = new CliBuilder(usage:' ffxc loopBuilder [options] <filename1>');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.e(longOpt:'eps', args:1, argName:'1.0', 'RMS gradient convergence criteria');
-cli.n(longOpt:'steps', args:1, argName:'10000000', 'Number of molecular dynamics steps.');
-cli.d(longOpt:'dt', args:1, argName:'1.0', 'Time discretization step (fsec).');
-cli.r(longOpt:'report', args:1, argName:'1.0', 'Interval to report thermodyanamics (psec).');
+cli.n(longOpt:'steps', args:1, argName:'10000', 'Number of molecular dynamics steps.');
+cli.d(longOpt:'dt', args:1, argName:'2.5', 'Time discretization step (fsec).');
+cli.r(longOpt:'report', args:1, argName:'0.01', 'Interval to report thermodyanamics (psec).');
 cli.w(longOpt:'write', args:1, argName:'100.0', 'Interval to write out coordinates (psec).');
 cli.t(longOpt:'temperature', args:1, argName:'298.15', 'Temperature in degrees Kelvin.');
-
 
 def options = cli.parse(args);
 
@@ -155,7 +157,7 @@ if (arguments != null && arguments.size() > 0) {
 }
 
 // Get a reference to the first system's ForceFieldEnergy.
-ForceFieldEnergy energy = active.getPotentialEnergy();
+ForceFieldEnergy forceFieldEnergy = active.getPotentialEnergy();
 // Set built atoms active/use flags to true (false for other atoms).
 Atom[] atoms = active.getAtomArray();
 for (int i = 0; i <= atoms.length; i++) {
@@ -175,12 +177,21 @@ logger.info(" RMS gradient convergence criteria: " + eps);
 // Minimization without vdW.
 e = minimize(eps);
 
+energy();
+
 // Run OSRW with a vdW potential.
 System.setProperty("vdwterm", "true");
-System.setProperty("mpoleterm", "false");
-System.setProperty("intramolecularSoftcore", "true");
-System.setProperty("intermolecularSoftcore", "true");
+System.setProperty("mpoleterm", "true");
+System.setProperty("polarization", "none");
+System.setProperty("intramolecular-softcore", "true");
+System.setProperty("intermolecular-softcore", "true");
 System.setProperty("lambdaterm", "true");
+System.setProperty("ligand-vapor-elec","false");
+System.setProperty("ewald-alpha","0.0");
+System.setProperty("lambda-bias-cutoff", "3");
+System.setProperty("bias-gaussian-mag", "0.01");
+System.setProperty("lambda-bin-width", "0.01");
+
 for (int i = 0; i <= atoms.length; i++) {
     Atom ai = atoms[i - 1];
     if (ai.getBuilt()) {
@@ -189,22 +200,30 @@ for (int i = 0; i <= atoms.length; i++) {
         ai.setApplyLambda(false);
     }
 }
-energy = new ForceFieldEnergy(active);
+
+forceFieldEnergy= new ForceFieldEnergy(active);
+forceFieldEnergy.setLambda(lambda);
+
+energy();
+
 // Turn off checks for overlapping atoms, which is expected for lambda=0.
-energy.getCrystal().setSpecialPositionCutoff(0.0);
+forceFieldEnergy.getCrystal().setSpecialPositionCutoff(0.0);
 // OSRW will be configured for a single topology.
 File lambdaRestart = null;
 File histogramRestart = null;
 boolean asynchronous = false;
 boolean wellTempered = false;
-OSRW osrw =  new OSRW(energy, energy, lambdaRestart, histogramRestart, active.getProperties(),
+OSRW osrw =  new OSRW(forceFieldEnergy, forceFieldEnergy, lambdaRestart, histogramRestart, active.getProperties(),
     temperature, timeStep, printInterval, saveInterval, asynchronous, sh, wellTempered);
+osrw.setLambda(lambda);
 // Create the MolecularDynamics instance.
 MolecularDynamics molDyn = new MolecularDynamics(active, osrw, active.getProperties(),
     null, thermostat, integrator);
 File dyn = null;
 molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities,
     fileType, restartInterval, dyn);
+
+energy();
 
 if (false) {
     e = minimize(eps);
@@ -227,7 +246,7 @@ if (false) {
     // Integrators [ BEEMAN, RESPA, STOCHASTIC]
     integrator = null;
 
-    SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(active, energy,
+    SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(active, forceFieldEnergy,
         active.getProperties(), null, thermostat, integrator);
     simulatedAnnealing.anneal(high, low, windows, steps, timeStep);
 
@@ -251,12 +270,12 @@ System.setProperty("intramolecularSoftcore", "false");
 System.setProperty("intermolecularSoftcore", "false");
 System.setProperty("lambdaterm", "false");
 
-energy = new ForceFieldEnergy(active);
+forceFieldEnergy = new ForceFieldEnergy(active);
 e = minimize(eps);
 
 if (false) {
     // MD, SA, OSRW and/or Side-Chain DEE
-    simulatedAnnealing = new SimulatedAnnealing(active, energy, active.getProperties(),
+    simulatedAnnealing = new SimulatedAnnealing(active, forceFieldEnergy, active.getProperties(),
         null, thermostat, integrator);
     simulatedAnnealing.anneal(high, low, windows, steps, timeStep);
     e = minimize(0.1);
