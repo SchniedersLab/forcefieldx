@@ -64,12 +64,12 @@ import org.biojava.bio.structure.align.pairwise.AlternativeAlignment;
 import org.biojava.bio.structure.io.PDBFileReader;
 
 /**
- *
- * @author JacobLitman
+ * @author Jacob M. Litman
  */
 public class ClusterStructures {
 
     private static final Logger logger = Logger.getLogger(ClusterStructures.class.getName());
+    private final int nThreads = 1;
     private final AlgorithmFunctions utils;
     private PDBFileReader[] fileReaders;
     private File[] files;
@@ -79,7 +79,7 @@ public class ClusterStructures {
     private int numClusters = 0; // Over-rides rmsdCutoff if > 0.
     private int cacheSize = 1000;
     private int cacheStart = 0; // First structure to be cached.
-    private int nThreads = 1;
+
     private int nFiles;
     private double rmsdCutoff = 1.0;
     private boolean copyFiles = true;
@@ -404,7 +404,8 @@ public class ClusterStructures {
      *
      * @param cluster
      * @param cutoff
-     * @return
+     * 
+     * @return A List of Cluster instances.
      */
     private List<Cluster> getSubclusters(Cluster cluster, double cutoff) {
         if (cluster.getDistance() < cutoff || cluster.isLeaf()) {
@@ -512,7 +513,6 @@ public class ClusterStructures {
      * under the License.
      * ****************************************************************************
      */
-
     // Copyright license for BioJava
     /*
      *                    BioJava development code

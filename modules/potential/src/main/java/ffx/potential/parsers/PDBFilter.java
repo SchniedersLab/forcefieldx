@@ -1032,7 +1032,8 @@ public final class PDBFilter extends SystemFilter {
      * Locate disulfide bonds based on SSBOND records.
      *
      * @param ssbonds
-     * @return
+     *
+     * @return An ArrayList of Bond instances for SS-Bonds.
      */
     private List<Bond> locateDisulfideBonds(List<String> ssbonds) {
         List<Bond> ssBondList = new ArrayList<>();
@@ -1133,7 +1134,8 @@ public final class PDBFilter extends SystemFilter {
      * to position the loops.
      *
      * @param xyzIndex
-     * @return
+     *
+     * @return xyzIndex updated based on built atoms.
      */
     private int buildMissingResidues(int xyzIndex) {
 

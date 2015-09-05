@@ -64,7 +64,8 @@ import static ffx.numerics.VectorMath.dot;
 public class LoopClosure {
 
     private static final Logger logger = Logger.getLogger(LoopClosure.class.getName());
-    private static final SturmMethod sturmMethod = new SturmMethod();
+
+    private final SturmMethod sturmMethod;
 
     private int max_soln = 16;
     private int[] deg_pol = new int[1];
@@ -101,12 +102,14 @@ public class LoopClosure {
     private double[][] C2 = new double[3][3];
     private double[][] Q = new double[5][17];
     private double[][] R = new double[3][17];
-    
+
     /**
      * LoopClosure Constructor.
      */
     public LoopClosure() {
         deg_pol[0] = 16;
+        sturmMethod = new SturmMethod();
+        initializeLoopClosure();
     }
 
     public void solve3PepPoly(double[] r_n1, double[] r_a1, double[] r_a3, double[] r_c3, double[][][] r_soln_n,
@@ -136,7 +139,8 @@ public class LoopClosure {
      *
      * @param a
      * @param b
-     * @return
+     *
+     * @return If b >= 0, return abs(a), else return -abs(a).
      */
     public double sign(double a, double b) {
         if (b >= 0.0) {
@@ -149,7 +153,7 @@ public class LoopClosure {
     /**
      * Initialize Loop Closure.
      */
-    public void initializeLoopClosure() {
+    private void initializeLoopClosure() {
         double[] axis = new double[3];
         double[] rr_a1 = new double[3];
         double[] rr_c1 = new double[3];
@@ -166,17 +170,6 @@ public class LoopClosure {
         double[][] Us = new double[3][3];
         double[] mulpro = new double[3];
         double[] tmp_val = new double[3];
-        double[][] tol_secant = new double[1][1];
-        int[][] max_iter_sturm = new int[1][1];
-        int[][] max_iter_secant = new int[1][1];
-
-        //known constants
-        tol_secant[0][0] = 1.0e-15;
-        max_iter_sturm[0][0] = 100;
-        max_iter_secant[0][0] = 20;
-
-        //sets termination criteria for polynomial solver
-        sturmMethod.initializeSturm(tol_secant, max_iter_sturm, max_iter_secant);
 
         //initializing initial length, angle, and torsion arrays
         len0[0] = 1.52;
@@ -546,7 +539,7 @@ public class LoopClosure {
         double[] f24 = new double[17];
         double[] f25 = new double[17];
         double[] f26 = new double[17];
-        
+
         for (int i = 0; i < 3; i++) {
             double A0 = cos_alpha[i] * cos_xi[i] * cos_eta[i] - cos_theta[i];
             double A1 = -sin_alpha[i] * cos_xi[i] * sin_eta[i];
@@ -1166,7 +1159,8 @@ public class LoopClosure {
      * Calculate T2.
      *
      * @param t0
-     * @return
+     *
+     * @return a double T2.
      */
     public double calcT2(double t0) {
         double t0_2 = t0 * t0;
@@ -1200,7 +1194,8 @@ public class LoopClosure {
      *
      * @param t0
      * @param t2
-     * @return
+     *
+     * @return return a double T1.
      */
     public double calcT1(double t0, double t2) {
         double t0_2 = t0 * t0;

@@ -60,9 +60,9 @@ import ffx.potential.utils.PotentialsUtils;
 public class LoopClosureTest {
 
     private static final Logger logger = Logger.getLogger(LoopClosureTest.class.getName());
-    private MolecularAssembly molecularAssembly;
-    private File structure;
-    private Loop loop;
+    private final MolecularAssembly molecularAssembly;
+    private final File structure;
+    private final Loop loop;
 
     double[][] xyz_n_test = new double[3][3];
     double[][] xyz_c_test = new double[3][3];
@@ -160,7 +160,7 @@ public class LoopClosureTest {
         r_a = loop.getRA();
         r_c = loop.getRC();
         r_n = loop.getRN();
-        r_o = Loop.sturmMethod.getr_o();
+        r_o = loop.sturmMethod.getr_o();
 
         //System.out.println("R_O:\n");
         //System.out.println(r_o+"\n\n\n\n");

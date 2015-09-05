@@ -505,9 +505,8 @@ public class Protonate implements MonteCarloListener {
                 stepType = StepType.TITRATE;
             }
         }
-        
-        // forceFieldEnergy.checkAtoms();
 
+        // forceFieldEnergy.checkAtoms();
         // Perform the MC move.
         boolean accepted = false;
         switch (stepType) {
@@ -521,9 +520,8 @@ public class Protonate implements MonteCarloListener {
                 accepted = tryComboStep(targetMulti);
                 break;
         }
-        
-        // forceFieldEnergy.checkAtoms();
 
+        // forceFieldEnergy.checkAtoms();
         // Increment the shared snapshot counter.
         snapshotIndex++;
         return accepted;
@@ -1013,14 +1011,14 @@ public class Protonate implements MonteCarloListener {
                         BondedUtils.intxyz(HE2, NE2, 1.02, CD2, 126.0, CE1, 126.0, 1);
                         BondedUtils.intxyz(HD1, ND1, 1.02, CG, 126.0, CB, 0.0, 0);
                         // Manual reset since we gotta reset two of 'em.
-                        HE2.setXYZGradient(0,0,0);
+                        HE2.setXYZGradient(0, 0, 0);
                         HE2.setVelocity(thermostat.maxwellIndividual(HE2.getMass()));
-                        HE2.setAcceleration(new double[]{0,0,0});
-                        HE2.setPreviousAcceleration(new double[]{0,0,0});
-                        HD1.setXYZGradient(0,0,0);
+                        HE2.setAcceleration(new double[]{0, 0, 0});
+                        HE2.setPreviousAcceleration(new double[]{0, 0, 0});
+                        HD1.setXYZGradient(0, 0, 0);
                         HD1.setVelocity(thermostat.maxwellIndividual(HD1.getMass()));
-                        HD1.setAcceleration(new double[]{0,0,0});
-                        HD1.setPreviousAcceleration(new double[]{0,0,0});
+                        HD1.setAcceleration(new double[]{0, 0, 0});
+                        HD1.setPreviousAcceleration(new double[]{0, 0, 0});
                         debug(4, String.format(" Moved 'stranded' hydrogen %s.", HE2));
                         debug(4, String.format(" Moved 'stranded' hydrogen %s.", HD1));
                         // Parameters from AminoAcidUtils, line:
@@ -1077,10 +1075,10 @@ public class Protonate implements MonteCarloListener {
                     default:
                 }
                 if (resetMe != null) {
-                    resetMe.setXYZGradient(0,0,0);
+                    resetMe.setXYZGradient(0, 0, 0);
                     resetMe.setVelocity(thermostat.maxwellIndividual(resetMe.getMass()));
-                    resetMe.setAcceleration(new double[]{0,0,0});
-                    resetMe.setPreviousAcceleration(new double[]{0,0,0});
+                    resetMe.setAcceleration(new double[]{0, 0, 0});
+                    resetMe.setPreviousAcceleration(new double[]{0, 0, 0});
                 }
             }
         }
@@ -1120,23 +1118,26 @@ public class Protonate implements MonteCarloListener {
     /**
      * Locate to which Polymer in the MolecularAssembly a given Residue belongs.
      *
-     * @param res
-     * @param molAss
-     * @return
+     * @param residue
+     *
+     * @param molecularAssembly
+     *
+     * @return the Polymer where the passed Residue is located.
      */
-    private Polymer findResiduePolymer(Residue res, MolecularAssembly molAss) {
-        if (res.getChainID() == null) {
-            logger.severe("No chain ID for residue " + res);
+    private Polymer findResiduePolymer(Residue residue,
+            MolecularAssembly molecularAssembly) {
+        if (residue.getChainID() == null) {
+            logger.severe("No chain ID for residue " + residue);
         }
-        Polymer polymers[] = molAss.getChains();
+        Polymer polymers[] = molecularAssembly.getChains();
         Polymer location = null;
         for (Polymer p : polymers) {
-            if (p.getChainID() == res.getChainID()) {
+            if (p.getChainID() == residue.getChainID()) {
                 location = p;
             }
         }
         if (location == null) {
-            logger.severe("Couldn't find polymer for residue " + res);
+            logger.severe("Couldn't find polymer for residue " + residue);
         }
         return location;
     }
@@ -1206,7 +1207,6 @@ public class Protonate implements MonteCarloListener {
     private enum Titratable {
 
         // Standard Forms
-
         ASP(3.90, -53.188, AminoAcid3.ASH, AminoAcid3.ASP),
         GLU(4.25, -59.390, AminoAcid3.GLH, AminoAcid3.GLU),
         CYS(8.18, 60.834, AminoAcid3.CYS, AminoAcid3.CYD),

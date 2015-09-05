@@ -93,8 +93,10 @@ public abstract class BondedTerm extends MSNode {
 
     /**
      * Checks if all atoms in this BondedTerm are of the given resolution.
+     *
      * @param resolution
-     * @return
+     *
+     * @return true if all atoms in this term are at the same resolution.
      */
     public boolean isResolution(Resolution resolution) {
         for (Atom atom : atoms) {
@@ -108,8 +110,11 @@ public abstract class BondedTerm extends MSNode {
     /**
      * Checks if at least one atom in this BondedTerm is of the given
      * resolution.
+     *
      * @param resolution
-     * @return
+     *
+     * @return true if at least one atom in this term is of the specified
+     * resolution.
      */
     public boolean containsResolution(Resolution resolution) {
         for (Atom atom : atoms) {
