@@ -64,6 +64,8 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
     private int mdSteps;
     private double timeStep;
     private boolean done, terminate;
+    private boolean targetTemperaturesPresent = false;
+    private double[] targetTemperatures;
 
     /**
      * <p>
@@ -202,6 +204,37 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
 
     }
 
+    public void annealToTargetValues(double[] targetTemperatures,
+            int mdSteps,
+            double timeStep) {
+
+        targetTemperaturesPresent = true;
+        this.targetTemperatures = targetTemperatures;
+
+        if (mdSteps <= 0) {
+            mdSteps = 100;
+        }
+        this.mdSteps = mdSteps;
+
+        if (timeStep <= 0) {
+            timeStep = 1.0;
+        }
+        this.timeStep = timeStep;
+
+        Thread annealingThread = new Thread(this);
+        annealingThread.start();
+        synchronized (this) {
+            try {
+                while (annealingThread.isAlive()) {
+                    wait(100);
+                }
+            } catch (Exception e) {
+                String message = "Simualted annealing interrupted.";
+                logger.log(Level.WARNING, message, e);
+            }
+        }
+    }
+
     /**
      * {@inheritDoc}
      *
@@ -213,16 +246,26 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
         done = false;
         terminate = false;
 
-        double dt = (highTemperature - lowTemperature) / (annealingSteps - 1);
-        for (int i = 0; i < annealingSteps; i++) {
-            double temperature = highTemperature - dt * i;
-            molecularDynamics.dynamic(mdSteps, timeStep, 0.01, 10.0, temperature, true, null);
-            if (terminate) {
-                logger.info(String.format("\n Terminating at temperature %8.3f.\n", temperature));
-                break;
+        if (!targetTemperaturesPresent) {
+            double dt = (highTemperature - lowTemperature) / (annealingSteps - 1);
+            for (int i = 0; i < annealingSteps; i++) {
+                double temperature = highTemperature - dt * i;
+                molecularDynamics.dynamic(mdSteps, timeStep, 0.01, 10.0, temperature, true, null);
+                if (terminate) {
+                    logger.info(String.format("\n Terminating at temperature %8.3f.\n", temperature));
+                    break;
+                }
+            }
+        } else {
+            for (int i = 0; i < targetTemperatures.length; i++) {
+                double temperature = targetTemperatures[i];
+                molecularDynamics.dynamic(mdSteps, timeStep, 0.01, 10.0, temperature, true, null);
+                if (terminate) {
+                    logger.info(String.format("\n Terminating at temperature %8.3f.\n", temperature));
+                    break;
+                }
             }
         }
-
         if (!terminate) {
             logger.info(String.format(" Completed %8d annealing steps\n", annealingSteps));
         }

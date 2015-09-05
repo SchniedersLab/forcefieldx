@@ -46,7 +46,6 @@ import org.apache.commons.io.FilenameUtils;
 import groovy.util.CliBuilder;
 
 // FFX Imports
-
 import ffx.algorithms.Minimize;
 import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.OSRW;
@@ -56,6 +55,20 @@ import ffx.algorithms.Thermostat.Thermostats;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
 import ffx.potential.MolecularAssembly;
+import ffx.algorithms.RotamerOptimization
+import ffx.algorithms.RotamerOptimization.Direction;
+import ffx.potential.ForceFieldEnergy;
+import ffx.potential.bonded.Polymer;
+import ffx.potential.bonded.Residue;
+import ffx.potential.bonded.MultiResidue;
+import ffx.potential.bonded.RotamerLibrary;
+import ffx.potential.bonded.Rotamer;
+import ffx.potential.bonded.ResidueEnumerations;
+import ffx.potential.bonded.ResidueEnumerations.CommonAminoAcid3;
+import ffx.potential.bonded.Residue.ResidueType;
+
+import edu.rit.pj.Comm
+import java.util.Scanner;
 
 // Default convergence criteria.
 double eps = 1.0;
@@ -93,6 +106,18 @@ String fileType = "PDB";
 // Value of Lambda.
 double lambda = 0.0;
 
+// Rotamer Optimization
+boolean runRotamer = false;
+
+// Simulated Annealing
+boolean runSimulatedAnnealing = false;
+
+// Molecular Dynamics to Generate Set
+boolean runMD = false;
+
+// OSRW
+boolean runOSRW = true;
+
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
@@ -105,6 +130,12 @@ cli.d(longOpt:'dt', args:1, argName:'2.5', 'Time discretization step (fsec).');
 cli.r(longOpt:'report', args:1, argName:'0.01', 'Interval to report thermodyanamics (psec).');
 cli.w(longOpt:'write', args:1, argName:'100.0', 'Interval to write out coordinates (psec).');
 cli.t(longOpt:'temperature', args:1, argName:'298.15', 'Temperature in degrees Kelvin.');
+cli.osrw(longOpt:'OSRW', 'Run OSRW.');
+cli.sa(longOpt:'simulated annealing', 'Run simulated annealing.');
+cli.md(longOpt:'molecular dynamics', args:1, argName:'10','MD generateration of sets (size).');
+cli.rot(longOpt:'rotamer', 'Run rotamer optimization.');
+cli.a(longOpt:'all', 'Run optimal pipeline of algorithms.');
+
 
 def options = cli.parse(args);
 
@@ -142,6 +173,36 @@ if (options.e) {
     eps = Double.parseDouble(options.e);
 }
 
+// Run OSRW
+if (options.osrw){
+    runOSRW = true;
+}
+
+// Run Simulated Annealing
+if (options.sa){
+    runSimulatedAnnealing = true;
+}
+
+// Run Rotamer Optimization
+if (options.rot){
+    runRotamer = true;
+}
+
+// Run MD to obtain set of possible loops
+if (options.md){
+    runMD = true;
+}
+
+// Default
+if (!(options.osrw && options.sa)){
+    runOSRW = true;
+}
+
+// Robust Default
+if (options.a){
+    runOSRW = true;
+    runRotamer = true;
+}
 System.setProperty("buildLoops", "true");
 System.setProperty("vdwterm", "false");
 
@@ -179,81 +240,81 @@ e = minimize(eps);
 
 energy();
 
-// Run OSRW with a vdW potential.
-System.setProperty("vdwterm", "true");
-System.setProperty("mpoleterm", "true");
-System.setProperty("polarization", "none");
-System.setProperty("intramolecular-softcore", "true");
-System.setProperty("intermolecular-softcore", "true");
-System.setProperty("lambdaterm", "true");
-System.setProperty("ligand-vapor-elec","false");
-System.setProperty("ewald-alpha","0.0");
-System.setProperty("lambda-bias-cutoff", "3");
-System.setProperty("bias-gaussian-mag", "0.01");
-System.setProperty("lambda-bin-width", "0.01");
+if(runOSRW){
+    // Run OSRW with a vdW potential.
+    System.setProperty("vdwterm", "true");
+    System.setProperty("mpoleterm", "true");
+    System.setProperty("polarization", "none");
+    System.setProperty("intramolecular-softcore", "true");
+    System.setProperty("intermolecular-softcore", "true");
+    System.setProperty("lambdaterm", "true");
+    System.setProperty("ligand-vapor-elec","false");
+    System.setProperty("ewald-alpha","0.0");
+    System.setProperty("lambda-bias-cutoff", "3");
+    System.setProperty("bias-gaussian-mag", "0.01");
+    System.setProperty("lambda-bin-width", "0.01");
 
-for (int i = 0; i <= atoms.length; i++) {
-    Atom ai = atoms[i - 1];
-    if (ai.getBuilt()) {
-        ai.setApplyLambda(true);
-    } else {
-        ai.setApplyLambda(false);
+    for (int i = 0; i <= atoms.length; i++) {
+        Atom ai = atoms[i - 1];
+        if (ai.getBuilt()) {
+            ai.setApplyLambda(true);
+        } else {
+            ai.setApplyLambda(false);
+        }
     }
+
+    forceFieldEnergy= new ForceFieldEnergy(active);
+    forceFieldEnergy.setLambda(lambda);
+
+    energy();
+
+    // Turn off checks for overlapping atoms, which is expected for lambda=0.
+    forceFieldEnergy.getCrystal().setSpecialPositionCutoff(0.0);
+    // OSRW will be configured for a single topology.
+    File lambdaRestart = null;
+    File histogramRestart = null;
+    boolean asynchronous = false;
+    boolean wellTempered = false;
+    OSRW osrw =  new OSRW(forceFieldEnergy, forceFieldEnergy, lambdaRestart, histogramRestart, active.getProperties(),
+        temperature, timeStep, printInterval, saveInterval, asynchronous, sh, wellTempered);
+    osrw.setLambda(lambda);
+    // Create the MolecularDynamics instance.
+    MolecularDynamics molDyn = new MolecularDynamics(active, osrw, active.getProperties(),
+        null, thermostat, integrator);
+    File dyn = null;
+    molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities,
+        fileType, restartInterval, dyn);
+
+    int lambdaTarget = 1;
+    forceFieldEnergy.setCoordinates(osrw.getLowEnergyCoordinates(lambdaTarget));
+    energy();
 }
 
-forceFieldEnergy= new ForceFieldEnergy(active);
-forceFieldEnergy.setLambda(lambda);
-
-energy();
-
-// Turn off checks for overlapping atoms, which is expected for lambda=0.
-forceFieldEnergy.getCrystal().setSpecialPositionCutoff(0.0);
-// OSRW will be configured for a single topology.
-File lambdaRestart = null;
-File histogramRestart = null;
-boolean asynchronous = false;
-boolean wellTempered = false;
-OSRW osrw =  new OSRW(forceFieldEnergy, forceFieldEnergy, lambdaRestart, histogramRestart, active.getProperties(),
-    temperature, timeStep, printInterval, saveInterval, asynchronous, sh, wellTempered);
-osrw.setLambda(lambda);
-// Create the MolecularDynamics instance.
-MolecularDynamics molDyn = new MolecularDynamics(active, osrw, active.getProperties(),
-    null, thermostat, integrator);
-File dyn = null;
-molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities,
-    fileType, restartInterval, dyn);
-
-energy();
-
-if (false) {
+if (runSimulatedAnnealing) {   
+    // Minimize with vdW.
+    System.setProperty("vdwterm", "true");
+    System.setProperty("mpoleterm", "false");
+    energy = new ForceFieldEnergy(active);
     e = minimize(eps);
 
     // SA with vdW.
     logger.info("\n Running simulated annealing on " + active.getName());
-
-    // High temperature starting point.
-    double high = 1000.0;
-    // Low temperature end point.
-    double low = 10.0;
-    // Number of annealing steps.
-    int windows = 10;
+    double[] heatUpTemperatures = [150,250,400,700,1000];
     // Number of molecular dynamics steps at each temperature.
-    int steps = 100;
+    int steps = 267; //267 at 3
     // Time step in femtoseconds.
-    timeStep = 1.0;
+    timeStep = 3.0;
     // Thermostats [ ADIABATIC, BERENDSEN, BUSSI ]
     thermostat = Thermostats.BERENDSEN;
     // Integrators [ BEEMAN, RESPA, STOCHASTIC]
-    integrator = null;
+    integrator = Integrators.RESPA;
 
-    SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(active, forceFieldEnergy,
-        active.getProperties(), null, thermostat, integrator);
-    simulatedAnnealing.anneal(high, low, windows, steps, timeStep);
+    SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(active, energy, active.getProperties(), null, thermostat, integrator);
+    simulatedAnnealing.annealToTargetValues(heatUpTemperatures, steps, timeStep);
 
-    for (int i = 0; i <= atoms.length; i++) {
-        Atom ai = atoms[i - 1];
-        ai.setUse(true);
-    }
+    double[] annealingTargetTemperatures = [1000, 800, 600, 500, 400, 300];
+    steps = 800; //800 at 3
+    simulatedAnnealing.annealToTargetValues(annealingTargetTemperatures,steps,timeStep);
 }
 
 for (int i = 0; i <= atoms.length; i++) {
@@ -273,14 +334,89 @@ System.setProperty("lambdaterm", "false");
 forceFieldEnergy = new ForceFieldEnergy(active);
 e = minimize(eps);
 
-if (false) {
-    // MD, SA, OSRW and/or Side-Chain DEE
-    simulatedAnnealing = new SimulatedAnnealing(active, forceFieldEnergy, active.getProperties(),
-        null, thermostat, integrator);
-    simulatedAnnealing.anneal(high, low, windows, steps, timeStep);
-    e = minimize(0.1);
+if (runMD){
+    // Number of molecular dynamics steps
+    nSteps = 500000; // nSteps * timeStep = time in femtoseconds
+
+    // Temperature in degrees Kelvin.
+    temperature = 300;
+    
+    // Time step in femtoseconds.
+    timeStep = 1;
+    
+    // Reset velocities (ignored if a restart file is given)
+    initVelocities = true;
+
+    // Write interval in picoseconds.
+    saveInterval = 1;   //set size = (nSteps * timeStep) / (1000 * saveInterval)
+    
+    // Interval to write out restart file (psec)
+    double restartFrequency = 1000;
+
+    MolecularDynamics molDyn = new MolecularDynamics(active, energy, active.getProperties(), null, thermostat, integrator);
+    molDyn.setFileType(fileType);
+    molDyn.setRestartFrequency(restartFrequency);
+    molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
 }
 
+if (runRotamer){
+    
+    for (int i = 0; i <= atoms.length; i++) {
+        Atom ai = atoms[i - 1];
+        ai.setActive(true);
+        ai.setUse(true);
+    }
+
+    energy = new ForceFieldEnergy(active);
+    boolean threeBodyTerm = false;
+    RotamerOptimization rotamerOptimization;  
+
+
+    logger.info(String.format(" Rotomer Optimization"));
+    rotamerOptimization = new RotamerOptimization(active, energy, null);
+
+    rotamerOptimization.setThreeBodyEnergy(threeBodyTerm);
+    RotamerLibrary.setUseOrigCoordsRotamer(true);
+
+    //RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.PonderAndRichards);
+    RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
+
+    Polymer[] polymers = systems[0].getChains();
+    ArrayList<Residue> fullResidueList = polymers[0].getResidues();
+    ArrayList<Residue> residuesToRO = new ArrayList<>();
+
+    //Rotomer Optimization inclusion list building (grab built residues)
+    for (int i = 0; i < fullResidueList.size(); i++) {
+        Residue r = fullResidueList[i];
+        if (r.getBackboneAtoms().get(0).getBuilt()) {
+            residuesToRO.add(fullResidueList[i]);
+        } 
+    }
+    //Rotomer Optimization inclusion list building (grab residues within 7A of the built loop)
+    boolean expandList = true
+    double expansionDistance = 7.0;
+
+    if (expandList) {
+        // Do a sliding-window rotamer optimization on loop window with a radius-inclusion criterion.
+        RotamerLibrary.setUseOrigCoordsRotamer(true);
+
+       // rotamerOptimization.setForcedResidues(resID, resID);
+        rotamerOptimization.setWindowSize(1);
+        rotamerOptimization.setDistanceCutoff(expansionDistance);
+
+        startResID = residuesToRO.get(0).getResidueNumber();
+        finalResID = residuesToRO.get(residuesToRO.size() - 1).getResidueNumber();
+
+        rotamerOptimization.setForcedResidues(startResID,finalResID);
+        rotamerOptimization.setResidues(startResID, finalResID);
+    }
+
+    rotamerOptimization.setResiduesIgnoreNull(residuesToRO);
+
+    residuesToRO = rotamerOptimization.getResidues();
+    RotamerLibrary.measureRotamers(residuesToRO, false);
+    rotamerOptimization.optimize(RotamerOptimization.Algorithm.SLIDING_WINDOW);
+}
 
 String ext = FilenameUtils.getExtension(filename);
 filename = FilenameUtils.removeExtension(filename);
