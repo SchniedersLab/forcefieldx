@@ -2499,7 +2499,14 @@ public final class MainPanel extends JPanel implements ActionListener,
     }
     
     /**
-     * Enumerates the exit status codes FFX may terminate with.
+     * Enumerates the exit status codes FFX may terminate with; 0 will indicate 
+     * normal execution, 1-99 will indicate fatal errors, 100-199 non-fatal errors,
+     * and 200-254 other exit statuses. Presently, only 0, 1, 3, 100, and 200 have
+     * been defined for FFX.
+     * 
+     * When adding to this enumeration, avoid the ranges 2, 64-78, 126-128, 130,
+     * 137, and 255 or greater (see http://tldp.org/LDP/abs/html/exitcodes.html 
+     * and the C/C++ standard /usr/include/sysexits.h).
      */
     enum ExitStatus {
         // Normal termination.
@@ -2509,12 +2516,12 @@ public final class MainPanel extends JPanel implements ActionListener,
         // with a system code of 1 under these circumstances.
         EXCEPTION (1),
         // A call to logger.severe() resulted in program termination.
-        SEVERE (2),
+        SEVERE (3),
         // Algorithm did not complete properly (a minimization had a bad 
         // interpolation, etc).
-        ALGORITHM_FAILURE (3),
+        ALGORITHM_FAILURE (100),
         // Some issue not listed here.
-        OTHER (4);
+        OTHER (200);
         
         // This gets sent to System.exit().
         private final int exitCode;
