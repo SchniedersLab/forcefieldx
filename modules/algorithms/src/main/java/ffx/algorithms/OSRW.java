@@ -282,6 +282,11 @@ public class OSRW implements Potential {
      */
     private ArrayList<String> traversalInHand = new ArrayList<>();
     /**
+     * Holds the lowest potential-energy parameters from among all visits to lambda < 0.1 and > 0.9
+     */
+    private double lowEnergyCoordsZero[], lowEnergyCoordsOne[];
+    private double lowEnergyZero= Double.MAX_VALUE, lowEnergyOne = Double.MAX_VALUE;
+    /**
      * Interval between how often the free energy is updated from the count
      * matrix.
      */
@@ -378,6 +383,8 @@ public class OSRW implements Potential {
         this.wellTempered = wellTempered;
 
         nVariables = potential.getNumberOfVariables();
+        lowEnergyCoordsZero = new double[nVariables];
+        lowEnergyCoordsOne = new double[nVariables];
 
         /**
          * Convert the time step to picoseconds.
@@ -750,6 +757,10 @@ public class OSRW implements Potential {
                     lambdaZeroFilter.clearListOutput();
                     lambdaZeroFilter.writeFileWithHeader(lambdaFile, new StringBuilder(String.format("%.4f,%d", lambda, totalCounts)));
                     traversalInHand = lambdaZeroFilter.getListOutput();
+                    if (e < lowEnergyZero) {
+                        lowEnergyZero = e;
+                        lowEnergyCoordsZero = potential.getCoordinates(null);
+                    }
                     traversalSnapshotTarget = 0;
                 } else if (((lambda > 0.9 && traversalInHand.isEmpty()) || (lambda > heldTraversalLambda + 0.025 && !traversalInHand.isEmpty()))
                         && (traversalSnapshotTarget == 1 || traversalSnapshotTarget == -1)) {
@@ -760,6 +771,10 @@ public class OSRW implements Potential {
                     lambdaOneFilter.clearListOutput();
                     lambdaOneFilter.writeFileWithHeader(lambdaFile, new StringBuilder(String.format("%.4f,%d", lambda, totalCounts)));
                     traversalInHand = lambdaOneFilter.getListOutput();
+                    if (e < lowEnergyOne) {
+                        lowEnergyOne = e;
+                        lowEnergyCoordsOne = potential.getCoordinates(null);
+                    }
                     traversalSnapshotTarget = 1;
                 }
             }
@@ -1249,6 +1264,25 @@ public class OSRW implements Potential {
     @Override
     public double[] getCoordinates(double[] doubles) {
         return potential.getCoordinates(doubles);
+    }
+
+    /**
+     * Return a copy of the parameter array containing lowest-energy parameters
+     * from amongst visits to the specified end state (either 0 or 1).
+     *
+     * @param endState
+     *
+     * @return a double array of parameters
+     */
+    public double[] getLowEnergyCoordinates(int endState) {
+        if (endState == 0) {
+            return lowEnergyCoordsZero;
+        } else if (endState == 1) {
+            return lowEnergyCoordsOne;
+        } else {
+            logger.severe("Improper function call.");
+            return null;
+        }
     }
 
     @Override

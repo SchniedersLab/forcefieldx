@@ -79,6 +79,7 @@ import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.NACorrectionException;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
+import ffx.potential.bonded.ResidueEnumerations;
 import ffx.potential.bonded.ResidueState;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
@@ -89,7 +90,6 @@ import ffx.utilities.IndexIndexPair;
 
 import static ffx.potential.bonded.Residue.ResidueType.AA;
 import static ffx.potential.bonded.Residue.ResidueType.NA;
-import ffx.potential.bonded.ResidueEnumerations;
 import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
 
 /**
@@ -97,7 +97,12 @@ import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
  * conformations using rotamers.
  *
  * @author Michael J. Schnieders
+ *
  * @author Jacob M. Litman
+ *
+ * @author Stephen D. LuCore
+ *
+ * @since 1.0
  */
 public class RotamerOptimization implements Terminatable {
 
@@ -616,7 +621,8 @@ public class RotamerOptimization implements Terminatable {
      * @param i
      * @param lowEnergy
      * @param optimum
-     * @return
+     *
+     * @return the current energy.
      */
     public double rotamerOptimization(MolecularAssembly molecularAssembly, Residue residues[], int i,
             double lowEnergy, int optimum[]) {
@@ -766,7 +772,8 @@ public class RotamerOptimization implements Terminatable {
      * @param lowEnergy
      * @param optimum Optimum set of rotamers.
      * @param permutationEnergies Energies of visited permutations or null.
-     * @return
+     *
+     * @return current energy.
      */
     public double rotamerOptimizationDEE(MolecularAssembly molecularAssembly, Residue residues[], int i,
             int currentRotamers[], double lowEnergy, int optimum[], double[] permutationEnergies) {
@@ -930,7 +937,8 @@ public class RotamerOptimization implements Terminatable {
      * @param currentRotamers
      * @param lowEnergy
      * @param optimum
-     * @return
+     *
+     * @return 0.
      */
     public double dryRun(MolecularAssembly molecularAssembly, Residue residues[], int i,
             int currentRotamers[], double lowEnergy, int optimum[]) {
@@ -1003,7 +1011,8 @@ public class RotamerOptimization implements Terminatable {
      * @param gmecEnergy Minimum energy for these residues.
      * @param permutationEnergies Energy of all permutations.
      * @param permutations Contains accepted permutations.
-     * @return
+     *
+     * @return 0.
      */
     public double dryRunForEnsemble(Residue residues[], int i, int currentRotamers[],
             double gmecEnergy, double[] permutationEnergies, int[][] permutations) {
@@ -5461,7 +5470,7 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
-     * Find the min/max of the 3-body energy.
+     * Find the min/max of the 2-body energy.
      *
      * @param residues The residue array.
      * @param minMax The bound on the 3-body energy (minMax[0] = min, minMax[1]
@@ -5471,7 +5480,8 @@ public class RotamerOptimization implements Terminatable {
      * @param j Residue j
      * @param rj Rotamer rj of Residue j
      * @param k Residue k
-     * @return
+     *
+     * @return true if this term is valid.
      */
     private boolean minMax2BodySum(Residue[] residues, double minMax[], int i, int ri, int j, int rj) {
         int nres = residues.length;
@@ -5525,7 +5535,7 @@ public class RotamerOptimization implements Terminatable {
      * @param j Residue j
      * @param rj Rotamer rj of Residue j
      * @param k Residue k
-     * @return
+     * @return true if this term is valid.
      */
     private boolean minMax3BodySum(Residue[] residues, double minMax[], int i, int ri, int j, int rj, int k, int rk) {
         int nres = residues.length;
@@ -5684,7 +5694,8 @@ public class RotamerOptimization implements Terminatable {
      * be evaluated by the 3-body form of the Goldstein criteria.
      *
      * @param residues The list of residues to be optimized.
-     * @return
+     *
+     * @return true if a residue is eliminated.
      */
     private boolean goldsteinRotamerPairDriver(Residue[] residues) {
         int nres = residues.length;

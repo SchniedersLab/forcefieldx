@@ -371,12 +371,12 @@ public class XtalEnergy implements Potential {
     }
 
     /**
-     *
      * @param x
      * @param index1
      * @param index2
      * @param eps
-     * @return
+     *
+     * @return finite-difference derivative.
      */
     private double finiteDifference2(double[] x, int index1, int index2, double eps) {
         double scale1 = 1.0;
@@ -404,13 +404,12 @@ public class XtalEnergy implements Potential {
     }
 
     /**
-     *
      * @param x
      * @param index1
      * @param index2
      * @param index3
      * @param eps
-     * @return
+     * @return finite-difference derivative.
      */
     private double finiteDifference3(double[] x, int index1, int index2, int index3, double eps) {
         double scale1 = 1.0;
