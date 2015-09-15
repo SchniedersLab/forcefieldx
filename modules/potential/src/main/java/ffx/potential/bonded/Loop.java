@@ -43,7 +43,6 @@ import java.util.logging.Logger;
 
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
-import ffx.numerics.VectorMath;
 import ffx.potential.MolecularAssembly;
 
 import static ffx.numerics.VectorMath.dot;
@@ -119,7 +118,7 @@ public class Loop {
         double[][][] r_soln_a = new double[max_soln][3][3];
         double[][][] r_soln_c = new double[max_soln][3][3];
         int[] n_soln = new int[1];
-
+         
         loopClosure.solve3PepPoly(r_n[1], r_a[1], r_a[3], r_c[3], r_soln_n, r_soln_a, r_soln_c, n_soln);
 
         StringBuilder sb = new StringBuilder();
@@ -140,16 +139,16 @@ public class Loop {
                 }
             }
             double sum = 0.0;
-
+           
             for (i = 0; i < 3; i++) {
                 for (int j = 0; j < 3; j++) {
                     dr[j] = r_soln_n[k][i][j] - r_n[i + 1][j];
                 }
-                sum += VectorMath.dot(dr, dr);
+                sum += dot(dr, dr);
                 for (int j = 0; j < 3; j++) {
                     dr[j] = r_soln_a[k][i][j] - r_a[i + 1][j];
                 }
-                sum += VectorMath.dot(dr, dr);
+                sum += dot(dr, dr);
                 for (int j = 0; j < 3; j++) {
                     dr[j] = r_soln_c[k][i][j] - r_c[i + 1][j];
                 }
