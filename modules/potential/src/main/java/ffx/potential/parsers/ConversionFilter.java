@@ -37,28 +37,30 @@
  */
 package ffx.potential.parsers;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Vector;
+
+import org.apache.commons.configuration.CompositeConfiguration;
+
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.parameters.ForceField;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Vector;
-import org.apache.commons.configuration.CompositeConfiguration;
 
 /**
- * The ConversionFilter class is the base class for most Force Field X parsers for
- * non-Force Field X data structures
+ * The ConversionFilter class is the base class for most Force Field X parsers
+ * for non-Force Field X data structures
  *
  * @author Michael J. Schnieders
- * @autor Jacob M. Litman
+ * @author Jacob M. Litman
+ * 
  * @since 1.0
- *
  */
 public abstract class ConversionFilter {
-    
+
     /**
      * The atomList is filled by filters that extend ConversionFilter.
      */
@@ -116,9 +118,8 @@ public abstract class ConversionFilter {
      * nuclear centers (applies primarily to hydrogens).
      */
     protected boolean vdwH = false;
-    
-    
-    public ConversionFilter (Object structure, MolecularAssembly molecularAssembly, 
+
+    public ConversionFilter(Object structure, MolecularAssembly molecularAssembly,
             ForceField forcefield, CompositeConfiguration properties) {
         this.currentStructure = structure;
         this.structures = new ArrayList<>();
@@ -128,13 +129,14 @@ public abstract class ConversionFilter {
         this.activeMolecularAssembly = molecularAssembly;
         this.forceField = forcefield;
         this.properties = properties;
-        
+
         String vdwHydrogens = System.getProperty("vdwHydrogens");
         if (vdwHydrogens != null && vdwHydrogens.equalsIgnoreCase("true")) {
             vdwH = true;
         }
     }
-    public ConversionFilter (List<Object> structures, MolecularAssembly molecularAssembly, 
+
+    public ConversionFilter(List<Object> structures, MolecularAssembly molecularAssembly,
             ForceField forcefield, CompositeConfiguration properties) {
         this.structures = structures;
         if (structures != null && !structures.isEmpty()) {
@@ -143,13 +145,14 @@ public abstract class ConversionFilter {
         this.activeMolecularAssembly = molecularAssembly;
         this.forceField = forcefield;
         this.properties = properties;
-        
+
         String vdwHydrogens = System.getProperty("vdwHydrogens");
         if (vdwHydrogens != null && vdwHydrogens.equalsIgnoreCase("true")) {
             vdwH = true;
         }
     }
-    public ConversionFilter (Object structure, List<MolecularAssembly> molecularAssemblies, 
+
+    public ConversionFilter(Object structure, List<MolecularAssembly> molecularAssemblies,
             ForceField forcefield, CompositeConfiguration properties) {
         this.currentStructure = structure;
         this.structures = new ArrayList<>();
@@ -160,13 +163,13 @@ public abstract class ConversionFilter {
         this.activeMolecularAssembly = systems.firstElement();
         this.forceField = forcefield;
         this.properties = properties;
-        
+
         String vdwHydrogens = System.getProperty("vdwHydrogens");
         if (vdwHydrogens != null && vdwHydrogens.equalsIgnoreCase("true")) {
             vdwH = true;
         }
     }
-    
+
     /**
      * This follows the TINKER file versioning scheme.
      *
@@ -317,8 +320,7 @@ public abstract class ConversionFilter {
      * <p>
      * getMolecularAssemblys</p>
      *
-     * @return an array of {@link ffx.potential.MolecularAssembly}
-     * objects.
+     * @return an array of {@link ffx.potential.MolecularAssembly} objects.
      */
     public MolecularAssembly[] getMolecularAssemblys() {
         if (systems.size() > 0) {
@@ -339,7 +341,7 @@ public abstract class ConversionFilter {
     public Utilities.FileType getFileType() {
         return fileType;
     }
-    
+
     /**
      * <p>
      * getDataType</p>
@@ -438,7 +440,7 @@ public abstract class ConversionFilter {
     public void setFile(File file) {
         this.file = file;
     }
-    
+
     /**
      * <p>
      * setStructure</p>

@@ -45,9 +45,10 @@ import org.biojava.bio.structure.Structure;
  * Structure" in a class similar to the PDB, INT, XYZ, etc. FileFilter classes.
  *
  * @author Michael J. Schnieders
- * @autor Jacob M. Litman
- * @since 1.0
  *
+ * @author Jacob M. Litman
+ *
+ * @since 1.0
  */
 public class BiojavaDataFilter implements DataFilter {
 

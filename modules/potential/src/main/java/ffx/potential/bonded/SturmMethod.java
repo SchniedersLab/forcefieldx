@@ -58,73 +58,121 @@ public class SturmMethod {
 
     private static final Logger logger = Logger.getLogger(SturmMethod.class.getName());
 
-    final int PRINT_LEVEL = 0;
-    final int MAX_ORDER = 16;
-    final int MAXPOW = 32;
-    final double SMALL_ENOUGH = 1.0e-18;
-    double RELERROR;
-    int MAXIT, MAX_ITER_SECANT;
-    double[] roots;
-    double[][] xyz_o = new double[5][3];
-
     /**
-     * Class that holds polynomial information.
+     * Calculates the modulus of u(x)/v(x) leaving it in r, it returns 0 if r(x)
+     * is constant. This function assumes the leading coefficient of v is 1 or
+     * -1.
      *
-     * Poly objects have one position that holds the order of a polynomial in
-     * poly.ord.
+     * Modp was originally a static int and returned r.ord as an int. The
+     * buildSturm function requires that a boolean is returned from the modp
+     * function, so modp is set to return a boolean. This new boolean return
+     * could be problematic elsewhere in the code if modp is used to return a
+     * value. This should be checked.
      *
-     * Poly objects have up to 16 positions that hold the coefficients of a 16th
-     * degree polynomial.
+     * @param u
+     * @param v
+     * @param r
      *
-     * The coefficients are located in poly.coef[position].
+     * @return true if r.ord > 0.
+     *
      */
-    private class Poly {
+    private static boolean modp(Polynomial u, Polynomial v, Polynomial r) {
+        double nr[] = r.coefficients;
+        int end = u.order;
+        double uc[] = u.coefficients;
 
-        int ord;
-        double coef[];
+        for (int i = 0; i <= end; i++) {
+            nr[i] = uc[i];
+        }
 
-        private Poly() {
-            coef = new double[MAX_ORDER + 1];
+        if (v.coefficients[v.order] < 0.0) {
+            for (int k = u.order - v.order - 1; k >= 0; k -= 2) {
+                r.coefficients[k] = -r.coefficients[k];
+            }
+
+            for (int k = u.order - v.order; k >= 0; k--) {
+                for (int j = v.order + k - 1; j >= k; j--) {
+                    r.coefficients[j] = -r.coefficients[j] - r.coefficients[v.order + k] * v.coefficients[j - k];
+                }
+            }
+        } else {
+            for (int k = u.order - v.order; k >= 0; k--) {
+                for (int j = v.order + k - 1; j >= k; j--) {
+                    r.coefficients[j] -= r.coefficients[v.order + k] * v.coefficients[j - k];
+                }
+            }
+        }
+
+        int k = v.order - 1;
+        while (k >= 0 && abs(r.coefficients[k]) < 1.0e-18) {
+            r.coefficients[k] = 0.0;
+            k--;
+        }
+
+        if (k < 0) {
+            r.order = 0;
+        } else {
+            r.order = k;
+        }
+
+        if (r.order > 0) {
+            return true;
+        } else if (r.order == 0) {
+            return false;
+        } else {
+            return false;
         }
     }
 
+    final int MAXPOW = 32;
+    final double SMALL_ENOUGH = 1.0e-18;
+    private final double RELERROR;
+    private final int MAXIT;
+    private final int MAX_ITER_SECANT;
+    private double[] roots;
+    private final double[][] xyz_o = new double[5][3];
+
     /**
-     * Sets termination criteria for polynomial solver.
-     *
-     * @param tol_secant
-     * @param max_iter_sturm
-     * @param max_iter_secant
+     * SturmMethod constructor with termination criteria for polynomial solver.
      */
-    void initializeSturm(double[][] tol_secant, int[][] max_iter_sturm, int[][] max_iter_secant) {
-        RELERROR = tol_secant[0][0];
-        MAXIT = max_iter_sturm[0][0];
-        MAX_ITER_SECANT = max_iter_secant[0][0];
+    public SturmMethod() {
+        RELERROR = 1.0e-15;
+        MAXIT = 100;
+        MAX_ITER_SECANT = 20;
     }
 
-    void solveSturm(int[] p_order, int[] n_root, double[] poly_coeffs, double[] roots) {
+    /**
+     * Solve using the Sturm method.
+     *
+     * @param p_order
+     * @param n_root
+     * @param poly_coeffs
+     * @param roots
+     */
+    public void solveSturm(int[] p_order, int[] n_root, double[] poly_coeffs, double[] roots) {
 
-        Poly[] sseq = new Poly[MAX_ORDER * 2];
+        Polynomial[] sseq = new Polynomial[Polynomial.MAX_ORDER * 2];
         double min, max;
         int order, nroots, nchanges, np;
         int[] atmin = new int[1];
         int[] atmax = new int[1];
         this.roots = roots;
 
-        for (int i = 0; i < MAX_ORDER * 2; i++) {
-            sseq[i] = new Poly();
+        for (int i = 0; i < Polynomial.MAX_ORDER * 2; i++) {
+            sseq[i] = new Polynomial();
         }
 
         order = p_order[0];
 
         for (int i = order; i >= 0; i--) {
-            sseq[0].coef[i] = poly_coeffs[i];
+            sseq[0].coefficients[i] = poly_coeffs[i];
         }
 
         if (logger.isLoggable(Level.FINE)) {
             StringBuilder string = new StringBuilder();
             for (int i = order; i >= 0; i--) {
                 string.append(String.format(" Coefficients in Sturm solver\n"));
-                string.append(String.format("%d %f\n", i, sseq[0].coef[i]));
+                string.append(String.format("%d %f\n", i, sseq[0].coefficients[i]));
             }
             logger.fine(string.toString());
         }
@@ -135,12 +183,12 @@ public class SturmMethod {
             StringBuilder string1 = new StringBuilder();
             string1.append(String.format(" Sturm sequence for:\n"));
             for (int i = order; i >= 0; i--) {
-                string1.append(String.format("%f ", sseq[0].coef[i]));
+                string1.append(String.format("%f ", sseq[0].coefficients[i]));
                 string1.append("\n");
             }
             for (int i = 0; i <= np; i++) {
-                for (int j = sseq[i].ord; j >= 0; j--) {
-                    string1.append(String.format("%f ", sseq[i].coef[j]));
+                for (int j = sseq[i].order; j >= 0; j--) {
+                    string1.append(String.format("%f ", sseq[i].coefficients[j]));
                     string1.append("\n");
                 }
             }
@@ -186,7 +234,7 @@ public class SturmMethod {
 
         // Perform the bisection
         nroots = atmin[0] - atmax[0];
-        sbisect(np, sseq, min, max, atmin[0], atmax[0], this.roots);
+        sturmBisection(np, sseq, min, max, atmin[0], atmax[0], this.roots);
         n_root[0] = nroots;
 
         //write out the roots
@@ -204,81 +252,24 @@ public class SturmMethod {
         }
     }
 
-    double hyperTan(double a, double x) {
+    /**
+     * The hyperTan method.
+     *
+     * @param a
+     * @param x
+     * @return 1.0 if (ax > 100), -1.0 if (ax < -100) and
+     * (exp(ax)-exp(-ax))/(exp(ax)+exp(-ax)) otherwise.
+     */
+    private double hyperTan(double a, double x) {
         double ax = a * x;
         if (ax > 100.0) {
-            return (1.0);
+            return 1.0;
         } else if (ax < -100.0) {
-            return (-1.0);
+            return -1.0;
         } else {
             double exp_x1 = exp(ax);
             double exp_x2 = exp(-ax);
             return (exp_x1 - exp_x2) / (exp_x1 + exp_x2);
-        }
-    }
-
-    /**
-     * Calculates the modulus of u(x)/v(x) leaving it in r, it returns 0 if r(x)
-     * is constant. This function assumes the leading coefficient of v is is 1
-     * or -1.
-     *
-     * Modp was originally a static int and returned r.ord as an int. The
-     * buildSturm function requires that a boolean is returned from the modp
-     * function, so modp is set to return a boolean. This new boolean return
-     * could be problematic elsewhere in the code if modp is used to return a
-     * value. This should be checked.
-     *
-     * @param u
-     * @param v
-     * @param r
-     * @return
-     */
-    static boolean modp(Poly u, Poly v, Poly r) {
-
-        double nr[] = r.coef;
-        int end = u.ord;
-        double uc[] = u.coef;
-
-        for (int i = 0; i <= end; i++) {
-            nr[i] = uc[i];
-
-        }
-        if (v.coef[v.ord] < 0.0) {
-            for (int k = u.ord - v.ord - 1; k >= 0; k -= 2) {
-                r.coef[k] = -r.coef[k];
-            }
-
-            for (int k = u.ord - v.ord; k >= 0; k--) {
-                for (int j = v.ord + k - 1; j >= k; j--) {
-                    r.coef[j] = -r.coef[j] - r.coef[v.ord + k] * v.coef[j - k];
-                }
-            }
-        } else {
-            for (int k = u.ord - v.ord; k >= 0; k--) {
-                for (int j = v.ord + k - 1; j >= k; j--) {
-                    r.coef[j] -= r.coef[v.ord + k] * v.coef[j - k];
-                }
-            }
-        }
-
-        int k = v.ord - 1;
-        while (k >= 0 && abs(r.coef[k]) < 1.0e-18) {
-            r.coef[k] = 0.0;
-            k--;
-        }
-
-        if (k < 0) {
-            r.ord = 0;
-        } else {
-            r.ord = k;
-        }
-
-        if (r.ord > 0) {
-            return true;
-        } else if (r.ord == 0) {
-            return false;
-        } else {
-            return false;
         }
     }
 
@@ -288,20 +279,20 @@ public class SturmMethod {
      *
      * @param ord
      * @param sseq
-     * @return
+     * @return the number of polynomials in the sequence.
      */
-    int buildSturm(int ord, Poly[] sseq) {
+    private int buildSturm(int ord, Polynomial[] sseq) {
         double f;
         double[] fp;
         double[] fc;
 
-        sseq[0].ord = ord;
-        sseq[1].ord = ord - 1;
+        sseq[0].order = ord;
+        sseq[1].order = ord - 1;
 
         // Calculate the derivative and normalise the leading coefficient
-        f = abs(sseq[0].coef[ord] * ord);
-        fp = sseq[1].coef;
-        fc = Arrays.copyOfRange(sseq[0].coef, 1, sseq[0].coef.length);
+        f = abs(sseq[0].coefficients[ord] * ord);
+        fp = sseq[1].coefficients;
+        fc = Arrays.copyOfRange(sseq[0].coefficients, 1, sseq[0].coefficients.length);
 
         int j = 0;
         for (int i = 1; i <= ord; i++) {
@@ -311,18 +302,18 @@ public class SturmMethod {
 
         // Construct the rest of the Sturm sequence. (Double check this... )
         int i;
-        for (i = 0; i < sseq[0].coef.length - 2 && modp(sseq[i], sseq[i + 1], sseq[i + 2]); i++) {
+        for (i = 0; i < sseq[0].coefficients.length - 2 && modp(sseq[i], sseq[i + 1], sseq[i + 2]); i++) {
             //reverse the sign and normalise
-            f = -Math.abs(sseq[i + 2].coef[sseq[i + 2].ord]);
-            for (j = sseq[i + 2].ord; j >= 0; j--) {
-                sseq[i + 2].coef[j] /= f;
+            f = -Math.abs(sseq[i + 2].coefficients[sseq[i + 2].order]);
+            for (j = sseq[i + 2].order; j >= 0; j--) {
+                sseq[i + 2].coefficients[j] /= f;
             }
         }
 
         // Reverse the sign.
-        sseq[i + 2].coef[0] = -sseq[i + 2].coef[0];
+        sseq[i + 2].coefficients[0] = -sseq[i + 2].coefficients[0];
 
-        return (sseq[0].ord - sseq[i + 2].ord);
+        return (sseq[0].order - sseq[i + 2].order);
     }
 
     /**
@@ -333,19 +324,20 @@ public class SturmMethod {
      * @param sseq
      * @param atneg
      * @param atpos
-     * @return
+     *
+     * @return the number of distinct real roots of sseq.
      */
-    int numRoots(int np, Poly[] sseq, int[] atneg, int[] atpos) {
+    private int numRoots(int np, Polynomial[] sseq, int[] atneg, int[] atpos) {
 
         int atposinf = 0;
         int atneginf = 0;
 
         // Changes at positive infinity.
-        double lf = sseq[0].coef[sseq[0].ord];
+        double lf = sseq[0].coefficients[sseq[0].order];
 
         for (int i = 1; i <= np; i++) //for (s = sseq + 1; s <= sseq + np; s++)
         {
-            double f = sseq[i].coef[sseq[i].ord];
+            double f = sseq[i].coefficients[sseq[i].order];
             if (lf == 0.0 || lf * f < 0) {
                 atposinf++;
             }
@@ -353,18 +345,18 @@ public class SturmMethod {
         }
 
         // Changes at negative infinity.
-        if ((sseq[0].ord & 1) != 0) {
-            lf = -sseq[0].coef[sseq[0].ord];
+        if ((sseq[0].order & 1) != 0) {
+            lf = -sseq[0].coefficients[sseq[0].order];
         } else {
-            lf = sseq[0].coef[sseq[0].ord];
+            lf = sseq[0].coefficients[sseq[0].order];
         }
 
         for (int i = 1; i <= np; i++) {
             double f;
-            if ((sseq[i].ord & 1) != 0) {
-                f = -sseq[i].coef[sseq[i].ord];
+            if ((sseq[i].order & 1) != 0) {
+                f = -sseq[i].coefficients[sseq[i].order];
             } else {
-                f = sseq[i].coef[sseq[i].ord];
+                f = sseq[i].coefficients[sseq[i].order];
             }
             if (lf == 0.0 || lf * f < 0) {
                 atneginf++;
@@ -379,20 +371,21 @@ public class SturmMethod {
     }
 
     /**
-     * Return the number of sign changesin the Sturm sequence in sseq at the
+     * Return the number of sign changes in the Sturm sequence in sseq at the
      * value a.
      *
      * @param np
      * @param sseq
      * @param a
-     * @return
+     *
+     * @return the number of sign changes.
      */
-    int numChanges(int np, Poly[] sseq, double a) {
+    private int numChanges(int np, Polynomial[] sseq, double a) {
 
         int changes = 0;
-        double lf = evalpoly(sseq[0].ord, sseq[0].coef, a);
+        double lf = evalPoly(sseq[0].order, sseq[0].coefficients, a);
         for (int i = 1; i <= np; i++) {
-            double f = evalpoly(sseq[i].ord, sseq[i].coef, a);
+            double f = evalPoly(sseq[i].order, sseq[i].coefficients, a);
             if (lf == 0.0 || lf * f < 0) {
                 changes++;
             }
@@ -416,7 +409,7 @@ public class SturmMethod {
      * @param atmax
      * @param roots
      */
-    void sbisect(int np, Poly[] sseq, double min, double max, int atmin, int atmax, double[] roots) {
+    private void sturmBisection(int np, Polynomial[] sseq, double min, double max, int atmin, int atmax, double[] roots) {
         double mid = 0.;
         int n1 = 0;
         int n2 = 0;
@@ -429,7 +422,7 @@ public class SturmMethod {
 
         if (nroot == 1) {
             //first try a less expensive technique
-            if (modrf(sseq[0].ord, sseq[0].coef, min, max, roots)) {
+            if (modifiedRegulaFalsi(sseq[0].order, sseq[0].coefficients, min, max, roots)) {
                 remainder = this.roots.length - roots.length;
                 count = 0;
                 for (int q = remainder; q < this.roots.length; q++) {
@@ -494,8 +487,8 @@ public class SturmMethod {
             n1 = atmin - atmid;
             n2 = atmid - atmax;
             if (n1 != 0 && n2 != 0) {
-                sbisect(np, sseq, min, mid, atmin, atmid, roots);
-                sbisect(np, sseq, mid, max, atmid, atmax, Arrays.copyOfRange(roots, n1, roots.length));
+                sturmBisection(np, sseq, min, mid, atmin, atmid, roots);
+                sturmBisection(np, sseq, mid, max, atmid, atmax, Arrays.copyOfRange(roots, n1, roots.length));
                 break;
             }
             if (n1 == 0) {
@@ -526,9 +519,10 @@ public class SturmMethod {
      * @param ord
      * @param coef
      * @param x
-     * @return
+     *
+     * @return value of the polynomial at x.
      */
-    double evalpoly(int ord, double[] coef, double x) {
+    private double evalPoly(int ord, double[] coef, double x) {
 
         double fp[] = coef;
         double f = fp[ord];
@@ -550,9 +544,10 @@ public class SturmMethod {
      * @param a
      * @param b
      * @param val
-     * @return
+     *
+     * @return 0 if the method does not converge.
      */
-    boolean modrf(int ord, double[] coef, double a, double b, double[] val) {
+    private boolean modifiedRegulaFalsi(int ord, double[] coef, double a, double b, double[] val) {
         double fa = coef[ord];
         double fb = fa;
 
@@ -614,9 +609,10 @@ public class SturmMethod {
      * @param molAss
      * @param counter
      * @param writeFile
-     * @return
+     *
+     * @return the File.
      */
-    File writePDBBackbone(double[][] r_n, double[][] r_a, double[][] r_c, int stt_res, int end_res, MolecularAssembly molAss, int counter, boolean writeFile) {
+    public File writePDBBackbone(double[][] r_n, double[][] r_a, double[][] r_c, int stt_res, int end_res, MolecularAssembly molAss, int counter, boolean writeFile) {
 
         Polymer[] newChain = molAss.getChains();
         ArrayList<Atom> backBoneAtoms;
@@ -733,9 +729,33 @@ public class SturmMethod {
     /**
      * Used only in JUnit testing.
      *
-     * @return
+     * @return oxygen coordinates.
      */
     public double[][] getr_o() {
         return xyz_o;
+    }
+
+    /**
+     * The Polynomial class describes a single polynomial of up to 16th degree.
+     */
+    private class Polynomial {
+
+        final static int MAX_ORDER = 16;
+
+        /**
+         * The order of the polynomial.
+         */
+        public int order;
+        /**
+         * The coefficients of the polynomial.
+         */
+        public final double coefficients[];
+
+        /**
+         * Private constructor.
+         */
+        private Polynomial() {
+            coefficients = new double[MAX_ORDER + 1];
+        }
     }
 }

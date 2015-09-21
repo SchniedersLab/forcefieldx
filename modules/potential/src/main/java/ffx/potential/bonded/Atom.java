@@ -530,7 +530,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     /**
      * If true, this atom should be used in potential energy functions.
      *
-     * @return
+     * @return true if this atom should be included in the potential energy.
      */
     public boolean getUse() {
         return use;
@@ -539,7 +539,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     /**
      * If true, this atom was built during PDB file parsing.
      *
-     * @return
+     * @return true if this atom was built during parsing of a PDB file.
      */
     public boolean getBuilt() {
         return built;
@@ -557,7 +557,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     /**
      * If active, the coordinates of this atom can be modified.
      *
-     * @return
+     * @return true if this atom's coordinates, b-factors, etc. can be modified.
      */
     public boolean isActive() {
         return active;
@@ -1117,7 +1117,9 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * getXYZ</p>
      *
      * @param xyz an array of double.
-     * @return
+     *
+     * @return the original array with updated coordinates, or a new array if
+     * xyz was null.
      */
     public double[] getXYZ(double xyz[]) {
         if (xyz == null) {

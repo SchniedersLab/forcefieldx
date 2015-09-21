@@ -1252,7 +1252,7 @@ public class OSRW implements Potential {
         lambda = sinTheta * sinTheta;
         lambdaInterface.setLambda(lambda);
     }
-    
+
     @Override
     public void setScaling(double[] scaling) {
         potential.setScaling(scaling);
@@ -1267,12 +1267,14 @@ public class OSRW implements Potential {
     public double[] getCoordinates(double[] doubles) {
         return potential.getCoordinates(doubles);
     }
-    
+
     /**
-     * Return a copy of the parameter array containing lowest-energy parameters 
+     * Return a copy of the parameter array containing lowest-energy parameters
      * from amongst visits to the specified end state (either 0 or 1).
+     *
      * @param endState
-     * @return 
+     *
+     * @return a double array of parameters
      */
     public double[] getLowEnergyCoordinates(int endState) {
         if (endState == 0) {
