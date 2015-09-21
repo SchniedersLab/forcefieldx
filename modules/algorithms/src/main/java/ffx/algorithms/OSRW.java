@@ -70,6 +70,8 @@ import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.parsers.PDBFilter;
+import java.util.Arrays;
+
 
 /**
  * An implementation of the Orthogonal Space Random Walk algorithm.
@@ -746,7 +748,7 @@ public class OSRW implements Potential {
                         heldTraversalLambda = 0.5;
                         traversalInHand.clear();
                         traversalSnapshotTarget = 1 - traversalSnapshotTarget;
-                    }
+                  }
                 }
                 if (((lambda < 0.1 && traversalInHand.isEmpty()) || (lambda < heldTraversalLambda - 0.025 && !traversalInHand.isEmpty()))
                         && (traversalSnapshotTarget == 0 || traversalSnapshotTarget == -1)) {
@@ -755,7 +757,7 @@ public class OSRW implements Potential {
                         lambdaZeroFilter.setListMode(true);
                     }
                     lambdaZeroFilter.clearListOutput();
-                    lambdaZeroFilter.writeFileWithHeader(lambdaFile, new StringBuilder(String.format("%.4f,%d", lambda, totalCounts)));
+                    lambdaZeroFilter.writeFileWithHeader(lambdaFile, new StringBuilder(String.format("%.4f,%d,", lambda, totalCounts)));
                     traversalInHand = lambdaZeroFilter.getListOutput();
                     if (e < lowEnergyZero) {
                         lowEnergyZero = e;
@@ -769,7 +771,7 @@ public class OSRW implements Potential {
                         lambdaOneFilter.setListMode(true);
                     }
                     lambdaOneFilter.clearListOutput();
-                    lambdaOneFilter.writeFileWithHeader(lambdaFile, new StringBuilder(String.format("%.4f,%d", lambda, totalCounts)));
+                    lambdaOneFilter.writeFileWithHeader(lambdaFile, new StringBuilder(String.format("%.4f,%d,", lambda, totalCounts)));
                     traversalInHand = lambdaOneFilter.getListOutput();
                     if (e < lowEnergyOne) {
                         lowEnergyOne = e;
