@@ -277,15 +277,13 @@ if(runOSRW){
     String baseFilename = FilenameUtils.removeExtension(structureFile.getName());
     File histogramRestart = new File(baseFilename + ".his");
     File lambdaRestart = new File(baseFilename + ".lam");
-    File lambdaOneFile = new File(baseFilename + ".lam1");
-    File lambdaZeroFile = new File(baseFilename + ".lam0");
 
     boolean asynchronous = false;
     boolean wellTempered = false;
     OSRW osrw =  new OSRW(forceFieldEnergy, forceFieldEnergy, lambdaRestart, histogramRestart, active.getProperties(),
         temperature, timeStep, printInterval, saveInterval, asynchronous, sh, wellTempered);
     osrw.setLambda(lambda);
-    osrw.setTraversalOutput(lambdaOneFile, active, lambdaZeroFile, active);
+    osrw.setLoopBuilding(true);
     // Create the MolecularDynamics instance.
     MolecularDynamics molDyn = new MolecularDynamics(active, osrw, active.getProperties(),
         null, thermostat, integrator);
@@ -293,9 +291,8 @@ if(runOSRW){
     molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities,
         fileType, restartInterval, dyn);
 
-    int lambdaTarget = 1;
     logger.info("\n Obtaining low energy coordinates");
-    double[] lowEnergyCoordinates = osrw.getLowEnergyCoordinates(lambdaTarget);
+    double[] lowEnergyCoordinates = osrw.getLowEnergyLoop();
     System.out.println(lowEnergyCoordinates);
     logger.info(" Placing low energy coordinates");
     forceFieldEnergy.setCoordinates(lowEnergyCoordinates);

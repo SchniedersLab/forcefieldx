@@ -288,6 +288,14 @@ public class OSRW implements Potential {
      */
     private double lowEnergyCoordsZero[], lowEnergyCoordsOne[];
     private double lowEnergyZero= Double.MAX_VALUE, lowEnergyOne = Double.MAX_VALUE;
+    
+    /**
+     * Holds the lowest potential-energy parameters for loopBuilder runs
+     * from all visits to lambda > 0.9
+     */
+    private double lowEnergyLoopCoords[];
+    private double lowEnergyLoop = Double.MAX_VALUE;
+    
     /**
      * Interval between how often the free energy is updated from the count
      * matrix.
@@ -352,6 +360,7 @@ public class OSRW implements Potential {
     private int periodCount = 0;
     private int window = 1000;
 
+    private boolean buildingLoop = false;
     /**
      * OSRW Asynchronous MultiWalker Constructor.
      *
@@ -703,6 +712,14 @@ public class OSRW implements Potential {
                     logger.log(Level.INFO, message, ex);
                 }
             }
+            
+            if(buildingLoop){
+                if ((e < lowEnergyLoop) && (lambda > 0.9)) {
+                    lowEnergyLoop = e;
+                    lowEnergyLoopCoords = potential.getCoordinates(null);
+                } 
+            }
+            
             /**
              * Write out snapshot upon each full lambda traversal.
              */
@@ -759,10 +776,6 @@ public class OSRW implements Potential {
                     lambdaZeroFilter.clearListOutput();
                     lambdaZeroFilter.writeFileWithHeader(lambdaFile, new StringBuilder(String.format("%.4f,%d,", lambda, totalCounts)));
                     traversalInHand = lambdaZeroFilter.getListOutput();
-                    if (e < lowEnergyZero) {
-                        lowEnergyZero = e;
-                        lowEnergyCoordsZero = potential.getCoordinates(null);
-                    }
                     traversalSnapshotTarget = 0;
                 } else if (((lambda > 0.9 && traversalInHand.isEmpty()) || (lambda > heldTraversalLambda + 0.025 && !traversalInHand.isEmpty()))
                         && (traversalSnapshotTarget == 1 || traversalSnapshotTarget == -1)) {
@@ -773,10 +786,6 @@ public class OSRW implements Potential {
                     lambdaOneFilter.clearListOutput();
                     lambdaOneFilter.writeFileWithHeader(lambdaFile, new StringBuilder(String.format("%.4f,%d,", lambda, totalCounts)));
                     traversalInHand = lambdaOneFilter.getListOutput();
-                    if (e < lowEnergyOne) {
-                        lowEnergyOne = e;
-                        lowEnergyCoordsOne = potential.getCoordinates(null);
-                    }
                     traversalSnapshotTarget = 1;
                 }
             }
@@ -1287,6 +1296,19 @@ public class OSRW implements Potential {
         }
     }
 
+    public double[] getLowEnergyLoop(){
+        if (lowEnergyLoop < Double.MAX_VALUE){
+            return lowEnergyLoopCoords;
+        } else {
+            logger.severe("Lambda > 0.9 was not reached. Try increasing number of timesteps.");
+            return null;
+        }
+    }
+    
+    public void setLoopBuilding(boolean buildingLoop){
+        this.buildingLoop = buildingLoop;
+    }
+    
     @Override
     public double[] getMass() {
         return potential.getMass();
