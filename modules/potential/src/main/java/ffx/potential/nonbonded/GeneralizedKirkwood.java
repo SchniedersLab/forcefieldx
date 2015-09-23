@@ -204,6 +204,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * Use base radii defined by AtomType rather than by atomic number.
      */
     private boolean verboseRadii = false;
+
+    private boolean fixedRadii = false;
+    private boolean bornUseAll = false;
+
     private final HashMap<Integer, Double> radiiOverride = new HashMap<>();
     private static final HashMap<Integer, Double> typeToBondi = new HashMap<>();
 
@@ -373,6 +377,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
         sharedGKField = new SharedDoubleArray[3];
         sharedGKFieldCR = new SharedDoubleArray[3];
 
+        bornUseAll = forceField.getBoolean(ForceField.ForceFieldBoolean.BORN_USE_ALL, false);
+
         probe = forceField.getDouble(ForceField.ForceFieldDouble.PROBE_RADIUS, 1.4);
         /*double defaultCutoff = crystal.aperiodic() ? 100.0 : 7.0; // If an aperiodic system, the GK cutoff should be 0.
          cutoff = forceField.getDouble(ForceField.ForceFieldDouble.EWALD_CUTOFF, defaultCutoff);*/
@@ -436,7 +442,26 @@ public class GeneralizedKirkwood implements LambdaInterface {
         initAtomArrays();
     }
 
+    private void setFixedRadii(boolean fixedRadii) {
+        this.fixedRadii = fixedRadii;
+    }
+
+    private boolean getFixedRadii() {
+        return fixedRadii;
+    }
+
+    private void setBornUseAll(boolean bornUseAll) {
+        this.bornUseAll = bornUseAll;
+    }
+
+    private boolean getBornUseAll() {
+        return bornUseAll;
+    }
+
     private void initAtomArrays() {
+        if (fixedRadii) {
+            fixedRadii = false;
+        }
         x = particleMeshEwald.coordinates[0][0];
         y = particleMeshEwald.coordinates[0][1];
         z = particleMeshEwald.coordinates[0][2];
@@ -597,6 +622,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * computeBornRadii</p>
      */
     public void computeBornRadii() {
+
+        /**
+         * Born radii are fixed.
+         */
+        if (fixedRadii) {
+            return;
+        }
+
         try {
             parallelTeam.execute(bornRadiiRegion);
         } catch (Exception e) {
@@ -608,8 +641,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             if (use[i]) {
                 double borni = born[i];
                 if (Double.isInfinite(borni) || Double.isNaN(borni)) {
-                    Atom atom = atoms[i];
-                    logger.severe(String.format(" %s\n Born radii %d %8.3f", atom, i, born[i]));
+                    logger.severe(String.format(" %s\n Born radii %d %8.3f", atoms[i], i, born[i]));
                 }
             }
         }
@@ -928,7 +960,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             @Override
             public void run(int lb, int ub) {
                 for (int i = lb; i <= ub; i++) {
-                    if (!use[i]) {
+                    if (!bornUseAll && !use[i]) {
                         continue;
                     }
                     final double baseRi = baseRadius[i];
@@ -949,7 +981,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     for (int l = 0; l < npair; l++) {
                         int k = list[l];
                         final double baseRk = baseRadius[k];
-                        if (i != k && baseRk > 0.0 && use[k]) {
+                        if (i != k && baseRk > 0.0) {
+                            if (!bornUseAll && !use[k]) {
+                                continue;
+                            }
                             final double xr = x[k] - xi;
                             final double yr = y[k] - yi;
                             final double zr = z[k] - zi;
