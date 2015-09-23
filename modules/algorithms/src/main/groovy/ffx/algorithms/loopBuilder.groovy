@@ -41,6 +41,7 @@
 
 // Apache Commons Imports
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.FileUtils;
 
 // Groovy Imports
 import groovy.util.CliBuilder;
@@ -83,10 +84,10 @@ double timeStep = 2.5;
 double printInterval = 0.01;
 
 // Frequency to write out coordinates in picoseconds.
-double saveInterval = 100.0;
+double saveInterval = 100; 
 
 // Frequency to write out restart information in picoseconds.
-double restartInterval = 1.0;
+double restartInterval = 1.0;  
 
 // Number of molecular dynamics steps: default is 100 nanoseconds.
 int nSteps = 10000;
@@ -271,13 +272,18 @@ if(runOSRW){
     // Turn off checks for overlapping atoms, which is expected for lambda=0.
     forceFieldEnergy.getCrystal().setSpecialPositionCutoff(0.0);
     // OSRW will be configured for a single topology.
-    File lambdaRestart = null;
-    File histogramRestart = null;
+    File structureFile = new File(FilenameUtils.normalize(filename));
+    structureFile = new File(structureFile.getAbsolutePath());
+    String baseFilename = FilenameUtils.removeExtension(structureFile.getName());
+    File histogramRestart = new File(baseFilename + ".his");
+    File lambdaRestart = new File(baseFilename + ".lam");
+
     boolean asynchronous = false;
     boolean wellTempered = false;
     OSRW osrw =  new OSRW(forceFieldEnergy, forceFieldEnergy, lambdaRestart, histogramRestart, active.getProperties(),
         temperature, timeStep, printInterval, saveInterval, asynchronous, sh, wellTempered);
     osrw.setLambda(lambda);
+    osrw.setLoopBuilding(true);
     // Create the MolecularDynamics instance.
     MolecularDynamics molDyn = new MolecularDynamics(active, osrw, active.getProperties(),
         null, thermostat, integrator);
@@ -285,8 +291,11 @@ if(runOSRW){
     molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities,
         fileType, restartInterval, dyn);
 
-    int lambdaTarget = 1;
-    forceFieldEnergy.setCoordinates(osrw.getLowEnergyCoordinates(lambdaTarget));
+    logger.info("\n Obtaining low energy coordinates");
+    double[] lowEnergyCoordinates = osrw.getLowEnergyLoop();
+    System.out.println(lowEnergyCoordinates);
+    logger.info(" Placing low energy coordinates");
+    forceFieldEnergy.setCoordinates(lowEnergyCoordinates);
     energy();
 }
 
