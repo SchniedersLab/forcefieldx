@@ -1236,6 +1236,86 @@ public class RotamerOptimization implements Terminatable {
         }
     }
 
+    /**
+     * Prints a summary of pair and trimer energies above [cutoff] kcal/mol.
+     * @param cutoff 
+     */
+    public void printLargeInteractions(double pairCutoff, double trimerCutoff, boolean dO_mode) {
+        Residue residues[] = residueList.toArray(new Residue[residueList.size()]);
+        int nRes = residues.length;
+        
+        if (dO_mode) {
+            logger.info(String.format(" Large pair interactions (>%.2f):", pairCutoff));
+            for (int i = 0; i < nRes; i++) {
+                for (int j = i + 1; j < nRes; j++) {
+                    if (Math.abs(twoBodyEnergy[i][0][j][0]) >= pairCutoff) {
+                        logger.info(String.format(" Large Pair %s %s:       %16.5f",
+                                residues[i], residues[j], twoBodyEnergy[i][0][j][0]));
+                    }
+                }
+            }
+            logger.info(String.format("\n Large trimer interactions (>%.2f):", trimerCutoff));
+            for (int i = 0; i < nRes; i++) {
+                for (int j = i + 1; j < nRes; j++) {
+                    for (int k = j + 1; k < nRes; k++) {
+                        if (Math.abs(threeBodyEnergy[i][0][j][0][k][0]) >= trimerCutoff) {
+                            logger.info(String.format(" Large Trimer  %s %s %s:    %16.5f",
+                                    residues[i], residues[j], residues[k], threeBodyEnergy[i][0][j][0][k][0]));
+                        }
+                    }
+                }
+            }
+            return;
+        }
+        
+        logger.info(String.format(" Large pair interactions (>%.2f):", pairCutoff));
+        for (int i = 0; i < nRes; i++) {
+            Residue resi = residues[i];
+            Rotamer roti[] = resi.getRotamers(resi);
+            for (int ri = 0; ri < roti.length; ri++) {
+                for (int j = i + 1; j < nRes; j++) {
+                    Residue resj = residues[j];
+                    Rotamer rotj[] = resj.getRotamers(resj);
+                    for (int rj = 0; rj < rotj.length; rj++) {
+                        try {
+                            if (Math.abs(twoBodyEnergy[i][ri][j][rj]) >= pairCutoff) {
+                                logger.info(String.format(" Large Pair %7s %-2d, %7s %-2d: %16.8f",
+                                        resi, ri, resj, rj, twoBodyEnergy[i][ri][j][rj]));
+                            }
+                        } catch (Exception ex) {}
+                    }
+                }
+            }
+        }
+        
+        logger.info(String.format("\n Large trimer interactions (>%.2f):", trimerCutoff));
+        for (int i = 0; i < nRes; i++) {
+            Residue resi = residues[i];
+            Rotamer roti[] = resi.getRotamers(resi);
+            for (int ri = 0; ri < roti.length; ri++) {
+                for (int j = i + 1; j < nRes; j++) {
+                    Residue resj = residues[j];
+                    Rotamer rotj[] = resj.getRotamers(resj);
+                    for (int rj = 0; rj < rotj.length; rj++) {
+                        for (int k = j + 1; k < nRes; k++) {
+                            Residue resk = residues[k];
+                            Rotamer rotk[] = resk.getRotamers(resk);
+                            for (int rk = 0; rk < rotk.length; rk++) {
+                                try {
+                                    if (Math.abs(threeBodyEnergy[i][ri][j][rj][k][rk]) >= trimerCutoff) {
+                                        logger.info(String.format(" Large Trimer %7s %-2d, %7s %-2d, %7s %-2d: %16.8f",
+                                                resi, ri, resj, rj, resk, rk, threeBodyEnergy[i][ri][j][rj][k][rk]));
+                                    }
+                                } catch (Exception ex) {}
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+    }
+    
     private boolean decomposeOriginal = false;
 
     /**

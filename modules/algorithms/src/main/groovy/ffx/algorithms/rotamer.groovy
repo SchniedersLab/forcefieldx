@@ -115,6 +115,9 @@ boolean video_writeVideo = false;
 boolean video_ignoreInactiveAtoms = false;
 boolean video_skipEnergies = false;
 
+double largePairCutoff = 0.0;
+double largeTrimerCutoff = 0.0;
+
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc rotamer [options] <filename>');
 cli.h(longOpt:'help', 'Print this help message.');
@@ -145,6 +148,8 @@ cli.sO(longOpt:'sequenceOptimization', args:1, argName: '-1', 'Choose a list of 
 cli.tO(longOpt:'titrationOptimization', args:1, argName: '-1', 'Choose a list of individual residues to titrate (protonation state optimization).');
 cli.nt(longOpt:'nucleicCorrectionThreshold', args:1, argName: '0', 'Nucleic acid Rotamers adjusted by more than a threshold distance (A) are discarded (0 disables this function).');
 cli.mn(longOpt:'minimumAcceptedNARotamers', args:1, argName: '10', 'Minimum number of NA rotamers to be accepted if a threshold distance is enabled.');
+cli.li(longOpt:'printLargeInteractions', args:2, valueSeparator: ',' as char, argName: '0.0,0.0', 'Prints a summary of pair and trimer absolute energies larger than [arg] kcal.')
+
 /**
  * Now handled by system keys.
 // bD is used as a single string argument to allow for easier argument size checking.
@@ -199,6 +204,11 @@ if (options.tO) {
         logger.info(" Protonation state optimizing " + t);
         titrationOptimizationList.add(t);
     }
+}
+
+if (options.li) {
+    largePairCutoff = Math.abs(Double.parseDouble(options.lis[0]));
+    largeTrimerCutoff = Math.abs(Double.parseDouble(options.lis[1]));
 }
 
 if (options.vw) {
@@ -790,6 +800,9 @@ if (decomposeOriginal) {
     if (master) {
         logger.info(String.format("\n"));
         energy();
+        if (largePairCutoff > 0.0 || largeTrimerCutoff > 0.0) {
+            rotamerOptimization.printLargeInteractions(largePairCutoff,largeTrimerCutoff,true);
+        }
     }
     return;
 }
@@ -812,6 +825,9 @@ if (master) {
     }
     logger.info(" Final Minimum Energy");
     energy();
+    if (largePairCutoff > 0.0 || largeTrimerCutoff > 0.0) {
+        rotamerOptimization.printLargeInteractions(largePairCutoff,largeTrimerCutoff,false);
+    }
     String ext = FilenameUtils.getExtension(filename);
     filename = FilenameUtils.removeExtension(filename);
     if (ext.toUpperCase().contains("XYZ")) {
