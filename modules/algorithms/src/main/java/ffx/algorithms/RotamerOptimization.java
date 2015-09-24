@@ -1164,6 +1164,7 @@ public class RotamerOptimization implements Terminatable {
         double sumSelf = 0;
         double sumPair = 0;
         double sumTri = 0;
+        double residueEnergy[][] = new double[3][nRes];
 
         for (int i = 0; i < nRes; i++) {
             turnOnAtoms(residues[i]);
@@ -1181,6 +1182,7 @@ public class RotamerOptimization implements Terminatable {
             turnOnAtoms(residues[i]);
             localSelfEnergy[i] = currentEnergy() - localBackboneEnergy;
             logger.info(String.format(" Self %s:          %16.5f", residues[i], localSelfEnergy[i]));
+            residueEnergy[0][i] = localSelfEnergy[i];
             sumSelf += localSelfEnergy[i];
             turnOffAtoms(residues[i]);
         }
@@ -1191,6 +1193,9 @@ public class RotamerOptimization implements Terminatable {
                 pairEnergy[i][j] = currentEnergy() - localSelfEnergy[i] - localSelfEnergy[j] - localBackboneEnergy;
                 logger.info(String.format(" Pair %s %s:       %16.5f", residues[i], residues[j], pairEnergy[i][j]));
                 sumPair += pairEnergy[i][j];
+                double halfPair = pairEnergy[i][j] * 0.5;
+                residueEnergy[1][i] += halfPair;
+                residueEnergy[1][j] += halfPair;
                 turnOffAtoms(residues[j]);
             }
             turnOffAtoms(residues[i]);
@@ -1210,6 +1215,10 @@ public class RotamerOptimization implements Terminatable {
                                 - pairEnergy[i][j] - pairEnergy[j][k] - pairEnergy[i][k] - localBackboneEnergy;
                         logger.info(String.format(" Tri  %s %s %s:    %16.5f", residues[i], residues[j], residues[k], triEnergy[i][j][k]));
                         sumTri += triEnergy[i][j][k];
+                        double thirdTrimer = triEnergy[i][j][k] / 3.0;
+                        residueEnergy[2][i] += thirdTrimer;
+                        residueEnergy[2][j] += thirdTrimer;
+                        residueEnergy[2][k] += thirdTrimer;
                         turnOffAtoms(residues[k]);
                     } else if (dist == Double.MAX_VALUE) {
                         logger.info(String.format(" Tri  %s %s %s:    set to 0.0 at NaN (very long distance)", residues[i], residues[j], residues[k]));
@@ -1223,17 +1232,24 @@ public class RotamerOptimization implements Terminatable {
             }
             turnOffAtoms(residues[i]);
         }
-        logger.info(String.format("\n\n"));
-        logger.info(String.format(" Backbone:     %16.5f", localBackboneEnergy));
-        logger.info(String.format(" Sum Self:     %16.5f", sumSelf));
-        logger.info(String.format(" Sum Pair:     %16.5f", sumPair));
-        logger.info(String.format(" Sum Tri:      %16.5f", sumTri));
-        logger.info(String.format(" Neglected:    %16.5f", totalEnergy - sumSelf - sumPair - sumTri - localBackboneEnergy));
-        logger.info(String.format(" AMOEBA:       %16.5f", totalEnergy));
-        logger.info(String.format("\n\n"));
+
+        logger.info(String.format("\n"));
+        logger.info(String.format(" Residue-Based Many-Body Energy Summation\n "));
+        logger.info(String.format(" %9s %9s %9s %9s %9s", "Residue", "Self", "Pair", "3-Body", "Total"));
         for (int i = 0; i < nRes; i++) {
-            turnOnAtoms(residues[i]);
+            Residue r = residues[i];
+            double total = residueEnergy[0][i] + residueEnergy[1][i] + residueEnergy[2][i];
+            logger.info(String.format(" %9s %9.3f %9.3f %9.3f %9.3f",
+                    r.toString(), residueEnergy[0][i], residueEnergy[1][i], residueEnergy[2][i], total));
+            turnOnAtoms(r);
         }
+        logger.info(String.format(" %9s %9.3f %9.3f %9.3f %9.3f",
+                "Sum", sumSelf, sumPair, sumTri, sumSelf + sumPair + sumTri));
+        logger.info(String.format(" Backbone:        %9.3f", localBackboneEnergy));
+        double target = sumSelf + sumPair + sumTri + localBackboneEnergy;
+        logger.info(String.format(" Expansion Total: %9.3f", target));
+        logger.info(String.format(" True Total:      %9.3f", totalEnergy));
+        logger.info(String.format(" Neglected:       %9.3f\n", totalEnergy - target));
     }
 
     private boolean decomposeOriginal = false;
@@ -1276,6 +1292,7 @@ public class RotamerOptimization implements Terminatable {
         double sumSelf = 0;
         double sumPair = 0;
         double sumTri = 0;
+        double residueEnergy[][] = new double[3][nRes];
 
         for (int i = 0; i < nRes; i++) {
             turnOnAtoms(residues[i]);
@@ -1299,14 +1316,19 @@ public class RotamerOptimization implements Terminatable {
         if (master) {
             for (int i = 0; i < nRes; i++) {
                 localSelfEnergy[i] = selfEnergy[i][0];
+                residueEnergy[0][i] = localSelfEnergy[i];
                 logger.info(String.format(" Self %s:          %16.5f", residues[i], localSelfEnergy[i]));
                 sumSelf += localSelfEnergy[i];
             }
             for (int i = 0; i < nRes; i++) {
                 for (int j = i + 1; j < nRes; j++) {
                     pairEnergy[i][j] = twoBodyEnergy[i][0][j][0];
-                    logger.info(String.format(" Pair %s %s:       %16.5f", residues[i], residues[j], pairEnergy[i][j]));
+                    logger.info(String.format(" Pair %s %s:       %16.5f", residues[i],
+                            residues[j], pairEnergy[i][j]));
                     sumPair += pairEnergy[i][j];
+                    double halfPair = pairEnergy[i][j] * 0.5;
+                    residueEnergy[1][i] += halfPair;
+                    residueEnergy[1][j] += halfPair;
                 }
             }
             for (int i = 0; i < nRes; i++) {
@@ -1317,6 +1339,10 @@ public class RotamerOptimization implements Terminatable {
                         double djk = checkDistanceMatrix(j, 0, k, 0);
                         double dist = Math.min(dij, Math.min(dik, djk));
                         triEnergy[i][j][k] = threeBodyEnergy[i][0][j][0][k][0];
+                        double thirdTrimer = triEnergy[i][j][k] / 3.0;
+                        residueEnergy[2][i] += thirdTrimer;
+                        residueEnergy[2][j] += thirdTrimer;
+                        residueEnergy[2][k] += thirdTrimer;
                         if (triEnergy[i][j][k] != 0.0) {
                             logger.info(String.format(" Tri  %s %s %s:    %16.5f", residues[i], residues[j], residues[k], triEnergy[i][j][k]));
                             sumTri += triEnergy[i][j][k];
@@ -1334,17 +1360,23 @@ public class RotamerOptimization implements Terminatable {
                     }
                 }
             }
-            logger.info(String.format("\n\n"));
-            logger.info(String.format(" Backbone:     %16.5f", localBackboneEnergy));
-            logger.info(String.format(" Sum Self:     %16.5f", sumSelf));
-            logger.info(String.format(" Sum Pair:     %16.5f", sumPair));
-            logger.info(String.format(" Sum Tri:      %16.5f", sumTri));
-            logger.info(String.format(" Neglected:    %16.5f", totalEnergy - sumSelf - sumPair - sumTri - localBackboneEnergy));
-            logger.info(String.format(" AMOEBA:       %16.5f", totalEnergy));
-            logger.info(String.format("\n\n"));
+            logger.info(String.format("\n"));
+            logger.info(String.format(" Residue-Based Many-Body Energy Summation\n "));
+            logger.info(String.format(" %9s %9s %9s %9s %9s", "Residue", "Self", "Pair", "3-Body", "Total"));
             for (int i = 0; i < nRes; i++) {
-                turnOnAtoms(residues[i]);
+                Residue r = residues[i];
+                double total = residueEnergy[0][i] + residueEnergy[1][i] + residueEnergy[2][i];
+                logger.info(String.format(" %9s %9.3f %9.3f %9.3f %9.3f",
+                        r.toString(), residueEnergy[0][i], residueEnergy[1][i], residueEnergy[2][i], total));
+                turnOnAtoms(r);
             }
+            logger.info(String.format(" %9s %9.3f %9.3f %9.3f %9.3f",
+                    "Sum", sumSelf, sumPair, sumTri, sumSelf + sumPair + sumTri));
+            logger.info(String.format(" Backbone:        %9.3f", localBackboneEnergy));
+            double target = sumSelf + sumPair + sumTri + localBackboneEnergy;
+            logger.info(String.format(" Expansion Total: %9.3f", target));
+            logger.info(String.format(" True Total:      %9.3f", totalEnergy));
+            logger.info(String.format(" Neglected:       %9.3f\n", totalEnergy - target));
         }
         decomposeOriginal = false;
     }
