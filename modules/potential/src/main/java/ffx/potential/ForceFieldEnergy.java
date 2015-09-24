@@ -1710,11 +1710,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @param x
-     */
     public void checkAtoms() {
         int n = getNumberOfVariables();
         //int index = 0;
@@ -1728,26 +1723,19 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             sb.append("Atom: " + a + "\n");
             try {
                 sb.append("   XYZ :  " + a.getX() + ", " + a.getY() + ", " + a.getZ() + "\n");
-            } catch (Exception e) {}
-            try {
                 a.getVelocity(vel);
                 sb.append("   Vel:   " + vel[0] + ", " + vel[1] + ", " + vel[2] + "\n");
-            } catch (Exception e) {}
-            try {
                 a.getVelocity(accel);
                 sb.append("   Accel: " + accel[0] + ", " + accel[1] + ", " + accel[2] + "\n");
-            } catch (Exception e) {}
-            try {
                 a.getXYZGradient(grad);
                 sb.append("   Grad:  " + grad[0] + ", " + grad[1] + ", " + grad[2] + "\n");
-            } catch (Exception e) {}
-            try {
                 sb.append("   Mass:  " + a.getMass() + "\n");
-            } catch (Exception e) {}
+            } catch (Exception e) {
+            }
             logger.info(sb.toString());
         }
     }
-    
+
     /**
      * {@inheritDoc}
      *

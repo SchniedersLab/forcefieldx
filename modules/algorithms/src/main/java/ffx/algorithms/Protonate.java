@@ -508,6 +508,7 @@ public class Protonate implements MonteCarloListener {
             }
         }
 
+        // forceFieldEnergy.checkAtoms();
         // Perform the MC move.
         boolean accepted = false;
         switch (stepType) {
@@ -522,6 +523,7 @@ public class Protonate implements MonteCarloListener {
                 break;
         }
 
+        // forceFieldEnergy.checkAtoms();
         // Increment the shared snapshot counter.
         snapshotIndex++;
         return accepted;
@@ -907,15 +909,22 @@ public class Protonate implements MonteCarloListener {
 //                    debug(3, String.format(" inactiveAtom = %s", inactiveAtom));
                     if (inactiveAtom != null) {
                         debug(4, String.format(" Propagating %s\n          to %s.", activeAtom, inactiveAtom));
+                        // Propagate position and gradient.
                         double activeXYZ[] = activeAtom.getXYZ(null);
-                        double inactiveXYZ[] = inactiveAtom.getXYZ(null);
-                        inactiveXYZ[0] = activeXYZ[0];
-                        inactiveXYZ[1] = activeXYZ[1];
-                        inactiveXYZ[2] = activeXYZ[2];
-                        inactiveAtom.setXYZ(inactiveXYZ);
+                        inactiveAtom.setXYZ(activeXYZ);
                         double grad[] = new double[3];
                         activeAtom.getXYZGradient(grad);
                         inactiveAtom.setXYZGradient(grad[0], grad[1], grad[2]);
+                        // Propagate velocity, acceleration, and previous acceleration.
+                        double activeVelocity[] = new double[3];
+                        activeAtom.getVelocity(activeVelocity);
+                        inactiveAtom.setVelocity(activeVelocity);
+                        double activeAccel[] = new double[3];
+                        activeAtom.getAcceleration(activeAccel);
+                        inactiveAtom.setAcceleration(activeAccel);
+                        double activePrevAcc[] = new double[3];
+                        activeAtom.getPreviousAcceleration(activePrevAcc);
+                        inactiveAtom.setPreviousAcceleration(activePrevAcc);
                         debug(4, String.format("\n          to %s.", activeAtom, inactiveAtom));
                     } else {
                         if (activeName.equals("C") || activeName.equals("O") || activeName.equals("N") || activeName.equals("CA")
@@ -941,10 +950,12 @@ public class Protonate implements MonteCarloListener {
         }
 
         // If inactive residue is a protonated form, move the stranded hydrogen to new coords (based on propagated heavies).
+        // Also give the stranded hydrogen a maxwell velocity and remove its accelerations.
         for (MultiResidue multiRes : multiResidues) {
             Residue active = multiRes.getActive();
             List<Residue> inactives = multiRes.getInactive();
             for (Residue inactive : inactives) {
+                Atom resetMe = null;
                 switch (inactive.getName()) {
                     case "LYS": {
                         Atom HZ3 = (Atom) inactive.getAtomNode("HZ3");
@@ -952,6 +963,7 @@ public class Protonate implements MonteCarloListener {
                         Atom CE = (Atom) inactive.getAtomNode("CE");
                         Atom HZ1 = (Atom) inactive.getAtomNode("HZ1");
                         BondedUtils.intxyz(HZ3, NZ, 1.02, CE, 109.5, HZ1, 109.5, -1);
+                        resetMe = HZ3;
                         debug(4, String.format(" Moved 'stranded' hydrogen %s.", HZ3));
                         // Parameters from AminoAcidUtils, line:
                         // Atom HZ3 = buildHydrogen(inactive, "HZ3", NZ, 1.02, CE, 109.5, HZ1, 109.5, -1, k + 9, forceField, null);
@@ -963,6 +975,7 @@ public class Protonate implements MonteCarloListener {
                         Atom CG = (Atom) inactive.getAtomNode("CG");
                         Atom OD1 = (Atom) inactive.getAtomNode("OD1");
                         BondedUtils.intxyz(HD2, OD2, 0.98, CG, 108.7, OD1, 0.0, 0);
+                        resetMe = HD2;
                         debug(4, String.format(" Moved 'stranded' hydrogen %s.", HD2));
                         // Parameters from AminoAcidUtils, line:
                         // Atom HD2 = buildHydrogen(residue, "HD2", OD2, 0.98, CG, 108.7, OD1, 0.0, 0, k + 5, forceField, bondList);
@@ -974,6 +987,7 @@ public class Protonate implements MonteCarloListener {
                         Atom CD = (Atom) inactive.getAtomNode("CD");
                         Atom OE1 = (Atom) inactive.getAtomNode("OE1");
                         BondedUtils.intxyz(HE2, OE2, 0.98, CD, 108.7, OE1, 0.0, 0);
+                        resetMe = HE2;
                         debug(4, String.format(" Moved 'stranded' hydrogen %s.", HE2));
                         // Parameters from AminoAcidUtils, line:
                         // Atom HE2 = buildHydrogen(residue, "HE2", OE2, 0.98, CD, 108.7, OE1, 0.0, 0, k + 7, forceField, bondList);
@@ -990,6 +1004,15 @@ public class Protonate implements MonteCarloListener {
                         Atom CB = (Atom) inactive.getAtomNode("CB");
                         BondedUtils.intxyz(HE2, NE2, 1.02, CD2, 126.0, CE1, 126.0, 1);
                         BondedUtils.intxyz(HD1, ND1, 1.02, CG, 126.0, CB, 0.0, 0);
+                        // Manual reset since we gotta reset two of 'em.
+                        HE2.setXYZGradient(0, 0, 0);
+                        HE2.setVelocity(thermostat.maxwellIndividual(HE2.getMass()));
+                        HE2.setAcceleration(new double[]{0, 0, 0});
+                        HE2.setPreviousAcceleration(new double[]{0, 0, 0});
+                        HD1.setXYZGradient(0, 0, 0);
+                        HD1.setVelocity(thermostat.maxwellIndividual(HD1.getMass()));
+                        HD1.setAcceleration(new double[]{0, 0, 0});
+                        HD1.setPreviousAcceleration(new double[]{0, 0, 0});
                         debug(4, String.format(" Moved 'stranded' hydrogen %s.", HE2));
                         debug(4, String.format(" Moved 'stranded' hydrogen %s.", HD1));
                         // Parameters from AminoAcidUtils, line:
@@ -1003,6 +1026,7 @@ public class Protonate implements MonteCarloListener {
                         Atom CG = (Atom) inactive.getAtomNode("CG");
                         Atom CB = (Atom) inactive.getAtomNode("CB");
                         BondedUtils.intxyz(HD1, ND1, 1.02, CG, 126.0, CB, 0.0, 0);
+                        resetMe = HD1;
                         // Parameters from AminoAcidUtils, line:
                         // Atom HD1 = buildHydrogen(residue, "HD1", ND1, 1.02, CG, 126.0, CB, 0.0, 0, k + 4, forceField, bondList);
                         break;
@@ -1013,6 +1037,7 @@ public class Protonate implements MonteCarloListener {
                         Atom CD2 = (Atom) inactive.getAtomNode("CD2");
                         Atom CE1 = (Atom) inactive.getAtomNode("CE1");
                         BondedUtils.intxyz(HE2, NE2, 1.02, CD2, 126.0, CE1, 126.0, 1);
+                        resetMe = HE2;
                         // Parameters from AminoAcidUtils, line:
                         // Atom HE2 = buildHydrogen(residue, "HE2", NE2, 1.02, CD2, 126.0, CE1, 126.0, 1, k + 9, forceField, bondList);
                         break;
@@ -1023,6 +1048,7 @@ public class Protonate implements MonteCarloListener {
                         Atom CB = (Atom) inactive.getAtomNode("CB");
                         Atom CA = (Atom) inactive.getAtomNode("CA");
                         BondedUtils.intxyz(HG, SG, 1.34, CB, 96.0, CA, 180.0, 0);
+                        resetMe = HG;
                         debug(4, String.format(" Moved 'stranded' hydrogen %s.", HG));
                         // Parameters from AminoAcidUtils, line:
                         // Atom HG = buildHydrogen(residue, "HG", SG, 1.34, CB, 96.0, CA, 180.0, 0, k + 3, forceField, bondList);
@@ -1034,12 +1060,19 @@ public class Protonate implements MonteCarloListener {
                         Atom CZ = (Atom) inactive.getAtomNode("CZ");
                         Atom CE2 = (Atom) inactive.getAtomNode("CE2");
                         BondedUtils.intxyz(HH, OH, 0.97, CZ, 108.0, CE2, 0.0, 0);
+                        resetMe = HH;
                         debug(4, String.format(" Moved 'stranded' hydrogen %s.", HH));
                         // Parameters from AminoAcidUtils, line:
                         // Atom HH = buildHydrogen(residue, "HH", OH, 0.97, CZ, 108.0, CE2, 0.0, 0, k + 9, forceField, bondList);
                         break;
                     }
                     default:
+                }
+                if (resetMe != null) {
+                    resetMe.setXYZGradient(0, 0, 0);
+                    resetMe.setVelocity(thermostat.maxwellIndividual(resetMe.getMass()));
+                    resetMe.setAcceleration(new double[]{0, 0, 0});
+                    resetMe.setPreviousAcceleration(new double[]{0, 0, 0});
                 }
             }
         }
@@ -1079,23 +1112,26 @@ public class Protonate implements MonteCarloListener {
     /**
      * Locate to which Polymer in the MolecularAssembly a given Residue belongs.
      *
-     * @param res
-     * @param molAss
-     * @return
+     * @param residue
+     *
+     * @param molecularAssembly
+     *
+     * @return the Polymer where the passed Residue is located.
      */
-    private Polymer findResiduePolymer(Residue res, MolecularAssembly molAss) {
-        if (res.getChainID() == null) {
-            logger.severe("No chain ID for residue " + res);
+    private Polymer findResiduePolymer(Residue residue,
+            MolecularAssembly molecularAssembly) {
+        if (residue.getChainID() == null) {
+            logger.severe("No chain ID for residue " + residue);
         }
-        Polymer polymers[] = molAss.getPolymers();
+        Polymer polymers[] = molecularAssembly.getPolymers();
         Polymer location = null;
         for (Polymer p : polymers) {
-            if (p.getChainIDChar() == res.getChainID()) {
+            if (p.getChainIDChar() == residue.getChainID()) {
                 location = p;
             }
         }
         if (location == null) {
-            logger.severe("Couldn't find polymer for residue " + res);
+            logger.severe("Couldn't find polymer for residue " + residue);
         }
         return location;
     }
@@ -1165,7 +1201,6 @@ public class Protonate implements MonteCarloListener {
     private enum Titratable {
 
         // Standard Forms
-
         ASP(3.90, -53.188, AminoAcid3.ASH, AminoAcid3.ASP),
         GLU(4.25, -59.390, AminoAcid3.GLH, AminoAcid3.GLU),
         CYS(8.18, 60.834, AminoAcid3.CYS, AminoAcid3.CYD),

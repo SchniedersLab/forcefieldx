@@ -67,6 +67,7 @@ import org.biojava.nbio.structure.align.util.AtomCache;
  * some data structure to Force Field X MolecularAssembly(s).
  *
  * @author Jacob M. Litman
+ *
  * @author Michael J. Schnieders
  */
 public class PotentialsDataConverter implements FileOpener {
@@ -292,7 +293,8 @@ public class PotentialsDataConverter implements FileOpener {
      * Returns the properties associated with the i'th MolecularAssembly
      *
      * @param i
-     * @return
+     *
+     * @return CompositeConfiguration for MolecularAssembly i.
      */
     public CompositeConfiguration getProperties(int i) {
         return propertyList.get(i);

@@ -101,6 +101,12 @@ public class LogHandler extends Handler {
      */
     @Override
     public synchronized void publish(LogRecord record) {
+        if (record.getLevel() == Level.OFF) {
+            if (record.getMessage().toLowerCase().contains("algorithm failure:")) {
+                mainPanel.setExitType(MainPanel.ExitStatus.ALGORITHM_FAILURE);
+            }
+            return;
+        }
         /**
          * Check if the record is loggable and that we have not already
          * encountered a fatal error.
@@ -144,6 +150,7 @@ public class LogHandler extends Handler {
                 System.err.println(" Force Field X will not continue.");
                 System.err.println(" Shutting down...");
                 flush();
+                mainPanel.setExitType(MainPanel.ExitStatus.SEVERE);
                 mainPanel.exit();
             }
             ModelingShell shell = null;
