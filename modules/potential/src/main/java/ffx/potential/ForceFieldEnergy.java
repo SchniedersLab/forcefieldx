@@ -310,6 +310,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         // Define the cutoff lengths.
         double vdwOff = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 9.0);
         double ewaldOff = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, 7.0);
+        if (ewaldOff > vdwOff) {
+            vdwOff = ewaldOff;
+        }
         double buff = 2.0;
         double cutOff2 = 2.0 * (max(vdwOff, ewaldOff) + buff);
 
