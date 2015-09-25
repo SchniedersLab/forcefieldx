@@ -431,7 +431,17 @@ public class VanDerWaals implements MaskingInterface,
             vdwcut = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 9.0);
         } else {
             vdwcut = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, crystal.a / 2.0 - (buff + 1.0));
+            // If aperiodic, set the vdW cutoff to cover everything.
         }
+        
+        // Ensure van der Waals cutoff is at least as large as Ewald cutoff.
+        double ewaldOff = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, 7.0);
+        if (ewaldOff > vdwcut) {
+            vdwcut = ewaldOff;
+            logger.info(" The van der Waals cutoff must be at least as large as the Ewald cutoff.");
+            logger.info(String.format(" The van der Waals cutoff has been set to %f", ewaldOff));
+        }
+        
         double vdwtaper = 0.9 * vdwcut;
         cut = vdwtaper;
         off = vdwcut;
