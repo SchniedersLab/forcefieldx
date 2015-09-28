@@ -680,24 +680,22 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         return e;
     }
 
-    /*
-     * FIXME: needs to handle multiple conformations
-     */
     /**
      * {@inheritDoc}
      */
     @Override
     public void getdEdXdL(double[] gradient) {
         double weight = data.getWeight();
-
         if (thermostat != null) {
             ktscale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
         }
-
         int assemblysize = molecularAssembly.length;
         // Compute the chemical energy and gradient.
         for (int i = 0; i < assemblysize; i++) {
             ForceFieldEnergy fe = molecularAssembly[i].getPotentialEnergy();
+            for (int j = 0; j < nxyz; j++) {
+                gChemical[i][j] = 0.0;
+            }
             fe.getdEdXdL(gChemical[i]);
         }
         for (int i = 0; i < assemblysize; i++) {
@@ -715,19 +713,20 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
             gradient[i] *= ktscale;
         }
 
-        // clear gradients for X-ray calculation
-        for (Atom a : atomarray) {
-            a.setXYZGradient(0.0, 0.0, 0.0);
-        }
-
         // Compute the X-ray target energy and gradient.
         if (gXray == null || gXray.length != nxyz) {
             gXray = new double[nxyz];
+        } else {
+            for (int j = 0; j < nxyz; j++) {
+                gXray[j] = 0.0;
+            }
         }
+
         if (data instanceof DiffractionData) {
             XRayEnergy xrayenergy = (XRayEnergy) dataEnergy;
             xrayenergy.getdEdXdL(gXray);
         } else if (data instanceof RealSpaceData) {
+
             RealSpaceEnergy realspaceenergy = (RealSpaceEnergy) dataEnergy;
             realspaceenergy.getdEdXdL(gXray);
         }
@@ -735,6 +734,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         // Add the chemical and X-ray gradients.
         for (int i = 0; i < nxyz; i++) {
             gradient[i] += weight * gXray[i];
+            //gradient[i] += gXray[i];
         }
     }
 

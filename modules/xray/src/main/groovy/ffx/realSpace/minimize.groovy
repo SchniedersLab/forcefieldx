@@ -112,11 +112,13 @@ if (options.p) {
 
 logger.info("\n Running real-space minimize on " + modelFilename);
 systems = open(modelFilename);
+
 if (mapFiles.size() == 0) {
     RealSpaceFile realspacefile = new RealSpaceFile(systems);
     mapFiles.add(realspacefile);
 }
-RealSpaceData realspacedata = new RealSpaceData(systems, systems[0].getProperties(), mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
+RealSpaceData realspacedata = new RealSpaceData(systems, systems[0].getProperties(),
+    mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
 energy();
 
 RefinementMinimize refinementMinimize = new RefinementMinimize(realspacedata, RefinementMode.COORDINATES);
@@ -128,4 +130,5 @@ logger.info("\n RMS gradient convergence criteria: " + eps + " max number of ite
 refinementMinimize.minimize(eps, maxiter);
 
 energy();
+
 saveAsPDB(systems, new File(FilenameUtils.removeExtension(modelFilename) + suffix + ".pdb"));
