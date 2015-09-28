@@ -726,7 +726,6 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
             XRayEnergy xrayenergy = (XRayEnergy) dataEnergy;
             xrayenergy.getdEdXdL(gXray);
         } else if (data instanceof RealSpaceData) {
-
             RealSpaceEnergy realspaceenergy = (RealSpaceEnergy) dataEnergy;
             realspaceenergy.getdEdXdL(gXray);
         }
@@ -734,7 +733,6 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         // Add the chemical and X-ray gradients.
         for (int i = 0; i < nxyz; i++) {
             gradient[i] += weight * gXray[i];
-            //gradient[i] += gXray[i];
         }
     }
 
