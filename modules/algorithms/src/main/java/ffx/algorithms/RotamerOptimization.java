@@ -57,8 +57,6 @@ import static java.util.Arrays.fill;
 
 import org.apache.commons.io.FilenameUtils;
 
-import static org.apache.commons.math3.util.FastMath.min;
-
 import edu.rit.mp.BooleanBuf;
 import edu.rit.mp.Buf;
 import edu.rit.mp.DoubleBuf;
@@ -334,9 +332,9 @@ public class RotamerOptimization implements Terminatable {
      * Not presently implemented beyond getting the value in from Groovy.
      */
     private double singletonNAPruningFactor = 1.5;
-    // Prune individual pairs at a stronger criterion.
-    private double indivPairFactor = 1.5;
-    // Flag to calculate and print additional energies (mostly for debugging).
+    /**
+     * Flag to calculate and print additional energies (mostly for debugging).
+     */
     private boolean verboseEnergies = true;
     private ArrayList<Residue> allResiduesList = null;
     private Residue allResiduesArray[] = null;
@@ -599,17 +597,6 @@ public class RotamerOptimization implements Terminatable {
             AlgorithmListener algorithmListener, int startResID, int finalResID, Algorithm algorithm) {
         this(molecularAssembly, potential, algorithmListener);
         this.algorithm = algorithm;
-    }
-
-    /**
-     * Flag to indicate use of the full AMOEBA potential energy when ranking
-     * rotamer combinations after dead-end elimination based on truncation at
-     * 2-body or 3-body interactions.
-     *
-     * @param useFullAMOEBAEnergy
-     */
-    public void setUseFullAMOEBAEnergy(boolean useFullAMOEBAEnergy) {
-        this.useFullAMOEBAEnergy = useFullAMOEBAEnergy;
     }
 
     /**
@@ -1080,6 +1067,17 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
+     * Flag to indicate use of the full AMOEBA potential energy when ranking
+     * rotamer combinations after dead-end elimination based on truncation at
+     * 2-body or 3-body interactions.
+     *
+     * @param useFullAMOEBAEnergy
+     */
+    public void setUseFullAMOEBAEnergy(boolean useFullAMOEBAEnergy) {
+        this.useFullAMOEBAEnergy = useFullAMOEBAEnergy;
+    }
+
+    /**
      * Uses existing backbone, self, pair, and 3-body energies from
      * rotamerEnergies() to calculate an approximate energy for a rotamer
      * permutation.
@@ -1130,7 +1128,7 @@ public class RotamerOptimization implements Terminatable {
      * For decomposing the energies of the original (0th) rotamers without
      * computing the entire energy matrix.
      */
-    private void decomposeOriginal() {
+    public void decomposeOriginal() {
         allResiduesList = new ArrayList<>();
         polymers = molecularAssembly.getChains();
         for (Polymer polymer : polymers) {
@@ -1158,9 +1156,6 @@ public class RotamerOptimization implements Terminatable {
 
         double totalEnergy;
         double localBackboneEnergy = 0;
-        double sumSelf = 0;
-        double sumPair = 0;
-        double sumTri = 0;
         double localSelfEnergy[] = new double[nRes];
         double pairEnergy[][] = new double[nRes][nRes];
         double triEnergy[][][] = new double[nRes][nRes][nRes];
@@ -1184,7 +1179,6 @@ public class RotamerOptimization implements Terminatable {
             localSelfEnergy[i] = currentEnergy() - localBackboneEnergy;
             logger.info(String.format(" Self %s:          %16.5f", ri, localSelfEnergy[i]));
             residueEnergy[0][i] = localSelfEnergy[i];
-            sumSelf += localSelfEnergy[i];
             turnOffAtoms(ri);
         }
         for (int i = 0; i < nRes; i++) {
@@ -1195,7 +1189,6 @@ public class RotamerOptimization implements Terminatable {
                 turnOnAtoms(rj);
                 pairEnergy[i][j] = currentEnergy() - localSelfEnergy[i] - localSelfEnergy[j] - localBackboneEnergy;
                 logger.info(String.format(" Pair %s %s:       %16.5f", ri, rj, pairEnergy[i][j]));
-                sumPair += pairEnergy[i][j];
                 double halfPair = pairEnergy[i][j] * 0.5;
                 residueEnergy[1][i] += halfPair;
                 residueEnergy[1][j] += halfPair;
@@ -1211,17 +1204,13 @@ public class RotamerOptimization implements Terminatable {
                 turnOnAtoms(rj);
                 for (int k = j + 1; k < nRes; k++) {
                     Residue rk = residues[k];
-                    double dij = checkDistanceMatrix(i, 0, j, 0);
-                    double dik = checkDistanceMatrix(i, 0, k, 0);
-                    double djk = checkDistanceMatrix(j, 0, k, 0);
-                    double dist = min(dij, min(dik, djk));
+                    double dist = trimerDistance(i, 0, j, 0, k, 0);
                     if (dist < threeBodyCutoffDist) {
                         turnOnAtoms(rk);
                         triEnergy[i][j][k] = currentEnergy()
                                 - localSelfEnergy[i] - localSelfEnergy[j] - localSelfEnergy[k]
                                 - pairEnergy[i][j] - pairEnergy[j][k] - pairEnergy[i][k] - localBackboneEnergy;
                         logger.info(String.format(" Tri  %s %s %s:    %16.5f", ri, rj, rk, triEnergy[i][j][k]));
-                        sumTri += triEnergy[i][j][k];
                         double thirdTrimer = triEnergy[i][j][k] / 3.0;
                         residueEnergy[2][i] += thirdTrimer;
                         residueEnergy[2][j] += thirdTrimer;
@@ -1243,7 +1232,7 @@ public class RotamerOptimization implements Terminatable {
         for (int i = 0; i < nRes; i++) {
             turnOnAtoms(residues[i]);
         }
-        decomposePrint(residues, totalEnergy, sumSelf, sumPair, sumTri, localBackboneEnergy, residueEnergy);
+        decomposePrint(residues, totalEnergy, localBackboneEnergy, residueEnergy);
     }
 
     /**
@@ -1252,7 +1241,7 @@ public class RotamerOptimization implements Terminatable {
      *
      * @param residues Residue array to decompose energies of.
      */
-    private void decomposeOriginal(Residue[] residues) {
+    public void decomposeOriginal(Residue[] residues) {
         allResiduesList = new ArrayList<>();
         polymers = molecularAssembly.getChains();
         for (Polymer polymer : polymers) {
@@ -1279,9 +1268,6 @@ public class RotamerOptimization implements Terminatable {
 
         double totalEnergy;
         double localBackboneEnergy = 0;
-        double sumSelf = 0;
-        double sumPair = 0;
-        double sumTri = 0;
         double localSelfEnergy[] = new double[nRes];
         double pairEnergy[][] = new double[nRes][nRes];
         double triEnergy[][][] = new double[nRes][nRes][nRes];
@@ -1304,7 +1290,6 @@ public class RotamerOptimization implements Terminatable {
             turnOnAtoms(ri);
             localSelfEnergy[i] = currentEnergy() - localBackboneEnergy;
             logger.info(String.format(" Self %s:          %16.5f", ri, localSelfEnergy[i]));
-            sumSelf += localSelfEnergy[i];
             residueEnergy[0][i] = localSelfEnergy[i];
             turnOffAtoms(ri);
         }
@@ -1316,7 +1301,6 @@ public class RotamerOptimization implements Terminatable {
                 turnOnAtoms(rj);
                 pairEnergy[i][j] = currentEnergy() - localSelfEnergy[i] - localSelfEnergy[j] - localBackboneEnergy;
                 logger.info(String.format(" Pair %s %s:       %16.5f", ri, rj, pairEnergy[i][j]));
-                sumPair += pairEnergy[i][j];
                 double halfPair = pairEnergy[i][j] * 0.5;
                 residueEnergy[1][i] += halfPair;
                 residueEnergy[1][j] += halfPair;
@@ -1335,17 +1319,13 @@ public class RotamerOptimization implements Terminatable {
                 for (int k = j + 1; k < nRes; k++) {
                     Residue rk = residues[k];
                     int indexOfK = allResiduesList.indexOf(rk);
-                    double dij = checkDistanceMatrix(indexOfI, 0, indexOfJ, 0);
-                    double dik = checkDistanceMatrix(indexOfI, 0, indexOfK, 0);
-                    double djk = checkDistanceMatrix(indexOfJ, 0, indexOfK, 0);
-                    double dist = min(dij, min(dik, djk));
+                    double dist = trimerDistance(indexOfI, 0, indexOfJ, 0, indexOfK, 0);
                     if (dist < threeBodyCutoffDist) {
                         turnOnAtoms(rk);
                         triEnergy[i][j][k] = currentEnergy()
                                 - localSelfEnergy[i] - localSelfEnergy[j] - localSelfEnergy[k]
                                 - pairEnergy[i][j] - pairEnergy[j][k] - pairEnergy[i][k] - localBackboneEnergy;
                         logger.info(String.format(" Tri  %s %s %s:    %16.5f", ri, rj, rk, triEnergy[i][j][k]));
-                        sumTri += triEnergy[i][j][k];
                         double thirdTrimer = triEnergy[i][j][k] / 3.0;
                         residueEnergy[2][i] += thirdTrimer;
                         residueEnergy[2][j] += thirdTrimer;
@@ -1366,14 +1346,14 @@ public class RotamerOptimization implements Terminatable {
         for (int i = 0; i < nRes; i++) {
             turnOnAtoms(residues[i]);
         }
-        decomposePrint(residues, totalEnergy, sumSelf, sumPair, sumTri, localBackboneEnergy, residueEnergy);
+        decomposePrint(residues, totalEnergy, localBackboneEnergy, residueEnergy);
     }
 
     /**
      * For decomposing the energies of the original (0th) rotamers without
      * computing the entire energy matrix.
      */
-    private void decomposeOriginalParallel() {
+    public void decomposeOriginalParallel() {
         allResiduesList = new ArrayList<>();
         polymers = molecularAssembly.getChains();
         for (Polymer polymer : polymers) {
@@ -1400,10 +1380,7 @@ public class RotamerOptimization implements Terminatable {
         distanceMatrix();
 
         double totalEnergy;
-        double localBackboneEnergy = 0; // Dummy value to keep compiler from complaining.
-        double sumSelf = 0;
-        double sumPair = 0;
-        double sumTri = 0;
+        double localBackboneEnergy = 0;
         double localSelfEnergy[] = new double[nRes];
         double pairEnergy[][] = new double[nRes][nRes];
         double triEnergy[][][] = new double[nRes][nRes][nRes];
@@ -1434,7 +1411,6 @@ public class RotamerOptimization implements Terminatable {
                 localSelfEnergy[i] = selfEnergy[i][0];
                 residueEnergy[0][i] = localSelfEnergy[i];
                 logger.info(String.format(" Self %s:          %16.5f", ri, localSelfEnergy[i]));
-                sumSelf += localSelfEnergy[i];
             }
             for (int i = 0; i < nRes; i++) {
                 Residue ri = residues[i];
@@ -1442,7 +1418,6 @@ public class RotamerOptimization implements Terminatable {
                     Residue rj = residues[j];
                     pairEnergy[i][j] = twoBodyEnergy[i][0][j][0];
                     logger.info(String.format(" Pair %s %s:       %16.5f", ri, rj, pairEnergy[i][j]));
-                    sumPair += pairEnergy[i][j];
                     double halfPair = pairEnergy[i][j] * 0.5;
                     residueEnergy[1][i] += halfPair;
                     residueEnergy[1][j] += halfPair;
@@ -1454,10 +1429,7 @@ public class RotamerOptimization implements Terminatable {
                     Residue rj = residues[j];
                     for (int k = j + 1; k < nRes; k++) {
                         Residue rk = residues[k];
-                        double dij = checkDistanceMatrix(i, 0, j, 0);
-                        double dik = checkDistanceMatrix(i, 0, k, 0);
-                        double djk = checkDistanceMatrix(j, 0, k, 0);
-                        double dist = min(dij, min(dik, djk));
+                        double dist = trimerDistance(i, 0, j, 0, k, 0);
                         triEnergy[i][j][k] = threeBodyEnergy[i][0][j][0][k][0];
                         double thirdTrimer = triEnergy[i][j][k] / 3.0;
                         residueEnergy[2][i] += thirdTrimer;
@@ -1465,7 +1437,6 @@ public class RotamerOptimization implements Terminatable {
                         residueEnergy[2][k] += thirdTrimer;
                         if (triEnergy[i][j][k] != 0.0) {
                             logger.info(String.format(" Tri  %s %s %s:    %16.5f", ri, rj, rk, triEnergy[i][j][k]));
-                            sumTri += triEnergy[i][j][k];
                         } else {
                             if (dist == Double.MAX_VALUE) {
                                 logger.info(String.format(" Tri  %s %s %s:    set to 0.0 at NaN (very long distance)",
@@ -1488,7 +1459,7 @@ public class RotamerOptimization implements Terminatable {
             for (int i = 0; i < nRes; i++) {
                 turnOnAtoms(residues[i]);
             }
-            decomposePrint(residues, totalEnergy, sumSelf, sumPair, sumTri, localBackboneEnergy, residueEnergy);
+            decomposePrint(residues, totalEnergy, localBackboneEnergy, residueEnergy);
         }
         decomposeOriginal = false;
     }
@@ -1500,7 +1471,7 @@ public class RotamerOptimization implements Terminatable {
      * @param quadCutoff
      * @param maxQuads
      */
-    private void decomposeOriginalQuads(double quadCutoff, int maxQuads) {
+    public void decomposeOriginalQuads(double quadCutoff, int maxQuads) {
         allResiduesList = new ArrayList<>();
         polymers = molecularAssembly.getChains();
         for (Polymer polymer : polymers) {
@@ -1578,10 +1549,7 @@ public class RotamerOptimization implements Terminatable {
                 turnOnAtoms(rj);
                 for (int k = j + 1; k < nRes; k++) {
                     Residue rk = residues[k];
-                    double dij = checkDistanceMatrix(i, 0, j, 0);
-                    double dik = checkDistanceMatrix(i, 0, k, 0);
-                    double djk = checkDistanceMatrix(j, 0, k, 0);
-                    double dist = min(dij, min(dik, djk));
+                    double dist = trimerDistance(i, 0, j, 0, k, 0);
                     if (dist < threeBodyCutoffDist) {
                         turnOnAtoms(rk);
                         triEnergy[i][j][k] = currentEnergy() - localSelfEnergy[i] - localSelfEnergy[j] - localSelfEnergy[k]
@@ -1619,13 +1587,7 @@ public class RotamerOptimization implements Terminatable {
                     turnOnAtoms(rk);
                     //quadEnergy[i][j][k] = new double[nRes];
                     for (int l = k + 1; l < nRes; l++) {
-                        double dij = checkDistanceMatrix(i, 0, j, 0);
-                        double dik = checkDistanceMatrix(i, 0, k, 0);
-                        double dil = checkDistanceMatrix(i, 0, l, 0);
-                        double djk = checkDistanceMatrix(j, 0, k, 0);
-                        double djl = checkDistanceMatrix(j, 0, l, 0);
-                        double dkl = checkDistanceMatrix(k, 0, l, 0);
-                        double dist = min(min(min(dij, dik), dil), min(min(djk, djl), dkl));
+                        double dist = quadDistance(i, 0, j, 0, k, 0, l, 0);
                         Residue rl = residues[l];
                         if (dist < quadCutoff) {
                             turnOnAtoms(rl);
@@ -1685,15 +1647,76 @@ public class RotamerOptimization implements Terminatable {
         }
     }
 
-    private void decomposePrint(Residue residues[], double totalEnergy, double sumSelf, double sumPair, double sumTri,
-            double backbone, double residueEnergy[][]) {
+    private void decomposePrint(Residue residues[], double totalEnergy, double backbone, double residueEnergy[][]) {
         if (residues == null || residueEnergy == null) {
             return;
         }
+
+        int molecule[] = molecularAssembly.getMoleculeNumbers();
+
+        // Internal Molecule ID to Reduced Set of Molecule IDs
+        HashMap<Integer, Integer> nMolecules = new HashMap<>();
+        // Internal Molecule ID to Molecule Names
+        HashMap<Integer, String> molNames = new HashMap<>();
+        // Residue ID to Reduced Set of Molecule IDs
+        HashMap<Residue, Integer> moleculeMap = new HashMap<>();
+
+        /**
+         * Sum self, pair and trimer energies.
+         */
+        int nRes = residues.length;
+        double sumSelf = 0;
+        double sumPair = 0;
+        double sumTri = 0;
+        int molPointer = 0;
+        int reducedIndex = 0;
+        for (int i = 0; i < nRes; i++) {
+            sumSelf += residueEnergy[0][i];
+            sumPair += residueEnergy[1][i];
+            sumTri += residueEnergy[2][i];
+
+            // Count the number of molecules.
+            Residue r = residues[i];
+            Atom a0 = (Atom) r.getAtomNode(0);
+            int atomIndex = a0.getXYZIndex();
+            Integer moleculeIndex = molecule[atomIndex];
+            if (!nMolecules.containsKey(moleculeIndex)) {
+                nMolecules.put(moleculeIndex, molPointer);
+                molNames.put(moleculeIndex, r.getSegID());
+                reducedIndex = molPointer;
+                molPointer++;
+            } else {
+                reducedIndex = nMolecules.get(moleculeIndex);
+            }
+            moleculeMap.put(r, reducedIndex);
+        }
+
+        int nMol = nMolecules.size();
+        if (nMol > 1) {
+            logger.info(String.format("\n"));
+            logger.info(String.format(" Molecule-Based Many-Body Energy Summation\n "));
+            double moleculeEnergy[][] = new double[3][nMol];
+            for (int i = 0; i < nRes; i++) {
+                int iMolecule = moleculeMap.get(residues[i]);
+                moleculeEnergy[0][iMolecule] += residueEnergy[0][i];
+                moleculeEnergy[1][iMolecule] += residueEnergy[1][i];
+                moleculeEnergy[2][iMolecule] += residueEnergy[2][i];
+            }
+            logger.info(String.format(" %9s %9s %9s %9s %9s", "Molecule", "Self", "Pair", "3-Body", "Total"));
+            for (int i = 0; i < nMol; i++) {
+                String molName = molNames.get(i);
+                double total = moleculeEnergy[0][i] + moleculeEnergy[1][i] + moleculeEnergy[2][i];
+                logger.info(String.format(" %9s %9.3f %9.3f %9.3f %9.3f",
+                        molName, moleculeEnergy[0][i], moleculeEnergy[1][i], moleculeEnergy[2][i], total));
+            }
+            logger.info(String.format(" %9s %9.3f %9.3f %9.3f %9.3f",
+                    "Sum", sumSelf, sumPair, sumTri, sumSelf + sumPair + sumTri));
+        }
+
         logger.info(String.format("\n"));
         logger.info(String.format(" Residue-Based Many-Body Energy Summation\n "));
         logger.info(String.format(" %9s %9s %9s %9s %9s", "Residue", "Self", "Pair", "3-Body", "Total"));
-        int nRes = residues.length;
+
         for (int i = 0; i < nRes; i++) {
             double total = residueEnergy[0][i] + residueEnergy[1][i] + residueEnergy[2][i];
             logger.info(String.format(" %9s %9.3f %9.3f %9.3f %9.3f",
@@ -1875,7 +1898,7 @@ public class RotamerOptimization implements Terminatable {
     /**
      * Identify titratable residues and choose them all.
      */
-    private void titrationSetResidues(ArrayList<Residue> residueList) {
+    public void titrationSetResidues(ArrayList<Residue> residueList) {
         String histidineModeProp = System.getProperty("histidineMode");
         Protonate.HistidineMode histidineMode = Protonate.HistidineMode.ALL;
         if (histidineModeProp != null) {
@@ -2876,101 +2899,6 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
-     * Checks the distance matrix value in the correct triangle; calculates this
-     * distance if it has not yet been calculated. After filling the distance
-     * matrix, all instances of accessing the distance matrix should go through
-     * this method to avoid any reverse-order calls. Assumes rotamers must be
-     * applied.
-     *
-     * @param i Residue i index
-     * @param ri Rotamer index for i
-     * @param j Residue i index
-     * @param rj Rotamer index for j
-     * @return Distance between ri and rj
-     */
-    /*private double checkDistanceMatrix(int i, int ri, int j, int rj) {
-     return checkDistanceMatrix(i, ri, j, rj, true);
-     }
-
-     /**
-     * Checks the distance matrix value in the correct triangle; calculates this
-     * distance if it has not yet been calculated. After filling the distance
-     * matrix, all instances of accessing the distance matrix should go through
-     * this method to avoid any reverse-order calls.
-     *
-     * @param i Residue i index
-     * @param ri Rotamer index for i
-     * @param j Residue i index
-     * @param rj Rotamer index for j
-     * @param applyRotamers If false, assumes residues are in the correct rotamer
-     * @return Distance between ri and rj
-     */
-    /*private double checkDistanceMatrix(int i, int ri, int j, int rj, boolean applyRotamers) {
-     if (i > j) {
-     double dist = distanceMatrix[j][rj][i][ri];
-     if (dist < 0) {
-     dist = evaluateDistance(j, rj, i, ri, applyRotamers);
-     distanceMatrix[j][rj][i][ri] = dist;
-     }
-     return dist;
-     } else {
-     double dist = distanceMatrix[i][ri][j][rj];
-     if (dist < 0) {
-     dist = evaluateDistance(i, ri, j, rj, applyRotamers);
-     distanceMatrix[i][ri][j][rj] = dist;
-     }
-     return dist;
-     }
-     }
-
-     /**
-     * Evaluates the minimum distance between rotamers of two residues and their
-     * symmetry mates
-     * @param i Residue i index
-     * @param ri Rotamer i index
-     * @param j Residue j index
-     * @param rj Rotamer j index
-     * @param applyRotamers If false, assumes residues are already in the proper rotamer.
-     * @return Minimum distance
-     */
-    /*private double evaluateDistance(int i, int ri, int j, int rj, boolean applyRotamers) {
-     Crystal crystal = molecularAssembly.getCrystal();
-     int nSymm = crystal.spaceGroup.getNumberOfSymOps();
-     double minDist = Double.MAX_VALUE;
-
-     Residue resi = allResiduesArray[i];
-     Rotamer roti = resi.getRotamers(resi)[ri];
-     double[][] xi;
-     if (checkIfForced(resi) || !applyRotamers) {
-     xi = resi.storeCoordinateArray();
-     } else {
-     ResidueState origI = resi.storeCoordinates();
-     RotamerLibrary.applyRotamer(resi, roti);
-     xi = resi.storeCoordinateArray();
-     resi.revertCoordinates(origI);
-     }
-
-     Residue resj = allResiduesArray[j];
-     Rotamer rotj = resj.getRotamers(resj)[rj];
-     double[][] xj;
-     if (checkIfForced(resj) || !applyRotamers) {
-     xj = resj.storeCoordinateArray();
-     } else {
-     ResidueState origJ = resj.storeCoordinates();
-     RotamerLibrary.applyRotamer(resj, rotj);
-     xj = resj.storeCoordinateArray();
-     resj.revertCoordinates(origJ);
-     }
-
-     for (int iSymOp = 0; iSymOp < nSymm; iSymOp++) {
-     SymOp symOp = crystal.spaceGroup.getSymOp(iSymOp);
-
-     double dist = interResidueDistance(xi, xj, symOp);
-     minDist = dist < minDist ? dist : minDist;
-     }
-     return minDist;
-     }*/
-    /**
      * Checks the distance matrix, finding the shortest distance between two
      * residues' rotamers under any symmetry operator; will evaluate this if
      * distance matrix not already filled.
@@ -2996,6 +2924,47 @@ public class RotamerOptimization implements Terminatable {
             distanceMatrix[i][ri][j][rj] = dist;
         }
         return dist;
+    }
+
+    /**
+     * Returns the mean of three dimer distances.
+     *
+     * @param i Residue i
+     * @param ri Rotamer for i
+     * @param j Residue j
+     * @param rj Rotamer for j
+     * @param k Residue k
+     * @param rk Rotamer for k
+     * @return mean separation distance
+     */
+    private double trimerDistance(int i, int ri, int j, int rj, int k, int rk) {
+        double ij = checkDistanceMatrix(i, ri, j, rj);
+        double ik = checkDistanceMatrix(i, ri, k, rk);
+        double jk = checkDistanceMatrix(j, rj, k, rk);
+        return (ij + ik + jk) / 3.0;
+    }
+
+    /**
+     * Returns the mean of six dimer distances.
+     *
+     * @param i Residue i
+     * @param ri Rotamer for i
+     * @param j Residue j
+     * @param rj Rotamer for j
+     * @param k Residue k
+     * @param rk Rotamer for k
+     * @param l Residue l
+     * @param rl Rotamer for l
+     * @return mean separation distance
+     */
+    private double quadDistance(int i, int ri, int j, int rj, int k, int rk, int l, int rl) {
+        double ij = checkDistanceMatrix(i, ri, j, rj);
+        double ik = checkDistanceMatrix(i, ri, k, rk);
+        double il = checkDistanceMatrix(i, ri, l, rl);
+        double jk = checkDistanceMatrix(j, rj, k, rk);
+        double jl = checkDistanceMatrix(j, rj, l, rl);
+        double kl = checkDistanceMatrix(k, rk, l, rl);
+        return (ij + ik + il + jk + jl + kl) / 6.0;
     }
 
     /**
@@ -4880,7 +4849,8 @@ public class RotamerOptimization implements Terminatable {
                 if (useForcedResidues) {
                     logger.warning(ex.toString());
                 } else {
-                    logIfMaster(String.format(" Non-forced Residue i %s has null rotamers.", residuei.toString()), Level.WARNING);
+                    logIfMaster(String.format(" Non-forced Residue i %s has null rotamers.",
+                            residuei.toString()), Level.WARNING);
                 }
                 continue;
             }
