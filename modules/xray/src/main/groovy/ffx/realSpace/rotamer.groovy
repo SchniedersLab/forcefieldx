@@ -39,38 +39,36 @@
 // Apache Commons Imports
 import org.apache.commons.io.FilenameUtils;
 
-// ENERGY
-import ffx.potential.MolecularAssembly;
-import ffx.potential.ForceFieldEnergy;
-
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Polymer;
-import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.MultiResidue;
-import ffx.potential.bonded.RotamerLibrary;
-import ffx.potential.bonded.Rotamer;
-import ffx.potential.bonded.ResidueEnumerations;
-import ffx.potential.bonded.ResidueEnumerations.CommonAminoAcid3;
-import ffx.potential.bonded.Residue.ResidueType;
-
-// X-Ray imports
-import ffx.xray.RealSpaceData;
-import ffx.xray.RefinementEnergy;
-import ffx.xray.RealSpaceFile;
-import ffx.xray.RefinementMinimize;
-import ffx.xray.RefinementMinimize.RefinementMode;
-import ffx.xray.DiffractionData;
-import ffx.xray.DiffractionFile;
-import ffx.xray.CrystalReciprocalSpace.SolventModel;
+import java.util.Scanner;
 
 // Groovy Imports
 import groovy.util.CliBuilder;
 
-// FFX Imports
-import ffx.algorithms.RotamerOptimization
-import ffx.algorithms.RotamerOptimization.Direction;
+// Parallel Java
 import edu.rit.pj.Comm
-import java.util.Scanner;
+
+// FFX Imports
+import ffx.algorithms.RotamerOptimization;
+import ffx.algorithms.RotamerOptimization.Direction;
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.MultiResidue;
+import ffx.potential.bonded.Polymer;
+import ffx.potential.bonded.Residue;
+import ffx.potential.bonded.Residue.ResidueType;
+import ffx.potential.bonded.ResidueEnumerations;
+import ffx.potential.bonded.ResidueEnumerations.CommonAminoAcid3;
+import ffx.potential.bonded.Rotamer;
+import ffx.potential.bonded.RotamerLibrary;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.ForceFieldEnergy;
+import ffx.xray.CrystalReciprocalSpace.SolventModel;
+import ffx.xray.DiffractionData;
+import ffx.xray.DiffractionFile;
+import ffx.xray.RealSpaceData;
+import ffx.xray.RealSpaceFile;
+import ffx.xray.RefinementEnergy;
+import ffx.xray.RefinementMinimize;
+import ffx.xray.RefinementMinimize.RefinementMode;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
@@ -586,7 +584,7 @@ if (minimumNumberAcceptedNARotamers < 1) {
 }
 /**
  * Now handled by system keys.
- * 
+ *
 if (pruningFactor < 0) {
     logger.warning("\n Pruning factor must be >= 0.  Setting to default of 1.0.\n");
     pruningFactor = 1;
@@ -604,8 +602,9 @@ if (mapFiles.size() == 0) {
 }
 
 Atom[] atoms = systems[0].getAtomArray();
-RealSpaceData realSpaceData = new RealSpaceData(systems, systems[0].getProperties(), mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
-RefinementEnergy refinementEnergy = RefinementEnergy.refinementEnergyFactory(realSpaceData, RefinementMode.COORDINATES, null);
+RealSpaceData realSpaceData = new RealSpaceData(systems, systems[0].getProperties(),
+    mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
+RefinementEnergy refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMode.COORDINATES, null);
 
 double [] x = new double[atoms.length*3];
 refinementEnergy.getCoordinates(x);
