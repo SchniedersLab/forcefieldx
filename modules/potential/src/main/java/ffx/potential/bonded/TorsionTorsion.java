@@ -156,6 +156,7 @@ public class TorsionTorsion extends BondedTerm {
         energy(false);
     }
 
+    protected static final double ad[] = new double[3];
     protected static final double a0[] = new double[3];
     protected static final double a1[] = new double[3];
     protected static final double a2[] = new double[3];
@@ -495,11 +496,11 @@ public class TorsionTorsion extends BondedTerm {
              * Compute the signed parallelpiped volume at the central site.
              */
             if (atom != null) {
-                atom.getXYZ(a0);
+                atom.getXYZ(ad);
                 atoms[1].getXYZ(a1);
                 atoms[2].getXYZ(a2);
                 atoms[3].getXYZ(a3);
-                diff(a0, a2, vc0);
+                diff(ad, a2, vc0);
                 diff(a1, a2, vc1);
                 diff(a3, a2, vc2);
                 double volume = vc0[0] * (vc1[1] * vc2[2] - vc1[2] * vc2[1]) + vc1[0] * (vc2[1] * vc0[2] - vc2[2] * vc0[1]) + vc2[0] * (vc0[1] * vc1[2] - vc0[2] * vc1[1]);
