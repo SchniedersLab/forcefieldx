@@ -84,10 +84,10 @@ double timeStep = 2.5;
 double printInterval = 0.01;
 
 // Frequency to write out coordinates in picoseconds.
-double saveInterval = 100; 
+double saveInterval = 100;
 
 // Frequency to write out restart information in picoseconds.
-double restartInterval = 1.0;  
+double restartInterval = 1.0;
 
 // Number of molecular dynamics steps: default is 100 nanoseconds.
 int nSteps = 10000;
@@ -283,7 +283,7 @@ if(runOSRW){
     OSRW osrw =  new OSRW(forceFieldEnergy, forceFieldEnergy, lambdaRestart, histogramRestart, active.getProperties(),
         temperature, timeStep, printInterval, saveInterval, asynchronous, sh, wellTempered);
     osrw.setLambda(lambda);
-    osrw.setLoopBuilding(true);
+    osrw.setOptimization(true);
     // Create the MolecularDynamics instance.
     MolecularDynamics molDyn = new MolecularDynamics(active, osrw, active.getProperties(),
         null, thermostat, integrator);
@@ -299,7 +299,7 @@ if(runOSRW){
     energy();
 }
 
-if (runSimulatedAnnealing) {   
+if (runSimulatedAnnealing) {
     // Minimize with vdW.
     System.setProperty("vdwterm", "true");
     System.setProperty("mpoleterm", "false");
@@ -349,16 +349,16 @@ if (runMD){
 
     // Temperature in degrees Kelvin.
     temperature = 300;
-    
+
     // Time step in femtoseconds.
     timeStep = 1;
-    
+
     // Reset velocities (ignored if a restart file is given)
     initVelocities = true;
 
     // Write interval in picoseconds.
     saveInterval = 1;   //set size = (nSteps * timeStep) / (1000 * saveInterval)
-    
+
     // Interval to write out restart file (psec)
     double restartFrequency = 1000;
 
@@ -369,7 +369,7 @@ if (runMD){
 }
 
 if (runRotamer){
-    
+
     for (int i = 0; i <= atoms.length; i++) {
         Atom ai = atoms[i - 1];
         ai.setActive(true);
@@ -378,7 +378,7 @@ if (runRotamer){
 
     energy = new ForceFieldEnergy(active);
     boolean threeBodyTerm = false;
-    RotamerOptimization rotamerOptimization;  
+    RotamerOptimization rotamerOptimization;
 
 
     logger.info(String.format(" Rotomer Optimization"));
@@ -399,7 +399,7 @@ if (runRotamer){
         Residue r = fullResidueList[i];
         if (r.getBackboneAtoms().get(0).getBuilt()) {
             residuesToRO.add(fullResidueList[i]);
-        } 
+        }
     }
     //Rotomer Optimization inclusion list building (grab residues within 7A of the built loop)
     boolean expandList = true

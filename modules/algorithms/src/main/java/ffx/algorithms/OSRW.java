@@ -70,8 +70,6 @@ import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.parsers.PDBFilter;
-import java.util.Arrays;
-
 
 /**
  * An implementation of the Orthogonal Space Random Walk algorithm.
@@ -284,18 +282,19 @@ public class OSRW implements Potential {
      */
     private ArrayList<String> traversalInHand = new ArrayList<>();
     /**
-     * Holds the lowest potential-energy parameters from among all visits to lambda < 0.1 and > 0.9
+     * Holds the lowest potential-energy parameters from among all visits to
+     * lambda < 0.1 and > 0.9
      */
     private double lowEnergyCoordsZero[], lowEnergyCoordsOne[];
-    private double lowEnergyZero= Double.MAX_VALUE, lowEnergyOne = Double.MAX_VALUE;
-    
+    private double lowEnergyZero = Double.MAX_VALUE, lowEnergyOne = Double.MAX_VALUE;
+
     /**
-     * Holds the lowest potential-energy parameters for loopBuilder runs
-     * from all visits to lambda > 0.9
+     * Holds the lowest potential-energy parameters for loopBuilder runs from
+     * all visits to lambda > 0.9
      */
-    private double lowEnergyLoopCoords[];
-    private double lowEnergyLoop = Double.MAX_VALUE;
-    
+    private double osrwOptimumCoords[];
+    private double osrwOptimum = Double.MAX_VALUE;
+
     /**
      * Interval between how often the free energy is updated from the count
      * matrix.
@@ -360,7 +359,8 @@ public class OSRW implements Potential {
     private int periodCount = 0;
     private int window = 1000;
 
-    private boolean buildingLoop = false;
+    private boolean osrwOptimization = false;
+
     /**
      * OSRW Asynchronous MultiWalker Constructor.
      *
@@ -712,14 +712,36 @@ public class OSRW implements Potential {
                     logger.log(Level.INFO, message, ex);
                 }
             }
-            
-            if(buildingLoop){
-                if ((e < lowEnergyLoop) && (lambda > 0.9)) {
-                    lowEnergyLoop = e;
-                    lowEnergyLoopCoords = potential.getCoordinates(null);
-                } 
+
+            if (osrwOptimization) {
+                if (lambda > 0.9) {
+                    // Save current coordinates.
+                    double currentCoords[] = potential.getCoordinates(null);
+
+                    // Set Lambda value to 1.0.
+                    this.lambdaInterface.setLambda(1.0);
+
+                    Minimize minimize = new Minimize(null, potential, null);
+                    minimize.minimize(0.01);
+                    double minEnergy = potential.getTotalEnergy();
+
+                    if (minEnergy < osrwOptimum) {
+                        osrwOptimum = minEnergy;
+                        osrwOptimumCoords = potential.getCoordinates(null);
+                        logger.info(" New minimum energy found.");
+                    }
+
+                    // Revert coordinates.
+                    double eCheck = potential.energy(currentCoords);
+                    if (eCheck != e) {
+                        logger.info(" OSRW optimization did not revert coordinates");
+                    }
+
+                    // Reset lambda value.
+                    lambdaInterface.setLambda(lambda);
+                }
             }
-            
+
             /**
              * Write out snapshot upon each full lambda traversal.
              */
@@ -765,7 +787,7 @@ public class OSRW implements Potential {
                         heldTraversalLambda = 0.5;
                         traversalInHand.clear();
                         traversalSnapshotTarget = 1 - traversalSnapshotTarget;
-                  }
+                    }
                 }
                 if (((lambda < 0.1 && traversalInHand.isEmpty()) || (lambda < heldTraversalLambda - 0.025 && !traversalInHand.isEmpty()))
                         && (traversalSnapshotTarget == 0 || traversalSnapshotTarget == -1)) {
@@ -1296,19 +1318,19 @@ public class OSRW implements Potential {
         }
     }
 
-    public double[] getLowEnergyLoop(){
-        if (lowEnergyLoop < Double.MAX_VALUE){
-            return lowEnergyLoopCoords;
+    public double[] getLowEnergyLoop() {
+        if (osrwOptimum < Double.MAX_VALUE) {
+            return osrwOptimumCoords;
         } else {
             logger.severe("Lambda > 0.9 was not reached. Try increasing number of timesteps.");
             return null;
         }
     }
-    
-    public void setLoopBuilding(boolean buildingLoop){
-        this.buildingLoop = buildingLoop;
+
+    public void setOptimization(boolean osrwOptimization) {
+        this.osrwOptimization = osrwOptimization;
     }
-    
+
     @Override
     public double[] getMass() {
         return potential.getMass();
@@ -1340,7 +1362,7 @@ public class OSRW implements Potential {
         potential.setEnergyTermState(state);
     }
 
-        @Override
+    @Override
     public void setVelocity(double[] velocity) {
         potential.setVelocity(velocity);
     }
