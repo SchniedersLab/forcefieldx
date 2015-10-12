@@ -57,6 +57,7 @@ import static java.util.Arrays.fill;
 import org.apache.commons.configuration.CompositeConfiguration;
 
 import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.floor;
 import static org.apache.commons.math3.util.FastMath.sin;
@@ -360,6 +361,10 @@ public class OSRW implements Potential {
     private int window = 1000;
 
     private boolean osrwOptimization = false;
+    private int osrwOptimizationFrequency = 10000;
+    private double osrwOptimizationLambdaCutoff = 0.75;
+    private double osrwOptimizationEps = 0.1;
+    private double osrwOptimizationTolerance = 1.0e-8;
 
     /**
      * OSRW Asynchronous MultiWalker Constructor.
@@ -579,6 +584,41 @@ public class OSRW implements Potential {
             return e;
         }
 
+        if (osrwOptimization || energyCount % osrwOptimizationFrequency == 0) {
+            if (lambda > osrwOptimizationLambdaCutoff) {
+                // Set Lambda value to 1.0.
+                lambdaInterface.setLambda(1.0);
+
+                // Optimize the system.
+                Minimize minimize = new Minimize(null, potential, null);
+                minimize.minimize(osrwOptimizationEps);
+
+                // Remove the scaling of coordinates & gradient set by the minimizer.
+                potential.setScaling(null);
+
+                // Reset lambda value.
+                lambdaInterface.setLambda(lambda);
+
+                // Collect the minimum energy.
+                double minEnergy = potential.getTotalEnergy();
+
+                // If a new minimum has been found, save its coordinates.
+                if (minEnergy < osrwOptimum) {
+                    osrwOptimum = minEnergy;
+                    logger.info(String.format(" New minimum energy found: %16.8f.", osrwOptimum));
+                    osrwOptimumCoords = potential.getCoordinates(osrwOptimumCoords);
+                }
+
+                // Revert to the coordinates and gradient prior to optimization.
+                double eCheck = potential.energyAndGradient(x, gradient);
+
+                if (abs(eCheck - e) > osrwOptimizationTolerance) {
+                    logger.warning(String.format(
+                            " OSRW optimization could not revert coordinates %16.8f vs. %16.8f.", e, eCheck));
+                }
+            }
+        }
+
         double biasEnergy = 0.0;
         dEdLambda = lambdaInterface.getdEdL();
         d2EdLambda2 = lambdaInterface.getd2EdL2();
@@ -710,35 +750,6 @@ public class OSRW implements Potential {
                 } catch (IOException ex) {
                     String message = " Exception writing OSRW lambda restart file.";
                     logger.log(Level.INFO, message, ex);
-                }
-            }
-
-            if (osrwOptimization) {
-                if (lambda > 0.9) {
-                    // Save current coordinates.
-                    double currentCoords[] = potential.getCoordinates(null);
-
-                    // Set Lambda value to 1.0.
-                    this.lambdaInterface.setLambda(1.0);
-
-                    Minimize minimize = new Minimize(null, potential, null);
-                    minimize.minimize(0.01);
-                    double minEnergy = potential.getTotalEnergy();
-
-                    if (minEnergy < osrwOptimum) {
-                        osrwOptimum = minEnergy;
-                        osrwOptimumCoords = potential.getCoordinates(null);
-                        logger.info(" New minimum energy found.");
-                    }
-
-                    // Revert coordinates.
-                    double eCheck = potential.energy(currentCoords);
-                    if (eCheck != e) {
-                        logger.info(" OSRW optimization did not revert coordinates");
-                    }
-
-                    // Reset lambda value.
-                    lambdaInterface.setLambda(lambda);
                 }
             }
 
