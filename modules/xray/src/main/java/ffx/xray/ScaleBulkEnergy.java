@@ -116,6 +116,7 @@ public class ScaleBulkEnergy implements Potential {
     private final ParallelTeam parallelTeam;
     private final ScaleBulkEnergyRegion scaleBulkEnergyRegion;
     double totalEnergy;
+    private STATE state = STATE.BOTH;
     private final int threadCount;
 
     /**
@@ -641,6 +642,12 @@ public class ScaleBulkEnergy implements Potential {
     }
 
     @Override
+    public STATE getEnergyTermState() {
+        return state;
+    }
+
+    @Override
     public void setEnergyTermState(Potential.STATE state) {
+        this.state = state;
     }
 }

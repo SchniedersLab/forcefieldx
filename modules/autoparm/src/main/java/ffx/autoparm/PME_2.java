@@ -6657,6 +6657,12 @@ public class PME_2 implements Potential {
     private final double sfPhi[] = new double[tensorCount];
     private final double sPhi[] = new double[tensorCount];
 
+    @Override
     public void setEnergyTermState(STATE state) {
+    }
+
+    @Override
+    public STATE getEnergyTermState() {
+        return null;
     }
 }

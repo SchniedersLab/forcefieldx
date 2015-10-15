@@ -623,6 +623,11 @@ public class XtalEnergy implements Potential {
     }
 
     @Override
+    public STATE getEnergyTermState() {
+        return forceFieldEnergy.getEnergyTermState();
+    }
+
+    @Override
     public void setVelocity(double[] velocity) {
         throw new UnsupportedOperationException("Not supported yet.");
     }

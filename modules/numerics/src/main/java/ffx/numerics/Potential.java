@@ -160,4 +160,12 @@ public interface Potential {
      * or BOTH.
      */
     public abstract void setEnergyTermState(STATE state);
+
+    /**
+     * Get the Potential Energy terms that is active.
+     * 
+     * @return the STATE
+     */
+    public abstract STATE getEnergyTermState();
+
 }

@@ -72,13 +72,13 @@ import edu.rit.pj.Comm
 import java.util.Scanner;
 
 // Default convergence criteria.
-double eps = 1.0;
+double eps = 0.1;
 
 // Temperture in degrees Kelvin.
 double temperature = 298.15;
 
 // Time step in femtoseconds.
-double timeStep = 2.5;
+double timeStep = 1.0;
 
 // Frequency to log thermodynamics information in picoseconds.
 double printInterval = 0.01;
@@ -90,13 +90,13 @@ double saveInterval = 100;
 double restartInterval = 1.0;
 
 // Number of molecular dynamics steps: default is 100 nanoseconds.
-int nSteps = 10000;
+int nSteps = 50000;
 
 // Thermostats [ ADIABATIC, BERENDSEN, BUSSI ]
 Thermostats thermostat = Thermostats.BERENDSEN;
 
 // Integrators [ BEEMAN, RESPA, STOCHASTIC ]
-Integrators integrator = Integrators.RESPA;
+Integrators integrator = Integrators.BEEMAN;
 
 // Reset velocities (ignored if a restart file is given)
 boolean initVelocities = true;
@@ -250,7 +250,7 @@ if(runOSRW){
     System.setProperty("intermolecular-softcore", "true");
     System.setProperty("lambdaterm", "true");
     System.setProperty("ligand-vapor-elec","false");
-    System.setProperty("ewald-alpha","0.0");
+    System.setProperty("vdw-cutoff", "9.0");
     System.setProperty("lambda-bias-cutoff", "3");
     System.setProperty("bias-gaussian-mag", "0.01");
     System.setProperty("lambda-bin-width", "0.01");
@@ -293,10 +293,7 @@ if(runOSRW){
 
     logger.info("\n Obtaining low energy coordinates");
     double[] lowEnergyCoordinates = osrw.getLowEnergyLoop();
-    System.out.println(lowEnergyCoordinates);
-    logger.info(" Placing low energy coordinates");
     forceFieldEnergy.setCoordinates(lowEnergyCoordinates);
-    energy();
 }
 
 if (runSimulatedAnnealing) {
@@ -409,7 +406,7 @@ if (runRotamer){
         // Do a sliding-window rotamer optimization on loop window with a radius-inclusion criterion.
         RotamerLibrary.setUseOrigCoordsRotamer(true);
 
-       // rotamerOptimization.setForcedResidues(resID, resID);
+        // rotamerOptimization.setForcedResidues(resID, resID);
         rotamerOptimization.setWindowSize(1);
         rotamerOptimization.setDistanceCutoff(expansionDistance);
 

@@ -75,6 +75,7 @@ public class SplineEnergy implements Potential {
     protected double[] optimizationScaling = null;
     private final ComplexNumber fct = new ComplexNumber();
     private double totalEnergy;
+    private STATE state = STATE.BOTH;
 
     /**
      * <p>
@@ -357,7 +358,13 @@ public class SplineEnergy implements Potential {
     }
 
     @Override
+    public STATE getEnergyTermState() {
+        return state;
+    }
+
+    @Override
     public void setEnergyTermState(STATE state) {
+        this.state = state;
     }
 
     @Override

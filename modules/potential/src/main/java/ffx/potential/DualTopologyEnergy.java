@@ -280,6 +280,8 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
      */
     private final ForceFieldEnergy forceFieldEnergy2;
 
+    private STATE state = STATE.BOTH;
+
     private final int nActive1;
     private final int nActive2;
     private final Atom activeAtoms1[];
@@ -879,7 +881,13 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
     }
 
     @Override
+    public STATE getEnergyTermState() {
+        return state;
+    }
+
+    @Override
     public void setEnergyTermState(STATE state) {
+        this.state = state;
         potential1.setEnergyTermState(state);
         potential2.setEnergyTermState(state);
     }
