@@ -41,46 +41,139 @@ import ffx.numerics.Potential;
 
 /**
  * The Integrator class is responsible for propagation of degrees of freedom
- * through time. Implementations must define their behavior at half-step and
- * full-step time points.
+ * through time. Implementations must define their behavior at pre-force and
+ * post-force evaluation time points.
  *
  * @author Michael J. Schnieders
- * @since 1.0
  *
+ * @since 1.0
  */
 public abstract class Integrator {
 
+    /**
+     * An enumeration of available integrators.
+     */
     public enum Integrators {
 
         BEEMAN, RESPA, STOCHASTIC, VELOCITYVERLET
     };
 
+    protected double x[];
+    protected double v[];
+    protected double a[];
+    protected double aPrevious[];
+    protected double mass[];
+    protected int nVariables;
+    protected double dt;
+    protected double dt_2;
+
+    /**
+     * Constructor for Integrator.
+     *
+     * @param nVariables number of Variables.
+     * @param x Cartesian coordinates (Angstroms).
+     * @param v Velocities.
+     * @param a Accelerations.
+     * @param aPrevious Previous Accelerations.
+     * @param mass Mass.
+     */
+    public Integrator(int nVariables, double x[], double v[], double a[],
+            double aPrevious[], double mass[]) {
+        this.nVariables = nVariables;
+        this.x = x;
+        this.v = v;
+        this.a = a;
+        this.aPrevious = aPrevious;
+        this.mass = mass;
+        dt = 1.0;
+        dt_2 = dt / 2.0;
+    }
+
+    /**
+     * Constructor for Integrator that do not use previous accelerations.
+     *
+     * @param nVariables number of Variables.
+     * @param x Cartesian coordinates (Angstroms).
+     * @param v Velocities.
+     * @param a Accelerations.
+     * @param mass Mass.
+     */
+    public Integrator(int nVariables, double x[], double v[], double a[], double mass[]) {
+        this.nVariables = nVariables;
+        this.x = x;
+        this.v = v;
+        this.a = a;
+        this.mass = mass;
+        this.aPrevious = null;
+        dt = 1.0;
+    }
+
+    /**
+     * Update the integrator to be consistent with chemical perturbations.
+     *
+     * @param nVariables the number of variables being integrated.
+     * @param x the current value of each variable.
+     * @param v the current velocity of each variable.
+     * @param a the current acceleration of each variable.
+     * @param aPrevious the previous acceleration of each variable.
+     * @param mass the mass for each variable.
+     */
+    public void setNumberOfVariables(int nVariables, double x[], double v[],
+            double a[], double aPrevious[], double mass[]) {
+        this.nVariables = nVariables;
+        this.x = x;
+        this.v = v;
+        this.a = a;
+        this.aPrevious = aPrevious;
+        this.mass = mass;
+    }
+
+    /**
+     * Update the integrator to be consistent with chemical perturbations.
+     *
+     * @param nVariables the number of variables being integrated.
+     * @param x the current value of each variable.
+     * @param v the current velocity of each variable.
+     * @param a the current acceleration of each variable.
+     * @param mass the mass for each variable.
+     */
+    public void setNumberOfVariables(int nVariables, double x[], double v[],
+            double a[], double mass[]) {
+        this.nVariables = nVariables;
+        this.x = x;
+        this.v = v;
+        this.a = a;
+        this.mass = mass;
+    }
+
+    /**
+     * Get the time step.
+     *
+     * @return the time step (fsec).
+     */
+    public double getTimeStep() {
+        return dt;
+    }
+
+    /**
+     * Set the time step.
+     *
+     * @param dt the time step (fsec).
+     */
     abstract public void setTimeStep(double dt);
 
     /**
-     * Integrator halfStep operation.
+     * Integrator pre-force evaluation operation.
      *
      * @param potential the Potential this integrator operates on.
      */
     abstract public void preForce(Potential potential);
 
     /**
-     * Integrator fullStep operation.
+     * Integrator post-force evaluation operation.
      *
      * @param gradient the gradient for the post-force operation.
      */
     abstract public void postForce(double gradient[]);
 
-    /**
-     * Update the Integrator to be consistent with chemical perturbations.
-     *
-     * @param nVariables
-     * @param x
-     * @param v
-     * @param a
-     * @param aPrevious
-     * @param mass
-     */
-    abstract public void setNumberOfVariables(int nVariables, double x[], double v[],
-            double a[], double aPrevious[], double mass[]);
 }

@@ -63,6 +63,14 @@ import ffx.numerics.Potential.VARIABLE_TYPE;
 public abstract class Thermostat {
 
     private static final Logger logger = Logger.getLogger(Thermostat.class.getName());
+
+    /**
+     * An enumeration of available Thermostats.
+     */
+    public enum Thermostats {
+
+        ADIABATIC, BERENDSEN, BUSSI;
+    };
     /**
      * Boltzmann constant in units of g*Ang**2/ps**2/mole/K
      */
@@ -76,29 +84,75 @@ public abstract class Thermostat {
      */
     public static final double R = 1.9872066e-3;
 
-    public enum Thermostats {
-
-        ADIABATIC, BERENDSEN, BUSSI;
-    };
+    /**
+     * The identity of this Thermostat.
+     */
     protected Thermostats name;
+    /**
+     * The target temperature that this thermostat should maintain.
+     */
     protected double targetTemperature;
+    /**
+     * The current temperature of the degrees of freedom.
+     */
     protected double currentTemperature;
+    /**
+     * The value of kT in kcal/mol at the target temperature.
+     */
     protected double kT;
+    /**
+     * The current kinetic energy of the system.
+     */
     protected double currentKineticEnergy;
-
+    /**
+     * Number of variables.
+     */
     protected int nVariables;
+    /**
+     * Number of degrees of freedom, which can be less than the number of
+     * variables. For example, removing translational motion removes 3 degrees
+     * of freedom.
+     */
     protected int dof;
+    /**
+     * Current values of variables.
+     */
     protected double x[];
+    /**
+     * Current velocity of the variables.
+     */
     protected double v[];
+    /**
+     * Mass for each variable.
+     */
     protected double mass[];
+    /**
+     * The type of each variable.
+     */
     protected VARIABLE_TYPE type[];
+    /**
+     * The total mass of the system.
+     */
     protected double totalMass;
-
+    /**
+     * The center of mass coordinates.
+     */
     protected final double centerOfMass[] = new double[3];
+    /**
+     * The linear momentum.
+     */
     protected final double linearMomentum[] = new double[3];
+    /**
+     * The angular momentum.
+     */
     protected final double angularMomentum[] = new double[3];
-    protected boolean removingCenterOfMassMotion;
-
+    /**
+     * Flag to indicate that center of mass motion should be removed.
+     */
+    protected boolean removeCenterOfMassMotion;
+    /**
+     * The random number generator that the Thermostat will use.
+     */
     protected Random random;
 
     /**
@@ -131,7 +185,7 @@ public abstract class Thermostat {
          * Set the degrees of freedom to nVariables - 3 because we will remove
          * center of mass motion.
          */
-        removingCenterOfMassMotion = true;
+        removeCenterOfMassMotion = true;
         dof = nVariables - 3;
     }
 
@@ -151,8 +205,11 @@ public abstract class Thermostat {
         this.v = v;
         this.mass = mass;
         this.type = type;
-
-        removingCenterOfMassMotion(removingCenterOfMassMotion);
+        assert (x.length == nVariables);
+        assert (v.length == nVariables);
+        assert (mass.length == nVariables);
+        assert (type.length == nVariables);
+        setRemoveCenterOfMassMotion(removeCenterOfMassMotion);
     }
 
     /**
@@ -163,17 +220,17 @@ public abstract class Thermostat {
      * @param remove <code>true</code> if center of mass motion is being
      * removed.
      */
-    public void removingCenterOfMassMotion(boolean remove) {
-        removingCenterOfMassMotion = remove;
-        if (removingCenterOfMassMotion) {
+    public void setRemoveCenterOfMassMotion(boolean remove) {
+        removeCenterOfMassMotion = remove;
+        if (removeCenterOfMassMotion) {
             dof = nVariables - 3;
         } else {
             dof = nVariables;
         }
     }
 
-    public boolean removingCOM() {
-        return removingCenterOfMassMotion;
+    public boolean getRemoveCenterOfMassMotion() {
+        return removeCenterOfMassMotion;
     }
 
     /**
@@ -197,12 +254,14 @@ public abstract class Thermostat {
      */
     protected void log(Level level) {
         if (logger.isLoggable(level)) {
-            logger.log(level, "\n" + toString());
-            logger.log(level, String.format(" Target temperature:           %7.2f Kelvin", targetTemperature));
-            logger.log(level, String.format(" Current temperature:          %7.2f Kelvin", currentTemperature));
-            logger.log(level, String.format(" Number of variables:          %7d", nVariables));
-            logger.log(level, String.format(" Number of degrees of freedom: %7d", dof));
-            logger.log(level, String.format(" kT per degree of freedom:     %7.2f", convert * currentKineticEnergy / (dof * kT)));
+            StringBuilder sb = new StringBuilder("\n");
+            sb.append(toString());
+            sb.append(String.format(" Target temperature:           %7.2f Kelvin", targetTemperature));
+            sb.append(String.format(" Current temperature:          %7.2f Kelvin", currentTemperature));
+            sb.append(String.format(" Number of variables:          %7d", nVariables));
+            sb.append(String.format(" Number of degrees of freedom: %7d", dof));
+            sb.append(String.format(" kT per degree of freedom:     %7.2f", convert * currentKineticEnergy / (dof * kT)));
+            logger.log(level, sb.toString());
         }
     }
 
@@ -251,6 +310,14 @@ public abstract class Thermostat {
         kT = t * kB;
     }
 
+    /**
+     * Return 3 velocities from a Maxwell-Boltzmann distribution of momenta. The
+     * variance of each independent momentum component is kT * mass.
+     *
+     * @param mass The mass for the degrees of freedom.
+     *
+     * @return three velocity components.
+     */
     public double[] maxwellIndividual(double mass) {
         double vv[] = new double[3];
         for (int i = 0; i < 3; i++) {
@@ -260,8 +327,9 @@ public abstract class Thermostat {
     }
 
     /**
-     * Reset velocities from a Maxwell-Boltzmann distribution of momenta. The
-     * variance of each independent momentum component is kT * mass.
+     * Reset velocities from a Maxwell-Boltzmann distribution of momenta based
+     * on the supplied target temperature. The variance of each independent
+     * momentum component is kT * mass.
      *
      * @param targetTemperature the target Temperature for the Maxwell
      * distribution.
@@ -275,7 +343,7 @@ public abstract class Thermostat {
         /**
          * Remove the center of mass motion.
          */
-        if (removingCenterOfMassMotion) {
+        if (removeCenterOfMassMotion) {
             centerOfMassMotion(true, true);
         }
 
@@ -289,7 +357,7 @@ public abstract class Thermostat {
          * temperature if the center of mass motion was removed and/or due to
          * finite system size.
          *
-         * Scale the velocities to reach the target temperature.
+         * Scale the velocities to enforce the target temperature.
          */
         double scale = Math.sqrt(targetTemperature / currentTemperature);
         for (int i = 0; i < nVariables; i++) {
@@ -304,16 +372,19 @@ public abstract class Thermostat {
         log(Level.INFO);
     }
 
+    /**
+     * Reset velocities from a Maxwell-Boltzmann distribution based on the
+     * current target temperature of thermostat.
+     */
     public void maxwell() {
         maxwell(targetTemperature);
     }
 
     /**
-     * <p>
-     * centerOfMassMotion</p>
+     * Compute the center of mass, linear momentum and angular momentum.
      *
-     * @param remove a boolean.
-     * @param print a boolean.
+     * @param remove If true, the center of mass motion will be removed.
+     * @param print If true, the center of mass and momenta will be printed.
      */
     protected void centerOfMassMotion(boolean remove, boolean print) {
         totalMass = 0.0;
@@ -362,9 +433,13 @@ public abstract class Thermostat {
         linearMomentum[2] /= totalMass;
 
         if (print) {
-            logger.info(String.format("\n Center of Mass   (%12.3f,%12.3f,%12.3f)", centerOfMass[0], centerOfMass[1], centerOfMass[2]));
-            logger.info(String.format(" Linear Momentum  (%12.3f,%12.3f,%12.3f)", linearMomentum[0], linearMomentum[1], linearMomentum[2]));
-            logger.info(String.format(" Angular Momentum (%12.3f,%12.3f,%12.3f)", angularMomentum[0], angularMomentum[1], angularMomentum[2]));
+            StringBuilder sb = new StringBuilder(String.format("\n Center of Mass   (%12.3f,%12.3f,%12.3f)",
+                    centerOfMass[0], centerOfMass[1], centerOfMass[2]));
+            sb.append(String.format(" Linear Momentum  (%12.3f,%12.3f,%12.3f)",
+                    linearMomentum[0], linearMomentum[1], linearMomentum[2]));
+            sb.append(String.format(" Angular Momentum (%12.3f,%12.3f,%12.3f)",
+                    angularMomentum[0], angularMomentum[1], angularMomentum[2]));
+            logger.info(sb.toString());
         }
 
         if (remove) {
@@ -376,6 +451,8 @@ public abstract class Thermostat {
     /**
      * Remove center of mass translational and rotational velocity by inverting
      * the moment of inertia tensor.
+     *
+     * @param print If true, log removal of center of mass motion.
      */
     private void removeCenterOfMassMotion(boolean print) {
         double xx = 0.0;
@@ -459,11 +536,8 @@ public abstract class Thermostat {
                 v[index++] += (-ox * yi + oy * xi);
             }
         }
-        /**
-         * Update the degrees of freedom.
-         */
         if (print) {
-            logger.info(String.format(" Center of mass motion removed."));
+            logger.info(" Center of mass motion removed.");
         }
     }
 
@@ -483,16 +557,14 @@ public abstract class Thermostat {
     }
 
     /**
-     * <p>
-     * halfStep</p>
+     * The half-step temperature correction.
      *
      * @param dt a double.
      */
     public abstract void halfStep(double dt);
 
     /**
-     * <p>
-     * fullStep</p>
+     * The full-step temperature correction.
      *
      * @param dt a double.
      */

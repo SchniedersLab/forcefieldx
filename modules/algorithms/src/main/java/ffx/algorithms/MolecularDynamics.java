@@ -212,7 +212,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
          * For StochasticDynamics, center of mass motion will not be removed.
          */
         if (integrator instanceof Stochastic) {
-            thermostat.removingCenterOfMassMotion(false);
+            thermostat.setRemoveCenterOfMassMotion(false);
         }
 
         done = true;
@@ -532,9 +532,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
         }
         this.removeCOMMotionFrequency = removeCOMMotionFrequency;
         if (removeCOMMotionFrequency != 0) {
-            thermostat.removingCenterOfMassMotion(true);
+            thermostat.setRemoveCenterOfMassMotion(true);
         } else {
-            thermostat.removingCenterOfMassMotion(false);
+            thermostat.setRemoveCenterOfMassMotion(false);
         }
     }
 
@@ -683,7 +683,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
             /**
              * Remove center of mass motion ever ~100 steps.
              */
-            if (thermostat.removingCOM() && step % removeCOMMotionFrequency == 0) {
+            if (thermostat.getRemoveCenterOfMassMotion() && step % removeCOMMotionFrequency == 0) {
                 thermostat.centerOfMassMotion(true, false);
             }
 

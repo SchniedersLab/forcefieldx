@@ -53,14 +53,8 @@ import ffx.numerics.Potential;
  */
 public class Stochastic extends Integrator {
 
-    private int numberOfVariables;
-    private double x[];
-    private double v[];
-    private double a[];
-    private double mass[];
     private double vfric[];
     private double vrand[];
-    private double dt;
     private final double friction;
     private double inverseFriction;
     private double fdt;
@@ -80,23 +74,18 @@ public class Stochastic extends Integrator {
      */
     public Stochastic(double friction, int nVariables, double x[],
             double v[], double a[], double mass[]) {
+        super(nVariables, x, v, a, mass);
         this.friction = friction;
-        this.numberOfVariables = nVariables;
-        this.x = x;
-        this.v = v;
-        this.a = a;
-        this.mass = mass;
-        dt = 1.0;
-        temperature = 298.15;
-        fdt = friction * dt;
-        efdt = exp(-fdt);
         if (friction >= 0) {
             inverseFriction = 1.0 / friction;
         } else {
             inverseFriction = Double.POSITIVE_INFINITY;
         }
-        vfric = new double[numberOfVariables];
-        vrand = new double[numberOfVariables];
+        vfric = new double[nVariables];
+        vrand = new double[nVariables];
+        fdt = friction * dt;
+        efdt = exp(-fdt);
+        temperature = 298.15;
         random = new Random();
     }
 
@@ -138,7 +127,7 @@ public class Stochastic extends Integrator {
      */
     @Override
     public void preForce(Potential potential) {
-        for (int i = 0; i < numberOfVariables; i++) {
+        for (int i = 0; i < nVariables; i++) {
             double m = mass[i];
             double pfric;
             double afric;
@@ -231,31 +220,28 @@ public class Stochastic extends Integrator {
      */
     @Override
     public void postForce(double[] gradient) {
-        for (int i = 0; i < numberOfVariables; i++) {
+        for (int i = 0; i < nVariables; i++) {
             a[i] = -Thermostat.convert * gradient[i] / mass[i];
             v[i] += (0.5 * a[i] * vfric[i] + vrand[i]);
         }
     }
 
     /**
-     * To allow chemical perturbations during MD.
+     * Update the integrator to be consistent with chemical perturbations. This
+     * overrides the default implementation so that the vfric and vrand arrays
+     * can be resized.
      *
-     * @param nVariables
-     * @param x
-     * @param v
-     * @param a
-     * @param aPrevious
-     * @param mass
+     * @param nVariables the number of variables being integrated.
+     * @param x the current value of each variable.
+     * @param v the current velocity of each variable.
+     * @param a the current acceleration of each variable.
+     * @param aPrevious the previous acceleration of each variable.
+     * @param mass the mass for each variable.
      */
     @Override
     public void setNumberOfVariables(int nVariables, double x[], double v[],
             double a[], double aPrevious[], double mass[]) {
-        this.numberOfVariables = nVariables;
-        this.x = x;
-        this.v = v;
-        this.a = a;
-        this.mass = mass;
-
+        super.setNumberOfVariables(nVariables, x, v, a, mass);
         if (nVariables > vfric.length) {
             vfric = new double[nVariables];
             vrand = new double[nVariables];

@@ -52,14 +52,6 @@ import ffx.numerics.Potential;
  */
 public class Respa extends Integrator {
 
-    private double x[];
-    private double v[];
-    private double a[];
-    private double aPrevious[];
-    private double mass[];
-    private int nVariables;
-    private double dt;
-    private double dt_2;
     private double dalt;
     private double dta;
     private double dta_2;
@@ -79,14 +71,8 @@ public class Respa extends Integrator {
      */
     public Respa(int nVariables, double x[], double v[], double a[],
             double aPrevious[], double mass[]) {
-        this.nVariables = nVariables;
-        this.x = x;
-        this.v = v;
-        this.a = a;
-        this.aPrevious = aPrevious;
-        this.mass = mass;
-        dt = 1.0;
-        dt_2 = 0.5 * dt;
+        super(nVariables, x, v, a, aPrevious, mass);
+
         dalt = 0.00025;
         nalt = ((int) (dt / (dalt + eps))) + 1;
         dalt = (double) nalt;
@@ -164,26 +150,5 @@ public class Respa extends Integrator {
         dalt = (double) nalt;
         dta = dt / dalt;
         dta_2 = 0.5 * dta;
-    }
-
-    /**
-     * To allow chemical perturbations during MD.
-     *
-     * @param nVariables
-     * @param x
-     * @param v
-     * @param a
-     * @param aPrevious
-     * @param mass
-     */
-    @Override
-    public void setNumberOfVariables(int nVariables, double x[], double v[],
-            double a[], double aPrevious[], double mass[]) {
-        this.nVariables = nVariables;
-        this.x = x;
-        this.v = v;
-        this.a = a;
-        this.aPrevious = aPrevious;
-        this.mass = mass;
     }
 }

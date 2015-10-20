@@ -44,18 +44,10 @@ import ffx.numerics.Potential;
  * recursion formula.
  *
  * @author Michael J. Schnieders
- * @since 1.0
  *
+ * @since 1.0
  */
 public class VelocityVerlet extends Integrator {
-
-    private double x[];
-    private double v[];
-    private double a[];
-    private double mass[];
-    private int nVariables;
-    private double dt;
-    private double dt_2;
 
     /**
      * Constructor for VelocityVerlet.
@@ -68,13 +60,7 @@ public class VelocityVerlet extends Integrator {
      */
     public VelocityVerlet(int nVariables, double x[], double v[], double a[],
             double mass[]) {
-        this.nVariables = nVariables;
-        this.x = x;
-        this.v = v;
-        this.a = a;
-        this.mass = mass;
-        dt = 1.0;
-        dt_2 = dt * .5;
+        super(nVariables, x, v, a, null, mass);
     }
 
     /**
@@ -96,7 +82,6 @@ public class VelocityVerlet extends Integrator {
      */
     @Override
     public void postForce(double gradient[]) {
-
         for (int i = 0; i < nVariables; i++) {
             a[i] = -Thermostat.convert * gradient[i] / mass[i];
             v[i] = v[i] + a[i] * dt_2;
@@ -106,27 +91,6 @@ public class VelocityVerlet extends Integrator {
     @Override
     public void setTimeStep(double dt) {
         this.dt = dt;
-        dt_2 = dt * .5;
+        dt_2 = dt * 0.5;
     }
-
-    /**
-     * To allow chemical perturbations during MD.
-     *
-     * @param nVariables
-     * @param x
-     * @param v
-     * @param a
-     * @param aPrevious
-     * @param mass
-     */
-    @Override
-    public void setNumberOfVariables(int nVariables, double x[], double v[],
-            double a[], double aPrevious[], double mass[]) {
-        this.nVariables = nVariables;
-        this.x = x;
-        this.v = v;
-        this.a = a;
-        this.mass = mass;
-    }
-
 }

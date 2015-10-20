@@ -43,10 +43,11 @@ import ffx.numerics.Potential.VARIABLE_TYPE;
 
 /**
  * Thermostat a molecular dynamics trajectory to an external bath using the
- * Berendensen weak-coupling thermostat.
+ * Berendsen weak-coupling thermostat.
  *
  * @author Michael J. Schnieders derived from TINKER temperature control by Alan
  * Grossfield and Jay Ponder
+ *
  * @see <a href="http://link.aip.org/link/?JCP/81/3684"> H. J. C. Berendsen, J.
  * P. M. Postma, W. F. van Gunsteren, A. DiNola and J. R. Hauk, "Molecular
  * Dynamics with Coupling to an External Bath", Journal of Chemical Physics, 81,
@@ -55,6 +56,9 @@ import ffx.numerics.Potential.VARIABLE_TYPE;
  */
 public class Berendsen extends Thermostat {
 
+    /**
+     * Berendsen time constant (psec).
+     */
     private double tau;
 
     /**
@@ -117,13 +121,13 @@ public class Berendsen extends Thermostat {
      */
     @Override
     public String toString() {
-        return String.format(" Berendsen thermostat (tau = %8.3f)", tau);
+        return String.format(" Berendsen Thermostat (tau = %8.3f psec)", tau);
     }
 
     /**
      * {@inheritDoc}
      *
-     * No velocity modifications are made by the Berendesen method at the
+     * No velocity modifications are made by the Berendsen method at the
      * half-step.
      */
     @Override
