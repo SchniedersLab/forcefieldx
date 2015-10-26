@@ -349,11 +349,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 case "BORN_CAV_DISP":
                     nonpolarModel = NonPolar.BORN_CAV_DISP;
                     break;
+                case "NONE":
                 default:
-                    logger.warning(" Cavitation model not recognized: using surface area cav-disp GK");
+                    nonpolarModel = NonPolar.NONE;
+                    logger.info(" No non-polar term will be used.");
             }
         } catch (Exception ex) {
-            logger.warning(String.format(" Error in parsing GK cavitation model: set to surface area: %s", ex.toString()));
+            nonpolarModel = NonPolar.NONE;
+            logger.warning(String.format(" Error parsing non-polar model (set to NONE) %s", ex.toString()));
         }
         nonPolar = nonpolarModel;
 
@@ -408,7 +411,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
         logger.info(" Continuum Solvation ");
         logger.info(String.format("  Generalized Kirkwood cut-off:        %8.2f (A)", cutoff));
-        logger.info(String.format("  Non-Polar Model:                     %s",
+        logger.info(String.format("  Non-Polar Model:                     %8s",
                 nonPolar.toString().replace('_', '-')));
 
         switch (nonPolar) {
@@ -427,6 +430,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             //hydrophobicPMFRegion = new HydrophobicPMFRegion(threadCount);
             //volumeRegion = null;
             case BORN_SOLV:
+            case NONE:
             default:
                 dispersionRegion = null;
                 cavitationRegion = null;
@@ -442,19 +446,19 @@ public class GeneralizedKirkwood implements LambdaInterface {
         initAtomArrays();
     }
 
-    private void setFixedRadii(boolean fixedRadii) {
+    public void setFixedRadii(boolean fixedRadii) {
         this.fixedRadii = fixedRadii;
     }
 
-    private boolean getFixedRadii() {
+    public boolean getFixedRadii() {
         return fixedRadii;
     }
 
-    private void setBornUseAll(boolean bornUseAll) {
+    public void setBornUseAll(boolean bornUseAll) {
         this.bornUseAll = bornUseAll;
     }
 
-    private boolean getBornUseAll() {
+    public boolean getBornUseAll() {
         return bornUseAll;
     }
 
@@ -726,6 +730,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     dispersionTime += System.nanoTime();
                     break;
                 case BORN_SOLV:
+                case NONE:
                 default:
                     break;
             }
@@ -765,6 +770,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             dispersionRegion.getEnergy(), dispersionTime * 1e-9));
                     break;
                 case BORN_SOLV:
+                case NONE:
                 default:
                     break;
             }
@@ -772,18 +778,20 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
         switch (nonPolar) {
             case CAV_DISP:
-                // gk.getElectrostatic + gk.getCavitation?
                 solvationEnergy = gkEnergyRegion.getEnergy() + dispersionRegion.getEnergy()
                         + cavitationRegion.getEnergy();
                 break;
             case BORN_CAV_DISP:
                 solvationEnergy = gkEnergyRegion.getEnergy() + dispersionRegion.getEnergy();
                 break;
+            //case HYDROPHOBIC_PMF:
+            //solvationEnergy = gkEnergyRegion.getEnergy() + hydrophobicPMFRegion.getEnergy();
             case BORN_SOLV:
+            case NONE:
+            default:
                 solvationEnergy = gkEnergyRegion.getEnergy();
                 break;
-            case HYDROPHOBIC_PMF:
-            //solvationEnergy = gkEnergyRegion.getEnergy() + hydrophobicPMFRegion.getEnergy();
+
         }
 
         if (lambdaTerm) {
@@ -860,7 +868,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     private enum NonPolar {
 
-        CAV_DISP, HYDROPHOBIC_PMF, BORN_CAV_DISP, BORN_SOLV
+        CAV_DISP, HYDROPHOBIC_PMF, BORN_CAV_DISP, BORN_SOLV, NONE
     }
 
     /**

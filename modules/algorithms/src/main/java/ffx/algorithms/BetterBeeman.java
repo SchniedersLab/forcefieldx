@@ -39,6 +39,8 @@ package ffx.algorithms;
 
 import ffx.numerics.Potential;
 
+import static ffx.algorithms.Thermostat.convert;
+
 /**
  * Integrate Newton's equations of motion using a Beeman multistep recursion
  * formula; the actual coefficients are Brooks' "Better Beeman" values.
@@ -49,13 +51,6 @@ import ffx.numerics.Potential;
  */
 public class BetterBeeman extends Integrator {
 
-    private double x[];
-    private double v[];
-    private double a[];
-    private double aPrevious[];
-    private double mass[];
-    private int nVariables;
-    private double dt;
     private double dt2_8;
     private double dt_8;
 
@@ -71,37 +66,10 @@ public class BetterBeeman extends Integrator {
      */
     public BetterBeeman(int nVariables, double x[], double v[], double a[],
             double aPrevious[], double mass[]) {
-        this.nVariables = nVariables;
-        this.x = x;
-        this.v = v;
-        this.a = a;
-        this.aPrevious = aPrevious;
-        this.mass = mass;
+        super(nVariables, x, v, a, aPrevious, mass);
 
-        dt = 1.0;
         dt_8 = 0.125 * dt;
         dt2_8 = dt * dt_8;
-    }
-
-    /**
-     * To allow chemical perturbations during MD.
-     *
-     * @param nVariables
-     * @param x
-     * @param v
-     * @param a
-     * @param aPrevious
-     * @param mass
-     */
-    @Override
-    public void setNumberOfVariables(int nVariables, double x[], double v[],
-            double a[], double aPrevious[], double mass[]) {
-        this.nVariables = nVariables;
-        this.x = x;
-        this.v = v;
-        this.a = a;
-        this.aPrevious = aPrevious;
-        this.mass = mass;
     }
 
     /**
@@ -125,7 +93,7 @@ public class BetterBeeman extends Integrator {
     public void postForce(double gradient[]) {
         for (int i = 0; i < nVariables; i++) {
             aPrevious[i] = a[i];
-            a[i] = -Thermostat.convert * gradient[i] / mass[i];
+            a[i] = -convert * gradient[i] / mass[i];
             v[i] += (3.0 * a[i] + aPrevious[i]) * dt_8;
         }
     }

@@ -72,31 +72,31 @@ import edu.rit.pj.Comm
 import java.util.Scanner;
 
 // Default convergence criteria.
-double eps = 1.0;
+double eps = 0.1;
 
 // Temperture in degrees Kelvin.
 double temperature = 298.15;
 
 // Time step in femtoseconds.
-double timeStep = 2.5;
+double timeStep = 1.0;
 
 // Frequency to log thermodynamics information in picoseconds.
 double printInterval = 0.01;
 
 // Frequency to write out coordinates in picoseconds.
-double saveInterval = 100; 
+double saveInterval = 100;
 
 // Frequency to write out restart information in picoseconds.
-double restartInterval = 1.0;  
+double restartInterval = 1.0;
 
 // Number of molecular dynamics steps: default is 100 nanoseconds.
-int nSteps = 10000;
+int nSteps = 50000;
 
 // Thermostats [ ADIABATIC, BERENDSEN, BUSSI ]
 Thermostats thermostat = Thermostats.BERENDSEN;
 
 // Integrators [ BEEMAN, RESPA, STOCHASTIC ]
-Integrators integrator = Integrators.RESPA;
+Integrators integrator = Integrators.BEEMAN;
 
 // Reset velocities (ignored if a restart file is given)
 boolean initVelocities = true;
@@ -250,7 +250,7 @@ if(runOSRW){
     System.setProperty("intermolecular-softcore", "true");
     System.setProperty("lambdaterm", "true");
     System.setProperty("ligand-vapor-elec","false");
-    System.setProperty("ewald-alpha","0.0");
+    System.setProperty("vdw-cutoff", "9.0");
     System.setProperty("lambda-bias-cutoff", "3");
     System.setProperty("bias-gaussian-mag", "0.01");
     System.setProperty("lambda-bin-width", "0.01");
@@ -283,7 +283,7 @@ if(runOSRW){
     OSRW osrw =  new OSRW(forceFieldEnergy, forceFieldEnergy, lambdaRestart, histogramRestart, active.getProperties(),
         temperature, timeStep, printInterval, saveInterval, asynchronous, sh, wellTempered);
     osrw.setLambda(lambda);
-    osrw.setLoopBuilding(true);
+    osrw.setOptimization(true);
     // Create the MolecularDynamics instance.
     MolecularDynamics molDyn = new MolecularDynamics(active, osrw, active.getProperties(),
         null, thermostat, integrator);
@@ -293,13 +293,10 @@ if(runOSRW){
 
     logger.info("\n Obtaining low energy coordinates");
     double[] lowEnergyCoordinates = osrw.getLowEnergyLoop();
-    System.out.println(lowEnergyCoordinates);
-    logger.info(" Placing low energy coordinates");
     forceFieldEnergy.setCoordinates(lowEnergyCoordinates);
-    energy();
 }
 
-if (runSimulatedAnnealing) {   
+if (runSimulatedAnnealing) {
     // Minimize with vdW.
     System.setProperty("vdwterm", "true");
     System.setProperty("mpoleterm", "false");
@@ -349,16 +346,16 @@ if (runMD){
 
     // Temperature in degrees Kelvin.
     temperature = 300;
-    
+
     // Time step in femtoseconds.
     timeStep = 1;
-    
+
     // Reset velocities (ignored if a restart file is given)
     initVelocities = true;
 
     // Write interval in picoseconds.
     saveInterval = 1;   //set size = (nSteps * timeStep) / (1000 * saveInterval)
-    
+
     // Interval to write out restart file (psec)
     double restartFrequency = 1000;
 
@@ -369,7 +366,7 @@ if (runMD){
 }
 
 if (runRotamer){
-    
+
     for (int i = 0; i <= atoms.length; i++) {
         Atom ai = atoms[i - 1];
         ai.setActive(true);
@@ -378,7 +375,7 @@ if (runRotamer){
 
     energy = new ForceFieldEnergy(active);
     boolean threeBodyTerm = false;
-    RotamerOptimization rotamerOptimization;  
+    RotamerOptimization rotamerOptimization;
 
 
     logger.info(String.format(" Rotomer Optimization"));
@@ -399,7 +396,7 @@ if (runRotamer){
         Residue r = fullResidueList[i];
         if (r.getBackboneAtoms().get(0).getBuilt()) {
             residuesToRO.add(fullResidueList[i]);
-        } 
+        }
     }
     //Rotomer Optimization inclusion list building (grab residues within 7A of the built loop)
     boolean expandList = true
@@ -409,7 +406,7 @@ if (runRotamer){
         // Do a sliding-window rotamer optimization on loop window with a radius-inclusion criterion.
         RotamerLibrary.setUseOrigCoordsRotamer(true);
 
-       // rotamerOptimization.setForcedResidues(resID, resID);
+        // rotamerOptimization.setForcedResidues(resID, resID);
         rotamerOptimization.setWindowSize(1);
         rotamerOptimization.setDistanceCutoff(expansionDistance);
 

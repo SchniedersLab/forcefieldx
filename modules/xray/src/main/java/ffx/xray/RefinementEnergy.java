@@ -76,6 +76,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
 
     private static final Logger logger = Logger.getLogger(RefinementEnergy.class.getName());
     private final MolecularAssembly molecularAssembly[];
+    private STATE state = STATE.BOTH;
     private final DataContainer data;
     private final RefinementModel refinementmodel;
     private Atom[] atomarray;
@@ -806,7 +807,13 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
     }
 
     @Override
+    public STATE getEnergyTermState() {
+        return state;
+    }
+
+    @Override
     public void setEnergyTermState(STATE state) {
+        this.state = state;
         int assemblysize = molecularAssembly.length;
         for (int i = 0; i < assemblysize; i++) {
             ForceFieldEnergy fe = molecularAssembly[i].getPotentialEnergy();

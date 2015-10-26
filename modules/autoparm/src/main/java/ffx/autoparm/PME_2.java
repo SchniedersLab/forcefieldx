@@ -6657,11 +6657,17 @@ public class PME_2 implements Potential {
     private final double sfPhi[] = new double[tensorCount];
     private final double sPhi[] = new double[tensorCount];
 
+    @Override
     public void setEnergyTermState(STATE state) {
     }
     
     @Override
     public void reInit() {
         throw new UnsupportedOperationException(String.format(" No reInit method defined for %s", PME_2.class.toString()));
+    }
+
+    @Override
+    public STATE getEnergyTermState() {
+        return null;
     }
 }

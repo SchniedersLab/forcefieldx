@@ -104,6 +104,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private Atom[] activeAtoms;
     private Crystal crystal;
     private final ParallelTeam parallelTeam;
+    private STATE state = STATE.BOTH;
     private Bond bonds[];
     private Angle angles[];
     private StretchBend stretchBends[];
@@ -1909,6 +1910,11 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         rb.log();
     }
 
+    @Override
+    public STATE getEnergyTermState() {
+        return state;
+    }
+
     /**
      * This method is for the RESPA integrator only.
      *
@@ -1916,6 +1922,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
      */
     @Override
     public void setEnergyTermState(STATE state) {
+        this.state = state;
         switch (state) {
             case FAST:
                 bondTerm = bondTermOrig;

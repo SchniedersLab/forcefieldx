@@ -166,4 +166,12 @@ public interface Potential {
      * any change in the underlying variables.
      */
     public abstract void reInit();
+
+    /**
+     * Get the Potential Energy terms that is active.
+     * 
+     * @return the STATE
+     */
+    public abstract STATE getEnergyTermState();
+
 }

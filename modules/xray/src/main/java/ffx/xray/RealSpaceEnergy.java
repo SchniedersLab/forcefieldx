@@ -66,6 +66,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
     protected double[] optimizationScaling = null;
     protected double lambda = 1.0;
     private double totalEnergy;
+    private STATE state = STATE.BOTH;
 
     /**
      * Diffraction data energy target
@@ -397,14 +398,13 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
     }
 
     @Override
+    public STATE getEnergyTermState() {
+        return state;
+    }
+
+    @Override
     public void setEnergyTermState(STATE state) {
-        switch (state) {
-            case FAST:
-                break;
-            case SLOW:
-                break;
-            default:
-        }
+        this.state = state;
     }
     
     @Override

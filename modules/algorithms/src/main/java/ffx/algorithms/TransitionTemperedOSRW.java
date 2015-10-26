@@ -1379,6 +1379,11 @@ public class TransitionTemperedOSRW implements Potential {
     }
 
     @Override
+    public STATE getEnergyTermState() {
+        return state;
+    }
+
+    @Override
     public double energy(double[] x) {
         throw new UnsupportedOperationException("Not supported yet.");
     }

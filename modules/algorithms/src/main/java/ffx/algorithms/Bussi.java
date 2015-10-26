@@ -52,15 +52,22 @@ import ffx.numerics.Potential.VARIABLE_TYPE;
  * @author Michael J. Schnieders
  *
  * Derived from TINKER temperature control by Alan Grossfield and Jay Ponder.
+ *
  * @see <a href="http://dx.doi.org/10.1016/j.cpc.2008.01.006"> G. Bussi and M.
  * Parrinello, "Stochastic Thermostats: Comparison of Local and Global Schemes",
  * Computer Physics Communications, 179, 26-29 (2008)</a>
- * @since 1.0
  *
+ * @since 1.0
  */
 public class Bussi extends Thermostat {
 
+    /**
+     * Bussi thermostat time constant (psec).
+     */
     private double tau;
+    /**
+     * The random number generator used to perturb velocities.
+     */
     private final Random bussiRandom;
 
     /**
@@ -125,7 +132,7 @@ public class Bussi extends Thermostat {
      */
     @Override
     public String toString() {
-        return String.format(" Bussi thermostat (tau = %8.3f)", tau);
+        return String.format(" Bussi Thermostat (tau = %8.3f psec)", tau);
     }
 
     /**
@@ -145,17 +152,18 @@ public class Bussi extends Thermostat {
      */
     @Override
     public void fullStep(double dt) {
-        double exptau = exp(-dt / tau);
-        double ratio = targetTemperature / currentTemperature;
-        double rate = (1.0 - exptau) * ratio / nVariables;
+        double expTau = exp(-dt / tau);
+        double tempRatio = targetTemperature / currentTemperature;
+        double rate = (1.0 - expTau) * tempRatio / dof;
         double r = bussiRandom.nextGaussian();
         double s = 0.0;
-        for (int i = 0; i < nVariables - 1; i++) {
+        for (int i = 0; i < dof - 1; i++) {
             double si = bussiRandom.nextGaussian();
             s += si * si;
         }
-        double scale = sqrt(exptau + (s + r * r) * rate + 2.0 * r * sqrt(exptau * rate));
-        if (r + sqrt(exptau / rate) < 0.0) {
+        double scale = expTau + (s + r * r) * rate + 2.0 * r * sqrt(expTau * rate);
+        scale = sqrt(scale);
+        if (r + sqrt(expTau / rate) < 0.0) {
             scale = -scale;
         }
         for (int i = 0; i < nVariables; i++) {

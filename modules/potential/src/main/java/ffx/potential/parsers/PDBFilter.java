@@ -526,7 +526,8 @@ public final class PDBFilter extends SystemFilter {
                                 seqres.put(chainID, chain);
                             }
                             int resID = (serNum - 1) * 13;
-                            for (int start = 19; start < 68; start += 4) {
+                            int end = line.length();
+                            for (int start = 19; start + 3 <= end; start += 4) {
                                 String res = line.substring(start, start + 3).trim();
                                 if (res == null || res.length() < 1) {
                                     break;

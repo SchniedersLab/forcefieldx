@@ -90,6 +90,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
     private double temp = 50.0;
     protected double lambda = 1.0;
     private double totalEnergy;
+    private STATE state = STATE.BOTH;
 
     /**
      * Diffraction data energy target
@@ -1032,11 +1033,17 @@ public class XRayEnergy implements LambdaInterface, Potential {
         return vtypes;
     }
 
+    @Override
+    public STATE getEnergyTermState() {
+        return state;
+    }
+
     /*
      * RESPA setup
      */
     @Override
     public void setEnergyTermState(STATE state) {
+        this.state = state;
         switch (state) {
             case FAST:
                 xrayterms = false;

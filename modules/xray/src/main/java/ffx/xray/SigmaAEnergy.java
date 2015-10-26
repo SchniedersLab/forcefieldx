@@ -140,6 +140,7 @@ public class SigmaAEnergy implements Potential {
     protected double[] optimizationScaling = null;
     private double totalEnergy;
     private final boolean useCernBessel;
+    private STATE state = STATE.BOTH;
 
     /**
      * <p>
@@ -757,7 +758,13 @@ public class SigmaAEnergy implements Potential {
     }
 
     @Override
+    public STATE getEnergyTermState() {
+        return state;
+    }
+
+    @Override
     public void setEnergyTermState(STATE state) {
+        this.state = state;
     }
     
     @Override
