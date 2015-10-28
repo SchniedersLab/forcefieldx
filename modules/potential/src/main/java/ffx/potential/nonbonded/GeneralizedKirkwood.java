@@ -418,7 +418,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         switch (nonPolar) {
             case CAV:
                 cavitationRegion = new CavitationRegion(threadCount);
-                tensionDefault = 0.003;
+                tensionDefault = 0.0049;
                 dispersionRegion = null;
                 break;
             case CAV_DISP:
