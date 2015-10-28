@@ -44,6 +44,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.util.Arrays.fill;
+import static java.lang.String.format;
 
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.abs;
@@ -133,6 +134,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * Empirical scaling of the Bondi radii.
      */
     private final double bondiScale;
+    /**
+     * Cavitation surface tension coefficient (kcal/mol/A^2).
+     */
+    private final double surfaceTension;
 
     private final double bornaiTerm;
     private final double probe;
@@ -163,10 +168,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
     private final InducedGKFieldRegion inducedGKFieldRegion;
     private final GKEnergyRegion gkEnergyRegion;
     private final BornCRRegion bornGradRegion;
-    //private final HydrophobicPMFRegion hydrophobicPMFRegion;
     private final DispersionRegion dispersionRegion;
     private final CavitationRegion cavitationRegion;
-    //private final VolumeRegion volumeRegion;
 
     /**
      * Gradient array for each thread.
@@ -289,18 +292,18 @@ public class GeneralizedKirkwood implements LambdaInterface {
         String epsilonProp = System.getProperty("gk-epsilon");
         if (epsilonProp != null) {
             this.epsilon = Double.parseDouble(epsilonProp);
-            logger.info(String.format(" (GK) GLOBAL dielectric constant set to %.2f", epsilon));
+            logger.info(format(" (GK) GLOBAL dielectric constant set to %.2f", epsilon));
         }
 
         String bondiOverride = System.getProperty("gk-bondiOverride");
         if (bondiOverride != null) {
             double scale = Double.parseDouble(bondiOverride);
             bondiScale = scale;
-            logger.info(String.format(" (GK) Scaling GLOBAL bondi radii by factor: %.2f", bondiScale));
+            logger.info(format(" (GK) Scaling GLOBAL bondi radii by factor: %.2f", bondiScale));
         } else {
             bondiScale = 1.16;
             if (verboseRadii) {
-                logger.info(String.format(" (GK) Scaling GLOBAL bondi radii by factor: %.2f", bondiScale));
+                logger.info(format(" (GK) Scaling GLOBAL bondi radii by factor: %.2f", bondiScale));
             }
         }
 
@@ -314,7 +317,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 int separator = token.indexOf("r");
                 int type = Integer.parseInt(token.substring(0, separator));
                 double factor = Double.parseDouble(token.substring(separator + 1));
-                logger.info(String.format(" (GK) Scaling AtomType %d with bondi factor %.2f", type, factor));
+                logger.info(format(" (GK) Scaling AtomType %d with bondi factor %.2f", type, factor));
                 radiiOverride.put(type, factor);
             }
         }
@@ -337,6 +340,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
         try {
             String cavModel = forceField.getString(ForceField.ForceFieldString.CAVMODEL, "CAV_DISP").toUpperCase();
             switch (cavModel) {
+                case "CAV":
+                    nonpolarModel = NonPolar.CAV;
+                    break;
                 case "CAV_DISP":
                     nonpolarModel = NonPolar.CAV_DISP;
                     break;
@@ -356,7 +362,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             }
         } catch (Exception ex) {
             nonpolarModel = NonPolar.NONE;
-            logger.warning(String.format(" Error parsing non-polar model (set to NONE) %s", ex.toString()));
+            logger.warning(format(" Error parsing non-polar model (set to NONE) %s", ex.toString()));
         }
         nonPolar = nonpolarModel;
 
@@ -383,8 +389,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         bornUseAll = forceField.getBoolean(ForceField.ForceFieldBoolean.BORN_USE_ALL, false);
 
         probe = forceField.getDouble(ForceField.ForceFieldDouble.PROBE_RADIUS, 1.4);
-        /*double defaultCutoff = crystal.aperiodic() ? 100.0 : 7.0; // If an aperiodic system, the GK cutoff should be 0.
-         cutoff = forceField.getDouble(ForceField.ForceFieldDouble.EWALD_CUTOFF, defaultCutoff);*/
+
         cutoff = particleMeshEwald.getEwaldCutoff();
         cut2 = cutoff * cutoff;
         lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
@@ -409,26 +414,23 @@ public class GeneralizedKirkwood implements LambdaInterface {
         gkEnergyRegion = new GKEnergyRegion(threadCount);
         bornGradRegion = new BornCRRegion(threadCount);
 
-        logger.info(" Continuum Solvation ");
-        logger.info(String.format("  Generalized Kirkwood cut-off:        %8.2f (A)", cutoff));
-        logger.info(String.format("  Non-Polar Model:                     %8s",
-                nonPolar.toString().replace('_', '-')));
-
+        double tensionDefault = 0.08;
         switch (nonPolar) {
+            case CAV:
+                dispersionRegion = null;
+                cavitationRegion = new CavitationRegion(threadCount);
+                tensionDefault = 0.003;
+                break;
             case CAV_DISP:
                 dispersionRegion = new DispersionRegion(threadCount);
                 cavitationRegion = new CavitationRegion(threadCount);
-                //volumeRegion = new VolumeRegion(threadCount);
-                //volumeRegion = null;
-                //hydrophobicPMFRegion = null;
+                tensionDefault = 0.080;
                 break;
             case BORN_CAV_DISP:
                 dispersionRegion = new DispersionRegion(threadCount);
                 cavitationRegion = null;
                 break;
             case HYDROPHOBIC_PMF:
-            //hydrophobicPMFRegion = new HydrophobicPMFRegion(threadCount);
-            //volumeRegion = null;
             case BORN_SOLV:
             case NONE:
             default:
@@ -436,6 +438,20 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 cavitationRegion = null;
                 break;
         }
+
+        surfaceTension = forceField.getDouble(ForceField.ForceFieldDouble.SURFACE_TENSION, tensionDefault);
+
+        logger.info(" Continuum Solvation ");
+        logger.info(format("  Generalized Kirkwood Cut-Off:        %8.3f (A)", cutoff));
+        logger.info(format("  Solvent Dielectric:                  %8.3f", epsilon));
+        logger.info(format("  Non-Polar Model:                     %8s",
+                nonPolar.toString().replace('_', '-')));
+
+        if (cavitationRegion != null) {
+            logger.info(format("  Cavitation Probe Radius:             %8.3f (A)", probe));
+            logger.info(format("  Cavitation Surface Tension:          %8.3f (Kcal/mol/A^2)", surfaceTension));
+        }
+
         logger.info("");
     }
 
@@ -868,7 +884,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     private enum NonPolar {
 
-        CAV_DISP, HYDROPHOBIC_PMF, BORN_CAV_DISP, BORN_SOLV, NONE
+        CAV, CAV_DISP, HYDROPHOBIC_PMF, BORN_CAV_DISP, BORN_SOLV, NONE
     }
 
     /**
@@ -4825,7 +4841,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             private final static double pix4 = 4.0 * PI;
             private final static double pid2 = PI / 2.0;
             private final static double eps = 1.0e-8;
-            private final static double surfaceTension = 0.08;
+
             public long time;
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
