@@ -4580,7 +4580,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
              * Set the sphere radii.
              */
             for (int i = 0; i < nAtoms; i++) {
-                r[i] = rDisp[i];
+                VDWType type = atoms[i].getVDWType();
+                double rmini = type.radius;
+                r[i] = rmini / 2.0;
                 if (r[i] != 0.0) {
                     r[i] = r[i] + probe;
                 }
