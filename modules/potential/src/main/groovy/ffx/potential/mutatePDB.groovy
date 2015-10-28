@@ -55,6 +55,8 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.utils.PotentialsUtils;
 import ffx.potential.ForceFieldEnergy;
 import ffx.utilities.Keyword;
+import ffx.potential.bonded.Rotamer;
+import ffx.potential.bonded.RotamerLibrary;
 
 // Groovy Imports
 import groovy.util.CliBuilder;
@@ -68,11 +70,13 @@ cli.c(longOpt:'chain', args:1, argName:' ', 'Single character chain name (defaul
 cli.p(longOpt:'repack', args:1, argName:'7.0', 'After mutation, repack all residues within # Angstroms.');
 cli.pt(longOpt:'threeBodyRepack', args:1, argName:'true', 'Include three-body energies in repacking.');
 cli.eR(longOpt:'energyRestart', args: 1, argName:'filename', 'Load energy restart file from a previous run. Ensure that all parameters are the same!');
+cli.R(longOpt:'rotamer', args: 1, argName:'0', 'Rotamer number to apply.');
 
 boolean repack = false;
 double repackDistance = 7.0;
 boolean threeBodyRepack = true;
 boolean useEnergyRestart = false;
+int destRotamer = 0;
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -114,6 +118,13 @@ if (options.eR) {
     }*/
     useEnergyRestart = true;
     energyRestartFile = new File(options.eR);
+}
+
+if (options.R) {
+    if (options.p) {
+        logger.severe(" Can't combine repack with explicit rotamer specification.");
+    }
+    destRotamer = Integer.parseInt(options.R);
 }
 
 // Read in command line.
@@ -168,6 +179,14 @@ if (repack) {
     RotamerLibrary.measureRotamers(residueList, false);
     rotamerOptimization.optimize(RotamerOptimization.Algorithm.SLIDING_WINDOW);
     logger.info("\n Repacking successful.\n");
+}
+
+if (options.R) {
+    RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
+    Polymer polymer = molecularAssembly.getChain(chain.toString());
+    Residue residue = polymer.getResidue(resID);
+    Rotamer[] rotamers = RotamerLibrary.getRotamers(residue);
+    RotamerLibrary.applyRotamer(residue, rotamers[destRotamer]);
 }
 
 pdbFilter.writeFile(structure, false);
