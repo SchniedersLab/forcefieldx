@@ -43,8 +43,8 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.util.Arrays.fill;
 import static java.lang.String.format;
+import static java.util.Arrays.fill;
 
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.abs;
@@ -417,25 +417,25 @@ public class GeneralizedKirkwood implements LambdaInterface {
         double tensionDefault = 0.08;
         switch (nonPolar) {
             case CAV:
-                dispersionRegion = null;
                 cavitationRegion = new CavitationRegion(threadCount);
                 tensionDefault = 0.003;
+                dispersionRegion = null;
                 break;
             case CAV_DISP:
-                dispersionRegion = new DispersionRegion(threadCount);
                 cavitationRegion = new CavitationRegion(threadCount);
                 tensionDefault = 0.080;
+                dispersionRegion = new DispersionRegion(threadCount);
                 break;
             case BORN_CAV_DISP:
-                dispersionRegion = new DispersionRegion(threadCount);
                 cavitationRegion = null;
+                dispersionRegion = new DispersionRegion(threadCount);
                 break;
             case HYDROPHOBIC_PMF:
             case BORN_SOLV:
             case NONE:
             default:
-                dispersionRegion = null;
                 cavitationRegion = null;
+                dispersionRegion = null;
                 break;
         }
 
@@ -724,11 +724,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
              * Find the nonpolar energy.
              */
             switch (nonPolar) {
-                case HYDROPHOBIC_PMF:
-                    pmfTime = -System.nanoTime();
-                    //hydrophobicPMFRegion.setGradient(gradient);
-                    //parallelTeam.execute(hydrophobicPMFRegion);
-                    pmfTime += System.nanoTime();
+                case CAV:
+                    cavitationTime = -System.nanoTime();
+                    parallelTeam.execute(cavitationRegion);
+                    cavitationTime += System.nanoTime();
                     break;
                 case CAV_DISP:
                     dispersionTime = -System.nanoTime();
@@ -745,12 +744,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     parallelTeam.execute(dispersionRegion);
                     dispersionTime += System.nanoTime();
                     break;
+                case HYDROPHOBIC_PMF:
                 case BORN_SOLV:
                 case NONE:
                 default:
                     break;
             }
-            //parallelTeam.execute(volumeRegion);
         } catch (Exception e) {
             String message = "Fatal exception computing the continuum solvation energy.";
             logger.log(Level.SEVERE, message, e);
@@ -771,20 +770,24 @@ public class GeneralizedKirkwood implements LambdaInterface {
         }
 
         if (print) {
-            logger.info(String.format(" Generalized Kirkwood%16.8f %10.3f",
+            logger.info(format(" Generalized Kirkwood%16.8f %10.3f",
                     gkEnergyRegion.getEnergy(), gkTime * 1e-9));
             switch (nonPolar) {
-                case HYDROPHOBIC_PMF:
-                    //logger.info(String.format(" Hydrophibic PMF     %16.8f %10.3f", hydrophobicPMFRegion.getEnergy(), pmfTime * 1e-9));
+                case CAV:
+                    logger.info(format(" Cavitation          %16.8f %10.3f",
+                            cavitationRegion.getEnergy(), cavitationTime * 1e-9));
                     break;
                 case CAV_DISP:
-                    logger.info(String.format(" Cavitation          %16.8f %10.3f",
+                    logger.info(format(" Cavitation          %16.8f %10.3f",
                             cavitationRegion.getEnergy(), cavitationTime * 1e-9));
-                // Fall through.
-                case BORN_CAV_DISP:
-                    logger.info(String.format(" Dispersion          %16.8f %10.3f",
+                    logger.info(format(" Dispersion          %16.8f %10.3f",
                             dispersionRegion.getEnergy(), dispersionTime * 1e-9));
                     break;
+                case BORN_CAV_DISP:
+                    logger.info(format(" Dispersion          %16.8f %10.3f",
+                            dispersionRegion.getEnergy(), dispersionTime * 1e-9));
+                    break;
+                case HYDROPHOBIC_PMF:
                 case BORN_SOLV:
                 case NONE:
                 default:
@@ -793,6 +796,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
         }
 
         switch (nonPolar) {
+            case CAV:
+                solvationEnergy = gkEnergyRegion.getEnergy() + cavitationRegion.getEnergy();
+                break;
             case CAV_DISP:
                 solvationEnergy = gkEnergyRegion.getEnergy() + dispersionRegion.getEnergy()
                         + cavitationRegion.getEnergy();
@@ -800,8 +806,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             case BORN_CAV_DISP:
                 solvationEnergy = gkEnergyRegion.getEnergy() + dispersionRegion.getEnergy();
                 break;
-            //case HYDROPHOBIC_PMF:
-            //solvationEnergy = gkEnergyRegion.getEnergy() + hydrophobicPMFRegion.getEnergy();
+            case HYDROPHOBIC_PMF:
             case BORN_SOLV:
             case NONE:
             default:
