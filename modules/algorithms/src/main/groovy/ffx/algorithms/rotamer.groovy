@@ -144,31 +144,11 @@ cli.bC(longOpt:'boxInclusionCriterion', args: 1, argName: '1', 'Criterion to use
 cli.fR(longOpt:'forceResidues', args: 1, argName: '-1,-1', 'Force residues in this range to be considered for sliding window radii, regardless of whether they lack rotamers.');
 cli.lR(longOpt:'listResidues', args: 1, argName: '-1', 'Choose a list of individual residues to optimize (eg. A11,A24,B40).');
 cli.vw(longOpt:'videoWriter', args: 0, 'Prototype video snapshot output; skips energy calculation.');
-cli.sO(longOpt:'sequenceOptimization', args:1, argName: '-1', 'Choose a list of individual residues to sequence optimize.');
+cli.sO(longOpt:'sequenceOptimization', args:1, argName: '-1', 'Choose a list of individual residues to sequence optimize (example: A2.A3.A5).');
 cli.tO(longOpt:'titrationOptimization', args:1, argName: '-1', 'Choose a list of individual residues to titrate (protonation state optimization).');
 cli.nt(longOpt:'nucleicCorrectionThreshold', args:1, argName: '0', 'Nucleic acid Rotamers adjusted by more than a threshold distance (A) are discarded (0 disables this function).');
 cli.mn(longOpt:'minimumAcceptedNARotamers', args:1, argName: '10', 'Minimum number of NA rotamers to be accepted if a threshold distance is enabled.');
 cli.li(longOpt:'printLargeInteractions', args:2, valueSeparator: ',' as char, argName: '0.0,0.0', 'Prints a summary of pair and trimer absolute energies larger than [arg] kcal.')
-
-/**
- * Now handled by system keys.
-// bD is used as a single string argument to allow for easier argument size checking.
-cli.bD(longOpt:'boxDimensions', args:1, argName:'buffer,xmin,xmax,ymin,ymax,zmin,zmax', 'If set, box optimization only uses supplied coordinates plus buffer.');
-cli.i(longOpt:'increment', args:1, argName:'3', 'Distance sliding window shifts with respect to adjacent residues');
-cli.d(longOpt:'direction', args:1, argName:'Forward', 'Direction of the sliding window or box optimization (boxes indexed by increasing Z,Y,X): [Forward / Backward]');
-cli.z(longOpt:'undo', args:1, argName:'false', 'Window optimizations that do not lower the energy are discarded.');
-cli.g(longOpt:'Goldstein', args:1, argName:'true', 'True to use Goldstein Criteria, False to use DEE');
-cli.pE(longOpt:'parallelEnergies', args: 1, argName:'true', 'Compute rotamer energies in parallel.');
-cli.sT(longOpt:'superpositionThreshold', args: 1, argName: '0.1', 'Sets the maximum atom-atom distance (Angstroms) which will cause a pair or triple energy to be defaulted to 1.0E100 kcal/mol.');
-cli.e(longOpt:'ensemble', args:1, argName:'1', 'Produce an ensemble of this many of the most favorable structures.');
-cli.eT(longOpt: 'ensembleTarget', args:1, argName:'0.0', 'Produces an ensemble of structures with energies between GMEC and GMEC + value (kcal/mol).');
-cli.b(longOpt:'buffer', args:1, argName:'0.0/5.0', 'Sets a starting energy buffer value for use with ensemble search.');
-cli.td(longOpt:'threeBodyCutoffDist', args:1, argName: '9.0', 'Angstrom distance beyond which three-body interactions will be truncated (-1 for no cutoff).');
-cli.pf(longOpt:'pruningFactor', args:1, argName: '1.0', 'Multiplier of pruning constraints for nucleic acids.');
-cli.sf(longOpt:'nucleicSinglesPruningFactor', args:1, argName: '1.5', 'Constant multiplier of singleton pruning constraint for nucleic acids');
-cli.sC(longOpt:'singletonClashThreshold', args: 1, argName: '20.0', 'Sets the threshold for singleton pruning.');
-cli.pC(longOpt:'pairClashThreshold', args: 1, argName: '50.0', 'Sets the threshold for pair pruning');
-*/
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -219,7 +199,7 @@ if (options.vw) {
 
 // Ensemble.
 /*if (options.pE) {
-    parallelEnergies = Boolean.parseBoolean(options.pE);
+parallelEnergies = Boolean.parseBoolean(options.pE);
 }*/
 
 if (options.e) {
@@ -323,7 +303,7 @@ if (options.t) {
 }
 
 /*if (options.td) {
-    threeBodyCutoffDist = Double.parseDouble(options.td);
+threeBodyCutoffDist = Double.parseDouble(options.td);
 }*/
 
 if (options.g) {
@@ -383,7 +363,7 @@ if (options.dO) {
 
 if (options.eR) {
     /*if (!parallelEnergies || algorithm == 4) {
-        logger.severe(" FFX shutting down: energy restart only implemented for parallelized global optimizations.");
+    logger.severe(" FFX shutting down: energy restart only implemented for parallelized global optimizations.");
     }*/
     useEnergyRestart = true;
     energyRestartFile = new File(options.eR);
@@ -433,28 +413,28 @@ if (algorithm == 5 && options.nB) {
 }
 
 /*if (options.bD) {
-    try {
-        String[] bdTokens = options.bD.split(",+");
-        if (bdTokens.length != 7) {
-            logger.warning(" Improper number of arguments to boxDimensions; default settings used.");
-        } else {
-            for (int i = 1; i < 7; i+=2) {
-                boxDimensions[i-1] = Double.parseDouble(bdTokens[i]);
-                boxDimensions[i] = Double.parseDouble(bdTokens[i+1]);
-                if (boxDimensions[i] < boxDimensions[i-1]) {
-                    logger.info(String.format(" Improper dimension min %8.5f > max %8.5f; max/min reversed.", boxDimensions[i-1], boxDimensions[i]));
-                    double temp = boxDimensions[i];
-                    boxDimensions[i] = boxDimensions[i-1];
-                    boxDimensions[i-1] = temp;
-                }
-            }
-            superboxBuffer = Double.parseDouble(bdTokens[0]);
-            useBoxDimensions = true;
-        }
-    } catch (Exception ex) {
-        logger.warning(String.format(" Error in parsing box dimensions: input discarded and defaults used: %s.", ex));
-        useBoxDimensions = false;
-    }
+try {
+String[] bdTokens = options.bD.split(",+");
+if (bdTokens.length != 7) {
+logger.warning(" Improper number of arguments to boxDimensions; default settings used.");
+} else {
+for (int i = 1; i < 7; i+=2) {
+boxDimensions[i-1] = Double.parseDouble(bdTokens[i]);
+boxDimensions[i] = Double.parseDouble(bdTokens[i+1]);
+if (boxDimensions[i] < boxDimensions[i-1]) {
+logger.info(String.format(" Improper dimension min %8.5f > max %8.5f; max/min reversed.", boxDimensions[i-1], boxDimensions[i]));
+double temp = boxDimensions[i];
+boxDimensions[i] = boxDimensions[i-1];
+boxDimensions[i-1] = temp;
+}
+}
+superboxBuffer = Double.parseDouble(bdTokens[0]);
+useBoxDimensions = true;
+}
+} catch (Exception ex) {
+logger.warning(String.format(" Error in parsing box dimensions: input discarded and defaults used: %s.", ex));
+useBoxDimensions = false;
+}
 }*/
 
 if (options.bC) {
@@ -529,17 +509,17 @@ if (minimumNumberAcceptedNARotamers < 1) {
 }
 /**
  * Now handled by system keys.
- * 
+ *
 if (pruningFactor < 0) {
-    logger.warning("\n Pruning factor must be >= 0.  Setting to default of 1.0.\n");
-    pruningFactor = 1;
+logger.warning("\n Pruning factor must be >= 0.  Setting to default of 1.0.\n");
+pruningFactor = 1;
 }
 
 if (singletonNAPruningFactor < 0) {
-    logger.warning("\n Pruning factor must be >= 0.  Setting to default of 1.5.\n");
-    singletonNAPruningFactor = 1.5;
+logger.warning("\n Pruning factor must be >= 0.  Setting to default of 1.5.\n");
+singletonNAPruningFactor = 1.5;
 }
-*/
+ */
 
 open(filename);
 
@@ -550,22 +530,6 @@ rotamerOptimization.setWindowSize(windowSize);
 rotamerOptimization.setDistanceCutoff(distance);
 rotamerOptimization.setNucleicCorrectionThreshold(nucleicCorrectionThreshold);
 rotamerOptimization.setMinimumNumberAcceptedNARotamers(minimumNumberAcceptedNARotamers);
-/**
- * Now handled by system keys.
-rotamerOptimization.setIncrement(increment);
-rotamerOptimization.setDirection(direction);
-rotamerOptimization.setRevert(revert);
-rotamerOptimization.setGoldstein(useGoldstein);
-rotamerOptimization.setEnsemble(ensemble, buffer);
-rotamerOptimization.setEnsembleTarget(ensembleTarget);
-rotamerOptimization.setThreeBodyCutoffDist(threeBodyCutoffDist);
-rotamerOptimization.setPruningFactor(pruningFactor);
-rotamerOptimization.setSingletonNAPruningFactor(singletonNAPruningFactor);
-rotamerOptimization.setSingletonClashThreshold(singletonClashThreshold);
-rotamerOptimization.setPairClashThreshold(pairClashThreshold);
-rotamerOptimization.setParallelEnergies(parallelEnergies);
-rotamerOptimization.setSuperpositionThreshold(superpositionThreshold);
-*/
 rotamerOptimization.setVerboseEnergies(verboseEnergies);
 rotamerOptimization.setBoxBorderSize(boxBorderSize);
 rotamerOptimization.setApproxBoxLength(approxBoxLength);
@@ -576,7 +540,7 @@ if (useEnergyRestart) {
     rotamerOptimization.setEnergyRestartFile(energyRestartFile);
 }
 /*if (useBoxDimensions) {
-    rotamerOptimization.setBoxDimensions(boxDimensions, superboxBuffer);
+rotamerOptimization.setBoxDimensions(boxDimensions, superboxBuffer);
 }*/
 if (options.vw) {
     rotamerOptimization.setVideoWriter(video_writeVideo, video_ignoreInactiveAtoms, video_skipEnergies);
