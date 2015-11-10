@@ -1,4 +1,3 @@
-
 /**
  * Title: Force Field X.
  *
@@ -232,8 +231,7 @@ int rank = 0;
 // For a multi-process job, try to get the restart files from rank sub-directories.
 if (size > 1) {
     rank = world.rank();
-    File rankDirectory = new File(structureFile.getParent() + File.separator
-        + Integer.toString(rank));
+    File rankDirectory = new File(structureFile.getParent() + File.separator + Integer.toString(rank));
     if (!rankDirectory.exists()) {
         rankDirectory.mkdir();
     }
@@ -246,7 +244,12 @@ if (!dyn.exists()) {
     dyn = null;
 }
 
-MolecularAssembly[] systems = open(filename);
+open(filename);
+
+// If this is a multi-process job, set the structure file to come from the subdirectory.
+if (size > 1) {
+    active.setFile(structureFile);
+}
 
 // Get a reference to the first system's ForceFieldEnergy.
 ForceFieldEnergy forceFieldEnergy = active.getPotentialEnergy();
@@ -410,7 +413,7 @@ if (runRotamer){
     //RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.PonderAndRichards);
     RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
 
-    Polymer[] polymers = systems[0].getChains();
+    Polymer[] polymers = active.getChains();
     ArrayList<Residue> fullResidueList = polymers[0].getResidues();
     ArrayList<Residue> residuesToRO = new ArrayList<>();
 
@@ -447,8 +450,6 @@ if (runRotamer){
     rotamerOptimization.optimize(RotamerOptimization.Algorithm.SLIDING_WINDOW);
 }
 
-String ext = FilenameUtils.getExtension(filename);
-filename = FilenameUtils.removeExtension(filename);
-saveAsPDB(systems, new File(filename + ".pdb"));
+saveAsPDB(active, structureFile);
 
 
