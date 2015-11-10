@@ -73,6 +73,14 @@ import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.ForceFieldEnergy;
 
+import ffx.xray.CrystalReciprocalSpace.SolventModel;
+import ffx.xray.DiffractionData;
+import ffx.xray.DiffractionFile;
+import ffx.xray.RealSpaceData;
+import ffx.xray.RealSpaceFile;
+import ffx.xray.RefinementEnergy;
+import ffx.xray.RefinementMinimize.RefinementMode;
+
 // Default convergence criteria.
 double eps = 0.1;
 
@@ -251,8 +259,25 @@ if (size > 1) {
     active.setFile(structureFile);
 }
 
-// Get a reference to the first system's ForceFieldEnergy.
-ForceFieldEnergy forceFieldEnergy = active.getPotentialEnergy();
+// Set up real space map data (can be multiple files)
+List mapFiles = new ArrayList();
+int nDiffractionData = 0;
+if (arguments.size() > 1) {
+    String dataFileName = arguments.get(1);
+    if (FilenameUtils.isExtension(dataFileName, "map")) {
+        RealSpaceFile realspacefile = new RealSpaceFile(dataFileName, 1.0);
+        mapFiles.add(realspacefile);
+    } else {
+        DiffractionFile diffractionFile = new DiffractionFile(dataFileName, 1.0, false);
+        DiffractionData diffractionData = new DiffractionData(systems, systems[0].getProperties(), SolventModel.POLYNOMIAL, diffractionFile);
+        diffractionData.scaleBulkFit();
+        diffractionData.printStats();
+        String mapFileName = String.format("%s_ffx_%d", FilenameUtils.removeExtension(dataFileName), ++nDiffractionData);
+        diffractionData.writeMaps(mapFileName);
+        mapFiles.add(new RealSpaceFile(mapFileName + "_2fofc.map", 1.0));
+    }
+}
+
 // Set built atoms active/use flags to true (false for other atoms).
 Atom[] atoms = active.getAtomArray();
 for (int i = 0; i <= atoms.length; i++) {
@@ -270,7 +295,10 @@ logger.info("\n Running minimize on built atoms of " + active.getName());
 logger.info(" RMS gradient convergence criteria: " + eps);
 
 // Minimization without vdW.
-e = minimize(eps);
+RealSpaceData realSpaceData = new RealSpaceData(active, active.getProperties(),
+    mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
+RefinementMinimize refinementMinimize = new RefinementMinimize(realSpaceData, RefinementMode.COORDINATES);
+refinementMinimize.minimize(eps);
 
 energy();
 
@@ -297,8 +325,11 @@ if(runOSRW){
         }
     }
 
-    forceFieldEnergy= new ForceFieldEnergy(active);
+    forceFieldEnergy = new ForceFieldEnergy(active);
     forceFieldEnergy.setLambda(lambda);
+    realSpaceData = new RealSpaceData(active, active.getProperties(), mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
+    RefinementEnergy refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMode.COORDINATES, null);
+    refinementEnergy.setLambda(lambda);
 
     energy();
 
@@ -307,7 +338,7 @@ if(runOSRW){
 
     boolean asynchronous = false;
     boolean wellTempered = false;
-    OSRW osrw =  new OSRW(forceFieldEnergy, forceFieldEnergy, lambdaRestart, histogramRestart, active.getProperties(),
+    OSRW osrw =  new OSRW(refinementEnergy, refinementEnergy, lambdaRestart, histogramRestart, active.getProperties(),
         temperature, timeStep, printInterval, saveInterval, asynchronous, sh, wellTempered);
     osrw.setLambda(lambda);
     osrw.setOptimization(true);
@@ -324,10 +355,15 @@ if(runOSRW){
 
 if (runSimulatedAnnealing) {
     // Minimize with vdW.
+    System.setProperty("lambdaterm", "false");
     System.setProperty("vdwterm", "true");
     System.setProperty("mpoleterm", "false");
+
     energy = new ForceFieldEnergy(active);
-    e = minimize(eps);
+    realSpaceData = new RealSpaceData(active, active.getProperties(),
+        mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
+    refinementMinimize = new RefinementMinimize(realSpaceData, RefinementMode.COORDINATES);
+    refinementMinimize.minimize(eps);
 
     // SA with vdW.
     logger.info("\n Running simulated annealing on " + active.getName());
@@ -341,7 +377,9 @@ if (runSimulatedAnnealing) {
     // Integrators [ BEEMAN, RESPA, STOCHASTIC]
     integrator = Integrators.RESPA;
 
-    SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(active, energy, active.getProperties(), null, thermostat, integrator);
+    refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMode.COORDINATES, null);
+    SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(active, refinementEnergy,
+        active.getProperties(), null, thermostat, integrator);
     simulatedAnnealing.annealToTargetValues(heatUpTemperatures, steps, timeStep);
 
     double[] annealingTargetTemperatures = [1000, 800, 600, 500, 400, 300];
@@ -364,7 +402,11 @@ System.setProperty("intermolecularSoftcore", "false");
 System.setProperty("lambdaterm", "false");
 
 forceFieldEnergy = new ForceFieldEnergy(active);
-e = minimize(eps);
+realSpaceData = new RealSpaceData(active, active.getProperties(),
+    mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
+refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMode.COORDINATES, null);
+refinementMinimize = new RefinementMinimize(realSpaceData, RefinementMode.COORDINATES);
+refinementMinimize.minimize(eps);
 
 if (runMD){
     // Number of molecular dynamics steps
@@ -385,32 +427,26 @@ if (runMD){
     // Interval to write out restart file (psec)
     double restartFrequency = 1000;
 
-    MolecularDynamics molDyn = new MolecularDynamics(active, energy, active.getProperties(), null, thermostat, integrator);
+    MolecularDynamics molDyn = new MolecularDynamics(active, refinementEnergy,
+        active.getProperties(), null, thermostat, integrator);
     molDyn.setFileType(fileType);
     molDyn.setRestartFrequency(restartFrequency);
     molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
 }
 
 if (runRotamer){
-
+    logger.info(String.format(" Rotomer Optimization"));
     for (int i = 0; i <= atoms.length; i++) {
         Atom ai = atoms[i - 1];
         ai.setActive(true);
         ai.setUse(true);
     }
 
-    energy = new ForceFieldEnergy(active);
+    RotamerOptimization rotamerOptimization = new RotamerOptimization(active, refinementEnergy, null);
     boolean threeBodyTerm = false;
-    RotamerOptimization rotamerOptimization;
-
-
-    logger.info(String.format(" Rotomer Optimization"));
-    rotamerOptimization = new RotamerOptimization(active, energy, null);
-
     rotamerOptimization.setThreeBodyEnergy(threeBodyTerm);
     RotamerLibrary.setUseOrigCoordsRotamer(true);
 
-    //RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.PonderAndRichards);
     RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
 
     Polymer[] polymers = active.getChains();
