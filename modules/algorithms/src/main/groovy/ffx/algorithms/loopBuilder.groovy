@@ -39,6 +39,9 @@
 
 // LOOP BUILDER
 
+// Java Imports
+import java.util.Scanner;
+
 // Apache Commons Imports
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.FileUtils;
@@ -46,30 +49,30 @@ import org.apache.commons.io.FileUtils;
 // Groovy Imports
 import groovy.util.CliBuilder;
 
+// Paralle Java Imports
+import edu.rit.pj.Comm;
+
 // FFX Imports
+import ffx.algorithms.Integrator.Integrators;
 import ffx.algorithms.Minimize;
 import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.OSRW;
-import ffx.algorithms.SimulatedAnnealing;
-import ffx.algorithms.Integrator.Integrators;
-import ffx.algorithms.Thermostat.Thermostats;
-import ffx.potential.ForceFieldEnergy;
-import ffx.potential.bonded.Atom;
-import ffx.potential.MolecularAssembly;
 import ffx.algorithms.RotamerOptimization
 import ffx.algorithms.RotamerOptimization.Direction;
-import ffx.potential.ForceFieldEnergy;
+import ffx.algorithms.SimulatedAnnealing;
+import ffx.algorithms.Thermostat.Thermostats;
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.ResidueEnumerations;
 import ffx.potential.bonded.ResidueEnumerations.CommonAminoAcid3;
 import ffx.potential.bonded.Residue.ResidueType;
-
-import edu.rit.pj.Comm
-import java.util.Scanner;
+import ffx.potential.ForceFieldEnergy;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.ForceFieldEnergy;
 
 // Default convergence criteria.
 double eps = 0.1;
@@ -136,7 +139,6 @@ cli.sa(longOpt:'simulated annealing', 'Run simulated annealing.');
 cli.md(longOpt:'molecular dynamics', args:1, argName:'10','MD generateration of sets (size).');
 cli.rot(longOpt:'rotamer', 'Run rotamer optimization.');
 cli.a(longOpt:'all', 'Run optimal pipeline of algorithms.');
-
 
 def options = cli.parse(args);
 
@@ -209,14 +211,42 @@ System.setProperty("vdwterm", "false");
 
 List<String> arguments = options.arguments();
 String filename = null;
-MolecularAssembly[] systems = null;
 if (arguments != null && arguments.size() > 0) {
     // Read in command line.
     filename = arguments.get(0);
-    systems = open(filename);
 } else {
     return cli.usage();
 }
+
+File structureFile = new File(FilenameUtils.normalize(filename));
+structureFile = new File(structureFile.getAbsolutePath());
+String baseFilename = FilenameUtils.removeExtension(structureFile.getName());
+File histogramRestart = new File(baseFilename + ".his");
+File lambdaRestart = new File(baseFilename + ".lam");
+File dyn = new File(baseFilename + ".dyn");
+
+Comm world = Comm.world();
+int size = world.size();
+int rank = 0;
+
+// For a multi-process job, try to get the restart files from rank sub-directories.
+if (size > 1) {
+    rank = world.rank();
+    File rankDirectory = new File(structureFile.getParent() + File.separator
+        + Integer.toString(rank));
+    if (!rankDirectory.exists()) {
+        rankDirectory.mkdir();
+    }
+    lambdaRestart = new File(rankDirectory.getPath() + File.separator + baseFilename + ".lam");
+    dyn = new File(rankDirectory.getPath() + File.separator + baseFilename + ".dyn");
+    structureFile = new File(rankDirectory.getPath() + File.separator + structureFile.getName());
+}
+
+if (!dyn.exists()) {
+    dyn = null;
+}
+
+MolecularAssembly[] systems = open(filename);
 
 // Get a reference to the first system's ForceFieldEnergy.
 ForceFieldEnergy forceFieldEnergy = active.getPotentialEnergy();
@@ -242,7 +272,7 @@ e = minimize(eps);
 energy();
 
 if(runOSRW){
-    // Run OSRW with a vdW potential.
+    // Run OSRW.
     System.setProperty("vdwterm", "true");
     System.setProperty("mpoleterm", "true");
     System.setProperty("polarization", "none");
@@ -271,12 +301,6 @@ if(runOSRW){
 
     // Turn off checks for overlapping atoms, which is expected for lambda=0.
     forceFieldEnergy.getCrystal().setSpecialPositionCutoff(0.0);
-    // OSRW will be configured for a single topology.
-    File structureFile = new File(FilenameUtils.normalize(filename));
-    structureFile = new File(structureFile.getAbsolutePath());
-    String baseFilename = FilenameUtils.removeExtension(structureFile.getName());
-    File histogramRestart = new File(baseFilename + ".his");
-    File lambdaRestart = new File(baseFilename + ".lam");
 
     boolean asynchronous = false;
     boolean wellTempered = false;
@@ -287,7 +311,6 @@ if(runOSRW){
     // Create the MolecularDynamics instance.
     MolecularDynamics molDyn = new MolecularDynamics(active, osrw, active.getProperties(),
         null, thermostat, integrator);
-    File dyn = null;
     molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities,
         fileType, restartInterval, dyn);
 
