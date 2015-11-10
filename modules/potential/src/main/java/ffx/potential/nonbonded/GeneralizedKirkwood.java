@@ -207,7 +207,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * Use base radii defined by AtomType rather than by atomic number.
      */
     private boolean verboseRadii = false;
-
     private boolean fixedRadii = false;
     private boolean bornUseAll = false;
 
@@ -215,57 +214,151 @@ public class GeneralizedKirkwood implements LambdaInterface {
     private static final HashMap<Integer, Double> typeToBondi = new HashMap<>();
 
     static {
-        // ARG: NE, CZ, NH1, NH2, HE, HH11, HH12, HH21, HH22
-        typeToBondi.put(211, 1.240);
-        typeToBondi.put(212, 1.240);
-        typeToBondi.put(213, 1.240);
-        typeToBondi.put(214, 1.240);
-        typeToBondi.put(215, 1.240);
-        // ASH: CG, OD1, OD2, HD2
-        typeToBondi.put(146, 1.200);
-        typeToBondi.put(147, 1.200);
-        typeToBondi.put(148, 1.200);
-        typeToBondi.put(149, 1.200);
-        // ASP: CG, OD1, OD2
-        typeToBondi.put(142, 0.950);
-        typeToBondi.put(143, 0.950);
-        // CYD: SG
-        typeToBondi.put(52, 0.950);
-        // GLH: CD, OE1, OE2, HE2
-        typeToBondi.put(166, 1.110);
-        typeToBondi.put(167, 1.110);
-        typeToBondi.put(168, 1.110);
-        typeToBondi.put(169, 1.110);
-        // GLU: CD, OE1, OE2
-        typeToBondi.put(160, 0.900);
-        typeToBondi.put(161, 0.900);
-        // HID: ND1, HD1, CE1, HE1, NE2
-        typeToBondi.put(123, 1.100);
-        typeToBondi.put(124, 1.100);
-        typeToBondi.put(127, 1.100);
-        typeToBondi.put(128, 1.100);
-        typeToBondi.put(129, 1.100);
-        // HIE: ND1, CE1, HE1, NE2, HE2
-        typeToBondi.put(133, 1.100);
-        typeToBondi.put(136, 1.100);
-        typeToBondi.put(137, 1.100);
-        typeToBondi.put(138, 1.100);
-        typeToBondi.put(139, 1.100);
-        // HIS: ND1, HD1, CE1, HE1, NE2, HE2
-        typeToBondi.put(112, 1.450);
-        typeToBondi.put(113, 1.450);
-        typeToBondi.put(116, 1.450);
-        typeToBondi.put(117, 1.450);
-        typeToBondi.put(118, 1.450);
-        typeToBondi.put(119, 1.450);
-        // LYD: NZ, HZ1, HZ2
-        typeToBondi.put(203, 0.950);
-        typeToBondi.put(204, 0.950);
-        // LYS: NZ, HZ1, HZ2, HZ3
-        typeToBondi.put(193, 1.300);
-        typeToBondi.put(194, 1.300);
-        // TYD: OH
-        typeToBondi.put(91, 0.850);
+        // GLY
+        typeToBondi.put(2,1.15);
+        typeToBondi.put(6,1.15);
+        // ALA
+        typeToBondi.put(8,1.60);
+        typeToBondi.put(12,1.60);
+        typeToBondi.put(13,1.60);
+        typeToBondi.put(14,1.60);
+        // VAL
+        typeToBondi.put(15,1.40);
+        typeToBondi.put(16,1.40);
+        typeToBondi.put(17,1.40);
+        typeToBondi.put(18,1.40);
+        // LEU
+        typeToBondi.put(19,1.40);
+        typeToBondi.put(20,1.40);
+        typeToBondi.put(21,1.40);
+        typeToBondi.put(22,1.40);
+        typeToBondi.put(23,1.40);
+        typeToBondi.put(24,1.40);
+        // ILE
+        typeToBondi.put(25,1.40);
+        typeToBondi.put(26,1.40);
+        typeToBondi.put(27,1.40);
+        typeToBondi.put(28,1.40);
+        typeToBondi.put(29,1.40);
+        typeToBondi.put(30,1.40);
+        typeToBondi.put(31,1.40);
+        typeToBondi.put(32,1.40);
+        // SER
+        typeToBondi.put(35,1.0235);
+        typeToBondi.put(36,1.0235);
+        // THR
+        typeToBondi.put(39,1.25);
+        typeToBondi.put(40,1.25);
+        // CYD
+        typeToBondi.put(43,1.02);
+        typeToBondi.put(44,1.02);
+        typeToBondi.put(48,1.02);
+        typeToBondi.put(49,1.02);
+        // CYS
+        typeToBondi.put(45,1.80);
+        typeToBondi.put(46,1.80);
+        // PRO
+        typeToBondi.put(50,1.05);
+        typeToBondi.put(51,1.05);
+        typeToBondi.put(52,1.05);
+        typeToBondi.put(53,1.05);
+        typeToBondi.put(54,1.05);
+        typeToBondi.put(55,1.05);
+        typeToBondi.put(56,1.05);
+        typeToBondi.put(57,1.05);
+        typeToBondi.put(58,1.05);
+        typeToBondi.put(59,1.05);
+        typeToBondi.put(60,1.05);
+        // PHE
+        typeToBondi.put(61,1.325);
+        typeToBondi.put(62,1.325);
+        typeToBondi.put(63,1.325);
+        typeToBondi.put(64,1.325);
+        typeToBondi.put(65,1.325);
+        typeToBondi.put(66,1.325);
+        typeToBondi.put(67,1.325);
+        typeToBondi.put(68,1.325);
+        typeToBondi.put(69,1.325);
+        // TYR
+        typeToBondi.put(78,1.15);
+        typeToBondi.put(79,1.15);
+        // TYD
+        typeToBondi.put(88,0.938563);
+        // TRP
+        typeToBondi.put(89,1.32475);
+        typeToBondi.put(90,1.32475);
+        typeToBondi.put(91,1.32475);
+        typeToBondi.put(92,1.32475);
+        typeToBondi.put(93,1.32475);
+        typeToBondi.put(94,1.32475);
+        typeToBondi.put(95,1.32475);
+        typeToBondi.put(96,1.32475);
+        typeToBondi.put(97,1.32475);
+        typeToBondi.put(98,1.32475);
+        typeToBondi.put(99,1.32475);
+        typeToBondi.put(100,1.32475);
+        typeToBondi.put(101,1.32475);
+        typeToBondi.put(102,1.32475);
+        typeToBondi.put(103,1.32475);
+        typeToBondi.put(104,1.32475);
+        typeToBondi.put(105,1.32475);
+        // HIS
+        typeToBondi.put(109,1.60);
+        typeToBondi.put(110,1.60);
+        typeToBondi.put(113,1.60);
+        typeToBondi.put(114,1.60);
+        typeToBondi.put(115,1.60);
+        typeToBondi.put(116,1.60);
+        // HID
+        typeToBondi.put(120,1.1375);
+        typeToBondi.put(121,1.1375);
+        typeToBondi.put(124,1.1375);
+        typeToBondi.put(125,1.1375);
+        typeToBondi.put(126,1.1375);
+        // HIE
+        typeToBondi.put(130,1.06175);
+        typeToBondi.put(133,1.06175);
+        typeToBondi.put(134,1.06175);
+        typeToBondi.put(135,1.06175);
+        typeToBondi.put(136,1.06175);
+        // ASP
+        typeToBondi.put(139,1.0555);
+        typeToBondi.put(140,1.0555);
+        // ASH
+        typeToBondi.put(143,1.1125);
+        typeToBondi.put(144,1.1125);
+        typeToBondi.put(145,1.1125);
+        typeToBondi.put(146,1.1125);
+        // ASN
+        typeToBondi.put(150,1.118125);
+        typeToBondi.put(151,1.118125);
+        typeToBondi.put(152,1.118125);
+        // GLU
+        typeToBondi.put(157,1.16);
+        typeToBondi.put(158,1.16);
+        // GLH
+        typeToBondi.put(163,1.06);
+        typeToBondi.put(164,1.06);
+        typeToBondi.put(165,1.06);
+        typeToBondi.put(166,1.06);
+        // GLN
+        typeToBondi.put(172,1.085);
+        typeToBondi.put(173,1.085);
+        typeToBondi.put(174,1.085);
+        // MET
+        typeToBondi.put(179,1.30);
+        // LYS
+        typeToBondi.put(190,1.64);
+        typeToBondi.put(191,1.64);
+        // LYD
+        typeToBondi.put(200,1.562);
+        typeToBondi.put(201,1.562);
+        // ARG
+        typeToBondi.put(208,1.525);
+        typeToBondi.put(209,1.525);
+        typeToBondi.put(210,1.525);
+        typeToBondi.put(211,1.525);
+        typeToBondi.put(212,1.525);
     }
 
     /**
@@ -511,7 +604,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
         fill(use, true);
         for (int i = 0; i < nAtoms; i++) {
             baseRadius[i] = 2.0;
-            overlapScale[i] = 0.69;
+//            overlapScale[i] = 0.69;   // Old value based on small molecules.
+            overlapScale[i] = 0.60;     // New value based on 2015 amino acid GK parameterization.
             int atomicNumber = atoms[i].getAtomicNumber();
             AtomType atomType = atoms[i].getAtomType();
 
@@ -594,29 +688,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 bondiFactor = factor;
                 logger.info(String.format(" (GK) Scaling Atom %3s-%-3s with AtomType %d to %.2f (bondi factor %.2f)",
                         atoms[i].getResidueName(), atoms[i].getName(), atomType.type, baseRadius[i] * bondiFactor, bondiFactor));
-            }
-            // Testing.
-            String scaleEnv = System.getProperty("gk-scaleEnv");
-            if (scaleEnv != null) {
-                if (!scaleEnv.contains("!") || radiiOverride.containsKey(atomType.type)) {
-                    logger.severe("Invalid environment scaling.");
-                }
-                int separator = scaleEnv.indexOf("!");
-                String env = scaleEnv.substring(0, separator);
-                double factor = Double.parseDouble(scaleEnv.substring(separator + 1));
-                if (atomType.environment.contains(env)) {
-                    // Don't scale backbone atoms.
-                    if (!(atomType.environment.endsWith(" N")
-                            || atomType.environment.endsWith(" CA")
-                            || atomType.environment.endsWith(" C")
-                            || atomType.environment.endsWith(" O")
-                            || atomType.environment.endsWith(" HN")
-                            || atomType.environment.endsWith(" HA"))) {
-                        bondiFactor = factor;
-                        logger.info(String.format(" (GK) Scaling Atom %3s-%-3s with AtomType %d to %.2f (bondi factor %.2f)",
-                                atoms[i].getResidueName(), atoms[i].getName(), atomType.type, baseRadius[i] * bondiFactor, bondiFactor));
-                    }
-                }
             }
 
             baseRadius[i] *= bondiFactor;
