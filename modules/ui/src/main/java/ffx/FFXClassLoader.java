@@ -107,6 +107,7 @@ public class FFXClassLoader extends URLClassLoader {
             "org.apache.logging.log4j/log4j-api.jar",
             "org.apache.logging.log4j/log4j-core.jar",
             "org.slf4j/slf4j-api.jar",
+            "org.slf4j/slf4j-simple.jar",
             "edu.uiowa.eng.ffx/algorithms.jar",
             "edu.uiowa.eng.ffx/autoparm.jar",
             "edu.uiowa.eng.ffx/binding.jar",
