@@ -450,6 +450,6 @@ if (runRotamer){
     rotamerOptimization.optimize(RotamerOptimization.Algorithm.SLIDING_WINDOW);
 }
 
-saveAsPDB(active, structureFile);
+saveAsPDB(structureFile);
 
 
