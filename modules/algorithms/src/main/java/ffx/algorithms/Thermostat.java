@@ -41,6 +41,8 @@ import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.lang.String.format;
+
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.LUDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
@@ -255,12 +257,12 @@ public abstract class Thermostat {
     protected void log(Level level) {
         if (logger.isLoggable(level)) {
             StringBuilder sb = new StringBuilder("\n");
-            sb.append(toString());
-            sb.append(String.format(" Target temperature:           %7.2f Kelvin", targetTemperature));
-            sb.append(String.format(" Current temperature:          %7.2f Kelvin", currentTemperature));
-            sb.append(String.format(" Number of variables:          %7d", nVariables));
-            sb.append(String.format(" Number of degrees of freedom: %7d", dof));
-            sb.append(String.format(" kT per degree of freedom:     %7.2f", convert * currentKineticEnergy / (dof * kT)));
+            sb.append(toString()).append("\n");
+            sb.append(format(" Target temperature:           %7.2f Kelvin\n", targetTemperature));
+            sb.append(format(" Current temperature:          %7.2f Kelvin\n", currentTemperature));
+            sb.append(format(" Number of variables:          %7d\n", nVariables));
+            sb.append(format(" Number of degrees of freedom: %7d\n", dof));
+            sb.append(format(" kT per degree of freedom:     %7.2f\n", convert * currentKineticEnergy / (dof * kT)));
             logger.log(level, sb.toString());
         }
     }
@@ -433,11 +435,11 @@ public abstract class Thermostat {
         linearMomentum[2] /= totalMass;
 
         if (print) {
-            StringBuilder sb = new StringBuilder(String.format("\n Center of Mass   (%12.3f,%12.3f,%12.3f)",
+            StringBuilder sb = new StringBuilder(format("\n Center of Mass   (%12.3f,%12.3f,%12.3f)\n",
                     centerOfMass[0], centerOfMass[1], centerOfMass[2]));
-            sb.append(String.format(" Linear Momentum  (%12.3f,%12.3f,%12.3f)",
+            sb.append(format(" Linear Momentum  (%12.3f,%12.3f,%12.3f)\n",
                     linearMomentum[0], linearMomentum[1], linearMomentum[2]));
-            sb.append(String.format(" Angular Momentum (%12.3f,%12.3f,%12.3f)",
+            sb.append(format(" Angular Momentum (%12.3f,%12.3f,%12.3f)",
                     angularMomentum[0], angularMomentum[1], angularMomentum[2]));
             logger.info(sb.toString());
         }

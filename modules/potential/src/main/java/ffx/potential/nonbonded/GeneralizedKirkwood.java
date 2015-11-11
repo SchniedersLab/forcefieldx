@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
 import static org.apache.commons.math3.util.FastMath.PI;
@@ -133,6 +134,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * Empirical scaling of the Bondi radii.
      */
     private final double bondiScale;
+    /**
+     * Cavitation surface tension coefficient (kcal/mol/A^2).
+     */
+    private final double surfaceTension;
 
     private final double bornaiTerm;
     private final double probe;
@@ -163,10 +168,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
     private final InducedGKFieldRegion inducedGKFieldRegion;
     private final GKEnergyRegion gkEnergyRegion;
     private final BornCRRegion bornGradRegion;
-    //private final HydrophobicPMFRegion hydrophobicPMFRegion;
     private final DispersionRegion dispersionRegion;
     private final CavitationRegion cavitationRegion;
-    //private final VolumeRegion volumeRegion;
 
     /**
      * Gradient array for each thread.
@@ -204,7 +207,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * Use base radii defined by AtomType rather than by atomic number.
      */
     private boolean verboseRadii = false;
-
     private boolean fixedRadii = false;
     private boolean bornUseAll = false;
 
@@ -212,57 +214,151 @@ public class GeneralizedKirkwood implements LambdaInterface {
     private static final HashMap<Integer, Double> typeToBondi = new HashMap<>();
 
     static {
-        // ARG: NE, CZ, NH1, NH2, HE, HH11, HH12, HH21, HH22
-        typeToBondi.put(211, 1.240);
-        typeToBondi.put(212, 1.240);
-        typeToBondi.put(213, 1.240);
-        typeToBondi.put(214, 1.240);
-        typeToBondi.put(215, 1.240);
-        // ASH: CG, OD1, OD2, HD2
-        typeToBondi.put(146, 1.200);
-        typeToBondi.put(147, 1.200);
-        typeToBondi.put(148, 1.200);
-        typeToBondi.put(149, 1.200);
-        // ASP: CG, OD1, OD2
-        typeToBondi.put(142, 0.950);
-        typeToBondi.put(143, 0.950);
-        // CYD: SG
-        typeToBondi.put(52, 0.950);
-        // GLH: CD, OE1, OE2, HE2
-        typeToBondi.put(166, 1.110);
-        typeToBondi.put(167, 1.110);
-        typeToBondi.put(168, 1.110);
-        typeToBondi.put(169, 1.110);
-        // GLU: CD, OE1, OE2
-        typeToBondi.put(160, 0.900);
-        typeToBondi.put(161, 0.900);
-        // HID: ND1, HD1, CE1, HE1, NE2
-        typeToBondi.put(123, 1.100);
-        typeToBondi.put(124, 1.100);
-        typeToBondi.put(127, 1.100);
-        typeToBondi.put(128, 1.100);
-        typeToBondi.put(129, 1.100);
-        // HIE: ND1, CE1, HE1, NE2, HE2
-        typeToBondi.put(133, 1.100);
-        typeToBondi.put(136, 1.100);
-        typeToBondi.put(137, 1.100);
-        typeToBondi.put(138, 1.100);
-        typeToBondi.put(139, 1.100);
-        // HIS: ND1, HD1, CE1, HE1, NE2, HE2
-        typeToBondi.put(112, 1.450);
-        typeToBondi.put(113, 1.450);
-        typeToBondi.put(116, 1.450);
-        typeToBondi.put(117, 1.450);
-        typeToBondi.put(118, 1.450);
-        typeToBondi.put(119, 1.450);
-        // LYD: NZ, HZ1, HZ2
-        typeToBondi.put(203, 0.950);
-        typeToBondi.put(204, 0.950);
-        // LYS: NZ, HZ1, HZ2, HZ3
-        typeToBondi.put(193, 1.300);
-        typeToBondi.put(194, 1.300);
-        // TYD: OH
-        typeToBondi.put(91, 0.850);
+        // GLY
+        typeToBondi.put(2,1.15);
+        typeToBondi.put(6,1.15);
+        // ALA
+        typeToBondi.put(8,1.60);
+        typeToBondi.put(12,1.60);
+        typeToBondi.put(13,1.60);
+        typeToBondi.put(14,1.60);
+        // VAL
+        typeToBondi.put(15,1.40);
+        typeToBondi.put(16,1.40);
+        typeToBondi.put(17,1.40);
+        typeToBondi.put(18,1.40);
+        // LEU
+        typeToBondi.put(19,1.40);
+        typeToBondi.put(20,1.40);
+        typeToBondi.put(21,1.40);
+        typeToBondi.put(22,1.40);
+        typeToBondi.put(23,1.40);
+        typeToBondi.put(24,1.40);
+        // ILE
+        typeToBondi.put(25,1.40);
+        typeToBondi.put(26,1.40);
+        typeToBondi.put(27,1.40);
+        typeToBondi.put(28,1.40);
+        typeToBondi.put(29,1.40);
+        typeToBondi.put(30,1.40);
+        typeToBondi.put(31,1.40);
+        typeToBondi.put(32,1.40);
+        // SER
+        typeToBondi.put(35,1.0235);
+        typeToBondi.put(36,1.0235);
+        // THR
+        typeToBondi.put(39,1.25);
+        typeToBondi.put(40,1.25);
+        // CYD
+        typeToBondi.put(43,1.02);
+        typeToBondi.put(44,1.02);
+        typeToBondi.put(48,1.02);
+        typeToBondi.put(49,1.02);
+        // CYS
+        typeToBondi.put(45,1.80);
+        typeToBondi.put(46,1.80);
+        // PRO
+        typeToBondi.put(50,1.05);
+        typeToBondi.put(51,1.05);
+        typeToBondi.put(52,1.05);
+        typeToBondi.put(53,1.05);
+        typeToBondi.put(54,1.05);
+        typeToBondi.put(55,1.05);
+        typeToBondi.put(56,1.05);
+        typeToBondi.put(57,1.05);
+        typeToBondi.put(58,1.05);
+        typeToBondi.put(59,1.05);
+        typeToBondi.put(60,1.05);
+        // PHE
+        typeToBondi.put(61,1.325);
+        typeToBondi.put(62,1.325);
+        typeToBondi.put(63,1.325);
+        typeToBondi.put(64,1.325);
+        typeToBondi.put(65,1.325);
+        typeToBondi.put(66,1.325);
+        typeToBondi.put(67,1.325);
+        typeToBondi.put(68,1.325);
+        typeToBondi.put(69,1.325);
+        // TYR
+        typeToBondi.put(78,1.15);
+        typeToBondi.put(79,1.15);
+        // TYD
+        typeToBondi.put(88,0.938563);
+        // TRP
+        typeToBondi.put(89,1.32475);
+        typeToBondi.put(90,1.32475);
+        typeToBondi.put(91,1.32475);
+        typeToBondi.put(92,1.32475);
+        typeToBondi.put(93,1.32475);
+        typeToBondi.put(94,1.32475);
+        typeToBondi.put(95,1.32475);
+        typeToBondi.put(96,1.32475);
+        typeToBondi.put(97,1.32475);
+        typeToBondi.put(98,1.32475);
+        typeToBondi.put(99,1.32475);
+        typeToBondi.put(100,1.32475);
+        typeToBondi.put(101,1.32475);
+        typeToBondi.put(102,1.32475);
+        typeToBondi.put(103,1.32475);
+        typeToBondi.put(104,1.32475);
+        typeToBondi.put(105,1.32475);
+        // HIS
+        typeToBondi.put(109,1.60);
+        typeToBondi.put(110,1.60);
+        typeToBondi.put(113,1.60);
+        typeToBondi.put(114,1.60);
+        typeToBondi.put(115,1.60);
+        typeToBondi.put(116,1.60);
+        // HID
+        typeToBondi.put(120,1.1375);
+        typeToBondi.put(121,1.1375);
+        typeToBondi.put(124,1.1375);
+        typeToBondi.put(125,1.1375);
+        typeToBondi.put(126,1.1375);
+        // HIE
+        typeToBondi.put(130,1.06175);
+        typeToBondi.put(133,1.06175);
+        typeToBondi.put(134,1.06175);
+        typeToBondi.put(135,1.06175);
+        typeToBondi.put(136,1.06175);
+        // ASP
+        typeToBondi.put(139,1.0555);
+        typeToBondi.put(140,1.0555);
+        // ASH
+        typeToBondi.put(143,1.1125);
+        typeToBondi.put(144,1.1125);
+        typeToBondi.put(145,1.1125);
+        typeToBondi.put(146,1.1125);
+        // ASN
+        typeToBondi.put(150,1.118125);
+        typeToBondi.put(151,1.118125);
+        typeToBondi.put(152,1.118125);
+        // GLU
+        typeToBondi.put(157,1.16);
+        typeToBondi.put(158,1.16);
+        // GLH
+        typeToBondi.put(163,1.06);
+        typeToBondi.put(164,1.06);
+        typeToBondi.put(165,1.06);
+        typeToBondi.put(166,1.06);
+        // GLN
+        typeToBondi.put(172,1.085);
+        typeToBondi.put(173,1.085);
+        typeToBondi.put(174,1.085);
+        // MET
+        typeToBondi.put(179,1.30);
+        // LYS
+        typeToBondi.put(190,1.64);
+        typeToBondi.put(191,1.64);
+        // LYD
+        typeToBondi.put(200,1.562);
+        typeToBondi.put(201,1.562);
+        // ARG
+        typeToBondi.put(208,1.525);
+        typeToBondi.put(209,1.525);
+        typeToBondi.put(210,1.525);
+        typeToBondi.put(211,1.525);
+        typeToBondi.put(212,1.525);
     }
 
     /**
@@ -289,18 +385,18 @@ public class GeneralizedKirkwood implements LambdaInterface {
         String epsilonProp = System.getProperty("gk-epsilon");
         if (epsilonProp != null) {
             this.epsilon = Double.parseDouble(epsilonProp);
-            logger.info(String.format(" (GK) GLOBAL dielectric constant set to %.2f", epsilon));
+            logger.info(format(" (GK) GLOBAL dielectric constant set to %.2f", epsilon));
         }
 
         String bondiOverride = System.getProperty("gk-bondiOverride");
         if (bondiOverride != null) {
             double scale = Double.parseDouble(bondiOverride);
             bondiScale = scale;
-            logger.info(String.format(" (GK) Scaling GLOBAL bondi radii by factor: %.2f", bondiScale));
+            logger.info(format(" (GK) Scaling GLOBAL bondi radii by factor: %.2f", bondiScale));
         } else {
             bondiScale = 1.16;
             if (verboseRadii) {
-                logger.info(String.format(" (GK) Scaling GLOBAL bondi radii by factor: %.2f", bondiScale));
+                logger.info(format(" (GK) Scaling GLOBAL bondi radii by factor: %.2f", bondiScale));
             }
         }
 
@@ -314,7 +410,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 int separator = token.indexOf("r");
                 int type = Integer.parseInt(token.substring(0, separator));
                 double factor = Double.parseDouble(token.substring(separator + 1));
-                logger.info(String.format(" (GK) Scaling AtomType %d with bondi factor %.2f", type, factor));
+                logger.info(format(" (GK) Scaling AtomType %d with bondi factor %.2f", type, factor));
                 radiiOverride.put(type, factor);
             }
         }
@@ -337,6 +433,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
         try {
             String cavModel = forceField.getString(ForceField.ForceFieldString.CAVMODEL, "CAV_DISP").toUpperCase();
             switch (cavModel) {
+                case "CAV":
+                    nonpolarModel = NonPolar.CAV;
+                    break;
                 case "CAV_DISP":
                     nonpolarModel = NonPolar.CAV_DISP;
                     break;
@@ -356,7 +455,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             }
         } catch (Exception ex) {
             nonpolarModel = NonPolar.NONE;
-            logger.warning(String.format(" Error parsing non-polar model (set to NONE) %s", ex.toString()));
+            logger.warning(format(" Error parsing non-polar model (set to NONE) %s", ex.toString()));
         }
         nonPolar = nonpolarModel;
 
@@ -383,8 +482,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         bornUseAll = forceField.getBoolean(ForceField.ForceFieldBoolean.BORN_USE_ALL, false);
 
         probe = forceField.getDouble(ForceField.ForceFieldDouble.PROBE_RADIUS, 1.4);
-        /*double defaultCutoff = crystal.aperiodic() ? 100.0 : 7.0; // If an aperiodic system, the GK cutoff should be 0.
-         cutoff = forceField.getDouble(ForceField.ForceFieldDouble.EWALD_CUTOFF, defaultCutoff);*/
+
         cutoff = particleMeshEwald.getEwaldCutoff();
         cut2 = cutoff * cutoff;
         lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
@@ -409,33 +507,44 @@ public class GeneralizedKirkwood implements LambdaInterface {
         gkEnergyRegion = new GKEnergyRegion(threadCount);
         bornGradRegion = new BornCRRegion(threadCount);
 
-        logger.info(" Continuum Solvation ");
-        logger.info(String.format("  Generalized Kirkwood cut-off:        %8.2f (A)", cutoff));
-        logger.info(String.format("  Non-Polar Model:                     %8s",
-                nonPolar.toString().replace('_', '-')));
-
+        double tensionDefault = 0.08;
         switch (nonPolar) {
-            case CAV_DISP:
-                dispersionRegion = new DispersionRegion(threadCount);
+            case CAV:
                 cavitationRegion = new CavitationRegion(threadCount);
-                //volumeRegion = new VolumeRegion(threadCount);
-                //volumeRegion = null;
-                //hydrophobicPMFRegion = null;
+                tensionDefault = 0.0049;
+                dispersionRegion = null;
+                break;
+            case CAV_DISP:
+                cavitationRegion = new CavitationRegion(threadCount);
+                tensionDefault = 0.080;
+                dispersionRegion = new DispersionRegion(threadCount);
                 break;
             case BORN_CAV_DISP:
-                dispersionRegion = new DispersionRegion(threadCount);
                 cavitationRegion = null;
+                dispersionRegion = new DispersionRegion(threadCount);
                 break;
             case HYDROPHOBIC_PMF:
-            //hydrophobicPMFRegion = new HydrophobicPMFRegion(threadCount);
-            //volumeRegion = null;
             case BORN_SOLV:
             case NONE:
             default:
-                dispersionRegion = null;
                 cavitationRegion = null;
+                dispersionRegion = null;
                 break;
         }
+
+        surfaceTension = forceField.getDouble(ForceField.ForceFieldDouble.SURFACE_TENSION, tensionDefault);
+
+        logger.info(" Continuum Solvation ");
+        logger.info(format("  Generalized Kirkwood Cut-Off:        %8.3f (A)", cutoff));
+        logger.info(format("  Solvent Dielectric:                  %8.3f", epsilon));
+        logger.info(format("  Non-Polar Model:                     %8s",
+                nonPolar.toString().replace('_', '-')));
+
+        if (cavitationRegion != null) {
+            logger.info(format("  Cavitation Probe Radius:             %8.3f (A)", probe));
+            logger.info(format("  Cavitation Surface Tension:          %8.3f (Kcal/mol/A^2)", surfaceTension));
+        }
+
         logger.info("");
     }
 
@@ -495,7 +604,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
         fill(use, true);
         for (int i = 0; i < nAtoms; i++) {
             baseRadius[i] = 2.0;
-            overlapScale[i] = 0.69;
+//            overlapScale[i] = 0.69;   // Old value based on small molecules.
+            overlapScale[i] = 0.60;     // New value based on 2015 amino acid GK parameterization.
             int atomicNumber = atoms[i].getAtomicNumber();
             AtomType atomType = atoms[i].getAtomType();
 
@@ -578,29 +688,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 bondiFactor = factor;
                 logger.info(String.format(" (GK) Scaling Atom %3s-%-3s with AtomType %d to %.2f (bondi factor %.2f)",
                         atoms[i].getResidueName(), atoms[i].getName(), atomType.type, baseRadius[i] * bondiFactor, bondiFactor));
-            }
-            // Testing.
-            String scaleEnv = System.getProperty("gk-scaleEnv");
-            if (scaleEnv != null) {
-                if (!scaleEnv.contains("!") || radiiOverride.containsKey(atomType.type)) {
-                    logger.severe("Invalid environment scaling.");
-                }
-                int separator = scaleEnv.indexOf("!");
-                String env = scaleEnv.substring(0, separator);
-                double factor = Double.parseDouble(scaleEnv.substring(separator + 1));
-                if (atomType.environment.contains(env)) {
-                    // Don't scale backbone atoms.
-                    if (!(atomType.environment.endsWith(" N")
-                            || atomType.environment.endsWith(" CA")
-                            || atomType.environment.endsWith(" C")
-                            || atomType.environment.endsWith(" O")
-                            || atomType.environment.endsWith(" HN")
-                            || atomType.environment.endsWith(" HA"))) {
-                        bondiFactor = factor;
-                        logger.info(String.format(" (GK) Scaling Atom %3s-%-3s with AtomType %d to %.2f (bondi factor %.2f)",
-                                atoms[i].getResidueName(), atoms[i].getName(), atomType.type, baseRadius[i] * bondiFactor, bondiFactor));
-                    }
-                }
             }
 
             baseRadius[i] *= bondiFactor;
@@ -708,11 +795,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
              * Find the nonpolar energy.
              */
             switch (nonPolar) {
-                case HYDROPHOBIC_PMF:
-                    pmfTime = -System.nanoTime();
-                    //hydrophobicPMFRegion.setGradient(gradient);
-                    //parallelTeam.execute(hydrophobicPMFRegion);
-                    pmfTime += System.nanoTime();
+                case CAV:
+                    cavitationTime = -System.nanoTime();
+                    parallelTeam.execute(cavitationRegion);
+                    cavitationTime += System.nanoTime();
                     break;
                 case CAV_DISP:
                     dispersionTime = -System.nanoTime();
@@ -729,12 +815,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     parallelTeam.execute(dispersionRegion);
                     dispersionTime += System.nanoTime();
                     break;
+                case HYDROPHOBIC_PMF:
                 case BORN_SOLV:
                 case NONE:
                 default:
                     break;
             }
-            //parallelTeam.execute(volumeRegion);
         } catch (Exception e) {
             String message = "Fatal exception computing the continuum solvation energy.";
             logger.log(Level.SEVERE, message, e);
@@ -755,20 +841,24 @@ public class GeneralizedKirkwood implements LambdaInterface {
         }
 
         if (print) {
-            logger.info(String.format(" Generalized Kirkwood%16.8f %10.3f",
+            logger.info(format(" Generalized Kirkwood%16.8f %10.3f",
                     gkEnergyRegion.getEnergy(), gkTime * 1e-9));
             switch (nonPolar) {
-                case HYDROPHOBIC_PMF:
-                    //logger.info(String.format(" Hydrophibic PMF     %16.8f %10.3f", hydrophobicPMFRegion.getEnergy(), pmfTime * 1e-9));
+                case CAV:
+                    logger.info(format(" Cavitation          %16.8f %10.3f",
+                            cavitationRegion.getEnergy(), cavitationTime * 1e-9));
                     break;
                 case CAV_DISP:
-                    logger.info(String.format(" Cavitation          %16.8f %10.3f",
+                    logger.info(format(" Cavitation          %16.8f %10.3f",
                             cavitationRegion.getEnergy(), cavitationTime * 1e-9));
-                // Fall through.
-                case BORN_CAV_DISP:
-                    logger.info(String.format(" Dispersion          %16.8f %10.3f",
+                    logger.info(format(" Dispersion          %16.8f %10.3f",
                             dispersionRegion.getEnergy(), dispersionTime * 1e-9));
                     break;
+                case BORN_CAV_DISP:
+                    logger.info(format(" Dispersion          %16.8f %10.3f",
+                            dispersionRegion.getEnergy(), dispersionTime * 1e-9));
+                    break;
+                case HYDROPHOBIC_PMF:
                 case BORN_SOLV:
                 case NONE:
                 default:
@@ -777,6 +867,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
         }
 
         switch (nonPolar) {
+            case CAV:
+                solvationEnergy = gkEnergyRegion.getEnergy() + cavitationRegion.getEnergy();
+                break;
             case CAV_DISP:
                 solvationEnergy = gkEnergyRegion.getEnergy() + dispersionRegion.getEnergy()
                         + cavitationRegion.getEnergy();
@@ -784,8 +877,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             case BORN_CAV_DISP:
                 solvationEnergy = gkEnergyRegion.getEnergy() + dispersionRegion.getEnergy();
                 break;
-            //case HYDROPHOBIC_PMF:
-            //solvationEnergy = gkEnergyRegion.getEnergy() + hydrophobicPMFRegion.getEnergy();
+            case HYDROPHOBIC_PMF:
             case BORN_SOLV:
             case NONE:
             default:
@@ -868,7 +960,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     private enum NonPolar {
 
-        CAV_DISP, HYDROPHOBIC_PMF, BORN_CAV_DISP, BORN_SOLV, NONE
+        CAV, CAV_DISP, HYDROPHOBIC_PMF, BORN_CAV_DISP, BORN_SOLV, NONE
     }
 
     /**
@@ -4559,7 +4651,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
              * Set the sphere radii.
              */
             for (int i = 0; i < nAtoms; i++) {
-                r[i] = rDisp[i];
+                VDWType type = atoms[i].getVDWType();
+                double rmini = type.radius;
+                r[i] = rmini / 2.0;
                 if (r[i] != 0.0) {
                     r[i] = r[i] + probe;
                 }
@@ -4825,7 +4919,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             private final static double pix4 = 4.0 * PI;
             private final static double pid2 = PI / 2.0;
             private final static double eps = 1.0e-8;
-            private final static double surfaceTension = 0.08;
+
             public long time;
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
