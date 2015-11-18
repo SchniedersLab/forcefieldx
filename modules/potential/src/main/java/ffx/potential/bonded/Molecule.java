@@ -584,7 +584,13 @@ public class Molecule extends MSGroup implements Group {
 
     @Override
     public boolean isWater() {
-        return GroupType.WATERNAMES.contains(getName());
+        String molName = getName().toUpperCase();
+        for (String wname : GroupType.WATERNAMES) {
+            if (molName.startsWith(wname)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

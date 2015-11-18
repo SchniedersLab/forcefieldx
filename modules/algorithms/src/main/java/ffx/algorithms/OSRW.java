@@ -52,16 +52,8 @@ import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.util.Arrays.fill;
 
 import org.apache.commons.configuration.CompositeConfiguration;
-
-import static org.apache.commons.math3.util.FastMath.PI;
-import static org.apache.commons.math3.util.FastMath.abs;
-import static org.apache.commons.math3.util.FastMath.exp;
-import static org.apache.commons.math3.util.FastMath.floor;
-import static org.apache.commons.math3.util.FastMath.sin;
-import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.mp.DoubleBuf;
 import edu.rit.pj.Comm;
@@ -71,6 +63,13 @@ import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.parsers.PDBFilter;
+import static java.util.Arrays.fill;
+import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.floor;
+import static org.apache.commons.math3.util.FastMath.sin;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * An implementation of the Orthogonal Space Random Walk algorithm.
@@ -331,7 +330,7 @@ public class OSRW implements Potential {
      * or BOTH. OSRW is not active when only FAST varying energy terms are being
      * propagated.
      */
-    private STATE state = STATE.BOTH;
+    private Potential.STATE state = Potential.STATE.BOTH;
     /**
      * Flag to indicate if OSRW should send and receive counts between processes
      * synchronously or asynchronously. The latter is faster by ~40% because
@@ -580,7 +579,7 @@ public class OSRW implements Potential {
         /**
          * OSRW is propagated with the slowly varying terms.
          */
-        if (state == STATE.FAST) {
+        if (state == Potential.STATE.FAST) {
             return e;
         }
 
@@ -609,7 +608,7 @@ public class OSRW implements Potential {
                 // If a new minimum has been found, save its coordinates.
                 if (minEnergy < osrwOptimum) {
                     osrwOptimum = minEnergy;
-                    logger.info(String.format(" New minimum energy found: %16.8f.", osrwOptimum));
+                    logger.info(String.format(" New minimum energy found: %16.8f (Step %d).", osrwOptimum,energyCount));
                     osrwOptimumCoords = potential.getCoordinates(osrwOptimumCoords);
                 }
 
@@ -1337,7 +1336,7 @@ public class OSRW implements Potential {
         if (osrwOptimum < Double.MAX_VALUE) {
             return osrwOptimumCoords;
         } else {
-            logger.severe("Lambda > 0.9 was not reached. Try increasing number of timesteps.");
+            logger.info("Lambda > 0.9 was not reached. Try increasing number of timesteps.");
             return null;
         }
     }
@@ -1357,7 +1356,7 @@ public class OSRW implements Potential {
      * @return the type of each variable.
      */
     @Override
-    public VARIABLE_TYPE[] getVariableTypes() {
+    public Potential.VARIABLE_TYPE[] getVariableTypes() {
         return potential.getVariableTypes();
     }
 
@@ -1372,7 +1371,7 @@ public class OSRW implements Potential {
     }
 
     @Override
-    public void setEnergyTermState(STATE state) {
+    public void setEnergyTermState(Potential.STATE state) {
         this.state = state;
         potential.setEnergyTermState(state);
     }
@@ -1413,7 +1412,7 @@ public class OSRW implements Potential {
     }
 
     @Override
-    public STATE getEnergyTermState() {
+    public Potential.STATE getEnergyTermState() {
         return state;
     }
 

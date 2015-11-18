@@ -2660,24 +2660,28 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
      * Does not seem to function perfectly yet.
      */
     private void determineFormalCharge() {
-        ChemComp chemComp = ChemCompGroupFactory.getChemComp(resName);
-        if (chemComp != null) {
-            List<ChemCompAtom> ccAtoms = chemComp.getAtoms();
-            for (ChemCompAtom ccAtom : ccAtoms) {
-                String ccName = ccAtom.getAtom_id();
-                if (ccName.equalsIgnoreCase(getName())) {
-                    String formalChargeStr = ccAtom.getCharge();
-                    formalCharge = Integer.parseInt(formalChargeStr);
-                    break;
+        try {
+            ChemComp chemComp = ChemCompGroupFactory.getChemComp(resName);
+            if (chemComp != null) {
+                List<ChemCompAtom> ccAtoms = chemComp.getAtoms();
+                for (ChemCompAtom ccAtom : ccAtoms) {
+                    String ccName = ccAtom.getAtom_id();
+                    if (ccName.equalsIgnoreCase(getName())) {
+                        String formalChargeStr = ccAtom.getCharge();
+                        formalCharge = Integer.parseInt(formalChargeStr);
+                        break;
+                    }
                 }
+            } else {
+                logger.fine(String.format(" Could not find chemical component definition for Atom %s", toString()));
+                formalCharge = 0;
             }
-        } else {
-            logger.fine(String.format(" Could not find chemical component definition for Atom %s", toString()));
+            if (Math.abs(formalCharge) > 9) {
+                formalCharge = 0;
+                // Been getting some ridiculous results.
+            }
+        } catch (Exception ex) {
             formalCharge = 0;
-        }
-        if (Math.abs(formalCharge) > 9) {
-            formalCharge = 0;
-            // Been getting some ridiculous results.
         }
     }
 
