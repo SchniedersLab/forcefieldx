@@ -117,9 +117,6 @@ boolean runRotamer = false;
 // Simulated Annealing
 boolean runSimulatedAnnealing = false;
 
-// Molecular Dynamics to Generate Set
-boolean runMD = false;
-
 // OSRW
 boolean runOSRW = true;
 
@@ -137,7 +134,6 @@ cli.w(longOpt:'write', args:1, argName:'100.0', 'Interval to write out coordinat
 cli.t(longOpt:'temperature', args:1, argName:'298.15', 'Temperature in degrees Kelvin.');
 cli.osrw(longOpt:'OSRW', 'Run OSRW.');
 cli.sa(longOpt:'simulated annealing', 'Run simulated annealing.');
-cli.md(longOpt:'molecular dynamics', args:1, argName:'10','MD generateration of sets (size).');
 cli.rot(longOpt:'rotamer', 'Run rotamer optimization.');
 cli.a(longOpt:'all', 'Run optimal pipeline of algorithms.');
 
@@ -190,11 +186,6 @@ if (options.sa){
 // Run Rotamer Optimization
 if (options.rot){
     runRotamer = true;
-}
-
-// Run MD to obtain set of possible loops
-if (options.md){
-    runMD = true;
 }
 
 // Default
@@ -417,32 +408,13 @@ if (runOSRW && size > 1){
     saveAsPDB(structureFile);
 }
 
-if (runMD){
-    // Number of molecular dynamics steps
-    nSteps = 500000; // nSteps * timeStep = time in femtoseconds
-
-    // Temperature in degrees Kelvin.
-    temperature = 300;
-
-    // Time step in femtoseconds.
-    timeStep = 1;
-
-    // Reset velocities (ignored if a restart file is given)
-    initVelocities = true;
-
-    // Write interval in picoseconds.
-    saveInterval = 1;   //set size = (nSteps * timeStep) / (1000 * saveInterval)
-
-    // Interval to write out restart file (psec)
-    double restartFrequency = 1000;
-
-    MolecularDynamics molDyn = new MolecularDynamics(active, forceFieldEnergy, active.getProperties(), null, thermostat, integrator);
-    molDyn.setFileType(fileType);
-    molDyn.setRestartFrequency(restartFrequency);
-    molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
-}
-
 if (runRotamer){
+    
+    for (int i = 0; i <= atoms.length; i++) {
+        Atom ai = atoms[i - 1];
+        ai.setActive(true);
+        ai.setUse(true);
+    }
     
     Polymer[] polymers = active.getPolymers();
     ArrayList<Residue> fullResidueList = polymers[0].getResidues();
@@ -501,14 +473,9 @@ if (runRotamer){
         System.setProperty("buildLoops", "false");
         logger.info(String.format("Path to best loop " + bestRankDirectory.getPath() + File.separator + bestStructureFile.getName()));
         open(bestRankDirectory.getPath() + File.separator + bestStructureFile.getName()); 
+        structureFile = bestStructureFile;
     }
     
-    for (int i = 0; i <= atoms.length; i++) {
-        Atom ai = atoms[i - 1];
-        ai.setActive(true);
-        ai.setUse(true);
-    }
-
     forceFieldEnergy = new ForceFieldEnergy(active);
     boolean threeBodyTerm = false;
     RotamerOptimization rotamerOptimization;
@@ -539,7 +506,6 @@ if (runRotamer){
 
     RotamerLibrary.measureRotamers(residuesToRO, false);
     rotamerOptimization.optimize(RotamerOptimization.Algorithm.SLIDING_WINDOW);
-    structureFile = bestStructureFile;
 }
 saveAsPDB(structureFile);
 

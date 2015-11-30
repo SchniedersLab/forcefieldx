@@ -457,7 +457,7 @@ public class BondedUtils {
         }
         
         // Basic checking for unspecified H atoms attached to waters.
-        if (residue instanceof Molecule) {
+        if (residue instanceof Molecule && atom == null) {
             Molecule molec = (Molecule) residue;
             if (molec.isWater()) {
                 atom = (Atom) molec.getAtomNode("H");
