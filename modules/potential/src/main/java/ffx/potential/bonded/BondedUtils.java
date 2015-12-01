@@ -443,7 +443,7 @@ public class BondedUtils {
         }
         
         // Basic checking for unspecified H atoms attached to waters.
-        if (residue instanceof Molecule) {
+        if (residue instanceof Molecule && atom == null) {
             Molecule molec = (Molecule) residue;
             String molName = molec.getName().toUpperCase();
             if (molName.startsWith("HOH") || molName.startsWith("WAT") || molName.startsWith("TIP3")) {
