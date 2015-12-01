@@ -136,11 +136,21 @@ cli.osrw(longOpt:'OSRW', 'Run OSRW.');
 cli.sa(longOpt:'simulated annealing', 'Run simulated annealing.');
 cli.rot(longOpt:'rotamer', 'Run rotamer optimization.');
 cli.a(longOpt:'all', 'Run optimal pipeline of algorithms.');
+cli.s(longOpt:'start', args:1, argName:'1', 'Starting atom of existing loop.');
+cli.f(longOpt:'final', args:1, argName:'-1', 'Final atom of an existing loop.');
 
 def options = cli.parse(args);
 
 if (options.h) {
     return cli.usage();
+}
+
+// Starting and ending loop atoms.
+if (options.s && options.f) {
+    loopStart = Integer.parseInt(options.s);
+    loopStop = Integer.parseInt(options.f);
+} else if (options.s || options.f){
+    logger.info("Starting atom and final atom numbers are need to use this option.")
 }
 
 // Load the time steps in femtoseconds.
@@ -198,7 +208,10 @@ if (options.a){
     runOSRW = true;
     runRotamer = true;
 }
-System.setProperty("buildLoops", "true");
+//build loop with PDBFilter if an existing loop is not provided 
+if(!(options.s && options.f)){
+    System.setProperty("buildLoops", "true");
+}
 System.setProperty("vdwterm", "false");
 
 List<String> arguments = options.arguments();
@@ -252,6 +265,15 @@ if (size > 1) {
 ForceFieldEnergy forceFieldEnergy = active.getPotentialEnergy();
 // Set built atoms active/use flags to true (false for other atoms).
 Atom[] atoms = active.getAtomArray();
+
+//if existing loop is used, set loop atoms to match atoms built with PDBFilter
+if(options.s && options.f){
+    for (int i = loopStart; i <= loopStop; i++) {
+        Atom ai = atoms[i - 1];
+        ai.setBuilt(true);
+    }
+}
+
 for (int i = 0; i <= atoms.length; i++) {
     Atom ai = atoms[i - 1];
     if (ai.getBuilt()) {
@@ -416,6 +438,7 @@ if (runRotamer){
         ai.setUse(true);
     }
     
+    forceFieldEnergy = new ForceFieldEnergy(active);
     Polymer[] polymers = active.getChains();
     ArrayList<Residue> fullResidueList = polymers[0].getResidues();
     ArrayList<Residue> residuesToRO = new ArrayList<>();
