@@ -81,6 +81,7 @@ import ffx.potential.nonbonded.NCSRestraint;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.ELEC_FORM;
 import ffx.potential.nonbonded.VanDerWaals;
+import ffx.potential.nonbonded.VanDerWaals.RADIUS_RULE;
 import ffx.potential.nonbonded.VanDerWaals.VDW_FORM;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
@@ -600,17 +601,20 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         if (vanderWaalsTerm) {
             if (name.contains("OPLS")) {
                 vanderWaals = new VanDerWaals(atoms, molecule, crystal, forceField,
-                        parallelTeam, VDW_FORM.LENNARD_JONES_6_12);
+                        parallelTeam, VDW_FORM.LENNARD_JONES_6_12, RADIUS_RULE.GEOMETRIC);
+            } else if (name.contains("AMBER")) {
+                vanderWaals = new VanDerWaals(atoms, molecule, crystal, forceField,
+                        parallelTeam, VDW_FORM.LENNARD_JONES_6_12, RADIUS_RULE.ARITHMETIC);
             } else {
                 vanderWaals = new VanDerWaals(atoms, molecule, crystal, forceField,
-                        parallelTeam, VDW_FORM.BUFFERED_14_7);
+                        parallelTeam, VDW_FORM.BUFFERED_14_7, RADIUS_RULE.CUBIC_MEAN);
             }
         } else {
             vanderWaals = null;
         }
 
         if (multipoleTerm) {
-            if (name.contains("OPLS")) {
+            if (name.contains("OPLS") || name.contains("AMBER")) {
                 particleMeshEwald = new ParticleMeshEwald(atoms, molecule, forceField, crystal,
                         vanderWaals.getNeighborList(), ELEC_FORM.FIXED_CHARGE, parallelTeam);
             } else {

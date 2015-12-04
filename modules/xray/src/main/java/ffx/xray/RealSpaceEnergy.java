@@ -56,13 +56,14 @@ import ffx.xray.RefinementMinimize.RefinementMode;
 public class RealSpaceEnergy implements LambdaInterface, Potential {
 
     private static final Logger logger = Logger.getLogger(RealSpaceEnergy.class.getName());
-    private final RealSpaceData realspacedata;
-    private final RefinementModel refinementmodel;
-    private final Atom atomarray[];
+
+    private final RealSpaceData realSpaceData;
+    private final RefinementModel refinementModel;
+    private final Atom atomArray[];
     private final int nAtoms;
-    private int nxyz;
+    private int nXYZ;
     private RefinementMode refinementMode;
-    private boolean refinexyz = false;
+    private boolean refineXYZ = false;
     protected double[] optimizationScaling = null;
     protected double lambda = 1.0;
     private double totalEnergy;
@@ -71,26 +72,67 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
     /**
      * Diffraction data energy target
      *
-     * @param realspacedata {@link RealSpaceData} object to associate with the
+     * @param realSpaceData {@link RealSpaceData} object to associate with the
      * target
      * @param nxyz number of xyz parameters
      * @param nb number of b factor parameters
      * @param nocc number of occupancy parameters
-     * @param refinementmode the {@link RefinementMinimize.RefinementMode} type
+     * @param refinementMode the {@link RefinementMinimize.RefinementMode} type
      * of refinement requested
      */
-    public RealSpaceEnergy(RealSpaceData realspacedata, int nxyz, int nb, int nocc,
-            RefinementMode refinementmode) {
-        this.realspacedata = realspacedata;
-        this.refinementmodel = realspacedata.getRefinementModel();
-        this.refinementMode = refinementmode;
-        this.atomarray = refinementmodel.atomArray;
-        this.nAtoms = atomarray.length;
-        this.nxyz = nxyz;
+    public RealSpaceEnergy(RealSpaceData realSpaceData, int nxyz, int nb, int nocc,
+            RefinementMode refinementMode) {
+        this.realSpaceData = realSpaceData;
+        this.refinementModel = realSpaceData.getRefinementModel();
+        this.refinementMode = refinementMode;
+        this.atomArray = refinementModel.atomArray;
+        this.nAtoms = atomArray.length;
+        this.nXYZ = nxyz;
 
         setRefinementBooleans();
     }
 
+    /**
+     * <p>
+     * Getter for the field <code>refinementMode</code>.</p>
+     *
+     * @return a {@link ffx.xray.RefinementMinimize.RefinementMode} object.
+     */
+    public RefinementMode getRefinementMode() {
+        return refinementMode;
+    }
+
+    /**
+     * <p>
+     * Setter for the field <code>refinementMode</code>.</p>
+     *
+     * @param refinementMode a
+     * {@link ffx.xray.RefinementMinimize.RefinementMode} object.
+     */
+    public void setRefinementMode(RefinementMode refinementMode) {
+        this.refinementMode = refinementMode;
+        setRefinementBooleans();
+    }
+
+    /**
+     * If the refinement mode has changed, this should be called to update which
+     * parameters are being fit.
+     */
+    private void setRefinementBooleans() {
+        // reset, if previously set
+        refineXYZ = false;
+
+        if (refinementMode == RefinementMode.COORDINATES
+                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS
+                || refinementMode == RefinementMode.COORDINATES_AND_OCCUPANCIES
+                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
+            refineXYZ = true;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double energy(double[] x) {
         double e = 0.0;
@@ -104,15 +146,15 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
             }
         }
 
-        if (refinexyz) {
-            for (Atom a : atomarray) {
+        if (refineXYZ) {
+            for (Atom a : atomArray) {
                 a.setXYZGradient(0.0, 0.0, 0.0);
             }
         }
 
         // target function for real space refinement
-        if (refinexyz) {
-            e = realspacedata.computeRealSpaceTarget();
+        if (refineXYZ) {
+            e = realSpaceData.computeRealSpaceTarget();
         }
 
         /**
@@ -145,15 +187,15 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
             }
         }
 
-        if (refinexyz) {
-            for (Atom a : atomarray) {
+        if (refineXYZ) {
+            for (Atom a : atomArray) {
                 a.setXYZGradient(0.0, 0.0, 0.0);
             }
         }
 
         // target function for real space refinement
-        if (refinexyz) {
-            e = realspacedata.computeRealSpaceTarget();
+        if (refineXYZ) {
+            e = realSpaceData.computeRealSpaceTarget();
 
             // pack gradients into gradient array
             getXYZGradients(g);
@@ -174,71 +216,33 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
     }
 
     /**
-     * <p>
-     * Getter for the field <code>refinementMode</code>.</p>
-     *
-     * @return a {@link ffx.xray.RefinementMinimize.RefinementMode} object.
-     */
-    public RefinementMode getRefinementMode() {
-        return refinementMode;
-    }
-
-    /**
-     * <p>
-     * Setter for the field <code>refinementMode</code>.</p>
-     *
-     * @param refinementmode a
-     * {@link ffx.xray.RefinementMinimize.RefinementMode} object.
-     */
-    public void setRefinementMode(RefinementMode refinementmode) {
-        this.refinementMode = refinementmode;
-        setRefinementBooleans();
-    }
-
-    /**
-     * if the refinement mode has changed, this should be called to update which
-     * parameters are being fit
-     */
-    private void setRefinementBooleans() {
-        // reset, if previously set
-        refinexyz = false;
-
-        if (refinementMode == RefinementMode.COORDINATES
-                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS
-                || refinementMode == RefinementMode.COORDINATES_AND_OCCUPANCIES
-                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-            refinexyz = true;
-        }
-    }
-
-    /**
-     * get the number of xyz parameters being fit
+     * Get the number of xyz parameters being fit.
      *
      * @return the number of xyz parameters
      */
     public int getNXYZ() {
-        return nxyz;
+        return nXYZ;
     }
 
     /**
-     * set the number of xyz parameters
+     * Set the number of xyz parameters.
      *
      * @param nxyz requested number of xyz parameters
      */
     public void setNXYZ(int nxyz) {
-        this.nxyz = nxyz;
+        this.nXYZ = nxyz;
     }
 
     /**
-     * fill gradient array with xyz gradients
+     * Fill gradient array with xyz gradient.
      *
-     * @param g array to add gradients to
+     * @param g array to add gradient to
      */
     public void getXYZGradients(double g[]) {
         assert (g != null);
         double grad[] = new double[3];
         int index = 0;
-        for (Atom a : atomarray) {
+        for (Atom a : atomArray) {
             a.getXYZGradient(grad);
             g[index++] = grad[0];
             g[index++] = grad[1];
@@ -256,8 +260,8 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         int index = 0;
         fill(x, 0.0);
 
-        if (refinexyz) {
-            for (Atom a : atomarray) {
+        if (refineXYZ) {
+            for (Atom a : atomArray) {
                 a.getXYZ(xyz);
                 x[index++] = xyz[0];
                 x[index++] = xyz[1];
@@ -269,7 +273,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
     }
 
     /**
-     * set atomic xyz coordinates based on current position
+     * Set atomic xyz coordinates based on current position.
      *
      * @param x current parameters to set coordinates with
      */
@@ -278,7 +282,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         assert (x != null);
         double xyz[] = new double[3];
         int index = 0;
-        for (Atom a : atomarray) {
+        for (Atom a : atomArray) {
             xyz[0] = x[index++];
             xyz[1] = x[index++];
             xyz[2] = x[index++];
@@ -307,10 +311,10 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
      */
     @Override
     public double[] getMass() {
-        double mass[] = new double[nxyz];
+        double mass[] = new double[nXYZ];
         int i = 0;
-        if (refinexyz) {
-            for (Atom a : atomarray) {
+        if (refineXYZ) {
+            for (Atom a : atomArray) {
                 double m = a.getMass();
                 mass[i++] = m;
                 mass[i++] = m;
@@ -334,7 +338,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
      */
     @Override
     public int getNumberOfVariables() {
-        return nxyz;
+        return nXYZ;
     }
 
     /**
@@ -344,7 +348,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
     public void setLambda(double lambda) {
         if (lambda <= 1.0 && lambda >= 0.0) {
             this.lambda = lambda;
-            realspacedata.setLambda(lambda);
+            realSpaceData.setLambda(lambda);
         } else {
             String message = String.format("Lambda value %8.3f is not in the range [0..1].", lambda);
             logger.warning(message);
@@ -364,7 +368,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
      */
     @Override
     public double getdEdL() {
-        return realspacedata.getdEdL();
+        return realSpaceData.getdEdL();
     }
 
     /**
@@ -380,7 +384,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
      */
     @Override
     public void getdEdXdL(double[] gradient) {
-        realspacedata.getdEdXdL(gradient);
+        realSpaceData.getdEdXdL(gradient);
     }
 
     /**

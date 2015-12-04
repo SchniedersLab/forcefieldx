@@ -63,6 +63,7 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.VanDerWaals;
+import ffx.potential.nonbonded.VanDerWaals.RADIUS_RULE;
 import ffx.potential.nonbonded.VanDerWaals.VDW_FORM;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
@@ -245,7 +246,7 @@ public class Energy {
 
             int molecule[] = molecularAssembly.getMoleculeNumbers();
             vanderWaals = new VanDerWaals(atoms, molecule, crystal, forceField,
-                    parallelTeam, VDW_FORM.BUFFERED_14_7);
+                    parallelTeam, VDW_FORM.BUFFERED_14_7, RADIUS_RULE.CUBIC_MEAN);
             pme2 = new PME_2(forceField, atoms, crystal, parallelTeam, vanderWaals.getNeighborLists(), key);
             pme2.propyze = true;
             pme2.init_prms();

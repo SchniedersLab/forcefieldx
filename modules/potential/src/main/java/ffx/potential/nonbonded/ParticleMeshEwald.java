@@ -713,9 +713,14 @@ public class ParticleMeshEwald implements LambdaInterface {
             m14scale = forceField.getDouble(ForceFieldDouble.MPOLE_14_SCALE, 0.4);
             m15scale = forceField.getDouble(ForceFieldDouble.MPOLE_15_SCALE, 0.8);
         } else {
+            double mpole14 = 0.5;
+            String name = forceField.toString().toUpperCase();
+            if (name.contains("AMBER")) {
+                mpole14 = 1.0 / 1.2;
+            }
             m12scale = forceField.getDouble(ForceFieldDouble.MPOLE_12_SCALE, 0.0);
             m13scale = forceField.getDouble(ForceFieldDouble.MPOLE_13_SCALE, 0.0);
-            m14scale = forceField.getDouble(ForceFieldDouble.MPOLE_14_SCALE, 0.5);
+            m14scale = forceField.getDouble(ForceFieldDouble.MPOLE_14_SCALE, mpole14);
             m15scale = forceField.getDouble(ForceFieldDouble.MPOLE_15_SCALE, 1.0);
         }
         d11scale = forceField.getDouble(ForceFieldDouble.DIRECT_11_SCALE, 0.0);

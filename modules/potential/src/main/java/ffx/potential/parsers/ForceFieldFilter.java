@@ -97,6 +97,27 @@ public class ForceFieldFilter {
     private final CompositeConfiguration properties;
     private final File forceFieldFile;
 
+    private boolean convertRadiusToDiameter = false;
+    private boolean convertSigmaToRMin = false;
+    private double torsionScale = -1.0;
+    private double improperTorsionScale = -1.0;
+
+    public void setConvertRadiusToDiameter(boolean convertRadiusToDiameter) {
+        this.convertRadiusToDiameter = convertRadiusToDiameter;
+    }
+
+    public void setConvertSigmaToRMin(boolean convertSigmaToRMin) {
+        this.convertSigmaToRMin = convertSigmaToRMin;
+    }
+
+    public void setTorsionScale(double torsionScale) {
+        this.torsionScale = torsionScale;
+    }
+
+    public void setImproperTorsionScale(double improperTorsionScale) {
+        this.improperTorsionScale = improperTorsionScale;
+    }
+
     /**
      * <p>
      * Constructor for ForceFieldFilter.</p>
@@ -458,7 +479,8 @@ public class ForceFieldFilter {
 
         String forceFieldName = forceField.toString().toUpperCase();
         AngleType angleType;
-        if (forceFieldName.contains("OPLS")) {
+        if (forceFieldName.contains("OPLS")
+                || forceFieldName.contains("AMBER")) {
             angleType = new AngleType(atomClasses, forceConstant,
                     newBondAngle, AngleType.AngleFunction.HARMONIC);
         } else {
@@ -580,7 +602,8 @@ public class ForceFieldFilter {
             double distance = Double.parseDouble(tokens[4]);
             String forceFieldName = forceField.toString().toUpperCase();
             BondType bondType;
-            if (forceFieldName.contains("OPLS")) {
+            if (forceFieldName.contains("OPLS")
+                    || forceFieldName.contains("AMBER")) {
                 bondType = new BondType(atomClasses, forceConstant,
                         distance, BondType.BondFunction.HARMONIC);
             } else {
@@ -857,6 +880,9 @@ public class ForceFieldFilter {
             double k = Double.parseDouble(tokens[5]);
             double phase = Double.parseDouble(tokens[6]);
             int period = Integer.parseInt(tokens[7]);
+            if (improperTorsionScale > 0.0) {
+                k = k * improperTorsionScale;
+            }
             ImproperTorsionType improperType = new ImproperTorsionType(atomClasses,
                     k, phase, period);
             forceField.addForceFieldType(improperType);
@@ -886,6 +912,9 @@ public class ForceFieldFilter {
                 amplitude[i] = Double.parseDouble(tokens[index++]);
                 phase[i] = Double.parseDouble(tokens[index++]);
                 periodicity[i] = Integer.parseInt(tokens[index++]);
+                if (torsionScale > 0.0) {
+                    amplitude[i] = amplitude[i] * torsionScale;
+                }
             }
             TorsionType torsionType = new TorsionType(atomClasses, amplitude,
                     phase, periodicity);
@@ -1006,6 +1035,13 @@ public class ForceFieldFilter {
             double reductionFactor = -1.0;
             if (tokens.length == 5) {
                 reductionFactor = Double.parseDouble(tokens[4]);
+            }
+            if (convertRadiusToDiameter) {
+                radius = radius * 2.0;
+            }
+            if (convertSigmaToRMin) {
+                double twoSix = 1.122462048309372981;
+                radius = radius * twoSix;
             }
             VDWType vdwType = new VDWType(atomType, radius, wellDepth,
                     reductionFactor);

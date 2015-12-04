@@ -79,6 +79,7 @@ import ffx.xray.DiffractionFile;
 import ffx.xray.RealSpaceData;
 import ffx.xray.RealSpaceFile;
 import ffx.xray.RefinementEnergy;
+import ffx.xray.RefinementMinimize;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
 // Default convergence criteria.

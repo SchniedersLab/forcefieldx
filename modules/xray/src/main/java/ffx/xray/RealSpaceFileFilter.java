@@ -46,7 +46,6 @@ import ffx.crystal.Crystal;
  * RealSpaceFileFilter interface.</p>
  *
  * @author Timothy D. Fenn
- *
  */
 public interface RealSpaceFileFilter {
 
@@ -65,11 +64,11 @@ public interface RealSpaceFileFilter {
      * read in Real Space file
      *
      * @param filename file to read in
-     * @param refinementdata the {@link RealSpaceRefinementData} object to fill
+     * @param refinementData the {@link RealSpaceRefinementData} object to fill
      * in
      * @param properties system properties
      * @return true if read in properly
      */
-    boolean readFile(String filename, RealSpaceRefinementData refinementdata,
+    boolean readFile(String filename, RealSpaceRefinementData refinementData,
             CompositeConfiguration properties);
 }

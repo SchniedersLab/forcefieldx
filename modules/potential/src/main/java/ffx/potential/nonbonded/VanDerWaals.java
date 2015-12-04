@@ -92,6 +92,10 @@ public class VanDerWaals implements MaskingInterface,
         BUFFERED_14_7, LENNARD_JONES_6_12
     };
 
+    public enum RADIUS_RULE {
+        ARITHMETIC, CUBIC_MEAN, GEOMETRIC
+    };
+
     private Resolution resolution = null;
 
     /**
@@ -262,6 +266,7 @@ public class VanDerWaals implements MaskingInterface,
     private final MultiplicativeSwitch multiplicativeSwitch;
 
     private VDW_FORM vdwForm = VDW_FORM.BUFFERED_14_7;
+    private RADIUS_RULE radiusRule = RADIUS_RULE.CUBIC_MEAN;
 
     /**
      * The VanDerWaals class constructor.
@@ -272,16 +277,18 @@ public class VanDerWaals implements MaskingInterface,
      * @param forceField the ForceField parameters to apply.
      * @param parallelTeam The parallel environment.
      * @param vdwForm the van der Waals functional form.
+     * @param radiusRule the van der Waals radius combining rule.
      *
      * @since 1.0
      */
     public VanDerWaals(Atom atoms[], int molecule[], Crystal crystal, ForceField forceField,
-            ParallelTeam parallelTeam, VDW_FORM vdwForm) {
+            ParallelTeam parallelTeam, VDW_FORM vdwForm, RADIUS_RULE radiusRule) {
         this.atoms = atoms;
         this.molecule = molecule;
         this.crystal = crystal;
         this.parallelTeam = parallelTeam;
         this.vdwForm = vdwForm;
+        this.radiusRule = radiusRule;
         this.forceField = forceField;
 
         nAtoms = atoms.length;
@@ -325,7 +332,6 @@ public class VanDerWaals implements MaskingInterface,
         /**
          * Atom Class numbering starts at 1.
          */
-        double twosix = 1.122462048309372981;
         for (VDWType vdwi : vdwTypes.values()) {
             int i = vdwi.atomClass;
             double ri = 0.5 * vdwi.radius;
@@ -342,12 +348,19 @@ public class VanDerWaals implements MaskingInterface,
                 double se2 = sqrt(e2);
                 double radmin;
                 double eps;
+                switch (radiusRule) {
+                    case ARITHMETIC:
+                        radmin = ri + rj;
+                        break;
+                    case GEOMETRIC:
+                        radmin = 2.0 * sqrt(ri) * sqrt(rj);
+                        break;
+                    default:
+                    case CUBIC_MEAN:
+                        radmin = 2.0 * (ri3 + rj3) / (ri2 + rj2);
+                }
                 switch (vdwForm) {
                     case LENNARD_JONES_6_12:
-                        /**
-                         * Geometric
-                         */
-                        radmin = 2.0 * sqrt(ri * twosix) * sqrt(rj * twosix);
                         /**
                          * Geometric
                          */
@@ -355,10 +368,6 @@ public class VanDerWaals implements MaskingInterface,
                         break;
                     default:
                     case BUFFERED_14_7:
-                        /**
-                         * Cubic-mean.
-                         */
-                        radmin = 2.0 * (ri3 + rj3) / (ri2 + rj2);
                         /**
                          * HHG
                          */
@@ -433,7 +442,7 @@ public class VanDerWaals implements MaskingInterface,
             vdwcut = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, crystal.a / 2.0 - (buff + 1.0));
             // If aperiodic, set the vdW cutoff to cover everything.
         }
-        
+
         // Ensure van der Waals cutoff is at least as large as Ewald cutoff.
         double ewaldOff = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, 7.0);
         if (ewaldOff > vdwcut) {
@@ -441,7 +450,7 @@ public class VanDerWaals implements MaskingInterface,
             logger.info(" The van der Waals cutoff must be at least as large as the Ewald cutoff.");
             logger.info(String.format(" The van der Waals cutoff has been set to %f", ewaldOff));
         }
-        
+
         double vdwtaper = 0.9 * vdwcut;
         cut = vdwtaper;
         off = vdwcut;

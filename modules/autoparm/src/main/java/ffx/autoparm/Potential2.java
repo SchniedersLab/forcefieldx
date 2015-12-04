@@ -65,6 +65,7 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.VanDerWaals;
+import ffx.potential.nonbonded.VanDerWaals.RADIUS_RULE;
 import ffx.potential.nonbonded.VanDerWaals.VDW_FORM;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
@@ -218,7 +219,7 @@ public class Potential2 implements OptimizationListener {
         nSymm = crystal.spaceGroup.getNumberOfSymOps();
         int molecule[] = molecularAssembly.getMoleculeNumbers();
         VanDerWaals vanderWaals = new VanDerWaals(atoms, molecule,
-                crystal, forceField, parallelTeam, VDW_FORM.BUFFERED_14_7);
+                crystal, forceField, parallelTeam, VDW_FORM.BUFFERED_14_7, RADIUS_RULE.CUBIC_MEAN);
         //RENAME
         //store_key_file(structure_prm);
         store_key_file(structure_key);

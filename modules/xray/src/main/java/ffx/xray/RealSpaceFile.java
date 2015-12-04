@@ -58,12 +58,13 @@ import ffx.potential.MolecularAssembly;
 public class RealSpaceFile {
 
     private static final Logger logger = Logger.getLogger(RealSpaceFile.class.getName());
+
     protected final String filename;
     protected final double weight;
-    protected final RealSpaceFileFilter realspacefilter;
+    protected final RealSpaceFileFilter realSpaceFileFilter;
 
     /**
-     * read in a Real Space density file, weight set to 1.0
+     * Read in a Real Space density file and set weight set to 1.0.
      *
      * @param filename file name to read in
      */
@@ -72,7 +73,7 @@ public class RealSpaceFile {
     }
 
     /**
-     * read in a Real Space density file
+     * Read in a Real Space density file.
      *
      * @param filename file name to read in
      * @param weight the weight of the data
@@ -84,9 +85,9 @@ public class RealSpaceFile {
         }
 
         if (isExtension(filename, "map")) {
-            realspacefilter = new CCP4MapFilter();
+            realSpaceFileFilter = new CCP4MapFilter();
         } else {
-            realspacefilter = null;
+            realSpaceFileFilter = null;
         }
 
         this.filename = filename;
@@ -94,8 +95,8 @@ public class RealSpaceFile {
     }
 
     /**
-     * read in a Real Space density file based on the molecular assembly
-     * filename, using a weight of 1.0 and neutron value of false
+     * Read in a Real Space density file based on the molecular assembly
+     * filename, using a weight of 1.0 and neutron value of false.
      *
      * @param assembly {@link ffx.potential.MolecularAssembly} from which a
      * filename will be determined
@@ -105,8 +106,8 @@ public class RealSpaceFile {
     }
 
     /**
-     * read in a Real Space density file based on the molecular assembly
-     * filename, using a weight of 1.0
+     * Read in a Real Space density file based on the molecular assembly
+     * filename, using a weight of 1.0.
      *
      * @param assembly {@link ffx.potential.MolecularAssembly} from which a
      * filename will be determined
@@ -116,8 +117,8 @@ public class RealSpaceFile {
     }
 
     /**
-     * read in a Real Space density file based on the molecular assembly
-     * filename, using a weight of 1.0
+     * Read in a Real Space density file based on the molecular assembly
+     * filename, using a weight of 1.0.
      *
      * @param assembly {@link ffx.potential.MolecularAssembly} from which a
      * filename will be determined
@@ -129,12 +130,13 @@ public class RealSpaceFile {
         File tmp = new File(name + ".map");
         if (tmp.exists()) {
             logger.info(" Data file: " + tmp.getName());
-            realspacefilter = new CCP4MapFilter();
+            realSpaceFileFilter = new CCP4MapFilter();
         } else {
             logger.severe(" No input data was found.");
-            realspacefilter = null;
+            realSpaceFileFilter = null;
         }
-        String filenameHolder; // Compiler complains if I set this.filename directly.
+
+        String filenameHolder;
         try {
             Path filepath = Paths.get(tmp.getCanonicalPath());
             Path pwdPath = Paths.get(new File("").getCanonicalPath());
@@ -148,7 +150,7 @@ public class RealSpaceFile {
     }
 
     /**
-     * return the weight of this dataset
+     * Return the weight of this dataset.
      *
      * @return weight wA
      */

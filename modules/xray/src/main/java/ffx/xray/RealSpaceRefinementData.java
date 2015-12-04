@@ -42,7 +42,6 @@ package ffx.xray;
  * RealSpaceRefinementData class.</p>
  *
  * @author Timothy D. Fenn
- *
  */
 public class RealSpaceRefinementData {
 
