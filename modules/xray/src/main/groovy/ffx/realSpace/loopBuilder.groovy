@@ -449,7 +449,7 @@ if (runRotamer){
 
     RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
 
-    Polymer[] polymers = active.getPolymers();
+    Polymer[] polymers = active.getChains();
     ArrayList<Residue> fullResidueList = polymers[0].getResidues();
     ArrayList<Residue> residuesToRO = new ArrayList<>();
 

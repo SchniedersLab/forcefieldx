@@ -161,7 +161,7 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
          * Count the number of hydrogens attached to the central atom, but that
          * are not part of the angle.
          */
-        ArrayList<Bond> ba = atoms[1].getFFXBonds();
+        ArrayList<Bond> ba = atoms[1].getBonds();
         nh = 0;
         for (Bond b1 : ba) {
             if (b1 != bonds[0] && b1 != bonds[1]) {
@@ -271,7 +271,7 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
      */
     public Atom getTrigonalAtom() {
         if (atoms[1].isTrigonal()) {
-            for (Bond b : atoms[1].getFFXBonds()) {
+            for (Bond b : atoms[1].getBonds()) {
                 if (b != bonds[0] && b != bonds[1]) {
                     return b.get1_2(atoms[1]);
                 }

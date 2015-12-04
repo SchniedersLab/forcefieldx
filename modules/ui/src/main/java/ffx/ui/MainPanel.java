@@ -101,7 +101,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.SystemUtils;
-import org.biojava.nbio.structure.Structure;
+import org.biojava.bio.structure.Structure;
 
 import ffx.crystal.Crystal;
 import ffx.potential.MolecularAssembly;
@@ -140,7 +140,6 @@ import ffx.utilities.Keyword;
 import ffx.utilities.StringUtils;
 
 import static ffx.utilities.StringUtils.pdbForID;
-import org.biojava.nbio.structure.StructureException;
 
 /**
  * The MainPanel class is the main container for Force Field X, handles file
@@ -1515,44 +1514,30 @@ public final class MainPanel extends JPanel implements ActionListener,
      * @return an array of {@link ffx.ui.FFXSystem} objects.
      */
     public synchronized FFXSystem[] openWait(String file) {
-        File fileopen = new File(file);
-        if (fileopen.exists() && fileopen.isFile()) {
-            Thread thread = open(file);
-            while (thread != null && thread.isAlive()) {
-                try {
-                    wait(1);
-                } catch (InterruptedException e) {
-                    String message = "Exception waiting for " + file + " to open.";
-                    logger.log(Level.WARNING, message, e);
-                    return null;
-                }
-
-            }
-
-            MolecularAssembly systems[] = activeFilter.getMolecularAssemblys();
-            if (systems != null) {
-                int n = systems.length;
-                FFXSystem ffxSystems[] = new FFXSystem[n];
-                FFXSystem allSystems[] = getHierarchy().getSystems();
-                int total = allSystems.length;
-                for (int i = 0; i < n; i++) {
-                    ffxSystems[i] = allSystems[total - n + i];
-                }
-                return ffxSystems;
-            } else {
-                return null;
-            }
-        } else {
+        Thread thread = open(file);
+        while (thread != null && thread.isAlive()) {
             try {
-                /*AtomCache cache = new AtomCache();
-                cache.getFileParsingParams().setLoadChemCompInfo(true);
-                StructureIO.setAtomCache(cache);
-                Structure struct = StructureIO.getStructure(file);*/
-                Structure struct = PotentialsDataConverter.loadFromPDB(file);
-                return convertWait(struct, null);
-            } catch (IOException | StructureException ex) {
+                wait(1);
+            } catch (InterruptedException e) {
+                String message = "Exception waiting for " + file + " to open.";
+                logger.log(Level.WARNING, message, e);
                 return null;
             }
+
+        }
+
+        MolecularAssembly systems[] = activeFilter.getMolecularAssemblys();
+        if (systems != null) {
+            int n = systems.length;
+            FFXSystem ffxSystems[] = new FFXSystem[n];
+            FFXSystem allSystems[] = getHierarchy().getSystems();
+            int total = allSystems.length;
+            for (int i = 0; i < n; i++) {
+                ffxSystems[i] = allSystems[total - n + i];
+            }
+            return ffxSystems;
+        } else {
+            return null;
         }
     }
 

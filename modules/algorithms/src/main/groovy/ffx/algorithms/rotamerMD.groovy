@@ -547,7 +547,7 @@ if (useOrigCoordsRotamer) {
 if (algorithm != 5) {
     if (options.x) {
         ArrayList<Residue> residueList = new ArrayList<Residue>();
-        Polymer[] polymers = active.getPolymers();
+        Polymer[] polymers = active.getChains();
         int nPolymers = polymers.length;
         for (int p=0; p<nPolymers; p++) {
             Polymer polymer = polymers[p];
@@ -555,7 +555,7 @@ if (algorithm != 5) {
             int nResidues = residues.size();
             for (int i=0; i<nResidues; i++) {
                 Residue residue = residues.get(i);
-                Rotamer[] rotamers = residue.getRotamers();
+                Rotamer[] rotamers = RotamerLibrary.getRotamers(residue);
                 if (rotamers != null) {
                     int nrot = rotamers.length;
                     if (nrot == 1) {
@@ -582,7 +582,7 @@ if (algorithm != 5) {
     }
 } else {
     ArrayList<Residue> residueList = new ArrayList<Residue>();
-    Polymer[] polymers = active.getPolymers();
+    Polymer[] polymers = active.getChains();
     int nPolymers = polymers.length;
     for (int p=0; p<nPolymers; p++) {
         Polymer polymer = polymers[p];
@@ -590,7 +590,7 @@ if (algorithm != 5) {
         int nResidues = residues.size();
         for (int i=0; i<nResidues; i++) {
             Residue residue = residues.get(i);
-            Rotamer[] rotamers = residue.getRotamers();
+            Rotamer[] rotamers = RotamerLibrary.getRotamers(residue);
             if (rotamers != null) {
                 int nrot = rotamers.length;
                 if (nrot == 1) {

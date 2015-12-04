@@ -190,7 +190,7 @@ public final class Utilities {
             return;
         }
         residue.addMSNode(phosphate);
-        for (Bond b : phosphate.getFFXBonds()) {
+        for (Bond b : phosphate.getBonds()) {
             Atom oxygen = b.get1_2(phosphate);
             // Add oxygens not bonded to a Carbon
             if (numberOfBondsWith(oxygen, 6) == 0) {
@@ -264,7 +264,7 @@ public final class Utilities {
             Atom alpha = backbone.get(start + 1);
             Atom carbonyl = backbone.get(start + 2);
             Atom beta = null;
-            List alphabonds = alpha.getFFXBonds();
+            List alphabonds = alpha.getBonds();
             Bond abond;
             for (ListIterator li = alphabonds.listIterator(); li.hasNext();) {
                 abond = (Bond) li.next();
@@ -279,7 +279,7 @@ public final class Utilities {
             if (beta == null) {
                 return null;
             }
-            List betabonds = beta.getFFXBonds();
+            List betabonds = beta.getBonds();
             Atom gamma;
             int carboncount = 0;
             for (ListIterator li = betabonds.listIterator(); li.hasNext();) {
@@ -327,7 +327,6 @@ public final class Utilities {
         if (residue == null) {
             residue = new Residue(resname, Residue.ResidueType.UNK);
         }
-        //residue.findParentPolymer();
         // Create the Residue group
         for (ListIterator li = atoms.listIterator(); li.hasNext();) {
             a = (Atom) li.next();
@@ -383,7 +382,7 @@ public final class Utilities {
                         Molecule water = new Molecule("Water-" + waterNum);
                         water.addMSNode(atom);
                         atoms.remove(0);
-                        List<Bond> bonds = atom.getFFXBonds();
+                        List<Bond> bonds = atom.getBonds();
                         for (Bond b : bonds) {
                             Atom hydrogen = b.get1_2(atom);
                             water.addMSNode(hydrogen);
@@ -421,7 +420,6 @@ public final class Utilities {
             Character chainID = getChainID(num);
             String segID = getSegID(chainID, segIDs);
             Polymer c = new Polymer(chainID, segID, true);
-            c.setStructure(molecularAssembly);
             if (backbone.size() > 2 && divideBackbone(backbone, c)) {
                 for (Atom a : c.getAtomList()) {
                     atoms.remove(a);
@@ -494,7 +492,7 @@ public final class Utilities {
             return;
         }
         atoms.add(seed);
-        for (Bond b : seed.getFFXBonds()) {
+        for (Bond b : seed.getBonds()) {
             Atom nextAtom = b.get1_2(seed);
             if (nextAtom.getParent() != null) {
                 continue;
@@ -515,10 +513,10 @@ public final class Utilities {
      */
     public static int countCO(Atom adjacent) {
         int total = 0;
-        for (Bond b : adjacent.getFFXBonds()) {
+        for (Bond b : adjacent.getBonds()) {
             Atom carbonyl = b.get1_2(adjacent);
             if (carbonyl.getAtomicNumber() == 6) {
-                for (Bond b2 : carbonyl.getFFXBonds()) {
+                for (Bond b2 : carbonyl.getBonds()) {
                     Atom oxygen = b2.get1_2(carbonyl);
                     if (oxygen.getAtomicNumber() == 8) {
                         total++;
@@ -790,7 +788,7 @@ public final class Utilities {
      * @return Atom
      */
     public static Atom findAlphaCarbon(Atom a) {
-        for (Bond b : a.getFFXBonds()) {
+        for (Bond b : a.getBonds()) {
             Atom alpha = b.get1_2(a);
             if (alpha.getAtomicNumber() == 6
                     && findCO(alpha) != null
@@ -810,7 +808,7 @@ public final class Utilities {
      * @return Atom
      */
     public static Atom findBondWith(Atom a, int atomicNumber) {
-        for (Bond b : a.getFFXBonds()) {
+        for (Bond b : a.getBonds()) {
             Atom other = b.get1_2(a);
             if (other.getAtomicNumber() == atomicNumber) {
                 return other;
@@ -827,7 +825,7 @@ public final class Utilities {
      * @return Atom
      */
     public static Atom findC5(Atom adjacent) {
-        for (Bond b : adjacent.getFFXBonds()) {
+        for (Bond b : adjacent.getBonds()) {
             Atom carbon = b.get1_2(adjacent);
             if (carbon.getAtomicNumber() == 6 && numberOfBondsWith(carbon, 6) == 1 && numberOfBondsWith(carbon, 8) == 1) {
                 return carbon;
@@ -843,12 +841,12 @@ public final class Utilities {
      * @return Atom
      */
     public static Atom findCarbonyl(Atom adjacent) {
-        for (Bond b : adjacent.getFFXBonds()) {
+        for (Bond b : adjacent.getBonds()) {
             Atom carbonyl = b.get1_2(adjacent);
             if (carbonyl.getAtomicNumber() == 6) {
-                for (Bond b2 : carbonyl.getFFXBonds()) {
+                for (Bond b2 : carbonyl.getBonds()) {
                     Atom oxygen = b2.get1_2(carbonyl);
-                    if (oxygen.getAtomicNumber() == 8 && oxygen.getFFXBonds().size() == 1) {
+                    if (oxygen.getAtomicNumber() == 8 && oxygen.getBonds().size() == 1) {
                         return carbonyl;
                     }
                 }
@@ -865,7 +863,7 @@ public final class Utilities {
      * @return Atom
      */
     public static Atom findCCO(Atom adjacent) {
-        for (Bond b : adjacent.getFFXBonds()) {
+        for (Bond b : adjacent.getBonds()) {
             Atom carbon = b.get1_2(adjacent);
             if (carbon.getAtomicNumber() == 6 && numberOfBondsWith(carbon, 6) == 2 && numberOfBondsWith(carbon, 8) >= 1) {
                 return carbon;
@@ -882,7 +880,7 @@ public final class Utilities {
      * @return Atom a nitrogen atom.
      */
     public static Atom findN(Atom adjacent) {
-        for (Bond b : adjacent.getFFXBonds()) {
+        for (Bond b : adjacent.getBonds()) {
             Atom nitrogen = b.get1_2(adjacent);
             if (nitrogen.getAtomicNumber() == 7) {
                 return nitrogen;
@@ -899,7 +897,7 @@ public final class Utilities {
      * @return Atom
      */
     public static Atom findCO(Atom adjacent) {
-        for (Bond b : adjacent.getFFXBonds()) {
+        for (Bond b : adjacent.getBonds()) {
             Atom carbon = b.get1_2(adjacent);
             if (carbon.getAtomicNumber() == 6 && formsBondsWith(carbon, 8)) {
                 return carbon;
@@ -918,7 +916,7 @@ public final class Utilities {
      * @return Atom
      */
     public static Atom findOtherOxygen(Atom p, Atom o) {
-        for (Bond b : p.getFFXBonds()) {
+        for (Bond b : p.getBonds()) {
             Atom oxygen = b.get1_2(p);
             if (oxygen.getAtomicNumber() == 8 && oxygen != o && formsBondsWith(oxygen, 6)) {
                 return oxygen;
@@ -939,7 +937,7 @@ public final class Utilities {
     public static List<Atom> findPolymer(List<Atom> atoms, Atom currentAtom,
             List<Atom> path) {
         // Atom has no bonds to follow
-        if (currentAtom.getFFXBonds() == null) {
+        if (currentAtom.getBonds() == null) {
             path = getAtomListFromPool();
             path.add(currentAtom);
             return path;
@@ -992,7 +990,7 @@ public final class Utilities {
         if (path != null) {
             previousAtom = path.get(path.size() - 1);
         }
-        List<Bond> bonds = currentAtom.getFFXBonds();
+        List<Bond> bonds = currentAtom.getBonds();
         if (bonds.size() == 1 && previousAtom != null) {
             return null;
         }
@@ -1046,7 +1044,7 @@ public final class Utilities {
      * @return Atom
      */
     public static Atom findSeed(Atom end, Atom other) {
-        for (Bond b : end.getFFXBonds()) {
+        for (Bond b : end.getBonds()) {
             Atom seed = b.get1_2(end);
             if (seed != other) {
                 return seed;
@@ -1064,7 +1062,7 @@ public final class Utilities {
      * @return boolean
      */
     public static boolean formsBondsWith(Atom a, int atomicNumber) {
-        for (Bond b : a.getFFXBonds()) {
+        for (Bond b : a.getBonds()) {
             Atom other = b.get1_2(a);
             if (other.getAtomicNumber() == atomicNumber) {
                 return true;
@@ -1115,7 +1113,7 @@ public final class Utilities {
         if (a.getAtomicNumber() != 8) {
             return false;
         }
-        for (Bond b : a.getFFXBonds()) {
+        for (Bond b : a.getBonds()) {
             Atom h = b.get1_2(a);
             if (h.getAtomicNumber() != 1) {
                 return false;
@@ -1134,7 +1132,7 @@ public final class Utilities {
      */
     public static int numberOfBondsWith(Atom a, int atomicNumber) {
         int total = 0;
-        for (Bond b : a.getFFXBonds()) {
+        for (Bond b : a.getBonds()) {
             Atom other = b.get1_2(a);
             if (other.getAtomicNumber() == atomicNumber) {
                 total++;

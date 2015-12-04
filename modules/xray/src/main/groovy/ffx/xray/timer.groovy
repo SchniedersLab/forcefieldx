@@ -148,7 +148,7 @@ diffractiondata.scaleBulkFit();
 diffractiondata.printStats();
 energy();
 
-RefinementEnergy refinementEnergy = RefinementEnergy.refinementEnergyFactory(diffractiondata, refinementmode);
+RefinementEnergy refinementEnergy = new RefinementEnergy(diffractiondata, refinementmode);
 int n = refinementEnergy.getNumberOfVariables();
 double[] x = new double[n];
 double[] g = new double[n];

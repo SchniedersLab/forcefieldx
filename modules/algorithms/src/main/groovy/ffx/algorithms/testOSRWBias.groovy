@@ -49,7 +49,7 @@ import groovy.util.CliBuilder;
 import edu.rit.pj.Comm;
 
 // Force Field X Imports
-//import ffx.algorithms.Barostat;
+import ffx.algorithms.Barostat;
 import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.OSRW;
 import ffx.algorithms.Integrator.Integrators;

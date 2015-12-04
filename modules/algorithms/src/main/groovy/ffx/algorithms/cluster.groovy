@@ -56,36 +56,34 @@ import ffx.potential.parsers.CoordinateFileFilter;
 import ffx.algorithms.AlgorithmFunctions;
 import ffx.algorithms.AlgorithmUtils;
 import ffx.algorithms.ClusterStructures;
-import static ffx.algorithms.ClusterStructures.Linkage.*;
+import static ffx.algorithms.ClusterStructures.ClustAlg.*;
 import static ffx.algorithms.ClusterStructures.ClusterDistanceFunction.*;
 
 import ffx.potential.parsers.PDBFileFilter;
 
 boolean copyFiles = true;
 boolean parallel = true;
-boolean alignment = true;
 String[] sourceFileNames;
 File[] clusterFiles;
 AlgorithmFunctions utils;
 String outputDirectoryName = "ffx_cluster_";
-ClusterStructures.Linkage linkage = ClusterStructures.Linkage.AV_LINK;
+ClusterStructures.ClustAlg algorithm = ClusterStructures.ClustAlg.AV_LINK;
 ClusterStructures.ClusterDistanceFunction distFunction = RMSD;
 int numClusters = 0;
 int cacheSize = 1000;
 double rmsdCutoff = 1.0;
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc cluster [options] <pdbfilename>');
+def cli = new CliBuilder(usage:' ffxc rescore [options] <pdbfilename>');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.w(longOpt:'write', args:1, argName:'true', 'Write copies of PDB files to cluster directories.');
-cli.o(longOpt:'outputDirectories', args:1, argName:'ffx_cluster_', 'Prefix of cluster output directories (followed by number)');
-cli.d(longOpt:'distanceFunction', args:1, argName:'1', 'Cluster based on all-atom RMSD (1), CA RMSD (2), all-torsion RMSD (3), or backbone torsion RMSD (4)');
-cli.l(longOpt:'linkage', args:1, argName:'average', 'Make clusters using single, average, or complete linkage (SLINK, AV_LINK, CLINK)');
-cli.r(longOpt:'rmsdCutoff', args:1, argName:'1.0', 'RMSD at which to separate clusters.');
-cli.n(longOpt:'numClusters', args:1, argName:'0', 'Number of clusters to generate; over-rides distance.');
-cli.p(longOpt:'parallel', args:1, argName:'true', 'Clusters in parallel.');
-cli.c(longOpt:'cacheSize', args:1, argName:'1000', 'Number of structures to retain in memory.');
-cli.a(longOpt:'alignment', args:1, argName:'true', 'Use Biojava to superimpose structures before calculating RMSD (CURRENTLY ALWAYS TRUE)');
+cli.o(longOpt:'outputDirectories', argName:'ffx_cluster_', 'Prefix of cluster output directories (followed by number)');
+cli.d(longOpt:'distanceFunction', argName:'1', 'Cluster based on all-atom RMSD (1), CA RMSD (2), all-torsion RMSD (3), or backbone torsion RMSD (4)');
+cli.a(longOpt:'algorithm', argName:'average', 'Make clusters using single, average, or complete linkage (SLINK, UPGMA, CLINK)');
+cli.r(longOpt:'rmsdCutoff', argName:'1.0', 'RMSD at which to separate clusters.');
+cli.n(longOpt:'numClusters', argName:'0', 'Number of clusters to generate; over-rides distance.');
+cli.p(longOpt:'parallel', argName:'true', 'Clusters in parallel.');
+cli.c(longOpt:'cacheSize', argName:'1000', 'Number of structures to retain in memory.');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -116,10 +114,6 @@ if (options.r) {
     rmsdCutoff = Double.parseDouble(options.r);
 }
 
-if (options.a) {
-    alignment = Boolean.parseBoolean(options.a);
-}
-
 if (options.d) {
     int value = Integer.parseInt(options.d);
     switch (value) {
@@ -142,27 +136,27 @@ if (options.d) {
     }
 }
 
-if (options.l) {
-    String link = options.l;
-    switch (link.toUpperCase()) {
+if (options.a) {
+    String algo = options.a.toUpperCase();
+    switch (algo) {
     case "SLINK":
     case "SINGLE":
     case "SINGLE_LINKAGE":
-        linkage = SLINK;
+        algorithm = SLINK;
         break;
     case "AV_LINK":
     case "AVERAGE":
     case "UPGMA":
     case "AVERAGE_LINKAGE":
-        linkage = AV_LINK;
+        algorithm = AV_LINK;
         break;
     case "CLINK":
     case "COMPLETE":
     case "COMPLETE_LINKAGE":
-        linkage = CLINK;
+        algorithm = CLINK;
         break;
     default:
-        logger.warning(String.format(" Invalid linkage selection %s; must be SLINK, AV_LINK, or CLINK", link));
+        logger.warning(String.format(" Invalid algorithm selection %s; must be SLINK, AV_LINK, or CLINK", algo));
         break;
     }
 }
@@ -187,7 +181,7 @@ File tempDirectory = null;
 String tempDirName = "";
 
 // Temporary, simplified system for loading files: one directory of PDBs.
-String dirname = arguments.get(0);
+String dirname = arguments.get(i);
 File dir = new File(dirname);
 if (!dir.exists() || !dir.isDirectory()) {
     logger.severe(" Argument was not a directory (preliminary loading system only takes a directory)");
@@ -367,8 +361,8 @@ if (tempDirectory != null) {
     //FileUtils.deleteDirectory(tempDirectory);
 }*/
 
-ClusterStructures clusterer = new ClusterStructures(utils, modelFiles.toArray(new File[modelFiles.size()]));
-clusterer.setLinkage(linkage);
+ClusterStructures clusterer = new ClusterStructures(utils, modelFiles);
+clusterer.setAlgorithm(algorithm);
 clusterer.setNumClusters(numClusters);
 clusterer.setOutputDirectoryPrefix(outputDirectoryName);
 clusterer.setDistanceFunction(distFunction);
@@ -376,5 +370,4 @@ clusterer.setCopyFiles(copyFiles);
 clusterer.setClusterParallel(parallel);
 clusterer.setCacheSize(cacheSize);
 clusterer.setRmsdCutoff(rmsdCutoff);
-clusterer.setAlignment(alignment);
 clusterer.cluster();

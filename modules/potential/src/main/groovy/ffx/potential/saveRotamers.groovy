@@ -132,7 +132,7 @@ systems = open(filename);
 
 MolecularAssembly molecularAssembly = (MolecularAssembly) active;
 RotamerLibrary.initializeDefaultAtomicCoordinates(molecularAssembly);
-Polymer polymer = molecularAssembly.getPolymer(chain);
+Polymer polymer = molecularAssembly.getChain(chain);
 if (polymer == null) {
     logger.info(" Polymer + " + chain + " does not exist.");
     return;
@@ -149,7 +149,7 @@ if (library == 1) {
     RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
 }
 
-Rotamer[] rotamers = residue.getRotamers();
+Rotamer[] rotamers = RotamerLibrary.getRotamers(residue);
 if (rotamers == null) {
     logger.severe(" There are no rotamers for residue + " + residue.toString());
 }

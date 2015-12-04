@@ -138,14 +138,14 @@ if (writemtz) {
 
 if (writemaps) {
 //    if (options.o) {
-//        def polymers = active.getPolymers();
+//        def polymers = active.getChains();
 //        int nPolymers = polymers.length;
 //        for (int p=0; p < nPolymers; p++) {
 //            Polymer polymer = polymers[p];
 //            ArrayList<Residue> residues = polymer.getResidues();
 //            for (int i=0; i < residues.size(); i++) {
 //                Residue residue = residues.get(i);
-//                Rotamer[] rotamers = residue.getRotamers();
+//                Rotamer[] rotamers = RotamerLibrary.getRotamers(residue);
 //                if (rotamers != null) {
 //                    logger.info("Turning off atoms of " + residue.toString());
 //                    RotamerOptimization.turnOffAtoms(residue);

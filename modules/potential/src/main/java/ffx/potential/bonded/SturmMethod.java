@@ -614,7 +614,7 @@ public class SturmMethod {
      */
     public File writePDBBackbone(double[][] r_n, double[][] r_a, double[][] r_c, int stt_res, int end_res, MolecularAssembly molAss, int counter, boolean writeFile) {
 
-        Polymer[] newChain = molAss.getPolymers();
+        Polymer[] newChain = molAss.getChains();
         ArrayList<Atom> backBoneAtoms;
         double[] xyz_n = new double[3];
         double[] xyz_a = new double[3];

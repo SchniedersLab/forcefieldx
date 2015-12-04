@@ -43,37 +43,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
-import java.util.logging.Logger;
 
 import javax.media.j3d.BranchGroup;
 import javax.media.j3d.Material;
 import javax.vecmath.Color3f;
 
 import ffx.numerics.VectorMath;
-import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Residue.ResidueType;
 import ffx.potential.parameters.ForceField;
-import ffx.potential.parsers.BiojavaFilter;
 
 import static ffx.utilities.HashCodeUtil.SEED;
 import static ffx.utilities.HashCodeUtil.hash;
-
-import org.biojava.nbio.core.exceptions.CompoundNotFoundException;
-import org.biojava.nbio.core.sequence.DNASequence;
-import org.biojava.nbio.core.sequence.ProteinSequence;
-import org.biojava.nbio.core.sequence.RNASequence;
-import org.biojava.nbio.core.sequence.compound.AminoAcidCompound;
-import org.biojava.nbio.core.sequence.compound.NucleotideCompound;
-import org.biojava.nbio.core.sequence.template.Sequence;
-import org.biojava.nbio.structure.Chain;
-import org.biojava.nbio.structure.Compound;
-import org.biojava.nbio.structure.Group;
-import org.biojava.nbio.structure.GroupType;
-import org.biojava.nbio.structure.ResidueNumber;
-import org.biojava.nbio.structure.Structure;
-import org.biojava.nbio.structure.StructureException;
-import org.biojava.nbio.structure.StructureTools;
-import org.biojava.nbio.structure.io.FileConvert;
 
 /**
  * The Polymer class encapsulates a peptide or nucleotide chain.
@@ -81,9 +61,8 @@ import org.biojava.nbio.structure.io.FileConvert;
  * @author Michael J. Schnieders
  *
  */
-public class Polymer extends MSGroup implements Chain {
+public class Polymer extends MSGroup {
 
-    private static final Logger logger = Logger.getLogger(Polymer.class.getName());
     private static final long serialVersionUID = 1L;
     /**
      * Constant <code>MultiScaleLevel=3</code>
@@ -112,12 +91,6 @@ public class Polymer extends MSGroup implements Chain {
     private boolean link = false;
     private int polymerNumber;
     private Character chainID;
-    private Structure parentStructure;
-    private long hibID; // Hibernate ID
-    private String asym_id; // mmCIF chain ID.
-    private String swissprotID;
-    private List<Molecule> associatedMolecules;
-    private Compound compound;
 
     /**
      * Polymer constructor.
@@ -164,12 +137,10 @@ public class Polymer extends MSGroup implements Chain {
      */
     @Override
     public MSNode addMSNode(MSNode msNode) {
-        /*assert (msNode instanceof Residue || msNode instanceof Molecule);
-        getAtomNode().add(msNode);*/
         assert (msNode instanceof Residue);
 
         Residue residue = (Residue) msNode;
-        int resNumber = residue.getResidueIndex();
+        int resNumber = residue.getResidueNumber();
 
         MSNode residueNode = getAtomNode();
         int n = residueNode.getChildCount();
@@ -177,7 +148,7 @@ public class Polymer extends MSGroup implements Chain {
 
         for (int i=0; i<n; i++) {
             Residue current = (Residue) residueNode.getChildAt(i);
-            if (current.getResidueIndex() > resNumber) {
+            if (current.getResidueNumber() > resNumber) {
                 childIndex = i;
                 break;
             }
@@ -246,7 +217,7 @@ public class Polymer extends MSGroup implements Chain {
     @Override
     public void finalize(boolean finalizeGroups, ForceField forceField) {
         ListIterator li;
-        List<MSNode> residues = getAtomNodeList();
+        ArrayList residues = getAtomNodeList();
         setFinalized(false);
 
         // Finalize the residues in the Polymer
@@ -272,7 +243,7 @@ public class Polymer extends MSGroup implements Chain {
 
             for (Atom a : atoms) {
                 if (a.getNumBonds() > 0) {
-                    for (Bond b : a.getFFXBonds()) {
+                    for (Bond b : a.getBonds()) {
                         if (!b.sameGroup() && b.getParent() == null) {
                             Residue r1 = (Residue) a.getMSNode(Residue.class);
                             Residue r2 = (Residue) b.get1_2(a).getMSNode(
@@ -322,432 +293,8 @@ public class Polymer extends MSGroup implements Chain {
      *
      * @return a {@link java.lang.Character} object.
      */
-    public Character getChainIDChar() {
+    public Character getChainID() {
         return chainID;
-    }
-    
-    @Override
-    public void addGroup(Group group) {
-        if (!group.has3D()) {
-            throw new IllegalArgumentException(" FFX cannot accept any atoms which lack coordinates.");
-        }
-        if (group instanceof Residue) {
-            addMSNode((Residue) group);
-        } else {
-            List<org.biojava.nbio.structure.Atom> atoms = group.getAtoms();
-            List<Residue> newResidues = new ArrayList<>(atoms.size());
-            for (org.biojava.nbio.structure.Atom atom : atoms) {
-                Atom newAtom = BiojavaFilter.readAtom(atom, this.getChainID());
-                String resName = newAtom.getResidueName();
-                int resNum = newAtom.getResidueNumber();
-                Residue res = this.getResidue(resName, resNum, true);
-                res.setChain(this, true);
-                res.addAtom(newAtom);
-            }
-        }
-    }
-    
-    public Polymer clone() {
-        Polymer polymer = new Polymer(chainID, getName(), link);
-        polymer.setCompound(compound);
-        polymer.setId(hibID);
-        polymer.setInternalChainID(asym_id);
-        polymer.setSwissprotId(swissprotID);
-        for (Group group : getAtomGroups()) {
-            polymer.addGroup((Group) group.clone());
-        }
-        return polymer;
-    }
-
-    @Override
-    public Long getId() {
-        return hibID;
-    }
-
-    @Override
-    public void setId(Long id) {
-        hibID = id;
-    }
-
-    @Override
-    public Group getAtomGroup(int position) {
-        return (Group) getResidue(position);
-    }
-
-    /**
-     * Presently, acts the same as getAtomGroup (all FFX data structures have
-     * physical coordinates).
-     * @param position Residue to get
-     * @return Residue at position
-     */
-    @Override
-    public Group getSeqResGroup(int position) {
-        return (Group) getResidue(position);
-    }
-
-    @Override
-    public List<Group> getAtomGroups() {
-        List<Residue> residues = getResidues();
-        List<Group> molecules = getAtomLigands();
-        List<Group> groupList = new ArrayList<>(residues.size() + molecules.size());
-        groupList.addAll(residues);
-        groupList.addAll(getAtomLigands());
-        return groupList;
-    }
-
-    @Override
-    public void setAtomGroups(List<Group> groups) {
-        for (Group group : getAtomGroups()) {
-            if (group instanceof Residue) {
-                ((Residue) group).setChain(null, true);
-            } else if (group instanceof Molecule) {
-                ((Molecule) group).setChain(null, true);
-            } else {
-                group.setChain(null);
-            }
-        }
-        this.removeAllChildren();
-        for (Group group : groups) {
-            addGroup(group);
-        }
-        /*for (Group group : groups) {
-            if (group instanceof MSGroup) {
-                this.addMSNode((MSGroup) group);
-            } else {
-                List<org.biojava.nbio.structure.Atom> atomList = group.getAtoms();
-                List<Residue> residues = new ArrayList<>();
-                for (org.biojava.nbio.structure.Atom atom : atomList) {
-                    Atom newAtom = BiojavaFilter.readAtom(atom, this.getName());
-                    String resName = newAtom.getResidueName();
-                    int resNum = newAtom.getResidueNumber();
-                    Residue res = this.getResidue(resName, resNum, true);
-                    if (!residues.contains(res)) {
-                        residues.add(res);
-                    }
-                    res.addMSNode(newAtom);
-                }
-                if (residues.size() != 1) {
-                    logger.fine(String.format(" Group %s created nonzero number of Residues %d", group.toString(), residues.size()));
-                }
-                for (Residue residue : residues) {
-                    this.addMSNode(residue);
-                }
-            }
-        }*/
-    }
-
-    @Override
-    public List<Group> getAtomGroups(GroupType type) {
-        List<Group> ret = new ArrayList<>();
-        List<Group> groups = getAtomGroups();
-        for (Group group : groups) {
-            if (group.getType() == type) {
-                ret.add(group);
-            }
-        }
-        return ret;
-    }
-
-    @Override
-    public Group getGroupByPDB(ResidueNumber resNum) throws StructureException {
-        int seqNum = resNum.getSeqNum();
-        Residue res = getResidue(seqNum);
-        if (res == null) {
-            throw new StructureException("unknown PDB residue number " + seqNum + " in chain " + chainID);
-        }
-        return res;
-    }
-
-    @Override
-    public Group[] getGroupsByPDB(ResidueNumber pdbresnumStart, ResidueNumber pdbresnumEnd) throws StructureException {
-        return getGroupsByPDB(pdbresnumStart, pdbresnumEnd, false);
-    }
-
-    @Override
-    public Group[] getGroupsByPDB(ResidueNumber pdbresnumStart, ResidueNumber pdbresnumEnd, boolean ignoreMissing) throws StructureException {
-        int start = pdbresnumStart.getSeqNum();
-        int end = pdbresnumEnd.getSeqNum();
-        List<Group> groups = new ArrayList<>();
-        if (ignoreMissing) {
-            for (int i = start; i <= end; i++) {
-                Residue res = getResidue(i);
-                if (res != null) {
-                    groups.add(res);
-                }
-            }
-        } else {
-            Residue res = getResidue(start);
-            if (res == null) {
-                throw new StructureException("did not find start PDB residue number " + pdbresnumStart + " in chain " + chainID);
-            }
-            groups.add(res);
-            res = getResidue(end);
-            if (res == null) {
-                throw new StructureException("did not find end PDB residue number " + pdbresnumEnd + " in chain " + chainID);
-            }
-            for (int i = start + 1; i <= end; i++) {
-                res = getResidue(i);
-                if (res != null) {
-                    groups.add(res);
-                }
-            }
-        }
-        Group[] ret = new Group[groups.size()];
-        groups.toArray(ret);
-        return ret;
-    }
-
-    @Override
-    public int getAtomLength() {
-        return getResidues().size();
-    }
-
-    /**
-     * Identical to getAtomLength(), as FFX currently only supports Groups with
-     * physical coordinates (seqres records are ignored).
-     * @return Number of residues.
-     */
-    @Override
-    public int getSeqResLength() {
-        logger.fine(" Seqres length is equal to atom length for FFX Polymer, as all Groups must have coordinates");
-        return getResidues().size();
-    }
-
-    @Override
-    public void setCompound(Compound compound) {
-        this.compound = compound;
-    }
-
-    @Override
-    public Compound getCompound() {
-        return compound;
-    }
-
-    /**
-     * Only takes the first character (FFX chain IDs are currently single characters).
-     * @param name 
-     */
-    @Override
-    public void setChainID(String name) {
-        this.chainID = name.charAt(0);
-    }
-
-    @Override
-    public String getChainID() {
-        return "" + chainID;
-    }
-
-    @Override
-    public String getInternalChainID() {
-        return asym_id;
-    }
-
-    @Override
-    public void setInternalChainID(String internalChainID) {
-        asym_id = internalChainID;
-    }
-
-    @Override
-    public Sequence<?> getBJSequence() {
-        String seq = getSeqResSequence();
-        ResidueType rtype;
-        Residue firstRes = getResidues().get(0);
-        try {
-            rtype = firstRes.getResidueType();
-        } catch (Exception ex) {
-            rtype = ResidueType.AA;
-        }
-        switch (rtype) {
-            case AA:
-                Sequence<AminoAcidCompound> protSeq = null;
-
-                try {
-                    protSeq = new ProteinSequence(seq);
-                } catch (CompoundNotFoundException e) {
-                    logger.warning(String.format("Could not create sequence object "
-                            + "from sequence. Some unknown compound: %s", e.toString()));
-                }
-                return protSeq;
-            case NA:
-                Sequence<NucleotideCompound> naSeq = null;
-                boolean deoxy = firstRes.isDeoxy();
-                if (deoxy) {
-                    try {
-                        naSeq = new DNASequence(seq);
-                    } catch (CompoundNotFoundException e) {
-                        logger.warning(String.format("Could not create sequence object "
-                                + "from sequence. Some unknown compound: %s", e.toString()));
-                    }
-                } else {
-                    try {
-                        naSeq = new RNASequence(seq);
-                    } catch (CompoundNotFoundException e) {
-                        logger.warning(String.format("Could not create sequence object "
-                                + "from sequence. Some unknown compound: %s", e.toString()));
-                    }
-                }
-                return naSeq;
-            case UNK:
-            default:
-                return null;
-        }
-        
-
-        //TODO: return a DNA sequence if the content is DNA...
-        /*Sequence seq;
-        List<Residue> residues = getResidues();
-        switch (residues.get(0).residueType) {
-            case NA:
-                StringBuilder sb = new StringBuilder();
-                for (Residue res : residues) {
-                    try {
-                        ResidueEnumerations.NucleicAcid3 rescode = ResidueEnumerations.NucleicAcid3.valueOf(res.getName());
-                        sb.append(Residue.NucleicAcid3toNA1(rescode, true).toString());
-                    } catch (Exception ex) {
-                        logger.fine(String.format(" Exception in getting NA1 value of residue %s: %s", res.toString(), ex.toString()));
-                    }
-                }
-                try {
-                    String seqString = sb.toString();
-                    if (seqString.contains("U")) {
-                        seq = new RNASequence(seqString);
-                    } else {
-                        seq = new DNASequence(seqString);
-                    }
-                    return seq;
-                } catch (CompoundNotFoundException ex) {
-                    logger.warning(String.format("Could not create sequence object "
-                            + "from sequence. Some unknown compound: %s", ex.toString()));
-                }
-                return null;
-            case AA:
-                sb = new StringBuilder();
-                for (Residue res : residues) {
-                    try {
-                        Residue.AA3 rescode = Residue.AA3.valueOf(res.getName());
-                        sb.append(Residue.AA3toAA1.get(rescode));
-                    } catch (Exception ex) {
-                        logger.fine(String.format(" Exception in getting AA1 value of residue %s: %s", res.toString(), ex.toString()));
-                    }
-                }
-                try {
-                    seq = new ProteinSequence(sb.toString());
-                    return seq;
-                } catch (CompoundNotFoundException ex) {
-                    logger.warning(String.format("Could not create sequence object "
-                            + "from sequence. Some unknown compound: %s", ex.toString()));
-                }
-                return null;
-            case UNK:
-            default:
-                return null;
-        }*/
-    }
-
-    @Override
-    public String getAtomSequence() {
-        return StructureTools.getAtomSequence(this);
-    }
-
-    @Override
-    public String getSeqResSequence() {
-        return StructureTools.getSeqResSequence(this);
-    }
-
-    @Override
-    public void setSwissprotId(String sp_id) {
-        swissprotID = sp_id;
-    }
-
-    @Override
-    public String getSwissprotId() {
-        return swissprotID;
-    }
-
-    /**
-     * Acts as a wrapper for getGroups(type); FFX does not support groups without 
-     * physical coordinates.
-     * @param type
-     * @return 
-     */
-    @Override
-    public List<Group> getSeqResGroups(GroupType type) {
-        return getAtomGroups(type);
-    }
-
-    /**
-     * Acts as a wrapper for getGroups(); FFX does not support groups without 
-     * physical coordinates.
-     * @return 
-     */
-    @Override
-    public List<Group> getSeqResGroups() {
-        return getAtomGroups();
-    }
-
-    /**
-     * Acts as a proxy for setGroups (FFX does not support groups without physical
-     * coordinates.
-     * @param seqResGroups Groups to set.
-     */
-    @Override
-    public void setSeqResGroups(List<Group> seqResGroups) {
-        logger.fine(" FFX is not compatible with seqres Groups; all Groups are assumed to have coordinates.");
-        setAtomGroups(seqResGroups);
-    }
-
-    @Override
-    public void setStructure(Structure parent) {
-        if (parentStructure instanceof MolecularAssembly) {
-            removeFromParent();
-        }
-        parentStructure = parent;
-        if (parent instanceof MolecularAssembly) {
-            ((MolecularAssembly) parent).addMSNode(this);
-        }
-    }
-    
-    public void setStructure(Structure parent, boolean onlySetRef) {
-        if (onlySetRef) {
-            parentStructure = parent;
-        } else {
-            setStructure(parent);
-        }
-    }
-
-    @Override
-    public Structure getStructure() {
-        return parentStructure;
-    }
-
-    @Override
-    public List<Group> getAtomLigands() {
-        if (associatedMolecules == null) {
-            if (!(parentStructure instanceof MolecularAssembly)) {
-                return null;
-            } else {
-                associatedMolecules = new ArrayList<>();
-                List<Molecule> molecules = ((MolecularAssembly) parentStructure).getMolecules();
-                for (Molecule molecule : molecules) {
-                    if (molecule.getChainID().equals(chainID)) {
-                        associatedMolecules.add(molecule);
-                    }
-                }
-            }
-        }
-        List<Group> retList = new ArrayList<>();
-        retList.addAll(associatedMolecules);
-        return retList;
-    }
-
-    @Override
-    public String toPDB() {
-        return FileConvert.toPDB(this);
-    }
-
-    @Override
-    public String toMMCIF() {
-        return FileConvert.toMMCIF(this, true);
     }
 
     public void addMultiResidue(MultiResidue multiResidue) {
@@ -830,14 +377,14 @@ public class Polymer extends MSGroup implements Chain {
     public Residue getResidue(int resNum) {
         if (resNum > 0 && getAtomNode().getChildCount() >= resNum) {
             Residue r = (Residue) getAtomNode().getChildAt(resNum - 1);
-            if (r.getResidueIndex() == resNum) {
+            if (r.getResidueNumber() == resNum) {
                 return r;
             }
         }
         // Fall back for non-ordered children
         for (Enumeration e = getAtomNode().children(); e.hasMoreElements();) {
             Residue r = (Residue) e.nextElement();
-            if (r.getResidueIndex() == resNum) {
+            if (r.getResidueNumber() == resNum) {
                 return r;
             }
         }
@@ -854,15 +401,9 @@ public class Polymer extends MSGroup implements Chain {
      * @return a {@link ffx.potential.bonded.Residue} object.
      */
     public Residue getResidue(String resName, int resNum, boolean create) {
-        if (resNum > 0 && getAtomNode().getChildCount() >= resNum) {
-            Residue r = (Residue) getAtomNode().getChildAt(resNum - 1);
-            if (r.getResidueIndex() == resNum && r.getName().equalsIgnoreCase(resName)) {
-                return r;
-            }
-        }
         for (Enumeration e = getAtomNode().children(); e.hasMoreElements();) {
             Residue r = (Residue) e.nextElement();
-            if (r.getResidueIndex() == resNum && r.getName().equalsIgnoreCase(resName)) {
+            if (r.getResidueNumber() == resNum && r.getName().equalsIgnoreCase(resName)) {
                 return r;
             }
         }
@@ -903,10 +444,9 @@ public class Polymer extends MSGroup implements Chain {
                     chainID, getName());
         }
         addMSNode(residue);
-        residue.setChain(this, true);
         return residue;
     }
-    
+
     /**
      * {@inheritDoc}
      */

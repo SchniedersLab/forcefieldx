@@ -650,9 +650,4 @@ public class ScaleBulkEnergy implements Potential {
     public void setEnergyTermState(Potential.STATE state) {
         this.state = state;
     }
-    
-    @Override
-    public void reInit() {
-        throw new UnsupportedOperationException(String.format(" No reInit method defined for %s", ScaleBulkEnergy.class.toString()));
-    }
 }

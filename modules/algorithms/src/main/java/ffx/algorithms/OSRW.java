@@ -52,8 +52,16 @@ import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.util.Arrays.fill;
 
 import org.apache.commons.configuration.CompositeConfiguration;
+
+import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.floor;
+import static org.apache.commons.math3.util.FastMath.sin;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.mp.DoubleBuf;
 import edu.rit.pj.Comm;
@@ -1552,9 +1560,5 @@ public class OSRW implements Potential {
             }
         }
     }
-    
-    @Override
-    public void reInit() {
-        throw new UnsupportedOperationException(String.format(" No reInit method defined for %s", OSRW.class.toString()));
-    }
+
 }

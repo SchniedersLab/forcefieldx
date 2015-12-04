@@ -58,12 +58,10 @@ public class RefinementModel {
 
     private static final Logger logger = Logger.getLogger(RefinementModel.class.getName());
     protected List<Atom> atomList;
-    private Atom[] atomArray;
+    protected final Atom[] atomArray;
     protected List<Integer>[] xIndex;
     protected ArrayList<ArrayList<Residue>> altResidues;
     protected ArrayList<ArrayList<Molecule>> altMolecules;
-    //private final boolean refineMolOcc;
-    private final MolecularAssembly[] allAssemblies;
 
     /**
      * <p>
@@ -86,71 +84,6 @@ public class RefinementModel {
      */
     @SuppressWarnings("unchecked")
     public RefinementModel(MolecularAssembly assembly[], boolean refinemolocc) {
-        generateAtomList(assembly, refinemolocc);
-        //this.refineMolOcc = refinemolocc;
-        this.allAssemblies = assembly;
-        
-        atomArray = atomList.toArray(new Atom[atomList.size()]);
-
-        for (ArrayList<Residue> list : altResidues) {
-            if (list.size() == 1) {
-                Residue r = list.get(0);
-                logger.log(Level.INFO, "residue: {0}: single conformer, non-unity occupancy: occupancy will be refined independently!", r.toString());
-            }
-        }
-
-        for (ArrayList<Molecule> list : altMolecules) {
-            if (list.size() == 1) {
-                Molecule m = list.get(0);
-                logger.log(Level.INFO, "molecule: {0}: single conformer, non-unity occupancy: occupancy will be refined independently!", m.toString());
-            }
-        }
-    }
-    
-    /**
-     * Regenerates the list of Atoms, particularly after chemical perturbation.
-     */
-    public void regenerateAtomList() {
-        //generateAtomList(allAssemblies, refineMolOcc); Takes about 2x longer; not sure if necessary.
-        List<Atom> aList;
-        int nAssemblies = allAssemblies.length;
-        
-        for (int i = 0; i < nAssemblies; i++) {
-            xIndex[i] = new ArrayList<>();
-        }
-        int index = 0;
-        // also set up atomList that will be used for SF calc
-        atomList = new ArrayList<>();
-
-        // root list
-        aList = allAssemblies[0].getAtomList();
-        for (Atom a : aList) {
-            a.setFormFactorIndex(index);
-            xIndex[0].add(index);
-            atomList.add(a);
-            index++;
-        }
-        // now add cross references to root and any alternate atoms not in root
-        for (int i = 1; i < nAssemblies; i++) {
-            aList = allAssemblies[i].getAtomList();
-            for (Atom a : aList) {
-                Atom root = allAssemblies[0].findAtom(a);
-                if (root != null
-                        && root.getAltLoc().equals(a.getAltLoc())) {
-                    xIndex[i].add(root.getFormFactorIndex());
-                    a.setFormFactorIndex(root.getFormFactorIndex());
-                } else {
-                    xIndex[i].add(index);
-                    atomList.add(a);
-                    index++;
-                }
-            }
-        }
-        
-        atomArray = atomList.toArray(new Atom[atomList.size()]);
-    }
-    
-    private void generateAtomList(MolecularAssembly[] assemblies, boolean refinemolocc) {
         List<Atom> alist;
 
         /**
@@ -159,11 +92,11 @@ public class RefinementModel {
          */
         altResidues = new ArrayList<>();
         altMolecules = new ArrayList<>();
-        ArrayList<MSNode> nodeList0 = assemblies[0].getNodeList();
+        ArrayList<MSNode> nodeList0 = assembly[0].getNodeList();
         ArrayList<Residue> tempResidues = null;
         ArrayList<Molecule> tempMolecules = null;
         boolean altconf;
-        
+
         /**
          * By residue/molecule.
          */
@@ -195,8 +128,8 @@ public class RefinementModel {
                 }
             }
             if (altconf) {
-                for (int j = 1; j < assemblies.length; j++) {
-                    ArrayList<MSNode> nlist = assemblies[j].getNodeList();
+                for (int j = 1; j < assembly.length; j++) {
+                    ArrayList<MSNode> nlist = assembly[j].getNodeList();
                     MSNode node = nlist.get(i);
 
                     for (Atom a : node.getAtomList()) {
@@ -222,8 +155,8 @@ public class RefinementModel {
         /**
          * For mapping between atoms between different molecular assemblies.
          */
-        xIndex = new List[assemblies.length];
-        for (int i = 0; i < assemblies.length; i++) {
+        xIndex = new List[assembly.length];
+        for (int i = 0; i < assembly.length; i++) {
             xIndex[i] = new ArrayList<>();
         }
         int index = 0;
@@ -231,7 +164,7 @@ public class RefinementModel {
         atomList = new ArrayList<>();
 
         // root list
-        alist = assemblies[0].getAtomList();
+        alist = assembly[0].getAtomList();
         for (Atom a : alist) {
             a.setFormFactorIndex(index);
             xIndex[0].add(index);
@@ -239,10 +172,10 @@ public class RefinementModel {
             index++;
         }
         // now add cross references to root and any alternate atoms not in root
-        for (int i = 1; i < assemblies.length; i++) {
-            alist = assemblies[i].getAtomList();
+        for (int i = 1; i < assembly.length; i++) {
+            alist = assembly[i].getAtomList();
             for (Atom a : alist) {
-                Atom root = assemblies[0].findAtom(a);
+                Atom root = assembly[0].findAtom(a);
                 if (root != null
                         && root.getAltLoc().equals(a.getAltLoc())) {
                     xIndex[i].add(root.getFormFactorIndex());
@@ -254,12 +187,20 @@ public class RefinementModel {
                 }
             }
         }
-    }
-    
-    public Atom[] getAtomArray() {
-        int nAtoms = atomArray.length;
-        Atom[] retAtoms = new Atom[nAtoms];
-        System.arraycopy(atomArray, 0, retAtoms, 0, nAtoms);
-        return retAtoms;
+        atomArray = atomList.toArray(new Atom[atomList.size()]);
+
+        for (ArrayList<Residue> list : altResidues) {
+            if (list.size() == 1) {
+                Residue r = list.get(0);
+                logger.log(Level.INFO, "residue: {0}: single conformer, non-unity occupancy: occupancy will be refined independently!", r.toString());
+            }
+        }
+
+        for (ArrayList<Molecule> list : altMolecules) {
+            if (list.size() == 1) {
+                Molecule m = list.get(0);
+                logger.log(Level.INFO, "molecule: {0}: single conformer, non-unity occupancy: occupancy will be refined independently!", m.toString());
+            }
+        }
     }
 }

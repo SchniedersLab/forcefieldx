@@ -65,7 +65,6 @@ import ffx.potential.bonded.Residue.AA3;
 import static ffx.potential.bonded.Residue.ResiduePosition.FIRST_RESIDUE;
 import static ffx.potential.bonded.Residue.ResiduePosition.LAST_RESIDUE;
 import static ffx.potential.bonded.Residue.ResiduePosition.MIDDLE_RESIDUE;
-import ffx.potential.bonded.Residue.ResidueType;
 import static ffx.potential.bonded.ResidueEnumerations.aminoAcidHeavyAtoms;
 import static ffx.potential.bonded.ResidueEnumerations.getAminoAcid;
 import static ffx.potential.bonded.ResidueEnumerations.getAminoAcidNumber;
@@ -157,7 +156,7 @@ public class AminoAcidUtils {
     public static final String methionineAtoms[] = {"CB","HB2","HB3","CG","HG2","HG3","SD","CE","HE1","HE2","HE3"};
     public static final String lysineAtoms[] = {"CB","HB2","HB3","CG","HG2","HG3","CD","HD2","HD3","CE","HE2","HE3","NZ","HZ1","HZ2","HZ3"};
     public static final String arginineAtoms[] = {"CB","HB2","HB3","CG","HG2","HG3","CD","HD2","HD3","NE","HE","CZ","NH1","HH11","HH12","NH2","HH21","HH22"};
-    
+
     public static void copyResidue(Residue fromResidue, Residue toResidue) {
         String resName = fromResidue.getName();
         AA3 res = AA3.valueOf(resName);
@@ -1092,8 +1091,6 @@ public class AminoAcidUtils {
 
         int j = 1;
         ResiduePosition position = MIDDLE_RESIDUE;
-        boolean isProtonatedCterm = false;
-        Atom HXT = null;
         if (previousResidue == null) {
             j = 0;
             position = FIRST_RESIDUE;
@@ -1109,21 +1106,6 @@ public class AminoAcidUtils {
                 residueName = "NH2".intern();
                 residue.setName(residueName);
             }
-            
-            /**
-             * Check to see if it's a protonated C-terminus.
-             */
-            HXT = (Atom) residue.getAtomNode("HXT", true);
-            if (HXT == null) {
-                HXT = (Atom) residue.getAtomNode("DXT", true);
-            }
-            if (HXT == null) {
-                HXT = (Atom) residue.getAtomNode("HX2", true);
-            }
-            if (HXT == null) {
-                HXT = (Atom) residue.getAtomNode("DX2", true);
-            }
-            isProtonatedCterm = (HXT != null);
         }
 
         AminoAcid3 aminoAcid = getAminoAcid(residueName);
@@ -1193,15 +1175,12 @@ public class AminoAcidUtils {
                 CA = buildHeavy(residue, "CA", N, caType[j][aminoAcidNumber], forceField, bondList);
             }
             if (!(position == LAST_RESIDUE && aminoAcid == AminoAcid3.NME)) {
-                int cBioType = isProtonatedCterm ? protonatedCTermCType : cType[j][aminoAcidNumber];
-                C = buildHeavy(residue, "C", CA, cBioType, forceField, bondList);
+                C = buildHeavy(residue, "C", CA, cType[j][aminoAcidNumber], forceField, bondList);
                 O = (Atom) residue.getAtomNode("O");
                 if (O == null) {
                     O = (Atom) residue.getAtomNode("OT1");
                 }
-                
-                int oBioType = isProtonatedCterm ? protonatedCTermOType : oType[j][aminoAcidNumber];
-                AtomType atomType = findAtomType(oBioType, forceField);
+                AtomType atomType = findAtomType(oType[j][aminoAcidNumber], forceField);
                 if (O == null) {
                     MissingHeavyAtomException missingHeavyAtom
                             = new MissingHeavyAtomException("O", atomType, C);
@@ -1318,8 +1297,7 @@ public class AminoAcidUtils {
          * Build the terminal oxygen if the residue is not NH2 or NME.
          */
         if (position == LAST_RESIDUE && !(aminoAcid == AminoAcid3.NH2 || aminoAcid == AminoAcid3.NME)) {
-            int oxtAtomType = isProtonatedCterm ? protonatedCTermOHType : oType[2][aminoAcidNumber];
-            atomType = findAtomType(oxtAtomType, forceField);
+            atomType = findAtomType(oType[2][aminoAcidNumber], forceField);
             Atom OXT = (Atom) residue.getAtomNode("OXT");
             if (OXT == null) {
                 OXT = (Atom) residue.getAtomNode("OT2");
@@ -1344,12 +1322,6 @@ public class AminoAcidUtils {
                 OXT.setAtomType(atomType);
             }
             buildBond(C, OXT, forceField, bondList);
-            
-            if (HXT != null) {
-                atomType = findAtomType(protonatedCTermHOType, forceField);
-                HXT.setAtomType(atomType);
-                buildBond(OXT, HXT, forceField, bondList);
-            }
         }
         /**
          * Do some checks on the current residue to make sure all atoms have
@@ -1364,7 +1336,7 @@ public class AminoAcidUtils {
                  * its place, so we have a "dummy" deuteron still hanging around.
                  */
                 String protonEq = atom.getName().replaceFirst("D", "H");
-                Atom correspH = (Atom) residue.getAtomNode(protonEq, true);
+                Atom correspH = (Atom) residue.getAtomNode(protonEq);
                 if (correspH == null || correspH.getAtomType() == null) {
                     MissingAtomTypeException missingAtomTypeException
                             = new MissingAtomTypeException(residue, atom);
@@ -1390,92 +1362,6 @@ public class AminoAcidUtils {
     }
 
     /**
-     * Renames residues to any detected protonation state.
-     * @param residue Residue to rename.
-     */
-    public static void renameToProtonationState(Residue residue) {
-        if (residue.getResidueType().equals(ResidueType.AA)) {
-            String residueName = residue.getName().toUpperCase();
-            AminoAcid3 aminoAcid = getAminoAcid(residueName);
-            switch (residueName) {
-                // CYD and TYD cannot be easily distinguished from CYS/TYR.
-                // If desired, probably just check for other side-chain hydrogens.
-                // Have to check for deuterons the brute-force way because atom
-                // types (and thus elements) have not yet been initialized.
-                case "HIS":
-                    Atom HD1 = (Atom) residue.getAtomNode("HD1", true);
-                    Atom HE2 = (Atom) residue.getAtomNode("HE2", true);
-                    if (HD1 == null && HE2 != null) {
-                        renameResidue(residue, "HIE");
-                    } else if (HD1 != null && HE2 == null) {
-                        renameResidue(residue, "HID");
-                    } else {
-                        HD1 = (Atom) residue.getAtomNode("DD1", true);
-                        HE2 = (Atom) residue.getAtomNode("DE2", true);
-                        if (HD1 == null && HE2 != null) {
-                            renameResidue(residue, "HIE");
-                        } else if (HD1 != null && HE2 == null) {
-                            renameResidue(residue, "HID");
-                        }
-                    }
-                break;
-                case "ASP":
-                    HD1 = (Atom) residue.getAtomNode("HD1", true);
-                    Atom HD2 = (Atom) residue.getAtomNode("HD2", true);
-                    if (HD1 != null || HD2 != null) {
-                        renameResidue(residue, "ASH");
-                    } else {
-                        HD1 = (Atom) residue.getAtomNode("DD1", true);
-                        HD2 = (Atom) residue.getAtomNode("DD2", true);
-                        if (HD1 != null || HD2 != null) {
-                            renameResidue(residue, "ASH");
-                        }
-                    }
-                break;
-                case "GLU":
-                    Atom HE1 = (Atom) residue.getAtomNode("HE1", true);
-                    HE2 = (Atom) residue.getAtomNode("HE2", true);
-                    if (HE1 != null || HE2 != null) {
-                        renameResidue(residue, "GLH");
-                    } else {
-                        HE1 = (Atom) residue.getAtomNode("DE1", true);
-                        HE2 = (Atom) residue.getAtomNode("DE2", true);
-                        if (HE1 != null || HE2 != null) {
-                            renameResidue(residue, "GLH");
-                        }
-                    }
-                break;
-                case "LYS":
-                    Atom HZ1 = (Atom) residue.getAtomNode("HZ1", true);
-                    Atom HZ3 = (Atom) residue.getAtomNode("HZ3", true);
-                    if (HZ1 != null && HZ3 == null) {
-                        renameResidue(residue, "LYD");
-                    } else {
-                        HZ1 = (Atom) residue.getAtomNode("DZ1", true);
-                        HZ3 = (Atom) residue.getAtomNode("DZ3", true);
-                        if (HZ1 != null && HZ3 == null) {
-                            renameResidue(residue, "LYD");
-                        }
-                    }
-                break;
-            }
-        }
-    }
-    
-    /**
-     * Sets a residue's name, and the resName attached to all its atoms.
-     * @param residue
-     * @param newResname 
-     */
-    private static void renameResidue(Residue residue, String newResname) {
-        residue.setName(newResname);
-        List<Atom> atoms = residue.getAtomList();
-        for (Atom atom : atoms) {
-            atom.setResName(newResname);
-        }
-    }
-    
-    /**
      * Assign atom types to a single amino acid side chain.
      *
      * @param position The position of this amino acid in the chain.
@@ -1490,7 +1376,7 @@ public class AminoAcidUtils {
      * exception is thrown if when heavy is atom is missing that cannot be
      * built.
      */
-    private static void assignAminoAcidSideChain(ResiduePosition position, AminoAcid3 aminoAcid, Residue residue,
+    public static void assignAminoAcidSideChain(ResiduePosition position, AminoAcid3 aminoAcid, Residue residue,
             Atom CA, Atom N, Atom C, ForceField forceField, ArrayList<Bond> bondList)
             throws MissingHeavyAtomException {
         int k = cbType[aminoAcid.ordinal()];
@@ -1699,7 +1585,7 @@ public class AminoAcidUtils {
                             hydrogen.setHetero(true);
                             residue.addMSNode(hydrogen);
                             int valence = ia.getAtomType().valence;
-                            List<Bond> aBonds = ia.getFFXBonds();
+                            List<Bond> aBonds = ia.getBonds();
                             int numBonds = aBonds.size();
                             /**
                              * Try to find the following configuration: ib-ia-ic
@@ -1897,15 +1783,6 @@ public class AminoAcidUtils {
             }
         }
     }
-    
-    /**
-     * Biotype keys for protonated C-termini atom types. These are consistent 
-     * with parameter files from TINKER V. 6.1 (June 2012).
-     */
-    public static final int protonatedCTermCType = 771;
-    public static final int protonatedCTermOType = 772;
-    public static final int protonatedCTermOHType = 773;
-    public static final int protonatedCTermHOType = 774;
 
     /**
      * Biotype keys for amino acid backbone atom types. These are consistent

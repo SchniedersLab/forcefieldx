@@ -196,7 +196,7 @@ diffractiondata.scaleBulkFit();
 diffractiondata.printStats();
 energy();
 
-RefinementEnergy refinementEnergy = RefinementEnergy.refinementEnergyFactory(diffractiondata, refinementmode);
+RefinementEnergy refinementEnergy = new RefinementEnergy(diffractiondata, refinementmode);
 
 // Restart File
 File dyn = new File(FilenameUtils.removeExtension(modelfilename) + ".dyn");

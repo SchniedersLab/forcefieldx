@@ -108,7 +108,6 @@ public class TimerTest {
 
         // load any properties associated with it
         CompositeConfiguration properties = Keyword.loadProperties(structure);
-        // There is also opener.getProperties() available.
 
         // read in Fo/sigFo/FreeR
         MTZFilter mtzFilter = new MTZFilter();

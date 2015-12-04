@@ -37,7 +37,7 @@
  */
 package ffx.potential.parsers;
 
-import org.biojava.nbio.structure.Structure;
+import org.biojava.bio.structure.Structure;
 
 /**
  * The BiojavaDataFilter class determines if an object is an instance of a
@@ -59,7 +59,7 @@ public class BiojavaDataFilter implements DataFilter {
 
     @Override
     public String getDescription() {
-        return "Biojava Structure";
+        return "Biojava 3 Structure";
     }
 
 }

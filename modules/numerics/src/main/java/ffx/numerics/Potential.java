@@ -160,12 +160,6 @@ public interface Potential {
      * or BOTH.
      */
     public abstract void setEnergyTermState(STATE state);
-    
-    /**
-     * Re-initializes the Potential and performs all necessary operations upon 
-     * any change in the underlying variables.
-     */
-    public abstract void reInit();
 
     /**
      * Get the Potential Energy terms that is active.

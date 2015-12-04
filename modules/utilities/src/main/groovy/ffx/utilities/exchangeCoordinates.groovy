@@ -83,12 +83,12 @@ if (options.i) {
 
 open(toFile);
 MolecularAssembly original = active;
-Polymer[] toPolymers = original.getPolymers();
+Polymer[] toPolymers = original.getChains();
 
 // Begin Loop Here...
 // For 
 open(fromFile);
-Polymer[] fromPolymers = active.getPolymers();
+Polymer[] fromPolymers = active.getChains();
 
 for (int i=startPosition; i<=endPosition; i++) {
     Residue fromResidue = fromPolymers[0].getResidue(i);

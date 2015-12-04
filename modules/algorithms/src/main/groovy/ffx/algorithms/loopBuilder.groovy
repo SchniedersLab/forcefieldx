@@ -439,7 +439,7 @@ if (runRotamer){
     }
     
     forceFieldEnergy = new ForceFieldEnergy(active);
-    Polymer[] polymers = active.getPolymers();
+    Polymer[] polymers = active.getChains();
     ArrayList<Residue> fullResidueList = polymers[0].getResidues();
     ArrayList<Residue> residuesToRO = new ArrayList<>();
 
@@ -512,7 +512,7 @@ if (runRotamer){
     RotamerLibrary.setUseOrigCoordsRotamer(true);
     //RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.PonderAndRichards);
     RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
-    
+
     //Rotamer Optimization inclusion list building (grab residues within 7A of the built loop)
     boolean expandList = true
     double expansionDistance = 7.0;

@@ -636,7 +636,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
 
         if (comTerm) {
-            Polymer polymers[] = molecularAssembly.getPolymers();
+            Polymer polymers[] = molecularAssembly.getChains();
             List<Molecule> molecules = molecularAssembly.getMolecules();
             List<MSNode> waters = molecularAssembly.getWaters();
             List<MSNode> ions = molecularAssembly.getIons();
@@ -674,9 +674,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
     }
 
-    @Override
     public void reInit() {
-        
+
         atoms = molecularAssembly.getAtomArray();
         nAtoms = atoms.length;
 
@@ -1013,8 +1012,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         if (comTerm) {
             logger.severe(" COM restrain energy term cannot be used with variable systems sizes.");
         }
-        
-        molecularAssembly.reinitPotentials();
+
     }
 
     public void setFixedCharges(Atom atoms[]) {
@@ -1715,8 +1713,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     public void checkAtoms() {
-        int n = getNumberOfVariables();
-        //int index = 0;
         double vel[] = new double[3];
         double accel[] = new double[3];
         double grad[] = new double[3];

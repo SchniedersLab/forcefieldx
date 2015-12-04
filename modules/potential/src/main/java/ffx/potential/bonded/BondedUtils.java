@@ -435,31 +435,18 @@ public class BondedUtils {
         if (atomType == null) {
             return null;
         }
-        Atom atom = (Atom) residue.getAtomNode(atomName, true);
+        Atom atom = (Atom) residue.getAtomNode(atomName);
         // It may be a Deuterium
         if (atom == null) {
             String dAtomName = atomName.replaceFirst("H", "D");
-            atom = (Atom) residue.getAtomNode(dAtomName, true);
-        }
-        // Basic error checking for malformed H1/D1 names.
-        if (residue instanceof Residue && atom == null && atomName.equals("H1")) {
-            atom = (Atom) residue.getAtomNode("H", true);
-            if (atom != null) {
-                atom.setName("H1");
-            } else {
-                // Deuteron-parsing is only robust when the element (and thus atom 
-                // type) has been initialized.
-                atom = (Atom) residue.getAtomNode("D", true);
-                if (atom != null) {
-                    atom.setName("D1");
-                }
-            }
+            atom = (Atom) residue.getAtomNode(dAtomName);
         }
         
         // Basic checking for unspecified H atoms attached to waters.
         if (residue instanceof Molecule && atom == null) {
             Molecule molec = (Molecule) residue;
-            if (molec.isWater()) {
+            String molName = molec.getName().toUpperCase();
+            if (molName.startsWith("HOH") || molName.startsWith("WAT") || molName.startsWith("TIP3")) {
                 atom = (Atom) molec.getAtomNode("H");
                 if (atom == null) {
                     atom = (Atom) molec.getAtomNode("D");

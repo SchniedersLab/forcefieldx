@@ -669,7 +669,7 @@ if (useOrigCoordsRotamer) {
 if (algorithm != 5) {
     if (options.x) {
         ArrayList<Residue> residueList = new ArrayList<Residue>();
-        Polymer[] polymers = active.getPolymers();
+        Polymer[] polymers = active.getChains();
         int nPolymers = polymers.length;
         for (int p=0; p<nPolymers; p++) {
             Polymer polymer = polymers[p];
@@ -677,7 +677,7 @@ if (algorithm != 5) {
             int nResidues = residues.size();
             for (int i=0; i<nResidues; i++) {
                 Residue residue = residues.get(i);
-                Rotamer[] rotamers = residue.getRotamers();
+                Rotamer[] rotamers = RotamerLibrary.getRotamers(residue);
                 if (rotamers != null) {
                     int nrot = rotamers.length;
                     if (nrot == 1) {
@@ -699,18 +699,18 @@ if (algorithm != 5) {
         rotamerOptimization.setResidues(residueList);
     } else if (options.lR) {
         ArrayList<Residue> residueList = new ArrayList<>();
-        Polymer[] polymers = active.getPolymers();
+        Polymer[] polymers = active.getChains();
         int n = 0;
         for (String s : resList) {
             Character chainID = s.charAt(0);
             int i = Integer.parseInt(s.substring(1));
             for (Polymer p : polymers) {
-                if (p.getChainIDChar() == chainID) {
+                if (p.getChainID() == chainID) {
                     List<Residue> rs = p.getResidues();
                     for (Residue r : rs) {
-                        if (r.getResidueIndex() == i) {
+                        if (r.getResidueNumber() == i) {
                             residueList.add(r);
-                            Rotamer[] rotamers = r.getRotamers();
+                            Rotamer[] rotamers = RotamerLibrary.getRotamers(r);
                             if (rotamers != null && rotamers.size() > 1) {
                                 n++;
                             }
@@ -735,7 +735,7 @@ if (algorithm != 5) {
         ignoreNA = true;
     }
     ArrayList<Residue> residueList = new ArrayList<Residue>();
-    Polymer[] polymers = active.getPolymers();
+    Polymer[] polymers = active.getChains();
     int nPolymers = polymers.length;
     for (int p=0; p<nPolymers; p++) {
         Polymer polymer = polymers[p];
@@ -746,7 +746,7 @@ if (algorithm != 5) {
             if (ignoreNA && residue.getResidueType() == ResidueType.NA) {
                 continue;
             }
-            Rotamer[] rotamers = residue.getRotamers();
+            Rotamer[] rotamers = RotamerLibrary.getRotamers(residue);
             if (rotamers != null) {
                 int nrot = rotamers.length;
                 if (nrot == 1) {
@@ -773,10 +773,10 @@ if (options.sO) {
         int num = Integer.parseInt(s.substring(1));
         for (int i = 0; i < residueList.size(); i++) {
             Residue res = residueList.get(i);
-            if (res.getChainID() == chainID && res.getResidueIndex() == num) {
+            if (res.getChainID() == chainID && res.getResidueNumber() == num) {
                 MultiResidue multiRes = new MultiResidue(res, active.getForceField(), active.getPotentialEnergy());
-                for (Polymer polymer : active.getPolymers()) {
-                    if (polymer.getChainIDChar() == chainID) {
+                for (Polymer polymer : active.getChains()) {
+                    if (polymer.getChainID() == chainID) {
                         logger.info(String.format(" Adding multiresidue %s to chain %c.", multiRes, chainID));
                         polymer.addMultiResidue(multiRes);
                     }
@@ -787,7 +787,7 @@ if (options.sO) {
                     }
                     if (!aa.toString().equalsIgnoreCase(res.getName())) {
                         logger.info(String.format(" Adding %s to residue %s.", aa.toString(), multiRes.toString()));
-                        multiRes.addResidue(new Residue(aa.toString(), res.getResidueIndex(), ResidueType.AA));
+                        multiRes.addResidue(new Residue(aa.toString(), res.getResidueNumber(), ResidueType.AA));
                     }
                 }
                 multiRes.finalize();
@@ -807,7 +807,7 @@ if (options.tO) {
         int num = Integer.parseInt(s.substring(1));
         for (int i = 0; i < residueList.size(); i++) {
             Residue res = residueList.get(i);
-            if (res.getChainID() == chainID && res.getResidueIndex() == num) {
+            if (res.getChainID() == chainID && res.getResidueNumber() == num) {
                 titrating.add(res);
             }
         }

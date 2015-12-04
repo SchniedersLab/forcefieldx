@@ -343,17 +343,6 @@ public class Main extends JFrame {
                 argList.add(args[i]);
             }
         }
-        
-        /**
-         * Check for presence of Biojava properties, and appropriately squash.
-         */
-        String tempDirString = System.getProperty("java.io.tmpdir");
-        if (System.getProperty("PDB_DIR") == null) {
-            System.setProperty("PDB_DIR", tempDirString);
-        }
-        if (System.getProperty("PDB_CACHE_DIR") == null) {
-            System.setProperty("PDB_CACHE_DIR", tempDirString);
-        }
 
         /**
          * Start up the GUI or CLI version of Force Field X.

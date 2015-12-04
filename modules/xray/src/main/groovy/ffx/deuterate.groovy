@@ -68,7 +68,7 @@ for (int i=0; i<systems.length; i++) {
     Atom[] atoms = systems[i].getAtomArray();
     for (Atom a : atoms) {
 	if (a.getAtomicNumber() == 1) {
-	    Atom b = a.getFFXBonds().get(0).get1_2(a);
+	    Atom b = a.getBonds().get(0).get1_2(a);
 
 	    // criteria for converting H to D
 	    if (b.getAtomicNumber() == 7

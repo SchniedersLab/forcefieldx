@@ -108,7 +108,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
         this.diffractiondata = diffractiondata;
         this.refinementmodel = diffractiondata.getRefinementModel();
         this.refinementMode = refinementmode;
-        this.atomarray = refinementmodel.getAtomArray();
+        this.atomarray = refinementmodel.atomArray;
         this.nAtoms = atomarray.length;
         this.nxyz = nxyz;
         this.nb = nb;
@@ -522,10 +522,6 @@ public class XRayEnergy implements LambdaInterface, Potential {
         assert (x != null);
         double xyz[] = new double[3];
         int index = 0;
-        int nVar = getNumberOfVariables();
-        if (x.length < nVar) {
-            x = new double[nVar];
-        }
         fill(x, 0.0);
 
         if (refinexyz) {
@@ -697,7 +693,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
         // set hydrogen based on bonded atom
         for (Atom a : atomarray) {
             if (a.getAtomicNumber() == 1) {
-                Atom b = a.getFFXBonds().get(0).get1_2(a);
+                Atom b = a.getBonds().get(0).get1_2(a);
                 a.setTempFactor(b.getTempFactor());
             }
         }
@@ -783,7 +779,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
                 a.addToTempFactorGradient(gradb);
 
                 // similarity harmonic restraint
-                ArrayList<Bond> bonds = a.getFFXBonds();
+                ArrayList<Bond> bonds = a.getBonds();
                 for (Bond b : bonds) {
                     if (a.compareTo(b.getAtom(0)) == 0) {
                         a1 = b.getAtom(0);
@@ -829,7 +825,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
                 a.addToAnisouGradient(gradu);
 
                 // similarity harmonic restraint based on determinants
-                ArrayList<Bond> bonds = a.getFFXBonds();
+                ArrayList<Bond> bonds = a.getBonds();
                 for (Bond b : bonds) {
                     if (a.compareTo(b.getAtom(0)) == 0) {
                         a1 = b.getAtom(0);
@@ -1057,11 +1053,6 @@ public class XRayEnergy implements LambdaInterface, Potential {
                 xrayterms = true;
                 restraintterms = true;
         }
-    }
-    
-    @Override
-    public void reInit() {
-        throw new UnsupportedOperationException(String.format(" No reInit method defined for %s", XRayEnergy.class.toString()));
     }
 
     @Override

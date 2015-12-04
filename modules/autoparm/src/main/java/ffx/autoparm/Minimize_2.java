@@ -279,8 +279,8 @@ public class Minimize_2 implements OptimizationListener, Terminatable {
             bw.write(String.format("%6d\n", atoms.length));
             for (Atom a : atoms) {
                 String output = String.format("%6d", a.xyzIndex) + "  " + a.getAtomType().name + " " + String.format("%12s %12s %12s", myFormatter.format(a.getX()), myFormatter.format(a.getY()), myFormatter.format(a.getZ())) + " " + String.format("%6d", a.getAtomType().atomClass);
-                for (int i = 0; i < a.getFFXBonds().size(); i++) {
-                    output += String.format("%6d", a.getFFXBonds().get(i).get1_2(a).xyzIndex);
+                for (int i = 0; i < a.getBonds().size(); i++) {
+                    output += String.format("%6d", a.getBonds().get(i).get1_2(a).xyzIndex);
                 }
                 bw.write(output + "\n");
             }

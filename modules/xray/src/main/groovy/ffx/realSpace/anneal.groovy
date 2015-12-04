@@ -143,7 +143,7 @@ RealSpaceData realspacedata = new RealSpaceData(active, active.getProperties(), 
 
 energy();
 
-RefinementEnergy refinementEnergy = RefinementEnergy.refinementEnergyFactory(realspacedata, RefinementMode.COORDINATES);
+RefinementEnergy refinementEnergy = new RefinementEnergy(realspacedata, RefinementMode.COORDINATES);
 SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(active, refinementEnergy, active.getProperties(), refinementEnergy);
 simulatedAnnealing.anneal(high, low, windows, steps);
 energy();

@@ -166,7 +166,7 @@ if (library == 1) {
 }
 
 ArrayList<Residue> residueList = new ArrayList<>();
-Polymer[] polymers = active.getPolymers();
+Polymer[] polymers = active.getChains();
 
 if (options.x) {
     int counter = 1;
@@ -177,7 +177,7 @@ if (options.x) {
         int nResidues = residues.size();
         for (int i=0; i<nResidues; i++) {
             Residue residue = residues.get(i);
-            Rotamer[] rotamers = residue.getRotamers();
+            Rotamer[] rotamers = RotamerLibrary.getRotamers(residue);
             if (rotamers != null) {
                 int nrot = rotamers.length;
                 if (nrot == 1) {
@@ -201,9 +201,9 @@ if (options.x) {
             if (p.getChainID() == chainID) {
                 List<Residue> rs = p.getResidues();
                 for (Residue r : rs) {
-                    if (r.getResidueIndex() == i) {
+                    if (r.getResidueNumber() == i) {
                         residueList.add(r);
-                        Rotamer[] rotamers = r.getRotamers();
+                        Rotamer[] rotamers = RotamerLibrary.getRotamers(r);
                         if (rotamers != null && rotamers.size() > 1) {
                             n++;
                         }

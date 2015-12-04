@@ -58,7 +58,6 @@ import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Residue.ResidueType;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
-import ffx.potential.bonded.ResidueState;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.parameters.ForceField;
@@ -242,7 +241,7 @@ public class Protonate implements MonteCarloListener {
      */
     private void chooseAllTitratables() {
         chosenResidues = new ArrayList<>();
-        Polymer polymers[] = molAss.getPolymers();
+        Polymer polymers[] = molAss.getChains();
         for (int i = 0; i < polymers.length; i++) {
             ArrayList<Residue> residues = polymers[i].getResidues();
             for (int j = 0; j < residues.size(); j++) {
@@ -264,7 +263,7 @@ public class Protonate implements MonteCarloListener {
      */
     private void chooseTitratablesInWindow(double pH, double window) {
         chosenResidues = new ArrayList<>();
-        Polymer polymers[] = molAss.getPolymers();
+        Polymer polymers[] = molAss.getChains();
         for (int i = 0; i < polymers.length; i++) {
             ArrayList<Residue> residues = polymers[i].getResidues();
             for (int j = 0; j < residues.size(); j++) {
@@ -282,16 +281,16 @@ public class Protonate implements MonteCarloListener {
     }
 
     public void chooseResID(ArrayList<String> crIDs) {
-        Polymer[] polymers = molAss.getPolymers();
+        Polymer[] polymers = molAss.getChains();
         int n = 0;
         for (String s : crIDs) {
             Character chainID = s.charAt(0);
             int i = Integer.parseInt(s.substring(1));
             for (Polymer p : polymers) {
-                if (p.getChainIDChar() == chainID) {
+                if (p.getChainID() == chainID) {
                     List<Residue> rs = p.getResidues();
                     for (Residue r : rs) {
-                        if (r.getResidueIndex() == i) {
+                        if (r.getResidueNumber() == i) {
                             chosenResidues.add(r);
                             // logger.info(String.format(" Chosen: %s", r));
                         }
@@ -302,12 +301,12 @@ public class Protonate implements MonteCarloListener {
     }
 
     public void chooseResID(char chain, int resID) {
-        Polymer polymers[] = molAss.getPolymers();
+        Polymer polymers[] = molAss.getChains();
         for (Polymer polymer : polymers) {
-            if (polymer.getChainIDChar() == chain) {
+            if (polymer.getChainID() == chain) {
                 ArrayList<Residue> residues = polymer.getResidues();
                 for (Residue residue : residues) {
-                    if (residue.getResidueIndex() == resID) {
+                    if (residue.getResidueNumber() == resID) {
                         chosenResidues.add(residue);
                         logger.info(String.format(" Chosen: %s", residue));
                     }
@@ -327,7 +326,7 @@ public class Protonate implements MonteCarloListener {
             polymer.addMultiResidue(multiRes);
             String protFormName = Titratable.valueOf(res.getName()).protForm.toString();
             String deprotFormName = Titratable.valueOf(res.getName()).deprotForm.toString();
-            int resNumber = res.getResidueIndex();
+            int resNumber = res.getResidueNumber();
             ResidueType resType = res.getResidueType();
             if (!res.getName().equalsIgnoreCase(protFormName)) {
                 multiRes.addResidue(new Residue(protFormName, resNumber, resType));
@@ -421,7 +420,7 @@ public class Protonate implements MonteCarloListener {
             // If this Titration target is not a choice for the MultiResidue, then add it.
             String targetName = titr.target.toString();
             if (!choices.contains(targetName)) {
-                int resNumber = member.getResidueIndex();
+                int resNumber = member.getResidueNumber();
                 ResidueType resType = member.getResidueType();
                 Residue newChoice = new Residue(targetName, resNumber, resType);
                 multiRes.addResidue(newChoice);
@@ -498,9 +497,8 @@ public class Protonate implements MonteCarloListener {
         MultiResidue targetMulti = titratingResidues.get(random);
 
         // Check whether rotamer moves are possible for the selected residue.
-        Residue targetMultiActive = targetMulti.getActive();
-        Rotamer[] targetMultiRotamers = targetMultiActive.getRotamers();
-        if (targetMultiRotamers == null || targetMultiRotamers.length <= 1) {
+        if (RotamerLibrary.getRotamers(targetMulti.getActive()) == null
+                || RotamerLibrary.getRotamers(targetMulti.getActive()).length <= 1) {
             if (stepType == StepType.ROTAMER) {
                 return false;
             } else if (stepType == StepType.COMBO) {
@@ -630,14 +628,18 @@ public class Protonate implements MonteCarloListener {
         // Save coordinates so we can return to them if move is rejected.
         Residue residue = targetMulti.getActive();
         ArrayList<Atom> atoms = residue.getAtomList();
-        ResidueState origState = residue.storeState();
+        double[][] origCoordinates = new double[atoms.size()][];
+        for (int i = 0; i < atoms.size(); i++) {
+            Atom atomi = atoms.get(i);
+            origCoordinates[i] = new double[3];
+            atomi.getXYZ(origCoordinates[i]);
+        }
         double chi[] = new double[4];
         RotamerLibrary.measureAARotamer(residue, chi, false);
         AminoAcid3 aa = AminoAcid3.valueOf(residue.getName());
-        Rotamer origCoordsRotamer = new Rotamer(aa, origState, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0);
+        Rotamer origCoordsRotamer = new Rotamer(aa, origCoordinates, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0);
         // Select a new rotamer and swap to it.
-        //Rotamer rotamers[] = residue.getRotamers();
-        Rotamer[] rotamers = residue.getRotamers();
+        Rotamer rotamers[] = RotamerLibrary.getRotamers(residue);
         int rotaRand = rng.nextInt(rotamers.length);
         RotamerLibrary.applyRotamer(residue, rotamers[rotaRand]);
 
@@ -715,15 +717,19 @@ public class Protonate implements MonteCarloListener {
         // Change rotamer state, but first save coordinates so we can return to them if rejected.
         Residue residue = targetMulti.getActive();
         ArrayList<Atom> atoms = residue.getAtomList();
-        ResidueState origState = residue.storeState();
+        double[][] origCoordinates = new double[atoms.size()][];
+        for (int i = 0; i < atoms.size(); i++) {
+            Atom atomi = atoms.get(i);
+            origCoordinates[i] = new double[3];
+            atomi.getXYZ(origCoordinates[i]);
+        }
         double chi[] = new double[4];
         RotamerLibrary.measureAARotamer(residue, chi, false);
         AminoAcid3 aa = AminoAcid3.valueOf(residue.getName());
-        Rotamer origCoordsRotamer = new Rotamer(aa, origState, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0);
-        
+        Rotamer origCoordsRotamer = new Rotamer(aa, origCoordinates, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0);
+
         // Swap to the new rotamer.
-        //Rotamer rotamers[] = residue.getRotamers();
-        Rotamer[] rotamers = residue.getRotamers();
+        Rotamer rotamers[] = RotamerLibrary.getRotamers(residue);
         int rotaRand = rng.nextInt(rotamers.length);
         RotamerLibrary.applyRotamer(residue, rotamers[rotaRand]);
 
@@ -1123,10 +1129,10 @@ public class Protonate implements MonteCarloListener {
         if (residue.getChainID() == null) {
             logger.severe("No chain ID for residue " + residue);
         }
-        Polymer polymers[] = molecularAssembly.getPolymers();
+        Polymer polymers[] = molecularAssembly.getChains();
         Polymer location = null;
         for (Polymer p : polymers) {
-            if (p.getChainIDChar() == residue.getChainID()) {
+            if (p.getChainID() == residue.getChainID()) {
                 location = p;
             }
         }

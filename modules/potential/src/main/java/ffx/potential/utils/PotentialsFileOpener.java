@@ -39,7 +39,6 @@ package ffx.potential.utils;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.FileNotFoundException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -87,7 +86,7 @@ public class PotentialsFileOpener implements FileOpener {
     private List<CompositeConfiguration> propertyList;
     private CompositeConfiguration activeProperties;
 
-    public PotentialsFileOpener(File file) throws IllegalArgumentException {
+    public PotentialsFileOpener(File file) {
         if (!file.exists() || !file.isFile()) {
             throw new IllegalArgumentException(String.format(" File %s either did not exist or was not a file.", file.getName()));
         }
@@ -113,15 +112,15 @@ public class PotentialsFileOpener implements FileOpener {
         propertyList = new ArrayList<>();
     }
 
-    public PotentialsFileOpener(String filename) throws IllegalArgumentException {
+    public PotentialsFileOpener(String filename) {
         this(new File(filename));
     }
 
-    public PotentialsFileOpener(Path filepath) throws IllegalArgumentException {
+    public PotentialsFileOpener(Path filepath) {
         this(filepath.toString());
     }
 
-    public PotentialsFileOpener(File[] files) throws IllegalArgumentException {
+    public PotentialsFileOpener(File[] files) {
         if (files == null) {
             throw new IllegalArgumentException(" Array of files to be opened was null.");
         }
@@ -163,7 +162,7 @@ public class PotentialsFileOpener implements FileOpener {
         propertyList = new ArrayList<>();
     }
 
-    public PotentialsFileOpener(String[] filenames) throws IllegalArgumentException {
+    public PotentialsFileOpener(String[] filenames) {
         if (filenames == null) {
             throw new IllegalArgumentException(" Array of files to be opened was null.");
         }

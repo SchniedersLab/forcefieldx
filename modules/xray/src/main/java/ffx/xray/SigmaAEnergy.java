@@ -766,9 +766,4 @@ public class SigmaAEnergy implements Potential {
     public void setEnergyTermState(STATE state) {
         this.state = state;
     }
-    
-    @Override
-    public void reInit() {
-        throw new UnsupportedOperationException(String.format(" No reInit method defined for %s", SigmaAEnergy.class.toString()));
-    }
 }

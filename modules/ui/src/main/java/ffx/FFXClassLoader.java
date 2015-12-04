@@ -85,15 +85,8 @@ public class FFXClassLoader extends URLClassLoader {
         "org.apache.commons.lang",
         "org.apache.commons.lang3",
         "org.apache.commons.math3",
-        "org.apache.logging.log4j",
-        "org.apache.logging.log4j.log4j-core",
-        "org.apache.logging.log4j.log4j-api",
-        "org.apache.logging.log4j.log4j-slf4j-impl",
-        "org.slf4j",
         "org.jogamp",
         "edu.rit.pj",
-        "net.sourceforge.jmol",
-        "org.biojava",
         "jcuda"};
     static final List<String> FFX_FILES;
     private static String gluegen = null;
@@ -103,11 +96,6 @@ public class FFXClassLoader extends URLClassLoader {
 
     static {
         FFX_FILES = new ArrayList<>(Arrays.asList(new String[]{
-            "org.apache.logging.log4j/log4j-slf4j-impl.jar",
-            "org.apache.logging.log4j/log4j-api.jar",
-            "org.apache.logging.log4j/log4j-core.jar",
-            "org.slf4j/slf4j-api.jar",
-            "org.slf4j/slf4j-simple.jar",
             "edu.uiowa.eng.ffx/algorithms.jar",
             "edu.uiowa.eng.ffx/autoparm.jar",
             "edu.uiowa.eng.ffx/binding.jar",
@@ -153,31 +141,12 @@ public class FFXClassLoader extends URLClassLoader {
             // Java Help
             "javax.help/javahelp.jar",
             // BioJava
-            /* Old Biojava jars (version 3)
             "org.biojava/biojava3-core.jar",
             "org.biojava/core.jar",
             "org.biojava/bytecode.jar",
             "org.biojava/biojava3-structure.jar",
             "org.biojava/biojava3-alignment.jar",
             "org.biojava/biojava3-phylo.jar",
-            */
-            "org.biojava/biojava-aa-prop-ffx.jar",
-            "org.biojava/biojava-alignment-ffx.jar",
-            "org.biojava/biojava-core-ffx.jar",
-            "org.biojava/biojava-genome-ffx.jar",
-            "org.biojava/biojava-integrationtest-ffx.jar",
-            "org.biojava/biojava-modfinder-ffx.jar",
-            "org.biojava/biojava-ontology-ffx.jar",
-            "org.biojava/biojava-phylo-ffx.jar",
-            "org.biojava/biojava-protein-disorder-ffx.jar",
-            "org.biojava/biojava-sequencing-ffx.jar",
-            "org.biojava/biojava-structure-ffx.jar",
-            "org.biojava/biojava-structure-gui-ffx.jar",
-            "org.biojava/biojava-survival-ffx.jar",
-            "org.biojava/biojava-ws-ffx.jar",
-            "org.biojava/jcolorbrewer.jar",
-            "org.biojava.thirdparty/forester.jar",
-            "net.sourceforge.jmol/jmol.jar",
             // Lars Behnke's hierarchical-clustering-java
             "com.apporiented/hierarchical-clustering.jar"
         }));

@@ -114,7 +114,7 @@ public class ImproperTorsion extends BondedTerm implements
 //        logger.info(atom.toString());
         Atom atoms[] = new Atom[4];
         atoms[2] = atom;
-        ArrayList<Bond> bonds = atom.getFFXBonds();
+        ArrayList<Bond> bonds = atom.getBonds();
         if (bonds == null || bonds.size() != 3) {
             return null;
         }

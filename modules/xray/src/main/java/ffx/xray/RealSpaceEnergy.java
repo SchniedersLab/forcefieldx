@@ -84,7 +84,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         this.realspacedata = realspacedata;
         this.refinementmodel = realspacedata.getRefinementModel();
         this.refinementMode = refinementmode;
-        this.atomarray = refinementmodel.getAtomArray();
+        this.atomarray = refinementmodel.atomArray;
         this.nAtoms = atomarray.length;
         this.nxyz = nxyz;
 
@@ -254,10 +254,6 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         assert (x != null);
         double xyz[] = new double[3];
         int index = 0;
-        int nVar = getNumberOfVariables();
-        if (x.length < nVar) {
-            x = new double[nVar];
-        }
         fill(x, 0.0);
 
         if (refinexyz) {
@@ -405,11 +401,6 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
     @Override
     public void setEnergyTermState(STATE state) {
         this.state = state;
-    }
-    
-    @Override
-    public void reInit() {
-        throw new UnsupportedOperationException(String.format(" No reInit method defined for %s", RealSpaceEnergy.class.toString()));
     }
 
     @Override

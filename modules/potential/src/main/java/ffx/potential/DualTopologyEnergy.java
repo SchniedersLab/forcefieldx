@@ -37,9 +37,6 @@
  */
 package ffx.potential;
 
-/*import edu.rit.pj.ParallelRegion;
-import edu.rit.pj.ParallelSection;
-import edu.rit.pj.ParallelTeam;*/
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -283,8 +280,6 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
      */
     private final ForceFieldEnergy forceFieldEnergy2;
 
-    /*private final ParallelTeam dualTopologyTeam;
-    private final EnergyRegion energyRegion;*/
     private STATE state = STATE.BOTH;
 
     private final int nActive1;
@@ -431,9 +426,6 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
                 mass[softcoreIndex++] = m;
             }
         }
-        /*dualTopologyTeam = new ParallelTeam(2);
-        // Will probably not be an issue, even with only one thread allocated.
-        energyRegion = new EnergyRegion();*/
     }
 
     public DualTopologyEnergy(MolecularAssembly topology1, MolecularAssembly topology2) {
@@ -580,9 +572,6 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
                 mass[softcoreIndex++] = m;
             }
         }
-        /*dualTopologyTeam = new ParallelTeam(2);
-        // Will probably not be an issue, even with only one thread allocated.
-        energyRegion = new EnergyRegion();*/
     }
 
     @Override
@@ -592,13 +581,6 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
          */
         unpackCoordinates(x);
 
-        /*
-         try {
-         dualTopologyTeam.execute(energyRegion);
-         } catch (Exception e) {
-         String message = "Fatal exception computing the Dual-Topology Energy.\n";
-         logger.log(Level.SEVERE, message, e);
-         } */
         /**
          * Compute the energy of topology 1.
          */
@@ -615,10 +597,10 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
             logger.fine(String.format(" Topology 1 Energy & Restraints: %15.8f %15.8f\n",
                     lambdaPow * energy1, oneMinusLambdaPow * restraintEnergy1));
         }
+
         /**
          * Compute the energy of topology 2.
          */
-
         energy2 = potential2.energy(x2);
         if (doValenceRestraint2 && potential2 instanceof ForceFieldEnergy) {
             ForceFieldEnergy ffE2 = (ForceFieldEnergy) potential2;
@@ -632,6 +614,7 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
             logger.fine(String.format(" Topology 2 Energy & Restraints: %15.8f %15.8f\n",
                     oneMinusLambdaPow * energy2, lambdaPow * restraintEnergy2));
         }
+
         /**
          * Apply the dual-topology scaling for the total energy.
          */
@@ -662,14 +645,6 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
          */
         unpackCoordinates(x);
 
-        /*
-         try {
-         energyRegion.setGradient(true);
-         dualTopologyTeam.execute(energyRegion);
-         } catch (Exception e) {
-         String message = "Fatal exception computing the Dual-Topology Energy.\n";
-         logger.log(Level.SEVERE, message, e);
-         } */
         /**
          * Initialize dUdXdL arrays.
          */
@@ -677,7 +652,6 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
         fill(gl2, 0.0);
         fill(rgl1, 0.0);
         fill(rgl2, 0.0);
-
         /**
          * Compute the energy and gradient of topology 1.
          */
@@ -685,6 +659,7 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
         dEdL_1 = lambdaInterface1.getdEdL();
         d2EdL2_1 = lambdaInterface1.getd2EdL2();
         lambdaInterface1.getdEdXdL(gl1);
+
         if (doValenceRestraint1) {
             forceFieldEnergy1.setLambdaBondedTerms(true);
             restraintEnergy1 = forceFieldEnergy1.energyAndGradient(x1, rg1);
@@ -709,6 +684,7 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
         dEdL_2 = -lambdaInterface2.getdEdL();
         d2EdL2_2 = lambdaInterface2.getd2EdL2();
         lambdaInterface2.getdEdXdL(gl2);
+
         if (doValenceRestraint2) {
             forceFieldEnergy2.setLambdaBondedTerms(true);
             restraintEnergy2 = forceFieldEnergy2.energyAndGradient(x2, rg2);
@@ -806,11 +782,6 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
                 g[i] /= scaling[i];
             }
         }
-    }
-    
-    @Override
-    public void reInit() {
-        throw new UnsupportedOperationException(String.format(" No reInit method defined for %s", DualTopologyEnergy.class.toString()));
     }
 
     private void unpackCoordinates(double x[]) {
@@ -1240,118 +1211,4 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
 
         return previousAcceleration;
     }
-
-    /*private class EnergyRegion extends ParallelRegion {
-
-        private final EnergySection1 e1 = new EnergySection1();
-        private final EnergySection2 e2 = new EnergySection2();
-        boolean gradient = false;
-
-        public void setGradient(boolean gradient) {
-            this.gradient = gradient;
-        }
-
-        @Override
-        public void run() throws Exception {
-            try {
-                execute(e1, e2);
-                gradient = false;
-            } catch (Exception e) {
-                String message = "Fatal exception computing the Dual-Topology Energy.\n";
-                logger.log(Level.SEVERE, message, e);
-            }
-
-        }
-
-        private class EnergySection1 extends ParallelSection {
-
-            @Override
-            public void run() throws Exception {
-                if (!gradient) {
-                    energy1 = potential1.energy(x1);
-                    if (doValenceRestraint1 && potential1 instanceof ForceFieldEnergy) {
-                        ForceFieldEnergy ffE1 = (ForceFieldEnergy) potential1;
-                        ffE1.setLambdaBondedTerms(true);
-                        restraintEnergy1 = potential1.energy(x1);
-                        ffE1.setLambdaBondedTerms(false);
-                    } else {
-                        restraintEnergy1 = 0.0;
-                    }
-                    if (logger.isLoggable(Level.INFO)) {
-                        logger.info(String.format(" Topology 1 Energy & Restraints: %15.8f %15.8f\n",
-                                lambdaPow * energy1, oneMinusLambdaPow * restraintEnergy1));
-                    }
-                } else {
-                    fill(gl1, 0.0);
-                    fill(rgl1, 0.0);
-                    energy1 = potential1.energyAndGradient(x1, g1);
-                    dEdL_1 = lambdaInterface1.getdEdL();
-                    d2EdL2_1 = lambdaInterface1.getd2EdL2();
-                    lambdaInterface1.getdEdXdL(gl1);
-                    if (doValenceRestraint1) {
-                        forceFieldEnergy1.setLambdaBondedTerms(true);
-                        restraintEnergy1 = forceFieldEnergy1.energyAndGradient(x1, rg1);
-                        restraintdEdL_1 = forceFieldEnergy1.getdEdL();
-                        restraintd2EdL2_1 = forceFieldEnergy1.getd2EdL2();
-                        forceFieldEnergy1.getdEdXdL(rgl1);
-                        forceFieldEnergy1.setLambdaBondedTerms(false);
-                    } else {
-                        restraintEnergy1 = 0.0;
-                        restraintdEdL_1 = 0.0;
-                        restraintd2EdL2_1 = 0.0;
-                    }
-                    if (logger.isLoggable(Level.INFO)) {
-                        logger.info(String.format(" Topology 1 Gradient & Restraints: %15.8f %15.8f\n",
-                                lambdaPow * energy1, oneMinusLambdaPow * restraintEnergy1));
-                    }
-                }
-            }
-        }
-
-        private class EnergySection2 extends ParallelSection {
-
-            @Override
-            public void run() throws Exception {
-                if (!gradient) {
-                    energy2 = potential2.energy(x2);
-                    if (doValenceRestraint2 && potential2 instanceof ForceFieldEnergy) {
-                        ForceFieldEnergy ffE2 = (ForceFieldEnergy) potential2;
-                        ffE2.setLambdaBondedTerms(true);
-                        restraintEnergy2 = potential2.energy(x2);
-                        ffE2.setLambdaBondedTerms(false);
-                    } else {
-                        restraintEnergy2 = 0.0;
-                    }
-                    if (logger.isLoggable(Level.INFO)) {
-                        logger.info(String.format(" Topology 2 Energy & Restraints: %15.8f %15.8f\n",
-                                oneMinusLambdaPow * energy2, lambdaPow * restraintEnergy2));
-                    }
-                } else {
-                    fill(gl2, 0.0);
-                    fill(rgl2, 0.0);
-                    energy2 = potential2.energyAndGradient(x2, g2);
-                    dEdL_2 = -lambdaInterface2.getdEdL();
-                    d2EdL2_2 = lambdaInterface2.getd2EdL2();
-                    lambdaInterface2.getdEdXdL(gl2);
-
-                    if (doValenceRestraint2) {
-                        forceFieldEnergy2.setLambdaBondedTerms(true);
-                        restraintEnergy2 = forceFieldEnergy2.energyAndGradient(x2, rg2);
-                        restraintdEdL_2 = -forceFieldEnergy2.getdEdL();
-                        restraintd2EdL2_2 = forceFieldEnergy2.getd2EdL2();
-                        forceFieldEnergy2.getdEdXdL(rgl2);
-                        forceFieldEnergy2.setLambdaBondedTerms(false);
-                    } else {
-                        restraintEnergy2 = 0.0;
-                        restraintdEdL_2 = 0.0;
-                        restraintd2EdL2_2 = 0.0;
-                    }
-                    if (logger.isLoggable(Level.INFO)) {
-                        logger.info(String.format(" Topology 2 Gradient & Restraints: %15.8f %15.8f\n",
-                                oneMinusLambdaPow * energy2, lambdaPow * restraintEnergy2));
-                    }
-                }
-            }
-        }
-    }*/
 }

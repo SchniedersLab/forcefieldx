@@ -39,7 +39,6 @@ package ffx.potential.bonded;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -54,12 +53,6 @@ import java.util.logging.Logger;
  */
 public class ResidueState {
     private static final Logger logger = Logger.getLogger(ResidueState.class.getName());
-    /**
-     * For a MultiResidue, parent is the MultiResidue, while res is the chemical 
-     * state to which this ResidueState belongs. For a regular Residue, both are
-     * just the Residue. In general, use res to store a chemical or other state,
-     * and parent to store the Residue to which this belongs.
-     */
     private final Residue parent;
     private final Residue res;
     private final HashMap<Atom, double[]> atomMap;
@@ -86,7 +79,7 @@ public class ResidueState {
         return parent;
     }
     
-    public Residue getStateResidue() {
+    public Residue getResidue() {
         return res;
     }
     
@@ -129,16 +122,6 @@ public class ResidueState {
      */
     public double[] getAtomCoords(Atom atom) {
         double[] xyz = new double[3];
-        if (!atomMap.containsKey(atom)) {
-            logger.info(String.format(" Illegal call to ResidueState.getAtomCoords: atom %s not found: hashcode %d", atom, atom.hashCode()));
-            for (Atom ratom : res.getAtomList()) {
-                logger.info(String.format(" Atoms in residue: %s hashcode: %d", ratom, ratom.hashCode()));
-            }
-            for (Atom matom : atomMap.keySet()) {
-                logger.info(String.format(" Atoms in ResidueState atom cache: %s hashcode: %d", matom, matom.hashCode()));
-            }
-            logger.log(Level.SEVERE, " Error in ResidueState.getAtomCoords.", new IllegalStateException());
-        }
         System.arraycopy(atomMap.get(atom), 0, xyz, 0, 3);
         return xyz;
     }
@@ -162,7 +145,7 @@ public class ResidueState {
         int nResidues = residues.length;
         ResidueState states[] = new ResidueState[nResidues];
         for (int i = 0; i < nResidues; i++) {
-            states[i] = residues[i].storeState();
+            states[i] = residues[i].storeCoordinates();
         }
         return states;
     }
@@ -195,14 +178,14 @@ public class ResidueState {
             Residue resi = residueArray[i];
             // If indexing did not get thrown off:
             if (resi.equals(states[i].getParent())) {
-                resi.revertState(states[i]);
+                resi.revertCoordinates(states[i]);
             } else {
                 // Else must search states[]
                 boolean matchFound = false;
                 for (int j = 0; j < nResidues; j++) {
                     if (resi.equals(states[j].getParent())) {
                         matchFound = true;
-                        resi.revertState(states[j]);
+                        resi.revertCoordinates(states[j]);
                         break;
                     }
                 }
@@ -213,11 +196,5 @@ public class ResidueState {
                 }
             }
         }
-    }
-    
-    @Override
-    public String toString() {
-        return String.format(" ResidueState with parent residue %s, state residue "
-                + "%s, number of atoms %d", parent, res, atoms.length);
     }
 }

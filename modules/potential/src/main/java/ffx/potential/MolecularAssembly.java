@@ -47,7 +47,6 @@ import java.util.ListIterator;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Map;
 
 import javax.media.j3d.Appearance;
 import javax.media.j3d.BoundingSphere;
@@ -77,11 +76,9 @@ import org.jdesktop.j3d.loaders.vrml97.VrmlLoader;
 import org.jdesktop.j3d.loaders.vrml97.VrmlScene;
 
 import ffx.crystal.Crystal;
-import ffx.numerics.Potential;
 import ffx.numerics.VectorMath;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
-import ffx.potential.bonded.DisulfideBond;
 import ffx.potential.bonded.MSGroup;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.Molecule;
@@ -91,31 +88,10 @@ import ffx.potential.bonded.RendererCache;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Residue.ResiduePosition;
 import ffx.potential.parameters.ForceField;
-import ffx.potential.parsers.PDBFilter;
-import ffx.potential.utils.PotentialsUtils;
-import ffx.utilities.Keyword;
 
 import static ffx.potential.bonded.Residue.ResiduePosition.FIRST_RESIDUE;
 import static ffx.potential.bonded.Residue.ResiduePosition.LAST_RESIDUE;
 import static ffx.potential.bonded.Residue.ResiduePosition.MIDDLE_RESIDUE;
-import ffx.potential.parsers.BiojavaFilter;
-
-import org.apache.commons.configuration.CompositeConfiguration;
-
-import org.biojava.nbio.structure.Chain;
-import org.biojava.nbio.structure.Compound;
-import org.biojava.nbio.structure.DBRef;
-import org.biojava.nbio.structure.ExperimentalTechnique;
-import org.biojava.nbio.structure.GroupType;
-import org.biojava.nbio.structure.JournalArticle;
-import org.biojava.nbio.structure.PDBCrystallographicInfo;
-import org.biojava.nbio.structure.PDBHeader;
-import org.biojava.nbio.structure.ResidueRange;
-import org.biojava.nbio.structure.SSBond;
-import org.biojava.nbio.structure.Site;
-import org.biojava.nbio.structure.Structure;
-import org.biojava.nbio.structure.StructureException;
-import org.biojava.nbio.structure.io.FileConvert;
 
 /**
  * The MolecularAssembly class is a collection of Polymers, Hetero Molecules,
@@ -124,7 +100,7 @@ import org.biojava.nbio.structure.io.FileConvert;
  * @author Michael J. Schnieders
  *
  */
-public class MolecularAssembly extends MSGroup implements Structure {
+public class MolecularAssembly extends MSGroup {
 
     private static final Logger logger = Logger.getLogger(MolecularAssembly.class.getName());
     private static final long serialVersionUID = 1L;
@@ -141,7 +117,6 @@ public class MolecularAssembly extends MSGroup implements Structure {
     private File file;
     protected ForceField forceField;
     private ForceFieldEnergy potentialEnergy;
-    private final List<Potential> potentials;
     private Vector3d offset;
     private int cycles = 1;
     private int currentCycle = 1;
@@ -172,19 +147,6 @@ public class MolecularAssembly extends MSGroup implements Structure {
     private URL vrmlURL = null;
     private boolean visible = false;
     private final ArrayList<BranchGroup> myNewShapes = new ArrayList<>();
-    private JournalArticle journalArticle;
-    private List<Compound> compounds = new ArrayList<>();
-    //private Map<Character, MolecularAssembly> altLocAssemblies = new HashMap<>();
-    private String pdbCode;
-    private PDBHeader pdbHeader;
-    private boolean nmrFlag = false;
-    private List<Map<String, Integer>> connections;
-    private List<SSBond> ssBonds;
-    private long hibID;
-    private List<Site> sites;
-    private boolean biologicalAssembly = false;
-    private List<DBRef> dbRefs;
-    private PDBCrystallographicInfo pdbCrystalInfo;
 
     // Constructors
     /**
@@ -199,7 +161,6 @@ public class MolecularAssembly extends MSGroup implements Structure {
         add(molecules);
         add(ions);
         add(water);
-        potentials = new ArrayList<>();
     }
 
     /**
@@ -211,7 +172,6 @@ public class MolecularAssembly extends MSGroup implements Structure {
      */
     public MolecularAssembly(String name, MSNode Polymers) {
         super(name, Polymers);
-        potentials = new ArrayList<>();
     }
 
     /**
@@ -231,11 +191,7 @@ public class MolecularAssembly extends MSGroup implements Structure {
      * @param potentialEnergy a {@link ffx.potential.ForceFieldEnergy} object.
      */
     public void setPotential(ForceFieldEnergy potentialEnergy) {
-        if (this.potentialEnergy != null) {
-            potentials.remove(this.potentialEnergy);
-        }
         this.potentialEnergy = potentialEnergy;
-        potentials.add(potentialEnergy);
     }
 
     /**
@@ -247,47 +203,11 @@ public class MolecularAssembly extends MSGroup implements Structure {
     public ForceFieldEnergy getPotentialEnergy() {
         return potentialEnergy;
     }
-    
-    public List<Potential> getPotentials() {
-        return new ArrayList<>(potentials);
-    }
-    
-    public void addPotential(Potential potential) {
-        potentials.add(potential);
-    }
-    
-    public boolean removePotential(Potential potential) {
-        return potentials.remove(potential);
-    }
-    
-    public void reinitPotentials() {
-        List<Potential> pots = getPotentials();
-        
-        // Remove potentialEnergy from the list of potentials so that we can 
-        // guarantee it is the first to be re-initialized. Possibly unnecessary.
-        /*for (Iterator<Potential> iter = pots.iterator(); iter.hasNext();) {
-            Potential pot = iter.next();
-            if (pot == potentialEnergy) {
-                iter.remove();
-                break;
-            } else {
-                
-            logger.info(" A schlocky merc.");
-            }
-        }*/
-        
-        //potentialEnergy.reInit();
-        for (Potential pot : pots) {
-            if (pot != potentialEnergy) {
-                pot.reInit();
-            }
-        }
-    }
 
     public ResiduePosition getResiduePosition(int residueNumber) {
         ResiduePosition position;
         int numberOfResidues = 0;
-        Polymer polymers[] = getPolymers();
+        Polymer polymers[] = getChains();
         int nPolymers = polymers.length;
         for (int i = 0; i < nPolymers; i++) {
             Polymer polymer = polymers[i];
@@ -369,7 +289,6 @@ public class MolecularAssembly extends MSGroup implements Structure {
                 return c.addMSNode(residue);
             } else {
                 Polymer newc = new Polymer(chainID, segID);
-                newc.setStructure(this, true);
                 getAtomNode().add(newc);
                 setFinalized(false);
                 return newc.addMSNode(residue);
@@ -711,7 +630,7 @@ public class MolecularAssembly extends MSGroup implements Structure {
                 Molecule m = (Molecule) node;
                 if (m.getSegID().equalsIgnoreCase(atom.getSegID())
                         && m.getResidueName().equalsIgnoreCase(atom.getResidueName())
-                        && m.getResidueIndex() == atom.getResidueNumber()) {
+                        && m.getResidueNumber() == atom.getResidueNumber()) {
                     Atom root = (Atom) node.contains(atom);
                     return root;
                 }
@@ -721,7 +640,7 @@ public class MolecularAssembly extends MSGroup implements Structure {
                 Molecule m = (Molecule) node;
                 if (m.getSegID().equalsIgnoreCase(atom.getSegID())
                         && m.getResidueName().equalsIgnoreCase(atom.getResidueName())
-                        && m.getResidueIndex() == atom.getResidueNumber()) {
+                        && m.getResidueNumber() == atom.getResidueNumber()) {
                     Atom root = (Atom) node.contains(atom);
                     return root;
                 }
@@ -731,7 +650,7 @@ public class MolecularAssembly extends MSGroup implements Structure {
                 Molecule m = (Molecule) node;
                 if (m.getSegID().equalsIgnoreCase(atom.getSegID())
                         && m.getResidueName().equalsIgnoreCase(atom.getResidueName())
-                        && m.getResidueIndex() == atom.getResidueNumber()) {
+                        && m.getResidueNumber() == atom.getResidueNumber()) {
                     Atom root = (Atom) node.contains(atom);
                     return root;
                 }
@@ -751,7 +670,7 @@ public class MolecularAssembly extends MSGroup implements Structure {
         int moleculeNumber[] = new int[getAtomList().size()];
         int current = 0;
         // Loop over polymers together
-        Polymer[] polymers = getPolymers();
+        Polymer[] polymers = getChains();
         if (polymers != null && polymers.length > 0) {
             for (Polymer polymer : polymers) {
                 List<Atom> atomList = polymer.getAtomList();
@@ -925,11 +844,11 @@ public class MolecularAssembly extends MSGroup implements Structure {
 
     /**
      * <p>
-     * getPolymers</p>
+     * getChains</p>
      *
      * @return an array of {@link ffx.potential.bonded.Polymer} objects.
      */
-    public Polymer[] getPolymers() {
+    public Polymer[] getChains() {
         ArrayList<Polymer> polymers = new ArrayList<Polymer>();
         for (ListIterator li = getAtomNodeList().listIterator(); li.hasNext();) {
             MSNode node = (MSNode) li.next();
@@ -1046,7 +965,7 @@ public class MolecularAssembly extends MSGroup implements Structure {
             if (node instanceof Polymer) {
                 Polymer polymer = (Polymer) node;
                 if (polymer.getName().equals(segID)
-                        && polymer.getChainIDChar().equals(chainID)) {
+                        && polymer.getChainID().equals(chainID)) {
                     return (Polymer) node;
                 }
             }
@@ -1054,7 +973,6 @@ public class MolecularAssembly extends MSGroup implements Structure {
         if (create) {
             Polymer polymer = new Polymer(chainID, segID, true);
             addMSNode(polymer);
-            polymer.setStructure(this);
             return polymer;
         }
 
@@ -1111,20 +1029,6 @@ public class MolecularAssembly extends MSGroup implements Structure {
     public ArrayList<MSNode> getWaters() {
         return water.getChildList();
     }
-    
-    /**
-     * Finds the highest XYZIndex of any Atom in this Assembly.
-     * 
-     * @return Maximum XYZIndex
-     */
-    public int getMaxXYZIndex() {
-        int maxIndex = 0;
-        for (Atom atom : getAtomList()) {
-            int atomIndex = atom.getXYZIndex();
-            maxIndex = (atomIndex > maxIndex) ? atomIndex : maxIndex;
-        }
-        return maxIndex;
-    }
 
     /**
      * <p>
@@ -1168,7 +1072,7 @@ public class MolecularAssembly extends MSGroup implements Structure {
         for (MSNode node : list) {
             Molecule m = (Molecule) node;
             if (m.getSegID().equalsIgnoreCase(segID) && m.getResidueName().equalsIgnoreCase(resName)
-                    && m.getResidueIndex() == resNum) {
+                    && m.getResidueNumber() == resNum) {
                 return (Atom) m.addMSNode(atom);
             }
         }
@@ -1177,7 +1081,7 @@ public class MolecularAssembly extends MSGroup implements Structure {
             Molecule m = (Molecule) node;
             if (m.getSegID().equalsIgnoreCase(segID)
                     && m.getResidueName().equalsIgnoreCase(resName)
-                    && m.getResidueIndex() == resNum) {
+                    && m.getResidueNumber() == resNum) {
                 return (Atom) m.addMSNode(atom);
             }
         }
@@ -1186,14 +1090,13 @@ public class MolecularAssembly extends MSGroup implements Structure {
             Molecule m = (Molecule) node;
             if (m.getSegID().equalsIgnoreCase(segID)
                     && m.getResidueName().equalsIgnoreCase(resName)
-                    && m.getResidueIndex() == resNum) {
+                    && m.getResidueNumber() == resNum) {
                 return (Atom) m.addMSNode(atom);
             }
         }
         if (create) {
             Molecule m = new Molecule(resName, resNum, chainID, segID);
             m.addMSNode(atom);
-            // Can be changed to GroupType.WATERNAMES.contains(resName.toUpperCase()
             if (resName.equalsIgnoreCase("DOD")
                     || resName.equalsIgnoreCase("HOH")
                     || resName.equalsIgnoreCase("WAT")) {
@@ -1828,455 +1731,5 @@ public class MolecularAssembly extends MSGroup implements Structure {
             r = (Residue) li.next();
             r.logSideChainCOM();
         }
-    }
-
-    /**
-     * Clones this MolecularAssembly; implementation is currently simplistic.
-     * @return A copy of this MolecularAssembly
-     */
-    @Override
-    public Structure clone() {
-        PotentialsUtils utils = new PotentialsUtils();
-        MolecularAssembly[] newAssemblies = utils.convertDataStructure(this, this.file);
-        return newAssemblies[0];
-    }
-
-    @Override
-    public void setPDBCode(String pdb_id) {
-        this.pdbCode = pdb_id;
-    }
-
-    @Override
-    public String getPDBCode() {
-        return pdbCode;
-    }
-
-    @Override
-    public void setConnections(List<Map<String, Integer>> connections) {
-        this.connections = connections;
-    }
-
-    /**
-     * Returns connectivity information; not auto-initialized by FFX.
-     * @return Connectivity
-     */
-    @Override
-    public List<Map<String, Integer>> getConnections() {
-        return connections;
-    }
-
-    @Override
-    public int size() {
-        return getChains().size();
-    }
-
-    @Override
-    public int size(int modelnr) {
-        // modelnr parameter is meaningless for FFX, as each Assembly would
-        // represent one model.
-        return getChains().size();
-    }
-
-    @Override
-    public int nrModels() {
-        return 1;
-    }
-
-    /**
-     * Checks for the presence of NMR experimental data; otherwise returns a manually
-     * set NMR flag (does not attempt to infer this like the core implementation).
-     * @return Presence of NMR experimental data.
-     */
-    @Override
-    public boolean isNmr() {
-        if (pdbHeader == null) {
-            return nmrFlag;
-        } else if (pdbHeader.getExperimentalTechniques() != null) {
-            return ExperimentalTechnique.isNmr(pdbHeader.getExperimentalTechniques());
-        } else {
-            /*
-            * FFX deals with many non-experimental structures, so the core Biojava
-            * method of trying to guess is not appropriate.
-            */
-            return nmrFlag;
-        }
-    }
-
-    /**
-     * Checks for presence of crystallographic data or a periodic unit cell; else
-     * returns a manually set crystallography flag.
-     * @return Presence of X-ray crystal data
-     */
-    @Override
-    public boolean isCrystallographic() {
-        if (pdbHeader != null && pdbHeader.getExperimentalTechniques() != null) {
-            return ExperimentalTechnique.isCrystallographic(pdbHeader.getExperimentalTechniques());
-        } else {
-            return !(getCrystal().aperiodic());
-        }
-    }
-
-    @Override
-    public void setNmr(boolean nmr) {
-        nmrFlag = nmr;
-    }
-
-    @Override
-    public void addModel(List<Chain> model) {
-        throw new UnsupportedOperationException("FFX does not currently support alternative models.");
-    }
-
-    @Override
-    public void setModel(int position, List<Chain> model) {
-        throw new UnsupportedOperationException("FFX does not currently support alternative models.");
-    }
-
-    @Override
-    public List<Chain> getModel(int modelnr) {
-        throw new UnsupportedOperationException("FFX does not currently support alternative models."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public List<Chain> getChains() {
-        Polymer[] polys = getPolymers();
-        List<Chain> ret = new ArrayList<>(polys.length);
-        ret.addAll(Arrays.asList(polys));
-        return ret;
-    }
-
-    @Override
-    public void setChains(List<Chain> chains) {
-        for (Polymer polymer : getPolymers()) {
-            polymer.setStructure(null, true);
-            polymer.removeFromParent();
-        }
-        for (Chain chain : chains) {
-            addChain(chain);
-        }
-    }
-
-    @Override
-    public List<Chain> getChains(int modelnr) {
-        return getChains();
-    }
-
-    @Override
-    public void setChains(int modelnr, List<Chain> chains) {
-        setChains(chains);
-    }
-
-    @Override
-    public void addChain(Chain chain) {
-        //String chainID = chain.getChainID();
-        String segID = getSegID(chain.getChainID());
-        if (chain instanceof Polymer) {
-            addMSNode((Polymer) chain);
-        } else {
-            for (org.biojava.nbio.structure.Group group : chain.getAtomGroups()) {
-                for (org.biojava.nbio.structure.Atom atom : group.getAtoms()) {
-                    Atom at = BiojavaFilter.readAtom(atom, segID);
-                    this.addMSNode(at);
-                }
-            }
-        }
-    }
-    
-
-    /**
-     * Converts potentially duplicate chain ID to unique segID.
-     * @param chainID Chain ID
-     * @return Unique segID
-     */
-    private String getSegID(String chainID) {
-        if (chainID.equals(" ")) {
-            chainID = "A";
-        }
-        
-        int count = 0;
-        for (Polymer polymer : getPolymers()) {
-            String polyID = polymer.getName();
-            if (polyID.endsWith(chainID)) {
-                ++count;
-            }
-        }
-        
-        if (count == 0) {
-            return chainID;
-        } else {
-            return String.format("%d%s", count, chainID);
-        }
-    }
-
-    @Override
-    public void addChain(Chain chain, int modelnr) {
-        addChain(chain);
-    }
-
-    @Override
-    public Chain getChain(int pos) {
-        return getChains().get(pos);
-    }
-
-    @Override
-    public Chain getChain(int modelnr, int pos) {
-        return getChain(pos);
-    }
-
-    @Override
-    public Chain findChain(String chainId) throws StructureException {
-        for (Polymer polymer : getPolymers()) {
-            if (polymer.getChainID().equals(chainId)) {
-                return polymer;
-            }
-        }
-        throw new StructureException(String.format("Chain %s not found in MolecularAssembly.", chainId));
-    }
-
-    @Override
-    public boolean hasChain(String chainId) {
-        try {
-            findChain(chainId);
-            return true;
-        } catch (StructureException ex) {
-            return false;
-        }
-    }
-
-    @Override
-    public Chain findChain(String chainId, int modelnr) throws StructureException {
-        return findChain(chainId);
-    }
-
-    @Override
-    public org.biojava.nbio.structure.Group findGroup(String chainId, String pdbResnum) throws StructureException {
-        Polymer polymer = (Polymer) findChain(chainId);
-        for (org.biojava.nbio.structure.Group group : polymer.getAtomGroups()) {
-            if (group.getResidueNumber().toString().equals(pdbResnum)) {
-                return group;
-            }
-        }
-        throw new StructureException(String.format("Group not found in MolecularAssembly: chainId %s pdbResnum %s", chainId, pdbResnum));
-    }
-
-    @Override
-    public org.biojava.nbio.structure.Group findGroup(String chainId, String pdbResnum, int modelnr) throws StructureException {
-        return findGroup(chainId, pdbResnum);
-    }
-
-    @Override
-    public Chain getChainByPDB(String chainId) throws StructureException {
-        for (Polymer polymer : getPolymers()) {
-            if (polymer.getChainID().equalsIgnoreCase(chainId)) {
-                return polymer;
-            }
-        }
-        throw new StructureException(String.format("Chain %s not found in MolecularAssembly", chainId));
-    }
-
-    @Override
-    public Chain getChainByPDB(String chainId, int modelnr) throws StructureException {
-        return getChainByPDB (chainId);
-    }
-    
-    public String toPDB(boolean biojFormatting) {
-        if (biojFormatting) {
-            FileConvert f = new FileConvert(this);
-            return f.toPDB();
-        } else {
-            return this.toPDB();
-        }
-    }
-
-    /**
-     * Writes to PDB using FFX formatting (use toPDB(true) to format Biojava style).
-     * 
-     * @return String representing PDB content.
-     */
-    @Override
-    public String toPDB() {
-        CompositeConfiguration properties = Keyword.loadProperties(file);
-        PDBFilter pdbFilter = new PDBFilter(file, this, this.getForceField(), properties);
-        pdbFilter.setListMode(true);
-        pdbFilter.writeFile(file, false);
-        List<String> lines = pdbFilter.getListOutput();
-        StringBuilder sb = new StringBuilder();
-        for (String line : lines) {
-            sb.append(line).append("\n");
-        }
-        return sb.toString();
-    }
-
-    @Override
-    public String toMMCIF() {
-        FileConvert f = new FileConvert(this);
-        return f.toMMCIF();
-    }
-
-    @Override
-    public void setCompounds(List<Compound> molList) {
-        compounds = molList;
-    }
-
-    @Override
-    public List<Compound> getCompounds() {
-        return compounds;
-    }
-
-    @Override
-    public void addCompound(Compound compound) {
-        compounds.add(compound);
-    }
-
-    @Override
-    public void setDBRefs(List<DBRef> dbrefs) {
-        this.dbRefs = dbrefs;
-    }
-
-    @Override
-    public List<DBRef> getDBRefs() {
-        return dbRefs;
-    }
-
-    @Override
-    public Compound getCompoundById(int molId) {
-        for (Compound compound : compounds) {
-            if (compound.getMolId() == molId) {
-                return compound;
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public PDBHeader getPDBHeader() {
-        return pdbHeader;
-    }
-
-    @Override
-    public boolean hasJournalArticle() {
-        return (journalArticle == null);
-    }
-
-    @Override
-    public JournalArticle getJournalArticle() {
-        return journalArticle;
-    }
-
-    @Override
-    public void setJournalArticle(JournalArticle journalArticle) {
-        this.journalArticle = journalArticle;
-    }
-
-    @Override
-    public List<SSBond> getSSBonds() {
-        if (ssBonds == null) {
-            ssBonds = new ArrayList<>();
-            List<ROLS> bonds = getBondList();
-            for (ROLS bond : bonds) {
-                if (bond instanceof Bond) {
-                    Atom at1 = ((Bond) bond).getAtom(0);
-                    Atom at2 = ((Bond) bond).get1_2(at1);
-                    if (at1.getName().equalsIgnoreCase("SG") && at1.getResidueName().equalsIgnoreCase("CYS") 
-                            && at2.getName().equalsIgnoreCase("SG") && at2.getResidueName().equalsIgnoreCase("CYS")) {
-                        DisulfideBond dsBond = new DisulfideBond(at1.getGroup(), at2.getGroup());
-                        ssBonds.add(dsBond);
-                    }
-                }
-            }
-        }
-        return ssBonds;
-    }
-
-    @Override
-    public void setSSBonds(List<SSBond> ssbonds) {
-        ssBonds = ssbonds;
-    }
-
-    @Override
-    public void addSSBond(SSBond ssbond) {
-        ssBonds.add(ssbond);
-    }
-
-    @Override
-    public void setPDBHeader(PDBHeader header) {
-        pdbHeader = header;
-    }
-
-    @Override
-    public Long getId() {
-        return hibID;
-    }
-
-    @Override
-    public void setId(Long id) {
-        hibID = id;
-    }
-
-    @Override
-    public void setSites(List<Site> sites) {
-        this.sites = sites;
-    }
-
-    @Override
-    public List<Site> getSites() {
-        return sites;
-    }
-
-    @Override
-    public List<org.biojava.nbio.structure.Group> getHetGroups() {
-        List<org.biojava.nbio.structure.Group> hetGroups = new ArrayList<>();
-        List<Residue> residues = getResidueList();
-        for (Residue residue : residues) {
-            if (residue.getType().equals(GroupType.HETATM)) {
-                hetGroups.add(residue);
-            }
-        }
-        hetGroups.addAll(getMolecules());
-        return hetGroups;
-    }
-
-    @Override
-    public void setBiologicalAssembly(boolean biologicalAssembly) {
-        this.biologicalAssembly = biologicalAssembly;
-    }
-
-    @Override
-    public boolean isBiologicalAssembly() {
-        return biologicalAssembly;
-    }
-
-    @Override
-    public void setCrystallographicInfo(PDBCrystallographicInfo crystallographicInfo) {
-        pdbCrystalInfo = crystallographicInfo;
-    }
-
-    @Override
-    public PDBCrystallographicInfo getCrystallographicInfo() {
-        return pdbCrystalInfo;
-    }
-
-    @Override
-    public void resetModels() {
-        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public String getIdentifier() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public String getPdbId() {
-        return pdbCode;
-    }
-
-    @Override
-    public List<? extends ResidueRange> getResidueRanges() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public List<String> getRanges() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }

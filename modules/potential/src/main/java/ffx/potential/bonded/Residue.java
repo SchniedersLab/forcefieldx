@@ -37,7 +37,6 @@
  */
 package ffx.potential.bonded;
 
-import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -45,8 +44,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Iterator;
-import java.util.Map;
 
 import javax.media.j3d.Canvas3D;
 import javax.media.j3d.J3DGraphics2D;
@@ -56,21 +53,12 @@ import javax.vecmath.Color3f;
 import javax.vecmath.Point2d;
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
-import javax.swing.tree.TreeNode;
 
 import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
 import ffx.potential.parameters.ForceField;
-import ffx.potential.parsers.BiojavaFilter;
 
 import static ffx.utilities.HashCodeUtil.SEED;
 import static ffx.utilities.HashCodeUtil.hash;
-
-import org.biojava.nbio.structure.Chain;
-import org.biojava.nbio.structure.Group;
-import org.biojava.nbio.structure.GroupType;
-import org.biojava.nbio.structure.ResidueNumber;
-import org.biojava.nbio.structure.StructureTools;
-import org.biojava.nbio.structure.io.mmcif.model.ChemComp;
 
 /**
  * The Residue class represents individual amino acids or nucleic acid bases.
@@ -78,38 +66,18 @@ import org.biojava.nbio.structure.io.mmcif.model.ChemComp;
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
  */
-public class Residue extends MSGroup implements Group {
+public class Residue extends MSGroup {
 
     private static final Logger logger = Logger.getLogger(Residue.class.getName());
 
     /**
      * The residue number of this residue in a chain.
      */
-    private int resIndex;
+    private int resNumber;
     /**
      * Possibly redundant PDB chain ID.
      */
     private Character chainID;
-    /**
-     * The Polymer to which this Residue belongs.
-     */
-    private Chain parentChain;
-    /**
-     * String-mapped Biojava-related properties.
-     */
-    private Map<String, Object> properties;
-    /**
-     * List of Residues matching alternative locations.
-     */
-    //private Map<Character, Group> altLocGroups;
-    /**
-     * Biojava residue identifier.
-     */
-    private ResidueNumber resNum;
-    /**
-     * Chemical component definition
-     */
-    private ChemComp chemComp;
     /**
      * Unique segID.
      */
@@ -145,17 +113,6 @@ public class Residue extends MSGroup implements Group {
     private double[] C4sCoords = null;
 
     private Rotamer currentRotamer = null;
-    private Rotamer originalRotamer = null;
-    protected static final boolean origAtEnd;
-    
-    static {
-        String origAtEndStr = System.getProperty("ro-origAtEnd");
-        if (origAtEndStr != null) {
-            origAtEnd = Boolean.parseBoolean(origAtEndStr);
-        } else {
-            origAtEnd = false;
-        }
-    }
 
     /**
      * Default Constructor where num is this Residue's position in the Polymer.
@@ -165,7 +122,7 @@ public class Residue extends MSGroup implements Group {
      */
     public Residue(int num, ResidueType rt) {
         super();
-        resIndex = num;
+        resNumber = num;
         residueType = rt;
         assignResidueType();
     }
@@ -193,7 +150,7 @@ public class Residue extends MSGroup implements Group {
      */
     public Residue(String name, int num, ResidueType rt) {
         this(name, rt);
-        resIndex = num;
+        resNumber = num;
     }
 
     /**
@@ -209,7 +166,7 @@ public class Residue extends MSGroup implements Group {
     public Residue(String name, int resNumber, ResidueType rt, Character chainID,
             String segID) {
         this(name, rt);
-        this.resIndex = resNumber;
+        this.resNumber = resNumber;
         this.chainID = chainID;
         this.segID = segID;
     }
@@ -226,68 +183,18 @@ public class Residue extends MSGroup implements Group {
      */
     public Residue(String name, int num, MSNode atoms, ResidueType rt, ForceField forceField) {
         super(name, atoms);
-        resIndex = num;
+        resNumber = num;
         residueType = rt;
         assignResidueType();
         finalize(true, forceField);
     }
-    
-    /**
-     * Gets the Rotamers for this residue, potentially incorporating the original
-     * coordinates if RotamerLibrary's original coordinates rotamer flag has been 
-     * set.
-     * @return An array of Rotamer.
-     */
-    public Rotamer[] getRotamers() {
-        if (RotamerLibrary.getUsingOrigCoordsRotamer()) {
-            Rotamer[] libRotamers = RotamerLibrary.getRotamers(this);
-            if (libRotamers == null) {
-                return null;
-            }
-            int nRots = libRotamers.length;
-            Rotamer[] rotamers = new Rotamer[nRots + 1];
-            if (originalRotamer == null) {
-                ResidueState origState = storeState();
-                double[] chi = RotamerLibrary.measureRotamer(this, false);
-                switch (residueType) {
-                    case AA:
-                        AminoAcid3 aa3 = AminoAcid3.valueOf(getName());
-                        originalRotamer = new Rotamer(aa3, origState, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0);
-                        break;
-                    case NA:
-                        NucleicAcid3 na3 = NucleicAcid3.valueOf(getName());
-                        originalRotamer = new Rotamer(na3, origState, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0, chi[4], 0, chi[5], 0);
-                        break;
-                    default:
-                        originalRotamer = null;
-                        return libRotamers;
-                }
-            }
-            if (origAtEnd) {
-                System.arraycopy(libRotamers, 0, rotamers, 0, nRots);
-                rotamers[rotamers.length - 1] = originalRotamer;
-            } else {
-                System.arraycopy(libRotamers, 0, rotamers, 1, nRots);
-                rotamers[0] = originalRotamer;
-            }
-            return rotamers;
-        } else {
-            return RotamerLibrary.getRotamers(this);
-        }
+
+    public Rotamer[] getRotamers(Residue residue) {
+        return RotamerLibrary.getRotamers(residue);
     }
 
     public ResidueType getResidueType() {
         return residueType;
-    }
-    
-    public boolean isDeoxy() {
-        if (getResidueType() == ResidueType.NA) {
-            Atom HOs = (Atom) getAtomNode("HO\'");
-            if (HOs == null) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**
@@ -306,7 +213,7 @@ public class Residue extends MSGroup implements Group {
                 if (carbon == null) {
                     return null;
                 }
-                ArrayList<Bond> bonds = carbon.getFFXBonds();
+                ArrayList<Bond> bonds = carbon.getBonds();
                 for (Bond b : bonds) {
                     Atom other = b.get1_2(carbon);
                     if (other.getName().equalsIgnoreCase("N")) {
@@ -320,7 +227,7 @@ public class Residue extends MSGroup implements Group {
                 if (oxygen == null) {
                     return null;
                 }
-                ArrayList<Bond> bonds = oxygen.getFFXBonds();
+                ArrayList<Bond> bonds = oxygen.getBonds();
                 for (Bond b : bonds) {
                     Atom other = b.get1_2(oxygen);
                     if (other.getName().equalsIgnoreCase("P")) {
@@ -351,7 +258,7 @@ public class Residue extends MSGroup implements Group {
                 if (nitrogen == null) {
                     return null;
                 }
-                ArrayList<Bond> bonds = nitrogen.getFFXBonds();
+                ArrayList<Bond> bonds = nitrogen.getBonds();
                 for (Bond b : bonds) {
                     Atom other = b.get1_2(nitrogen);
                     if (other.getName().equalsIgnoreCase("C")) {
@@ -365,7 +272,7 @@ public class Residue extends MSGroup implements Group {
                 if (phosphate == null) {
                     return null;
                 }
-                ArrayList<Bond> bonds = phosphate.getFFXBonds();
+                ArrayList<Bond> bonds = phosphate.getBonds();
                 for (Bond b : bonds) {
                     Atom other = b.get1_2(phosphate);
                     if (other.getName().equalsIgnoreCase("O3\'")) {
@@ -410,11 +317,11 @@ public class Residue extends MSGroup implements Group {
         return atom;
     }
 
-    public ResidueState storeState() {
+    public ResidueState storeCoordinates() {
         return new ResidueState(this, this);
     }
 
-    public void revertState(ResidueState state) {
+    public void revertCoordinates(ResidueState state) {
         List<Atom> atomList = getAtomList();
         for (Atom atom : atomList) {
             atom.moveTo(state.getAtomCoords(atom));
@@ -439,429 +346,6 @@ public class Residue extends MSGroup implements Group {
     public Rotamer getRotamer() {
         return currentRotamer;
     }
-    
-    @Override
-    public void setChain(Chain chain) {
-        if (parentChain instanceof Polymer) {
-            removeFromParent();
-        }
-        if (chain instanceof Polymer) {
-            ((Polymer) chain).addMSNode(this);
-        }
-        this.parentChain = chain;
-    }
-    
-    /**
-     * Sets the parent Chain; if onlySetRef is true, does not detach or attach to
-     * FFX data structure.
-     * @param chain Chain to set parentChain reference to
-     * @param onlySetRef If true, only shallowly sets reference
-     */
-    public void setChain(Chain chain, boolean onlySetRef) {
-        if (onlySetRef) {
-            this.parentChain = chain;
-        } else {
-            setChain(chain);
-        }
-    }
-    
-    /**
-     * Returns a copy with basic information (force field information generally
-     * not copied).
-     * @return 
-     */
-    public Residue clone() {
-        Residue ret = new Residue(getName(), resIndex, residueType, chainID, segID);
-        for (Atom atom : getAtomList()) {
-            Atom newAtom = atom.clone();
-            ret.addMSNode(newAtom);
-        }
-        ret.setChemComp(chemComp);
-        ret.setResidueNumber(copyResNum());
-        return ret;
-    }
-    
-    public void findParentPolymer() {
-        TreeNode parentNode = getParent();
-        while (parentNode != null) {
-            if (parentNode instanceof Polymer) {
-                this.parentChain = (Chain) parentChain;
-                break;
-            } else {
-                parentNode = parentNode.getParent();
-            }
-        }
-    }
-    
-    public Chain getParentChain() {
-        if (parentChain == null) {
-            findParentPolymer();
-        }
-        return parentChain;
-    }
-    
-    @Override
-    public int size() {
-        return getAtomList().size();
-    }
-
-    /**
-     * FFX data structures have 3D coordinates by default.
-     * @return Always true.
-     */
-    @Override
-    public boolean has3D() {
-        return true;
-    }
-
-    /**
-     * Does nothing (FFX data structures have 3D coordinates by default).
-     * @param bln Discarded.
-     */
-    @Override
-    public void setPDBFlag(boolean bln) {
-        logger.fine(" FFX atoms always have coordinates; setPDBFlag is meaningless.");
-        // throw new UnsupportedOperationException("Force Field X atoms always have coordinates");
-    }
-
-    @Override
-    public GroupType getType() {
-        switch (residueType) {
-            case AA:
-                return org.biojava.nbio.structure.GroupType.AMINOACID;
-            case NA:
-                return org.biojava.nbio.structure.GroupType.NUCLEOTIDE;
-            default:
-                return org.biojava.nbio.structure.GroupType.HETATM;
-        }
-    }
-
-    @Override
-    public void addAtom(org.biojava.nbio.structure.Atom atom) {
-        if (atom instanceof Atom) {
-            addMSNode((Atom) atom);
-        } else {
-            Atom at = BiojavaFilter.readAtom(atom, segID);
-            addMSNode(at);
-            /*Polymer parentPolymer = (Polymer) parentChain;
-            if (parentPolymer.hasFFXParents()) {
-                parentPolymer.addExteriorAtom(atom);
-            }*/
-        }
-    }
-
-    @Override
-    public List<org.biojava.nbio.structure.Atom> getAtoms() {
-        List<org.biojava.nbio.structure.Atom> retList = new ArrayList<>();
-        retList.addAll(getAtomList());
-        return retList;
-    }
-
-    @Override
-    public void setAtoms(List<org.biojava.nbio.structure.Atom> list) {
-        clearAtoms();
-        for (org.biojava.nbio.structure.Atom atom : list) {
-            try {
-                this.addAtom(atom);
-            } catch (IllegalArgumentException ex) {
-                logger.fine(String.format(" Failure to add atom %s", atom.toString()));
-            }
-        }
-    }
-
-    @Override
-    public void clearAtoms() {
-        List<Atom> atoms = this.getAtomList();
-        for (Atom atom : atoms) {
-            atom.setGroup(null, true);
-            this.remove(atom);
-        }
-    }
-
-    @Override
-    public org.biojava.nbio.structure.Atom getAtom(String string) {
-        Atom atom = (Atom) this.getAtomNode(string);
-        if (atom != null) {
-            return atom;
-        }
-        return null;
-    }
-
-    /**
-     * May not be reliable, as FFX data structure may reorder atoms.
-     * @param i
-     * @return 
-     */
-    @Override
-    public org.biojava.nbio.structure.Atom getAtom(int i) {
-        return this.getAtomList().get(i);
-        //return (org.biojava.nbio.structure.Atom) this.getAtomNode(i);
-    }
-
-    @Override
-    public boolean hasAtom(String string) {
-        return (getAtom(string) != null);
-    }
-
-    @Override
-    public String getPDBName() {
-        String name = getName();
-        AminoAcid3 aa3 = AminoAcid3.valueOf(name);
-        switch (aa3) {
-            case GLH:
-                return "GLU";
-            case HIE:
-            case HID:
-                return "HIS";
-            case CYD:
-                return "CYS";
-            case TYD:
-                return "TYR";
-            case ASH:
-                return "ASP";
-            case LYD:
-                return "LYS";
-            default:
-                return name;
-        }
-    }
-
-    @Override
-    public void setPDBName(String string) {
-        setName(string);
-    }
-
-    @Override
-    public boolean hasAminoAtoms() {
-		// if this method call is performed too often, it should become a
-        // private method and provide a flag for Group object ...
-
-        return hasAtom(StructureTools.CA_ATOM_NAME)
-                && hasAtom(StructureTools.C_ATOM_NAME)
-                && hasAtom(StructureTools.N_ATOM_NAME)
-                && hasAtom(StructureTools.O_ATOM_NAME);
-
-    }
-
-    @Override
-    public void setProperties(Map<String, Object> map) {
-        this.properties = map;
-    }
-
-    @Override
-    public Map<String, Object> getProperties() {
-        return properties;
-    }
-
-    @Override
-    public void setProperty(String string, Object o) {
-        properties.put(string, o);
-    }
-
-    @Override
-    public Object getProperty(String string) {
-        return properties.get(string);
-    }
-
-    @Override
-    public Iterator<org.biojava.nbio.structure.Atom> iterator() {
-        return new AtomIterator(this);
-    }
-    
-    @Override
-    public Chain getChain() {
-        if (parentChain == null) {
-            findParentPolymer();
-        }
-        return parentChain;
-    }
-
-    @Override
-    public ResidueNumber getResidueNumber() {
-        if (resNum == null) {
-            generateResNum();
-        }
-        return resNum;
-    }
-    
-    /**
-     * Generates a ResidueNumber object to act as unique identifier.
-     */
-    private void generateResNum() {
-        char insCode = ' ';
-        for (Atom atom : getAtomList()) {
-            if (atom.getInsertionCode() != ' ') {
-                insCode = atom.getInsertionCode();
-                break;
-            }
-        }
-        resNum = new ResidueNumber("" + chainID, resIndex, insCode);
-    }
-    
-    private ResidueNumber copyResNum() {
-        if (resNum == null) {
-            generateResNum();
-        }
-        return new ResidueNumber(resNum.getChainId(), resNum.getSeqNum(), resNum.getInsCode());
-    }
-
-    @Override
-    public void setResidueNumber(ResidueNumber rn) {
-        this.resNum = rn;
-    }
-
-    @Override
-    public void setResidueNumber(String chnID, Integer rNum, Character iCode) {
-        resNum = new ResidueNumber(chnID, rNum, iCode);
-    }
-
-    @Override
-    public String getChainId() {
-        return "" + chainID;
-    }
-
-    @Override
-    public void setChemComp(ChemComp cc) {
-        this.chemComp = cc;
-    }
-
-    @Override
-    public ChemComp getChemComp() {
-        return chemComp;
-    }
-
-    @Override
-    public boolean hasAltLoc() {
-        /*if (altLocGroups == null) {
-            findAltLocs();
-        }
-        return !(altLocGroups.isEmpty());*/
-        /*throw new UnsupportedOperationException("FFX does not yet support references"
-                + " to alternate locations.");*/
-        return false;
-    }
-    
-    private void findAltLocs() {
-        // TO BE IMPLEMENTAZORLALIZATIONED
-    }
-    
-    /**
-     * As FFX treats alternate locations on a per-atom basis, not a per-residue
-     * basis, this method was developed to create generic Groups in a similar
-     * fashion.
-     */
-    /*@Override
-    public void updateAltLocs() {
-        List<Atom> allAtoms = this.getAtomList();
-        altLocGroups = new HashMap<>();
-
-        List<Atom> nonAltAtoms = new ArrayList<>();
-        for (Atom atom : allAtoms) {
-            char altLoc = atom.getAltLoc();
-            if (altLoc != ' ') {
-                if (altLocGroups.containsKey(altLoc)) {
-                    altLocGroups.get(altLoc).addAtom(atom);
-                } else {
-                    Group altGroup;
-                    switch (this.residueType) {
-                        case NA:
-                            altGroup = new NucleotideImpl();
-                            break;
-                        case AA:
-                            altGroup = new AminoAcidImpl();
-                            break;
-                        default:
-                            altGroup = new HetatomImpl();
-                            break;
-                    }
-                    altGroup.addAtom(atom);
-                    altGroup.setChain(this.getChain());
-                    altGroup.setPDBFlag(true);
-                    altGroup.setPDBName(getName());
-                    altGroup.setProperties(properties);
-                    altGroup.setResidueNumber(getResidueIndex());
-                    altLocGroups.put(altLoc, altGroup);
-                }
-            } else {
-                nonAltAtoms.add(atom);
-            }
-        }
-        if (!altLocGroups.isEmpty()) {
-            for (Group altGroup : altLocGroups.values()) {
-                for (Atom atom : nonAltAtoms) {
-                    altGroup.addAtom(atom);
-                }
-            }
-        }
-    }*/
-
-    @Override
-    public List<Group> getAltLocs() {
-        /*List<Group> altLocs = new ArrayList<>();
-        if (altLocGroups == null) {
-            findAltLocs();
-        }
-        altLocs.addAll(altLocGroups.values());
-        return altLocs;*/
-        throw new UnsupportedOperationException("FFX does not yet support references"
-                + " to alternate locations.");
-    }
-
-    @Override
-    public void addAltLoc(Group group) {
-        /*if (altLocGroups == null) {
-            findAltLocs();
-        }
-        boolean altLocFound = false;
-        for (org.biojava.nbio.structure.Atom atom : group.getAtoms()) {
-            char aLoc = atom.getAltLoc();
-            if (atom.getAltLoc() != ' ' && !altLocGroups.containsKey(aLoc)) {
-                altLocGroups.put(aLoc, group);
-                altLocFound = true;
-                break;
-            }
-        }
-        if (!altLocFound) {
-            for (char alpha = 'A'; alpha <= 'Z'; alpha++) {
-                if (!altLocGroups.containsKey(alpha)) {
-                    altLocGroups.put(alpha, group);
-                    for (org.biojava.nbio.structure.Atom atom : group.getAtoms()) {
-                        atom.setAltLoc(alpha);
-                    }
-                    logger.info(String.format(" Alternate location group %s does "
-                            + "not have a unique alternate location code; setting"
-                            + "the group to altloc %c", group.toString(), alpha));
-                }
-            }
-        }*/
-        throw new UnsupportedOperationException("FFX does not yet support references"
-                + " to alternate locations.");
-    }
-
-    /**
-     * Always returns false (a Residue is never a water; only a Molecule can be 
-     * a water).
-     * @return False.
-     */
-    @Override
-    public boolean isWater() {
-        return false;
-    }
-
-    @Override
-    public Group getAltLocGroup(Character aLoc) {
-        /*if (altLocGroups == null) {
-            findAltLocs();
-        }
-        return altLocGroups.get(aLoc);*/
-        throw new UnsupportedOperationException("FFX does not yet support references"
-                + " to alternate locations.");
-    }
-
-    @Override
-    public void trimToSize() {
-        logger.fine(" Operation trimToSize() not yet supported.");
-    }
 
     /**
      * {@inheritDoc}
@@ -877,7 +361,6 @@ public class Residue extends MSGroup implements Group {
             MSNode atoms = getAtomNode();
             currentAtom = (Atom) atoms.contains(newAtom);
             if (currentAtom == null) {
-                newAtom.setGroup(this, true);
                 currentAtom = newAtom;
                 atoms.add(newAtom);
                 setFinalized(false);
@@ -957,18 +440,6 @@ public class Residue extends MSGroup implements Group {
             default:
                 return null;
         }
-    }
-    
-    /**
-     * Returns a list of atoms liable to change during dead-end elimination repacking.
-     * For ordinary amino acids: side chain atoms. For ordinary nucleic acids:
-     * sugar/phosphate backbone atoms. MultiResidue over-rides this to return all
-     * atoms (as backbone atom types are nonconstant).
-     * 
-     * @return Atoms changeable during DEE.
-     */
-    public List<Atom> getVariableAtoms() {
-        return getSideChainAtoms();
     }
 
     /**
@@ -1123,9 +594,9 @@ public class Residue extends MSGroup implements Group {
             return false;
         }
         if (getParent() == null || other.getParent() == null) {
-            return (getResidueIndex() == other.getResidueIndex());
+            return (getResidueNumber() == other.getResidueNumber());
         } else if (getParent() == other.getParent()) {
-            return (getResidueIndex() == other.getResidueIndex());
+            return (getResidueNumber() == other.getResidueNumber());
         } else {
             return false;
         }
@@ -1300,8 +771,8 @@ public class Residue extends MSGroup implements Group {
      *
      * @return a int.
      */
-    public int getResidueIndex() {
-        return resIndex;
+    public int getResidueNumber() {
+        return resNumber;
     }
 
     /**
@@ -1310,7 +781,7 @@ public class Residue extends MSGroup implements Group {
     @Override
     public int hashCode() {
         int hash = hash(SEED, segID);
-        hash = hash(hash, getResidueIndex());
+        hash = hash(hash, getResidueNumber());
         hash = hash(hash, residueType);
         if (residueType == ResidueType.AA) {
             hash = hash(hash, aa);
@@ -1401,7 +872,7 @@ public class Residue extends MSGroup implements Group {
      * @param n a int.
      */
     public void setNumber(int n) {
-        resIndex = n;
+        resNumber = n;
     }
 
     /**
@@ -1441,7 +912,7 @@ public class Residue extends MSGroup implements Group {
     @Override
     public String toString() {
         if (shortString == null) {
-            shortString = new String("" + resIndex + "-" + getName());
+            shortString = new String("" + resNumber + "-" + getName());
         }
         return shortString;
     }
@@ -1485,10 +956,6 @@ public class Residue extends MSGroup implements Group {
      */
     public static final HashMap<AA1, AA3> AA1toAA3 = new HashMap<>();
     /**
-     * Constant <code>AA3toAA1</code>
-     */
-    public static final HashMap<AA3, AA1> AA3toAA1 = new HashMap<>();
-    /**
      * Constant <code>AA3Color</code>
      */
     public static final HashMap<AA3, Color3f> AA3Color = new HashMap<>();
@@ -1500,80 +967,6 @@ public class Residue extends MSGroup implements Group {
      * Constant <code>Ramachandran="new String[17]"</code>
      */
     public static String Ramachandran[] = new String[17];
-    
-    /**
-     * Converts an NA3 enum to an equivalent NA1; if simpleCodes is true, ignores
-     * the differences between DNA and RNA (deoxy-cytosine and cytosine are both
-     * returned as C, for example).
-     * @param na3 To convert
-     * @param simpleCodes Whether to use the same codes for DNA and RNA
-     * @return NA1 code
-     */
-    public static NA1 NucleicAcid3toNA1(NucleicAcid3 na3, boolean simpleCodes) {
-        if (simpleCodes) {
-            switch (na3) {
-                case ADE:
-                case DAD:
-                    return NA1.A;
-                case CYT:
-                case DCY:
-                    return NA1.C;
-                case GUA:
-                case DGU:
-                    return NA1.G;
-                case URI:
-                    return NA1.U;
-                case THY:
-                case DTY:
-                    return NA1.T;
-                default:
-                    return NA1.X;
-            }
-        } else {
-            switch (na3) {
-                case ADE:
-                    return NA1.A;
-                case DAD:
-                    return NA1.D;
-                case CYT:
-                    return NA1.C;
-                case DCY:
-                    return NA1.I;
-                case GUA:
-                    return NA1.G;
-                case DGU:
-                    return NA1.B;
-                case URI:
-                    return NA1.U;
-                case THY:
-                    return NA1.T;
-                case DTY:
-                    return NA1.T;
-                default:
-                    return NA1.X;
-            }
-        }
-    }
-    /*
-    /**
-     * Since enumeration values must start with a letter, an 'M' is added to
-     * modified bases whose IUPAC name starts with an integer.
-     *
-    public enum NucleicAcid3 {
-
-        ADE, GUA, CYT, URI, DAD, DGU, DCY, DTY, THY, MP1, DP2, TP3, UNK, M2MG,
-        H2U, M2G, OMC, OMG, PSU, M5MC, M7MG, M5MU, M1MA, YYG
-    };
-    public enum NA1 {
-
-        A, C, G, U, D, I, B, T, P, Q, R, X;
-    }
-
-    public enum NA3 {
-
-        A, C, G, U, DA, DC, DG, DT, MPO, DPO, TPO, UNK;
-    }
-    */
 
     static {
         NA1 na1[] = NA1.values();
@@ -1603,7 +996,6 @@ public class Residue extends MSGroup implements Group {
         AA3 aa3[] = AA3.values();
         for (int i = 0; i < AA1.values().length; i++) {
             AA1toAA3.put(aa1[i], aa3[i]);
-            AA3toAA1.put(aa3[i], aa1[i]);
         }
     }
 

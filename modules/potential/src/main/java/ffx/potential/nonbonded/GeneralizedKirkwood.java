@@ -1284,7 +1284,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 Atom atom = atoms[i];
                 int atomicNumber = atom.getAtomicNumber();
                 if (atomicNumber == 6) {
-                    List<Bond> bonds = atom.getFFXBonds();
+                    List<Bond> bonds = atom.getBonds();
                     int bondCount = bonds.size();
                     if (bondCount <= 2) {
                         continue;
@@ -1334,7 +1334,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 int atomicNumber = atom.getAtomicNumber();
                 if (atomicNumber == 6) {
                     int nh = 0;
-                    List<Bond> bonds = atom.getFFXBonds();
+                    List<Bond> bonds = atom.getBonds();
                     int bondCount = bonds.size();
                     if (bondCount <= 2) {
                         continue;
@@ -1567,7 +1567,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     double tanhSAi = tanhSA[ii];
                     Atom ssAtom = null;
                     Atom atom = atoms[i];
-                    List<Bond> bonds = atom.getFFXBonds();
+                    List<Bond> bonds = atom.getBonds();
                     for (Bond bond : bonds) {
                         Atom atom2 = bond.get1_2(atom);
                         int k = atom2.xyzIndex - 1;
@@ -1600,11 +1600,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             }
                             omit[k] = i;
                             if (ssAtom != null) {
-                                List<Bond> bonds2 = atom2.getFFXBonds();
+                                List<Bond> bonds2 = atom2.getBonds();
                                 for (Bond bond : bonds2) {
                                     Atom s = bond.get1_2(atom2);
                                     if (s.getAtomicNumber() == 16) {
-                                        List<Bond> sBonds = s.getFFXBonds();
+                                        List<Bond> sBonds = s.getBonds();
                                         for (Bond sBond : sBonds) {
                                             Atom s2 = sBond.get1_2(s);
                                             if (s2 == ssAtom) {

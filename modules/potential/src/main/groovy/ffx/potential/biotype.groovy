@@ -73,7 +73,7 @@ int index = 1;
 for (Atom atom : atoms) {
     StringBuilder sb = new StringBuilder();
     sb.append(String.format(" biotype %3d %4s \"%s\" %3d", index++, atom.getName(), mol, atom.getAtomType().type));
-    List bonds = atom.getFFXBonds();
+    List bonds = atom.getBonds();
     if (bonds != null) {
         for (Bond bond : bonds) {
             sb.append(String.format(" %4s", bond.get1_2(atom).getName()));

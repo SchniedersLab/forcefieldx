@@ -196,7 +196,7 @@ diffractiondata.scaleBulkFit();
 diffractiondata.printStats();
 energy();
 
-RefinementEnergy refinementEnergy = RefinementEnergy.refinementEnergyFactory(diffractiondata, refinementmode);
+RefinementEnergy refinementEnergy = new RefinementEnergy(diffractiondata, refinementmode);
 SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(active, refinementEnergy, active.getProperties(),
     refinementEnergy, thermostat, integrator);
 

@@ -1576,9 +1576,4 @@ public class TransitionTemperedOSRW implements Potential {
             }
         }
     }
-    
-    @Override
-    public void reInit() {
-        throw new UnsupportedOperationException(String.format(" No reInit method defined for %s", TransitionTemperedOSRW.class.toString()));
-    }
 }

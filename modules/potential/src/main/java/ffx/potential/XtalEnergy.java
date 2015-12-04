@@ -621,11 +621,6 @@ public class XtalEnergy implements Potential {
     public void setEnergyTermState(STATE state) {
         forceFieldEnergy.setEnergyTermState(state);
     }
-    
-    @Override
-    public void reInit() {
-        throw new UnsupportedOperationException(String.format(" No reInit method defined for %s", XtalEnergy.class.toString()));
-    }
 
     @Override
     public STATE getEnergyTermState() {

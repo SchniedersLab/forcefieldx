@@ -220,8 +220,6 @@ public class Torsion extends BondedTerm {
             c[2] = atom2.getAtomType().atomClass;
             c[3] = bond3.getOtherAtom(middleBond).getAtomType().atomClass;
             key = TorsionType.sortKey(c);
-            //logger.info(String.format(" Atom names: %s %s %s %s", bond1.getOtherAtom(middleBond), atom1, atom2, bond3.getOtherAtom(middleBond)));
-            //logger.info(String.format(" Atom types %s %s %s %s", bond1.getOtherAtom(middleBond).getAtomType(), atom1.getAtomType(), atom2.getAtomType(), bond3.getOtherAtom(middleBond).getAtomType()));
             logger.severe(format("No TorsionType for key: %s\n%s\n%s\n%s\n",
                     key, bond1.toString(), middleBond.toString(), bond3.toString()));
             return null;

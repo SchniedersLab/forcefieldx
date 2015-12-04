@@ -160,7 +160,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         this.atomArray = data.getAtomArray();
         this.nAtoms = atomArray.length;
 
-        refinementEnergy = RefinementEnergy.refinementEnergyFactory(data, refinementmode, null);
+        refinementEnergy = new RefinementEnergy(data, refinementmode, null);
 
         this.nXYZ = refinementEnergy.nxyz;
         this.nB = refinementEnergy.nb;

@@ -40,21 +40,6 @@ package ffx.potential.bonded;
 import java.util.logging.Logger;
 
 import ffx.potential.parameters.ForceField;
-import ffx.potential.parsers.BiojavaFilter;
-
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
-import javax.swing.tree.TreeNode;
-
-import org.biojava.nbio.structure.Chain;
-import org.biojava.nbio.structure.Group;
-import org.biojava.nbio.structure.GroupType;
-import org.biojava.nbio.structure.ResidueNumber;
-import org.biojava.nbio.structure.StructureTools;
-import org.biojava.nbio.structure.io.mmcif.model.ChemComp;
 
 /**
  * The Molecule class is a general container used for simple compounds or in
@@ -63,7 +48,7 @@ import org.biojava.nbio.structure.io.mmcif.model.ChemComp;
  * @author Michael J. Schnieders
  *
  */
-public class Molecule extends MSGroup implements Group {
+public class Molecule extends MSGroup {
 
     private Logger logger = Logger.getLogger(Molecule.class.getName());
     private static final long serialVersionUID = 1L;
@@ -87,26 +72,6 @@ public class Molecule extends MSGroup implements Group {
      * Unique segID.
      */
     private String segID = null;
-    /**
-     * The Chain to which this Molecule belongs.
-     */
-    private Chain parentChain;
-    /**
-     * String-mapped Biojava-related properties.
-     */
-    private Map<String, Object> properties;
-    /**
-     * List of Molecules matching alternative locations.
-     */
-    private Map<Character, Group> altLocGroups;
-    /**
-     * Biojava residue identifier.
-     */
-    private ResidueNumber resNum;
-    /**
-     * Chemical component definition.
-     */
-    private ChemComp chemComp;
 
     /**
      * <p>
@@ -174,7 +139,7 @@ public class Molecule extends MSGroup implements Group {
      *
      * @return a int.
      */
-    public int getResidueIndex() {
+    public int getResidueNumber() {
         return residueNum;
     }
 
@@ -205,7 +170,7 @@ public class Molecule extends MSGroup implements Group {
      * @param name a {@link java.lang.String} object.
      * @return a {@link ffx.potential.bonded.Atom} object.
      */
-    public Atom getMoleculeAtom(String name) {
+    public Atom getAtom(String name) {
         for (Atom a : getAtomList()) {
             if (a.getName().equalsIgnoreCase(name)) {
                 return a;
@@ -228,7 +193,6 @@ public class Molecule extends MSGroup implements Group {
             MSNode atoms = getAtomNode();
             currentAtom = (Atom) atoms.contains(newAtom);
             if (currentAtom == null) {
-                newAtom.setGroup(this, true);
                 currentAtom = newAtom;
                 atoms.add(newAtom);
                 setFinalized(false);
@@ -268,343 +232,5 @@ public class Molecule extends MSGroup implements Group {
         // findDangelingAtoms();
         setCenter(getMultiScaleCenter(false));
         setFinalized(true);
-    }
-    
-    @Override
-    public void setChain(Chain chain) {
-        if (parentChain instanceof Polymer) {
-            removeFromParent();
-        }
-        if (chain instanceof Polymer) {
-            ((Polymer) chain).addMSNode(this);
-        }
-        this.parentChain = chain;
-    }
-    
-    /**
-     * Sets the parent Chain; if onlySetRef is true, does not detach or attach to
-     * FFX data structure.
-     * @param chain Chain to set parentChain reference to
-     * @param onlySetRef If true, only shallowly sets reference
-     */
-    public void setChain(Chain chain, boolean onlySetRef) {
-        if (onlySetRef) {
-            this.parentChain = chain;
-        } else {
-            setChain(chain);
-        }
-    }
-    
-    /**
-     * Returns a copy with basic information (force field information generally
-     * not copied).
-     * @return 
-     */
-    public Molecule clone() {
-        Molecule ret = new Molecule(getName(), residueNum, chainID, segID);
-        for (Atom atom : getAtomList()) {
-            Atom newAtom = atom.clone();
-            ret.addMSNode(newAtom);
-        }
-        ret.setChemComp(chemComp);
-        ret.setResidueNumber(copyResNum());
-        return ret;
-    }
-    
-    public void findParentPolymer() {
-        TreeNode parentNode = getParent();
-        while (parentNode != null) {
-            if (parentNode instanceof Polymer) {
-                this.parentChain = (Chain) parentChain;
-                break;
-            } else {
-                parentNode = parentNode.getParent();
-            }
-        }
-    }
-    
-    public Chain getParentChain() {
-        if (parentChain == null) {
-            findParentPolymer();
-        }
-        return parentChain;
-    }
-    
-    @Override
-    public int size() {
-        return getAtomList().size();
-    }
-
-    /**
-     * FFX data structures have 3D coordinates by default.
-     * @return Always true.
-     */
-    @Override
-    public boolean has3D() {
-        return true;
-    }
-
-    /**
-     * Does nothing (FFX data structures have 3D coordinates by default).
-     * @param bln Discarded.
-     */
-    @Override
-    public void setPDBFlag(boolean bln) {
-        logger.fine(" FFX atoms always have coordinates; setPDBFlag is meaningless.");
-        // throw new UnsupportedOperationException("Force Field X atoms always have coordinates");
-    }
-
-    @Override
-    public GroupType getType() {
-        return org.biojava.nbio.structure.GroupType.HETATM;
-    }
-
-    @Override
-    public void addAtom(org.biojava.nbio.structure.Atom atom) {
-        if (atom instanceof Atom) {
-            addMSNode((Atom) atom);
-        } else {
-            Atom at = BiojavaFilter.readAtom(atom, segID);
-            addMSNode(at);
-            /*Polymer parentPolymer = (Polymer) parentChain;
-            if (parentPolymer.hasFFXParents()) {
-                parentPolymer.addExteriorAtom(atom);
-            }*/
-        }
-    }
-
-    @Override
-    public List<org.biojava.nbio.structure.Atom> getAtoms() {
-        List<org.biojava.nbio.structure.Atom> retList = new ArrayList<>();
-        retList.addAll(getAtomList());
-        return retList;
-    }
-
-    @Override
-    public void setAtoms(List<org.biojava.nbio.structure.Atom> list) {
-        clearAtoms();
-        for (org.biojava.nbio.structure.Atom atom : list) {
-            try {
-                this.addAtom(atom);
-            } catch (IllegalArgumentException ex) {
-                logger.fine(String.format(" Failure to add atom %s", atom.toString()));
-            }
-        }
-    }
-
-    @Override
-    public void clearAtoms() {
-        List<Atom> atoms = this.getAtomList();
-        for (Atom atom : atoms) {
-            atom.setGroup(null, true);
-            this.remove(atom);
-        }
-    }
-
-    @Override
-    public org.biojava.nbio.structure.Atom getAtom(String string) {
-        Atom atom = (Atom) this.getAtomNode(string);
-        if (atom != null) {
-            return atom;
-        }
-        return null;
-    }
-
-    @Override
-    public org.biojava.nbio.structure.Atom getAtom(int i) {
-        return (org.biojava.nbio.structure.Atom) this.getAtomNode(i);
-    }
-
-    @Override
-    public boolean hasAtom(String string) {
-        return (getMoleculeAtom(string) != null);
-    }
-
-    @Override
-    public String getPDBName() {
-        return getName();
-    }
-
-    @Override
-    public void setPDBName(String string) {
-        setName(string);
-    }
-
-    @Override
-    public boolean hasAminoAtoms() {
-		// if this method call is performed too often, it should become a
-        // private method and provide a flag for Group object ...
-
-        return hasAtom(StructureTools.CA_ATOM_NAME)
-                && hasAtom(StructureTools.C_ATOM_NAME)
-                && hasAtom(StructureTools.N_ATOM_NAME)
-                && hasAtom(StructureTools.O_ATOM_NAME);
-
-    }
-
-    @Override
-    public void setProperties(Map<String, Object> map) {
-        this.properties = map;
-    }
-
-    @Override
-    public Map<String, Object> getProperties() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void setProperty(String string, Object o) {
-        properties.put(string, o);
-    }
-
-    @Override
-    public Object getProperty(String string) {
-        return properties.get(string);
-    }
-
-    @Override
-    public Iterator<org.biojava.nbio.structure.Atom> iterator() {
-        return new AtomIterator(this);
-    }
-    
-    @Override
-    public Chain getChain() {
-        if (parentChain == null) {
-            findParentPolymer();
-        }
-        return parentChain;
-    }
-
-    @Override
-    public ResidueNumber getResidueNumber() {
-        if (resNum == null) {
-            generateResNum();
-        }
-        return resNum;
-    }
-    
-    private void generateResNum() {
-        char insCode = ' ';
-        for (Atom atom : getAtomList()) {
-            if (atom.getInsertionCode() != ' ') {
-                insCode = atom.getInsertionCode();
-                break;
-            }
-        }
-        resNum = new ResidueNumber("" + chainID, residueNum, insCode);
-    }
-    
-    private ResidueNumber copyResNum() {
-        if (resNum == null) {
-            generateResNum();
-        }
-        return new ResidueNumber(resNum.getChainId(), resNum.getSeqNum(), resNum.getInsCode());
-    }
-
-    @Override
-    public void setResidueNumber(ResidueNumber rn) {
-        this.resNum = rn;
-    }
-
-    @Override
-    public void setResidueNumber(String chnID, Integer rNum, Character iCode) {
-        resNum = new ResidueNumber(chnID, rNum, iCode);
-    }
-
-    @Override
-    public String getChainId() {
-        return "" + chainID;
-    }
-
-    @Override
-    public void setChemComp(ChemComp cc) {
-        this.chemComp = cc;
-    }
-
-    @Override
-    public ChemComp getChemComp() {
-        return chemComp;
-    }
-
-    @Override
-    public boolean hasAltLoc() {
-        /*if (altLocGroups == null) {
-            findAltLocs();
-        }
-        return !(altLocGroups.isEmpty());*/
-        return false;
-    }
-    
-    private void findAltLocs() {
-        // TO BE IMPLEMENTAZORLALIZATIONED
-    }
-
-    @Override
-    public List<Group> getAltLocs() {
-        /*List<Group> altLocs = new ArrayList<>();
-        if (altLocGroups == null) {
-            findAltLocs();
-        }
-        altLocs.addAll(altLocGroups.values());
-        return altLocs;*/
-        throw new UnsupportedOperationException("FFX does not yet support references"
-                + " to alternate locations.");
-    }
-
-    @Override
-    public void addAltLoc(Group group) {
-        /*if (altLocGroups == null) {
-            findAltLocs();
-        }
-        boolean altLocFound = false;
-        for (org.biojava.nbio.structure.Atom atom : group.getAtoms()) {
-            char aLoc = atom.getAltLoc();
-            if (atom.getAltLoc() != ' ' && !altLocGroups.containsKey(aLoc)) {
-                altLocGroups.put(aLoc, group);
-                altLocFound = true;
-                break;
-            }
-        }
-        if (!altLocFound) {
-            for (char alpha = 'A'; alpha <= 'Z'; alpha++) {
-                if (!altLocGroups.containsKey(alpha)) {
-                    altLocGroups.put(alpha, group);
-                    for (org.biojava.nbio.structure.Atom atom : group.getAtoms()) {
-                        atom.setAltLoc(alpha);
-                    }
-                    logger.info(String.format(" Alternate location group %s does "
-                            + "not have a unique alternate location code; setting"
-                            + "the group to altloc %c", group.toString(), alpha));
-                }
-            }
-        }*/
-        throw new UnsupportedOperationException("FFX does not yet support references"
-                + " to alternate locations.");
-    }
-
-    @Override
-    public boolean isWater() {
-        String molName = getName().toUpperCase();
-        for (String wname : GroupType.WATERNAMES) {
-            if (molName.startsWith(wname)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @Override
-    public Group getAltLocGroup(Character aLoc) {
-        /*if (altLocGroups == null) {
-            findAltLocs();
-        }
-        return altLocGroups.get(aLoc);*/
-        throw new UnsupportedOperationException("FFX does not yet support references"
-                + " to alternate locations.");
-    }
-
-    @Override
-    public void trimToSize() {
-        logger.fine(" Operation trimToSize() not yet supported.");
     }
 }

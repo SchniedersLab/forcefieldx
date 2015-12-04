@@ -162,7 +162,7 @@ RealSpaceData realspacedata = new RealSpaceData(active, active.getProperties(), 
 
 energy();
 
-RefinementEnergy refinementEnergy = RefinementEnergy.refinementEnergyFactory(realspacedata, RefinementMode.COORDINATES);
+RefinementEnergy refinementEnergy = new RefinementEnergy(realspacedata, RefinementMode.COORDINATES);
 
 // Restart File
 File dyn = new File(FilenameUtils.removeExtension(modelfilename) + ".dyn");

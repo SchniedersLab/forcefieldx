@@ -79,8 +79,8 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
     private STATE state = STATE.BOTH;
     private final DataContainer data;
     private final RefinementModel refinementmodel;
-    private Atom[] atomarray;
-    private int nAtoms;
+    private final Atom[] atomarray;
+    private final int nAtoms;
     private final List<Integer> xindex[];
     protected Potential dataEnergy;
     protected Thermostat thermostat;
@@ -95,73 +95,29 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
     private double gXray[];
     private double totalEnergy;
     protected double[] optimizationScaling = null;
-    
-    /**
-     * Factory for energy (avoids a leaking this issue).
-     *
-     * @param data input {@link DiffractionData data} for refinement
-     * @param refinementMode {@link RefinementMinimize.RefinementMode} for
-     * refinement
-     * @return Constructed RefinementEnergy.
-     */
-    public static RefinementEnergy refinementEnergyFactory(DataContainer data, 
-            RefinementMode refinementMode) {
-        RefinementEnergy newEnergy = new RefinementEnergy(data, refinementMode);
-        newEnergy.addToAssemblies();
-        return newEnergy;
-    }
-    
-    /**
-     * Factory for energy (avoids a leaking this issue).
-     *
-     * @param data input {@link DiffractionData data} for refinement
-     * @param refinementMode {@link RefinementMinimize.RefinementMode} for
-     * refinement
-     * @param scaling scaling of refinement parameters
-     * @return Constructed RefinementEnergy.
-     */
-    public static RefinementEnergy refinementEnergyFactory(DataContainer data, 
-            RefinementMode refinementMode, double[] scaling) {
-        RefinementEnergy newEnergy = new RefinementEnergy(data, refinementMode, scaling);
-        newEnergy.addToAssemblies();
-        return newEnergy;
-    }
-    
-    /**
-     * Adds self to the associated MolecularAssemblies (cause of the leaking this
-     * issue necessitating factory methods).
-     */
-    void addToAssemblies() {
-        for (MolecularAssembly assembly : molecularAssembly) {
-            assembly.addPotential(this);
-        }
-    }
 
     /**
-     * constructor for energy (private to avoid a leaking this issue).
+     * constructor for energy
      *
      * @param data input {@link DiffractionData data} for refinement
      * @param refinementmode {@link RefinementMinimize.RefinementMode} for
      * refinement
      */
-    private RefinementEnergy(DataContainer data, RefinementMode refinementmode) {
+    public RefinementEnergy(DataContainer data, RefinementMode refinementmode) {
         this(data, refinementmode, null);
     }
 
     /**
-     * constructor for energy (private to avoid a leaking this issue).
+     * constructor for energy
      *
      * @param data input {@link DiffractionData data} for refinement
      * @param refinementmode {@link RefinementMinimize.RefinementMode} for
      * refinement
      * @param scaling scaling of refinement parameters
      */
-    private RefinementEnergy(DataContainer data,
+    public RefinementEnergy(DataContainer data,
             RefinementMode refinementmode, double scaling[]) {
-        //this.molecularAssembly = data.getMolecularAssembly();
-        MolecularAssembly[] dataAssemblies = data.getMolecularAssembly();
-        this.molecularAssembly = new MolecularAssembly[dataAssemblies.length];
-        System.arraycopy(dataAssemblies, 0, molecularAssembly, 0, dataAssemblies.length);
+        this.molecularAssembly = data.getMolecularAssembly();
         this.data = data;
         this.refinementmodel = data.getRefinementModel();
         this.atomarray = data.getAtomArray();
@@ -173,56 +129,6 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         this.ktscale = 1.0;
 
         // determine size of fit
-        determineSizeFit(refinementMode);
-
-        // initialize force field and Xray energies
-        for (MolecularAssembly ma : molecularAssembly) {
-            ForceFieldEnergy fe = ma.getPotentialEnergy();
-            if (fe == null) {
-                fe = new ForceFieldEnergy(ma);
-                ma.setPotential(fe);
-            }
-            fe.setScaling(null);
-        }
-
-        if (data instanceof DiffractionData) {
-            DiffractionData diffractiondata = (DiffractionData) data;
-            if (!diffractiondata.scaled[0]) {
-                diffractiondata.printStats();
-            }
-
-            dataEnergy = new XRayEnergy(diffractiondata, nxyz, nb, nocc,
-                    refinementMode);
-            dataEnergy.setScaling(null);
-        } else if (data instanceof RealSpaceData) {
-            RealSpaceData realspacedata = (RealSpaceData) data;
-            dataEnergy = new RealSpaceEnergy(realspacedata, nxyz, 0, 0,
-                    refinementMode);
-            dataEnergy.setScaling(null);
-        }
-
-        int assemblysize = molecularAssembly.length;
-        xChemical = new double[assemblysize][];
-        gChemical = new double[assemblysize][];
-        for (int i = 0; i < assemblysize; i++) {
-            int len = molecularAssembly[i].getAtomArray().length * 3;
-            xChemical[i] = new double[len];
-            gChemical[i] = new double[len];
-        }
-    }
-    
-    /**
-     * Sets n, nxyz, nb, nocc parameters on construction or re-init.
-     */
-    private void determineSizeFit() {
-        determineSizeFit(refinementMode);
-    }
-    
-    /**
-     * Sets n, nxyz, nb, nocc parameters on construction or re-init.
-     * @param refinementmode 
-     */
-    private void determineSizeFit(RefinementMode refinementmode) {
         n = nxyz = nb = nocc = 0;
         switch (refinementmode) {
             case COORDINATES:
@@ -300,6 +206,41 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
                 break;
         }
         n = nxyz + nb + nocc;
+
+        // initialize force field and Xray energies
+        for (MolecularAssembly ma : molecularAssembly) {
+            ForceFieldEnergy fe = ma.getPotentialEnergy();
+            if (fe == null) {
+                fe = new ForceFieldEnergy(ma);
+                ma.setPotential(fe);
+            }
+            fe.setScaling(null);
+        }
+
+        if (data instanceof DiffractionData) {
+            DiffractionData diffractiondata = (DiffractionData) data;
+            if (!diffractiondata.scaled[0]) {
+                diffractiondata.printStats();
+            }
+
+            dataEnergy = new XRayEnergy(diffractiondata, nxyz, nb, nocc,
+                    refinementMode);
+            dataEnergy.setScaling(null);
+        } else if (data instanceof RealSpaceData) {
+            RealSpaceData realspacedata = (RealSpaceData) data;
+            dataEnergy = new RealSpaceEnergy(realspacedata, nxyz, 0, 0,
+                    refinementMode);
+            dataEnergy.setScaling(null);
+        }
+
+        int assemblysize = molecularAssembly.length;
+        xChemical = new double[assemblysize][];
+        gChemical = new double[assemblysize][];
+        for (int i = 0; i < assemblysize; i++) {
+            int len = molecularAssembly[i].getAtomArray().length * 3;
+            xChemical[i] = new double[len];
+            gChemical[i] = new double[len];
+        }
     }
 
     public Potential getDataEnergy() {
@@ -820,34 +761,6 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
             fe.setEnergyTermState(state);
         }
         dataEnergy.setEnergyTermState(state);
-    }
-    
-    @Override
-    public void reInit() {
-        totalEnergy = 0;
-        refinementmodel.regenerateAtomList();
-        atomarray = refinementmodel.getAtomArray();
-        nAtoms = atomarray.length;
-        
-        determineSizeFit(refinementMode); // n, nocc, nb, nxyz
-        if (data instanceof DiffractionData) {
-            DiffractionData diffractiondata = (DiffractionData) data;
-            dataEnergy = new XRayEnergy(diffractiondata, nxyz, nb, nocc,
-                    refinementMode);
-            dataEnergy.setScaling(null);
-        } else if (data instanceof RealSpaceData) {
-            RealSpaceData realspacedata = (RealSpaceData) data;
-            dataEnergy = new RealSpaceEnergy(realspacedata, nxyz, 0, 0,
-                    refinementMode);
-            dataEnergy.setScaling(null);
-        }
-
-        int assemblysize = molecularAssembly.length;
-        for (int i = 0; i < assemblysize; i++) {
-            int len = molecularAssembly[i].getAtomArray().length * 3;
-            xChemical[i] = new double[len];
-            gChemical[i] = new double[len];
-        }
     }
 
     @Override

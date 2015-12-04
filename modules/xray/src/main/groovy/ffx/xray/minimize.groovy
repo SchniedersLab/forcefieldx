@@ -78,7 +78,7 @@ String suffix = "_refine";
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc xray.minimize [options] <pdbfilename> [datafilename]');
 cli.h(longOpt:'help', 'Print this help message.');
-cli.dt(longOpt:'data', args:3, valueSeparator:',', argName:'data.mtz,1.0,false', 'specify input data filename (or simply provide the datafilename argument after the PDB file), weight applied to the data (wA) and if the data is from a neutron experiment');
+cli.d(longOpt:'data', args:3, valueSeparator:',', argName:'data.mtz,1.0,false', 'specify input data filename (or simply provide the datafilename argument after the PDB file), weight applied to the data (wA) and if the data is from a neutron experiment');
 cli.e(longOpt:'eps', args:1, argName:'-1.0', 'RMS gradient convergence criteria (negative: automatically determine based on refinement type)');
 cli.f(longOpt:'threeeps', args:3, valueSeparator:',', argName:'-1.0,-1.0,-1.0', 'RMS gradient convergence criteria for three stage refinement (negative: automatically determine for each stage)');
 cli.m(longOpt:'maxiter', args:1, argName:'1000', 'maximum number of allowed refinement iterations');
@@ -100,24 +100,17 @@ if (arguments != null && arguments.size() > 0) {
     return cli.usage();
 }
 
-boolean isNeutron = false;
-String neutronProperty = System.getProperty("neutronData");
-if (neutronProperty != null) {
-    isNeutron = Boolean.parseBoolean(neutronProperty);
-}
-
 // set up diffraction data (can be multiple files)
 List diffractionfiles = new ArrayList();
 if (arguments.size() > 1) {
-    //DiffractionFile diffractionfile = new DiffractionFile(arguments.get(1), 1.0, isNeutron);
-    DiffractionFile diffractionfile = new DiffractionFile(arguments.get(1), isNeutron);
+    DiffractionFile diffractionfile = new DiffractionFile(arguments.get(1), 1.0, false);
     diffractionfiles.add(diffractionfile);
 }
-if (options.dt) {
-    for (int i=0; i<options.dts.size(); i+=3) {
-	double wA = Double.parseDouble(options.dts[i+1]);
-	boolean neutron = Boolean.parseBoolean(options.dts[i+2]);
-	DiffractionFile diffractionfile = new DiffractionFile(options.dts[i], wA, neutron);
+if (options.d) {
+    for (int i=0; i<options.ds.size(); i+=3) {
+	double wA = Double.parseDouble(options.ds[i+1]);
+	boolean neutron = Boolean.parseBoolean(options.ds[i+2]);
+	DiffractionFile diffractionfile = new DiffractionFile(options.ds[i], wA, neutron);
 	diffractionfiles.add(diffractionfile);
     }
 }
@@ -160,7 +153,7 @@ logger.info("\n Running x-ray minimize on " + modelfilename);
 systems = open(modelfilename);
 
 if (diffractionfiles.size() == 0) {
-    DiffractionFile diffractionfile = new DiffractionFile(systems, 1.0, isNeutron);
+    DiffractionFile diffractionfile = new DiffractionFile(systems, 1.0, false);
     diffractionfiles.add(diffractionfile);
 }
 

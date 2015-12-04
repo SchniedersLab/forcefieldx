@@ -63,10 +63,6 @@ import static ffx.numerics.VectorMath.sum;
 import static ffx.potential.parameters.BondType.cubic;
 import static ffx.potential.parameters.BondType.quartic;
 import static ffx.potential.parameters.BondType.units;
-import org.apache.commons.math3.util.FastMath;
-import org.biojava.nbio.structure.io.mmcif.ChemCompGroupFactory;
-import org.biojava.nbio.structure.io.mmcif.model.ChemComp;
-import org.biojava.nbio.structure.io.mmcif.model.ChemCompBond;
 
 /**
  * The Bond class represents a covalent bond formed between two atoms.
@@ -75,7 +71,7 @@ import org.biojava.nbio.structure.io.mmcif.model.ChemCompBond;
  * @since 1.0
  *
  */
-public class Bond extends BondedTerm implements Comparable<Bond>, org.biojava.nbio.structure.Bond {
+public class Bond extends BondedTerm implements Comparable<Bond> {
 
     private static final Logger logger = Logger.getLogger(Bond.class.getName());
 
@@ -109,83 +105,6 @@ public class Bond extends BondedTerm implements Comparable<Bond>, org.biojava.nb
         // There should not be duplicate, identical bond objects.
         assert (!(this0 == a0 && this1 == a1));
         return 0;
-    }
-
-    @Override
-    public void addSelfToAtoms() {
-        List<org.biojava.nbio.structure.Bond> bonds = atoms[0].getBonds();
-        boolean exists = false;
-        for (org.biojava.nbio.structure.Bond bond : bonds) {
-            if (bond.getOther(atoms[0]).equals(atoms[1])) {
-                exists = true;
-                break;
-            }
-        }
-        if (!exists) {
-            atoms[0].setBond(this);
-            atoms[1].setBond(this);
-        }
-    }
-
-    @Override
-    public org.biojava.nbio.structure.Atom getAtomA() {
-        return atoms[0];
-    }
-
-    @Override
-    public org.biojava.nbio.structure.Atom getAtomB() {
-        return atoms[1];
-    }
-
-    @Override
-    public org.biojava.nbio.structure.Atom getOther(org.biojava.nbio.structure.Atom atom) {
-        if (atoms[0].equals(atom)) {
-            return atoms[1];
-        } else if (atoms[1].equals(atom)) {
-            return atoms[0];
-        } else {
-            throw new IllegalArgumentException(String.format("Atom %s to exclude is not in bond.", atom.toString()));
-        }
-    }
-
-    @Override
-    public int getBondOrder() {
-        if (bondOrder < 0) {
-            bondOrder = determineBondOrder(this);
-        }
-        return bondOrder;
-    }
-    
-    /**
-     * Determines a bond order based on the Chemical Component Dictionary; if it 
-     * could not be found (such as an inter-residue bond), it assumes order 1.
-     * @param bond
-     * @return 
-     */
-    public static int determineBondOrder(Bond bond) {
-        Atom[] atoms = bond.getAtomArray();
-        Residue res1 = (Residue) atoms[0].getParent().getParent();
-        Residue res2 = (Residue) atoms[1].getParent().getParent();
-        if (res1.equals(res2)) {
-            ChemComp chemComp = ChemCompGroupFactory.getChemComp(res1.getName());
-            String name1 = atoms[0].getName();
-            String name2 = atoms[1].getName();
-            for (ChemCompBond chemCompBond : chemComp.getBonds()) {
-                String ccName1 = chemCompBond.getAtom_id_1();
-                String ccName2 = chemCompBond.getAtom_id_2();
-                if (ccName1.equalsIgnoreCase(name1) && ccName2.equalsIgnoreCase(name2)) {
-                    return chemCompBond.getNumericalBondOrder();
-                } else if (ccName1.equalsIgnoreCase(name2) && ccName2.equalsIgnoreCase(name1)) {
-                    return chemCompBond.getNumericalBondOrder();
-                }
-            }
-        }
-        logger.fine(String.format(" Bond order for bond %s could not be found.", bond.toString()));
-        return 1;
-        /**
-         * Assumes all inter-residue bonds are of order 1, and defaults to order 1
-         * if it could not be properly found.
-         */
     }
 
     /**
@@ -242,7 +161,6 @@ public class Bond extends BondedTerm implements Comparable<Bond>, org.biojava.nb
     private LineArray la;
     private int lineIndex;
     private boolean wireVisible = true;
-    private int bondOrder = -1;
 
     /**
      * Bond constructor.
@@ -275,31 +193,6 @@ public class Bond extends BondedTerm implements Comparable<Bond>, org.biojava.nb
      */
     public Bond(String n) {
         super(n);
-    }
-    
-    public Bond(org.biojava.nbio.structure.Bond bond) {
-        org.biojava.nbio.structure.Atom at1 = bond.getAtomA();
-        org.biojava.nbio.structure.Atom at2 = bond.getAtomB();
-        if (at1 instanceof Atom && at2 instanceof Atom) {
-            Atom a1 = (Atom) at1;
-            Atom a2 = (Atom) at2;
-            atoms = new Atom[2];
-            int i1 = a1.getXYZIndex();
-            int i2 = a2.getXYZIndex();
-            if (i1 < i2) {
-                atoms[0] = a1;
-                atoms[1] = a2;
-            } else {
-                atoms[0] = a2;
-                atoms[1] = a1;
-            }
-            setID_Key(false);
-            viewModel = RendererCache.ViewModel.WIREFRAME;
-            a1.setBond(this);
-            a2.setBond(this);
-        } else {
-            throw new IllegalArgumentException("FFX Bonds must be constructed with FFX Atoms.");
-        }
     }
 
     /**
@@ -352,24 +245,6 @@ public class Bond extends BondedTerm implements Comparable<Bond>, org.biojava.nb
             return atoms[0];
         }
         return null; // Atom not found in bond
-    }
-    
-    /**
-     * Returns the length of the bond.
-     * @return Bond length
-     */
-    @Override
-    public double getLength() {
-        double[] axyz = new double[3];
-        double[] bxyz = new double[3];
-        atoms[0].getXYZ(axyz);
-        atoms[1].getXYZ(bxyz);
-        
-        double dx = axyz[0] - bxyz[0];
-        double dy = axyz[1] - bxyz[1];
-        double dz = axyz[2] - bxyz[2];
-        
-        return FastMath.sqrt((dx * dx) + (dy * dy) + (dz * dz));
     }
 
     /**

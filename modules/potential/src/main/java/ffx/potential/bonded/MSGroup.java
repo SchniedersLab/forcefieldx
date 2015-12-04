@@ -49,8 +49,6 @@ import javax.vecmath.Color3f;
 import ffx.numerics.VectorMath;
 import ffx.potential.parameters.ForceField;
 
-import org.biojava.nbio.structure.Element;
-
 /**
  * The MSGroup class has one subnode containing atoms, and one that contains
  * molecular mechanics/geometry terms.
@@ -230,7 +228,7 @@ public abstract class MSGroup extends MSNode {
         ArrayList<Bond> bonds = new ArrayList<>();
         for (Atom atom : getAtomList()) {
             if (atom.getNumBonds() != 0) {
-                for (Bond bond : atom.getFFXBonds()) {
+                for (Bond bond : atom.getBonds()) {
                     if (bond.sameGroup() && bond.getParent() == null) {
                         newBondNode.add(bond);
                         bonds.add(bond);
@@ -250,10 +248,10 @@ public abstract class MSGroup extends MSNode {
         for (Atom atom : getAtomList()) {
             if (atom.getNumBonds() != 0) {
                 int index = 0;
-                for (Bond bond : atom.getFFXBonds()) {
+                for (Bond bond : atom.getBonds()) {
                     index++;
                     if (bond.sameGroup()) {
-                        for (ListIterator<Bond> li = atom.getFFXBonds().listIterator(index); li.hasNext();) {
+                        for (ListIterator<Bond> li = atom.getBonds().listIterator(index); li.hasNext();) {
                             Bond bond2 = li.next();
                             if (bond2.sameGroup()) {
                                 Angle newAngle = Angle.angleFactory(bond, bond2, forceField);
@@ -319,9 +317,9 @@ public abstract class MSGroup extends MSNode {
             Atom atom1 = middleBond.getAtom(0);
             Atom atom2 = middleBond.getAtom(1);
             if (atom1.getNumBonds() != 0 && atom2.getNumBonds() != 0) {
-                for (Bond bond1 : atom1.getFFXBonds()) {
+                for (Bond bond1 : atom1.getBonds()) {
                     if (bond1 != middleBond) {
-                        for (Bond bond3 : atom2.getFFXBonds()) {
+                        for (Bond bond3 : atom2.getBonds()) {
                             if (bond3 != middleBond) {
                                 Torsion torsion = Torsion.torsionFactory(bond1, middleBond, bond3, forceField);
                                 if (torsion != null) {
@@ -378,10 +376,10 @@ public abstract class MSGroup extends MSNode {
             Atom atom1 = angle.atoms[0];
             Atom atom2 = angle.atoms[1];
             Atom atom3 = angle.atoms[2];
-            for (Bond firstBond : atom1.getFFXBonds()) {
+            for (Bond firstBond : atom1.getBonds()) {
                 Atom atom0 = firstBond.get1_2(atom1);
                 if (atom0 != atom2 && atom0 != atom3) {
-                    for (Bond lastBond : atom3.getFFXBonds()) {
+                    for (Bond lastBond : atom3.getBonds()) {
                         Atom atom4 = lastBond.get1_2(atom3);
                         if (atom4 != atom0 && atom4 != atom1 && atom4 != atom2) {
                             TorsionTorsion torsionTorsion = TorsionTorsion.
@@ -428,10 +426,10 @@ public abstract class MSGroup extends MSNode {
                 if (d1 < d2) {
                     ArrayList<Bond> adjunctBonds = new ArrayList<>();
                     if (a1.getNumBonds() > 0) {
-                        adjunctBonds.addAll(a1.getFFXBonds());
+                        adjunctBonds.addAll(a1.getBonds());
                     }
                     if (a2.getNumBonds() > 0) {
-                        adjunctBonds.addAll(a2.getFFXBonds());
+                        adjunctBonds.addAll(a2.getBonds());
                     }
                     Bond newbond = new Bond(a1, a2);
                     b.add(newbond);
@@ -442,7 +440,7 @@ public abstract class MSGroup extends MSNode {
                             Angle newangle = new Angle(newbond, adjunctBond);
                             a.add(newangle);
                             Atom atom13 = adjunctBond.getOtherAtom(newbond);
-                            for (Bond bond14 : atom13.getFFXBonds()) {
+                            for (Bond bond14 : atom13.getBonds()) {
                                 if (bond14 != adjunctBond) {
                                     d.add(new Torsion(newangle, bond14));
                                 }
@@ -485,7 +483,7 @@ public abstract class MSGroup extends MSNode {
         ArrayList<Angle> angles = new ArrayList<>();
         // Chemical Group #1
         Atom atom1 = bond.getAtom(0);
-        for (Bond bond2 : atom1.getFFXBonds()) {
+        for (Bond bond2 : atom1.getBonds()) {
             if (bond != bond2 && bond.getOtherAtom(bond2) != null) {
                 Angle newAngle = Angle.angleFactory(bond, bond2, forceField);
                 if (newAngle != null) {
@@ -496,7 +494,7 @@ public abstract class MSGroup extends MSNode {
         }
         // Chemical Group #2
         Atom atom2 = bond.getAtom(1);
-        for (Bond bond2 : atom2.getFFXBonds()) {
+        for (Bond bond2 : atom2.getBonds()) {
             if (bond != bond2 && bond.getOtherAtom(bond2) != null) {
                 Angle newAngle = Angle.angleFactory(bond, bond2, forceField);
                 if (newAngle != null) {
@@ -533,9 +531,9 @@ public abstract class MSGroup extends MSNode {
         atom1 = bond.getAtom(0);
         atom2 = bond.getAtom(1);
         if (atom1.getNumBonds() != 0 && atom2.getNumBonds() != 0) {
-            for (Bond firstBond : atom1.getFFXBonds()) {
+            for (Bond firstBond : atom1.getBonds()) {
                 if (firstBond != bond) {
-                    for (Bond lastBond : atom2.getFFXBonds()) {
+                    for (Bond lastBond : atom2.getBonds()) {
                         if (lastBond != bond) {
                             Torsion torsion = Torsion.torsionFactory(firstBond, bond, lastBond, forceField);
                             if (torsion != null) {
@@ -564,10 +562,10 @@ public abstract class MSGroup extends MSNode {
             atom1 = angle.atoms[0];
             atom2 = angle.atoms[1];
             Atom atom3 = angle.atoms[2];
-            for (Bond firstBond : atom1.getFFXBonds()) {
+            for (Bond firstBond : atom1.getBonds()) {
                 Atom atom0 = firstBond.get1_2(atom1);
                 if (atom0 != atom2 && atom0 != atom3) {
-                    for (Bond lastBond : atom3.getFFXBonds()) {
+                    for (Bond lastBond : atom3.getBonds()) {
                         Atom atom4 = lastBond.get1_2(atom3);
                         if (atom4 != atom0 && atom4 != atom1 && atom4 != atom2) {
                             TorsionTorsion torsionTorsion = TorsionTorsion.
@@ -702,57 +700,7 @@ public abstract class MSGroup extends MSNode {
                 return msNode;
             }
         }
-        return getDeuteronNode(n, list);
-    }
-    
-    /**
-     * Attempts to return a deuteron equivalent to the name specified by the 
-     * String n (for example, uses "HD21" to try to find "DD21").
-     *
-     * @param n a {@link java.lang.String} object.
-     * @param list List of MSnodes associated with this MSGroup.
-     * @return a {@link ffx.potential.bonded.MSNode} object.
-     */
-    private MSNode getDeuteronNode(String n, List<MSNode> list) {
-        // If method ever made public, should generate MSNode list as above.
-        
-        String deuteronName = n.replaceFirst("H", "D");
-        for (MSNode msNode : list) {
-            if (msNode instanceof Atom) {
-                Atom atom = (Atom) msNode;
-                Element element = atom.getElement();
-                // At this point, we are not correctly assigning the D element to deuterons.
-                if (element != null && (element.equals(Element.H) || element.equals(Element.D))) {
-                    if (msNode.getName().compareTo(deuteronName) == 0) {
-                        return msNode;
-                    }
-                }
-            }
-
-        }
         return null;
-    }
-    
-    /**
-     * Returns the AtomNode specified by the String n, with the option to fail 
-     * even if an equivalent deuterium could be found (hydrogens only).
-     *
-     * @param n a {@link java.lang.String} object.
-     * @param failOnDeuterium If true, do not check for deuterium.
-     * @return a {@link ffx.potential.bonded.MSNode} object.
-     */
-    public MSNode getAtomNode(String n, boolean failOnDeuterium) {
-        if (failOnDeuterium) {
-            List<MSNode> list = getAtomNodeList();
-            for (MSNode msNode : list) {
-                if (msNode.getName().compareTo(n) == 0) {
-                    return msNode;
-                }
-            }
-            return null;
-        } else {
-            return getAtomNode(n);
-        }
     }
 
     /**

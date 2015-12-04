@@ -157,25 +157,8 @@
         </dependency>
         <dependency>
             <groupId>org.biojava</groupId>
-            <artifactId>biojava-structure-ffx</artifactId>
-            <version>${biojava.version}</version>
-            <type>jar</type>
-        </dependency>
-        <dependency>
-            <groupId>org.biojava</groupId>
-            <artifactId>biojava-structure-gui-ffx</artifactId>
-            <version>${biojava.version}</version>
-            <type>jar</type>
-        </dependency>
-        <dependency>
-            <groupId>org.biojava</groupId>
-            <artifactId>jcolorbrewer</artifactId>
-            <version>5.2</version>
-        </dependency>
-        <dependency>
-            <groupId>net.sourceforge.jmol</groupId>
-            <artifactId>jmol</artifactId>
-            <version>13.0.14</version>
+            <artifactId>biojava3-structure</artifactId>
+            <version>3.0.8</version>
         </dependency>
         <dependency>
             <groupId>com.apporiented</groupId>

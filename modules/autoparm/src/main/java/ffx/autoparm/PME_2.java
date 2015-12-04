@@ -1275,7 +1275,7 @@ public class PME_2 implements Potential {
                     }
                 }
             }
-            for (Bond bi : ai.getFFXBonds()) {
+            for (Bond bi : ai.getBonds()) {
                 Atom aj = bi.get1_2(ai);
                 int tj = aj.getType();
                 for (int g : polarizationGroup) {
@@ -1369,8 +1369,8 @@ public class PME_2 implements Potential {
             for (int j = 0; j < list.size(); j++) {
                 jj = list.get(j);
                 Atom ajj = atoms[jj];
-                for (int k = 0; k < ajj.getFFXBonds().size(); k++) {
-                    kk = ajj.getFFXBonds().get(k).get1_2(ajj).getXYZIndex() - 1;
+                for (int k = 0; k < ajj.getBonds().size(); k++) {
+                    kk = ajj.getBonds().get(k).get1_2(ajj).getXYZIndex() - 1;
                     //System.out.println(mask.get(kk)+" "+i);
                     if (mask.get(kk) != i) {
                         keep.add(kk);
@@ -1599,7 +1599,7 @@ public class PME_2 implements Potential {
                     maskp_local[index] = p13scale;
                 }
             }
-            for (Bond bond : ai.getFFXBonds()) {
+            for (Bond bond : ai.getBonds()) {
                 int index = bond.get1_2(ai).xyzIndex - 1;
                 maskp_local[index] = p12scale;
             }
@@ -1802,7 +1802,7 @@ public class PME_2 implements Potential {
                     maskp_local[index] = p13scale;
                 }
             }
-            for (Bond bond : ai.getFFXBonds()) {
+            for (Bond bond : ai.getBonds()) {
                 int index = bond.get1_2(ai).xyzIndex - 1;
                 maskp_local[index] = p12scale;
             }
@@ -1957,7 +1957,7 @@ public class PME_2 implements Potential {
 //                        maskp_local[index] = p13scale;
 //                    }
 //                }
-//                for (Bond bond : ai.getFFXBonds()) {
+//                for (Bond bond : ai.getBonds()) {
 //                    int index = bond.get1_2(ai).xyzIndex - 1;
 //                    maskp_local[index] = p12scale;
 //                }
@@ -3836,7 +3836,7 @@ public class PME_2 implements Potential {
                             maskp_local[index] = p13scale;
                         }
                     }
-                    for (Bond bond : ai.getFFXBonds()) {
+                    for (Bond bond : ai.getBonds()) {
                         int index = bond.get1_2(ai).xyzIndex - 1;
                         maskp_local[index] = p12scale;
                     }
@@ -3987,7 +3987,7 @@ public class PME_2 implements Potential {
                             maskp_local[index] = 1.0;
                         }
                     }
-                    for (Bond bond : ai.getFFXBonds()) {
+                    for (Bond bond : ai.getBonds()) {
                         int index = bond.get1_2(ai).xyzIndex - 1;
                         maskp_local[index] = 1.0;
                     }
@@ -4838,7 +4838,7 @@ public class PME_2 implements Potential {
                                 maskingp_local[index] = p13scale;
                             }
                         }
-                        for (Bond bond : ai.getFFXBonds()) {
+                        for (Bond bond : ai.getBonds()) {
                             int index = bond.get1_2(ai).xyzIndex - 1;
                             masking_local[index] = m12scale;
                             maskingp_local[index] = p12scale;
@@ -5002,7 +5002,7 @@ public class PME_2 implements Potential {
                                 maskingp_local[index] = 1.0;
                             }
                         }
-                        for (Bond bond : ai.getFFXBonds()) {
+                        for (Bond bond : ai.getBonds()) {
                             int index = bond.get1_2(ai).xyzIndex - 1;
                             masking_local[index] = 1.0;
                             maskingp_local[index] = 1.0;
@@ -6300,7 +6300,7 @@ public class PME_2 implements Potential {
             return true;
         }
         // No bonds.
-        List<Bond> bonds = atom.getFFXBonds();
+        List<Bond> bonds = atom.getBonds();
         if (bonds == null || bonds.size() < 1) {
             String message = "Multipoles can only be assigned after bonded relationships are defined.\n";
             logger.severe(message);
@@ -6558,7 +6558,7 @@ public class PME_2 implements Potential {
             keep.clear();
             for (int j : list) {
                 Atom aj = atoms[j];
-                ArrayList<Bond> bonds = aj.getFFXBonds();
+                ArrayList<Bond> bonds = aj.getBonds();
                 for (Bond b : bonds) {
                     Atom ak = b.get1_2(aj);
                     int k = ak.getXYZIndex() - 1;
@@ -6624,7 +6624,7 @@ public class PME_2 implements Potential {
      */
     private void growGroup(List<Integer> polarizationGroup,
             List<Integer> group, Atom seed) {
-        List<Bond> bonds = seed.getFFXBonds();
+        List<Bond> bonds = seed.getBonds();
         for (Bond bi : bonds) {
             Atom aj = bi.get1_2(seed);
             int tj = aj.getType();
@@ -6659,11 +6659,6 @@ public class PME_2 implements Potential {
 
     @Override
     public void setEnergyTermState(STATE state) {
-    }
-    
-    @Override
-    public void reInit() {
-        throw new UnsupportedOperationException(String.format(" No reInit method defined for %s", PME_2.class.toString()));
     }
 
     @Override

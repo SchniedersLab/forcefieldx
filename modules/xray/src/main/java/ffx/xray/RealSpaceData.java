@@ -267,8 +267,7 @@ public class RealSpaceData implements DataContainer {
         // Zero out the realSpacedUdL energy.
         realSpacedUdL = 0.0;
         // Initialize gradient to zero; allocate space if necessary.
-        Atom[] refinementAtomArray = refinementmodel.getAtomArray();
-        int nAtoms = refinementAtomArray.length;
+        int nAtoms = refinementmodel.atomArray.length;
         if (realSpaceGradient == null || realSpaceGradient.length < nAtoms * 3) {
             realSpaceGradient = new double[nAtoms * 3];
         } else {
@@ -291,9 +290,7 @@ public class RealSpaceData implements DataContainer {
             double sum = 0.0;
             TriCubicSpline spline = new TriCubicSpline();
             int index = -1;
-            
-            
-            for (Atom a : refinementAtomArray) {
+            for (Atom a : refinementmodel.atomArray) {
                 index++;
                 if (!a.getUse()) {
                     continue;
@@ -394,7 +391,7 @@ public class RealSpaceData implements DataContainer {
         }
 
         int index = -1;
-        for (Atom a : refinementAtomArray) {
+        for (Atom a : refinementmodel.atomArray) {
             index++;
             int gradIndex = index * 3;
             int gx = gradIndex;
@@ -415,7 +412,7 @@ public class RealSpaceData implements DataContainer {
     }
 
     public double[] getRealSpaceGradient(double gradient[]) {
-        int nAtoms = refinementmodel.getAtomArray().length;
+        int nAtoms = refinementmodel.atomArray.length;
         if (gradient == null || gradient.length < nAtoms * 3) {
             gradient = new double[nAtoms * 3];
         }
@@ -426,7 +423,7 @@ public class RealSpaceData implements DataContainer {
     }
 
     public double[] getdEdXdL(double gradient[]) {
-        int nAtoms = refinementmodel.getAtomArray().length;
+        int nAtoms = refinementmodel.atomArray.length;
         if (gradient == null || gradient.length < nAtoms * 3) {
             gradient = new double[nAtoms * 3];
         }
@@ -450,7 +447,7 @@ public class RealSpaceData implements DataContainer {
      */
     @Override
     public Atom[] getAtomArray() {
-        return refinementmodel.getAtomArray();
+        return refinementmodel.atomArray;
     }
 
     /**

@@ -50,11 +50,7 @@ import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.XYZFilter;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import org.apache.commons.io.FilenameUtils;
-import org.biojava.nbio.structure.Structure;
-import org.biojava.nbio.structure.StructureException;
-import org.biojava.nbio.structure.StructureIO;
 
 /**
  * The PotentialsUtils class provides a local implementation, independent of the
@@ -108,18 +104,9 @@ public class PotentialsUtils implements PotentialsFunctions {
      */
     @Override
     public MolecularAssembly[] open(String file) {
-        try {
-            PotentialsFileOpener opener = new PotentialsFileOpener(file);
-            opener.run();
-            return opener.getAllAssemblies();
-        } catch (IllegalArgumentException e) {
-            try {
-                Structure struct = StructureIO.getStructure(file);
-                return convertDataStructure(struct);
-            } catch (IOException | StructureException ex) {
-                return null;
-            }
-        }
+        PotentialsFileOpener opener = new PotentialsFileOpener(file);
+        opener.run();
+        return opener.getAllAssemblies();
     }
 
     /**
@@ -131,28 +118,9 @@ public class PotentialsUtils implements PotentialsFunctions {
      */
     @Override
     public MolecularAssembly[] open(String[] files) {
-        try {
-            PotentialsFileOpener opener = new PotentialsFileOpener(files);
-            opener.run();
-            return opener.getAllAssemblies();
-        } catch (IllegalArgumentException e) {
-            try {
-                int nfiles = files.length;
-                Structure[] structs = new Structure[nfiles];
-                for (int i = 0; i < nfiles; i++) {
-                    try {
-                        structs[i] = StructureIO.getStructure(files[i]);
-                    } catch (StructureException | IOException ex) {
-                        structs[i] = null;
-                    }
-                }
-                PotentialsDataConverter converter = new PotentialsDataConverter(structs);
-                converter.run();
-                return converter.getAllAssemblies();
-            } catch (FileNotFoundException ex) {
-                return null;
-            }
-        }
+        PotentialsFileOpener opener = new PotentialsFileOpener(files);
+        opener.run();
+        return opener.getAllAssemblies();
     }
 
     /**
