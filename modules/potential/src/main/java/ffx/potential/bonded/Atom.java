@@ -336,7 +336,7 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
     /**
      * If built is true, this atom was built during the parsing of a file.
      */
-    private boolean loaded = false;
+    private boolean built = false;
     /**
      * True if this Atom is a HETATM.
      */
@@ -469,7 +469,7 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
             Character chainID, double occupancy, double tempFactor,
             String segID, boolean loaded) {
         this(xyzIndex, name, altLoc, xyz, resName, resSeq, chainID, occupancy, tempFactor, segID);
-        this.loaded = loaded;
+        this.built = loaded;
     }
 
     /**
@@ -584,10 +584,14 @@ public class Atom extends MSNode implements Comparable<Atom>, org.biojava.nbio.s
      *
      * @return true if this atom was built during parsing of a PDB file.
      */
-    public boolean getLoaded() {
-        return loaded;
+    public boolean getBuilt() {
+        return built;
     }
-
+    
+    public void setBuilt(boolean built) {
+        this.built = built;
+    }
+    
     /**
      * If true, this atom should be used in potential energy functions.
      * 
