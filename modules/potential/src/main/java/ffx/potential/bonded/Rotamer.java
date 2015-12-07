@@ -69,8 +69,8 @@ public class Rotamer {
     public final AminoAcid3 name;
     public final NucleicAcid3 nucleicName;
     public final int length;
-    public final double atomicCoordinates[][];
-    public final boolean isCoordinates;
+    public final ResidueState originalState;
+    public final boolean isState;
 
     public Rotamer(AminoAcid3 name, double... values) {
         length = values.length / 2;
@@ -88,8 +88,8 @@ public class Rotamer {
         chi4 = angles[3];
         chi5 = chi6 = chi7 = 0;
         nucleicName = null;
-        atomicCoordinates = null;
-        isCoordinates = false;
+        originalState = null;
+        isState = false;
     }
 
     public Rotamer(NucleicAcid3 name, double... values) {
@@ -110,11 +110,11 @@ public class Rotamer {
         chi5 = angles[4];
         chi6 = angles[5];
         chi7 = angles[6];
-        atomicCoordinates = null;
-        isCoordinates = false;
+        originalState = null;
+        isState = false;
     }
 
-    public Rotamer(AminoAcid3 name, double[][] origCoordinates, double... values) {
+    public Rotamer(AminoAcid3 name, ResidueState residueState, double... values) {
         length = values.length / 2;
         angles = new double[max(length, 4)];
         sigmas = new double[max(length, 4)];
@@ -130,15 +130,11 @@ public class Rotamer {
         chi4 = angles[3];
         chi5 = chi6 = chi7 = 0;
         nucleicName = null;
-        atomicCoordinates = new double[origCoordinates.length][];
-        for (int i = 0; i < origCoordinates.length; i++) {
-            atomicCoordinates[i] = new double[origCoordinates[i].length];
-            System.arraycopy(origCoordinates[i], 0, atomicCoordinates[i], 0, origCoordinates[i].length);
-        }
-        isCoordinates = true;
+        originalState = residueState;
+        isState = true;
     }
 
-    public Rotamer(NucleicAcid3 name, double[][] origCoordinates, double... values) {
+    public Rotamer(NucleicAcid3 name, ResidueState residueState, double... values) {
         length = values.length / 2;
         angles = new double[max(length, 7)];
         sigmas = new double[max(length, 7)];
@@ -156,12 +152,8 @@ public class Rotamer {
         chi5 = angles[4];
         chi6 = angles[5];
         chi7 = angles[6];
-        atomicCoordinates = new double[origCoordinates.length][];
-        for (int i = 0; i < origCoordinates.length; i++) {
-            atomicCoordinates[i] = new double[origCoordinates[i].length];
-            System.arraycopy(origCoordinates[i], 0, atomicCoordinates[i], 0, origCoordinates[i].length);
-        }
-        isCoordinates = true;
+        originalState = residueState;
+        isState = true;
     }
 
     @Override
