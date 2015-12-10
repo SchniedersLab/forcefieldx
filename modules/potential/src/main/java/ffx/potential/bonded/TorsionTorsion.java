@@ -65,13 +65,18 @@ import static ffx.potential.parameters.TorsionTorsionType.units;
  * @since 1.0
  *
  */
-public class TorsionTorsion extends BondedTerm {
+public class TorsionTorsion extends BondedTerm implements LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(TorsionTorsion.class.getName());
     private static final long serialVersionUID = 1L;
     public TorsionTorsionType torsionTorsionType = null;
     public final Torsion torsions[] = new Torsion[2];
     protected final boolean reversed;
+
+    private boolean lambdaTerm = false;
+    private double lambda = 1.0;
+    private double dEdL = 0.0;
+    private double dEdLdX[][] = new double[5][3];
 
     /**
      * Torsion-Torsion constructor.
@@ -268,6 +273,7 @@ public class TorsionTorsion extends BondedTerm {
     public double energy(boolean gradient) {
         energy = 0.0;
         value = 0.0;
+        dEdL = 0.0;
         atoms[0].getXYZ(a0);
         atoms[1].getXYZ(a1);
         atoms[2].getXYZ(a2);
@@ -358,11 +364,15 @@ public class TorsionTorsion extends BondedTerm {
             dxy[1] = torsionTorsionType.dxy[pos1 + 1];
             dxy[2] = torsionTorsionType.dxy[pos2 + 1];
             dxy[3] = torsionTorsionType.dxy[pos2];
-            if (!gradient) {
+            if (!gradient && !lambdaTerm) {
                 energy = units * bcuint(x1l, x1u, y1l, y1u, t1, t2);
+                dEdL = energy;
+                energy = lambda * energy;
             } else {
                 double ansy[] = new double[2];
                 energy = units * bcuint1(x1l, x1u, y1l, y1u, t1, t2, ansy);
+                dEdL = energy;
+                energy = lambda * energy;
                 double dedang1 = sign * units * toDegrees(ansy[0]);
                 double dedang2 = sign * units * toDegrees(ansy[1]);
                 /**
@@ -382,10 +392,22 @@ public class TorsionTorsion extends BondedTerm {
                 cross(v13, x2, g3);
                 sum(g2, g3, g2);
                 cross(x2, v12, g3);
-                atoms[0].addToXYZGradient(g0[0], g0[1], g0[2]);
-                atoms[1].addToXYZGradient(g1[0], g1[1], g1[2]);
-                atoms[2].addToXYZGradient(g2[0], g2[1], g2[2]);
-                atoms[3].addToXYZGradient(g3[0], g3[1], g3[2]);
+                dEdLdX[0][0] = g0[0];
+                dEdLdX[0][1] = g0[1];
+                dEdLdX[0][2] = g0[2];
+                dEdLdX[1][0] = g1[0];
+                dEdLdX[1][1] = g1[1];
+                dEdLdX[1][2] = g1[2];
+                dEdLdX[2][0] = g2[0];
+                dEdLdX[2][1] = g2[1];
+                dEdLdX[2][2] = g2[2];
+                dEdLdX[3][0] = g3[0];
+                dEdLdX[3][1] = g3[1];
+                dEdLdX[3][2] = g3[2];
+                atoms[0].addToXYZGradient(lambda * g0[0], lambda * g0[1], lambda * g0[2]);
+                atoms[1].addToXYZGradient(lambda * g1[0], lambda * g1[1], lambda * g1[2]);
+                atoms[2].addToXYZGradient(lambda * g2[0], lambda * g2[1], lambda * g2[2]);
+                atoms[3].addToXYZGradient(lambda * g3[0], lambda * g3[1], lambda * g3[2]);
                 /**
                  * Derivative components for the 2nd angle.
                  */
@@ -402,10 +424,22 @@ public class TorsionTorsion extends BondedTerm {
                 cross(v24, x2, g4);
                 sum(g3, g4, g3);
                 cross(x2, v23, g4);
-                atoms[1].addToXYZGradient(g1[0], g1[1], g1[2]);
-                atoms[2].addToXYZGradient(g2[0], g2[1], g2[2]);
-                atoms[3].addToXYZGradient(g3[0], g3[1], g3[2]);
-                atoms[4].addToXYZGradient(g4[0], g4[1], g4[2]);
+                dEdLdX[1][0] += g1[0];
+                dEdLdX[1][1] += g1[1];
+                dEdLdX[1][2] += g1[2];
+                dEdLdX[2][0] += g2[0];
+                dEdLdX[2][1] += g2[1];
+                dEdLdX[2][2] += g2[2];
+                dEdLdX[3][0] += g3[0];
+                dEdLdX[3][1] += g3[1];
+                dEdLdX[3][2] += g3[2];
+                dEdLdX[4][0] = g4[0];
+                dEdLdX[4][1] = g4[1];
+                dEdLdX[4][2] = g4[2];
+                atoms[1].addToXYZGradient(g1[0] * lambda, g1[1] * lambda, g1[2] * lambda);
+                atoms[2].addToXYZGradient(g2[0] * lambda, g2[1] * lambda, g2[2] * lambda);
+                atoms[3].addToXYZGradient(g3[0] * lambda, g3[1] * lambda, g3[2] * lambda);
+                atoms[4].addToXYZGradient(g4[0] * lambda, g4[1] * lambda, g4[2] * lambda);
             }
         }
         return energy;
@@ -638,4 +672,56 @@ public class TorsionTorsion extends BondedTerm {
             0.0, -1.0, 1.0},
         {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 1.0, 0.0, 0.0, 2.0, -2.0,
             0.0, 0.0, -1.0, 1.0}};
+
+    @Override
+    public void setLambda(double lambda) {
+        if (applyLambda()) {
+            lambdaTerm = true;
+            this.lambda = lambda;
+        } else {
+            lambdaTerm = false;
+            this.lambda = 1.0;
+        }
+    }
+
+    @Override
+    public double getLambda() {
+        return lambda;
+    }
+
+    @Override
+    public double getdEdL() {
+        return dEdL;
+    }
+
+    @Override
+    public double getd2EdL2() {
+        return 0.0;
+    }
+
+    @Override
+    public void getdEdXdL(double[] gradient) {
+        if (lambdaTerm) {
+            int index = (atoms[0].getXYZIndex() - 1) * 3;
+            gradient[index] += dEdLdX[0][0];
+            gradient[index + 1] += dEdLdX[0][1];
+            gradient[index + 2] += dEdLdX[0][2];
+            index = (atoms[1].getXYZIndex() - 1) * 3;
+            gradient[index] += dEdLdX[1][0];
+            gradient[index + 1] += dEdLdX[1][1];
+            gradient[index + 2] += dEdLdX[1][2];
+            index = (atoms[2].getXYZIndex() - 1) * 3;
+            gradient[index] += dEdLdX[2][0];
+            gradient[index + 1] += dEdLdX[2][1];
+            gradient[index + 2] += dEdLdX[2][2];
+            index = (atoms[3].getXYZIndex() - 1) * 3;
+            gradient[index] += dEdLdX[3][0];
+            gradient[index + 1] += dEdLdX[3][1];
+            gradient[index + 2] += dEdLdX[3][2];
+            index = (atoms[4].getXYZIndex() - 1) * 3;
+            gradient[index] += dEdLdX[4][0];
+            gradient[index + 1] += dEdLdX[4][1];
+            gradient[index + 2] += dEdLdX[4][2];
+        }
+    }
 }

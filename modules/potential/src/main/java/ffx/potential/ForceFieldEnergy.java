@@ -158,6 +158,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private boolean lambdaBondedTerms = false;
     private boolean relativeSolvationTerm;
     private boolean rigidHydrogens = false;
+    private boolean lambdaTorsions = false;
     private double rigidScale = 1.0;
     private boolean bondTermOrig;
     private boolean angleTermOrig;
@@ -176,7 +177,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private boolean ncsTermOrig;
     private boolean restrainTermOrig;
     private boolean comTermOrig;
-    private boolean relativeSolvationTermOrig;
     private double bondEnergy, bondRMSD;
     private double angleEnergy, angleRMSD;
     private double stretchBendEnergy;
@@ -290,6 +290,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         restraintBondTerm = false;
         restrainTerm = forceField.getBoolean(ForceFieldBoolean.RESTRAINTERM, false);
         comTerm = forceField.getBoolean(ForceFieldBoolean.COMRESTRAINTERM, false);
+        lambdaTorsions = forceField.getBoolean(ForceFieldBoolean.LAMBDA_TORSIONS, false);
 
         // For RESPA
         bondTermOrig = bondTerm;
@@ -427,7 +428,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 relativeSolvation = null;
                 break;
         }
-        relativeSolvationTermOrig = relativeSolvationTerm;
 
         if (rigidScale <= 1.0) {
             rigidScale = 1.0;
@@ -1574,6 +1574,14 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             if (comTerm && comRestraint != null) {
                 comRestraint.setLambda(lambda);
             }
+            if (lambdaTorsions) {
+                for (int i = 0; i < nTorsions; i++) {
+                    torsions[i].setLambda(lambda);
+                }
+                for (int i = 0; i < nTorsionTorsions; i++) {
+                    torsionTorsions[i].setLambda(lambda);
+                }
+            }
         } else {
             String message = String.format("Lambda value %8.3f is not in the range [0..1].", lambda);
             logger.warning(message);
@@ -1814,8 +1822,15 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             if (comTerm && comRestraint != null) {
                 dEdLambda += comRestraint.getdEdL();
             }
+            if (lambdaTorsions) {
+                for (int i = 0; i < nTorsions; i++) {
+                    dEdLambda += torsions[i].getdEdL();
+                }
+                for (int i = 0; i < nTorsionTorsions; i++) {
+                    dEdLambda += torsionTorsions[i].getdEdL();
+                }
+            }
         }
-
         return dEdLambda;
     }
 
@@ -1846,6 +1861,14 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             }
             if (comTerm && comRestraint != null) {
                 comRestraint.getdEdXdL(gradients);
+            }
+            if (lambdaTorsions) {
+                for (int i = 0; i < nTorsions; i++) {
+                    torsions[i].getdEdXdL(gradients);
+                }
+                for (int i = 0; i < nTorsionTorsions; i++) {
+                    torsionTorsions[i].getdEdXdL(gradients);
+                }
             }
         }
     }
@@ -1884,6 +1907,14 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             }
             if (comTerm && comRestraint != null) {
                 d2EdLambda2 += comRestraint.getd2EdL2();
+            }
+            if (lambdaTorsions) {
+                for (int i = 0; i < nTorsions; i++) {
+                    d2EdLambda2 += torsions[i].getd2EdL2();
+                }
+                for (int i = 0; i < nTorsionTorsions; i++) {
+                    d2EdLambda2 += torsionTorsions[i].getd2EdL2();
+                }
             }
         }
         return d2EdLambda2;

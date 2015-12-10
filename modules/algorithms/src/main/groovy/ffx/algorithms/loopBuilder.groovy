@@ -282,6 +282,7 @@ if(runOSRW){
     System.setProperty("intramolecular-softcore", "true");
     System.setProperty("intermolecular-softcore", "true");
     System.setProperty("lambdaterm", "true");
+    System.setProperty("lambda-torions", "true");
     System.setProperty("ligand-vapor-elec","false");
     System.setProperty("vdw-cutoff", "9.0");
     System.setProperty("lambda-bias-cutoff", "3");
@@ -362,6 +363,7 @@ System.setProperty("polarization", "direct");
 System.setProperty("intramolecularSoftcore", "false");
 System.setProperty("intermolecularSoftcore", "false");
 System.setProperty("lambdaterm", "false");
+System.setProperty("lambda-torions", "false");
 
 forceFieldEnergy = new ForceFieldEnergy(active);
 e = minimize(eps);
