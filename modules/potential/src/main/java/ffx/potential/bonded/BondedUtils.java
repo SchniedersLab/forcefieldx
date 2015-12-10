@@ -441,6 +441,21 @@ public class BondedUtils {
             String dAtomName = atomName.replaceFirst("H", "D");
             atom = (Atom) residue.getAtomNode(dAtomName);
         }
+        
+        // Basic checking for unspecified H atoms attached to waters.
+        if (residue instanceof Molecule && atom == null) {
+            Molecule molec = (Molecule) residue;
+            String molName = molec.getName().toUpperCase();
+            if (molName.startsWith("HOH") || molName.startsWith("WAT") || molName.startsWith("TIP3")) {
+                atom = (Atom) molec.getAtomNode("H");
+                if (atom == null) {
+                    atom = (Atom) molec.getAtomNode("D");
+                }
+                if (atom != null) {
+                    atom.setName(atomName);
+                }
+            }
+        }
         if (atom == null) {
             String resName = ia.getResidueName();
             int resSeq = ia.getResidueNumber();

@@ -555,7 +555,7 @@ if (algorithm != 5) {
             int nResidues = residues.size();
             for (int i=0; i<nResidues; i++) {
                 Residue residue = residues.get(i);
-                Rotamer[] rotamers = RotamerLibrary.getRotamers(residue);
+                Rotamer[] rotamers = residue.getRotamers();
                 if (rotamers != null) {
                     int nrot = rotamers.length;
                     if (nrot == 1) {
@@ -590,7 +590,7 @@ if (algorithm != 5) {
         int nResidues = residues.size();
         for (int i=0; i<nResidues; i++) {
             Residue residue = residues.get(i);
-            Rotamer[] rotamers = RotamerLibrary.getRotamers(residue);
+            Rotamer[] rotamers = residue.getRotamers();
             if (rotamers != null) {
                 int nrot = rotamers.length;
                 if (nrot == 1) {

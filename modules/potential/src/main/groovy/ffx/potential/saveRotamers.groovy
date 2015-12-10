@@ -149,7 +149,7 @@ if (library == 1) {
     RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
 }
 
-Rotamer[] rotamers = RotamerLibrary.getRotamers(residue);
+Rotamer[] rotamers = residue.getRotamers();
 if (rotamers == null) {
     logger.severe(" There are no rotamers for residue + " + residue.toString());
 }

@@ -1424,7 +1424,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         StringBuilder sb = new StringBuilder("\n");
         if (bondTerm && nBonds > 0) {
             sb.append(String.format("  %s %16.8f %12d %12.3f (%8.5f)\n",
-                    "Bond Streching    ", bondEnergy, nBonds,
+                    "Bond Stretching   ", bondEnergy, nBonds,
                     bondTime * toSeconds, bondRMSD));
         }
         if (angleTerm && nAngles > 0) {

@@ -177,7 +177,7 @@ if (options.x) {
         int nResidues = residues.size();
         for (int i=0; i<nResidues; i++) {
             Residue residue = residues.get(i);
-            Rotamer[] rotamers = RotamerLibrary.getRotamers(residue);
+            Rotamer[] rotamers = residue.getRotamers();
             if (rotamers != null) {
                 int nrot = rotamers.length;
                 if (nrot == 1) {
@@ -203,7 +203,7 @@ if (options.x) {
                 for (Residue r : rs) {
                     if (r.getResidueNumber() == i) {
                         residueList.add(r);
-                        Rotamer[] rotamers = RotamerLibrary.getRotamers(r);
+                        Rotamer[] rotamers = r.getRotamers();
                         if (rotamers != null && rotamers.size() > 1) {
                             n++;
                         }

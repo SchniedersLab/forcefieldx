@@ -544,7 +544,10 @@ public class Atom extends MSNode implements Comparable<Atom> {
     public boolean getBuilt() {
         return built;
     }
-
+    
+    public void setBuilt(boolean built) {
+        this.built = built;
+    }
     /**
      * If true, this atom should be used in potential energy functions.
      *

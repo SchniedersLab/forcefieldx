@@ -37,6 +37,7 @@
  */
 package ffx.potential.bonded;
 
+import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -113,6 +114,17 @@ public class Residue extends MSGroup {
     private double[] C4sCoords = null;
 
     private Rotamer currentRotamer = null;
+    private Rotamer originalRotamer = null;
+    protected static final boolean origAtEnd;
+
+    static {
+        String origAtEndStr = System.getProperty("ro-origAtEnd");
+        if (origAtEndStr != null) {
+            origAtEnd = Boolean.parseBoolean(origAtEndStr);
+        } else {
+            origAtEnd = false;
+        }
+    }
 
     /**
      * Default Constructor where num is this Residue's position in the Polymer.
@@ -189,12 +201,62 @@ public class Residue extends MSGroup {
         finalize(true, forceField);
     }
 
-    public Rotamer[] getRotamers(Residue residue) {
-        return RotamerLibrary.getRotamers(residue);
+    /**
+     * Gets the Rotamers for this residue, potentially incorporating the original
+     * coordinates if RotamerLibrary's original coordinates rotamer flag has been 
+     * set.
+     * @return An array of Rotamer.
+     */
+    public Rotamer[] getRotamers() {
+        if (RotamerLibrary.getUsingOrigCoordsRotamer()) {
+            Rotamer[] libRotamers = RotamerLibrary.getRotamers(this);
+            if (libRotamers == null) {
+                return null;
+    }
+            int nRots = libRotamers.length;
+            Rotamer[] rotamers = new Rotamer[nRots + 1];
+            if (originalRotamer == null) {
+                ResidueState origState = storeState();
+                double[] chi = RotamerLibrary.measureRotamer(this, false);
+                switch (residueType) {
+                    case AA:
+                        AminoAcid3 aa3 = AminoAcid3.valueOf(getName());
+                        originalRotamer = new Rotamer(aa3, origState, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0);
+                        break;
+                    case NA:
+                        NucleicAcid3 na3 = NucleicAcid3.valueOf(getName());
+                        originalRotamer = new Rotamer(na3, origState, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0, chi[4], 0, chi[5], 0);
+                        break;
+                    default:
+                        originalRotamer = null;
+                        return libRotamers;
+                }
+            }
+            if (origAtEnd) {
+                System.arraycopy(libRotamers, 0, rotamers, 0, nRots);
+                rotamers[rotamers.length - 1] = originalRotamer;
+            } else {
+                System.arraycopy(libRotamers, 0, rotamers, 1, nRots);
+                rotamers[0] = originalRotamer;
+            }
+            return rotamers;
+        } else {
+            return RotamerLibrary.getRotamers(this);
+        }
     }
 
     public ResidueType getResidueType() {
         return residueType;
+    }
+
+    public boolean isDeoxy() {
+        if (getResidueType() == ResidueType.NA) {
+            Atom HOs = (Atom) getAtomNode("HO\'");
+            if (HOs == null) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -317,11 +379,11 @@ public class Residue extends MSGroup {
         return atom;
     }
 
-    public ResidueState storeCoordinates() {
+    public ResidueState storeState() {
         return new ResidueState(this, this);
     }
 
-    public void revertCoordinates(ResidueState state) {
+    public void revertState(ResidueState state) {
         List<Atom> atomList = getAtomList();
         for (Atom atom : atomList) {
             atom.moveTo(state.getAtomCoords(atom));
@@ -440,6 +502,18 @@ public class Residue extends MSGroup {
             default:
                 return null;
         }
+    }
+
+    /**
+     * Returns a list of atoms liable to change during dead-end elimination repacking.
+     * For ordinary amino acids: side chain atoms. For ordinary nucleic acids:
+     * sugar/phosphate backbone atoms. MultiResidue over-rides this to return all
+     * atoms (as backbone atom types are nonconstant).
+     * 
+     * @return Atoms changeable during DEE.
+     */
+    public List<Atom> getVariableAtoms() {
+        return getSideChainAtoms();
     }
 
     /**
@@ -956,6 +1030,10 @@ public class Residue extends MSGroup {
      */
     public static final HashMap<AA1, AA3> AA1toAA3 = new HashMap<>();
     /**
+     * Constant <code>AA3toAA1</code>
+     */
+    public static final HashMap<AA3, AA1> AA3toAA1 = new HashMap<>();
+    /**
      * Constant <code>AA3Color</code>
      */
     public static final HashMap<AA3, Color3f> AA3Color = new HashMap<>();
@@ -967,6 +1045,80 @@ public class Residue extends MSGroup {
      * Constant <code>Ramachandran="new String[17]"</code>
      */
     public static String Ramachandran[] = new String[17];
+
+    /**
+     * Converts an NA3 enum to an equivalent NA1; if simpleCodes is true, ignores
+     * the differences between DNA and RNA (deoxy-cytosine and cytosine are both
+     * returned as C, for example).
+     * @param na3 To convert
+     * @param simpleCodes Whether to use the same codes for DNA and RNA
+     * @return NA1 code
+     */
+    public static NA1 NucleicAcid3toNA1(NucleicAcid3 na3, boolean simpleCodes) {
+        if (simpleCodes) {
+            switch (na3) {
+                case ADE:
+                case DAD:
+                    return NA1.A;
+                case CYT:
+                case DCY:
+                    return NA1.C;
+                case GUA:
+                case DGU:
+                    return NA1.G;
+                case URI:
+                    return NA1.U;
+                case THY:
+                case DTY:
+                    return NA1.T;
+                default:
+                    return NA1.X;
+            }
+        } else {
+            switch (na3) {
+                case ADE:
+                    return NA1.A;
+                case DAD:
+                    return NA1.D;
+                case CYT:
+                    return NA1.C;
+                case DCY:
+                    return NA1.I;
+                case GUA:
+                    return NA1.G;
+                case DGU:
+                    return NA1.B;
+                case URI:
+                    return NA1.U;
+                case THY:
+                    return NA1.T;
+                case DTY:
+                    return NA1.T;
+                default:
+                    return NA1.X;
+            }
+        }
+    }
+    /*
+    /**
+     * Since enumeration values must start with a letter, an 'M' is added to
+     * modified bases whose IUPAC name starts with an integer.
+     *
+    public enum NucleicAcid3 {
+
+        ADE, GUA, CYT, URI, DAD, DGU, DCY, DTY, THY, MP1, DP2, TP3, UNK, M2MG,
+        H2U, M2G, OMC, OMG, PSU, M5MC, M7MG, M5MU, M1MA, YYG
+    };
+    public enum NA1 {
+
+        A, C, G, U, D, I, B, T, P, Q, R, X;
+    }
+
+    public enum NA3 {
+
+        A, C, G, U, DA, DC, DG, DT, MPO, DPO, TPO, UNK;
+    }
+    */
 
     static {
         NA1 na1[] = NA1.values();
@@ -996,6 +1148,7 @@ public class Residue extends MSGroup {
         AA3 aa3[] = AA3.values();
         for (int i = 0; i < AA1.values().length; i++) {
             AA1toAA3.put(aa1[i], aa3[i]);
+            AA3toAA1.put(aa3[i], aa1[i]);
         }
     }
 

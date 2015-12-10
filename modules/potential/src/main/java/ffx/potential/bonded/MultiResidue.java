@@ -39,20 +39,20 @@ package ffx.potential.bonded;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.media.j3d.BranchGroup;
 import javax.media.j3d.Material;
 import javax.vecmath.Color3f;
 
-import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.BondedUtils.MissingAtomTypeException;
 import ffx.potential.bonded.BondedUtils.MissingHeavyAtomException;
-import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
+import static ffx.potential.bonded.AminoAcidUtils.assignAminoAcidAtomTypes;
+import ffx.potential.ForceFieldEnergy;
 import ffx.potential.parameters.ForceField;
 
-import static ffx.potential.bonded.AminoAcidUtils.assignAminoAcidAtomTypes;
+import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
+import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
 import static ffx.utilities.HashCodeUtil.SEED;
 import static ffx.utilities.HashCodeUtil.hash;
 
@@ -76,26 +76,27 @@ public class MultiResidue extends Residue {
     /**
      * List of Atoms in the zero'th residue; should be (mostly) immutable.
      */
-    private ArrayList<Atom> defaultAtomList;
+    //private ArrayList<Atom> defaultAtomList;
 
     /**
      * The "default" residue, particularly for purposes of rotamer optimization.
      */
-    private Residue defaultResidue;
+    //private Residue defaultResidue;
 
     /**
      * Force field in use.
      */
     ForceField forceField;
     ForceFieldEnergy forceFieldEnergy;
+    private Rotamer originalRotamer;
 
     public MultiResidue(Residue residue, ForceField forceField, ForceFieldEnergy forceFieldEnergy) {
         super("MultiResidue", residue.getResidueNumber(), residue.residueType, residue.getChainID(), residue.getChainID().toString());
         this.forceField = forceField;
         this.forceFieldEnergy = forceFieldEnergy;
         activeResidue = residue;
-        defaultResidue = residue;
-        defaultAtomList = new ArrayList<>(activeResidue.getAtomList());
+        //defaultResidue = residue;
+        //defaultAtomList = new ArrayList<>(activeResidue.getAtomList());
         // Creates a shallow copy of the zero'th residue's atom list.
         setName(activeResidue.getName());
         // Initialize consideredResidue list.
@@ -153,28 +154,28 @@ public class MultiResidue extends Residue {
         return activeResidue.getAngles();
     }
 
-    @Override
+    /*@Override
     public ArrayList<Atom> getAtomList(boolean originalOrder) {
         return originalOrder ? defaultAtomList : getAtomList();
-    }
+    }*/
 
-    @Override
+    /*@Override
     public void reInitOriginalAtomList() {
         defaultAtomList = new ArrayList<>(defaultResidue.getAtomList());
-    }
+    }*/
 
-    public void setDefaultResidue() {
+    /*public void setDefaultResidue() {
         defaultResidue = activeResidue;
-    }
+    }*/
 
-    public void setDefaultResidue(Residue residue) throws IllegalArgumentException {
+    /*public void setDefaultResidue(Residue residue) throws IllegalArgumentException {
         if (consideredResidues.contains(residue)) {
             activeResidue = residue;
         } else {
             throw new IllegalArgumentException(String.format(" MultiResidue %s does "
                     + "not contain residue %s", this.toString(), residue.toString()));
         }
-    }
+    }*/
 
     @Override
     public MSNode getAtomNode() {
@@ -347,6 +348,76 @@ public class MultiResidue extends Residue {
     }
 
     @Override
+    public Rotamer[] getRotamers() {
+        List<Rotamer[]> usual = new ArrayList<>();
+        int nRots = 0;
+        
+        for (Residue residue : consideredResidues) {
+            Rotamer[] rotamers = RotamerLibrary.getRotamers(residue);
+            if (rotamers != null && rotamers.length > 0) {
+                usual.add(rotamers);
+                nRots += rotamers.length;
+            }
+        }
+        
+        if (RotamerLibrary.getUsingOrigCoordsRotamer()) {
+            if (originalRotamer == null && (residueType == ResidueType.AA || 
+                    residueType == ResidueType.NA)) {
+                ResidueState origState = storeState();
+                double[] chi = RotamerLibrary.measureRotamer(activeResidue, false);
+                if (residueType == ResidueType.AA) {
+                    AminoAcid3 aa3 = AminoAcid3.valueOf(activeResidue.getName());
+                    originalRotamer = new Rotamer(aa3, origState, chi);
+                } else if (residueType == ResidueType.NA) {
+                    NucleicAcid3 na3 = NucleicAcid3.valueOf(activeResidue.getName());
+                    originalRotamer = new Rotamer(na3, origState, chi);
+                }
+            }
+            Rotamer[] allRotamers;
+            if (originalRotamer != null) {
+                allRotamers = new Rotamer[nRots + 1];
+                int index;
+                
+                if (origAtEnd) {
+                    index = 0;
+                    allRotamers[allRotamers.length - 1] = originalRotamer;
+                } else {
+                    index = 1;
+                    allRotamers[0] = originalRotamer;
+                }
+                
+                for (Rotamer[] rotamersI : usual) {
+                    int nrotamers = rotamersI.length;
+                    System.arraycopy(rotamersI, 0, allRotamers, index, nrotamers);
+                    index += nrotamers;
+                }
+            } else {
+                allRotamers = addAllDefaultRotamers(usual, nRots);
+            }
+            return allRotamers;
+        } else {
+            return addAllDefaultRotamers(usual, nRots);
+        }
+    }
+    
+    /**
+     * Returns an array of all standard torsion-based Rotamers for this Multi-Residue.
+     * @param usual List of Rotamer[] to flatten
+     * @param nRots
+     * @return 
+     */
+    private Rotamer[] addAllDefaultRotamers(List<Rotamer[]> usual, int nRots) {
+        Rotamer[] allRotamers = new Rotamer[nRots];
+        int index = 0;
+        for (Rotamer[] rotamers : usual) {
+            int nrotamers = rotamers.length;
+            System.arraycopy(rotamers, 0, allRotamers, index, nrotamers);
+            index += nrotamers;
+        }
+        return allRotamers;
+    }
+
+    /*@Override
     public Rotamer[] getRotamers(Residue residue) {
         if (residue == null) {
             logger.warning("Couldn't retrieve rotamers for null residue.");
@@ -379,21 +450,35 @@ public class MultiResidue extends Residue {
             logger.fine(consideredResidues.size() + " residue options with " + rotamerTotal + " rotamers.");
         }
         return allRotamers;
-    }
+    }*/
 
+    /**
+     * Publicly accessible method for storing a MultiResidue state.
+     * @return A ResidueState.
+     */
     @Override
-    public ResidueState storeCoordinates() {
+    public ResidueState storeState() {
+        return storeMultiResState();
+    }
+    
+    /**
+     * Non-overrideable implementation method for storeState. Probably unnecessary,
+     * as I dropped the idea of initializing the original-coordinates rotamer in
+     * the constructor.
+     * @return A ResidueState.
+     */
+    private ResidueState storeMultiResState() {
         return new ResidueState(this, activeResidue);
     }
 
     @Override
-    public void revertCoordinates(ResidueState state) {
-        Residue res = state.getResidue();
+    public void revertState(ResidueState state) {
+        Residue res = state.getStateResidue();
         //if (!res.equals(activeResidue)) {
         if (!setActiveResidue(res)) {
             throw new IllegalArgumentException(String.format(" Could not revert "
                     + "multi-residue %s to residue identity %s", this.toString(),
-                    state.getResidue().toString()));
+                    state.getStateResidue().toString()));
         }
         //}
         for (Atom atom : getAtomList()) {
@@ -658,7 +743,6 @@ public class MultiResidue extends Residue {
         for (Residue res : consideredResidues) {
             consideredCopy.add(res);
         }
-
         return consideredCopy;
     }
 
@@ -740,12 +824,10 @@ public class MultiResidue extends Residue {
     }
 
     /**
-     * Method may be redundant with requestSetActiveResidue. Will need to check
-     * when it is not Friday afternoon.
+     * Method may be redundant with requestSetActiveResidue.
      *
      * @param aa
-     *
-     * @return true if requested amino acid is now active.
+     * @return True if successful
      */
     public boolean setActiveResidue(AminoAcid3 aa) {
         Residue residue = null;
@@ -761,13 +843,13 @@ public class MultiResidue extends Residue {
         return setActiveResidue(residue);
     }
 
-    public boolean setToDefaultResidue() {
+    /*public boolean setToDefaultResidue() {
         return setActiveResidue(defaultResidue);
     }
 
     public Residue getDefaultResidue() {
         return defaultResidue;
-    }
+    }*/
 
     public int getResidueCount() {
         if (consideredResidues == null) {
@@ -776,6 +858,21 @@ public class MultiResidue extends Residue {
         return consideredResidues.size();
     }
 
+    @Override
+    public ArrayList<Atom> getSideChainAtoms() {
+        return activeResidue.getSideChainAtoms();
+    }
+    
+    /**
+     * Returns all atoms (all atoms are variable during DEE).
+     * 
+     * @return All atoms.
+     */
+    @Override
+    public List<Atom> getVariableAtoms() {
+        return activeResidue.getAtomList();
+    }
+    
     /**
      * {@inheritDoc}
      *

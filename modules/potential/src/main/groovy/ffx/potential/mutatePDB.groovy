@@ -185,7 +185,7 @@ if (options.R) {
     RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
     Polymer polymer = molecularAssembly.getChain(chain.toString());
     Residue residue = polymer.getResidue(resID);
-    Rotamer[] rotamers = RotamerLibrary.getRotamers(residue);
+    Rotamer[] rotamers = residue.getRotamers();
     RotamerLibrary.applyRotamer(residue, rotamers[destRotamer]);
 }
 
