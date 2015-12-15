@@ -771,7 +771,7 @@ public class MolecularAssembly extends MSGroup {
         for (Residue residue : residues) {
             backbone.addAll(residue.getBackboneAtoms());
         }
-        
+
         /*Atom ca = new Atom("CA");
         ArrayList<ROLS> atoms = this.getList(Atom.class, new ArrayList<ROLS>());
         for (ROLS m : atoms) {
@@ -784,7 +784,7 @@ public class MolecularAssembly extends MSGroup {
         }*/
         return backbone;
     }
-    
+
     /**
      * <p>
      * Getter for the field <code>branchGroup</code>.</p>
