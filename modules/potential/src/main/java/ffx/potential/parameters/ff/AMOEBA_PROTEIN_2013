@@ -1089,7 +1089,7 @@ biotype    644  N     "C-Terminal PRO         "     50
 biotype    645  CA    "C-Terminal PRO         "     51
 biotype    646  C     "C-Terminal PRO         "    233
 biotype    647  OXT   "C-Terminal PRO         "    234
-biotype    648  HA    "C-Terminal PRO         "     55
+biotype    648  HA    "C-Terminal PRO         "     54
 biotype    649  N     "C-Terminal PHE         "      7
 biotype    650  CA    "C-Terminal PHE         "      8
 biotype    651  C     "C-Terminal PHE         "    233
