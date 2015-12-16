@@ -519,7 +519,7 @@ biotype     74  HG1   "Threonine              "     40
 biotype     75  CG2   "Threonine              "     41
 biotype     76  HG2   "Threonine              "     42
 biotype     77  N     "Cysteine (SH)          "      7
-biotype     78  CA    "Cysteine (SH)          "      8
+biotype     78  CA    "Cysteine (SH)          "     47
 biotype     79  C     "Cysteine (SH)          "      9
 biotype     80  HN    "Cysteine (SH)          "     10
 biotype     81  O     "Cysteine (SH)          "     11
@@ -538,7 +538,7 @@ biotype     93  CB    "Cystine (SS)           "     43
 biotype     94  HB    "Cystine (SS)           "     44
 biotype     95  SG    "Cystine (SS)           "     48
 biotype     96  N     "Cysteine (S-)          "      7
-biotype     97  CA    "Cysteine (S-)          "      8
+biotype     97  CA    "Cysteine (S-)          "     47
 biotype     98  C     "Cysteine (S-)          "      9
 biotype     99  HN    "Cysteine (S-)          "     10
 biotype    100  O     "Cysteine (S-)          "     11
@@ -1684,7 +1684,7 @@ multipole     42     41     37          0.06784 \
                                         0.00765 \
                                         0.00000  0.10555 \
                                        -0.15569  0.00000 -0.11320
-multipole     43      8     45         -0.30144 \
+multipole     43      45    47         -0.30144 \
                                         0.07672  0.00000  0.42645 \
                                        -0.35442 \
                                         0.00000 -0.51033 \
@@ -3468,6 +3468,7 @@ torsion     1     7     8    17  -1.470   0.000 1   1.530 180.000 2   0.260   0.
 torsion     1     7     8    22  -1.000   0.000 1   0.100 180.000 2   1.150   0.000 3
 torsion     1     7     8    26   0.730   0.000 1   1.780 180.000 2   0.000   0.000 3
 torsion     1     7     8    30  -4.150   0.000 1   2.060 180.000 2   0.000   0.000 3
+torsion     1     7     8    32  -4.150   0.000 1   2.060 180.000 2   0.000   0.000 3
 torsion     1     7     8    36  -0.500   0.000 1   0.800 180.000 2  -1.110   0.000 3
 torsion     3     7     8     3  -0.911   0.000 1   3.500 180.000 2  -0.198   0.000 3
 torsion     3     7     8     7   0.740   0.000 1   0.270 180.000 2  -1.316   0.000 3
@@ -5598,6 +5599,7 @@ vdw     17  3.800000000  0.089000000
 vdw     18  2.980000000  0.026000000  0.920
 vdw     19  3.405000000  0.110000000
 vdw     20  2.655000000  0.013500000  0.910
+vdw     21  3.320000000  0.112000000
 vdw     22  3.800000000  0.101000000
 vdw     23  2.980000000  0.026000000  0.920
 vdw     24  3.710000000  0.110000000
