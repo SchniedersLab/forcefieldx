@@ -169,7 +169,7 @@ cli.f(longOpt:'final', args:1, argName:'-1', 'Final ligand atom.');
 cli.f2(longOpt:'final2', args:1, argName:'-1', 'Final ligand atom for the 2nd topology.');
 cli.es1(longOpt:'noElecStart1', args:1, argName:'1', 'No Electrostatics Starting Atom.');
 cli.es2(longOpt:'noElecStart2', args:1, argName:'1', 'No Electrostatics Starting Atom for the 2nd Topology.');
-cli.ef(longOpt:'noElecFinal', args:1, argName:'-1', 'No Electrostatics Final Atom.');
+cli.ef1(longOpt:'noElecFinal1', args:1, argName:'-1', 'No Electrostatics Final Atom.');
 cli.ef2(longOpt:'noElecfinal2', args:1, argName:'-1', 'No Electrostatics Final Atom for the 2nd topology.');
 cli.l(longOpt:'lambda', args:1, argName:'0.0', 'Initial lambda value (> 1.0 distributes lambda across walkers)');
 cli.c(longOpt:'count', args:1, argName:'10', 'Time steps between OSRW counts.');
@@ -267,37 +267,32 @@ if (options.f) {
     ligandStop = Integer.parseInt(options.f);
 }
 
-// No electrostatics on Topology 1.
+// First ligand atom from Topology 1 with no electrostatics.
 if (options.es1) {
     noElecStart = Integer.parseInt(options.es1);
 }
 
-// First atom from Topology 1 with no electrostatics.
-if (options.ef) {
-    noElecStop = Integer.parseInt(options.ef);
+// Final ligand atom from Topology 1 with no electrostatics.
+if (options.ef1) {
+    noElecStop = Integer.parseInt(options.ef1);
 }
 
-// Starting ligand atom.
+// Starting ligand atom for Topology 2.
 if (options.s2) {
     ligandStart2 = Integer.parseInt(options.s2);
 }
 
-// Final ligand atom.
+// Final ligand atom for Topology 2.
 if (options.f2) {
     ligandStop2 = Integer.parseInt(options.f2);
 }
 
-// First atom from Topology 1 with no electrostatics.
-if (options.ef) {
-    noElecStop = Integer.parseInt(options.ef);
-}
-
-// No electrostatics on Topology 2.
+// First ligand atom from Topology 2 with no electrostatics.
 if (options.es2) {
     noElecStart2 = Integer.parseInt(options.es2);
 }
 
-// First atom from Topology 2 with no electrostatics.
+// Final ligand atom from Topology 2 with no electrostatics.
 if (options.ef2) {
     noElecStop2 = Integer.parseInt(options.ef2);
 }
