@@ -494,7 +494,6 @@ if (arguments.size() == 1) {
     for (int i = ligandStart2; i <= ligandStop2; i++) {
         Atom ai = atoms[i - 1];
         ai.setApplyLambda(true);
-        //ai.setElectrostatics(!noElec2);
         ai.print();
     }
 
