@@ -62,22 +62,22 @@ double s = -1;
 double s2 = -1;
 
 // Last softcore atom for topology 1.
-double f = -1;
+double f = -2;
 
 // Last softcore atom for topology 2.
-double f2 = -1;
+double f2 = -2;
 
 // First atom for no electrostatics.
 int noElecStart = 1;
 
 // Last atom for no electrostatics.
-int noElecStop = -1;
+int noElecStop = -2;
 
 // First atom of the 2nd topology for no electrostatics.
 int noElecStart2 = 1;
 
 // Last atom of the 2nd topology for no electrostatics.
-int noElecStop2 = -1;
+int noElecStop2 = -2;
 
 // Fixed lambda value.
 double lambda = -1;
