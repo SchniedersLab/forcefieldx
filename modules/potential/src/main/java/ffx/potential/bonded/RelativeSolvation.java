@@ -147,9 +147,9 @@ public class RelativeSolvation {
             case ILE:
                 return 0.14;
             case LYS:
-                return -46.96;
+                return -43.98;
             case LYD:
-                return -6.40;
+                return +0.35;
             case MET:
                 return -3.48;
             case ASN:

@@ -79,6 +79,7 @@ import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
 import ffx.potential.parameters.AtomType;
+import ffx.potential.parameters.BioType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.VDWType;
 
@@ -93,6 +94,9 @@ import static ffx.potential.parameters.MultipoleType.t100;
 import static ffx.potential.parameters.MultipoleType.t101;
 import static ffx.potential.parameters.MultipoleType.t110;
 import static ffx.potential.parameters.MultipoleType.t200;
+import ffx.potential.parameters.SolventRadii;
+import static java.lang.String.format;
+import java.util.Map;
 
 /**
  * This Generalized Kirkwood class implements GK for the AMOEBA polarizable
@@ -150,6 +154,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     private double inducedDipole[][];
     private double inducedDipoleCR[][];
     private double baseRadius[];
+    private double baseRadiusWithBondi[];
     private double overlapScale[];
     private double rDisp[];
     private double born[];
@@ -217,167 +222,23 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     private boolean bornUseAll = false;
     /**
-     * Maps radii overrides specified from the command line.
+     * Provides maps from atomtypes or biotypes to fitted GK radii (by forcefield).
+     */
+    private boolean useFittedRadii;
+    private SolventRadii solventRadii;
+    private RADII_MAP_TYPE radiiMapType = RADII_MAP_TYPE.ATOMTYPE;
+    /**
+     * Maps radii overrides (by AtomType) specified from the command line.
      * e.g. -DradiiOverride=134r1.20,135r1.20 sets atom types 134,135 to Bondi=1.20
      */
     private final HashMap<Integer, Double> radiiOverride = new HashMap<>();
     /**
-     * Maps hard-coded Bondi scale factors per atom type for AMOEBA_PROTEIN_2013.
-     * TODO: load these from a file instead.
+     * Maps radii overrides (by atom number) specified from the command line.
+     * This takes precendence over AtomType-based overrides.
+     * e.g. -DradiiOverride=1r1.20,5r1.20 sets atom numbers 1,5 to Bondi=1.20
      */
-    private static final HashMap<Integer, Double> typeToBondi = new HashMap<>();
-    /**
-     * To verify that the typeToBondi map only gets used under AMOEBA_PROTEIN_2013.
-     */
-    private final boolean useHardCodedRadii;
-
-    static {
-        // GLY
-//        typeToBondi.put(2,1.15);      // unnecessary and may suffer from the 
-//        typeToBondi.put(6,1.15);      // problem of atomTypes 8,12
-        // ALA
-//        typeToBondi.put(8,1.60);    // lots of AAs use this!
-//        typeToBondi.put(12,1.60);   // lots of AAs use this!
-        typeToBondi.put(13,1.60);
-        typeToBondi.put(14,1.60);
-        // VAL
-        typeToBondi.put(15,1.40);
-        typeToBondi.put(16,1.40);
-        typeToBondi.put(17,1.40);
-        typeToBondi.put(18,1.40);
-        // LEU
-        typeToBondi.put(19,1.40);
-        typeToBondi.put(20,1.40);
-        typeToBondi.put(21,1.40);
-        typeToBondi.put(22,1.40);
-        typeToBondi.put(23,1.40);
-        typeToBondi.put(24,1.40);
-        // ILE
-        typeToBondi.put(25,1.40);
-        typeToBondi.put(26,1.40);
-        typeToBondi.put(27,1.40);
-        typeToBondi.put(28,1.40);
-        typeToBondi.put(29,1.40);
-        typeToBondi.put(30,1.40);
-        typeToBondi.put(31,1.40);
-        typeToBondi.put(32,1.40);
-        // SER
-        typeToBondi.put(35,1.0235);
-        typeToBondi.put(36,1.0235);
-        // THR
-        typeToBondi.put(39,1.25);
-        typeToBondi.put(40,1.25);
-        // CYD
-//        typeToBondi.put(43,1.02);     // shared with CYS!
-//        typeToBondi.put(44,1.02);     // shared with CYS!
-        typeToBondi.put(48,1.02);
-        typeToBondi.put(49,1.02);
-        // CYS
-        typeToBondi.put(45,1.80);
-        typeToBondi.put(46,1.80);
-        // PRO
-        typeToBondi.put(50,1.05);
-        typeToBondi.put(51,1.05);
-        typeToBondi.put(52,1.05);
-        typeToBondi.put(53,1.05);
-        typeToBondi.put(54,1.05);
-        typeToBondi.put(55,1.05);
-        typeToBondi.put(56,1.05);
-        typeToBondi.put(57,1.05);
-        typeToBondi.put(58,1.05);
-        typeToBondi.put(59,1.05);
-        typeToBondi.put(60,1.05);
-        // PHE
-        typeToBondi.put(61,1.325);
-        typeToBondi.put(62,1.325);
-        typeToBondi.put(63,1.325);
-        typeToBondi.put(64,1.325);
-        typeToBondi.put(65,1.325);
-        typeToBondi.put(66,1.325);
-        typeToBondi.put(67,1.325);
-        typeToBondi.put(68,1.325);
-        typeToBondi.put(69,1.325);
-        // TYR
-        typeToBondi.put(78,1.15);
-        typeToBondi.put(79,1.15);
-        // TYD
-        typeToBondi.put(88,0.938563);
-        // TRP
-        typeToBondi.put(89,1.32475);
-        typeToBondi.put(90,1.32475);
-        typeToBondi.put(91,1.32475);
-        typeToBondi.put(92,1.32475);
-        typeToBondi.put(93,1.32475);
-        typeToBondi.put(94,1.32475);
-        typeToBondi.put(95,1.32475);
-        typeToBondi.put(96,1.32475);
-        typeToBondi.put(97,1.32475);
-        typeToBondi.put(98,1.32475);
-        typeToBondi.put(99,1.32475);
-        typeToBondi.put(100,1.32475);
-        typeToBondi.put(101,1.32475);
-        typeToBondi.put(102,1.32475);
-        typeToBondi.put(103,1.32475);
-        typeToBondi.put(104,1.32475);
-        typeToBondi.put(105,1.32475);
-        // HIS
-        typeToBondi.put(109,1.60);
-        typeToBondi.put(110,1.60);
-        typeToBondi.put(113,1.60);
-        typeToBondi.put(114,1.60);
-        typeToBondi.put(115,1.60);
-        typeToBondi.put(116,1.60);
-        // HID
-        typeToBondi.put(120,1.1375);
-        typeToBondi.put(121,1.1375);
-        typeToBondi.put(124,1.1375);
-        typeToBondi.put(125,1.1375);
-        typeToBondi.put(126,1.1375);
-        // HIE
-        typeToBondi.put(130,1.06175);
-        typeToBondi.put(133,1.06175);
-        typeToBondi.put(134,1.06175);
-        typeToBondi.put(135,1.06175);
-        typeToBondi.put(136,1.06175);
-        // ASP
-        typeToBondi.put(139,1.0555);
-        typeToBondi.put(140,1.0555);
-        // ASH
-        typeToBondi.put(143,1.1125);
-        typeToBondi.put(144,1.1125);
-        typeToBondi.put(145,1.1125);
-        typeToBondi.put(146,1.1125);
-        // ASN
-        typeToBondi.put(150,1.118125);
-        typeToBondi.put(151,1.118125);
-        typeToBondi.put(152,1.118125);
-        // GLU
-        typeToBondi.put(157,1.16);
-        typeToBondi.put(158,1.16);
-        // GLH
-        typeToBondi.put(163,1.06);
-        typeToBondi.put(164,1.06);
-        typeToBondi.put(165,1.06);
-        typeToBondi.put(166,1.06);
-        // GLN
-        typeToBondi.put(172,1.085);
-        typeToBondi.put(173,1.085);
-        typeToBondi.put(174,1.085);
-        // MET
-        typeToBondi.put(179,1.30);
-        // LYS
-        typeToBondi.put(190,1.64);
-        typeToBondi.put(191,1.64);
-        // LYD
-        typeToBondi.put(200,1.562);
-        typeToBondi.put(201,1.562);
-        // ARG
-        typeToBondi.put(208,1.525);
-        typeToBondi.put(209,1.525);
-        typeToBondi.put(210,1.525);
-        typeToBondi.put(211,1.525);
-        typeToBondi.put(212,1.525);
-    }
+    private final HashMap<Integer, Double> radiiByNumberMap = new HashMap<>();
+    private final ForceField forceField;
 
     /**
      * <p>
@@ -393,7 +254,29 @@ public class GeneralizedKirkwood implements LambdaInterface {
     public GeneralizedKirkwood(ForceField forceField, Atom[] atoms,
             ParticleMeshEwald particleMeshEwald, Crystal crystal,
             ParallelTeam parallelTeam) {
-
+        
+        this.forceField = forceField;
+        String forcefieldName = System.getProperty("forcefield");
+        if (forcefieldName.equalsIgnoreCase("AMOBEA_PROTEIN_2013")
+                || forcefieldName.equalsIgnoreCase("AMBER99SB")) {
+            useFittedRadii = true;
+            solventRadii = new SolventRadii(forcefieldName);
+        } else {
+            useFittedRadii = false;
+            solventRadii = null;
+        }
+        
+        String useFitRadiiProp = System.getProperty("gk-useFitRadii");
+        if (useFitRadiiProp != null) {
+            if (useFitRadiiProp.equalsIgnoreCase("false")) {
+                useFittedRadii = false;
+                solventRadii = null;
+            } else {
+                useFittedRadii = true;
+                solventRadii = new SolventRadii(useFitRadiiProp);
+            }
+        }
+        
         String verboseProp = System.getProperty("gk-verboseRadii");
         if (verboseProp != null) {
             this.verboseRadii = true;
@@ -406,11 +289,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
         }
         String bondiOverride = System.getProperty("gk-bondiOverride");
         if (bondiOverride != null) {
-            double scale = Double.parseDouble(bondiOverride);
-            bondiScale = scale;
+            bondiScale = Double.parseDouble(bondiOverride);
             logger.info(format(" (GK) Scaling GLOBAL bondi radii by factor: %.2f", bondiScale));
         } else {
-            bondiScale = 1.15;
+            if (useFittedRadii) {
+                bondiScale = solventRadii.getDefaultBondi();
+            } else {
+                bondiScale = 1.15;
+            }
             if (verboseRadii) {
                 logger.info(format(" (GK) Scaling GLOBAL bondi radii by factor: %.2f", bondiScale));
             }
@@ -429,11 +315,19 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 radiiOverride.put(type, factor);
             }
         }
-        String forcefieldName = System.getProperty("forcefield");
-        if (forcefieldName != null && forcefieldName.toUpperCase().equals("AMOEBA_PROTEIN_2013")) {
-            useHardCodedRadii = true;
-        } else {
-            useHardCodedRadii = false;
+        String radiiByNumber = System.getProperty("gk-radiiByNumber");
+        if (radiiByNumber != null) {
+            String tokens[] = radiiByNumber.split(",");
+            for (String token : tokens) {
+                if (!token.contains("r")) {
+                    logger.severe("Invalid radius override.");
+                }
+                int separator = token.indexOf("r");
+                int num = Integer.parseInt(token.substring(0, separator));
+                double factor = Double.parseDouble(token.substring(separator + 1));
+                logger.info(format(" (GK) Scaling Atom Number %d with bondi factor %.2f", num, factor));
+                radiiByNumberMap.put(num, factor);
+            }
         }
 
         // Se the Kirkwood multipolar reaction field constants.
@@ -616,6 +510,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             sharedGKFieldCR[2] = new SharedDoubleArray(nAtoms);
             sharedBornGrad = new SharedDoubleArray(nAtoms);
             baseRadius = new double[nAtoms];
+            baseRadiusWithBondi = new double[nAtoms];
             overlapScale = new double[nAtoms];
             rDisp = new double[nAtoms];
             born = new double[nAtoms];
@@ -625,8 +520,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
         fill(use, true);
         for (int i = 0; i < nAtoms; i++) {
             baseRadius[i] = 2.0;
-//            overlapScale[i] = 0.69;   // Old value based on small molecules.
-            overlapScale[i] = 0.60;     // New value based on 2015 amino acid GK parameterization.
+//            overlapScale[i] = 0.69;   // Original value based on small molecule parameterization.
+            overlapScale[i] = 0.60;     // New default value based on 2015 amino acid GK parameterization.
+            if (useFittedRadii) {
+                overlapScale[i] = solventRadii.getOverlapScale();
+            }
             int atomicNumber = atoms[i].getAtomicNumber();
             AtomType atomType = atoms[i].getAtomType();
 
@@ -694,46 +592,110 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
             double bondiFactor = bondiScale;
 
-            // Check for hard-coded AtomType bondi factor.
-            if (useHardCodedRadii && typeToBondi.containsKey(atomType.type)) {
-                double factor = typeToBondi.get(atomType.type);
-                bondiFactor = factor;
-                if (verboseRadii) {
-                    logger.info(String.format(" (GK) TypeToBondi: Atom %3s-%-3s with AtomType %d to %.2f (bondi factor %.4f)",
-                            atoms[i].getResidueName(), atoms[i].getName(), atomType.type, baseRadius[i] * bondiFactor, bondiFactor));
-                }
-            }
-            // Special case for ALA alpha carbon and alpha hydrogen.
-            // Many aminos use types 8,12 for their CA,HA so these can't be specified in the map.
-            if (useHardCodedRadii && (atoms[i].getAtomType().type == 8 || atoms[i].getAtomType().type == 12)) {
-                if (atoms[i].getResidueName().equals("ALA")) {
-                    bondiFactor = 1.60;
-                    if (verboseRadii) {
-                        logger.info(String.format(" (GK) TypeToBondi: Atom %3s-%-3s with AtomType %d to %.2f (bondi factor %.4f)",
-                                atoms[i].getResidueName(), atoms[i].getName(), atomType.type, baseRadius[i] * bondiFactor, bondiFactor));
-                    }
-                }
-            }
-            // Special case for CYD CB,HB.  As above, atom types for the CB+HB are shared between CYS and CYD.
-            // Currently, we only want S+HS on CYS.  So the CB,HB (types 43,44) are disabled in the table.
-            if (useHardCodedRadii && (atoms[i].getAtomType().type == 43 || atoms[i].getAtomType().type == 44)) {
-                if (atoms[i].getResidueName().equals("CYD")) {
-                    bondiFactor = 1.02;
-                    if (verboseRadii) {
-                        logger.info(String.format(" (GK) TypeToBondi: Atom %3s-%-3s with AtomType %d to %.2f (bondi factor %.4f)",
-                                atoms[i].getResidueName(), atoms[i].getName(), atomType.type, baseRadius[i] * bondiFactor, bondiFactor));
-                    }
+            int atomNumber = atoms[i].xyzIndex + 1;
+            if (useFittedRadii) {
+                switch (radiiMapType) {
+                    default:
+                    case ATOMTYPE:
+                        // Check for hard-coded AtomType bondi factor.
+                        if (solventRadii.getAtomBondiMap().containsKey(atomType.type)) {
+                            bondiFactor = solventRadii.getAtomBondiMap().get(atomType.type);
+                            if (verboseRadii) {
+                                logger.info(String.format(" (GK) TypeToBondi: Atom %3s-%-4s (%d) with AtomType %d to %.2f (bondi factor %.4f)",
+                                        atoms[i].getResidueName(), atoms[i].getName(), atomNumber, atomType.type, baseRadius[i] * bondiFactor, bondiFactor));
+                            }
+                        }
+                        // TODO: fix these manual overrides which only apply to AM-PRO-13.
+                        // Special case for ALA alpha carbon and alpha hydrogen.
+                        // Many aminos use types 8,12 for their CA,HA so these can't be specified in the map.
+                        if ((atoms[i].getAtomType().type == 8 || atoms[i].getAtomType().type == 12)) {
+                            if (atoms[i].getResidueName().equals("ALA")) {
+                                bondiFactor = 1.60;
+                                if (verboseRadii) {
+                                    logger.info(String.format(" (GK) TypeToBondi: Atom %3s-%-4s (%d) with AtomType %d to %.2f (bondi factor %.4f)",
+                                            atoms[i].getResidueName(), atoms[i].getName(), atomNumber, atomType.type, baseRadius[i] * bondiFactor, bondiFactor));
+                                }
+                            }
+                        }
+                        // Special case for CYD CB,HB.  As above, atom types for the CB+HB are shared between CYS and CYD.
+                        // Currently, we only want S+HS on CYS.  So the CB,HB (types 43,44) are disabled in the table.
+                        if ((atoms[i].getAtomType().type == 43 || atoms[i].getAtomType().type == 44)) {
+                            if (atoms[i].getResidueName().equals("CYD")) {
+                                bondiFactor = 1.02;
+                                if (verboseRadii) {
+                                    logger.info(String.format(" (GK) TypeToBondi: Atom %3s-%-4s (%d) with AtomType %d to %.2f (bondi factor %.4f)",
+                                            atoms[i].getResidueName(), atoms[i].getName(), atomNumber, atomType.type, baseRadius[i] * bondiFactor, bondiFactor));
+                                }
+                            }
+                        }
+                        break;
+                    case BIOTYPE:
+                        Map<String,BioType> bioTypes = forceField.getBioTypeMap();
+                        BioType bioType = null;
+                        for (BioType one : bioTypes.values()) {
+                            if (one.atomType == atomType.type) {
+                                bioType = one;
+                                break;
+                            }
+                        }
+                        if (bioType == null) {
+                            logger.severe(String.format("Couldn't find biotype for %s", atomType,toString()));
+                        }
+
+        //                BioType bioType = forceField.getBioType(atoms[i].getResidueName(), atoms[i].getName());
+        //                if (bioType == null) {
+        //                    logger.info(String.format("Null biotype for atom: %3s-%-4s", 
+        //                            atoms[i].getResidueName(), atoms[i].getName()));
+        //                }
+
+                        // Check for hard-coded BioType bondi factor.
+                        if (solventRadii.getBioBondiMap().containsKey(bioType.index)) {
+                            double factor = solventRadii.getBioBondiMap().get(bioType.index);
+                            bondiFactor = factor;
+                            if (verboseRadii) {
+                                logger.info(String.format(" (GK) BiotypeToBondi: Atom %3s-%-4s (%d) with BioType %d to %.2f (bondi factor %.4f)",
+                                        atoms[i].getResidueName(), atoms[i].getName(), atomNumber, bioType.index, baseRadius[i] * bondiFactor, bondiFactor));
+                            }
+                        }
+                        // TODO: fix these manual overrides which only apply to AM-PRO-13.
+                        // Special case for ALA alpha carbon and alpha hydrogen.
+                        // Many aminos use types 8,12 for their CA,HA so these can't be specified in the map.
+                        if (bioType.index == 8 || bioType.index == 12) {
+                            if (atoms[i].getResidueName().equals("ALA")) {
+                                bondiFactor = 1.60;
+                                if (verboseRadii) {
+                                    logger.info(String.format(" (GK) BiotypeToBondi: Atom %3s-%-4s (%d) with BioType %d to %.2f (bondi factor %.4f)",
+                                            atoms[i].getResidueName(), atoms[i].getName(), atomNumber, bioType.index, baseRadius[i] * bondiFactor, bondiFactor));
+                                }
+                            }
+                        }
+                        // Special case for CYD CB,HB.  As above, atom types for the CB+HB are shared between CYS and CYD.
+                        // Currently, we only want S+HS on CYS.  So the CB,HB (types 43,44) are disabled in the table.
+                        if (bioType.index == 83 || bioType.index == 84) {
+                            if (atoms[i].getResidueName().equals("CYD")) {
+                                bondiFactor = 1.02;
+                                if (verboseRadii) {
+                                    logger.info(String.format(" (GK) BiotypeToBondi: Atom %3s-%-4s (%d) with BioType %d to %.2f (bondi factor %.4f)",
+                                            atoms[i].getResidueName(), atoms[i].getName(), atomNumber, bioType.index, baseRadius[i] * bondiFactor, bondiFactor));
+                                }
+                            }
+                        }
+                        break;
                 }
             }
             // Check for command-line bondi factor override.
-            if (radiiOverride.containsKey(atomType.type)) {
-                double factor = radiiOverride.get(atomType.type);
-                bondiFactor = factor;
-                logger.info(String.format(" (GK) Scaling Atom %3s-%-3s with AtomType %d to %.2f (bondi factor %.2f)",
+            if (radiiOverride.containsKey(atomType.type) && !radiiByNumberMap.containsKey(atomNumber)) {
+                bondiFactor = radiiOverride.get(atomType.type);
+                logger.info(String.format(" (GK) Scaling Atom %3s-%-4s with AtomType %d to %.2f (bondi factor %.2f)",
                         atoms[i].getResidueName(), atoms[i].getName(), atomType.type, baseRadius[i] * bondiFactor, bondiFactor));
             }
+            if (radiiByNumberMap.containsKey(atomNumber)) {
+                bondiFactor = radiiByNumberMap.get(atomNumber);
+                logger.info(String.format(" (GK) Scaling Atom number %d, %3s-%-4s, with factor %.2f",
+                        atomNumber, atoms[i].getResidueName(), atoms[i].getName(), bondiFactor));
+            }
 
-            baseRadius[i] *= bondiFactor;
+            baseRadiusWithBondi[i] = baseRadius[i] * bondiFactor;
 
         }
 
@@ -1048,7 +1010,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         @Override
         public void finish() {
             for (int i = 0; i < nAtoms; i++) {
-                final double baseRi = baseRadius[i];
+                final double baseRi = baseRadiusWithBondi[i];
                 if (!use[i]) {
                     born[i] = baseRi;
                 } else {
@@ -1106,7 +1068,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     if (!bornUseAll && !use[i]) {
                         continue;
                     }
-                    final double baseRi = baseRadius[i];
+                    final double baseRi = baseRadiusWithBondi[i];
                     assert (baseRi > 0.0);
                     final double xi = x[i];
                     final double yi = y[i];
@@ -1123,7 +1085,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     int npair = list.length;
                     for (int l = 0; l < npair; l++) {
                         int k = list[l];
-                        final double baseRk = baseRadius[k];
+                        final double baseRk = baseRadiusWithBondi[k];
                         if (i != k && baseRk > 0.0) {
                             if (!bornUseAll && !use[k]) {
                                 continue;
@@ -9630,5 +9592,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
     private static final double third = 1.0 / 3.0;
     private static final double pi43 = 4.0 / 3.0 * PI;
     private static final double pi12 = PI / 12.0;
-
+    
+    private static enum RADII_MAP_TYPE {
+        ATOMTYPE, BIOTYPE, NONE;
+    }
 }
