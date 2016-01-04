@@ -158,7 +158,7 @@ double beta;
 double gamma;
 
 //Use "a" length to set apropriate translation vectors
-double max = 5;
+double max = 0.5;
 double min = -max;
 
 //Allocate memory for variable used in comparision with density of crystal
@@ -260,7 +260,7 @@ for (int i=0; i<nTrials; i++) {
             likelyDensity = true;
         }
     }
-
+logger.info("Cell parameters: " + a + ' ' + b + ' ' + c + ' ' + beta);
     // Set likelyDensity to false so that on next trial run it will generate new unit
     // cell parameters.
     likelyDensity = false;
@@ -300,7 +300,7 @@ for (int i=0; i<nTrials; i++) {
     double f = getRandomNumber(max, min, random);
     
     double[] translation = [d, e, f];
-    
+    logger.info("Translation vector: "+translation);
     // Apply the translation to each atom in the molecule
     for (k=0; k<nAtoms; k++) {
         atoms[k].move(translation);
