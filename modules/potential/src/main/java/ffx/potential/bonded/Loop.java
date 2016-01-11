@@ -46,6 +46,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 import ffx.potential.MolecularAssembly;
 
 import static ffx.numerics.VectorMath.dot;
+import java.util.Arrays;
 
 /**
  * @author Mallory R. Tollefson
@@ -120,7 +121,7 @@ public class Loop {
         int[] n_soln = new int[1];
          
         loopClosure.solve3PepPoly(r_n[1], r_a[1], r_a[3], r_c[3], r_soln_n, r_soln_a, r_soln_c, n_soln);
-
+        
         StringBuilder sb = new StringBuilder();
         sb.append(String.format(" Starting res.:             %d\n", firstResidue));
         sb.append(String.format(" Ending res.:               %d\n", endResidue));
@@ -156,10 +157,10 @@ public class Loop {
             }
 
             //Here the sum is now equal to the rmsd.
-            sum = sqrt(sum / 9.0);
+            //sum = sqrt(sum / 9.0);
 
             StringBuilder string = new StringBuilder();
-            string.append(String.format("Rmsd for solution #" + (k + 1) + " is " + sum + "\n"));
+            //string.append(String.format("Rmsd for solution #" + (k + 1) + " is " + sum + "\n"));
             logger.info(string.toString());
             counter++;
             File fileName = sturmMethod.writePDBBackbone(r_n, r_a, r_c,
