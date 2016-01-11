@@ -257,8 +257,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
         
         this.forceField = forceField;
         String forcefieldName = System.getProperty("forcefield");
-        if (forcefieldName.equalsIgnoreCase("AMOBEA_PROTEIN_2013")
-                || forcefieldName.equalsIgnoreCase("AMBER99SB")) {
+        if (forcefieldName != null && 
+                (forcefieldName.equalsIgnoreCase("AMOBEA_PROTEIN_2013")
+                || forcefieldName.equalsIgnoreCase("AMBER99SB"))) {
             useFittedRadii = true;
             solventRadii = new SolventRadii(forcefieldName);
         } else {

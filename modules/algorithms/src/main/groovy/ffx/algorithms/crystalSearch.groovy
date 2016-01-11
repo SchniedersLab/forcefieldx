@@ -123,6 +123,9 @@ double[] translate = new double[3];
 //Allocate memory for COM
 double[] com = new double[3];
 
+// Used to label trial number
+int counter = 1;
+
 //Avogadro #
 final double avogadro = 6.02214129e23;
 
@@ -241,9 +244,9 @@ for (int i=0; i<nTrials; i++) {
         Randomly assign lattice parameters for crystal
      ****************************************************/
     while (likelyDensity != true) {
-        a = getRandomNumber(12, 11, random);
-        b = getRandomNumber(10, 9, random);
-        c = getRandomNumber(13, 12, random);
+        a = getRandomNumber(14, 8, random);
+        b = getRandomNumber(14, 8, random);
+        c = getRandomNumber(14, 8, random);
     
         //Monoclinic Space group settings require alpha and gamma = 90
         alpha = 90;
@@ -260,6 +263,8 @@ for (int i=0; i<nTrials; i++) {
             likelyDensity = true;
         }
     }
+    logger.info("---------------------- Trial Number: " + counter + " ----------------------");
+    counter++;
 logger.info("Cell parameters: " + a + ' ' + b + ' ' + c + ' ' + beta);
     // Set likelyDensity to false so that on next trial run it will generate new unit
     // cell parameters.
