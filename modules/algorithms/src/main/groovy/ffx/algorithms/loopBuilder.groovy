@@ -132,6 +132,7 @@ cli.d(longOpt:'dt', args:1, argName:'2.5', 'Time discretization step (fsec).');
 cli.r(longOpt:'report', args:1, argName:'0.01', 'Interval to report thermodyanamics (psec).');
 cli.w(longOpt:'write', args:1, argName:'100.0', 'Interval to write out coordinates (psec).');
 cli.t(longOpt:'temperature', args:1, argName:'298.15', 'Temperature in degrees Kelvin.');
+cli.g(longOpt:'bias', args:1, argName:'0.01', 'Gaussian bias magnitude (kcal/mol).');
 cli.osrw(longOpt:'OSRW', 'Run OSRW.');
 cli.sa(longOpt:'simulated annealing', 'Run simulated annealing.');
 cli.rot(longOpt:'rotamer', 'Run rotamer optimization.');
@@ -150,7 +151,7 @@ if (options.s && options.f) {
     loopStart = Integer.parseInt(options.s);
     loopStop = Integer.parseInt(options.f);
 } else if (options.s || options.f){
-    logger.info("Starting atom and final atom numbers are need to use this option.")
+    logger.info("Starting atom and final atom numbers are need to use this option.");
 }
 
 // Load the time steps in femtoseconds.
@@ -186,6 +187,11 @@ if (options.e) {
 // Run OSRW
 if (options.osrw){
     runOSRW = true;
+}
+
+// Gaussian bias magnitude (kcal/mol).
+if (options.g) {
+    biasMag = Double.parseDouble(options.g);
 }
 
 // Run Simulated Annealing
@@ -305,9 +311,14 @@ if(runOSRW){
     System.setProperty("ligand-vapor-elec","false");
     System.setProperty("vdw-cutoff", "9.0");
     System.setProperty("lambda-bias-cutoff", "3");
-    System.setProperty("bias-gaussian-mag", "0.01");
+    if (options.g) {
+        osrw.setBiasMagnitude(biasMag);
+    } else {
+        System.setProperty("bias-gaussian-mag", "0.10");
+    }
     System.setProperty("lambda-bin-width", "0.01");
-
+    System.setProperty("tau-temperature","0.005");
+    
     for (int i = 0; i <= atoms.length; i++) {
         Atom ai = atoms[i - 1];
         if (ai.getBuilt()) {
@@ -319,9 +330,12 @@ if(runOSRW){
 
     forceFieldEnergy= new ForceFieldEnergy(active);
     forceFieldEnergy.setLambda(lambda);
-
     energy();
-
+    
+    int nStepsStage1 = nSteps;
+    if (nSteps > 20000){
+        nStepsStage1 = 20000;
+    }
     // Turn off checks for overlapping atoms, which is expected for lambda=0.
     forceFieldEnergy.getCrystal().setSpecialPositionCutoff(0.0);
 
@@ -334,17 +348,55 @@ if(runOSRW){
     // Create the MolecularDynamics instance.
     MolecularDynamics molDyn = new MolecularDynamics(active, osrw, active.getProperties(),
         null, thermostat, integrator);
-    molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities,
+    molDyn.dynamic(nStepsStage1, timeStep, printInterval, saveInterval, temperature, initVelocities,
         fileType, restartInterval, dyn);
 
     logger.info("Obtaining low energy coordinates");
     double[] lowEnergyCoordinates = osrw.getLowEnergyLoop();
-
+    double currentOSRWOptimum = osrw.getOSRWOptimum();
     if (lowEnergyCoordinates != null){
         forceFieldEnergy.setCoordinates(lowEnergyCoordinates);
     } else {
-        logger.info("OSRW did not succeed in finding a loop.")
+        logger.info("OSRW stage 1 did not succeed in finding a loop.");
         loopBuildError = true;
+    }
+    
+    if (nSteps > 20000){
+        int nStepsStage2 = nSteps - 20000;
+        // Run OSRW again
+        System.setProperty("bias-gaussian-mag", "0.002");
+        System.setProperty("lambda-bin-width", "0.01");
+        System.setProperty("tau-temperature","0.02");
+
+        forceFieldEnergy= new ForceFieldEnergy(active);
+        forceFieldEnergy.setLambda(lambda);
+        energy();
+
+        // Turn off checks for overlapping atoms, which is expected for lambda=0.
+        forceFieldEnergy.getCrystal().setSpecialPositionCutoff(0.0);
+
+        asynchronous = false;
+        wellTempered = false;
+        osrw =  new OSRW(forceFieldEnergy, forceFieldEnergy, lambdaRestart, histogramRestart, active.getProperties(),
+            (temperature), timeStep, printInterval, saveInterval, asynchronous, sh, wellTempered);
+        osrw.setLambda(lambda);
+        osrw.setOptimization(true);
+        osrw.setOSRWOptimum(currentOSRWOptimum);
+        // Create the MolecularDynamics instance.
+        molDyn = new MolecularDynamics(active, osrw, active.getProperties(),
+            null, thermostat, integrator);
+        molDyn.dynamic(nStepsStage2, timeStep, printInterval, saveInterval, temperature, initVelocities,
+            fileType, restartInterval, dyn);
+
+        logger.info("Obtaining low energy coordinates");
+        lowEnergyCoordinates = osrw.getLowEnergyLoop();
+
+        if (lowEnergyCoordinates != null){
+            forceFieldEnergy.setCoordinates(lowEnergyCoordinates);
+        } else {
+            logger.info("OSRW stage 2 did not succeed in finding a loop.");
+            loopBuildError = true;
+        }
     }
 }
 

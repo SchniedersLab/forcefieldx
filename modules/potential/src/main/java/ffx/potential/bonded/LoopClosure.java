@@ -131,7 +131,7 @@ public class LoopClosure {
         }
 
         getCoordsFromPolyRoots(n_soln, roots, r_n1, r_a1, r_a3, r_c3, r_soln_n, r_soln_a, r_soln_c);
-
+        
     }
 
     /**
