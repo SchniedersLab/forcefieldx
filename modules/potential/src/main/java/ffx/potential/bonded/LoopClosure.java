@@ -125,7 +125,9 @@ public class LoopClosure {
 
         getPolyCoeff(polyCoeff);
         sturmMethod.solveSturm(deg_pol, n_soln, polyCoeff, roots);
-
+        for(int i = 0; i < roots.length; i++){
+            logger.info(String.format("Roots: %f", roots[i]));
+        }
         if (n_soln[0] == 0) {
             logger.severe("Loop building failed.");
         }
@@ -1062,6 +1064,12 @@ public class LoopClosure {
                 r_soln_c[i_soln][2][i] = r_c3[i];
             }
 
+            for (int q = 0; q < 3; q++) {
+                for (int j = 0; j < 3; j++) {
+                    logger.info(String.format("DEEP r_soln_n[%d][%d][%d] = %f", i_soln, q, j, r_soln_n[i_soln][q][j]));
+                }
+            }
+
             if (logger.isLoggable(Level.FINE)) {
                 StringBuilder string1 = new StringBuilder();
                 string1.append(String.format("roots: t0\t\t t2\t\t t1\t\t %d\n", i_soln));
@@ -1095,7 +1103,7 @@ public class LoopClosure {
                 string2.append(String.format("ac: a1c1, a2c2 = %9.3f%9.3f%9.3f%9.3f\n", len0[0], a1c1, len0[3], a2c2));
                 string2.append(String.format("cn: c1n2, c2n3 = %9.3f%9.3f%9.3f%9.3f\n", len0[1], c1n2, len0[4], c2n3));
                 string2.append(String.format("aa: a1a2, a2a3 = %9.3f%9.3f%9.3f%9.3f\n", len_aa[1], a1a2, len_aa[2], a2a3));
-                logger.fine(string2.toString());
+                logger.info(string2.toString());
             }
 
             for (int i = 0; i < 3; i++) {

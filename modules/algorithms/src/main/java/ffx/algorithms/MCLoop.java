@@ -178,7 +178,7 @@ public class MCLoop implements MonteCarloListener {
         if (numLoopsFound <= 1) {
             return false;
         }     
-
+        
         // Perform the MC move.
         boolean accepted = tryLoopStep(loopSolutions);
         return accepted;                 
