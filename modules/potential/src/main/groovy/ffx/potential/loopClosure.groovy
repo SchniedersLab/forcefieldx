@@ -108,6 +108,9 @@ Loop loop = new Loop(active);
 
 List<double[]> loopSolutions = loop.generateLoops(stt_res, end_res);
 for(int i = 0; i < loopSolutions.size(); i++){
+    //Test for using alternative coordinates with generateLoops method.
+   // loopSolutions = loop.generateLoops(stt_res+1, end_res+1,loopSolutions.get(i));
+    
     forceFieldEnergy.setCoordinates(loopSolutions.get(i));
     File modifiedFile = new File("loop_"+modelFilename + "_"+i);
     PDBFilter modFilter = new PDBFilter(modifiedFile, active, null, null);

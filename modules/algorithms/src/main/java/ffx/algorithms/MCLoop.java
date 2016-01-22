@@ -96,6 +96,10 @@ public class MCLoop implements MonteCarloListener {
      */    
     Loop loop;
     /**
+     * Number of KIC iterations per MC move.
+     */ 
+    private int iterations;
+    /**
      * List of active atoms.
      */ 
     private final Atom[] atoms;
@@ -133,7 +137,11 @@ public class MCLoop implements MonteCarloListener {
         systemReferenceEnergy = molAss.getPotentialEnergy().getTotalEnergy();
         this.firstResidue = firstResidue;
         this.endResidue = endResidue; 
-        
+        this.iterations = 5;
+                
+        if ((endResidue - firstResidue) < 5){
+            logger.info("MCLoop requires at least 5 residues. First and last residues are anchors.");
+        }
         StringBuilder sb = new StringBuilder();
         sb.append(String.format(" Running MCLoop:\n"));
         sb.append(String.format("     mcStepFrequency: %4d\n", mcStepFrequency));
@@ -172,7 +180,22 @@ public class MCLoop implements MonteCarloListener {
         }
 
         // Randomly choose a target sub portion of loop to KIC.
-        List <double[]> loopSolutions = loop.generateLoops(firstResidue, endResidue);
+        int startOffset;
+        if (endResidue - firstResidue > 4){
+            startOffset = rng.nextInt(endResidue - firstResidue - 4) + firstResidue;
+        } else {
+            startOffset = firstResidue;
+        }
+        List <double[]> loopSolutions = loop.generateLoops(startOffset, startOffset + 4);
+
+        for(int i = 1; i < this.iterations; i++){
+            //pick random subloop
+            if(endResidue - firstResidue > 4){
+                startOffset = rng.nextInt(endResidue - firstResidue - 4) + firstResidue;
+            }
+            //pick random solution
+            loopSolutions = loop.generateLoops(startOffset, startOffset + 4,loopSolutions.get(rng.nextInt(loopSolutions.size())));
+        }
         int numLoopsFound = loopSolutions.size();
         // Check whether KIC found alternative loops
         if (numLoopsFound <= 1) {
@@ -265,7 +288,6 @@ public class MCLoop implements MonteCarloListener {
         
         forceFieldEnergy.reInit();
         molDyn.reInit();
-        return;
     }
 
     /**
@@ -280,6 +302,9 @@ public class MCLoop implements MonteCarloListener {
         return (double) numMovesAccepted / numTries;
     }
 
+    public void setIterations(int iterations){
+        this.iterations = iterations;
+    }
     public void addMolDyn(MolecularDynamics molDyn) {
         this.molDyn = molDyn;
     }
