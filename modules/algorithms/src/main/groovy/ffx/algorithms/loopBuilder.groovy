@@ -62,6 +62,7 @@ import ffx.algorithms.RotamerOptimization
 import ffx.algorithms.RotamerOptimization.Direction;
 import ffx.algorithms.SimulatedAnnealing;
 import ffx.algorithms.Thermostat.Thermostats;
+import ffx.algorithms.MCLoop;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.Polymer;
@@ -111,6 +112,9 @@ String fileType = "PDB";
 // Value of Lambda.
 double lambda = 0.0;
 
+// Monte-Carlo step frequencies for loop moves.
+int mcStepFrequency = 100000;
+
 // Rotamer Optimization
 boolean runRotamer = false;
 
@@ -119,6 +123,9 @@ boolean runSimulatedAnnealing = false;
 
 // OSRW
 boolean runOSRW = true;
+
+// Monte Carlo with KIC
+boolean runMCLoop = false;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
@@ -136,9 +143,11 @@ cli.g(longOpt:'bias', args:1, argName:'0.01', 'Gaussian bias magnitude (kcal/mol
 cli.osrw(longOpt:'OSRW', 'Run OSRW.');
 cli.sa(longOpt:'simulated annealing', 'Run simulated annealing.');
 cli.rot(longOpt:'rotamer', 'Run rotamer optimization.');
+cli.mcLoop(longOpt:'MC Loop','Run Monte Carlo KIC');
 cli.a(longOpt:'all', 'Run optimal pipeline of algorithms.');
 cli.s(longOpt:'start', args:1, argName:'1', 'Starting atom of existing loop.');
 cli.f(longOpt:'final', args:1, argName:'-1', 'Final atom of an existing loop.');
+cli.mc(longOpt:'mcStepFreq', args:1, argName:'10', 'Number of MD steps between Monte-Carlo protonation changes.')
 
 def options = cli.parse(args);
 
@@ -152,6 +161,11 @@ if (options.s && options.f) {
     loopStop = Integer.parseInt(options.f);
 } else if (options.s || options.f){
     logger.info("Starting atom and final atom numbers are need to use this option.");
+}
+
+// Set Monte Carlo step frequency
+if (options.mc) {
+    mcStepFrequency = Integer.parseInt(options.mc);
 }
 
 // Load the time steps in femtoseconds.
@@ -207,6 +221,13 @@ if (options.rot){
 // Default
 if (!(options.osrw && options.sa)){
     runOSRW = true;
+}
+
+// Run MC Loop Optimization
+if (options.mcLoop){
+    runMCLoop = true;
+    runOSRW = false;
+    MCLoop mcLoop;
 }
 
 // Robust Default
@@ -274,10 +295,28 @@ Atom[] atoms = active.getAtomArray();
 
 //if existing loop is used, set loop atoms to match atoms built with PDBFilter
 if(options.s && options.f){
-    for (int i = loopStart; i <= loopStop; i++) {
-        Atom ai = atoms[i - 1];
-        ai.setBuilt(true);
+    for (int i = 0; i < atoms.length; i++){
+        Atom ai = atoms[i];
+        if(ai.getResidueNumber() >= loopStart && ai.getResidueNumber() <= loopStop){
+            ai.setBuilt(true);            
+        }
+        
     }
+} else {
+    //create array of built residues
+    ArrayList<Residue> allResidues = polymers[0].getResidues();
+    ArrayList<Residue> loopResidues = new ArrayList<>();
+
+    //Rotamer Optimization inclusion list building (grab built residues)
+    for (int i = 0; i < allResidues.size(); i++) {
+        Residue temp = allResidues[i];
+        if (temp.getBackboneAtoms().get(0).getBuilt()) {
+            loopResidues.add(allResidues[i]);
+        }
+    }
+    
+    loopStart = loopResidues.get(0).getResidueNumber();
+    loopStop = loopResidues.get(loopResidues.size() - 1).getResidueNumber();
 }
 
 for (int i = 0; i <= atoms.length; i++) {
@@ -299,6 +338,7 @@ e = minimize(eps);
 energy();
 
 boolean loopBuildError = false;
+
 if(runOSRW){
     // Run OSRW.
     System.setProperty("vdwterm", "true");
@@ -314,10 +354,10 @@ if(runOSRW){
     if (options.g) {
         osrw.setBiasMagnitude(biasMag);
     } else {
-        System.setProperty("bias-gaussian-mag", "0.10");
+        System.setProperty("bias-gaussian-mag", "0.002");
     }
     System.setProperty("lambda-bin-width", "0.01");
-    System.setProperty("tau-temperature","0.005");
+    System.setProperty("tau-temperature","0.05");
     
     for (int i = 0; i <= atoms.length; i++) {
         Atom ai = atoms[i - 1];
@@ -332,10 +372,6 @@ if(runOSRW){
     forceFieldEnergy.setLambda(lambda);
     energy();
     
-    int nStepsStage1 = nSteps;
-    if (nSteps > 20000){
-        nStepsStage1 = 20000;
-    }
     // Turn off checks for overlapping atoms, which is expected for lambda=0.
     forceFieldEnergy.getCrystal().setSpecialPositionCutoff(0.0);
 
@@ -348,7 +384,16 @@ if(runOSRW){
     // Create the MolecularDynamics instance.
     MolecularDynamics molDyn = new MolecularDynamics(active, osrw, active.getProperties(),
         null, thermostat, integrator);
-    molDyn.dynamic(nStepsStage1, timeStep, printInterval, saveInterval, temperature, initVelocities,
+
+    /*
+    if(runMCLoop){
+        mcLoop = new MCLoop(active, mcStepFrequency, molDyn.getThermostat(),loopStart,loopStop);
+        molDyn.addMCListener(mcLoop);
+        mcLoop.addMolDyn(molDyn);
+    }
+    */
+   
+    molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities,
         fileType, restartInterval, dyn);
 
     logger.info("Obtaining low energy coordinates");
@@ -357,48 +402,29 @@ if(runOSRW){
     if (lowEnergyCoordinates != null){
         forceFieldEnergy.setCoordinates(lowEnergyCoordinates);
     } else {
-        logger.info("OSRW stage 1 did not succeed in finding a loop.");
+        logger.info("OSRW stage did not succeed in finding a loop.");
         loopBuildError = true;
     }
-    
-    if (nSteps > 20000){
-        int nStepsStage2 = nSteps - 20000;
-        // Run OSRW again
-        System.setProperty("bias-gaussian-mag", "0.002");
-        System.setProperty("lambda-bin-width", "0.01");
-        System.setProperty("tau-temperature","0.02");
-
-        forceFieldEnergy= new ForceFieldEnergy(active);
-        forceFieldEnergy.setLambda(lambda);
-        energy();
-
-        // Turn off checks for overlapping atoms, which is expected for lambda=0.
-        forceFieldEnergy.getCrystal().setSpecialPositionCutoff(0.0);
-
-        asynchronous = false;
-        wellTempered = false;
-        osrw =  new OSRW(forceFieldEnergy, forceFieldEnergy, lambdaRestart, histogramRestart, active.getProperties(),
-            (temperature), timeStep, printInterval, saveInterval, asynchronous, sh, wellTempered);
-        osrw.setLambda(lambda);
-        osrw.setOptimization(true);
-        osrw.setOSRWOptimum(currentOSRWOptimum);
-        // Create the MolecularDynamics instance.
-        molDyn = new MolecularDynamics(active, osrw, active.getProperties(),
-            null, thermostat, integrator);
-        molDyn.dynamic(nStepsStage2, timeStep, printInterval, saveInterval, temperature, initVelocities,
-            fileType, restartInterval, dyn);
-
-        logger.info("Obtaining low energy coordinates");
-        lowEnergyCoordinates = osrw.getLowEnergyLoop();
-
-        if (lowEnergyCoordinates != null){
-            forceFieldEnergy.setCoordinates(lowEnergyCoordinates);
-        } else {
-            logger.info("OSRW stage 2 did not succeed in finding a loop.");
-            loopBuildError = true;
-        }
-    }
 }
+ 
+if (runMCLoop){
+    // Monte Carlo with KIC
+    System.setProperty("vdwterm", "false");
+    System.setProperty("polarization", "none");
+    logger.info("\n Running molecular dynamics on " + baseFilename);
+    
+    forceFieldEnergy= new ForceFieldEnergy(active);
+    // create the MD object
+    MolecularDynamics molDyn = new MolecularDynamics(active, active.getPotentialEnergy(), active.getProperties(), null, thermostat, integrator);
+    
+    // create the Monte-Carlo listener and connect it to the MD
+    mcLoop = new MCLoop(active, mcStepFrequency, molDyn.getThermostat(),loopStart,loopStop);
+    molDyn.addMCListener(mcLoop);
+    mcLoop.addMolDyn(molDyn);
+    
+    molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities,fileType,restartInterval,dyn);
+}   
+  
 
 if (runSimulatedAnnealing) {
     // Minimize with vdW.

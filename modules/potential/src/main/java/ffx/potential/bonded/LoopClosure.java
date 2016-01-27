@@ -126,7 +126,7 @@ public class LoopClosure {
         getPolyCoeff(polyCoeff);
         sturmMethod.solveSturm(deg_pol, n_soln, polyCoeff, roots);
         if (n_soln[0] == 0) {
-            logger.severe("Loop building failed.");
+            logger.info("Could not find alternative loop solutions using KIC.");
         }
 
         getCoordsFromPolyRoots(n_soln, roots, r_n1, r_a1, r_a3, r_c3, r_soln_n, r_soln_a, r_soln_c);

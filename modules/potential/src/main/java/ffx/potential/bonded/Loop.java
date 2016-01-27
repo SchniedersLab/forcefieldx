@@ -141,7 +141,7 @@ public class Loop {
         int[] n_soln = new int[1];
          
         loopClosure.solve3PepPoly(r_n[1], r_a[1], r_a[3], r_c[3], r_soln_n, r_soln_a, r_soln_c, n_soln);
-        
+
         StringBuilder sb = new StringBuilder();
         sb.append(String.format(" Starting res.:             %d\n", firstResidue));
         sb.append(String.format(" Ending res.:               %d\n", endResidue));
@@ -227,7 +227,7 @@ public class Loop {
             double[] determinedXYZ = new double[3];
 
             for (Atom backBoneAtom : backBoneAtoms) {
-                backBoneAtom.setBuilt(true);
+            //    backBoneAtom.setBuilt(true);
                 int backBoneIndex = backBoneAtom.getXYZIndex() - 1;
 
                 switch (backBoneAtom.getAtomType().name) {
@@ -278,7 +278,7 @@ public class Loop {
             System.arraycopy(coordsArray[BC.getXYZIndex() - 1],0,bc,0,3);
             
             for (Atom backBoneAtom : backBoneAtoms) {
-                backBoneAtom.setBuilt(true);
+            //    backBoneAtom.setBuilt(true);
                 switch (backBoneAtom.getAtomType().name) {
                         case "H":
                             determinedXYZ = BondedUtils.determineIntxyz(n, 1.0, bc, 119.0, ca, 119.0, 1);
@@ -2447,7 +2447,6 @@ public class Loop {
                 coordsArray1D[i*3 + j] = coordsArray[i][j];
             }
         }
-
         return coordsArray1D;
     }
 

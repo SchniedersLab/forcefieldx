@@ -102,7 +102,7 @@ public class MCLoop implements MonteCarloListener {
     /**
      * List of active atoms.
      */ 
-    private final Atom[] atoms;
+    private Atom[] atoms;
      /**
      * First and last residue numbers of loop.
      */ 
@@ -113,8 +113,7 @@ public class MCLoop implements MonteCarloListener {
      */
     private final Random rng = new Random();
     /**
-     * The ForceFieldEnergy object being used by MD. Needed by MultiResidue
-     * constructor and for reinitializing after a chemical change.
+     * The ForceFieldEnergy object being used by MD.
      */
     private final ForceFieldEnergy forceFieldEnergy;
     
@@ -134,12 +133,12 @@ public class MCLoop implements MonteCarloListener {
         this.forceFieldEnergy = molAss.getPotentialEnergy();
         this.mcStepFrequency = (mcStepFrequency == 0) ? Integer.MAX_VALUE : mcStepFrequency;
         this.thermostat = thermostat;
-        systemReferenceEnergy = molAss.getPotentialEnergy().getTotalEnergy();
+        systemReferenceEnergy = molAss.getPotentialEnergy().energy(false, true);
         this.firstResidue = firstResidue;
         this.endResidue = endResidue; 
-        this.iterations = 5;
-                
-        if ((endResidue - firstResidue) < 5){
+        this.iterations = 1;
+
+        if ((endResidue - firstResidue) < 4){
             logger.info("MCLoop requires at least 5 residues. First and last residues are anchors.");
         }
         StringBuilder sb = new StringBuilder();
@@ -174,10 +173,11 @@ public class MCLoop implements MonteCarloListener {
 
         stepCount++;
         // Decide on the type of step to be taken.
-        if (stepCount % mcStepFrequency == 0 ) {
+        if (stepCount % mcStepFrequency != 0 ) {
             // Not yet time for an MC step, return to MD.
             return false;
         }
+        atoms = molAss.getAtomArray();
 
         // Randomly choose a target sub portion of loop to KIC.
         int startOffset;
@@ -186,7 +186,9 @@ public class MCLoop implements MonteCarloListener {
         } else {
             startOffset = firstResidue;
         }
-        List <double[]> loopSolutions = loop.generateLoops(startOffset, startOffset + 4);
+        List <double[]> loopSolutions;
+        
+        loopSolutions = loop.generateLoops(startOffset, startOffset + 4);
 
         for(int i = 1; i < this.iterations; i++){
             //pick random subloop
@@ -216,18 +218,19 @@ public class MCLoop implements MonteCarloListener {
 
         // Choose from the list of available loops and save current coordinates
         double[] newCoords = loopSolutions.get(rng.nextInt(loopSolutions.size()));       
-        forceFieldEnergy.getCoordinates(oldCoords);
-        
+        oldCoords = storeActiveCoordinates();
+
         // Optimize the system.
-        Minimize minimize1 = new Minimize(null, forceFieldEnergy, null);
-        minimize1.minimize();
-        double originalLoopEnergy = forceFieldEnergy.getTotalEnergy();
+     //   Minimize minimize1 = new Minimize(null, forceFieldEnergy, null);
+     //   minimize1.minimize();
+        double originalLoopEnergy = forceFieldEnergy.energy(false,true);
         
         // Perform move and analysis of chosen loop.
         performLoopMove(newCoords);
-        Minimize minimize2 = new Minimize(null, forceFieldEnergy, null);
-        minimize2.minimize();
-        double newLoopEnergy = forceFieldEnergy.getTotalEnergy();
+      //  Minimize minimize2 = new Minimize(null, forceFieldEnergy, null);
+      //  minimize2.minimize();
+        
+        double newLoopEnergy = forceFieldEnergy.energy(false,true);
         
         double temperature = thermostat.getCurrentTemperature();
         double kT = boltzmann * temperature;
@@ -240,7 +243,7 @@ public class MCLoop implements MonteCarloListener {
         StringBuilder sb = new StringBuilder();
         sb.append(String.format(" Assessing possible MC loop move step:\n"));
         sb.append(String.format("     original loop: %16.8f\n", originalLoopEnergy));
-        sb.append(String.format("     possible loop:   %16.8f\n", newLoopEnergy));
+        sb.append(String.format("     possible loop: %16.8f\n", newLoopEnergy));
         sb.append(String.format("     -----\n"));
 
         // Test Monte-Carlo criterion.
@@ -263,23 +266,19 @@ public class MCLoop implements MonteCarloListener {
         sb.append(String.format("     Denied."));
         logger.info(sb.toString());
 
-        // Move was rejected, undo the titration state change.
+        // Move was rejected, undo the loop move
         performLoopMove(oldCoords);
         return false;
     }
 
     /**
-     * Perform the requested titration on the given MultiResidue and
-     * reinitialize the FF.
+     * Perform the requested coordinate move
      *
-     * @param multiRes
-     * @param titration
+     * @param newCoordinates
      */
     private void performLoopMove(double[] newCoordinates) {
-
         int index = 0;
-        for (int i = 0; i < atoms.length; i++) {
-            Atom a = atoms[i];
+        for (Atom a : atoms) {
             double x = newCoordinates[index++];
             double y = newCoordinates[index++];
             double z = newCoordinates[index++];
@@ -307,6 +306,17 @@ public class MCLoop implements MonteCarloListener {
     }
     public void addMolDyn(MolecularDynamics molDyn) {
         this.molDyn = molDyn;
+    }
+
+    private double[] storeActiveCoordinates() {
+        double [] coords = new double[atoms.length*3];
+        int index = 0;
+        for (Atom a : atoms) {
+            coords[index++] = a.getX();
+            coords[index++] = a.getY();
+            coords[index++] = a.getZ();
+        }
+        return coords;
     }
 
     private enum MCOverride {
