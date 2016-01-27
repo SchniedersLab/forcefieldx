@@ -58,6 +58,7 @@ import ffx.algorithms.Integrator.Integrators;
 import ffx.algorithms.Minimize;
 import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.OSRW;
+import ffx.algorithms.TransitionTemperedOSRW;
 import ffx.algorithms.RotamerOptimization
 import ffx.algorithms.RotamerOptimization.Direction;
 import ffx.algorithms.SimulatedAnnealing;
@@ -75,6 +76,7 @@ import ffx.potential.bonded.Residue.ResidueType;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.ForceFieldEnergy;
+import ffx.numerics.Potential;
 
 // Default convergence criteria.
 double eps = 0.1;
@@ -127,6 +129,9 @@ boolean runOSRW = true;
 // Monte Carlo with KIC
 boolean runMCLoop = false;
 
+// Transition Tempered OSRW
+boolean runTTOSRW = false;
+
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
@@ -141,13 +146,14 @@ cli.w(longOpt:'write', args:1, argName:'100.0', 'Interval to write out coordinat
 cli.t(longOpt:'temperature', args:1, argName:'298.15', 'Temperature in degrees Kelvin.');
 cli.g(longOpt:'bias', args:1, argName:'0.01', 'Gaussian bias magnitude (kcal/mol).');
 cli.osrw(longOpt:'OSRW', 'Run OSRW.');
+cli.tt(longOpt:'ttOSRW', 'Run Transition Tempered OSRW');
 cli.sa(longOpt:'simulated annealing', 'Run simulated annealing.');
 cli.rot(longOpt:'rotamer', 'Run rotamer optimization.');
-cli.mcLoop(longOpt:'MC Loop','Run Monte Carlo KIC');
+cli.mc(longOpt:'MC Loop','Run Monte Carlo KIC');
 cli.a(longOpt:'all', 'Run optimal pipeline of algorithms.');
 cli.s(longOpt:'start', args:1, argName:'1', 'Starting atom of existing loop.');
 cli.f(longOpt:'final', args:1, argName:'-1', 'Final atom of an existing loop.');
-cli.mc(longOpt:'mcStepFreq', args:1, argName:'10', 'Number of MD steps between Monte-Carlo protonation changes.')
+cli.mcn(longOpt:'mcStepFreq', args:1, argName:'10', 'Number of MD steps between Monte-Carlo protonation changes.')
 
 def options = cli.parse(args);
 
@@ -164,8 +170,8 @@ if (options.s && options.f) {
 }
 
 // Set Monte Carlo step frequency
-if (options.mc) {
-    mcStepFrequency = Integer.parseInt(options.mc);
+if (options.mcn) {
+    mcStepFrequency = Integer.parseInt(options.mcn);
 }
 
 // Load the time steps in femtoseconds.
@@ -218,13 +224,18 @@ if (options.rot){
     runRotamer = true;
 }
 
+// Run Transition Tempered OSRW
+if (options.tt){
+    runTTOSRW = true;
+}
+
 // Default
 if (!(options.osrw && options.sa)){
     runOSRW = true;
 }
 
 // Run MC Loop Optimization
-if (options.mcLoop){
+if (options.mc){
     runMCLoop = true;
     runOSRW = false;
     MCLoop mcLoop;
@@ -304,7 +315,8 @@ if(options.s && options.f){
     }
 } else {
     //create array of built residues
-    ArrayList<Residue> allResidues = polymers[0].getResidues();
+    
+    ArrayList<Residue> allResidues = active.getChains()[0].getResidues();
     ArrayList<Residue> loopResidues = new ArrayList<>();
 
     //Rotamer Optimization inclusion list building (grab built residues)
@@ -377,8 +389,16 @@ if(runOSRW){
 
     boolean asynchronous = false;
     boolean wellTempered = false;
-    OSRW osrw =  new OSRW(forceFieldEnergy, forceFieldEnergy, lambdaRestart, histogramRestart, active.getProperties(),
-        (temperature), timeStep, printInterval, saveInterval, asynchronous, sh, wellTempered);
+   
+    Potential osrw;
+    if(runTTOSRW){
+        osrw = new TransitionTemperedOSRW(forceFieldEnergy, forceFieldEnergy, lambdaRestart, histogramRestart, active.getProperties(),
+            (temperature), timeStep, printInterval, saveInterval, asynchronous, sh);
+    } else {
+        osrw =  new OSRW(forceFieldEnergy, forceFieldEnergy, lambdaRestart, histogramRestart, active.getProperties(),
+            (temperature), timeStep, printInterval, saveInterval, asynchronous, sh, wellTempered);    
+    }
+    
     osrw.setLambda(lambda);
     osrw.setOptimization(true);
     // Create the MolecularDynamics instance.

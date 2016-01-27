@@ -285,6 +285,12 @@ public class TransitionTemperedOSRW implements Potential {
      */
     private ArrayList<String> traversalInHand = new ArrayList<>();
     /**
+     * Holds the lowest potential-energy parameters for loopBuilder runs from
+     * all visits to lambda > 0.9
+     */
+    private double osrwOptimumCoords[];
+    private double osrwOptimum = Double.MAX_VALUE;
+    /**
      * Interval between how often the free energy is updated from the count
      * matrix.
      */
@@ -377,6 +383,11 @@ public class TransitionTemperedOSRW implements Potential {
     private int periodCount = 0;
     private int window = 1000;
 
+    private boolean osrwOptimization = false;
+    private int osrwOptimizationFrequency = 1000;
+    private double osrwOptimizationLambdaCutoff = 0.5;
+    private double osrwOptimizationEps = 0.1;
+    private double osrwOptimizationTolerance = 1.0e-8;
     /**
      * OSRW Asynchronous MultiWalker Constructor.
      *
@@ -592,7 +603,45 @@ public class TransitionTemperedOSRW implements Potential {
         if (state == STATE.FAST) {
             return e;
         }
+        
+        if (osrwOptimization && lambda > osrwOptimizationLambdaCutoff) {
+            if (energyCount % osrwOptimizationFrequency == 0) {
+                logger.info(String.format(" OSRW Minimization (Step %d)", energyCount));
 
+                // Set Lambda value to 1.0.
+                lambdaInterface.setLambda(1.0);
+
+                potential.setEnergyTermState(Potential.STATE.BOTH);
+
+                // Optimize the system.
+                Minimize minimize = new Minimize(null, potential, null);
+                minimize.minimize(osrwOptimizationEps);
+
+                // Remove the scaling of coordinates & gradient set by the minimizer.
+                potential.setScaling(null);
+
+                // Reset lambda value.
+                lambdaInterface.setLambda(lambda);
+
+                // Collect the minimum energy.
+                double minEnergy = potential.getTotalEnergy();
+                // If a new minimum has been found, save its coordinates.
+                if (minEnergy < osrwOptimum) {
+                    osrwOptimum = minEnergy;
+                    logger.info(String.format(" New minimum energy found: %16.8f (Step %d).", osrwOptimum,energyCount));
+                    osrwOptimumCoords = potential.getCoordinates(osrwOptimumCoords);
+                }
+
+                // Revert to the coordinates and gradient prior to optimization.
+                double eCheck = potential.energyAndGradient(x, gradient);
+
+                if (abs(eCheck - e) > osrwOptimizationTolerance) {
+                    logger.warning(String.format(
+                            " OSRW optimization could not revert coordinates %16.8f vs. %16.8f.", e, eCheck));
+                }
+            }
+        }
+                
         double biasEnergy = 0.0;
         dEdLambda = lambdaInterface.getdEdL();
         d2EdLambda2 = lambdaInterface.getd2EdL2();
@@ -1347,6 +1396,26 @@ public class TransitionTemperedOSRW implements Potential {
         return potential.getCoordinates(doubles);
     }
 
+    public void setOSRWOptimum(double prevOSRWOptimum) {
+        osrwOptimum = prevOSRWOptimum;
+    }
+    
+    public double getOSRWOptimum(){
+        return osrwOptimum;
+    }
+    public double[] getLowEnergyLoop() {
+        if (osrwOptimum < Double.MAX_VALUE) {
+            return osrwOptimumCoords;
+        } else {
+            logger.info("Lambda > 0.9 was not reached. Try increasing number of timesteps.");
+            return null;
+        }
+    }
+    
+    public void setOptimization(boolean osrwOptimization) {
+        this.osrwOptimization = osrwOptimization;
+    }
+        
     @Override
     public double[] getMass() {
         return potential.getMass();
