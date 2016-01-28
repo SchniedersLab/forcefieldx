@@ -364,7 +364,7 @@ if(runOSRW){
     System.setProperty("vdw-cutoff", "9.0");
     System.setProperty("lambda-bias-cutoff", "3");
     if (options.g) {
-        osrw.setBiasMagnitude(biasMag);
+        System.setProperty("bias-gaussian-mag",String.format("%f",biasMag));
     } else {
         System.setProperty("bias-gaussian-mag", "0.002");
     }
@@ -489,7 +489,6 @@ if(!loopBuildError){
     System.setProperty("intermolecularSoftcore", "false");
     System.setProperty("lambdaterm", "false");
     System.setProperty("lambda-torions", "false");
-
 
     forceFieldEnergy = new ForceFieldEnergy(active);
     e = minimize(eps);
