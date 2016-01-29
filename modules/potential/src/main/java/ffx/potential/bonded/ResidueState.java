@@ -37,6 +37,8 @@
  */
 package ffx.potential.bonded;
 
+import ffx.potential.MolecularAssembly;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
@@ -182,6 +184,38 @@ public class ResidueState {
     
     public static void revertAllCoordinates(List<Residue> residueList, ResidueState[] states) {
         revertAllCoordinates(residueList.toArray(new Residue[residueList.size()]), states);
+    }
+    
+    /**
+     * Returns a new double[nAtoms][3] with the coordinates of an array of atoms.
+     * @param atoms To store coordinates of
+     * @return Coordinates
+     */
+    public static double[][] storeAtomicCoordinates(Atom[] atoms) {
+        int nAtoms = atoms.length;
+        double[][] coords = new double[nAtoms][3];
+        for (int i = 0; i < nAtoms; i++) {
+            atoms[i].getXYZ(coords[i]);
+        }
+        return coords;
+    }
+    
+    /**
+     * Uses a double[nAtoms][3] to revert the coordinates of an array of atoms. 
+     * Does not check to see if the arrays are properly ordered; make sure you are
+     * using the correct arrays.
+     * @param atoms To revert coordinates of
+     * @param coords Coordinates
+     */
+    public static void revertAtomicCoordinates(Atom[] atoms, double[][] coords) {
+        int nAtoms = atoms.length;
+        if (coords.length != nAtoms) {
+            throw new IllegalArgumentException(String.format(" Length %d of atoms "
+                    + "array does not match length %d of coordinates array", nAtoms, coords.length));
+        }
+        for (int i = 0; i < nAtoms; i++) {
+            atoms[i].setXYZ(coords[i]);
+        }
     }
     
     public static void revertAllCoordinates(Residue[] residueArray, ResidueState[] states) {

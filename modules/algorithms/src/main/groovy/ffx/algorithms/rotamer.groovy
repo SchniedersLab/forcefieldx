@@ -109,6 +109,9 @@ int forceResiduesEnd = -1;
 double superpositionThreshold = 0.1;
 double singletonClashThreshold = 20.0;
 double pairClashThreshold = 50.0;
+boolean monteCarlo = false;
+int nMCsteps = 1000000;
+double mcTemp = 298.15; // Room temperature.
 
 // prototype
 boolean video_writeVideo = false;
@@ -149,6 +152,7 @@ cli.tO(longOpt:'titrationOptimization', args:1, argName: '-1', 'Choose a list of
 cli.nt(longOpt:'nucleicCorrectionThreshold', args:1, argName: '0', 'Nucleic acid Rotamers adjusted by more than a threshold distance (A) are discarded (0 disables this function).');
 cli.mn(longOpt:'minimumAcceptedNARotamers', args:1, argName: '10', 'Minimum number of NA rotamers to be accepted if a threshold distance is enabled.');
 cli.li(longOpt:'printLargeInteractions', args:2, valueSeparator: ',' as char, argName: '0.0,0.0', 'Prints a summary of pair and trimer absolute energies larger than [arg] kcal.')
+//cli.mc(longOpt: 'monteCarlo', args:1, argName: '-1', 'If set, follow DEE with n Monte Carlo steps (if fewer permutations remaining, enumerates all remaining instead).');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -211,6 +215,17 @@ if (options.e) {
 if (options.b) {
     buffer = Double.parseDouble(options.b);
 }
+
+/*if (options.mc) {
+    nMCsteps = Integer.parseInt(options.mc);
+    if (nMCsteps > 1) {
+        monteCarlo = true;
+    }
+    String mcTempProp = System.getProperty("ro-mcTemp");
+    if (mcTempProp != null) {
+        mcTemp = Double.parseDouble(mcTempProp);
+    }
+}*/
 
 // Rotamer Library.
 if (options.l) {
@@ -539,6 +554,14 @@ rotamerOptimization.setForcedResidues(forceResiduesStart, forceResiduesEnd);
 if (useEnergyRestart) {
     rotamerOptimization.setEnergyRestartFile(energyRestartFile);
 }
+/*if (monteCarlo) {
+ * boolean monteCarlo = false;
+int nMCsteps = 1000000;
+double mcTemp = 298.15; // Room temperature.
+
+    rotamerOptimization.setMonteCarlo(true, nMCsteps, mcTemp);
+}*/
+
 /*if (useBoxDimensions) {
 rotamerOptimization.setBoxDimensions(boxDimensions, superboxBuffer);
 }*/

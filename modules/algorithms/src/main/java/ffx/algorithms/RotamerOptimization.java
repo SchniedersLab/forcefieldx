@@ -390,7 +390,17 @@ public class RotamerOptimization implements Terminatable {
     private boolean computeQuads = false;
     private boolean decomposeOriginal = false;
     private int quadMaxout = Integer.MAX_VALUE;
-
+    
+    /**
+     * Monte Carlo parameters.
+     */
+    private int nMCsteps = 1000000;
+    /**
+     * Check to see if proposed move has an eliminated pair or higher-order term; 
+     * breaks detailed balance.
+     */
+    private boolean checkHigherOrder = false;
+    
     /**
      * RotamerOptimization constructor.
      *
@@ -745,6 +755,164 @@ public class RotamerOptimization implements Terminatable {
             }
         }
         return currentEnergy;
+    }
+    
+    /**
+     * Note to self: remember to avoid generating any MC moves which would result
+     * in an eliminated pair or triple.
+     * @param molecularAssembly
+     * @param residues
+     * @param lowEnergy
+     * @param optimum
+     * @param initialRots
+     * @param permutationEnergies
+     * @param maxIters
+     * @param randomizeRots
+     * @return 
+     */
+    /*private double rotamerOptimizationDEEMC(MolecularAssembly molecularAssembly, 
+            Residue residues[], double lowEnergy, int optimum[], int[] initialRots,
+            double[] permutationEnergies, int maxIters, boolean randomizeRots) {
+        
+        double currentEnergy = computeEnergy(residues, initialRots, false);
+        int nResidues = residues.length;
+        // It may be possible to use initialRots[] instead of currentRots[].
+        int[] currentRots = Arrays.copyOf(initialRots, nResidues);
+        int[] newRots = Arrays.copyOf(currentRots, nResidues);
+        optimum = Arrays.copyOf(currentRots, nResidues);
+        int nAccept = 0;
+        int nReject = 0;
+        int nError = 0;
+        
+        /**
+         * unRes is short for undeterminedResidues. These lists will eventually 
+         * be converted to an int[] with the indices of those residues which 
+         * aren't eliminated down to one rotamer, and an int[][] with the 
+         * non-eliminated rotamers of those residues.
+         */
+        /*List<Integer> unRes = new ArrayList<>(nResidues);
+        List<List<Integer>> unResRots = new ArrayList<>(nResidues);
+        
+        for (int i = 0; i < nResidues; i++) {
+            ArrayList<Integer> allowedRots = new ArrayList<>();
+            for (int ri = 0; ri < residues[i].getRotamers().length; ri++) {
+                if (!check(i, ri)) {
+                    allowedRots.add(ri);
+                }
+            }
+            
+            int nrots = allowedRots.size();
+            if (nrots > 1) {
+                unRes.add(i);
+                allowedRots.trimToSize();
+                unResRots.add(allowedRots);
+            }
+        }
+        
+        int nUnRes = unRes.size();
+        ((ArrayList) unRes).trimToSize();
+        ((ArrayList) unResRots).trimToSize();
+        
+        for (int iter = 0; iter < maxIters; iter++) {
+            int i = 0;
+            int ri = 0;
+            
+            /**
+             * Intent of the do-while loop is, if checkHigherOrder set true, to 
+             * reject any moves involving an eliminated pair/triple. Else, it just
+             * runs once.
+             */
+            /*boolean validMove = !checkHigherOrder;
+            do {
+                int resi = ThreadLocalRandom.current().nextInt(0, nUnRes);
+                List<Integer> rotsi = unResRots.get(resi);
+                int lenri = rotsi.size();
+                int roti = ThreadLocalRandom.current().nextInt(0, lenri);
+                i = unRes.get(resi);
+                ri = unResRots.get(resi).get(roti);
+                validMove = checkHigherOrder ? checkValidMcMove(currentRots, i, ri) : validMove;
+            } while (!validMove);
+            
+            newRots[i] = ri;
+            try {
+                double newEnergy = computeEnergy(residues, newRots, false);
+                if (threeBodyTerm) {
+                    logIfMaster(String.format(" %d Proposed energy through 3-Body interactions: %16.8f",
+                            evaluatedPermutations, newEnergy));
+                } else {
+                    logIfMaster(String.format(" %d Proposed energy through 2-Body interactions: %16.8f",
+                            evaluatedPermutations, newEnergy));
+                }
+                
+                boolean accepted = mcTrial(newEnergy, currentEnergy);
+                ++evaluatedPermutations;
+                
+                if (accepted) {
+                    currentRots[i] = ri;
+                    currentEnergy = newEnergy;
+                    logIfMaster(String.format(" Move %s-%d accepted", residues[i].toString(), ri));
+                    ++nAccept;
+                } else {
+                    newRots[i] = currentRots[i];
+                    logIfMaster(String.format(" Move %s-%d rejected", residues[i].toString(), ri));
+                    ++nReject;
+                }
+                
+            } catch (NullPointerException ex) {
+                logIfMaster(String.format(" Exception during Monte Carlo move "
+                        + "evaluation; probably an excluded move: %s", ex.toString()));
+                if (master) {
+                    StringBuilder sb = new StringBuilder(" Rotamers ");
+                    for (int j = 0; j < nResidues; j++) {
+                        sb.append(newRots[j]).append(',');
+                    }
+                    logger.info(sb.toString());
+                }
+                newRots[i] = currentRots[i];
+                ++nError;
+            }
+        }
+        logIfMaster(String.format(" Number of accepted moves: %d", nAccept));
+        logIfMaster(String.format(" Number of rejected moves: %d", nReject));
+        logIfMaster(String.format(" Number of non-allowed moves: %d", nError));
+        
+        double fractAccept = ((double) nAccept) / ((double) maxIters);
+        logIfMaster(String.format(" Fraction of accepted moves: %10.6f", fractAccept));
+        return currentEnergy;
+    }*/
+    
+    /**
+     * Checks to see if the proposed move (resi set to roti) conflicts with any
+     * eliminated pairs or triples. We assume that resi-roti is a valid pair 
+     * already. All parameters should refer to the entire residue/rotamer matrix,
+     * including those eliminated down to one rotamer.
+     * 
+     * I suspect this might break detailed balance, as not all rotamer permutations
+     * will have an equal number of valid one-move steps out.
+     * @param currentRots All rotamers
+     * @param resi Residue i index
+     * @param roti Rotamer ri index
+     * @return True if valid.
+     */
+    private boolean checkValidMcMove(int[] currentRots, int resi, int roti) {
+        int nResidues = currentRots.length;
+        for (int j = 0; j < nResidues; j++) {
+            if (j == resi) {
+                continue;
+            }
+            if (check(j, currentRots[j], resi, roti)) {
+                return false;
+            }
+            for (int k = j; k < nResidues; k++) {
+                if (k == resi) {
+                    continue;
+                }
+                if (check(j, currentRots[j], k, currentRots[k], resi, roti)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     /**
@@ -2402,6 +2570,13 @@ public class RotamerOptimization implements Terminatable {
     public void setRevert(boolean revert) {
         this.revert = revert;
     }
+    
+    /*public void setMonteCarlo(boolean monteCarlo, int nMCsteps, double mcTemp) {
+        this.monteCarlo = monteCarlo;
+        this.nMCsteps = nMCsteps;
+        this.mcTemp = mcTemp;
+        kbTinv = -1.0 / (mcTemp * BOLTZMANN);
+    }*/
 
     public void setNucleicCorrectionThreshold(double nucleicCorrectionThreshold) {
         this.nucleicCorrectionThreshold = nucleicCorrectionThreshold;
@@ -2483,7 +2658,14 @@ public class RotamerOptimization implements Terminatable {
         }
         return e;
     }
+    
 
+
+    /**
+     * The main driver for optimizing a block of residues using DEE.
+     * @param residueList Residues to optimize.
+     * @return Final energy.
+     */
     private double globalUsingEliminations(List<Residue> residueList) {
         int currentEnsemble = Integer.MAX_VALUE;
         Residue residues[] = residueList.toArray(new Residue[residueList.size()]);
