@@ -37,8 +37,6 @@
  */
 package ffx.algorithms.mc;
 
-import ffx.potential.AssemblyState;
-import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import org.apache.commons.math3.util.FastMath;
 

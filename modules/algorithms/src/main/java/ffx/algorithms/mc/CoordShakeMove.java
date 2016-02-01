@@ -43,8 +43,9 @@ import ffx.potential.bonded.ResidueState;
 import org.apache.commons.math3.distribution.NormalDistribution;
 
 /**
- * The MCMove interface defines the basic functionality of a Monte Carlo move; 
- * that it can apply its move and revert it.
+ * The CoordShakeMove class implements a simplistic atomic coordinate shake. 
+ * At present, simply adds a random number from a normal distribution to each
+ * Cartesian coordinate; in the future, will use a move in polar coordinates.
  *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
