@@ -35,21 +35,20 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.algorithms;
+package ffx.algorithms.mc;
 
 import ffx.numerics.Potential;
 import ffx.potential.AssemblyState;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.ResidueState;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
-import org.apache.commons.math3.distribution.NormalDistribution;
 
 /**
- * The MolecularMC class implements Metropolis Monte Carlo for molecular systems 
- with a variety of move sets. All move sets will move atoms upon accepted MC
- * step; to revert, you must store and revert coordinates in the calling method. 
- * Rejected moves 
+ * The MolecularMC class is a framework to take Monte Carlo steps on a molecular
+ * system. It does not implement an MC algorithm, nor does it implement move sets;
+ * it is used to evaluate a single MC step with movements defined by implementations
+ * of MCMove.
  *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
@@ -100,91 +99,55 @@ public class MolecularMC extends BoltzmannMC {
         return potential;
     }
     
-    public void shakeMove(Atom[] atoms, double sigma) {
-        NormalDistribution dist = new NormalDistribution(0, sigma);
-        int nAtoms = atoms.length;
-        double[][] origCoords = ResidueState.storeAtomicCoordinates(atoms);
-        
-        // Perform the shake.
-        for (int i = 0; i < nAtoms; i++) {
-            double[] xyz = new double[3];
-            atoms[i].getXYZ(xyz);
-            for (int j = 0; j < 3; j++) {
-                xyz[j] += dist.sample();
-            }
-            atoms[i].setXYZ(xyz);
-        }
+    public boolean mcStep(MCMove move) {
+        return MolecularMC.this.mcStep(move, currentEnergy());
     }
     
-    public void startHybridMove() {
-        startHybridMove(currentEnergy());
+    public boolean mcStep(MCMove move, double en1) {
+        List<MCMove> moveList = new ArrayList<>(1);
+        moveList.add(move);
+        return MolecularMC.this.mcStep(moveList, en1);
     }
     
-    public void startHybridMove(double en1) {
+    public boolean mcStep(List<MCMove> moves) {
+        return MolecularMC.this.mcStep(moves, currentEnergy());
+    }
+    
+
+    @Override
+    public boolean mcStep(List<MCMove> moves, double en1) {
         e1 = en1;
+        eAdjust = 0.0;
         initialState = new AssemblyState(mola);
-    }
-    
-    public boolean tryHybridMove() {
-        e2 = currentEnergy();boolean accept = tryMove(e1, e2);
         
-        if (accept) {
+        int nMoves = moves.size();
+        for (int i = 0; i < nMoves; i++) {
+            MCMove movei = moves.get(i);
+            double eCorr = movei.move();
             if (print) {
-                logger.info(String.format(" Shake move accepted to energy %10.6f "
-                        + "from energy %10.6f", e2, e1));
+                logger.info(String.format(" Energy adjustment %10.6f kcal/mol for %s", eCorr, movei.toString()));
             }
-        } else {
-            if (print) {
-                logger.info(String.format(" Shake move rejected to energy %10.6f "
-                        + "from energy %10.6f", e2, e1));
-            }
-            // Revert Assembly State here.
+            eAdjust += eCorr;
         }
-        return accept;
-    }
-    
-    /**
-     * Move set: shakes selected atom coordinates using a normal distribution of
-     * width sigma.
-     * @param atoms To shake
-     * @param sigma Width of normal distribution
-     * @return If move accepted
-     */
-    public boolean tryShakeMove(Atom[] atoms, double sigma) {
-        e1 = currentEnergy();
-        return tryShakeMove(atoms, sigma, e1);
-    }
-    
-    /**
-     * Move set: shakes selected atom coordinates using a normal distribution of
-     * width sigma.
-     * @param atoms To shake
-     * @param sigma Width of normal distribution
-     * @param en1 Starting energy
-     * @return If move accepted
-     */
-    public boolean tryShakeMove(Atom[] atoms, double sigma, double en1) {
-        this.e1 = en1;
-        double[][] origCoords = ResidueState.storeAtomicCoordinates(atoms);
         
-        shakeMove(atoms, sigma);
-        
-        e2 = currentEnergy();
-        boolean accept = tryMove(e1, e2);
-        
-        if (accept) {
+        e2 = currentEnergy() + eAdjust;
+        if (evaluateMove(e1, e2)) {
             if (print) {
-                logger.info(String.format(" Shake move accepted to energy %10.6f "
-                        + "from energy %10.6f", e2, e1));
+                logger.info(String.format(" Monte Carlo step accepted with e2 %10.6f and e1 %10.6f", e2, e1));
             }
+            return true;
         } else {
-            if (print) {
-                logger.info(String.format(" Shake move rejected to energy %10.6f "
-                        + "from energy %10.6f", e2, e1));
+            for (int i = nMoves - 1; i >= 0; i--) {
+                moves.get(i).revertMove();
             }
-            ResidueState.revertAtomicCoordinates(atoms, origCoords);
+            logger.info(String.format(" Monte Carlo step rejected with e2 %10.6f and e1 %10.6f", e2, e1));
+            return false;
         }
-        return accept;
+    }
+    
+    @Override
+    public void revertStep() {
+        initialState.revertState();
     }
 
     /**

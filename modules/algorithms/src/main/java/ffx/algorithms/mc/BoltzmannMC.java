@@ -35,8 +35,10 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.algorithms;
+package ffx.algorithms.mc;
 
+import ffx.potential.AssemblyState;
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import org.apache.commons.math3.util.FastMath;
 
@@ -55,6 +57,7 @@ public abstract class BoltzmannMC  implements MetropolisMC {
     
     protected double e1 = 0.0;
     protected double e2 = 0.0;
+    protected double eAdjust = 0.0;
     
     /**
      * Criterion for accept/reject a move; intended to be used mostly internally.
@@ -63,18 +66,21 @@ public abstract class BoltzmannMC  implements MetropolisMC {
      * @return If move accepted
      */
     @Override
-    public boolean tryMove(double e1, double e2) {
+    public boolean evaluateMove(double e1, double e2) {
         if (e2 <= e1) {
             return true;
         } else {
             // p(X) = exp(-U(X)/kb*T)
             double prob = FastMath.exp(kbTinv * (e2 - e1));
-            // Remove the next section once tested.
+            
+            assert (prob >= 0.0 && prob <= 1.0);
+            /* Section used for testing purposes only.
             if (prob < 0.0 || prob > 1.0) {
                 throw new ArithmeticException(String.format(" Invalid Monte Carlo "
                         + "result: probability %10.6f of accepting move from "
                         + "energy %10.6f to energy %10.6f", prob, e1, e2));
-            }
+            }*/
+            
             double trial = ThreadLocalRandom.current().nextDouble();
             return (trial <= prob);
         }
@@ -99,5 +105,10 @@ public abstract class BoltzmannMC  implements MetropolisMC {
     @Override
     public double getE2() {
         return e2;
+    }
+    
+    @Override
+    public double getEAdjust() {
+        return eAdjust;
     }
 }

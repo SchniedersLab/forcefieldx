@@ -35,11 +35,14 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.algorithms;
+package ffx.algorithms.mc;
+
+import java.util.List;
 
 /**
  * The MetropolisMC interface defines the basic methods of a Metropolis Monte 
- * Carlo application.
+ * Carlo application. Intended to be a framework to allow you to take and revert
+ * a single step, and return basic information about the last step taken.
  *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
@@ -57,7 +60,7 @@ public interface MetropolisMC {
      * @param e2 Trial energy
      * @return If move accepted
      */
-    public boolean tryMove (double e1, double e2);
+    public boolean evaluateMove (double e1, double e2);
     
     /**
      * Sets temperature of Monte Carlo criterion.
@@ -79,10 +82,30 @@ public interface MetropolisMC {
     public double getE1();
     
     /**
-     * Return trial energy from last attempted step.
+     * Return trial energy from last attempted step. Includes extra-potential
+     * energy adjustments.
      * @return e2
      */
     public double getE2();
     
-    // Implementations should follow the example and style of DefaultMC
+    /**
+     * Returns energy adjustments to e2 not included in underlying Potential.
+     * @return Extra-potential energy adjustment to e2
+     */
+    public double getEAdjust();
+    
+    /**
+     * If possible, reverts the last successful Monte Carlo step taken.
+     */
+    public void revertStep();
+    
+    /**
+     * Performs a series of moves sequentially, as a single hybrid step. Should
+     * also work with single-member lists.
+     *
+     * @param moves MCMoves to perform
+     * @param en1 Initial energy
+     * @return If move/moves accepted.
+     */
+    public boolean mcStep(List<MCMove> moves, double en1);
 }
