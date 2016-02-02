@@ -42,7 +42,8 @@ import java.util.List;
 /**
  * The MetropolisMC interface defines the basic methods of a Metropolis Monte 
  * Carlo application. Intended to be a framework to allow you to take and revert
- * a single step, and return basic information about the last step taken.
+ * a single step, and return basic information about the last step taken. Many 
+ * of methods will only return a meaningful result after the first step.
  *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
@@ -67,6 +68,12 @@ public interface MetropolisMC {
      * @param temp 
      */
     public void setTemperature (double temp);
+    
+    /**
+     * Returns temperature of the Monte Carlo criterion.
+     * @return temperature
+     */
+    public double getTemperature();
     
     /**
      * Sets whether the implementation prints its own messages.
@@ -95,9 +102,22 @@ public interface MetropolisMC {
     public double getEAdjust();
     
     /**
+     * Returns the energy as of the last step taken (not including any extra-
+     * potential energy adjustments).
+     * @return Last step's energy
+     */
+    public double lastEnergy();
+    
+    /**
      * If possible, reverts the last successful Monte Carlo step taken.
      */
     public void revertStep();
+    
+    public boolean mcStep(MCMove move);
+    
+    public boolean mcStep(MCMove move, double en1);
+    
+    public boolean mcStep(List<MCMove> moves);
     
     /**
      * Performs a series of moves sequentially, as a single hybrid step. Should

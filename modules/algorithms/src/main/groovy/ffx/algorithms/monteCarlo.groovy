@@ -71,7 +71,7 @@ double temperature = 298.15;
 int xShakeFreq = 1;
 
 // Normal distribution width for coordinate shakes.
-double xShakeWidth = 0.1;
+double xShakeWidth = 0.001;
 
 // File type of snapshots.
 String fileType = "PDB";
@@ -88,7 +88,7 @@ cli.t(longOpt:'temperature', args:1, argName:'298.15', 'Temperature in degrees K
 cli.w(longOpt:'save', args:1, argName:'0.1', 'Interval to write out coordinates (psec).');
 cli.f(longOpt:'file', args:1, argName:'PDB', 'Choose file type to write to [PDB/XYZ]');
 cli.xf(longOpt:'xShakeFreq', args:1, argName:'1', 'Shake coordinates every n steps.');
-cli.xw(longOpt:'xShakeWidth', args:1, argName:'0.1', 'Normal distribution width for coordinate shakes.');
+cli.xw(longOpt:'xShakeWidth', args:1, argName:'0.001', 'Normal distribution width for coordinate shakes.');
 def options = cli.parse(args);
 
 if (options.h) {
@@ -155,11 +155,12 @@ move.setSigma(xShakeWidth);
 moveList.add(move);
 
 // Run the first step to get it running.
-double eOpt = mc.tryMove(moveList) ? mc.getE2() : mc.getE1();
+mc.mcStep(moveList);
+double eOpt = Math.min(mc.getE1(), mc.getE2());
 AssemblyState optimum = new AssemblyState(active);
 
 for (int i = 1; i < nSteps; i++) {
-    if (mc.tryMove(moveList) && mc.getE2() < eOpt) {
+    if (mc.mcStep(moveList) && mc.getE2() < eOpt) {
         eOpt = mc.getE2();
         optimum = new AssemblyState(active);
     }

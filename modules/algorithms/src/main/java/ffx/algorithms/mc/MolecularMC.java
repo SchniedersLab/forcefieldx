@@ -40,8 +40,6 @@ package ffx.algorithms.mc;
 import ffx.numerics.Potential;
 import ffx.potential.AssemblyState;
 import ffx.potential.MolecularAssembly;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -99,52 +97,6 @@ public class MolecularMC extends BoltzmannMC {
         return potential;
     }
     
-    public boolean mcStep(MCMove move) {
-        return MolecularMC.this.mcStep(move, currentEnergy());
-    }
-    
-    public boolean mcStep(MCMove move, double en1) {
-        List<MCMove> moveList = new ArrayList<>(1);
-        moveList.add(move);
-        return MolecularMC.this.mcStep(moveList, en1);
-    }
-    
-    public boolean mcStep(List<MCMove> moves) {
-        return MolecularMC.this.mcStep(moves, currentEnergy());
-    }
-    
-
-    @Override
-    public boolean mcStep(List<MCMove> moves, double en1) {
-        e1 = en1;
-        eAdjust = 0.0;
-        initialState = new AssemblyState(mola);
-        
-        int nMoves = moves.size();
-        for (int i = 0; i < nMoves; i++) {
-            MCMove movei = moves.get(i);
-            double eCorr = movei.move();
-            if (print) {
-                logger.info(String.format(" Energy adjustment %10.6f kcal/mol for %s", eCorr, movei.toString()));
-            }
-            eAdjust += eCorr;
-        }
-        
-        e2 = currentEnergy() + eAdjust;
-        if (evaluateMove(e1, e2)) {
-            if (print) {
-                logger.info(String.format(" Monte Carlo step accepted with e2 %10.6f and e1 %10.6f", e2, e1));
-            }
-            return true;
-        } else {
-            for (int i = nMoves - 1; i >= 0; i--) {
-                moves.get(i).revertMove();
-            }
-            logger.info(String.format(" Monte Carlo step rejected with e2 %10.6f and e1 %10.6f", e2, e1));
-            return false;
-        }
-    }
-    
     @Override
     public void revertStep() {
         initialState.revertState();
@@ -157,7 +109,8 @@ public class MolecularMC extends BoltzmannMC {
      * @return Energy of the current state, or 1e100 if an ArithmeticException
      * occurred during calculation.
      */
-    private double currentEnergy() {
+    @Override
+    protected double currentEnergy() {
         if (x == null) {
             int nVar = potential.getNumberOfVariables();
             x = new double[nVar * 3];
@@ -174,9 +127,14 @@ public class MolecularMC extends BoltzmannMC {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("Default Metropolis Monte Carlo implementation\nTemperature: ");
-        sb.append(temperature);
-        sb.append(String.format("\ne1: %10.6f   e2: %10.6f\nMolecular Assembly", e1, e2));
+        sb.append(getTemperature());
+        sb.append(String.format("\ne1: %10.6f   e2: %10.6f\nMolecular Assembly", getE1(), getE2()));
         sb.append(mola.toString()).append("\nPotential: ").append(potential.toString());
         return sb.toString();
+    }
+
+    @Override
+    protected void storeState() {
+        initialState = new AssemblyState(mola);
     }
 }

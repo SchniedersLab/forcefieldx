@@ -87,10 +87,13 @@ import ffx.potential.nonbonded.NeighborList;
 import ffx.potential.parsers.PDBFilter;
 import ffx.utilities.DoubleIndexPair;
 import ffx.utilities.IndexIndexPair;
+import ffx.algorithms.mc.BoltzmannMC;
+import ffx.algorithms.mc.MCMove;
 
 import static ffx.potential.bonded.Residue.ResidueType.AA;
 import static ffx.potential.bonded.Residue.ResidueType.NA;
 import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Optimize protein side-chain conformations and nucleic acid backbone
@@ -757,6 +760,104 @@ public class RotamerOptimization implements Terminatable {
         return currentEnergy;
     }
     
+    private double rotamerOptimizationDEEMC(MolecularAssembly molecularAssembly,
+            Residue[] residues, int[] optimum, int[] initialRots, 
+            double[] permutationEnergies, int maxIters, boolean randomizeRots) {
+        
+        long initTime = System.nanoTime();
+        int nRes = residues.length;
+        System.arraycopy(initialRots, 0, optimum, 0, nRes);
+        assert optimum.length == nRes;
+        assert initialRots.length == nRes;
+        
+        RotamerMatrixMC rmc = new RotamerMatrixMC(initialRots, residues);
+        RotamerMatrixMove rmove = new RotamerMatrixMove(false, initialRots, residues);
+        List<MCMove> rmList = new ArrayList<>(1);
+        rmList.add(rmove);
+        
+        double initialEnergy = computeEnergy(residues, initialRots, false);
+        double optimumEnergy = initialEnergy;
+        double currentEnergy = initialEnergy;
+        
+        logger.info(String.format(" Beginning %d iterations of Monte Carlo search "
+                + "starting from energy %10.6f", maxIters, initialEnergy));
+        
+        for (int i = 0; i < maxIters; i++) {
+            if (rmc.mcStep(rmList, currentEnergy)) {
+                
+            }
+            currentEnergy = rmc.lastEnergy();
+        }
+        
+        long finalTime = System.nanoTime();
+        return optimumEnergy; // One day, I will get to this line.
+    }
+    
+    /**
+     * Scrambles an array of rotamers.
+     * @param rotamers
+     * @param residues
+     * @param useAllElims 
+     */
+    private void randomizeRotamers(int[] rotamers, Residue[] residues, boolean useAllElims) {
+        int nRes = rotamers.length;
+        for (int i = 0; i < nRes; i++) {
+            Rotamer[] rotsi = residues[i].getRotamers();
+            int lenri = rotsi.length;
+            ArrayList<Integer> allowedRots = new ArrayList<>(lenri);
+            
+            for (int ri = 0; ri < lenri; ri++) {
+                if (!check(i, ri)) {
+                    allowedRots.add(ri);
+                }
+            }
+            
+            int nRots = allowedRots.size();
+            if (nRots > 1) {
+                boolean validMove = !useAllElims;
+                int indexRI;
+                do {
+                    int ri = ThreadLocalRandom.current().nextInt(nRots);
+                    indexRI = allowedRots.get(ri);
+                    if (useAllElims) {
+                        validMove = checkValidMove(i, indexRI, rotamers);
+                    }
+                } while (!validMove);
+                rotamers[i] = indexRI;
+            }
+        }
+    }
+        
+    /**
+     * Checks the pair and triple elimination arrays to see if this permutation
+     * has been eliminated. I am reasonably confident this violates detailed
+     * balance.
+     *
+     * @param i Residue number
+     * @param ri Rotamer number
+     * @return If valid
+     */
+    private boolean checkValidMove(int i, int ri, int[] currentRots) {
+        int nRes = currentRots.length;
+        for (int j = 0; j < nRes; j++) {
+            if (j == i) {
+                continue;
+            }
+            if (check(j, currentRots[j], i, ri)) {
+                return false;
+            }
+            for (int k = j + 1; k < nRes; k++) {
+                if (k == i) {
+                    continue;
+                }
+                if (check(j, currentRots[j], k, currentRots[k], i, ri)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    
     /**
      * Note to self: remember to avoid generating any MC moves which would result
      * in an eliminated pair or triple.
@@ -880,40 +981,6 @@ public class RotamerOptimization implements Terminatable {
         logIfMaster(String.format(" Fraction of accepted moves: %10.6f", fractAccept));
         return currentEnergy;
     }*/
-    
-    /**
-     * Checks to see if the proposed move (resi set to roti) conflicts with any
-     * eliminated pairs or triples. We assume that resi-roti is a valid pair 
-     * already. All parameters should refer to the entire residue/rotamer matrix,
-     * including those eliminated down to one rotamer.
-     * 
-     * I suspect this might break detailed balance, as not all rotamer permutations
-     * will have an equal number of valid one-move steps out.
-     * @param currentRots All rotamers
-     * @param resi Residue i index
-     * @param roti Rotamer ri index
-     * @return True if valid.
-     */
-    private boolean checkValidMcMove(int[] currentRots, int resi, int roti) {
-        int nResidues = currentRots.length;
-        for (int j = 0; j < nResidues; j++) {
-            if (j == resi) {
-                continue;
-            }
-            if (check(j, currentRots[j], resi, roti)) {
-                return false;
-            }
-            for (int k = j; k < nResidues; k++) {
-                if (k == resi) {
-                    continue;
-                }
-                if (check(j, currentRots[j], k, currentRots[k], resi, roti)) {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
 
     /**
      * A global optimization over side-chain rotamers using a recursive
@@ -4167,6 +4234,11 @@ public class RotamerOptimization implements Terminatable {
         }
         potential.getCoordinates(x);
         return potential.energy(x);
+    }
+    
+    // Wrapper intended for use with RotamerMatrixMC.
+    private double currentEnergyWrapper() {
+        return currentEnergy();
     }
 
     /**
@@ -8762,6 +8834,182 @@ public class RotamerOptimization implements Terminatable {
             filter.writeFile(file, false);
             molecularAssembly.setFile(previous);
             snapshotNum++;
+        }
+    }
+    
+    /**
+     * Monte Carlo driver for DEE-MC.
+     */
+    private class RotamerMatrixMC extends BoltzmannMC {
+        
+        private final int[] currentRots;
+        private final int[] oldRots;
+        private final int nRes;
+        private final Residue[] residues;
+        
+        // Strongly considering adding another internal class to represent the
+        // residues-rotamers data, because I'm paranoid somebody won't remember
+        // that everybody has to be using the same int[] rotamers.
+
+        /**
+         * The rotamers array MUST be the same array as passed to any MCMove
+         * objects used, and NOT a copy.
+         * @param rotamers
+         * @param residues 
+         */
+        RotamerMatrixMC (int[] rotamers, Residue[] residues) {
+            currentRots = rotamers; // This is intentional.
+            nRes = rotamers.length;
+            oldRots = new int[nRes];
+            System.arraycopy(rotamers, 0, oldRots, 0, nRes);
+            this.residues = residues;
+        }
+        
+        @Override
+        public void revertStep() {
+            System.arraycopy(oldRots, 0, currentRots, 0, nRes);
+        }
+        
+        /**
+         * If useFullAMOEBAEnergy is set to true, explicitly evaluates energy, 
+         * else computes energy from the rotamer energy matrices.
+         * @return Energy at the current state
+         */
+        @Override
+        protected double currentEnergy() {
+            try {
+                return useFullAMOEBAEnergy ? currentEnergyWrapper() : computeEnergy(residues, currentRots, false);
+            } catch (NullPointerException ex) {
+                // If using the rotamer energy matrix, and there is some missing
+                // energy term, just return a default, very large energy.
+                return 1e100;
+            }
+            //return computeEnergy(residues, currentRots, false);
+        }
+
+        @Override
+        protected void storeState() {
+            System.arraycopy(currentRots, 0, oldRots, 0, nRes);
+        }
+    }
+    
+    /**
+     * This implements single-rotamer changes in the framework of the rotamer
+     * energy matrices.
+     */
+    private class RotamerMatrixMove implements MCMove {
+        
+        private final boolean useAllElims;
+        /**
+         * currentRots should point to the same array as being used in the overlying
+         * MetropolisMC implementation.
+         */
+        private final int[] currentRots;
+        private final int nRes;
+        private final List<Integer> allowedRes;
+        private final List<List<Integer>> allowedRots;
+        private final int nAllowed;
+        /**
+         * When we take a step, we need to remember which rotamer of which 
+         * residue was changed.
+         */
+        private int changedRes;
+        private int changedRot;
+        
+        /**
+         * Constructs the RotamerMatrixMove set; at present, a new object must
+         * be made if rotamers or residues are changed outside the scope of
+         * this class.
+         * @param useAllElims Use eliminated pair/triple info
+         * @param rots Initial rotamer set
+         */
+        RotamerMatrixMove (boolean useAllElims, int[] rots, Residue[] residues) {
+            this.useAllElims = useAllElims;
+            nRes = rots.length;
+            currentRots = rots; // Again, very intentional.
+            
+            allowedRes = new ArrayList<>(nRes);
+            allowedRots = new ArrayList<>(nRes);
+            
+            for (int i = 0; i < nRes; i++) {
+                ArrayList<Integer> resAllowed = new ArrayList<>();
+                
+                int lenri = residues[i].getRotamers().length;
+                for (int ri = 0; ri < lenri; ri++) {
+                    if (!check(i, ri)) {
+                        resAllowed.add(ri);
+                    }
+                }
+                
+                if (resAllowed.size() > 1) {
+                    resAllowed.trimToSize();
+                    allowedRes.add(i);
+                    allowedRots.add(resAllowed);
+                }
+            }
+            
+            ((ArrayList) allowedRes).trimToSize();
+            nAllowed = allowedRes.size();
+        }
+
+        @Override
+        public double move() {
+            boolean validMove = !useAllElims;
+            int indexI;
+            int indexRI;
+            do {
+                /**
+                 * resi and roti correspond to their positions in allowedRes and
+                 * allowedRots. indexI and indexRI correspond to their numbers
+                 * in the rotamer matrix.
+                 */
+                int resi = ThreadLocalRandom.current().nextInt(nAllowed);
+                indexI = allowedRes.get(resi);
+                List<Integer> rotsi = allowedRots.get(resi);
+                int lenri = rotsi.size();
+
+                int roti = ThreadLocalRandom.current().nextInt(lenri);
+                indexRI = rotsi.get(roti);
+                if (useAllElims) {
+                    validMove = checkValidMove(indexI, indexRI, currentRots);
+                }
+            } while (!validMove);
+
+            changedRes = indexI;
+            changedRot = currentRots[indexI];
+
+            currentRots[indexI] = indexRI;
+            return 0.0;
+        }
+
+        @Override
+        public double revertMove() {
+            currentRots[changedRes] = changedRot;
+            return 0.0;
+        }
+        
+        /**
+         * This method should not be necessary, because currentRots should be the
+         * same array as used in the MetropolisMC.
+         * @return The current rotamers array
+         */
+        private int[] getCurrentRots() {
+            return currentRots;
+        }
+
+        @Override
+        public double getEcorrection() {
+            return 0.0;
+        }
+
+        @Override
+        public String getDescription() {
+            return toString();
+        }
+        
+        @Override
+        public String toString() {
+            return "Rotamer moves utlizing a rotamer energy matrix";
         }
     }
 

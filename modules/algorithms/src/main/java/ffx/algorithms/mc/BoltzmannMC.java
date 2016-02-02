@@ -37,7 +37,10 @@
  */
 package ffx.algorithms.mc;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.logging.Logger;
 import org.apache.commons.math3.util.FastMath;
 
 /**
@@ -48,14 +51,16 @@ import org.apache.commons.math3.util.FastMath;
  * @author Jacob M. Litman
  */
 public abstract class BoltzmannMC  implements MetropolisMC {
+    private static final Logger logger = Logger.getLogger(BoltzmannMC.class.getName());
     public static final double BOLTZMANN = 0.0019872041; // In kcal/(mol*K)
-    protected double temperature = 298.15; // Room temperature (also SATP).
-    protected double kbTinv = -1.0 / (BOLTZMANN * temperature); // Constant factor for Monte Carlo moves (-1/kbT)
-    protected boolean print = true;
+    private double temperature = 298.15; // Room temperature (also SATP).
+    private double kbTinv = -1.0 / (BOLTZMANN * temperature); // Constant factor for Monte Carlo moves (-1/kbT)
+    private boolean print = true;
     
-    protected double e1 = 0.0;
-    protected double e2 = 0.0;
-    protected double eAdjust = 0.0;
+    private double e1 = 0.0;
+    private double e2 = 0.0;
+    private double eAdjust = 0.0;
+    private double lastE = 0.0;
     
     /**
      * Criterion for accept/reject a move; intended to be used mostly internally.
@@ -71,13 +76,7 @@ public abstract class BoltzmannMC  implements MetropolisMC {
             // p(X) = exp(-U(X)/kb*T)
             double prob = FastMath.exp(kbTinv * (e2 - e1));
             
-            assert (prob >= 0.0 && prob <= 1.0);
-            /* Section used for testing purposes only.
-            if (prob < 0.0 || prob > 1.0) {
-                throw new ArithmeticException(String.format(" Invalid Monte Carlo "
-                        + "result: probability %10.6f of accepting move from "
-                        + "energy %10.6f to energy %10.6f", prob, e1, e2));
-            }*/
+            assert (prob >= 0.0 && prob <= 1.0) : "Probability of a Monte Carlo move up in energy should be 0-1";
             
             double trial = ThreadLocalRandom.current().nextDouble();
             return (trial <= prob);
@@ -109,4 +108,77 @@ public abstract class BoltzmannMC  implements MetropolisMC {
     public double getEAdjust() {
         return eAdjust;
     }
+    
+    @Override
+    public double lastEnergy() {
+        return lastE;
+    }
+    
+    @Override
+    public boolean mcStep(MCMove move) {
+        return mcStep(move, currentEnergy());
+    }
+    
+    @Override
+    public boolean mcStep(MCMove move, double en1) {
+        List<MCMove> moveList = new ArrayList<>(1);
+        moveList.add(move);
+        return mcStep(moveList, en1);
+    }
+    
+    @Override
+    public boolean mcStep(List<MCMove> moves) {
+        return mcStep(moves, currentEnergy());
+    }
+
+    @Override
+    public boolean mcStep(List<MCMove> moves, double en1) {
+        storeState();
+        e1 = en1;
+        eAdjust = 0.0;
+        
+        int nMoves = moves.size();
+        for (int i = 0; i < nMoves; i++) {
+            MCMove movei = moves.get(i);
+            double eCorr = movei.move();
+            if (print) {
+                logger.info(String.format(" Energy adjustment %10.6f kcal/mol for %s", eCorr, movei.toString()));
+            }
+            eAdjust += eCorr;
+        }
+        
+        lastE = currentEnergy(); // Is reset to e1 if move rejected.
+        e2 = lastE + eAdjust;
+        if (evaluateMove(e1, e2)) {
+            if (print) {
+                logger.info(String.format(" Monte Carlo step accepted with e2 %10.6f and e1 %10.6f", e2, e1));
+            }
+            return true;
+        } else {
+            for (int i = nMoves - 1; i >= 0; i--) {
+                moves.get(i).revertMove();
+            }
+            lastE = e1;
+            if (print) {
+                logger.info(String.format(" Monte Carlo step rejected with e2 %10.6f and e1 %10.6f", e2, e1));
+            }
+            return false;
+        }
+    }
+    
+    @Override
+    public double getTemperature() {
+        return temperature;
+    }
+    
+    /**
+     * Must return the current energy of the system.
+     * @return Current system energy
+     */
+    protected abstract double currentEnergy();
+    
+    /**
+     * Store the state for reverting a move.
+     */
+    protected abstract void storeState();
 }

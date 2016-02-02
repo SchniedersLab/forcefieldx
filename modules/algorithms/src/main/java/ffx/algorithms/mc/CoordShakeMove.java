@@ -55,7 +55,7 @@ import org.apache.commons.math3.distribution.NormalDistribution;
 public class CoordShakeMove implements MCMove {
     private Atom[] atoms;
     private double[][] originalCoords;
-    private double sigma = 0.1;
+    private double sigma = 0.001;
     private NormalDistribution dist;
     
     
