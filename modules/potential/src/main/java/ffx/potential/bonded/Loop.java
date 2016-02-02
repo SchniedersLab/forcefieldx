@@ -276,19 +276,23 @@ public class Loop {
             System.arraycopy(coordsArray[N.getXYZIndex() - 1],0,n,0,3);
             Atom BC = (Atom) backResidue.getAtomNode("C");
             System.arraycopy(coordsArray[BC.getXYZIndex() - 1],0,bc,0,3);
-            
+            /*
             for (Atom backBoneAtom : backBoneAtoms) {
             //    backBoneAtom.setBuilt(true);
+                logger.info(String.format("getAtomType().name "+backBoneAtom.getAtomType().name));
                 switch (backBoneAtom.getAtomType().name) {
-                        case "H":
-                            determinedXYZ = BondedUtils.determineIntxyz(n, 1.0, bc, 119.0, ca, 119.0, 1);
-                            coordsArray = fillCoordsArray(backBoneAtom,coordsArray, determinedXYZ); 
-                            break;
-                        case "HA":
+                        case "H": 
+                                            logger.info(String.format("H getAtomType().name "+backBoneAtom.getAtomType().name));
                             determinedXYZ = BondedUtils.determineIntxyz(ca, 1.0, n, 109.5, c, 109.5, -1);
                             coordsArray = fillCoordsArray(backBoneAtom,coordsArray, determinedXYZ); 
                             break;
+                        case "HA":
+                                            logger.info(String.format("HA getAtomType().name "+backBoneAtom.getAtomType().name));
+                            determinedXYZ = BondedUtils.determineIntxyz(n, 1.0, bc, 119.0, ca, 119.0, 1);
+                            coordsArray = fillCoordsArray(backBoneAtom,coordsArray, determinedXYZ); 
+                            break;
                         case "O":
+                                            logger.info(String.format("O getAtomType().name "+backBoneAtom.getAtomType().name));
                             determinedXYZ = BondedUtils.determineIntxyz(c, 1.2255, ca, 122.4, n, 180, 0);
                             coordsArray = fillCoordsArray(backBoneAtom,coordsArray, determinedXYZ); 
                             break;
@@ -296,23 +300,43 @@ public class Loop {
                             break;
                 }
             }
-                    
+                    */
+            Atom H = (Atom) newResidue.getAtomNode("H");
+            double [] h = coordsArray[H.getXYZIndex() - 1];
+            System.arraycopy(BondedUtils.determineIntxyz(n, 1.0, bc, 119.0, ca, 119.0, 1), 0, h, 0, 3);          //H
+            coordsArray = fillCoordsArray(H,coordsArray, h);               
+
+            Atom O = (Atom) newResidue.getAtomNode("O");
+            double [] o = coordsArray[O.getXYZIndex() - 1];
+            System.arraycopy(BondedUtils.determineIntxyz(c, 1.2255, ca, 122.4, n, 180, 0), 0, o, 0, 3);          //O
+            coordsArray = fillCoordsArray(O,coordsArray, o);               
+
             AminoAcid3 name = AminoAcid3.valueOf(newResidue.getName());
+            
+            if (name != AminoAcid3.GLY){
+                Atom HA = (Atom) newResidue.getAtomNode("HA");
+                double [] ha = coordsArray[HA.getXYZIndex() - 1];
+                System.arraycopy(BondedUtils.determineIntxyz(ca, 1.0, n, 109.5, c, 109.5, -1), 0, ha, 0, 3);     //HA
+                coordsArray = fillCoordsArray(HA,coordsArray, ha);  
+            }
+            
+
             switch (name) {
-    /*            case GLY: {
-                    Atom HA1 = (Atom) newResidue.getAtomNode("HA1");
-                    double [] ha1 = HA1.getXYZIndex() - 1];
+                case GLY: {
                     Atom HA2 = (Atom) newResidue.getAtomNode("HA2");
-                    double [] ha2 = HA2.getXYZIndex() - 1];
+                    double [] ha2 = coordsArray[HA2.getXYZIndex() - 1];
                     
-                    System.arraycopy(BondedUtils.determineIntxyz(ca, 1.00, n, 109.5, c, 109.5, 0), 0, ha1, 0, 3);      //HA1
-                    coordsArray = fillCoordsArray(HA1,coordsArray, ha1);                      
+                    Atom HA3 = (Atom) newResidue.getAtomNode("HA3");
+                    double [] ha3 = coordsArray[HA3.getXYZIndex() - 1];
                     
-                    System.arraycopy(BondedUtils.determineIntxyz(ca, 1.00, n, 109.5, ha1, 109.5, 1), 0, ha2, 0, 3);    //HA2
+                    System.arraycopy(BondedUtils.determineIntxyz(ca, 1.00, n, 109.5, c, 109.5, 0), 0, ha2, 0, 3);      //HA2
                     coordsArray = fillCoordsArray(HA2,coordsArray, ha2);                      
                     
+                    System.arraycopy(BondedUtils.determineIntxyz(ca, 1.00, n, 109.5, ha2, 109.5, -1), 0, ha3, 0, 3);    //HA3
+                    coordsArray = fillCoordsArray(HA3,coordsArray, ha3);                      
+                    
                     break;
-                }*/
+                }
                 case ALA: {
                     Atom CB = (Atom) newResidue.getAtomNode("CB");
                     double [] cb = coordsArray[CB.getXYZIndex() - 1];

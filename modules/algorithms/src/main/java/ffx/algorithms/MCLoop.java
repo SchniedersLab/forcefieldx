@@ -148,7 +148,6 @@ public class MCLoop implements MonteCarloListener {
         logger.info(sb.toString());
 
         loop = new Loop(molAss);
-        forceFieldEnergy.reInit();
     }
 
     /**
@@ -284,9 +283,6 @@ public class MCLoop implements MonteCarloListener {
             double z = newCoordinates[index++];
             a.moveTo(x, y, z);
         }
-        
-        forceFieldEnergy.reInit();
-        molDyn.reInit();
     }
 
     /**

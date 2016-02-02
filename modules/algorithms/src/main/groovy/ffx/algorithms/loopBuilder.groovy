@@ -115,7 +115,7 @@ String fileType = "PDB";
 double lambda = 0.0;
 
 // Monte-Carlo step frequencies for loop moves.
-int mcStepFrequency = 100000;
+int mcStepFrequency = 1000;
 
 // Rotamer Optimization
 boolean runRotamer = false;
@@ -237,7 +237,7 @@ if (!(options.osrw && options.sa)){
 // Run MC Loop Optimization
 if (options.mc){
     runMCLoop = true;
-    runOSRW = false;
+  //  runOSRW = false;
     MCLoop mcLoop;
 }
 
@@ -405,13 +405,13 @@ if(runOSRW){
     MolecularDynamics molDyn = new MolecularDynamics(active, osrw, active.getProperties(),
         null, thermostat, integrator);
 
-    /*
+    
     if(runMCLoop){
         mcLoop = new MCLoop(active, mcStepFrequency, molDyn.getThermostat(),loopStart,loopStop);
         molDyn.addMCListener(mcLoop);
         mcLoop.addMolDyn(molDyn);
     }
-    */
+    
    
     molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities,
         fileType, restartInterval, dyn);
@@ -426,7 +426,7 @@ if(runOSRW){
         loopBuildError = true;
     }
 }
- 
+ /*
 if (runMCLoop){
     // Monte Carlo with KIC
     System.setProperty("vdwterm", "false");
@@ -443,7 +443,7 @@ if (runMCLoop){
     mcLoop.addMolDyn(molDyn);
     
     molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities,fileType,restartInterval,dyn);
-}   
+}   */
   
 
 if (runSimulatedAnnealing) {
