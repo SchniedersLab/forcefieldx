@@ -78,11 +78,11 @@ public interface DataContainer {
 
     /**
      * <p>
-     * getMolecularAssembly</p>
+ getMolecularAssemblies</p>
      *
      * @return an array of {@link ffx.potential.MolecularAssembly} objects.
      */
-    public MolecularAssembly[] getMolecularAssembly();
+    public MolecularAssembly[] getMolecularAssemblies();
 
     /**
      * <p>

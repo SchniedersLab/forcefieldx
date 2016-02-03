@@ -1707,6 +1707,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     /**
+     * The coords array should only contain coordinates of for active atoms.
      *
      * @param coords
      */
@@ -2152,6 +2153,11 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         return relativeSolvationEnergy;
     }
 
+    /**
+     * The velocity array should only contain velocity data for active atoms.
+     *
+     * @param velocity
+     */
     @Override
     public void setVelocity(double[] velocity) {
         if (velocity == null) {
@@ -2167,6 +2173,12 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
     }
 
+    /**
+     * The acceleration array should only contain acceleration data for active
+     * atoms.
+     *
+     * @param acceleration
+     */
     @Override
     public void setAcceleration(double[] acceleration) {
         if (acceleration == null) {
@@ -2182,6 +2194,12 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
     }
 
+    /**
+     * The previousAcceleration array should only contain previous acceleration
+     * data for active atoms.
+     *
+     * @param previousAcceleration
+     */
     @Override
     public void setPreviousAcceleration(double[] previousAcceleration) {
         if (previousAcceleration == null) {
@@ -2197,6 +2215,12 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
     }
 
+    /**
+     * Returns an array of velocity values for active atoms.
+     *
+     * @param velocity if the velocity array is null, it will be allocated.
+     * @return the velocity array is returned.
+     */
     @Override
     public double[] getVelocity(double[] velocity) {
         int n = getNumberOfVariables();
@@ -2215,6 +2239,13 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         return velocity;
     }
 
+    /**
+     * Returns an array of acceleration values for active atoms.
+     *
+     * @param acceleration if the acceleration array is null, it will be
+     * allocated.
+     * @return the acceleration array is returned.
+     */
     @Override
     public double[] getAcceleration(double[] acceleration) {
         int n = getNumberOfVariables();
@@ -2232,6 +2263,13 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         return acceleration;
     }
 
+    /**
+     * Returns an array of previous acceleration values for active atoms.
+     *
+     * @param previousAcceleration if the previousAcceleration array is null, it
+     * will be allocated.
+     * @return the previousAcceleration array is returned.
+     */
     @Override
     public double[] getPreviousAcceleration(double[] previousAcceleration) {
         int n = getNumberOfVariables();

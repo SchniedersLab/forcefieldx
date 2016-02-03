@@ -761,6 +761,26 @@ public class MolecularAssembly extends MSGroup {
 
     /**
      * <p>
+     * getActiveAtomArray</p>
+     *
+     * @return an array of active {@link ffx.potential.bonded.Atom} objects.
+     */
+    public Atom[] getActiveAtomArray() {
+        ArrayList<Atom> atoms = getAtomList();
+        ArrayList<Atom> activeAtoms = new ArrayList<>();
+        for (Atom a : activeAtoms) {
+            if (a.isActive()) {
+                activeAtoms.add(a);
+            }
+        }
+        Atom[] atomArray = activeAtoms.toArray(new Atom[activeAtoms.size()]);
+        Arrays.sort(atomArray);
+        return atomArray;
+    }
+
+
+    /**
+     * <p>
      * getBackBoneAtoms</p>
      *
      * @return a {@link java.util.ArrayList} object.
@@ -1320,10 +1340,8 @@ public class MolecularAssembly extends MSGroup {
             if (macroNode.getChildCount() > 0) {
                 getAtomNode().setName(
                         "Macromolecules " + "(" + macroNode.getChildCount() + ")");
-            } else {
-                if (macroNode.getParent() == this) {
-                    remove(macroNode);
-                }
+            } else if (macroNode.getParent() == this) {
+                remove(macroNode);
             }
         }
 

@@ -38,6 +38,7 @@
 package ffx.xray;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -69,89 +70,150 @@ import static ffx.xray.RefinementMinimize.RefinementMode.OCCUPANCIES;
  * {@link Potential} interface
  *
  * @author Timothy D. Fenn and Michael J. Schnieders
- * @since 1.0
  *
+ * @since 1.0
  */
 public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmListener {
 
     private static final Logger logger = Logger.getLogger(RefinementEnergy.class.getName());
-    private final MolecularAssembly molecularAssembly[];
+
+    /**
+     * MolecularAssembly instances being refined.
+     */
+    private final MolecularAssembly molecularAssemblies[];
+    /**
+     * Compute fast varying forces, slowly varying forces, or both.
+     */
     private STATE state = STATE.BOTH;
+    /**
+     * Container to huge experimental data.
+     */
     private final DataContainer data;
-    private final RefinementModel refinementmodel;
-    private final Atom[] atomarray;
+    /**
+     * The refinement model.
+     */
+    private final RefinementModel refinementModel;
+    /**
+     * An array of atoms being refined.
+     */
+    private final Atom[] atomArray;
+    /**
+     * The number of atoms being refined.
+     */
     private final int nAtoms;
-    private final List<Integer> xindex[];
+    /**
+     * An array of XYZIndex values.
+     */
+    private final List<Integer> xIndex[];
+    /**
+     * The Potential based on experimental data.
+     */
     protected Potential dataEnergy;
+    /**
+     * A thermostat instance.
+     */
     protected Thermostat thermostat;
+    /**
+     * The refinement mode being used.
+     */
     private RefinementMode refinementMode;
-    protected int nxyz;
-    protected int nb;
-    protected int nocc;
+    /**
+     * The number of XYZ coordinates being refined.
+     */
+    protected int nXYZ;
+    /**
+     * The number of b-factor parameters being refined.
+     */
+    protected int nBFactor;
+    /**
+     * The number of occupancy parameters being refined.
+     */
+    protected int nOccupancy;
+    /**
+     * The total number of parameters being refined.
+     */
     private int n;
-    private double ktscale;
+    /**
+     * The kT scale factor.
+     */
+    private double kTScale;
+    /**
+     * Atomic coordinates for computing the chemical energy.
+     */
     private double xChemical[][];
+    /**
+     * Array for storing chemical gradient.
+     */
     private double gChemical[][];
+    /**
+     * Array for storing the experimental gradient.
+     */
     private double gXray[];
+    /**
+     * Total potential energy.
+     */
     private double totalEnergy;
+    /**
+     * Optimization scale factors.
+     */
     protected double[] optimizationScaling = null;
 
     /**
-     * constructor for energy
+     * RefinementEnergy Constructor.
      *
      * @param data input {@link DiffractionData data} for refinement
-     * @param refinementmode {@link RefinementMinimize.RefinementMode} for
+     * @param refinementMode {@link RefinementMinimize.RefinementMode} for
      * refinement
      */
-    public RefinementEnergy(DataContainer data, RefinementMode refinementmode) {
-        this(data, refinementmode, null);
+    public RefinementEnergy(DataContainer data, RefinementMode refinementMode) {
+        this(data, refinementMode, null);
     }
 
     /**
-     * constructor for energy
+     * RefinementEnergy Constructor.
      *
      * @param data input {@link DiffractionData data} for refinement
-     * @param refinementmode {@link RefinementMinimize.RefinementMode} for
+     * @param refinementMode {@link RefinementMinimize.RefinementMode} for
      * refinement
-     * @param scaling scaling of refinement parameters
+     * @param optimizationScaling scaling of refinement parameters
      */
     public RefinementEnergy(DataContainer data,
-            RefinementMode refinementmode, double scaling[]) {
-        this.molecularAssembly = data.getMolecularAssembly();
+            RefinementMode refinementMode, double optimizationScaling[]) {
+        this.molecularAssemblies = data.getMolecularAssemblies();
         this.data = data;
-        this.refinementmodel = data.getRefinementModel();
-        this.atomarray = data.getAtomArray();
-        this.nAtoms = atomarray.length;
-        this.xindex = refinementmodel.xIndex;
-        this.refinementMode = refinementmode;
-        this.optimizationScaling = scaling;
+        this.refinementModel = data.getRefinementModel();
+        this.atomArray = data.getAtomArray();
+        this.nAtoms = atomArray.length;
+        this.xIndex = refinementModel.xIndex;
+        this.refinementMode = refinementMode;
+        this.optimizationScaling = optimizationScaling;
         this.thermostat = null;
-        this.ktscale = 1.0;
+        this.kTScale = 1.0;
 
         // determine size of fit
-        n = nxyz = nb = nocc = 0;
-        switch (refinementmode) {
+        n = nXYZ = nBFactor = nOccupancy = 0;
+        switch (refinementMode) {
             case COORDINATES:
-                nxyz = nAtoms * 3;
+                nXYZ = nAtoms * 3;
                 break;
             case COORDINATES_AND_BFACTORS:
             case COORDINATES_AND_OCCUPANCIES:
             case COORDINATES_AND_BFACTORS_AND_OCCUPANCIES:
                 // coordinate params
-                nxyz = nAtoms * 3;
+                nXYZ = nAtoms * 3;
             case BFACTORS:
             case OCCUPANCIES:
             case BFACTORS_AND_OCCUPANCIES:
                 if (data instanceof DiffractionData) {
                     DiffractionData diffractiondata = (DiffractionData) data;
                     // bfactor params
-                    if (refinementmode == RefinementMode.BFACTORS
-                            || refinementmode == RefinementMode.BFACTORS_AND_OCCUPANCIES
-                            || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS
-                            || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
+                    if (refinementMode == RefinementMode.BFACTORS
+                            || refinementMode == RefinementMode.BFACTORS_AND_OCCUPANCIES
+                            || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS
+                            || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
                         int resnum = -1;
                         int nres = diffractiondata.nresiduebfactor + 1;
-                        for (Atom a : atomarray) {
+                        for (Atom a : atomArray) {
                             // ignore hydrogens!!!
                             if (a.getAtomicNumber() == 1) {
                                 continue;
@@ -163,11 +225,11 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
                                     anisou[0] = anisou[1] = anisou[2] = u;
                                     anisou[3] = anisou[4] = anisou[5] = 0.0;
                                     a.setAnisou(anisou);
-                                    nb += 6;
+                                    nBFactor += 6;
                                 } else if (diffractiondata.residuebfactor) {
                                     if (resnum != a.getResidueNumber()) {
                                         if (nres >= diffractiondata.nresiduebfactor) {
-                                            nb++;
+                                            nBFactor++;
                                             nres = 1;
                                         } else {
                                             nres++;
@@ -175,29 +237,29 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
                                         resnum = a.getResidueNumber();
                                     }
                                 } else {
-                                    nb++;
+                                    nBFactor++;
                                 }
                             } else {
-                                nb += 6;
+                                nBFactor += 6;
                             }
                         }
                         if (diffractiondata.residuebfactor) {
                             if (nres < diffractiondata.nresiduebfactor) {
-                                nb--;
+                                nBFactor--;
                             }
                         }
                     }
 
                     // occupancy params
-                    if (refinementmode == RefinementMode.OCCUPANCIES
-                            || refinementmode == RefinementMode.BFACTORS_AND_OCCUPANCIES
-                            || refinementmode == RefinementMode.COORDINATES_AND_OCCUPANCIES
-                            || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-                        for (ArrayList<Residue> list : refinementmodel.altResidues) {
-                            nocc += list.size();
+                    if (refinementMode == RefinementMode.OCCUPANCIES
+                            || refinementMode == RefinementMode.BFACTORS_AND_OCCUPANCIES
+                            || refinementMode == RefinementMode.COORDINATES_AND_OCCUPANCIES
+                            || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
+                        for (ArrayList<Residue> list : refinementModel.altResidues) {
+                            nOccupancy += list.size();
                         }
-                        for (ArrayList<Molecule> list : refinementmodel.altMolecules) {
-                            nocc += list.size();
+                        for (ArrayList<Molecule> list : refinementModel.altMolecules) {
+                            nOccupancy += list.size();
                         }
                     }
                 } else {
@@ -205,16 +267,16 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
                 }
                 break;
         }
-        n = nxyz + nb + nocc;
+        n = nXYZ + nBFactor + nOccupancy;
 
         // initialize force field and Xray energies
-        for (MolecularAssembly ma : molecularAssembly) {
-            ForceFieldEnergy fe = ma.getPotentialEnergy();
-            if (fe == null) {
-                fe = new ForceFieldEnergy(ma);
-                ma.setPotential(fe);
+        for (MolecularAssembly molecularAssembly : molecularAssemblies) {
+            ForceFieldEnergy forceFieldEnergy = molecularAssembly.getPotentialEnergy();
+            if (forceFieldEnergy == null) {
+                forceFieldEnergy = new ForceFieldEnergy(molecularAssembly);
+                molecularAssembly.setPotential(forceFieldEnergy);
             }
-            fe.setScaling(null);
+            forceFieldEnergy.setScaling(null);
         }
 
         if (data instanceof DiffractionData) {
@@ -222,22 +284,21 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
             if (!diffractiondata.scaled[0]) {
                 diffractiondata.printStats();
             }
-
-            dataEnergy = new XRayEnergy(diffractiondata, nxyz, nb, nocc,
+            dataEnergy = new XRayEnergy(diffractiondata, nXYZ, nBFactor, nOccupancy,
                     refinementMode);
             dataEnergy.setScaling(null);
         } else if (data instanceof RealSpaceData) {
             RealSpaceData realspacedata = (RealSpaceData) data;
-            dataEnergy = new RealSpaceEnergy(realspacedata, nxyz, 0, 0,
+            dataEnergy = new RealSpaceEnergy(realspacedata, nXYZ, 0, 0,
                     refinementMode);
             dataEnergy.setScaling(null);
         }
 
-        int assemblysize = molecularAssembly.length;
-        xChemical = new double[assemblysize][];
-        gChemical = new double[assemblysize][];
-        for (int i = 0; i < assemblysize; i++) {
-            int len = molecularAssembly[i].getAtomArray().length * 3;
+        int assemblySize = molecularAssemblies.length;
+        xChemical = new double[assemblySize][];
+        gChemical = new double[assemblySize][];
+        for (int i = 0; i < assemblySize; i++) {
+            int len = molecularAssemblies[i].getActiveAtomArray().length * 3;
             xChemical[i] = new double[len];
             gChemical[i] = new double[len];
         }
@@ -253,7 +314,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         double e = 0.0;
 
         if (thermostat != null) {
-            ktscale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
+            kTScale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
         }
 
         if (optimizationScaling != null) {
@@ -263,19 +324,19 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
             }
         }
 
-        int assemblysize = molecularAssembly.length;
+        int assemblysize = molecularAssemblies.length;
         switch (refinementMode) {
             case COORDINATES:
-                // Compute the chemical energy and gradient.
+                // Compute the chemical energy.
                 for (int i = 0; i < assemblysize; i++) {
-                    ForceFieldEnergy fe = molecularAssembly[i].getPotentialEnergy();
+                    ForceFieldEnergy fe = molecularAssemblies[i].getPotentialEnergy();
                     getAssemblyi(i, x, xChemical[i]);
                     double curE = fe.energy(xChemical[i]);
                     e += (curE - e) / (i + 1);
                 }
                 double chemE = e;
 
-                e = chemE * ktscale;
+                e = chemE * kTScale;
 
                 // Compute the X-ray target energy.
                 double xE = dataEnergy.energy(x);
@@ -292,7 +353,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
             case COORDINATES_AND_BFACTORS_AND_OCCUPANCIES:
                 // Compute the chemical energy and gradient.
                 for (int i = 0; i < assemblysize; i++) {
-                    ForceFieldEnergy fe = molecularAssembly[i].getPotentialEnergy();
+                    ForceFieldEnergy fe = molecularAssemblies[i].getPotentialEnergy();
                     getAssemblyi(i, x, xChemical[i]);
                     double curE = fe.energy(xChemical[i]);
                     e += (curE - e) / (i + 1);
@@ -327,7 +388,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         fill(g, 0.0);
 
         if (thermostat != null) {
-            ktscale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
+            kTScale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
         }
 
         if (optimizationScaling != null) {
@@ -337,50 +398,40 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
             }
         }
 
-        int assemblysize = molecularAssembly.length;
+        int assemblysize = molecularAssemblies.length;
         switch (refinementMode) {
             case COORDINATES:
                 // Compute the chemical energy and gradient.
                 for (int i = 0; i < assemblysize; i++) {
-                    ForceFieldEnergy fe = molecularAssembly[i].getPotentialEnergy();
+                    ForceFieldEnergy fe = molecularAssemblies[i].getPotentialEnergy();
                     getAssemblyi(i, x, xChemical[i]);
                     double curE = fe.energyAndGradient(xChemical[i], gChemical[i]);
                     e += (curE - e) / (i + 1);
                     setAssemblyi(i, g, gChemical[i]);
                 }
                 double chemE = e;
-                //System.out.println("chem E: " + e + " scaled chem E: " + ktscale * e);
 
-                e = chemE * ktscale;
+                e = chemE * kTScale;
                 // normalize gradients for multiple-counted atoms
                 if (assemblysize > 1) {
-                    for (int i = 0; i < nxyz; i++) {
+                    for (int i = 0; i < nXYZ; i++) {
                         g[i] /= assemblysize;
                     }
                 }
-                for (int i = 0; i < nxyz; i++) {
-                    g[i] *= ktscale;
+                for (int i = 0; i < nXYZ; i++) {
+                    g[i] *= kTScale;
                 }
 
                 // Compute the X-ray target energy and gradient.
-                if (gXray == null || gXray.length != nxyz) {
-                    gXray = new double[nxyz];
+                if (gXray == null || gXray.length != nXYZ) {
+                    gXray = new double[nXYZ];
                 }
                 double xE = dataEnergy.energyAndGradient(x, gXray);
                 //System.out.println("Xray E: " + xE + " scaled Xray E: " + weight * xE);
                 e += weight * xE;
 
-                /*
-                 * double normchem = 0.0; for (int i = 0; i < nxyz; i++) {
-                 * normchem += g[i] * g[i]; } normchem = Math.sqrt(normchem) /
-                 * nxyz; double normxray = 0.0; for (int i = 0; i < nxyz; i++) {
-                 * normxray += gXray[i] * gXray[i]; } normxray =
-                 * Math.sqrt(normxray) / nxyz; System.out.println("chem: " +
-                 * normchem + " xray: " + normxray + " weight wa: " + normchem /
-                 * normxray);
-                 */
                 // Add the chemical and X-ray gradients.
-                for (int i = 0; i < nxyz; i++) {
+                for (int i = 0; i < nXYZ; i++) {
                     g[i] += weight * gXray[i];
                 }
                 break;
@@ -395,7 +446,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
             case COORDINATES_AND_BFACTORS_AND_OCCUPANCIES:
                 // Compute the chemical energy and gradient.
                 for (int i = 0; i < assemblysize; i++) {
-                    ForceFieldEnergy fe = molecularAssembly[i].getPotentialEnergy();
+                    ForceFieldEnergy fe = molecularAssemblies[i].getPotentialEnergy();
                     getAssemblyi(i, x, xChemical[i]);
                     double curE = fe.energyAndGradient(xChemical[i], gChemical[i]);
                     e += (curE - e) / (i + 1);
@@ -403,7 +454,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
                 }
                 // normalize gradients for multiple-counted atoms
                 if (assemblysize > 1) {
-                    for (int i = 0; i < nxyz; i++) {
+                    for (int i = 0; i < nXYZ; i++) {
                         g[i] /= assemblysize;
                     }
                 }
@@ -415,13 +466,13 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
                 e += weight * dataEnergy.energyAndGradient(x, gXray);
 
                 // Add the chemical and X-ray gradients.
-                for (int i = 0; i < nxyz; i++) {
+                for (int i = 0; i < nXYZ; i++) {
                     g[i] += weight * gXray[i];
                 }
 
                 // bfactors, occ
-                if (n > nxyz) {
-                    for (int i = nxyz; i < n; i++) {
+                if (n > nXYZ) {
+                    for (int i = nXYZ; i < n; i++) {
                         g[i] = weight * gXray[i];
                     }
                 }
@@ -443,45 +494,45 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
     }
 
     /**
-     * get the molecular assembly associated with index i of n, put in xchem
+     * Get the MolecularAssembly associated with index i of n; put in xChem.
      *
-     * @param i the desired molecular assembly index to "set" xchem to
-     * @param x all parameters
-     * @param xchem the xchem parameters for the particular molecular assembly
-     * that will be passed to {@link ForceFieldEnergy}
+     * @param i The desired MolecularAssembly index for xChem.
+     * @param x All parameters.
+     * @param xChem The xChem parameters for the particular MolecularAssembly
+     * that will be passed to {@link ForceFieldEnergy}.
      */
-    public void getAssemblyi(int i, double x[], double xchem[]) {
-        assert (x != null && xchem != null);
-        for (int j = 0; j < xchem.length; j += 3) {
+    public void getAssemblyi(int i, double x[], double xChem[]) {
+        assert (x != null && xChem != null);
+        for (int j = 0; j < xChem.length; j += 3) {
             int index = j / 3;
-            int aindex = xindex[i].get(index) * 3;
-            xchem[j] = x[aindex];
-            xchem[j + 1] = x[aindex + 1];
-            xchem[j + 2] = x[aindex + 2];
+            int aindex = xIndex[i].get(index) * 3;
+            xChem[j] = x[aindex];
+            xChem[j + 1] = x[aindex + 1];
+            xChem[j + 2] = x[aindex + 2];
         }
     }
 
     /**
-     * get the molecular assembly associated with index i of n, put in x
+     * Set the MolecularAssembly associated with index i of n; put in x.
      *
-     * @param i the desired molecular assembly index to "set" x to
-     * @param x all parameters
-     * @param xchem the xchem parameters for the particular molecular assembly
-     * that will be passed to {@link ForceFieldEnergy}
+     * @param i the desired MolecularAssembly index for "setting" x.
+     * @param x All parameters.
+     * @param xChem The xChem parameters for the particular MolecularAssembly
+     * that will be passed to {@link ForceFieldEnergy}.
      */
-    public void setAssemblyi(int i, double x[], double xchem[]) {
-        assert (x != null && xchem != null);
-        for (int j = 0; j < xchem.length; j += 3) {
+    public void setAssemblyi(int i, double x[], double xChem[]) {
+        assert (x != null && xChem != null);
+        for (int j = 0; j < xChem.length; j += 3) {
             int index = j / 3;
-            int aindex = xindex[i].get(index) * 3;
-            x[aindex] += xchem[j];
-            x[aindex + 1] += xchem[j + 1];
-            x[aindex + 2] += xchem[j + 2];
+            int aindex = xIndex[i].get(index) * 3;
+            x[aindex] += xChem[j];
+            x[aindex + 1] += xChem[j + 1];
+            x[aindex + 2] += xChem[j + 2];
         }
     }
 
     /**
-     * get the current dataset weight
+     * Get the current data weight (wA).
      *
      * @return weight wA
      */
@@ -495,7 +546,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
      * @return kT scale
      */
     public double getKTScale() {
-        return this.ktscale;
+        return this.kTScale;
     }
 
     /**
@@ -504,7 +555,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
      * @param ktscale requested kT scale
      */
     public void setKTScale(double ktscale) {
-        this.ktscale = ktscale;
+        this.kTScale = ktscale;
     }
 
     /**
@@ -561,15 +612,13 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
     @Override
     public boolean algorithmUpdate(MolecularAssembly active) {
         if (thermostat != null) {
-            ktscale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
+            kTScale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
         }
-        logger.info(" kTscale: " + ktscale);
+        logger.info(" kTscale: " + kTScale);
         logger.info(data.printEnergyUpdate());
-
         return true;
     }
 
-    // this should probably be part of the potential class
     /**
      * <p>
      * Setter for the field <code>thermostat</code>.</p>
@@ -580,7 +629,6 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         this.thermostat = thermostat;
     }
 
-    // this should probably be part of the potential class
     /**
      * <p>
      * Getter for the field <code>thermostat</code>.</p>
@@ -596,17 +644,16 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
      */
     @Override
     public void setLambda(double lambda) {
-        for (MolecularAssembly ma : molecularAssembly) {
-            ForceFieldEnergy fe = ma.getPotentialEnergy();
-            fe.setLambda(lambda);
+        for (MolecularAssembly molecularAssembly : molecularAssemblies) {
+            ForceFieldEnergy forceFieldEnergy = molecularAssembly.getPotentialEnergy();
+            forceFieldEnergy.setLambda(lambda);
         }
-
         if (data instanceof DiffractionData) {
-            XRayEnergy xrayenergy = (XRayEnergy) dataEnergy;
-            xrayenergy.setLambda(lambda);
+            XRayEnergy xRayEnergy = (XRayEnergy) dataEnergy;
+            xRayEnergy.setLambda(lambda);
         } else if (data instanceof RealSpaceData) {
-            RealSpaceEnergy realspaceenergy = (RealSpaceEnergy) dataEnergy;
-            realspaceenergy.setLambda(lambda);
+            RealSpaceEnergy realSpaceEnergy = (RealSpaceEnergy) dataEnergy;
+            realSpaceEnergy.setLambda(lambda);
         }
     }
 
@@ -615,16 +662,15 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
      */
     @Override
     public double getLambda() {
-        double l = 1.0;
+        double lambda = 1.0;
         if (data instanceof DiffractionData) {
-            XRayEnergy xrayenergy = (XRayEnergy) dataEnergy;
-            l = xrayenergy.getLambda();
+            XRayEnergy xRayEnergy = (XRayEnergy) dataEnergy;
+            lambda = xRayEnergy.getLambda();
         } else if (data instanceof RealSpaceData) {
-            RealSpaceEnergy realspaceenergy = (RealSpaceEnergy) dataEnergy;
-            l = realspaceenergy.getLambda();
+            RealSpaceEnergy realSpaceEnergy = (RealSpaceEnergy) dataEnergy;
+            lambda = realSpaceEnergy.getLambda();
         }
-
-        return l;
+        return lambda;
     }
 
     /**
@@ -633,28 +679,26 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
     @Override
     public double getdEdL() {
         double e = 0.0;
-
         if (thermostat != null) {
-            ktscale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
+            kTScale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
         }
-
-        int assemblysize = molecularAssembly.length;
-        // Compute the chemical energy and gradient.
+        int assemblysize = molecularAssemblies.length;
+        /**
+         * Compute the chemical energy and gradient.
+         */
         for (int i = 0; i < assemblysize; i++) {
-            ForceFieldEnergy fe = molecularAssembly[i].getPotentialEnergy();
-            double curE = fe.getdEdL();
+            ForceFieldEnergy forceFieldEnergy = molecularAssemblies[i].getPotentialEnergy();
+            double curE = forceFieldEnergy.getdEdL();
             e += (curE - e) / (i + 1);
         }
-        e *= ktscale;
-
+        e *= kTScale;
         if (data instanceof DiffractionData) {
-            XRayEnergy xrayenergy = (XRayEnergy) dataEnergy;
-            e += xrayenergy.getdEdL();
+            XRayEnergy xRayEnergy = (XRayEnergy) dataEnergy;
+            e += xRayEnergy.getdEdL();
         } else if (data instanceof RealSpaceData) {
-            RealSpaceEnergy realspaceenergy = (RealSpaceEnergy) dataEnergy;
-            e += realspaceenergy.getdEdL();
+            RealSpaceEnergy realSpaceEnergy = (RealSpaceEnergy) dataEnergy;
+            e += realSpaceEnergy.getdEdL();
         }
-
         return e;
     }
 
@@ -664,20 +708,19 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
     @Override
     public double getd2EdL2() {
         double e = 0.0;
-
         if (thermostat != null) {
-            ktscale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
+            kTScale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
         }
-
-        int assemblysize = molecularAssembly.length;
-        // Compute the chemical energy and gradient.
+        int assemblysize = molecularAssemblies.length;
+        /**
+         * Compute the chemical energy and gradient.
+         */
         for (int i = 0; i < assemblysize; i++) {
-            ForceFieldEnergy fe = molecularAssembly[i].getPotentialEnergy();
-            double curE = fe.getd2EdL2();
+            ForceFieldEnergy forceFieldEnergy = molecularAssemblies[i].getPotentialEnergy();
+            double curE = forceFieldEnergy.getd2EdL2();
             e += (curE - e) / (i + 1);
         }
-        e *= ktscale;
-
+        e *= kTScale;
         return e;
     }
 
@@ -688,51 +731,56 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
     public void getdEdXdL(double[] gradient) {
         double weight = data.getWeight();
         if (thermostat != null) {
-            ktscale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
+            kTScale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
         }
-        int assemblysize = molecularAssembly.length;
-        // Compute the chemical energy and gradient.
+        int assemblysize = molecularAssemblies.length;
+
+        /**
+         * Compute the chemical energy and gradient.
+         */
         for (int i = 0; i < assemblysize; i++) {
-            ForceFieldEnergy fe = molecularAssembly[i].getPotentialEnergy();
-            for (int j = 0; j < nxyz; j++) {
-                gChemical[i][j] = 0.0;
-            }
-            fe.getdEdXdL(gChemical[i]);
+            ForceFieldEnergy forcefieldEnergy = molecularAssemblies[i].getPotentialEnergy();
+            Arrays.fill(gChemical[i], 0.0);
+            forcefieldEnergy.getdEdXdL(gChemical[i]);
         }
         for (int i = 0; i < assemblysize; i++) {
-            for (int j = 0; j < nxyz; j++) {
+            for (int j = 0; j < nXYZ; j++) {
                 gradient[j] += gChemical[i][j];
             }
         }
-        // normalize gradients for multiple-counted atoms
+
+        /**
+         * Normalize gradients for multiple-counted atoms.
+         */
         if (assemblysize > 1) {
-            for (int i = 0; i < nxyz; i++) {
+            for (int i = 0; i < nXYZ; i++) {
                 gradient[i] /= assemblysize;
             }
         }
-        for (int i = 0; i < nxyz; i++) {
-            gradient[i] *= ktscale;
+        for (int i = 0; i < nXYZ; i++) {
+            gradient[i] *= kTScale;
         }
 
-        // Compute the X-ray target energy and gradient.
-        if (gXray == null || gXray.length != nxyz) {
-            gXray = new double[nxyz];
+        /**
+         * Compute the X-ray target energy and gradient.
+         */
+        if (gXray == null || gXray.length != nXYZ) {
+            gXray = new double[nXYZ];
         } else {
-            for (int j = 0; j < nxyz; j++) {
+            for (int j = 0; j < nXYZ; j++) {
                 gXray[j] = 0.0;
             }
         }
-
         if (data instanceof DiffractionData) {
-            XRayEnergy xrayenergy = (XRayEnergy) dataEnergy;
-            xrayenergy.getdEdXdL(gXray);
+            XRayEnergy xRayEnergy = (XRayEnergy) dataEnergy;
+            xRayEnergy.getdEdXdL(gXray);
         } else if (data instanceof RealSpaceData) {
-            RealSpaceEnergy realspaceenergy = (RealSpaceEnergy) dataEnergy;
-            realspaceenergy.getdEdXdL(gXray);
+            RealSpaceEnergy realSpaceEnergy = (RealSpaceEnergy) dataEnergy;
+            realSpaceEnergy.getdEdXdL(gXray);
         }
 
         // Add the chemical and X-ray gradients.
-        for (int i = 0; i < nxyz; i++) {
+        for (int i = 0; i < nXYZ; i++) {
             gradient[i] += weight * gXray[i];
         }
     }
@@ -755,9 +803,9 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
     @Override
     public void setEnergyTermState(STATE state) {
         this.state = state;
-        int assemblysize = molecularAssembly.length;
+        int assemblysize = molecularAssemblies.length;
         for (int i = 0; i < assemblysize; i++) {
-            ForceFieldEnergy fe = molecularAssembly[i].getPotentialEnergy();
+            ForceFieldEnergy fe = molecularAssemblies[i].getPotentialEnergy();
             fe.setEnergyTermState(state);
         }
         dataEnergy.setEnergyTermState(state);
