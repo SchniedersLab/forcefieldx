@@ -151,8 +151,8 @@ public abstract class BoltzmannMC  implements MetropolisMC {
         for (int i = 0; i < nMoves; i++) {
             MCMove movei = moves.get(i);
             double eCorr = movei.move();
-            if (print) {
-                logger.info(String.format(" Energy adjustment %10.6f kcal/mol for %s", eCorr, movei.toString()));
+            if (print && eCorr != 0.0) {
+                logger.info(String.format(" Monte Carlo step with %10.6f kcal/mol energy adjustment", eCorr));
             }
             eAdjust += eCorr;
         }
@@ -161,7 +161,7 @@ public abstract class BoltzmannMC  implements MetropolisMC {
         e2 = lastE + eAdjust;
         if (evaluateMove(e1, e2)) {
             if (print) {
-                logger.info(String.format(" Monte Carlo step accepted with e2 %10.6f and e1 %10.6f", e2, e1));
+                logger.info(String.format(" Monte Carlo step accepted: e1 -> e2 %10.6f -> %10.6f", e1, e2));
             }
             return true;
         } else {
@@ -170,7 +170,7 @@ public abstract class BoltzmannMC  implements MetropolisMC {
             }
             lastE = e1;
             if (print) {
-                logger.info(String.format(" Monte Carlo step rejected with e2 %10.6f and e1 %10.6f", e2, e1));
+                logger.info(String.format(" Monte Carlo step rejected: e1 -> e2 %10.6f -> %10.6f", e1, e2));
             }
             return false;
         }
