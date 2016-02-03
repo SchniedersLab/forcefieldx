@@ -612,7 +612,7 @@ public class OSRW implements Potential {
 
                 // Collect the minimum energy.
                 double minEnergy = potential.getTotalEnergy();
-
+                
                 // If a new minimum has been found, save its coordinates.
                 if (minEnergy < osrwOptimum) {
                     osrwOptimum = minEnergy;
@@ -1340,6 +1340,13 @@ public class OSRW implements Potential {
         }
     }
 
+    public void setOSRWOptimum(double prevOSRWOptimum) {
+        osrwOptimum = prevOSRWOptimum;
+    }
+    
+    public double getOSRWOptimum(){
+        return osrwOptimum;
+    }
     public double[] getLowEnergyLoop() {
         if (osrwOptimum < Double.MAX_VALUE) {
             return osrwOptimumCoords;

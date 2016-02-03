@@ -125,13 +125,12 @@ public class LoopClosure {
 
         getPolyCoeff(polyCoeff);
         sturmMethod.solveSturm(deg_pol, n_soln, polyCoeff, roots);
-
         if (n_soln[0] == 0) {
-            logger.severe("Loop building failed.");
+            logger.info("Could not find alternative loop solutions using KIC.");
         }
 
         getCoordsFromPolyRoots(n_soln, roots, r_n1, r_a1, r_a3, r_c3, r_soln_n, r_soln_a, r_soln_c);
-
+        
     }
 
     /**
@@ -1095,7 +1094,7 @@ public class LoopClosure {
                 string2.append(String.format("ac: a1c1, a2c2 = %9.3f%9.3f%9.3f%9.3f\n", len0[0], a1c1, len0[3], a2c2));
                 string2.append(String.format("cn: c1n2, c2n3 = %9.3f%9.3f%9.3f%9.3f\n", len0[1], c1n2, len0[4], c2n3));
                 string2.append(String.format("aa: a1a2, a2a3 = %9.3f%9.3f%9.3f%9.3f\n", len_aa[1], a1a2, len_aa[2], a2a3));
-                logger.fine(string2.toString());
+                logger.info(string2.toString());
             }
 
             for (int i = 0; i < 3; i++) {

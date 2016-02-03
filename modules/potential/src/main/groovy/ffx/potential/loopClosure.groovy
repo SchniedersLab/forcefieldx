@@ -1,3 +1,4 @@
+
 /**
  * Title: Force Field X.
  *
@@ -39,7 +40,9 @@
 // LOOPCLOSURE
 
 // Groovy Imports
+import ffx.potential.ForceFieldEnergy
 import ffx.potential.bonded.Loop
+import ffx.potential.parsers.PDBFilter
 import groovy.util.CliBuilder;
 
 // Things below this line normally do not need to be changed.
@@ -85,21 +88,36 @@ if (end_res - stt_res != 4)
 }
 
 List<String> arguments = options.arguments();
-String modelfilename = null;
+String modelFilename = null;
 if (arguments != null && arguments.size() > 0) {
     // Read in command line.
-    modelfilename = arguments.get(0);
-    open(modelfilename);
+    modelFilename = arguments.get(0);
+    open(modelFilename);
 } else if (active == null) {
     return cli.usage();
 } else {
-    modelfilename = active.getFile();
+    modelFilename = active.getFile();
 }
 
-logger.info("\n Running loopClosure on " + modelfilename);
+logger.info("\n Running loopClosure on " + modelFilename);
 boolean writeFile = true;
+ForceFieldEnergy forceFieldEnergy = active.getPotentialEnergy();
+//Loop loop = new Loop(active, stt_res, end_res, writeFile);
 
-Loop loop = new Loop(active, stt_res, end_res, writeFile);
+Loop loop = new Loop(active);
+
+List<double[]> loopSolutions = loop.generateLoops(stt_res, end_res);
+for(int i = 0; i < loopSolutions.size(); i++){
+    //Test for using alternative coordinates with generateLoops method.
+   // loopSolutions = loop.generateLoops(stt_res+1, end_res+1,loopSolutions.get(i));
+    
+    forceFieldEnergy.setCoordinates(loopSolutions.get(i));
+    File modifiedFile = new File("loop_"+modelFilename + "_"+i);
+    PDBFilter modFilter = new PDBFilter(modifiedFile, active, null, null);
+    if (writeFile) {
+        modFilter.writeFile(modifiedFile, true);
+    }        
+}
 
 /*
  * Example of using the new PotentialsFunctions interface instead of Groovy method

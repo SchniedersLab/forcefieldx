@@ -410,53 +410,32 @@ public class SturmMethod {
      * @param roots
      */
     private void sturmBisection(int np, Polynomial[] sseq, double min, double max, int atmin, int atmax, double[] roots) {
-        double mid = 0.;
+        double mid = 0;
         int n1 = 0;
         int n2 = 0;
         int its, atmid, nroot;
 
-        int remainder = 0;
-        int count = 0;
-
         nroot = atmin - atmax;
-
         if (nroot == 1) {
-            //first try a less expensive technique
+            // First try a less expensive technique
             if (modifiedRegulaFalsi(sseq[0].order, sseq[0].coefficients, min, max, roots)) {
-                remainder = this.roots.length - roots.length;
-                count = 0;
-                for (int q = remainder; q < this.roots.length; q++) {
-                    this.roots[q] = roots[count];
-                    count++;
-                }
-                return;
-
+                fillArray(roots, this.roots);
+                return;            
             }
 
-            //When code reaches this point, the root must be evaluated
-            //      using the Sturm sequence.
+            // When code reaches this point, the root must be evaluated using the Sturm sequence.
             for (its = 0; its < MAXIT; its++) {
                 mid = (min + max) / 2;
                 atmid = numChanges(np, sseq, mid);
                 if (abs(mid) > RELERROR) {
                     if (abs((max - min) / mid) < RELERROR) {
                         roots[0] = mid;
-                        remainder = this.roots.length - roots.length;
-                        count = 0;
-                        for (int q = remainder; q < this.roots.length; q++) {
-                            this.roots[q] = roots[count];
-                            count++;
-                        }
+                        fillArray(roots, this.roots);
                         return;
                     }
                 } else if (abs(max - min) < RELERROR) {
                     roots[0] = mid;
-                    remainder = this.roots.length - roots.length;
-                    count = 0;
-                    for (int q = remainder; q < this.roots.length; q++) {
-                        this.roots[q] = roots[count];
-                        count++;
-                    }
+                    fillArray(roots, this.roots);
                     return;
                 }
                 if ((atmin - atmid) == 0) {
@@ -470,12 +449,7 @@ public class SturmMethod {
                         min, max, max - min, nroot, n1, n2));
                 roots[0] = mid;
             }
-            remainder = this.roots.length - roots.length;
-            count = 0;
-            for (int q = remainder; q < this.roots.length; q++) {
-                this.roots[q] = roots[count];
-                count++;
-            }
+            fillArray(roots, this.roots);
             return;
 
         }
@@ -488,7 +462,11 @@ public class SturmMethod {
             n2 = atmid - atmax;
             if (n1 != 0 && n2 != 0) {
                 sturmBisection(np, sseq, min, mid, atmin, atmid, roots);
-                sturmBisection(np, sseq, mid, max, atmid, atmax, Arrays.copyOfRange(roots, n1, roots.length));
+                // Keep a reference to this array so that its values can be copied into the
+                // roots array later.
+                final double[] rootsSection = Arrays.copyOfRange(roots, n1, roots.length);
+                sturmBisection(np, sseq, mid, max, atmid, atmax, rootsSection);
+                fillArray(rootsSection, roots);
                 break;
             }
             if (n1 == 0) {
@@ -503,13 +481,38 @@ public class SturmMethod {
                 roots[n1 - atmax] = mid;
             }
         }
+    }
 
-        //may not need this~~~~
-        remainder = this.roots.length - roots.length;
-        count = 0;
-        for (int q = remainder; q < this.roots.length; q++) {
-            this.roots[q] = roots[count];
-            count++;
+    /**
+     * This method fills the target array with values from the values array. The
+     * context of this method makes the most sense when the values array is
+     * smaller than the target array, resulting in the data from the values
+     * array simply being added to the target array at the first point that
+     * would entail the final value being copied into the target array's final
+     * index. See below for an example input and output.
+     * <pre>
+     * Inputs:
+     * valuesArray: [ 10, 20, 30,  0 ]
+     * targetArray: [  1,  2,  3,  4,  0,  0,  0,  0,  0,  0];
+     * 
+     * Output (via array reference with later use of target array):
+     * [  1,  2,  3,  4,  0,  0, 10, 20, 30, 0 ]
+     * </pre>
+     *
+     * @param valuesArray The array that will hold the values to copy into the
+     * target array.
+     * @param targetArray The array that will receive the values in the values
+     * array.
+     */
+    private void fillArray(final double[] valuesArray, final double[] targetArray) {
+        final int tarLen = targetArray.length;
+        final int valLen = valuesArray.length;
+        if (tarLen >= valLen) {
+            for (int tarIndex = tarLen - valLen, valIndex = 0; tarIndex < tarLen; tarIndex++, valIndex++) {
+                targetArray[tarIndex] = valuesArray[valIndex];
+            }
+        } else {
+            logger.info(" sbisect: length of values array is too long for the target array; not filling");
         }
     }
 

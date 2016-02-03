@@ -709,7 +709,21 @@ public class ForceField {
         }
         return null;
     }
-
+    
+    public BioType getBioType(String moleculeName, String atomName) {
+        for (BioType bioType : bioTypes.values()) {
+            if (bioType.moleculeName.equalsIgnoreCase(moleculeName)
+                    && bioType.atomName.equalsIgnoreCase(atomName)) {
+                return bioType;
+            }
+        }
+        return null;
+    }
+    
+    public Map<String,BioType> getBioTypeMap() {
+        return bioTypes;
+    }
+    
     /**
      * <p>
      * Getter for the field <code>atomTypes</code>.</p>
