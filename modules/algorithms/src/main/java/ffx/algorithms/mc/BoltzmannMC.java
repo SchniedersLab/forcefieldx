@@ -131,6 +131,16 @@ public abstract class BoltzmannMC  implements MetropolisMC {
         return mcStep(moves, currentEnergy());
     }
 
+    /**
+     * Performs a Boltzmann-weighted Monte Carlo step with an arbitrary list of
+     * moves and a defined starting energy. The list of MCMoves should be of a
+     * type with O(1) element access, as the current implementation utilizes an
+     * indexed for loop.
+     * 
+     * @param moves Moves to try
+     * @param en1 Starting energy
+     * @return If step accepted
+     */
     @Override
     public boolean mcStep(List<MCMove> moves, double en1) {
         storeState();

@@ -52,6 +52,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Comparator;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static java.util.Arrays.fill;
 
@@ -93,7 +95,6 @@ import ffx.algorithms.mc.MCMove;
 import static ffx.potential.bonded.Residue.ResidueType.AA;
 import static ffx.potential.bonded.Residue.ResidueType.NA;
 import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
-import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Optimize protein side-chain conformations and nucleic acid backbone
@@ -398,11 +399,15 @@ public class RotamerOptimization implements Terminatable {
      * Monte Carlo parameters.
      */
     private int nMCsteps = 1000000;
+    private boolean monteCarlo = false;
+    private double mcTemp = 298.15;
     /**
      * Check to see if proposed move has an eliminated pair or higher-order term; 
      * breaks detailed balance.
      */
-    private boolean checkHigherOrder = false;
+    private boolean mcUseAll = false;
+    // Skips brute force enumeration in favor of pure Monte Carlo. Recommended only for testing.
+    private boolean mcNoEnum = false;
     
     /**
      * RotamerOptimization constructor.
@@ -453,6 +458,9 @@ public class RotamerOptimization implements Terminatable {
         String quadCutoffDist = System.getProperty("ro-quadCutoffDist");
         String quadMaxout = System.getProperty("ro-quadMaxout");
         String lazyMatrix = System.getProperty("ro-lazyMatrix");
+        String mcTemp = System.getProperty("ro-mcTemp");
+        String mcUseAll = System.getProperty("ro-mcUseAll");
+        String mcNoEnum = System.getProperty("ro-debug-mcNoEnum");
         if (computeQuads != null) {
             boolean value = Boolean.parseBoolean(computeQuads);
             this.computeQuads = value;
@@ -598,6 +606,21 @@ public class RotamerOptimization implements Terminatable {
                 logger.warning(String.format(" Error in parsing box dimensions: input discarded and defaults used: %s.", ex.toString()));
                 manualSuperbox = false;
             }
+        }
+        if (mcTemp != null) {
+            double value = Double.parseDouble(mcTemp);
+            this.mcTemp = value;
+            logIfMaster(String.format(" (KEY) mcTemp: %10.6f", this.mcTemp));
+        }
+        if (mcUseAll != null) {
+            boolean value = Boolean.parseBoolean(mcUseAll);
+            this.mcUseAll = value;
+            logIfMaster(String.format(" (KEY) mcUseAll: %b", this.mcUseAll));
+        }
+        if (mcNoEnum != null) {
+            boolean value = Boolean.parseBoolean(mcNoEnum);
+            this.mcNoEnum = value;
+            logIfMaster(String.format(" (KEY) debug-mcNoEnum: %b", this.mcNoEnum));
         }
         if (lazyMatrix != null) {
             boolean value = Boolean.parseBoolean(lazyMatrix);
@@ -760,18 +783,37 @@ public class RotamerOptimization implements Terminatable {
         return currentEnergy;
     }
     
-    private double rotamerOptimizationDEEMC(MolecularAssembly molecularAssembly,
-            Residue[] residues, int[] optimum, int[] initialRots, 
-            double[] permutationEnergies, int maxIters, boolean randomizeRots) {
+    /**
+     * Runs Monte Carlo side chain optimization using the rotamer energy matrix 
+     * and potentially some information from dead-end or Goldstein elimination.
+     * The useAllElims variable should be set false if detailed balance is to be
+     * maintained. At present, no support for ensembles.
+     * 
+     * @param residues Optimization window
+     * @param optimum Array to store optimum rotamers
+     * @param initialRots Array with starting rotamers
+     * @param maxIters Number of MC steps to run
+     * @param randomizeRots Scramble initialRots
+     * @param useAllElims Use pair/triple elimination information
+     * @return Lowest energy found
+     */
+    private double rotamerOptimizationMC(Residue[] residues, int[] optimum, 
+            int[] initialRots, int maxIters, boolean randomizeRots, 
+            boolean useAllElims) {
         
-        long initTime = System.nanoTime();
+        long initTime = -System.nanoTime();
+        if (randomizeRots) {
+            randomizeRotamers(initialRots, residues, true);
+        }
+        
         int nRes = residues.length;
         System.arraycopy(initialRots, 0, optimum, 0, nRes);
         assert optimum.length == nRes;
         assert initialRots.length == nRes;
         
         RotamerMatrixMC rmc = new RotamerMatrixMC(initialRots, residues);
-        RotamerMatrixMove rmove = new RotamerMatrixMove(false, initialRots, residues);
+        rmc.setTemperature(mcTemp);
+        RotamerMatrixMove rmove = new RotamerMatrixMove(useAllElims, initialRots, residues);
         List<MCMove> rmList = new ArrayList<>(1);
         rmList.add(rmove);
         
@@ -779,18 +821,47 @@ public class RotamerOptimization implements Terminatable {
         double optimumEnergy = initialEnergy;
         double currentEnergy = initialEnergy;
         
-        logger.info(String.format(" Beginning %d iterations of Monte Carlo search "
+        int nAccept = 0;
+        //int nReject = 0;
+        
+        /**
+         * I have the vague idea of parallelizing down to individual threads, by
+         * simply calling this method from each thread, with randomizeRots true.
+         * That would require replacing logIfMaster with logger.info.
+         */
+        logIfMaster(String.format(" Beginning %d iterations of Monte Carlo search "
                 + "starting from energy %10.6f", maxIters, initialEnergy));
         
         for (int i = 0; i < maxIters; i++) {
             if (rmc.mcStep(rmList, currentEnergy)) {
-                
+                currentEnergy = rmc.lastEnergy();
+                ++nAccept;
+                if (currentEnergy < optimumEnergy) {
+                    optimumEnergy = currentEnergy;
+                    System.arraycopy(initialRots, 0, optimum, 0, nRes);
+                }
+            } else {
+                currentEnergy = rmc.lastEnergy();
+                //++nReject;
             }
-            currentEnergy = rmc.lastEnergy();
+            /*if (threeBodyTerm) {
+                logIfMaster(String.format(" %d Energy through 3-Body interactions: %16.8f",
+                        i, currentEnergy));
+            } else {
+                logIfMaster(String.format(" %d Energy through 2-Body interactions: %16.8f",
+                        i, currentEnergy));
+            }*/
         }
         
-        long finalTime = System.nanoTime();
-        return optimumEnergy; // One day, I will get to this line.
+        initTime += System.nanoTime();
+        double fractAccept = ((double) nAccept) / ((double) maxIters);
+        logIfMaster(String.format(" %d steps of DEE-MC completed in %10.6f seconds", 
+                maxIters, (initTime * 1.0E-9)));
+        logIfMaster(String.format(" Number of steps accepted: %d for %10.6f of total", nAccept, fractAccept));
+        logIfMaster(String.format(" Lowest energy found: %10.6f kcal/mol", optimumEnergy));
+        logIfMaster(String.format(" Final energy found: %10.6f kcal/mol", currentEnergy));
+        
+        return optimumEnergy;
     }
     
     /**
@@ -857,130 +928,6 @@ public class RotamerOptimization implements Terminatable {
         }
         return true;
     }
-    
-    /**
-     * Note to self: remember to avoid generating any MC moves which would result
-     * in an eliminated pair or triple.
-     * @param molecularAssembly
-     * @param residues
-     * @param lowEnergy
-     * @param optimum
-     * @param initialRots
-     * @param permutationEnergies
-     * @param maxIters
-     * @param randomizeRots
-     * @return 
-     */
-    /*private double rotamerOptimizationDEEMC(MolecularAssembly molecularAssembly, 
-            Residue residues[], double lowEnergy, int optimum[], int[] initialRots,
-            double[] permutationEnergies, int maxIters, boolean randomizeRots) {
-        
-        double currentEnergy = computeEnergy(residues, initialRots, false);
-        int nResidues = residues.length;
-        // It may be possible to use initialRots[] instead of currentRots[].
-        int[] currentRots = Arrays.copyOf(initialRots, nResidues);
-        int[] newRots = Arrays.copyOf(currentRots, nResidues);
-        optimum = Arrays.copyOf(currentRots, nResidues);
-        int nAccept = 0;
-        int nReject = 0;
-        int nError = 0;
-        
-        /**
-         * unRes is short for undeterminedResidues. These lists will eventually 
-         * be converted to an int[] with the indices of those residues which 
-         * aren't eliminated down to one rotamer, and an int[][] with the 
-         * non-eliminated rotamers of those residues.
-         */
-        /*List<Integer> unRes = new ArrayList<>(nResidues);
-        List<List<Integer>> unResRots = new ArrayList<>(nResidues);
-        
-        for (int i = 0; i < nResidues; i++) {
-            ArrayList<Integer> allowedRots = new ArrayList<>();
-            for (int ri = 0; ri < residues[i].getRotamers().length; ri++) {
-                if (!check(i, ri)) {
-                    allowedRots.add(ri);
-                }
-            }
-            
-            int nrots = allowedRots.size();
-            if (nrots > 1) {
-                unRes.add(i);
-                allowedRots.trimToSize();
-                unResRots.add(allowedRots);
-            }
-        }
-        
-        int nUnRes = unRes.size();
-        ((ArrayList) unRes).trimToSize();
-        ((ArrayList) unResRots).trimToSize();
-        
-        for (int iter = 0; iter < maxIters; iter++) {
-            int i = 0;
-            int ri = 0;
-            
-            /**
-             * Intent of the do-while loop is, if checkHigherOrder set true, to 
-             * reject any moves involving an eliminated pair/triple. Else, it just
-             * runs once.
-             */
-            /*boolean validMove = !checkHigherOrder;
-            do {
-                int resi = ThreadLocalRandom.current().nextInt(0, nUnRes);
-                List<Integer> rotsi = unResRots.get(resi);
-                int lenri = rotsi.size();
-                int roti = ThreadLocalRandom.current().nextInt(0, lenri);
-                i = unRes.get(resi);
-                ri = unResRots.get(resi).get(roti);
-                validMove = checkHigherOrder ? checkValidMcMove(currentRots, i, ri) : validMove;
-            } while (!validMove);
-            
-            newRots[i] = ri;
-            try {
-                double newEnergy = computeEnergy(residues, newRots, false);
-                if (threeBodyTerm) {
-                    logIfMaster(String.format(" %d Proposed energy through 3-Body interactions: %16.8f",
-                            evaluatedPermutations, newEnergy));
-                } else {
-                    logIfMaster(String.format(" %d Proposed energy through 2-Body interactions: %16.8f",
-                            evaluatedPermutations, newEnergy));
-                }
-                
-                boolean accepted = mcTrial(newEnergy, currentEnergy);
-                ++evaluatedPermutations;
-                
-                if (accepted) {
-                    currentRots[i] = ri;
-                    currentEnergy = newEnergy;
-                    logIfMaster(String.format(" Move %s-%d accepted", residues[i].toString(), ri));
-                    ++nAccept;
-                } else {
-                    newRots[i] = currentRots[i];
-                    logIfMaster(String.format(" Move %s-%d rejected", residues[i].toString(), ri));
-                    ++nReject;
-                }
-                
-            } catch (NullPointerException ex) {
-                logIfMaster(String.format(" Exception during Monte Carlo move "
-                        + "evaluation; probably an excluded move: %s", ex.toString()));
-                if (master) {
-                    StringBuilder sb = new StringBuilder(" Rotamers ");
-                    for (int j = 0; j < nResidues; j++) {
-                        sb.append(newRots[j]).append(',');
-                    }
-                    logger.info(sb.toString());
-                }
-                newRots[i] = currentRots[i];
-                ++nError;
-            }
-        }
-        logIfMaster(String.format(" Number of accepted moves: %d", nAccept));
-        logIfMaster(String.format(" Number of rejected moves: %d", nReject));
-        logIfMaster(String.format(" Number of non-allowed moves: %d", nError));
-        
-        double fractAccept = ((double) nAccept) / ((double) maxIters);
-        logIfMaster(String.format(" Fraction of accepted moves: %10.6f", fractAccept));
-        return currentEnergy;
-    }*/
 
     /**
      * A global optimization over side-chain rotamers using a recursive
@@ -1153,17 +1100,13 @@ public class RotamerOptimization implements Terminatable {
      * algorithm and information about eliminated rotamers, rotamer pairs and
      * rotamer triples.
      *
-     * @param molecularAssembly
      * @param residues
      * @param i
      * @param currentRotamers
-     * @param lowEnergy
-     * @param optimum
      *
      * @return 0.
      */
-    public double dryRun(MolecularAssembly molecularAssembly, Residue residues[], int i,
-            int currentRotamers[], double lowEnergy, int optimum[]) {
+    public double dryRun(Residue residues[], int i, int currentRotamers[]) {
         // This is the initialization condition.
         if (i == 0) {
             evaluatedPermutations = 0;
@@ -1194,8 +1137,7 @@ public class RotamerOptimization implements Terminatable {
                     continue;
                 }
                 currentRotamers[i] = ri;
-                dryRun(molecularAssembly, residues, i + 1,
-                        currentRotamers, lowEnergy, optimum);
+                dryRun(residues, i + 1, currentRotamers);
             }
         } else {
             /**
@@ -2637,13 +2579,17 @@ public class RotamerOptimization implements Terminatable {
     public void setRevert(boolean revert) {
         this.revert = revert;
     }
-    
-    /*public void setMonteCarlo(boolean monteCarlo, int nMCsteps, double mcTemp) {
+
+    /**
+     * Sets the option to use a number of Monte Carlo steps for final optimization.
+     * 
+     * @param monteCarlo If Monte Carlo is to be considered
+     * @param nMCsteps Number of steps to be taken
+     */
+    public void setMonteCarlo(boolean monteCarlo, int nMCsteps) {
         this.monteCarlo = monteCarlo;
         this.nMCsteps = nMCsteps;
-        this.mcTemp = mcTemp;
-        kbTinv = -1.0 / (mcTemp * BOLTZMANN);
-    }*/
+    }
 
     public void setNucleicCorrectionThreshold(double nucleicCorrectionThreshold) {
         this.nucleicCorrectionThreshold = nucleicCorrectionThreshold;
@@ -2726,7 +2672,79 @@ public class RotamerOptimization implements Terminatable {
         return e;
     }
     
-
+    /**
+     * Finds the first non-eliminated rotamer permutation.
+     *
+     * @param residues
+     * @param i
+     * @param currentRotamers
+     *
+     * @return If valid permutation found.
+     */
+    public boolean firstValidPerm(Residue residues[], int i, int currentRotamers[]) {
+        // This is the initialization condition.
+        int nResidues = residues.length;
+        Residue residuei = residues[i];
+        Rotamer[] rotamersi = residuei.getRotamers();
+        int lenri = rotamersi.length;
+        if (i < nResidues - 1) {
+            for (int ri = 0; ri < lenri; ri++) {
+                if (check(i, ri)) {
+                    continue;
+                }
+                boolean deadEnd = false;
+                for (int j = 0; j < i; j++) {
+                    int rj = currentRotamers[j];
+                    deadEnd = check(j, rj, i, ri);
+                    if (deadEnd) {
+                        break;
+                    }
+                    /*for (int k = j + 1; k < i; k++) { // Check triples
+                        int rk = currentRotamers[k];
+                        deadEnd = check(j, rj, k, rk, i, ri);
+                        if (deadEnd) {
+                            break;
+                        }
+                    }
+                    if (deadEnd) {
+                        break;
+                    }*/
+                }
+                if (deadEnd) {
+                    continue;
+                }
+                currentRotamers[i] = ri;
+                if (firstValidPerm(residues, i + 1, currentRotamers)) {
+                    return true;
+                }
+                //dryRun(residues, i + 1, currentRotamers);
+            }
+        } else {
+            /**
+             * At the end of the recursion, check each rotamer of the final
+             * residue.
+             */
+            for (int ri = 0; ri < lenri; ri++) {
+                if (check(i, ri)) {
+                    continue;
+                }
+                currentRotamers[i] = ri;
+                boolean deadEnd = false;
+                for (int j = 0; j < i; j++) {
+                    int rj = currentRotamers[j];
+                    deadEnd = check(j, rj, i, ri);
+                    if (deadEnd) {
+                        break;
+                    }
+                }
+                if (deadEnd) {
+                    continue;
+                }
+                return true;
+            }
+        }
+        return false;
+    }
 
     /**
      * The main driver for optimizing a block of residues using DEE.
@@ -2777,7 +2795,7 @@ public class RotamerOptimization implements Terminatable {
                     }
                 }
             }
-            dryRun(molecularAssembly, residues, 0, currentRotamers, Double.MAX_VALUE, optimum);
+            dryRun(residues, 0, currentRotamers);
             double pairTotalElimination = singletonPermutations - (double) evaluatedPermutations;
             if (evaluatedPermutations == 0) {
                 logger.severe("No valid path through rotamer space found; try recomputing without pruning or using ensemble.");
@@ -2805,49 +2823,61 @@ public class RotamerOptimization implements Terminatable {
             logIfMaster(String.format(" Number of permutations after singleton eliminations: %10.4e.", singletonPermutations));
             logIfMaster(String.format(" Number of permutations removed by pairwise eliminations: %10.4e.", pairTotalElimination));
             logIfMaster(String.format(" Number of permutations remaining: %10.4e.", (double) evaluatedPermutations));
+            
+            double e;
+            if (useMonteCarlo()) {
+                firstValidPerm(residues, 0, currentRotamers);
+                System.arraycopy(currentRotamers, 0, optimum, 0, nResidues);
+                rotamerOptimizationMC(residues, optimum, currentRotamers, nMCsteps, false, mcUseAll);
 
-            double[] permutationEnergies = new double[evaluatedPermutations];
-            double e = rotamerOptimizationDEE(molecularAssembly, residues, 0, currentRotamers,
-                    Double.MAX_VALUE, optimum, permutationEnergies);
-            int[][] acceptedPermutations = new int[evaluatedPermutations][];
-            for (int i = 0; i < acceptedPermutations.length; i++) {
-                acceptedPermutations[i] = null;
-            }
-            logIfMaster(String.format("\n Checking permutations for distance < %5.3f kcal/mol from GMEC energy %10.8f kcal/mol", ensembleEnergy, e));
-            dryRunForEnsemble(residues, 0, currentRotamers, e, permutationEnergies, acceptedPermutations);
-            int numAcceptedPermutations = 0;
-            for (int i = 0; i < acceptedPermutations.length; i++) {
-                if (acceptedPermutations[i] != null) {
-                    ++numAcceptedPermutations;
-                    logIfMaster(String.format(" Accepting permutation %d at %8.6f < %8.6f", i, permutationEnergies[i] - e, ensembleEnergy));
-                    for (int j = 0; j < nResidues; j++) {
-                        Residue residuej = residues[j];
-                        Rotamer[] rotamersj = residuej.getRotamers();
-                        RotamerLibrary.applyRotamer(residuej, rotamersj[acceptedPermutations[i][j]]);
-                    }
-                    try {
-                        FileWriter fw = new FileWriter(ensembleFile, true);
-                        BufferedWriter bw = new BufferedWriter(fw);
-                        bw.write(String.format("MODEL        %d", numAcceptedPermutations));
-                        for (int j = 0; j < 75; j++) {
-                            bw.write(" ");
+                logIfMaster(" Ensembles not currently compatible with Monte Carlo search");
+                /**
+                 * Not currently compatible with ensembles.
+                 */
+            } else {
+                double[] permutationEnergies = new double[evaluatedPermutations];
+                e = rotamerOptimizationDEE(molecularAssembly, residues, 0, currentRotamers,
+                        Double.MAX_VALUE, optimum, permutationEnergies);
+                int[][] acceptedPermutations = new int[evaluatedPermutations][];
+                for (int i = 0; i < acceptedPermutations.length; i++) {
+                    acceptedPermutations[i] = null;
+                }
+                logIfMaster(String.format("\n Checking permutations for distance < %5.3f kcal/mol from GMEC energy %10.8f kcal/mol", ensembleEnergy, e));
+                dryRunForEnsemble(residues, 0, currentRotamers, e, permutationEnergies, acceptedPermutations);
+                int numAcceptedPermutations = 0;
+                for (int i = 0; i < acceptedPermutations.length; i++) {
+                    if (acceptedPermutations[i] != null) {
+                        ++numAcceptedPermutations;
+                        logIfMaster(String.format(" Accepting permutation %d at %8.6f < %8.6f", i, permutationEnergies[i] - e, ensembleEnergy));
+                        for (int j = 0; j < nResidues; j++) {
+                            Residue residuej = residues[j];
+                            Rotamer[] rotamersj = residuej.getRotamers();
+                            RotamerLibrary.applyRotamer(residuej, rotamersj[acceptedPermutations[i][j]]);
                         }
-                        bw.newLine();
-                        bw.flush();
-                        ensembleFilter.writeFile(ensembleFile, true);
-                        bw.write(String.format("ENDMDL"));
-                        for (int j = 0; j < 64; j++) {
-                            bw.write(" ");
+                        try {
+                            FileWriter fw = new FileWriter(ensembleFile, true);
+                            BufferedWriter bw = new BufferedWriter(fw);
+                            bw.write(String.format("MODEL        %d", numAcceptedPermutations));
+                            for (int j = 0; j < 75; j++) {
+                                bw.write(" ");
+                            }
+                            bw.newLine();
+                            bw.flush();
+                            ensembleFilter.writeFile(ensembleFile, true);
+                            bw.write(String.format("ENDMDL"));
+                            for (int j = 0; j < 64; j++) {
+                                bw.write(" ");
+                            }
+                            bw.newLine();
+                            bw.close();
+                        } catch (IOException ex) {
+                            logger.warning(String.format(" Exception writing to file: %s", ensembleFile.getName()));
                         }
-                        bw.newLine();
-                        bw.close();
-                    } catch (IOException ex) {
-                        logger.warning(String.format(" Exception writing to file: %s", ensembleFile.getName()));
                     }
                 }
+                logIfMaster(String.format(" Number of permutations within %5.3f kcal/mol of GMEC energy: %6.4e",
+                        ensembleEnergy, (double) numAcceptedPermutations));
             }
-            logIfMaster(String.format(" Number of permutations within %5.3f kcal/mol of GMEC energy: %6.4e",
-                    ensembleEnergy, (double) numAcceptedPermutations));
 
             logIfMaster("\n Final rotamers:");
             for (int i = 0; i < nResidues; i++) {
@@ -2904,6 +2934,10 @@ public class RotamerOptimization implements Terminatable {
         }
 
         while (currentEnsemble != ensembleNumber) {
+            if (monteCarlo) {
+                logIfMaster(" Ensemble search not currently compatible with Monte Carlo");
+                ensembleNumber = 1;
+            }
             if (iterations == 0) {
                 applyEliminationCriteria(residues, true, true);
             } else {
@@ -2940,7 +2974,7 @@ public class RotamerOptimization implements Terminatable {
                     }
                 }
             }
-            dryRun(molecularAssembly, residues, 0, currentRotamers, Double.MAX_VALUE, optimum);
+            dryRun(residues, 0, currentRotamers);
             double pairTotalElimination = singletonPermutations - (double) evaluatedPermutations;
             currentEnsemble = (int) evaluatedPermutations;
             if (ensembleNumber == 1 && currentEnsemble == 0) {
@@ -3017,8 +3051,13 @@ public class RotamerOptimization implements Terminatable {
             logger.warning(" No valid rotamer permutations found; results will be unreliable.  Try increasing the starting ensemble buffer.");
         }
         double[] permutationEnergyStub = null;
-        rotamerOptimizationDEE(molecularAssembly, residues, 0, currentRotamers,
-                Double.MAX_VALUE, optimum, permutationEnergyStub);
+        if (useMonteCarlo()) {
+            firstValidPerm(residues, 0, currentRotamers);
+            rotamerOptimizationMC(residues, optimum, currentRotamers, nMCsteps, false, mcUseAll);
+        } else {
+            rotamerOptimizationDEE(molecularAssembly, residues, 0, currentRotamers,
+                    Double.MAX_VALUE, optimum, permutationEnergyStub);
+        }
 
         logIfMaster("\n Final rotamers:");
         for (int i = 0; i < nResidues; i++) {
@@ -3074,6 +3113,15 @@ public class RotamerOptimization implements Terminatable {
         logIfMaster(String.format(" Approximate Energy:     %16.8f", approximateEnergy));
 
         return e;
+    }
+    
+    /**
+     * Use Monte Carlo if monteCarlo specified, and either skipDEE specified or
+     * nMCsteps is smaller then the remaining permutation size.
+     * @return Finish DEE search with Monte Carlo.
+     */
+    private boolean useMonteCarlo() {
+        return monteCarlo && (mcNoEnum || (nMCsteps < evaluatedPermutations));
     }
 
     /**
@@ -9010,6 +9058,121 @@ public class RotamerOptimization implements Terminatable {
         @Override
         public String toString() {
             return "Rotamer moves utlizing a rotamer energy matrix";
+        }
+    }
+    
+    /**
+     * Describes an integer array of rotamers and its energy for DEE-MC.
+     */
+    private class RotamerPermutation implements Comparable {
+        private final int[] rotamers;
+        private final double energy;
+        private final int nRots;
+        
+        private RotamerPermutation(int[] rotamers, double energy) {
+            nRots = rotamers.length;
+            this.rotamers = new int[nRots];
+            System.arraycopy(rotamers, 0, this.rotamers, 0, nRots);
+            this.energy = energy;
+        }
+        
+        private int[] getRotamers() {
+            int[] ret = new int[nRots];
+            System.arraycopy(rotamers, 0, ret, 0, nRots);
+            return ret;
+        }
+        
+        private double getEnergy() {
+            return energy;
+        }
+        
+        /**
+         * Equal if the rotamer arrays are identical.
+         * @param o
+         * @return 
+         */
+        @Override
+        public boolean equals(Object o) {
+            if (o == null) {
+                return false;
+            }
+            if (!(o instanceof RotamerPermutation)) {
+                return false;
+            }
+            RotamerPermutation other = (RotamerPermutation) o;
+            int[] otherRots = other.getRotamers();
+            if (otherRots.length != nRots) {
+                return false;
+            }
+            for (int i = 0; i < nRots; i++) {
+                if (rotamers[i] < otherRots[i]) {
+                    return false;
+                } else if (rotamers[i] > otherRots[i]) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 7;
+            hash = 37 * hash + Arrays.hashCode(this.rotamers);
+            hash = 37 * hash + this.nRots;
+            return hash;
+        }
+
+        /**
+         * Compares based on the rotamer permutation. Consistent with equals.
+         * Much more likely, however, to compare using the rotPermEnComparator.
+         * @param o To compare to
+         * @return 
+         */
+        @Override
+        public int compareTo(Object o) {
+            if (o == null) {
+                return 0;
+            }
+            if (!(o instanceof RotamerPermutation)) {
+                return 0;
+            }
+            RotamerPermutation other = (RotamerPermutation) o;
+            int[] otherRots = other.getRotamers();
+            if (otherRots.length != nRots) {
+                return 0;
+            }
+            for (int i = 0; i < nRots; i++) {
+                if (rotamers[i] < otherRots[i]) {
+                    return -1;
+                } else if (rotamers[i] > otherRots[i]) {
+                    return 1;
+                }
+            }
+            return 0;
+            /*if (energy < other.getEnergy()) {
+                return -1;
+            } else if (energy > other.getEnergy()) {
+                return 1;
+            } else {
+                return 0;
+            }*/
+        }
+    }
+    
+    /**
+     * Compares RotamerPermutation objects based on energy instead of the natural
+     * ordering. Inconsistent with equals.
+     */
+    private class rotPermEcomparator implements Comparator<RotamerPermutation> {
+        @Override
+        public int compare(RotamerPermutation o1, RotamerPermutation o2) {
+            if (o1.getEnergy() < o2.getEnergy()) {
+                return -1;
+            } else if (o1.getEnergy() > o2.getEnergy()) {
+                return 1;
+            } else {
+                return 0;
+            }
         }
     }
 
