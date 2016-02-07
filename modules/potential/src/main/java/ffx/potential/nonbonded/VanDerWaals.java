@@ -329,19 +329,28 @@ public class VanDerWaals implements MaskingInterface,
             }
         }
         radEps = new double[maxClass + 1][2 * (maxClass + 1)];
+        String radiusSize = forceField.getString(ForceField.ForceFieldString.RADIUSSIZE, "Diameter");
+        String radiusType = forceField.getString(ForceField.ForceFieldString.RADIUSTYPE, "R-Min");
+        double radScale = 0.5;
+        if (radiusSize.equalsIgnoreCase("Radius")) {
+            radScale = 1.0;
+        }
+        if (radiusType.equalsIgnoreCase("Sigma")) {
+            radScale *= 1.122462048309372981;
+        }
         /**
          * Atom Class numbering starts at 1.
          */
         for (VDWType vdwi : vdwTypes.values()) {
             int i = vdwi.atomClass;
-            double ri = 0.5 * vdwi.radius;
+            double ri = radScale * vdwi.radius;
             double ri2 = ri * ri;
             double ri3 = ri * ri2;
             double e1 = vdwi.wellDepth;
             double se1 = sqrt(e1);
             for (VDWType vdwj : vdwTypes.tailMap(vdwi.getKey()).values()) {
                 int j = vdwj.atomClass;
-                double rj = 0.5 * vdwj.radius;
+                double rj = radScale * vdwj.radius;
                 double rj2 = rj * rj;
                 double rj3 = rj * rj2;
                 double e2 = vdwj.wellDepth;

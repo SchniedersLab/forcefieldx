@@ -49,8 +49,8 @@ import static org.apache.commons.math3.util.FastMath.toRadians;
  * The TorsionType class defines a torsional angle.
  *
  * @author Michael J. Schnieders
- * @since 1.0
  *
+ * @since 1.0
  */
 public final class TorsionType extends BaseType implements Comparator<String> {
 
@@ -230,12 +230,6 @@ public final class TorsionType extends BaseType implements Comparator<String> {
         String key = c[0] + " " + c[1] + " " + c[2] + " " + c[3];
         return key;
     }
-    /**
-     * Convert Torsional Angle energy to kcal/mole.
-     *
-     * @since 1.0
-     */
-    public static final double units = 0.5;
 
     /**
      * {@inheritDoc}

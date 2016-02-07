@@ -54,12 +54,6 @@ import static org.apache.commons.math3.util.FastMath.toRadians;
  */
 public final class ImproperTorsionType extends BaseType implements Comparator<String> {
 
-    /**
-     * Convert Torsional Angle energy to kcal/mole.
-     *
-     * @since 1.0
-     */
-    public static final double units = 0.5;
 
     /**
      * This method sorts the atom classes for the improper torsion.

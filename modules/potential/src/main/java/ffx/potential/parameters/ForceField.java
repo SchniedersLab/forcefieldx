@@ -560,6 +560,9 @@ public class ForceField {
         String key = normalizeKey(forceFieldDouble.toString());
         try {
             double old = getDouble(forceFieldDouble);
+            if (old == value) {
+                return;
+            }
             properties.clearProperty(key);
             logger.info(String.format(" Removed %s with value %8.3f.", key, old));
         } catch (Exception e) {
@@ -583,6 +586,9 @@ public class ForceField {
         String key = normalizeKey(forceFieldInteger.toString());
         try {
             int old = getInteger(forceFieldInteger);
+            if (old == value) {
+                return;
+            }
             logger.info(String.format(" Clearing %s with value %d.", key, old));
             properties.clearProperty(key);
         } catch (Exception e) {
@@ -591,6 +597,41 @@ public class ForceField {
             logger.info(String.format(" Adding %s with value %d.", key, value));
             properties.addProperty(key, value);
         }
+    }
+
+    public static boolean isForceFieldKeyword(String keyword) {
+        keyword = keyword.toUpperCase();
+        try {
+            ForceFieldBoolean forceFieldBoolean = ForceFieldBoolean.valueOf(keyword);
+            return true;
+        } catch (Exception e) {
+            // Ignore.
+        }
+        try {
+            ForceFieldDouble forceFieldDouble = ForceFieldDouble.valueOf(keyword);
+            return true;
+        } catch (Exception e) {
+            // Ignore.
+        }
+        try {
+            ForceFieldInteger forceFieldInteger = ForceFieldInteger.valueOf(keyword);
+            return true;
+        } catch (Exception e) {
+            // Ignore.
+        }
+        try {
+            ForceFieldString forceFieldString = ForceFieldString.valueOf(keyword);
+            return true;
+        } catch (Exception e) {
+            // Ignore.
+        }
+        try {
+            ForceFieldType forceFieldType = ForceFieldType.valueOf(keyword);
+            return true;
+        } catch (Exception e) {
+            // Ignore.
+        }
+        return false;
     }
 
     /**
@@ -606,6 +647,9 @@ public class ForceField {
         String key = normalizeKey(forceFieldString.toString());
         try {
             String old = getString(forceFieldString);
+            if (old.equalsIgnoreCase(value)) {
+                return;
+            }
             properties.clearProperty(key);
             logger.info(String.format(" Removed %s with value %s.", key, old));
         } catch (Exception e) {
@@ -629,6 +673,9 @@ public class ForceField {
         String key = normalizeKey(forceFieldBoolean.toString());
         try {
             boolean old = getBoolean(forceFieldBoolean);
+            if (old == value) {
+                return;
+            }
             properties.clearProperty(key);
             logger.info(String.format(" Cleared %s with value %s.", key, Boolean.toString(old)));
         } catch (Exception e) {
@@ -660,6 +707,10 @@ public class ForceField {
             return;
         }
         if (treeMap.containsKey(type.key)) {
+            if (treeMap.get(type.key).toString().equalsIgnoreCase(type.toString())) {
+                // Ignore this type if its identical to an existing type.
+                return;
+            }
             logger.log(Level.WARNING,
                     " A force field entry of type {0} already exists with the key: {1}\n The (discarded) old entry: {2}\n The new entry            : {3}",
                     new Object[]{type.forceFieldType, type.key,
@@ -709,7 +760,7 @@ public class ForceField {
         }
         return null;
     }
-    
+
     public BioType getBioType(String moleculeName, String atomName) {
         for (BioType bioType : bioTypes.values()) {
             if (bioType.moleculeName.equalsIgnoreCase(moleculeName)
@@ -719,11 +770,11 @@ public class ForceField {
         }
         return null;
     }
-    
-    public Map<String,BioType> getBioTypeMap() {
+
+    public Map<String, BioType> getBioTypeMap() {
         return bioTypes;
     }
-    
+
     /**
      * <p>
      * Getter for the field <code>atomTypes</code>.</p>
@@ -1194,7 +1245,7 @@ public class ForceField {
 
         SPACEGROUP, NCSGROUP, FORCEFIELD, POLARIZATION, VDW_SCHEDULE, REAL_SCHEDULE,
         RECIP_SCHEDULE, SCF_PREDICTOR, SCF_ALGORITHM, CAVMODEL, VDWINDEX, FFT_METHOD,
-        RELATIVE_SOLVATION
+        RELATIVE_SOLVATION, RADIUSRULE, RADIUSTYPE, RADIUSSIZE
     }
 
     public enum ForceFieldDouble {
@@ -1205,7 +1256,7 @@ public class ForceField {
         DIRECT_11_SCALE, RIGID_SCALE, VDW_LAMBDA_EXPONENT, VDW_LAMBDA_ALPHA, PERMANENT_LAMBDA_EXPONENT,
         PERMANENT_LAMBDA_ALPHA, POLARIZATION_LAMBDA_START, POLARIZATION_LAMBDA_END, POLARIZATION_LAMBDA_EXPONENT,
         DUAL_TOPOLOGY_LAMBDA_EXPONENT, CG_PRECONDITIONER_CUTOFF, CG_PRECONDITIONER_EWALD, CG_PRECONDITIONER_SOR,
-        RESTRAINT_K, PROBE_RADIUS, BORNAI, SURFACE_TENSION
+        RESTRAINT_K, PROBE_RADIUS, BORNAI, SURFACE_TENSION, TORSIONUNIT, IMPTORUNIT
     }
 
     public enum ForceFieldInteger {
@@ -1225,6 +1276,7 @@ public class ForceField {
 
     public enum ForceFieldType {
 
-        KEYWORD, ANGLE, ATOM, BIOTYPE, BOND, CHARGE, IMPTORS, MULTIPOLE, OPBEND, PITORS, POLARIZE, STRBND, TORSION, TORTORS, UREYBRAD, VDW
+        KEYWORD, ANGLE, ATOM, BIOTYPE, BOND, CHARGE, IMPTORS, MULTIPOLE, OPBEND,
+        PITORS, POLARIZE, STRBND, TORSION, TORTORS, UREYBRAD, VDW
     }
 }

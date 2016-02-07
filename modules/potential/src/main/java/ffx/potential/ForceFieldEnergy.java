@@ -130,9 +130,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private int nUreyBradleys;
     private int nOutOfPlaneBends;
     private int nTorsions;
+    private int nImproperTorsions;
     private int nPiOrbitalTorsions;
     private int nTorsionTorsions;
-    private int nImproperTorsions;
     private int nRestraintBonds;
     private int nVanDerWaalInteractions;
     private int nPermanentInteractions;
@@ -144,9 +144,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private boolean ureyBradleyTerm;
     private boolean outOfPlaneBendTerm;
     private boolean torsionTerm;
+    private boolean improperTorsionTerm;
     private boolean piOrbitalTorsionTerm;
     private boolean torsionTorsionTerm;
-    private boolean improperTorsionTerm;
     private boolean restraintBondTerm;
     private boolean vanderWaalsTerm;
     private boolean multipoleTerm;
@@ -166,9 +166,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private boolean ureyBradleyTermOrig;
     private boolean outOfPlaneBendTermOrig;
     private boolean torsionTermOrig;
+    private boolean improperTorsionTermOrig;
     private boolean piOrbitalTorsionTermOrig;
     private boolean torsionTorsionTermOrig;
-    private boolean improperTorsionTermOrig;
     private boolean restraintBondTermOrig;
     private boolean vanderWaalsTermOrig;
     private boolean multipoleTermOrig;
@@ -183,9 +183,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private double ureyBradleyEnergy;
     private double outOfPlaneBendEnergy;
     private double torsionEnergy;
+    private double improperTorsionEnergy;
     private double piOrbitalTorsionEnergy;
     private double torsionTorsionEnergy;
-    private double improperTorsionEnergy;
     private double restraintBondEnergy;
     private double totalBondedEnergy;
     private double vanDerWaalsEnergy;
@@ -2103,6 +2103,14 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
     public double getTorsionEnergy() {
         return torsionEnergy;
+    }
+
+    public int getNumberofImproperTorsions() {
+        return nImproperTorsions;
+    }
+
+    public double getImproperTorsionEnergy() {
+        return improperTorsionEnergy;
     }
 
     public int getNumberofTorsions() {

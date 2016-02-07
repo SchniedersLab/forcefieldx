@@ -79,11 +79,42 @@ public class PotentialEnergyTest {
                 279.64162198, 2835,
                 67.64798284, 651,
                 215.14214012, 3297,
+                0.0, 0,
                 24.69060350, 106,
                 -29.43681349, 71,
                 13183.92864934, 1483768,
                 -33012.66179952, 623490,
                 -13041.30955459, 623490},
+            {false,
+                "OPLS-AA/L Peptide",
+                "ffx/potential/structures/peptide-oplsaal.xyz",
+                39.69175722, 333,
+                41.54908436, 596,
+                0.0, 0,
+                0.0, 0,
+                0.0, 0,
+                41.53603210, 875,
+                0.92410847, 97,
+                0.0, 0,
+                0.0, 0,
+                112122.04255274, 40511,
+                -671.66812023, 53628,
+                0.0, 53628},
+            {false,
+                "Amber99sb Peptide",
+                "ffx/potential/structures/peptide-amber99sb.xyz",
+                41.19699756, 333,
+                54.88751601, 596,
+                0.0, 0,
+                0.0, 0,
+                0.0, 0,
+                189.34195768, 875,
+                1.59062194, 101,
+                0.0, 0,
+                0.0, 0,
+                111362.79687915, 52696,
+                -413.54328593, 53628,
+                0.0, 53628},
             {true,
                 "DHFR Benchmark",
                 "ffx/potential/structures/dhfr.xyz",
@@ -93,6 +124,7 @@ public class PotentialEnergyTest {
                 687.46861123, 7023,
                 198.72886589, 1566,
                 426.23738971, 6701,
+                0.0, 0,
                 48.26628393, 292,
                 -41.71473465, 147,
                 32630.94057333, 3480445,
@@ -107,6 +139,7 @@ public class PotentialEnergyTest {
                 10.00655326, 1288,
                 540.99677465, 9948,
                 1671.56977674, 45796,
+                0.0, 0,
                 159.42575736, 1480,
                 -2243.98305878, 1072,
                 16013.08734188, 2966572,
@@ -121,6 +154,7 @@ public class PotentialEnergyTest {
                 2.50163831, 322,
                 135.24919366, 2487,
                 417.89244418, 11449,
+                0.0, 0,
                 39.85643934, 370,
                 -560.99576469, 268,
                 4003.27183547, 741643,
@@ -137,6 +171,7 @@ public class PotentialEnergyTest {
     private final int nUreyBradleys;
     private final int nOutOfPlaneBends;
     private final int nTorsions;
+    private final int nImproperTorsions;
     private final int nPiOrbitalTorsions;
     private final int nTorsionTorsions;
     private final int nVanDerWaals;
@@ -148,6 +183,7 @@ public class PotentialEnergyTest {
     private final double ureyBradleyEnergy;
     private final double outOfPlaneBendEnergy;
     private final double torsionEnergy;
+    private final double improperTorsionEnergy;
     private final double piOrbitalTorsionEnergy;
     private final double torsionTorsionEnergy;
     private final double vanDerWaalsEnergy;
@@ -169,6 +205,7 @@ public class PotentialEnergyTest {
             double ureyBradleyEnergy, int nUreyBradleys,
             double outOfPlaneBendEnergy, int nOutOfPlaneBends,
             double torsionEnergy, int nTorsions,
+            double improperTorsionEnergy, int nImproperTorsions,
             double piOrbitalTorsionEnergy, int nPiOrbitalTorsions,
             double torsionTorsionEnergy, int nTorsionTorsions,
             double vanDerWaalsEnergy, int nVanDerWaals,
@@ -188,6 +225,8 @@ public class PotentialEnergyTest {
         this.nOutOfPlaneBends = nOutOfPlaneBends;
         this.torsionEnergy = torsionEnergy;
         this.nTorsions = nTorsions;
+        this.improperTorsionEnergy = improperTorsionEnergy;
+        this.nImproperTorsions = nImproperTorsions;
         this.piOrbitalTorsionEnergy = piOrbitalTorsionEnergy;
         this.nPiOrbitalTorsions = nPiOrbitalTorsions;
         this.torsionTorsionEnergy = torsionTorsionEnergy;
@@ -263,6 +302,9 @@ public class PotentialEnergyTest {
         // Torsional Angle
         assertEquals(info + " Torsion Energy", torsionEnergy, forceFieldEnergy.getTorsionEnergy(), tolerance);
         assertEquals(info + " Torsion Count", nTorsions, forceFieldEnergy.getNumberofTorsions());
+        // Improper Torsional Angle
+        assertEquals(info + " Improper Torsion Energy", improperTorsionEnergy, forceFieldEnergy.getImproperTorsionEnergy(), tolerance);
+        assertEquals(info + " Improper Torsion Count", nImproperTorsions, forceFieldEnergy.getNumberofImproperTorsions());
         // Pi-Orbital Torsion
         assertEquals(info + " Pi-OrbitalTorsion Energy", piOrbitalTorsionEnergy,
                 forceFieldEnergy.getPiOrbitalTorsionEnergy(), tolerance);

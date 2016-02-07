@@ -132,8 +132,8 @@ import static ffx.utilities.StringUtils.padRight;
  * format 3.2</a>
  *
  * @author Michael J. Schnieders
- * @since 1.0
  *
+ * @since 1.0
  */
 public final class PDBFilter extends SystemFilter {
 
@@ -676,13 +676,13 @@ public final class PDBFilter extends SystemFilter {
                                 try {
                                     occupancy = new Double(line.substring(54, 60).trim());
                                     tempFactor = new Double(line.substring(60, 66).trim());
-                                } catch (NumberFormatException e) {
+                                } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
                                     // Use default values.
                                     if (print) {
-                                        logger.warning(" No values for occupancy or b-factors; defaulting to 1.00 (further warnings suppressed).");
+                                        logger.info(" Missing occupancy and b-factors set to 1.0.");
                                         print = false;
                                     } else if (logger.isLoggable(Level.FINE)) {
-                                        logger.fine(" No values for occupancy or b-factors; defaulting to 1.00.");
+                                        logger.fine(" Missing occupancy and b-factors set to 1.0.");
                                     }
                                 }
                                 newAtom = new Atom(0, name, altLoc, d, resName, resSeq,
@@ -749,13 +749,13 @@ public final class PDBFilter extends SystemFilter {
                             try {
                                 occupancy = new Double(line.substring(54, 60).trim());
                                 tempFactor = new Double(line.substring(60, 66).trim());
-                            } catch (NumberFormatException e) {
+                            } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
                                 // Use default values.
                                 if (print) {
-                                    logger.warning(" No values for occupancy or b-factors; defaulting to 1.00 (further warnings suppressed).");
+                                    logger.info(" Missing occupancy and b-factors set to 1.0.");
                                     print = false;
                                 } else if (logger.isLoggable(Level.FINE)) {
-                                    logger.fine(" No values for occupancy or b-factors; defaulting to 1.00.");
+                                    logger.fine(" Missing occupancy and b-factors set to 1.0.");
                                 }
                             }
                             newAtom = new Atom(0, name, altLoc, d, resName, resSeq, chainID,
@@ -856,10 +856,8 @@ public final class PDBFilter extends SystemFilter {
                                         && (a2 == ' ' || a2 == 'A')) {
                                     links.add(line);
                                 }
-                            } else {
-                                if (a1 == currentAltLoc && a2 == currentAltLoc) {
-                                    links.add(line);
-                                }
+                            } else if (a1 == currentAltLoc && a2 == currentAltLoc) {
+                                links.add(line);
                             }
                             break;
                         case SSBOND:
@@ -1877,10 +1875,10 @@ public final class PDBFilter extends SystemFilter {
                         default:
                     }
                 }
-            } else {
-                /**
-                 * Assume ribose (RNA) since there is an O2* atom.
-                 */
+            } else /**
+             * Assume ribose (RNA) since there is an O2* atom.
+             */
+            {
                 if (residueName.startsWith("D")) {
                     switch (nucleicAcid) {
                         case DAD:
@@ -1944,12 +1942,10 @@ public final class PDBFilter extends SystemFilter {
                         buildHeavy(residue, "OP3", P, 1236);
                         O5s = buildHeavy(residue, "O5\'", P, 1234);
                     }
+                } else if (isDNA) {
+                    O5s = buildHeavy(residue, "O5\'", P, 1244);
                 } else {
-                    if (isDNA) {
-                        O5s = buildHeavy(residue, "O5\'", P, 1244);
-                    } else {
-                        O5s = buildHeavy(residue, "O5\'", P, 1232);
-                    }
+                    O5s = buildHeavy(residue, "O5\'", P, 1232);
                 }
             } else {
                 P = buildHeavy(residue, "P", pO3s, pTyp[naNumber]);
