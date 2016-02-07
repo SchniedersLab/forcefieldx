@@ -38,6 +38,7 @@
 package ffx.potential.bonded;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
@@ -47,6 +48,7 @@ import static java.lang.String.format;
 
 import ffx.potential.bonded.BondedUtils.MissingAtomTypeException;
 import ffx.potential.bonded.BondedUtils.MissingHeavyAtomException;
+import ffx.potential.bonded.Residue.AA3;
 import ffx.potential.bonded.Residue.ResiduePosition;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.parameters.AtomType;
@@ -61,14 +63,774 @@ import static ffx.potential.bonded.BondedUtils.buildHydrogen;
 import static ffx.potential.bonded.BondedUtils.buildHydrogenAtom;
 import static ffx.potential.bonded.BondedUtils.findAtomType;
 import static ffx.potential.bonded.BondedUtils.intxyz;
-import ffx.potential.bonded.Residue.AA3;
 import static ffx.potential.bonded.Residue.ResiduePosition.FIRST_RESIDUE;
 import static ffx.potential.bonded.Residue.ResiduePosition.LAST_RESIDUE;
 import static ffx.potential.bonded.Residue.ResiduePosition.MIDDLE_RESIDUE;
 import static ffx.potential.bonded.ResidueEnumerations.aminoAcidHeavyAtoms;
 import static ffx.potential.bonded.ResidueEnumerations.getAminoAcid;
 import static ffx.potential.bonded.ResidueEnumerations.getAminoAcidNumber;
-import java.util.Arrays;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+
+import static java.lang.String.format;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
 
 /**
  * Utilities for creating Amino Acid residues.
@@ -121,7 +883,7 @@ public class AminoAcidUtils {
 
     private static void copyCoordinates(Residue fromResidue, Residue toResidue, String atomName) {
         Atom fromAtom;
-        if(fromResidue.getAtomNode(atomName) != null){
+        if (fromResidue.getAtomNode(atomName) != null) {
             fromAtom = (Atom) fromResidue.getAtomNode(atomName);
         } else {
             fromAtom = (Atom) fromResidue.getAtomNode("H1");
@@ -130,32 +892,31 @@ public class AminoAcidUtils {
         toAtom.setXYZ(fromAtom.getXYZ(null));
     }
 
-    public static final String nCapBackboneAtoms[] = {"N","H1","H2","H3","CA","HA","C","O"};
-
+    public static final String nCapBackboneAtoms[] = {"N", "H1", "H2", "H3", "CA", "HA", "C", "O"};
     public static final String backboneAtoms[] = {"N", "H", "CA", "HA", "C", "O"};
-    public static final String glycineBackboneAtoms[] = {"N", "H", "CA", "HA2","HA3", "C", "O"};
+    public static final String glycineBackboneAtoms[] = {"N", "H", "CA", "HA2", "HA3", "C", "O"};
     public static final String prolineBackboneAtoms[] = {"N", "CA", "HA", "C", "O"};
 
     public static final String alanineAtoms[] = {"CB", "HB1", "HB2", "HB3"};
     public static final String glycineAtoms[] = {"HA2"};
-    public static final String valineAtoms[] = {"CB","HB","CG1","HG11","HG12","HG13", "CG2","HG21","HG22","HG23"};
-    public static final String leucineAtoms[] = {"CB","HB2","HB3","CG","HG", "CD1","HD11","HD12","HD13", "CD2","HD21","HD22","HD23"};
-    public static final String isoleucineAtoms[] = {"CB","HB", "CG1","HG12","HG13", "CG2","HG21","HG22","HG23", "CD1","HD11","HD12","HD13"};
-    public static final String serineAtoms[] = {"CB","HB2", "HB3", "OG", "HG" };
-    public static final String threonineAtoms[] = {"CB", "HB","OG1","HG1","CG2","HG21","HG22","HG23"};
-    public static final String cysteineAtoms[] = {"CB","HB2","HB3","SG","HG"};
-    public static final String prolineAtoms[] = {"CB","HB2","HB3","CG","HG2","HG3","CD","HD2","HD3"};
-    public static final String phenylalanineAtoms[] = {"CB","HB2","HB3", "CG","CD1","HD1","CD2","HD2","CE1","HE1","CE2","HE2","CZ","HZ"};
-    public static final String tyrosineAtoms[] = {"CB","HB2","HB3", "CG","CD1","HD1","CD2","HD2","CE1","HE1","CE2","HE2","CZ","OH","HH"};
-    public static final String tryptophanAtoms[] = {"CB","HB2","HB3","CG","CD1","HD1","CD2","NE1","HE1","CE2","CE3","HE3","CZ2","HZ2","CZ3","HZ3","CH2","HH2"};
-    public static final String histidineAtoms[] = {"CB", "HB2", "HB3","CG","ND1","HD1","CD2","HD2","CE1","HE1","NE2","HE2"};
-    public static final String aspartateAtoms[] = {"CB","HB2","HB3","CG","OD1","OD2"};
-    public static final String asparagineAtoms[] = {"CB","HB2","HB3","CG","OD1","ND2","HD21","HD22"};
-    public static final String glutamateAtoms[] = {"CB","HB2","HB3","CG","HG2","HG3","CD","OE1","OE2"};
-    public static final String glutamineAtoms[] = {"CB","HB2","HB3","CG","HG2","HG3","CD","OE1","NE2","HE21","HE22"};
-    public static final String methionineAtoms[] = {"CB","HB2","HB3","CG","HG2","HG3","SD","CE","HE1","HE2","HE3"};
-    public static final String lysineAtoms[] = {"CB","HB2","HB3","CG","HG2","HG3","CD","HD2","HD3","CE","HE2","HE3","NZ","HZ1","HZ2","HZ3"};
-    public static final String arginineAtoms[] = {"CB","HB2","HB3","CG","HG2","HG3","CD","HD2","HD3","NE","HE","CZ","NH1","HH11","HH12","NH2","HH21","HH22"};
+    public static final String valineAtoms[] = {"CB", "HB", "CG1", "HG11", "HG12", "HG13", "CG2", "HG21", "HG22", "HG23"};
+    public static final String leucineAtoms[] = {"CB", "HB2", "HB3", "CG", "HG", "CD1", "HD11", "HD12", "HD13", "CD2", "HD21", "HD22", "HD23"};
+    public static final String isoleucineAtoms[] = {"CB", "HB", "CG1", "HG12", "HG13", "CG2", "HG21", "HG22", "HG23", "CD1", "HD11", "HD12", "HD13"};
+    public static final String serineAtoms[] = {"CB", "HB2", "HB3", "OG", "HG"};
+    public static final String threonineAtoms[] = {"CB", "HB", "OG1", "HG1", "CG2", "HG21", "HG22", "HG23"};
+    public static final String cysteineAtoms[] = {"CB", "HB2", "HB3", "SG", "HG"};
+    public static final String prolineAtoms[] = {"CB", "HB2", "HB3", "CG", "HG2", "HG3", "CD", "HD2", "HD3"};
+    public static final String phenylalanineAtoms[] = {"CB", "HB2", "HB3", "CG", "CD1", "HD1", "CD2", "HD2", "CE1", "HE1", "CE2", "HE2", "CZ", "HZ"};
+    public static final String tyrosineAtoms[] = {"CB", "HB2", "HB3", "CG", "CD1", "HD1", "CD2", "HD2", "CE1", "HE1", "CE2", "HE2", "CZ", "OH", "HH"};
+    public static final String tryptophanAtoms[] = {"CB", "HB2", "HB3", "CG", "CD1", "HD1", "CD2", "NE1", "HE1", "CE2", "CE3", "HE3", "CZ2", "HZ2", "CZ3", "HZ3", "CH2", "HH2"};
+    public static final String histidineAtoms[] = {"CB", "HB2", "HB3", "CG", "ND1", "HD1", "CD2", "HD2", "CE1", "HE1", "NE2", "HE2"};
+    public static final String aspartateAtoms[] = {"CB", "HB2", "HB3", "CG", "OD1", "OD2"};
+    public static final String asparagineAtoms[] = {"CB", "HB2", "HB3", "CG", "OD1", "ND2", "HD21", "HD22"};
+    public static final String glutamateAtoms[] = {"CB", "HB2", "HB3", "CG", "HG2", "HG3", "CD", "OE1", "OE2"};
+    public static final String glutamineAtoms[] = {"CB", "HB2", "HB3", "CG", "HG2", "HG3", "CD", "OE1", "NE2", "HE21", "HE22"};
+    public static final String methionineAtoms[] = {"CB", "HB2", "HB3", "CG", "HG2", "HG3", "SD", "CE", "HE1", "HE2", "HE3"};
+    public static final String lysineAtoms[] = {"CB", "HB2", "HB3", "CG", "HG2", "HG3", "CD", "HD2", "HD3", "CE", "HE2", "HE3", "NZ", "HZ1", "HZ2", "HZ3"};
+    public static final String arginineAtoms[] = {"CB", "HB2", "HB3", "CG", "HG2", "HG3", "CD", "HD2", "HD3", "NE", "HE", "CZ", "NH1", "HH11", "HH12", "NH2", "HH21", "HH22"};
 
     public static void copyResidue(Residue fromResidue, Residue toResidue) {
         String resName = fromResidue.getName();
@@ -245,7 +1006,7 @@ public class AminoAcidUtils {
             default:
                 atomNames = null;
         }
-        for(String atomName: atomNames){
+        for (String atomName : atomNames) {
             copyCoordinates(fromResidue, toResidue, atomName);
         }
     }
@@ -1159,7 +1920,7 @@ public class AminoAcidUtils {
          */
         Atom N = (Atom) residue.getAtomNode("N");
         if (N != null) {
-            N.setAtomType(BondedUtils.findAtomType(nType[j][aminoAcidNumber], forceField));
+            N.setAtomType(BondedUtils.findAtomType(AA_N[j][aminoAcidNumber], forceField));
             if (position != FIRST_RESIDUE) {
                 buildBond(pC, N, forceField, bondList);
             }
@@ -1170,17 +1931,17 @@ public class AminoAcidUtils {
         Atom O = null;
         if (!(position == LAST_RESIDUE && aminoAcid == AminoAcid3.NH2)) {
             if (aminoAcid == AminoAcid3.ACE || aminoAcid == AminoAcid3.NME) {
-                CA = buildHeavy(residue, "CH3", N, caType[j][aminoAcidNumber], forceField, bondList);
+                CA = buildHeavy(residue, "CH3", N, AA_CA[j][aminoAcidNumber], forceField, bondList);
             } else {
-                CA = buildHeavy(residue, "CA", N, caType[j][aminoAcidNumber], forceField, bondList);
+                CA = buildHeavy(residue, "CA", N, AA_CA[j][aminoAcidNumber], forceField, bondList);
             }
             if (!(position == LAST_RESIDUE && aminoAcid == AminoAcid3.NME)) {
-                C = buildHeavy(residue, "C", CA, cType[j][aminoAcidNumber], forceField, bondList);
+                C = buildHeavy(residue, "C", CA, AA_C[j][aminoAcidNumber], forceField, bondList);
                 O = (Atom) residue.getAtomNode("O");
                 if (O == null) {
                     O = (Atom) residue.getAtomNode("OT1");
                 }
-                AtomType atomType = findAtomType(oType[j][aminoAcidNumber], forceField);
+                AtomType atomType = findAtomType(AA_O[j][aminoAcidNumber], forceField);
                 if (O == null) {
                     MissingHeavyAtomException missingHeavyAtom
                             = new MissingHeavyAtomException("O", atomType, C);
@@ -1193,7 +1954,7 @@ public class AminoAcidUtils {
         /**
          * Nitrogen hydrogen atoms.
          */
-        AtomType atomType = findAtomType(hnType[j][aminoAcidNumber], forceField);
+        AtomType atomType = findAtomType(AA_HN[j][aminoAcidNumber], forceField);
         switch (position) {
             case FIRST_RESIDUE:
                 switch (aminoAcid) {
@@ -1247,7 +2008,7 @@ public class AminoAcidUtils {
         if (aminoAcid == AminoAcid3.GLY) {
             haName = "HA2";
         }
-        atomType = findAtomType(haType[j][aminoAcidNumber], forceField);
+        atomType = findAtomType(AA_HA[j][aminoAcidNumber], forceField);
         switch (position) {
             case FIRST_RESIDUE:
                 switch (aminoAcid) {
@@ -1297,7 +2058,7 @@ public class AminoAcidUtils {
          * Build the terminal oxygen if the residue is not NH2 or NME.
          */
         if (position == LAST_RESIDUE && !(aminoAcid == AminoAcid3.NH2 || aminoAcid == AminoAcid3.NME)) {
-            atomType = findAtomType(oType[2][aminoAcidNumber], forceField);
+            atomType = findAtomType(AA_O[2][aminoAcidNumber], forceField);
             Atom OXT = (Atom) residue.getAtomNode("OXT");
             if (OXT == null) {
                 OXT = (Atom) residue.getAtomNode("OT2");
@@ -1333,7 +2094,8 @@ public class AminoAcidUtils {
             if (atomType == null) {
                 /**
                  * Sometimes, with deuterons, a proton has been constructed in
-                 * its place, so we have a "dummy" deuteron still hanging around.
+                 * its place, so we have a "dummy" deuteron still hanging
+                 * around.
                  */
                 String protonEq = atom.getName().replaceFirst("D", "H");
                 Atom correspH = (Atom) residue.getAtomNode(protonEq);
@@ -1379,18 +2141,18 @@ public class AminoAcidUtils {
     public static void assignAminoAcidSideChain(ResiduePosition position, AminoAcid3 aminoAcid, Residue residue,
             Atom CA, Atom N, Atom C, ForceField forceField, ArrayList<Bond> bondList)
             throws MissingHeavyAtomException {
-        int k = cbType[aminoAcid.ordinal()];
+        int k = AA_CB[aminoAcid.ordinal()];
         switch (aminoAcid) {
             case GLY:
                 switch (position) {
                     case FIRST_RESIDUE:
-                        k = haType[0][k];
+                        k = AA_HA[0][k];
                         break;
                     case LAST_RESIDUE:
-                        k = haType[2][k];
+                        k = AA_HA[2][k];
                         break;
                     default:
-                        k = haType[1][k];
+                        k = AA_HA[1][k];
 
                 }
                 buildHydrogen(residue, "HA3", CA, 1.10, N, 109.5, C, 109.5, 1, k, forceField, bondList);
@@ -1794,7 +2556,7 @@ public class AminoAcidUtils {
      * <br>
      * xType[2][..] are for C-terminal residues.
      */
-    public static final int nType[][] = {
+    public static final int[][] AA_N = {
         {
             403, 409, 415, 421, 427, 433, 439, 445,
             451, 457, 463, 471, 477, 483, 489, 495,
@@ -1815,7 +2577,7 @@ public class AminoAcidUtils {
             0, 0, 773, 775, 777, 584
         }
     };
-    public static final int caType[][] = {
+    public static final int[][] AA_CA = {
         {
             404, 410, 416, 422, 428, 434, 440, 446,
             452, 458, 464, 472, 478, 484, 490, 496,
@@ -1836,7 +2598,7 @@ public class AminoAcidUtils {
             0, 0, 0, 0, 779, 585
         }
     };
-    public static final int cType[][] = {
+    public static final int[][] AA_C = {
         {
             405, 411, 417, 423, 429, 435, 441, 447,
             453, 459, 465, 473, 479, 485, 491, 497,
@@ -1857,7 +2619,7 @@ public class AminoAcidUtils {
             0, 0, 771, 0, 0, 586
         }
     };
-    public static final int hnType[][] = {
+    public static final int[][] AA_HN = {
         {
             406, 412, 418, 424, 430, 436, 442, 448,
             454, 460, 466, 474, 480, 486, 492, 498,
@@ -1877,7 +2639,7 @@ public class AminoAcidUtils {
             730, 736, 742, 748, 754, 760, 0, 0,
             0, 0, 774, 776, 778, 587}
     };
-    public static final int oType[][] = {
+    public static final int[][] AA_O = {
         {
             407, 413, 419, 425, 431, 437, 443, 449,
             455, 461, 467, 475, 481, 487, 493, 499,
@@ -1898,7 +2660,7 @@ public class AminoAcidUtils {
             0, 0, 772, 0, 0, 588
         }
     };
-    public static final int haType[][] = {
+    public static final int[][] AA_HA = {
         {
             408, 414, 420, 426, 432, 438, 444, 450,
             456, 462, 468, 476, 482, 488, 494, 500,
@@ -1919,7 +2681,7 @@ public class AminoAcidUtils {
             0, 0, 0, 0, 780, 589
         }
     };
-    public static final int cbType[] = {
+    public static final int[] AA_CB = {
         0, 13, 21, 33, 47, 61, 71, 83,
         93, 102, 110, 122, 137, 153, 168, 191,
         208, 224, 240, 250, 262, 274, 286, 300,

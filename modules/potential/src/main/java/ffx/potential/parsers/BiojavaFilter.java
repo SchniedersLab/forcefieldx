@@ -84,6 +84,13 @@ import ffx.utilities.Hybrid36;
 
 import static ffx.numerics.VectorMath.diff;
 import static ffx.numerics.VectorMath.r;
+import static ffx.potential.bonded.AminoAcidUtils.AA_C;
+import static ffx.potential.bonded.AminoAcidUtils.AA_CA;
+import static ffx.potential.bonded.AminoAcidUtils.AA_CB;
+import static ffx.potential.bonded.AminoAcidUtils.AA_HA;
+import static ffx.potential.bonded.AminoAcidUtils.AA_HN;
+import static ffx.potential.bonded.AminoAcidUtils.AA_N;
+import static ffx.potential.bonded.AminoAcidUtils.AA_O;
 import static ffx.potential.bonded.AminoAcidUtils.buildAIB;
 import static ffx.potential.bonded.AminoAcidUtils.buildAlanine;
 import static ffx.potential.bonded.AminoAcidUtils.buildArginine;
@@ -114,13 +121,6 @@ import static ffx.potential.bonded.AminoAcidUtils.buildThreonine;
 import static ffx.potential.bonded.AminoAcidUtils.buildTryptophan;
 import static ffx.potential.bonded.AminoAcidUtils.buildTyrosine;
 import static ffx.potential.bonded.AminoAcidUtils.buildValine;
-import static ffx.potential.bonded.AminoAcidUtils.cType;
-import static ffx.potential.bonded.AminoAcidUtils.caType;
-import static ffx.potential.bonded.AminoAcidUtils.cbType;
-import static ffx.potential.bonded.AminoAcidUtils.haType;
-import static ffx.potential.bonded.AminoAcidUtils.hnType;
-import static ffx.potential.bonded.AminoAcidUtils.nType;
-import static ffx.potential.bonded.AminoAcidUtils.oType;
 import static ffx.potential.bonded.AminoAcidUtils.removeH1_H2_H3;
 import static ffx.potential.bonded.AminoAcidUtils.removeOXT_OT2;
 import static ffx.potential.bonded.AminoAcidUtils.renameArginineHydrogens;
@@ -134,26 +134,26 @@ import static ffx.potential.bonded.AminoAcidUtils.renameGlycineAlphaHydrogens;
 import static ffx.potential.bonded.AminoAcidUtils.renameIsoleucineHydrogens;
 import static ffx.potential.bonded.AminoAcidUtils.renameZetaHydrogens;
 import static ffx.potential.bonded.BondedUtils.intxyz;
-import static ffx.potential.bonded.NucleicAcidUtils.c1Typ;
-import static ffx.potential.bonded.NucleicAcidUtils.c2Typ;
-import static ffx.potential.bonded.NucleicAcidUtils.c3Typ;
-import static ffx.potential.bonded.NucleicAcidUtils.c4Typ;
-import static ffx.potential.bonded.NucleicAcidUtils.c5Typ;
-import static ffx.potential.bonded.NucleicAcidUtils.h1Typ;
-import static ffx.potential.bonded.NucleicAcidUtils.h21Typ;
-import static ffx.potential.bonded.NucleicAcidUtils.h22Typ;
-import static ffx.potential.bonded.NucleicAcidUtils.h3Typ;
-import static ffx.potential.bonded.NucleicAcidUtils.h3tTyp;
-import static ffx.potential.bonded.NucleicAcidUtils.h4Typ;
-import static ffx.potential.bonded.NucleicAcidUtils.h51Typ;
-import static ffx.potential.bonded.NucleicAcidUtils.h52Typ;
-import static ffx.potential.bonded.NucleicAcidUtils.h5tTyp;
-import static ffx.potential.bonded.NucleicAcidUtils.o2Typ;
-import static ffx.potential.bonded.NucleicAcidUtils.o3Typ;
-import static ffx.potential.bonded.NucleicAcidUtils.o4Typ;
-import static ffx.potential.bonded.NucleicAcidUtils.o5Typ;
-import static ffx.potential.bonded.NucleicAcidUtils.opTyp;
-import static ffx.potential.bonded.NucleicAcidUtils.pTyp;
+import static ffx.potential.bonded.NucleicAcidUtils.NA_C1;
+import static ffx.potential.bonded.NucleicAcidUtils.NA_C2;
+import static ffx.potential.bonded.NucleicAcidUtils.NA_C3;
+import static ffx.potential.bonded.NucleicAcidUtils.NA_C4;
+import static ffx.potential.bonded.NucleicAcidUtils.NA_C5;
+import static ffx.potential.bonded.NucleicAcidUtils.NA_H1;
+import static ffx.potential.bonded.NucleicAcidUtils.NA_H21;
+import static ffx.potential.bonded.NucleicAcidUtils.NA_H22;
+import static ffx.potential.bonded.NucleicAcidUtils.NA_H3;
+import static ffx.potential.bonded.NucleicAcidUtils.NA_H3T;
+import static ffx.potential.bonded.NucleicAcidUtils.NA_H4;
+import static ffx.potential.bonded.NucleicAcidUtils.NA_H51;
+import static ffx.potential.bonded.NucleicAcidUtils.NA_H52;
+import static ffx.potential.bonded.NucleicAcidUtils.NA_H5T;
+import static ffx.potential.bonded.NucleicAcidUtils.NA_O2;
+import static ffx.potential.bonded.NucleicAcidUtils.NA_O3;
+import static ffx.potential.bonded.NucleicAcidUtils.NA_O4;
+import static ffx.potential.bonded.NucleicAcidUtils.NA_O5;
+import static ffx.potential.bonded.NucleicAcidUtils.NA_OP;
+import static ffx.potential.bonded.NucleicAcidUtils.NA_P;
 import static ffx.potential.bonded.Residue.ResiduePosition.FIRST_RESIDUE;
 import static ffx.potential.bonded.Residue.ResiduePosition.LAST_RESIDUE;
 import static ffx.potential.bonded.Residue.ResiduePosition.MIDDLE_RESIDUE;
@@ -1141,11 +1141,11 @@ public class BiojavaFilter extends ConversionFilter {
              * Check if this is a 3' phosphate being listed as its own residue.
              */
             /*if (residue.getAtomList().size() == 1) {
-             Atom P3s = (Atom) residue.getAtomNode("P");
+             Atom P3s = (Atom) residue.getAtomNode("NA_P");
              if (P3s != null) {
              Residue prevResidue = residue.getPreviousResidue();
              if (prevResidue != null) {
-             Atom O2sPrev = (Atom) prevResidue.getAtomNode("O2\'");
+             Atom O2sPrev = (Atom) prevResidue.getAtomNode("NA_O2\'");
              if (O2sPrev == null) {
              P3s = buildHeavy(prevResidue, "P3s", null, 1247);
              } else {
@@ -1194,11 +1194,10 @@ public class BiojavaFilter extends ConversionFilter {
                         default:
                     }
                 }
-            } else {
-                /**
-                 * Assume ribose (RNA) since there is an O2* atom.
-                 */
-                if (residueName.startsWith("D")) {
+            } else /**
+             * Assume ribose (RNA) since there is an O2* atom.
+             */
+             if (residueName.startsWith("D")) {
                     switch (nucleicAcid) {
                         case DAD:
                             nucleicAcid = NucleicAcid3.ADE;
@@ -1223,7 +1222,6 @@ public class BiojavaFilter extends ConversionFilter {
                         default:
                     }
                 }
-            }
 
             /**
              * Set a position flag.
@@ -1237,7 +1235,7 @@ public class BiojavaFilter extends ConversionFilter {
             /**
              * Build the phosphate atoms of the current residue.
              */
-            Atom P = null;
+            Atom phosphate = null;
             Atom O5s = null;
             if (position == FIRST_RESIDUE) {
                 /**
@@ -1246,43 +1244,41 @@ public class BiojavaFilter extends ConversionFilter {
                  *
                  * If the base has phosphate atom we will assume a PO3 group.
                  */
-                P = (Atom) residue.getAtomNode("P");
-                if (P != null) {
+                phosphate = (Atom) residue.getAtomNode("P");
+                if (phosphate != null) {
                     if (isDNA) {
-                        P = buildHeavy(residue, "P", null, 1247);
-                        buildHeavy(residue, "OP1", P, 1248);
-                        buildHeavy(residue, "OP2", P, 1248);
-                        buildHeavy(residue, "OP3", P, 1248);
-                        O5s = buildHeavy(residue, "O5\'", P, 1246);
+                        phosphate = buildHeavy(residue, "P", null, 1247);
+                        buildHeavy(residue, "OP1", phosphate, 1248);
+                        buildHeavy(residue, "OP2", phosphate, 1248);
+                        buildHeavy(residue, "OP3", phosphate, 1248);
+                        O5s = buildHeavy(residue, "O5\'", phosphate, 1246);
                     } else {
-                        P = buildHeavy(residue, "P", null, 1235);
-                        buildHeavy(residue, "OP1", P, 1236);
-                        buildHeavy(residue, "OP2", P, 1236);
-                        buildHeavy(residue, "OP3", P, 1236);
-                        O5s = buildHeavy(residue, "O5\'", P, 1234);
+                        phosphate = buildHeavy(residue, "P", null, 1235);
+                        buildHeavy(residue, "OP1", phosphate, 1236);
+                        buildHeavy(residue, "OP2", phosphate, 1236);
+                        buildHeavy(residue, "OP3", phosphate, 1236);
+                        O5s = buildHeavy(residue, "O5\'", phosphate, 1234);
                     }
+                } else if (isDNA) {
+                    O5s = buildHeavy(residue, "O5\'", phosphate, 1244);
                 } else {
-                    if (isDNA) {
-                        O5s = buildHeavy(residue, "O5\'", P, 1244);
-                    } else {
-                        O5s = buildHeavy(residue, "O5\'", P, 1232);
-                    }
+                    O5s = buildHeavy(residue, "O5\'", phosphate, 1232);
                 }
             } else {
-                P = buildHeavy(residue, "P", pO3s, pTyp[naNumber]);
-                buildHeavy(residue, "OP1", P, opTyp[naNumber]);
-                buildHeavy(residue, "OP2", P, opTyp[naNumber]);
-                O5s = buildHeavy(residue, "O5\'", P, o5Typ[naNumber]);
+                phosphate = buildHeavy(residue, "P", pO3s, NA_P[naNumber]);
+                buildHeavy(residue, "OP1", phosphate, NA_OP[naNumber]);
+                buildHeavy(residue, "OP2", phosphate, NA_OP[naNumber]);
+                O5s = buildHeavy(residue, "O5\'", phosphate, NA_O5[naNumber]);
             }
             /**
              * Build the ribose sugar atoms of the current base.
              */
-            Atom C5s = buildHeavy(residue, "C5\'", O5s, c5Typ[naNumber]);
-            Atom C4s = buildHeavy(residue, "C4\'", C5s, c4Typ[naNumber]);
-            Atom O4s = buildHeavy(residue, "O4\'", C4s, o4Typ[naNumber]);
-            Atom C1s = buildHeavy(residue, "C1\'", O4s, c1Typ[naNumber]);
-            Atom C3s = buildHeavy(residue, "C3\'", C4s, c3Typ[naNumber]);
-            Atom C2s = buildHeavy(residue, "C2\'", C3s, c2Typ[naNumber]);
+            Atom C5s = buildHeavy(residue, "C5\'", O5s, NA_C5[naNumber]);
+            Atom C4s = buildHeavy(residue, "C4\'", C5s, NA_C4[naNumber]);
+            Atom O4s = buildHeavy(residue, "O4\'", C4s, NA_O4[naNumber]);
+            Atom C1s = buildHeavy(residue, "C1\'", O4s, NA_C1[naNumber]);
+            Atom C3s = buildHeavy(residue, "C3\'", C4s, NA_C3[naNumber]);
+            Atom C2s = buildHeavy(residue, "C2\'", C3s, NA_C2[naNumber]);
             buildBond(C2s, C1s);
             Atom O3s = null;
             if (position == LAST_RESIDUE || numberOfResidues == 1) {
@@ -1292,39 +1288,39 @@ public class BiojavaFilter extends ConversionFilter {
                     O3s = buildHeavy(residue, "O3\'", C3s, 1237);
                 }
             } else {
-                O3s = buildHeavy(residue, "O3\'", C3s, o3Typ[naNumber]);
+                O3s = buildHeavy(residue, "O3\'", C3s, NA_O3[naNumber]);
             }
             if (!isDNA) {
-                O2s = buildHeavy(residue, "O2\'", C2s, o2Typ[naNumber]);
+                O2s = buildHeavy(residue, "O2\'", C2s, NA_O2[naNumber]);
             }
             /**
              * Build the backbone hydrogen atoms.
              */
-            if (position == FIRST_RESIDUE && P == null) {
-                buildHydrogen(residue, "H5T", O5s, 1.00e0, C5s, 109.5e0, C4s, 180.0e0, 0, h5tTyp[naNumber]);
+            if (position == FIRST_RESIDUE && phosphate == null) {
+                buildHydrogen(residue, "H5T", O5s, 1.00e0, C5s, 109.5e0, C4s, 180.0e0, 0, NA_H5T[naNumber]);
             }
-            buildHydrogen(residue, "H5\'1", C5s, 1.09e0, O5s, 109.5e0, C4s, 109.5e0, 1, h51Typ[naNumber]);
-            buildHydrogen(residue, "H5\'2", C5s, 1.09e0, O5s, 109.5e0, C4s, 109.5e0, -1, h52Typ[naNumber]);
-            buildHydrogen(residue, "H4\'", C4s, 1.09e0, C5s, 109.5e0, C3s, 109.5e0, -1, h4Typ[naNumber]);
-            buildHydrogen(residue, "H3\'", C3s, 1.09e0, C4s, 109.5e0, C2s, 109.5e0, -1, h3Typ[naNumber]);
+            buildHydrogen(residue, "H5\'1", C5s, 1.09e0, O5s, 109.5e0, C4s, 109.5e0, 1, NA_H51[naNumber]);
+            buildHydrogen(residue, "H5\'2", C5s, 1.09e0, O5s, 109.5e0, C4s, 109.5e0, -1, NA_H52[naNumber]);
+            buildHydrogen(residue, "H4\'", C4s, 1.09e0, C5s, 109.5e0, C3s, 109.5e0, -1, NA_H4[naNumber]);
+            buildHydrogen(residue, "H3\'", C3s, 1.09e0, C4s, 109.5e0, C2s, 109.5e0, -1, NA_H3[naNumber]);
             if (isDNA) {
-                buildHydrogen(residue, "H2\'1", C2s, 1.09e0, C3s, 109.5e0, C1s, 109.5e0, -1, h21Typ[naNumber]);
-                buildHydrogen(residue, "H2\'2", C2s, 1.09e0, C3s, 109.5e0, C1s, 109.5e0, 1, h22Typ[naNumber]);
+                buildHydrogen(residue, "H2\'1", C2s, 1.09e0, C3s, 109.5e0, C1s, 109.5e0, -1, NA_H21[naNumber]);
+                buildHydrogen(residue, "H2\'2", C2s, 1.09e0, C3s, 109.5e0, C1s, 109.5e0, 1, NA_H22[naNumber]);
             } else {
-                buildHydrogen(residue, "H2\'", C2s, 1.09e0, C3s, 109.5e0, C1s, 109.5e0, -1, h21Typ[naNumber]);
-                // Add the O2' Methyl for OMC and OMG
+                buildHydrogen(residue, "H2\'", C2s, 1.09e0, C3s, 109.5e0, C1s, 109.5e0, -1, NA_H21[naNumber]);
+                // Add the NA_O2' Methyl for OMC and OMG
                 if (nucleicAcid == NucleicAcid3.OMC || nucleicAcid == NucleicAcid3.OMG) {
                     Atom CM2 = buildHeavy(residue, "CM2", O2s, 1427);
                     Atom HM21 = buildHydrogen(residue, "HM21", CM2, 1.08e0, O2s, 109.5e0, C2s, 0.0e0, 0, 1428);
                     buildHydrogen(residue, "HM22", CM2, 1.08e0, O2s, 109.5e0, HM21, 109.5e0, 1, 1429);
                     buildHydrogen(residue, "HM23", CM2, 1.08e0, O2s, 109.5e0, HM21, 109.5e0, -1, 1430);
                 } else {
-                    buildHydrogen(residue, "HO\'", O2s, 1.00e0, C2s, 109.5e0, C3s, 180.0e0, 0, h22Typ[naNumber]);
+                    buildHydrogen(residue, "HO\'", O2s, 1.00e0, C2s, 109.5e0, C3s, 180.0e0, 0, NA_H22[naNumber]);
                 }
             }
-            buildHydrogen(residue, "H1\'", C1s, 1.09e0, O4s, 109.5e0, C2s, 109.5e0, -1, h1Typ[naNumber]);
+            buildHydrogen(residue, "H1\'", C1s, 1.09e0, O4s, 109.5e0, C2s, 109.5e0, -1, NA_H1[naNumber]);
             if (position == LAST_RESIDUE || numberOfResidues == 1) {
-                buildHydrogen(residue, "H3T", O3s, 1.00e0, C3s, 109.5e0, C4s, 180.0e0, 0, h3tTyp[naNumber]);
+                buildHydrogen(residue, "H3T", O3s, 1.00e0, C3s, 109.5e0, C4s, 180.0e0, 0, NA_H3T[naNumber]);
                 // Else, if it is terminated by a 3' phosphate cap:
                 // Will need to see how PDB would label a 3' phosphate cap.
             }
@@ -1660,7 +1656,7 @@ public class BiojavaFilter extends ConversionFilter {
                 buildHydrogen(residue, "H6", C6, 1.08e0, C5, 118.6e0, C4, 180.0e0, 0, 1116);
                 break;
             case PSU:
-                // C1s bonds to C5 in PsuedoUridine
+                // C1s bonds to NA_C5 in PsuedoUridine
                 C5 = buildHeavy(residue, "C5", C1s, 1485);
                 C6 = buildHeavy(residue, "C6", C5, 1486);
                 N1 = buildHeavy(residue, "N1", C6, 1481);
@@ -1939,7 +1935,7 @@ public class BiojavaFilter extends ConversionFilter {
          */
         Atom N = (Atom) residue.getAtomNode("N");
         if (N != null) {
-            N.setAtomType(findAtomType(nType[j][aminoAcidNumber]));
+            N.setAtomType(findAtomType(AA_N[j][aminoAcidNumber]));
             if (position != FIRST_RESIDUE) {
                 buildBond(pC, N);
             }
@@ -1950,17 +1946,17 @@ public class BiojavaFilter extends ConversionFilter {
         Atom O = null;
         if (!(position == LAST_RESIDUE && aminoAcid == AminoAcid3.NH2)) {
             if (aminoAcid == AminoAcid3.ACE || aminoAcid == AminoAcid3.NME) {
-                CA = buildHeavy(residue, "CH3", N, caType[j][aminoAcidNumber]);
+                CA = buildHeavy(residue, "CH3", N, AA_CA[j][aminoAcidNumber]);
             } else {
-                CA = buildHeavy(residue, "CA", N, caType[j][aminoAcidNumber]);
+                CA = buildHeavy(residue, "CA", N, AA_CA[j][aminoAcidNumber]);
             }
             if (!(position == LAST_RESIDUE && aminoAcid == AminoAcid3.NME)) {
-                C = buildHeavy(residue, "C", CA, cType[j][aminoAcidNumber]);
+                C = buildHeavy(residue, "C", CA, AA_C[j][aminoAcidNumber]);
                 O = (Atom) residue.getAtomNode("O");
                 if (O == null) {
                     O = (Atom) residue.getAtomNode("OT1");
                 }
-                AtomType atomType = findAtomType(oType[j][aminoAcidNumber]);
+                AtomType atomType = findAtomType(AA_O[j][aminoAcidNumber]);
                 if (O == null) {
                     MissingHeavyAtomException missingHeavyAtom = new MissingHeavyAtomException("O", atomType, C);
                     throw missingHeavyAtom;
@@ -1972,7 +1968,7 @@ public class BiojavaFilter extends ConversionFilter {
         /**
          * Nitrogen hydrogen atoms.
          */
-        AtomType atomType = findAtomType(hnType[j][aminoAcidNumber]);
+        AtomType atomType = findAtomType(AA_HN[j][aminoAcidNumber]);
         switch (position) {
             case FIRST_RESIDUE:
                 switch (aminoAcid) {
@@ -2015,7 +2011,7 @@ public class BiojavaFilter extends ConversionFilter {
         if (aminoAcid == AminoAcid3.GLY) {
             haName = "HA2";
         }
-        atomType = findAtomType(haType[j][aminoAcidNumber]);
+        atomType = findAtomType(AA_HA[j][aminoAcidNumber]);
         switch (position) {
             case FIRST_RESIDUE:
                 switch (aminoAcid) {
@@ -2055,7 +2051,7 @@ public class BiojavaFilter extends ConversionFilter {
          * Build the terminal oxygen if the residue is not NH2 or NME.
          */
         if (position == LAST_RESIDUE && !(aminoAcid == AminoAcid3.NH2 || aminoAcid == AminoAcid3.NME)) {
-            atomType = findAtomType(oType[2][aminoAcidNumber]);
+            atomType = findAtomType(AA_O[2][aminoAcidNumber]);
             Atom OXT = (Atom) residue.getAtomNode("OXT");
             if (OXT == null) {
                 OXT = (Atom) residue.getAtomNode("OT2");
@@ -2119,18 +2115,18 @@ public class BiojavaFilter extends ConversionFilter {
      */
     public void assignAminoAcidSideChain(ResiduePosition position, AminoAcid3 aminoAcid, Residue residue,
             Atom CA, Atom N, Atom C) throws MissingHeavyAtomException {
-        int k = cbType[aminoAcid.ordinal()];
+        int k = AA_CB[aminoAcid.ordinal()];
         switch (aminoAcid) {
             case GLY:
                 switch (position) {
                     case FIRST_RESIDUE:
-                        k = haType[0][k];
+                        k = AA_HA[0][k];
                         break;
                     case LAST_RESIDUE:
-                        k = haType[2][k];
+                        k = AA_HA[2][k];
                         break;
                     default:
-                        k = haType[1][k];
+                        k = AA_HA[1][k];
 
                 }
                 buildHydrogen(residue, "HA3", CA, 1.10, N, 109.5, C, 109.5, 1, k);
@@ -3485,7 +3481,7 @@ public class BiojavaFilter extends ConversionFilter {
                 continue;
             }
             String atomName = atom.getName().toUpperCase();
-            // Handles situations such as 1H where it should be H1, etc.
+            // Handles situations such as 1H where it should be NA_H1, etc.
             if (atomName.contains("H")) {
                 try {
                     String firstChar = atomName.substring(0, 1);

@@ -4,6 +4,7 @@ radiustype              R-MIN
 radiussize              RADIUS
 torsionunit             1.0
 imptorunit              1.0
+polarizeterm            FALSE
 
 angle      1      1      1   40.00  109.50
 angle      1      1      2   63.00  111.10

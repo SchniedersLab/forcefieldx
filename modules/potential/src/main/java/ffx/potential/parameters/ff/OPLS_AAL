@@ -2,7 +2,7 @@
 radiusrule              GEOMETRIC
 radiustype              SIGMA
 radiussize              DIAMETER
-
+polarizeterm            FALSE
 
 angle      1      1      1   58.35  112.70
 angle      1      1      2   37.50  110.70
