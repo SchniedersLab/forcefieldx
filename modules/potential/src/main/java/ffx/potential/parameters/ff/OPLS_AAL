@@ -1,7 +1,11 @@
 
+vdwtype                 LENNARD-JONES
 radiusrule              GEOMETRIC
 radiustype              SIGMA
 radiussize              DIAMETER
+epsilonrule             GEOMETRIC
+vdw-14-scale            2.0
+
 polarizeterm            FALSE
 
 angle      1      1      1   58.35  112.70

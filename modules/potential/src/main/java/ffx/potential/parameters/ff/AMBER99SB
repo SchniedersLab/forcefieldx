@@ -1,7 +1,11 @@
 
+vdwtype                 LENNARD-JONES
 radiusrule              ARITHMETIC
 radiustype              R-MIN
 radiussize              RADIUS
+epsilonrule             GEOMETRIC
+vdw-14-scale            2.0
+
 torsionunit             1.0
 imptorunit              1.0
 polarizeterm            FALSE

@@ -1,3 +1,45 @@
+forcefield              AMOEBA-2004
+
+bond-cubic              -2.55
+bond-quartic            3.793125
+angle-cubic             -0.014
+angle-quartic           0.000056
+angle-pentic            -0.0000007
+angle-sextic            0.000000022
+opbendtype              ALLINGER
+opbend-cubic            -0.014
+opbend-quartic          0.000056
+opbend-pentic           -0.0000007
+opbend-sextic           0.000000022
+torsionunit             0.5
+vdwtype                 BUFFERED-14-7
+radiusrule              CUBIC-MEAN
+radiustype              R-MIN
+radiussize              DIAMETER
+epsilonrule             HHG
+dielectric              1.0
+polarization            MUTUAL
+vdw-12-scale            0.0
+vdw-13-scale            0.0
+vdw-14-scale            1.0
+vdw-15-scale            1.0
+mpole-12-scale          0.0
+mpole-13-scale          0.0
+mpole-14-scale          0.4
+mpole-15-scale          0.8
+polar-12-scale          0.0
+polar-13-scale          0.0
+polar-14-scale          1.0
+polar-15-scale          1.0
+polar-14-intra          0.5
+direct-11-scale         0.0
+direct-12-scale         1.0
+direct-13-scale         1.0
+direct-14-scale         1.0
+mutual-11-scale         1.0
+mutual-12-scale         1.0
+mutual-13-scale         1.0
+mutual-14-scale         1.0
 
 angle     18     17     18   65.00  109.47
 angle     23     22     23   39.57  109.47
@@ -576,6 +618,8 @@ bond     84     84   323.0   1.5247
 bond     86     87   487.0   1.0280
 bond     86     88   491.4   1.3250
 bond     89     90   467.6   1.0300
+
+
 
 
 multipole      1      0      0          0.00000 \
@@ -3026,4 +3070,5 @@ vdw     87  2.590000000  0.022000000  0.900
 vdw     88  3.650000000  0.101000000
 vdw     89  3.710000000  0.105000000
 vdw     90  2.700000000  0.020000000  0.910
+
 

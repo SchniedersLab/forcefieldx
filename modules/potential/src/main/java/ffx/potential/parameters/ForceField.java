@@ -384,11 +384,25 @@ public class ForceField {
      * @param s an input Enum string
      * @return the normalized keyword
      */
-    private String normalizeKey(String s) {
+    public static String toPropertyForm(String s) {
         if (s == null) {
             return null;
         }
         return s.toLowerCase().replace("_", "-");
+    }
+
+    /**
+     * Enums are uppercase with underscores, but property files use lower case
+     * with dashes.
+     *
+     * @param key an input keyword
+     * @return the keyword in Enum form.
+     */
+    public static String toEnumForm(String key) {
+        if (key == null) {
+            return null;
+        }
+        return key.toUpperCase().replace("-", "_");
     }
 
     /**
@@ -405,7 +419,7 @@ public class ForceField {
         if (forceFieldDouble == null) {
             throw new Exception("NULL keyword");
         }
-        String key = normalizeKey(forceFieldDouble.toString());
+        String key = toPropertyForm(forceFieldDouble.toString());
         if (!properties.containsKey(key)) {
             throw new Exception("Undefined keyword: " + key);
         }
@@ -444,7 +458,7 @@ public class ForceField {
         if (forceFieldInteger == null) {
             throw new Exception("NULL keyword");
         }
-        String key = normalizeKey(forceFieldInteger.toString());
+        String key = toPropertyForm(forceFieldInteger.toString());
         if (!properties.containsKey(key)) {
             throw new Exception("Undefined keyword: " + key);
         }
@@ -483,7 +497,7 @@ public class ForceField {
         if (forceFieldString == null) {
             throw new Exception("NULL keyword");
         }
-        String key = normalizeKey(forceFieldString.toString());
+        String key = toPropertyForm(forceFieldString.toString());
         if (!properties.containsKey(key)) {
             throw new Exception("Undefined keyword: " + key);
         }
@@ -522,7 +536,7 @@ public class ForceField {
         if (forceFieldBoolean == null) {
             throw new Exception("NULL keyword");
         }
-        String key = normalizeKey(forceFieldBoolean.toString());
+        String key = toPropertyForm(forceFieldBoolean.toString());
         if (!properties.containsKey(key)) {
             throw new Exception("Undefined keyword: " + key);
         }
@@ -557,7 +571,7 @@ public class ForceField {
         if (forceFieldDouble == null) {
             return;
         }
-        String key = normalizeKey(forceFieldDouble.toString());
+        String key = toPropertyForm(forceFieldDouble.toString());
         try {
             double old = getDouble(forceFieldDouble);
             if (old == value) {
@@ -583,7 +597,7 @@ public class ForceField {
         if (forceFieldInteger == null) {
             return;
         }
-        String key = normalizeKey(forceFieldInteger.toString());
+        String key = toPropertyForm(forceFieldInteger.toString());
         try {
             int old = getInteger(forceFieldInteger);
             if (old == value) {
@@ -644,7 +658,7 @@ public class ForceField {
         if (forceFieldString == null) {
             return;
         }
-        String key = normalizeKey(forceFieldString.toString());
+        String key = toPropertyForm(forceFieldString.toString());
         try {
             String old = getString(forceFieldString);
             if (old.equalsIgnoreCase(value)) {
@@ -670,7 +684,7 @@ public class ForceField {
         if (forceFieldBoolean == null) {
             return;
         }
-        String key = normalizeKey(forceFieldBoolean.toString());
+        String key = toPropertyForm(forceFieldBoolean.toString());
         try {
             boolean old = getBoolean(forceFieldBoolean);
             if (old == value) {
@@ -1114,7 +1128,7 @@ public class ForceField {
             return null;
         }
 
-        key = normalizeKey(key);
+        key = toPropertyForm(key);
 
         if (properties.containsKey(key)) {
             List l = properties.getList(key);
@@ -1238,14 +1252,41 @@ public class ForceField {
      */
     public enum ForceFieldName {
 
-        AMOEBA_WATER, AMOEBA_2004, AMOEBA_PROTEIN_2004, AMOEBA_PROTEIN_2004_U1, AMOEBA_2009, AMOEBA_BIO_2009, AMOEBA_BIO_2009_ORIG, AMOEBA_PROTEIN_2013, OPLS_AAL, AMBER99SB
+        AMBER99SB,
+        AMOEBA_WATER,
+        AMOEBA_WATER_2003,
+        AMOEBA_WATER_2014,
+        AMOEBA_2004,
+        AMOEBA_PROTEIN_2004,
+        AMOEBA_PROTEIN_2004_U1,
+        AMOEBA_2009,
+        AMOEBA_BIO_2009,
+        AMOEBA_BIO_2009_ORIG,
+        AMOEBA_PROTEIN_2013,
+        IAMOEBA_WATER,
+        OPLS_AAL
     }
 
     public enum ForceFieldString {
 
-        SPACEGROUP, NCSGROUP, FORCEFIELD, POLARIZATION, VDW_SCHEDULE, REAL_SCHEDULE,
-        RECIP_SCHEDULE, SCF_PREDICTOR, SCF_ALGORITHM, CAVMODEL, VDWINDEX, FFT_METHOD,
-        RELATIVE_SOLVATION, RADIUSRULE, RADIUSTYPE, RADIUSSIZE
+        CAVMODEL,
+        EPSILONRULE,
+        FFT_METHOD,
+        FORCEFIELD,
+        NCSGROUP,
+        POLARIZATION,
+        RADIUSRULE,
+        RADIUSSIZE,
+        RADIUSTYPE,
+        REAL_SCHEDULE,
+        RECIP_SCHEDULE,
+        RELATIVE_SOLVATION,
+        SCF_PREDICTOR,
+        SCF_ALGORITHM,
+        SPACEGROUP,
+        VDWINDEX,
+        VDWTYPE,
+        VDW_SCHEDULE
     }
 
     public enum ForceFieldDouble {
@@ -1256,12 +1297,22 @@ public class ForceField {
         DIRECT_11_SCALE, RIGID_SCALE, VDW_LAMBDA_EXPONENT, VDW_LAMBDA_ALPHA, PERMANENT_LAMBDA_EXPONENT,
         PERMANENT_LAMBDA_ALPHA, POLARIZATION_LAMBDA_START, POLARIZATION_LAMBDA_END, POLARIZATION_LAMBDA_EXPONENT,
         DUAL_TOPOLOGY_LAMBDA_EXPONENT, CG_PRECONDITIONER_CUTOFF, CG_PRECONDITIONER_EWALD, CG_PRECONDITIONER_SOR,
-        RESTRAINT_K, PROBE_RADIUS, BORNAI, SURFACE_TENSION, TORSIONUNIT, IMPTORUNIT
+        RESTRAINT_K, PROBE_RADIUS, BORNAI, SURFACE_TENSION, TORSIONUNIT, IMPTORUNIT,
+        VDW_12_SCALE, VDW_13_SCALE, VDW_14_SCALE, VDW_15_SCALE
     }
 
     public enum ForceFieldInteger {
 
-        FF_THREADS, PME_ORDER, PME_REAL_THREADS, PME_GRID_X, PME_GRID_Y, PME_GRID_Z, LIGAND_START, LIGAND_STOP, SCF_CYCLES, SCF_PREDICTOR_ORDER
+        FF_THREADS,
+        PME_ORDER,
+        PME_REAL_THREADS,
+        PME_GRID_X,
+        PME_GRID_Y,
+        PME_GRID_Z,
+        LIGAND_START,
+        LIGAND_STOP,
+        SCF_CYCLES,
+        SCF_PREDICTOR_ORDER
     }
 
     public enum ForceFieldBoolean {
@@ -1276,7 +1327,21 @@ public class ForceField {
 
     public enum ForceFieldType {
 
-        KEYWORD, ANGLE, ATOM, BIOTYPE, BOND, CHARGE, IMPTORS, MULTIPOLE, OPBEND,
-        PITORS, POLARIZE, STRBND, TORSION, TORTORS, UREYBRAD, VDW
+        KEYWORD,
+        ANGLE, 
+        ATOM,
+        BIOTYPE,
+        BOND,
+        CHARGE,
+        IMPTORS,
+        MULTIPOLE,
+        OPBEND,
+        PITORS,
+        POLARIZE,
+        STRBND,
+        TORSION,
+        TORTORS,
+        UREYBRAD,
+        VDW
     }
 }

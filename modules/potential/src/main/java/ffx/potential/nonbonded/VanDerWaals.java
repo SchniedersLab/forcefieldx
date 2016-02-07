@@ -73,6 +73,13 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.VDWType;
 
+import static ffx.potential.parameters.ForceField.ForceFieldString.EPSILONRULE;
+import static ffx.potential.parameters.ForceField.ForceFieldString.RADIUSRULE;
+import static ffx.potential.parameters.ForceField.ForceFieldString.RADIUSSIZE;
+import static ffx.potential.parameters.ForceField.ForceFieldString.RADIUSTYPE;
+import static ffx.potential.parameters.ForceField.ForceFieldString.VDWTYPE;
+import static ffx.potential.parameters.ForceField.toEnumForm;
+
 /**
  * The van der Waals class computes the buffered 14-7 van der Waals interaction
  * used by the AMOEBA force field in parallel using a {@link NeighborList} for
@@ -87,14 +94,39 @@ public class VanDerWaals implements MaskingInterface,
 
     private static final Logger logger = Logger.getLogger(VanDerWaals.class.getName());
 
-    public enum VDW_FORM {
+    public enum VDW_TYPE {
 
-        BUFFERED_14_7, LENNARD_JONES_6_12
-    };
+        BUFFERED_14_7, LENNARD_JONES
+    }
 
     public enum RADIUS_RULE {
         ARITHMETIC, CUBIC_MEAN, GEOMETRIC
-    };
+    }
+
+    public enum RADIUS_SIZE {
+        DIAMETER, RADIUS
+    }
+
+    public enum RADIUS_TYPE {
+        R_MIN, SIGMA
+    }
+
+    public enum EPSILON_RULE {
+        GEOMETRIC, HHG
+    }
+
+    /**
+     * Configure default vdW parameters based on the AMOEBA force field.
+     */
+    private VDW_TYPE vdwType = VDW_TYPE.BUFFERED_14_7;
+    private EPSILON_RULE epsilonRule = EPSILON_RULE.HHG;
+    private RADIUS_RULE radiusRule = RADIUS_RULE.CUBIC_MEAN;
+    private RADIUS_SIZE radiusSize = RADIUS_SIZE.DIAMETER;
+    private RADIUS_TYPE radiusType = RADIUS_TYPE.R_MIN;
+    private double vdw12Scale = 0.0;
+    private double vdw13Scale = 0.0;
+    private double vdw14Scale = 1.0;
+    private double vdw15Scale = 1.0;
 
     private Resolution resolution = null;
 
@@ -265,9 +297,6 @@ public class VanDerWaals implements MaskingInterface,
 
     private final MultiplicativeSwitch multiplicativeSwitch;
 
-    private VDW_FORM vdwForm = VDW_FORM.BUFFERED_14_7;
-    private RADIUS_RULE radiusRule = RADIUS_RULE.CUBIC_MEAN;
-
     /**
      * The VanDerWaals class constructor.
      *
@@ -276,40 +305,109 @@ public class VanDerWaals implements MaskingInterface,
      * @param crystal The boundary conditions.
      * @param forceField the ForceField parameters to apply.
      * @param parallelTeam The parallel environment.
-     * @param vdwForm the van der Waals functional form.
-     * @param radiusRule the van der Waals radius combining rule.
      *
      * @since 1.0
      */
     public VanDerWaals(Atom atoms[], int molecule[], Crystal crystal, ForceField forceField,
-            ParallelTeam parallelTeam, VDW_FORM vdwForm, RADIUS_RULE radiusRule) {
+            ParallelTeam parallelTeam) {
         this.atoms = atoms;
         this.molecule = molecule;
         this.crystal = crystal;
         this.parallelTeam = parallelTeam;
-        this.vdwForm = vdwForm;
-        this.radiusRule = radiusRule;
         this.forceField = forceField;
-
         nAtoms = atoms.length;
         nSymm = crystal.spaceGroup.getNumberOfSymOps();
 
         /**
+         * Define functional form.
+         */
+        String value = forceField.getString(VDWTYPE, "Buffered-14-7");
+        try {
+            vdwType = VDW_TYPE.valueOf(toEnumForm(value));
+        } catch (Exception e) {
+            logger.info(format(" Unrecognized VDWTYPE %s; defaulting to Buffered-14-7", value));
+        }
+
+        /**
+         * Define epsilon combining rule.
+         */
+        value = forceField.getString(EPSILONRULE, "HHG");
+        try {
+            epsilonRule = EPSILON_RULE.valueOf(toEnumForm(value));
+        } catch (Exception e) {
+            logger.info(format(" Unrecognized EPSILONRULE %s; defaulting to HHG", value));
+        }
+
+        /**
+         * Define radius combining rule.
+         */
+        value = forceField.getString(RADIUSRULE, "Cubic-Mean");
+        try {
+            radiusRule = RADIUS_RULE.valueOf(toEnumForm(value));
+        } catch (Exception e) {
+            logger.info(format(" Unrecognized RADIUSRULE %s; defaulting to Cubic-Mean", value));
+        }
+
+        /**
+         * Define radius size.
+         */
+        value = forceField.getString(RADIUSSIZE, "Diameter");
+        try {
+            radiusSize = RADIUS_SIZE.valueOf(toEnumForm(value));
+        } catch (Exception e) {
+            logger.info(format(" Unrecognized RADIUSSIZE %s; defaulting to Diameter", value));
+        }
+
+        /**
+         * Define radius type.
+         */
+        value = forceField.getString(RADIUSTYPE, "R-Min");
+        try {
+            radiusType = RADIUS_TYPE.valueOf(toEnumForm(value));
+        } catch (Exception e) {
+            logger.info(format(" Unrecognized RADIUSTYPE %s; defaulting to R-Min", value));
+        }
+
+        /**
+         * Define masking rules.
+         */
+        vdw12Scale = forceField.getDouble(ForceFieldDouble.VDW_12_SCALE, 0.0);
+        vdw13Scale = forceField.getDouble(ForceFieldDouble.VDW_13_SCALE, 0.0);
+        vdw14Scale = forceField.getDouble(ForceFieldDouble.VDW_14_SCALE, 1.0);
+        vdw15Scale = forceField.getDouble(ForceFieldDouble.VDW_15_SCALE, 1.0);
+        /**
+         * The convention in TINKER is a vdw-14-scale factor of 2.0 means to
+         * scale by 0.5.
+         */
+        if (vdw12Scale > 1.0) {
+            vdw12Scale = 1.0 / vdw12Scale;
+        }
+        if (vdw13Scale > 1.0) {
+            vdw13Scale = 1.0 / vdw13Scale;
+        }
+        if (vdw14Scale > 1.0) {
+            vdw14Scale = 1.0 / vdw14Scale;
+        }
+        if (vdw15Scale != 1.0) {
+            logger.severe(" Van Der Waals 1-5 masking rules are not supported.");
+        }
+
+        /**
          * Configure van der Waals well shape parameters.
          */
-        switch (vdwForm) {
-            case LENNARD_JONES_6_12:
+        switch (vdwType) {
+            case LENNARD_JONES:
                 repulsivePower = 12;
                 dispersivePower = 6;
-                this.delta = 0.0;
-                this.gamma = 0.0;
+                delta = 0.0;
+                gamma = 0.0;
                 break;
             case BUFFERED_14_7:
             default:
                 repulsivePower = 14;
                 dispersivePower = 7;
-                this.delta = 0.07;
-                this.gamma = 0.12;
+                delta = 0.07;
+                gamma = 0.12;
                 break;
         }
 
@@ -329,15 +427,27 @@ public class VanDerWaals implements MaskingInterface,
             }
         }
         radEps = new double[maxClass + 1][2 * (maxClass + 1)];
-        String radiusSize = forceField.getString(ForceField.ForceFieldString.RADIUSSIZE, "Diameter");
-        String radiusType = forceField.getString(ForceField.ForceFieldString.RADIUSTYPE, "R-Min");
-        double radScale = 0.5;
-        if (radiusSize.equalsIgnoreCase("Radius")) {
-            radScale = 1.0;
+
+        double radScale;
+        switch (radiusSize) {
+            case DIAMETER:
+                radScale = 0.5;
+                break;
+            case RADIUS:
+            default:
+                radScale = 1.0;
+                break;
         }
-        if (radiusType.equalsIgnoreCase("Sigma")) {
-            radScale *= 1.122462048309372981;
+        switch (radiusType) {
+            case SIGMA:
+                radScale *= 1.122462048309372981;
+                break;
+            case R_MIN:
+            default:
+                break;
+
         }
+
         /**
          * Atom Class numbering starts at 1.
          */
@@ -368,18 +478,12 @@ public class VanDerWaals implements MaskingInterface,
                     case CUBIC_MEAN:
                         radmin = 2.0 * (ri3 + rj3) / (ri2 + rj2);
                 }
-                switch (vdwForm) {
-                    case LENNARD_JONES_6_12:
-                        /**
-                         * Geometric
-                         */
+                switch (epsilonRule) {
+                    case GEOMETRIC:
                         eps = se1 * se2;
                         break;
                     default:
-                    case BUFFERED_14_7:
-                        /**
-                         * HHG
-                         */
+                    case HHG:
                         eps = 4.0 * (e1 * e2) / ((se1 + se2) * (se1 + se2));
                         break;
                 }
@@ -510,7 +614,7 @@ public class VanDerWaals implements MaskingInterface,
             reductionValue = new double[nAtoms];
             bondMask = new int[nAtoms][];
             angleMask = new int[nAtoms][];
-            if (vdwForm == VDW_FORM.LENNARD_JONES_6_12) {
+            if (vdwType == VDW_TYPE.LENNARD_JONES) {
                 torsionMask = new int[nAtoms][];
             } else {
                 torsionMask = null;
@@ -549,27 +653,27 @@ public class VanDerWaals implements MaskingInterface,
             coordinates[i3 + XX] = xyz[XX];
             coordinates[i3 + YY] = xyz[YY];
             coordinates[i3 + ZZ] = xyz[ZZ];
-            AtomType type = ai.getAtomType();
-            if (type == null) {
+            AtomType atomType = ai.getAtomType();
+            if (atomType == null) {
                 logger.severe(ai.toString());
                 continue;
             }
             String vdwIndex = forceField.getString(ForceField.ForceFieldString.VDWINDEX, "Class");
             if (vdwIndex.equalsIgnoreCase("Type")) {
-                atomClass[i] = type.type;
+                atomClass[i] = atomType.type;
             } else {
-                atomClass[i] = type.atomClass;
+                atomClass[i] = atomType.atomClass;
             }
-            VDWType vdwType = forceField.getVDWType(Integer.toString(atomClass[i]));
-            ai.setVDWType(vdwType);
+            VDWType type = forceField.getVDWType(Integer.toString(atomClass[i]));
+            ai.setVDWType(type);
             ArrayList<Bond> bonds = ai.getBonds();
             int numBonds = bonds.size();
-            if (vdwType.reductionFactor > 0.0 && numBonds == 1) {
+            if (type.reductionFactor > 0.0 && numBonds == 1) {
                 Bond bond = bonds.get(0);
                 Atom heavyAtom = bond.get1_2(ai);
                 // Atom indexes start at 1
                 reductionIndex[i] = heavyAtom.xyzIndex - 1;
-                reductionValue[i] = vdwType.reductionFactor;
+                reductionValue[i] = type.reductionFactor;
             } else {
                 reductionIndex[i] = i;
                 reductionValue[i] = 0.0;
@@ -595,7 +699,7 @@ public class VanDerWaals implements MaskingInterface,
                     angleMask[i][j++] = ak.xyzIndex - 1;
                 }
             }
-            if (vdwForm == VDW_FORM.LENNARD_JONES_6_12) {
+            if (vdw14Scale != 1.0) {
                 ArrayList<Torsion> torsions = ai.getTorsions();
                 int numTorsions = 0;
                 for (Torsion torsion : torsions) {
@@ -812,22 +916,22 @@ public class VanDerWaals implements MaskingInterface,
      */
     @Override
     public void applyMask(final double mask[], final int i) {
-        if (vdwForm == VDW_FORM.LENNARD_JONES_6_12) {
+        if (vdw14Scale != 1.0) {
             final int[] torsionMaski = torsionMask[i];
             final int n14 = torsionMaski.length;
             for (int m = 0; m < n14; m++) {
-                mask[torsionMaski[m]] = 0.5;
+                mask[torsionMaski[m]] = vdw14Scale;
             }
         }
         final int[] angleMaski = angleMask[i];
         final int n13 = angleMaski.length;
         for (int m = 0; m < n13; m++) {
-            mask[angleMaski[m]] = 0;
+            mask[angleMaski[m]] = vdw13Scale;
         }
         final int[] bondMaski = bondMask[i];
         final int n12 = bondMaski.length;
         for (int m = 0; m < n12; m++) {
-            mask[bondMaski[m]] = 0;
+            mask[bondMaski[m]] = vdw12Scale;
         }
     }
 
@@ -838,7 +942,7 @@ public class VanDerWaals implements MaskingInterface,
      */
     @Override
     public void removeMask(final double mask[], final int i) {
-        if (vdwForm == VDW_FORM.LENNARD_JONES_6_12) {
+        if (vdwType == VDW_TYPE.LENNARD_JONES) {
             final int[] torsionMaski = torsionMask[i];
             final int n14 = torsionMaski.length;
             for (int m = 0; m < n14; m++) {

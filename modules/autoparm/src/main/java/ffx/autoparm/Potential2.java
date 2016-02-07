@@ -65,8 +65,6 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.VanDerWaals;
-import ffx.potential.nonbonded.VanDerWaals.RADIUS_RULE;
-import ffx.potential.nonbonded.VanDerWaals.VDW_FORM;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldString;
@@ -218,8 +216,7 @@ public class Potential2 implements OptimizationListener {
         crystal = create_crystal(forceField, atoms);
         nSymm = crystal.spaceGroup.getNumberOfSymOps();
         int molecule[] = molecularAssembly.getMoleculeNumbers();
-        VanDerWaals vanderWaals = new VanDerWaals(atoms, molecule,
-                crystal, forceField, parallelTeam, VDW_FORM.BUFFERED_14_7, RADIUS_RULE.CUBIC_MEAN);
+        VanDerWaals vanderWaals = new VanDerWaals(atoms, molecule, crystal, forceField, parallelTeam);
         //RENAME
         //store_key_file(structure_prm);
         store_key_file(structure_key);
@@ -1034,15 +1031,13 @@ public class Potential2 implements OptimizationListener {
         if (info == null) {
             logger.info(String.format("%6d %13.4g %11.4g\n",
                     iter, f, grms));
+        } else if (info == LineSearchResult.Success) {
+            logger.info(String.format("%6d %13.4g %11.4g %11.4g %10.4g %9.2g %7d %8.3g %6.4f\n",
+                    iter, f, grms, df, xrms, angle, nfun, seconds,
+                    avgrms()));
         } else {
-            if (info == LineSearchResult.Success) {
-                logger.info(String.format("%6d %13.4g %11.4g %11.4g %10.4g %9.2g %7d %8.3g %6.4f\n",
-                        iter, f, grms, df, xrms, angle, nfun, seconds,
-                        avgrms()));
-            } else {
-                logger.info(String.format("%6d %13.4g %11.4g %11.4g %10.4g %9.2g %7d %8s\n",
-                        iter, f, grms, df, xrms, angle, nfun, info.toString()));
-            }
+            logger.info(String.format("%6d %13.4g %11.4g %11.4g %10.4g %9.2g %7d %8s\n",
+                    iter, f, grms, df, xrms, angle, nfun, info.toString()));
         }
         if (terminate) {
             logger.info(" The optimization recieved a termination request.");

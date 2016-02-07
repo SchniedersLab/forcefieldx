@@ -82,7 +82,6 @@ import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.ELEC_FORM;
 import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.nonbonded.VanDerWaals.RADIUS_RULE;
-import ffx.potential.nonbonded.VanDerWaals.VDW_FORM;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldBoolean;
@@ -599,16 +598,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
         int molecule[] = molecularAssembly.getMoleculeNumbers();
         if (vanderWaalsTerm) {
-            if (name.contains("OPLS")) {
-                vanderWaals = new VanDerWaals(atoms, molecule, crystal, forceField,
-                        parallelTeam, VDW_FORM.LENNARD_JONES_6_12, RADIUS_RULE.GEOMETRIC);
-            } else if (name.contains("AMBER")) {
-                vanderWaals = new VanDerWaals(atoms, molecule, crystal, forceField,
-                        parallelTeam, VDW_FORM.LENNARD_JONES_6_12, RADIUS_RULE.ARITHMETIC);
-            } else {
-                vanderWaals = new VanDerWaals(atoms, molecule, crystal, forceField,
-                        parallelTeam, VDW_FORM.BUFFERED_14_7, RADIUS_RULE.CUBIC_MEAN);
-            }
+            vanderWaals = new VanDerWaals(atoms, molecule, crystal, forceField, parallelTeam);
         } else {
             vanderWaals = null;
         }
