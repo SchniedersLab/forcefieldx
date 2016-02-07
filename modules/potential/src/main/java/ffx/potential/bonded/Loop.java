@@ -259,12 +259,14 @@ public class Loop {
         for (int i = stt_res + 1; i < end_res; i++) {
             Residue newResidue = newChain[0].getResidue(i);
             Residue backResidue = newChain[0].getResidue(i-1);
+            Residue forwardResidue = newChain[0].getResidue(i+1);
             backBoneAtoms = newResidue.getBackboneAtoms();
 
             double[] c = new double[3];
             double[] ca = new double[3];
             double[] n = new double[3];
             double[] bc = new double[3];
+            double[] fn = new double[3];
             double[] determinedXYZ = new double[3];
             
             //Obtaining coordinates for sidechains
@@ -276,6 +278,8 @@ public class Loop {
             System.arraycopy(coordsArray[N.getXYZIndex() - 1],0,n,0,3);
             Atom BC = (Atom) backResidue.getAtomNode("C");
             System.arraycopy(coordsArray[BC.getXYZIndex() - 1],0,bc,0,3);
+            Atom FN = (Atom) forwardResidue.getAtomNode("N");
+            System.arraycopy(coordsArray[FN.getXYZIndex() - 1], 0, fn, 0, 3);
             /*
             for (Atom backBoneAtom : backBoneAtoms) {
             //    backBoneAtom.setBuilt(true);
@@ -308,7 +312,7 @@ public class Loop {
 
             Atom O = (Atom) newResidue.getAtomNode("O");
             double [] o = coordsArray[O.getXYZIndex() - 1];
-            System.arraycopy(BondedUtils.determineIntxyz(c, 1.2255, ca, 122.4, n, 180, 0), 0, o, 0, 3);          //O
+            System.arraycopy(BondedUtils.determineIntxyz(c, 1.2255, ca, 122.4, fn, 180, 0), 0, o, 0, 3);          //O
             coordsArray = fillCoordsArray(O,coordsArray, o);               
 
             AminoAcid3 name = AminoAcid3.valueOf(newResidue.getName());
