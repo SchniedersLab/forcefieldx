@@ -667,4 +667,12 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
         hash = 47 * hash + Arrays.hashCode(atomClasses);
         return hash;
     }
+
+    public static TorsionTorsionType average(TorsionTorsionType torsionTorsionType1,
+            TorsionTorsionType torsionTorsionType2, int atomClasses[]) {
+        if (torsionTorsionType1 == null || torsionTorsionType2 == null || atomClasses == null) {
+            return null;
+        }
+        return null;
+    }
 }

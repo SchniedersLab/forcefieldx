@@ -161,6 +161,31 @@ public final class BondType extends BaseType implements Comparator<String> {
         key = c[0] + " " + c[1];
         return key;
     }
+
+    /**
+     * Average two BondType instances. The atom classes that define the
+     * new type must be supplied.
+     *
+     * @param bondType1
+     * @param bondType2
+     * @param atomClasses
+     * @return
+     */
+    public static BondType average(BondType bondType1, BondType bondType2, int atomClasses[]) {
+        if (bondType1 == null || bondType2 == null || atomClasses == null) {
+            return null;
+        }
+        BondType.BondFunction bondFunction = bondType1.bondFunction;
+        if (bondFunction != bondType2.bondFunction) {
+            return null;
+        }
+
+        double forceConstant = (bondType1.forceConstant + bondType2.forceConstant) / 2.0;
+        double distance = (bondType1.distance + bondType2.distance) / 2.0;
+
+        return new BondType(atomClasses, forceConstant, distance, bondFunction);
+    }
+
     /**
      * Convert bond stretch energy to kcal/mole.
      */

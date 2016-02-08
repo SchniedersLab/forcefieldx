@@ -227,4 +227,22 @@ public final class StretchBendType extends BaseType implements Comparator<String
         hash = 29 * hash + Arrays.hashCode(atomClasses);
         return hash;
     }
+
+    public static StretchBendType average(StretchBendType stretchBendType1,
+            StretchBendType stretchBendType2, int atomClasses[]) {
+        if (stretchBendType1 == null || stretchBendType2 == null || atomClasses == null) {
+            return null;
+        }
+        int len = stretchBendType1.forceConstants.length;
+        if (len != stretchBendType2.forceConstants.length) {
+            return null;
+        }
+        double forceConstants[] = new double[len];
+        for (int i = 0; i < len; i++) {
+            forceConstants[i] = (stretchBendType1.forceConstants[i]
+                    + stretchBendType2.forceConstants[i]) / 2.0;
+        }
+        return new StretchBendType(atomClasses, forceConstants);
+    }
+
 }

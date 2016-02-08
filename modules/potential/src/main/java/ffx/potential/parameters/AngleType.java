@@ -154,6 +154,36 @@ public final class AngleType extends BaseType implements Comparator<String> {
     }
 
     /**
+     * Average two AngleType instances. The atom classes that define the
+     * new type must be supplied.
+     * 
+     * @param angleType1
+     * @param angleType2
+     * @param atomClasses
+     * @return
+     */
+    public static AngleType average(AngleType angleType1, AngleType angleType2, int atomClasses[]) {
+        if (angleType1 == null || angleType2 == null || atomClasses == null) {
+            return null;
+        }
+        AngleFunction angleFunction = angleType1.angleFunction;
+        if (angleFunction != angleType2.angleFunction) {
+            return null;
+        }
+        int len = angleType1.angle.length;
+        if (len != angleType2.angle.length) {
+            return null;
+        }
+        double forceConstant = (angleType1.forceConstant + angleType2.forceConstant) / 2.0;
+        double angle[] = new double[len];
+        for (int i = 0; i < len; i++) {
+            angle[i] = (angleType1.angle[i] + angleType2.angle[i]) / 2.0;
+        }
+
+        return new AngleType(atomClasses, forceConstant, angle, angleFunction);
+    }
+
+    /**
      * {@inheritDoc}
      *
      * Nicely formatted Angle bending string.

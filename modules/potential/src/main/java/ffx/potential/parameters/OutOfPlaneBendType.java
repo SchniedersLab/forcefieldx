@@ -219,4 +219,25 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
         hash = 53 * hash + Arrays.hashCode(atomClasses);
         return hash;
     }
+
+    /**
+     * Average two OutOfPlaneBendType instances. The atom classes that define the
+     * new type must be supplied.
+     *
+     * @param outOfPlaneBendType1
+     * @param outOfPlaneBendType2
+     * @param atomClasses
+     * @return
+     */
+    public static OutOfPlaneBendType average(OutOfPlaneBendType outOfPlaneBendType1,
+            OutOfPlaneBendType outOfPlaneBendType2, int atomClasses[]) {
+        if (outOfPlaneBendType1 == null || outOfPlaneBendType2 == null || atomClasses == null) {
+            return null;
+        }
+
+        double forceConstant = (outOfPlaneBendType1.forceConstant + outOfPlaneBendType2.forceConstant) / 2.0;
+
+        return new OutOfPlaneBendType(atomClasses, forceConstant);
+    }
+
 }

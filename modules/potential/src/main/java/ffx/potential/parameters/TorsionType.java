@@ -306,4 +306,25 @@ public final class TorsionType extends BaseType implements Comparator<String> {
         hash = 89 * hash + Arrays.hashCode(atomClasses);
         return hash;
     }
+
+    public static TorsionType average(TorsionType torsionType1, TorsionType torsionType2, int atomClasses[]) {
+        if (torsionType1 == null || torsionType2 == null || atomClasses == null) {
+            return null;
+        }
+        int len = torsionType1.amplitude.length;
+        if (len != torsionType2.amplitude.length) {
+            return null;
+        }
+        double amplitude[] = new double[len];
+        double phase[] = new double[len];
+        int periodicity[] = new int[len];
+        for (int i = 0; i < len; i++) {
+            amplitude[i] = (torsionType1.amplitude[i] + torsionType2.amplitude[i]) / 2.0;
+            phase[i] = (torsionType1.phase[i] + torsionType2.phase[i]) / 2.0;
+            periodicity[i] = (torsionType1.periodicity[i] + torsionType2.periodicity[i]) / 2;
+        }
+
+        return new TorsionType(atomClasses, amplitude, phase, periodicity);
+    }
+
 }

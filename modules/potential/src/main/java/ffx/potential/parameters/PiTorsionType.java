@@ -197,4 +197,25 @@ public final class PiTorsionType extends BaseType implements Comparator<String> 
         hash = 97 * hash + Arrays.hashCode(atomClasses);
         return hash;
     }
+
+    /**
+     * Average two PiTorsionType instances. The atom classes that define the
+     * new type must be supplied.
+     *
+     * @param piTorsionType1
+     * @param piTorsionType2
+     * @param atomClasses
+     * @return
+     */
+    public static PiTorsionType average(PiTorsionType piTorsionType1,
+            PiTorsionType piTorsionType2, int atomClasses[]) {
+        if (piTorsionType1 == null || piTorsionType2 == null || atomClasses == null) {
+            return null;
+        }
+
+        double forceConstant = (piTorsionType1.forceConstant + piTorsionType2.forceConstant) / 2.0;
+
+        return new PiTorsionType(atomClasses, forceConstant);
+    }
+
 }

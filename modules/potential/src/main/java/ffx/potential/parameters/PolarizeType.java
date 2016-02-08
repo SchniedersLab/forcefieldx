@@ -227,4 +227,25 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
         hash = 37 * hash + type;
         return hash;
     }
+
+    /**
+     * Average two PolarizeType instances. The atom types to include in the new
+     * polarizationGroup must be supplied.
+     *
+     * @param polarizeType1
+     * @param polarizeType2
+     * @param atomType
+     * @param polarizationGroup
+     * @return
+     */
+    public static PolarizeType average(PolarizeType polarizeType1,
+            PolarizeType polarizeType2, int atomType, int polarizationGroup[]) {
+        if (polarizeType1 == null || polarizeType2 == null) {
+            return null;
+        }
+        double thole = (polarizeType1.thole + polarizeType2.thole) / 2.0;
+        double polarizability = (polarizeType1.polarizability + polarizeType2.polarizability) / 2.0;
+        return new PolarizeType(atomType, thole, polarizability, polarizationGroup);
+    }
+
 }

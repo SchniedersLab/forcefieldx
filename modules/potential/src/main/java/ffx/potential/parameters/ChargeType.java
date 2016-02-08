@@ -105,6 +105,24 @@ public final class ChargeType extends BaseType implements Comparator<String> {
         }
 
         return 0;
-
     }
+
+    /**
+     * Average two ChargeType instances. The atom type that defines the
+     * new type must be supplied.
+     *
+     * @param chargeType1
+     * @param chargeType2
+     * @param atomType
+     * @return
+     */
+    public static ChargeType average(ChargeType chargeType1, ChargeType chargeType2, int atomType) {
+        if (chargeType1 == null || chargeType2 == null) {
+            return null;
+        }
+        double charge = (chargeType1.charge + chargeType2.charge) / 2.0;
+
+        return new ChargeType(atomType, charge);
+    }
+
 }

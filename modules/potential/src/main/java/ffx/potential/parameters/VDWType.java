@@ -71,7 +71,7 @@ public final class VDWType extends BaseType implements Comparator<String> {
     public final double wellDepth;
     /**
      * Reduction factor for evaluating van der Waals pairs. Valid range: 0.0
-     * .GT. reduction .LE. 1.0 Usually only hydrogen atom have a reduction
+     * .GT. reduction .LE. 1.0 Usually only hydrogen atoms have a reduction
      * factor. Setting the reduction to .LT. 0.0 indicates it is not being used.
      */
     public final double reductionFactor;
@@ -171,4 +171,17 @@ public final class VDWType extends BaseType implements Comparator<String> {
         hash = 97 * hash + this.atomClass;
         return hash;
     }
+
+    public static VDWType average(VDWType vdwType1, VDWType vdwType2, int atomClass) {
+        if (vdwType1 == null || vdwType2 == null) {
+            return null;
+        }
+
+        double radius = (vdwType1.radius + vdwType2.radius) / 2.0;
+        double wellDepth = (vdwType1.wellDepth + vdwType2.wellDepth) / 2.0;
+        double reductionFactor = (vdwType1.reductionFactor + vdwType2.reductionFactor) / 2.0;
+
+        return new VDWType(atomClass, radius, wellDepth, reductionFactor);
+    }
+
 }

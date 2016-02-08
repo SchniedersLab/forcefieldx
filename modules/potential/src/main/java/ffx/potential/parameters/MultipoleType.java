@@ -360,6 +360,36 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         hash = 29 * hash + Arrays.hashCode(frameAtomTypes);
         return hash;
     }
+
+    /**
+     * Average two MultipoleType instances. The atom types that define the
+     * frame of the new type must be supplied.
+     *
+     * @param multipoleType1
+     * @param multipoleType2
+     * @param multipoleFrameTypes
+     * @return
+     */
+    public static MultipoleType average(MultipoleType multipoleType1, MultipoleType multipoleType2, int[] multipoleFrameTypes) {
+        if (multipoleType1 == null || multipoleType2 == null || multipoleFrameTypes != null) {
+            return null;
+        }
+        MultipoleFrameDefinition frameDefinition = multipoleType1.frameDefinition;
+        if (frameDefinition != multipoleType1.frameDefinition) {
+            return null;
+        }
+        double charge = (multipoleType1.charge + multipoleType2.charge) / 2.0;
+        double[] dipole = new double[3];
+        double[][] quadrupole = new double[3][3];
+        for (int i = 0; i < 3; i++) {
+            dipole[i] = (multipoleType1.dipole[i] + multipoleType2.dipole[i]) / 2.0;
+            for (int j = 0; j < 3; j++) {
+                quadrupole[i][j] = (multipoleType1.quadrupole[i][j] + multipoleType2.quadrupole[i][j]) / 2.0;
+            }
+        }
+        return new MultipoleType(charge, dipole, quadrupole, multipoleFrameTypes, frameDefinition);
+    }
+
     /**
      * Indices into a 1D tensor array based on compressed tensor notation. This
      * makes multipole code much easier to read.
