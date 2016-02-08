@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
  *
  * This file is part of Force Field X.
  *
@@ -254,10 +254,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
     public GeneralizedKirkwood(ForceField forceField, Atom[] atoms,
             ParticleMeshEwald particleMeshEwald, Crystal crystal,
             ParallelTeam parallelTeam) {
-        
+
         this.forceField = forceField;
         String forcefieldName = System.getProperty("forcefield");
-        if (forcefieldName != null && 
+        if (forcefieldName != null &&
                 (forcefieldName.equalsIgnoreCase("AMOBEA_PROTEIN_2013")
                 || forcefieldName.equalsIgnoreCase("AMBER99SB"))) {
             useFittedRadii = true;
@@ -266,7 +266,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             useFittedRadii = false;
             solventRadii = null;
         }
-        
+
         String useFitRadiiProp = System.getProperty("gk-useFitRadii");
         if (useFitRadiiProp != null) {
             if (useFitRadiiProp.equalsIgnoreCase("false")) {
@@ -277,7 +277,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 solventRadii = new SolventRadii(useFitRadiiProp);
             }
         }
-        
+
         String verboseProp = System.getProperty("gk-verboseRadii");
         if (verboseProp != null) {
             this.verboseRadii = true;
@@ -522,7 +522,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         for (int i = 0; i < nAtoms; i++) {
             baseRadius[i] = 2.0;
 //            overlapScale[i] = 0.69;   // Original value based on small molecule parameterization.
-            overlapScale[i] = 0.60;     // New default value based on 2015 amino acid GK parameterization.
+            overlapScale[i] = 0.60;     // New default value based on 2016 amino acid GK parameterization.
             if (useFittedRadii) {
                 overlapScale[i] = solventRadii.getOverlapScale();
             }
@@ -645,7 +645,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
         //                BioType bioType = forceField.getBioType(atoms[i].getResidueName(), atoms[i].getName());
         //                if (bioType == null) {
-        //                    logger.info(String.format("Null biotype for atom: %3s-%-4s", 
+        //                    logger.info(String.format("Null biotype for atom: %3s-%-4s",
         //                            atoms[i].getResidueName(), atoms[i].getName()));
         //                }
 
@@ -9593,7 +9593,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     private static final double third = 1.0 / 3.0;
     private static final double pi43 = 4.0 / 3.0 * PI;
     private static final double pi12 = PI / 12.0;
-    
+
     private static enum RADII_MAP_TYPE {
         ATOMTYPE, BIOTYPE, NONE;
     }

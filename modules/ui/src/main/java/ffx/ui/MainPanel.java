@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
  *
  * This file is part of Force Field X.
  *
@@ -732,11 +732,11 @@ public final class MainPanel extends JPanel implements ActionListener,
     public void exit() {
         exit(exitType);
     }
-    
+
     /**
      * <p>
      * exit with a target ExitStatus</p>
-     * 
+     *
      * @param exitStatus How FFX has closed.
      */
     void exit (ExitStatus exitStatus) {
@@ -744,10 +744,10 @@ public final class MainPanel extends JPanel implements ActionListener,
         savePrefs();
         System.exit(exitStatus.getExitCode());
     }
-    
+
     /**
      * Set the current exit code.
-     * 
+     *
      * @param exitType Enumerated type for exit codes.
      */
     void setExitType(ExitStatus exitType) {
@@ -926,9 +926,9 @@ public final class MainPanel extends JPanel implements ActionListener,
      */
     public static final String version = "Version 1.0.0-BETA";
     /**
-     * Constant <code>date="January 2015"</code>
+     * Constant <code>date="February 2016"</code>
      */
-    public static final String date = "January 2015";
+    public static final String date = "February 2016";
     /**
      * Constant
      */
@@ -944,8 +944,8 @@ public final class MainPanel extends JPanel implements ActionListener,
      */
     public static final String aboutString
             = "        " + version + "  " + date + " \n"
-            + "\n        Copyright (c)  Michael J. Schnieders    2001-2015 \n"
-            + "        Portions Copyright (c)  Timothy D. Fenn 2009-2015 \n"
+            + "\n        Copyright (c)  Michael J. Schnieders    2001-2016 \n"
+            + "        Portions Copyright (c)  Timothy D. Fenn 2009-2016 \n"
             + "\n"
             + "        All Rights Reserved \n"
             + "\n"
@@ -2110,7 +2110,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
 
     }
-    
+
     public void savePDBSymMates(File file, String suffix) {
         FFXSystem system = hierarchy.getActive();
         if (system == null) {
@@ -2145,7 +2145,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         } else {
             logger.log(Level.INFO, " Save failed for: {0}", system);
         }
-        
+
         Crystal crystal = system.getCrystal();
         int nSymOps = crystal.spaceGroup.getNumberOfSymOps();
         logger.info(String.format(" Writing %d symmetry mates for %s", nSymOps, system.toString()));
@@ -2159,7 +2159,7 @@ public final class MainPanel extends JPanel implements ActionListener,
                 }
                 saveFile = new File(saveFileName + "_" + j);
             }
-            
+
             StringBuilder symSb = new StringBuilder();
             String[] symopLines = crystal.spaceGroup.getSymOp(i).toString().split("\\r?\\n");
             int nLines = symopLines.length;
@@ -2174,7 +2174,7 @@ public final class MainPanel extends JPanel implements ActionListener,
             for (int j = 0; j < nLines; j++) {
                 symSb.append("\nREMARK 350 ").append(symopLines[j]);
             }
-            
+
             if (saveFile.exists()) {
                 logger.warning(String.format(" Could not successfully version file "
                         + "%s: appending to file %s", saveFileName, saveFile.getName()));
@@ -2497,39 +2497,39 @@ public final class MainPanel extends JPanel implements ActionListener,
     public String toString() {
         return "Program Control";
     }
-    
+
     /**
-     * Enumerates the exit status codes FFX may terminate with; 0 will indicate 
+     * Enumerates the exit status codes FFX may terminate with; 0 will indicate
      * normal execution, 1-99 will indicate fatal errors, 100-199 non-fatal errors,
      * and 200-254 other exit statuses. Presently, only 0, 1, 3, 100, and 200 have
      * been defined for FFX.
-     * 
+     *
      * When adding to this enumeration, avoid the ranges 2, 64-78, 126-128, 130,
-     * 137, and 255 or greater (see http://tldp.org/LDP/abs/html/exitcodes.html 
+     * 137, and 255 or greater (see http://tldp.org/LDP/abs/html/exitcodes.html
      * and the C/C++ standard /usr/include/sysexits.h).
      */
     enum ExitStatus {
         // Normal termination.
         NORMAL (0),
-        // Indicates some uncaught Exception, Error, or Throwable. As of now, 
+        // Indicates some uncaught Exception, Error, or Throwable. As of now,
         // this enum value is unused, and we rely on the JVM automatically exiting
         // with a system code of 1 under these circumstances.
         EXCEPTION (1),
         // A call to logger.severe() resulted in program termination.
         SEVERE (3),
-        // Algorithm did not complete properly (a minimization had a bad 
+        // Algorithm did not complete properly (a minimization had a bad
         // interpolation, etc).
         ALGORITHM_FAILURE (100),
         // Some issue not listed here.
         OTHER (200);
-        
+
         // This gets sent to System.exit().
         private final int exitCode;
-        
+
         ExitStatus(int exitCode) {
             this.exitCode = exitCode;
         }
-        
+
         /**
          * Gets the exit code associated with this exit status.
          * @return JVM exit code.
