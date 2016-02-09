@@ -41,20 +41,38 @@
 // Apache Imports
 import org.apache.commons.io.FilenameUtils;
 
+// FFX Imports
+import ffx.potential.MolecularAssembly;
+import ffx.potential.parameters.ForceField;
+
 // Groovy Imports
 import groovy.util.CliBuilder;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
+int offset = 0;
 
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc saveAsXYZ [options] <filename>');
 cli.h(longOpt:'help', 'Print this help message.');
+cli.p(longOpt:'pos-offset', args:1, argName:'0', 'Positive offset of atom types in the new file.');
+cli.n(longOpt:'neg-offset', args:1, argName:'0', 'Negative offset of atom types in the new file.');
 def options = cli.parse(args);
 
 List<String> arguments = options.arguments();
 if (options.h || arguments == null || arguments.size() != 1) {
     return cli.usage();
+}
+
+// Positive offset atom types.
+if (options.p) {
+    offset = Integer.parseInt(options.p);
+}
+
+// Offset atom types.
+if (options.n) {
+    offset = Integer.parseInt(options.n);
+    offset = -offset;
 }
 
 // Read in command line.
@@ -63,6 +81,14 @@ String filename = arguments.get(0);
 logger.info("\n Writing out XYZ for " + filename);
 
 open(filename);
+
+// Offset atom type numbers.
+if (offset != 0) {
+    logger.info("\n Offset atom types by " + offset);
+    MolecularAssembly molecularAssembly = active;
+    ForceField forceField = molecularAssembly.getForceField();
+    forceField.renumberForceField(0,offset,0);
+}
 
 filename = FilenameUtils.removeExtension(filename) + ".xyz";
 

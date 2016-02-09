@@ -56,110 +56,100 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.ForceField;
 
 /**
- * Test the PotentialEnergy class.
+ * Test the ForceFieldEnergy class for small crystals.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
 @RunWith(Parameterized.class)
-public class PotentialEnergyTest {
+public class CrystalEnergyTest {
 
-    private static final Logger logger = Logger.getLogger(PotentialEnergyTest.class.getName());
+    private static final Logger logger = Logger.getLogger(CrystalEnergyTest.class.getName());
 
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
             {
                 false,
-                "Ubiquitin Benchmark",
-                "ffx/potential/structures/ubiquitin.xyz",
-                2673.37683484, 6908,
-                1637.34919041, 5094,
-                -11.04350364, 1958,
-                279.64162198, 2835,
-                67.64798284, 651,
-                215.14214012, 3297,
+                "Acetanilide Benchmark",
+                "ffx/potential/structures/acetanilide.xyz",
+                0.67814832, 19,
+                1.06817134, 30,
+                -0.06290501, 26,
                 0.0, 0,
-                24.69060350, 106,
-                -29.43681349, 71,
-                13183.92864934, 1483768,
-                -33012.66179952, 623490,
-                -13041.30955459, 623490},
-            {false,
-                "OPLS-AA/L Peptide",
-                "ffx/potential/structures/peptide-oplsaal.xyz",
-                39.69175722, 333,
-                41.54908436, 596,
+                0.13033970, 24,
+                -8.01262794, 38,
                 0.0, 0,
                 0.0, 0,
                 0.0, 0,
-                41.53603210, 875,
-                0.92410847, 97,
+                -3.62572228, 7295,
+                -26.07329410, 1456,
+                -1.97396298, 1456},
+            {
+                false,
+                "Ethylparaben Benchmark",
+                "ffx/potential/structures/ethylparaben.xyz",
+                1.37991170, 44,
+                2.43600964, 70,
+                0.20006782, 58,
+                0.0, 0,
+                0.04434686, 42,
+                -7.14298308, 88,
                 0.0, 0,
                 0.0, 0,
-                112122.04255274, 40511,
-                -671.66812023, 53628,
-                0.0, 53628},
-            {false,
-                "Amber99sb Peptide",
-                "ffx/potential/structures/peptide-amber99sb.xyz",
-                41.19699756, 333,
-                54.88751601, 596,
+                0.0, 0,
+                -4.52561611, 16755,
+                -45.56554007, 3256,
+                -3.96630319, 3256},
+            {
+                false,
+                "Methylparaben Benchmark",
+                "ffx/potential/structures/methylparaben.xyz",
+                0.42501694, 19,
+                1.23611203, 29,
+                0.00351228, 24,
+                0.0, 0,
+                0.01058196, 21,
+                -3.72750990, 35,
                 0.0, 0,
                 0.0, 0,
                 0.0, 0,
-                189.34195768, 875,
-                1.59062194, 101,
+                0.20573979, 7639,
+                -26.55680786, 1538,
+                -2.35904592, 1538},
+            {
+                false,
+                "Paracetamol Benchmark",
+                "ffx/potential/structures/paracetamol.xyz",
+                0.55316710, 20,
+                1.51848706, 31,
+                0.05096337, 27,
+                0.0, 0,
+                0.46651316, 24,
+                -7.40125527, 40,
                 0.0, 0,
                 0.0, 0,
-                111362.79687915, 52696,
-                -413.54328593, 53628,
-                0.0, 53628},
-            {true,
-                "DHFR Benchmark",
-                "ffx/potential/structures/dhfr.xyz",
-                6423.84579926, 16569,
-                3746.31506290, 11584,
-                -21.85553039, 4031,
-                687.46861123, 7023,
-                198.72886589, 1566,
-                426.23738971, 6701,
                 0.0, 0,
-                48.26628393, 292,
-                -41.71473465, 147,
-                32630.94057333, 3480445,
-                -79396.71166429, 1463353,
-                -32141.39930772, 1463353},
-            {true,
-                "SNARE P1",
-                "ffx/potential/structures/1n7s.P1.xyz",
-                1405.28569930, 20160,
-                2976.77005458, 33020,
-                25.68062976, 27696,
-                10.00655326, 1288,
-                540.99677465, 9948,
-                1671.56977674, 45796,
+                0.76621272, 7832,
+                -32.03804278, 1505,
+                -4.92282076, 1505},
+            {
+                false,
+                "Phenacetin Benchmark",
+                "ffx/potential/structures/phenacetin.xyz",
+                0.56492623, 26,
+                2.68273715, 43,
+                0.00409248, 35,
                 0.0, 0,
-                159.42575736, 1480,
-                -2243.98305878, 1072,
-                16013.08734188, 2966572,
-                -49215.72628076, 1328456,
-                -11245.82734685, 1328456},
-            {true,
-                "SNARE P212121",
-                "ffx/potential/structures/1n7s.P212121.xyz",
-                351.32142483, 5040,
-                744.19251364, 8255,
-                6.42015744, 6924,
-                2.50163831, 322,
-                135.24919366, 2487,
-                417.89244418, 11449,
+                0.33385711, 24,
+                -6.49787814, 52,
                 0.0, 0,
-                39.85643934, 370,
-                -560.99576469, 268,
-                4003.27183547, 741643,
-                -12303.93157019, 332114,
-                -2811.45683671, 332114}});
+                0.0, 0,
+                0.0, 0,
+                -5.62144406, 10340,
+                -25.42277465, 2115,
+                -2.07980993, 2115}
+        });
     }
     private final String info;
     private final File structure;
@@ -195,7 +185,7 @@ public class PotentialEnergyTest {
     private boolean mpoleTerm;
     private final ForceFieldEnergy forceFieldEnergy;
 
-    public PotentialEnergyTest(
+    public CrystalEnergyTest(
             boolean ciOnly,
             String info, String filename,
             double bondEnergy, int nBonds,
@@ -254,6 +244,7 @@ public class PotentialEnergyTest {
         structure = new File(cl.getResource(filename).getPath());
         PotentialsUtils potentialUtils = new PotentialsUtils();
         molecularAssembly = potentialUtils.open(structure.getAbsolutePath())[0];
+
         forceFieldEnergy = molecularAssembly.getPotentialEnergy();
         mpoleTerm = molecularAssembly.getForceField().getBoolean(ForceField.ForceFieldBoolean.MPOLETERM, true);
 
