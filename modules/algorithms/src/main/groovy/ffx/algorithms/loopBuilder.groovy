@@ -407,7 +407,7 @@ if(runOSRW){
 
     
     if(runMCLoop){
-        mcLoop = new MCLoop(active, mcStepFrequency, molDyn.getThermostat(),loopStart,loopStop);
+        mcLoop = new MCLoop(active, mcStepFrequency, molDyn.getThermostat(),loopStart-1,loopStop+1);
         molDyn.addMCListener(mcLoop);
         mcLoop.addMolDyn(molDyn);
     }
@@ -631,5 +631,3 @@ if (runRotamer){
     rotamerOptimization.optimize(RotamerOptimization.Algorithm.SLIDING_WINDOW);
 }
 saveAsPDB(structureFile);
-
-
