@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
  *
  * This file is part of Force Field X.
  *
@@ -219,4 +219,17 @@ public final class UreyBradleyType extends BaseType implements Comparator<String
         hash = 79 * hash + Arrays.hashCode(atomClasses);
         return hash;
     }
+
+    public static UreyBradleyType average(UreyBradleyType ureyBradleyType1,
+            UreyBradleyType ureyBradleyType2, int atomClasses[]) {
+        if (ureyBradleyType1 == null || ureyBradleyType2 == null || atomClasses == null) {
+            return null;
+        }
+
+        double forceConstant = (ureyBradleyType1.forceConstant + ureyBradleyType2.forceConstant) / 2.0;
+        double distance = (ureyBradleyType1.distance + ureyBradleyType2.distance) / 2.0;
+
+        return new UreyBradleyType(atomClasses, forceConstant, distance);
+    }
+
 }

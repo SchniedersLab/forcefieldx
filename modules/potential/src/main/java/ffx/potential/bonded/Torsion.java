@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
  *
  * This file is part of Force Field X.
  *
@@ -54,7 +54,6 @@ import static ffx.numerics.VectorMath.dot;
 import static ffx.numerics.VectorMath.r;
 import static ffx.numerics.VectorMath.scalar;
 import static ffx.numerics.VectorMath.sum;
-import static ffx.potential.parameters.TorsionType.units;
 
 /**
  * The Torsion class represents a torsional angle formed between four bonded
@@ -74,6 +73,7 @@ public class Torsion extends BondedTerm implements LambdaInterface {
     private boolean lambdaTerm = false;
 
     public TorsionType torsionType = null;
+    public double units = 0.5;
 
     /**
      * Torsion constructor.
@@ -232,6 +232,8 @@ public class Torsion extends BondedTerm implements LambdaInterface {
 
         Torsion torsion = new Torsion(bond1, middleBond, bond3);
         torsion.torsionType = torsionType;
+        torsion.units = forceField.getDouble(ForceField.ForceFieldDouble.TORSIONUNIT, 0.5);
+
         return torsion;
     }
 
@@ -415,6 +417,13 @@ public class Torsion extends BondedTerm implements LambdaInterface {
                 }
             }
         }
+
+        /*
+        if (energy > 3.0) {
+            torsionType.log();
+            log();
+        } */
+
         return energy;
     }
 

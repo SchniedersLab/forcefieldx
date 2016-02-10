@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
  *
  * This file is part of Force Field X.
  *
@@ -38,8 +38,11 @@
 package ffx.potential.utils;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.Arrays;
 import java.util.logging.Logger;
+
+import org.apache.commons.io.FilenameUtils;
 
 import ffx.crystal.Crystal;
 import ffx.potential.ForceFieldEnergy;
@@ -49,8 +52,6 @@ import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.XYZFilter;
-import java.io.FileNotFoundException;
-import org.apache.commons.io.FilenameUtils;
 
 /**
  * The PotentialsUtils class provides a local implementation, independent of the
@@ -126,6 +127,7 @@ public class PotentialsUtils implements PotentialsFunctions {
     /**
      * Converts a data structure (such as a Biojava Structure) into one or more
      * MolecularAssembly objects.
+     *
      * @param data Structure to convert
      * @return Array of MolecularAssembly
      */
@@ -135,15 +137,16 @@ public class PotentialsUtils implements PotentialsFunctions {
             PotentialsDataConverter converter = new PotentialsDataConverter(data);
             converter.run();
             return converter.getAllAssemblies();
-        } catch (FileNotFoundException|IllegalArgumentException ex) {
+        } catch (FileNotFoundException | IllegalArgumentException ex) {
             logger.warning(String.format(" Exception in data structure conversion: %s", ex.toString()));
             return null;
         }
     }
-    
+
     /**
      * Converts a data structure (such as a Biojava Structure) into one or more
      * MolecularAssembly objects.
+     *
      * @param data Structure to convert
      * @param file Source file
      * @return Array of MolecularAssembly
@@ -154,18 +157,19 @@ public class PotentialsUtils implements PotentialsFunctions {
             PotentialsDataConverter converter = new PotentialsDataConverter(data, file);
             converter.run();
             return converter.getAllAssemblies();
-        } catch (FileNotFoundException|IllegalArgumentException ex) {
+        } catch (FileNotFoundException | IllegalArgumentException ex) {
             logger.warning(String.format(" Exception in data structure conversion: %s", ex.toString()));
             return null;
         }
     }
-    
+
     /**
      * Converts a data structure (such as a Biojava Structure) into one or more
      * MolecularAssembly objects.
+     *
      * @param data Structure to convert
      * @param filename Source file
-     * @return  Array of MolecularAssembly
+     * @return Array of MolecularAssembly
      */
     @Override
     public MolecularAssembly[] convertDataStructure(Object data, String filename) {
@@ -176,15 +180,15 @@ public class PotentialsUtils implements PotentialsFunctions {
         }
         return convertDataStructure(data, file);
     }
-    
+
     // Below methods not implemented on account of needing to figure out how to
     // distinguish an Object from an Object[].
-    
     /**
      * Converts a data structure (such as a Biojava Structure) into one or more
-     * MolecularAssembly objects. Not implemented, on account of trying to figure
-     * out how to get constructors to distinguish an array or list of Object from 
-     * a singular Object.
+     * MolecularAssembly objects. Not implemented, on account of trying to
+     * figure out how to get constructors to distinguish an array or list of
+     * Object from a singular Object.
+     *
      * @param data Structure(s) to convert
      * @return Array of MolecularAssembly
      */
@@ -194,12 +198,12 @@ public class PotentialsUtils implements PotentialsFunctions {
         converter.run();
         return converter.getAllAssemblies();
     }*/
-    
     /**
      * Converts a data structure (such as a Biojava Structure) into one or more
-     * MolecularAssembly objects. Not implemented, on account of trying to figure
-     * out how to get constructors to distinguish an array or list of Object from 
-     * a singular Object.
+     * MolecularAssembly objects. Not implemented, on account of trying to
+     * figure out how to get constructors to distinguish an array or list of
+     * Object from a singular Object.
+     *
      * @param data Structure(s) to convert
      * @param file File to save to
      * @return Array of MolecularAssembly
@@ -211,12 +215,13 @@ public class PotentialsUtils implements PotentialsFunctions {
         converter.run();
         return converter.getAllAssemblies();
     }*/
-
     /**
-     * Shuts down parallel teams in the force field of the provided MolecularAssembly.
-     * Kaminsky's ParallelTeamThreads' run() methods are infinite loops, and because
-     * running threads are always GC roots, it is necessary to send them a signal
-     * to shut down to enable garbage collection.
+     * Shuts down parallel teams in the force field of the provided
+     * MolecularAssembly. Kaminsky's ParallelTeamThreads' run() methods are
+     * infinite loops, and because running threads are always GC roots, it is
+     * necessary to send them a signal to shut down to enable garbage
+     * collection.
+     *
      * @param assembly Assembly to close.
      */
     @Override
@@ -225,7 +230,9 @@ public class PotentialsUtils implements PotentialsFunctions {
     }
 
     /**
-     * Shuts down parallel teams in the force fields of the provided MolecularAssemblys.
+     * Shuts down parallel teams in the force fields of the provided
+     * MolecularAssemblys.
+     *
      * @param assemblies Assemblies to close.
      */
     @Override
@@ -316,12 +323,12 @@ public class PotentialsUtils implements PotentialsFunctions {
             }
         }
     }
-    
+
     @Override
     public void savePDBSymMates(MolecularAssembly assembly, File file) {
         savePDBSymMates(assembly, file, "_symMate");
     }
-    
+
     @Override
     public void savePDBSymMates(MolecularAssembly assembly, File file, String suffix) {
         if (assembly == null) {
@@ -353,24 +360,22 @@ public class PotentialsUtils implements PotentialsFunctions {
                     for (int j = 0; j < nLines; j++) {
                         symSb.append("\nREMARK 350 ").append(symopLines[j]);
                     }
-                    
+
                     symopLines = crystal.spaceGroup.getSymOp(i).toXYZString().split("\\r?\\n");
                     nLines = symopLines.length;
                     symSb.append("\nREMARK 350\nREMARK 350 SYMMETRY OPERATORS XYZ FORM");
                     for (int j = 0; j < nLines; j++) {
                         symSb.append("\nREMARK 350 ").append(symopLines[j]);
                     }
-                    
+
                     if (saveFile.exists()) {
                         logger.warning(String.format(" Could not successfully version file "
                                 + "%s: appending to file %s", saveFileName, saveFile.getName()));
                         if (!pdbFilter.writeFileWithHeader(saveFile, symSb, true)) {
                             logger.info(String.format(" Save failed for %s", saveFile.getName()));
                         }
-                    } else {
-                        if (!pdbFilter.writeFileWithHeader(saveFile, symSb, false)) {
-                            logger.info(String.format(" Save failed for %s", saveFile.getName()));
-                        }
+                    } else if (!pdbFilter.writeFileWithHeader(saveFile, symSb, false)) {
+                        logger.info(String.format(" Save failed for %s", saveFile.getName()));
                     }
                 }
             }

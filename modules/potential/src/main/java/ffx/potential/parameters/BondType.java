@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
  *
  * This file is part of Force Field X.
  *
@@ -40,6 +40,7 @@ package ffx.potential.parameters;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.logging.Logger;
 
 import ffx.potential.parameters.ForceField.ForceFieldType;
 
@@ -51,6 +52,8 @@ import ffx.potential.parameters.ForceField.ForceFieldType;
  *
  */
 public final class BondType extends BaseType implements Comparator<String> {
+
+    private static final Logger logger = Logger.getLogger(BondType.class.getName());
 
     public enum BondFunction {
 
@@ -105,29 +108,39 @@ public final class BondType extends BaseType implements Comparator<String> {
      * Remap new atom classes to known internal ones.
      *
      * @param typeMap a lookup between new atom types and known atom types.
+     * @return
      */
-    public void patchClasses(HashMap<AtomType, AtomType> typeMap) {
+    public BondType patchClasses(HashMap<AtomType, AtomType> typeMap) {
 
         int count = 0;
+        int len = atomClasses.length;
+        /**
+         * Look for new BondTypes that contain one mapped atom class.
+         */
         for (AtomType newType : typeMap.keySet()) {
-            for (int i = 0; i < atomClasses.length; i++) {
+            for (int i = 0; i < len; i++) {
                 if (atomClasses[i] == newType.atomClass) {
                     count++;
                 }
             }
         }
-        if (count > 0 && count < atomClasses.length) {
+        /**
+         * If found, create a new BondType that bridges to known classes.
+         */
+        if (count == 1) {
+            int newClasses[] =  Arrays.copyOf(atomClasses, len);
             for (AtomType newType : typeMap.keySet()) {
-                for (int i = 0; i < atomClasses.length; i++) {
+                for (int i = 0; i < len; i++) {
                     if (atomClasses[i] == newType.atomClass) {
                         AtomType knownType = typeMap.get(newType);
-                        atomClasses[i] = knownType.atomClass;
+                        newClasses[i] = knownType.atomClass;
                     }
                 }
-
             }
-            setKey(sortKey(atomClasses));
+            BondType bondType = new BondType(newClasses, forceConstant, distance, bondFunction);
+            return bondType;
         }
+        return null;
     }
 
     /**
@@ -161,6 +174,31 @@ public final class BondType extends BaseType implements Comparator<String> {
         key = c[0] + " " + c[1];
         return key;
     }
+
+    /**
+     * Average two BondType instances. The atom classes that define the new type
+     * must be supplied.
+     *
+     * @param bondType1
+     * @param bondType2
+     * @param atomClasses
+     * @return
+     */
+    public static BondType average(BondType bondType1, BondType bondType2, int atomClasses[]) {
+        if (bondType1 == null || bondType2 == null || atomClasses == null) {
+            return null;
+        }
+        BondType.BondFunction bondFunction = bondType1.bondFunction;
+        if (bondFunction != bondType2.bondFunction) {
+            return null;
+        }
+
+        double forceConstant = (bondType1.forceConstant + bondType2.forceConstant) / 2.0;
+        double distance = (bondType1.distance + bondType2.distance) / 2.0;
+
+        return new BondType(atomClasses, forceConstant, distance, bondFunction);
+    }
+
     /**
      * Convert bond stretch energy to kcal/mole.
      */

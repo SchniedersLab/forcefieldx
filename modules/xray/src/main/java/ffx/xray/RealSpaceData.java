@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
  *
  * This file is part of Force Field X.
  *
@@ -38,6 +38,7 @@
 package ffx.xray;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -61,20 +62,64 @@ import ffx.xray.RefinementMinimize.RefinementMode;
 public class RealSpaceData implements DataContainer {
 
     private static final Logger logger = Logger.getLogger(RealSpaceData.class.getName());
-    protected final MolecularAssembly[] molecularAssemblies;
-    protected final RealSpaceFile[] realSpaceFile;
-    protected final String modelName;
-    protected final int n;
-    protected final Crystal crystal[];
-    protected final RealSpaceRefinementData[] refinementData;
-    protected final RefinementModel refinementModel;
 
+    /**
+     * The collection of MolecularAssembly instances that model the real space
+     * data.
+     */
+    protected final MolecularAssembly[] molecularAssemblies;
+    /**
+     * The real space data files.
+     */
+    protected final RealSpaceFile[] realSpaceFile;
+    /**
+     * The name of the model.
+     */
+    protected final String modelName;
+    /**
+     * The number of real space data sources to consider.
+     */
+    protected final int n;
+    /**
+     * The collection of crystals that describe the PBC and symmetry of each
+     * data source.
+     */
+    protected final Crystal crystal[];
+    /**
+     * The real space refinement data for each data source.
+     */
+    protected final RealSpaceRefinementData[] refinementData;
+    /**
+     * The refinement model.
+     */
+    protected final RefinementModel refinementModel;
+    /**
+     * The total real space energy.
+     */
     private double realSpaceEnergy = 0.0;
+    /**
+     * The partial derivative of the real space energy with respect to lambda.
+     */
     private double realSpacedUdL = 0.0;
+    /**
+     * The real space gradient.
+     */
     private double realSpaceGradient[];
+    /**
+     * The partial derivative of the real space gradient with respect to lambda.
+     */
     private double realSpacedUdXdL[];
+    /**
+     * The weight of the data relative to the weight of the force field.
+     */
     public double xweight;
+    /**
+     * The current value of the state variable lambda.
+     */
     protected double lambda = 1.0;
+    /**
+     * A flag to indicate if the lambda term is active.
+     */
     private boolean lambdaTerm = false;
 
     /**
@@ -266,34 +311,27 @@ public class RealSpaceData implements DataContainer {
         // Zero out the realSpacedUdL energy.
         realSpacedUdL = 0.0;
         // Initialize gradient to zero; allocate space if necessary.
-        int nAtoms = refinementModel.atomArray.length;
-        if (realSpaceGradient == null || realSpaceGradient.length < nAtoms * 3) {
-            realSpaceGradient = new double[nAtoms * 3];
+        int nUsedAtoms = refinementModel.usedAtoms.length;
+        int nActive = refinementModel.activeAtoms.length;
+
+        int nGrad = nActive * 3;
+        if (realSpaceGradient == null || realSpaceGradient.length < nGrad) {
+            realSpaceGradient = new double[nGrad];
         } else {
-            int nGrad = nAtoms * 3;
-            for (int i = 0; i < nGrad; i++) {
-                realSpaceGradient[i] = 0;
-            }
+            Arrays.fill(realSpaceGradient, 0.0);
         }
         // Initialize dUdXdL to zero; allocate space if necessary.
-        if (realSpacedUdXdL == null || realSpacedUdXdL.length < nAtoms * 3) {
-            realSpacedUdXdL = new double[nAtoms * 3];
+        if (realSpacedUdXdL == null || realSpacedUdXdL.length < nGrad) {
+            realSpacedUdXdL = new double[nGrad];
         } else {
-            int nGrad = nAtoms * 3;
-            for (int i = 0; i < nGrad; i++) {
-                realSpacedUdXdL[i] = 0;
-            }
+            Arrays.fill(realSpacedUdXdL, 0.0);
         }
 
         for (int i = 0; i < n; i++) {
             double sum = 0.0;
             TriCubicSpline spline = new TriCubicSpline();
-            int index = -1;
-            for (Atom a : refinementModel.atomArray) {
-                index++;
-                if (!a.getUse()) {
-                    continue;
-                }
+            int index = 0;
+            for (Atom a : refinementModel.usedAtoms) {
                 double lambdai = 1.0;
                 double dUdL = 0.0;
                 if (lambdaTerm && a.applyLambda()) {
@@ -362,24 +400,27 @@ public class RealSpaceData implements DataContainer {
                 sum += scale * val;
                 realSpacedUdL += scaledUdL * val;
 
-                grad[0] = grad[0] * refinementData[i].ni[0];
-                grad[1] = grad[1] * refinementData[i].ni[1];
-                grad[2] = grad[2] * refinementData[i].ni[2];
-                // transpose of toFractional
-                xyz[0] = grad[0] * crystal[i].A00 + grad[1] * crystal[i].A01 + grad[2] * crystal[i].A02;
-                xyz[1] = grad[0] * crystal[i].A10 + grad[1] * crystal[i].A11 + grad[2] * crystal[i].A12;
-                xyz[2] = grad[0] * crystal[i].A20 + grad[1] * crystal[i].A21 + grad[2] * crystal[i].A22;
+                if (a.isActive()) {
+                    grad[0] = grad[0] * refinementData[i].ni[0];
+                    grad[1] = grad[1] * refinementData[i].ni[1];
+                    grad[2] = grad[2] * refinementData[i].ni[2];
+                    // transpose of toFractional
+                    xyz[0] = grad[0] * crystal[i].A00 + grad[1] * crystal[i].A01 + grad[2] * crystal[i].A02;
+                    xyz[1] = grad[0] * crystal[i].A10 + grad[1] * crystal[i].A11 + grad[2] * crystal[i].A12;
+                    xyz[2] = grad[0] * crystal[i].A20 + grad[1] * crystal[i].A21 + grad[2] * crystal[i].A22;
 
-                int gradIndex = index * 3;
-                int gx = gradIndex;
-                int gy = gradIndex + 1;
-                int gz = gradIndex + 2;
-                realSpaceGradient[gx] += scale * xyz[0];
-                realSpaceGradient[gy] += scale * xyz[1];
-                realSpaceGradient[gz] += scale * xyz[2];
-                realSpacedUdXdL[gx] += scaledUdL * xyz[0];
-                realSpacedUdXdL[gy] += scaledUdL * xyz[1];
-                realSpacedUdXdL[gz] += scaledUdL * xyz[2];
+                    int gradIndex = index * 3;
+                    int gx = gradIndex;
+                    int gy = gradIndex + 1;
+                    int gz = gradIndex + 2;
+                    realSpaceGradient[gx] += scale * xyz[0];
+                    realSpaceGradient[gy] += scale * xyz[1];
+                    realSpaceGradient[gz] += scale * xyz[2];
+                    realSpacedUdXdL[gx] += scaledUdL * xyz[0];
+                    realSpacedUdXdL[gy] += scaledUdL * xyz[1];
+                    realSpacedUdXdL[gz] += scaledUdL * xyz[2];
+                    index++;
+                }
 
             }
             refinementData[i].densityscore = sum;
@@ -389,14 +430,14 @@ public class RealSpaceData implements DataContainer {
             realSpaceEnergy += refinementData[i].densityscore;
         }
 
-        int index = -1;
-        for (Atom a : refinementModel.atomArray) {
-            index++;
+        int index = 0;
+        for (Atom a : refinementModel.activeAtoms) {
             int gradIndex = index * 3;
             int gx = gradIndex;
             int gy = gradIndex + 1;
             int gz = gradIndex + 2;
             a.addToXYZGradient(realSpaceGradient[gx], realSpaceGradient[gy], realSpaceGradient[gz]);
+            index++;
         }
 
         return realSpaceEnergy;
@@ -411,7 +452,7 @@ public class RealSpaceData implements DataContainer {
     }
 
     public double[] getRealSpaceGradient(double gradient[]) {
-        int nAtoms = refinementModel.atomArray.length;
+        int nAtoms = refinementModel.activeAtoms.length;
         if (gradient == null || gradient.length < nAtoms * 3) {
             gradient = new double[nAtoms * 3];
         }
@@ -422,7 +463,7 @@ public class RealSpaceData implements DataContainer {
     }
 
     public double[] getdEdXdL(double gradient[]) {
-        int nAtoms = refinementModel.atomArray.length;
+        int nAtoms = refinementModel.activeAtoms.length;
         if (gradient == null || gradient.length < nAtoms * 3) {
             gradient = new double[nAtoms * 3];
         }
@@ -446,7 +487,7 @@ public class RealSpaceData implements DataContainer {
      */
     @Override
     public Atom[] getAtomArray() {
-        return refinementModel.atomArray;
+        return refinementModel.usedAtoms;
     }
 
     /**
@@ -469,7 +510,7 @@ public class RealSpaceData implements DataContainer {
      * {@inheritDoc}
      */
     @Override
-    public MolecularAssembly[] getMolecularAssembly() {
+    public MolecularAssembly[] getMolecularAssemblies() {
         return molecularAssemblies;
     }
 

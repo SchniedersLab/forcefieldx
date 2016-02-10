@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
  *
  * This file is part of Force Field X.
  *
@@ -82,7 +82,6 @@ import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.ELEC_FORM;
 import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.nonbonded.VanDerWaals.RADIUS_RULE;
-import ffx.potential.nonbonded.VanDerWaals.VDW_FORM;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldBoolean;
@@ -130,9 +129,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private int nUreyBradleys;
     private int nOutOfPlaneBends;
     private int nTorsions;
+    private int nImproperTorsions;
     private int nPiOrbitalTorsions;
     private int nTorsionTorsions;
-    private int nImproperTorsions;
     private int nRestraintBonds;
     private int nVanDerWaalInteractions;
     private int nPermanentInteractions;
@@ -144,9 +143,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private boolean ureyBradleyTerm;
     private boolean outOfPlaneBendTerm;
     private boolean torsionTerm;
+    private boolean improperTorsionTerm;
     private boolean piOrbitalTorsionTerm;
     private boolean torsionTorsionTerm;
-    private boolean improperTorsionTerm;
     private boolean restraintBondTerm;
     private boolean vanderWaalsTerm;
     private boolean multipoleTerm;
@@ -166,9 +165,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private boolean ureyBradleyTermOrig;
     private boolean outOfPlaneBendTermOrig;
     private boolean torsionTermOrig;
+    private boolean improperTorsionTermOrig;
     private boolean piOrbitalTorsionTermOrig;
     private boolean torsionTorsionTermOrig;
-    private boolean improperTorsionTermOrig;
     private boolean restraintBondTermOrig;
     private boolean vanderWaalsTermOrig;
     private boolean multipoleTermOrig;
@@ -183,9 +182,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private double ureyBradleyEnergy;
     private double outOfPlaneBendEnergy;
     private double torsionEnergy;
+    private double improperTorsionEnergy;
     private double piOrbitalTorsionEnergy;
     private double torsionTorsionEnergy;
-    private double improperTorsionEnergy;
     private double restraintBondEnergy;
     private double totalBondedEnergy;
     private double vanDerWaalsEnergy;
@@ -599,16 +598,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
         int molecule[] = molecularAssembly.getMoleculeNumbers();
         if (vanderWaalsTerm) {
-            if (name.contains("OPLS")) {
-                vanderWaals = new VanDerWaals(atoms, molecule, crystal, forceField,
-                        parallelTeam, VDW_FORM.LENNARD_JONES_6_12, RADIUS_RULE.GEOMETRIC);
-            } else if (name.contains("AMBER")) {
-                vanderWaals = new VanDerWaals(atoms, molecule, crystal, forceField,
-                        parallelTeam, VDW_FORM.LENNARD_JONES_6_12, RADIUS_RULE.ARITHMETIC);
-            } else {
-                vanderWaals = new VanDerWaals(atoms, molecule, crystal, forceField,
-                        parallelTeam, VDW_FORM.BUFFERED_14_7, RADIUS_RULE.CUBIC_MEAN);
-            }
+            vanderWaals = new VanDerWaals(atoms, molecule, crystal, forceField, parallelTeam);
         } else {
             vanderWaals = null;
         }
@@ -1707,6 +1697,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     /**
+     * The coords array should only contain coordinates of for active atoms.
      *
      * @param coords
      */
@@ -2104,6 +2095,14 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         return torsionEnergy;
     }
 
+    public int getNumberofImproperTorsions() {
+        return nImproperTorsions;
+    }
+
+    public double getImproperTorsionEnergy() {
+        return improperTorsionEnergy;
+    }
+
     public int getNumberofTorsions() {
         return nTorsions;
     }
@@ -2152,6 +2151,11 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         return relativeSolvationEnergy;
     }
 
+    /**
+     * The velocity array should only contain velocity data for active atoms.
+     *
+     * @param velocity
+     */
     @Override
     public void setVelocity(double[] velocity) {
         if (velocity == null) {
@@ -2167,6 +2171,12 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
     }
 
+    /**
+     * The acceleration array should only contain acceleration data for active
+     * atoms.
+     *
+     * @param acceleration
+     */
     @Override
     public void setAcceleration(double[] acceleration) {
         if (acceleration == null) {
@@ -2182,6 +2192,12 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
     }
 
+    /**
+     * The previousAcceleration array should only contain previous acceleration
+     * data for active atoms.
+     *
+     * @param previousAcceleration
+     */
     @Override
     public void setPreviousAcceleration(double[] previousAcceleration) {
         if (previousAcceleration == null) {
@@ -2197,6 +2213,12 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
     }
 
+    /**
+     * Returns an array of velocity values for active atoms.
+     *
+     * @param velocity if the velocity array is null, it will be allocated.
+     * @return the velocity array is returned.
+     */
     @Override
     public double[] getVelocity(double[] velocity) {
         int n = getNumberOfVariables();
@@ -2215,6 +2237,13 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         return velocity;
     }
 
+    /**
+     * Returns an array of acceleration values for active atoms.
+     *
+     * @param acceleration if the acceleration array is null, it will be
+     * allocated.
+     * @return the acceleration array is returned.
+     */
     @Override
     public double[] getAcceleration(double[] acceleration) {
         int n = getNumberOfVariables();
@@ -2232,6 +2261,13 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         return acceleration;
     }
 
+    /**
+     * Returns an array of previous acceleration values for active atoms.
+     *
+     * @param previousAcceleration if the previousAcceleration array is null, it
+     * will be allocated.
+     * @return the previousAcceleration array is returned.
+     */
     @Override
     public double[] getPreviousAcceleration(double[] previousAcceleration) {
         int n = getNumberOfVariables();

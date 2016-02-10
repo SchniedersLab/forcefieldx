@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
  *
  * This file is part of Force Field X.
  *
@@ -53,28 +53,6 @@ import static org.apache.commons.math3.util.FastMath.toRadians;
  *
  */
 public final class ImproperTorsionType extends BaseType implements Comparator<String> {
-
-    /**
-     * Convert Torsional Angle energy to kcal/mole.
-     *
-     * @since 1.0
-     */
-    public static final double units = 0.5;
-
-    /**
-     * This method sorts the atom classes for the improper torsion.
-     *
-     * @param c atomClasses
-     * @return lookup key
-     * @since 1.0
-     */
-    public static String sortKey(int c[]) {
-        if (c == null || c.length != 4) {
-            return null;
-        }
-        String key = c[0] + " " + c[1] + " " + c[2] + " " + c[3];
-        return key;
-    }
 
     /**
      * Atom classes that for this Improper Torsion angle.
@@ -307,4 +285,47 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
         hash = 89 * hash + Arrays.hashCode(atomClasses);
         return hash;
     }
+
+    /**
+     * This method sorts the atom classes for the improper torsion.
+     *
+     * @param c atomClasses
+     * @return lookup key
+     * @since 1.0
+     */
+    public static String sortKey(int c[]) {
+        if (c == null || c.length != 4) {
+            return null;
+        }
+        String key = c[0] + " " + c[1] + " " + c[2] + " " + c[3];
+        return key;
+    }
+
+    /**
+     * Average two ImproperTorsionType instances. The atom classes that define the
+     * new type must be supplied.
+     * 
+     * @param improperTorsionType1
+     * @param improperTorsionType2
+     * @param atomClasses
+     * @return
+     */
+    public static ImproperTorsionType average(ImproperTorsionType improperTorsionType1,
+            ImproperTorsionType improperTorsionType2, int atomClasses[]) {
+
+        if (improperTorsionType1 == null || improperTorsionType2 == null || atomClasses == null) {
+            return null;
+        }
+
+        int periodicity = improperTorsionType1.periodicity;
+        if (periodicity != improperTorsionType2.periodicity) {
+            return null;
+        }
+
+        double forceConstant = (improperTorsionType1.k + improperTorsionType2.k) / 2.0;
+        double phase = (improperTorsionType1.phase + improperTorsionType2.phase) / 2.0;
+
+        return new ImproperTorsionType(atomClasses, forceConstant, phase, periodicity);
+    }
+
 }

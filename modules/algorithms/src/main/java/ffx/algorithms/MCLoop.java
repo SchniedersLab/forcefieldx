@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
  *
  * This file is part of Force Field X.
  *
@@ -181,7 +181,7 @@ public class MCLoop implements MonteCarloListener {
         // Randomly choose a target sub portion of loop to KIC.
         int startOffset;
         if (endResidue - firstResidue > 4){
-            startOffset = rng.nextInt(endResidue - firstResidue - 4) + firstResidue;
+            startOffset = rng.nextInt(endResidue - firstResidue - 3) + firstResidue;
         } else {
             startOffset = firstResidue;
         }
@@ -192,10 +192,17 @@ public class MCLoop implements MonteCarloListener {
         for(int i = 1; i < this.iterations; i++){
             //pick random subloop
             if(endResidue - firstResidue > 4){
-                startOffset = rng.nextInt(endResidue - firstResidue - 4) + firstResidue;
+                startOffset = rng.nextInt(endResidue - firstResidue - 3) + firstResidue;
             }
             //pick random solution
-            loopSolutions = loop.generateLoops(startOffset, startOffset + 4,loopSolutions.get(rng.nextInt(loopSolutions.size())));
+            if (loopSolutions.size() > 0){
+                List <double[]> tempLoops = loop.generateLoops(startOffset, startOffset + 4,loopSolutions.get(rng.nextInt(loopSolutions.size())));
+                for(int j = 0; j < tempLoops.size(); j++){
+                    loopSolutions.add(tempLoops.get(j));
+                }
+            } else {
+                loopSolutions = loop.generateLoops(startOffset, startOffset + 4,loopSolutions.get(rng.nextInt(loopSolutions.size())));
+            }
         }
         int numLoopsFound = loopSolutions.size();
         // Check whether KIC found alternative loops
@@ -220,17 +227,19 @@ public class MCLoop implements MonteCarloListener {
         oldCoords = storeActiveCoordinates();
 
         // Optimize the system.
-     //   Minimize minimize1 = new Minimize(null, forceFieldEnergy, null);
-     //   minimize1.minimize();
+        Minimize minimize1 = new Minimize(null, forceFieldEnergy, null);
+        minimize1.minimize();
         double originalLoopEnergy = forceFieldEnergy.energy(false,true);
         
         // Perform move and analysis of chosen loop.
         performLoopMove(newCoords);
-      //  Minimize minimize2 = new Minimize(null, forceFieldEnergy, null);
-      //  minimize2.minimize();
-        
+        Minimize minimize2 = new Minimize(null, forceFieldEnergy, null);
+        minimize2.minimize();
         double newLoopEnergy = forceFieldEnergy.energy(false,true);
         
+        // Remove the scaling of coordinates & gradient set by the minimizer.
+        forceFieldEnergy.setScaling(null);
+                
         double temperature = thermostat.getCurrentTemperature();
         double kT = boltzmann * temperature;
         // Test the MC criterion for a loop move.
@@ -245,6 +254,12 @@ public class MCLoop implements MonteCarloListener {
         sb.append(String.format("     possible loop: %16.8f\n", newLoopEnergy));
         sb.append(String.format("     -----\n"));
 
+        if (dE < -1000){
+            sb.append(String.format("     Denied (dE < -1000)."));
+            logger.info(sb.toString());        
+            return false;
+        }
+        
         // Test Monte-Carlo criterion.
         if (dE < 0 ) {
             sb.append(String.format("     Accepted!"));

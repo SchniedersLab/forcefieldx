@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
  *
  * This file is part of Force Field X.
  *
@@ -37,83 +37,82 @@
  */
 package ffx.potential.parsers;
 
-import ffx.potential.MolecularAssembly;
-//import ffx.potential.parameters.ForceField;
 import java.io.BufferedReader;
-//import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
-//import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-//import java.lang.reflect.Array;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-//import java.lang.String;
-import java.util.HashMap;
-import java.util.logging.Logger;
-//import java.util.regex.Pattern;
-//import java.lang.ArrayIndexOutOfBoundsException;
-import java.text.DecimalFormat;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
-import org.apache.commons.io.FileUtils;
-//import static javafx.beans.binding.Bindings.concat;
-//import java.lang.Double;
+import java.util.logging.Logger;
+
+import ffx.potential.MolecularAssembly;
 
 /**
+ * Patch Combiner merges multiple patch files.
  *
- * @author rcorrigan
+ * @author Rae Corrigan
  */
 public class PatchCombiner {
 
     private static final Logger logger = Logger.getLogger(ForceFieldFilter.class.getName());
     private final List<MolecularAssembly> molecularAssemblies;
     private final String mapname;
-    private final String patch1;
-    private final String patch2;
-    private final String patch3;
-    private final String patch4;
-    private final String patch5;
-    private final String patch6;
+    private final String patches[];
 
-    public PatchCombiner(List<MolecularAssembly> molecularAssemblies, String mapname, String patch1, String patch2, String patch3, String patch4, String patch5, String patch6) {
+    List<String> atomNameList;
+    List<String> fragCodeList;
+    List<String> fAtomNameList;
+    List<String> typeNumList;
+    List<String> vTypeNumList;
+
+    String[] atomName;
+    String[] fragCode;
+    String[] fAtomName;
+    String[] typeNum;
+    String[] vTypeNum;
+    int max;
+
+    HashMap<String, String> typeNumMap;
+    HashMap<Integer, String> patchMap;
+    HashMap<String, String> Map4to51;
+    HashMap<String, String> Map4to52;
+    HashMap<String, String> Map4to53;
+    HashMap<String, String> Map4to54;
+    HashMap<String, String> Map4to55;
+    HashMap<String, String> Map4to56;
+
+    public PatchCombiner(List<MolecularAssembly> molecularAssemblies, String mapname,
+            String... patch) {
         this.molecularAssemblies = molecularAssemblies;
         this.mapname = mapname;
-        this.patch1 = patch1;
-        this.patch2 = patch2;
-        this.patch3 = patch3;
-        this.patch4 = patch4;
-        this.patch5 = patch5;
-        this.patch6 = patch6;
+        this.patches = patch;
     }
 
-    public void myMethod() throws FileNotFoundException {
+    public void combinePatches() throws FileNotFoundException {
 
-        List<String> atomNameList = new ArrayList<>();
-        List<String> fragCodeList = new ArrayList<>();
-        List<String> fAtomNameList = new ArrayList<>();
-        List<String> typeNumList = new ArrayList<>();
-        List<String> vTypeNumList = new ArrayList<>();
-
-        HashMap<String, String> typeNumMap = new HashMap<>();
+        atomNameList = new ArrayList<>();
+        fragCodeList = new ArrayList<>();
+        fAtomNameList = new ArrayList<>();
+        typeNumList = new ArrayList<>();
+        vTypeNumList = new ArrayList<>();
+        typeNumMap = new HashMap<>();
 
         try {
             File file = new File(mapname);
             FileReader fileReader = new FileReader(file);
             BufferedReader bufferedReader = new BufferedReader(fileReader);
-            StringBuilder stringBuffer = new StringBuilder();
             String line;
 
             while ((line = bufferedReader.readLine()) != null) {
-
                 String[] pieces = line.split(" : ");
-
                 if (pieces.length == 5) {
                     atomNameList.add(pieces[0]);
                     fragCodeList.add(pieces[1]);
@@ -128,41 +127,39 @@ public class PatchCombiner {
             }
 
             fileReader.close();
-
             atomNameList.remove("Atom Name");
             fragCodeList.remove("Fragment Code");
             fAtomNameList.remove("fAtom Name");
             typeNumList.remove("fAtom Type Number");
             vTypeNumList.remove("vAtom Type Number");
-
         } catch (IOException e) {
         }
 
-        HashMap<Integer, String> patchMap = new HashMap<>();
-        patchMap.put(1, patch1);
-        patchMap.put(2, patch2);
-        patchMap.put(3, patch3);
-        patchMap.put(4, patch4);
-        patchMap.put(5, patch5);
-        patchMap.put(6, patch6);
+        patchMap = new HashMap<>();
+        patchMap.put(1, patches[0]);
+        patchMap.put(2, patches[1]);
+        patchMap.put(3, patches[2]);
+        patchMap.put(4, patches[3]);
+        patchMap.put(5, patches[4]);
+        patchMap.put(6, patches[5]);
 
-        String[] atomName = new String[atomNameList.size()];
+        atomName = new String[atomNameList.size()];
         atomNameList.toArray(atomName);
-        String[] fragCode = new String[fragCodeList.size()];
+        fragCode = new String[fragCodeList.size()];
         fragCodeList.toArray(fragCode);
-        String[] fAtomName = new String[fAtomNameList.size()];
+        fAtomName = new String[fAtomNameList.size()];
         fAtomNameList.toArray(fAtomName);
-        String[] typeNum = new String[typeNumList.size()];
+        typeNum = new String[typeNumList.size()];
         typeNumList.toArray(typeNum);
-        String[] vTypeNum = new String[vTypeNumList.size()];
+        vTypeNum = new String[vTypeNumList.size()];
         vTypeNumList.toArray(vTypeNum);
 
-        HashMap<String, String> Map4to51 = new HashMap<>();
-        HashMap<String, String> Map4to52 = new HashMap<>();
-        HashMap<String, String> Map4to53 = new HashMap<>();
-        HashMap<String, String> Map4to54 = new HashMap<>();
-        HashMap<String, String> Map4to55 = new HashMap<>();
-        HashMap<String, String> Map4to56 = new HashMap<>();
+        Map4to51 = new HashMap<>();
+        Map4to52 = new HashMap<>();
+        Map4to53 = new HashMap<>();
+        Map4to54 = new HashMap<>();
+        Map4to55 = new HashMap<>();
+        Map4to56 = new HashMap<>();
 
         for (int l = 0; l < fragCode.length; ++l) {
             if (Integer.parseInt(fragCode[l]) == 1) {
@@ -180,11 +177,35 @@ public class PatchCombiner {
             }
         }
 
-        int max = atomName.length;
+        max = atomName.length;
 
         /**
          * Atom writing code
          */
+        writeAtoms();
+
+        /**
+         * *
+         * Multipole averaging/writing code
+         */
+        writeMultipoles();
+
+        /**
+         * Polarize averaging/writing code
+         */
+        writePolarize();
+
+        /**
+         * VDW averaging/writing code
+         */
+        writeVDW();
+
+        /**
+         * Bond averaging/writing code
+         */
+    }
+
+    public void writeAtoms() throws FileNotFoundException {
         PrintWriter atomWriter1 = new PrintWriter("Oatom.patch");
 
         for (int count = 1; count < 7; ++count) {
@@ -209,7 +230,7 @@ public class PatchCombiner {
 
                         String[] atomSplit1 = line.split(" ");
 
-                        //remove spaces                        
+                        //remove spaces
                         List<String> list = new ArrayList<>(Arrays.asList(atomSplit1));
                         list.removeAll(Arrays.asList("", null));
 
@@ -260,7 +281,6 @@ public class PatchCombiner {
         try {
             FileReader fr = new FileReader("Oatom.patch");
             BufferedReader bufferedReader = new BufferedReader(fr);
-            StringBuilder stringBuffer = new StringBuilder();
             String line1;
             while ((line1 = bufferedReader.readLine()) != null) {
 
@@ -300,15 +320,9 @@ public class PatchCombiner {
         }
 
         System.out.println("Atom Patch: COMPLETE");
+    }
 
-        /**
-         * *
-         * End atom writing code
-         */
-        /**
-         * *
-         * Multipole averaging/writing code
-         */
+    public void writeMultipoles() throws FileNotFoundException {
         List<String> multipoles = new ArrayList<>();
         List<String> mCol1List = new ArrayList<>();
         List<String> mCol2List = new ArrayList<>();
@@ -488,7 +502,7 @@ public class PatchCombiner {
 
                     ++lineCount;
                 }//ends reader while
-            }//end try 
+            }//end try
             catch (IOException e) {
 
             }
@@ -850,7 +864,7 @@ public class PatchCombiner {
         try {
             FileReader fr = new FileReader("Omultipole.patch");
             BufferedReader bufferedReader = new BufferedReader(fr);
-            StringBuilder stringBuffer = new StringBuilder();
+            StringBuilder resultBuilder = new StringBuilder();
             String line;
             String leadSpace = "                                        ";
             while ((line = bufferedReader.readLine()) != null) {
@@ -987,7 +1001,7 @@ public class PatchCombiner {
                         alreadyPresentm.add(testS6);
 
                     }
-                    result = resultBuilder.toString();
+                    String result = resultBuilder.toString();
 
                     //write final multipole values to patch file
                     try {
@@ -1009,14 +1023,9 @@ public class PatchCombiner {
         }
 
         System.out.println("Multipole Patch: COMPLETE");
+    }
 
-        /**
-         * *
-         * End multipole averaging/writing code
-         */
-        /**
-         * Polarize averaging/writing code
-         */
+    public void writePolarize() throws FileNotFoundException {
         String polarAtom = null;
 
         PrintWriter polarWriter1 = new PrintWriter("Opolarize.patch");
@@ -1053,7 +1062,7 @@ public class PatchCombiner {
 
                 if (atomName[i].equals(atomName[j])) {
 
-                    //find corresponding fragCode value for index j 
+                    //find corresponding fragCode value for index j
                     //from this fragCode, using the fragCodeMap, find matching patch file
                     String code = fragCode[j];
                     String num = typeNum[j];
@@ -1388,7 +1397,7 @@ public class PatchCombiner {
                                         //similar atom incrimentor
                                         ++ptcount;
 
-                                        //for similar atoms in many patches, certain polarizing atoms may not be listed 
+                                        //for similar atoms in many patches, certain polarizing atoms may not be listed
                                         //in every patch.  These "extra" values ensure that all atoms that contribute
                                         //to the polarization of the atom in question are listed in the "polarize" section
                                         //of the final, vem patch file
@@ -1397,7 +1406,7 @@ public class PatchCombiner {
 
                                         //check and see if all recorded values are already listed in the final "polarize"
                                         //line for the atom in question.
-                                        //if not, they are entered into "extra1" or "extra2" variables for adding to 
+                                        //if not, they are entered into "extra1" or "extra2" variables for adding to
                                         //final "polarize" types array for printing in final patch file
                                         if (ptcount == 2) {
                                             if (!" ".equals(polarTypes4A3) && polarTypes4A3 != null && !check4.equals(polarTypes4A3) && !check5.equals(polarTypes4A3)
@@ -1514,14 +1523,14 @@ public class PatchCombiner {
 
                                         //updates the values used for checking for extras
                                         //sets check4/5/6 to the polarize 5** values for the first occurance
-                                        //of the atom in question.  
+                                        //of the atom in question.
                                         if (ptcount == 1 && polarTypes4Aa4[0] != null && polarTypes5Aa4[0] != null && polarTypes6Aa4 != null) {
                                             check4 = polarTypes4Aa4[0];
                                             check5 = polarTypes5Aa4[0];
                                             check6 = polarTypes6Aa4[0];
                                         }
 
-                                        //adds "polarize" line trailing values to final arrays for 
+                                        //adds "polarize" line trailing values to final arrays for
                                         //printing as part of the final "polarize" line for the atom in question
                                         //in the final patch file.
                                         for (int count = 0; count < polarTypes4Aa4.length; ++count) {
@@ -1617,7 +1626,7 @@ public class PatchCombiner {
         try {
             FileReader fr = new FileReader("Opolarize.patch");
             BufferedReader bufferedReader = new BufferedReader(fr);
-            StringBuilder stringBuffer = new StringBuilder();
+            StringBuilder resultBuilder = new StringBuilder();
             String line;
             while ((line = bufferedReader.readLine()) != null) {
 
@@ -1640,7 +1649,7 @@ public class PatchCombiner {
                         alreadyPresent.add(parts[5]);
 
                     }
-                    result = resultBuilder.toString();
+                    String result = resultBuilder.toString();
 
                     //write final polarize values to patch file
                     try {
@@ -1661,14 +1670,9 @@ public class PatchCombiner {
         }
 
         System.out.println("Polarize Patch: COMPLETE");
+    }
 
-        /**
-         * *
-         * End polarize averaging/writing code
-         */
-        /**
-         * VDW averaging/writing code
-         */
+    public void writeVDW() throws FileNotFoundException {
         String vdwAtom = null;
 
         PrintWriter vdwWriter1 = new PrintWriter("Ovdw.patch");
@@ -1689,7 +1693,7 @@ public class PatchCombiner {
                 List<Double> col2List = new ArrayList<>();
 
                 if (atomName[i].equals(atomName[j])) {
-                    //find corresponding fragCode value for index i 
+                    //find corresponding fragCode value for index i
                     //from this fragCode, using the fragCodeMap, find matching patch file
                     String code = fragCode[j];
                     String num = typeNum[j];
@@ -1789,7 +1793,7 @@ public class PatchCombiner {
         try {
             FileReader fr = new FileReader("Ovdw.patch");
             BufferedReader bufferedReader = new BufferedReader(fr);
-            StringBuilder stringBuffer = new StringBuilder();
+            StringBuilder resultBuilder = new StringBuilder();
             String line;
             while ((line = bufferedReader.readLine()) != null) {
 
@@ -1811,7 +1815,7 @@ public class PatchCombiner {
                     alreadyPresentV.add(parts[7]);
 
                 }
-                result = resultBuilder.toString();
+                String result = resultBuilder.toString();
 
                 //write final vdw values to patch file
                 try {
@@ -1829,14 +1833,9 @@ public class PatchCombiner {
         }
 
         System.out.println("van der Waals Patch: COMPLETE");
+    }
 
-        /**
-         * *
-         * End VDW averaging/writing code
-         */
-        /**
-         * Bond averaging/writing code
-         */
+    public void writeBonded() throws FileNotFoundException {
         List<String> bonds = new ArrayList<>();
         List<String> firstNList = new ArrayList<>();
         List<String> secondNList = new ArrayList<>();
@@ -2014,7 +2013,6 @@ public class PatchCombiner {
         try {
             FileReader fr = new FileReader("Obond.patch");
             BufferedReader bufferedReader = new BufferedReader(fr);
-            StringBuilder stringBuffer = new StringBuilder();
             String line;
             while ((line = bufferedReader.readLine()) != null) {
 
@@ -2175,7 +2173,7 @@ public class PatchCombiner {
                     } //ends if(patch.contains("angle"))
 
                 }//ends reader while
-            }//end try 
+            }//end try
             catch (IOException e) {
 
             }
@@ -2278,7 +2276,7 @@ public class PatchCombiner {
         try {
             FileReader fr = new FileReader("Oangle.patch");
             BufferedReader bufferedReader = new BufferedReader(fr);
-            StringBuilder stringBuffer = new StringBuilder();
+            StringBuilder resultBuilder = new StringBuilder();
             String line;
             while ((line = bufferedReader.readLine()) != null) {
 
@@ -2388,7 +2386,7 @@ public class PatchCombiner {
                     alreadyPresentan.add(testS6);
 
                 }
-                result = resultBuilder.toString();
+                String result = resultBuilder.toString();
 
                 //write final angle values to patch file
                 try {
@@ -2505,7 +2503,7 @@ public class PatchCombiner {
                     } //ends if(patch.contains("strbnd"))
 
                 }//ends reader while
-            }//end try 
+            }//end try
             catch (IOException e) {
 
             }
@@ -2600,16 +2598,13 @@ public class PatchCombiner {
         }
 
         strbndWriter1.close();
-
-        //String resultSt = null;
-        //StringBuilder resultBuilderst = new StringBuilder();
         Set<String> alreadyPresentst = new HashSet<>();
 
         //make sure there is only one strbnd parameter line for each atom combination
         try {
             FileReader fr = new FileReader("Ostrbnd.patch");
+            StringBuilder resultBuilder = new StringBuilder();
             BufferedReader bufferedReader = new BufferedReader(fr);
-            StringBuilder stringBuffer = new StringBuilder();
             String line;
             while ((line = bufferedReader.readLine()) != null) {
 
@@ -2719,7 +2714,7 @@ public class PatchCombiner {
                     alreadyPresentst.add(testS6);
 
                 }
-                result = resultBuilder.toString();
+                String result = resultBuilder.toString();
 
                 //write final strbnd values to patch file
                 try {
@@ -2909,15 +2904,13 @@ public class PatchCombiner {
 
         opWriter1.close();
 
-        //String resultOp;
-        //StringBuilder resultBuilderop = new StringBuilder();
         Set<String> alreadyPresentop = new HashSet<>();
-
         //make sure there is only one opbend parameter line for each atom combination
         try {
             FileReader fr = new FileReader("Oopbend.patch");
             BufferedReader bufferedReader = new BufferedReader(fr);
-            StringBuilder stringBuffer = new StringBuilder();
+            StringBuilder resultBuilder = new StringBuilder();
+
             String line;
             while ((line = bufferedReader.readLine()) != null) {
 
@@ -2961,7 +2954,7 @@ public class PatchCombiner {
                     alreadyPresentop.add(testS2);
 
                 }
-                result = resultBuilder.toString();
+                String result = resultBuilder.toString();
 
                 //write final opbend values to patch file
                 try {
@@ -3097,7 +3090,7 @@ public class PatchCombiner {
                     } //ends if(patch.contains("torsion"))
 
                 }//ends reader while
-            }//end try 
+            }//end try
             catch (IOException e) {
 
             }
@@ -3217,15 +3210,12 @@ public class PatchCombiner {
 
         torsionWriter1.close();
 
-        //String resultT = null;
-        //StringBuilder resultBuildert = new StringBuilder();
         Set<String> alreadyPresentt = new HashSet<>();
-
         //make sure there is only one torsion parameter line for each atom combination
         try {
             FileReader fr = new FileReader("Otorsion.patch");
             BufferedReader bufferedReader = new BufferedReader(fr);
-            StringBuilder stringBuffer = new StringBuilder();
+            StringBuilder resultBuilder = new StringBuilder();
             String line;
             while ((line = bufferedReader.readLine()) != null) {
 
@@ -3320,7 +3310,7 @@ public class PatchCombiner {
                     alreadyPresentt.add(testS24);
 
                 }
-                result = resultBuilder.toString();
+                String result = resultBuilder.toString();
 
                 //write final torsion values to patch file
                 try {
@@ -3496,15 +3486,13 @@ public class PatchCombiner {
 
         piWriter1.close();
 
-        //String resultPi;
-        //StringBuilder resultBuilderpi = new StringBuilder();
         Set<String> alreadyPresentpi = new HashSet<>();
 
         //make sure there is only one pitors parameter line for each atom combination
         try {
             FileReader fr = new FileReader("Opitors.patch");
             BufferedReader bufferedReader = new BufferedReader(fr);
-            StringBuilder stringBuffer = new StringBuilder();
+            StringBuilder resultBuilder = new StringBuilder();
             String line;
             while ((line = bufferedReader.readLine()) != null) {
 
@@ -3548,7 +3536,7 @@ public class PatchCombiner {
                     alreadyPresentpi.add(testS2);
 
                 }
-                result = resultBuilder.toString();
+                String result = resultBuilder.toString();
 
                 //write final pitors values to patch file
                 try {
@@ -3572,29 +3560,30 @@ public class PatchCombiner {
          * *
          * End pitors averaging/writing code
          */
-        /***
+        /**
+         * *
          * Final writing code
          */
         //read each file
         //print contents to final.patch
         PrintWriter finalWriter = new PrintWriter("final.patch");
-        
-        try{
+
+        try {
             FileReader fr = new FileReader("pitors.patch");
             BufferedReader bufferedReader = new BufferedReader(fr);
             StringBuilder stringBuffer = new StringBuilder();
             String line;
             while ((line = bufferedReader.readLine()) != null) {
-                finalWriter.write(line+"\n");
+                finalWriter.write(line + "\n");
             }
-            
+
             finalWriter.close();
-            
-        } catch (IOException e){
-            
+
+        } catch (IOException e) {
+
         }
-        
+
         System.out.println("Final Patch: COMPLETE");
-        
     }
+
 }

@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
  *
  * This file is part of Force Field X.
  *
@@ -49,8 +49,8 @@ import static org.apache.commons.math3.util.FastMath.toRadians;
  * The TorsionType class defines a torsional angle.
  *
  * @author Michael J. Schnieders
- * @since 1.0
  *
+ * @since 1.0
  */
 public final class TorsionType extends BaseType implements Comparator<String> {
 
@@ -144,28 +144,37 @@ public final class TorsionType extends BaseType implements Comparator<String> {
      * Remap new atom classes to known internal ones.
      *
      * @param typeMap a lookup between new atom types and known atom types.
+     * @return
      */
-    public void patchClasses(HashMap<AtomType, AtomType> typeMap) {
+    public TorsionType patchClasses(HashMap<AtomType, AtomType> typeMap) {
         int count = 0;
+        int len = atomClasses.length;
+        /**
+         * Look for new TorsionTypes that contain 1 to 3 mapped atom classes.
+         */
         for (AtomType newType : typeMap.keySet()) {
-            for (int i = 0; i < atomClasses.length; i++) {
+            for (int i = 0; i < len; i++) {
                 if (atomClasses[i] == newType.atomClass) {
                     count++;
                 }
             }
         }
-        if (count > 0 && count < atomClasses.length) {
+        /**
+         * If found, create a new TorsionType that bridges to known classes.
+         */
+        if (count == 1 || count == 2 || count == 3) {
+            int newClasses[] = Arrays.copyOf(atomClasses, len);
             for (AtomType newType : typeMap.keySet()) {
-                for (int i = 0; i < atomClasses.length; i++) {
+                for (int i = 0; i < len; i++) {
                     if (atomClasses[i] == newType.atomClass) {
                         AtomType knownType = typeMap.get(newType);
-                        atomClasses[i] = knownType.atomClass;
+                        newClasses[i] = knownType.atomClass;
                     }
                 }
-
             }
-            setKey(sortKey(atomClasses));
+            return new TorsionType(newClasses, amplitude, phase, periodicity);
         }
+        return null;
     }
 
     /**
@@ -230,12 +239,6 @@ public final class TorsionType extends BaseType implements Comparator<String> {
         String key = c[0] + " " + c[1] + " " + c[2] + " " + c[3];
         return key;
     }
-    /**
-     * Convert Torsional Angle energy to kcal/mole.
-     *
-     * @since 1.0
-     */
-    public static final double units = 0.5;
 
     /**
      * {@inheritDoc}
@@ -312,4 +315,25 @@ public final class TorsionType extends BaseType implements Comparator<String> {
         hash = 89 * hash + Arrays.hashCode(atomClasses);
         return hash;
     }
+
+    public static TorsionType average(TorsionType torsionType1, TorsionType torsionType2, int atomClasses[]) {
+        if (torsionType1 == null || torsionType2 == null || atomClasses == null) {
+            return null;
+        }
+        int len = torsionType1.amplitude.length;
+        if (len != torsionType2.amplitude.length) {
+            return null;
+        }
+        double amplitude[] = new double[len];
+        double phase[] = new double[len];
+        int periodicity[] = new int[len];
+        for (int i = 0; i < len; i++) {
+            amplitude[i] = (torsionType1.amplitude[i] + torsionType2.amplitude[i]) / 2.0;
+            phase[i] = (torsionType1.phase[i] + torsionType2.phase[i]) / 2.0;
+            periodicity[i] = (torsionType1.periodicity[i] + torsionType2.periodicity[i]) / 2;
+        }
+
+        return new TorsionType(atomClasses, amplitude, phase, periodicity);
+    }
+
 }

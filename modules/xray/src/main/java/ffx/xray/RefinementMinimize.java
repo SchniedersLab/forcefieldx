@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
  *
  * This file is part of Force Field X.
  *
@@ -162,9 +162,9 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
 
         refinementEnergy = new RefinementEnergy(data, refinementmode, null);
 
-        this.nXYZ = refinementEnergy.nxyz;
-        this.nB = refinementEnergy.nb;
-        this.nOcc = refinementEnergy.nocc;
+        this.nXYZ = refinementEnergy.nXYZ;
+        this.nB = refinementEnergy.nBFactor;
+        this.nOcc = refinementEnergy.nOccupancy;
         this.n = refinementEnergy.getNumberOfVariables();
 
         x = new double[n];
@@ -494,7 +494,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         // update display
         if (listener != null) {
             MolecularAssembly molecularAssembly[];
-            molecularAssembly = dataContainer.getMolecularAssembly();
+            molecularAssembly = dataContainer.getMolecularAssemblies();
             for (MolecularAssembly ma : molecularAssembly) {
                 listener.algorithmUpdate(ma);
             }

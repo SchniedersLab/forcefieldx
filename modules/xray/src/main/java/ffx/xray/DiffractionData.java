@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
  *
  * This file is part of Force Field X.
  *
@@ -70,6 +70,14 @@ import ffx.xray.MTZWriter.MTZType;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
 import static ffx.xray.CrystalReciprocalSpace.SolventModel.POLYNOMIAL;
+
+import static java.util.Arrays.fill;
+import static java.util.Arrays.fill;
+import static java.util.Arrays.fill;
+import static java.util.Arrays.fill;
+import static java.util.Arrays.fill;
+import static java.util.Arrays.fill;
+import static java.util.Arrays.fill;
 
 /**
  * <p>
@@ -348,7 +356,7 @@ public class DiffractionData implements DataContainer {
         refinementModel = new RefinementModel(assembly, refinemolocc);
 
         // initialize atomic form factors
-        for (Atom a : refinementModel.atomArray) {
+        for (Atom a : refinementModel.usedAtoms) {
             a.setFormFactorIndex(-1);
             XRayFormFactor atomff
                     = new XRayFormFactor(a, use_3g, 2.0);
@@ -380,14 +388,14 @@ public class DiffractionData implements DataContainer {
         parallelTeam = new ParallelTeam();
         for (int i = 0; i < n; i++) {
             crs_fc[i] = new CrystalReciprocalSpace(reflectionList[i],
-                    refinementModel.atomArray, parallelTeam, parallelTeam,
+                    refinementModel.usedAtoms, parallelTeam, parallelTeam,
                     false, dataFiles[i].neutron);
             refinementData[i].setCrystalReciprocalSpace_fc(crs_fc[i]);
             crs_fc[i].setUse3G(use_3g);
             crs_fc[i].setWeight(dataFiles[i].weight);
             crs_fc[i].lambdaTerm = lambdaTerm;
             crs_fs[i] = new CrystalReciprocalSpace(reflectionList[i],
-                    refinementModel.atomArray, parallelTeam, parallelTeam,
+                    refinementModel.usedAtoms, parallelTeam, parallelTeam,
                     true, dataFiles[i].neutron, solventmodel);
             refinementData[i].setCrystalReciprocalSpace_fs(crs_fs[i]);
             crs_fs[i].setUse3G(use_3g);
@@ -415,7 +423,7 @@ public class DiffractionData implements DataContainer {
         RefinementModel tmprefinementmodel = new RefinementModel(assembly, refinemolocc);
 
         // initialize atomic form factors
-        for (Atom a : tmprefinementmodel.atomArray) {
+        for (Atom a : tmprefinementmodel.usedAtoms) {
             a.setFormFactorIndex(-1);
             XRayFormFactor atomff
                     = new XRayFormFactor(a, use_3g, 2.0);
@@ -444,11 +452,11 @@ public class DiffractionData implements DataContainer {
         // set up FFT and run it
         for (int i = 0; i < n; i++) {
             crs_fc[i] = new CrystalReciprocalSpace(reflectionList[i],
-                    tmprefinementmodel.atomArray, parallelTeam, parallelTeam,
+                    tmprefinementmodel.usedAtoms, parallelTeam, parallelTeam,
                     false, dataFiles[i].neutron);
             refinementData[i].setCrystalReciprocalSpace_fc(crs_fc[i]);
             crs_fs[i] = new CrystalReciprocalSpace(reflectionList[i],
-                    tmprefinementmodel.atomArray, parallelTeam, parallelTeam,
+                    tmprefinementmodel.usedAtoms, parallelTeam, parallelTeam,
                     true, dataFiles[i].neutron, solventModel);
             refinementData[i].setCrystalReciprocalSpace_fs(crs_fs[i]);
         }
@@ -549,12 +557,12 @@ public class DiffractionData implements DataContainer {
 
     /**
      * {@inheritDoc}
-     *
-     * return the atomArray for the model associated with this data
+
+ return the usedAtoms for the model associated with this data
      */
     @Override
     public Atom[] getAtomArray() {
-        return refinementModel.atomArray;
+        return refinementModel.usedAtoms;
     }
 
     /**
@@ -577,7 +585,7 @@ public class DiffractionData implements DataContainer {
      * {@inheritDoc}
      */
     @Override
-    public MolecularAssembly[] getMolecularAssembly() {
+    public MolecularAssembly[] getMolecularAssemblies() {
         return assembly;
     }
 
@@ -667,7 +675,7 @@ public class DiffractionData implements DataContainer {
     public void printStats() {
         int nat = 0;
         int nnonh = 0;
-        for (Atom a : refinementModel.atomList) {
+        for (Atom a : refinementModel.usedAtomList) {
             if (a.getOccupancy() == 0.0) {
                 continue;
             }

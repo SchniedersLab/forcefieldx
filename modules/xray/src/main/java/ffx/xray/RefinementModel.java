@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
  *
  * This file is part of Force Field X.
  *
@@ -57,11 +57,30 @@ import ffx.potential.bonded.Residue;
 public class RefinementModel {
 
     private static final Logger logger = Logger.getLogger(RefinementModel.class.getName());
-    protected List<Atom> atomList;
-    protected final Atom[] atomArray;
+
+    /**
+     * An atom list that only includes those with their "use" flag set to true.
+     */
+    protected List<Atom> usedAtomList;
+    /**
+     * An atom array that only includes those with their "use" flag set to true.
+     */
+    protected final Atom[] usedAtoms;
+    /**
+     * Map between atom in different molecular assemblies.
+     */
     protected List<Integer>[] xIndex;
     protected ArrayList<ArrayList<Residue>> altResidues;
     protected ArrayList<ArrayList<Molecule>> altMolecules;
+
+    /**
+     * An atom array that only includes active atoms.
+     */
+    protected final List<Atom> activeAtomList;
+    /**
+     * An atom array that only includes active atoms.
+     */
+    protected final Atom[] activeAtoms;
 
     /**
      * <p>
@@ -84,7 +103,7 @@ public class RefinementModel {
      */
     @SuppressWarnings("unchecked")
     public RefinementModel(MolecularAssembly assembly[], boolean refinemolocc) {
-        List<Atom> alist;
+        List<Atom> atomList;
 
         /**
          * Build alternate conformer list for occupancy refinement (if
@@ -108,6 +127,9 @@ public class RefinementModel {
              * first set up alternate residue restraint list.
              */
             for (Atom a : iNode.getAtomList()) {
+                if (!a.getUse()) {
+                    continue;
+                }
                 if (!a.getAltLoc().equals(' ')
                         || a.getOccupancy() < 1.0) {
                     if (iNode instanceof Residue) {
@@ -131,8 +153,10 @@ public class RefinementModel {
                 for (int j = 1; j < assembly.length; j++) {
                     ArrayList<MSNode> nlist = assembly[j].getNodeList();
                     MSNode node = nlist.get(i);
-
                     for (Atom a : node.getAtomList()) {
+                        if (!a.getUse()) {
+                            continue;
+                        }
                         if (!a.getAltLoc().equals(' ')
                                 && !a.getAltLoc().equals('A')) {
                             if (node instanceof Residue) {
@@ -159,22 +183,40 @@ public class RefinementModel {
         for (int i = 0; i < assembly.length; i++) {
             xIndex[i] = new ArrayList<>();
         }
-        int index = 0;
-        // also set up atomList that will be used for SF calc
-        atomList = new ArrayList<>();
 
-        // root list
-        alist = assembly[0].getAtomList();
-        for (Atom a : alist) {
+        /**
+         * Create the activeAtomList and usedAtomList, which will be used for SF
+         * calc.
+         */
+        usedAtomList = new ArrayList<>();
+        activeAtomList = new ArrayList<>();
+
+        /**
+         * Root list.
+         */
+        atomList = assembly[0].getAtomList();
+        int index = 0;
+        for (Atom a : atomList) {
+            if (!a.getUse()) {
+                continue;
+            }
             a.setFormFactorIndex(index);
             xIndex[0].add(index);
-            atomList.add(a);
+            usedAtomList.add(a);
             index++;
+            if (a.isActive()) {
+                activeAtomList.add(a);
+            }
+
         }
-        // now add cross references to root and any alternate atoms not in root
+
+        // Now add cross references to root and any alternate atoms not in root
         for (int i = 1; i < assembly.length; i++) {
-            alist = assembly[i].getAtomList();
-            for (Atom a : alist) {
+            atomList = assembly[i].getAtomList();
+            for (Atom a : atomList) {
+                if (!a.getUse()) {
+                    continue;
+                }
                 Atom root = assembly[0].findAtom(a);
                 if (root != null
                         && root.getAltLoc().equals(a.getAltLoc())) {
@@ -182,24 +224,28 @@ public class RefinementModel {
                     a.setFormFactorIndex(root.getFormFactorIndex());
                 } else {
                     xIndex[i].add(index);
-                    atomList.add(a);
+                    usedAtomList.add(a);
                     index++;
+                    if (a.isActive()) {
+                        activeAtomList.add(a);
+                    }
                 }
             }
         }
-        atomArray = atomList.toArray(new Atom[atomList.size()]);
+        usedAtoms = usedAtomList.toArray(new Atom[usedAtomList.size()]);
+        activeAtoms = activeAtomList.toArray(new Atom[activeAtomList.size()]);
 
         for (ArrayList<Residue> list : altResidues) {
             if (list.size() == 1) {
                 Residue r = list.get(0);
-                logger.log(Level.INFO, "residue: {0}: single conformer, non-unity occupancy: occupancy will be refined independently!", r.toString());
+                logger.log(Level.INFO, " Residue {0} is a single conformer with non-unity occupancy.\n Occupancy will be refined independently!", r.toString());
             }
         }
 
         for (ArrayList<Molecule> list : altMolecules) {
             if (list.size() == 1) {
                 Molecule m = list.get(0);
-                logger.log(Level.INFO, "molecule: {0}: single conformer, non-unity occupancy: occupancy will be refined independently!", m.toString());
+                logger.log(Level.INFO, " Molecule {0} is a single conformer with non-unity occupancy.\n Occupancy will be refined independently!", m.toString());
             }
         }
     }

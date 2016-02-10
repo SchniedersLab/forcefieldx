@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
  *
  * This file is part of Force Field X.
  *
@@ -110,28 +110,37 @@ public final class StretchBendType extends BaseType implements Comparator<String
      * Remap new atom classes to known internal ones.
      *
      * @param typeMap a lookup between new atom types and known atom types.
+     * @return
      */
-    public void patchClasses(HashMap<AtomType, AtomType> typeMap) {
+    public StretchBendType patchClasses(HashMap<AtomType, AtomType> typeMap) {
         int count = 0;
+        int len = atomClasses.length;
+        /**
+         * Check if this StetchBendType contain 1 or 2 mapped atom classes.
+         */
         for (AtomType newType : typeMap.keySet()) {
-            for (int i = 0; i < atomClasses.length; i++) {
+            for (int i = 0; i < len; i++) {
                 if (atomClasses[i] == newType.atomClass) {
                     count++;
                 }
             }
         }
-        if (count > 0 && count < atomClasses.length) {
+        /**
+         * If found, create a new StetchBendType that bridges to known classes.
+         */
+        if (count == 1 || count == 2) {
+            int newClasses[] = Arrays.copyOf(atomClasses, len);
             for (AtomType newType : typeMap.keySet()) {
-                for (int i = 0; i < atomClasses.length; i++) {
+                for (int i = 0; i < len; i++) {
                     if (atomClasses[i] == newType.atomClass) {
                         AtomType knownType = typeMap.get(newType);
-                        atomClasses[i] = knownType.atomClass;
+                        newClasses[i] = knownType.atomClass;
                     }
                 }
-
             }
-            setKey(sortKey(atomClasses));
+            return new StretchBendType(newClasses, forceConstants);
         }
+        return null;
     }
 
     /**
@@ -227,4 +236,22 @@ public final class StretchBendType extends BaseType implements Comparator<String
         hash = 29 * hash + Arrays.hashCode(atomClasses);
         return hash;
     }
+
+    public static StretchBendType average(StretchBendType stretchBendType1,
+            StretchBendType stretchBendType2, int atomClasses[]) {
+        if (stretchBendType1 == null || stretchBendType2 == null || atomClasses == null) {
+            return null;
+        }
+        int len = stretchBendType1.forceConstants.length;
+        if (len != stretchBendType2.forceConstants.length) {
+            return null;
+        }
+        double forceConstants[] = new double[len];
+        for (int i = 0; i < len; i++) {
+            forceConstants[i] = (stretchBendType1.forceConstants[i]
+                    + stretchBendType2.forceConstants[i]) / 2.0;
+        }
+        return new StretchBendType(atomClasses, forceConstants);
+    }
+
 }

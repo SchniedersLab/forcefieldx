@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
  *
  * This file is part of Force Field X.
  *
@@ -270,7 +270,7 @@ public class MolecularAssembly extends MSGroup {
         ArrayList Polymers = getAtomNodeList();
         if (o instanceof Atom) {
             Atom atom = (Atom) o;
-            if (!atom.isHetero()) {
+            if (!atom.isHetero() || atom.isModRes()) {
                 return getResidue(atom, true);
             } else {
                 return getMolecule(atom, true);
@@ -613,7 +613,7 @@ public class MolecularAssembly extends MSGroup {
      * @return a {@link ffx.potential.bonded.Atom} object.
      */
     public Atom findAtom(Atom atom) {
-        if (!atom.isHetero()) {
+        if (!atom.isHetero() || atom.isModRes()) {
             Polymer polymer = getPolymer(atom.getChainID(), atom.getSegID(), false);
             if (polymer != null) {
                 Residue res = polymer.getResidue(atom.getResidueName(), atom.getResidueNumber(), false);
@@ -758,6 +758,26 @@ public class MolecularAssembly extends MSGroup {
         Arrays.sort(atomArray);
         return atomArray;
     }
+
+    /**
+     * <p>
+     * getActiveAtomArray</p>
+     *
+     * @return an array of active {@link ffx.potential.bonded.Atom} objects.
+     */
+    public Atom[] getActiveAtomArray() {
+        ArrayList<Atom> atoms = getAtomList();
+        ArrayList<Atom> activeAtoms = new ArrayList<>();
+        for (Atom a : activeAtoms) {
+            if (a.isActive()) {
+                activeAtoms.add(a);
+            }
+        }
+        Atom[] atomArray = activeAtoms.toArray(new Atom[activeAtoms.size()]);
+        Arrays.sort(atomArray);
+        return atomArray;
+    }
+
 
     /**
      * <p>
@@ -1320,10 +1340,8 @@ public class MolecularAssembly extends MSGroup {
             if (macroNode.getChildCount() > 0) {
                 getAtomNode().setName(
                         "Macromolecules " + "(" + macroNode.getChildCount() + ")");
-            } else {
-                if (macroNode.getParent() == this) {
-                    remove(macroNode);
-                }
+            } else if (macroNode.getParent() == this) {
+                remove(macroNode);
             }
         }
 

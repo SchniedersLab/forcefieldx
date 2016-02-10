@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
  *
  * This file is part of Force Field X.
  *
@@ -666,5 +666,13 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
         int hash = 3;
         hash = 47 * hash + Arrays.hashCode(atomClasses);
         return hash;
+    }
+
+    public static TorsionTorsionType average(TorsionTorsionType torsionTorsionType1,
+            TorsionTorsionType torsionTorsionType2, int atomClasses[]) {
+        if (torsionTorsionType1 == null || torsionTorsionType2 == null || atomClasses == null) {
+            return null;
+        }
+        return null;
     }
 }

@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
  *
  * This file is part of Force Field X.
  *
@@ -5719,7 +5719,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                 //double uwsin = sqrt(1.0 - uwcos * uwcos);
                 //double vwcos = dot(v, w);
                 //double vwsin = sqrt(1.0 - vwcos * vwcos);
-                    /*
+                /*
                  * Negative of dot product of torque with unit vectors gives
                  * result of infinitesimal rotation along these vectors.
                  */
@@ -6508,7 +6508,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             //double uwsin = sqrt(1.0 - uwcos * uwcos);
             //double vwcos = dot(v, w);
             //double vwsin = sqrt(1.0 - vwcos * vwcos);
-                    /*
+            /*
              * Negative of dot product of torque with unit vectors gives result
              * of infinitesimal rotation along these vectors.
              */
@@ -8224,11 +8224,11 @@ public class ParticleMeshEwald implements LambdaInterface {
         }
         private MultivariateMatrixFunction multivariateMatrixFunction
                 = new MultivariateMatrixFunction() {
-                    @Override
-                    public double[][] value(double[] point) {
-                        return jacobian(point);
-                    }
-                };
+            @Override
+            public double[][] value(double[] point) {
+                return jacobian(point);
+            }
+        };
     }
 
     /**

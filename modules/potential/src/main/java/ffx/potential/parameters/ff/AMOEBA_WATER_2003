@@ -1,0 +1,62 @@
+forcefield              AMOEBA-WATER-2003
+
+bond-cubic              -2.55
+bond-quartic            3.793125
+angle-cubic             -0.014
+angle-quartic           0.000056
+angle-pentic            -0.0000007
+angle-sextic            0.000000022
+vdwtype                 BUFFERED-14-7
+radiusrule              CUBIC-MEAN
+radiustype              R-MIN
+radiussize              DIAMETER
+epsilonrule             HHG
+dielectric              1.0
+polarization            MUTUAL
+vdw-12-scale            0.0
+vdw-13-scale            0.0
+vdw-14-scale            1.0
+vdw-15-scale            1.0
+mpole-12-scale          0.0
+mpole-13-scale          0.0
+mpole-14-scale          0.4
+mpole-15-scale          0.8
+polar-12-scale          0.0
+polar-13-scale          0.0
+polar-14-scale          1.0
+polar-15-scale          1.0
+polar-14-intra          0.5
+direct-11-scale         0.0
+direct-12-scale         1.0
+direct-13-scale         1.0
+direct-14-scale         1.0
+mutual-11-scale         1.0
+mutual-12-scale         1.0
+mutual-13-scale         1.0
+mutual-14-scale         1.0
+
+angle      2      1      2   48.70  108.50
+
+atom      1      1  O     "AMOEBA Water O"             8   15.9950  2
+atom      2      2  H     "AMOEBA Water H"             1    1.0080  1
+
+bond      1      2   556.9   0.9572
+
+multipole      1     -2     -2         -0.51966 \
+                                        0.00000  0.00000  0.14279 \
+                                        0.37928 \
+                                        0.00000 -0.41809 \
+                                        0.00000  0.00000  0.03881
+multipole      2      1      2          0.25983 \
+                                       -0.03859  0.00000 -0.05818 \
+                                       -0.03673 \
+                                        0.00000 -0.10739 \
+                                       -0.00203  0.00000  0.14412
+
+polarize      1   0.837  0.390      2      1
+polarize      2   0.496  0.390      1      2
+
+ureybrad      2      1      2   -7.60   1.5326
+
+vdw      1  3.405000000  0.110000000
+vdw      2  2.655000000  0.013500000  0.910

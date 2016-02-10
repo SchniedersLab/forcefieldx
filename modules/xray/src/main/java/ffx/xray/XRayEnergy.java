@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
  *
  * This file is part of Force Field X.
  *
@@ -55,6 +55,34 @@ import static ffx.algorithms.Thermostat.kB;
 import static ffx.numerics.VectorMath.b2u;
 import static ffx.numerics.VectorMath.determinant3;
 import static ffx.numerics.VectorMath.u2b;
+
+import static java.util.Arrays.fill;
+
+import static ffx.numerics.VectorMath.determinant3;
+
+import static java.util.Arrays.fill;
+
+import static ffx.numerics.VectorMath.determinant3;
+
+import static java.util.Arrays.fill;
+
+import static ffx.numerics.VectorMath.determinant3;
+
+import static java.util.Arrays.fill;
+
+import static ffx.numerics.VectorMath.determinant3;
+
+import static java.util.Arrays.fill;
+
+import static ffx.numerics.VectorMath.determinant3;
+
+import static java.util.Arrays.fill;
+
+import static ffx.numerics.VectorMath.determinant3;
+
+import static java.util.Arrays.fill;
+
+import static ffx.numerics.VectorMath.determinant3;
 
 /**
  * Combine the X-ray target and chemical potential energy.
@@ -108,7 +136,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
         this.diffractiondata = diffractiondata;
         this.refinementmodel = diffractiondata.getRefinementModel();
         this.refinementMode = refinementmode;
-        this.atomarray = refinementmodel.atomArray;
+        this.atomarray = refinementmodel.usedAtoms;
         this.nAtoms = atomarray.length;
         this.nxyz = nxyz;
         this.nb = nb;

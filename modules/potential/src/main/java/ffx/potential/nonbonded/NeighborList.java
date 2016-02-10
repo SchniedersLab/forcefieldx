@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
  *
  * This file is part of Force Field X.
  *
@@ -382,7 +382,10 @@ public class NeighborList extends ParallelRegion {
          * Assert that the boundary conditions defined by the crystal allow use
          * of the minimum image condition.
          */
-        assert (sphere > total);
+        if (!crystal.aperiodic() )
+        {
+            assert (sphere > total);
+        }
 
         /**
          * nEdgeA, nEdgeB and nEdgeC must be >= 1.

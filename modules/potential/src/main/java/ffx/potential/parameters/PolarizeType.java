@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
  *
  * This file is part of Force Field X.
  *
@@ -37,6 +37,7 @@
  */
 package ffx.potential.parameters;
 
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 
@@ -112,34 +113,35 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
     }
 
     /**
-     * Remap new atom types to known internal ones.
+     * Add mapped known types to the polarization group of a new patch.
      *
      * @param typeMap a lookup between new atom types and known atom types.
+     * @return
      */
-    public void patchTypes(HashMap<AtomType, AtomType> typeMap) {
-
+    public boolean patchTypes(HashMap<AtomType, AtomType> typeMap) {
         if (polarizationGroup == null) {
-            return;
+            return false;
         }
 
-        int count = 0;
+        /**
+         * Append known mapped types.
+         */
+        int len = polarizationGroup.length;
+        int added = 0;
         for (AtomType newType : typeMap.keySet()) {
-            for (int i = 0; i < polarizationGroup.length; i++) {
+            for (int i = 1; i < len; i++) {
                 if (polarizationGroup[i] == newType.type) {
-                    count++;
+                    AtomType knownType = typeMap.get(newType);
+                    added++;
+                    polarizationGroup = Arrays.copyOf(polarizationGroup, len + added);
+                    polarizationGroup[len + added - 1] = knownType.type;
                 }
             }
         }
-        if (count > 0 && count < polarizationGroup.length) {
-            for (AtomType newType : typeMap.keySet()) {
-                for (int i = 0; i < polarizationGroup.length; i++) {
-                    if (polarizationGroup[i] == newType.type) {
-                        AtomType knownType = typeMap.get(newType);
-                        polarizationGroup[i] = knownType.type;
-                    }
-                }
-            }
+        if (added > 0) {
+            return true;
         }
+        return false;
     }
 
     /**
@@ -227,4 +229,25 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
         hash = 37 * hash + type;
         return hash;
     }
+
+    /**
+     * Average two PolarizeType instances. The atom types to include in the new
+     * polarizationGroup must be supplied.
+     *
+     * @param polarizeType1
+     * @param polarizeType2
+     * @param atomType
+     * @param polarizationGroup
+     * @return
+     */
+    public static PolarizeType average(PolarizeType polarizeType1,
+            PolarizeType polarizeType2, int atomType, int polarizationGroup[]) {
+        if (polarizeType1 == null || polarizeType2 == null) {
+            return null;
+        }
+        double thole = (polarizeType1.thole + polarizeType2.thole) / 2.0;
+        double polarizability = (polarizeType1.polarizability + polarizeType2.polarizability) / 2.0;
+        return new PolarizeType(atomType, thole, polarizability, polarizationGroup);
+    }
+
 }

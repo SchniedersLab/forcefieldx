@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
  *
  * This file is part of Force Field X.
  *
@@ -110,28 +110,37 @@ public final class AngleType extends BaseType implements Comparator<String> {
      * Remap new atom classes to known internal ones.
      *
      * @param typeMap a lookup between new atom types and known atom types.
+     * @return
      */
-    public void patchClasses(HashMap<AtomType, AtomType> typeMap) {
+    public AngleType patchClasses(HashMap<AtomType, AtomType> typeMap) {
         int count = 0;
+        int len = atomClasses.length;
+        /**
+         * Look for new AngleTypes that contain 1 or 2 mapped atom classes.
+         */
         for (AtomType newType : typeMap.keySet()) {
-            for (int i = 0; i < atomClasses.length; i++) {
+            for (int i = 0; i < len; i++) {
                 if (atomClasses[i] == newType.atomClass) {
                     count++;
                 }
             }
         }
-        if (count > 0 && count < atomClasses.length) {
+        /**
+         * If found, create a new AngleType that bridges to known classes.
+         */
+        if (count == 1 || count == 2) {
+            int newClasses[] =  Arrays.copyOf(atomClasses, len);
             for (AtomType newType : typeMap.keySet()) {
-                for (int i = 0; i < atomClasses.length; i++) {
+                for (int i = 0; i < len; i++) {
                     if (atomClasses[i] == newType.atomClass) {
                         AtomType knownType = typeMap.get(newType);
-                        atomClasses[i] = knownType.atomClass;
+                        newClasses[i] = knownType.atomClass;
                     }
                 }
-
             }
-            setKey(sortKey(atomClasses));
+            return new AngleType(newClasses, forceConstant, angle, angleFunction);
         }
+        return null;
     }
 
     /**
@@ -151,6 +160,36 @@ public final class AngleType extends BaseType implements Comparator<String> {
         }
         String key = c[0] + " " + c[1] + " " + c[2];
         return key;
+    }
+
+    /**
+     * Average two AngleType instances. The atom classes that define the new
+     * type must be supplied.
+     *
+     * @param angleType1
+     * @param angleType2
+     * @param atomClasses
+     * @return
+     */
+    public static AngleType average(AngleType angleType1, AngleType angleType2, int atomClasses[]) {
+        if (angleType1 == null || angleType2 == null || atomClasses == null) {
+            return null;
+        }
+        AngleFunction angleFunction = angleType1.angleFunction;
+        if (angleFunction != angleType2.angleFunction) {
+            return null;
+        }
+        int len = angleType1.angle.length;
+        if (len != angleType2.angle.length) {
+            return null;
+        }
+        double forceConstant = (angleType1.forceConstant + angleType2.forceConstant) / 2.0;
+        double angle[] = new double[len];
+        for (int i = 0; i < len; i++) {
+            angle[i] = (angleType1.angle[i] + angleType2.angle[i]) / 2.0;
+        }
+
+        return new AngleType(atomClasses, forceConstant, angle, angleFunction);
     }
 
     /**

@@ -1,3 +1,46 @@
+forcefield              AMOEBA-BIO-2009
+
+bond-cubic              -2.55
+bond-quartic            3.793125
+angle-cubic             -0.014
+angle-quartic           0.000056
+angle-pentic            -0.0000007
+angle-sextic            0.000000022
+opbendtype              ALLINGER
+opbend-cubic            -0.014
+opbend-quartic          0.000056
+opbend-pentic           -0.0000007
+opbend-sextic           0.000000022
+torsionunit             0.5
+vdwtype                 BUFFERED-14-7
+radiusrule              CUBIC-MEAN
+radiustype              R-MIN
+radiussize              DIAMETER
+epsilonrule             HHG
+dielectric              1.0
+polarization            MUTUAL
+vdw-12-scale            0.0
+vdw-13-scale            0.0
+vdw-14-scale            1.0
+vdw-15-scale            1.0
+mpole-12-scale          0.0
+mpole-13-scale          0.0
+mpole-14-scale          0.4
+mpole-15-scale          0.8
+polar-12-scale          0.0
+polar-13-scale          0.0
+polar-14-scale          1.0
+polar-15-scale          1.0
+polar-14-intra          0.5
+direct-11-scale         0.0
+direct-12-scale         1.0
+direct-13-scale         1.0
+direct-14-scale         1.0
+mutual-11-scale         1.0
+mutual-12-scale         1.0
+mutual-13-scale         1.0
+mutual-14-scale         1.0
+
 
 angle      2      1      3   50.00  122.00
 angle      2      1      4   32.00  117.00
@@ -722,7 +765,7 @@ atom    410     81  Mg+   "Magnesium Ion Mg+2"        12   24.3050  0
 atom    411     82  Ca+   "Calcium Ion Ca+2"          20   40.0780  0
 atom    412     83  Zn+   "Zinc Ion Zn+2"             30   65.3800  0
 atom    413     84  Cl-   "Chloride Ion Cl-"          17   35.4530  0
-atom    414     85  Br-   "Bromide Ion Br-"           35   35.4530  0
+
 
 biotype      1  N     "Glycine                "      1
 biotype      2  CA    "Glycine                "      2
@@ -1763,9 +1806,8 @@ biotype   2003  NA    "Sodium Ion             "    405
 biotype   2004  K     "Potassium Ion          "    406
 biotype   2005  MG    "Magnesium Ion          "    410
 biotype   2006  CA    "Calcium Ion            "    411
-biotype   2007  CL    "Chloride Ion           "    413
-biotype   2008  ZN    "Zinc Ion (+2)          "    412
-biotype   2009  BR    "Bromide Ion            "    414
+biotype   2007  CL    "Chloride Ion           "    412
+
 
 bond      1      2   375.0   1.4370
 bond      1      3   482.0   1.3450
@@ -1889,6 +1931,8 @@ bond     68     69   384.0   1.4180
 bond     69     69   320.1   1.5130
 bond     70     71   776.9   1.4800
 bond     73     74   529.6   0.9572
+
+
 
 
 multipole      1      2      4         -0.22620 \
@@ -4356,11 +4400,6 @@ multipole    413      0      0         -1.00000 \
                                         0.00000 \
                                         0.00000  0.00000 \
                                         0.00000  0.00000  0.00000
-multipole    414      0      0         -1.00000 \
-                                        0.00000  0.00000  0.00000 \
-                                        0.00000 \
-                                        0.00000  0.00000 \
-                                        0.00000  0.00000  0.00000
 
 
 opbend      1      3      0      0  107.90
@@ -4896,7 +4935,7 @@ polarize    410   0.080  0.095
 polarize    411   0.550  0.159
 polarize    412   0.260  0.210
 polarize    413   4.000  0.390
-polarize    414   4.000  0.390
+
 
 strbnd      2      1      3    7.20    7.20
 strbnd      2      1      4    4.30    4.30
@@ -11303,4 +11342,5 @@ vdw     81  2.940000000  0.300000000
 vdw     82  3.630000000  0.350000000
 vdw     83  2.680000000  0.222000000
 vdw     84  4.130000000  0.340000000
-vdw     85  2.680000000  0.222000000
+
+
