@@ -434,7 +434,7 @@ public class RotamerOptimization implements Terminatable {
         }
 
         // Process relevant system keys.
-        String skipEnergies = System.getProperty("skipEnergies");
+        String skipEnergies = System.getProperty("ro-skipEnergies");
         String undo = System.getProperty("ro-undo");
         String direction = System.getProperty("ro-direction");
         String increment = System.getProperty("ro-increment");

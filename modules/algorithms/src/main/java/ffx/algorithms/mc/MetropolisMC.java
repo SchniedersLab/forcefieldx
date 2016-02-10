@@ -113,10 +113,32 @@ public interface MetropolisMC {
      */
     public void revertStep();
     
+    // The easiest way to implement the next three methods is to follow the 
+    // pattern of BoltzmannMC; calculate en1 via currentEnergy() if necessary,
+    // and construct a single-member List<MCMove> if necessary, and pass it
+    // through to mcStep(List<MCMove> moves, double en1).
+    
+    /**
+     * Calculates the current system energy and performs an MCMove.
+     * @param move MCMove to perform
+     * @return If move accepted
+     */
     public boolean mcStep(MCMove move);
     
+    /**
+     * Performs an MCMove.
+     * @param move MCMove to perform
+     * @param en1 Initial energy
+     * @return If move accepted
+     */
     public boolean mcStep(MCMove move, double en1);
     
+    /**
+     * Calculates the current system energy and performs a series of moves
+     * sequentially as a single hybrid step.
+     * @param moves MCMoves to perform
+     * @return If move/moves accepted
+     */
     public boolean mcStep(List<MCMove> moves);
     
     /**
@@ -128,4 +150,32 @@ public interface MetropolisMC {
      * @return If move/moves accepted.
      */
     public boolean mcStep(List<MCMove> moves, double en1);
+    
+    /**
+     * If last step taken was a success.
+     * @return Acceptance of last move
+     */
+    public boolean getAccept();
+    
+    // I'm not sure I like having the following methods; this is supposed to be
+    // an interface to take single steps, not to control or track the progress
+    // of a Monte Carlo algorithm.
+    
+    /**
+     * Get number of accepted steps using this MetropolisMC.
+     * @return 
+     */
+    //public int getNumAccept();
+    
+    /**
+     * Get number of rejected steps using this MetropolisMC.
+     * @return 
+     */
+    //public int getNumReject();
+    
+    /**
+     * Get number of steps tried using this MetropolisMC.
+     * @return 
+     */
+    //public int numSteps();
 }
