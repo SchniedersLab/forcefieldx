@@ -150,22 +150,38 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      * Remap new atom types to known internal ones.
      *
      * @param typeMap a lookup between new atom types and known atom types.
+     *
+     * @return
      */
-    public void patchTypes(HashMap<AtomType, AtomType> typeMap) {
-        boolean patched = false;
+    public MultipoleType patchTypes(HashMap<AtomType, AtomType> typeMap) {
+        int count = 0;
+        int len = frameAtomTypes.length;
+        /**
+         * Look for a MultipoleType that contain a mapped atom class.
+         */
         for (AtomType newType : typeMap.keySet()) {
-            for (int i = 1; i < frameAtomTypes.length; i++) {
-                if (frameAtomTypes[i] > 0 && frameAtomTypes[i] == newType.type) {
-                    AtomType knownType = typeMap.get(newType);
-                    frameAtomTypes[i] = knownType.type;
-                    patched = true;
+            for (int i = 0; i < len; i++) {
+                if (frameAtomTypes[i] == newType.type) {
+                    count++;
                 }
             }
         }
-        if (patched) {
-            setKey(frameAtomTypes);
+        /**
+         * If found, create a new MultipoleType that bridges to known classes.
+         */
+        if (count > 0 && count < len) {
+            int newFrame[] = Arrays.copyOf(frameAtomTypes, len);
+            for (AtomType newType : typeMap.keySet()) {
+                for (int i = 0; i < len; i++) {
+                    if (frameAtomTypes[i] == newType.type) {
+                        AtomType knownType = typeMap.get(newType);
+                        newFrame[i] = knownType.type;
+                    }
+                }
+            }
+            return new MultipoleType(charge, dipole, quadrupole, newFrame, frameDefinition);
         }
-
+        return null;
     }
 
     private void initMultipole() {
@@ -362,8 +378,8 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
     }
 
     /**
-     * Average two MultipoleType instances. The atom types that define the
-     * frame of the new type must be supplied.
+     * Average two MultipoleType instances. The atom types that define the frame
+     * of the new type must be supplied.
      *
      * @param multipoleType1
      * @param multipoleType2

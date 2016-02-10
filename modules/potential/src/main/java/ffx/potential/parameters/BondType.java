@@ -40,6 +40,7 @@ package ffx.potential.parameters;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.logging.Logger;
 
 import ffx.potential.parameters.ForceField.ForceFieldType;
 
@@ -51,6 +52,8 @@ import ffx.potential.parameters.ForceField.ForceFieldType;
  *
  */
 public final class BondType extends BaseType implements Comparator<String> {
+
+    private static final Logger logger = Logger.getLogger(BondType.class.getName());
 
     public enum BondFunction {
 
@@ -105,29 +108,39 @@ public final class BondType extends BaseType implements Comparator<String> {
      * Remap new atom classes to known internal ones.
      *
      * @param typeMap a lookup between new atom types and known atom types.
+     * @return
      */
-    public void patchClasses(HashMap<AtomType, AtomType> typeMap) {
+    public BondType patchClasses(HashMap<AtomType, AtomType> typeMap) {
 
         int count = 0;
+        int len = atomClasses.length;
+        /**
+         * Look for new BondTypes that contain one mapped atom class.
+         */
         for (AtomType newType : typeMap.keySet()) {
-            for (int i = 0; i < atomClasses.length; i++) {
+            for (int i = 0; i < len; i++) {
                 if (atomClasses[i] == newType.atomClass) {
                     count++;
                 }
             }
         }
-        if (count > 0 && count < atomClasses.length) {
+        /**
+         * If found, create a new BondType that bridges to known classes.
+         */
+        if (count == 1) {
+            int newClasses[] =  Arrays.copyOf(atomClasses, len);
             for (AtomType newType : typeMap.keySet()) {
-                for (int i = 0; i < atomClasses.length; i++) {
+                for (int i = 0; i < len; i++) {
                     if (atomClasses[i] == newType.atomClass) {
                         AtomType knownType = typeMap.get(newType);
-                        atomClasses[i] = knownType.atomClass;
+                        newClasses[i] = knownType.atomClass;
                     }
                 }
-
             }
-            setKey(sortKey(atomClasses));
+            BondType bondType = new BondType(newClasses, forceConstant, distance, bondFunction);
+            return bondType;
         }
+        return null;
     }
 
     /**
@@ -163,8 +176,8 @@ public final class BondType extends BaseType implements Comparator<String> {
     }
 
     /**
-     * Average two BondType instances. The atom classes that define the
-     * new type must be supplied.
+     * Average two BondType instances. The atom classes that define the new type
+     * must be supplied.
      *
      * @param bondType1
      * @param bondType2

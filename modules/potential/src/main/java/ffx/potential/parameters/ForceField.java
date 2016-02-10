@@ -95,8 +95,18 @@ public class ForceField {
         return forceFields.get(forceField);
     }
 
+    /**
+     * URL to the force field parameter file.
+     */
     public URL forceFieldURL;
+    /**
+     * Reference to the keyword file in use.
+     */
     public File keywordFile;
+    /**
+     * The CompositeConfiguration that contains key=value property pairs from a
+     * number of sources.
+     */
     private final CompositeConfiguration properties;
     private final Map<String, AngleType> angleTypes;
     private final Map<String, AtomType> atomTypes;
@@ -174,6 +184,11 @@ public class ForceField {
         forceFieldTypes.put(ForceFieldType.VDW, vanderWaalsTypes);
     }
 
+    /**
+     * Returns the minimum atom class value.
+     *
+     * @return
+     */
     public int minClass() {
         int minClass = maxClass();
         for (AtomType type : atomTypes.values()) {
@@ -184,6 +199,11 @@ public class ForceField {
         return minClass;
     }
 
+    /**
+     * Returns the minimum atom type value.
+     *
+     * @return
+     */
     public int minType() {
         int minType = maxType();
         for (String key : atomTypes.keySet()) {
@@ -195,6 +215,11 @@ public class ForceField {
         return minType;
     }
 
+    /**
+     * Returns the minimum Biotype value.
+     *
+     * @return
+     */
     public int minBioType() {
         int minBioType = maxBioType();
         for (String key : bioTypes.keySet()) {
@@ -206,6 +231,11 @@ public class ForceField {
         return minBioType;
     }
 
+    /**
+     * Returns the maximum atom class value.
+     *
+     * @return
+     */
     public int maxClass() {
         int maxClass = 0;
         for (AtomType type : atomTypes.values()) {
@@ -216,6 +246,11 @@ public class ForceField {
         return maxClass;
     }
 
+    /**
+     * Returns the maximum atom type value.
+     *
+     * @return
+     */
     public int maxType() {
         int maxType = 0;
         for (String key : atomTypes.keySet()) {
@@ -227,6 +262,11 @@ public class ForceField {
         return maxType;
     }
 
+    /**
+     * Returns the maximum Biotype.
+     *
+     * @return
+     */
     public int maxBioType() {
         int maxBioType = 0;
         for (String key : bioTypes.keySet()) {
@@ -238,6 +278,13 @@ public class ForceField {
         return maxBioType;
     }
 
+    /**
+     * Renumber ForceField class, type and biotype values.
+     *
+     * @param classOffset
+     * @param typeOffset
+     * @param bioTypeOffset
+     */
     public void renumberForceField(int classOffset, int typeOffset, int bioTypeOffset) {
 
         for (AngleType angleType : angleTypes.values()) {
@@ -375,6 +422,53 @@ public class ForceField {
         for (VDWType vdwType : patch.vanderWaalsTypes.values()) {
             vanderWaalsTypes.put(vdwType.getKey(), vdwType);
         }
+
+        // Is this a modified residue patch?
+        String modres = patch.getString(ForceFieldString.MODRES, "false");
+        if (!modres.equalsIgnoreCase("false")) {
+            logger.info(" Adding modified residue patch.");
+            modifiedResidue(modres);
+        }
+
+    }
+
+    private void modifiedResidue(String modres) {
+        String tokens[] = modres.trim().split(" +");
+        String modResname = tokens[0].toUpperCase();
+        String stdName = tokens[1].toUpperCase();
+        HashMap<String, AtomType> patchAtomTypes = getAtomTypes(modResname);
+        HashMap<String, AtomType> stdAtomTypes = getAtomTypes(stdName);
+
+        HashMap<String, AtomType> patchTypes = new HashMap<>();
+        int len = tokens.length;
+        for (int i = 2; i < len; i++) {
+            String atomName = tokens[i].toUpperCase();
+            if (!patchTypes.containsKey(atomName) && patchAtomTypes.containsKey(atomName)) {
+                AtomType type = patchAtomTypes.get(atomName);
+                patchTypes.put(atomName, type);
+            }
+        }
+
+        HashMap<AtomType, AtomType> typeMap = new HashMap<>();
+        for (String atomName : stdAtomTypes.keySet()) {
+            boolean found = false;
+            for (int i = 2; i < len; i++) {
+                if (atomName.equalsIgnoreCase(tokens[i])) {
+                    found = true;
+                }
+            }
+            if (!found) {
+                AtomType stdType = stdAtomTypes.get(atomName);
+                // Edit new BioType records to point to an existing force field type.
+                AtomType patchType = updateBioType(modResname, atomName, stdType.type);
+                if (patchType != null) {
+                    typeMap.put(patchType, stdType);
+                    logger.info(" " + patchType.toString() + " -> " + stdType.toString());
+                }
+            }
+        }
+
+        patchClassesAndTypes(typeMap, patchTypes);
     }
 
     /**
@@ -578,12 +672,12 @@ public class ForceField {
                 return;
             }
             properties.clearProperty(key);
-            logger.info(String.format(" Removed %s with value %8.3f.", key, old));
+            logger.info(String.format(" Removed %s %8.3f", key, old));
         } catch (Exception e) {
             // Property does not exist yet.
         } finally {
             properties.addProperty(key, value);
-            logger.info(String.format(" Added %s with value %8.3f.", key, value));
+            logger.info(String.format(" %s %8.3f", key, value));
         }
     }
 
@@ -603,12 +697,12 @@ public class ForceField {
             if (old == value) {
                 return;
             }
-            logger.info(String.format(" Clearing %s with value %d.", key, old));
+            logger.info(String.format(" Clearing %s %d", key, old));
             properties.clearProperty(key);
         } catch (Exception e) {
             // Property does not exist yet.
         } finally {
-            logger.info(String.format(" Adding %s with value %d.", key, value));
+            logger.info(String.format(" %s %d", key, value));
             properties.addProperty(key, value);
         }
     }
@@ -665,12 +759,12 @@ public class ForceField {
                 return;
             }
             properties.clearProperty(key);
-            logger.info(String.format(" Removed %s with value %s.", key, old));
+            logger.info(String.format(" Removed %s %s.", key, old));
         } catch (Exception e) {
             // Property does not exist yet.
         } finally {
             properties.addProperty(key, value);
-            logger.info(String.format(" Added %s with value %s.", key, value));
+            logger.info(String.format(" %s %s", key, value));
         }
     }
 
@@ -691,12 +785,12 @@ public class ForceField {
                 return;
             }
             properties.clearProperty(key);
-            logger.info(String.format(" Cleared %s with value %s.", key, Boolean.toString(old)));
+            logger.info(String.format(" Cleared %s %s", key, Boolean.toString(old)));
         } catch (Exception e) {
             // Property does not exist yet.
         } finally {
             properties.addProperty(key, value);
-            logger.info(String.format(" Added %s with value %s.", key, Boolean.toString(value)));
+            logger.info(String.format(" %s %s", key, Boolean.toString(value)));
         }
     }
 
@@ -783,6 +877,31 @@ public class ForceField {
             }
         }
         return null;
+    }
+
+    /**
+     * All atoms whose atomName begins with name in the passed molecule will be
+     * updated to the new type. The case where an atom such as CD is should map
+     * to both CD1 and CD2.
+     *
+     * @param molecule
+     * @param atom
+     * @param newType
+     * @return
+     */
+    public AtomType updateBioType(String molecule, String atom, int newType) {
+        int type = 0;
+        for (BioType bioType : bioTypes.values()) {
+            if (bioType.moleculeName.equalsIgnoreCase(molecule)) {
+                if (atom.length() <= bioType.atomName.length()) {
+                    if (bioType.atomName.toUpperCase().startsWith(atom.toUpperCase())) {
+                        type = bioType.atomType;
+                        bioType.atomType = newType;
+                    }
+                }
+            }
+        }
+        return getAtomType(Integer.toString(type));
     }
 
     public Map<String, BioType> getBioTypeMap() {
@@ -1145,71 +1264,69 @@ public class ForceField {
      *
      * @param typeMap A look-up from new types to existing types.
      */
-    public void patchClassesAndTypes(HashMap<AtomType, AtomType> typeMap) {
-
-        for (AngleType angleType : angleTypes.values().toArray(new AngleType[0])) {
-            String currentKey = angleType.key;
-            angleType.patchClasses(typeMap);
-            if (!angleType.key.equals(currentKey)) {
-                angleTypes.remove(currentKey);
-                addForceFieldType(angleType);
-            }
-        }
+    public void patchClassesAndTypes(HashMap<AtomType, AtomType> typeMap, HashMap<String, AtomType> patchTypes) {
 
         for (BondType bondType : bondTypes.values().toArray(new BondType[0])) {
-            String currentKey = bondType.key;
-            bondType.patchClasses(typeMap);
-            if (!bondType.key.equals(currentKey)) {
-                bondTypes.remove(currentKey);
-                addForceFieldType(bondType);
+            BondType newType = bondType.patchClasses(typeMap);
+            if (newType != null) {
+                logger.info(" " + newType.toString());
+                addForceFieldType(newType);
             }
         }
 
-        for (OutOfPlaneBendType outOfPlaneBendType : outOfPlaneBendTypes.values().toArray(new OutOfPlaneBendType[0])) {
-            String currentKey = outOfPlaneBendType.key;
-            outOfPlaneBendType.patchClasses(typeMap);
-            if (!outOfPlaneBendType.key.equals(currentKey)) {
-                outOfPlaneBendTypes.remove(currentKey);
-                addForceFieldType(outOfPlaneBendType);
+        for (AngleType angleType : angleTypes.values().toArray(new AngleType[0])) {
+            AngleType newType = angleType.patchClasses(typeMap);
+            if (newType != null) {
+                logger.info(" " + newType.toString());
+                addForceFieldType(newType);
             }
         }
 
-        for (PiTorsionType piTorsionType : piTorsionTypes.values().toArray(new PiTorsionType[0])) {
-            String currentKey = piTorsionType.key;
-            piTorsionType.patchClasses(typeMap);
-            if (!piTorsionType.key.equals(currentKey)) {
-                piTorsionTypes.remove(currentKey);
-                addForceFieldType(piTorsionType);
+        for (OutOfPlaneBendType outOfPlaneBendType
+                : outOfPlaneBendTypes.values().toArray(new OutOfPlaneBendType[0])) {
+            OutOfPlaneBendType newType = outOfPlaneBendType.patchClasses(typeMap);
+            if (newType != null) {
+                logger.info(" " + newType.toString());
+                addForceFieldType(newType);
             }
         }
 
-        for (StretchBendType stretchBendType : stretchBendTypes.values().toArray(new StretchBendType[0])) {
-            String currentKey = stretchBendType.key;
-            stretchBendType.patchClasses(typeMap);
-            if (!stretchBendType.key.equals(currentKey)) {
-                stretchBendTypes.remove(currentKey);
-                addForceFieldType(stretchBendType);
+        for (PiTorsionType piTorsionType
+                : piTorsionTypes.values().toArray(new PiTorsionType[0])) {
+            PiTorsionType newType = piTorsionType.patchClasses(typeMap);
+            if (newType != null) {
+                logger.info(" " + newType.toString());
+                addForceFieldType(newType);
             }
         }
 
-        for (TorsionTorsionType torsionTorsionType : torsionTorsionTypes.values().toArray(new TorsionTorsionType[0])) {
-            String currentKey = torsionTorsionType.key;
-            torsionTorsionType.patchClasses(typeMap);
-            if (!torsionTorsionType.key.equals(currentKey)) {
-                torsionTorsionTypes.remove(currentKey);
-                addForceFieldType(torsionTorsionType);
+        for (StretchBendType stretchBendType
+                : stretchBendTypes.values().toArray(new StretchBendType[0])) {
+            StretchBendType newType = stretchBendType.patchClasses(typeMap);
+            if (newType != null) {
+                logger.info(" " + newType.toString());
+                addForceFieldType(newType);
             }
         }
+
+        /* for (TorsionTorsionType torsionTorsionType :
+         * torsionTorsionTypes.values().toArray(new TorsionTorsionType[0])) {
+         * String currentKey = torsionTorsionType.key;
+         * torsionTorsionType.patchClasses(typeMap); if
+         * (!torsionTorsionType.key.equals(currentKey)) {
+         * torsionTorsionTypes.remove(currentKey);
+         * addForceFieldType(torsionTorsionType); } }
+         */
 
         for (TorsionType torsionType : torsionTypes.values().toArray(new TorsionType[0])) {
-            String currentKey = torsionType.key;
-            torsionType.patchClasses(typeMap);
-            if (!torsionType.key.equals(currentKey)) {
-                torsionTypes.remove(currentKey);
-                addForceFieldType(torsionType);
+            TorsionType newType = torsionType.patchClasses(typeMap);
+            if (newType != null) {
+                logger.info(" " + newType.toString());
+                addForceFieldType(newType);
             }
         }
 
+        /*
         for (ImproperTorsionType improperType : imptorsTypes.values().toArray(new ImproperTorsionType[0])) {
             String currentKey = improperType.key;
             improperType.patchClasses(typeMap);
@@ -1226,23 +1343,20 @@ public class ForceField {
                 ureyBradleyTypes.remove(currentKey);
                 addForceFieldType(ureyBradleyType);
             }
-        }
+        } */
 
         for (MultipoleType multipoleType : multipoleTypes.values().toArray(new MultipoleType[0])) {
-            String currentKey = multipoleType.key;
-            multipoleType.patchTypes(typeMap);
-            if (!multipoleType.key.equals(currentKey)) {
-                multipoleTypes.remove(currentKey);
-                addForceFieldType(multipoleType);
+            MultipoleType newType = multipoleType.patchTypes(typeMap);
+            if (newType != null) {
+                logger.info(" " + newType.toString());
+                addForceFieldType(newType);
             }
         }
 
-        for (PolarizeType polarizeType : polarizeTypes.values().toArray(new PolarizeType[0])) {
-            String currentKey = polarizeType.key;
-            polarizeType.patchTypes(typeMap);
-            if (!polarizeType.key.equals(currentKey)) {
-                polarizeTypes.remove(currentKey);
-                addForceFieldType(polarizeType);
+        for (AtomType atomType : patchTypes.values()) {
+            PolarizeType polarizeType = getPolarizeType(atomType.key);
+            if (polarizeType.patchTypes(typeMap)) {
+                logger.info(" " + polarizeType.toString());
             }
         }
     }
@@ -1274,6 +1388,7 @@ public class ForceField {
         FFT_METHOD,
         FORCEFIELD,
         NCSGROUP,
+        MODRES,
         POLARIZATION,
         RADIUSRULE,
         RADIUSSIZE,
@@ -1328,7 +1443,7 @@ public class ForceField {
     public enum ForceFieldType {
 
         KEYWORD,
-        ANGLE, 
+        ANGLE,
         ATOM,
         BIOTYPE,
         BOND,
@@ -1344,4 +1459,12 @@ public class ForceField {
         UREYBRAD,
         VDW
     }
+
+    /**
+     * 1) Read in protein with HETATM side-chain. 2) Read in side-chain analog
+     * patch and add to ForceField. 3) Define HETATM precedence via 1) existing
+     * side-chain or 2) patch. 4) Create needed parameters via averaging. A)
+     * Create a map between patch atoms and forcefield atoms. B) Loop over all
+     * patch terms and create averaged ones if there is mixed precedence.
+     */
 }

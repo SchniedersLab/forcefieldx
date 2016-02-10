@@ -1341,6 +1341,8 @@ public final class MainPanel extends JPanel implements ActionListener,
             patchConfiguration.addProperty("parameters", patch);
             forceFieldFilter = new ForceFieldFilter(patchConfiguration);
             ForceField patchForceField = forceFieldFilter.parse();
+
+
             forceField.append(patchForceField);
         }
         newSystem.setForceField(forceField);

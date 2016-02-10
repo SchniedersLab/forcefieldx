@@ -110,28 +110,37 @@ public final class StretchBendType extends BaseType implements Comparator<String
      * Remap new atom classes to known internal ones.
      *
      * @param typeMap a lookup between new atom types and known atom types.
+     * @return
      */
-    public void patchClasses(HashMap<AtomType, AtomType> typeMap) {
+    public StretchBendType patchClasses(HashMap<AtomType, AtomType> typeMap) {
         int count = 0;
+        int len = atomClasses.length;
+        /**
+         * Check if this StetchBendType contain 1 or 2 mapped atom classes.
+         */
         for (AtomType newType : typeMap.keySet()) {
-            for (int i = 0; i < atomClasses.length; i++) {
+            for (int i = 0; i < len; i++) {
                 if (atomClasses[i] == newType.atomClass) {
                     count++;
                 }
             }
         }
-        if (count > 0 && count < atomClasses.length) {
+        /**
+         * If found, create a new StetchBendType that bridges to known classes.
+         */
+        if (count == 1 || count == 2) {
+            int newClasses[] = Arrays.copyOf(atomClasses, len);
             for (AtomType newType : typeMap.keySet()) {
-                for (int i = 0; i < atomClasses.length; i++) {
+                for (int i = 0; i < len; i++) {
                     if (atomClasses[i] == newType.atomClass) {
                         AtomType knownType = typeMap.get(newType);
-                        atomClasses[i] = knownType.atomClass;
+                        newClasses[i] = knownType.atomClass;
                     }
                 }
-
             }
-            setKey(sortKey(atomClasses));
+            return new StretchBendType(newClasses, forceConstants);
         }
+        return null;
     }
 
     /**

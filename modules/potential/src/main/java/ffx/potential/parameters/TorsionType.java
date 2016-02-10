@@ -144,28 +144,37 @@ public final class TorsionType extends BaseType implements Comparator<String> {
      * Remap new atom classes to known internal ones.
      *
      * @param typeMap a lookup between new atom types and known atom types.
+     * @return
      */
-    public void patchClasses(HashMap<AtomType, AtomType> typeMap) {
+    public TorsionType patchClasses(HashMap<AtomType, AtomType> typeMap) {
         int count = 0;
+        int len = atomClasses.length;
+        /**
+         * Look for new TorsionTypes that contain 1 to 3 mapped atom classes.
+         */
         for (AtomType newType : typeMap.keySet()) {
-            for (int i = 0; i < atomClasses.length; i++) {
+            for (int i = 0; i < len; i++) {
                 if (atomClasses[i] == newType.atomClass) {
                     count++;
                 }
             }
         }
-        if (count > 0 && count < atomClasses.length) {
+        /**
+         * If found, create a new TorsionType that bridges to known classes.
+         */
+        if (count == 1 || count == 2 || count == 3) {
+            int newClasses[] = Arrays.copyOf(atomClasses, len);
             for (AtomType newType : typeMap.keySet()) {
-                for (int i = 0; i < atomClasses.length; i++) {
+                for (int i = 0; i < len; i++) {
                     if (atomClasses[i] == newType.atomClass) {
                         AtomType knownType = typeMap.get(newType);
-                        atomClasses[i] = knownType.atomClass;
+                        newClasses[i] = knownType.atomClass;
                     }
                 }
-
             }
-            setKey(sortKey(atomClasses));
+            return new TorsionType(newClasses, amplitude, phase, periodicity);
         }
+        return null;
     }
 
     /**

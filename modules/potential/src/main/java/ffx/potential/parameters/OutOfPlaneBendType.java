@@ -94,28 +94,37 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
      * Remap new atom classes to known internal ones.
      *
      * @param typeMap a lookup between new atom types and known atom types.
+     * @return
      */
-    public void patchClasses(HashMap<AtomType, AtomType> typeMap) {
+    public OutOfPlaneBendType patchClasses(HashMap<AtomType, AtomType> typeMap) {
         int count = 0;
+        int len = atomClasses.length;
+        /**
+         * Look for new OutOfPlaneBends that contain 1 mapped atom classes.
+         */
         for (AtomType newType : typeMap.keySet()) {
-            for (int i = 0; i < atomClasses.length; i++) {
+            for (int i = 0; i < len; i++) {
                 if (atomClasses[i] == newType.atomClass) {
                     count++;
                 }
             }
         }
-        if (count > 0 && count < 2) {
+        /**
+         * If found, create a new OutOfPlaneBend that bridges to known classes.
+         */
+        if (count == 1) {
+            int newClasses[] = Arrays.copyOf(atomClasses, len);
             for (AtomType newType : typeMap.keySet()) {
-                for (int i = 0; i < atomClasses.length; i++) {
+                for (int i = 0; i < len; i++) {
                     if (atomClasses[i] == newType.atomClass) {
                         AtomType knownType = typeMap.get(newType);
-                        atomClasses[i] = knownType.atomClass;
+                        newClasses[i] = knownType.atomClass;
                     }
                 }
-
             }
-            setKey(sortKey(atomClasses));
+            return new OutOfPlaneBendType(newClasses, forceConstant);
         }
+        return null;
     }
 
     /**
@@ -221,8 +230,8 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
     }
 
     /**
-     * Average two OutOfPlaneBendType instances. The atom classes that define the
-     * new type must be supplied.
+     * Average two OutOfPlaneBendType instances. The atom classes that define
+     * the new type must be supplied.
      *
      * @param outOfPlaneBendType1
      * @param outOfPlaneBendType2

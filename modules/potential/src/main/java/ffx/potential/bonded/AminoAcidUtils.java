@@ -537,60 +537,17 @@ public class AminoAcidUtils {
                 String residueName = residue.getName();
                 logger.log(Level.INFO, " Patching side-chain {0}", residueName);
                 HashMap<String, AtomType> types = forceField.getAtomTypes(residueName);
-                HashMap<AtomType, AtomType> typeMap = new HashMap<>();
                 if (!types.isEmpty()) {
                     boolean patched = true;
                     ArrayList<Atom> residueAtoms = residue.getAtomList();
                     // Assign atom types for side-chain atoms.
                     for (Atom atom : residueAtoms) {
                         String atomName = atom.getName().toUpperCase();
-                        AtomType internalType = atom.getAtomType();
-                        // Map the internal type to the new type.
-                        if (internalType != null) {
-                            AtomType newType = types.get(atomName);
-                            if (newType != null) {
-                                typeMap.put(newType, internalType);
-                                types.remove(atomName);
-                            }
-                        } else {
-                            AtomType atomType = types.get(atomName);
-                            if (atomType == null) {
-                                logger.log(Level.INFO, " No atom type was found for {0} of {1}.",
-                                        new Object[]{atomName, residueName});
-                                patched = false;
-                                break;
-                            } else {
-                                atom.setAtomType(atomType);
-                                types.remove(atomName);
-                            }
-                        }
-                    }
-
-                    forceField.patchClassesAndTypes(typeMap);
-
-                    // Create a new multipole type for HA with the correct frame.
-                    Atom HA = (Atom) residue.getAtomNode("HA");
-                    Atom CAlpha = (Atom) residue.getAtomNode("CA");
-                    Atom CBeta = (Atom) residue.getAtomNode("CB");
-                    int frame[] = new int[3];
-                    frame[0] = HA.getAtomType().type;
-                    frame[1] = CAlpha.getAtomType().type;
-                    frame[2] = forceField.getAtomType("Alanine", "CB").type;
-                    MultipoleType multipoleType = forceField.getMultipoleType(frame[0] + " " + frame[1] + " " + frame[2]);
-
-                    frame[2] = CBeta.getAtomType().type;
-                    multipoleType = new MultipoleType(multipoleType.charge, multipoleType.dipole,
-                            multipoleType.quadrupole, frame, multipoleType.frameDefinition);
-                    forceField.addForceFieldType(multipoleType);
-
-                    // Check for missing heavy atoms.
-                    if (patched && !types.isEmpty()) {
-                        for (AtomType type : types.values()) {
-                            if (type.atomicNumber != 1) {
-                                logger.log(Level.INFO, " Missing heavy atom {0}", type.name);
-                                patched = false;
-                                break;
-                            }
+                        AtomType type = atom.getAtomType();
+                        if (type == null) {
+                            type = types.get(atomName);
+                            atom.setAtomType(type);
+                            types.remove(atomName);
                         }
                     }
                     // Create bonds between known atoms.
@@ -759,9 +716,14 @@ public class AminoAcidUtils {
                         logger.log(Level.SEVERE, format(" Could not patch %s.", residueName));
                     } else {
                         logger.log(Level.INFO, " Patch for {0} succeeded.", residueName);
+                        residueAtoms = residue.getAtomList();
+                        // Assign atom types for side-chain atoms.
+                        double charge = 0.0;
+                        for (Atom atom : residueAtoms) {
+                            logger.info(atom.toString() + " -> " + atom.getAtomType().toString());
+                        }
                     }
                 } else {
-
                     switch (position) {
                         case FIRST_RESIDUE:
                             buildHydrogen(residue, "HA2", CA, 1.10e0, N, 109.5e0, C, 109.5e0, 1, 355,

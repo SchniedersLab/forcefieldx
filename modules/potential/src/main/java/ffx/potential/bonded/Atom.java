@@ -319,7 +319,11 @@ public class Atom extends MSNode implements Comparable<Atom> {
     /**
      * True if this Atom is a HETATM.
      */
-    private boolean hetatm;
+    private boolean hetatm = false;
+    /**
+     * True if this Atom is a member of modified residue.
+     */
+    private boolean modres = false;
     /**
      * If electrostatics is true, include the charge, multipole and/or
      * polarizability in electrostatics calculations.
@@ -487,12 +491,32 @@ public class Atom extends MSNode implements Comparable<Atom> {
 
     /**
      * <p>
+     * setModRes</p>
+     *
+     * @param modres a boolean.
+     */
+    public void setModRes(boolean modres) {
+        this.modres = modres;
+    }
+
+    /**
+     * <p>
      * setHetero</p>
      *
      * @param hetatm a boolean.
      */
     public void setHetero(boolean hetatm) {
         this.hetatm = hetatm;
+    }
+
+    /**
+     * <p>
+     * isModRes</p>
+     *
+     * @return a boolean.
+     */
+    public boolean isModRes() {
+        return modres;
     }
 
     /**
@@ -544,10 +568,11 @@ public class Atom extends MSNode implements Comparable<Atom> {
     public boolean getBuilt() {
         return built;
     }
-    
+
     public void setBuilt(boolean built) {
         this.built = built;
     }
+
     /**
      * If true, this atom should be used in potential energy functions.
      *
@@ -1902,15 +1927,13 @@ public class Atom extends MSNode implements Comparable<Atom> {
             } else {
                 System.arraycopy(anisouGradient, 0, this.anisouGradient, 0, 6);
             }
+        } else if (anisouGradient == null) {
+            this.anisouGradient = null;
         } else {
-            if (anisouGradient == null) {
-                this.anisouGradient = null;
-            } else {
-                if (this.anisouGradient == null) {
-                    this.anisouGradient = new double[6];
-                }
-                Arrays.fill(anisouGradient, 0.0);
+            if (this.anisouGradient == null) {
+                this.anisouGradient = new double[6];
             }
+            Arrays.fill(anisouGradient, 0.0);
         }
     }
 
@@ -1929,15 +1952,13 @@ public class Atom extends MSNode implements Comparable<Atom> {
             } else {
                 System.arraycopy(anisouVelocity, 0, this.anisouVelocity, 0, 6);
             }
+        } else if (anisouVelocity == null) {
+            this.anisouVelocity = null;
         } else {
-            if (anisouVelocity == null) {
-                this.anisouVelocity = null;
-            } else {
-                if (this.anisouVelocity == null) {
-                    this.anisouVelocity = new double[6];
-                }
-                Arrays.fill(anisouVelocity, 0.0);
+            if (this.anisouVelocity == null) {
+                this.anisouVelocity = new double[6];
             }
+            Arrays.fill(anisouVelocity, 0.0);
         }
     }
 
@@ -1956,15 +1977,13 @@ public class Atom extends MSNode implements Comparable<Atom> {
             } else {
                 System.arraycopy(anisouAcceleration, 0, this.anisouAcceleration, 0, 6);
             }
+        } else if (anisouAcceleration == null) {
+            this.anisouAcceleration = null;
         } else {
-            if (anisouAcceleration == null) {
-                this.anisouAcceleration = null;
-            } else {
-                if (this.anisouAcceleration == null) {
-                    this.anisouAcceleration = new double[6];
-                }
-                Arrays.fill(anisouAcceleration, 0.0);
+            if (this.anisouAcceleration == null) {
+                this.anisouAcceleration = new double[6];
             }
+            Arrays.fill(anisouAcceleration, 0.0);
         }
     }
 
@@ -1983,15 +2002,13 @@ public class Atom extends MSNode implements Comparable<Atom> {
             } else {
                 System.arraycopy(anisouPreviousAcceleration, 0, this.anisouPreviousAcceleration, 0, 6);
             }
+        } else if (anisouPreviousAcceleration == null) {
+            this.anisouPreviousAcceleration = null;
         } else {
-            if (anisouPreviousAcceleration == null) {
-                this.anisouPreviousAcceleration = null;
-            } else {
-                if (this.anisouPreviousAcceleration == null) {
-                    this.anisouPreviousAcceleration = new double[6];
-                }
-                Arrays.fill(anisouPreviousAcceleration, 0.0);
+            if (this.anisouPreviousAcceleration == null) {
+                this.anisouPreviousAcceleration = new double[6];
             }
+            Arrays.fill(anisouPreviousAcceleration, 0.0);
         }
     }
 

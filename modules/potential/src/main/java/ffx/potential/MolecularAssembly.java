@@ -270,7 +270,7 @@ public class MolecularAssembly extends MSGroup {
         ArrayList Polymers = getAtomNodeList();
         if (o instanceof Atom) {
             Atom atom = (Atom) o;
-            if (!atom.isHetero()) {
+            if (!atom.isHetero() || atom.isModRes()) {
                 return getResidue(atom, true);
             } else {
                 return getMolecule(atom, true);
@@ -613,7 +613,7 @@ public class MolecularAssembly extends MSGroup {
      * @return a {@link ffx.potential.bonded.Atom} object.
      */
     public Atom findAtom(Atom atom) {
-        if (!atom.isHetero()) {
+        if (!atom.isHetero() || atom.isModRes()) {
             Polymer polymer = getPolymer(atom.getChainID(), atom.getSegID(), false);
             if (polymer != null) {
                 Residue res = polymer.getResidue(atom.getResidueName(), atom.getResidueNumber(), false);

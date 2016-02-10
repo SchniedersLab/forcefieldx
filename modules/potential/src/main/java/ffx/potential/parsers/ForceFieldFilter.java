@@ -80,6 +80,8 @@ import ffx.potential.parameters.UreyBradleyType;
 import ffx.potential.parameters.VDWType;
 import ffx.utilities.Keyword;
 
+import static ffx.potential.parameters.ForceField.toEnumForm;
+
 /**
  * The ForceFieldFilter Class is used to parse and store molecular mechanics
  * data from keyword/property and parameter (*.PRM) files.
@@ -419,11 +421,23 @@ public class ForceFieldFilter {
     }
 
     private boolean parseKeyword(String tokens[]) {
-        String keyword = tokens[0].toUpperCase().replaceAll("-", "_");
+        String keyword = toEnumForm(tokens[0]);
         try {
             // Parse Keywords with a String value.
             ForceFieldString ffString = ForceFieldString.valueOf(keyword);
-            forceField.addForceFieldString(ffString, tokens[1]);
+            int len = tokens.length;
+            if (len == 1) {
+                forceField.addForceFieldString(ffString, null);
+            } else if (len == 2) {
+                forceField.addForceFieldString(ffString, tokens[1]);
+            } else {
+                StringBuilder stringBuilder = new StringBuilder(tokens[1]);
+                for (int i = 2; i < len; i++) {
+                    stringBuilder.append(" ");
+                    stringBuilder.append(tokens[i]);
+                }
+                forceField.addForceFieldString(ffString, stringBuilder.toString());
+            }
         } catch (Exception e) {
             try {
                 // Parse Keywords with a Double value.

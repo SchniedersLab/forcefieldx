@@ -117,32 +117,6 @@ public final class PDBFilter extends SystemFilter {
     private static final Logger logger = Logger.getLogger(PDBFilter.class.getName());
 
     /**
-     * PDB records that are recognized.
-     */
-    private enum Record {
-
-        ANISOU, ATOM, CONECT, CRYST1, DBREF, END, HELIX, HETATM, LINK, SEQRES,
-        SHEET, SSBOND, REMARK
-    }
-
-    /**
-     * Presently, VERSION3_3 is default, and VERSION3_2 is anything
-     * non-standard.
-     */
-    public enum PDBFileStandard {
-
-        VERSION3_3, VERSION3_2, VERSION3_1, VERSION3_0, VERSION2_3;
-    }
-
-    /**
-     * Common HETATOM labels for water and ions.
-     */
-    public enum HetAtoms {
-
-        HOH, H2O, WAT, NA, K, MG, MG2, CA, CA2, CL, BR, ZN, ZN2
-    }
-
-    /**
      * Map of SEQRES entries.
      */
     private final Map<Character, String[]> seqres = new HashMap<>();
@@ -170,13 +144,42 @@ public final class PDBFilter extends SystemFilter {
      * 1A-1Z,10-19, and for the third series segID = 2A-2Z,20-29, and so on.
      */
     private final List<String> segIDs = new ArrayList<>();
+    /**
+     * List of modified residues *
+     */
+    private final Map<String, String> modres = new HashMap<>();
+    /**
+     * Character for the current chain ID.
+     */
     private Character currentChainID = null;
+    /**
+     * String for the current SegID.
+     */
     private String currentSegID = null;
+    /**
+     * Flag to indicate a mutation is requested.
+     */
     private boolean mutate = false;
+    /**
+     * Residue ID of the residue to mutate.
+     */
     private int mutateResID = 0;
+    /**
+     * Residue name after mutation.
+     */
     private String mutateToResname = null;
+    /**
+     * Character for the chain ID of the residue that will be mutated.
+     */
     private Character mutateChainID = null;
-    private boolean print = true;
+    /**
+     * Flag to indicate if missing fields should be printed (i.e. missing
+     * B-factors).
+     */
+    private boolean printMissingFields = true;
+    /**
+     * Number of symmetry operators in the current crystal.
+     */
     private int nSymOp = 0;
     /**
      * Assume current standard.
@@ -191,7 +194,6 @@ public final class PDBFilter extends SystemFilter {
      * Don't output atoms which fail Atom.getUse().
      */
     private boolean ignoreUnusedAtoms = false;
-
     /**
      * Keep track of ATOM record serial numbers to match them with ANISOU
      * records.
@@ -525,6 +527,21 @@ public final class PDBFilter extends SystemFilter {
                                 chain[resID++] = res;
                             }
                             break;
+                        case MODRES:
+                            String modResName = line.substring(12, 15).trim();
+                            String stdName = line.substring(24, 27).trim();
+                            modres.put(modResName.toUpperCase(), stdName.toUpperCase());
+// =============================================================================
+//  1 -  6        Record name     "MODRES"
+//  8 - 11        IDcode          idCode         ID code of this entry.
+// 13 - 15        Residue name    resName        Residue name used in this entry.
+// 17             Character       chainID        Chain identifier.
+// 19 - 22        Integer         seqNum         Sequence number.
+// 23             AChar           iCode          Insertion code.
+// 25 - 27        Residue name    stdRes         Standard residue name.
+// 30 - 70        String          comment        Description of the residue modification.
+// =============================================================================
+                            break;
                         case ANISOU:
 // =============================================================================
 //  1 - 6        Record name   "ANISOU"
@@ -646,9 +663,9 @@ public final class PDBFilter extends SystemFilter {
                                     tempFactor = new Double(line.substring(60, 66).trim());
                                 } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
                                     // Use default values.
-                                    if (print) {
+                                    if (printMissingFields) {
                                         logger.info(" Missing occupancy and b-factors set to 1.0.");
-                                        print = false;
+                                        printMissingFields = false;
                                     } else if (logger.isLoggable(Level.FINE)) {
                                         logger.fine(" Missing occupancy and b-factors set to 1.0.");
                                     }
@@ -719,9 +736,9 @@ public final class PDBFilter extends SystemFilter {
                                 tempFactor = new Double(line.substring(60, 66).trim());
                             } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
                                 // Use default values.
-                                if (print) {
+                                if (printMissingFields) {
                                     logger.info(" Missing occupancy and b-factors set to 1.0.");
-                                    print = false;
+                                    printMissingFields = false;
                                 } else if (logger.isLoggable(Level.FINE)) {
                                     logger.fine(" Missing occupancy and b-factors set to 1.0.");
                                 }
@@ -729,6 +746,10 @@ public final class PDBFilter extends SystemFilter {
                             newAtom = new Atom(0, name, altLoc, d, resName, resSeq, chainID,
                                     occupancy, tempFactor, segID);
                             newAtom.setHetero(true);
+                            // Check if this is a modified residue.
+                            if (modres.containsKey(resName.toUpperCase())) {
+                                newAtom.setModRes(true);
+                            }
                             returnedAtom = (Atom) activeMolecularAssembly.addMSNode(newAtom);
                             if (returnedAtom != newAtom) {
                                 // A previously added atom has been retained.
@@ -2105,12 +2126,13 @@ public final class PDBFilter extends SystemFilter {
                     for (AminoAcid3 amino : aminoAcidList) {
                         if (amino.toString().equalsIgnoreCase(name)) {
                             aa = true;
-                            renameNonstandardHydrogens(residue);
+                            checkHydrogenAtomNames(residue);
                             break;
                         }
                     }
                     // Check for a patch.
                     if (!aa) {
+                        logger.info(" Checking for non-standard amino acid patch " + name);
                         HashMap<String, AtomType> types = forceField.getAtomTypes(name);
                         if (types.isEmpty()) {
                             isProtein = false;
@@ -2761,7 +2783,7 @@ public final class PDBFilter extends SystemFilter {
      *
      * @param residue
      */
-    private void renameNonstandardHydrogens(Residue residue) {
+    private void checkHydrogenAtomNames(Residue residue) {
         switch (fileStandard) {
             case VERSION3_3:
                 return;
@@ -3305,6 +3327,60 @@ public final class PDBFilter extends SystemFilter {
         currentSegID = newSegID;
 
         return newSegID;
+    }
+
+    /**
+     * PDB records that are recognized.
+     */
+    private enum Record {
+
+        ANISOU,
+        ATOM,
+        CONECT,
+        CRYST1,
+        DBREF,
+        END,
+        HELIX,
+        HETATM,
+        LINK,
+        MODRES,
+        SEQRES,
+        SHEET,
+        SSBOND,
+        REMARK
+    }
+
+    /**
+     * Presently, VERSION3_3 is default, and VERSION3_2 is anything
+     * non-standard.
+     */
+    public enum PDBFileStandard {
+
+        VERSION2_3,
+        VERSION3_0,
+        VERSION3_1,
+        VERSION3_2,
+        VERSION3_3
+    }
+
+    /**
+     * Common HETATOM labels for water and ions.
+     */
+    public enum HetAtoms {
+
+        BR,
+        CA,
+        CA2,
+        CL,
+        K,
+        MG,
+        MG2,
+        NA,
+        HOH,
+        H2O,
+        WAT,
+        ZN,
+        ZN2
     }
 
 }
