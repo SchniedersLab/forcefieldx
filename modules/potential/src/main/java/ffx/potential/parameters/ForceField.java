@@ -1353,11 +1353,15 @@ public class ForceField {
             }
         }
 
-        for (AtomType atomType : patchTypes.values()) {
-            PolarizeType polarizeType = getPolarizeType(atomType.key);
-            if (polarizeType.patchTypes(typeMap)) {
-                logger.info(" " + polarizeType.toString());
+        try {
+            for (AtomType atomType : patchTypes.values()) {
+                PolarizeType polarizeType = getPolarizeType(atomType.key);
+                if (polarizeType != null && polarizeType.patchTypes(typeMap)) {
+                    logger.info(" " + polarizeType.toString());
+                }
             }
+        } catch (Exception e) {
+            // Inefficient hack. Should actually check if polarizeTypes are necessary.
         }
     }
 
@@ -1437,7 +1441,8 @@ public class ForceField {
         MPOLETERM, POLARIZETERM, GKTERM, SCFCACHE, APERIODIC, RIGID_HYDROGENS,
         LAMBDATERM, NCSTERM, USE_CHARGES, USE_DIPOLES, USE_QUADRUPOLES, ROTATE_MULTIPOLES,
         LIGAND_VAPOR_ELEC, NO_LIGAND_CONDENSED_SCF, USE_SCF_PRECONDITIONER, INTERMOLECULAR_SOFTCORE,
-        INTRAMOLECULAR_SOFTCORE, LAMBDA_VALENCE_RESTRAINTS, LAMBDA_TORSIONS, RECIPTERM, BORN_USE_ALL
+        INTRAMOLECULAR_SOFTCORE, LAMBDA_VALENCE_RESTRAINTS, LAMBDA_TORSIONS, RECIPTERM, BORN_USE_ALL,
+        CHECK_ALL_NODE_CHARGES
     }
 
     public enum ForceFieldType {

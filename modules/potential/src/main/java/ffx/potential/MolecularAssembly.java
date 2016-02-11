@@ -1207,6 +1207,31 @@ public class MolecularAssembly extends MSGroup {
         }
         return residues;
     }
+    
+    /**
+     * Sums up charge of the system, checking nonstandard residues for 
+     * non-unitary charges.
+     * @param alwaysLog Log non-unitary charge warnings for all nodes
+     * @return System charge
+     */
+    public double getCharge(boolean alwaysLog) {
+        double totalCharge = 0;
+        for (MSNode node : getNodeList()) {
+            double charge = 0;
+            boolean isNonstandard = false;
+            for (Atom atom : node.getAtomList()) {
+                charge += atom.getMultipoleType().charge;
+                if (atom.isModRes()) {
+                    isNonstandard = true;
+                }
+            }
+            if ((alwaysLog || isNonstandard) && (Math.abs(Math.round(charge) - charge) > 1.0E-5)) {
+                logger.warning(String.format(" Node %s has non-unitary charge %12.8f", node.toString(), charge));
+            }
+            totalCharge += charge;
+        }
+        return totalCharge;
+    }
 
     /**
      * <p>
