@@ -518,9 +518,7 @@ public class Residue extends MSGroup {
 
     /**
      * Returns a list of backbone atoms; for our purposes, nucleic acid backbone
-     * atoms are those of the nucleobase. Protein backbone atoms will be
-     * ordered:
-     *
+     * atoms are those of the nucleobase.
      *
      * @return ArrayList of backbone (or nucleobase) atoms.
      */
@@ -555,7 +553,7 @@ public class Residue extends MSGroup {
                 tryAddAtom(ret, "HA3");
                 return ret;
             default:
-                return null;
+                return new ArrayList<>(1); // Return empty list.
         }
     }
 
