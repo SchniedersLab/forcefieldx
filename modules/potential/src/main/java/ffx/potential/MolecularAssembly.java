@@ -768,7 +768,7 @@ public class MolecularAssembly extends MSGroup {
     public Atom[] getActiveAtomArray() {
         ArrayList<Atom> atoms = getAtomList();
         ArrayList<Atom> activeAtoms = new ArrayList<>();
-        for (Atom a : activeAtoms) {
+        for (Atom a : atoms) {
             if (a.isActive()) {
                 activeAtoms.add(a);
             }
