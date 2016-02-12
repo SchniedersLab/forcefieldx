@@ -53,6 +53,7 @@ import org.apache.commons.math3.util.FastMath;
 public abstract class BoltzmannMC  implements MetropolisMC {
     private static final Logger logger = Logger.getLogger(BoltzmannMC.class.getName());
     public static final double BOLTZMANN = 0.0019872041; // In kcal/(mol*K)
+    
     private double temperature = 298.15; // Room temperature (also SATP).
     private double kbTinv = -1.0 / (BOLTZMANN * temperature); // Constant factor for Monte Carlo moves (-1/kbT)
     private boolean print = true;
@@ -61,6 +62,10 @@ public abstract class BoltzmannMC  implements MetropolisMC {
     private double e2 = 0.0;
     private double eAdjust = 0.0;
     private double lastE = 0.0;
+    
+    private boolean lastAccept = false;
+    //private int nAccept = 0;
+    //private int nTotal = 0;
     
     /**
      * Criterion for accept/reject a move; intended to be used mostly internally.
@@ -159,12 +164,16 @@ public abstract class BoltzmannMC  implements MetropolisMC {
         
         lastE = currentEnergy(); // Is reset to e1 if move rejected.
         e2 = lastE + eAdjust;
+        //++nTotal;
         if (evaluateMove(e1, e2)) {
+            //++nAccept;
+            lastAccept = true;
             if (print) {
                 logger.info(String.format(" Monte Carlo step accepted: e1 -> e2 %10.6f -> %10.6f", e1, e2));
             }
             return true;
         } else {
+            lastAccept = false;
             for (int i = nMoves - 1; i >= 0; i--) {
                 moves.get(i).revertMove();
             }
@@ -181,6 +190,26 @@ public abstract class BoltzmannMC  implements MetropolisMC {
         return temperature;
     }
     
+    @Override
+    public boolean getAccept() {
+        return lastAccept;
+    }
+    
+    /*@Override
+    public int getNumAccept() {
+        return nAccept;
+    }
+    
+    @Override
+    public int getNumReject() {
+        return (nTotal - nAccept);
+    }
+    
+    @Override
+    public int numSteps() {
+        return nTotal;
+    }*/
+    
     /**
      * Must return the current energy of the system.
      * @return Current system energy
@@ -188,7 +217,9 @@ public abstract class BoltzmannMC  implements MetropolisMC {
     protected abstract double currentEnergy();
     
     /**
-     * Store the state for reverting a move.
+     * Store the state for reverting a move. Must be properly implemented for 
+     * revertStep() to function properly; otherwise, the implementation of 
+     * revertStep() should throw an OperationNotSupportedException.
      */
     protected abstract void storeState();
 }
