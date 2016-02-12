@@ -2310,6 +2310,7 @@ public final class PDBFilter extends SystemFilter {
                     patched = false;
                     break;
                 } else {
+                    logger.fine(" " + atom.toString() + " -> " + atomType.toString());
                     atom.setAtomType(atomType);
                     types.remove(atomName);
                 }
