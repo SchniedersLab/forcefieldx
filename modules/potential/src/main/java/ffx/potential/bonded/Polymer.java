@@ -401,6 +401,20 @@ public class Polymer extends MSGroup {
      * @return a {@link ffx.potential.bonded.Residue} object.
      */
     public Residue getResidue(String resName, int resNum, boolean create) {
+        return getResidue(resName, resNum, create, Residue.ResidueType.UNK);
+    }
+
+    /**
+     * <p>
+     * getResidue</p>
+     *
+     * @param resName a {@link java.lang.String} object.
+     * @param resNum a int.
+     * @param create a boolean.
+     * @param defaultRT Default ResidueType if it cannot be assigned.
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
+    public Residue getResidue(String resName, int resNum, boolean create, Residue.ResidueType defaultRT) {
         for (Enumeration e = getAtomNode().children(); e.hasMoreElements();) {
             Residue r = (Residue) e.nextElement();
             if (r.getResidueNumber() == resNum && r.getName().equalsIgnoreCase(resName)) {
@@ -440,7 +454,7 @@ public class Polymer extends MSGroup {
             }
         }
         if (residue == null) {
-            residue = new Residue(resName, resNum, Residue.ResidueType.UNK,
+            residue = new Residue(resName, resNum, defaultRT,
                     chainID, getName());
         }
         addMSNode(residue);
