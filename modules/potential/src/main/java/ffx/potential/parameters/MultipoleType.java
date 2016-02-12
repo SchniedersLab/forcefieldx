@@ -161,7 +161,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
          */
         for (AtomType newType : typeMap.keySet()) {
             for (int i = 0; i < len; i++) {
-                if (frameAtomTypes[i] == newType.type) {
+                if (frameAtomTypes[i] == newType.type || frameAtomTypes[i] == 0) {
                     count++;
                 }
             }
