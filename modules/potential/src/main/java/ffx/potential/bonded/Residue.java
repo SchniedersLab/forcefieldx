@@ -116,6 +116,7 @@ public class Residue extends MSGroup {
     private Rotamer currentRotamer = null;
     private Rotamer originalRotamer = null;
     protected static final boolean origAtEnd;
+    private Rotamer rotamers[];
 
     static {
         String origAtEndStr = System.getProperty("ro-origAtEnd");
@@ -202,47 +203,49 @@ public class Residue extends MSGroup {
     }
 
     /**
-     * Gets the Rotamers for this residue, potentially incorporating the original
-     * coordinates if RotamerLibrary's original coordinates rotamer flag has been 
-     * set.
+     * Gets the Rotamers for this residue, potentially incorporating the
+     * original coordinates if RotamerLibrary's original coordinates rotamer
+     * flag has been set.
+     *
      * @return An array of Rotamer.
      */
     public Rotamer[] getRotamers() {
-        if (RotamerLibrary.getUsingOrigCoordsRotamer()) {
-            Rotamer[] libRotamers = RotamerLibrary.getRotamers(this);
-            if (libRotamers == null) {
-                return null;
-    }
-            int nRots = libRotamers.length;
-            Rotamer[] rotamers = new Rotamer[nRots + 1];
-            if (originalRotamer == null) {
-                ResidueState origState = storeState();
-                double[] chi = RotamerLibrary.measureRotamer(this, false);
-                switch (residueType) {
-                    case AA:
-                        AminoAcid3 aa3 = AminoAcid3.valueOf(getName());
-                        originalRotamer = new Rotamer(aa3, origState, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0);
-                        break;
-                    case NA:
-                        NucleicAcid3 na3 = NucleicAcid3.valueOf(getName());
-                        originalRotamer = new Rotamer(na3, origState, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0, chi[4], 0, chi[5], 0);
-                        break;
-                    default:
-                        originalRotamer = null;
-                        return libRotamers;
-                }
-            }
-            if (origAtEnd) {
-                System.arraycopy(libRotamers, 0, rotamers, 0, nRots);
-                rotamers[rotamers.length - 1] = originalRotamer;
-            } else {
-                System.arraycopy(libRotamers, 0, rotamers, 1, nRots);
-                rotamers[0] = originalRotamer;
-            }
-            return rotamers;
-        } else {
-            return RotamerLibrary.getRotamers(this);
+        Rotamer[] libRotamers = RotamerLibrary.getRotamers(this);
+        if (libRotamers == null || !RotamerLibrary.getUsingOrigCoordsRotamer()) {
+            return libRotamers;
         }
+        if (rotamers != null) {
+            return rotamers;
+        }
+
+        int nRots = libRotamers.length;
+        rotamers = new Rotamer[nRots + 1];
+        ResidueState origState = storeState();
+        double[] chi = RotamerLibrary.measureRotamer(this, false);
+        switch (residueType) {
+            case AA:
+                AminoAcid3 aa3 = AminoAcid3.valueOf(getName());
+                originalRotamer = new Rotamer(aa3, origState, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0);
+                break;
+            case NA:
+                NucleicAcid3 na3 = NucleicAcid3.valueOf(getName());
+                originalRotamer = new Rotamer(na3, origState, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0, chi[4], 0, chi[5], 0);
+                break;
+            default:
+                originalRotamer = null;
+                rotamers = libRotamers;
+                return rotamers;
+        }
+
+        if (origAtEnd) {
+            System.arraycopy(libRotamers, 0, rotamers, 0, nRots);
+            rotamers[rotamers.length - 1] = originalRotamer;
+        } else {
+            System.arraycopy(libRotamers, 0, rotamers, 1, nRots);
+            rotamers[0] = originalRotamer;
+        }
+
+        return rotamers;
     }
 
     public ResidueType getResidueType() {
@@ -505,11 +508,11 @@ public class Residue extends MSGroup {
     }
 
     /**
-     * Returns a list of atoms liable to change during dead-end elimination repacking.
-     * For ordinary amino acids: side chain atoms. For ordinary nucleic acids:
-     * sugar/phosphate backbone atoms. MultiResidue over-rides this to return all
-     * atoms (as backbone atom types are nonconstant).
-     * 
+     * Returns a list of atoms liable to change during dead-end elimination
+     * repacking. For ordinary amino acids: side chain atoms. For ordinary
+     * nucleic acids: sugar/phosphate backbone atoms. MultiResidue over-rides
+     * this to return all atoms (as backbone atom types are nonconstant).
+     *
      * @return Atoms changeable during DEE.
      */
     public List<Atom> getVariableAtoms() {
@@ -1045,9 +1048,10 @@ public class Residue extends MSGroup {
     public static String Ramachandran[] = new String[17];
 
     /**
-     * Converts an NA3 enum to an equivalent NA1; if simpleCodes is true, ignores
-     * the differences between DNA and RNA (deoxy-cytosine and cytosine are both
-     * returned as C, for example).
+     * Converts an NA3 enum to an equivalent NA1; if simpleCodes is true,
+     * ignores the differences between DNA and RNA (deoxy-cytosine and cytosine
+     * are both returned as C, for example).
+     *
      * @param na3 To convert
      * @param simpleCodes Whether to use the same codes for DNA and RNA
      * @return NA1 code
@@ -1097,6 +1101,7 @@ public class Residue extends MSGroup {
             }
         }
     }
+
     /*
     /**
      * Since enumeration values must start with a letter, an 'M' is added to
@@ -1116,8 +1121,7 @@ public class Residue extends MSGroup {
 
         A, C, G, U, DA, DC, DG, DT, MPO, DPO, TPO, UNK;
     }
-    */
-
+     */
     static {
         NA1 na1[] = NA1.values();
         NA3 na3[] = NA3.values();

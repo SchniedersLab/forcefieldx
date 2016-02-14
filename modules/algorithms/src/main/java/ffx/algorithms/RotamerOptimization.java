@@ -394,7 +394,7 @@ public class RotamerOptimization implements Terminatable {
     private boolean computeQuads = false;
     private boolean decomposeOriginal = false;
     private int quadMaxout = Integer.MAX_VALUE;
-    
+
     /**
      * Monte Carlo parameters.
      */
@@ -402,13 +402,13 @@ public class RotamerOptimization implements Terminatable {
     private boolean monteCarlo = false;
     private double mcTemp = 298.15;
     /**
-     * Check to see if proposed move has an eliminated pair or higher-order term; 
-     * breaks detailed balance.
+     * Check to see if proposed move has an eliminated pair or higher-order
+     * term; breaks detailed balance.
      */
     private boolean mcUseAll = false;
     // Skips brute force enumeration in favor of pure Monte Carlo. Recommended only for testing.
     private boolean mcNoEnum = false;
-    
+
     /**
      * RotamerOptimization constructor.
      *
@@ -782,13 +782,13 @@ public class RotamerOptimization implements Terminatable {
         }
         return currentEnergy;
     }
-    
+
     /**
-     * Runs Monte Carlo side chain optimization using the rotamer energy matrix 
+     * Runs Monte Carlo side chain optimization using the rotamer energy matrix
      * and potentially some information from dead-end or Goldstein elimination.
      * The useAllElims variable should be set false if detailed balance is to be
      * maintained. At present, no support for ensembles.
-     * 
+     *
      * @param residues Optimization window
      * @param optimum Array to store optimum rotamers
      * @param initialRots Array with starting rotamers
@@ -797,33 +797,33 @@ public class RotamerOptimization implements Terminatable {
      * @param useAllElims Use pair/triple elimination information
      * @return Lowest energy found
      */
-    private double rotamerOptimizationMC(Residue[] residues, int[] optimum, 
-            int[] initialRots, int maxIters, boolean randomizeRots, 
+    private double rotamerOptimizationMC(Residue[] residues, int[] optimum,
+            int[] initialRots, int maxIters, boolean randomizeRots,
             boolean useAllElims) {
-        
+
         long initTime = -System.nanoTime();
         if (randomizeRots) {
             randomizeRotamers(initialRots, residues, true);
         }
-        
+
         int nRes = residues.length;
         System.arraycopy(initialRots, 0, optimum, 0, nRes);
         assert optimum.length == nRes;
         assert initialRots.length == nRes;
-        
+
         RotamerMatrixMC rmc = new RotamerMatrixMC(initialRots, residues);
         rmc.setTemperature(mcTemp);
         RotamerMatrixMove rmove = new RotamerMatrixMove(useAllElims, initialRots, residues);
         List<MCMove> rmList = new ArrayList<>(1);
         rmList.add(rmove);
-        
+
         double initialEnergy = computeEnergy(residues, initialRots, false);
         double optimumEnergy = initialEnergy;
         double currentEnergy = initialEnergy;
-        
+
         int nAccept = 0;
         //int nReject = 0;
-        
+
         /**
          * I have the vague idea of parallelizing down to individual threads, by
          * simply calling this method from each thread, with randomizeRots true.
@@ -831,7 +831,7 @@ public class RotamerOptimization implements Terminatable {
          */
         logIfMaster(String.format(" Beginning %d iterations of Monte Carlo search "
                 + "starting from energy %10.6f", maxIters, initialEnergy));
-        
+
         for (int i = 0; i < maxIters; i++) {
             if (rmc.mcStep(rmList, currentEnergy)) {
                 currentEnergy = rmc.lastEnergy();
@@ -852,23 +852,24 @@ public class RotamerOptimization implements Terminatable {
                         i, currentEnergy));
             }*/
         }
-        
+
         initTime += System.nanoTime();
         double fractAccept = ((double) nAccept) / ((double) maxIters);
-        logIfMaster(String.format(" %d steps of DEE-MC completed in %10.6f seconds", 
+        logIfMaster(String.format(" %d steps of DEE-MC completed in %10.6f seconds",
                 maxIters, (initTime * 1.0E-9)));
         logIfMaster(String.format(" Number of steps accepted: %d for %10.6f of total", nAccept, fractAccept));
         logIfMaster(String.format(" Lowest energy found: %10.6f kcal/mol", optimumEnergy));
         logIfMaster(String.format(" Final energy found: %10.6f kcal/mol", currentEnergy));
-        
+
         return optimumEnergy;
     }
-    
+
     /**
      * Scrambles an array of rotamers.
+     *
      * @param rotamers
      * @param residues
-     * @param useAllElims 
+     * @param useAllElims
      */
     private void randomizeRotamers(int[] rotamers, Residue[] residues, boolean useAllElims) {
         int nRes = rotamers.length;
@@ -876,13 +877,13 @@ public class RotamerOptimization implements Terminatable {
             Rotamer[] rotsi = residues[i].getRotamers();
             int lenri = rotsi.length;
             ArrayList<Integer> allowedRots = new ArrayList<>(lenri);
-            
+
             for (int ri = 0; ri < lenri; ri++) {
                 if (!check(i, ri)) {
                     allowedRots.add(ri);
                 }
             }
-            
+
             int nRots = allowedRots.size();
             if (nRots > 1) {
                 boolean validMove = !useAllElims;
@@ -898,7 +899,7 @@ public class RotamerOptimization implements Terminatable {
             }
         }
     }
-        
+
     /**
      * Checks the pair and triple elimination arrays to see if this permutation
      * has been eliminated. I am reasonably confident this violates detailed
@@ -1614,21 +1615,19 @@ public class RotamerOptimization implements Terminatable {
                         residueEnergy[2][k] += thirdTrimer;
                         if (triEnergy[i][j][k] != 0.0) {
                             logger.info(String.format(" Tri  %s %s %s:    %16.5f", ri, rj, rk, triEnergy[i][j][k]));
+                        } else if (dist == Double.MAX_VALUE) {
+                            logger.info(String.format(" Tri  %s %s %s:    set to 0.0 at NaN (very long distance)",
+                                    ri, rj, rk));
+                            triEnergy[i][j][k] = 0.0;
+                        } else if (dist > threeBodyCutoffDist) {
+                            logger.info(String.format(" Tri  %s %s %s:    set to 0.0 at %1.5f Angstroms",
+                                    ri, rj, rk, dist));
+                            triEnergy[i][j][k] = 0.0;
                         } else {
-                            if (dist == Double.MAX_VALUE) {
-                                logger.info(String.format(" Tri  %s %s %s:    set to 0.0 at NaN (very long distance)",
-                                        ri, rj, rk));
-                                triEnergy[i][j][k] = 0.0;
-                            } else if (dist > threeBodyCutoffDist) {
-                                logger.info(String.format(" Tri  %s %s %s:    set to 0.0 at %1.5f Angstroms",
-                                        ri, rj, rk, dist));
-                                triEnergy[i][j][k] = 0.0;
-                            } else {
-                                String m = String.
-                                        format(" Zero trimer energy inside cutoff: %s %s %s at %1.5f Angstroms.",
-                                                ri, rj, rk, dist);
-                                logger.warning(m);
-                            }
+                            String m = String.
+                                    format(" Zero trimer energy inside cutoff: %s %s %s at %1.5f Angstroms.",
+                                            ri, rj, rk, dist);
+                            logger.warning(m);
                         }
                     }
                 }
@@ -2581,8 +2580,9 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
-     * Sets the option to use a number of Monte Carlo steps for final optimization.
-     * 
+     * Sets the option to use a number of Monte Carlo steps for final
+     * optimization.
+     *
      * @param monteCarlo If Monte Carlo is to be considered
      * @param nMCsteps Number of steps to be taken
      */
@@ -2671,7 +2671,7 @@ public class RotamerOptimization implements Terminatable {
         }
         return e;
     }
-    
+
     /**
      * Finds the first non-eliminated rotamer permutation.
      *
@@ -2748,6 +2748,7 @@ public class RotamerOptimization implements Terminatable {
 
     /**
      * The main driver for optimizing a block of residues using DEE.
+     *
      * @param residueList Residues to optimize.
      * @return Final energy.
      */
@@ -2823,7 +2824,7 @@ public class RotamerOptimization implements Terminatable {
             logIfMaster(String.format(" Number of permutations after singleton eliminations: %10.4e.", singletonPermutations));
             logIfMaster(String.format(" Number of permutations removed by pairwise eliminations: %10.4e.", pairTotalElimination));
             logIfMaster(String.format(" Number of permutations remaining: %10.4e.", (double) evaluatedPermutations));
-            
+
             double e;
             if (useMonteCarlo()) {
                 firstValidPerm(residues, 0, currentRotamers);
@@ -3114,10 +3115,11 @@ public class RotamerOptimization implements Terminatable {
 
         return e;
     }
-    
+
     /**
      * Use Monte Carlo if monteCarlo specified, and either skipDEE specified or
      * nMCsteps is smaller then the remaining permutation size.
+     *
      * @return Finish DEE search with Monte Carlo.
      */
     private boolean useMonteCarlo() {
@@ -3508,16 +3510,14 @@ public class RotamerOptimization implements Terminatable {
                                 ResidueState.revertAllCoordinates(currentWindow, coordinates);
                             }
                         }
-                    } else {
-                        if (useForcedResidues) {
-                            if (onlyRotameric.size() < 1) {
-                                logger.info(" Window has no rotameric residues.");
-                            } else {
-                                globalUsingEliminations(onlyRotameric);
-                            }
+                    } else if (useForcedResidues) {
+                        if (onlyRotameric.size() < 1) {
+                            logger.info(" Window has no rotameric residues.");
                         } else {
-                            globalUsingEliminations(currentWindow);
+                            globalUsingEliminations(onlyRotameric);
                         }
+                    } else {
+                        globalUsingEliminations(currentWindow);
                     }
                     if (!incrementTruncated) {
                         if (windowStart + (windowSize - 1) + increment > nOptimize - 1) {
@@ -3566,7 +3566,7 @@ public class RotamerOptimization implements Terminatable {
                             residue.reInitOriginalAtomList();
                         }
                     }*/
-                    }
+                }
                 break;
 
             default:
@@ -4136,10 +4136,8 @@ public class RotamerOptimization implements Terminatable {
             eliminateNABackboneRotamers(residues, numEliminatedRotamers);
             /* double naBackboneEnergy = currentEnergy();
              logger.info(String.format(" After Eliminate NA Backbone %16.8f", naBackboneEnergy)); */
-        } else {
-            if (verboseEnergies) {
-                logIfMaster(String.format("\n Beginning Energy %16.8f", currentEnergy()));
-            }
+        } else if (verboseEnergies) {
+            logIfMaster(String.format("\n Beginning Energy %16.8f", currentEnergy()));
         }
 
         rotamerEnergies(residues);
@@ -4283,7 +4281,7 @@ public class RotamerOptimization implements Terminatable {
         potential.getCoordinates(x);
         return potential.energy(x);
     }
-    
+
     // Wrapper intended for use with RotamerMatrixMC.
     private double currentEnergyWrapper() {
         return currentEnergy();
@@ -4651,14 +4649,12 @@ public class RotamerOptimization implements Terminatable {
                                     residue, ri, self(i, ri), minEnergy));
                             eliminateRotamer(residues, i, ri, print);
                         }
-                    } else {
-                        if (!check(i, ri) && (self(i, ri) > (minEnergy + clashThreshold))) {
-                            // don't prune orig-coords rotamers
-                            if (!(useOrigCoordsRot && ri == 0)) {
-                                logger.info(String.format(" Clash for rotamer %s %d: %16.8f >> %16.8f",
-                                        residue, ri, self(i, ri), minEnergy));
-                                eliminateRotamer(residues, i, ri, print);
-                            }
+                    } else if (!check(i, ri) && (self(i, ri) > (minEnergy + clashThreshold))) {
+                        // don't prune orig-coords rotamers
+                        if (!(useOrigCoordsRot && ri == 0)) {
+                            logger.info(String.format(" Clash for rotamer %s %d: %16.8f >> %16.8f",
+                                    residue, ri, self(i, ri), minEnergy));
+                            eliminateRotamer(residues, i, ri, print);
                         }
                     }
                 }
@@ -5028,112 +5024,20 @@ public class RotamerOptimization implements Terminatable {
         return backboneEnergy;
     }
 
-    /*private double[][][] storeCoordinates(ArrayList<Residue> residueList) {
-     // Array stores coordinates in [residue][atom][XYZ].
-     Residue residues[] = residueList.toArray(new Residue[residueList.size()]);
-     int nResidues = residues.length;
-     double xyz[][][] = new double[nResidues][][];
-     for (int i = 0; i < nResidues; i++) {
-     xyz[i] = storeSingleCoordinates(residues[i]);
-     }
-     return xyz;
-     }*/
-
-    /*private double[][][] storeCoordinates(Residue[] residueArray) {
-     int nResidues = residueArray.length;
-     double xyz[][][] = new double[nResidues][][];
-     for (int i = 0; i < nResidues; i++) {
-     xyz[i] = storeSingleCoordinates(residueArray[i]);
-     }
-     return xyz;
-     }
-
-     private double[][] storeSingleCoordinates(Residue residue) {
-     return storeSingleCoordinates(residue, false);
-     }
-
-     private double[][] storeSingleCoordinates(Residue residue, boolean useOrigCoords) {
-     /**
-     * In short; if it's a MultiResidue, we want to check to see if it is
-     */
-    /*if (residue instanceof MultiResidue) {
-     MultiResidue multiRes = (MultiResidue) residue;
-     Residue res = multiRes.getActive();
-     List<Atom> atomList = res.getAtomList();
-     int nAtoms = atomList.size();
-
-     if (!res.equals(multiRes.getDefaultResidue())) {
-     double[][] startCoords = new double[nAtoms][3];
-     for (int i = 0; i < nAtoms; i++) {
-     atomList.get(i).getXYZ(startCoords[i]);
-     }
-
-     multiRes.setToDefaultResidue();
-     List<Atom> defAtoms = multiRes.getAtomList();
-     int nDefAtoms = defAtoms.size();
-
-     double[][] xyz = new double[nDefAtoms][3];
-     for (int i = 0; i < nDefAtoms; i++) {
-     defAtoms.get(i).getXYZ(xyz[i]);
-     }
-
-     multiRes.setActiveResidue(res);
-     }
-
-
-
-     ((MultiResidue) residue).setToDefaultResidue();
-     }
-     ArrayList<Atom> atoms = residue.getAtomList(useOrigCoords);
-     int nAtoms = atoms.size();
-     double xyz[][] = new double[nAtoms][3];
-     for (int j = 0; j < nAtoms; j++) {
-     Atom atom = atoms.get(j);
-     /**
-     * Do not use getXYZ(). That returns the array reference.
-     */
-    /*atom.getXYZ(xyz[j]);
-     }
-     return xyz;
-     }
-
-     private void revertCoordinates(ArrayList<Residue> residueList, double xyz[][][]) {
-     Residue residues[] = residueList.toArray(new Residue[residueList.size()]);
-     int nResidues = residues.length;
-     for (int i = 0; i < nResidues; i++) {
-     revertSingleResidueCoordinates(residues[i], xyz[i]);
-     }
-     }
-
-     private void revertSingleResidueCoordinates(Residue residue, double xyz[][]) {
-     revertSingleResidueCoordinates(residue, xyz, false);
-     }
-
-     private void revertSingleResidueCoordinates(Residue residue, double xyz[][],
-     boolean useOrigCoords) {
-     if (useOrigCoords && residue instanceof MultiResidue) {
-     ((MultiResidue) residue).setToDefaultResidue();
-     }
-     ArrayList<Atom> atoms = residue.getAtomList(useOrigCoords);
-     int nAtoms = atoms.size();
-     for (int i = 0; i < nAtoms; i++) {
-     Atom atom = atoms.get(i);
-     atom.moveTo(xyz[i]);
-     }
-     }*/
     /**
      * Calculates the distance matrix; residue-residue distance is defined as
      * the shortest atom-atom distance in any possible rotamer-rotamer pair if
      * the residues are neighbors (central atom-central atom distances are
      * within a cutoff); else, distances are set to a default of
-     * Double.MAX_VALUE. The intent of using a neighbor list is to avoid
-     * tediously searching rotamer- rotamer pairs when two residues are so far
-     * apart we will never need the exact distance. We use the distance matrix
-     * for adding residues to the sliding window and determining whether to set
-     * 3-body energy to 0.0. If the central atoms are too distant from each
-     * other, we can safely assume no atoms will ever be close enough for
-     * addition to sliding window or to cause explicit calculation of 3-body
-     * energy.
+     * Double.MAX_VALUE.
+     *
+     * The intent of using a neighbor list is to avoid tediously searching
+     * rotamer- rotamer pairs when two residues are so far apart we will never
+     * need the exact distance. We use the distance matrix for adding residues
+     * to the sliding window and determining whether to set 3-body energy to
+     * 0.0. If the central atoms are too distant from each other, we can safely
+     * assume no atoms will ever be close enough for addition to sliding window
+     * or to cause explicit calculation of 3-body energy.
      */
     private void distanceMatrix() {
 
@@ -5224,14 +5128,6 @@ public class RotamerOptimization implements Terminatable {
             int nSymm = crystal.spaceGroup.getNumberOfSymOps();
             logger.info("\n Computing Residue Distance Matrix");
 
-            /**
-             * Jacob's Suggestion: make bufferDistance a function of
-             * threeBodyCutoffDist double bufferDistance = (containsNA) ?
-             * (2*12.0) + threeBodyCutoffDist + 5.0 : (2*7.0) +
-             * threeBodyCutoffDist + 5.0; This wouldn't work; you'd need to
-             * figure this out individually for each residue pair. I tried; it'd
-             * be a huge pain.
-             */
             NeighborList neighborList = new NeighborList(null, crystal,
                     atoms, distance + 25.0, 0.0, parallelTeam);
 
@@ -5268,42 +5164,6 @@ public class RotamerOptimization implements Terminatable {
             neighborTime += System.nanoTime();
             logger.info(String.format(" Built residue neighbor list:           %8.3f sec", neighborTime * 1.0e-9));
 
-            // Allocate memory for the distance matrix.
-            /* distanceMatrix = new double[numResidues][][][];
-             for (int i = 0; i < numResidues; i++) {
-             Residue residuei = allResiduesArray[i];
-             Rotamer rotamersi[] = residuei.getRotamers();
-             if (rotamersi == null) {
-             logger.warning(" residuei " + residuei.toString() + " has null rotamers.");
-             continue;
-             }
-             int lengthRi = rotamersi.length;
-             distanceMatrix[i] = new double[lengthRi][][];
-             for (int ri = 0; ri < lengthRi; ri++) {
-             distanceMatrix[i][ri] = new double[numResidues][];
-             for (int j = 0; j < numResidues; j++) {
-             if (j == i) {
-             continue;
-             }
-             Residue residuej = allResiduesArray[j];
-             Rotamer rotamersj[] = residuej.getRotamers();
-             if (rotamersj == null) {
-             logger.warning(" residuej " + residuej.toString() + " has null rotamers");
-             continue;
-             }
-             int lengthRj = rotamersj.length;
-             distanceMatrix[i][ri][j] = new double[lengthRj];
-             fill(distanceMatrix[i][ri][j], Double.MAX_VALUE);
-             }
-             }
-             } */
-
-            /*
-             long seqTime = -System.nanoTime();
-             sequentialDistanceMatrix(crystal, lists);
-             seqTime += System.nanoTime();
-             logger.info(String.format(" Pairwise distance matrix sequentially: %8.3f", seqTime * 1.0e-9));
-             */
             DistanceRegion distanceRegion = new DistanceRegion(parallelTeam.getThreadCount(),
                     numResidues, crystal, lists, neighborList.getPairwiseSchedule());
 
@@ -8169,24 +8029,22 @@ public class RotamerOptimization implements Terminatable {
 
                     if (writeVideo || skipEnergies) {
                         twoBodyEnergy = 0;
-                    } else {
-                        if (distanceMatrix != null) {
-                            int indexI = allResiduesList.indexOf(resi);
-                            int indexJ = allResiduesList.indexOf(resj);
-                            double dist = checkDistanceMatrix(indexI, ri, indexJ, rj);
-                            if (dist < superpositionThreshold) {
-                                twoBodyEnergy = 1.0E100;
-                                logger.info(String.format(" Pair %7s %-2d, %7s %-2d:   set to 1.0E100 at %13.6f Ang < %5.3f Ang", resi, ri, resj, rj, dist, superpositionThreshold));
-                            } else {
-                                twoBodyEnergy = currentEnergy() - self(i, ri) - self(j, rj) - backboneEnergy;
-                                String distString = (dist < Double.MAX_VALUE) ? String.format("%10.3f", dist) : String.format("     large");
-                                logger.info(String.format(" Pair %7s %-2d, %7s %-2d: %16.8f at %s Ang", resi, ri, resj, rj, twoBodyEnergy, distString));
-                            }
+                    } else if (distanceMatrix != null) {
+                        int indexI = allResiduesList.indexOf(resi);
+                        int indexJ = allResiduesList.indexOf(resj);
+                        double dist = checkDistanceMatrix(indexI, ri, indexJ, rj);
+                        if (dist < superpositionThreshold) {
+                            twoBodyEnergy = 1.0E100;
+                            logger.info(String.format(" Pair %7s %-2d, %7s %-2d:   set to 1.0E100 at %13.6f Ang < %5.3f Ang", resi, ri, resj, rj, dist, superpositionThreshold));
                         } else {
-                            twoBodyEnergy = currentEnergy()
-                                    - self(i, ri) - self(j, rj) - backboneEnergy;
-                            logger.info(String.format(" Pair %7s %-2d, %7s %-2d: %16.8f", resi, ri, resj, rj, twoBodyEnergy));
+                            twoBodyEnergy = currentEnergy() - self(i, ri) - self(j, rj) - backboneEnergy;
+                            String distString = (dist < Double.MAX_VALUE) ? String.format("%10.3f", dist) : String.format("     large");
+                            logger.info(String.format(" Pair %7s %-2d, %7s %-2d: %16.8f at %s Ang", resi, ri, resj, rj, twoBodyEnergy, distString));
                         }
+                    } else {
+                        twoBodyEnergy = currentEnergy()
+                                - self(i, ri) - self(j, rj) - backboneEnergy;
+                        logger.info(String.format(" Pair %7s %-2d, %7s %-2d: %16.8f", resi, ri, resj, rj, twoBodyEnergy));
                     }
 
                     // get energy and broadcast it
@@ -8800,12 +8658,10 @@ public class RotamerOptimization implements Terminatable {
                                             // Would apply symmetry to the distance matrix:
                                             // distanceMatrix[j][rj][i][ri] = r;
                                         }
-                                    } else {
-                                        if (r < distanceMatrix[j][rj][i][ri]) {
-                                            distanceMatrix[j][rj][i][ri] = r;
-                                            // Would apply symmetry to the distance matrix:
-                                            // distanceMatrix[j][rj][i][ri] = r;
-                                        }
+                                    } else if (r < distanceMatrix[j][rj][i][ri]) {
+                                        distanceMatrix[j][rj][i][ri] = r;
+                                        // Would apply symmetry to the distance matrix:
+                                        // distanceMatrix[j][rj][i][ri] = r;
                                     }
                                 }
                             }
@@ -8892,43 +8748,44 @@ public class RotamerOptimization implements Terminatable {
             snapshotNum++;
         }
     }
-    
+
     /**
      * Monte Carlo driver for DEE-MC.
      */
     private class RotamerMatrixMC extends BoltzmannMC {
-        
+
         private final int[] currentRots;
         private final int[] oldRots;
         private final int nRes;
         private final Residue[] residues;
-        
+
         // Strongly considering adding another internal class to represent the
         // residues-rotamers data, because I'm paranoid somebody won't remember
         // that everybody has to be using the same int[] rotamers.
-
         /**
          * The rotamers array MUST be the same array as passed to any MCMove
          * objects used, and NOT a copy.
+         *
          * @param rotamers
-         * @param residues 
+         * @param residues
          */
-        RotamerMatrixMC (int[] rotamers, Residue[] residues) {
+        RotamerMatrixMC(int[] rotamers, Residue[] residues) {
             currentRots = rotamers; // This is intentional.
             nRes = rotamers.length;
             oldRots = new int[nRes];
             System.arraycopy(rotamers, 0, oldRots, 0, nRes);
             this.residues = residues;
         }
-        
+
         @Override
         public void revertStep() {
             System.arraycopy(oldRots, 0, currentRots, 0, nRes);
         }
-        
+
         /**
-         * If useFullAMOEBAEnergy is set to true, explicitly evaluates energy, 
+         * If useFullAMOEBAEnergy is set to true, explicitly evaluates energy,
          * else computes energy from the rotamer energy matrices.
+         *
          * @return Energy at the current state
          */
         @Override
@@ -8948,17 +8805,17 @@ public class RotamerOptimization implements Terminatable {
             System.arraycopy(currentRots, 0, oldRots, 0, nRes);
         }
     }
-    
+
     /**
      * This implements single-rotamer changes in the framework of the rotamer
      * energy matrices.
      */
     private class RotamerMatrixMove implements MCMove {
-        
+
         private final boolean useAllElims;
         /**
-         * currentRots should point to the same array as being used in the overlying
-         * MetropolisMC implementation.
+         * currentRots should point to the same array as being used in the
+         * overlying MetropolisMC implementation.
          */
         private final int[] currentRots;
         private final int nRes;
@@ -8966,44 +8823,45 @@ public class RotamerOptimization implements Terminatable {
         private final List<List<Integer>> allowedRots;
         private final int nAllowed;
         /**
-         * When we take a step, we need to remember which rotamer of which 
+         * When we take a step, we need to remember which rotamer of which
          * residue was changed.
          */
         private int changedRes;
         private int changedRot;
-        
+
         /**
          * Constructs the RotamerMatrixMove set; at present, a new object must
-         * be made if rotamers or residues are changed outside the scope of
-         * this class.
+         * be made if rotamers or residues are changed outside the scope of this
+         * class.
+         *
          * @param useAllElims Use eliminated pair/triple info
          * @param rots Initial rotamer set
          */
-        RotamerMatrixMove (boolean useAllElims, int[] rots, Residue[] residues) {
+        RotamerMatrixMove(boolean useAllElims, int[] rots, Residue[] residues) {
             this.useAllElims = useAllElims;
             nRes = rots.length;
             currentRots = rots; // Again, very intentional.
-            
+
             allowedRes = new ArrayList<>(nRes);
             allowedRots = new ArrayList<>(nRes);
-            
+
             for (int i = 0; i < nRes; i++) {
                 ArrayList<Integer> resAllowed = new ArrayList<>();
-                
+
                 int lenri = residues[i].getRotamers().length;
                 for (int ri = 0; ri < lenri; ri++) {
                     if (!check(i, ri)) {
                         resAllowed.add(ri);
                     }
                 }
-                
+
                 if (resAllowed.size() > 1) {
                     resAllowed.trimToSize();
                     allowedRes.add(i);
                     allowedRots.add(resAllowed);
                 }
             }
-            
+
             ((ArrayList) allowedRes).trimToSize();
             nAllowed = allowedRes.size();
         }
@@ -9043,10 +8901,11 @@ public class RotamerOptimization implements Terminatable {
             currentRots[changedRes] = changedRot;
             return 0.0;
         }
-        
+
         /**
-         * This method should not be necessary, because currentRots should be the
-         * same array as used in the MetropolisMC.
+         * This method should not be necessary, because currentRots should be
+         * the same array as used in the MetropolisMC.
+         *
          * @return The current rotamers array
          */
         private int[] getCurrentRots() {
@@ -9062,42 +8921,44 @@ public class RotamerOptimization implements Terminatable {
         public String getDescription() {
             return toString();
         }
-        
+
         @Override
         public String toString() {
             return "Rotamer moves utlizing a rotamer energy matrix";
         }
     }
-    
+
     /**
      * Describes an integer array of rotamers and its energy for DEE-MC.
      */
     private class RotamerPermutation implements Comparable {
+
         private final int[] rotamers;
         private final double energy;
         private final int nRots;
-        
+
         private RotamerPermutation(int[] rotamers, double energy) {
             nRots = rotamers.length;
             this.rotamers = new int[nRots];
             System.arraycopy(rotamers, 0, this.rotamers, 0, nRots);
             this.energy = energy;
         }
-        
+
         private int[] getRotamers() {
             int[] ret = new int[nRots];
             System.arraycopy(rotamers, 0, ret, 0, nRots);
             return ret;
         }
-        
+
         private double getEnergy() {
             return energy;
         }
-        
+
         /**
          * Equal if the rotamer arrays are identical.
+         *
          * @param o
-         * @return 
+         * @return
          */
         @Override
         public boolean equals(Object o) {
@@ -9133,8 +8994,9 @@ public class RotamerOptimization implements Terminatable {
         /**
          * Compares based on the rotamer permutation. Consistent with equals.
          * Much more likely, however, to compare using the rotPermEnComparator.
+         *
          * @param o To compare to
-         * @return 
+         * @return
          */
         @Override
         public int compareTo(Object o) {
@@ -9166,12 +9028,13 @@ public class RotamerOptimization implements Terminatable {
             }*/
         }
     }
-    
+
     /**
-     * Compares RotamerPermutation objects based on energy instead of the natural
-     * ordering. Inconsistent with equals.
+     * Compares RotamerPermutation objects based on energy instead of the
+     * natural ordering. Inconsistent with equals.
      */
     private class rotPermEcomparator implements Comparator<RotamerPermutation> {
+
         @Override
         public int compare(RotamerPermutation o1, RotamerPermutation o2) {
             if (o1.getEnergy() < o2.getEnergy()) {
