@@ -7996,7 +7996,9 @@ public class RotamerOptimization implements Terminatable {
                     ResidueState resiOriginal = (resi.getResidueType() == NA ? resi.storeState() : null);
                     turnOnAtoms(resi);
                     RotamerLibrary.applyRotamer(resi, roti);
-                    algorithmListener.algorithmUpdate(molecularAssembly);
+                    if (algorithmListener != null) {
+                        algorithmListener.algorithmUpdate(molecularAssembly);
+                    }
                     if (writeVideo) {
                         videoWriter.write(String.format("%03d-%03d", i, ri));
 //                        if (videoWriter.skipEnergies) {
@@ -8153,7 +8155,9 @@ public class RotamerOptimization implements Terminatable {
                     turnOnAtoms(resj);
                     RotamerLibrary.applyRotamer(resi, roti);
                     RotamerLibrary.applyRotamer(resj, rotj);
-                    algorithmListener.algorithmUpdate(molecularAssembly);
+                    if (algorithmListener != null) {
+                        algorithmListener.algorithmUpdate(molecularAssembly);
+                    }
                     if (writeVideo) {
                         videoWriter.write(String.format("%03d-%03d_%03d-%03d", i, ri, j, rj));
 //                        if (videoWriter.skipEnergies) {
@@ -8372,7 +8376,9 @@ public class RotamerOptimization implements Terminatable {
                             RotamerLibrary.applyRotamer(resi, roti);
                             RotamerLibrary.applyRotamer(resj, rotj);
                             RotamerLibrary.applyRotamer(resk, rotk);
-                            algorithmListener.algorithmUpdate(molecularAssembly);
+                            if (algorithmListener != null) {
+                                algorithmListener.algorithmUpdate(molecularAssembly);
+                            }
                             if (writeVideo) {
                                 videoWriter.write(String.format("%03d-%03d_%03d-%03d_%03d-%03d", i, ri, j, rj, k, rk));
 //                                if (videoWriter.skipEnergies) {
@@ -8557,7 +8563,9 @@ public class RotamerOptimization implements Terminatable {
                             RotamerLibrary.applyRotamer(resj, rotj);
                             RotamerLibrary.applyRotamer(resk, rotk);
                             RotamerLibrary.applyRotamer(resl, rotl);
-                            algorithmListener.algorithmUpdate(molecularAssembly);
+                            if (algorithmListener != null) {
+                                algorithmListener.algorithmUpdate(molecularAssembly);
+                            }
 
                             // compute quad and broadcast it
                             if (writeVideo || skipEnergies) {
