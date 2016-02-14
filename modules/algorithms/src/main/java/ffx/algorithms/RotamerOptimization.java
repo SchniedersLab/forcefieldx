@@ -2243,17 +2243,12 @@ public class RotamerOptimization implements Terminatable {
         allResiduesArray = allResiduesList.toArray(new Residue[numResidues]);
 
         /*
-         * Distance matrix is only needed to add residues to the sliding window
+         * Distance matrix is  used to add residues to the sliding window
          * based on distance cutoff, and to automatically set some 3-body terms
          * to 0 at > 10 angstroms.
          *
-         * Thus, it is unnecessary, and a major problem for some very large
-         * structures like 4FY1.  We could even just do a check of distance > 0,
-         * and if it's needed for 3-body terms, we can implement a lazy loading
-         * procedure or use a local distance matrix like before.
-         *
-         * Note: the local distance matrix is coded, but not yet implemented,
-         * awaiting testing.
+         * The memory and compute overhead can be a problem for some very large
+         * structures.
          */
         if (distance > 0) {
             distanceMatrix();
@@ -3278,10 +3273,6 @@ public class RotamerOptimization implements Terminatable {
      * @return Shortest distance
      */
     private double evaluateDistance(int i, int ri, int j, int rj) {
-        Crystal crystal = molecularAssembly.getCrystal();
-        int nSymm = crystal.spaceGroup.getNumberOfSymOps();
-        double minDist = Double.MAX_VALUE;
-
         Residue resi = allResiduesArray[i];
         Rotamer[] rotamersI = resi.getRotamers();
         Rotamer roti = rotamersI[ri];
@@ -3308,9 +3299,11 @@ public class RotamerOptimization implements Terminatable {
             resj.revertState(origJ);
         }
 
+        Crystal crystal = molecularAssembly.getCrystal();
+        int nSymm = crystal.spaceGroup.getNumberOfSymOps();
+        double minDist = Double.MAX_VALUE;
         for (int iSymOp = 0; iSymOp < nSymm; iSymOp++) {
             SymOp symOp = crystal.spaceGroup.getSymOp(iSymOp);
-
             double dist = interResidueDistance(xi, xj, symOp);
             minDist = dist < minDist ? dist : minDist;
         }

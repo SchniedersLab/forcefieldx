@@ -427,7 +427,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 relativeSolvation = null;
                 break;
         }
-        
+
         boolean checkAllNodeCharges = forceField.getBoolean(ForceFieldBoolean.CHECK_ALL_NODE_CHARGES, false);
 
         if (rigidScale <= 1.0) {
@@ -614,7 +614,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                         vanderWaals.getNeighborList(), ELEC_FORM.PAM, parallelTeam);
             }
             double charge = molecularAssembly.getCharge(checkAllNodeCharges);
-            logger.info(String.format(" Overall system charge: %12.8f", charge));
+            logger.info(String.format("  Overall system charge:           %12.8e", charge));
         } else {
             particleMeshEwald = null;
         }

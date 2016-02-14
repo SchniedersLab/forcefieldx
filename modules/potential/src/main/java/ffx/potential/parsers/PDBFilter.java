@@ -1946,37 +1946,42 @@ public final class PDBFilter extends SystemFilter {
         if (!properties.getBoolean("buildLoops", false)) {
             return xyzIndex;
         }
-
         Polymer polymers[] = activeMolecularAssembly.getChains();
         for (Polymer polymer : polymers) {
 
             Character chainID = polymer.getChainID();
             String resNames[] = seqres.get(chainID);
             int seqRange[] = dbref.get(chainID);
+            if (resNames == null || seqRange == null) {
+                continue;
+            }
             int seqBegin = seqRange[0];
             int seqEnd = seqRange[1];
-
-            StringBuilder stringBuilder = new StringBuilder(
-                    String.format("\n Building missing loops for chain %c between residues %d and %d.",
-                            chainID, seqBegin, seqEnd));
+            logger.info(format("\n Checking for missing residues in chain %s between residues %d and %d.",
+                    polymer.toString(), seqBegin, seqEnd));
 
             int firstResID = polymer.getFirstResidue().getResidueNumber();
-            int lastBuiltResidue = -1;
-            boolean builtResidues = false;
             for (int i = 0; i < resNames.length; i++) {
                 int currentID = seqBegin + i;
-                if (currentID <= firstResID) {
-                    continue;
-                }
+
                 Residue currentResidue = polymer.getResidue(currentID);
                 if (currentResidue != null) {
                     continue;
                 }
-                Residue previousResidue = polymer.getResidue(currentID - 1);
-                if (previousResidue == null) {
+
+                if (currentID <= firstResID) {
+                    logger.info(format(" Residue %d is missing, but is at the beginning of the chain.",
+                            currentID));
                     continue;
                 }
-                currentResidue = polymer.getResidue(resNames[i], currentID, true);
+
+                Residue previousResidue = polymer.getResidue(currentID - 1);
+                if (previousResidue == null) {
+                    logger.info(format(" Residue %d is missing, but could not be build (previous residue missing).",
+                            currentID));
+                    continue;
+                }
+
                 Residue nextResidue = null;
                 for (int j = currentID + 1; j <= seqEnd; j++) {
                     nextResidue = polymer.getResidue(j);
@@ -1988,13 +1993,25 @@ public final class PDBFilter extends SystemFilter {
                  * Residues at the end of the chain are not currently built.
                  */
                 if (nextResidue == null) {
+                    logger.info(format(" Residue %d is missing, but is at the end of the chain.",
+                            currentID));
                     break;
                 }
+                /**
+                 * Find the previous carbonyl carbon and next nitrogen.
+                 */
                 Atom C = (Atom) previousResidue.getAtomNode("C");
                 Atom N = (Atom) nextResidue.getAtomNode("N");
                 if (C == null || N == null) {
+                    logger.info(format(" Residue %d is missing, but bonding atoms are missing (C or N).",
+                            currentID));
                     continue;
                 }
+
+                /**
+                 * Build the missing residue.
+                 */
+                currentResidue = polymer.getResidue(resNames[i], currentID, true);
 
                 double vector[] = new double[3];
                 int count = 3 * (nextResidue.getResidueNumber() - previousResidue.getResidueNumber());
@@ -2038,15 +2055,7 @@ public final class PDBFilter extends SystemFilter {
                 Atom newO = new Atom(xyzIndex++, "O", C.getAltLoc(), oXYZ, resNames[i], currentID,
                         chainID, 1.0, C.getTempFactor(), C.getSegID(), true);
                 currentResidue.addMSNode(newO);
-                if (lastBuiltResidue != currentID - 1) {
-                    stringBuilder.append("\n");
-                }
-                stringBuilder.append(String.format(" %8s", currentResidue.toString()));
-                builtResidues = true;
-                lastBuiltResidue = currentID;
-            }
-            if (builtResidues) {
-                logger.info(stringBuilder.toString());
+                logger.info(String.format(" Building residue %8s.", currentResidue.toString()));
             }
         }
         return xyzIndex;

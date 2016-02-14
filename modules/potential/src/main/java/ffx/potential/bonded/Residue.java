@@ -210,16 +210,30 @@ public class Residue extends MSGroup {
      * @return An array of Rotamer.
      */
     public Rotamer[] getRotamers() {
+
+        /**
+         * Return rotamers for this residue from the RotamerLibrary.
+         */
         Rotamer[] libRotamers = RotamerLibrary.getRotamers(this);
+
+        /**
+         * If there are no rotamers or if original coordinates are not being
+         * used as a rotamer, simply return the reference from RotamerLibrary.
+         */
         if (libRotamers == null || !RotamerLibrary.getUsingOrigCoordsRotamer()) {
             return libRotamers;
         }
+
+        /**
+         * If the rotamers for this residue have been cached, return them.
+         */
         if (rotamers != null) {
             return rotamers;
         }
 
-        int nRots = libRotamers.length;
-        rotamers = new Rotamer[nRots + 1];
+        /**
+         * Define the current coordinates as a new rotamer.
+         */
         ResidueState origState = storeState();
         double[] chi = RotamerLibrary.measureRotamer(this, false);
         switch (residueType) {
@@ -237,6 +251,11 @@ public class Residue extends MSGroup {
                 return rotamers;
         }
 
+        /**
+         * Add the new rotamer to those from the library and cache the result.
+         */
+        int nRots = libRotamers.length;
+        rotamers = new Rotamer[nRots + 1];
         if (origAtEnd) {
             System.arraycopy(libRotamers, 0, rotamers, 0, nRots);
             rotamers[rotamers.length - 1] = originalRotamer;
@@ -245,6 +264,9 @@ public class Residue extends MSGroup {
             rotamers[0] = originalRotamer;
         }
 
+        /**
+         * Return the rotamer array.
+         */
         return rotamers;
     }
 
