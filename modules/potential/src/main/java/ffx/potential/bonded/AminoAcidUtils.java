@@ -88,13 +88,15 @@ public class AminoAcidUtils {
      */
     public static void removeH1_H2_H3(AminoAcid3 aminoAcid, Residue residue) {
         if (aminoAcid != AminoAcid3.NME) {
-            Atom H1 = (Atom) residue.getAtomNode("H1");
-            if (H1 != null) {
-                residue.deleteAtom(H1);
-            }
-            Atom H2 = (Atom) residue.getAtomNode("H2");
-            if (H2 != null) {
-                residue.deleteAtom(H2);
+            if (aminoAcid != AminoAcid3.NH2) {
+                Atom H1 = (Atom) residue.getAtomNode("H1");
+                if (H1 != null) {
+                    residue.deleteAtom(H1);
+                }
+                Atom H2 = (Atom) residue.getAtomNode("H2");
+                if (H2 != null) {
+                    residue.deleteAtom(H2);
+                }
             }
             Atom H3 = (Atom) residue.getAtomNode("H3");
             if (H3 != null) {
