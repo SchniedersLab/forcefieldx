@@ -315,20 +315,26 @@ if(options.s && options.f){
     }
 } else {
     //create array of built residues
-    
-    ArrayList<Residue> allResidues = active.getChains()[0].getResidues();
     ArrayList<Residue> loopResidues = new ArrayList<>();
+    for (int i = 0; i < active.getChains().size(); i++){
+        ArrayList<Residue> allResidues = active.getChains()[i].getResidues();
 
-    //Rotamer Optimization inclusion list building (grab built residues)
-    for (int i = 0; i < allResidues.size(); i++) {
-        Residue temp = allResidues[i];
-        if (temp.getBackboneAtoms().get(0).getBuilt()) {
-            loopResidues.add(allResidues[i]);
+        for (int j = 0; j < allResidues.size(); j++) {
+            Residue temp = allResidues[j];
+            if (temp.getBackboneAtoms().get(0).getBuilt()) {
+                loopResidues.add(allResidues[j]);
+            }
         }
     }
-    
     loopStart = loopResidues.get(0).getResidueNumber();
-    loopStop = loopResidues.get(loopResidues.size() - 1).getResidueNumber();
+    loopStop = loopResidues.get(0).getResidueNumber();
+    for (int i = 0; i < loopResidues.size(); i++){
+        if(loopResidues.get(i).getChainID() == loopResidues.get(0).getChainID()){
+            if (loopStop + 1 == loopResidues.get(i).getResidueNumber()){
+                loopStop = loopResidues.get(i).getResidueNumber();
+            }
+        }
+    }     
 }
 
 for (int i = 0; i <= atoms.length; i++) {
@@ -410,6 +416,8 @@ if(runOSRW){
         mcLoop = new MCLoop(active, mcStepFrequency, molDyn.getThermostat(),loopStart-1,loopStop+1);
         molDyn.addMCListener(mcLoop);
         mcLoop.addMolDyn(molDyn);
+        mcLoop.addLambdaInterface(osrw.getLambdaInterface());
+        
     }
     
    

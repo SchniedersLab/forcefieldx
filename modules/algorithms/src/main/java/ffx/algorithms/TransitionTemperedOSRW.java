@@ -1312,7 +1312,11 @@ public class TransitionTemperedOSRW implements Potential {
         this.lambda = lambda;
         theta = Math.asin(Math.sqrt(lambda));
     }
-
+    
+    public LambdaInterface getLambdaInterface(){
+        return lambdaInterface;
+    }
+    
     public void setTraversalOutput(File lambdaOneFile, MolecularAssembly topology1, File lambdaZeroFile, MolecularAssembly topology2) {
         this.writeTraversalSnapshots = true;
         this.lambdaOneFile = lambdaOneFile;

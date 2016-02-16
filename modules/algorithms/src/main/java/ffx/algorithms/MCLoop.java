@@ -47,6 +47,7 @@ import static org.apache.commons.math3.util.FastMath.random;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.Loop;
 
 /**
@@ -116,6 +117,10 @@ public class MCLoop implements MonteCarloListener {
      * The ForceFieldEnergy object being used by MD.
      */
     private final ForceFieldEnergy forceFieldEnergy;
+     /**
+     * The LambdaInterface object being used by OSRW.
+     */
+    private LambdaInterface lambdaInterface;
     
 
     /**
@@ -172,10 +177,18 @@ public class MCLoop implements MonteCarloListener {
 
         stepCount++;
         // Decide on the type of step to be taken.
-        if (stepCount % mcStepFrequency != 0 ) {
+        if ((stepCount % mcStepFrequency != 0 )) {
             // Not yet time for an MC step, return to MD.
             return false;
         }
+        
+        if(lambdaInterface != null){
+            if (lambdaInterface.getLambda() > 0.2){
+                logger.info(String.format(" KIC procedure skipped (Lambda > 0.2)."));
+                return false;
+            }
+        }
+        
         atoms = molAss.getAtomArray();
 
         // Randomly choose a target sub portion of loop to KIC.
@@ -253,12 +266,6 @@ public class MCLoop implements MonteCarloListener {
         sb.append(String.format("     original loop: %16.8f\n", originalLoopEnergy));
         sb.append(String.format("     possible loop: %16.8f\n", newLoopEnergy));
         sb.append(String.format("     -----\n"));
-
-        if (dE < -1000){
-            sb.append(String.format("     Denied (dE < -1000)."));
-            logger.info(sb.toString());        
-            return false;
-        }
         
         // Test Monte-Carlo criterion.
         if (dE < 0 ) {
@@ -318,7 +325,11 @@ public class MCLoop implements MonteCarloListener {
     public void addMolDyn(MolecularDynamics molDyn) {
         this.molDyn = molDyn;
     }
-
+    
+    public void addLambdaInterface(LambdaInterface lambdaInterface) {
+        this.lambdaInterface = lambdaInterface;
+    }
+    
     private double[] storeActiveCoordinates() {
         double [] coords = new double[atoms.length*3];
         int index = 0;
