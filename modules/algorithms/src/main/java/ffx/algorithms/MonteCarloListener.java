@@ -59,5 +59,4 @@ public interface MonteCarloListener {
      */
     public abstract boolean mcUpdate(MolecularAssembly active);
 
-    public abstract double getAcceptanceRate();
 }

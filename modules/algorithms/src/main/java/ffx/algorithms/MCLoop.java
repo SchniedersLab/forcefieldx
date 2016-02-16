@@ -305,7 +305,6 @@ public class MCLoop implements MonteCarloListener {
      *
      * @return the acceptance rate.
      */
-    @Override
     public double getAcceptanceRate() {
         // Intentional integer division.
         int numTries = stepCount / mcStepFrequency;

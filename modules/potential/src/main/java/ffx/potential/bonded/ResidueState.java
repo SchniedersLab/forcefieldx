@@ -178,6 +178,20 @@ public class ResidueState {
         return xyz;
     }
     
+    public static ResidueState storeAllCoordinates(Residue res) {
+        Residue residues[] = new Residue[1];
+        residues[0] = res;
+        return storeAllCoordinates(residues)[0];
+    }
+    
+    public static void revertAllCoordinates(Residue res, ResidueState state) {
+        Residue residues[] = new Residue[1];
+        ResidueState states[] = new ResidueState[1];
+        residues[0] = res;
+        states[0] = state;
+        revertAllCoordinates(residues, states);
+    }
+    
     public static double[][][] storeAllCoordinateArrays(List<Residue> residueList) {
         return storeAllCoordinateArrays(residueList.toArray(new Residue[residueList.size()]));
     }
