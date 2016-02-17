@@ -183,8 +183,8 @@ public class MCLoop implements MonteCarloListener {
         }
         
         if(lambdaInterface != null){
-            if (lambdaInterface.getLambda() > 0.2){
-                logger.info(String.format(" KIC procedure skipped (Lambda > 0.2)."));
+            if (lambdaInterface.getLambda() > 0.1){
+                logger.info(String.format(" KIC procedure skipped (Lambda > 0.1)."));
                 return false;
             }
         }
