@@ -494,6 +494,14 @@ public class RealSpaceData implements DataContainer {
      * {@inheritDoc}
      */
     @Override
+    public Atom[] getActiveAtomArray() {
+        return refinementModel.activeAtoms;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public ArrayList<ArrayList<Residue>> getAltResidues() {
         return refinementModel.altResidues;
     }
