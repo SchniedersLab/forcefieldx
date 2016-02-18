@@ -406,7 +406,7 @@ if(runOSRW){
     }
     
     osrw.setLambda(lambda);
-    osrw.setOptimization(true);
+    osrw.setOptimization(true,active);
     // Create the MolecularDynamics instance.
     MolecularDynamics molDyn = new MolecularDynamics(active, osrw, active.getProperties(),
         null, thermostat, integrator);
