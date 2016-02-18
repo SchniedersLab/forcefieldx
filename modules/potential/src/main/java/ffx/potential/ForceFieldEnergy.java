@@ -1057,6 +1057,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         if (gradient) {
             for (int i = 0; i < nAtoms; i++) {
                 atoms[i].setXYZGradient(0.0, 0.0, 0.0);
+                atoms[i].setLambdaXYZGradient(0.0, 0.0, 0.0);
             }
         }
 
@@ -1843,11 +1844,23 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 comRestraint.getdEdXdL(gradients);
             }
             if (lambdaTorsions) {
+                /*
                 for (int i = 0; i < nTorsions; i++) {
                     torsions[i].getdEdXdL(gradients);
                 }
                 for (int i = 0; i < nTorsionTorsions; i++) {
                     torsionTorsions[i].getdEdXdL(gradients);
+                } */
+                double grad[] = new double[3];
+                int index = 0;
+                for (int i = 0; i < nAtoms; i++) {
+                    Atom a = atoms[i];
+                    if (a.isActive()) {
+                        a.getLambdaXYZGradient(grad);
+                        gradients[index++] += grad[0];
+                        gradients[index++] += grad[1];
+                        gradients[index++] += grad[2];
+                    }
                 }
             }
         }

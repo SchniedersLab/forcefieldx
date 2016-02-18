@@ -397,6 +397,7 @@ public class Torsion extends BondedTerm implements LambdaInterface {
                 cross(v13, x2, g3);
                 sum(g2, g3, g2);
                 cross(x2, v12, g3);
+                /*
                 dEdLdX[0][0] = g0[0];
                 dEdLdX[0][1] = g0[1];
                 dEdLdX[0][2] = g0[2];
@@ -408,7 +409,13 @@ public class Torsion extends BondedTerm implements LambdaInterface {
                 dEdLdX[2][2] = g2[2];
                 dEdLdX[3][0] = g3[0];
                 dEdLdX[3][1] = g3[1];
-                dEdLdX[3][2] = g3[2];
+                dEdLdX[3][2] = g3[2]; */
+                if (lambdaTerm) {
+                    atoms[0].addToLambdaXYZGradient(g0[0], g0[1], g0[2]);
+                    atoms[1].addToLambdaXYZGradient(g1[0], g1[1], g1[2]);
+                    atoms[2].addToLambdaXYZGradient(g2[0], g2[1], g2[2]);
+                    atoms[3].addToLambdaXYZGradient(g3[0], g3[1], g3[2]);
+                }
                 if (gradient) {
                     atoms[0].addToXYZGradient(lambda * g0[0], lambda * g0[1], lambda * g0[2]);
                     atoms[1].addToXYZGradient(lambda * g1[0], lambda * g1[1], lambda * g1[2]);
@@ -423,7 +430,6 @@ public class Torsion extends BondedTerm implements LambdaInterface {
             torsionType.log();
             log();
         } */
-
         return energy;
     }
 
@@ -447,7 +453,7 @@ public class Torsion extends BondedTerm implements LambdaInterface {
 
     @Override
     public void setLambda(double lambda) {
-        if (applyLambda()) {
+        if (applyAllLambda()) {
             this.lambda = lambda;
             lambdaTerm = true;
         } else {
@@ -462,7 +468,11 @@ public class Torsion extends BondedTerm implements LambdaInterface {
 
     @Override
     public double getdEdL() {
-        return dEdL;
+        if (lambdaTerm) {
+            return dEdL;
+        } else {
+            return 0.0;
+        }
     }
 
     @Override

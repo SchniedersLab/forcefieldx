@@ -337,8 +337,8 @@ public class RealSpaceData implements DataContainer {
                 if (lambdaTerm && a.applyLambda()) {
                     lambdai = lambda;
                     dUdL = 1.0;
+                    a.setLambdaXYZGradient(0.0, 0.0, 0.0);
                 }
-
                 a.getXYZ(xyz);
                 a.setXYZGradient(0.0, 0.0, 0.0);
                 crystal[i].toFractionalCoordinates(xyz, uvw);

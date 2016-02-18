@@ -59,6 +59,12 @@ int ligandStart = 1;
 // Last ligand atom.
 int ligandStop = -1;
 
+// First active atom.
+int activeStart = 1;
+
+// Last active atom.
+int activeStop = -1;
+
 // First ligand atom of the 2nd topology.
 int ligandStart2 = 1;
 
@@ -93,6 +99,8 @@ cli.s(longOpt:'start', args:1, argName:'1', 'Starting ligand atom.');
 cli.s2(longOpt:'start2', args:1, argName:'1', 'Starting ligand atom for the 2nd topology.');
 cli.f(longOpt:'final', args:1, argName:'n', 'Final ligand atom.');
 cli.f2(longOpt:'final2', args:1, argName:'n', 'Final ligand atom for the 2nd topology.');
+cli.as(longOpt:'activeStart', args:1, argName:'1', 'Starting active atom.');
+cli.af(longOpt:'activeFinal', args:1, argName:'n', 'Final active atom.');
 cli.es(longOpt:'noElecStart', args:1, argName:'1', 'No Electrostatics Starting Atom.');
 cli.es2(longOpt:'noElecStart2', args:1, argName:'1', 'No Electrostatics Starting Atom for the 2nd Topology.');
 cli.ef(longOpt:'noElecFinal', args:1, argName:'-1', 'No Electrostatics Final Atom.');
@@ -127,6 +135,16 @@ if (options.s2) {
 // Final ligand atom.
 if (options.f2) {
     ligandStop2 = Integer.parseInt(options.f2);
+}
+
+// Starting ligand atom.
+if (options.as) {
+    activeStart = Integer.parseInt(options.as);
+}
+
+// Final ligand atom.
+if (options.af) {
+    activeStop = Integer.parseInt(options.af);
 }
 
 // No electrostatics on Topology 1.
@@ -201,6 +219,24 @@ for (int i = ligandStart; i <= ligandStop; i++) {
     ai.setApplyLambda(true);
     ai.print();
 }
+
+// Only support active atoms for single topology
+if (arguments.size() == 1) {
+// Apply active atom selection
+if (activeStop > activeStart && activeStart > 0 && activeStop <= n) {
+    // Make all atoms inactive.
+    for (int i = 0; i <= n; i++) {
+        Atom ai = atoms[i - 1];
+        ai.setActive(false);
+    }
+    // Make requested atoms active.
+    for (int i = activeStart; i <= activeStop; i++) {
+        Atom ai = atoms[i - 1];
+        ai.setActive(true);
+    }
+}
+}
+
 
 // Apply the no electrostatics atom selection
 if (noElecStart < 1) {

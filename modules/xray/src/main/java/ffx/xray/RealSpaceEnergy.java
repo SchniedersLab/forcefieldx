@@ -206,6 +206,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         if (refineXYZ) {
             for (Atom a : activeAtoms) {
                 a.setXYZGradient(0.0, 0.0, 0.0);
+                a.setLambdaXYZGradient(0.0, 0.0, 0.0);
             }
         }
 
@@ -247,6 +248,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         if (refineXYZ) {
             for (Atom a : activeAtoms) {
                 a.setXYZGradient(0.0, 0.0, 0.0);
+                a.setLambdaXYZGradient(0.0, 0.0, 0.0);
             }
         }
 

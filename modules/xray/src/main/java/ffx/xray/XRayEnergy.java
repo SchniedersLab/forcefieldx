@@ -217,6 +217,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
         if (refinexyz) {
             for (Atom a : atomarray) {
                 a.setXYZGradient(0.0, 0.0, 0.0);
+                a.setLambdaXYZGradient(0.0, 0.0, 0.0);
             }
 
             // update coordinates

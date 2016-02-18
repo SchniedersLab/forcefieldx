@@ -202,7 +202,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * Contiguous atom index ranging from 0..nAtoms.
+     * Contiguous atom index ranging from 0..nAtoms - 1.
      *
      * @since 1.0
      */
@@ -251,11 +251,17 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     private double redXYZ[];
     /**
-     * Array of XYZ gradients for each altLoc.
+     * Array of XYZ gradient.
      *
      * @since 1.0
      */
     private final double xyzGradient[] = new double[3];
+    /**
+     * Array of XYZ lambda gradient.
+     *
+     * @since 1.0
+     */
+    private final double xyzLambdaGradient[] = new double[3];
     /**
      * Array of occupancy values for each altLoc.
      *
@@ -2306,6 +2312,22 @@ public class Atom extends MSNode implements Comparable<Atom> {
 
     /**
      * <p>
+     * setLambdaXYZGradient</p>
+     *
+     * @param x a double.
+     * @param y a double.
+     * @param z a double.
+     */
+    public void setLambdaXYZGradient(double x, double y, double z) {
+        if (active) {
+            xyzLambdaGradient[0] = x;
+            xyzLambdaGradient[1] = y;
+            xyzLambdaGradient[2] = z;
+        }
+    }
+
+    /**
+     * <p>
      * addToXYZGradient</p>
      *
      * @param x a double.
@@ -2322,6 +2344,22 @@ public class Atom extends MSNode implements Comparable<Atom> {
 
     /**
      * <p>
+     * addToLambdaXYZGradient</p>
+     *
+     * @param x a double.
+     * @param y a double.
+     * @param z a double.
+     */
+    public void addToLambdaXYZGradient(double x, double y, double z) {
+        if (active) {
+            xyzLambdaGradient[0] += x;
+            xyzLambdaGradient[1] += y;
+            xyzLambdaGradient[2] += z;
+        }
+    }
+
+    /**
+     * <p>
      * getXYZGradient</p>
      *
      * @param x an array of double.
@@ -2333,6 +2371,21 @@ public class Atom extends MSNode implements Comparable<Atom> {
         x[0] = xyzGradient[0];
         x[1] = xyzGradient[1];
         x[2] = xyzGradient[2];
+    }
+
+    /**
+     * <p>
+     * getLambdaXYZGradient</p>
+     *
+     * @param x an array of double.
+     */
+    public void getLambdaXYZGradient(double x[]) {
+        if (x == null) {
+            x = new double[3];
+        }
+        x[0] = xyzLambdaGradient[0];
+        x[1] = xyzLambdaGradient[1];
+        x[2] = xyzLambdaGradient[2];
     }
 
     /**

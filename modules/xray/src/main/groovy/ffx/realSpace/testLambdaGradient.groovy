@@ -66,6 +66,12 @@ int ligandStart = 1;
 // Last ligand atom.
 int ligandStop = -1;
 
+// First active atom.
+int activeStart = 1;
+
+// Last active atom.
+int activeStop = -1;
+
 // First atom for no electrostatics.
 int noElecStart = 1;
 
@@ -86,6 +92,8 @@ def cli = new CliBuilder(usage:' ffxc realSpace.testLambdaGradient [options] <XY
 cli.h(longOpt:'help', 'Print this help message.');
 cli.s(longOpt:'start', args:1, argName:'1', 'Starting ligand atom.');
 cli.f(longOpt:'final', args:1, argName:'n', 'Final ligand atom.');
+cli.as(longOpt:'activeStart', args:1, argName:'1', 'Starting active atom.');
+cli.af(longOpt:'activeFinal', args:1, argName:'n', 'Final active atom.');
 cli.es(longOpt:'noElecStart', args:1, argName:'1', 'No Electrostatics Starting Atom.');
 cli.ef(longOpt:'noElecFinal', args:1, argName:'-1', 'No Electrostatics Final Atom.');
 cli.l(longOpt:'lambda', args:1, argName:'0.5', 'Lambda value to test.');
@@ -108,6 +116,16 @@ if (options.s) {
 // Final ligand atom.
 if (options.f) {
     ligandStop = Integer.parseInt(options.f);
+}
+
+// Starting ligand atom.
+if (options.as) {
+    activeStart = Integer.parseInt(options.as);
+}
+
+// Final ligand atom.
+if (options.af) {
+    activeStop = Integer.parseInt(options.af);
 }
 
 // No electrostatics final atom.
@@ -164,10 +182,25 @@ Atom[] atoms = active.getAtomArray();
 int n = atoms.length;
 
 // Apply ligand atom selection
+if (ligandStop > ligandStart && ligandStart > 0 && ligandStop <= n) {
 for (int i = ligandStart; i <= ligandStop; i++) {
     Atom ai = atoms[i - 1];
     ai.setApplyLambda(true);
-    ai.print();
+}
+}
+
+// Apply active atom selection
+if (activeStop > activeStart && activeStart > 0 && activeStop <= n) {
+    // Make all atoms inactive.
+    for (int i = 0; i <= n; i++) {
+        Atom ai = atoms[i - 1];
+        ai.setActive(false);
+    }
+    // Make requested atoms active.
+    for (int i = activeStart; i <= activeStop; i++) {
+        Atom ai = atoms[i - 1];
+        ai.setActive(true);
+    }
 }
 
 // Apply the no electrostatics atom selection

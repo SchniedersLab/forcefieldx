@@ -166,6 +166,20 @@ public abstract class BondedTerm extends MSNode {
     }
 
     /**
+     * Check if all atoms of this BondedTerm have the Lambda flag set.
+     *
+     * @return True if Lambda is applied to all of the BondedTerm atoms.
+     */
+    public boolean applyAllLambda() {
+        for (int i = 0; i < atoms.length; i++) {
+            if (!atoms[i].applyLambda()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * {@inheritDoc}
      *
      * Overridden method that returns true if object is equals to this, is of
