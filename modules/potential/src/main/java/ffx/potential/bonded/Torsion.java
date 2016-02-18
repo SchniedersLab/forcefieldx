@@ -69,7 +69,6 @@ public class Torsion extends BondedTerm implements LambdaInterface {
     private static final long serialVersionUID = 1L;
     private double lambda = 1.0;
     private double dEdL = 0.0;
-    private double dEdLdX[][] = new double[4][3];
     private boolean lambdaTerm = false;
 
     public TorsionType torsionType = null;
@@ -381,6 +380,7 @@ public class Torsion extends BondedTerm implements LambdaInterface {
             energy = units * energy;
             dEdL = energy;
             energy = lambda * energy;
+
             if (gradient || lambdaTerm) {
                 dedphi = units * dedphi;
                 diff(a2, a0, v02);
@@ -397,19 +397,6 @@ public class Torsion extends BondedTerm implements LambdaInterface {
                 cross(v13, x2, g3);
                 sum(g2, g3, g2);
                 cross(x2, v12, g3);
-                /*
-                dEdLdX[0][0] = g0[0];
-                dEdLdX[0][1] = g0[1];
-                dEdLdX[0][2] = g0[2];
-                dEdLdX[1][0] = g1[0];
-                dEdLdX[1][1] = g1[1];
-                dEdLdX[1][2] = g1[2];
-                dEdLdX[2][0] = g2[0];
-                dEdLdX[2][1] = g2[1];
-                dEdLdX[2][2] = g2[2];
-                dEdLdX[3][0] = g3[0];
-                dEdLdX[3][1] = g3[1];
-                dEdLdX[3][2] = g3[2]; */
                 if (lambdaTerm) {
                     atoms[0].addToLambdaXYZGradient(g0[0], g0[1], g0[2]);
                     atoms[1].addToLambdaXYZGradient(g1[0], g1[1], g1[2]);
@@ -424,12 +411,6 @@ public class Torsion extends BondedTerm implements LambdaInterface {
                 }
             }
         }
-
-        /*
-        if (energy > 3.0) {
-            torsionType.log();
-            log();
-        } */
         return energy;
     }
 
@@ -482,23 +463,6 @@ public class Torsion extends BondedTerm implements LambdaInterface {
 
     @Override
     public void getdEdXdL(double[] gradient) {
-        if (lambdaTerm) {
-            int index = (atoms[0].getXYZIndex() - 1) * 3;
-            gradient[index] += dEdLdX[0][0];
-            gradient[index + 1] += dEdLdX[0][1];
-            gradient[index + 2] += dEdLdX[0][2];
-            index = (atoms[1].getXYZIndex() - 1) * 3;
-            gradient[index] += dEdLdX[1][0];
-            gradient[index + 1] += dEdLdX[1][1];
-            gradient[index + 2] += dEdLdX[1][2];
-            index = (atoms[2].getXYZIndex() - 1) * 3;
-            gradient[index] += dEdLdX[2][0];
-            gradient[index + 1] += dEdLdX[2][1];
-            gradient[index + 2] += dEdLdX[2][2];
-            index = (atoms[3].getXYZIndex() - 1) * 3;
-            gradient[index] += dEdLdX[3][0];
-            gradient[index + 1] += dEdLdX[3][1];
-            gradient[index + 2] += dEdLdX[3][2];
-        }
+        return;
     }
 }

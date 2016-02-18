@@ -1540,6 +1540,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 for (int i = 0; i < nTorsions; i++) {
                     torsions[i].setLambda(lambda);
                 }
+                for (int i = 0; i < nPiOrbitalTorsions; i++) {
+                    piOrbitalTorsions[i].setLambda(lambda);
+                }
                 for (int i = 0; i < nTorsionTorsions; i++) {
                     torsionTorsions[i].setLambda(lambda);
                 }
@@ -1807,6 +1810,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 for (int i = 0; i < nTorsions; i++) {
                     dEdLambda += torsions[i].getdEdL();
                 }
+                for (int i = 0; i < nPiOrbitalTorsions; i++) {
+                    dEdLambda += piOrbitalTorsions[i].getdEdL();
+                }
                 for (int i = 0; i < nTorsionTorsions; i++) {
                     dEdLambda += torsionTorsions[i].getdEdL();
                 }
@@ -1844,13 +1850,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 comRestraint.getdEdXdL(gradients);
             }
             if (lambdaTorsions) {
-                /*
-                for (int i = 0; i < nTorsions; i++) {
-                    torsions[i].getdEdXdL(gradients);
-                }
-                for (int i = 0; i < nTorsionTorsions; i++) {
-                    torsionTorsions[i].getdEdXdL(gradients);
-                } */
                 double grad[] = new double[3];
                 int index = 0;
                 for (int i = 0; i < nAtoms; i++) {
@@ -1904,6 +1903,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             if (lambdaTorsions) {
                 for (int i = 0; i < nTorsions; i++) {
                     d2EdLambda2 += torsions[i].getd2EdL2();
+                }
+                for (int i = 0; i < nPiOrbitalTorsions; i++) {
+                    d2EdLambda2 += piOrbitalTorsions[i].getd2EdL2();
                 }
                 for (int i = 0; i < nTorsionTorsions; i++) {
                     d2EdLambda2 += torsionTorsions[i].getd2EdL2();

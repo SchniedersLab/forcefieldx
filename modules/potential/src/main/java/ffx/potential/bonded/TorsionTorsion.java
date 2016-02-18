@@ -76,7 +76,6 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
     private boolean lambdaTerm = false;
     private double lambda = 1.0;
     private double dEdL = 0.0;
-    private double dEdLdX[][] = new double[5][3];
 
     /**
      * Torsion-Torsion constructor.
@@ -392,20 +391,6 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
                 cross(v13, x2, g3);
                 sum(g2, g3, g2);
                 cross(x2, v12, g3);
-                /*
-                dEdLdX[0][0] = g0[0];
-                dEdLdX[0][1] = g0[1];
-                dEdLdX[0][2] = g0[2];
-                dEdLdX[1][0] = g1[0];
-                dEdLdX[1][1] = g1[1];
-                dEdLdX[1][2] = g1[2];
-                dEdLdX[2][0] = g2[0];
-                dEdLdX[2][1] = g2[1];
-                dEdLdX[2][2] = g2[2];
-                dEdLdX[3][0] = g3[0];
-                dEdLdX[3][1] = g3[1];
-                dEdLdX[3][2] = g3[2];
-                */
                 if (lambdaTerm) {
                     atoms[0].addToLambdaXYZGradient(g0[0], g0[1], g0[2]);
                     atoms[1].addToLambdaXYZGradient(g1[0], g1[1], g1[2]);
@@ -434,19 +419,6 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
                 cross(v24, x2, g4);
                 sum(g3, g4, g3);
                 cross(x2, v23, g4);
-                /*
-                dEdLdX[1][0] += g1[0];
-                dEdLdX[1][1] += g1[1];
-                dEdLdX[1][2] += g1[2];
-                dEdLdX[2][0] += g2[0];
-                dEdLdX[2][1] += g2[1];
-                dEdLdX[2][2] += g2[2];
-                dEdLdX[3][0] += g3[0];
-                dEdLdX[3][1] += g3[1];
-                dEdLdX[3][2] += g3[2];
-                dEdLdX[4][0] = g4[0];
-                dEdLdX[4][1] = g4[1];
-                dEdLdX[4][2] = g4[2]; */
                 if (lambdaTerm) {
                     atoms[1].addToLambdaXYZGradient(g1[0], g1[1], g1[2]);
                     atoms[2].addToLambdaXYZGradient(g2[0], g2[1], g2[2]);
@@ -724,27 +696,6 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
 
     @Override
     public void getdEdXdL(double[] gradient) {
-        if (lambdaTerm) {
-            int index = (atoms[0].getXYZIndex() - 1) * 3;
-            gradient[index] += dEdLdX[0][0];
-            gradient[index + 1] += dEdLdX[0][1];
-            gradient[index + 2] += dEdLdX[0][2];
-            index = (atoms[1].getXYZIndex() - 1) * 3;
-            gradient[index] += dEdLdX[1][0];
-            gradient[index + 1] += dEdLdX[1][1];
-            gradient[index + 2] += dEdLdX[1][2];
-            index = (atoms[2].getXYZIndex() - 1) * 3;
-            gradient[index] += dEdLdX[2][0];
-            gradient[index + 1] += dEdLdX[2][1];
-            gradient[index + 2] += dEdLdX[2][2];
-            index = (atoms[3].getXYZIndex() - 1) * 3;
-            gradient[index] += dEdLdX[3][0];
-            gradient[index + 1] += dEdLdX[3][1];
-            gradient[index + 2] += dEdLdX[3][2];
-            index = (atoms[4].getXYZIndex() - 1) * 3;
-            gradient[index] += dEdLdX[4][0];
-            gradient[index + 1] += dEdLdX[4][1];
-            gradient[index + 2] += dEdLdX[4][2];
-        }
+        return;
     }
 }
