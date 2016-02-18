@@ -72,6 +72,7 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.parsers.PDBFilter;
 import static java.util.Arrays.fill;
+import org.apache.commons.io.FilenameUtils;
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.exp;
@@ -372,7 +373,10 @@ public class OSRW implements Potential {
     private double osrwOptimizationLambdaCutoff = 0.5;
     private double osrwOptimizationEps = 0.1;
     private double osrwOptimizationTolerance = 1.0e-8;
-
+    private MolecularAssembly molecularAssembly;
+    private PDBFilter pdbFilter = null;
+    private File pdbFile = null;
+    
     /**
      * OSRW Asynchronous MultiWalker Constructor.
      *
@@ -494,7 +498,7 @@ public class OSRW implements Potential {
                 logger.info(" Lambda restart file could not be found and will be ignored.");
             }
         }
-
+                    
         dL = 1.0 / (lambdaBins - 1);
         dL_2 = dL / 2.0;
         minLambda = -dL_2;
@@ -617,7 +621,10 @@ public class OSRW implements Potential {
                 if (minEnergy < osrwOptimum) {
                     osrwOptimum = minEnergy;
                     logger.info(String.format(" New minimum energy found: %16.8f (Step %d).", osrwOptimum,energyCount));
-                    osrwOptimumCoords = potential.getCoordinates(osrwOptimumCoords);
+                    osrwOptimumCoords = potential.getCoordinates(osrwOptimumCoords);             
+                    if (pdbFilter.writeFile(pdbFile, false)) {
+                        logger.info(String.format(" Wrote PDB file to " + pdbFile.getName()));
+                    }
                 }
 
                 // Revert to the coordinates and gradient prior to optimization.
@@ -1360,8 +1367,16 @@ public class OSRW implements Potential {
         }
     }
 
-    public void setOptimization(boolean osrwOptimization) {
+    public void setOptimization(boolean osrwOptimization, MolecularAssembly molAss) {
         this.osrwOptimization = osrwOptimization;
+        this.molecularAssembly = molAss;
+        File file = molecularAssembly.getFile();
+        String fileName = FilenameUtils.removeExtension(file.getAbsolutePath());
+        if (pdbFilter == null) {
+            pdbFile = new File(fileName + "_opt.pdb");
+            pdbFilter = new PDBFilter(new File(fileName + "_opt.pdb"), molecularAssembly, null, null);
+        }
+        
     }
 
     @Override
