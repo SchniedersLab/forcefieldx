@@ -81,7 +81,6 @@ import ffx.potential.nonbonded.NCSRestraint;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.ELEC_FORM;
 import ffx.potential.nonbonded.VanDerWaals;
-import ffx.potential.nonbonded.VanDerWaals.RADIUS_RULE;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldBoolean;
@@ -101,7 +100,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private static final double toSeconds = 0.000000001;
     private final MolecularAssembly molecularAssembly;
     private Atom[] atoms;
-    private Atom[] activeAtoms;
     private Crystal crystal;
     private final ParallelTeam parallelTeam;
     private STATE state = STATE.BOTH;
@@ -122,7 +120,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private final CoordRestraint coordRestraint;
     private final COMRestraint comRestraint;
     private int nAtoms;
-    private int nActive;
     private int nBonds;
     private int nAngles;
     private int nStretchBends;
@@ -225,28 +222,14 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         nAtoms = atoms.length;
 
         // Check that atom ordering is correct and count the number of active atoms.
-        nActive = 0;
         for (int i = 0; i < nAtoms; i++) {
             int index = atoms[i].xyzIndex - 1;
             assert (i == index);
-            if (atoms[i].isActive()) {
-                nActive++;
-            }
-        }
-
-        activeAtoms = new Atom[nActive];
-        // Load an array with active atoms.
-        int index = 0;
-        for (int i = 0; i < nAtoms; i++) {
-            Atom a = atoms[i];
-            if (a.isActive()) {
-                activeAtoms[index++] = a;
-            }
         }
 
         // Enforce that the number of threads be less than or equal to the number of atoms.
         int nThreads = ParallelTeam.getDefaultThreadCount();
-        nThreads = nActive < nThreads ? nActive : nThreads;
+        nThreads = nAtoms < nThreads ? nAtoms : nThreads;
         parallelTeam = new ParallelTeam(nThreads);
 
         ForceField forceField = molecularAssembly.getForceField();
@@ -682,27 +665,11 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
 
         // Check that atom ordering is correct and count number of Active atoms.
-        nActive = 0;
         for (int i = 0; i < nAtoms; i++) {
             Atom atom = atoms[i];
             int index = atom.xyzIndex - 1;
             assert (i == index);
             atom.setXYZIndex(i + 1);
-            if (atom.isActive()) {
-                nActive++;
-            }
-        }
-
-        // Lengthen the activeAtom array if necessary, then load it.
-        if (activeAtoms.length < nActive) {
-            activeAtoms = new Atom[nActive];
-        }
-        int index = 0;
-        for (int i = 0; i < nAtoms; i++) {
-            Atom atom = atoms[i];
-            if (atom.isActive()) {
-                activeAtoms[index++] = atom;
-            }
         }
 
         // Collect, count, pack and sort bonds.
@@ -1608,10 +1575,12 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         int n = getNumberOfVariables();
         VARIABLE_TYPE type[] = new VARIABLE_TYPE[n];
         int i = 0;
-        for (int j = 0; j < nActive; j++) {
-            type[i++] = VARIABLE_TYPE.X;
-            type[i++] = VARIABLE_TYPE.Y;
-            type[i++] = VARIABLE_TYPE.Z;
+        for (int j = 0; j < nAtoms; j++) {
+            if (atoms[j].isActive()) {
+                type[i++] = VARIABLE_TYPE.X;
+                type[i++] = VARIABLE_TYPE.Y;
+                type[i++] = VARIABLE_TYPE.Z;
+            }
         }
         return type;
     }
@@ -1681,22 +1650,24 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         assert (g != null);
         double grad[] = new double[3];
         int index = 0;
-        for (int i = 0; i < nActive; i++) {
-            Atom a = activeAtoms[i];
-            a.getXYZGradient(grad);
-            double gx = grad[0];
-            double gy = grad[1];
-            double gz = grad[2];
-            if (Double.isNaN(gx) || Double.isInfinite(gx)
-                    || Double.isNaN(gy) || Double.isInfinite(gy)
-                    || Double.isNaN(gz) || Double.isInfinite(gz)) {
-                String message = format("The gradient of atom %s is (%8.3f,%8.3f,%8.3f).",
-                        a.toString(), gx, gy, gz);
-                logger.severe(message);
+        for (int i = 0; i < nAtoms; i++) {
+            Atom a = atoms[i];
+            if (a.isActive()) {
+                a.getXYZGradient(grad);
+                double gx = grad[0];
+                double gy = grad[1];
+                double gz = grad[2];
+                if (Double.isNaN(gx) || Double.isInfinite(gx)
+                        || Double.isNaN(gy) || Double.isInfinite(gy)
+                        || Double.isNaN(gz) || Double.isInfinite(gz)) {
+                    String message = format("The gradient of atom %s is (%8.3f,%8.3f,%8.3f).",
+                            a.toString(), gx, gy, gz);
+                    logger.severe(message);
+                }
+                g[index++] = gx;
+                g[index++] = gy;
+                g[index++] = gz;
             }
-            g[index++] = gx;
-            g[index++] = gy;
-            g[index++] = gz;
         }
     }
 
@@ -1710,12 +1681,14 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             return;
         }
         int index = 0;
-        for (int i = 0; i < nActive; i++) {
-            Atom a = activeAtoms[i];
-            double x = coords[index++];
-            double y = coords[index++];
-            double z = coords[index++];
-            a.moveTo(x, y, z);
+        for (int i = 0; i < nAtoms; i++) {
+            Atom a = atoms[i];
+            if (a.isActive()) {
+                double x = coords[index++];
+                double y = coords[index++];
+                double z = coords[index++];
+                a.moveTo(x, y, z);
+            }
         }
     }
 
@@ -1724,22 +1697,24 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         double accel[] = new double[3];
         double grad[] = new double[3];
         StringBuilder sb;
-        for (int i = 0; i < nActive; i++) {
-            Atom a = activeAtoms[i];
-            sb = new StringBuilder();
-            sb.append("Atom: " + a + "\n");
-            try {
-                sb.append("   XYZ :  " + a.getX() + ", " + a.getY() + ", " + a.getZ() + "\n");
-                a.getVelocity(vel);
-                sb.append("   Vel:   " + vel[0] + ", " + vel[1] + ", " + vel[2] + "\n");
-                a.getVelocity(accel);
-                sb.append("   Accel: " + accel[0] + ", " + accel[1] + ", " + accel[2] + "\n");
-                a.getXYZGradient(grad);
-                sb.append("   Grad:  " + grad[0] + ", " + grad[1] + ", " + grad[2] + "\n");
-                sb.append("   Mass:  " + a.getMass() + "\n");
-            } catch (Exception e) {
+        for (int i = 0; i < nAtoms; i++) {
+            Atom a = atoms[i];
+            if (a.isActive()) {
+                sb = new StringBuilder();
+                sb.append("Atom: " + a + "\n");
+                try {
+                    sb.append("   XYZ :  " + a.getX() + ", " + a.getY() + ", " + a.getZ() + "\n");
+                    a.getVelocity(vel);
+                    sb.append("   Vel:   " + vel[0] + ", " + vel[1] + ", " + vel[2] + "\n");
+                    a.getVelocity(accel);
+                    sb.append("   Accel: " + accel[0] + ", " + accel[1] + ", " + accel[2] + "\n");
+                    a.getXYZGradient(grad);
+                    sb.append("   Grad:  " + grad[0] + ", " + grad[1] + ", " + grad[2] + "\n");
+                    sb.append("   Mass:  " + a.getMass() + "\n");
+                } catch (Exception e) {
+                }
+                logger.info(sb.toString());
             }
-            logger.info(sb.toString());
         }
     }
 
@@ -1755,11 +1730,13 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             x = new double[n];
         }
         int index = 0;
-        for (int i = 0; i < nActive; i++) {
-            Atom a = activeAtoms[i];
-            x[index++] = a.getX();
-            x[index++] = a.getY();
-            x[index++] = a.getZ();
+        for (int i = 0; i < nAtoms; i++) {
+            Atom a = atoms[i];
+            if (a.isActive()) {
+                x[index++] = a.getX();
+                x[index++] = a.getY();
+                x[index++] = a.getZ();
+            }
         }
         return x;
     }
@@ -1772,12 +1749,14 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         int n = getNumberOfVariables();
         double mass[] = new double[n];
         int index = 0;
-        for (int i = 0; i < nActive; i++) {
-            Atom a = activeAtoms[i];
-            double m = a.getMass();
-            mass[index++] = m;
-            mass[index++] = m;
-            mass[index++] = m;
+        for (int i = 0; i < nAtoms; i++) {
+            Atom a = atoms[i];
+            if (a.isActive()) {
+                double m = a.getMass();
+                mass[index++] = m;
+                mass[index++] = m;
+                mass[index++] = m;
+            }
         }
         return mass;
     }
@@ -1787,6 +1766,12 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
      */
     @Override
     public int getNumberOfVariables() {
+        int nActive = 0;
+        for (int i = 0; i < nAtoms; i++) {
+            if (atoms[i].isActive()) {
+                nActive++;
+            }
+        }
         return nActive * 3;
     }
 
@@ -2167,11 +2152,13 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
         int index = 0;
         double vel[] = new double[3];
-        for (int i = 0; i < nActive; i++) {
-            vel[0] = velocity[index++];
-            vel[1] = velocity[index++];
-            vel[2] = velocity[index++];
-            activeAtoms[i].setVelocity(vel);
+        for (int i = 0; i < nAtoms; i++) {
+            if (atoms[i].isActive()) {
+                vel[0] = velocity[index++];
+                vel[1] = velocity[index++];
+                vel[2] = velocity[index++];
+                atoms[i].setVelocity(vel);
+            }
         }
     }
 
@@ -2188,11 +2175,13 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
         int index = 0;
         double accel[] = new double[3];
-        for (int i = 0; i < nActive; i++) {
-            accel[0] = acceleration[index++];
-            accel[1] = acceleration[index++];
-            accel[2] = acceleration[index++];
-            activeAtoms[i].setAcceleration(accel);
+        for (int i = 0; i < nAtoms; i++) {
+            if (atoms[i].isActive()) {
+                accel[0] = acceleration[index++];
+                accel[1] = acceleration[index++];
+                accel[2] = acceleration[index++];
+                atoms[i].setAcceleration(accel);
+            }
         }
     }
 
@@ -2209,11 +2198,13 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
         int index = 0;
         double prev[] = new double[3];
-        for (int i = 0; i < nActive; i++) {
-            prev[0] = previousAcceleration[index++];
-            prev[1] = previousAcceleration[index++];
-            prev[2] = previousAcceleration[index++];
-            activeAtoms[i].setPreviousAcceleration(prev);
+        for (int i = 0; i < nAtoms; i++) {
+            if (atoms[i].isActive()) {
+                prev[0] = previousAcceleration[index++];
+                prev[1] = previousAcceleration[index++];
+                prev[2] = previousAcceleration[index++];
+                atoms[i].setPreviousAcceleration(prev);
+            }
         }
     }
 
@@ -2231,12 +2222,14 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
         int index = 0;
         double v[] = new double[3];
-        for (int i = 0; i < nActive; i++) {
-            Atom a = activeAtoms[i];
-            a.getVelocity(v);
-            velocity[index++] = v[0];
-            velocity[index++] = v[1];
-            velocity[index++] = v[2];
+        for (int i = 0; i < nAtoms; i++) {
+            Atom a = atoms[i];
+            if (a.isActive()) {
+                a.getVelocity(v);
+                velocity[index++] = v[0];
+                velocity[index++] = v[1];
+                velocity[index++] = v[2];
+            }
         }
         return velocity;
     }
@@ -2256,11 +2249,13 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
         int index = 0;
         double a[] = new double[3];
-        for (int i = 0; i < nActive; i++) {
-            activeAtoms[i].getAcceleration(a);
-            acceleration[index++] = a[0];
-            acceleration[index++] = a[1];
-            acceleration[index++] = a[2];
+        for (int i = 0; i < nAtoms; i++) {
+            if (atoms[i].isActive()) {
+                atoms[i].getAcceleration(a);
+                acceleration[index++] = a[0];
+                acceleration[index++] = a[1];
+                acceleration[index++] = a[2];
+            }
         }
         return acceleration;
     }
@@ -2280,11 +2275,13 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
         int index = 0;
         double a[] = new double[3];
-        for (int i = 0; i < nActive; i++) {
-            activeAtoms[i].getPreviousAcceleration(a);
-            previousAcceleration[index++] = a[0];
-            previousAcceleration[index++] = a[1];
-            previousAcceleration[index++] = a[2];
+        for (int i = 0; i < nAtoms; i++) {
+            if (atoms[i].isActive()) {
+                atoms[i].getPreviousAcceleration(a);
+                previousAcceleration[index++] = a[0];
+                previousAcceleration[index++] = a[1];
+                previousAcceleration[index++] = a[2];
+            }
         }
         return previousAcceleration;
     }

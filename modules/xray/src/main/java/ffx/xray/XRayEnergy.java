@@ -68,22 +68,6 @@ import static java.util.Arrays.fill;
 
 import static ffx.numerics.VectorMath.determinant3;
 
-import static java.util.Arrays.fill;
-
-import static ffx.numerics.VectorMath.determinant3;
-
-import static java.util.Arrays.fill;
-
-import static ffx.numerics.VectorMath.determinant3;
-
-import static java.util.Arrays.fill;
-
-import static ffx.numerics.VectorMath.determinant3;
-
-import static java.util.Arrays.fill;
-
-import static ffx.numerics.VectorMath.determinant3;
-
 /**
  * Combine the X-ray target and chemical potential energy.
  *
@@ -431,7 +415,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
         double grad[] = null;
         int index = nxyz;
         int resnum = -1;
-        int nres = diffractiondata.nresiduebfactor + 1;
+        int nres = diffractiondata.nResidueBFactor + 1;
         for (Atom a : atomarray) {
             // ignore hydrogens!!!
             if (a.getAtomicNumber() == 1) {
@@ -447,7 +431,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
                 g[index++] = grad[5];
             } else if (diffractiondata.residuebfactor) {
                 if (resnum != a.getResidueNumber()) {
-                    if (nres >= diffractiondata.nresiduebfactor) {
+                    if (nres >= diffractiondata.nResidueBFactor) {
                         if (resnum > -1
                                 && index < nxyz + nb - 1) {
                             index++;
@@ -565,7 +549,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
             double anisou[] = null;
             int resnum = -1;
             int nat = 0;
-            int nres = diffractiondata.nresiduebfactor + 1;
+            int nres = diffractiondata.nResidueBFactor + 1;
             for (Atom a : atomarray) {
                 // ignore hydrogens!!!
                 if (a.getAtomicNumber() == 1) {
@@ -581,7 +565,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
                     x[index++] = anisou[5];
                 } else if (diffractiondata.residuebfactor) {
                     if (resnum != a.getResidueNumber()) {
-                        if (nres >= diffractiondata.nresiduebfactor) {
+                        if (nres >= diffractiondata.nResidueBFactor) {
                             if (resnum > -1
                                     && index < nxyz + nb - 1) {
                                 x[index] /= nat;
@@ -647,7 +631,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
         int index = nxyz;
         int nneg = 0;
         int resnum = -1;
-        int nres = diffractiondata.nresiduebfactor + 1;
+        int nres = diffractiondata.nResidueBFactor + 1;
         for (Atom a : atomarray) {
             // ignore hydrogens!!!
             if (a.getAtomicNumber() == 1) {
@@ -657,7 +641,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
                 double biso = x[index];
                 if (diffractiondata.residuebfactor) {
                     if (resnum != a.getResidueNumber()) {
-                        if (nres >= diffractiondata.nresiduebfactor) {
+                        if (nres >= diffractiondata.nResidueBFactor) {
                             if (resnum > -1
                                     && index < nxyz + nb - 1) {
                                 index++;

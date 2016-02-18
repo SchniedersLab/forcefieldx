@@ -62,6 +62,14 @@ public interface DataContainer {
 
     /**
      * <p>
+     * getActiveAtomArray</p>
+     *
+     * @return an array of {@link ffx.potential.bonded.Atom} objects.
+     */
+    public Atom[] getActiveAtomArray();
+
+    /**
+     * <p>
      * getAltResidues</p>
      *
      * @return a {@link java.util.ArrayList} object.
@@ -78,7 +86,7 @@ public interface DataContainer {
 
     /**
      * <p>
- getMolecularAssemblies</p>
+     * getMolecularAssemblies</p>
      *
      * @return an array of {@link ffx.potential.MolecularAssembly} objects.
      */

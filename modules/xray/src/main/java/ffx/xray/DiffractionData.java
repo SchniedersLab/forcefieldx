@@ -74,10 +74,6 @@ import static ffx.xray.CrystalReciprocalSpace.SolventModel.POLYNOMIAL;
 import static java.util.Arrays.fill;
 import static java.util.Arrays.fill;
 import static java.util.Arrays.fill;
-import static java.util.Arrays.fill;
-import static java.util.Arrays.fill;
-import static java.util.Arrays.fill;
-import static java.util.Arrays.fill;
 
 /**
  * <p>
@@ -119,8 +115,8 @@ public class DiffractionData implements DataContainer {
     public final double bnonzeroweight;
     public final double bmass;
     public final boolean residuebfactor;
-    public final int nresiduebfactor;
-    public final boolean addanisou;
+    public final int nResidueBFactor;
+    public final boolean addAnisou;
     public final boolean refinemolocc;
     public final double occmass;
     public final boolean lambdaTerm;
@@ -265,8 +261,8 @@ public class DiffractionData implements DataContainer {
         bnonzeroweight = properties.getDouble("bnonzeroweight", 1.0);
         bmass = properties.getDouble("bmass", 5.0);
         residuebfactor = properties.getBoolean("residuebfactor", false);
-        nresiduebfactor = properties.getInt("nresiduebfactor", 1);
-        addanisou = properties.getBoolean("addanisou", false);
+        nResidueBFactor = properties.getInt("nresiduebfactor", 1);
+        addAnisou = properties.getBoolean("addanisou", false);
         refinemolocc = properties.getBoolean("refinemolocc", false);
         occmass = properties.getDouble("occmass", 10.0);
         lambdaTerm = properties.getBoolean("lambdaterm", false);
@@ -343,8 +339,8 @@ public class DiffractionData implements DataContainer {
             sb.append("  Non-zero weight (bnonzeroweight): ").append(bnonzeroweight).append("\n");
             sb.append("  Lagrangian mass (bmass): ").append(bmass).append("\n");
             sb.append("  Refined by residue (residuebfactor): ").append(residuebfactor).append("\n");
-            sb.append("    (if true, num. residues per B (nresiduebfactor): ").append(nresiduebfactor).append(")\n");
-            sb.append("  Add ANISOU for refinement (addanisou): ").append(addanisou).append("\n\n");
+            sb.append("    (if true, num. residues per B (nresiduebfactor): ").append(nResidueBFactor).append(")\n");
+            sb.append("  Add ANISOU for refinement (addanisou): ").append(addAnisou).append("\n\n");
             sb.append("  Occupancies\n");
             sb.append("  Refine on molecules (HETATMs - refinemolocc): ").append(refinemolocc).append("\n");
             sb.append("  Lagrangian mass (occmass): ").append(occmass).append("\n");
@@ -557,12 +553,20 @@ public class DiffractionData implements DataContainer {
 
     /**
      * {@inheritDoc}
-
- return the usedAtoms for the model associated with this data
+     *
+     * return the usedAtoms for the model associated with this data
      */
     @Override
     public Atom[] getAtomArray() {
         return refinementModel.usedAtoms;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Atom[] getActiveAtomArray() {
+        return refinementModel.activeAtoms;
     }
 
     /**

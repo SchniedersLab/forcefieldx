@@ -42,6 +42,7 @@ import java.util.logging.Logger;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import java.util.List;
+import java.util.Random;
 
 /**
  * @author Mallory R. Tollefson
@@ -60,7 +61,8 @@ public class Loop {
     public final LoopClosure loopClosure;
     private double[][] altCoords;
     private boolean useAltCoords = false;
-
+    private final Random rng = new Random();
+    
     public Loop(MolecularAssembly molAss, int firstResidue, int endResidue, boolean writeFile) {
 
         loopClosure = new LoopClosure();
@@ -143,8 +145,8 @@ public class Loop {
         loopClosure.solve3PepPoly(r_n[1], r_a[1], r_a[3], r_c[3], r_soln_n, r_soln_a, r_soln_c, n_soln);
 
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format(" Starting res.:             %d\n", firstResidue));
-        sb.append(String.format(" Ending res.:               %d\n", endResidue));
+        sb.append(String.format(" Starting res.:             %d\n", firstResidue + 1));
+        sb.append(String.format(" Ending res.:               %d\n", endResidue - 1));
         sb.append(String.format(" No. of solutions:          %d\n", n_soln[0]));
         logger.info(sb.toString());
 
@@ -256,7 +258,7 @@ public class Loop {
         }
         
         //Loop through again to build Hydrogens and side-chains with current C,N,CA coordinates
-        for (int i = stt_res + 1; i < end_res; i++) {
+        for (int i = stt_res + 1; i < end_res - 1; i++) {
             Residue newResidue = newChain[0].getResidue(i);
             Residue backResidue = newChain[0].getResidue(i-1);
             Residue forwardResidue = newChain[0].getResidue(i+1);
@@ -324,7 +326,7 @@ public class Loop {
                 coordsArray = fillCoordsArray(HA,coordsArray, ha);  
             }
             
-
+            double rotScale = rng.nextDouble();
             switch (name) {
                 case GLY: {
                     Atom HA2 = (Atom) newResidue.getAtomNode("HA2");
@@ -402,7 +404,7 @@ public class Loop {
                     System.arraycopy(BondedUtils.determineIntxyz(ca, 1.54, n, 109.5, c, 107.8, 1), 0, cb, 0, 3);
                     coordsArray = fillCoordsArray(CB,coordsArray, cb);                    
                     
-                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, 180.0, 0),0,cg1,0,3);         //CG1    
+                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, rotScale*180.0, 0),0,cg1,0,3);         //CG1    
                     coordsArray = fillCoordsArray(CG1,coordsArray, cg1);
                     
                     System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, cg1, 109.5, -1),0,cg2,0,3);      //CG2
@@ -481,7 +483,7 @@ public class Loop {
                     System.arraycopy(BondedUtils.determineIntxyz(ca, 1.54, n, 109.5, c, 107.8, 1),0,cb,0,3);
                     coordsArray = fillCoordsArray(CB,coordsArray, cb);     
                     
-                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, 180.0, 0),0,cg,0,3);            //CG
+                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, rotScale*180.0, 0),0,cg,0,3);            //CG
                     coordsArray = fillCoordsArray(CG,coordsArray, cg);
                     
                     System.arraycopy(BondedUtils.determineIntxyz(cg, dCD_CG, cb, dCD_CG_CB, ca, 180.0, 0),0,cd1,0,3);          //CD1
@@ -576,7 +578,7 @@ public class Loop {
                     System.arraycopy(BondedUtils.determineIntxyz(ca, 1.54, n, 109.5, c, 107.8, 1),0,cb,0,3);
                     coordsArray = fillCoordsArray(CB,coordsArray, cb);    
                     
-                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG1_CB, ca, dCG1_CB_CA, n, 0.0, 0),0,cg1,0,3);               //CG1
+                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG1_CB, ca, dCG1_CB_CA, n, rotScale*180.0, 0),0,cg1,0,3);    //CG1
                     coordsArray = fillCoordsArray(CG1,coordsArray, cg1);
                     
                     System.arraycopy(BondedUtils.determineIntxyz(cb, dCG2_CB, ca, dCG2_CB_CA, cg1, 109.5, 1),0,cg2,0,3);           //CG2
@@ -639,7 +641,7 @@ public class Loop {
                     System.arraycopy(BondedUtils.determineIntxyz(ca, 1.54, n, 109.5, c, 107.8, 1),0,cb,0,3);
                     coordsArray = fillCoordsArray(CB,coordsArray, cb);    
                     
-                    System.arraycopy(BondedUtils.determineIntxyz(cb, dOG_CB, ca, dOG_CB_CA, n, 180.0, 0),0,og,0,3);            //OG
+                    System.arraycopy(BondedUtils.determineIntxyz(cb, dOG_CB, ca, dOG_CB_CA, n, rotScale*180.0, 0),0,og,0,3);            //OG
                     coordsArray = fillCoordsArray(OG,coordsArray, og);
                     
                     System.arraycopy(BondedUtils.determineIntxyz(cb, dHB_CB, ca, dHB_CB_CA, og, 106.7, 1),0,hb2,0,3);          //HB2
@@ -692,7 +694,7 @@ public class Loop {
                     System.arraycopy(BondedUtils.determineIntxyz(ca, 1.54, n, 109.5, c, 107.8, 1),0,cb,0,3);
                     coordsArray = fillCoordsArray(CB,coordsArray, cb);    
                     
-                    System.arraycopy(BondedUtils.determineIntxyz(cb, dOG1_CB, ca, dOG1_CB_CA, n, 180.0, 0),0,og1,0,3);                 //OG1
+                    System.arraycopy(BondedUtils.determineIntxyz(cb, dOG1_CB, ca, dOG1_CB_CA, n, rotScale*180.0, 0),0,og1,0,3);                 //OG1
                     coordsArray = fillCoordsArray(OG1,coordsArray, og1);
                     
                     System.arraycopy(BondedUtils.determineIntxyz(cb, dCG2_CB, ca, dCG2_CB_CA, og1, 107.7, 1),0,cg2,0,3);               //CG2
@@ -741,7 +743,7 @@ public class Loop {
                     System.arraycopy(BondedUtils.determineIntxyz(ca, 1.54, n, 109.5, c, 107.8, 1),0,cb,0,3);
                     coordsArray = fillCoordsArray(CB,coordsArray, cb);    
                     
-                    System.arraycopy(BondedUtils.determineIntxyz(cb, dSG_CB, ca, dSG_CB_CA, n, 180.0, 0),0,sg,0,3);             //SG
+                    System.arraycopy(BondedUtils.determineIntxyz(cb, dSG_CB, ca, dSG_CB_CA, n, rotScale*180.0, 0),0,sg,0,3);             //SG
                     coordsArray = fillCoordsArray(SG,coordsArray, sg);
                     
                     System.arraycopy(BondedUtils.determineIntxyz(cb, dHB_CB, ca, dHB_CB_CA, sg, 112.0, 1),0,hb2,0,3);           //HB2
@@ -774,7 +776,7 @@ public class Loop {
                     System.arraycopy(BondedUtils.determineIntxyz(ca, 1.54, n, 109.5, c, 107.8, 1),0,cb,0,3);
                     coordsArray = fillCoordsArray(CB,coordsArray, cb);    
                     
-                    System.arraycopy(BondedUtils.determineIntxyz(cb, dSG_CB, ca, dSG_CB_CA, n, 180.0, 0),0,sg,0,3);            //SG
+                    System.arraycopy(BondedUtils.determineIntxyz(cb, dSG_CB, ca, dSG_CB_CA, n, rotScale*180.0, 0),0,sg,0,3);            //SG
                     coordsArray = fillCoordsArray(SG,coordsArray, sg);
                     
                     System.arraycopy(BondedUtils.determineIntxyz(cb, dHB_CB, ca, dHB_CB_CA, sg, 112.0, 1),0,hb2,0,3);          //HB2
@@ -848,7 +850,7 @@ public class Loop {
                     System.arraycopy(BondedUtils.determineIntxyz(ca, 1.54, n, 109.5, c, 107.8, 1),0,cb,0,3);
                     coordsArray = fillCoordsArray(CB,coordsArray, cb);    
                     
-                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, 180.0, 0),0,cg,0,3);            //CG
+                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, rotScale*180.0, 0),0,cg,0,3);            //CG
                     coordsArray = fillCoordsArray(CG,coordsArray, cg);
                     
                     System.arraycopy(BondedUtils.determineIntxyz(cg, dCD_CG, cb, dCD_CG_CB, ca, 180.0, 0),0,cd1,0,3);          //CD1
@@ -930,7 +932,7 @@ public class Loop {
                     System.arraycopy(BondedUtils.determineIntxyz(ca, 1.54, n, 109.5, c, 107.8, 1),0,cb,0,3);
                     coordsArray = fillCoordsArray(CB,coordsArray, cb);    
                     
-                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, 30.0, 0),0,cg,0,3);             //CG
+                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, rotScale*180.0, 0),0,cg,0,3);             //CG
                     coordsArray = fillCoordsArray(CG,coordsArray, cg);
                     
                     System.arraycopy(BondedUtils.determineIntxyz(cg, dCD_CG, cb, dCD_CG_CB, ca, 30.0, 0),0,cd,0,3);            //CD
@@ -1027,7 +1029,7 @@ public class Loop {
                     System.arraycopy(BondedUtils.determineIntxyz(ca, dCB_CA, n, 109.5, c, 107.8, 1),0,cb,0,3);
                     coordsArray = fillCoordsArray(CB,coordsArray, cb);    
                     
-                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, 62.0, 0),0,cg,0,3);                     //CG
+                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, rotScale*180.0, 0),0,cg,0,3);                     //CG
                     coordsArray = fillCoordsArray(CG,coordsArray, cg);
                     
                     System.arraycopy(BondedUtils.determineIntxyz(cg, dCD_CG, cb, dCD_CG_CB, ca, 90.0, 0),0,cd1,0,3);                   //CD1
@@ -1134,7 +1136,7 @@ public class Loop {
                     System.arraycopy(BondedUtils.determineIntxyz(ca, 1.54, n, 109.5, c, 107.8, 1),0,cb,0,3);
                     coordsArray = fillCoordsArray(CB,coordsArray, cb);
                     
-                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, 62.0, 0),0,cg,0,3);             //CG
+                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, rotScale*180.0, 0),0,cg,0,3);             //CG
                     coordsArray = fillCoordsArray(CG,coordsArray, cg);
                     
                     System.arraycopy(BondedUtils.determineIntxyz(cg, dCD_CG, cb, dCD_CG_CB, ca, 90.0, 0),0,cd1,0,3);           //CD1
@@ -1278,7 +1280,7 @@ public class Loop {
                     System.arraycopy(BondedUtils.determineIntxyz(ca, 1.54, n, 109.5, c, 107.8, 1),0,cb,0,3);
                     coordsArray = fillCoordsArray(CB,coordsArray, cb);
                     
-                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, 62.0, 0),0,cg,0,3);                 //CG
+                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, rotScale*180.0, 0),0,cg,0,3);                 //CG
                     coordsArray = fillCoordsArray(CG,coordsArray, cg);
                     
                     System.arraycopy(BondedUtils.determineIntxyz(cg, dCD1_CG, cb, dCD1_CG_CB, ca, -90.0, 0),0,cd1,0,3);            //CD1
@@ -1398,7 +1400,7 @@ public class Loop {
                     System.arraycopy(BondedUtils.determineIntxyz(ca, 1.54, n, 109.5, c, 107.8, 1),0,cb,0,3);
                     coordsArray = fillCoordsArray(CB,coordsArray, cb);
                     
-                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, 180.0, 0),0,cg,0,3);            //CG
+                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, rotScale*180.0, 0),0,cg,0,3);            //CG
                     coordsArray = fillCoordsArray(CG,coordsArray, cg);
                     
                     System.arraycopy(BondedUtils.determineIntxyz(cg, dND1_CG, cb, dND1_CG_CB, ca, 180.0, 0),0,nd1,0,3);        //ND1
@@ -1494,7 +1496,7 @@ public class Loop {
                     System.arraycopy(BondedUtils.determineIntxyz(ca, 1.54, n, 109.5, c, 107.8, 1),0,cb,0,3);
                     coordsArray = fillCoordsArray(CB,coordsArray, cb);
                     
-                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, 180.0, 0),0,cg,0,3);            //CG
+                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, rotScale*180.0, 0),0,cg,0,3);            //CG
                     coordsArray = fillCoordsArray(CG,coordsArray, cg);
                     
                     System.arraycopy(BondedUtils.determineIntxyz(cg, dND1_CG, cb, dND1_CG_CB, ca, 180.0, 0),0,nd1,0,3);        //ND1
@@ -1587,7 +1589,7 @@ public class Loop {
                     System.arraycopy(BondedUtils.determineIntxyz(ca, 1.54, n, 109.5, c, 107.8, 1),0,cb,0,3);
                     coordsArray = fillCoordsArray(CB,coordsArray, cb);
                     
-                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, 180.0, 0),0,cg,0,3);            //CG
+                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, rotScale*180.0, 0),0,cg,0,3);            //CG
                     coordsArray = fillCoordsArray(CG,coordsArray, cg);
                     
                     System.arraycopy(BondedUtils.determineIntxyz(cg, dND1_CG, cb, dND1_CG_CB, ca, 180.0, 0),0,nd1,0,3);        //ND1
@@ -1650,7 +1652,7 @@ public class Loop {
                     System.arraycopy(BondedUtils.determineIntxyz(ca, 1.54, n, 109.5, c, 107.8, 1),0,cb,0,3);
                     coordsArray = fillCoordsArray(CB,coordsArray, cb);
                     
-                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, 180.0, 0),0,cg,0,3);        //CG
+                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, rotScale*180.0, 0),0,cg,0,3);        //CG
                     coordsArray = fillCoordsArray(CG,coordsArray, cg);
                     
                     System.arraycopy(BondedUtils.determineIntxyz(cg, dOD1_CG, cb, dOD1_CG_CB, ca, 0.0, 0),0,od1,0,3);      //OD1
@@ -1704,7 +1706,7 @@ public class Loop {
                     System.arraycopy(BondedUtils.determineIntxyz(ca, 1.54, n, 109.5, c, 107.8, 1),0,cb,0,3);
                     coordsArray = fillCoordsArray(CB,coordsArray, cb);
                     
-                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, 180.0, 0),0,cg,0,3);            //CG
+                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, rotScale*180.0, 0),0,cg,0,3);            //CG
                     coordsArray = fillCoordsArray(CG,coordsArray, cg);
                     
                     System.arraycopy(BondedUtils.determineIntxyz(cg, dOD1_CG, cb, dOD1_CG_CB, ca, 0.0, 0),0,od1,0,3);          //OD1
@@ -1763,7 +1765,7 @@ public class Loop {
                     System.arraycopy(BondedUtils.determineIntxyz(ca, 1.54, n, 109.5, c, 107.8, 1),0,cb,0,3);
                     coordsArray = fillCoordsArray(CB,coordsArray, cb);
                     
-                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, 180.0, 0),0,cg,0,3);            //CG
+                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, rotScale*180.0, 0),0,cg,0,3);            //CG
                     coordsArray = fillCoordsArray(CG,coordsArray, cg);
                     
                     System.arraycopy(BondedUtils.determineIntxyz(cg, dOD1_CG, cb, dOD1_CG_CB, ca, 0.0, 0),0,od1,0,3);          //OD1
@@ -1831,7 +1833,7 @@ public class Loop {
                     System.arraycopy(BondedUtils.determineIntxyz(ca, 1.54, n, 109.5, c, 107.8, 1),0,cb,0,3);
                     coordsArray = fillCoordsArray(CB,coordsArray, cb);
                     
-                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, 180.0, 0),0,cg,0,3);            //CG
+                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, rotScale*180.0, 0),0,cg,0,3);            //CG
                     coordsArray = fillCoordsArray(CG,coordsArray, cg);
                     
                     System.arraycopy(BondedUtils.determineIntxyz(cg, dCD_CG, cb, dCD_CG_CB, ca, 180.0, 0),0,cd,0,3);           //CD
@@ -1908,7 +1910,7 @@ public class Loop {
                     System.arraycopy(BondedUtils.determineIntxyz(ca, 1.54, n, 109.5, c, 107.8, 1),0,cb,0,3);
                     coordsArray = fillCoordsArray(CB,coordsArray, cb);
                     
-                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, 180.0, 0),0,cg,0,3);            //CG
+                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, rotScale*180.0, 0),0,cg,0,3);            //CG
                     coordsArray = fillCoordsArray(CG,coordsArray, cg);
                     
                     System.arraycopy(BondedUtils.determineIntxyz(cg, dCD_CG, cb, dCD_CG_CB, ca, 180.0, 0),0,cd,0,3);           //CD
@@ -1990,7 +1992,7 @@ public class Loop {
                     System.arraycopy(BondedUtils.determineIntxyz(ca, 1.54, n, 109.5, c, 107.8, 1),0,cb,0,3);
                     coordsArray = fillCoordsArray(CB,coordsArray, cb);
                     
-                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, 180.0, 0),0,cg,0,3);            //CG
+                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, rotScale*180.0, 0),0,cg,0,3);            //CG
                     coordsArray = fillCoordsArray(CG,coordsArray, cg);
                     
                     System.arraycopy(BondedUtils.determineIntxyz(cg, dCD_CG, cb, dCD_CG_CB, ca, 180.0, 0),0,cd,0,3);           //CD
@@ -2071,7 +2073,7 @@ public class Loop {
                     System.arraycopy(BondedUtils.determineIntxyz(ca, 1.54, n, 109.5, c, 107.8, 1),0,cb,0,3);
                     coordsArray = fillCoordsArray(CB,coordsArray, cb);
                     
-                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, 180.0, 0),0,cg,0,3);            //CG
+                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, rotScale*180.0, 0),0,cg,0,3);            //CG
                     coordsArray = fillCoordsArray(CG,coordsArray, cg);
                     
                     System.arraycopy(BondedUtils.determineIntxyz(cg, dSD_CG, cb, dSD_CG_CB, ca, 180.0, 0),0,sd,0,3);           //SD
@@ -2174,7 +2176,7 @@ public class Loop {
                     System.arraycopy(BondedUtils.determineIntxyz(ca, 1.54, n, 109.5, c, 107.8, 1),0,cb,0,3);
                     coordsArray = fillCoordsArray(CB,coordsArray, cb);
                     
-                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, 180.0, 0),0,cg,0,3);            //CG
+                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, rotScale*180.0, 0),0,cg,0,3);            //CG
                     coordsArray = fillCoordsArray(CG,coordsArray, cg);
                     
                     System.arraycopy(BondedUtils.determineIntxyz(cg, dCD_CG, cb, dCD_CG_CB, ca, 180.0, 0),0,cd,0,3);           //CD
@@ -2290,7 +2292,7 @@ public class Loop {
                     System.arraycopy(BondedUtils.determineIntxyz(ca, 1.54, n, 109.5, c, 107.8, 1),0,cb,0,3);
                     coordsArray = fillCoordsArray(CB,coordsArray, cb);
                     
-                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, 180.0, 0),0,cg,0,3);            //CG
+                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, rotScale*180.0, 0),0,cg,0,3);            //CG
                     coordsArray = fillCoordsArray(CG,coordsArray, cg);
                     
                     System.arraycopy(BondedUtils.determineIntxyz(cg, dCD_CG, cb, dCD_CG_CB, ca, 180.0, 0),0,cd,0,3);           //CD
@@ -2413,7 +2415,7 @@ public class Loop {
                     System.arraycopy(BondedUtils.determineIntxyz(ca, 1.54, n, 109.5, c, 107.8, 1),0,cb,0,3);
                     coordsArray = fillCoordsArray(CB,coordsArray, cb);
                     
-                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, 180.0, 0),0,cg,0,3);            //CG
+                    System.arraycopy(BondedUtils.determineIntxyz(cb, dCG_CB, ca, dCG_CB_CA, n, rotScale*180.0, 0),0,cg,0,3);            //CG
                     coordsArray = fillCoordsArray(CG,coordsArray, cg);
                     
                     System.arraycopy(BondedUtils.determineIntxyz(cg, dCD_CG, cb, dCD_CG_CB, ca, 180.0, 0),0,cd,0,3);           //CD

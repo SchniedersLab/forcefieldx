@@ -43,11 +43,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.lang.String.format;
 
 import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.io.FilenameUtils;
 
 import ffx.potential.ForceFieldEnergy;
@@ -222,13 +224,25 @@ public class PotentialsFileOpener implements FileOpener {
             Path pathI = allPaths[i];
             MolecularAssembly assembly = new MolecularAssembly(pathI.toString());
             assembly.setFile(fileI);
-
             CompositeConfiguration properties = Keyword.loadProperties(fileI);
             ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties);
             ForceField forceField = forceFieldFilter.parse();
+            String patches[] = properties.getStringArray("patch");
+            for (String patch : patches) {
+                logger.info(" Attempting to read force field patch from " + patch + ".");
+                CompositeConfiguration patchConfiguration = new CompositeConfiguration();
+                try {
+                    patchConfiguration.addProperty("propertyFile", fileI.getCanonicalPath());
+                } catch (IOException e) {
+                    logger.log(Level.INFO, " Error loading {0}.", patch);
+                }
+                patchConfiguration.addProperty("parameters", patch);
+                forceFieldFilter = new ForceFieldFilter(patchConfiguration);
+                ForceField patchForceField = forceFieldFilter.parse();
+                forceField.append(patchForceField);
+            }
             assembly.setForceField(forceField);
             SystemFilter filter;
-
             if (new PDBFileFilter().acceptDeep(fileI)) {
                 filter = new PDBFilter(fileI, assembly, forceField, properties);
             } else if (new XYZFileFilter().acceptDeep(fileI)) {

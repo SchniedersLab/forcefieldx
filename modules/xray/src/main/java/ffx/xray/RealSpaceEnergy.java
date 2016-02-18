@@ -46,8 +46,6 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
-import static java.util.Arrays.fill;
-
 /**
  * Combine the Real Space target and chemical potential energy.
  *
@@ -134,6 +132,8 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
                 count++;
             }
         }
+
+        this.nXYZ = count * 3;
         nActive = count;
         activeAtoms = new Atom[count];
         count = 0;
@@ -315,11 +315,14 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
      */
     @Override
     public double[] getCoordinates(double x[]) {
-        assert (x != null);
+        int n = getNumberOfVariables();
+        if (x == null || x.length < n) {
+            x = new double[n];
+        }
         int index = 0;
-        fill(x, 0.0);
-        if (refineXYZ) {
-            for (Atom a : activeAtoms) {
+        for (int i = 0; i < nActive; i++) {
+            Atom a = activeAtoms[i];
+            if (a.isActive()) {
                 x[index++] = a.getX();
                 x[index++] = a.getY();
                 x[index++] = a.getZ();
@@ -448,7 +451,16 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
      */
     @Override
     public VARIABLE_TYPE[] getVariableTypes() {
-        return null;
+
+        VARIABLE_TYPE type[] = new VARIABLE_TYPE[nActive * 3];
+
+        int index = 0;
+        for (int i = 0; i < nActive; i++) {
+            type[index++] = VARIABLE_TYPE.X;
+            type[index++] = VARIABLE_TYPE.Y;
+            type[index++] = VARIABLE_TYPE.Z;
+        }
+        return type;
     }
 
     @Override
