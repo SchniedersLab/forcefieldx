@@ -6939,7 +6939,7 @@ public class RotamerOptimization implements Terminatable {
             } else if (singleLines.size() > 0) {
                 loaded = 1;
             } else {
-                logger.severe(String.format("Empty or unreadable energy restart file: %s.", restartFile.getCanonicalPath()));
+                logger.warning(String.format("Empty or unreadable energy restart file: %s.", restartFile.getCanonicalPath()));
             }
             if (loaded >= 1) {
                 jobMapSingles.clear();
