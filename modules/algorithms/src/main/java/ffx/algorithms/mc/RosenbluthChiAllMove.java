@@ -38,12 +38,15 @@
 package ffx.algorithms.mc;
 
 import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.ROLS;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.bonded.ResidueState;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
+import ffx.potential.bonded.Torsion;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Logger;
@@ -53,31 +56,43 @@ import java.util.logging.Logger;
  * For use with RosenbluthRotamerMC.
  * @author S. LuCore
  */
-public class RosenbluthRotamerMove implements MCMove {
-    private static final Logger logger = Logger.getLogger(RosenbluthRotamerMove.class.getName());
+public class RosenbluthChiAllMove implements MCMove {
+    private static final Logger logger = Logger.getLogger(RosenbluthChi0Move.class.getName());
     
     private final Residue target;
     private final ResidueState origState;
     private final Rotamer newState;
-    public final double theta;
+    public final double thetas[];
     
-    public RosenbluthRotamerMove(Residue target) {
+    public RosenbluthChiAllMove(Residue target) {
         this.target = target;
         AminoAcid3 name = AminoAcid3.valueOf(target.getName());
-        origState = ResidueState.storeAllCoordinates(target);
+        origState = target.storeState();
         double chi[] = RotamerLibrary.measureRotamer(target, false);
-        theta = ThreadLocalRandom.current().nextDouble(360.0);
-        chi[0] = theta;
-        newState = new Rotamer(name, chi);
+        thetas = new double[chi.length];
+        for (int i = 0; i < thetas.length; i++) {
+            thetas[i] = ThreadLocalRandom.current().nextDouble(360.0) - 180;
+            chi[i] = thetas[i];
+        }
+        // Need to add sigma values to construct a new Rotamer with these chis.
+        double values[] = new double[chi.length * 2];
+        for (int i = 0; i < chi.length; i++) {
+            int ii = 2*i;
+            values[ii] = chi[i];
+            values[ii+1] = 0.0;
+        }
+        newState = new Rotamer(name, values);
     }
     
     /**
      * Performs the move associated with this MCMove.
+     * Also calls energy() on all Torsions to update chi values.
      * @return Extra-potential energy changes
      */
     @Override
     public double move() {
         RotamerLibrary.applyRotamer(target, newState);
+        updateTorsions();
         return 0.0;
     }
     
@@ -88,8 +103,16 @@ public class RosenbluthRotamerMove implements MCMove {
      */
     @Override
     public double revertMove() {
-        ResidueState.revertAllCoordinates(target, origState);
+        target.revertState(origState);
+        updateTorsions();
         return 0.0;
+    }
+    
+    private void updateTorsions() {
+        List<ROLS> torsions = target.getTorsionList();
+        for (ROLS rols : torsions) {
+            ((Torsion) rols).update();
+        }
     }
     
     /**
@@ -107,8 +130,8 @@ public class RosenbluthRotamerMove implements MCMove {
      */
     @Override
     public String getDescription() {
-        return String.format("Rosenbluth Rotamer Move:\n   Res:   %s\n   Theta: %3.2f",
-                target.toString(), theta);
+        return String.format("Rosenbluth Rotamer Move:\n   Res:   %s\n   Thetas: %s",
+                target.toString(), Arrays.toString(thetas));
     }
     
 }
