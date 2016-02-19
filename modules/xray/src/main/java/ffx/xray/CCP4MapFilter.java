@@ -65,6 +65,7 @@ import ffx.crystal.SpaceGroup;
  * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html"
  * target="_blank">CCP4 library documentation</a>
  *
+ * @since 1.0
  */
 public class CCP4MapFilter implements RealSpaceFileFilter {
 
@@ -75,86 +76,84 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
      */
     @Override
     public Crystal getCrystal(String filename, CompositeConfiguration properties) {
-        int imapdata;
+        int imapData;
         int sg = -1;
-        double cella = -1.0;
-        double cellb = -1.0;
-        double cellc = -1.0;
-        double cellalpha = -1.0;
-        double cellbeta = -1.0;
-        double cellgamma = -1.0;
+        double cellA = -1.0;
+        double cellB = -1.0;
+        double cellC = -1.0;
+        double cellAlpha = -1.0;
+        double cellBeta = -1.0;
+        double cellGamma = -1.0;
 
-        ByteOrder b = ByteOrder.nativeOrder();
+        ByteOrder byteOrder = ByteOrder.nativeOrder();
 
-        FileInputStream fis;
-        DataInputStream dis;
+        FileInputStream fileInputStream;
+        DataInputStream dataInputStream;
 
         // first determine byte order of file versus system
         try {
-            fis = new FileInputStream(filename);
-            dis = new DataInputStream(fis);
+            fileInputStream = new FileInputStream(filename);
+            dataInputStream = new DataInputStream(fileInputStream);
 
-            dis.skipBytes(212);
+            dataInputStream.skipBytes(212);
             byte bytes[] = new byte[4];
-            dis.read(bytes, 0, 4);
-            ByteBuffer bb = ByteBuffer.wrap(bytes);
+            dataInputStream.read(bytes, 0, 4);
+            ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
 
-            imapdata = bb.order(ByteOrder.BIG_ENDIAN).getInt();
-            String stampstr = Integer.toHexString(imapdata);
+            imapData = byteBuffer.order(ByteOrder.BIG_ENDIAN).getInt();
+            String stampString = Integer.toHexString(imapData);
             // System.out.println("stamp: " + stampstr);
-            switch (stampstr.charAt(0)) {
+            switch (stampString.charAt(0)) {
                 case '1':
                 case '3':
-                    if (b.equals(ByteOrder.LITTLE_ENDIAN)) {
-                        b = ByteOrder.BIG_ENDIAN;
+                    if (byteOrder.equals(ByteOrder.LITTLE_ENDIAN)) {
+                        byteOrder = ByteOrder.BIG_ENDIAN;
                     }
                     break;
                 case '4':
-                    if (b.equals(ByteOrder.BIG_ENDIAN)) {
-                        b = ByteOrder.LITTLE_ENDIAN;
+                    if (byteOrder.equals(ByteOrder.BIG_ENDIAN)) {
+                        byteOrder = ByteOrder.LITTLE_ENDIAN;
                     }
                     break;
             }
-            fis.close();
+            fileInputStream.close();
         } catch (Exception e) {
             String message = "Fatal exception reading CCP4 map.\n";
             logger.log(Level.SEVERE, message, e);
-            System.exit(-1);
         }
 
         try {
-            fis = new FileInputStream(filename);
-            dis = new DataInputStream(fis);
+            fileInputStream = new FileInputStream(filename);
+            dataInputStream = new DataInputStream(fileInputStream);
 
-            dis.skipBytes(40);
+            dataInputStream.skipBytes(40);
             byte bytes[] = new byte[80];
-            dis.read(bytes, 0, 80);
-            ByteBuffer bb = ByteBuffer.wrap(bytes);
+            dataInputStream.read(bytes, 0, 80);
+            ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
 
-            cella = bb.order(b).getFloat();
-            cellb = bb.order(b).getFloat();
-            cellc = bb.order(b).getFloat();
-            cellalpha = bb.order(b).getFloat();
-            cellbeta = bb.order(b).getFloat();
-            cellgamma = bb.order(b).getFloat();
+            cellA = byteBuffer.order(byteOrder).getFloat();
+            cellB = byteBuffer.order(byteOrder).getFloat();
+            cellC = byteBuffer.order(byteOrder).getFloat();
+            cellAlpha = byteBuffer.order(byteOrder).getFloat();
+            cellBeta = byteBuffer.order(byteOrder).getFloat();
+            cellGamma = byteBuffer.order(byteOrder).getFloat();
 
             for (int i = 0; i < 3; i++) {
-                bb.order(b).getInt();
+                byteBuffer.order(byteOrder).getInt();
             }
             for (int i = 0; i < 3; i++) {
-                bb.order(b).getFloat();
+                byteBuffer.order(byteOrder).getFloat();
             }
 
-            sg = bb.order(b).getInt();
-            fis.close();
+            sg = byteBuffer.order(byteOrder).getInt();
+            fileInputStream.close();
         } catch (Exception e) {
             String message = "Fatal exception reading CCP4 map.\n";
             logger.log(Level.SEVERE, message, e);
-            System.exit(-1);
         }
 
-        return new Crystal(cella, cellb, cellc,
-                cellalpha, cellbeta, cellgamma,
+        return new Crystal(cellA, cellB, cellC,
+                cellAlpha, cellBeta, cellGamma,
                 SpaceGroup.spaceGroupNames[sg - 1]);
     }
 
@@ -166,13 +165,12 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
             CompositeConfiguration properties) {
 
         int imapdata;
-        double cella, cellb, cellc, cellalpha, cellbeta, cellgamma;
-        String stampstr;
+        double cellA, cellB, cellC, cellAlpha, cellBeta, cellGamma;
+        String stampString;
 
-        ByteOrder b = ByteOrder.nativeOrder();
-
-        FileInputStream fis;
-        DataInputStream dis;
+        ByteOrder byteOrder = ByteOrder.nativeOrder();
+        FileInputStream fileInputStream;
+        DataInputStream dataInputStream;
 
         double min = Double.POSITIVE_INFINITY;
         double max = Double.NEGATIVE_INFINITY;
@@ -180,85 +178,81 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
         double sd = 0.0;
         double rmsd = 0.0;
 
-        // first determine byte order of file versus system
+        // First determine byte order of file versus system
         try {
-            fis = new FileInputStream(filename);
-            dis = new DataInputStream(fis);
+            fileInputStream = new FileInputStream(filename);
+            dataInputStream = new DataInputStream(fileInputStream);
 
-            dis.skipBytes(212);
+            dataInputStream.skipBytes(212);
             byte bytes[] = new byte[4];
-            dis.read(bytes, 0, 4);
-            ByteBuffer bb = ByteBuffer.wrap(bytes);
+            dataInputStream.read(bytes, 0, 4);
+            ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
 
-            imapdata = bb.order(ByteOrder.BIG_ENDIAN).getInt();
-            stampstr = Integer.toHexString(imapdata);
-            // System.out.println("stamp: " + stampstr);
-            switch (stampstr.charAt(0)) {
+            imapdata = byteBuffer.order(ByteOrder.BIG_ENDIAN).getInt();
+            stampString = Integer.toHexString(imapdata);
+            switch (stampString.charAt(0)) {
                 case '1':
                 case '3':
-                    if (b.equals(ByteOrder.LITTLE_ENDIAN)) {
-                        b = ByteOrder.BIG_ENDIAN;
+                    if (byteOrder.equals(ByteOrder.LITTLE_ENDIAN)) {
+                        byteOrder = ByteOrder.BIG_ENDIAN;
                     }
                     break;
                 case '4':
-                    if (b.equals(ByteOrder.BIG_ENDIAN)) {
-                        b = ByteOrder.LITTLE_ENDIAN;
+                    if (byteOrder.equals(ByteOrder.BIG_ENDIAN)) {
+                        byteOrder = ByteOrder.LITTLE_ENDIAN;
                     }
                     break;
             }
-
             if (logger.isLoggable(Level.INFO)) {
                 StringBuilder sb = new StringBuilder();
-                sb.append(String.format("\nOpening CCP4 map: %s\n", filename));
-                sb.append(String.format("file type (machine stamp): %s\n",
-                        stampstr));
+                sb.append(String.format("\n Opening CCP4 map: %s\n", filename));
+                //sb.append(String.format("file type (machine stamp): %s\n", stampString));
                 logger.info(sb.toString());
             }
 
-            fis.close();
+            fileInputStream.close();
         } catch (Exception e) {
             String message = "Fatal exception reading CCP4 map.\n";
             logger.log(Level.SEVERE, message, e);
-            System.exit(-1);
         }
 
         try {
-            fis = new FileInputStream(filename);
-            dis = new DataInputStream(fis);
+            fileInputStream = new FileInputStream(filename);
+            dataInputStream = new DataInputStream(fileInputStream);
 
             byte bytes[] = new byte[2048];
 
-            dis.read(bytes, 0, 1024);
-            ByteBuffer bb = ByteBuffer.wrap(bytes);
+            dataInputStream.read(bytes, 0, 1024);
+            ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
 
             int ext[] = new int[3];
-            ext[0] = bb.order(b).getInt();
-            ext[1] = bb.order(b).getInt();
-            ext[2] = bb.order(b).getInt();
+            ext[0] = byteBuffer.order(byteOrder).getInt();
+            ext[1] = byteBuffer.order(byteOrder).getInt();
+            ext[2] = byteBuffer.order(byteOrder).getInt();
 
             // mode (2 = reals, only one we accept)
-            int mode = bb.order(b).getInt();
+            int mode = byteBuffer.order(byteOrder).getInt();
 
             int ori[] = new int[3];
-            ori[0] = bb.order(b).getInt();
-            ori[1] = bb.order(b).getInt();
-            ori[2] = bb.order(b).getInt();
+            ori[0] = byteBuffer.order(byteOrder).getInt();
+            ori[1] = byteBuffer.order(byteOrder).getInt();
+            ori[2] = byteBuffer.order(byteOrder).getInt();
 
             int ni[] = new int[3];
-            ni[0] = bb.order(b).getInt();
-            ni[1] = bb.order(b).getInt();
-            ni[2] = bb.order(b).getInt();
+            ni[0] = byteBuffer.order(byteOrder).getInt();
+            ni[1] = byteBuffer.order(byteOrder).getInt();
+            ni[2] = byteBuffer.order(byteOrder).getInt();
 
-            cella = bb.order(b).getFloat();
-            cellb = bb.order(b).getFloat();
-            cellc = bb.order(b).getFloat();
-            cellalpha = bb.order(b).getFloat();
-            cellbeta = bb.order(b).getFloat();
-            cellgamma = bb.order(b).getFloat();
+            cellA = byteBuffer.order(byteOrder).getFloat();
+            cellB = byteBuffer.order(byteOrder).getFloat();
+            cellC = byteBuffer.order(byteOrder).getFloat();
+            cellAlpha = byteBuffer.order(byteOrder).getFloat();
+            cellBeta = byteBuffer.order(byteOrder).getFloat();
+            cellGamma = byteBuffer.order(byteOrder).getFloat();
 
             int axisi[] = new int[3];
             for (int i = 0; i < 3; i++) {
-                int axis = bb.order(b).getInt();
+                int axis = byteBuffer.order(byteOrder).getInt();
                 switch (axis) {
                     case 1:
                         axisi[0] = i;
@@ -272,83 +266,63 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
                 }
             }
 
-            min = bb.order(b).getFloat();
-            max = bb.order(b).getFloat();
-            mean = bb.order(b).getFloat();
-
-            int sg = bb.order(b).getInt();
-
-            int nsymb = bb.order(b).getInt();
-
-            int skew = bb.order(b).getInt();
+            min = byteBuffer.order(byteOrder).getFloat();
+            max = byteBuffer.order(byteOrder).getFloat();
+            mean = byteBuffer.order(byteOrder).getFloat();
+            int sg = byteBuffer.order(byteOrder).getInt();
+            int nsymb = byteBuffer.order(byteOrder).getInt();
+            int skew = byteBuffer.order(byteOrder).getInt();
 
             for (int i = 0; i < 12; i++) {
-                bb.order(b).getFloat();
+                byteBuffer.order(byteOrder).getFloat();
             }
 
             for (int i = 0; i < 15; i++) {
-                bb.order(b).getInt();
+                byteBuffer.order(byteOrder).getInt();
             }
 
             byte word[] = new byte[2048];
-            bb.order(b).get(word, 0, 4);
-            String mapstr = new String(word);
-            // System.out.println("MAP?: " + mapstr);
+            byteBuffer.order(byteOrder).get(word, 0, 4);
+            String mapString = new String(word);
+            sd = byteBuffer.order(byteOrder).getFloat();
+            rmsd = byteBuffer.order(byteOrder).getFloat();
 
-            sd = bb.order(b).getFloat();
-            rmsd = bb.order(b).getFloat();
-
-            /*
-             System.out.println("col: " + ori[0] + " " + ext[0] + " " + ni[0]);
-             System.out.println("row: " + ori[1] + " " + ext[1] + " " + ni[1]);
-             System.out.println("sec: " + ori[2] + " " + ext[2] + " " + ni[2]);
-             System.out.println("order: " + axisi[0] + " " + axisi[1] + " " + axisi[2]);
-             System.out.println("min: " + min + " max: " + max + " mean: " + mean);
-             System.out.println("sd: " + sd + " rmsd: " + rmsd);
-             System.out.println("sg: " + sg);
-             System.out.println("a: " + cella + " b: " + cellb + " c: " + cellc
-             + " alpha: " + cellalpha + " beta: " + cellbeta + " gamma: " + cellgamma);
-             */
             if (logger.isLoggable(Level.INFO)) {
                 StringBuilder sb = new StringBuilder();
-                sb.append(String.format("  column origin: %d extent: %d\n",
+                sb.append(String.format("  Column origin:  %d\t Extent: %d\n",
                         ori[0], ext[0]));
-                sb.append(String.format("  row origin: %d extent: %d\n",
+                sb.append(String.format("  Row origin:     %d\t Extent: %d\n",
                         ori[1], ext[1]));
-                sb.append(String.format("  section origin: %d extent: %d\n",
+                sb.append(String.format("  Section origin: %d\t Extent: %d\n",
                         ori[2], ext[2]));
-                sb.append(String.format("  axis order: %d %d %d\n",
+                sb.append(String.format("  Axis order:     %d %d %d\n",
                         axisi[0], axisi[1], axisi[2]));
-                sb.append(String.format("  number of X, Y, Z columns: %d %d %d\n",
+                sb.append(String.format("  Number of X, Y, Z columns: %d %d %d\n",
                         ni[0], ni[1], ni[2]));
-                sb.append(String.format("  spacegroup #: %d (name: %s)\n",
+                sb.append(String.format("  Spacegroup:     %d (%s)\n",
                         sg, SpaceGroup.spaceGroupNames[sg - 1]));
-                sb.append(String.format("  cell: %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n",
-                        cella, cellb, cellc, cellalpha, cellbeta, cellgamma));
+                sb.append(String.format("  Cell: %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n",
+                        cellA, cellB, cellC, cellAlpha, cellBeta, cellGamma));
                 logger.info(sb.toString());
             }
 
-            int nlabel = bb.order(b).getInt();
-
-            // System.out.println("nsymb: " + nsymb + " nlabel: " + nlabel);
+            int nlabel = byteBuffer.order(byteOrder).getInt();
             for (int i = 0; i < 10; i++) {
-                bb.order(b).get(word, 0, 80);
-                mapstr = new String(word);
-                // System.out.println("label " + i + " : " + mapstr);
+                byteBuffer.order(byteOrder).get(word, 0, 80);
+                mapString = new String(word);
             }
 
             if (nsymb > 0) {
-                bb.rewind();
-                dis.read(bytes, 0, nsymb);
+                byteBuffer.rewind();
+                dataInputStream.read(bytes, 0, nsymb);
                 for (int i = 0; i < nsymb / 80; i += 80) {
-                    bb.order(b).get(word, 0, 80);
-                    mapstr = new String(word);
-                    // System.out.println("symm: " + mapstr);
+                    byteBuffer.order(byteOrder).get(word, 0, 80);
+                    mapString = new String(word);
                 }
             }
 
-            bb.rewind();
-            dis.read(bytes, 0, 2048);
+            byteBuffer.rewind();
+            dataInputStream.read(bytes, 0, 2048);
             refinementdata.data = new double[ext[0] * ext[1] * ext[2]];
             int ijk[] = new int[3];
             int index, x, y, z;
@@ -371,19 +345,18 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
                         y = ijk[axisi[1]];
                         z = ijk[axisi[2]];
                         index = x + nx * (y + ny * z);
-                        refinementdata.data[index] = bb.order(b).getFloat();
-                        if (!bb.hasRemaining()) {
-                            bb.rewind();
-                            dis.read(bytes, 0, 2048);
+                        refinementdata.data[index] = byteBuffer.order(byteOrder).getFloat();
+                        if (!byteBuffer.hasRemaining()) {
+                            byteBuffer.rewind();
+                            dataInputStream.read(bytes, 0, 2048);
                         }
                     }
                 }
             }
-            fis.close();
+            fileInputStream.close();
         } catch (Exception e) {
             String message = "Fatal exception reading CCP4 map.\n";
             logger.log(Level.SEVERE, message, e);
-            System.exit(-1);
         }
 
         return true;

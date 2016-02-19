@@ -255,10 +255,12 @@ if (options.a){
     runOSRW = true;
     runRotamer = true;
 }
-//build loop with PDBFilter if an existing loop is not provided
+// Build loop with PDBFilter if an existing loop is not provided
 if(!(options.s && options.f)){
     System.setProperty("buildLoops", "true");
 }
+
+// Initial force field will not include non-bonded iteractions.
 System.setProperty("vdwterm", "false");
 
 List<String> arguments = options.arguments();
@@ -327,13 +329,14 @@ if (arguments.size() > 1) {
     }
 }
 
-
 // Get a reference to the first system's ForceFieldEnergy.
 ForceFieldEnergy forceFieldEnergy = active.getPotentialEnergy();
 // Set built atoms active/use flags to true (false for other atoms).
 Atom[] atoms = active.getAtomArray();
 
-//if existing loop is used, set loop atoms to match atoms built with PDBFilter
+/**
+ * If existing loop is used, set loop atoms to match atoms built with PDBFilter.
+ */
 if(options.s && options.f){
     for (int i = 0; i < atoms.length; i++){
         Atom ai = atoms[i];
@@ -343,7 +346,7 @@ if(options.s && options.f){
 
     }
 } else {
-    //create array of built residues
+    // Create array of built residues.
     ArrayList<Residue> loopResidues = new ArrayList<>();
     for (int i = 0; i < active.getChains().size(); i++){
         ArrayList<Residue> allResidues = active.getChains()[i].getResidues();
@@ -377,8 +380,6 @@ for (int i = 0; i <= atoms.length; i++) {
     }
 }
 
-
-
 logger.info("\n Running minimize on built atoms of " + active.getName());
 logger.info(" RMS gradient convergence criteria: " + eps);
 
@@ -399,7 +400,7 @@ if(runOSRW){
     System.setProperty("intramolecular-softcore", "true");
     System.setProperty("intermolecular-softcore", "true");
     System.setProperty("lambdaterm", "true");
-    System.setProperty("lambda-torions", "true");
+    System.setProperty("lambda-torsions", "true");
     System.setProperty("ligand-vapor-elec","false");
     System.setProperty("vdw-cutoff", "9.0");
     System.setProperty("lambda-bias-cutoff", "3");
@@ -445,7 +446,7 @@ if(runOSRW){
     }
 
     osrw.setLambda(lambda);
-    osrw.setOptimization(true);
+    osrw.setOptimization(true, active);
     // Create the MolecularDynamics instance.
     MolecularDynamics molDyn = new MolecularDynamics(active, osrw, active.getProperties(),
         null, thermostat, integrator);
@@ -471,38 +472,17 @@ if(runOSRW){
         loopBuildError = true;
     }
 }
-/*
-if (runMCLoop){
-// Monte Carlo with KIC
-System.setProperty("vdwterm", "false");
-System.setProperty("polarization", "none");
-logger.info("\n Running molecular dynamics on " + baseFilename);
-
-forceFieldEnergy= new ForceFieldEnergy(active);
-// create the MD object
-MolecularDynamics molDyn = new MolecularDynamics(active, active.getPotentialEnergy(), active.getProperties(), null, thermostat, integrator);
-
-// create the Monte-Carlo listener and connect it to the MD
-mcLoop = new MCLoop(active, mcStepFrequency, molDyn.getThermostat(),loopStart,loopStop);
-molDyn.addMCListener(mcLoop);
-mcLoop.addMolDyn(molDyn);
-
-molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities,fileType,restartInterval,dyn);
-}   */
-
 
 if (runSimulatedAnnealing) {
     // Minimize with vdW.
     System.setProperty("vdwterm", "true");
     System.setProperty("mpoleterm", "false");
 
-
     energy = new ForceFieldEnergy(active);
     realSpaceData = new RealSpaceData(active, active.getProperties(),
         mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
     refinementMinimize = new RefinementMinimize(realSpaceData, RefinementMode.COORDINATES);
     refinementMinimize.minimize(eps);
-
 
     // SA with vdW.
     logger.info("\n Running simulated annealing on " + active.getName());
@@ -540,7 +520,7 @@ if(!loopBuildError){
     System.setProperty("intramolecularSoftcore", "false");
     System.setProperty("intermolecularSoftcore", "false");
     System.setProperty("lambdaterm", "false");
-    System.setProperty("lambda-torions", "false");
+    System.setProperty("lambda-torsions", "false");
 
     forceFieldEnergy = new ForceFieldEnergy(active);
     realSpaceData = new RealSpaceData(active, active.getProperties(),
@@ -694,4 +674,5 @@ if (runRotamer){
     RotamerLibrary.measureRotamers(residuesToRO, false);
     rotamerOptimization.optimize(RotamerOptimization.Algorithm.SLIDING_WINDOW);
 }
+
 saveAsPDB(structureFile);

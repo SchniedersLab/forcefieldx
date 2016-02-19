@@ -40,6 +40,7 @@ package ffx.potential.nonbonded;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -75,12 +76,12 @@ import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.LambdaInterface;
-import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BioType;
 import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.SolventRadii;
 import ffx.potential.parameters.VDWType;
 
 import static ffx.potential.parameters.MultipoleType.ELECTRIC;
@@ -94,9 +95,6 @@ import static ffx.potential.parameters.MultipoleType.t100;
 import static ffx.potential.parameters.MultipoleType.t101;
 import static ffx.potential.parameters.MultipoleType.t110;
 import static ffx.potential.parameters.MultipoleType.t200;
-import ffx.potential.parameters.SolventRadii;
-import static java.lang.String.format;
-import java.util.Map;
 
 /**
  * This Generalized Kirkwood class implements GK for the AMOEBA polarizable
@@ -222,20 +220,21 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     private boolean bornUseAll = false;
     /**
-     * Provides maps from atomtypes or biotypes to fitted GK radii (by forcefield).
+     * Provides maps from atomtypes or biotypes to fitted GK radii (by
+     * forcefield).
      */
     private boolean useFittedRadii;
     private SolventRadii solventRadii;
     private RADII_MAP_TYPE radiiMapType = RADII_MAP_TYPE.ATOMTYPE;
     /**
-     * Maps radii overrides (by AtomType) specified from the command line.
-     * e.g. -DradiiOverride=134r1.20,135r1.20 sets atom types 134,135 to Bondi=1.20
+     * Maps radii overrides (by AtomType) specified from the command line. e.g.
+     * -DradiiOverride=134r1.20,135r1.20 sets atom types 134,135 to Bondi=1.20
      */
     private final HashMap<Integer, Double> radiiOverride = new HashMap<>();
     /**
      * Maps radii overrides (by atom number) specified from the command line.
-     * This takes precendence over AtomType-based overrides.
-     * e.g. -DradiiOverride=1r1.20,5r1.20 sets atom numbers 1,5 to Bondi=1.20
+     * This takes precendence over AtomType-based overrides. e.g.
+     * -DradiiOverride=1r1.20,5r1.20 sets atom numbers 1,5 to Bondi=1.20
      */
     private final HashMap<Integer, Double> radiiByNumberMap = new HashMap<>();
     private final ForceField forceField;
@@ -257,8 +256,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
         this.forceField = forceField;
         String forcefieldName = System.getProperty("forcefield");
-        if (forcefieldName != null &&
-                (forcefieldName.equalsIgnoreCase("AMOBEA_PROTEIN_2013")
+        if (forcefieldName != null
+                && (forcefieldName.equalsIgnoreCase("AMOBEA_PROTEIN_2013")
                 || forcefieldName.equalsIgnoreCase("AMBER99SB"))) {
             useFittedRadii = true;
             solventRadii = new SolventRadii(forcefieldName);
@@ -631,7 +630,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         }
                         break;
                     case BIOTYPE:
-                        Map<String,BioType> bioTypes = forceField.getBioTypeMap();
+                        Map<String, BioType> bioTypes = forceField.getBioTypeMap();
                         BioType bioType = null;
                         for (BioType one : bioTypes.values()) {
                             if (one.atomType == atomType.type) {
@@ -640,15 +639,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             }
                         }
                         if (bioType == null) {
-                            logger.severe(String.format("Couldn't find biotype for %s", atomType,toString()));
+                            logger.severe(String.format("Couldn't find biotype for %s", atomType, toString()));
                         }
 
-        //                BioType bioType = forceField.getBioType(atoms[i].getResidueName(), atoms[i].getName());
-        //                if (bioType == null) {
-        //                    logger.info(String.format("Null biotype for atom: %3s-%-4s",
-        //                            atoms[i].getResidueName(), atoms[i].getName()));
-        //                }
-
+                        //                BioType bioType = forceField.getBioType(atoms[i].getResidueName(), atoms[i].getName());
+                        //                if (bioType == null) {
+                        //                    logger.info(String.format("Null biotype for atom: %3s-%-4s",
+                        //                            atoms[i].getResidueName(), atoms[i].getName()));
+                        //                }
                         // Check for hard-coded BioType bondi factor.
                         if (solventRadii.getBioBondiMap().containsKey(bioType.index)) {
                             double factor = solventRadii.getBioBondiMap().get(bioType.index);
