@@ -309,9 +309,9 @@ if(options.s && options.f){
     for (int i = 0; i < atoms.length; i++){
         Atom ai = atoms[i];
         if(ai.getResidueNumber() >= loopStart && ai.getResidueNumber() <= loopStop){
-            ai.setBuilt(true);            
+            ai.setBuilt(true);
         }
-        
+
     }
 } else {
     //create array of built residues
@@ -334,7 +334,7 @@ if(options.s && options.f){
                 loopStop = loopResidues.get(i).getResidueNumber();
             }
         }
-    }     
+    }
 }
 
 for (int i = 0; i <= atoms.length; i++) {
@@ -376,7 +376,7 @@ if(runOSRW){
     }
     System.setProperty("lambda-bin-width", "0.01");
     System.setProperty("tau-temperature","0.05");
-    
+
     for (int i = 0; i <= atoms.length; i++) {
         Atom ai = atoms[i - 1];
         if (ai.getBuilt()) {
@@ -389,38 +389,38 @@ if(runOSRW){
     forceFieldEnergy= new ForceFieldEnergy(active);
     forceFieldEnergy.setLambda(lambda);
     energy();
-    
+
     // Turn off checks for overlapping atoms, which is expected for lambda=0.
     forceFieldEnergy.getCrystal().setSpecialPositionCutoff(0.0);
 
     boolean asynchronous = false;
     boolean wellTempered = false;
-   
+
     Potential osrw;
     if(runTTOSRW){
         osrw = new TransitionTemperedOSRW(forceFieldEnergy, forceFieldEnergy, lambdaRestart, histogramRestart, active.getProperties(),
             (temperature), timeStep, printInterval, saveInterval, asynchronous, sh);
     } else {
         osrw =  new OSRW(forceFieldEnergy, forceFieldEnergy, lambdaRestart, histogramRestart, active.getProperties(),
-            (temperature), timeStep, printInterval, saveInterval, asynchronous, sh, wellTempered);    
+            (temperature), timeStep, printInterval, saveInterval, asynchronous, sh, wellTempered);
     }
-    
+
     osrw.setLambda(lambda);
-    osrw.setOptimization(true);
+    osrw.setOptimization(true, active);
     // Create the MolecularDynamics instance.
     MolecularDynamics molDyn = new MolecularDynamics(active, osrw, active.getProperties(),
         null, thermostat, integrator);
 
-    
+
     if(runMCLoop){
         mcLoop = new MCLoop(active, mcStepFrequency, molDyn.getThermostat(),loopStart-1,loopStop+1);
         molDyn.addMCListener(mcLoop);
         mcLoop.addMolDyn(molDyn);
         mcLoop.addLambdaInterface(osrw.getLambdaInterface());
-        
+
     }
-    
-   
+
+
     molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities,
         fileType, restartInterval, dyn);
 
@@ -440,19 +440,19 @@ if (runMCLoop){
     System.setProperty("vdwterm", "false");
     System.setProperty("polarization", "none");
     logger.info("\n Running molecular dynamics on " + baseFilename);
-    
+
     forceFieldEnergy= new ForceFieldEnergy(active);
     // create the MD object
     MolecularDynamics molDyn = new MolecularDynamics(active, active.getPotentialEnergy(), active.getProperties(), null, thermostat, integrator);
-    
+
     // create the Monte-Carlo listener and connect it to the MD
     mcLoop = new MCLoop(active, mcStepFrequency, molDyn.getThermostat(),loopStart,loopStop);
     molDyn.addMCListener(mcLoop);
     mcLoop.addMolDyn(molDyn);
-    
+
     molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities,fileType,restartInterval,dyn);
 }   */
-  
+
 
 if (runSimulatedAnnealing) {
     // Minimize with vdW.

@@ -101,7 +101,9 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
     private final DataContainer dataContainer;
     private final RefinementModel refinementModel;
     private final Atom atomArray[];
+    private final Atom activeAtomArray[];
     private final int nAtoms;
+    private final int nActive;
     private RefinementMode refinementMode;
     private final int nXYZ;
     private final int nB;
@@ -147,25 +149,26 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
      * @param data input {@link DataContainer} that will be used as the model,
      * must contain a {@link RefinementModel} and either {@link DiffractionData}
      * or {@link RealSpaceData}
-     * @param refinementmode {@link RefinementMinimize.RefinementMode} for
+     * @param refinementMode {@link RefinementMinimize.RefinementMode} for
      * refinement
      * @param listener {@link AlgorithmListener} a listener for updates
      */
-    public RefinementMinimize(DataContainer data, RefinementMode refinementmode,
+    public RefinementMinimize(DataContainer data, RefinementMode refinementMode,
             AlgorithmListener listener) {
+        dataContainer = data;
         this.listener = listener;
-        this.dataContainer = data;
-        this.refinementModel = data.getRefinementModel();
-        this.refinementMode = refinementmode;
-        this.atomArray = data.getAtomArray();
-        this.nAtoms = atomArray.length;
+        this.refinementMode = refinementMode;
 
-        refinementEnergy = new RefinementEnergy(data, refinementmode, null);
-
-        this.nXYZ = refinementEnergy.nXYZ;
-        this.nB = refinementEnergy.nBFactor;
-        this.nOcc = refinementEnergy.nOccupancy;
-        this.n = refinementEnergy.getNumberOfVariables();
+        refinementModel = data.getRefinementModel();
+        atomArray = data.getAtomArray();
+        nAtoms = atomArray.length;
+        activeAtomArray = data.getActiveAtomArray();
+        nActive = activeAtomArray.length;
+        refinementEnergy = new RefinementEnergy(data, refinementMode, null);
+        nXYZ = refinementEnergy.nXYZ;
+        nB = refinementEnergy.nBFactor;
+        nOcc = refinementEnergy.nOccupancy;
+        n = refinementEnergy.getNumberOfVariables();
 
         x = new double[n];
         grad = new double[n];
@@ -178,38 +181,38 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         double anisouscale = 50.0;
         double occscale = 15.0;
 
-        if (refinementmode == RefinementMode.COORDINATES_AND_BFACTORS
-                || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
+        if (refinementMode == RefinementMode.COORDINATES_AND_BFACTORS
+                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
             bisoscale = 0.4;
             anisouscale = 40.0;
         }
 
-        if (refinementmode == RefinementMode.COORDINATES_AND_OCCUPANCIES
-                || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
+        if (refinementMode == RefinementMode.COORDINATES_AND_OCCUPANCIES
+                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
             occscale = 10.0;
         }
 
         // set up scaling
-        if (refinementmode == RefinementMode.COORDINATES
-                || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS
-                || refinementmode == RefinementMode.COORDINATES_AND_OCCUPANCIES
-                || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-            for (int i = 0; i < nXYZ; i++) {
+        if (refinementMode == RefinementMode.COORDINATES
+                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS
+                || refinementMode == RefinementMode.COORDINATES_AND_OCCUPANCIES
+                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
+            for (int i = 0; i < n; i++) {
                 scaling[i] = xyzscale;
             }
         }
 
-        if (refinementmode == RefinementMode.BFACTORS
-                || refinementmode == RefinementMode.BFACTORS_AND_OCCUPANCIES
-                || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS
-                || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
+        if (refinementMode == RefinementMode.BFACTORS
+                || refinementMode == RefinementMode.BFACTORS_AND_OCCUPANCIES
+                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS
+                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
             int i = nXYZ;
             int resnum = -1;
             if (data instanceof DiffractionData) {
                 DiffractionData diffractiondata = (DiffractionData) data;
-                int nres = diffractiondata.nresiduebfactor + 1;
-                for (Atom a : atomArray) {
-                    // ignore hydrogens!!!
+                int nres = diffractiondata.nResidueBFactor + 1;
+                for (Atom a : activeAtomArray) {
+                    // Ignore hydrogens or inactive atoms.
                     if (a.getAtomicNumber() == 1) {
                         continue;
                     }
@@ -220,7 +223,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                         i += 6;
                     } else if (diffractiondata.residuebfactor) {
                         if (resnum != a.getResidueNumber()) {
-                            if (nres >= diffractiondata.nresiduebfactor) {
+                            if (nres >= diffractiondata.nResidueBFactor) {
                                 if (resnum > -1
                                         && i < nXYZ + nB - 1) {
                                     i++;
@@ -244,11 +247,15 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
             }
         }
 
-        if (refinementmode == RefinementMode.OCCUPANCIES
-                || refinementmode == RefinementMode.BFACTORS_AND_OCCUPANCIES
-                || refinementmode == RefinementMode.COORDINATES_AND_OCCUPANCIES
-                || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
+        if (refinementMode == RefinementMode.OCCUPANCIES
+                || refinementMode == RefinementMode.BFACTORS_AND_OCCUPANCIES
+                || refinementMode == RefinementMode.COORDINATES_AND_OCCUPANCIES
+                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
+            if (nAtoms != nActive) {
+                logger.severe(" Occupancy refinement is not supported for inactive atoms.");
+            }
             if (data instanceof DiffractionData) {
+
                 int i = nXYZ + nB;
                 for (ArrayList<Residue> list : refinementModel.altResidues) {
                     for (int j = 0; j < list.size(); j++) {
@@ -266,7 +273,6 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                 logger.severe(" Occupancy refinement not supported for this data type!");
             }
         }
-
         refinementEnergy.setScaling(scaling);
     }
 
@@ -279,7 +285,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
     public Double getEps() {
         boolean hasaniso = false;
 
-        for (Atom a : atomArray) {
+        for (Atom a : activeAtomArray) {
             // ignore hydrogens!!!
             if (a.getAtomicNumber() == 1) {
                 continue;
@@ -508,17 +514,15 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         if (info == null) {
             logger.info(String.format("%6d %12.3f %10.3f",
                     iter, f, grms));
+        } else if (info == LineSearchResult.Success) {
+            StringBuilder sb = new StringBuilder();
+            sb.append(String.format("%6d %12.3f %10.3f %10.3f %9.4f %8.2f %6d %8.3f ",
+                    iter, f, grms, df, xrms, angle, nfun, seconds));
+            sb.append(dataContainer.printOptimizationUpdate());
+            logger.info(sb.toString());
         } else {
-            if (info == LineSearchResult.Success) {
-                StringBuilder sb = new StringBuilder();
-                sb.append(String.format("%6d %12.3f %10.3f %10.3f %9.4f %8.2f %6d %8.3f ",
-                        iter, f, grms, df, xrms, angle, nfun, seconds));
-                sb.append(dataContainer.printOptimizationUpdate());
-                logger.info(sb.toString());
-            } else {
-                logger.info(String.format("%6d %12.3g %10.3f %10.3f %9.4f %8.2f %6d %8s",
-                        iter, f, grms, df, xrms, angle, nfun, info.toString()));
-            }
+            logger.info(String.format("%6d %12.3g %10.3f %10.3f %9.4f %8.2f %6d %8s",
+                    iter, f, grms, df, xrms, angle, nfun, info.toString()));
         }
         if (terminate) {
             logger.info(" The optimization recieved a termination request.");

@@ -337,8 +337,8 @@ public class RealSpaceData implements DataContainer {
                 if (lambdaTerm && a.applyLambda()) {
                     lambdai = lambda;
                     dUdL = 1.0;
+                    a.setLambdaXYZGradient(0.0, 0.0, 0.0);
                 }
-
                 a.getXYZ(xyz);
                 a.setXYZGradient(0.0, 0.0, 0.0);
                 crystal[i].toFractionalCoordinates(xyz, uvw);
@@ -488,6 +488,14 @@ public class RealSpaceData implements DataContainer {
     @Override
     public Atom[] getAtomArray() {
         return refinementModel.usedAtoms;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Atom[] getActiveAtomArray() {
+        return refinementModel.activeAtoms;
     }
 
     /**

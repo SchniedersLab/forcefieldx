@@ -102,6 +102,14 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
      */
     private final int nAtoms;
     /**
+     * An array of active atoms.
+     */
+    private final Atom[] activeAtomArray;
+    /**
+     * The number of active atoms.
+     */
+    private final int nActive;
+    /**
      * An array of XYZIndex values.
      */
     private final List<Integer> xIndex[];
@@ -179,28 +187,31 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
      */
     public RefinementEnergy(DataContainer data,
             RefinementMode refinementMode, double optimizationScaling[]) {
-        this.molecularAssemblies = data.getMolecularAssemblies();
+
         this.data = data;
-        this.refinementModel = data.getRefinementModel();
-        this.atomArray = data.getAtomArray();
-        this.nAtoms = atomArray.length;
-        this.xIndex = refinementModel.xIndex;
         this.refinementMode = refinementMode;
         this.optimizationScaling = optimizationScaling;
-        this.thermostat = null;
-        this.kTScale = 1.0;
+        molecularAssemblies = data.getMolecularAssemblies();
+        refinementModel = data.getRefinementModel();
+        atomArray = data.getAtomArray();
+        nAtoms = atomArray.length;
+        activeAtomArray = data.getActiveAtomArray();
+        nActive = activeAtomArray.length;
+        xIndex = refinementModel.xIndex;
+        thermostat = null;
+        kTScale = 1.0;
 
         // determine size of fit
         n = nXYZ = nBFactor = nOccupancy = 0;
         switch (refinementMode) {
             case COORDINATES:
-                nXYZ = nAtoms * 3;
+                nXYZ = nActive * 3;
                 break;
             case COORDINATES_AND_BFACTORS:
             case COORDINATES_AND_OCCUPANCIES:
             case COORDINATES_AND_BFACTORS_AND_OCCUPANCIES:
                 // coordinate params
-                nXYZ = nAtoms * 3;
+                nXYZ = nActive * 3;
             case BFACTORS:
             case OCCUPANCIES:
             case BFACTORS_AND_OCCUPANCIES:
@@ -212,14 +223,14 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
                             || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS
                             || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
                         int resnum = -1;
-                        int nres = diffractiondata.nresiduebfactor + 1;
+                        int nres = diffractiondata.nResidueBFactor + 1;
                         for (Atom a : atomArray) {
-                            // ignore hydrogens!!!
-                            if (a.getAtomicNumber() == 1) {
+                            // Ignore hydrogens and atoms that are not active.
+                            if (a.getAtomicNumber() == 1 || !a.isActive()) {
                                 continue;
                             }
                             if (a.getAnisou(null) == null) {
-                                if (diffractiondata.addanisou) {
+                                if (diffractiondata.addAnisou) {
                                     double anisou[] = new double[6];
                                     double u = b2u(a.getTempFactor());
                                     anisou[0] = anisou[1] = anisou[2] = u;
@@ -228,7 +239,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
                                     nBFactor += 6;
                                 } else if (diffractiondata.residuebfactor) {
                                     if (resnum != a.getResidueNumber()) {
-                                        if (nres >= diffractiondata.nresiduebfactor) {
+                                        if (nres >= diffractiondata.nResidueBFactor) {
                                             nBFactor++;
                                             nres = 1;
                                         } else {
@@ -244,7 +255,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
                             }
                         }
                         if (diffractiondata.residuebfactor) {
-                            if (nres < diffractiondata.nresiduebfactor) {
+                            if (nres < diffractiondata.nResidueBFactor) {
                                 nBFactor--;
                             }
                         }
@@ -261,12 +272,16 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
                         for (ArrayList<Molecule> list : refinementModel.altMolecules) {
                             nOccupancy += list.size();
                         }
+                        if (nActive != nAtoms) {
+                            logger.severe(" Occupancy refinement is not supported with inactive atoms.");
+                        }
                     }
                 } else {
                     logger.severe(" Refinement method not supported for this data type!");
                 }
                 break;
         }
+
         n = nXYZ + nBFactor + nOccupancy;
 
         // initialize force field and Xray energies
@@ -299,6 +314,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         gChemical = new double[assemblySize][];
         for (int i = 0; i < assemblySize; i++) {
             int len = molecularAssemblies[i].getActiveAtomArray().length * 3;
+            logger.info(" RefinementEnergy: Number of Parameters: " + len);
             xChemical[i] = new double[len];
             gChemical[i] = new double[len];
         }
@@ -316,6 +332,8 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         if (thermostat != null) {
             kTScale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
         }
+
+        logger.info(" RefinementEnergy.energy: Number of Parameters: " + x.length);
 
         if (optimizationScaling != null) {
             int len = x.length;
@@ -813,31 +831,128 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
 
     @Override
     public void setVelocity(double[] velocity) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        if (this.nBFactor > 0 || this.nOccupancy > 0) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+        if (velocity == null) {
+            return;
+        }
+        int index = 0;
+        double vel[] = new double[3];
+        for (int i = 0; i < nAtoms; i++) {
+            if (atomArray[i].isActive()) {
+                vel[0] = velocity[index++];
+                vel[1] = velocity[index++];
+                vel[2] = velocity[index++];
+                atomArray[i].setVelocity(vel);
+            }
+        }
     }
 
     @Override
     public void setAcceleration(double[] acceleration) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        if (this.nBFactor > 0 || this.nOccupancy > 0) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+        if (acceleration == null) {
+            return;
+        }
+        int index = 0;
+        double accel[] = new double[3];
+        for (int i = 0; i < nAtoms; i++) {
+            if (atomArray[i].isActive()) {
+                accel[0] = acceleration[index++];
+                accel[1] = acceleration[index++];
+                accel[2] = acceleration[index++];
+                atomArray[i].setAcceleration(accel);
+            }
+        }
     }
 
     @Override
     public void setPreviousAcceleration(double[] previousAcceleration) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        if (this.nBFactor > 0 || this.nOccupancy > 0) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+        if (previousAcceleration == null) {
+            return;
+        }
+        int index = 0;
+        double prev[] = new double[3];
+        for (int i = 0; i < nAtoms; i++) {
+            if (atomArray[i].isActive()) {
+                prev[0] = previousAcceleration[index++];
+                prev[1] = previousAcceleration[index++];
+                prev[2] = previousAcceleration[index++];
+                atomArray[i].setPreviousAcceleration(prev);
+            }
+        }
     }
 
     @Override
     public double[] getVelocity(double[] velocity) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        if (this.nBFactor > 0 || this.nOccupancy > 0) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+        int n = getNumberOfVariables();
+        if (velocity == null || velocity.length < n) {
+            velocity = new double[n];
+        }
+        int index = 0;
+        double v[] = new double[3];
+        for (int i = 0; i < nAtoms; i++) {
+            Atom a = atomArray[i];
+            if (a.isActive()) {
+                a.getVelocity(v);
+                velocity[index++] = v[0];
+                velocity[index++] = v[1];
+                velocity[index++] = v[2];
+            }
+        }
+        return velocity;
     }
 
     @Override
     public double[] getAcceleration(double[] acceleration) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        if (this.nBFactor > 0 || this.nOccupancy > 0) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+        int n = getNumberOfVariables();
+        if (acceleration == null || acceleration.length < n) {
+            acceleration = new double[n];
+        }
+        int index = 0;
+        double a[] = new double[3];
+        for (int i = 0; i < nAtoms; i++) {
+            if (atomArray[i].isActive()) {
+                atomArray[i].getAcceleration(a);
+                acceleration[index++] = a[0];
+                acceleration[index++] = a[1];
+                acceleration[index++] = a[2];
+            }
+        }
+        return acceleration;
     }
 
     @Override
     public double[] getPreviousAcceleration(double[] previousAcceleration) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        if (this.nBFactor > 0 || this.nOccupancy > 0) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+        int n = getNumberOfVariables();
+        if (previousAcceleration == null || previousAcceleration.length < n) {
+            previousAcceleration = new double[n];
+        }
+        int index = 0;
+        double a[] = new double[3];
+        for (int i = 0; i < nAtoms; i++) {
+            if (atomArray[i].isActive()) {
+                atomArray[i].getPreviousAcceleration(a);
+                previousAcceleration[index++] = a[0];
+                previousAcceleration[index++] = a[1];
+                previousAcceleration[index++] = a[2];
+            }
+        }
+        return previousAcceleration;
     }
 }

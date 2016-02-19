@@ -63,11 +63,14 @@ import static ffx.potential.parameters.PiTorsionType.units;
  * @since 1.0
  *
  */
-public class PiOrbitalTorsion extends BondedTerm {
+public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(PiOrbitalTorsion.class.getName());
     private static final long serialVersionUID = 1L;
     public PiTorsionType piTorsionType = null;
+    private double lambda = 1.0;
+    private double dEdL = 0.0;
+    private boolean lambdaTerm = false;
 
     /**
      * Pi-Orbital Torsion constructor.
@@ -263,6 +266,8 @@ public class PiOrbitalTorsion extends BondedTerm {
     public double energy(boolean gradient) {
         energy = 0.0;
         value = 0.0;
+        dEdL = 0.0;
+
         atoms[0].getXYZ(a0);
         atoms[1].getXYZ(a1);
         atoms[2].getXYZ(a2);
@@ -304,7 +309,9 @@ public class PiOrbitalTorsion extends BondedTerm {
             double cosine2 = cosine * cosine - sine * sine;
             double phi2 = 1.0 - cosine2;
             energy = units * piTorsionType.forceConstant * phi2;
-            if (gradient) {
+            dEdL = energy;
+            energy = lambda * energy;
+            if (gradient || lambdaTerm) {
                 double sine2 = 2.0 * cosine * sine;
                 double dphi2 = 2.0 * sine2;
                 double dedphi = units * piTorsionType.forceConstant * dphi2;
@@ -332,12 +339,22 @@ public class PiOrbitalTorsion extends BondedTerm {
                 sum(dedd, dedq, g3);
                 sum(g0, g1, temp);
                 diff(g3, temp, g3);
-                atoms[0].addToXYZGradient(g0[0], g0[1], g0[2]);
-                atoms[1].addToXYZGradient(g1[0], g1[1], g1[2]);
-                atoms[2].addToXYZGradient(g2[0], g2[1], g2[2]);
-                atoms[3].addToXYZGradient(g3[0], g3[1], g3[2]);
-                atoms[4].addToXYZGradient(g4[0], g4[1], g4[2]);
-                atoms[5].addToXYZGradient(g5[0], g5[1], g5[2]);
+                if (lambdaTerm) {
+                    atoms[0].addToLambdaXYZGradient(g0[0], g0[1], g0[2]);
+                    atoms[1].addToLambdaXYZGradient(g1[0], g1[1], g1[2]);
+                    atoms[2].addToLambdaXYZGradient(g2[0], g2[1], g2[2]);
+                    atoms[3].addToLambdaXYZGradient(g3[0], g3[1], g3[2]);
+                    atoms[4].addToLambdaXYZGradient(g4[0], g4[1], g4[2]);
+                    atoms[5].addToLambdaXYZGradient(g5[0], g5[1], g5[2]);
+                }
+                if (gradient) {
+                    atoms[0].addToXYZGradient(lambda * g0[0], lambda * g0[1], lambda * g0[2]);
+                    atoms[1].addToXYZGradient(lambda * g1[0], lambda * g1[1], lambda * g1[2]);
+                    atoms[2].addToXYZGradient(lambda * g2[0], lambda * g2[1], lambda * g2[2]);
+                    atoms[3].addToXYZGradient(lambda * g3[0], lambda * g3[1], lambda * g3[2]);
+                    atoms[4].addToXYZGradient(lambda * g4[0], lambda * g4[1], lambda * g4[2]);
+                    atoms[5].addToXYZGradient(lambda * g5[0], lambda * g5[1], lambda * g5[2]);
+                }
             }
         }
         return energy;
@@ -360,5 +377,39 @@ public class PiOrbitalTorsion extends BondedTerm {
     @Override
     public String toString() {
         return String.format("%s  (%7.1f,%7.2f)", id, value, energy);
+    }
+
+    @Override
+    public void setLambda(double lambda) {
+        if (applyAllLambda()) {
+            this.lambda = lambda;
+            lambdaTerm = true;
+        } else {
+            this.lambda = 1.0;
+        }
+    }
+
+    @Override
+    public double getLambda() {
+        return lambda;
+    }
+
+    @Override
+    public double getdEdL() {
+        if (lambdaTerm) {
+            return dEdL;
+        } else {
+            return 0.0;
+        }
+    }
+
+    @Override
+    public double getd2EdL2() {
+        return 0.0;
+    }
+
+    @Override
+    public void getdEdXdL(double[] gradient) {
+        return;
     }
 }
