@@ -40,7 +40,7 @@ package ffx.algorithms.mc;
 import ffx.algorithms.MonteCarloListener;
 import ffx.algorithms.Thermostat;
 import ffx.algorithms.mc.MCMove;
-import ffx.algorithms.mc.RosenbluthRotamerMove;
+import ffx.algorithms.mc.RosenbluthChi0Move;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
@@ -48,6 +48,7 @@ import ffx.potential.bonded.ROLS;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.bonded.ResidueState;
+import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.parsers.PDBFilter;
 import java.io.File;
@@ -59,12 +60,13 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.math3.util.FastMath;
 
 /**
- * As described by Frenkel/Smit in "Understanding Molecular Simulation" Chapter 13.1.2.
- * This uses the "orientational biasing" method to select chi[0] moves that are frequently accepted.
+ * Conformational Biased Monte Carlo (applied to ALL torsions of a peptide side-chain).
+ * As described by Frenkel/Smit in "Understanding Molecular Simulation" Chapters 13.2,13.3
+ * This uses the "conformational biasing" method to select whole rotamer transformations that are frequently accepted.
  * @author S. LuCore
  */
-public class RosenbluthRotamerMC implements MonteCarloListener {
-    private static final Logger logger = Logger.getLogger(RosenbluthRotamerMC.class.getName());
+public class RosenbluthCBMC implements MonteCarloListener {
+    private static final Logger logger = Logger.getLogger(RosenbluthCBMC.class.getName());
     
     private final double BOLTZMANN = 0.0019872041; // In kcal/(mol*K)
     private final MolecularAssembly mola;
@@ -91,14 +93,6 @@ public class RosenbluthRotamerMC implements MonteCarloListener {
      */
     private double Wo;
     /**
-     * Trial moveset for new configuration, bn.
-     */
-    private List<MCMove> newTrialSet;
-    /**
-     * Trial moveset for old configuration, bo.
-     */
-    private List<MCMove> oldTrialSet;
-    /**
      * Size of the trial sets, k.
      */
     private final int trialSetSize;
@@ -111,8 +105,18 @@ public class RosenbluthRotamerMC implements MonteCarloListener {
      * Creates verbose output.
      */
     private StringBuilder report = new StringBuilder();
-    
-    public RosenbluthRotamerMC(MolecularAssembly mola, ForceFieldEnergy ffe, Thermostat thermostat, 
+    /**
+     * Writes PDBs of each trial set and original/proposed configurations.
+     */
+    private boolean writeSnapshots = false;
+
+    /**
+     * RRMC constructor.
+     * @param targets Residues to undergo RRMC.
+     * @param mcFrequency Number of MD steps between RRMC proposals.
+     * @param trialSetSize Larger values cost more but increase acceptance.
+     */
+    public RosenbluthCBMC(MolecularAssembly mola, ForceFieldEnergy ffe, Thermostat thermostat, 
             List<Residue> targets, int mcFrequency, int trialSetSize) {
         this.targets = targets;
         this.mcFrequency = mcFrequency;
@@ -120,6 +124,12 @@ public class RosenbluthRotamerMC implements MonteCarloListener {
         this.mola = mola;
         this.forceFieldEnergy = ffe;
         this.thermostat = thermostat;
+    }
+    
+    public RosenbluthCBMC(MolecularAssembly mola, ForceFieldEnergy ffe, Thermostat thermostat, 
+            List<Residue> targets, int mcFrequency, int trialSetSize, boolean writeSnapshots) {
+        this(mola, ffe, thermostat, targets, mcFrequency, trialSetSize);
+        this.writeSnapshots = writeSnapshots;
     }
     
     @Override
@@ -131,38 +141,59 @@ public class RosenbluthRotamerMC implements MonteCarloListener {
         return false;
     }
     
+    private boolean mcStep() {
+        numMovesProposed++;
+        boolean accepted = false;
+        
+        // Select a target residue.
+        int which = ThreadLocalRandom.current().nextInt(targets.size());
+        Residue target = targets.get(which);
+        ResidueState origState = target.storeState();
+        List<ROLS> chiList = target.getTorsionList();
+        writeSnapshot("orig");
+        
+        return accepted;
+    }
+    
     /**
      * Does all the work for a move.
      * Moveset is a continuous 360 degree spin of the chi[0] torsion.
      * U_or in Frenkel's notation (uDep here) is the associated torsion energy.
      * Evaluation criterion: P_accept = Min( 1, (Wn/Wo)*exp(-beta(U[n]-U[o]) )
      */
-    private boolean mcStep() {
+    private boolean obmcStep() {
         numMovesProposed++;
         boolean accepted;
         
         // Select a target residue.
         int which = ThreadLocalRandom.current().nextInt(targets.size());
         Residue target = targets.get(which);
-        ResidueState state = ResidueState.storeAllCoordinates(target);
+        ResidueState origState = target.storeState();
+        List<ROLS> chiList = target.getTorsionList();
         Torsion chi0 = getChiZeroTorsion(target);
+        writeSnapshot("orig");
         
         /* Create old and new trial sets, calculate Wn and Wo, and choose a move bn.
             When doing strictly chi[0] moves, Frenkel/Smit's 'old' and 'new' configurations
             are the same state. The distinction is made here only to aid in future generalization.
         */
-        createTrialSets(target, state, state);
+        List<MCMove> oldTrialSet = createTrialSet(target, origState, trialSetSize - 1);
+        List<MCMove> newTrialSet = createTrialSet(target, origState, trialSetSize);
         report = new StringBuilder();
-        report.append(String.format(" Rosenbluth Rotamer MC Move: \n"));
+        report.append(String.format(" Rosenbluth Rotamer MC Move: %4d\n", numMovesProposed));
         report.append(String.format("    residue:   %s\n", target.toString()));
         report.append(String.format("    chi0:      %s\n", chi0.toString()));
-        MCMove proposal = calculateRosenbluthFactors(target, state, state, chi0);
+        MCMove proposal = calculateRosenbluthFactors(target, chiList, 
+                origState, oldTrialSet, origState, newTrialSet);
         
         /* Calculate the independent portion of the total old-conf energy.
             Then apply the move and calculate the independent total new-conf energy.
         */
+        setState(target, origState);
+        writeSnapshot("uIndO");
         double uIndO = getTotalEnergy() - getTorsionEnergy(chi0);
         proposal.move();
+        writeSnapshot("uIndN");
         double uIndN = getTotalEnergy() - getTorsionEnergy(chi0);
         
         // Apply acceptance criterion.
@@ -174,7 +205,7 @@ public class RosenbluthRotamerMC implements MonteCarloListener {
         double metropolis = Math.min(1, criterion);
         double rng = ThreadLocalRandom.current().nextDouble();
         
-        report.append(String.format("    theta:     %3.2f\n", ((RosenbluthRotamerMove) proposal).theta));
+        report.append(String.format("    theta:     %3.2f\n", ((RosenbluthChi0Move) proposal).theta));
         report.append(String.format("    criterion: %1.4f\n", criterion));
         report.append(String.format("       Wn/Wo:     %.2f\n", Wn/Wo));
         report.append(String.format("       uIndN,O:  %7.2f\t%7.2f\n", uIndN, uIndO));
@@ -192,8 +223,6 @@ public class RosenbluthRotamerMC implements MonteCarloListener {
         logger.info(report.toString());
         
         // Cleanup.
-        oldTrialSet = null;
-        newTrialSet = null;
         Wn = 0.0;
         Wo = 0.0;
         return accepted;
@@ -204,48 +233,51 @@ public class RosenbluthRotamerMC implements MonteCarloListener {
      * This involves loading the move-dependent energy component
      * into each member of the trial sets.
      */
-    private void createTrialSets(Residue target, ResidueState oldConf, ResidueState newConf) {
-        List<MCMove> oldMoves = new ArrayList<>();
-        List<MCMove> newMoves = new ArrayList<>();
+    private List<MCMove> createTrialSet(Residue target, ResidueState state, int setSize) {
+        List<MCMove> moves = new ArrayList<>();
         // Trial set around old configuration is of size (k-1).
-        ResidueState.revertAllCoordinates(target, oldConf);
-        for (int i = 0; i < trialSetSize - 1; i++) {
-            oldMoves.add(new RosenbluthRotamerMove(target));
+        setState(target, state);
+        for (int i = 0; i < setSize; i++) {
+            moves.add(new RosenbluthChi0Move(target));
         }
-        ResidueState.revertAllCoordinates(target, newConf);
-        for (int i = 0; i < trialSetSize; i++) {
-            newMoves.add(new RosenbluthRotamerMove(target));
-        }
-        oldTrialSet = oldMoves;
-        newTrialSet = newMoves;
+        return moves;
     }
     
     /**
-     * Chooses a move, bn, from amongst the new trial set, {b}k, based on 
-     * the Boltzmann-weighted orientational energy, U_or[n].
-     * Also calculates Rosenbluth factors for both sets, Wn and Wo.
-     * Wn = sum(i=1:k, exp(-beta * uDep[i]))
-     * Wo = exp(-beta * uDep[current]) + sum(i=2:k, exp(-beta * uDep[i]))
+     * Using a list and biasing each torsion independently (in order).
+     * -- REQUIRES CBMC, NOT OBMC!! --
+     * i.e. The "acceptance-rejection" technique of chapter 13.3
+     * and the product of sub-wn Rosenbluth factors.
      */
-    private MCMove calculateRosenbluthFactors(Residue target,
-            ResidueState oldConf, ResidueState newConf, Torsion chi0) {
-        if (oldTrialSet == null || newTrialSet == null) {
-            logger.severe("Improper function call.");
-        }
+    private MCMove calculateRosenbluthFactors(
+            Residue target, List<ROLS> chiList, 
+            ResidueState oldConf, List<MCMove> oldTrialSet, 
+            ResidueState newConf, List<MCMove> newTrialSet) {
         double temperature = thermostat.getCurrentTemperature();
         double beta = 1.0 / (BOLTZMANN * temperature);
         
         // Initialize and add up Wo.
-        Wo = FastMath.exp(-beta * getTorsionEnergy(chi0));
+        Wo = 0.0;
+        for (ROLS rols : chiList) { // WRONG
+            Wo += FastMath.exp(-beta * getTorsionEnergy((Torsion) rols));
+        }
+        Torsion chi0 = (Torsion) chiList.get(0); // WRONG
         report.append(String.format("    TestSet (Old): %5s\t%7s\t\t%7s\n", "uDepO", "uDepOe", "Sum(Wo)"));
+        report.append(String.format("       Orig %d:   %7.4f\t%7.4f\t\t%7.4f\n",
+                0, getTorsionEnergy(chi0), FastMath.exp(-beta*getTorsionEnergy(chi0)), Wo));
         for (int i = 0; i < oldTrialSet.size(); i++) {
-            ResidueState.revertAllCoordinates(target, oldConf);
+            setState(target, oldConf);
             MCMove move = oldTrialSet.get(i);
             move.move();
             double uDepO = getTorsionEnergy(chi0);
             double uDepOe = FastMath.exp(-beta*uDepO);
             Wo += uDepOe;
-            report.append(String.format("       Prop %d:   %7.4f\t%7.4f\t\t%7.4f\n", i, uDepO, uDepOe, Wo));
+            if (i < 5 || i >= oldTrialSet.size() - 5) {
+                report.append(String.format("       Prop %d:   %7.4f\t%7.4f\t\t%7.4f\n", i+1, uDepO, uDepOe, Wo));
+                writeSnapshot("ots");
+            } else if (i == 5) {
+                report.append(String.format("        ... \n"));
+            }
         }
         
         // Initialize and add up Wn.  Record dependent energy of each trial set member.
@@ -254,15 +286,20 @@ public class RosenbluthRotamerMC implements MonteCarloListener {
         double uDepNe[] = new double[newTrialSet.size()];
         report.append(String.format("    TestSet (New): %5s\t%7s\t\t%7s\n", "uDepN", "uDepNe", "Sum(Wn)"));
         for (int i = 0; i < newTrialSet.size(); i++) {
-            ResidueState.revertAllCoordinates(target, newConf);
+            setState(target, newConf);
             MCMove move = newTrialSet.get(i);
             move.move();
             uDepN[i] = getTorsionEnergy(chi0);
             uDepNe[i] = FastMath.exp(-beta*uDepN[i]);
             Wn += uDepNe[i];
-            report.append(String.format("       Prop %d:   %7.4f\t%7.4f\t\t%7.4f\n", i, uDepN[i], uDepNe[i], Wn));
+            if (i < 5 || i >= newTrialSet.size() - 5) {
+                report.append(String.format("       Prop %d:   %7.4f\t%7.4f\t\t%7.4f\n", i, uDepN[i], uDepNe[i], Wn));
+                writeSnapshot("nts");
+            } else if (i == 5) {
+                report.append(String.format("        ... \n"));
+            }
         }
-        ResidueState.revertAllCoordinates(target, oldConf);
+        setState(target, oldConf);
         
         // Choose a proposal move from the new trial set.
         MCMove proposal = null;
@@ -292,7 +329,7 @@ public class RosenbluthRotamerMC implements MonteCarloListener {
     private double getTorsionEnergy(Torsion torsion) {
         return torsion.energy(false);
     }
-    
+       
     private Torsion getChiZeroTorsion(Residue residue) {
         AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
         ArrayList<ROLS> torsions = residue.getTorsionList();
@@ -397,8 +434,23 @@ public class RosenbluthRotamerMC implements MonteCarloListener {
         return null;
     }
     
+    /**
+     * Calls through to residue.revertState() but also updates the Torsion
+     * objects associated with that residue (so they contain appropriate chi values).
+     */
+    private void setState(Residue target, ResidueState state) {
+        target.revertState(state);
+        ArrayList<ROLS> torsions = target.getTorsionList();
+        for (ROLS rols : torsions) {
+            ((Torsion) rols).update();
+        }
+    }
+    
     private final boolean snapshotInterleaving = false;
     private void writeSnapshot(String suffix) {
+        if (!writeSnapshots) {
+            return;
+        }
         String filename = FilenameUtils.removeExtension(mola.getFile().toString()) + "." + suffix + "-" + numMovesProposed;
         if (snapshotInterleaving) {
             filename = mola.getFile().getAbsolutePath();
