@@ -123,11 +123,9 @@ double saveInterval = 100.0;
 // Temperture in degrees Kelvin.
 double temperature = 298.15;
 
-boolean wellTempered = false;
-
 // Wrap the potential energy inside an OSRW instance.
 OSRW osrw = new OSRW(energy, energy, lambdaRestart, histogramRestart, active.getProperties(),
-    temperature, timeStep, printInterval, saveInterval, asynchronous, sh, wellTempered);
+    temperature, timeStep, printInterval, saveInterval, asynchronous, sh);
 
 if (pmf){
     osrw.evaluatePMF();

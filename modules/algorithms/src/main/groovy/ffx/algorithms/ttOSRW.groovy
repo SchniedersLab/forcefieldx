@@ -457,7 +457,7 @@ if (arguments.size() == 1) {
         //
         //        // Create the OSRW instance.
         //        osrw = new OSRW(energy, barostat, lambdaRestart, histogramRestart, active.getProperties(),
-        //            temperature, timeStep, printInterval, saveInterval, asynchronous, sh, wellTempered);
+        //            temperature, timeStep, printInterval, saveInterval, asynchronous, sh);
         //        osrw.setResetStatistics(resetStatistics);
         if (writeTraversals) {
             osrw.setTraversalOutput(lambdaOneFile, topology1, lambdaZeroFile, topology1);

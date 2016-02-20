@@ -393,8 +393,7 @@ if(runOSRW){
     // Turn off checks for overlapping atoms, which is expected for lambda=0.
     forceFieldEnergy.getCrystal().setSpecialPositionCutoff(0.0);
 
-    boolean asynchronous = false;
-    boolean wellTempered = false;
+    boolean asynchronous = true;
 
     Potential osrw;
     if(runTTOSRW){
@@ -402,7 +401,7 @@ if(runOSRW){
             (temperature), timeStep, printInterval, saveInterval, asynchronous, sh);
     } else {
         osrw =  new OSRW(forceFieldEnergy, forceFieldEnergy, lambdaRestart, histogramRestart, active.getProperties(),
-            (temperature), timeStep, printInterval, saveInterval, asynchronous, sh, wellTempered);
+            (temperature), timeStep, printInterval, saveInterval, asynchronous, sh);
     }
 
     osrw.setLambda(lambda);

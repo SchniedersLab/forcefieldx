@@ -109,10 +109,10 @@ double restartInterval = 1.0;
 int nSteps = 50000;
 
 // Thermostats [ ADIABATIC, BERENDSEN, BUSSI ]
-Thermostats thermostat = Thermostats.BERENDSEN;
+Thermostats thermostat = Thermostats.ADIABATIC;
 
 // Integrators [ BEEMAN, RESPA, STOCHASTIC ]
-Integrators integrator = Integrators.BEEMAN;
+Integrators integrator = Integrators.STOCHASTIC;
 
 // Reset velocities (ignored if a restart file is given)
 boolean initVelocities = true;
@@ -432,8 +432,7 @@ if(runOSRW){
     // Turn off checks for overlapping atoms, which is expected for lambda=0.
     forceFieldEnergy.getCrystal().setSpecialPositionCutoff(0.0);
 
-    boolean asynchronous = false;
-    boolean wellTempered = false;
+    boolean asynchronous = true;
 
     Potential osrw;
     if(runTTOSRW){
@@ -442,7 +441,7 @@ if(runOSRW){
             (temperature), timeStep, printInterval, saveInterval, asynchronous, sh);
     } else {
         osrw =  new OSRW(refinementEnergy, refinementEnergy, lambdaRestart, histogramRestart, active.getProperties(),
-            (temperature), timeStep, printInterval, saveInterval, asynchronous, sh, wellTempered);
+            (temperature), timeStep, printInterval, saveInterval, asynchronous, sh);
     }
 
     osrw.setLambda(lambda);
@@ -492,9 +491,9 @@ if (runSimulatedAnnealing) {
     // Time step in femtoseconds.
     timeStep = 3.0;
     // Thermostats [ ADIABATIC, BERENDSEN, BUSSI ]
-    thermostat = Thermostats.BERENDSEN;
+    thermostat = Thermostats.ADIABATIC;
     // Integrators [ BEEMAN, RESPA, STOCHASTIC]
-    integrator = Integrators.RESPA;
+    integrator = Integrators.STOCHASTIC;
 
     refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMode.COORDINATES, null);
     SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(active, refinementEnergy,
