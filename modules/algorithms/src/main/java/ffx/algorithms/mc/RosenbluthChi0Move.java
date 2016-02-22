@@ -82,26 +82,21 @@ public class RosenbluthChi0Move implements MCMove {
     
     /**
      * Performs the move associated with this MCMove.
-     * Also calls energy() on all Torsions to update chi values.
-     * @return Extra-potential energy changes
+     * Also updates chi values in associated Torsion objects.
      */
     @Override
-    public double move() {
+    public void move() {
         RotamerLibrary.applyRotamer(target, newState);
         updateTorsions();
-        return 0.0;
     }
     
     /**
-     * Reverts the last applied move() call. Returns the same energy change as
-     * described above (with the same sign).
-     * @return Extra-potential energy changes
+     * Reverts the last applied move() call.
      */
     @Override
-    public double revertMove() {
+    public void revertMove() {
         target.revertState(origState);
         updateTorsions();
-        return 0.0;
     }
     
     private void updateTorsions() {
@@ -110,22 +105,9 @@ public class RosenbluthChi0Move implements MCMove {
             ((Torsion) rols).update();
         }
     }
-    
-    /**
-     * Returns the extra-potential energy change from the last move() call.
-     * @return Extra-potential energy changes
-     */
+
     @Override
-    public double getEcorrection() {
-        return 0.0;
-    }
-    
-    /**
-     * Returns a description of the MCMove.
-     * @return 
-     */
-    @Override
-    public String getDescription() {
+    public String toString() {
         return String.format("Rosenbluth Rotamer Move:\n   Res:   %s\n   Theta: %3.2f",
                 target.toString(), theta);
     }

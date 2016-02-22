@@ -60,12 +60,9 @@ public abstract class BoltzmannMC  implements MetropolisMC {
     
     private double e1 = 0.0;
     private double e2 = 0.0;
-    private double eAdjust = 0.0;
     private double lastE = 0.0;
     
     private boolean lastAccept = false;
-    //private int nAccept = 0;
-    //private int nTotal = 0;
     
     /**
      * Criterion for accept/reject a move; intended to be used mostly internally.
@@ -110,11 +107,6 @@ public abstract class BoltzmannMC  implements MetropolisMC {
     }
     
     @Override
-    public double getEAdjust() {
-        return eAdjust;
-    }
-    
-    @Override
     public double lastEnergy() {
         return lastE;
     }
@@ -150,20 +142,15 @@ public abstract class BoltzmannMC  implements MetropolisMC {
     public boolean mcStep(List<MCMove> moves, double en1) {
         storeState();
         e1 = en1;
-        eAdjust = 0.0;
         
         int nMoves = moves.size();
         for (int i = 0; i < nMoves; i++) {
             MCMove movei = moves.get(i);
-            double eCorr = movei.move();
-            if (print && eCorr != 0.0) {
-                logger.info(String.format(" Monte Carlo step with %10.6f kcal/mol energy adjustment", eCorr));
-            }
-            eAdjust += eCorr;
+            movei.move();
         }
         
         lastE = currentEnergy(); // Is reset to e1 if move rejected.
-        e2 = lastE + eAdjust;
+        e2 = lastE;
         //++nTotal;
         if (evaluateMove(e1, e2)) {
             //++nAccept;
@@ -194,21 +181,6 @@ public abstract class BoltzmannMC  implements MetropolisMC {
     public boolean getAccept() {
         return lastAccept;
     }
-    
-    /*@Override
-    public int getNumAccept() {
-        return nAccept;
-    }
-    
-    @Override
-    public int getNumReject() {
-        return (nTotal - nAccept);
-    }
-    
-    @Override
-    public int numSteps() {
-        return nTotal;
-    }*/
     
     /**
      * Must return the current energy of the system.

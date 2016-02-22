@@ -8860,7 +8860,7 @@ public class RotamerOptimization implements Terminatable {
         }
 
         @Override
-        public double move() {
+        public void move() {
             boolean validMove = !useAllElims;
             int indexI;
             int indexRI;
@@ -8886,13 +8886,11 @@ public class RotamerOptimization implements Terminatable {
             changedRot = currentRots[indexI];
 
             currentRots[indexI] = indexRI;
-            return 0.0;
         }
 
         @Override
-        public double revertMove() {
+        public void revertMove() {
             currentRots[changedRes] = changedRot;
-            return 0.0;
         }
 
         /**
@@ -8903,16 +8901,6 @@ public class RotamerOptimization implements Terminatable {
          */
         private int[] getCurrentRots() {
             return currentRots;
-        }
-
-        @Override
-        public double getEcorrection() {
-            return 0.0;
-        }
-
-        @Override
-        public String getDescription() {
-            return toString();
         }
 
         @Override
