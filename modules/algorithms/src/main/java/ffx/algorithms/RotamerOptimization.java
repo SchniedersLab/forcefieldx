@@ -393,6 +393,7 @@ public class RotamerOptimization implements Terminatable {
     private boolean skipEnergies = false;
     private boolean computeQuads = false;
     private boolean decomposeOriginal = false;
+    private boolean addOrigRot = false; // Using original-rotamers for ALA, GLY, etc.
     private int quadMaxout = Integer.MAX_VALUE;
 
     /**
@@ -461,6 +462,8 @@ public class RotamerOptimization implements Terminatable {
         String mcTemp = System.getProperty("ro-mcTemp");
         String mcUseAll = System.getProperty("ro-mcUseAll");
         String mcNoEnum = System.getProperty("ro-debug-mcNoEnum");
+        String addOrigRotStr = System.getProperty("ro-addOrigRot");
+        String origAtEndStr = System.getProperty("ro-origAtEnd");
         if (computeQuads != null) {
             boolean value = Boolean.parseBoolean(computeQuads);
             this.computeQuads = value;
@@ -626,6 +629,16 @@ public class RotamerOptimization implements Terminatable {
             boolean value = Boolean.parseBoolean(lazyMatrix);
             this.lazyMatrix = value;
             logger.info(String.format(" (KEY) lazyMatrix: %b", lazyMatrix));
+        }
+        if (addOrigRotStr != null) {
+            boolean value = Boolean.parseBoolean(addOrigRotStr);
+            this.addOrigRot = value;
+            logger.info(String.format(" (KEY) origRot: %b", addOrigRot));
+        }
+        if (origAtEndStr != null) {
+            boolean value = Boolean.parseBoolean(origAtEndStr);
+            // Property works in the contest of Residue class.
+            logger.info(String.format(" (KEY) origAtEnd: %b", value));
         }
     }
 
@@ -2033,6 +2046,9 @@ public class RotamerOptimization implements Terminatable {
                             default:
                                 RotamerLibrary.applyRotamer(residue, rotamers[0]);
                                 break;
+                        }
+                        if (addOrigRot) {
+                            residueList.add(residue);
                         }
                     } else {
                         residueList.add(residue);

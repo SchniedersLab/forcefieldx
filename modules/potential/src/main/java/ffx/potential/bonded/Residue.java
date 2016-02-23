@@ -116,7 +116,8 @@ public class Residue extends MSGroup {
     private Rotamer currentRotamer = null;
     private Rotamer originalRotamer = null;
     protected static final boolean origAtEnd;
-    private Rotamer rotamers[];
+    private static final boolean addOrigRot;
+    private Rotamer rotamers[] = null;
 
     static {
         String origAtEndStr = System.getProperty("ro-origAtEnd");
@@ -124,6 +125,12 @@ public class Residue extends MSGroup {
             origAtEnd = Boolean.parseBoolean(origAtEndStr);
         } else {
             origAtEnd = false;
+        }
+        String origRotStr = System.getProperty("ro-addOrigRot");
+        if (origRotStr != null) {
+            addOrigRot = Boolean.parseBoolean(origRotStr);
+        } else {
+            addOrigRot = false;
         }
     }
 
@@ -212,23 +219,50 @@ public class Residue extends MSGroup {
     public Rotamer[] getRotamers() {
 
         /**
-         * Return rotamers for this residue from the RotamerLibrary.
-         */
-        Rotamer[] libRotamers = RotamerLibrary.getRotamers(this);
-
-        /**
-         * If there are no rotamers or if original coordinates are not being
-         * used as a rotamer, simply return the reference from RotamerLibrary.
-         */
-        if (libRotamers == null || !RotamerLibrary.getUsingOrigCoordsRotamer()) {
-            return libRotamers;
-        }
-
-        /**
          * If the rotamers for this residue have been cached, return them.
          */
         if (rotamers != null) {
             return rotamers;
+        }
+
+        /**
+         * Return rotamers for this residue from the RotamerLibrary.
+         */
+        Rotamer[] libRotamers = RotamerLibrary.getRotamers(this);
+        
+        /**
+         * If there are no rotamers, and addOrigRot is true, return an array with
+         * only an original-coordinates rotamer. Else if there are no rotamers,
+         * return (null) library rotamers. If there are rotamers, and original
+         * coordinates are turned off, return (filled) library rotamers. Else,
+         * continue generating the rotamers array.
+         */
+        if (libRotamers == null) {
+            if (addOrigRot) {
+                rotamers = new Rotamer[1];
+                ResidueState origState = this.storeState();
+                double[] chi = RotamerLibrary.measureRotamer(this, false);
+                switch (residueType) {
+                    case AA:
+                        AminoAcid3 aa3 = AminoAcid3.valueOf(getName());
+                        originalRotamer = new Rotamer(aa3, origState, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0);
+                        rotamers[0] = originalRotamer;
+                        break;
+                    case NA:
+                        NucleicAcid3 na3 = NucleicAcid3.valueOf(getName());
+                        originalRotamer = new Rotamer(na3, origState, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0, chi[4], 0, chi[5], 0);
+                        rotamers[0] = originalRotamer;
+                        break;
+                    default:
+                        originalRotamer = null;
+                        rotamers = libRotamers; // Resets to null.
+                }
+                return rotamers;
+            } else {
+                return libRotamers;
+            }
+        } else if (!RotamerLibrary.getUsingOrigCoordsRotamer()) {
+            return libRotamers;
         }
 
         /**
