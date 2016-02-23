@@ -58,6 +58,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Logger;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.math3.util.FastMath;
+import static ffx.algorithms.mc.BoltzmannMC.BOLTZMANN;
 
 /**
  * Orientational Biased Monte Carlo (as applied to chi0 torsion of peptide side-chains).
@@ -68,7 +69,6 @@ import org.apache.commons.math3.util.FastMath;
 public class RosenbluthOBMC implements MonteCarloListener {
     private static final Logger logger = Logger.getLogger(RosenbluthOBMC.class.getName());
     
-    private final double BOLTZMANN = 0.0019872041; // In kcal/(mol*K)
     private final MolecularAssembly mola;
     private final ForceFieldEnergy forceFieldEnergy;
     private final Thermostat thermostat;

@@ -58,6 +58,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Logger;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.math3.util.FastMath;
+import static ffx.algorithms.mc.BoltzmannMC.BOLTZMANN;
 
 /**
  * Represents a Boltzmann-drawn spin of all residue torsions.
@@ -75,7 +76,6 @@ import org.apache.commons.math3.util.FastMath;
  */
 public class RosenbluthChiAllMove implements MCMove {
     private static final Logger logger = Logger.getLogger(RosenbluthChiAllMove.class.getName());
-    private final double BOLTZMANN = 0.0019872041; // In kcal/(mol*K)
     
     private final Residue target;
     private final ResidueState origState;
