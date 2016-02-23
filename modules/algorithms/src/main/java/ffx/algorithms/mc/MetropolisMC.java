@@ -89,17 +89,10 @@ public interface MetropolisMC {
     public double getE1();
     
     /**
-     * Return trial energy from last attempted step. Includes extra-potential
-     * energy adjustments.
+     * Return trial energy from last attempted step.
      * @return e2
      */
     public double getE2();
-    
-    /**
-     * Returns energy adjustments to e2 not included in underlying Potential.
-     * @return Extra-potential energy adjustment to e2
-     */
-    public double getEAdjust();
     
     /**
      * Returns the energy as of the last step taken (not including any extra-
@@ -156,26 +149,5 @@ public interface MetropolisMC {
      * @return Acceptance of last move
      */
     public boolean getAccept();
-    
-    // I'm not sure I like having the following methods; this is supposed to be
-    // an interface to take single steps, not to control or track the progress
-    // of a Monte Carlo algorithm.
-    
-    /**
-     * Get number of accepted steps using this MetropolisMC.
-     * @return 
-     */
-    //public int getNumAccept();
-    
-    /**
-     * Get number of rejected steps using this MetropolisMC.
-     * @return 
-     */
-    //public int getNumReject();
-    
-    /**
-     * Get number of steps tried using this MetropolisMC.
-     * @return 
-     */
-    //public int numSteps();
+
 }

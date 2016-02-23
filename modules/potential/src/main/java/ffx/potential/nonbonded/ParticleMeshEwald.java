@@ -357,9 +357,12 @@ public class ParticleMeshEwald implements LambdaInterface {
     private double d2lPowPol = 0.0;
     private boolean doPolarization;
     /**
-     * Specify intermolecularSoftcore.
+     * Specify inter-molecular softcore.
      */
     private boolean intermolecularSoftcore = false;
+    /**
+     * Specify intra-molecular softcore.
+     */
     private boolean intramolecularSoftcore = false;
     /**
      * Molecule number for each atom.
@@ -672,11 +675,11 @@ public class ParticleMeshEwald implements LambdaInterface {
     private long realSpacePermTotal, realSpaceEnergyTotal, realSpaceSCFTotal;
     private long bornRadiiTotal, gkEnergyTotal;
     private ELEC_FORM elecForm = ELEC_FORM.PAM;
-    private static final double toSeconds = 1.0e-9;
+    private static final double TO_SECONDS = 1.0e-9;
     /**
      * The sqrt of PI.
      */
-    private static final double sqrtPi = sqrt(Math.PI);
+    private static final double SQRT_PI = sqrt(Math.PI);
 
     /**
      * ParticleMeshEwald constructor.
@@ -1221,19 +1224,6 @@ public class ParticleMeshEwald implements LambdaInterface {
                 coords[0][i * 3 + 2] = atoms[i].getZ();
             }
             vacuumNeighborList.buildList(coords, vaporLists, isSoft, true, true);
-
-            /*
-             sb = new StringBuilder();
-             for (int i=0; i<nAtoms; i++) {
-             int list[] = vaporLists[0][i];
-             sb.append(String.format(" Atom %d:", i+1));
-             for (int j=0; j<list.length; j++) {
-             sb.append(String.format(" %d", list[j]+1));
-             }
-             sb.append("\n");
-             }
-             logger.info(sb.toString());
-             */
             vaporPermanentSchedule = vacuumNeighborList.getPairwiseSchedule();
             vaporEwaldSchedule = vaporPermanentSchedule;
             vacuumRanges = new Range[maxThreads];
@@ -1425,7 +1415,7 @@ public class ParticleMeshEwald implements LambdaInterface {
 
     private void printRealSpaceTimings() {
 
-        double total = (realSpacePermTotal + realSpaceSCFTotal + realSpaceEnergyTotal) * toSeconds;
+        double total = (realSpacePermTotal + realSpaceSCFTotal + realSpaceEnergyTotal) * TO_SECONDS;
 
         logger.info(String.format("\n Real Space: %7.4f (sec)", total));
         logger.info("           Electric Field");
@@ -1442,8 +1432,8 @@ public class ParticleMeshEwald implements LambdaInterface {
         for (int i = 0; i < maxThreads; i++) {
             int count = realSpaceEnergyRegion.realSpaceEnergyLoop[i].getCount();
             logger.info(String.format("    %3d   %7.4f %7.4f %7.4f %10d", i,
-                    realSpacePermTime[i] * toSeconds, realSpaceSCFTime[i] * toSeconds,
-                    realSpaceEnergyTime[i] * toSeconds, count));
+                    realSpacePermTime[i] * TO_SECONDS, realSpaceSCFTime[i] * TO_SECONDS,
+                    realSpaceEnergyTime[i] * TO_SECONDS, count));
             minPerm = min(realSpacePermTime[i], minPerm);
             maxPerm = max(realSpacePermTime[i], maxPerm);
             minSCF = min(realSpaceSCFTime[i], minSCF);
@@ -1454,17 +1444,17 @@ public class ParticleMeshEwald implements LambdaInterface {
             maxCount = max(count, maxCount);
         }
         logger.info(String.format(" Min      %7.4f %7.4f %7.4f %10d",
-                minPerm * toSeconds, minSCF * toSeconds,
-                minEnergy * toSeconds, minCount));
+                minPerm * TO_SECONDS, minSCF * TO_SECONDS,
+                minEnergy * TO_SECONDS, minCount));
         logger.info(String.format(" Max      %7.4f %7.4f %7.4f %10d",
-                maxPerm * toSeconds, maxSCF * toSeconds,
-                maxEnergy * toSeconds, maxCount));
+                maxPerm * TO_SECONDS, maxSCF * TO_SECONDS,
+                maxEnergy * TO_SECONDS, maxCount));
         logger.info(String.format(" Delta    %7.4f %7.4f %7.4f %10d",
-                (maxPerm - minPerm) * toSeconds, (maxSCF - minSCF) * toSeconds,
-                (maxEnergy - minEnergy) * toSeconds, (maxCount - minCount)));
+                (maxPerm - minPerm) * TO_SECONDS, (maxSCF - minSCF) * TO_SECONDS,
+                (maxEnergy - minEnergy) * TO_SECONDS, (maxCount - minCount)));
         logger.info(String.format(" Actual   %7.4f %7.4f %7.4f %10d",
-                realSpacePermTotal * toSeconds, realSpaceSCFTotal * toSeconds,
-                realSpaceEnergyTotal * toSeconds, realSpaceEnergyRegion.getInteractions()));
+                realSpacePermTotal * TO_SECONDS, realSpaceSCFTotal * TO_SECONDS,
+                realSpaceEnergyTotal * TO_SECONDS, realSpaceEnergyRegion.getInteractions()));
     }
 
     /**
@@ -2060,7 +2050,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             cycleTime += System.nanoTime();
             if (print) {
                 sb.append(format(
-                        " %4d     %15.10f %7.4f\n", completedSCFCycles, eps, cycleTime * toSeconds));
+                        " %4d     %15.10f %7.4f\n", completedSCFCycles, eps, cycleTime * TO_SECONDS));
             }
             /**
              * If the RMS Debye change increases, fail the SCF process.
@@ -2092,10 +2082,10 @@ public class ParticleMeshEwald implements LambdaInterface {
         }
         if (print) {
             sb.append(format(" Direct:                  %7.4f\n",
-                    toSeconds * directTime));
+                    TO_SECONDS * directTime));
             startTime = System.nanoTime() - startTime;
             sb.append(format(" Total:                   %7.4f",
-                    startTime * toSeconds));
+                    startTime * TO_SECONDS));
             logger.info(sb.toString());
         }
         return completedSCFCycles;
@@ -4698,9 +4688,9 @@ public class ParticleMeshEwald implements LambdaInterface {
 
     private class ReciprocalEnergyRegion extends ParallelRegion {
 
-        private final double aewald1 = -ELECTRIC * aewald / sqrtPi;
+        private final double aewald1 = -ELECTRIC * aewald / SQRT_PI;
         private final double aewald2 = 2.0 * aewald * aewald;
-        private final double aewald3 = -2.0 / 3.0 * ELECTRIC * aewald * aewald * aewald / sqrtPi;
+        private final double aewald3 = -2.0 / 3.0 * ELECTRIC * aewald * aewald * aewald / SQRT_PI;
         private final double aewald4 = -2.0 * aewald3;
         private final double twoThirds = 2.0 / 3.0;
         private double nfftX, nfftY, nfftZ;
@@ -5869,9 +5859,9 @@ public class ParticleMeshEwald implements LambdaInterface {
         if (aewald <= 0.0) {
             piEwald = Double.POSITIVE_INFINITY;
         } else {
-            piEwald = 1.0 / (sqrtPi * aewald);
+            piEwald = 1.0 / (SQRT_PI * aewald);
         }
-        aewald3 = 4.0 / 3.0 * pow(aewald, 3.0) / sqrtPi;
+        aewald3 = 4.0 / 3.0 * pow(aewald, 3.0) / SQRT_PI;
         if (aewald > 0.0) {
             an0 = alsq2 * piEwald;
             an1 = alsq2 * an0;
@@ -6915,7 +6905,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             cycleTime += System.nanoTime();
             if (print) {
                 sb.append(format(
-                        " %4d     %15.10f %7.4f\n", completedSCFCycles, eps, cycleTime * toSeconds));
+                        " %4d     %15.10f %7.4f\n", completedSCFCycles, eps, cycleTime * TO_SECONDS));
             }
             /**
              * If the RMS Debye change increases, fail the SCF process.
@@ -6947,10 +6937,10 @@ public class ParticleMeshEwald implements LambdaInterface {
         }
         if (print) {
             sb.append(format(" Direct:                  %7.4f\n",
-                    toSeconds * directTime));
+                    TO_SECONDS * directTime));
             startTime = System.nanoTime() - startTime;
             sb.append(format(" Total:                   %7.4f",
-                    startTime * toSeconds));
+                    startTime * TO_SECONDS));
             logger.info(sb.toString());
         }
 

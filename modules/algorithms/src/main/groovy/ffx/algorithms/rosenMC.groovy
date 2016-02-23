@@ -49,7 +49,7 @@ import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.MonteCarloListener;
 import ffx.algorithms.Integrator.Integrators;
 import ffx.algorithms.Thermostat.Thermostats;
-import ffx.algorithms.mc.RosenbluthRotamerMC;
+import ffx.algorithms.mc.RosenbluthOBMC;
 import ffx.potential.bonded.Residue;
 
 // Number of molecular dynamics steps
@@ -87,6 +87,7 @@ List<Residue> targets = new ArrayList<>();
 int resNum = 1;
 int mcFrequency = 50;
 int trialSetSize = 10;
+boolean writeSnapshots = false;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
@@ -107,6 +108,7 @@ cli.f(longOpt:'file', args:1, argName:'PDB', 'Choose file type to write to [PDB/
 cli.rmcR(longOpt:'residue', args:1, argName:'1', 'RRMC target residue number.');
 cli.rmcF(longOpt:'mcFreq', args:1, argName:'50', 'RRMC frequency.');
 cli.rmcK(longOpt:'trialSetSize', args:1, argName:'10', 'Size of RRMC trial sets.');
+cli.rmcW(longOpt:'writeSnapshots', args:1, argName:'false', 'Output PDBs of trial sets and orig/proposed conformations.');
 def options = cli.parse(args);
 
 if (options.h) {
@@ -181,6 +183,10 @@ if (options.rmcK) {
     trialSetSize = Integer.parseInt(options.rmcK);
 }
 
+if (options.rmcW) {
+    writeSnapshots = Boolean.parseBoolean(options.rmcW);
+}
+
 List<String> arguments = options.arguments();
 String modelfilename = null;
 if (arguments != null && arguments.size() > 0) {
@@ -206,7 +212,8 @@ molDyn.setFileType(fileType);
 molDyn.setRestartFrequency(restartFrequency);
 
 targets.add(active.getChains()[0].getResidues().get(resNum));
-MonteCarloListener rrmc = new RosenbluthRotamerMC(active, active.getPotentialEnergy(), molDyn.getThermostat(), targets, mcFrequency, trialSetSize);
+MonteCarloListener rrmc = new RosenbluthOBMC(active, active.getPotentialEnergy(), molDyn.getThermostat(),
+    targets, mcFrequency, trialSetSize, writeSnapshots);
 molDyn.addMCListener(rrmc);
 
 molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);

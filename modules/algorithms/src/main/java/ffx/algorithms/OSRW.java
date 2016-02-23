@@ -55,6 +55,7 @@ import java.util.logging.Logger;
 import static java.util.Arrays.fill;
 
 import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.io.FilenameUtils;
 
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.abs;
@@ -71,14 +72,6 @@ import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.parsers.PDBFilter;
-import static java.util.Arrays.fill;
-import org.apache.commons.io.FilenameUtils;
-import static org.apache.commons.math3.util.FastMath.PI;
-import static org.apache.commons.math3.util.FastMath.abs;
-import static org.apache.commons.math3.util.FastMath.exp;
-import static org.apache.commons.math3.util.FastMath.floor;
-import static org.apache.commons.math3.util.FastMath.sin;
-import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * An implementation of the Orthogonal Space Random Walk algorithm.
@@ -348,10 +341,6 @@ public class OSRW implements Potential {
      */
     private final boolean asynchronous;
     /**
-     * Flag to indicate whether to use Well-Tempered Metadynamics Method
-     */
-    private final boolean wellTempered;
-    /**
      * An energy-value positive scalar parameter in the units of temperature
      */
     private final double dT = 1;
@@ -376,7 +365,7 @@ public class OSRW implements Potential {
     private MolecularAssembly molecularAssembly;
     private PDBFilter pdbFilter = null;
     private File pdbFile = null;
-    
+
     /**
      * OSRW Asynchronous MultiWalker Constructor.
      *
@@ -393,13 +382,12 @@ public class OSRW implements Potential {
      * @param asynchronous set to true if walkers run asynchronously.
      * @param algorithmListener the AlgorithmListener to be notified of
      * progress.
-     * @param wellTempered true for well-tempered OSRW (not implemented yet).
      */
     public OSRW(LambdaInterface lambdaInterface, Potential potential,
             File lambdaFile, File histogramFile, CompositeConfiguration properties,
             double temperature, double dt, double printInterval,
             double saveInterval, boolean asynchronous,
-            AlgorithmListener algorithmListener, boolean wellTempered) {
+            AlgorithmListener algorithmListener) {
         this.lambdaInterface = lambdaInterface;
         this.potential = potential;
         this.lambdaFile = lambdaFile;
@@ -407,7 +395,6 @@ public class OSRW implements Potential {
         this.temperature = temperature;
         this.asynchronous = asynchronous;
         this.algorithmListener = algorithmListener;
-        this.wellTempered = wellTempered;
 
         nVariables = potential.getNumberOfVariables();
         lowEnergyCoordsZero = new double[nVariables];
@@ -498,7 +485,7 @@ public class OSRW implements Potential {
                 logger.info(" Lambda restart file could not be found and will be ignored.");
             }
         }
-                    
+
         dL = 1.0 / (lambdaBins - 1);
         dL_2 = dL / 2.0;
         minLambda = -dL_2;
@@ -616,12 +603,12 @@ public class OSRW implements Potential {
 
                 // Collect the minimum energy.
                 double minEnergy = potential.getTotalEnergy();
-                
+
                 // If a new minimum has been found, save its coordinates.
                 if (minEnergy < osrwOptimum) {
                     osrwOptimum = minEnergy;
-                    logger.info(String.format(" New minimum energy found: %16.8f (Step %d).", osrwOptimum,energyCount));
-                    osrwOptimumCoords = potential.getCoordinates(osrwOptimumCoords);             
+                    logger.info(String.format(" New minimum energy found: %16.8f (Step %d).", osrwOptimum, energyCount));
+                    osrwOptimumCoords = potential.getCoordinates(osrwOptimumCoords);
                     if (pdbFilter.writeFile(pdbFile, false)) {
                         logger.info(String.format(" Wrote PDB file to " + pdbFile.getName()));
                     }
@@ -688,10 +675,6 @@ public class OSRW implements Potential {
                 double bias = weight * biasMag
                         * exp(-deltaL2 / (2.0 * ls2))
                         * exp(-deltaFL2 / (2.0 * FLs2));
-                //JP: for WTMetaD, multiply the above bias function by the exp(-V(sn+1)/(R*deltaT)) V(sn+1) is current free energy?
-                if (wellTempered) {
-                    bias = bias * exp(currentFreeEnergy() / (R * dT));
-                }
                 biasEnergy += bias;
                 dGdLambda -= deltaL / ls2 * bias;
                 dGdFLambda -= deltaFL / FLs2 * bias;
@@ -1245,10 +1228,10 @@ public class OSRW implements Potential {
         theta = Math.asin(Math.sqrt(lambda));
     }
 
-    public LambdaInterface getLambdaInterface(){
+    public LambdaInterface getLambdaInterface() {
         return lambdaInterface;
     }
-    
+
     public void setTraversalOutput(File lambdaOneFile, MolecularAssembly topology1, File lambdaZeroFile, MolecularAssembly topology2) {
         this.writeTraversalSnapshots = true;
         this.lambdaOneFile = lambdaOneFile;
@@ -1354,10 +1337,11 @@ public class OSRW implements Potential {
     public void setOSRWOptimum(double prevOSRWOptimum) {
         osrwOptimum = prevOSRWOptimum;
     }
-    
-    public double getOSRWOptimum(){
+
+    public double getOSRWOptimum() {
         return osrwOptimum;
     }
+
     public double[] getLowEnergyLoop() {
         if (osrwOptimum < Double.MAX_VALUE) {
             return osrwOptimumCoords;
@@ -1376,7 +1360,7 @@ public class OSRW implements Potential {
             pdbFile = new File(fileName + "_opt.pdb");
             pdbFilter = new PDBFilter(new File(fileName + "_opt.pdb"), molecularAssembly, null, null);
         }
-        
+
     }
 
     @Override

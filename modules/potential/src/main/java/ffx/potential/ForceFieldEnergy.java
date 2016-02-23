@@ -597,7 +597,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                         vanderWaals.getNeighborList(), ELEC_FORM.PAM, parallelTeam);
             }
             double charge = molecularAssembly.getCharge(checkAllNodeCharges);
-            logger.info(String.format("  Overall system charge:           %12.8e", charge));
+            logger.info(String.format(" Overall system charge:            %10.6e", charge));
         } else {
             particleMeshEwald = null;
         }

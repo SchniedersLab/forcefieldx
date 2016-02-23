@@ -84,7 +84,7 @@ public class CoordShakeMove implements MCMove {
     }
 
     @Override
-    public double move() {
+    public void move() {
         originalCoords = ResidueState.storeAtomicCoordinates(this.atoms);
         int nAtoms = atoms.length;
 
@@ -98,23 +98,11 @@ public class CoordShakeMove implements MCMove {
             }
             atoms[i].setXYZ(xyz);
         }
-        return 0.0;
     }
 
     @Override
-    public double revertMove() {
+    public void revertMove() {
         ResidueState.revertAtomicCoordinates(atoms, originalCoords);
-        return 0.0;
-    }
-
-    @Override
-    public double getEcorrection() {
-        return 0.0;
-    }
-    
-    @Override
-    public String getDescription() {
-        return this.toString();
     }
     
     @Override

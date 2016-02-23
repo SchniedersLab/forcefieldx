@@ -40,6 +40,7 @@ package ffx.potential.nonbonded;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -75,12 +76,12 @@ import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.LambdaInterface;
-import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BioType;
 import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.SolventRadii;
 import ffx.potential.parameters.VDWType;
 
 import static ffx.potential.parameters.MultipoleType.ELECTRIC;
@@ -94,9 +95,6 @@ import static ffx.potential.parameters.MultipoleType.t100;
 import static ffx.potential.parameters.MultipoleType.t101;
 import static ffx.potential.parameters.MultipoleType.t110;
 import static ffx.potential.parameters.MultipoleType.t200;
-import ffx.potential.parameters.SolventRadii;
-import static java.lang.String.format;
-import java.util.Map;
 
 /**
  * This Generalized Kirkwood class implements GK for the AMOEBA polarizable
@@ -222,20 +220,21 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     private boolean bornUseAll = false;
     /**
-     * Provides maps from atomtypes or biotypes to fitted GK radii (by forcefield).
+     * Provides maps from atomtypes or biotypes to fitted GK radii (by
+     * forcefield).
      */
     private boolean useFittedRadii;
     private SolventRadii solventRadii;
     private RADII_MAP_TYPE radiiMapType = RADII_MAP_TYPE.ATOMTYPE;
     /**
-     * Maps radii overrides (by AtomType) specified from the command line.
-     * e.g. -DradiiOverride=134r1.20,135r1.20 sets atom types 134,135 to Bondi=1.20
+     * Maps radii overrides (by AtomType) specified from the command line. e.g.
+     * -DradiiOverride=134r1.20,135r1.20 sets atom types 134,135 to Bondi=1.20
      */
     private final HashMap<Integer, Double> radiiOverride = new HashMap<>();
     /**
      * Maps radii overrides (by atom number) specified from the command line.
-     * This takes precendence over AtomType-based overrides.
-     * e.g. -DradiiOverride=1r1.20,5r1.20 sets atom numbers 1,5 to Bondi=1.20
+     * This takes precendence over AtomType-based overrides. e.g.
+     * -DradiiOverride=1r1.20,5r1.20 sets atom numbers 1,5 to Bondi=1.20
      */
     private final HashMap<Integer, Double> radiiByNumberMap = new HashMap<>();
     private final ForceField forceField;
@@ -257,8 +256,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
         this.forceField = forceField;
         String forcefieldName = System.getProperty("forcefield");
-        if (forcefieldName != null &&
-                (forcefieldName.equalsIgnoreCase("AMOBEA_PROTEIN_2013")
+        if (forcefieldName != null
+                && (forcefieldName.equalsIgnoreCase("AMOBEA_PROTEIN_2013")
                 || forcefieldName.equalsIgnoreCase("AMBER99SB"))) {
             useFittedRadii = true;
             solventRadii = new SolventRadii(forcefieldName);
@@ -631,7 +630,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         }
                         break;
                     case BIOTYPE:
-                        Map<String,BioType> bioTypes = forceField.getBioTypeMap();
+                        Map<String, BioType> bioTypes = forceField.getBioTypeMap();
                         BioType bioType = null;
                         for (BioType one : bioTypes.values()) {
                             if (one.atomType == atomType.type) {
@@ -640,15 +639,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             }
                         }
                         if (bioType == null) {
-                            logger.severe(String.format("Couldn't find biotype for %s", atomType,toString()));
+                            logger.severe(String.format("Couldn't find biotype for %s", atomType, toString()));
                         }
 
-        //                BioType bioType = forceField.getBioType(atoms[i].getResidueName(), atoms[i].getName());
-        //                if (bioType == null) {
-        //                    logger.info(String.format("Null biotype for atom: %3s-%-4s",
-        //                            atoms[i].getResidueName(), atoms[i].getName()));
-        //                }
-
+                        //                BioType bioType = forceField.getBioType(atoms[i].getResidueName(), atoms[i].getName());
+                        //                if (bioType == null) {
+                        //                    logger.info(String.format("Null biotype for atom: %3s-%-4s",
+                        //                            atoms[i].getResidueName(), atoms[i].getName()));
+                        //                }
                         // Check for hard-coded BioType bondi factor.
                         if (solventRadii.getBioBondiMap().containsKey(bioType.index)) {
                             double factor = solventRadii.getBioBondiMap().get(bioType.index);
@@ -1019,7 +1017,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     if (sum <= 0.0) {
                         sum = 0.001;
                     }
-                    born[i] = pow(sum / pi43, third);
+                    born[i] = pow(sum / PI4_3, THIRD);
                     born[i] = 1.0 / born[i];
                 }
 
@@ -1081,7 +1079,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                      * Lower values of i may have contributed descreening, so
                      * the integral is incremented rather than initialized.
                      */
-                    localBorn[i] += pi43 / (baseRi * baseRi * baseRi);
+                    localBorn[i] += PI4_3 / (baseRi * baseRi * baseRi);
                     int list[] = neighborLists[0][i];
                     int npair = list.length;
                     for (int l = 0; l < npair; l++) {
@@ -1107,7 +1105,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             if (baseRi + r < scaledRk) {
                                 final double lower = baseRi;
                                 final double upper = scaledRk - r;
-                                localBorn[i] += (pi43 * (1.0 / (upper * upper * upper)
+                                localBorn[i] += (PI4_3 * (1.0 / (upper * upper * upper)
                                         - 1.0 / (lower * lower * lower)));
                             }
                             // Upper integration bound is always the same.
@@ -1134,7 +1132,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             double u4r = u4 * r;
                             double term = (3.0 * (r2 - scaledRk2) + 6.0 * u2 - 8.0 * ur) / u4r
                                     - (3.0 * (r2 - scaledRk2) + 6.0 * l2 - 8.0 * lr) / l4r;
-                            localBorn[i] -= pi12 * term;
+                            localBorn[i] -= PI_12 * term;
 
                             // Atom k being descreeened by atom i.
                             final double scaledRi = baseRi * overlapScale[i];
@@ -1143,7 +1141,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             if (baseRk + r < scaledRi) {
                                 lower = baseRk;
                                 upper = scaledRi - r;
-                                localBorn[k] += (pi43 * (1.0 / (upper * upper * upper)
+                                localBorn[k] += (PI4_3 * (1.0 / (upper * upper * upper)
                                         - 1.0 / (lower * lower * lower)));
                             }
                             // Upper integration bound is always the same.
@@ -1169,7 +1167,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             u4r = u4 * r;
                             term = (3.0 * (r2 - scaledRi2) + 6.0 * u2 - 8.0 * ur) / u4r
                                     - (3.0 * (r2 - scaledRi2) + 6.0 * l2 - 8.0 * lr) / l4r;
-                            localBorn[k] -= pi12 * term;
+                            localBorn[k] -= PI_12 * term;
                         }
                     }
                 }
@@ -3965,7 +3963,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
          */
         private class BornCRLoop extends IntegerForLoop {
 
-            private final double factor = -pow(PI, third) * pow(6.0, (2.0 * third)) / 9.0;
+            private final double factor = -pow(PI, THIRD) * pow(6.0, (2.0 * THIRD)) / 9.0;
             private final double dx_local[];
             private double gX[];
             private double gY[];
@@ -4008,8 +4006,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     final double yi = y[i];
                     final double zi = z[i];
                     final double rbi = born[i];
-                    double termi = pi43 / (rbi * rbi * rbi);
-                    termi = factor / pow(termi, (4.0 * third));
+                    double termi = PI4_3 / (rbi * rbi * rbi);
+                    termi = factor / pow(termi, (4.0 * THIRD));
                     int list[] = neighborLists[0][i];
                     int nPair = list.length;
                     for (int l = 0; l < nPair; l++) {
@@ -4087,8 +4085,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
                             // Atom k being descreeened by atom i.
                             double rbk = born[k];
-                            double termk = pi43 / (rbk * rbk * rbk);
-                            termk = factor / pow(termk, (4.0 * third));
+                            double termk = PI4_3 / (rbk * rbk * rbk);
+                            termk = factor / pow(termk, (4.0 * THIRD));
                             final double si = ri * overlapScale[i];
                             final double si2 = si * si;
                             de = 0.0;
@@ -4158,13 +4156,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
         private final SharedDouble sharedDispersion;
         private boolean gradient = false;
         private double[] cdisp = null;
-        private static final double dispersionOverlapScaleFactor = 0.81;
-        private static final double slevy = 1.0;
-        private static final double awater = 0.033428;
-        private static final double epso = 0.1100;
-        private static final double epsh = 0.0135;
-        private static final double rmino = 1.7025;
-        private static final double rminh = 1.3275;
+        private static final double DISP_OVERLAP_SCALE_FACTOER = 0.81;
+        private static final double SLEVY = 1.0;
+        private static final double AWATER = 0.033428;
+        private static final double EPSO = 0.1100;
+        private static final double EPSH = 0.0135;
+        private static final double RMINO = 1.7025;
+        private static final double RMINH = 1.3275;
 
         public DispersionRegion(int nt) {
             dispersionLoop = new DispersionLoop[nt];
@@ -4208,15 +4206,15 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 double epsi = type.wellDepth;
                 double rmini = type.radius / 2.0;
                 if (rDisp[i] > 0.0 && epsi > 0.0) {
-                    double sqEpsoEpsi = sqrt(epso) + sqrt(epsi);
-                    double sqEpshEpsi = sqrt(epsh) + sqrt(epsi);
-                    double emixo = 4.0 * epso * epsi / (pow(sqEpsoEpsi, 2));
-                    double rmixo = 2.0 * (pow(rmino, 3) + pow(rmini, 3)) / (pow(rmino, 2) + pow(rmini, 2));
+                    double sqEpsoEpsi = sqrt(EPSO) + sqrt(epsi);
+                    double sqEpshEpsi = sqrt(EPSH) + sqrt(epsi);
+                    double emixo = 4.0 * EPSO * epsi / (pow(sqEpsoEpsi, 2));
+                    double rmixo = 2.0 * (pow(RMINO, 3) + pow(rmini, 3)) / (pow(RMINO, 2) + pow(rmini, 2));
                     double rmixo3 = pow(rmixo, 3);
                     double rmixo7 = pow(rmixo, 7);
                     double ao = emixo * rmixo7;
-                    double emixh = 4.0 * epsh * epsi / (pow(sqEpshEpsi, 2));
-                    double rmixh = 2.0 * (pow(rminh, 3) + pow(rmini, 3)) / (pow(rminh, 2) + pow(rmini, 2));
+                    double emixh = 4.0 * EPSH * epsi / (pow(sqEpshEpsi, 2));
+                    double rmixh = 2.0 * (pow(RMINH, 3) + pow(rmini, 3)) / (pow(RMINH, 2) + pow(rmini, 2));
                     double rmixh3 = pow(rmixh, 3);
                     double rmixh7 = pow(rmixh, 7);
                     double ah = emixh * rmixh7;
@@ -4239,7 +4237,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         cdisp[i] = cdisp[i] + 2.0 * PI * (2.0 * rmixo7 - 11.0 * ri7) * ao / (11.0 * ri11);
                     }
                 }
-                cdisp[i] = slevy * awater * cdisp[i];
+                cdisp[i] = SLEVY * AWATER * cdisp[i];
             }
         }
 
@@ -4362,7 +4360,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     /**
                      * Subtract descreening.
                      */
-                    edisp -= slevy * awater * sum;
+                    edisp -= SLEVY * AWATER * sum;
                 }
             }
 
@@ -4371,17 +4369,17 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 VDWType type = atoms[i].getVDWType();
                 double epsi = type.wellDepth;
                 double rmini = type.radius / 2.0;
-                double emixo = (4.0 * epso * epsi) / (pow(sqrt(epso) + sqrt(epsi), 2));
-                double rmixo = 2.0 * (pow(rmino, 3) + pow(rmini, 3)) / (pow(rmino, 2) + pow(rmini, 2));
+                double emixo = (4.0 * EPSO * epsi) / (pow(sqrt(EPSO) + sqrt(epsi), 2));
+                double rmixo = 2.0 * (pow(RMINO, 3) + pow(rmini, 3)) / (pow(RMINO, 2) + pow(rmini, 2));
                 double rmixo7 = pow(rmixo, 7);
                 double ao = emixo * rmixo7;
-                double emixh = 4.0 * epsh * epsi / (pow(sqrt(epsh) + sqrt(epsi), 2));
-                double rmixh = 2.0 * (pow(rminh, 3) + pow(rmini, 3)) / (pow(rminh, 2) + pow(rmini, 2));
+                double emixh = 4.0 * EPSH * epsi / (pow(sqrt(EPSH) + sqrt(epsi), 2));
+                double rmixh = 2.0 * (pow(RMINH, 3) + pow(rmini, 3)) / (pow(RMINH, 2) + pow(rmini, 2));
                 double rmixh7 = pow(rmixh, 7);
                 double ah = emixh * rmixh7;
                 double ri = rDisp[i];
                 double rk = rDisp[k];
-                double sk = rk * dispersionOverlapScaleFactor;
+                double sk = rk * DISP_OVERLAP_SCALE_FACTOER;
                 double sk2 = sk * sk;
                 if (ri < r + sk) {
                     double de = 0.0;
@@ -4563,7 +4561,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                      * Increment the individual dispersion gradient components.
                      */
                     if (gradient) {
-                        de = -de / r * slevy * awater;
+                        de = -de / r * SLEVY * AWATER;
                         double dedx = de * xr;
                         double dedy = de * yr;
                         double dedz = de * zr;
@@ -9590,9 +9588,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
     /**
      * Some static constants.
      */
-    private static final double third = 1.0 / 3.0;
-    private static final double pi43 = 4.0 / 3.0 * PI;
-    private static final double pi12 = PI / 12.0;
+    private static final double THIRD = 1.0 / 3.0;
+    private static final double PI4_3 = 4.0 / 3.0 * PI;
+    private static final double PI_12 = PI / 12.0;
 
     private static enum RADII_MAP_TYPE {
         ATOMTYPE, BIOTYPE, NONE;
