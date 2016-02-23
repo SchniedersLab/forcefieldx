@@ -244,12 +244,20 @@ public class Residue extends MSGroup {
                 double[] chi = RotamerLibrary.measureRotamer(this, false);
                 switch (residueType) {
                     case AA:
-                        AminoAcid3 aa3 = AminoAcid3.valueOf(getName());
+                        AminoAcid3 aa3 = AminoAcid3.UNK;
+                        try {
+                            aa3 = AminoAcid3.valueOf(getName());
+                        } catch (Exception e) {
+                        }
                         originalRotamer = new Rotamer(aa3, origState, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0);
                         rotamers[0] = originalRotamer;
                         break;
                     case NA:
-                        NucleicAcid3 na3 = NucleicAcid3.valueOf(getName());
+                        NucleicAcid3 na3 = NucleicAcid3.UNK;
+                        try {
+                            na3 = NucleicAcid3.valueOf(getName());
+                        } catch (Exception e) {
+                        }
                         originalRotamer = new Rotamer(na3, origState, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0, chi[4], 0, chi[5], 0);
                         rotamers[0] = originalRotamer;
                         break;

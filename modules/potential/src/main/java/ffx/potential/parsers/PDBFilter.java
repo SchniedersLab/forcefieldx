@@ -672,6 +672,10 @@ public final class PDBFilter extends SystemFilter {
                                 }
                                 newAtom = new Atom(0, name, altLoc, d, resName, resSeq,
                                         chainID, occupancy, tempFactor, segID);
+                                // Check if this is a modified residue.
+                                if (modres.containsKey(resName.toUpperCase())) {
+                                    newAtom.setModRes(true);
+                                }
 
                                 returnedAtom = (Atom) activeMolecularAssembly.addMSNode(newAtom);
                                 if (returnedAtom != newAtom) {

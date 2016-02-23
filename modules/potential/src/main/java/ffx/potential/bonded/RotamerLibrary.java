@@ -38,8 +38,6 @@
 package ffx.potential.bonded;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -131,6 +129,9 @@ public class RotamerLibrary {
         if (residue == null) {
             return null;
         }
+        if (isModRes(residue)) {
+            return null;
+        }
         switch (residue.getResidueType()) {
             case AA:
                 AminoAcid3 aa = AminoAcid3.valueOf(residue.getName());
@@ -181,6 +182,16 @@ public class RotamerLibrary {
             default:
                 return null;
         }
+    }
+    
+    /**
+     * Checks if a Residue has a PTM.
+     * @param residue
+     * @return 
+     */
+    private static boolean isModRes(Residue residue) {
+        List<Atom> resatoms = residue.getAtomList();
+        return (resatoms != null && !resatoms.isEmpty() && resatoms.get(0).isModRes());
     }
 
     /**
@@ -935,7 +946,7 @@ public class RotamerLibrary {
                 case AA:
                     double[] chi = new double[4];
                     try {
-                        measureAARotamer(residue, chi, print);
+                        measureRotamer(residue, chi, print);
                     } catch (ArrayIndexOutOfBoundsException e) {
                         String message = " Array passed to measureRotamer was not of sufficient size.";
                         logger.log(Level.WARNING, message, e);
@@ -944,7 +955,7 @@ public class RotamerLibrary {
                 case NA:
                     chi = new double[6];
                     try {
-                        measureNARotamer(residue, chi, print);
+                        measureRotamer(residue, chi, print);
                     } catch (ArrayIndexOutOfBoundsException e) {
                         String message = " Array passed to measureRotamer was not of sufficient size.";
                         logger.log(Level.WARNING, message, e);
@@ -965,7 +976,7 @@ public class RotamerLibrary {
      * @param print Verbosity flag
      */
     public static void measureRotamer(Residue residue, double chi[], boolean print) {
-        if (residue == null) {
+        if (residue == null || isModRes(residue)) {
             return;
         }
         switch (residue.getResidueType()) {
