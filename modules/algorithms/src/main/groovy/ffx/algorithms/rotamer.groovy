@@ -593,10 +593,9 @@ if (algorithm != 5) {
                     int nrot = rotamers.length;
                     if (nrot == 1) {
                         RotamerLibrary.applyRotamer(residue, rotamers[0]);
-                    } else if (nrot > 1) {
-                        if (counter >= allStartResID) {
-                            residueList.add(residue);
-                        }
+                    }
+                    if (counter >= allStartResID) {
+                        residueList.add(residue);
                     }
                 } else if (options.fR) {
                     if (counter >= allStartResID && counter >= forceResiduesStart
@@ -770,7 +769,9 @@ if (decomposeOriginal) {
             rotamerOptimization.decomposeOriginalQuads(quadsCutoff, numQuads);
         }
     } else if (options.x) {
-        rotamerOptimization.decomposeOriginalParallel();
+        Residue[] residueArray = residueList.toArray(new Residue[residueList.size()]);
+        rotamerOptimization.decomposeOriginal(residueArray);
+        //rotamerOptimization.decomposeOriginalParallel();
     } else {
         Residue[] residueArray = residueList.toArray(new Residue[residueList.size()]);
         rotamerOptimization.decomposeOriginal(residueArray);

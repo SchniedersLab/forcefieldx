@@ -633,7 +633,7 @@ public class RotamerOptimization implements Terminatable {
         if (addOrigRotStr != null) {
             boolean value = Boolean.parseBoolean(addOrigRotStr);
             this.addOrigRot = value;
-            logger.info(String.format(" (KEY) origRot: %b", addOrigRot));
+            logger.info(String.format(" (KEY) addOrigRot: %b", addOrigRot));
         }
         if (origAtEndStr != null) {
             boolean value = Boolean.parseBoolean(origAtEndStr);
