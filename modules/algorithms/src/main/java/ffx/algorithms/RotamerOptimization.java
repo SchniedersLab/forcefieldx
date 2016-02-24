@@ -1614,33 +1614,35 @@ public class RotamerOptimization implements Terminatable {
                     residueEnergy[1][j] += halfPair;
                 }
             }
-            for (int i = 0; i < nRes; i++) {
-                Residue ri = residues[i];
-                for (int j = i + 1; j < nRes; j++) {
-                    Residue rj = residues[j];
-                    for (int k = j + 1; k < nRes; k++) {
-                        Residue rk = residues[k];
-                        double dist = trimerDistance(i, 0, j, 0, k, 0);
-                        triEnergy[i][j][k] = threeBodyEnergy[i][0][j][0][k][0];
-                        double thirdTrimer = triEnergy[i][j][k] / 3.0;
-                        residueEnergy[2][i] += thirdTrimer;
-                        residueEnergy[2][j] += thirdTrimer;
-                        residueEnergy[2][k] += thirdTrimer;
-                        if (triEnergy[i][j][k] != 0.0) {
-                            logger.info(String.format(" Tri  %s %s %s:    %16.5f", ri, rj, rk, triEnergy[i][j][k]));
-                        } else if (dist == Double.MAX_VALUE) {
-                            logger.info(String.format(" Tri  %s %s %s:    set to 0.0 at NaN (very long distance)",
-                                    ri, rj, rk));
-                            triEnergy[i][j][k] = 0.0;
-                        } else if (dist > threeBodyCutoffDist) {
-                            logger.info(String.format(" Tri  %s %s %s:    set to 0.0 at %1.5f Angstroms",
-                                    ri, rj, rk, dist));
-                            triEnergy[i][j][k] = 0.0;
-                        } else {
-                            String m = String.
-                                    format(" Zero trimer energy inside cutoff: %s %s %s at %1.5f Angstroms.",
-                                            ri, rj, rk, dist);
-                            logger.warning(m);
+            if (threeBodyTerm) {
+                for (int i = 0; i < nRes; i++) {
+                    Residue ri = residues[i];
+                    for (int j = i + 1; j < nRes; j++) {
+                        Residue rj = residues[j];
+                        for (int k = j + 1; k < nRes; k++) {
+                            Residue rk = residues[k];
+                            double dist = trimerDistance(i, 0, j, 0, k, 0);
+                            triEnergy[i][j][k] = threeBodyEnergy[i][0][j][0][k][0];
+                            double thirdTrimer = triEnergy[i][j][k] / 3.0;
+                            residueEnergy[2][i] += thirdTrimer;
+                            residueEnergy[2][j] += thirdTrimer;
+                            residueEnergy[2][k] += thirdTrimer;
+                            if (triEnergy[i][j][k] != 0.0) {
+                                logger.info(String.format(" Tri  %s %s %s:    %16.5f", ri, rj, rk, triEnergy[i][j][k]));
+                            } else if (dist == Double.MAX_VALUE) {
+                                logger.info(String.format(" Tri  %s %s %s:    set to 0.0 at NaN (very long distance)",
+                                        ri, rj, rk));
+                                triEnergy[i][j][k] = 0.0;
+                            } else if (dist > threeBodyCutoffDist) {
+                                logger.info(String.format(" Tri  %s %s %s:    set to 0.0 at %1.5f Angstroms",
+                                        ri, rj, rk, dist));
+                                triEnergy[i][j][k] = 0.0;
+                            } else {
+                                String m = String.
+                                        format(" Zero trimer energy inside cutoff: %s %s %s at %1.5f Angstroms.",
+                                                ri, rj, rk, dist);
+                                logger.warning(m);
+                            }
                         }
                     }
                 }

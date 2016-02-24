@@ -770,11 +770,12 @@ if (decomposeOriginal) {
         }
     } else if (options.x) {
         Residue[] residueArray = residueList.toArray(new Residue[residueList.size()]);
-        rotamerOptimization.decomposeOriginal(residueArray);
-        //rotamerOptimization.decomposeOriginalParallel();
+        //rotamerOptimization.decomposeOriginal(residueArray);
+        rotamerOptimization.decomposeOriginalParallel();
     } else {
         Residue[] residueArray = residueList.toArray(new Residue[residueList.size()]);
-        rotamerOptimization.decomposeOriginal(residueArray);
+        //rotamerOptimization.decomposeOriginal(residueArray);
+        rotamerOptimization.decomposeOriginalParallel();
     }
     if (master) {
         logger.info(String.format("\n"));
