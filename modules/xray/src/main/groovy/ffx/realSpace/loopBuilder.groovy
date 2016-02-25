@@ -64,6 +64,7 @@ import ffx.algorithms.RotamerOptimization.Direction;
 import ffx.algorithms.SimulatedAnnealing;
 import ffx.algorithms.Thermostat.Thermostats;
 import ffx.algorithms.MCLoop;
+import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.Polymer;
@@ -418,6 +419,20 @@ if(runOSRW){
             ai.setApplyLambda(true);
         } else {
             ai.setApplyLambda(false);
+        }
+    }
+
+    // Set atoms that are 1-2 and 1-3 to Built atoms to be active.
+    for (int i = 0; i <= atoms.length; i++) {
+        Atom ai = atoms[i - 1];
+        if (ai.getBuilt()) {
+            ArrayList<Angle> angles = ai.getAngles();
+            for (int j=0; j < angles.size; j++) {
+                Atom[] angleAtoms = angles[j].getAtomArray();
+                for (int k = 0; k < angleAtoms.length; k++) {
+                    angleAtoms[k].setActive(true);
+                }
+            }
         }
     }
 
