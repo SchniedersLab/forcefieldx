@@ -701,7 +701,8 @@ if (options.sO) {
                     }
                 }
                 multiRes.finalize();
-                multiRes.requestSetActiveResidue(ResidueEnumerations.AminoAcid3.valueOf(res.getName()));
+                //multiRes.requestSetActiveResidue(ResidueEnumerations.AminoAcid3.valueOf(res.getName()));
+                multiRes.setActiveResidue(res);
                 active.getPotentialEnergy().reInit();
                 residueList.remove(i);
                 residueList.add(i, multiRes);

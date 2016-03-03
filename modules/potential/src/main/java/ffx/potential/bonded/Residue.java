@@ -570,6 +570,27 @@ public class Residue extends MSGroup {
                 return null;
         }
     }
+    
+    public AminoAcid3 getAminoAcid3() {
+        if (this.residueType != ResidueType.AA) {
+            throw new IllegalArgumentException(String.format(" This residue is "
+                    + "not an amino acid: %s", this.toString()));
+        } else if (aa == AA3.UNK) {
+            return AminoAcid3.UNK;
+        }
+        return AminoAcid3.valueOf(getName());
+    }
+    
+    public NucleicAcid3 getNucleicAcid3() {
+        if (this.residueType != ResidueType.NA) {
+            throw new IllegalArgumentException(String.format(" This residue is "
+                    + "not an amino acid: %s", this.toString()));
+        } else if (na == NA3.UNK) {
+            return NucleicAcid3.UNK;
+        }
+        return NucleicAcid3.valueOf(getName());
+        
+    }
 
     /**
      * Returns a list of atoms liable to change during dead-end elimination

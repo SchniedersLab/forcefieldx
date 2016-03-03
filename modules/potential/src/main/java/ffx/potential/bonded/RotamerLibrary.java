@@ -1947,7 +1947,7 @@ public class RotamerLibrary {
                 logger.warning(String.format(" Could not set residue %s for multi-residue %s", name, residue));
             }
         } else {
-            name = AminoAcid3.valueOf(residue.getName());
+            name = residue.getAminoAcid3();
         }
         switch (name) {
             case VAL: {
