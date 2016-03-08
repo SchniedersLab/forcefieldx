@@ -621,7 +621,7 @@ if (algorithm != 5) {
                         if (r.getResidueNumber() == i) {
                             residueList.add(r);
                             Rotamer[] rotamers = r.getRotamers();
-                            if (rotamers != null && rotamers.size() > 1) {
+                            if (rotamers != null) {
                                 n++;
                             }
                         }

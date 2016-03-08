@@ -2080,7 +2080,7 @@ public class RotamerOptimization implements Terminatable {
         this.residueList = new ArrayList<>();
         logger.info(" Optimizing these residues: ");
         for (Residue r : residueList) {
-            if (r.getRotamers() != null && r.getRotamers().length > 1) {
+            if (r.getRotamers() != null) {
                 this.residueList.add(r);
                 logger.info(String.format("\t%s", r.toString()));
             } else {
