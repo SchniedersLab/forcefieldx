@@ -529,6 +529,12 @@ if(!loopBuildError){
     refinementMinimize.minimize(eps);
 
     energy();
+    if (size > 1){
+        structureFile = new File("postOSRW."+ String.format("%d",world.rank())+"." + structureFile.getName());
+    } else{
+        structureFile = new File("postOSRW."+structureFile.getName());
+    }
+    saveAsPDB(structureFile);
 }
 
 
