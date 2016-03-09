@@ -123,6 +123,7 @@ public class ForceField {
     private final Map<String, TorsionTorsionType> torsionTorsionTypes;
     private final Map<String, UreyBradleyType> ureyBradleyTypes;
     private final Map<String, VDWType> vanderWaalsTypes;
+    private final Map<String, RelativeSolvationType> relativeSolvationTypes;
     private final Map<ForceFieldType, Map> forceFieldTypes;
 
     /**
@@ -165,6 +166,7 @@ public class ForceField {
         imptorsTypes = new TreeMap<>(new ImproperTorsionType(new int[4], 0.0, 0.0, 2));
         ureyBradleyTypes = new TreeMap<>(new UreyBradleyType(new int[3], 0, 0));
         vanderWaalsTypes = new TreeMap<>(new VDWType(0, 0, 0, 0));
+        relativeSolvationTypes = new TreeMap<>(new RelativeSolvationType("", 0.0));
 
         forceFieldTypes = new EnumMap<>(ForceFieldType.class);
         forceFieldTypes.put(ForceFieldType.ANGLE, angleTypes);
@@ -182,6 +184,7 @@ public class ForceField {
         forceFieldTypes.put(ForceFieldType.TORTORS, torsionTorsionTypes);
         forceFieldTypes.put(ForceFieldType.UREYBRAD, ureyBradleyTypes);
         forceFieldTypes.put(ForceFieldType.VDW, vanderWaalsTypes);
+        forceFieldTypes.put(ForceFieldType.RELATIVESOLV, relativeSolvationTypes);
     }
 
     /**
@@ -421,6 +424,10 @@ public class ForceField {
 
         for (VDWType vdwType : patch.vanderWaalsTypes.values()) {
             vanderWaalsTypes.put(vdwType.getKey(), vdwType);
+        }
+        
+        for (RelativeSolvationType rsType : patch.relativeSolvationTypes.values()) {
+            relativeSolvationTypes.put(rsType.getKey(), rsType);
         }
 
         // Is this a modified residue patch?
@@ -923,6 +930,14 @@ public class ForceField {
                 AtomType type = atomTypes.get(key);
                 types.put(bioType.atomName.toUpperCase(), type);
             }
+        }
+        return types;
+    }
+    
+    public HashMap<String, RelativeSolvationType> getRelativeSolvationTypes() {
+        HashMap<String, RelativeSolvationType> types = new HashMap<>();
+        for (String key : relativeSolvationTypes.keySet()) {
+            types.put(key, relativeSolvationTypes.get(key));
         }
         return types;
     }
@@ -1462,7 +1477,8 @@ public class ForceField {
         TORSION,
         TORTORS,
         UREYBRAD,
-        VDW
+        VDW,
+        RELATIVESOLV
     }
 
     /**

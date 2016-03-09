@@ -49,12 +49,12 @@ import java.util.logging.Logger;
 import static java.lang.String.format;
 
 import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.io.FilenameUtils;
 
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;
+import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.ARCFileFilter;
 import ffx.potential.parsers.FileOpener;
@@ -240,6 +240,9 @@ public class PotentialsFileOpener implements FileOpener {
                 forceFieldFilter = new ForceFieldFilter(patchConfiguration);
                 ForceField patchForceField = forceFieldFilter.parse();
                 forceField.append(patchForceField);
+                if (RotamerLibrary.addRotPatch(patch)) {
+                    logger.info(String.format(" Loaded rotamer definitions from patch %s.", patch));
+                }
             }
             assembly.setForceField(forceField);
             SystemFilter filter;

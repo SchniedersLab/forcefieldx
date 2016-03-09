@@ -369,17 +369,17 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         rigidHydrogens = forceField.getBoolean(ForceFieldBoolean.RIGID_HYDROGENS, false);
         rigidScale = forceField.getDouble(ForceFieldDouble.RIGID_SCALE, 10.0);
 
-        String relSolvationType = forceField.getString(ForceFieldString.RELATIVE_SOLVATION, "NONE").toUpperCase();
+        String relSolvLibrary = forceField.getString(ForceFieldString.RELATIVE_SOLVATION, "NONE").toUpperCase();
         relativeSolvationTerm = true;
         nRelativeSolvations = 0;
-        switch (relSolvationType) {
+        switch (relSolvLibrary) {
             case "AUTO":
                 if (generalizedKirkwoodTerm) {
                     if (name.toUpperCase().contains("OPLS")) {
-                        relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.MACCALLUM_TIP4P);
+                        relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.MACCALLUM_TIP4P, forceField);
                         // Change when we have good Generalized Born numbers of our own for OPLS.
                     } else {
-                        relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.GK);
+                        relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.GK, forceField);
                     }
                 } else {
                     relativeSolvationTerm = false;
@@ -387,22 +387,22 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 }
                 break;
             case "GK":
-                relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.GK);
+                relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.GK, forceField);
                 break;
             case "EXPLICIT":
-                relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.EXPLICIT);
+                relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.EXPLICIT, forceField);
                 break;
             case "WOLFENDEN":
-                relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.WOLFENDEN);
+                relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.WOLFENDEN, forceField);
                 break;
             case "CABANI":
-                relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.CABANI);
+                relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.CABANI, forceField);
                 break;
             case "MACCALLUM_SPC":
-                relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.MACCALLUM_SPC);
+                relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.MACCALLUM_SPC, forceField);
                 break;
             case "MACCALLUM_TIP4P":
-                relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.MACCALLUM_TIP4P);
+                relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.MACCALLUM_TIP4P, forceField);
                 break;
             case "NONE":
             default:

@@ -2071,8 +2071,8 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
-     * Accepts a list of residues but throws out null- or single-rotamer
-     * residues. Used by the -lR flag.
+     * Accepts a list of residues but throws out null residues. Used by the -lR 
+     * flag.
      *
      * @param residueList
      */

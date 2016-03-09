@@ -78,6 +78,7 @@ import ffx.potential.parameters.TorsionTorsionType;
 import ffx.potential.parameters.TorsionType;
 import ffx.potential.parameters.UreyBradleyType;
 import ffx.potential.parameters.VDWType;
+import ffx.potential.parameters.RelativeSolvationType;
 import ffx.utilities.Keyword;
 
 import static ffx.potential.parameters.ForceField.toEnumForm;
@@ -323,6 +324,9 @@ public class ForceFieldFilter {
                             case POLARIZE:
                                 parsePolarize(input, tokens);
                                 break;
+                            case RELATIVESOLV:
+                                parseRelativeSolvation(input, tokens);
+                                break;
                             default:
                                 logger.log(Level.WARNING, "ForceField type recognized, but not stored:{0}", type);
                         }
@@ -410,6 +414,9 @@ public class ForceFieldFilter {
                 case POLARIZE:
                     parsePolarize(input, tokens);
                     break;
+                case RELATIVESOLV:
+                    parseRelativeSolvation(input, tokens);
+                    break;
                 default:
                     logger.log(Level.WARNING, "ForceField type recognized, but not stored:{0}", type);
             }
@@ -484,6 +491,23 @@ public class ForceFieldFilter {
             }
         }
         return true;
+    }
+    
+    private void parseRelativeSolvation(String input, String[] tokens) {
+        if (tokens.length < 3) {
+            logger.log(Level.WARNING, "Invalid RELATIVE_SOLVATION type:\n{0}", input);
+            return;
+        }
+        String resName = tokens[1];
+        try {
+            double relSolvValue = Double.parseDouble(tokens[2]);
+            RelativeSolvationType rtype = new RelativeSolvationType(resName, relSolvValue);
+            forceField.addForceFieldType(rtype);
+        } catch (NumberFormatException ex) {
+            String message = "Exception parsing RELATIVE_SOLVATION type:\n" + input + "\n";
+            logger.log(Level.SEVERE, message, ex);
+        }
+        
     }
 
     private void parseAngle(String input, String tokens[]) {

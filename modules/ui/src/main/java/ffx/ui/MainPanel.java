@@ -111,6 +111,7 @@ import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MSRoot;
 import ffx.potential.bonded.ROLS;
 import ffx.potential.bonded.RendererCache;
+import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldString;
@@ -1342,6 +1343,9 @@ public final class MainPanel extends JPanel implements ActionListener,
             forceFieldFilter = new ForceFieldFilter(patchConfiguration);
             ForceField patchForceField = forceFieldFilter.parse();
             forceField.append(patchForceField);
+            if (RotamerLibrary.addRotPatch(patch)) {
+                logger.info(String.format(" Loaded rotamer definitions from patch %s.", patch));
+            }
         }
         newSystem.setForceField(forceField);
         SystemFilter systemFilter = null;
@@ -1391,6 +1395,9 @@ public final class MainPanel extends JPanel implements ActionListener,
             forceFieldFilter = new ForceFieldFilter(patchConfiguration);
             ForceField patchForceField = forceFieldFilter.parse();
             forceField.append(patchForceField);
+            if (RotamerLibrary.addRotPatch(patch)) {
+                logger.info(String.format(" Loaded rotamer definitions from patch %s.", patch));
+            }
         }
         newSystem.setForceField(forceField);
         ConversionFilter convFilter = null;
@@ -1458,6 +1465,9 @@ public final class MainPanel extends JPanel implements ActionListener,
             forceFieldFilter = new ForceFieldFilter(patchConfiguration);
             ForceField patchForceField = forceFieldFilter.parse();
             forceField.append(patchForceField);
+            if (RotamerLibrary.addRotPatch(patch)) {
+                logger.info(String.format(" Loaded rotamer definitions from patch %s.", patch));
+            }
         }
         newSystem.setForceField(forceField);
         // Decide what parser to use.
