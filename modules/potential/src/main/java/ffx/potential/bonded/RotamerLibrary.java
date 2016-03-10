@@ -991,7 +991,7 @@ public class RotamerLibrary {
      * @param print Verbosity flag
      */
     public static void measureRotamer(Residue residue, double chi[], boolean print) {
-        if (residue == null || isModRes(residue)) {
+        if (residue == null) {
             return;
         }
         switch (residue.getResidueType()) {
@@ -1013,7 +1013,23 @@ public class RotamerLibrary {
                 }
                 break;
             default:
+                try {
+                    measureUNKRotamer(residue, chi, print);
+                } catch (ArrayIndexOutOfBoundsException e) {
+                    String message = "Array passed to measureRotamer was not of sufficient size.";
+                    logger.log(Level.WARNING, message, e);
+                }
                 break;
+        }
+    }
+    
+    public static void measureUNKRotamer(Residue residue, double[] chi, boolean print) {
+        String resName = residue.getName().toUpperCase();
+        if (nonstdRotCache.containsKey(resName)) {
+            nonstdRotCache.get(resName).measureNonstdRot(residue, chi, print);
+        } else {
+            logger.warning(String.format(" Could not measure chi angles "
+                    + "for residue %s", residue.toString()));
         }
     }
 
@@ -1180,13 +1196,13 @@ public class RotamerLibrary {
         if (residue instanceof MultiResidue) {
             residue = ((MultiResidue) residue).getActive();
         }
-        AminoAcid3 name;
-        try {
+        AminoAcid3 name = residue.getAminoAcid3();
+        /*try {
             name = AminoAcid3.valueOf(residue.getName());
         } catch (IllegalArgumentException ex) {
             logger.info(String.format("(IAE) valueOf(%s)", residue.getName()));
             throw ex;
-        }
+        }*/
         switch (name) {
             case VAL: {
                 ArrayList<ROLS> torsions = residue.getTorsionList();
@@ -1843,9 +1859,10 @@ public class RotamerLibrary {
             case UNK:
                 String resName = residue.getName().toUpperCase();
                 if (nonstdRotCache.containsKey(resName)) {
-                    chi = new double[7];
                     nonstdRotCache.get(resName).measureNonstdRot(residue, chi, print);
                     //nonstdRotCache.get(resName).applyNonstdRotamer(residue, rotamer);
+                } else {
+                    throw new IllegalArgumentException(String.format("(IAE) valueOf(%s)", residue.getName()));
                 }
                 break;
             default: {
@@ -4105,13 +4122,10 @@ public class RotamerLibrary {
                 Angle a123 = at1.getAngle(at2, at3);
                 double dang = a123.angleType.angle[a123.nh];
                 double dtors;
-                /**
-                 * This handling could be made infinitely saner if we were to use
-                 * an array for the chi values, like sane people.
-                 */
                 if (toks[0].equalsIgnoreCase("PLACECHI")) {
                     int chiNum = Integer.parseInt(toks[5]);
-                    switch (chiNum) {
+                    dtors = rotamer.angles[chiNum - 1];
+                    /*switch (chiNum) {
                         case 1:
                             dtors = rotamer.chi1;
                             break;
@@ -4135,7 +4149,7 @@ public class RotamerLibrary {
                             break;
                         default:
                             throw new IllegalArgumentException(" Must be chi 1-7");
-                    }
+                    }*/
                 } else {
                     dtors = Double.parseDouble(toks[5]);
                 }

@@ -199,6 +199,10 @@ public final class PDBFilter extends SystemFilter {
      * records.
      */
     private final HashMap<Integer, Atom> atoms = new HashMap<>();
+    /**
+     * If false, skip logging "Saving file".
+     */
+    private boolean logWrites = true;
 
     /**
      * <p>
@@ -1023,6 +1027,14 @@ public final class PDBFilter extends SystemFilter {
     public void setIgnoreInactiveAtoms(boolean ignoreInactiveAtoms) {
         this.ignoreUnusedAtoms = ignoreInactiveAtoms;
     }
+    
+    /**
+     * Sets whether this PDBFilter should log each time it saves to a file.
+     * @param logWrites 
+     */
+    public void setLogWrites(boolean logWrites) {
+        this.logWrites = logWrites;
+    }
 
     /**
      * <p>
@@ -1115,7 +1127,9 @@ public final class PDBFilter extends SystemFilter {
             }
             activeMolecularAssembly.setFile(newFile);
             activeMolecularAssembly.setName(newFile.getName());
-            logger.log(Level.INFO, " Saving {0}", newFile.getName());
+            if (logWrites) {
+                logger.log(Level.INFO, " Saving {0}", newFile.getName());
+            }
             fw = new FileWriter(newFile, append);
             bw = new BufferedWriter(fw);
 // =============================================================================
@@ -1485,7 +1499,9 @@ public final class PDBFilter extends SystemFilter {
             }
             activeMolecularAssembly.setFile(newFile);
             activeMolecularAssembly.setName(newFile.getName());
-            logger.log(Level.INFO, " Saving {0}", newFile.getName());
+            if (logWrites) {
+                logger.log(Level.INFO, " Saving {0}", newFile.getName());
+            }
             fw = new FileWriter(newFile, append);
             bw = new BufferedWriter(fw);
 // =============================================================================
