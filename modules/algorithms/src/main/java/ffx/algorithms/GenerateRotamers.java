@@ -39,6 +39,7 @@ package ffx.algorithms;
 
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
@@ -51,6 +52,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * The GenerateRotamers class helps generate a rotamer library (particularly for 
@@ -89,6 +92,8 @@ public class GenerateRotamers {
     private boolean writeVideo = false;
     private File videoFile;
     private PDBFilter videoFilter;
+    
+    private static final Pattern atRangePatt = Pattern.compile("(\\d+)-(\\d+)");
     
     /**
      * Intended to create rotamer sets for nonstandard amino acids.
@@ -214,6 +219,59 @@ public class GenerateRotamers {
             }
         } else {
             writeVideo = false;
+        }
+    }
+    
+    /**
+     * Inactivates electrostatics for atom sets defined by 'start-end,start-end,...'.
+     * @param electrostatics Input string
+     */
+    public void setElectrostatics(String electrostatics) {
+        if (electrostatics != null) {
+            String[] toks = electrostatics.split(",");
+            Atom[] atoms = mola.getAtomArray();
+            for (String tok : toks) {
+                Matcher m = atRangePatt.matcher(tok);
+                if (m.matches()) {
+                    int begin = Integer.parseInt(m.group(1));
+                    int end = Integer.parseInt(m.group(2));
+                    logger.info(String.format(" Inactivating electrostatics for atoms %d-%d", begin, end));
+                    for (int i = begin; i <= end; i++) {
+                        Atom ai = atoms[i - 1];
+                        ai.setElectrostatics(false);
+                        ai.print();
+                    }
+                } else {
+                    logger.info(String.format(" Discarding electrostatics input %s", tok));
+                }
+            }
+        }
+    }
+    
+    /**
+     * Inactivates atom sets defined by 'start-end,start-end,...'.
+     *
+     * @param iatoms Input string
+     */
+    public void setInactiveAtoms(String iatoms) {
+        if (iatoms != null) {
+            String[] toks = iatoms.split(",");
+            Atom[] atoms = mola.getAtomArray();
+            for (String tok : toks) {
+                Matcher m = atRangePatt.matcher(tok);
+                if (m.matches()) {
+                    int begin = Integer.parseInt(m.group(1));
+                    int end = Integer.parseInt(m.group(2));
+                    logger.info(String.format(" Inactivating atoms %d-%d", begin, end));
+                    for (int i = begin; i <= end; i++) {
+                        Atom ai = atoms[i - 1];
+                        ai.setUse(false);
+                        ai.print();
+                    }
+                } else {
+                    logger.info(String.format(" Discarding inactive atoms input %s", tok));
+                }
+            }
         }
     }
     

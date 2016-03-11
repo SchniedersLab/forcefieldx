@@ -71,6 +71,8 @@ double width = 180.0; // Internally half of overall search width (so -180 and +1
 int library = 2;
 boolean verbose = false;
 String videoFile = null;
+String electrostatics = null;
+String inactiveAtoms = null;
 
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc generateRotamers [options] <filename>');
@@ -86,6 +88,8 @@ cli.o(longOpt:'outFile', args:1, argName:'file.tor.csv', 'File to print output t
 cli.l(longOpt:'library', args:1, argName:'2', 'Available rotamer libraries are Ponder and Richards (1) or Richardson (2).');
 cli.v(longOpt:'verbose', args:1, argName:'false', 'Log rotamer energies to console.');
 cli.vw(longOpt:'videoWriter', args: 1, argName:'file', 'Writes video to a file.');
+cli.e(longOpt:'electrostatics', args:1, argName:'a-b,c-d...', 'Turns off electrostatics for atoms a-b, c-d, etc.');
+cli.ia(longOpt:'inactiveAtoms', args:1, argName:'a-b,c-d...', 'Turns off all energy terms for atoms a-b, c-d, etc.');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -159,6 +163,14 @@ if (options.vw) {
     videoFile = options.vw;
 }
 
+if (options.e) {
+    electrostatics = options.e;
+}
+
+if (options.ia) {
+    inactiveAtoms = options.ia;
+}
+
 /**
  * This needs to come before setting the baseline residue.
  */
@@ -177,5 +189,7 @@ genr.setIncrement(incr);
 genr.setSearchWidth(width);
 genr.setPrint(verbose);
 genr.setVideo(videoFile);
+genr.setElectrostatics(electrostatics);
+genr.setInactiveAtoms(inactiveAtoms);
 energy();
 genr.tryRotamers();
