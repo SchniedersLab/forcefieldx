@@ -77,7 +77,6 @@ public final class ISolvRadType extends BaseType implements Comparator<String> {
      */
     public void incrementType(int increment) {
         atomType += increment;
-        logger.info(" isolv -> " + atomType);
         setKey(Integer.toString(atomType));
     }
 

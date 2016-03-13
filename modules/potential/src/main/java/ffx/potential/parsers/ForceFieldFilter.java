@@ -1128,10 +1128,7 @@ public class ForceFieldFilter {
             double radiusScale = Double.parseDouble(tokens[2].trim());
             ISolvRadType iSolvRadType = new ISolvRadType(atomType, radiusScale);
             forceField.addForceFieldType(iSolvRadType);
-            logger.info(String.format(" Parsed ISolvRad for type %d to scale %6.4f", atomType, radiusScale));
-            for (String key : forceField.getISolvRadTypes().keySet()) {
-                logger.info(String.format("key/val = %s / %.2f", key, forceField.getISolvRadTypes().get(key).radiusScale));
-            }
+//            logger.info(String.format(" Parsed ISolvRad for type %d to scale %6.4f", atomType, radiusScale));
         } catch (NumberFormatException e) {
             String message = "Exception parsing ISolvRad type:\n" + input + "\n";
             logger.log(Level.SEVERE, message, e);

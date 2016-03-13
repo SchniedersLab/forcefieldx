@@ -436,7 +436,7 @@ public class ForceField {
         
         for (ISolvRadType iSolvRadType : patch.iSolvRadTypes.values()) {
             iSolvRadTypes.put(iSolvRadType.getKey(), iSolvRadType);
-            logger.info(" Adding iSolvRadType to map: " + iSolvRadType.getKey() + "/" + iSolvRadType);
+//            logger.info(" Adding iSolvRadType to map: " + iSolvRadType.getKey() + "/" + iSolvRadType);
         }
         
         for (RelativeSolvationType rsType : patch.relativeSolvationTypes.values()) {
