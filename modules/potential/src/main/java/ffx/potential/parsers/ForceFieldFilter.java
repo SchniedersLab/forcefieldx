@@ -82,6 +82,7 @@ import ffx.potential.parameters.RelativeSolvationType;
 import ffx.utilities.Keyword;
 
 import static ffx.potential.parameters.ForceField.toEnumForm;
+import ffx.potential.parameters.ISolvRadType;
 
 /**
  * The ForceFieldFilter Class is used to parse and store molecular mechanics
@@ -324,6 +325,9 @@ public class ForceFieldFilter {
                             case POLARIZE:
                                 parsePolarize(input, tokens);
                                 break;
+                            case ISOLVRAD:
+                                parseISolvRad(input, tokens);
+                                break;
                             case RELATIVESOLV:
                                 parseRelativeSolvation(input, tokens);
                                 break;
@@ -417,6 +421,9 @@ public class ForceFieldFilter {
                 case RELATIVESOLV:
                     parseRelativeSolvation(input, tokens);
                     break;
+                case ISOLVRAD:
+                    parseISolvRad(input, tokens);
+                    break;
                 default:
                     logger.log(Level.WARNING, "ForceField type recognized, but not stored:{0}", type);
             }
@@ -492,7 +499,7 @@ public class ForceFieldFilter {
         }
         return true;
     }
-    
+
     private void parseRelativeSolvation(String input, String[] tokens) {
         if (tokens.length < 3) {
             logger.log(Level.WARNING, "Invalid RELATIVE_SOLVATION type:\n{0}", input);
@@ -1107,6 +1114,23 @@ public class ForceFieldFilter {
             forceField.addForceFieldType(vdwType);
         } catch (NumberFormatException e) {
             String message = "Exception parsing VDW type:\n" + input + "\n";
+            logger.log(Level.SEVERE, message, e);
+        }
+    }
+    
+    private void parseISolvRad(String input, String[] tokens) {
+        if (tokens.length < 3) {
+            logger.log(Level.WARNING, "Invalid ISolvRad type:\n{0}", input);
+            return;
+        }
+        try {
+            int atomType = Integer.parseInt(tokens[1].trim());
+            double radiusScale = Double.parseDouble(tokens[2].trim());
+            ISolvRadType iSolvRadType = new ISolvRadType(atomType, radiusScale);
+            forceField.addForceFieldType(iSolvRadType);
+//            logger.info(String.format(" Parsed ISolvRad for type %d to scale %6.4f", atomType, radiusScale));
+        } catch (NumberFormatException e) {
+            String message = "Exception parsing ISolvRad type:\n" + input + "\n";
             logger.log(Level.SEVERE, message, e);
         }
     }

@@ -113,6 +113,7 @@ public class ForceField {
     private final Map<String, BioType> bioTypes;
     private final Map<String, BondType> bondTypes;
     private final Map<String, ChargeType> chargeTypes;
+    private final Map<String, ISolvRadType> iSolvRadTypes;
     private final Map<String, MultipoleType> multipoleTypes;
     private final Map<String, OutOfPlaneBendType> outOfPlaneBendTypes;
     private final Map<String, PolarizeType> polarizeTypes;
@@ -156,6 +157,7 @@ public class ForceField {
         bioTypes = new TreeMap<>(new BioType(0, null, null, 0, null));
         bondTypes = new TreeMap<>(new BondType(new int[2], 0, 0, null));
         chargeTypes = new TreeMap<>(new ChargeType(0, 0));
+        iSolvRadTypes = new TreeMap<>(new ISolvRadType(0, 0.0));
         multipoleTypes = new TreeMap<>(new MultipoleType(0, new double[3], new double[3][3], null, null));
         outOfPlaneBendTypes = new TreeMap<>(new OutOfPlaneBendType(new int[4], 0));
         piTorsionTypes = new TreeMap<>(new PiTorsionType(new int[2], 0));
@@ -174,6 +176,7 @@ public class ForceField {
         forceFieldTypes.put(ForceFieldType.BOND, bondTypes);
         forceFieldTypes.put(ForceFieldType.BIOTYPE, bioTypes);
         forceFieldTypes.put(ForceFieldType.CHARGE, chargeTypes);
+        forceFieldTypes.put(ForceFieldType.ISOLVRAD, iSolvRadTypes);
         forceFieldTypes.put(ForceFieldType.OPBEND, outOfPlaneBendTypes);
         forceFieldTypes.put(ForceFieldType.MULTIPOLE, multipoleTypes);
         forceFieldTypes.put(ForceFieldType.PITORS, piTorsionTypes);
@@ -345,6 +348,11 @@ public class ForceField {
         for (VDWType vanderWaalsType : vanderWaalsTypes.values()) {
             vanderWaalsType.incrementClass(classOffset);
         }
+        
+        // TODO: determine why these don't need renumbered.
+//        for (ISolvRadType iSolvRadType : iSolvRadTypes.values()) {
+//            iSolvRadType.incrementType(typeOffset);
+//        }
 
     }
 
@@ -424,6 +432,11 @@ public class ForceField {
 
         for (VDWType vdwType : patch.vanderWaalsTypes.values()) {
             vanderWaalsTypes.put(vdwType.getKey(), vdwType);
+        }
+        
+        for (ISolvRadType iSolvRadType : patch.iSolvRadTypes.values()) {
+            iSolvRadTypes.put(iSolvRadType.getKey(), iSolvRadType);
+//            logger.info(" Adding iSolvRadType to map: " + iSolvRadType.getKey() + "/" + iSolvRadType);
         }
         
         for (RelativeSolvationType rsType : patch.relativeSolvationTypes.values()) {
@@ -933,7 +946,7 @@ public class ForceField {
         }
         return types;
     }
-    
+
     public HashMap<String, RelativeSolvationType> getRelativeSolvationTypes() {
         HashMap<String, RelativeSolvationType> types = new HashMap<>();
         for (String key : relativeSolvationTypes.keySet()) {
@@ -1110,6 +1123,14 @@ public class ForceField {
      */
     public Map<String, VDWType> getVDWTypes() {
         return vanderWaalsTypes;
+    }
+    
+    public ISolvRadType getISolvRadType(String key) {
+        return iSolvRadTypes.get(key);
+    }
+    
+    public Map<String, ISolvRadType> getISolvRadTypes() {
+        return iSolvRadTypes;
     }
 
     /**
@@ -1468,6 +1489,7 @@ public class ForceField {
         BIOTYPE,
         BOND,
         CHARGE,
+        ISOLVRAD,
         IMPTORS,
         MULTIPOLE,
         OPBEND,
