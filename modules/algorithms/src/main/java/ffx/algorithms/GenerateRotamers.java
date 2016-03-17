@@ -363,6 +363,8 @@ public class GenerateRotamers {
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(videoFile, true))) {
             bw.write(String.format("MODEL %d", nEval));
             bw.newLine();
+            bw.write(String.format("REMARK 301 TORSIONS %s", formatChi()));
+            bw.newLine();
             bw.flush();
             videoFilter.writeFile(videoFile, true);
             bw.write("ENDMDL");
@@ -422,6 +424,26 @@ public class GenerateRotamers {
             sb.append(String.format(",%8f", currentChi[i]));
         }
         return sb.toString();
+    }
+    
+    /**
+     * Accessory method for more simplistic saving of specific torsion states.
+     * @param torSets 
+     */
+    public void applyAndSaveTorsions(String[] torSets) {
+        for (String torSet : torSets) {
+            String[] torsions = torSet.split(",");
+            double[] values = new double[nChi*2];
+            Arrays.fill(values, 0.0);
+            for (int i = 0; i < (Math.min(torsions.length, nChi)); i++) {
+                double chival = Double.parseDouble(torsions[i]);
+                currentChi[i] = chival;
+                values[2*i] = chival;
+            }
+            Rotamer newRot = generateRotamer(values);
+            RotamerLibrary.applyRotamer(residue, newRot);
+            writeSnapshot();
+        }
     }
 
     /**
