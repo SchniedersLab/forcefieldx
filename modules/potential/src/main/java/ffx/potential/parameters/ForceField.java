@@ -349,11 +349,9 @@ public class ForceField {
             vanderWaalsType.incrementClass(classOffset);
         }
         
-        // TODO: determine why these don't need renumbered.
-//        for (ISolvRadType iSolvRadType : iSolvRadTypes.values()) {
-//            iSolvRadType.incrementType(typeOffset);
-//        }
-
+        for (ISolvRadType iSolvRadType : iSolvRadTypes.values()) {
+            iSolvRadType.incrementType(typeOffset);
+        }
     }
 
     /**
