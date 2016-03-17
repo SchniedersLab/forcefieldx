@@ -139,7 +139,7 @@ public class LoopClosure {
      * @param a
      * @param b
      *
-     * @return If b >= 0, return abs(a), else return -abs(a).
+     * @return If b is positive or zero, return abs(a), else return -abs(a).
      */
     public double sign(double a, double b) {
         if (b >= 0.0) {

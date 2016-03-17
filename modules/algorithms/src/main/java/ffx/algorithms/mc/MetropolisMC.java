@@ -54,8 +54,8 @@ public interface MetropolisMC {
     
     /**
      * Returns true if the move from e1 to e2 is accepted. For molecular systems, 
-     * this will mean accept if e2 <= e1, or accept with probability of 
-     * exp(-dU/kbT) if e2 > e1.
+     * this will mean accept if e2 is less than e1, or accept with probability of 
+     * exp(-dU/kbT) if e2 is greater than e1.
      * 
      * @param e1 Initial energy
      * @param e2 Trial energy
