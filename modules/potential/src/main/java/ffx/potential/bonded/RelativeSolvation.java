@@ -91,24 +91,25 @@ public class RelativeSolvation {
     public double getSolvationEnergy(Residue residue, boolean checkZeroes) throws IllegalArgumentException {
         String resName = "";
         double energy = 0;
-        switch (residue.getResidueType()) {
+        Residue theRes = (residue instanceof MultiResidue) ? ((MultiResidue) residue).getActive() : residue;
+        switch (theRes.getResidueType()) {
             case AA:
-                if (residue instanceof MultiResidue) {
-                    resName = ((MultiResidue) residue).getActive().getName();
+                if (theRes instanceof MultiResidue) {
+                    resName = ((MultiResidue) theRes).getActive().getName();
                 } else {
-                    resName = residue.getName();
+                    resName = theRes.getName();
                 }
                 
-                energy = getAASolvationEnergy(residue);
+                energy = getAASolvationEnergy(theRes);
                 break;
             case NA:
-                if (residue instanceof MultiResidue) {
-                    resName = ((MultiResidue) residue).getActive().getName();
+                if (theRes instanceof MultiResidue) {
+                    resName = ((MultiResidue) theRes).getActive().getName();
                 } else {
-                    resName = residue.getName();
+                    resName = theRes.getName();
                 }
                 
-                energy = getNASolvationEnergy(residue);
+                energy = getNASolvationEnergy(theRes);
                 break;
             default:
                 energy = 0;

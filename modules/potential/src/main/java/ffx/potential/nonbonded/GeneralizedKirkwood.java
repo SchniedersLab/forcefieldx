@@ -280,8 +280,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
         String verboseProp = System.getProperty("gk-verboseRadii");
         if (verboseProp != null) {
-            this.verboseRadii = true;
-            logger.info(" (GK) Verbose radii enabled.");
+            this.verboseRadii = Boolean.parseBoolean(verboseProp);
+            if (verboseRadii) {
+                logger.info(" (GK) Verbose radii enabled.");
+            }
         }
         String epsilonProp = System.getProperty("gk-epsilon");
         if (epsilonProp != null) {
@@ -693,8 +695,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
             ISolvRadType iSolvRadType = forceField.getISolvRadType(Integer.toString(atomType.type));
             if (iSolvRadType != null) {
                 bondiFactor = iSolvRadType.radiusScale;
-                logger.info(String.format(" (GK) ISolvRad parameter for Atom %3s-%-4s with AtomType %d to %.2f (bondi factor %.2f)",
-                    atoms[i].getResidueName(), atoms[i].getName(), atomType.type, baseRadius[i] * bondiFactor, bondiFactor));
+                if (verboseRadii) {
+                    logger.info(String.format(" (GK) ISolvRad parameter for Atom %3s-%-4s with AtomType %d to %.2f (bondi factor %.2f)",
+                            atoms[i].getResidueName(), atoms[i].getName(), atomType.type, baseRadius[i] * bondiFactor, bondiFactor));
+                }
             }
             // Finally, check for command-line bondi factor override.
             if (radiiOverride.containsKey(atomType.type) && !radiiByNumberMap.containsKey(atomNumber)) {
@@ -711,6 +715,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
             baseRadiusWithBondi[i] = baseRadius[i] * bondiFactor;
 
         }
+        
+        // Resets verboseRadii; reduces logging messages when mutating MultiResidues.
+        verboseRadii = false;
 
         if (dispersionRegion != null) {
             dispersionRegion.init();

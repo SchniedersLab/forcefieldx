@@ -688,6 +688,15 @@ public class MultiResidue extends Residue {
         }
         return consideredCopy;
     }
+    
+    /**
+     * Returns the AminoAcid3 of the active residue.
+     * @return 
+     */
+    @Override
+    public AminoAcid3 getAminoAcid3() {
+        return activeResidue.getAminoAcid3();
+    }
 
     /**
      * Request the passed amino acid be set as the active residue.

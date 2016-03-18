@@ -1857,6 +1857,7 @@ public class RotamerLibrary {
                 break;
             }
             case UNK:
+                chi = new double[7];
                 String resName = residue.getName().toUpperCase();
                 if (nonstdRotCache.containsKey(resName)) {
                     nonstdRotCache.get(resName).measureNonstdRot(residue, chi, print);
