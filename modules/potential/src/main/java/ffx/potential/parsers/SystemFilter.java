@@ -41,6 +41,10 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 
@@ -150,6 +154,10 @@ public abstract class SystemFilter {
         }
         return previousFile;
     }
+    
+    private static final Pattern intrangePattern = Pattern.compile("(\\d+)-(\\d+)");
+    
+    private static final Logger logger = Logger.getLogger(SystemFilter.class.getName());
     /**
      * The atomList is filled by filters that extend SystemFilter.
      */
@@ -467,6 +475,116 @@ public abstract class SystemFilter {
             this.currentFile = files.get(0);
         } else {
             this.currentFile = null;
+        }
+    }
+    
+    /**
+     * Automatically sets atom-specific flags, particularly nouse and inactive. 
+     * Intended to be called at the end of readFile() implementations.
+     */
+    public void setAtomFlags() {
+        /**
+         * What may be a more elegant implementation is to make readFile() a 
+         * public concrete, but skeletal method, and then have readFile()
+         * call a protected abstract readFile method for each implementation.
+         */
+        
+        Atom[] molaAtoms = activeMolecularAssembly.getAtomArray();
+        int nmolaAtoms = molaAtoms.length;
+        String[] nouseKeys = properties.getStringArray("nouse");
+        for (String nouseKey : nouseKeys) {
+            Matcher m = intrangePattern.matcher(nouseKey);
+            if (m.matches()) {
+                int start = Integer.parseInt(m.group(1)) - 1;
+                int end = Integer.parseInt(m.group(2)) - 1;
+                if (start > end) {
+                    logger.log(Level.INFO, String.format(" Input %s not valid; "
+                            + "start > end", nouseKey));
+                } else if (start < 0) {
+                    logger.log(Level.INFO, String.format(" Input %s not valid; "
+                            + "atoms should be indexed starting from 1", nouseKey));
+                } else {
+                    logger.log(Level.INFO, String.format(" Atoms %s set to be not "
+                            + "used", nouseKey));
+                    for (int i = start; i <= end; i++) {
+                        if (i >= nmolaAtoms) {
+                            logger.log(Level.INFO, String.format(" Atom index %d is "
+                                    + "out of bounds for molecular assembly of "
+                                    + "length %d", i + 1, nmolaAtoms));
+                            break;
+                        }
+                        molaAtoms[i].setUse(false);
+                    }                    
+                }
+            } else {
+                try {
+                    int atNum = Integer.parseUnsignedInt(nouseKey) - 1;
+                    if (atNum >= nmolaAtoms) {
+                        logger.log(Level.INFO, String.format(" Atom index %d is "
+                                + "out of bounds for molecular assembly of "
+                                + "length %d", atNum + 1, nmolaAtoms));
+                    } else if (atNum < 0) {
+                        logger.log(Level.INFO, String.format(" Input %s not valid; "
+                                + "atoms should be indexed starting from 1", nouseKey));
+                    } else {
+                        logger.log(Level.INFO, String.format(" Atom %s set to be not "
+                                + "used", nouseKey));
+                        molaAtoms[atNum].setUse(false);
+                    }
+                } catch (NumberFormatException ex) {
+                    logger.log(Level.INFO, String.format(" nouse key %s cannot "
+                            + "be interpreted as an atom number or range of atom "
+                            + "numbers.", nouseKey));
+                }
+            }
+        }
+
+        String[] inactiveKeys = properties.getStringArray("inactive");
+        for (String inactiveKey : inactiveKeys) {
+            Matcher m = intrangePattern.matcher(inactiveKey);
+            if (m.matches()) {
+                int start = Integer.parseInt(m.group(1)) - 1;
+                int end = Integer.parseInt(m.group(2)) - 1;
+                if (start > end) {
+                    logger.log(Level.INFO, String.format(" Input %s not valid; "
+                            + "start > end", inactiveKey));
+                } else if (start < 0) {
+                    logger.log(Level.INFO, String.format(" Input %s not valid; "
+                            + "atoms should be indexed starting from 1", inactiveKey));
+                } else {
+                    logger.log(Level.INFO, String.format(" Atoms %s set to be "
+                            + "inactive", inactiveKey));
+                    for (int i = start; i <= end; i++) {
+                        if (i >= nmolaAtoms) {
+                            logger.log(Level.INFO, String.format(" Atom index %d is "
+                                    + "out of bounds for molecular assembly of "
+                                    + "length %d", i + 1, nmolaAtoms));
+                            break;
+                        }
+                        molaAtoms[i].setActive(false);
+                    }                    
+                }
+            } else {
+                try {
+                    int atNum = Integer.parseUnsignedInt(inactiveKey) - 1;
+                    if (atNum >= nmolaAtoms) {
+                        logger.log(Level.INFO, String.format(" Atom index %d is "
+                                + "out of bounds for molecular assembly of "
+                                + "length %d", atNum + 1, nmolaAtoms));
+                    } else if (atNum < 0) {
+                        logger.log(Level.INFO, String.format(" Input %s not valid; "
+                                + "atoms should be indexed starting from 1", inactiveKey));
+                    } else {
+                        logger.log(Level.INFO, String.format(" Atom %s set to be "
+                                + "inactive", inactiveKey));
+                        molaAtoms[atNum].setActive(false);
+                    }
+                } catch (NumberFormatException ex) {
+                    logger.log(Level.INFO, String.format(" inactive key %s cannot "
+                            + "be interpreted as an atom number or range of atom "
+                            + "numbers.", inactiveKey));
+                }
+            }
         }
     }
 

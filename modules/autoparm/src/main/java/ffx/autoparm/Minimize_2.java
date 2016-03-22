@@ -161,6 +161,7 @@ public class Minimize_2 implements OptimizationListener, Terminatable {
         XYZFilter xyzFilter = new XYZFilter(structure_xyz, molecularAssembly, forceField, properties);
         xyzFilter.readFile();
         Utilities.biochemistry(molecularAssembly, xyzFilter.getAtomList());
+        xyzFilter.setAtomFlags();
         atoms = molecularAssembly.getAtomArray();
         molecularAssembly.finalize(true, forceField);
         //algorithmListener = this;
