@@ -144,6 +144,7 @@ double minDensity = 0.5;
 double maxDensity = 1.5;
 double maxSideMove = 0.25;
 double maxAngleMove = 1.0;
+double temperingParam = 2.0;
 
 // Write traversal snapshots
 boolean writeTraversals = false;
@@ -184,6 +185,7 @@ cli.W(longOpt:'traversals', args:0, 'Write out lambda-traversal snapshots.');
 //cli.am(longOpt:'maxAngleMove', args:1, argName:'1.0', 'Maximum angle move allowed by the barostat.');
 //cli.mi(longOpt:'meanInterval', args:1, argName:'10', 'Mean number of MD steps between applications of the barostat.');
 cli.rt(longOpt:'reset', args:0, 'Reset OSRW histogram once, when lambda reaches 0.99.');
+cli.tp(longOpt:'temperingParam', args:1, argName:'2', 'Tempering rate parameter in multiples of kbT.');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -345,6 +347,10 @@ if (options.mi) {
 // Traversal snapshots
 if (options.W) {
     writeTraversals = true;
+}
+// Dama et al tempering parameter
+if (options.tp) {
+    temperingParam = Double.parseDouble(options.tp);
 }
 
 println("\n Running Transition-Tempered Orthogonal Space Random Walk on " + filename);
@@ -515,6 +521,7 @@ if (arguments.size() == 1) {
     if (writeTraversals) {
         osrw.setTraversalOutput(lambdaOneFile, topology1, lambdaZeroFile, topology2);
     }
+    osrw.setDeltaT(temperingParam);
 }
 
 // Apply the command line lambda value if a lambda restart file does not exist.

@@ -259,7 +259,7 @@ public class PotentialsFileOpener implements FileOpener {
                 if (!(filter instanceof PDBFilter)) {
                     Utilities.biochemistry(assembly, filter.getAtomList());
                 }
-                filter.setAtomFlags();
+                filter.applyAtomProperties();
                 assembly.finalize(true, forceField);
                 ForceFieldEnergy energy = new ForceFieldEnergy(assembly);
                 assembly.setPotential(energy);
@@ -297,7 +297,7 @@ public class PotentialsFileOpener implements FileOpener {
                         if (pdbFilter.readFile()) {
                             String fileName = assembly.getFile().getAbsolutePath();
                             newAssembly.setName(FilenameUtils.getBaseName(fileName) + " " + c);
-                            filter.setAtomFlags();
+                            filter.applyAtomProperties();
                             newAssembly.finalize(true, assembly.getForceField());
                             energy = new ForceFieldEnergy(newAssembly);
                             newAssembly.setPotential(energy);

@@ -146,7 +146,7 @@ molecularAssembly.setForceField(forceField);
 PDBFilter pdbFilter = new PDBFilter(structure, molecularAssembly, forceField, properties);
 pdbFilter.mutate(chain,resID,resName);
 pdbFilter.readFile();
-pdbFilter.setAtomFlags();
+pdbFilter.applyAtomProperties();
 molecularAssembly.finalize(true, forceField);
 
 if (repack) {

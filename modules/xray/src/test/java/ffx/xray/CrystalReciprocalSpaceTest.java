@@ -98,7 +98,7 @@ public class CrystalReciprocalSpaceTest {
         molecularAssembly.setForceField(forceField);
         PDBFilter pdbFile = new PDBFilter(structure, molecularAssembly, forceField, properties);
         pdbFile.readFile();
-        pdbFile.setAtomFlags();
+        pdbFile.applyAtomProperties();
         molecularAssembly.finalize(true, forceField);
         ForceFieldEnergy energy = new ForceFieldEnergy(molecularAssembly);
 
@@ -167,7 +167,7 @@ public class CrystalReciprocalSpaceTest {
         molecularAssembly.setForceField(forceField);
         PDBFilter pdbFile = new PDBFilter(structure, molecularAssembly, forceField, properties);
         pdbFile.readFile();
-        pdbFile.setAtomFlags();
+        pdbFile.applyAtomProperties();
         molecularAssembly.finalize(true, forceField);
         ForceFieldEnergy energy = new ForceFieldEnergy(molecularAssembly);
 

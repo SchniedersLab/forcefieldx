@@ -1320,6 +1320,15 @@ public class TransitionTemperedOSRW implements Potential {
         theta = Math.asin(Math.sqrt(lambda));
     }
     
+    /**
+     * Sets the Dama et al tempering parameter, as a multiple of kbT. T is 
+     * presently assumed to be 298.0K.
+     * @param kbtMult 
+     */
+    public void setDeltaT(double kbtMult) {
+        deltaT = R * 298.0 * kbtMult;
+    }
+    
     public LambdaInterface getLambdaInterface(){
         return lambdaInterface;
     }

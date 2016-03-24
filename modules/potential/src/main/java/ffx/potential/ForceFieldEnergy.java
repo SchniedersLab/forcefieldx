@@ -117,7 +117,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private final VanDerWaals vanderWaals;
     private final ParticleMeshEwald particleMeshEwald;
     private final NCSRestraint ncsRestraint;
-    private final CoordRestraint coordRestraint;
+    //private final List<CoordRestraint> coordRestraints; 
+    private final CoordRestraint autoCoordRestraint;
     private final COMRestraint comRestraint;
     private int nAtoms;
     private int nBonds;
@@ -610,10 +611,12 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             ncsRestraint = null;
         }
 
+        //coordRestraints = new ArrayList<>();
         if (restrainTerm) {
-            this.coordRestraint = new CoordRestraint(atoms, forceField);
+            this.autoCoordRestraint = new CoordRestraint(atoms, forceField);
+            //coordRestraints.add(autoCoordRestraint);
         } else {
-            coordRestraint = null;
+            autoCoordRestraint = null;
         }
 
         if (comTerm) {
@@ -1197,7 +1200,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
             if (restrainTerm) {
                 coordRestraintTime = -System.nanoTime();
-                restrainEnergy = coordRestraint.residual(gradient, print);
+                restrainEnergy = autoCoordRestraint.residual(gradient, print);
                 coordRestraintTime += System.nanoTime();
             }
 
@@ -1530,8 +1533,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             if (ncsTerm && ncsRestraint != null) {
                 ncsRestraint.setLambda(lambda);
             }
-            if (restrainTerm && coordRestraint != null) {
-                coordRestraint.setLambda(lambda);
+            if (restrainTerm && autoCoordRestraint != null) {
+                autoCoordRestraint.setLambda(lambda);
             }
             if (comTerm && comRestraint != null) {
                 comRestraint.setLambda(lambda);
@@ -1800,8 +1803,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             if (ncsTerm && ncsRestraint != null) {
                 dEdLambda += ncsRestraint.getdEdL();
             }
-            if (restrainTerm && coordRestraint != null) {
-                dEdLambda += coordRestraint.getdEdL();
+            if (restrainTerm && autoCoordRestraint != null) {
+                dEdLambda += autoCoordRestraint.getdEdL();
             }
             if (comTerm && comRestraint != null) {
                 dEdLambda += comRestraint.getdEdL();
@@ -1843,8 +1846,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             if (ncsTerm && ncsRestraint != null) {
                 ncsRestraint.getdEdXdL(gradients);
             }
-            if (restrainTerm && coordRestraint != null) {
-                coordRestraint.getdEdXdL(gradients);
+            if (restrainTerm && autoCoordRestraint != null) {
+                autoCoordRestraint.getdEdXdL(gradients);
             }
             if (comTerm && comRestraint != null) {
                 comRestraint.getdEdXdL(gradients);
@@ -1894,8 +1897,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             if (ncsTerm && ncsRestraint != null) {
                 d2EdLambda2 += ncsRestraint.getd2EdL2();
             }
-            if (restrainTerm && coordRestraint != null) {
-                d2EdLambda2 += coordRestraint.getd2EdL2();
+            if (restrainTerm && autoCoordRestraint != null) {
+                d2EdLambda2 += autoCoordRestraint.getd2EdL2();
             }
             if (comTerm && comRestraint != null) {
                 d2EdLambda2 += comRestraint.getd2EdL2();

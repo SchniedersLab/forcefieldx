@@ -209,7 +209,7 @@ public class Potential2 implements OptimizationListener {
         XYZFilter xyzFilter = new XYZFilter(structure_xyz, molecularAssembly, forceField, properties);
         xyzFilter.readFile();
         Utilities.biochemistry(molecularAssembly, xyzFilter.getAtomList());
-        xyzFilter.setAtomFlags();
+        xyzFilter.applyAtomProperties();
         molecularAssembly.finalize(true, forceField);
         atoms = molecularAssembly.getAtomArray();
         nAtoms = atoms.length;
