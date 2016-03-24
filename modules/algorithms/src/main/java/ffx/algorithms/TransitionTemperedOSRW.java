@@ -392,6 +392,7 @@ public class TransitionTemperedOSRW implements Potential {
     private MolecularAssembly molecularAssembly;
     private PDBFilter pdbFilter;
     private File pdbFile;
+    
     /**
      * OSRW Asynchronous MultiWalker Constructor.
      *
@@ -413,6 +414,34 @@ public class TransitionTemperedOSRW implements Potential {
             File lambdaFile, File histogramFile, CompositeConfiguration properties,
             double temperature, double dt, double printInterval,
             double saveInterval, boolean asynchronous,
+            AlgorithmListener algorithmListener) {
+        this(lambdaInterface, potential, lambdaFile, histogramFile, properties, 
+                temperature, dt, printInterval, saveInterval, asynchronous, 
+                true, algorithmListener);
+    }
+    
+    /**
+     * OSRW Asynchronous MultiWalker Constructor.
+     *
+     * @param lambdaInterface defines Lambda and dU/dL.
+     * @param potential defines the Potential energy.
+     * @param lambdaFile contains the current Lambda particle position and
+     * velocity.
+     * @param histogramFile contains the Lambda and dU/dL histogram.
+     * @param properties defines System properties.
+     * @param temperature the simulation temperature.
+     * @param dt the time step.
+     * @param printInterval number of steps between logging updates.
+     * @param saveInterval number of steps between restart file updates.
+     * @param asynchronous set to true if walkers run asynchronously.
+     * @param resetNumSteps whether to reset energy counts to 0
+     * @param algorithmListener the AlgorithmListener to be notified of
+     * progress.
+     */
+    public TransitionTemperedOSRW(LambdaInterface lambdaInterface, Potential potential,
+            File lambdaFile, File histogramFile, CompositeConfiguration properties,
+            double temperature, double dt, double printInterval,
+            double saveInterval, boolean asynchronous, boolean resetNumSteps,
             AlgorithmListener algorithmListener) {
         this.lambdaInterface = lambdaInterface;
         this.potential = potential;
@@ -496,6 +525,8 @@ public class TransitionTemperedOSRW implements Potential {
                 logger.info(" Histogram restart file could not be found and will be ignored.");
             }
         }
+        
+        energyCount = -1;
 
         /**
          * Load the OSRW lambda restart file if it exists.
@@ -503,7 +534,7 @@ public class TransitionTemperedOSRW implements Potential {
         if (lambdaFile != null && lambdaFile.exists()) {
             try {
                 TTOSRWLambdaReader osrwLambdaReader = new TTOSRWLambdaReader(new FileReader(lambdaFile));
-                osrwLambdaReader.readLambdaFile();
+                osrwLambdaReader.readLambdaFile(resetNumSteps);
                 logger.info(String.format("\n Continuing OSRW lambda from %s.", lambdaFile.getName()));
             } catch (FileNotFoundException ex) {
                 logger.info(" Lambda restart file could not be found and will be ignored.");
@@ -517,7 +548,6 @@ public class TransitionTemperedOSRW implements Potential {
         maxFLambda = minFLambda + FLambdaBins * dFL;
         FLambda = new double[lambdaBins];
         dUdXdL = new double[nVariables];
-        energyCount = -1;
         stochasticRandom = new Random(0);
 
         /**
@@ -1514,6 +1544,15 @@ public class TransitionTemperedOSRW implements Potential {
     public double[] getPreviousAcceleration(double[] previousAcceleration) {
         return potential.getPreviousAcceleration(previousAcceleration);
     }
+    
+    /**
+     * Returns the number of energy evaluations performed by this ttOSRW, 
+     * including those picked up in the lambda file.
+     * @return Number of energy steps taken by this walker.
+     */
+    public int getEnergyCount() {
+        return energyCount;
+    }
 
     private class TTOSRWHistogramWriter extends PrintWriter {
 
@@ -1556,6 +1595,7 @@ public class TransitionTemperedOSRW implements Potential {
         public void writeLambdaFile() {
             printf("Lambda          %15.8f\n", lambda);
             printf("Lambda-Velocity %15.8e\n", halfThetaVelocity);
+            printf("Steps-Taken     %15d\n", energyCount);
         }
     }
 
@@ -1604,8 +1644,12 @@ public class TransitionTemperedOSRW implements Potential {
         public TTOSRWLambdaReader(Reader reader) {
             super(reader);
         }
-
+        
         public void readLambdaFile() {
+            readLambdaFile(true);
+        }
+
+        public void readLambdaFile(boolean resetEnergyCount) {
             try {
                 lambda = Double.parseDouble(readLine().split(" +")[1]);
                 halfThetaVelocity = Double.parseDouble(readLine().split(" +")[1]);
@@ -1613,6 +1657,13 @@ public class TransitionTemperedOSRW implements Potential {
             } catch (Exception e) {
                 String message = " Invalid OSRW Lambda file.";
                 logger.log(Level.SEVERE, message, e);
+            }
+            if (!resetEnergyCount) {
+                try {
+                    energyCount = Integer.parseUnsignedInt(readLine().split(" +")[1]);
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, String.format(" Could not find number of steps taken in OSRW Lambda file: %s", e.toString()));
+                }
             }
         }
     }
