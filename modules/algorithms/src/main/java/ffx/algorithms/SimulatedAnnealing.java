@@ -66,7 +66,7 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
     private boolean done, terminate;
     private boolean targetTemperaturesPresent = false;
     private double[] targetTemperatures;
-
+    private double printInterval = 0.01;
     /**
      * <p>
      * Constructor for SimulatedAnnealing.</p>
@@ -250,7 +250,7 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
             double dt = (highTemperature - lowTemperature) / (annealingSteps - 1);
             for (int i = 0; i < annealingSteps; i++) {
                 double temperature = highTemperature - dt * i;
-                molecularDynamics.dynamic(mdSteps, timeStep, 0.01, 10.0, temperature, true, null);
+                molecularDynamics.dynamic(mdSteps, timeStep, printInterval, 10.0, temperature, true, null);
                 if (terminate) {
                     logger.info(String.format("\n Terminating at temperature %8.3f.\n", temperature));
                     break;
@@ -259,7 +259,7 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
         } else {
             for (int i = 0; i < targetTemperatures.length; i++) {
                 double temperature = targetTemperatures[i];
-                molecularDynamics.dynamic(mdSteps, timeStep, 0.01, 10.0, temperature, true, null);
+                molecularDynamics.dynamic(mdSteps, timeStep, printInterval, 10.0, temperature, true, null);
                 if (terminate) {
                     logger.info(String.format("\n Terminating at temperature %8.3f.\n", temperature));
                     break;
@@ -274,6 +274,11 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
         terminate = false;
     }
 
+    //Set print interval to report thermodyanamics (psec)
+    public void setPrintInterval(double printInterval){
+        this.printInterval=printInterval;
+    }
+    
     /**
      * {@inheritDoc}
      */
