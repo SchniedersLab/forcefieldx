@@ -528,8 +528,8 @@ if (arguments.size() == 1) {
     DualTopologyEnergy dualTopologyEnergy = new DualTopologyEnergy(topology1, active);
     // Wrap the DualTopology potential energy inside an OSRW instance.
     osrw = new TransitionTemperedOSRW(dualTopologyEnergy, dualTopologyEnergy, lambdaRestart,
-        histogramRestart, active.getProperties(), temperature, timeStep, resetNumSteps, printInterval,
-        saveInterval, asynchronous, sh);
+        histogramRestart, active.getProperties(), temperature, timeStep, printInterval,
+        saveInterval, asynchronous, resetNumSteps, sh);
     osrw.setResetStatistics(resetStatistics);
     if (writeTraversals) {
         osrw.setTraversalOutput(lambdaOneFile, topology1, lambdaZeroFile, topology2);
