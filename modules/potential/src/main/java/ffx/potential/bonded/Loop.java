@@ -54,10 +54,10 @@ public class Loop {
     private final boolean writeFile = false;
     
     int max_soln = 16;
-    double[][] r_n = new double[5][3];
-    double[][] r_a = new double[5][3];
-    double[][] r_c = new double[5][3];
-    double[][] xyz_o = new double[5][3];
+    double[][] r_n = new double[3][3];
+    double[][] r_a = new double[3][3];
+    double[][] r_c = new double[3][3];
+    double[][] xyz_o = new double[3][3];
     public final LoopClosure loopClosure;
     private double[][] altCoords;
     private boolean useAltCoords = false;
@@ -88,11 +88,11 @@ public class Loop {
         boolean bool1 = true;
         int i = 0;
         List<double[]> solutions = new ArrayList<>();
-        
+             logger.info(String.format(" first res.:             %d\n", firstResidue));
+            logger.info(String.format(" end   res.:             %d\n", endResidue));       
         while (bool1) {
             Atom atom = backBoneAtoms.get(i);
             int resID = atom.getResidueNumber();
-
             if (resID > endResidue) {
                 //terminates the collection of atom coordinates
                 bool1 = false;
@@ -142,11 +142,11 @@ public class Loop {
         double[][][] r_soln_c = new double[max_soln][3][3];
         int[] n_soln = new int[1];
          
-        loopClosure.solve3PepPoly(r_n[1], r_a[1], r_a[3], r_c[3], r_soln_n, r_soln_a, r_soln_c, n_soln);
+        loopClosure.solve3PepPoly(r_n[0], r_a[0], r_a[2], r_c[2], r_soln_n, r_soln_a, r_soln_c, n_soln);
 
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format(" Starting res.:             %d\n", firstResidue + 1));
-        sb.append(String.format(" Ending res.:               %d\n", endResidue - 1));
+        sb.append(String.format(" Starting res.:             %d\n", firstResidue ));
+        sb.append(String.format(" Ending res.:               %d\n", endResidue ));
         sb.append(String.format(" No. of solutions:          %d\n", n_soln[0]));
         logger.info(sb.toString());
 
@@ -175,9 +175,9 @@ public class Loop {
     private double[] getSolutionCoordinates(int k, double[][][] r_soln_n, double[][][] r_soln_a, double[][][] r_soln_c, int stt_res, int end_res) {
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-                r_n[i + 1][j] = r_soln_n[k][i][j];
-                r_a[i + 1][j] = r_soln_a[k][i][j];
-                r_c[i + 1][j] = r_soln_c[k][i][j];
+                r_n[i][j] = r_soln_n[k][i][j];
+                r_a[i][j] = r_soln_a[k][i][j];
+                r_c[i][j] = r_soln_c[k][i][j];
             }
         }
        // double sum = 0.0;
@@ -215,7 +215,7 @@ public class Loop {
             }
         }
         //Loop through residues to build backbone C,N,CA
-        for (int i = stt_res + 1; i < end_res; i++) {
+        for (int i = stt_res; i <= end_res; i++) {
             Residue newResidue = newChain[0].getResidue(i);
             Residue backResidue = newChain[0].getResidue(i-1);
             backBoneAtoms = newResidue.getBackboneAtoms();

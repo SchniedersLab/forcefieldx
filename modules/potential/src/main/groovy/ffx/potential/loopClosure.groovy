@@ -69,7 +69,7 @@ if (options.s) {
 }
 else
 {
-    stt_res = 1;
+    stt_res = 2;
 }
 
 // Finish point
@@ -78,13 +78,13 @@ if (options.f) {
 } 
 else
 {
-    end_res = 5;
+    end_res = 4;
 }
 
 
-if (end_res - stt_res != 4)
+if (end_res - stt_res < 3)
 {
-    logger.info("\n\nInvalid residue range. Residue range must consist of only 5 residues.\n\n");
+    logger.info("\n\nInvalid residue range. Residue range must consist of only 3 residues.\n\n");
 }
 
 List<String> arguments = options.arguments();
