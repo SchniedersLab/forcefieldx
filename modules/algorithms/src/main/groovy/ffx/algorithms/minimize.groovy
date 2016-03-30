@@ -224,8 +224,10 @@ if (filename2 == null) {
     logger.info(" RMS gradient convergence criteria: " + eps);
 
     // Do the minimization
+    energy();
     e = minimize(eps);
-
+    energy();
+    
     String ext = FilenameUtils.getExtension(filename);
     filename = FilenameUtils.removeExtension(filename);
     if (ext.toUpperCase().contains("XYZ")) {

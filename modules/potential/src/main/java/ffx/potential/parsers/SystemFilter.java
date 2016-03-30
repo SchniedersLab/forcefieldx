@@ -54,6 +54,8 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.nonbonded.CoordRestraint;
 import ffx.potential.parameters.ForceField;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * The SystemFilter class is the base class for most Force Field X file parsers.
@@ -207,8 +209,10 @@ public abstract class SystemFilter {
      * nuclear centers (applies primarily to hydrogens).
      */
     protected boolean vdwH = false;
-    
-    //private List<CoordRestraint> coordRestraints;
+    /**
+     * A set of coordinate restraints obtained from the properties.
+     */
+    private List<CoordRestraint> coordRestraints;
 
     /**
      * <p>
@@ -611,23 +615,46 @@ public abstract class SystemFilter {
             }*/
         }
         
-        /*coordRestraints = new ArrayList<>();
+        coordRestraints = new ArrayList<>();
         String[] cRestraintStrings = properties.getStringArray("restraint");
         for (String coordRestraint : cRestraintStrings) {
             String[] toks = coordRestraint.split("\\s+");
-            double forceconst = Double.parseDouble(toks[0]);
+            double forceconst;
+            try {
+                forceconst = Double.parseDouble(toks[0]);
+            } catch (NumberFormatException ex) {
+                logger.log(Level.INFO, " First argument to coordinate restraint must be a positive force constant; discarding coordinate restraint.");
+                continue;
+            }
+            if (forceconst < 0) {
+                logger.log(Level.INFO, " Force constants must be positive. Discarding coordinate restraint.");
+                continue;
+            }
+            logger.info(String.format(" Adding lambda-disabled coordinate restraint "
+                    + "with force constant %10.4f", forceconst));
             Set<Atom> restraintAtoms = new HashSet<>();
             
             for (int i = 1; i < toks.length; i++) {
                 try {
-                    int[] nouseRange = parseAtNumArg(toks[i], nmolaAtoms);
-                    logger.log(Level.INFO, String.format(" Atoms %s set to be not "
-                            + "used", toks[i]));
+                    int[] nouseRange = parseAtNumArg("restraint", toks[i], nmolaAtoms);
+                    logger.info(String.format(" Adding atoms %d-%d to restraint", 
+                            nouseRange[0]+1, nouseRange[1]+1));
                     for (int j = nouseRange[0]; j <= nouseRange[1]; j++) {
                         restraintAtoms.add(molaAtoms[j]);
                     }
                 } catch (IllegalArgumentException ex) {
-                    logger.log(Level.INFO, ex.getLocalizedMessage());
+                    boolean atomFound = false;
+                    for (Atom atom : molaAtoms) {
+                        if (atom.getName().equalsIgnoreCase(toks[i])) {
+                            atomFound = true;
+                            restraintAtoms.add(atom);
+                        }
+                    }
+                    if (atomFound) {
+                        logger.info(String.format(" Added atoms with name %s to restraint", toks[i]));
+                    } else {
+                        logger.log(Level.INFO, ex.getLocalizedMessage());
+                    }
                 }
             }
             if (!restraintAtoms.isEmpty()) {
@@ -636,16 +663,62 @@ public abstract class SystemFilter {
             } else {
                 logger.warning(String.format(" Empty or unparseable restraint argument %s", coordRestraint));
             }
-        }*/
+        }
+        
+        
+        String[] lamRestraintStrings = properties.getStringArray("lamrestraint");
+        for (String coordRestraint : lamRestraintStrings) {
+            String[] toks = coordRestraint.split("\\s+");
+            double forceconst = Double.parseDouble(toks[0]);
+            logger.info(String.format(" Adding lambda-enabled coordinate restraint "
+                    + "with force constant %10.4f", forceconst));
+            Set<Atom> restraintAtoms = new HashSet<>();
+            
+            for (int i = 1; i < toks.length; i++) {
+                try {
+                    int[] nouseRange = parseAtNumArg("restraint", toks[i], nmolaAtoms);
+                    logger.info(String.format(" Adding atoms %d-%d to restraint", 
+                            nouseRange[0]+1, nouseRange[1]+1));
+                    for (int j = nouseRange[0]; j <= nouseRange[1]; j++) {
+                        restraintAtoms.add(molaAtoms[j]);
+                    }
+                } catch (IllegalArgumentException ex) {
+                    boolean atomFound = false;
+                    for (Atom atom : molaAtoms) {
+                        if (atom.getName().equalsIgnoreCase(toks[i])) {
+                            atomFound = true;
+                            restraintAtoms.add(atom);
+                        }
+                    }
+                    if (atomFound) {
+                        logger.info(String.format(" Added atoms with name %s to restraint", toks[i]));
+                    } else {
+                        logger.log(Level.INFO, String.format(" Restraint input %s "
+                                + "could not be parsed as a numerical range or "
+                                + "an atom type present in assembly", toks[i]));
+                    }
+                }
+            }
+            if (!restraintAtoms.isEmpty()) {
+                Atom[] ats = restraintAtoms.toArray(new Atom[restraintAtoms.size()]);
+                coordRestraints.add(new CoordRestraint(ats, forceField, true, forceconst));
+            } else {
+                logger.warning(String.format(" Empty or unparseable restraint argument %s", coordRestraint));
+            }
+        }
     }
     
-    /*public CoordRestraint[] getCoordRestraints() {
+    /**
+     * Gets the coordinate restraints parsed by this Filter.
+     * @return Coordinate restraints.
+     */
+    public List<CoordRestraint> getCoordRestraints() {
         if (!coordRestraints.isEmpty()) {
-            return coordRestraints.toArray(new CoordRestraint[coordRestraints.size()]);
+            return new ArrayList<>(coordRestraints);
         } else {
             return null;
         }
-    }*/
+    }
     
     /**
      * Parses a numerical argument for an atom-specific flag. Intended to reduce

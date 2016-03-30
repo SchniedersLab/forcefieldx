@@ -157,6 +157,10 @@ public class CoordRestraint implements LambdaInterface {
 //            setPlaneAtoms();
 //        }
     }
+    
+    public int getNumAtoms() {
+        return nAtoms;
+    }
 
     public double residual(boolean gradient, boolean print) {
         //pdbAtomRestraints uses atom indexes to restrain specific atoms

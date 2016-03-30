@@ -55,6 +55,7 @@ import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;
 import ffx.potential.bonded.RotamerLibrary;
+import ffx.potential.nonbonded.CoordRestraint;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.ARCFileFilter;
 import ffx.potential.parsers.FileOpener;
@@ -261,7 +262,7 @@ public class PotentialsFileOpener implements FileOpener {
                 }
                 filter.applyAtomProperties();
                 assembly.finalize(true, forceField);
-                ForceFieldEnergy energy = new ForceFieldEnergy(assembly);
+                ForceFieldEnergy energy = new ForceFieldEnergy(assembly, filter.getCoordRestraints());
                 assembly.setPotential(energy);
                 assemblies.add(assembly);
                 propertyList.add(properties);
@@ -299,7 +300,7 @@ public class PotentialsFileOpener implements FileOpener {
                             newAssembly.setName(FilenameUtils.getBaseName(fileName) + " " + c);
                             filter.applyAtomProperties();
                             newAssembly.finalize(true, assembly.getForceField());
-                            energy = new ForceFieldEnergy(newAssembly);
+                            energy = new ForceFieldEnergy(newAssembly, filter.getCoordRestraints());
                             newAssembly.setPotential(energy);
                             assemblies.add(newAssembly);
                         }
