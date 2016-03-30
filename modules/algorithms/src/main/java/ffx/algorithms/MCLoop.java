@@ -40,7 +40,7 @@ package ffx.algorithms;
 import java.util.List;
 import java.util.Random;
 import java.util.logging.Logger;
-
+import java.util.concurrent.ThreadLocalRandom;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.random;
 
@@ -121,7 +121,7 @@ public class MCLoop implements MonteCarloListener {
      * The LambdaInterface object being used by OSRW.
      */
     private LambdaInterface lambdaInterface;
-    
+    private boolean skipAlgorithm = false;
 
     /**
      * Construct a Monte-Carlo loop switching mechanism.
@@ -143,8 +143,9 @@ public class MCLoop implements MonteCarloListener {
         this.endResidue = endResidue; 
         this.iterations = 1;
 
-        if ((endResidue - firstResidue) < 4){
-            logger.info("MCLoop requires at least 5 residues. First and last residues are anchors.");
+        if ((endResidue - firstResidue) < 3){
+            logger.info("MCLoop requires at least 3 residues. First and last residues are anchors.");
+            skipAlgorithm = true;
         }
         StringBuilder sb = new StringBuilder();
         sb.append(String.format(" Running MCLoop:\n"));
@@ -176,6 +177,9 @@ public class MCLoop implements MonteCarloListener {
     public boolean mcUpdate(MolecularAssembly molAss) {
 
         stepCount++;
+        if (skipAlgorithm == true){
+            return false;
+        }
         // Decide on the type of step to be taken.
         if ((stepCount % mcStepFrequency != 0 )) {
             // Not yet time for an MC step, return to MD.
@@ -192,29 +196,27 @@ public class MCLoop implements MonteCarloListener {
         atoms = molAss.getAtomArray();
 
         // Randomly choose a target sub portion of loop to KIC.
-        int startOffset;
-        if (endResidue - firstResidue > 4){
-            startOffset = rng.nextInt(endResidue - firstResidue - 3) + firstResidue;
-        } else {
-            startOffset = firstResidue;
-        }
+        int midResidue;
+        
+
+        midResidue = ThreadLocalRandom.current().nextInt(firstResidue + 1, endResidue);
+        
         List <double[]> loopSolutions;
         
-        loopSolutions = loop.generateLoops(startOffset, startOffset + 4);
+        loopSolutions = loop.generateLoops(midResidue - 1, midResidue + 1);
 
         for(int i = 1; i < this.iterations; i++){
             //pick random subloop
-            if(endResidue - firstResidue > 4){
-                startOffset = rng.nextInt(endResidue - firstResidue - 3) + firstResidue;
-            }
+            midResidue = ThreadLocalRandom.current().nextInt(firstResidue + 1, endResidue);
+
             //pick random solution
             if (loopSolutions.size() > 0){
-                List <double[]> tempLoops = loop.generateLoops(startOffset, startOffset + 4,loopSolutions.get(rng.nextInt(loopSolutions.size())));
-                for(int j = 0; j < tempLoops.size(); j++){
-                    loopSolutions.add(tempLoops.get(j));
+                List <double[]> tempLoops = loop.generateLoops(midResidue - 1, midResidue + 1,loopSolutions.get(rng.nextInt(loopSolutions.size())));
+                for (double[] tempLoop : tempLoops) {
+                    loopSolutions.add(tempLoop);
                 }
             } else {
-                loopSolutions = loop.generateLoops(startOffset, startOffset + 4,loopSolutions.get(rng.nextInt(loopSolutions.size())));
+                loopSolutions = loop.generateLoops(midResidue - 1, midResidue + 1,loopSolutions.get(rng.nextInt(loopSolutions.size())));
             }
         }
         int numLoopsFound = loopSolutions.size();

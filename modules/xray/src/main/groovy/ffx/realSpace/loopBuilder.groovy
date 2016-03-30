@@ -445,13 +445,14 @@ if(runOSRW){
     }
 
     osrw.setLambda(lambda);
+    osrw.setThetaMass(1.0e-19);
     osrw.setOptimization(true, active);
     // Create the MolecularDynamics instance.
     MolecularDynamics molDyn = new MolecularDynamics(active, osrw, active.getProperties(),
         null, thermostat, integrator);
 
     if(runMCLoop){
-        mcLoop = new MCLoop(active, mcStepFrequency, molDyn.getThermostat(),loopStart-1,loopStop+1);
+        mcLoop = new MCLoop(active, mcStepFrequency, molDyn.getThermostat(),loopStart,loopStop);
         molDyn.addMCListener(mcLoop);
         mcLoop.addMolDyn(molDyn);
         mcLoop.addLambdaInterface(osrw.getLambdaInterface());
