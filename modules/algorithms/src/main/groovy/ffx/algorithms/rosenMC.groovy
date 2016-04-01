@@ -50,6 +50,7 @@ import ffx.algorithms.MonteCarloListener;
 import ffx.algorithms.Integrator.Integrators;
 import ffx.algorithms.Thermostat.Thermostats;
 import ffx.algorithms.mc.RosenbluthOBMC;
+import ffx.algorithms.mc.RosenbluthCBMC;
 import ffx.potential.bonded.Residue;
 
 // Number of molecular dynamics steps
@@ -212,7 +213,7 @@ molDyn.setFileType(fileType);
 molDyn.setRestartFrequency(restartFrequency);
 
 targets.add(active.getChains()[0].getResidues().get(resNum));
-MonteCarloListener rrmc = new RosenbluthOBMC(active, active.getPotentialEnergy(), molDyn.getThermostat(),
+MonteCarloListener rrmc = new RosenbluthCBMC(active, active.getPotentialEnergy(), molDyn.getThermostat(),
     targets, mcFrequency, trialSetSize, writeSnapshots);
 molDyn.addMCListener(rrmc);
 

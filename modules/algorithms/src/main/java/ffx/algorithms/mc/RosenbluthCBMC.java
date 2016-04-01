@@ -112,7 +112,7 @@ public class RosenbluthCBMC implements MonteCarloListener {
         this.mola = mola;
         this.ffe = ffe;
         this.thermostat = thermostat;
-        for (int i = targets.size() - 1; i >= 0; i++) {
+        for (int i = targets.size() - 1; i >= 0; i--) {
             AminoAcid3 name = AminoAcid3.valueOf(targets.get(i).getName());
             if (name == AminoAcid3.GLY || name == AminoAcid3.PRO || name == AminoAcid3.ALA) {
                 targets.remove(i);
@@ -157,6 +157,7 @@ public class RosenbluthCBMC implements MonteCarloListener {
         double Wo = cmbcMove.getWo();
         double criterion = Math.min(1, Wn / Wo);
         double rng = ThreadLocalRandom.current().nextDouble();
+        logger.info(String.format("    rng:    %5.2f", rng));
         if (rng < criterion) {
             cmbcMove.move();
             numMovesAccepted++;

@@ -581,6 +581,7 @@ public class Residue extends MSGroup {
             throw new IllegalArgumentException(String.format(" This residue is "
                     + "not an amino acid: %s", this.toString()));
         } else if (aa == AA3.UNK) {
+            logger.warning(String.format("UNK stored for residue with name: %s", getName()));
             return AminoAcid3.UNK;
         }
         return AminoAcid3.valueOf(getName());
@@ -685,6 +686,7 @@ public class Residue extends MSGroup {
                         aa = AA1toAA3.get(aa1);
                     }
                 } catch (Exception e) {
+                    logger.warning(String.format("Exception assigning AA3 for residue: %s", name));
                     aa = AA3.UNK;
                 }
                 break;
@@ -1330,7 +1332,7 @@ public class Residue extends MSGroup {
 
         GLY, ALA, VAL, LEU, ILE, SER, THR, CYS, PRO, PHE, TYR, TRP, ASP, ASN,
         GLU, GLN, MET, LYS, ARG, HIS, HID, HIE, ORN, AIB, PCA, FOR, ACE, NH2,
-        NME, UNK;
+        NME, UNK, ASH, GLH, LYD, CYD, TYD;
     }
 
     public enum NA {
