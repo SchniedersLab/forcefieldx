@@ -1112,7 +1112,7 @@ public class TransitionTemperedOSRW implements Potential {
         totalWeight = 0;
         StringBuilder stringBuilder = new StringBuilder();
         if (print) {
-            stringBuilder.append(" Weight    Lambda Bins    F_Lambda Bins   <   F_L  >  Max F_L    dG        G\n");
+            stringBuilder.append(" Weight    Lambda Bins    F_Lambda Bins   <   F_L  >  Max F_L     dG        G\n");
         }
         for (int iL = 0; iL < lambdaBins; iL++) {
             int ulFL = -1;
@@ -1142,6 +1142,7 @@ public class TransitionTemperedOSRW implements Potential {
             double maxBias = 0;
             if (ulFL == -1) {
                 FLambda[iL] = 0.0;
+                minFL = 0.0;
             } else {
                 double ensembleAverageFLambda = 0.0;
                 double partitionFunction = 0.0;
