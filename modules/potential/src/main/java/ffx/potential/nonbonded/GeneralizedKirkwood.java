@@ -2507,9 +2507,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     switch (nonPolar) {
                         case BORN_SOLV:
                         case BORN_CAV_DISP:
-                            double e = baseRadius[i] + probe; // e = ri + probe
+                            double e = baseRadiusWithBondi[i] + probe; // e = ri + probe
                             e *= (e * bornaiTerm);// e = (ri + probe) * ((ri + probe) * 4 * pi * ai)
-                            double rirb = baseRadius[i] / born[i]; // ri/rb^6
+                            double rirb = baseRadiusWithBondi[i] / born[i]; // ri/rb^6
                             rirb *= rirb;
                             rirb *= (rirb * rirb);
                             e *= rirb; // e = consts * (ri/rb)^6
@@ -4021,7 +4021,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     if (!use[i]) {
                         continue;
                     }
-                    final double ri = baseRadius[i];
+                    final double ri = baseRadiusWithBondi[i];
                     assert (ri > 0.0);
                     final double xi = x[i];
                     final double yi = y[i];
@@ -4036,7 +4036,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         if (!use[k]) {
                             continue;
                         }
-                        final double rk = baseRadius[k];
+                        final double rk = baseRadiusWithBondi[k];
                         if (k != i && rk > 0.0) {
                             dx_local[0] = x[k] - xi;
                             dx_local[1] = y[k] - yi;
