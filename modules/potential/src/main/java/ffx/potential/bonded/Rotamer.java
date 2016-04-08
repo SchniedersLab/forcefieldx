@@ -113,6 +113,32 @@ public class Rotamer {
         originalState = null;
         isState = false;
     }
+    
+    /**
+     * Constructor for unknown residue types.
+     * @param values 
+     */
+    public Rotamer(double... values) {
+        length = values.length / 2;
+        angles = new double[max(length, 7)];
+        sigmas = new double[max(length, 7)];
+        nucleicName = null;
+        this.name = null;
+        for (int i = 0; i < length; i++) {
+            int ii = 2 * i;
+            angles[i] = values[ii];
+            sigmas[i] = values[ii + 1];
+        }
+        chi1 = angles[0];
+        chi2 = angles[1];
+        chi3 = angles[2];
+        chi4 = angles[3];
+        chi5 = angles[4];
+        chi6 = angles[5];
+        chi7 = angles[6];
+        originalState = null;
+        isState = false;
+    }
 
     public Rotamer(AminoAcid3 name, ResidueState residueState, double... values) {
         length = values.length / 2;
@@ -139,6 +165,33 @@ public class Rotamer {
         angles = new double[max(length, 7)];
         sigmas = new double[max(length, 7)];
         nucleicName = name;
+        this.name = null;
+        for (int i = 0; i < length; i++) {
+            int ii = 2 * i;
+            angles[i] = values[ii];
+            sigmas[i] = values[ii + 1];
+        }
+        chi1 = angles[0];
+        chi2 = angles[1];
+        chi3 = angles[2];
+        chi4 = angles[3];
+        chi5 = angles[4];
+        chi6 = angles[5];
+        chi7 = angles[6];
+        originalState = residueState;
+        isState = true;
+    }
+
+    /**
+     * Constructor for unknown residue types.
+     * @param residueState
+     * @param values 
+     */
+    public Rotamer(ResidueState residueState, double... values) {
+        length = values.length / 2;
+        angles = new double[max(length, 7)];
+        sigmas = new double[max(length, 7)];
+        nucleicName = null;
         this.name = null;
         for (int i = 0; i < length; i++) {
             int ii = 2 * i;

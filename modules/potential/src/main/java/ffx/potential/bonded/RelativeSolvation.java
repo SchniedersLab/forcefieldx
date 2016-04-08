@@ -1,24 +1,75 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
+ *
+ * This file is part of Force Field X.
+ *
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
+ *
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+ * Linking this library statically or dynamically with other modules is making a
+ * combined work based on this library. Thus, the terms and conditions of the
+ * GNU General Public License cover the whole combination.
+ *
+ * As a special exception, the copyright holders of this library give you
+ * permission to link this library with independent modules to produce an
+ * executable, regardless of the license terms of these independent modules, and
+ * to copy and distribute the resulting executable under terms of your choice,
+ * provided that you also meet, for each linked independent module, the terms
+ * and conditions of the license of that module. An independent module is a
+ * module which is not derived from or based on this library. If you modify this
+ * library, you may extend this exception to your version of the library, but
+ * you are not obligated to do so. If you do not wish to do so, delete this
+ * exception statement from your version.
  */
 package ffx.potential.bonded;
 
+import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.RelativeSolvationType;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Logger;
+
 /**
+ * A relative solvation term for chemical perturbations.
  *
- * @author JacobLitman
+ * @author Michael J. Schnieders
+ * @author Jacob M. Litman
+ *
+ * @since 1.0
  */
 public class RelativeSolvation {
-    
+    private static final Logger logger = Logger.getLogger(RelativeSolvation.class.getName());
     private SolvationLibrary solvationLibrary;
+    private final Map<String, Double> nonStdEnergies;
     
-    public RelativeSolvation() {
-        this(SolvationLibrary.GK);
+    public RelativeSolvation(ForceField forceField) {
+        this(SolvationLibrary.GK, forceField);
     }
     
-    public RelativeSolvation(SolvationLibrary solvationLibrary) {
+    public RelativeSolvation(SolvationLibrary solvationLibrary, ForceField forceField) {
         this.solvationLibrary = solvationLibrary;
+        nonStdEnergies = new HashMap<>();
+        for (RelativeSolvationType rsType : forceField.getRelativeSolvationTypes().values()) {
+            String resName = rsType.getResName();
+            double e = rsType.getSolvEnergy();
+            if (nonStdEnergies.put(resName, e) != null) {
+                logger.warning(String.format(" Repeat relative solvation for %s", resName));
+            }
+        }
     }
     
     public void setSolvationLibrary(SolvationLibrary solvationLibrary) {
@@ -40,22 +91,25 @@ public class RelativeSolvation {
     public double getSolvationEnergy(Residue residue, boolean checkZeroes) throws IllegalArgumentException {
         String resName = "";
         double energy = 0;
-        switch (residue.getResidueType()) {
+        Residue theRes = (residue instanceof MultiResidue) ? ((MultiResidue) residue).getActive() : residue;
+        switch (theRes.getResidueType()) {
             case AA:
-                if (residue instanceof MultiResidue) {
-                    resName = ((MultiResidue) residue).getActive().getName();
+                if (theRes instanceof MultiResidue) {
+                    resName = ((MultiResidue) theRes).getActive().getName();
                 } else {
-                    resName = residue.getName();
+                    resName = theRes.getName();
                 }
-                energy = getSolvationEnergy(ResidueEnumerations.AminoAcid3.valueOf(resName));
+                
+                energy = getAASolvationEnergy(theRes);
                 break;
             case NA:
-                if (residue instanceof MultiResidue) {
-                    resName = ((MultiResidue) residue).getActive().getName();
+                if (theRes instanceof MultiResidue) {
+                    resName = ((MultiResidue) theRes).getActive().getName();
                 } else {
-                    resName = residue.getName();
+                    resName = theRes.getName();
                 }
-                energy = getSolvationEnergy(ResidueEnumerations.NucleicAcid3.valueOf(resName));
+                
+                energy = getNASolvationEnergy(theRes);
                 break;
             default:
                 energy = 0;
@@ -69,23 +123,23 @@ public class RelativeSolvation {
     
     /**
      * Returns amino acid solvation energy based on solvation library.
-     * @param name Amino acid name
+     * @param residue
      * @return Solvation energy
      */
-    public double getSolvationEnergy(ResidueEnumerations.AminoAcid3 name) {
+    public double getAASolvationEnergy(Residue residue) {
         switch (solvationLibrary) {
             case WOLFENDEN:
-                return getWolfendenSolvationEnergy(name);
+                return getWolfendenSolvationEnergy(residue);
             case CABANI:
-                return getCabaniSolvationEnergy(name);
+                return getCabaniSolvationEnergy(residue);
             case EXPLICIT:
-                return getExplicitSolvationEnergy(name);
+                return getExplicitSolvationEnergy(residue);
             case GK:
-                return getGKSolvationEnergy(name);
+                return getGKSolvationEnergy(residue);
             case MACCALLUM_SPC:
-                return getMacCallumSPCSolvationEnergy(name);
+                return getMacCallumSPCSolvationEnergy(residue);
             case MACCALLUM_TIP4P:
-                return getMacCallumTIP4PSolvationEnergy(name);
+                return getMacCallumTIP4PSolvationEnergy(residue);
             default:
                 return 0;
         }
@@ -94,31 +148,32 @@ public class RelativeSolvation {
     /**
      * Will return relative solvation energies for nucleic acids; currently returns
      * 0.
-     * @param name Nucleic acid name
+     * @param residue
      * @return Relative solvation energy
      */
-    public double getSolvationEnergy(ResidueEnumerations.NucleicAcid3 name) {
+    public double getNASolvationEnergy(Residue residue) {
         return 0;
     }
     
     /**
      * Will return solvation energies relative to glycine for capped monomers
      * in GK solvent; currently wraps getExplicitSolvationEnergy.
-     * @param name Amino acid name
+     * @param residue
      * @return Relative solvation energy
      */
-    public double getGKSolvationEnergy(ResidueEnumerations.AminoAcid3 name) {
-        return getExplicitSolvationEnergy(name);
+    public double getGKSolvationEnergy(Residue residue) {
+        return getExplicitSolvationEnergy(residue);
     }
     
     /**
      * Will return solvation energies relative to glycine for capped monomers in
      * AMOEBA solvent; currently approximates this with charging energies in 
      * AMOEBA solvent.
-     * @param name Amino acid name
+     * @param residue
      * @return Relative solvation energy
      */
-    public double getExplicitSolvationEnergy(ResidueEnumerations.AminoAcid3 name) {
+    public double getExplicitSolvationEnergy(Residue residue) {
+        ResidueEnumerations.AminoAcid3 name = residue.getAminoAcid3();
         switch (name) {
             case ALA:
                 return 0.58;
@@ -172,6 +227,8 @@ public class RelativeSolvation {
                 return 1.76;
             case TYD:
                 return -41.71;
+            case UNK:
+                return nonStdEnergies.getOrDefault(residue.getName().toUpperCase(), 0.0);
             default:
                 return 0;
         }
@@ -181,10 +238,11 @@ public class RelativeSolvation {
      * Returns absolute solvation energies for side chain analogs as calculated
      * by MacCallum for OPLS in TIP4P solvent.
      * 
-     * @param name Amino acid name
+     * @param residue
      * @return Solvation energy
      */
-    public double getMacCallumTIP4PSolvationEnergy(ResidueEnumerations.AminoAcid3 name) {
+    public double getMacCallumTIP4PSolvationEnergy(Residue residue) {
+        ResidueEnumerations.AminoAcid3 name = residue.getAminoAcid3();
         switch (name) {
             case ALA:
                 return 9.8;
@@ -222,6 +280,8 @@ public class RelativeSolvation {
                 return -16.2;
             case TYR:
                 return -18.8;
+            case UNK:
+                return nonStdEnergies.getOrDefault(residue.getName().toUpperCase(), 0.0);
             case GLY:
             case PRO:
             default:
@@ -233,10 +293,11 @@ public class RelativeSolvation {
      * Returns absolute solvation energies for side chain analogs as calculated
      * by MacCallum for OPLS in SPC solvent.
      * 
-     * @param name Amino acid name
+     * @param residue
      * @return Solvation energy
      */
-    public double getMacCallumSPCSolvationEnergy(ResidueEnumerations.AminoAcid3 name) {
+    public double getMacCallumSPCSolvationEnergy(Residue residue) {
+        ResidueEnumerations.AminoAcid3 name = residue.getAminoAcid3();
         switch (name) {
             case ALA:
                 return 9.3;
@@ -274,6 +335,8 @@ public class RelativeSolvation {
                 return -15.1;
             case TYR:
                 return -18.2;
+            case UNK:
+                return nonStdEnergies.getOrDefault(residue.getName().toUpperCase(), 0.0);
             case GLY:
             case PRO:
             default:
@@ -285,10 +348,11 @@ public class RelativeSolvation {
      * Returns absolute solvation energies for side chain analogs as experimentally
      * measured by Cabani et al.
      * 
-     * @param name Amino acid name
+     * @param residue
      * @return Solvation energy
      */
-    public double getCabaniSolvationEnergy(ResidueEnumerations.AminoAcid3 name) {
+    public double getCabaniSolvationEnergy(Residue residue) {
+        ResidueEnumerations.AminoAcid3 name = residue.getAminoAcid3();
         switch (name) {
             case ALA:
                 return 8.4;
@@ -326,6 +390,8 @@ public class RelativeSolvation {
                 return -12.3;
             case TYR:
                 return -25.7;
+            case UNK:
+                return nonStdEnergies.getOrDefault(residue.getName().toUpperCase(), 0.0);
             case GLY:
             case PRO:
             default:
@@ -337,10 +403,11 @@ public class RelativeSolvation {
      * Returns absolute solvation energies for side chain analogs as experimentally
      * measured by Wolfenden et al.
      * 
-     * @param name Amino acid name
+     * @param residue
      * @return Solvation energy
      */
-    public double getWolfendenSolvationEnergy(ResidueEnumerations.AminoAcid3 name) {
+    public double getWolfendenSolvationEnergy(Residue residue) {
+        ResidueEnumerations.AminoAcid3 name = residue.getAminoAcid3();
         switch (name) {
             case ALA:
                 return 8.1;
@@ -378,6 +445,8 @@ public class RelativeSolvation {
                 return -24.3;
             case TYR:
                 return -25.2;
+            case UNK:
+                return nonStdEnergies.getOrDefault(residue.getName().toUpperCase(), 0.0);
             case GLY:
             case PRO:
             default:
@@ -385,6 +454,9 @@ public class RelativeSolvation {
         }
     }
     
+    
+    
+    @Override
     public String toString() {
         return "Relative solvation library: " + solvationLibrary.toString();
     }

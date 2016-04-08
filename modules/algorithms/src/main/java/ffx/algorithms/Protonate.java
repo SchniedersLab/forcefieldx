@@ -70,10 +70,12 @@ import ffx.potential.parsers.PDBFilter;
 public class Protonate implements MonteCarloListener {
 
     private static final Logger logger = Logger.getLogger(Protonate.class.getName());
+    private static final double toSeconds = 0.000000001;
+    private final boolean logTimings = System.getProperty("cphmd-logTimings") != null ? true : false;
     /**
-     * The MoleularAssembly.
+     * The MolecularAssembly.
      */
-    private final MolecularAssembly molAss;
+    private final MolecularAssembly mola;
     /**
      * The MolecularDynamics object controlling the simulation.
      */
@@ -85,7 +87,7 @@ public class Protonate implements MonteCarloListener {
     /**
      * Boltzmann's constant is kcal/mol/Kelvin.
      */
-    private static final double boltzmann = 0.0019872041;
+    private static final double BOLTZMANN = 0.0019872041;
     /**
      * Energy of the system at initialization.
      */
@@ -163,6 +165,10 @@ public class Protonate implements MonteCarloListener {
      * Debug mode: all reference energies set to zero.
      */
     private boolean zeroReferenceEnergies = false;
+    
+    private boolean refOverride = System.getProperty("prot-refOverride") != null ? true : false;
+    private final double refOverrideValue = System.getProperty("prot-refOverride") != null ? 
+            Double.parseDouble(System.getProperty("prot-refOverride")) : 0.0;
 
     /**
      * Construct a Monte-Carlo protonation state switching mechanism.
@@ -174,8 +180,14 @@ public class Protonate implements MonteCarloListener {
      */
     Protonate(MolecularAssembly molAss, int mcStepFrequency, int rotamerStepFrequency, double pH, Thermostat thermostat) {
         // process system flags
+        if (refOverride) {
+            logger.info(" (CpHMD) Reference_Override: " + refOverrideValue);
+        }
         String zeroReferenceEnergies = System.getProperty("mc-zeroReferences");
         if (zeroReferenceEnergies != null) {
+            if (refOverride) {
+                logger.severe(" (CpHMD) Incompatible: refOverride,zeroReferenceEnergies");
+            }
             this.zeroReferenceEnergies = true;
             logger.info(" OVERRIDE: Zero-ing all reference energies.");
         }
@@ -218,7 +230,7 @@ public class Protonate implements MonteCarloListener {
         RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
         RotamerLibrary.setUseOrigCoordsRotamer(false);
 
-        this.molAss = molAss;
+        this.mola = molAss;
         this.forceField = molAss.getForceField();
         this.forceFieldEnergy = molAss.getPotentialEnergy();
         this.mcStepFrequency = (mcStepFrequency == 0) ? Integer.MAX_VALUE : mcStepFrequency;
@@ -242,7 +254,7 @@ public class Protonate implements MonteCarloListener {
      */
     private void chooseAllTitratables() {
         chosenResidues = new ArrayList<>();
-        Polymer polymers[] = molAss.getChains();
+        Polymer polymers[] = mola.getChains();
         for (int i = 0; i < polymers.length; i++) {
             ArrayList<Residue> residues = polymers[i].getResidues();
             for (int j = 0; j < residues.size(); j++) {
@@ -264,7 +276,7 @@ public class Protonate implements MonteCarloListener {
      */
     private void chooseTitratablesInWindow(double pH, double window) {
         chosenResidues = new ArrayList<>();
-        Polymer polymers[] = molAss.getChains();
+        Polymer polymers[] = mola.getChains();
         for (int i = 0; i < polymers.length; i++) {
             ArrayList<Residue> residues = polymers[i].getResidues();
             for (int j = 0; j < residues.size(); j++) {
@@ -280,9 +292,37 @@ public class Protonate implements MonteCarloListener {
             }
         }
     }
+    
+    /**
+     * Selecting titrating residues by a list of names, i.e. "LYS,TYR,HIS" will get all K/k/Y/y/H/U/D.
+     * @param names 
+     */
+    public void chooseByName(String names) {
+        chosenResidues = new ArrayList<>();
+        String tok[] = names.split(",");
+        for (int k = 0; k < tok.length; k++) {
+            String name = tok[k];
+            AminoAcid3 aa3 = AminoAcid3.valueOf(name);
+            Polymer polymers[] = mola.getChains();
+            for (int i = 0; i < polymers.length; i++) {
+                ArrayList<Residue> residues = polymers[i].getResidues();
+                for (int j = 0; j < residues.size(); j++) {
+                    Residue res = residues.get(j);
+                    List<Titration> avail = mapTitrations(res, false);
+                    for (Titration titration : avail) {
+                        AminoAcid3 from = titration.source;
+                        AminoAcid3 to = titration.target;
+                        if (aa3 == from || aa3 == to) {
+                            chosenResidues.add(res);
+                        }                        
+                    }
+                }
+            }
+        }
+    }
 
     public void chooseResID(ArrayList<String> crIDs) {
-        Polymer[] polymers = molAss.getChains();
+        Polymer[] polymers = mola.getChains();
         int n = 0;
         for (String s : crIDs) {
             Character chainID = s.charAt(0);
@@ -302,7 +342,7 @@ public class Protonate implements MonteCarloListener {
     }
 
     public void chooseResID(char chain, int resID) {
-        Polymer polymers[] = molAss.getChains();
+        Polymer polymers[] = mola.getChains();
         for (Polymer polymer : polymers) {
             if (polymer.getChainID() == chain) {
                 ArrayList<Residue> residues = polymer.getResidues();
@@ -323,7 +363,7 @@ public class Protonate implements MonteCarloListener {
         // Create MultiResidue objects to wrap titratables.
         for (Residue res : chosenResidues) {
             MultiResidue multiRes = new MultiResidue(res, forceField, forceFieldEnergy);
-            Polymer polymer = findResiduePolymer(res, molAss);
+            Polymer polymer = findResiduePolymer(res, mola);
             polymer.addMultiResidue(multiRes);
             String protFormName = Titratable.valueOf(res.getName()).protForm.toString();
             String deprotFormName = Titratable.valueOf(res.getName()).deprotForm.toString();
@@ -351,7 +391,7 @@ public class Protonate implements MonteCarloListener {
         // Create MultiResidue objects to wrap titratables.
         for (Residue res : chosenResidues) {
             MultiResidue multiRes = new MultiResidue(res, forceField, forceFieldEnergy);
-            Polymer polymer = findResiduePolymer(res, molAss);
+            Polymer polymer = findResiduePolymer(res, mola);
             polymer.addMultiResidue(multiRes);
 
             /* OLD WAY
@@ -473,6 +513,7 @@ public class Protonate implements MonteCarloListener {
      */
     @Override
     public boolean mcUpdate(MolecularAssembly molAss) {
+        long time = System.nanoTime();
         if (!finalized) {
             logger.severe("Monte-Carlo protonation engine was not finalized!");
         }
@@ -490,6 +531,10 @@ public class Protonate implements MonteCarloListener {
             stepType = StepType.ROTAMER;
         } else {
             // Not yet time for an MC step, return to MD.
+            if (logTimings) {
+                long took = System.nanoTime() - time;
+                logger.info(String.format(" CpHMD propagation time: %.6f", took * toSeconds));
+            }
             return false;
         }
 
@@ -525,6 +570,10 @@ public class Protonate implements MonteCarloListener {
 
         // forceFieldEnergy.checkAtoms();
         // Increment the shared snapshot counter.
+        if (logTimings) {
+            long took = System.nanoTime() - time;
+            logger.info(String.format(" CpHMD step time:        %.6f", took * toSeconds));
+        }
         snapshotIndex++;
         return accepted;
     }
@@ -560,11 +609,14 @@ public class Protonate implements MonteCarloListener {
         double pKaref = titration.pKa;
         double dG_ref = titration.refEnergy;
         double temperature = thermostat.getCurrentTemperature();
-        double kT = boltzmann * temperature;
+        double kT = BOLTZMANN * temperature;
         double dG_elec = currentElectrostaticEnergy() - previousElectrostaticEnergy;
 
         if (zeroReferenceEnergies) {
             dG_ref = 0.0;
+        }
+        if (refOverride) {
+            dG_ref = refOverrideValue;
         }
 
         /**
@@ -576,16 +628,28 @@ public class Protonate implements MonteCarloListener {
         if (type == TitrationType.DEP) {
             prefix = -prefix;
         }
+        // Change this to use a single value for reference and then switch based on reaction.
+        // Either positive ref == deprotonation or == standard -> nonstandard transition.
+        if (type == TitrationType.PROT) {
+            dG_ref = -dG_ref;
+        }
         double postfix = dG_elec - dG_ref;
         double dG_MC = prefix + postfix;
 
+//        StringBuilder sb = new StringBuilder();
+//        sb.append(String.format(" Assessing possible MC protonation step:\n"));
+//        sb.append(String.format("     %s --> %s\n", startString, targetMulti.toString()));
+//        sb.append(String.format("     pKaref:  %7.2f\n", pKaref));
+//        sb.append(String.format("     dG_ref:  %7.2f\n", dG_ref));
+//        sb.append(String.format("     dG_elec: %16.8f\n", dG_elec));
+//        sb.append(String.format("     dG_MC:   %16.8f\n", dG_MC));
+//        sb.append(String.format("     -----\n"));
         StringBuilder sb = new StringBuilder();
         sb.append(String.format(" Assessing possible MC protonation step:\n"));
         sb.append(String.format("     %s --> %s\n", startString, targetMulti.toString()));
-        sb.append(String.format("     pKaref:  %7.2f\n", pKaref));
-        sb.append(String.format("     dG_ref:  %7.2f\n", dG_ref));
-        sb.append(String.format("     dG_elec: %16.8f\n", dG_elec));
-        sb.append(String.format("     dG_MC:   %16.8f\n", dG_MC));
+        sb.append(String.format("     dG_ref:  %7.2f                pKaref:  %7.2f\n", dG_ref, pKaref));
+        sb.append(String.format("     pH_term: %16.4f       elec_term: %16.4f\n", prefix, postfix));
+        sb.append(String.format("     dG_elec: %16.4f       dG_MC:     %16.4f\n", dG_elec, dG_MC));
         sb.append(String.format("     -----\n"));
 
         // Test Monte-Carlo criterion.
@@ -646,7 +710,7 @@ public class Protonate implements MonteCarloListener {
 
         // Check the MC criterion.
         double temperature = thermostat.getCurrentTemperature();
-        double kT = boltzmann * temperature;
+        double kT = BOLTZMANN * temperature;
         double postTotalEnergy = currentTotalEnergy();
         double dG_tot = postTotalEnergy - previousTotalEnergy;
         double criterion = exp(-dG_tot / kT);
@@ -737,7 +801,7 @@ public class Protonate implements MonteCarloListener {
         double pKaref = titration.pKa;
         double dG_ref = titration.refEnergy;
         double temperature = thermostat.getCurrentTemperature();
-        double kT = boltzmann * temperature;
+        double kT = BOLTZMANN * temperature;
         double dG_elec = currentElectrostaticEnergy() - previousElectrostaticEnergy;
 
         if (zeroReferenceEnergies) {
@@ -1175,15 +1239,15 @@ public class Protonate implements MonteCarloListener {
                     break;
             }
             String postfixB = (beforeChange) ? "S-" : "F-";
-            String filename = FilenameUtils.removeExtension(molAss.getFile().toString()) + postfixA + postfixB + snapshotIndex;
+            String filename = FilenameUtils.removeExtension(mola.getFile().toString()) + postfixA + postfixB + snapshotIndex;
             if (snapshotsType == SnapshotsType.INTERLEAVED) {
-                filename = molAss.getFile().getAbsolutePath();
+                filename = mola.getFile().getAbsolutePath();
                 if (!filename.contains("dyn")) {
                     filename = FilenameUtils.removeExtension(filename) + "_dyn.pdb";
                 }
             }
             File afterFile = new File(filename);
-            PDBFilter afterWriter = new PDBFilter(afterFile, molAss, null, null);
+            PDBFilter afterWriter = new PDBFilter(afterFile, mola, null, null);
             afterWriter.writeFile(afterFile, false);
         }
     }
@@ -1204,7 +1268,7 @@ public class Protonate implements MonteCarloListener {
         GLU(4.25, -59.390, AminoAcid3.GLH, AminoAcid3.GLU),
         CYS(8.18, 60.834, AminoAcid3.CYS, AminoAcid3.CYD),
         HIS(6.00, -42.920, AminoAcid3.HIS, AminoAcid3.HID),
-        LYS(10.53, -50.440, AminoAcid3.LYS, AminoAcid3.LYD),
+        LYS(10.53, -50.440, AminoAcid3.LYS, AminoAcid3.LYD),    // new: 48.6928
         TYR(10.07, 34.802, AminoAcid3.TYR, AminoAcid3.TYD),
         // Protonated Forms
         ASH(4.00, +53.188, AminoAcid3.ASH, AminoAcid3.ASP),
@@ -1239,7 +1303,7 @@ public class Protonate implements MonteCarloListener {
         dtoD(3.90, -53.188, TitrationType.DEP, AminoAcid3.ASH, AminoAcid3.ASP),
         Etoe(4.25, +59.390, TitrationType.PROT, AminoAcid3.GLU, AminoAcid3.GLH),
         etoE(4.25, -59.390, TitrationType.DEP, AminoAcid3.GLH, AminoAcid3.GLU),
-        Ktok(10.53, +50.440, TitrationType.DEP, AminoAcid3.LYS, AminoAcid3.LYD),
+        Ktok(10.53, +50.440, TitrationType.DEP, AminoAcid3.LYS, AminoAcid3.LYD),    // new dG_elec: 48.6928
         ktoK(10.53, -50.440, TitrationType.PROT, AminoAcid3.LYD, AminoAcid3.LYS),
         Ytoy(10.07, -34.961, TitrationType.DEP, AminoAcid3.TYR, AminoAcid3.TYD),
         ytoY(10.07, +34.961, TitrationType.PROT, AminoAcid3.TYD, AminoAcid3.TYR),

@@ -267,5 +267,5 @@ public class ResidueState {
     public String toString() {
         return String.format(" ResidueState with parent residue %s, state residue "
                 + "%s, number of atoms %d", parent, res, atoms.length);
-}
+    }
 }

@@ -393,6 +393,7 @@ public class RotamerOptimization implements Terminatable {
     private boolean skipEnergies = false;
     private boolean computeQuads = false;
     private boolean decomposeOriginal = false;
+    private boolean addOrigRot = false; // Using original-rotamers for ALA, GLY, etc.
     private int quadMaxout = Integer.MAX_VALUE;
 
     /**
@@ -461,6 +462,8 @@ public class RotamerOptimization implements Terminatable {
         String mcTemp = System.getProperty("ro-mcTemp");
         String mcUseAll = System.getProperty("ro-mcUseAll");
         String mcNoEnum = System.getProperty("ro-debug-mcNoEnum");
+        String addOrigRotStr = System.getProperty("ro-addOrigRot");
+        String origAtEndStr = System.getProperty("ro-origAtEnd");
         if (computeQuads != null) {
             boolean value = Boolean.parseBoolean(computeQuads);
             this.computeQuads = value;
@@ -626,6 +629,16 @@ public class RotamerOptimization implements Terminatable {
             boolean value = Boolean.parseBoolean(lazyMatrix);
             this.lazyMatrix = value;
             logger.info(String.format(" (KEY) lazyMatrix: %b", lazyMatrix));
+        }
+        if (addOrigRotStr != null) {
+            boolean value = Boolean.parseBoolean(addOrigRotStr);
+            this.addOrigRot = value;
+            logger.info(String.format(" (KEY) addOrigRot: %b", addOrigRot));
+        }
+        if (origAtEndStr != null) {
+            boolean value = Boolean.parseBoolean(origAtEndStr);
+            // Property works in the contest of Residue class.
+            logger.info(String.format(" (KEY) origAtEnd: %b", value));
         }
     }
 
@@ -1601,33 +1614,35 @@ public class RotamerOptimization implements Terminatable {
                     residueEnergy[1][j] += halfPair;
                 }
             }
-            for (int i = 0; i < nRes; i++) {
-                Residue ri = residues[i];
-                for (int j = i + 1; j < nRes; j++) {
-                    Residue rj = residues[j];
-                    for (int k = j + 1; k < nRes; k++) {
-                        Residue rk = residues[k];
-                        double dist = trimerDistance(i, 0, j, 0, k, 0);
-                        triEnergy[i][j][k] = threeBodyEnergy[i][0][j][0][k][0];
-                        double thirdTrimer = triEnergy[i][j][k] / 3.0;
-                        residueEnergy[2][i] += thirdTrimer;
-                        residueEnergy[2][j] += thirdTrimer;
-                        residueEnergy[2][k] += thirdTrimer;
-                        if (triEnergy[i][j][k] != 0.0) {
-                            logger.info(String.format(" Tri  %s %s %s:    %16.5f", ri, rj, rk, triEnergy[i][j][k]));
-                        } else if (dist == Double.MAX_VALUE) {
-                            logger.info(String.format(" Tri  %s %s %s:    set to 0.0 at NaN (very long distance)",
-                                    ri, rj, rk));
-                            triEnergy[i][j][k] = 0.0;
-                        } else if (dist > threeBodyCutoffDist) {
-                            logger.info(String.format(" Tri  %s %s %s:    set to 0.0 at %1.5f Angstroms",
-                                    ri, rj, rk, dist));
-                            triEnergy[i][j][k] = 0.0;
-                        } else {
-                            String m = String.
-                                    format(" Zero trimer energy inside cutoff: %s %s %s at %1.5f Angstroms.",
-                                            ri, rj, rk, dist);
-                            logger.warning(m);
+            if (threeBodyTerm) {
+                for (int i = 0; i < nRes; i++) {
+                    Residue ri = residues[i];
+                    for (int j = i + 1; j < nRes; j++) {
+                        Residue rj = residues[j];
+                        for (int k = j + 1; k < nRes; k++) {
+                            Residue rk = residues[k];
+                            double dist = trimerDistance(i, 0, j, 0, k, 0);
+                            triEnergy[i][j][k] = threeBodyEnergy[i][0][j][0][k][0];
+                            double thirdTrimer = triEnergy[i][j][k] / 3.0;
+                            residueEnergy[2][i] += thirdTrimer;
+                            residueEnergy[2][j] += thirdTrimer;
+                            residueEnergy[2][k] += thirdTrimer;
+                            if (triEnergy[i][j][k] != 0.0) {
+                                logger.info(String.format(" Tri  %s %s %s:    %16.5f", ri, rj, rk, triEnergy[i][j][k]));
+                            } else if (dist == Double.MAX_VALUE) {
+                                logger.info(String.format(" Tri  %s %s %s:    set to 0.0 at NaN (very long distance)",
+                                        ri, rj, rk));
+                                triEnergy[i][j][k] = 0.0;
+                            } else if (dist > threeBodyCutoffDist) {
+                                logger.info(String.format(" Tri  %s %s %s:    set to 0.0 at %1.5f Angstroms",
+                                        ri, rj, rk, dist));
+                                triEnergy[i][j][k] = 0.0;
+                            } else {
+                                String m = String.
+                                        format(" Zero trimer energy inside cutoff: %s %s %s at %1.5f Angstroms.",
+                                                ri, rj, rk, dist);
+                                logger.warning(m);
+                            }
                         }
                     }
                 }
@@ -2034,6 +2049,9 @@ public class RotamerOptimization implements Terminatable {
                                 RotamerLibrary.applyRotamer(residue, rotamers[0]);
                                 break;
                         }
+                        if (addOrigRot) {
+                            residueList.add(residue);
+                        }
                     } else {
                         residueList.add(residue);
                     }
@@ -2053,8 +2071,8 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
-     * Accepts a list of residues but throws out null- or single-rotamer
-     * residues. Used by the -lR flag.
+     * Accepts a list of residues but throws out null residues. Used by the -lR 
+     * flag.
      *
      * @param residueList
      */
@@ -2062,7 +2080,7 @@ public class RotamerOptimization implements Terminatable {
         this.residueList = new ArrayList<>();
         logger.info(" Optimizing these residues: ");
         for (Residue r : residueList) {
-            if (r.getRotamers() != null && r.getRotamers().length > 1) {
+            if (r.getRotamers() != null) {
                 this.residueList.add(r);
                 logger.info(String.format("\t%s", r.toString()));
             } else {
@@ -8860,7 +8878,7 @@ public class RotamerOptimization implements Terminatable {
         }
 
         @Override
-        public double move() {
+        public void move() {
             boolean validMove = !useAllElims;
             int indexI;
             int indexRI;
@@ -8886,13 +8904,11 @@ public class RotamerOptimization implements Terminatable {
             changedRot = currentRots[indexI];
 
             currentRots[indexI] = indexRI;
-            return 0.0;
         }
 
         @Override
-        public double revertMove() {
+        public void revertMove() {
             currentRots[changedRes] = changedRot;
-            return 0.0;
         }
 
         /**
@@ -8903,16 +8919,6 @@ public class RotamerOptimization implements Terminatable {
          */
         private int[] getCurrentRots() {
             return currentRots;
-        }
-
-        @Override
-        public double getEcorrection() {
-            return 0.0;
-        }
-
-        @Override
-        public String getDescription() {
-            return toString();
         }
 
         @Override

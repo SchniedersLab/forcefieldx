@@ -123,8 +123,8 @@ public class LoopClosureTest {
     }
 
     public LoopClosureTest(double[][] xyz_n_test, double[][] xyz_a_test, double[][] xyz_c_test, double[][] xyz_o_test) {
-        int stt_res = 1;
-        int end_res = 5;
+        int stt_res = 2;
+        int end_res = 4;
         boolean writeFile = false;
         ClassLoader cl = this.getClass().getClassLoader();
         structure = new File(cl.getResource("ffx/potential/structures/LoopClosureTest.pdb").getPath());
@@ -152,9 +152,9 @@ public class LoopClosureTest {
 
     @Test
     public void loopTest() {
-        double[][] r_a = new double[5][3];
-        double[][] r_c = new double[5][3];
-        double[][] r_n = new double[5][3];
+        double[][] r_a = new double[3][3];
+        double[][] r_c = new double[3][3];
+        double[][] r_n = new double[3][3];
      //   double[][] r_o = new double[5][3];
 
         r_a = loop.getRA();
@@ -168,19 +168,19 @@ public class LoopClosureTest {
         int j = 0;
 
         for (j = 0; j < 3; j++) {
-            assertArrayEquals(r_a[j + 1], xyz_a_test[j], 1e-8);
+            assertArrayEquals(r_a[j], xyz_a_test[j], 1e-8);
         }
 
         for (j = 0; j < 3; j++) {
-            assertArrayEquals(r_c[j + 1], xyz_c_test[j], 1e-8);
+            assertArrayEquals(r_c[j], xyz_c_test[j], 1e-8);
         }
 
         for (j = 0; j < 3; j++) {
-            assertArrayEquals(r_n[j + 1], xyz_n_test[j], 1e-8);
+            assertArrayEquals(r_n[j], xyz_n_test[j], 1e-8);
         }
 
      //   for (j = 0; j < 3; j++) {
-      //      assertArrayEquals(r_o[j + 1], xyz_o_test[j], 1e-8);
+      //      assertArrayEquals(r_o[j], xyz_o_test[j], 1e-8);
      //   }
 
     }

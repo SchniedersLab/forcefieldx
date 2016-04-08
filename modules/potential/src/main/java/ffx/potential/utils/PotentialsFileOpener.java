@@ -49,12 +49,13 @@ import java.util.logging.Logger;
 import static java.lang.String.format;
 
 import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.io.FilenameUtils;
 
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;
+import ffx.potential.bonded.RotamerLibrary;
+import ffx.potential.nonbonded.CoordRestraint;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.ARCFileFilter;
 import ffx.potential.parsers.FileOpener;
@@ -240,6 +241,9 @@ public class PotentialsFileOpener implements FileOpener {
                 forceFieldFilter = new ForceFieldFilter(patchConfiguration);
                 ForceField patchForceField = forceFieldFilter.parse();
                 forceField.append(patchForceField);
+                if (RotamerLibrary.addRotPatch(patch)) {
+                    logger.info(String.format(" Loaded rotamer definitions from patch %s.", patch));
+                }
             }
             assembly.setForceField(forceField);
             SystemFilter filter;
@@ -256,8 +260,9 @@ public class PotentialsFileOpener implements FileOpener {
                 if (!(filter instanceof PDBFilter)) {
                     Utilities.biochemistry(assembly, filter.getAtomList());
                 }
+                filter.applyAtomProperties();
                 assembly.finalize(true, forceField);
-                ForceFieldEnergy energy = new ForceFieldEnergy(assembly);
+                ForceFieldEnergy energy = new ForceFieldEnergy(assembly, filter.getCoordRestraints());
                 assembly.setPotential(energy);
                 assemblies.add(assembly);
                 propertyList.add(properties);
@@ -293,8 +298,9 @@ public class PotentialsFileOpener implements FileOpener {
                         if (pdbFilter.readFile()) {
                             String fileName = assembly.getFile().getAbsolutePath();
                             newAssembly.setName(FilenameUtils.getBaseName(fileName) + " " + c);
+                            filter.applyAtomProperties();
                             newAssembly.finalize(true, assembly.getForceField());
-                            energy = new ForceFieldEnergy(newAssembly);
+                            energy = new ForceFieldEnergy(newAssembly, filter.getCoordRestraints());
                             newAssembly.setPotential(energy);
                             assemblies.add(newAssembly);
                         }

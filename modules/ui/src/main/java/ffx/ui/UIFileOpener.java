@@ -103,9 +103,10 @@ public class UIFileOpener implements FileOpener {
             if (!(systemFilter instanceof PDBFilter)) {
                 Utilities.biochemistry(ffxSystem, systemFilter.getAtomList());
             }
+            systemFilter.applyAtomProperties();
             // Add the system to the multiscale hierarchy.
             mainPanel.getHierarchy().addSystemNode(ffxSystem);
-            ForceFieldEnergy energy = new ForceFieldEnergy(ffxSystem);
+            ForceFieldEnergy energy = new ForceFieldEnergy(ffxSystem, systemFilter.getCoordRestraints());
             ffxSystem.setPotential(energy);
             mainPanel.getHierarchy().setActive(ffxSystem);
 
@@ -140,10 +141,11 @@ public class UIFileOpener implements FileOpener {
                     pdbFilter.setAltID(newSystem, c);
                     pdbFilter.clearSegIDs();
                     if (pdbFilter.readFile()) {
+                        pdbFilter.applyAtomProperties();
                         String fileName = ffxSystem.getFile().getAbsolutePath();
                         newSystem.setName(FilenameUtils.getBaseName(fileName) + " " + c);
                         mainPanel.getHierarchy().addSystemNode(newSystem);
-                        energy = new ForceFieldEnergy(newSystem);
+                        energy = new ForceFieldEnergy(newSystem, pdbFilter.getCoordRestraints());
                         newSystem.setPotential(energy);
                     }
                 }

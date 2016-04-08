@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
  *
  * This file is part of Force Field X.
  *
@@ -175,8 +175,8 @@ if (options.sO) {
         logger.info(" Sequence optimizing " + t);
         sequenceOptimizationList.add(t);
     }
-    if (System.getProperty("RELATIVE_SOLVATION") == null) {
-        System.setProperty("RELATIVE_SOLVATION", "AUTO");
+    if (System.getProperty("relative-solvation") == null) {
+        System.setProperty("relative-solvation", "AUTO");
     }
 }
 
@@ -593,10 +593,9 @@ if (algorithm != 5) {
                     int nrot = rotamers.length;
                     if (nrot == 1) {
                         RotamerLibrary.applyRotamer(residue, rotamers[0]);
-                    } else if (nrot > 1) {
-                        if (counter >= allStartResID) {
-                            residueList.add(residue);
-                        }
+                    }
+                    if (counter >= allStartResID) {
+                        residueList.add(residue);
                     }
                 } else if (options.fR) {
                     if (counter >= allStartResID && counter >= forceResiduesStart
@@ -622,7 +621,7 @@ if (algorithm != 5) {
                         if (r.getResidueNumber() == i) {
                             residueList.add(r);
                             Rotamer[] rotamers = r.getRotamers();
-                            if (rotamers != null && rotamers.size() > 1) {
+                            if (rotamers != null) {
                                 n++;
                             }
                         }
@@ -702,7 +701,8 @@ if (options.sO) {
                     }
                 }
                 multiRes.finalize();
-                multiRes.requestSetActiveResidue(ResidueEnumerations.AminoAcid3.valueOf(res.getName()));
+                //multiRes.requestSetActiveResidue(ResidueEnumerations.AminoAcid3.valueOf(res.getName()));
+                multiRes.setActiveResidue(res);
                 active.getPotentialEnergy().reInit();
                 residueList.remove(i);
                 residueList.add(i, multiRes);
@@ -770,10 +770,13 @@ if (decomposeOriginal) {
             rotamerOptimization.decomposeOriginalQuads(quadsCutoff, numQuads);
         }
     } else if (options.x) {
+        Residue[] residueArray = residueList.toArray(new Residue[residueList.size()]);
+        //rotamerOptimization.decomposeOriginal(residueArray);
         rotamerOptimization.decomposeOriginalParallel();
     } else {
         Residue[] residueArray = residueList.toArray(new Residue[residueList.size()]);
-        rotamerOptimization.decomposeOriginal(residueArray);
+        //rotamerOptimization.decomposeOriginal(residueArray);
+        rotamerOptimization.decomposeOriginalParallel();
     }
     if (master) {
         logger.info(String.format("\n"));

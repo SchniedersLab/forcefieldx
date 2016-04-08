@@ -82,6 +82,7 @@ public class MultiResidue extends Residue {
      */
     ForceField forceField;
     ForceFieldEnergy forceFieldEnergy;
+    private Rotamer[] rotamers;
     private Rotamer originalRotamer;
 
     public MultiResidue(Residue residue, ForceField forceField, ForceFieldEnergy forceFieldEnergy) {
@@ -318,6 +319,10 @@ public class MultiResidue extends Residue {
 
     @Override
     public Rotamer[] getRotamers() {
+        if (rotamers != null) {
+            return rotamers;
+        }
+        
         List<Rotamer[]> usual = new ArrayList<>();
         int nRots = 0;
 
@@ -335,10 +340,10 @@ public class MultiResidue extends Residue {
                 ResidueState origState = storeState();
                 double[] chi = RotamerLibrary.measureRotamer(activeResidue, false);
                 if (residueType == ResidueType.AA) {
-                    AminoAcid3 aa3 = AminoAcid3.valueOf(activeResidue.getName());
+                    AminoAcid3 aa3 = this.getAminoAcid3();
                     originalRotamer = new Rotamer(aa3, origState, chi);
                 } else if (residueType == ResidueType.NA) {
-                    NucleicAcid3 na3 = NucleicAcid3.valueOf(activeResidue.getName());
+                    NucleicAcid3 na3 = this.getNucleicAcid3();
                     originalRotamer = new Rotamer(na3, origState, chi);
                 }
             }
@@ -683,6 +688,15 @@ public class MultiResidue extends Residue {
         }
         return consideredCopy;
     }
+    
+    /**
+     * Returns the AminoAcid3 of the active residue.
+     * @return 
+     */
+    @Override
+    public AminoAcid3 getAminoAcid3() {
+        return activeResidue.getAminoAcid3();
+    }
 
     /**
      * Request the passed amino acid be set as the active residue.
@@ -762,7 +776,8 @@ public class MultiResidue extends Residue {
     }
 
     /**
-     * Method may be redundant with requestSetActiveResidue.
+     * Method may be redundant with requestSetActiveResidue. Will not function 
+     * correctly if there is more than one residue of type UNK (unknown).
      *
      * @param aa
      * @return True if successful
@@ -770,7 +785,7 @@ public class MultiResidue extends Residue {
     public boolean setActiveResidue(AminoAcid3 aa) {
         Residue residue = null;
         for (Residue res : consideredResidues) {
-            if (AminoAcid3.valueOf(res.getName()) == aa) {
+            if (res.getAminoAcid3() == aa) {
                 residue = res;
                 break;
             }

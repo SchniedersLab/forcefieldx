@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
  *
  * This file is part of Force Field X.
  *
@@ -146,6 +146,7 @@ molecularAssembly.setForceField(forceField);
 PDBFilter pdbFilter = new PDBFilter(structure, molecularAssembly, forceField, properties);
 pdbFilter.mutate(chain,resID,resName);
 pdbFilter.readFile();
+pdbFilter.applyAtomProperties();
 molecularAssembly.finalize(true, forceField);
 
 if (repack) {

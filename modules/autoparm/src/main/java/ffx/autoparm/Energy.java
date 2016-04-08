@@ -168,6 +168,7 @@ public class Energy {
         XYZFilter xyzFilter = new XYZFilter(structure_xyz, molecularAssembly, forceField, properties);
         xyzFilter.readFile();
         Utilities.biochemistry(molecularAssembly, xyzFilter.getAtomList());
+        xyzFilter.applyAtomProperties();
         molecularAssembly.finalize(true, forceField);
 
         //Read options

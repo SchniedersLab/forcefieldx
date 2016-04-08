@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
  *
  * This file is part of Force Field X.
  *
@@ -405,6 +405,7 @@ if(runOSRW){
     }
 
     osrw.setLambda(lambda);
+    osrw.setThetaMass(1.0e-19);
     osrw.setOptimization(true, active);
     // Create the MolecularDynamics instance.
     MolecularDynamics molDyn = new MolecularDynamics(active, osrw, active.getProperties(),
@@ -412,7 +413,7 @@ if(runOSRW){
 
 
     if(runMCLoop){
-        mcLoop = new MCLoop(active, mcStepFrequency, molDyn.getThermostat(),loopStart-1,loopStop+1);
+        mcLoop = new MCLoop(active, mcStepFrequency, molDyn.getThermostat(),loopStart,loopStop);
         molDyn.addMCListener(mcLoop);
         mcLoop.addMolDyn(molDyn);
         mcLoop.addLambdaInterface(osrw.getLambdaInterface());
@@ -500,6 +501,12 @@ if(!loopBuildError){
     forceFieldEnergy = new ForceFieldEnergy(active);
     e = minimize(eps);
     energy();
+    if (size > 1){
+        structureFile = new File("postOSRW."+ String.format("%d",world.rank())+"." + structureFile.getName());
+    } else{
+        structureFile = new File("postOSRW."+structureFile.getName());
+    }
+    saveAsPDB(structureFile);
 }
 
 

@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
  *
  * This file is part of Force Field X.
  *
@@ -137,6 +137,9 @@ boolean initVelocities = true;
 // Reset OSRW statistics
 boolean resetStatistics = false;
 
+// Reset number of steps taken, ignoring any record in .lam file
+boolean resetNumSteps = true;
+
 // Constant pressure
 boolean NPT = false;
 int meanInterval = 10;
@@ -144,6 +147,7 @@ double minDensity = 0.5;
 double maxDensity = 1.5;
 double maxSideMove = 0.25;
 double maxAngleMove = 1.0;
+double temperingParam = 2.0;
 
 // Write traversal snapshots
 boolean writeTraversals = false;
@@ -184,6 +188,8 @@ cli.W(longOpt:'traversals', args:0, 'Write out lambda-traversal snapshots.');
 //cli.am(longOpt:'maxAngleMove', args:1, argName:'1.0', 'Maximum angle move allowed by the barostat.');
 //cli.mi(longOpt:'meanInterval', args:1, argName:'10', 'Mean number of MD steps between applications of the barostat.');
 cli.rt(longOpt:'reset', args:0, 'Reset OSRW histogram once, when lambda reaches 0.99.');
+cli.tp(longOpt:'temperingParam', args:1, argName:'2', 'Tempering rate parameter in multiples of kbT.');
+cli.rn(longOpt:'resetNumSteps', args:1, argName:'true', 'Ignore prior steps logged in .lam files');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -346,6 +352,19 @@ if (options.mi) {
 if (options.W) {
     writeTraversals = true;
 }
+// Dama et al tempering parameter
+if (options.tp) {
+    temperingParam = Double.parseDouble(options.tp);
+}
+
+if (options.rn) {
+    if (eSteps > 0) {
+        println("");
+        logger.warning(" Ignoring resetNumSteps input due to equilibration");
+    } else if (options.rn.equalsIgnoreCase("false")) {
+        resetNumSteps = false;
+    }
+}
 
 println("\n Running Transition-Tempered Orthogonal Space Random Walk on " + filename);
 
@@ -465,7 +484,7 @@ if (arguments.size() == 1) {
     } else {
         // Wrap the single topology ForceFieldEnergy inside an OSRW instance.
         osrw = new TransitionTemperedOSRW(energy, energy, lambdaRestart, histogramRestart, active.getProperties(),
-            temperature, timeStep, printInterval, saveInterval, asynchronous, sh);
+            temperature, timeStep, printInterval, saveInterval, asynchronous, resetNumSteps, sh);
         osrw.setResetStatistics(resetStatistics);
         if (writeTraversals) {
             osrw.setTraversalOutput(lambdaOneFile, topology1, lambdaZeroFile, topology1);
@@ -510,11 +529,12 @@ if (arguments.size() == 1) {
     // Wrap the DualTopology potential energy inside an OSRW instance.
     osrw = new TransitionTemperedOSRW(dualTopologyEnergy, dualTopologyEnergy, lambdaRestart,
         histogramRestart, active.getProperties(), temperature, timeStep, printInterval,
-        saveInterval, asynchronous, sh);
+        saveInterval, asynchronous, resetNumSteps, sh);
     osrw.setResetStatistics(resetStatistics);
     if (writeTraversals) {
         osrw.setTraversalOutput(lambdaOneFile, topology1, lambdaZeroFile, topology2);
     }
+    osrw.setDeltaT(temperingParam);
 }
 
 // Apply the command line lambda value if a lambda restart file does not exist.
@@ -564,7 +584,18 @@ if (eSteps > 0) {
         fileType, restartInterval, dyn);
 } else {
     logger.info(" Beginning Transition-Tempered OSRW sampling without equilibration");
-    molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities,
-        fileType, restartInterval, dyn);
+    if (!resetNumSteps) {
+        int nEnergyCount = osrw.getEnergyCount();
+        if (nEnergyCount > 0) {
+            nSteps -= nEnergyCount;
+            logger.info(String.format(" Lambda file: %12d steps picked up, now sampling %12d steps", nEnergyCount, nSteps));
+        }
+    }
+    if (nSteps > 0) {
+        molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities,
+            fileType, restartInterval, dyn);
+    } else {
+        logger.info(" No steps remaining for this process!");
+    }
 }
 

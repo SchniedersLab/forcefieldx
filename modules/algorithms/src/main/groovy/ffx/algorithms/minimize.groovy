@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
  *
  * This file is part of Force Field X.
  *
@@ -224,8 +224,10 @@ if (filename2 == null) {
     logger.info(" RMS gradient convergence criteria: " + eps);
 
     // Do the minimization
+    energy();
     e = minimize(eps);
-
+    energy();
+    
     String ext = FilenameUtils.getExtension(filename);
     filename = FilenameUtils.removeExtension(filename);
     if (ext.toUpperCase().contains("XYZ")) {

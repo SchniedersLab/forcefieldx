@@ -81,6 +81,7 @@ import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BioType;
 import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.ISolvRadType;
 import ffx.potential.parameters.SolventRadii;
 import ffx.potential.parameters.VDWType;
 
@@ -279,8 +280,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
         String verboseProp = System.getProperty("gk-verboseRadii");
         if (verboseProp != null) {
-            this.verboseRadii = true;
-            logger.info(" (GK) Verbose radii enabled.");
+            this.verboseRadii = Boolean.parseBoolean(verboseProp);
+            if (verboseRadii) {
+                logger.info(" (GK) Verbose radii enabled.");
+            }
         }
         String epsilonProp = System.getProperty("gk-epsilon");
         if (epsilonProp != null) {
@@ -594,6 +597,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
             int atomNumber = atoms[i].xyzIndex + 1;
             if (useFittedRadii) {
+                // First check to see if this atom is in the hardcoded maps.
                 switch (radiiMapType) {
                     default:
                     case ATOMTYPE:
@@ -682,7 +686,21 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         break;
                 }
             }
-            // Check for command-line bondi factor override.
+            // Next, check if this Atom has an ISolvRad forcefield parameter.
+//            if (atoms[i].getISolvRadType() != null) {
+//                bondiFactor = atoms[i].getISolvRadType().radiusScale;
+//                logger.info(String.format(" (GK) ISolvRad parameter for Atom %3s-%-4s with AtomType %d to %.2f (bondi factor %.2f)",
+//                    atoms[i].getResidueName(), atoms[i].getName(), atomType.type, baseRadius[i] * bondiFactor, bondiFactor));
+//            }
+            ISolvRadType iSolvRadType = forceField.getISolvRadType(Integer.toString(atomType.type));
+            if (iSolvRadType != null) {
+                bondiFactor = iSolvRadType.radiusScale;
+                if (verboseRadii) {
+                    logger.info(String.format(" (GK) ISolvRad parameter for Atom %3s-%-4s with AtomType %d to %.2f (bondi factor %.2f)",
+                            atoms[i].getResidueName(), atoms[i].getName(), atomType.type, baseRadius[i] * bondiFactor, bondiFactor));
+                }
+            }
+            // Finally, check for command-line bondi factor override.
             if (radiiOverride.containsKey(atomType.type) && !radiiByNumberMap.containsKey(atomNumber)) {
                 bondiFactor = radiiOverride.get(atomType.type);
                 logger.info(String.format(" (GK) Scaling Atom %3s-%-4s with AtomType %d to %.2f (bondi factor %.2f)",
@@ -697,6 +715,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
             baseRadiusWithBondi[i] = baseRadius[i] * bondiFactor;
 
         }
+        
+        // Resets verboseRadii; reduces logging messages when mutating MultiResidues.
+        verboseRadii = false;
 
         if (dispersionRegion != null) {
             dispersionRegion.init();

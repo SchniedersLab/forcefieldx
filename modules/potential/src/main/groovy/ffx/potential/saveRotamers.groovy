@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
  *
  * This file is part of Force Field X.
  *
@@ -131,7 +131,7 @@ String filename = arguments.get(0);
 systems = open(filename);
 
 MolecularAssembly molecularAssembly = (MolecularAssembly) active;
-RotamerLibrary.initializeDefaultAtomicCoordinates(molecularAssembly);
+RotamerLibrary.initializeDefaultAtomicCoordinates(molecularAssembly.getChains());
 Polymer polymer = molecularAssembly.getChain(chain);
 if (polymer == null) {
     logger.info(" Polymer + " + chain + " does not exist.");

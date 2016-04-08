@@ -270,10 +270,10 @@ public class MolecularAssembly extends MSGroup {
         ArrayList Polymers = getAtomNodeList();
         if (o instanceof Atom) {
             Atom atom = (Atom) o;
-            if (!atom.isHetero()) {
-                return getResidue(atom, true);
-            } else if (atom.isModRes()) {
+            if (atom.isModRes()) {
                 return getResidue(atom, true, Residue.ResidueType.AA);
+            } else if (!atom.isHetero()) {
+                return getResidue(atom, true);
             } else {
                 return getMolecule(atom, true);
             }
@@ -1015,7 +1015,7 @@ public class MolecularAssembly extends MSGroup {
         if (polymer == null) {
             return null;
         }
-        Residue res = polymer.getResidue(resName, resNum, create);
+        Residue res = polymer.getResidue(resName, resNum, create, defaultRT);
         if (create && res != null) {
             return (Atom) res.addMSNode(atom);
         }

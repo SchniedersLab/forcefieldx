@@ -41,6 +41,10 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 
@@ -48,7 +52,10 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities.FileType;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
+import ffx.potential.nonbonded.CoordRestraint;
 import ffx.potential.parameters.ForceField;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * The SystemFilter class is the base class for most Force Field X file parsers.
@@ -150,6 +157,10 @@ public abstract class SystemFilter {
         }
         return previousFile;
     }
+    
+    private static final Pattern intrangePattern = Pattern.compile("(\\d+)-(\\d+)");
+    
+    private static final Logger logger = Logger.getLogger(SystemFilter.class.getName());
     /**
      * The atomList is filled by filters that extend SystemFilter.
      */
@@ -198,6 +209,10 @@ public abstract class SystemFilter {
      * nuclear centers (applies primarily to hydrogens).
      */
     protected boolean vdwH = false;
+    /**
+     * A set of coordinate restraints obtained from the properties.
+     */
+    private List<CoordRestraint> coordRestraints;
 
     /**
      * <p>
@@ -467,6 +482,302 @@ public abstract class SystemFilter {
             this.currentFile = files.get(0);
         } else {
             this.currentFile = null;
+        }
+    }
+    
+    /**
+     * Automatically sets atom-specific flags, particularly nouse and inactive, 
+     * and apply harmonic restraints. Intended to be called at the end of 
+     * readFile() implementations.
+     */
+    public void applyAtomProperties() {
+        /**
+         * What may be a more elegant implementation is to make readFile() a 
+         * public concrete, but skeletal method, and then have readFile()
+         * call a protected abstract readFile method for each implementation.
+         */
+        
+        Atom[] molaAtoms = activeMolecularAssembly.getAtomArray();
+        int nmolaAtoms = molaAtoms.length;
+        String[] nouseKeys = properties.getStringArray("nouse");
+        for (String nouseKey : nouseKeys) {
+            try {
+                int[] nouseRange = parseAtNumArg("nouse", nouseKey, nmolaAtoms);
+                logger.log(Level.INFO, String.format(" Atoms %d-%d set to be not "
+                        + "used", nouseRange[0]+1, nouseRange[1]+1));
+                for (int i = nouseRange[0]; i <= nouseRange[1]; i++) {
+                    molaAtoms[i].setUse(false);
+                }
+            } catch (IllegalArgumentException ex) {
+                logger.log(Level.INFO, ex.getLocalizedMessage());
+            }
+            /*Matcher m = intrangePattern.matcher(nouseKey);
+            if (m.matches()) {
+                int start = Integer.parseInt(m.group(1)) - 1;
+                int end = Integer.parseInt(m.group(2)) - 1;
+                if (start > end) {
+                    logger.log(Level.INFO, String.format(" Input %s not valid; "
+                            + "start > end", nouseKey));
+                } else if (start < 0) {
+                    logger.log(Level.INFO, String.format(" Input %s not valid; "
+                            + "atoms should be indexed starting from 1", nouseKey));
+                } else {
+                    logger.log(Level.INFO, String.format(" Atoms %s set to be not "
+                            + "used", nouseKey));
+                    for (int i = start; i <= end; i++) {
+                        if (i >= nmolaAtoms) {
+                            logger.log(Level.INFO, String.format(" Atom index %d is "
+                                    + "out of bounds for molecular assembly of "
+                                    + "length %d", i + 1, nmolaAtoms));
+                            break;
+                        }
+                        molaAtoms[i].setUse(false);
+                    }                    
+                }
+            } else {
+                try {
+                    int atNum = Integer.parseUnsignedInt(nouseKey) - 1;
+                    if (atNum >= nmolaAtoms) {
+                        logger.log(Level.INFO, String.format(" Atom index %d is "
+                                + "out of bounds for molecular assembly of "
+                                + "length %d", atNum + 1, nmolaAtoms));
+                    } else if (atNum < 0) {
+                        logger.log(Level.INFO, String.format(" Input %s not valid; "
+                                + "atoms should be indexed starting from 1", nouseKey));
+                    } else {
+                        logger.log(Level.INFO, String.format(" Atom %s set to be not "
+                                + "used", nouseKey));
+                        molaAtoms[atNum].setUse(false);
+                    }
+                } catch (NumberFormatException ex) {
+                    logger.log(Level.INFO, String.format(" nouse key %s cannot "
+                            + "be interpreted as an atom number or range of atom "
+                            + "numbers.", nouseKey));
+                }
+            }*/
+        }
+
+        String[] inactiveKeys = properties.getStringArray("inactive");
+        for (String inactiveKey : inactiveKeys) {
+            try {
+                int[] inactiveRange = parseAtNumArg("inactive", inactiveKey, nmolaAtoms);
+                logger.log(Level.INFO, String.format(" Atoms %d-%d set to be not "
+                        + "used", inactiveRange[0]+1, inactiveRange[1]+1));
+                for (int i = inactiveRange[0]; i <= inactiveRange[1]; i++) {
+                    molaAtoms[i].setActive(false);
+                }
+            } catch (IllegalArgumentException ex) {
+                logger.log(Level.INFO, ex.getLocalizedMessage());
+            }
+            /*Matcher m = intrangePattern.matcher(inactiveKey);
+            if (m.matches()) {
+                int start = Integer.parseInt(m.group(1)) - 1;
+                int end = Integer.parseInt(m.group(2)) - 1;
+                if (start > end) {
+                    logger.log(Level.INFO, String.format(" Input %s not valid; "
+                            + "start > end", inactiveKey));
+                } else if (start < 0) {
+                    logger.log(Level.INFO, String.format(" Input %s not valid; "
+                            + "atoms should be indexed starting from 1", inactiveKey));
+                } else {
+                    logger.log(Level.INFO, String.format(" Atoms %s set to be "
+                            + "inactive", inactiveKey));
+                    for (int i = start; i <= end; i++) {
+                        if (i >= nmolaAtoms) {
+                            logger.log(Level.INFO, String.format(" Atom index %d is "
+                                    + "out of bounds for molecular assembly of "
+                                    + "length %d", i + 1, nmolaAtoms));
+                            break;
+                        }
+                        molaAtoms[i].setActive(false);
+                    }                    
+                }
+            } else {
+                try {
+                    int atNum = Integer.parseUnsignedInt(inactiveKey) - 1;
+                    if (atNum >= nmolaAtoms) {
+                        logger.log(Level.INFO, String.format(" Atom index %d is "
+                                + "out of bounds for molecular assembly of "
+                                + "length %d", atNum + 1, nmolaAtoms));
+                    } else if (atNum < 0) {
+                        logger.log(Level.INFO, String.format(" Input %s not valid; "
+                                + "atoms should be indexed starting from 1", inactiveKey));
+                    } else {
+                        logger.log(Level.INFO, String.format(" Atom %s set to be "
+                                + "inactive", inactiveKey));
+                        molaAtoms[atNum].setActive(false);
+                    }
+                } catch (NumberFormatException ex) {
+                    logger.log(Level.INFO, String.format(" inactive key %s cannot "
+                            + "be interpreted as an atom number or range of atom "
+                            + "numbers.", inactiveKey));
+                }
+            }*/
+        }
+        
+        coordRestraints = new ArrayList<>();
+        String[] cRestraintStrings = properties.getStringArray("restraint");
+        for (String coordRestraint : cRestraintStrings) {
+            String[] toks = coordRestraint.split("\\s+");
+            double forceconst;
+            try {
+                forceconst = Double.parseDouble(toks[0]);
+            } catch (NumberFormatException ex) {
+                logger.log(Level.INFO, " First argument to coordinate restraint must be a positive force constant; discarding coordinate restraint.");
+                continue;
+            }
+            if (forceconst < 0) {
+                logger.log(Level.INFO, " Force constants must be positive. Discarding coordinate restraint.");
+                continue;
+            }
+            logger.info(String.format(" Adding lambda-disabled coordinate restraint "
+                    + "with force constant %10.4f", forceconst));
+            Set<Atom> restraintAtoms = new HashSet<>();
+            
+            for (int i = 1; i < toks.length; i++) {
+                try {
+                    int[] nouseRange = parseAtNumArg("restraint", toks[i], nmolaAtoms);
+                    logger.info(String.format(" Adding atoms %d-%d to restraint", 
+                            nouseRange[0]+1, nouseRange[1]+1));
+                    for (int j = nouseRange[0]; j <= nouseRange[1]; j++) {
+                        restraintAtoms.add(molaAtoms[j]);
+                    }
+                } catch (IllegalArgumentException ex) {
+                    boolean atomFound = false;
+                    for (Atom atom : molaAtoms) {
+                        if (atom.getName().equalsIgnoreCase(toks[i])) {
+                            atomFound = true;
+                            restraintAtoms.add(atom);
+                        }
+                    }
+                    if (atomFound) {
+                        logger.info(String.format(" Added atoms with name %s to restraint", toks[i]));
+                    } else {
+                        logger.log(Level.INFO, ex.getLocalizedMessage());
+                    }
+                }
+            }
+            if (!restraintAtoms.isEmpty()) {
+                Atom[] ats = restraintAtoms.toArray(new Atom[restraintAtoms.size()]);
+                coordRestraints.add(new CoordRestraint(ats, forceField, false, forceconst));
+            } else {
+                logger.warning(String.format(" Empty or unparseable restraint argument %s", coordRestraint));
+            }
+        }
+        
+        
+        String[] lamRestraintStrings = properties.getStringArray("lamrestraint");
+        for (String coordRestraint : lamRestraintStrings) {
+            String[] toks = coordRestraint.split("\\s+");
+            double forceconst = Double.parseDouble(toks[0]);
+            logger.info(String.format(" Adding lambda-enabled coordinate restraint "
+                    + "with force constant %10.4f", forceconst));
+            Set<Atom> restraintAtoms = new HashSet<>();
+            
+            for (int i = 1; i < toks.length; i++) {
+                try {
+                    int[] nouseRange = parseAtNumArg("restraint", toks[i], nmolaAtoms);
+                    logger.info(String.format(" Adding atoms %d-%d to restraint", 
+                            nouseRange[0]+1, nouseRange[1]+1));
+                    for (int j = nouseRange[0]; j <= nouseRange[1]; j++) {
+                        restraintAtoms.add(molaAtoms[j]);
+                    }
+                } catch (IllegalArgumentException ex) {
+                    boolean atomFound = false;
+                    for (Atom atom : molaAtoms) {
+                        if (atom.getName().equalsIgnoreCase(toks[i])) {
+                            atomFound = true;
+                            restraintAtoms.add(atom);
+                        }
+                    }
+                    if (atomFound) {
+                        logger.info(String.format(" Added atoms with name %s to restraint", toks[i]));
+                    } else {
+                        logger.log(Level.INFO, String.format(" Restraint input %s "
+                                + "could not be parsed as a numerical range or "
+                                + "an atom type present in assembly", toks[i]));
+                    }
+                }
+            }
+            if (!restraintAtoms.isEmpty()) {
+                Atom[] ats = restraintAtoms.toArray(new Atom[restraintAtoms.size()]);
+                coordRestraints.add(new CoordRestraint(ats, forceField, true, forceconst));
+            } else {
+                logger.warning(String.format(" Empty or unparseable restraint argument %s", coordRestraint));
+            }
+        }
+    }
+    
+    /**
+     * Gets the coordinate restraints parsed by this Filter.
+     * @return Coordinate restraints.
+     */
+    public List<CoordRestraint> getCoordRestraints() {
+        if (!coordRestraints.isEmpty()) {
+            return new ArrayList<>(coordRestraints);
+        } else {
+            return null;
+        }
+    }
+    
+    /**
+     * Parses a numerical argument for an atom-specific flag. Intended to reduce
+     * the amount of repetitive code in applyAtomProperties by parsing and 
+     * checking for validity, and then returning the appropriate range. Input
+     * should be 1-indexed (user end), output 0-indexed.
+     * @param keyType Type of key
+     * @param st Input string
+     * @param nAtoms Number of atoms in the MolecularAssembly
+     * @throws IllegalArgumentException if an invalid argument
+     * @return An int[2] with start, end indices (inclusive).
+     */
+    private int[] parseAtNumArg(String keyType, String st, int nAtoms) throws IllegalArgumentException {
+        Matcher m = intrangePattern.matcher(st);
+        if (m.matches()) {
+            int start = Integer.parseInt(m.group(1)) - 1;
+            int end = Integer.parseInt(m.group(2)) - 1;
+            if (start > end) {
+                throw new IllegalArgumentException(String.format(" %s input %s not "
+                        + "valid; start > end", keyType, st));
+            } else if (start < 0) {
+                throw new IllegalArgumentException(String.format(" %s input %s not "
+                        + "valid; atoms should be indexed starting from 1", keyType, st));
+            } else if (start >= nAtoms) {
+                throw new IllegalArgumentException(String.format(" %s input %s not "
+                        + "valid; atom range is out of bounds for assembly of "
+                        + "length %d", keyType, st, nAtoms));
+                /*for (int j = start; j <= end; j++) {
+                    if (j >= nAtoms) {
+                        logger.log(Level.INFO, String.format(" Atom index %d is "
+                                + "out of bounds for molecular assembly of "
+                                + "length %d", j + 1, nAtoms));
+                        break;
+                    }
+                }*/
+            } else {
+                if (end >= nAtoms) {
+                    logger.log(Level.INFO, String.format(" Truncating range %s "
+                            + "to end of valid range %d", st, nAtoms));
+                    end = nAtoms - 1;
+                }
+                int[] indices = { start, end };
+                return indices;
+            }
+        } else {
+            try {
+                int atNum = Integer.parseUnsignedInt(st) - 1;
+                if (atNum < 0 || atNum >= nAtoms) {
+                    throw new IllegalArgumentException(String.format(" %s numerical "
+                            + "argument %s out-of-bounds for range 1 to %d", keyType, 
+                            st, nAtoms));
+                }
+                int[] indices = { atNum, atNum };
+                return indices;
+            } catch (NumberFormatException ex) {
+                throw new IllegalArgumentException(String.format(" %s input %s "
+                        + "could not be parsed as a positive number or range of "
+                        + "positive integers", keyType, st));
+            }
         }
     }
 

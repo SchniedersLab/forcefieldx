@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2015.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
  *
  * This file is part of Force Field X.
  *
@@ -112,6 +112,7 @@ cli.s(longOpt:'restart', args:1, argName:'0.1', 'Interval to write out restart f
 cli.f(longOpt:'file', args:1, argName:'PDB', 'Choose file type to write to [PDB/XYZ]');
 cli.ra(longOpt:'resAll', 'Titrate all residues.');
 cli.rl(longOpt:'resList', args:1, 'Titrate a list of residues (eg A4.A8.B2.B34)');
+cli.rn(longOpt:'resName', args:1, 'Titrate a list of residue names (eg "LYS,TYR,HIS")');
 cli.rw(longOpt:'resWindow', args:1, 'Titrate all residues with intrinsic pKa within [arg] units of simulation pH.');
 cli.pH(longOpt:'pH', args:1, argName:'7.4', 'Constant simulation pH.');
 cli.mc(longOpt:'mcStepFreq', args:1, argName:'10', 'Number of MD steps between Monte-Carlo protonation changes.')
@@ -127,9 +128,9 @@ if ((options.rw && (options.ra || options.rl)) || (options.ra && options.rl)) {
     logger.info(" Must specify one of the following: -ra, -rl, or -rw.");
 }
 
-if (!options.ra && !options.rl && !options.rw) {
+if (!options.ra && !options.rl && !options.rw && !options.rn) {
     return cli.usage();
-    logger.info(" Must specify one of the following: -ra, -rl, or -rw.");
+    logger.info(" Must specify one of the following: -ra, -rl, -rn, or -rw.");
 }
 
 if (!options.pH) {
@@ -253,6 +254,8 @@ if (options.ra) {
     mcProt.chooseResID(resList);
 } else if (options.rw) {
     mcProt.chooseTitratablesInWindow(pH, window);
+} else if (options.rn) {
+    mcProt.chooseByName(options.rn);
 }
 
 // finalize the Multi-Residue machinery

@@ -117,7 +117,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private final VanDerWaals vanderWaals;
     private final ParticleMeshEwald particleMeshEwald;
     private final NCSRestraint ncsRestraint;
-    private final CoordRestraint coordRestraint;
+    private final List<CoordRestraint> coordRestraints; 
+    private final CoordRestraint autoCoordRestraint;
     private final COMRestraint comRestraint;
     private int nAtoms;
     private int nBonds;
@@ -206,7 +207,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private double xyz[] = null;
 
     private Resolution resolution = Resolution.AMOEBA;
-
+    
     /**
      * <p>
      * Constructor for ForceFieldEnergy.</p>
@@ -215,6 +216,19 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
      * object.
      */
     public ForceFieldEnergy(MolecularAssembly molecularAssembly) {
+        this(molecularAssembly, null);
+    }
+
+    /**
+     * <p>
+     * Constructor for ForceFieldEnergy.</p>
+     *
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
+     * object.
+     * @param restraints list of {@link ffx.potential.nonbonded.CoordRestraint}
+     * objects.
+     */
+    public ForceFieldEnergy(MolecularAssembly molecularAssembly, List<CoordRestraint> restraints) {
         // Get a reference to the sorted atom array.
         this.molecularAssembly = molecularAssembly;
         atoms = molecularAssembly.getAtomArray();
@@ -369,17 +383,17 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         rigidHydrogens = forceField.getBoolean(ForceFieldBoolean.RIGID_HYDROGENS, false);
         rigidScale = forceField.getDouble(ForceFieldDouble.RIGID_SCALE, 10.0);
 
-        String relSolvationType = forceField.getString(ForceFieldString.RELATIVE_SOLVATION, "NONE").toUpperCase();
+        String relSolvLibrary = forceField.getString(ForceFieldString.RELATIVE_SOLVATION, "NONE").toUpperCase();
         relativeSolvationTerm = true;
         nRelativeSolvations = 0;
-        switch (relSolvationType) {
+        switch (relSolvLibrary) {
             case "AUTO":
                 if (generalizedKirkwoodTerm) {
                     if (name.toUpperCase().contains("OPLS")) {
-                        relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.MACCALLUM_TIP4P);
+                        relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.MACCALLUM_TIP4P, forceField);
                         // Change when we have good Generalized Born numbers of our own for OPLS.
                     } else {
-                        relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.GK);
+                        relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.GK, forceField);
                     }
                 } else {
                     relativeSolvationTerm = false;
@@ -387,22 +401,22 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 }
                 break;
             case "GK":
-                relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.GK);
+                relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.GK, forceField);
                 break;
             case "EXPLICIT":
-                relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.EXPLICIT);
+                relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.EXPLICIT, forceField);
                 break;
             case "WOLFENDEN":
-                relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.WOLFENDEN);
+                relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.WOLFENDEN, forceField);
                 break;
             case "CABANI":
-                relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.CABANI);
+                relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.CABANI, forceField);
                 break;
             case "MACCALLUM_SPC":
-                relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.MACCALLUM_SPC);
+                relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.MACCALLUM_SPC, forceField);
                 break;
             case "MACCALLUM_TIP4P":
-                relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.MACCALLUM_TIP4P);
+                relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.MACCALLUM_TIP4P, forceField);
                 break;
             case "NONE":
             default:
@@ -610,10 +624,20 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             ncsRestraint = null;
         }
 
+        coordRestraints = new ArrayList<>();
+        if (restraints != null) {
+            coordRestraints.addAll(restraints);
+        }
         if (restrainTerm) {
-            this.coordRestraint = new CoordRestraint(atoms, forceField);
+            this.autoCoordRestraint = new CoordRestraint(atoms, forceField);
+            coordRestraints.add(autoCoordRestraint);
         } else {
-            coordRestraint = null;
+            autoCoordRestraint = null;
+        }
+        if (!coordRestraints.isEmpty()) {
+            restrainTerm = true;
+            restrainTermOrig = restrainTerm;
+            logger.log(Level.FINE, " restrainTerm set true");
         }
 
         if (comTerm) {
@@ -1195,9 +1219,17 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 ncsTime += System.nanoTime();
             }
 
-            if (restrainTerm) {
+            /*if (restrainTerm) {
                 coordRestraintTime = -System.nanoTime();
-                restrainEnergy = coordRestraint.residual(gradient, print);
+                restrainEnergy = autoCoordRestraint.residual(gradient, print);
+                coordRestraintTime += System.nanoTime();
+            }*/
+            
+            if (restrainTerm && !coordRestraints.isEmpty()) {
+                coordRestraintTime = -System.nanoTime();
+                for (CoordRestraint restraint : coordRestraints) {
+                    restrainEnergy += restraint.residual(gradient, print);
+                }
                 coordRestraintTime += System.nanoTime();
             }
 
@@ -1336,17 +1368,21 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
         if (ncsTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                    "NCS RESRAINT               : ", ncsEnergy, nAtoms));
+                    "NCS RESTRAINT              : ", ncsEnergy, nAtoms));
         }
 
-        if (restrainTerm) {
+        if (restrainTerm && !coordRestraints.isEmpty()) {
+            int nRests = 0;
+            for (CoordRestraint restraint : coordRestraints) {
+                nRests += restraint.getNumAtoms();
+            }
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                    "COORDINATE RESRAINT        : ", restrainEnergy, nAtoms));
+                    "COORDINATE RESTRAINTS      : ", restrainEnergy, nRests));
         }
 
         if (comTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                    "COM RESRAINT               : ", comRestraintEnergy, nAtoms));
+                    "COM RESTRAINT              : ", comRestraintEnergy, nAtoms));
         }
 
         if (vanderWaalsTerm) {
@@ -1439,9 +1475,13 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     "NCS Restraint     ", ncsEnergy, nAtoms,
                     ncsTime * toSeconds));
         }
-        if (restrainTerm) {
+        if (restrainTerm && !coordRestraints.isEmpty()) {
+            int nRests = 0;
+            for (CoordRestraint restraint : coordRestraints) {
+                nRests += restraint.getNumAtoms();
+            }
             sb.append(String.format("  %s %16.8f %12d %12.3f\n",
-                    "Coord. Restraint  ", restrainEnergy, nAtoms,
+                    "Coord. Restraints ", restrainEnergy, nRests,
                     coordRestraintTime * toSeconds));
         }
         if (comTerm) {
@@ -1530,8 +1570,11 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             if (ncsTerm && ncsRestraint != null) {
                 ncsRestraint.setLambda(lambda);
             }
-            if (restrainTerm && coordRestraint != null) {
-                coordRestraint.setLambda(lambda);
+            if (restrainTerm && !coordRestraints.isEmpty()) {
+                //autoCoordRestraint.setLambda(lambda);
+                for (CoordRestraint restraint : coordRestraints) {
+                    restraint.setLambda(lambda);
+                }
             }
             if (comTerm && comRestraint != null) {
                 comRestraint.setLambda(lambda);
@@ -1800,8 +1843,11 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             if (ncsTerm && ncsRestraint != null) {
                 dEdLambda += ncsRestraint.getdEdL();
             }
-            if (restrainTerm && coordRestraint != null) {
-                dEdLambda += coordRestraint.getdEdL();
+            if (restrainTerm && !coordRestraints.isEmpty()) {
+                for (CoordRestraint restraint : coordRestraints) {
+                    dEdLambda += restraint.getdEdL();
+                }
+                //dEdLambda += autoCoordRestraint.getdEdL();
             }
             if (comTerm && comRestraint != null) {
                 dEdLambda += comRestraint.getdEdL();
@@ -1843,8 +1889,11 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             if (ncsTerm && ncsRestraint != null) {
                 ncsRestraint.getdEdXdL(gradients);
             }
-            if (restrainTerm && coordRestraint != null) {
-                coordRestraint.getdEdXdL(gradients);
+            if (restrainTerm && !coordRestraints.isEmpty()) {
+                for (CoordRestraint restraint : coordRestraints) {
+                    restraint.getdEdXdL(gradients);
+                }
+                //autoCoordRestraint.getdEdXdL(gradients);
             }
             if (comTerm && comRestraint != null) {
                 comRestraint.getdEdXdL(gradients);
@@ -1894,8 +1943,11 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             if (ncsTerm && ncsRestraint != null) {
                 d2EdLambda2 += ncsRestraint.getd2EdL2();
             }
-            if (restrainTerm && coordRestraint != null) {
-                d2EdLambda2 += coordRestraint.getd2EdL2();
+            if (restrainTerm && !coordRestraints.isEmpty()) {
+                for (CoordRestraint restraint : coordRestraints) {
+                    d2EdLambda2 += restraint.getd2EdL2();
+                }
+                //d2EdLambda2 += autoCoordRestraint.getd2EdL2();
             }
             if (comTerm && comRestraint != null) {
                 d2EdLambda2 += comRestraint.getd2EdL2();

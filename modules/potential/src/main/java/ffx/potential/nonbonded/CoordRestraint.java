@@ -96,11 +96,40 @@ public class CoordRestraint implements LambdaInterface {
      * @param forceField the ForceField to apply.
      */
     public CoordRestraint(Atom[] atoms, ForceField forceField) {
+        this(atoms, forceField, true);
+    }
+    
+    /**
+     * This CoordRestraint is based on the unit cell parameters and symmetry
+     * operators of the supplied crystal.
+     *
+     * @param atoms the Atom array to base this CoordRestraint on.
+     * @param forceField the ForceField to apply.
+     * @param useLambda If false, do not apply lambda term to this restraint.
+     */
+    public CoordRestraint(Atom[] atoms, ForceField forceField, boolean useLambda) {
+        this(atoms, forceField, useLambda, forceField.getDouble(ForceField.ForceFieldDouble.RESTRAINT_K, 10.0));
+    }
+    
+    /**
+     * This CoordRestraint is based on the unit cell parameters and symmetry
+     * operators of the supplied crystal.
+     *
+     * @param atoms the Atom array to base this CoordRestraint on.
+     * @param forceField the ForceField to apply.
+     * @param useLambda If false, do not apply lambda term to this restraint.
+     * @param forceConst Force constant to apply
+     */
+    public CoordRestraint(Atom[] atoms, ForceField forceField, boolean useLambda, double forceConst) {
         this.atoms = atoms;
         nAtoms = atoms.length;
 
         //lambdaTerm = false;
-        lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
+        if (useLambda) {
+            lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
+        } else {
+            lambdaTerm = false;
+        }
 
         if (lambdaTerm) {
             lambdaGradient = new double[nAtoms * 3];
@@ -112,7 +141,7 @@ public class CoordRestraint implements LambdaInterface {
             d2LambdaPow = 0.0;
         }
 
-        forceConstant = forceField.getDouble(ForceField.ForceFieldDouble.RESTRAINT_K, 10.0);
+        forceConstant = forceConst;
 
         logger.info("\n Coordinate Restraint:");
 
@@ -127,6 +156,10 @@ public class CoordRestraint implements LambdaInterface {
 //        if (System.getProperty("atomrestraint1") != null) {
 //            setPlaneAtoms();
 //        }
+    }
+    
+    public int getNumAtoms() {
+        return nAtoms;
     }
 
     public double residual(boolean gradient, boolean print) {

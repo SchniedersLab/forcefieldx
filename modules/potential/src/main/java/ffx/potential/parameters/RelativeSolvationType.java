@@ -35,34 +35,61 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
+package ffx.potential.parameters;
 
-//POTENTIAL
+import java.util.Comparator;
+import java.util.Objects;
 
-import groovy.util.CliBuilder
+/**
+ * A BaseType for relative solvation energies (intended for nonstandard amino
+ * acids).
+ *
+ * @author Michael J. Schnieders
+ * @author Jacob M. Litman
+ * @since 1.0
+ */
+public class RelativeSolvationType extends BaseType implements Comparator<String> {
+    private final String resName;
+    private final double solvEnergy;
+    
+    public RelativeSolvationType(String resname, double solvEnergy) {
+        super(ForceField.ForceFieldType.RELATIVESOLV, resname);
+        this.resName = resname;
+        this.solvEnergy = solvEnergy;
+    }
+    
+    public double getSolvEnergy() {
+        return solvEnergy;
+    }
+    
+    public String getResName() {
+        return resName;
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof RelativeSolvationType) {
+            if (((RelativeSolvationType) o).getResName().equals(resName)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
-//Supply a choice (1 - 4)
-//1. Get QM Potential from a Gaussian CUBE File
-//2. Calculate the Model Potential for a System
-//3. Compare a Model Potential to a Target Grid
-//4. Fit Electrostatic Parameters to Target Grid
-//if choice == 1, then supply the cube filename
-//if choice == 2 || choice == 3, then supply the xyz filename
-//if choice == 4, then supply the xyz filename and the eps
+    @Override
+    public int hashCode() {
+        int hash = 3;
+        hash = 23 * hash + Objects.hashCode(this.resName);
+        return hash;
+    }
+    
+    @Override
+    public String toString() {
+        return String.format("relative solvation %10s %8.5f", resName, solvEnergy);
+    }
 
-def cli = new CliBuilder(usage:' ffxc potential <filename>');
-cli.h(longOpt:'help', 'Print this help message.');
-def options = cli.parse(args);
-List<String> arguments = options.arguments();
-if (options.h || arguments == null) {
-    return cli.usage();
+    @Override
+    public int compare(String o1, String o2) {
+        return o1.compareTo(o2);
+    }
 }
-
-//Get XYZ File
-Double eps = null;
-Integer choice = Integer.parseInt(arguments.get(0));
-String filename = arguments.get(1);
-int out_type = 5;
-if(choice == 4){
-    eps = Double.parseDouble(arguments.get(2));
-}
-potential(choice, filename, eps);

@@ -116,7 +116,8 @@ public class Residue extends MSGroup {
     private Rotamer currentRotamer = null;
     private Rotamer originalRotamer = null;
     protected static final boolean origAtEnd;
-    private Rotamer rotamers[];
+    private static final boolean addOrigRot;
+    private Rotamer rotamers[] = null;
 
     static {
         String origAtEndStr = System.getProperty("ro-origAtEnd");
@@ -124,6 +125,12 @@ public class Residue extends MSGroup {
             origAtEnd = Boolean.parseBoolean(origAtEndStr);
         } else {
             origAtEnd = false;
+        }
+        String origRotStr = System.getProperty("ro-addOrigRot");
+        if (origRotStr != null) {
+            addOrigRot = Boolean.parseBoolean(origRotStr);
+        } else {
+            addOrigRot = false;
         }
     }
 
@@ -212,23 +219,58 @@ public class Residue extends MSGroup {
     public Rotamer[] getRotamers() {
 
         /**
-         * Return rotamers for this residue from the RotamerLibrary.
-         */
-        Rotamer[] libRotamers = RotamerLibrary.getRotamers(this);
-
-        /**
-         * If there are no rotamers or if original coordinates are not being
-         * used as a rotamer, simply return the reference from RotamerLibrary.
-         */
-        if (libRotamers == null || !RotamerLibrary.getUsingOrigCoordsRotamer()) {
-            return libRotamers;
-        }
-
-        /**
          * If the rotamers for this residue have been cached, return them.
          */
         if (rotamers != null) {
             return rotamers;
+        }
+
+        /**
+         * Return rotamers for this residue from the RotamerLibrary.
+         */
+        Rotamer[] libRotamers = RotamerLibrary.getRotamers(this);
+        
+        /**
+         * If there are no rotamers, and addOrigRot is true, return an array with
+         * only an original-coordinates rotamer. Else if there are no rotamers,
+         * return (null) library rotamers. If there are rotamers, and original
+         * coordinates are turned off, return (filled) library rotamers. Else,
+         * continue generating the rotamers array.
+         */
+        if (libRotamers == null) {
+            if (addOrigRot) {
+                rotamers = new Rotamer[1];
+                ResidueState origState = this.storeState();
+                double[] chi = RotamerLibrary.measureRotamer(this, false);
+                switch (residueType) {
+                    case AA:
+                        AminoAcid3 aa3 = AminoAcid3.UNK;
+                        try {
+                            aa3 = AminoAcid3.valueOf(getName());
+                        } catch (Exception e) {
+                        }
+                        originalRotamer = new Rotamer(aa3, origState, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0);
+                        rotamers[0] = originalRotamer;
+                        break;
+                    case NA:
+                        NucleicAcid3 na3 = NucleicAcid3.UNK;
+                        try {
+                            na3 = NucleicAcid3.valueOf(getName());
+                        } catch (Exception e) {
+                        }
+                        originalRotamer = new Rotamer(na3, origState, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0, chi[4], 0, chi[5], 0);
+                        rotamers[0] = originalRotamer;
+                        break;
+                    default:
+                        originalRotamer = null;
+                        rotamers = libRotamers; // Resets to null.
+                }
+                return rotamers;
+            } else {
+                return libRotamers;
+            }
+        } else if (!RotamerLibrary.getUsingOrigCoordsRotamer()) {
+            return libRotamers;
         }
 
         /**
@@ -238,17 +280,22 @@ public class Residue extends MSGroup {
         double[] chi = RotamerLibrary.measureRotamer(this, false);
         switch (residueType) {
             case AA:
-                AminoAcid3 aa3 = AminoAcid3.valueOf(getName());
+                AminoAcid3 aa3 = this.getAminoAcid3();
                 originalRotamer = new Rotamer(aa3, origState, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0);
                 break;
             case NA:
-                NucleicAcid3 na3 = NucleicAcid3.valueOf(getName());
+                NucleicAcid3 na3 = this.getNucleicAcid3();
                 originalRotamer = new Rotamer(na3, origState, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0, chi[4], 0, chi[5], 0);
                 break;
             default:
-                originalRotamer = null;
-                rotamers = libRotamers;
-                return rotamers;
+                double[] rotaValues = new double[chi.length * 2];
+                for (int i = 0; i < chi.length; i++) {
+                    int ii = i*2;
+                    rotaValues[ii] = chi[i];
+                    rotaValues[ii+1] = 0.0;
+                }
+                originalRotamer = new Rotamer(origState, rotaValues);
+                break;
         }
 
         /**
@@ -528,6 +575,28 @@ public class Residue extends MSGroup {
                 return null;
         }
     }
+    
+    public AminoAcid3 getAminoAcid3() {
+        if (this.residueType != ResidueType.AA) {
+            throw new IllegalArgumentException(String.format(" This residue is "
+                    + "not an amino acid: %s", this.toString()));
+        } else if (aa == AA3.UNK) {
+            logger.warning(String.format("UNK stored for residue with name: %s", getName()));
+            return AminoAcid3.UNK;
+        }
+        return AminoAcid3.valueOf(getName());
+    }
+    
+    public NucleicAcid3 getNucleicAcid3() {
+        if (this.residueType != ResidueType.NA) {
+            throw new IllegalArgumentException(String.format(" This residue is "
+                    + "not an amino acid: %s", this.toString()));
+        } else if (na == NA3.UNK) {
+            return NucleicAcid3.UNK;
+        }
+        return NucleicAcid3.valueOf(getName());
+        
+    }
 
     /**
      * Returns a list of atoms liable to change during dead-end elimination
@@ -617,6 +686,7 @@ public class Residue extends MSGroup {
                         aa = AA1toAA3.get(aa1);
                     }
                 } catch (Exception e) {
+                    logger.warning(String.format("Exception assigning AA3 for residue: %s", name));
                     aa = AA3.UNK;
                 }
                 break;
@@ -1262,7 +1332,7 @@ public class Residue extends MSGroup {
 
         GLY, ALA, VAL, LEU, ILE, SER, THR, CYS, PRO, PHE, TYR, TRP, ASP, ASN,
         GLU, GLN, MET, LYS, ARG, HIS, HID, HIE, ORN, AIB, PCA, FOR, ACE, NH2,
-        NME, UNK;
+        NME, UNK, ASH, GLH, LYD, CYD, TYD;
     }
 
     public enum NA {

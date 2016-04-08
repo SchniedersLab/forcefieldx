@@ -208,8 +208,9 @@ public class XrayMinimizeTest {
         molecularAssembly.setForceField(forceField);
         PDBFilter pdbFile = new PDBFilter(structure, molecularAssembly, forceField, properties);
         pdbFile.readFile();
+        pdbFile.applyAtomProperties();
         molecularAssembly.finalize(true, forceField);
-        ForceFieldEnergy energy = new ForceFieldEnergy(molecularAssembly);
+        ForceFieldEnergy energy = new ForceFieldEnergy(molecularAssembly, pdbFile.getCoordRestraints());
 
         List<Atom> atomList = molecularAssembly.getAtomList();
         Atom atomArray[] = atomList.toArray(new Atom[atomList.size()]);

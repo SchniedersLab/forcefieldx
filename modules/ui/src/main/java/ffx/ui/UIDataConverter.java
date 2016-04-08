@@ -119,9 +119,10 @@ public class UIDataConverter implements FileOpener {
             if (!(conversionFilter instanceof BiojavaFilter)) {
                 Utilities.biochemistry(ffxSystem, conversionFilter.getAtomList());
             }
+            conversionFilter.applyAtomProperties();
             // Add the system to the multiscale hierarchy.
             mainPanel.getHierarchy().addSystemNode(ffxSystem);
-            ForceFieldEnergy energy = new ForceFieldEnergy(ffxSystem);
+            ForceFieldEnergy energy = new ForceFieldEnergy(ffxSystem, conversionFilter.getCoordRestraints());
             ffxSystem.setPotential(energy);
             mainPanel.getHierarchy().setActive(ffxSystem);
 
@@ -156,10 +157,11 @@ public class UIDataConverter implements FileOpener {
                     biojFilter.setAltID(newSystem, c);
                     biojFilter.clearSegIDs();
                     if (biojFilter.convert()) {
+                        biojFilter.applyAtomProperties();
                         String fileName = ffxSystem.getFile().getAbsolutePath();
                         newSystem.setName(FilenameUtils.getBaseName(fileName) + " " + c);
                         mainPanel.getHierarchy().addSystemNode(newSystem);
-                        energy = new ForceFieldEnergy(newSystem);
+                        energy = new ForceFieldEnergy(newSystem, biojFilter.getCoordRestraints());
                         newSystem.setPotential(energy);
                     }
                 }

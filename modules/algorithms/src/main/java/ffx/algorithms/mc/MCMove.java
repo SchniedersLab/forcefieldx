@@ -49,30 +49,14 @@ package ffx.algorithms.mc;
 public interface MCMove {
     
     /**
-     * Performs the move associated with this MCMove. Also returns extra-potential
-     * energy changes (any change in energy not associated with the underlying
-     * Potential). One example thereof is the pH term in titration Monte Carlo 
-     * steps, which does not come out in the underlying ForceFieldEnergy.
-     * @return Extra-potential energy changes
+     * Performs the move associated with this MCMove.
      */
-    public double move();
+    public void move();
     
     /**
      * Reverts the last applied move() call. Returns the same energy change as
      * described above (with the same sign).
-     * @return Extra-potential energy changes
      */
-    public double revertMove();
-    
-    /**
-     * Returns the extra-potential energy change from the last move() call.
-     * @return Extra-potential energy changes
-     */
-    public double getEcorrection();
-    
-    /**
-     * Returns a description of the MCMove.
-     * @return 
-     */
-    public String getDescription();
+    public void revertMove();
+
 }

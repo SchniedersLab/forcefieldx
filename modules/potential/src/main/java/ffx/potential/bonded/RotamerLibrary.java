@@ -38,14 +38,20 @@
 package ffx.potential.bonded;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
+import ffx.potential.bonded.Residue.ResidueType;
 
 import static ffx.potential.bonded.BondedUtils.determineIntxyz;
 import static ffx.potential.bonded.BondedUtils.intxyz;
@@ -89,6 +95,7 @@ public class RotamerLibrary {
     // Can easily add an naSolvationLibrary when we want to do NA sequence optimization.
     private static boolean useOrigCoordsRotamer = false;
     //private static final HashMap<Residue, Rotamer[]> origCoordsCache = new HashMap<>();
+    private static final Map<String, NonstandardRotLibrary> nonstdRotCache = new HashMap<>();
 
     /**
      * Set the protein rotamer library to use.
@@ -129,6 +136,12 @@ public class RotamerLibrary {
         // Package-private; intended to be accessed only by Residue and extensions
         // thereof. Otherwise, use Residue.getRotamers().
         if (residue == null) {
+            return null;
+        }
+        if (isModRes(residue)) {
+            if(nonstdRotCache.containsKey(residue.getName().toUpperCase())) {
+                return nonstdRotCache.get(residue.getName().toUpperCase()).getRotamers();
+            }
             return null;
         }
         switch (residue.getResidueType()) {
@@ -179,8 +192,21 @@ public class RotamerLibrary {
                     return getRotamers(na);
                 }*/
             default:
+                if (nonstdRotCache.containsKey(residue.getName().toUpperCase())) {
+                    return nonstdRotCache.get(residue.getName().toUpperCase()).getRotamers();
+                }
                 return null;
         }
+    }
+    
+    /**
+     * Checks if a Residue has a PTM.
+     * @param residue
+     * @return 
+     */
+    private static boolean isModRes(Residue residue) {
+        List<Atom> resatoms = residue.getAtomList();
+        return (resatoms != null && !resatoms.isEmpty() && resatoms.get(0).isModRes());
     }
 
     /**
@@ -935,7 +961,7 @@ public class RotamerLibrary {
                 case AA:
                     double[] chi = new double[4];
                     try {
-                        measureAARotamer(residue, chi, print);
+                        measureRotamer(residue, chi, print);
                     } catch (ArrayIndexOutOfBoundsException e) {
                         String message = " Array passed to measureRotamer was not of sufficient size.";
                         logger.log(Level.WARNING, message, e);
@@ -944,7 +970,7 @@ public class RotamerLibrary {
                 case NA:
                     chi = new double[6];
                     try {
-                        measureNARotamer(residue, chi, print);
+                        measureRotamer(residue, chi, print);
                     } catch (ArrayIndexOutOfBoundsException e) {
                         String message = " Array passed to measureRotamer was not of sufficient size.";
                         logger.log(Level.WARNING, message, e);
@@ -987,7 +1013,23 @@ public class RotamerLibrary {
                 }
                 break;
             default:
+                try {
+                    measureUNKRotamer(residue, chi, print);
+                } catch (ArrayIndexOutOfBoundsException e) {
+                    String message = "Array passed to measureRotamer was not of sufficient size.";
+                    logger.log(Level.WARNING, message, e);
+                }
                 break;
+        }
+    }
+    
+    public static void measureUNKRotamer(Residue residue, double[] chi, boolean print) {
+        String resName = residue.getName().toUpperCase();
+        if (nonstdRotCache.containsKey(resName)) {
+            nonstdRotCache.get(resName).measureNonstdRot(residue, chi, print);
+        } else {
+            logger.warning(String.format(" Could not measure chi angles "
+                    + "for residue %s", residue.toString()));
         }
     }
 
@@ -1154,13 +1196,13 @@ public class RotamerLibrary {
         if (residue instanceof MultiResidue) {
             residue = ((MultiResidue) residue).getActive();
         }
-        AminoAcid3 name;
-        try {
+        AminoAcid3 name = residue.getAminoAcid3();
+        /*try {
             name = AminoAcid3.valueOf(residue.getName());
         } catch (IllegalArgumentException ex) {
             logger.info(String.format("(IAE) valueOf(%s)", residue.getName()));
             throw ex;
-        }
+        }*/
         switch (name) {
             case VAL: {
                 ArrayList<ROLS> torsions = residue.getTorsionList();
@@ -1814,6 +1856,16 @@ public class RotamerLibrary {
                 }
                 break;
             }
+            case UNK:
+                chi = new double[7];
+                String resName = residue.getName().toUpperCase();
+                if (nonstdRotCache.containsKey(resName)) {
+                    nonstdRotCache.get(resName).measureNonstdRot(residue, chi, print);
+                    //nonstdRotCache.get(resName).applyNonstdRotamer(residue, rotamer);
+                } else {
+                    throw new IllegalArgumentException(String.format("(IAE) valueOf(%s)", residue.getName()));
+                }
+                break;
             default: {
             }
 
@@ -1936,7 +1988,7 @@ public class RotamerLibrary {
                 logger.warning(String.format(" Could not set residue %s for multi-residue %s", name, residue));
             }
         } else {
-            name = AminoAcid3.valueOf(residue.getName());
+            name = residue.getAminoAcid3();
         }
         switch (name) {
             case VAL: {
@@ -3283,6 +3335,12 @@ public class RotamerLibrary {
                 intxyz(HH22, NH2, dHH_NH, CZ, dHH_NH_CZ, HH21, 120.0, 1);
                 break;
             }
+            case UNK:
+                String resName = residue.getName().toUpperCase();
+                if (nonstdRotCache.containsKey(resName)) {
+                    nonstdRotCache.get(resName).applyNonstdRotamer(residue, rotamer);
+                }
+                break;
             default:
                 break;
         }
@@ -3889,6 +3947,87 @@ public class RotamerLibrary {
             }
         } // TODO: Add else-if to handle C3'-exo pucker.
     }
+    
+    public static boolean addRotPatch(String rotFileName) {
+        return addRotPatch(new File(rotFileName));
+    }
+    
+    private static boolean addRotPatch(File rpatchFile) {
+        try (BufferedReader br = new BufferedReader(new FileReader(rpatchFile))) {
+            String resName = null;
+            List<String> applyLines = new ArrayList<>();
+            //List<Rotamer> rotamers = new ArrayList<>();
+            List<String> rotLines = new ArrayList<>();
+            ResidueType rType = ResidueType.AA;
+            String line = br.readLine();
+            while (line != null) {
+                line = line.trim();
+                if (line.startsWith("PLACE")) {
+                    applyLines.add(line);
+                } else if (line.startsWith("RESNAME")) {
+                    String[] toks = line.split("\\s+");
+                    resName = toks[1];
+                } else if (line.startsWith("RESTYPE")) {
+                    String[] toks = line.split("\\s+");
+                    switch (toks[1]) {
+                        case "AA":
+                            rType = ResidueType.AA;
+                            break;
+                        case "NA":
+                            rType = ResidueType.NA;
+                            break;
+                        case "UNK":
+                        default:
+                            rType = ResidueType.UNK;
+                            break;
+                    }
+                } else if (line.startsWith("ROTAMER")) {
+                    rotLines.add(line);
+                }
+                line = br.readLine();
+            }
+            if (resName != null) {
+                List<Rotamer> rotamers = new ArrayList<>();
+                for (String string : rotLines) {
+                    String[] toks = string.split("\\s+");
+                    int nVals = toks.length - 1;
+                    double[] values = new double[nVals];
+                    for (int i = 0; i < nVals; i++) {
+                        values[i] = Double.parseDouble(toks[i + 1]);
+                    }
+                    switch (rType) {
+                        case AA:
+                            rotamers.add(new Rotamer(AminoAcid3.UNK, values));
+                            break;
+                        case NA:
+                            rotamers.add(new Rotamer(NucleicAcid3.UNK, values));
+                            break;
+                        case UNK:
+                        default:
+                            rotamers.add(new Rotamer(values));
+                            break;
+                    }
+                }
+                
+                if (nonstdRotCache.containsKey(resName)) {
+                    logger.warning(String.format(" Rotamer library already contains "
+                            + "rotamer definition for residue %s!", resName));
+                } else {
+                    NonstandardRotLibrary nrlib = new NonstandardRotLibrary(resName,
+                            applyLines.toArray(new String[applyLines.size()]),
+                            rotamers.toArray(new Rotamer[rotamers.size()]));
+                    nonstdRotCache.put(resName, nrlib);
+                }
+                return true;
+            } else {
+                return false;
+            }
+        } catch (IOException ex) {
+            logger.warning(String.format(" Exception in parsing rotamer patch "
+                    + "file %s: %s", rpatchFile.getName(), ex.toString()));
+            return false;
+        }
+    }
 
     /**
      * Will check for consistency of 5'-terminal Rotamers with original PDB
@@ -3912,5 +4051,112 @@ public class RotamerLibrary {
     public enum ProteinLibrary {
 
         PonderAndRichards, Richardson
+    }
+    
+    /**
+     * Class contains rotamer information for a nonstandard amino acid.
+     */
+    private static class NonstandardRotLibrary {
+        private final String resName;
+        private final String[] placeRecords; // Must be ordered correctly!
+        private final List<Rotamer> stdRotamers; // "Library" rotamers for this residue.
+        
+        NonstandardRotLibrary(String resname, String[] placeRecords, Rotamer[] stdRotamers) {
+            this.resName = resname.toUpperCase();
+            this.placeRecords = Arrays.copyOf(placeRecords, placeRecords.length);
+            this.stdRotamers = new ArrayList<>(Arrays.asList(stdRotamers));
+        }
+        
+        String getResName() {
+            return resName;
+        }
+        
+        Rotamer[] getRotamers() {
+            return stdRotamers.toArray(new Rotamer[stdRotamers.size()]);
+        }
+        
+        /**
+         * Intended for use when rotamers added separately from the initial
+         * definition file.
+         * @param newRots 
+         */
+        void addRotamers(Rotamer[] newRots) {
+            stdRotamers.addAll(Arrays.asList(newRots));
+        }
+        
+        void measureNonstdRot(Residue residue, double[] chi, boolean print) {
+            for (String placeRec : placeRecords) {
+                String[] toks = placeRec.split("\\s+");
+                if (toks[0].equalsIgnoreCase("PLACECHI")) {
+                    int chiNum = Integer.parseInt(toks[5]) - 1;
+                    Atom at1 = (Atom) residue.getAtomNode(toks[1]);
+                    Atom at2 = (Atom) residue.getAtomNode(toks[2]);
+                    Atom at3 = (Atom) residue.getAtomNode(toks[3]);
+                    Atom at4 = (Atom) residue.getAtomNode(toks[4]);
+                    Torsion tors = at1.getTorsion(at2, at3, at4);
+                    chi[chiNum] = tors.getValue();
+                    if (print) {
+                        logger.info(tors.toString());
+                    }
+                }
+            }
+        }
+        
+        /**
+         * Applies a nonstandard rotamer to an amino acid.
+         * @param residue
+         * @param rotamer 
+         */
+        void applyNonstdRotamer(Residue residue, Rotamer rotamer) {
+            if (!residue.getName().equalsIgnoreCase(resName)) {
+                throw new IllegalArgumentException(String.format(" Residue %s is "
+                        + "not of type %s", residue.toString(), resName));
+            }
+            for (String record : placeRecords) {
+                String[] toks = record.split("\\s+");
+                Atom at1 = (Atom) residue.getAtomNode(toks[1]);
+                Atom at2 = (Atom) residue.getAtomNode(toks[2]);
+                Atom at3 = (Atom) residue.getAtomNode(toks[3]);
+                Atom at4 = (Atom) residue.getAtomNode(toks[4]);
+                Bond b12 = at1.getBond(at2);
+                double dbond = b12.bondType.distance;
+                Angle a123 = at1.getAngle(at2, at3);
+                double dang = a123.angleType.angle[a123.nh];
+                double dtors;
+                if (toks[0].equalsIgnoreCase("PLACECHI")) {
+                    int chiNum = Integer.parseInt(toks[5]);
+                    dtors = rotamer.angles[chiNum - 1];
+                    /*switch (chiNum) {
+                        case 1:
+                            dtors = rotamer.chi1;
+                            break;
+                        case 2:
+                            dtors = rotamer.chi2;
+                            break;
+                        case 3:
+                            dtors = rotamer.chi3;
+                            break;
+                        case 4:
+                            dtors = rotamer.chi4;
+                            break;
+                        case 5:
+                            dtors = rotamer.chi5;
+                            break;
+                        case 6:
+                            dtors = rotamer.chi6;
+                            break;
+                        case 7:
+                            dtors = rotamer.chi7;
+                            break;
+                        default:
+                            throw new IllegalArgumentException(" Must be chi 1-7");
+                    }*/
+                } else {
+                    dtors = Double.parseDouble(toks[5]);
+                }
+                int chirality = Integer.parseInt(toks[6]);
+                intxyz(at1, at2, dbond, at3, dang, at4, dtors, chirality);
+            }
+        }
     }
 }
