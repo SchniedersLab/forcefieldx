@@ -55,9 +55,9 @@ public class SolventRadii {
     private final HashMap<Integer,Double> atomtypeToBondi;
     private final HashMap<Integer,Double> biotypeToBondi;
     
-    public SolventRadii(String forcefield) {
-        switch (forcefield.toUpperCase()) {
-            case "AMOEBA_PROTEIN_2013":
+    public SolventRadii(String forceFieldString, ForceField forceField) {
+        switch (forceFieldString.toUpperCase()) {
+            case "AMOEBA-PROTEIN-2013":
                 defaultBondi = 1.15;
                 overlapScale = 0.60;
                 atomtypeToBondi = amoebapro13ByAtomtype;
@@ -74,15 +74,16 @@ public class SolventRadii {
                 overlapScale = 0.0;
                 atomtypeToBondi = null;
                 biotypeToBondi = null;
-                logger.severe("No GK solvent radii available for forcefield: " + forcefield);
+                logger.severe("No GK solvent radii available for forcefield: " + forceFieldString);
         }
-        this.forcefield = forcefield.toUpperCase();
+        this.forcefield = forceFieldString.toUpperCase();
         
         // Parse properties and command-line overrides.
-        String shctProp = System.getProperty("gk-overlapScale");
+        overlapScale = forceField.getDouble(ForceField.ForceFieldDouble.GK_OVERLAPSCALE, overlapScale);
+        /*String shctProp = System.getProperty("gk-overlapScale");
         if (shctProp != null) {
             overlapScale = Double.parseDouble(shctProp);
-        }
+        }*/
     }
     
     public double getDefaultBondi() {

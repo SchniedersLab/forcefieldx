@@ -143,10 +143,7 @@ public abstract class ConversionFilter {
         this.forceField = forcefield;
         this.properties = properties;
 
-        String vdwHydrogens = System.getProperty("vdwHydrogens");
-        if (vdwHydrogens != null && vdwHydrogens.equalsIgnoreCase("true")) {
-            vdwH = true;
-        }
+        vdwH = properties.getBoolean("vdwHydrogens", false);
     }
 
     public ConversionFilter(List<Object> structures, MolecularAssembly molecularAssembly,
@@ -159,10 +156,7 @@ public abstract class ConversionFilter {
         this.forceField = forcefield;
         this.properties = properties;
 
-        String vdwHydrogens = System.getProperty("vdwHydrogens");
-        if (vdwHydrogens != null && vdwHydrogens.equalsIgnoreCase("true")) {
-            vdwH = true;
-        }
+        vdwH = properties.getBoolean("vdwHydrogens", false);
     }
 
     public ConversionFilter(Object structure, List<MolecularAssembly> molecularAssemblies,
@@ -177,10 +171,7 @@ public abstract class ConversionFilter {
         this.forceField = forcefield;
         this.properties = properties;
 
-        String vdwHydrogens = System.getProperty("vdwHydrogens");
-        if (vdwHydrogens != null && vdwHydrogens.equalsIgnoreCase("true")) {
-            vdwH = true;
-        }
+        vdwH = properties.getBoolean("vdwHydrogens", false);
     }
 
     /**
