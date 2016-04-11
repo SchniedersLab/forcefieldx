@@ -133,7 +133,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private int nRestraintBonds;
     private int nVanDerWaalInteractions;
     private int nPermanentInteractions;
-    private int nGKIteractions;
+    private int nGKInteractions;
     private int nRelativeSolvations;
     private boolean bondTerm;
     private boolean angleTerm;
@@ -1254,7 +1254,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 nPermanentInteractions = particleMeshEwald.getInteractions();
 
                 solvationEnergy = particleMeshEwald.getGKEnergy();
-                nGKIteractions = particleMeshEwald.getGKInteractions();
+                nGKInteractions = particleMeshEwald.getGKInteractions();
 
                 electrostaticTime = System.nanoTime() - electrostaticTime;
             }
@@ -1508,9 +1508,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     "Polarization      ", polarizationEnergy,
                     nPermanentInteractions, electrostaticTime * toSeconds));
         }
-        if (generalizedKirkwoodTerm && nGKIteractions > 0) {
+        if (generalizedKirkwoodTerm && nGKInteractions > 0) {
             sb.append(String.format("  %s %16.8f %12d\n",
-                    "Solvation         ", solvationEnergy, nGKIteractions));
+                    "Solvation         ", solvationEnergy, nGKInteractions));
         }
 
         if (relativeSolvationTerm) {
@@ -2201,6 +2201,14 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
     public double getTotalElectrostaticEnergy() {
         return totalElectrostaticEnergy + solvationEnergy;
+    }
+    
+    public double getSolvationEnergy() {
+        return solvationEnergy;
+    }
+    
+    public int getSolvationInteractions() {
+        return nGKInteractions;
     }
 
     public double getRelativeSolvationEnergy() {

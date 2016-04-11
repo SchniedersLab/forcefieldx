@@ -5132,6 +5132,7 @@ public class RotamerOptimization implements Terminatable {
             if (molecularAssembly.getPotentialEnergy().getParallelTeam() != null) {
                 nThreads = (nMultiRes > 1) ? 1 : molecularAssembly.getPotentialEnergy().getParallelTeam().getThreadCount();
             } else {
+                // Suggested: nThreads = (nMultiRes > 1) ? 1 : ParallelTeam.getDefaultThreadCount();
                 nThreads = 16;
             }
             ParallelTeam parallelTeam = new ParallelTeam(nThreads);

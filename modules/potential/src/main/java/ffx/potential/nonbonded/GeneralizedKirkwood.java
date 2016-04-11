@@ -43,6 +43,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.HashSet;
+import java.util.Set;
 
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
@@ -117,6 +119,22 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * Permittivity of water at STP.
      */
     private static final double dWater = 78.3;
+    
+    /**
+     * Set of force fields for which we have fitted GK/GB radii.
+     */
+    private static final Set<String> fittedForceFields;
+    static {
+        fittedForceFields = new HashSet<>();
+        String[] fitted = { "AMOEBA-PROTEIN-2013", "AMBER99SB" };
+        fittedForceFields.addAll(Arrays.asList(fitted));
+    }
+    
+    /**
+     * Default bondi scale factor.
+     */
+    private static final double DEFAULT_BONDI_SCALE = 1.15;
+    
     /**
      * The requested permittivity.
      */
@@ -256,41 +274,47 @@ public class GeneralizedKirkwood implements LambdaInterface {
             ParallelTeam parallelTeam) {
 
         this.forceField = forceField;
-        String forcefieldName = System.getProperty("forcefield");
-        if (forcefieldName != null
-                && (forcefieldName.equalsIgnoreCase("AMOBEA_PROTEIN_2013")
-                || forcefieldName.equalsIgnoreCase("AMBER99SB"))) {
-            useFittedRadii = true;
-            solventRadii = new SolventRadii(forcefieldName);
-        } else {
-            useFittedRadii = false;
-            solventRadii = null;
-        }
-
-        String useFitRadiiProp = System.getProperty("gk-useFitRadii");
-        if (useFitRadiiProp != null) {
-            if (useFitRadiiProp.equalsIgnoreCase("false")) {
-                useFittedRadii = false;
-                solventRadii = null;
-            } else {
+        String forcefieldName = forceField.getString(ForceField.ForceFieldString.FORCEFIELD,
+                ForceField.ForceFieldName.AMOEBA_BIO_2009.toString());
+        forcefieldName = forcefieldName.replaceAll("_","-");
+        boolean doUseFitRadii = forceField.getBoolean(ForceField.ForceFieldBoolean.GK_USEFITRADII, true);
+        boolean hasFittedRadii = fittedForceFields.contains(forcefieldName.toUpperCase());
+        
+        if (doUseFitRadii) {
+            if (hasFittedRadii) {
                 useFittedRadii = true;
-                solventRadii = new SolventRadii(useFitRadiiProp);
+                solventRadii = new SolventRadii(forcefieldName, forceField);
             }
+        } else if (hasFittedRadii) {
+            logger.log(Level.INFO, String.format(" (GK) Ignoring fitted radii for force field %s", forcefieldName));
         }
 
-        String verboseProp = System.getProperty("gk-verboseRadii");
-        if (verboseProp != null) {
-            this.verboseRadii = Boolean.parseBoolean(verboseProp);
+        boolean vRadii = forceField.getBoolean(ForceField.ForceFieldBoolean.GK_VERBOSERADII, false);
+        if (vRadii) {
+            logger.info(" (GK) Verbose radii enabled.");
+        }
+        verboseRadii = vRadii;
+        
+        try {
+            this.epsilon = forceField.getDouble(ForceField.ForceFieldDouble.GK_EPSILON);
+            logger.info(format(" (GK) GLOBAL dielectric constant set to %.2f", epsilon));
+        } catch (Exception e) {
+            this.epsilon = dWater;
+        }
+        
+        double bondiScaleValue;
+        try {
+            bondiScaleValue = forceField.getDouble(ForceField.ForceFieldDouble.GK_BONDIOVERRIDE);
+            logger.info(format(" (GK) Scaling GLOBAL bondi radii by factor: %.2f", bondiScaleValue));
+        } catch (Exception ex) {
+            bondiScaleValue = useFittedRadii ? solventRadii.getDefaultBondi() : DEFAULT_BONDI_SCALE;
             if (verboseRadii) {
-                logger.info(" (GK) Verbose radii enabled.");
+                logger.info(format(" (GK) Scaling default GLOBAL bondi radii by factor: %.2f", bondiScaleValue));
             }
         }
-        String epsilonProp = System.getProperty("gk-epsilon");
-        if (epsilonProp != null) {
-            this.epsilon = Double.parseDouble(epsilonProp);
-            logger.info(format(" (GK) GLOBAL dielectric constant set to %.2f", epsilon));
-        }
-        String bondiOverride = System.getProperty("gk-bondiOverride");
+        bondiScale = bondiScaleValue;
+        
+        /*String bondiOverride = System.getProperty("gk-bondiOverride");
         if (bondiOverride != null) {
             bondiScale = Double.parseDouble(bondiOverride);
             logger.info(format(" (GK) Scaling GLOBAL bondi radii by factor: %.2f", bondiScale));
@@ -303,8 +327,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
             if (verboseRadii) {
                 logger.info(format(" (GK) Scaling GLOBAL bondi radii by factor: %.2f", bondiScale));
             }
-        }
-        String radiiProp = System.getProperty("gk-radiiOverride");
+        }*/
+        
+        String radiiProp = forceField.getString(ForceField.ForceFieldString.GK_RADIIOVERRIDE, null);
         if (radiiProp != null) {
             String tokens[] = radiiProp.split(",");
             for (String token : tokens) {
@@ -318,7 +343,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 radiiOverride.put(type, factor);
             }
         }
-        String radiiByNumber = System.getProperty("gk-radiiByNumber");
+        
+        String radiiByNumber = forceField.getString(ForceField.ForceFieldString.GK_RADIIBYNUMBER, null);
         if (radiiByNumber != null) {
             String tokens[] = radiiByNumber.split(",");
             for (String token : tokens) {
@@ -2507,9 +2533,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     switch (nonPolar) {
                         case BORN_SOLV:
                         case BORN_CAV_DISP:
-                            double e = baseRadius[i] + probe; // e = ri + probe
+                            double e = baseRadiusWithBondi[i] + probe; // e = ri + probe
                             e *= (e * bornaiTerm);// e = (ri + probe) * ((ri + probe) * 4 * pi * ai)
-                            double rirb = baseRadius[i] / born[i]; // ri/rb^6
+                            double rirb = baseRadiusWithBondi[i] / born[i]; // ri/rb^6
                             rirb *= rirb;
                             rirb *= (rirb * rirb);
                             e *= rirb; // e = consts * (ri/rb)^6
@@ -4021,7 +4047,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     if (!use[i]) {
                         continue;
                     }
-                    final double ri = baseRadius[i];
+                    final double ri = baseRadiusWithBondi[i];
                     assert (ri > 0.0);
                     final double xi = x[i];
                     final double yi = y[i];
@@ -4036,7 +4062,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         if (!use[k]) {
                             continue;
                         }
-                        final double rk = baseRadius[k];
+                        final double rk = baseRadiusWithBondi[k];
                         if (k != i && rk > 0.0) {
                             dx_local[0] = x[k] - xi;
                             dx_local[1] = y[k] - yi;
