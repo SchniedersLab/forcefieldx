@@ -285,11 +285,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 logger.info(" (GK) Verbose radii enabled.");
             }
         }
-        String epsilonProp = System.getProperty("gk-epsilon");
+        /*String epsilonProp = System.getProperty("gk-epsilon");
         if (epsilonProp != null) {
             this.epsilon = Double.parseDouble(epsilonProp);
             logger.info(format(" (GK) GLOBAL dielectric constant set to %.2f", epsilon));
-        }
+        }*/
+        this.epsilon = forceField.getDouble(ForceField.ForceFieldDouble.GK_EPSILON, dWater);
         String bondiOverride = System.getProperty("gk-bondiOverride");
         if (bondiOverride != null) {
             bondiScale = Double.parseDouble(bondiOverride);
