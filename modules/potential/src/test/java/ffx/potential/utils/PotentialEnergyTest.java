@@ -84,7 +84,8 @@ public class PotentialEnergyTest {
                 -29.43681349, 71,
                 13183.92864934, 1483768,
                 -33012.66179952, 623490,
-                -13041.30955459, 623490},
+                -13041.30955459, 623490,
+                0.0, 0},
             {false,
                 "OPLS-AA/L Peptide",
                 "ffx/potential/structures/peptide-oplsaal.xyz",
@@ -99,7 +100,8 @@ public class PotentialEnergyTest {
                 0.0, 0,
                 112122.04255274, 40511,
                 -671.66812023, 53628,
-                0.0, 53628},
+                0.0, 53628,
+                0.0, 0},
             {false,
                 "Amber99sb Peptide",
                 "ffx/potential/structures/peptide-amber99sb.xyz",
@@ -114,7 +116,42 @@ public class PotentialEnergyTest {
                 0.0, 0,
                 111362.79687915, 52696,
                 -413.54328593, 53628,
-                0.0, 53628},
+                0.0, 53628,
+                0.0, 0},
+            {false,
+                "AMOEBA Protein 2013 GK Capped DMHD",
+                "ffx/potential/structures/dmhd-amoebapro13.xyz",
+                4.00030221, 71,
+                15.27574588, 124,
+                -0.23989418, 110,
+                0.0, 0,
+                0.39337245, 51,
+                13.93083122, 169,
+                0.0, 0,
+                0.09663007, 10,
+                0.0, 0,
+                22.07765097, 2290,
+                -169.24655738, 2485,
+                -11.36055094, 2485,
+                -160.55923508, 2556,
+            },
+            {false,
+                "AMBER99SB GB (no dispersion) Capped DMHD",
+                "ffx/potential/structures/dmhd-amber99sb.xyz",
+                1.56331971, 71,
+                25.07578077, 124,
+                0.0, 0,
+                0.0, 0,
+                0.0, 0,
+                27.92653816, 169,
+                0.15162117, 20,
+                0.0, 0,
+                0.0, 0,
+                -4.31922323, 2290,
+                -71.00737570, 2485,
+                0.0, 2485,
+                -147.04162801, 2556,
+            },
             {true,
                 "DHFR Benchmark",
                 "ffx/potential/structures/dhfr.xyz",
@@ -129,7 +166,8 @@ public class PotentialEnergyTest {
                 -41.71473465, 147,
                 32630.94057333, 3480445,
                 -79396.71166429, 1463353,
-                -32141.39930772, 1463353},
+                -32141.39930772, 1463353,
+                0.0, 0},
             {true,
                 "SNARE P1",
                 "ffx/potential/structures/1n7s.P1.xyz",
@@ -144,7 +182,8 @@ public class PotentialEnergyTest {
                 -2243.98305878, 1072,
                 16013.08734188, 2966572,
                 -49215.72628076, 1328456,
-                -11245.82734685, 1328456},
+                -11245.82734685, 1328456,
+                0.0, 0},
             {true,
                 "SNARE P212121",
                 "ffx/potential/structures/1n7s.P212121.xyz",
@@ -159,7 +198,8 @@ public class PotentialEnergyTest {
                 -560.99576469, 268,
                 4003.27183547, 741643,
                 -12303.93157019, 332114,
-                -2811.45683671, 332114}});
+                -2811.45683671, 332114,
+                0.0, 0}});
     }
     private final String info;
     private final File structure;
@@ -176,6 +216,7 @@ public class PotentialEnergyTest {
     private final int nVanDerWaals;
     private final int nPermanent;
     private final int nPolar;
+    private final int nSolvation;
     private final double bondEnergy;
     private final double angleEnergy;
     private final double stretchBendEnergy;
@@ -188,11 +229,13 @@ public class PotentialEnergyTest {
     private final double vanDerWaalsEnergy;
     private final double permanentEnergy;
     private final double polarizationEnergy;
+    private final double solvationEnergy;
     private final double tolerance = 1.0e-3;
     private final double gradientTolerance = 1.0e-4;
     private final boolean ci;
     private final boolean ciOnly;
     private boolean mpoleTerm;
+    private boolean solvTerm;
     private final ForceFieldEnergy forceFieldEnergy;
 
     public PotentialEnergyTest(
@@ -209,7 +252,8 @@ public class PotentialEnergyTest {
             double torsionTorsionEnergy, int nTorsionTorsions,
             double vanDerWaalsEnergy, int nVanDerWaals,
             double permanentEnergy, int nPermanent,
-            double polarizationEnergy, int nPolar) {
+            double polarizationEnergy, int nPolar,
+            double solvationEnergy, int nSolv) {
         this.ciOnly = ciOnly;
         this.info = info;
         this.bondEnergy = bondEnergy;
@@ -236,6 +280,8 @@ public class PotentialEnergyTest {
         this.nPermanent = nPermanent;
         this.polarizationEnergy = polarizationEnergy;
         this.nPolar = nPolar;
+        this.solvationEnergy = solvationEnergy;
+        this.nSolvation = nSolv;
 
         String ffxCi = System.getProperty("ffx.ci", "false");
         ci = ffxCi.equalsIgnoreCase("true");
@@ -256,6 +302,7 @@ public class PotentialEnergyTest {
         molecularAssembly = potentialUtils.open(structure.getAbsolutePath())[0];
         forceFieldEnergy = molecularAssembly.getPotentialEnergy();
         mpoleTerm = molecularAssembly.getForceField().getBoolean(ForceField.ForceFieldBoolean.MPOLETERM, true);
+        solvTerm = molecularAssembly.getForceField().getBoolean(ForceField.ForceFieldBoolean.GKTERM, false);
 
         /*
          if (ci) {
@@ -321,6 +368,11 @@ public class PotentialEnergyTest {
         assertEquals(info + " Polarization Energy", polarizationEnergy, forceFieldEnergy.getPolarizationEnergy(), tolerance);
         assertEquals(info + " Polarization Count", nPolar, forceFieldEnergy.getPermanentInteractions());
 
+        if (solvTerm) {
+            assertEquals(info + " Solvation", solvationEnergy,
+                    forceFieldEnergy.getSolvationEnergy(), tolerance);
+            assertEquals(info + " Solvation Count", nSolvation, forceFieldEnergy.getSolvationInteractions());
+        }
     }
 
     /**
