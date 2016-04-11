@@ -97,7 +97,7 @@ public class RosenbluthCBMC implements MonteCarloListener {
      * Writes PDBs of each trial set and original/proposed configurations.
      */
     private boolean writeSnapshots = false;
-
+    
     /**
      * RRMC constructor.
      * @param targets Residues to undergo RRMC.
@@ -105,13 +105,14 @@ public class RosenbluthCBMC implements MonteCarloListener {
      * @param trialSetSize Larger values cost more but increase acceptance.
      */
     public RosenbluthCBMC(MolecularAssembly mola, ForceFieldEnergy ffe, Thermostat thermostat, 
-            List<Residue> targets, int mcFrequency, int trialSetSize) {
+            List<Residue> targets, int mcFrequency, int trialSetSize, boolean writeSnapshots) {
         this.targets = targets;
         this.mcFrequency = mcFrequency;
         this.trialSetSize = trialSetSize;
         this.mola = mola;
         this.ffe = ffe;
         this.thermostat = thermostat;
+        this.writeSnapshots = writeSnapshots;
         for (int i = targets.size() - 1; i >= 0; i--) {
             AminoAcid3 name = AminoAcid3.valueOf(targets.get(i).getName());
             if (name == AminoAcid3.GLY || name == AminoAcid3.PRO || name == AminoAcid3.ALA) {
@@ -126,12 +127,6 @@ public class RosenbluthCBMC implements MonteCarloListener {
         }
     }
     
-    public RosenbluthCBMC(MolecularAssembly mola, ForceFieldEnergy ffe, Thermostat thermostat, 
-            List<Residue> targets, int mcFrequency, int trialSetSize, boolean writeSnapshots) {
-        this(mola, ffe, thermostat, targets, mcFrequency, trialSetSize);
-        this.writeSnapshots = writeSnapshots;
-    }
-    
     @Override
     public boolean mcUpdate(MolecularAssembly mola) {
         steps++;
@@ -141,10 +136,15 @@ public class RosenbluthCBMC implements MonteCarloListener {
         return false;
     }
     
-    private boolean cbmcStep() {
+    public boolean cbmcStep() {
         numMovesProposed++;
         boolean accepted;
-        double temperature = thermostat.getCurrentTemperature();
+        double temperature;
+        if (thermostat != null) {
+            temperature = thermostat.getCurrentTemperature();
+        } else {
+            temperature = 298.15;
+        }
         double beta = 1.0 / (BOLTZMANN * temperature);
         
         // Select a target residue.
@@ -161,14 +161,44 @@ public class RosenbluthCBMC implements MonteCarloListener {
         if (rng < criterion) {
             cmbcMove.move();
             numMovesAccepted++;
-            logger.info(String.format(" Accepted.\n"));
+            logger.info(String.format(" Accepted!  NewSystemEnergy: %.4f\n", cmbcMove.finalEnergy));
             accepted = true;
+            write();
         } else {
             logger.info(String.format(" Denied.\n"));
             accepted = false;
         }
         
         return accepted;
+    }
+
+    private PDBFilter writer;
+    private void write() {
+        if (writer == null) {
+            writer = new PDBFilter(mola.getFile(), mola, null, null);
+        }
+        String filename = FilenameUtils.removeExtension(mola.getFile().toString());
+        filename = mola.getFile().getAbsolutePath();
+        if (!filename.contains("_mc")) {
+            filename = FilenameUtils.removeExtension(filename) + "_mc.pdb";
+        }
+        File file = new File(filename);
+        writer.writeFile(file, false);
+    }
+    
+    public void controlStep() {
+        double temperature;
+        if (thermostat != null) {
+            temperature = thermostat.getCurrentTemperature();
+        } else {
+            temperature = 298.15;
+        }
+        double beta = 1.0 / (BOLTZMANN * temperature);
+        int which = ThreadLocalRandom.current().nextInt(targets.size());
+        Residue target = targets.get(which);
+        RosenbluthChiAllMove cmbcMove = new RosenbluthChiAllMove(
+                mola, target, ffe, temperature,
+                numMovesProposed, true);
     }
     
 }

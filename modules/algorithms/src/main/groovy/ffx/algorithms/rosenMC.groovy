@@ -89,6 +89,8 @@ int resNum = 1;
 int mcFrequency = 50;
 int trialSetSize = 10;
 boolean writeSnapshots = false;
+boolean dynamics = false;
+boolean bias = true;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
@@ -110,10 +112,20 @@ cli.rmcR(longOpt:'residue', args:1, argName:'1', 'RRMC target residue number.');
 cli.rmcF(longOpt:'mcFreq', args:1, argName:'50', 'RRMC frequency.');
 cli.rmcK(longOpt:'trialSetSize', args:1, argName:'10', 'Size of RRMC trial sets.');
 cli.rmcW(longOpt:'writeSnapshots', args:1, argName:'false', 'Output PDBs of trial sets and orig/proposed conformations.');
+cli.rmcD(longOpt:'dynamics', args:1, argName:'false', 'Skip molecular dynamics; do only Monte Carlo moves.')
+cli.rmcB(longOpt:'bias', args:1, argName:'true', 'For validation. Skips biasing.');
 def options = cli.parse(args);
 
 if (options.h) {
     return cli.usage();
+}
+
+if (options.rmcB) {
+    bias = Boolean.parseBoolean(options.rmcB);
+}
+
+if (options.rmcD) {
+    dynamics = Boolean.parseBoolean(options.rmcD);
 }
 
 // Load the number of molecular dynamics steps.
@@ -200,14 +212,30 @@ if (arguments != null && arguments.size() > 0) {
     modelfilename = active.getFile();
 }
 
-logger.info("\n Running molecular dynamics on " + modelfilename);
-
 // Restart File
 File dyn = new File(FilenameUtils.removeExtension(modelfilename) + ".dyn");
 if (!dyn.exists()) {
     dyn = null;
 }
 
+if (!dynamics) {
+    logger.info("\n Running CBMC on " + modelfilename);
+    System.setProperty("forcefield","AMOEBA_PROTEIN_2013");
+    mcFrequency = 1;
+    targets.add(active.getChains()[0].getResidues().get(resNum));
+    MonteCarloListener rrmc = new RosenbluthCBMC(active, active.getPotentialEnergy(), null,
+        targets, mcFrequency, trialSetSize, writeSnapshots);
+    for (int i = 0; i < nSteps; i++) {
+        if (bias) {
+            rrmc.cbmcStep();
+        } else {
+            rrmc.controlStep();
+        }
+    }
+    return;
+}
+
+logger.info("\n Running dynamics with CBMC on " + modelfilename);
 MolecularDynamics molDyn = new MolecularDynamics(active, active.getPotentialEnergy(), active.getProperties(), sh, thermostat, integrator);
 molDyn.setFileType(fileType);
 molDyn.setRestartFrequency(restartFrequency);
