@@ -235,12 +235,11 @@ public abstract class SystemFilter {
         this.forceField = forceField;
         this.properties = properties;
         
-        //String vdwHydrogens = System.getProperty("vdwHydrogens");
-        /*vdwHydrogens = properties.ge
-        if (vdwHydrogens != null && vdwHydrogens.equalsIgnoreCase("true")) {
-            vdwH = true;
-        }*/
-        vdwH = properties.getBoolean("vdwHydrogens", false);
+        if (properties != null) {
+            vdwH = properties.getBoolean("vdwHydrogens", false);
+        } else {
+            vdwH = false;
+        }
     }
 
     /**
@@ -265,7 +264,11 @@ public abstract class SystemFilter {
         this.forceField = forceField;
         this.properties = properties;
         
-        vdwH = properties.getBoolean("vdwHydrogens", false);
+        if (properties != null) {
+            vdwH = properties.getBoolean("vdwHydrogens", false);
+        } else {
+            vdwH = false;
+        }
     }
 
     /**
@@ -290,7 +293,11 @@ public abstract class SystemFilter {
         this.forceField = forceField;
         this.properties = properties;
         
-        vdwH = properties.getBoolean("vdwHydrogens", false);
+        if (properties != null) {
+            vdwH = properties.getBoolean("vdwHydrogens", false);
+        } else {
+            vdwH = false;
+        }
     }
 
     /**

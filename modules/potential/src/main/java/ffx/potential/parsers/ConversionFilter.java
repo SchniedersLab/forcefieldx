@@ -143,7 +143,11 @@ public abstract class ConversionFilter {
         this.forceField = forcefield;
         this.properties = properties;
 
-        vdwH = properties.getBoolean("vdwHydrogens", false);
+        if (properties != null) {
+            vdwH = properties.getBoolean("vdwHydrogens", false);
+        } else {
+            vdwH = false;
+        }
     }
 
     public ConversionFilter(List<Object> structures, MolecularAssembly molecularAssembly,
@@ -156,7 +160,11 @@ public abstract class ConversionFilter {
         this.forceField = forcefield;
         this.properties = properties;
 
-        vdwH = properties.getBoolean("vdwHydrogens", false);
+        if (properties != null) {
+            vdwH = properties.getBoolean("vdwHydrogens", false);
+        } else {
+            vdwH = false;
+        }
     }
 
     public ConversionFilter(Object structure, List<MolecularAssembly> molecularAssemblies,
@@ -171,7 +179,11 @@ public abstract class ConversionFilter {
         this.forceField = forcefield;
         this.properties = properties;
 
-        vdwH = properties.getBoolean("vdwHydrogens", false);
+        if (properties != null) {
+            vdwH = properties.getBoolean("vdwHydrogens", false);
+        } else {
+            vdwH = false;
+        }
     }
 
     /**

@@ -278,11 +278,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 ForceField.ForceFieldName.AMOEBA_BIO_2009.toString());
         forcefieldName = forcefieldName.replaceAll("_","-");
         boolean doUseFitRadii = forceField.getBoolean(ForceField.ForceFieldBoolean.GK_USEFITRADII, true);
-        try {
-            forceField.getBoolean(ForceField.ForceFieldBoolean.GK_USEFITRADII);
-        } catch (Exception e) {
-            logger.log(Level.INFO, String.format(" Exception %s", e.toString()));
-        }
         boolean hasFittedRadii = fittedForceFields.contains(forcefieldName.toUpperCase());
         
         if (doUseFitRadii) {
