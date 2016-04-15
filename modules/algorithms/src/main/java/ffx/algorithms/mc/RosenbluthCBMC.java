@@ -150,18 +150,24 @@ public class RosenbluthCBMC implements MonteCarloListener {
         // Select a target residue.
         int which = ThreadLocalRandom.current().nextInt(targets.size());
         Residue target = targets.get(which);
-        RosenbluthChiAllMove cmbcMove = new RosenbluthChiAllMove(
+        RosenbluthChiAllMove cbmcMove = new RosenbluthChiAllMove(
                 mola, target, trialSetSize, ffe, temperature,
                 writeSnapshots, numMovesProposed, true);
-        double Wn = cmbcMove.getWn();
-        double Wo = cmbcMove.getWo();
+        if (cbmcMove.getMode() == RosenbluthChiAllMove.MODE.CHEAP) {
+            if (cbmcMove.wasAccepted()) {
+                numMovesAccepted++;
+            }
+            return cbmcMove.wasAccepted();
+        }
+        double Wn = cbmcMove.getWn();
+        double Wo = cbmcMove.getWo();
         double criterion = Math.min(1, Wn / Wo);
         double rng = ThreadLocalRandom.current().nextDouble();
         logger.info(String.format("    rng:    %5.2f", rng));
         if (rng < criterion) {
-            cmbcMove.move();
+            cbmcMove.move();
             numMovesAccepted++;
-            logger.info(String.format(" Accepted!  NewSystemEnergy: %.4f\n", cmbcMove.finalEnergy));
+            logger.info(String.format(" Accepted!  Energy: %.4f\n", cbmcMove.finalEnergy));
             accepted = true;
             write();
         } else {
@@ -186,7 +192,7 @@ public class RosenbluthCBMC implements MonteCarloListener {
         writer.writeFile(file, false);
     }
     
-    public void controlStep() {
+    public boolean controlStep() {
         double temperature;
         if (thermostat != null) {
             temperature = thermostat.getCurrentTemperature();
@@ -196,9 +202,10 @@ public class RosenbluthCBMC implements MonteCarloListener {
         double beta = 1.0 / (BOLTZMANN * temperature);
         int which = ThreadLocalRandom.current().nextInt(targets.size());
         Residue target = targets.get(which);
-        RosenbluthChiAllMove cmbcMove = new RosenbluthChiAllMove(
-                mola, target, ffe, temperature,
-                numMovesProposed, true);
+        RosenbluthChiAllMove cbmcMove = new RosenbluthChiAllMove(
+                mola, target, -1, ffe, temperature,
+                false, numMovesProposed, true);
+        return cbmcMove.wasAccepted();
     }
     
 }
