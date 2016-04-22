@@ -43,6 +43,7 @@ import ffx.algorithms.AlgorithmFunctions;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.parsers.SystemFilter;
 
 /**
  * The UIUtils class implements all Function interfaces, enabling lower modules
@@ -61,6 +62,7 @@ public class UIUtils implements AlgorithmFunctions {
 
     private final ModelingShell modelingShell;
     private final MainPanel mainPanel;
+    private SystemFilter lastFilter;
 
     public UIUtils(ModelingShell modelingShell, MainPanel mainPanel) {
         this.modelingShell = modelingShell;
@@ -84,12 +86,16 @@ public class UIUtils implements AlgorithmFunctions {
 
     @Override
     public FFXSystem[] open(String file) {
-        return mainPanel.openWait(file);
+        FFXSystem[] systems = mainPanel.openWait(file);
+        lastFilter = mainPanel.getFilter();
+        return systems;
     }
 
     @Override
     public FFXSystem[] open(String[] files) {
-        return mainPanel.openWait(files);
+        FFXSystem[] systems = mainPanel.openWait(files);
+        lastFilter = mainPanel.getFilter();
+        return systems;
     }
 
     @Override
@@ -169,5 +175,10 @@ public class UIUtils implements AlgorithmFunctions {
             throw new IllegalArgumentException(String.format("%s not a valid file name.", filename));
         }
         return mainPanel.convertWait(data, file);
+    }
+
+    @Override
+    public SystemFilter getFilter() {
+        return lastFilter;
     }
 }

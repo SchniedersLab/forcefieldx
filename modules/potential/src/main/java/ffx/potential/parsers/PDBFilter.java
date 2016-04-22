@@ -2804,6 +2804,12 @@ public final class PDBFilter extends SystemFilter {
             }
         }
     }
+    
+    @Override
+    public boolean readNext() {
+        // May be able to have it move to the next MODEL record eventually.
+        return false;
+    }
 
     /**
      * Ensures proper naming of hydrogens according to latest PDB format.

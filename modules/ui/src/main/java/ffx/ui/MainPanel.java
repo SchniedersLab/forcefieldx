@@ -896,6 +896,14 @@ public final class MainPanel extends JPanel implements ActionListener,
         system.setTrajectory(trajectory);
         return trajectory;
     }
+    
+    /**
+     * Return the active SystemFilter.
+     * @return 
+     */
+    public SystemFilter getFilter() {
+        return activeFilter;
+    }
 
     /**
      * <p>
