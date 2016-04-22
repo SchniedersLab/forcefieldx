@@ -219,17 +219,24 @@ if (!dyn.exists()) {
 }
 
 if (!dynamics) {
+    int numAccepted = 0;
     logger.info("\n Running CBMC on " + modelfilename);
     System.setProperty("forcefield","AMOEBA_PROTEIN_2013");
     mcFrequency = 1;
     targets.add(active.getChains()[0].getResidues().get(resNum));
     MonteCarloListener rrmc = new RosenbluthCBMC(active, active.getPotentialEnergy(), null,
         targets, mcFrequency, trialSetSize, writeSnapshots);
-    for (int i = 0; i < nSteps; i++) {
+    while (numAccepted < nSteps) {
         if (bias) {
-            rrmc.cbmcStep();
+            boolean accepted = rrmc.cbmcStep();
+            if (accepted) {
+                numAccepted++;
+            }
         } else {
-            rrmc.controlStep();
+            boolean accepted = rrmc.controlStep();
+            if (accepted) {
+                numAccepted++;
+            }
         }
     }
     return;
