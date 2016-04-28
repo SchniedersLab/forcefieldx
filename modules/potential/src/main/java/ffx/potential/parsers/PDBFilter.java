@@ -49,6 +49,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static java.lang.String.format;
 
@@ -144,6 +146,7 @@ public final class PDBFilter extends SystemFilter {
      * 1A-1Z,10-19, and for the third series segID = 2A-2Z,20-29, and so on.
      */
     private final List<String> segIDs = new ArrayList<>();
+    private final Map<Character, List<String>> segidMap = new HashMap<>();
     /**
      * List of modified residues *
      */
@@ -203,6 +206,10 @@ public final class PDBFilter extends SystemFilter {
      * If false, skip logging "Saving file".
      */
     private boolean logWrites = true;
+    /**
+     * Keep track of the current MODEL in the file.
+     */
+    private int modelsRead = 1;
 
     /**
      * <p>
@@ -316,7 +323,7 @@ public final class PDBFilter extends SystemFilter {
     public void clearListOutput() {
         listOutput.clear();
     }
-
+    
     /**
      * {@inheritDoc}
      *
@@ -424,7 +431,7 @@ public final class PDBFilter extends SystemFilter {
                  */
                 String line = br.readLine();
                 /**
-                 * Parse until END is found or to the end of the file.
+                 * Parse until END or ENDMDL is found, or to the end of the file.
                  */
                 while (line != null) {
                     String identity = line;
@@ -446,6 +453,7 @@ public final class PDBFilter extends SystemFilter {
                      * Switch on the known record.
                      */
                     switch (record) {
+                        case ENDMDL:
                         case END:
                             /**
                              * Setting "line" to null will exit the loop.
@@ -973,6 +981,7 @@ public final class PDBFilter extends SystemFilter {
 // =============================================================================
                             structs.add(line);
                             break;
+                        case MODEL: // Currently, no handling in initial read.
                         default:
                             break;
                     }
@@ -2807,7 +2816,153 @@ public final class PDBFilter extends SystemFilter {
     
     @Override
     public boolean readNext() {
-        // May be able to have it move to the next MODEL record eventually.
+        // ^ is beginning of line, \\s+ means "one or more whitespace", (\\d+) means match and capture one or more digits.
+        Pattern modelPatt = Pattern.compile("^MODEL\\s+(\\d+)");
+        ++modelsRead;
+        boolean eof = true;
+        
+        for (MolecularAssembly system : systems) {
+            File file = system.getFile();
+            currentFile = file;
+            try (BufferedReader br = new BufferedReader(new FileReader(currentFile))) {
+                // Skip to appropriate model.
+                String line = br.readLine();
+                while (line != null) {
+                    line = line.trim();
+                    Matcher m = modelPatt.matcher(line);
+                    if (m.find()) {
+                        int modelNum = Integer.parseInt(m.group(1));
+                        if (modelNum == modelsRead) {
+                            logger.log(Level.INFO, String.format(" Reading model %d for %s", modelNum, currentFile));
+                            eof = false;
+                            break;
+                        }
+                    }
+                    line = br.readLine();
+                }
+                
+                if (eof) {
+                    logger.log(Level.INFO, String.format(" End of file reached for %s", file));
+                    br.close();
+                    return false;
+                }
+                
+                // Begin parsing the model.
+                boolean modelDone = false;
+                line = br.readLine();
+                while (line != null) {
+                    line = line.trim();
+                    String recID = line.substring(0, Math.min(6, line.length())).trim();
+                    try {
+                        Record record = Record.valueOf(recID);
+                        boolean hetatm = true;
+                        switch (record) {
+// =============================================================================
+//
+//  7 - 11        Integer       serial       Atom serial number.
+// 13 - 16        Atom          name         Atom name.
+// 17             Character     altLoc       Alternate location indicator.
+// 18 - 20        Residue name  resName      Residue name.
+// 22             Character     chainID      Chain identifier.
+// 23 - 26        Integer       resSeq       Residue sequence number.
+// 27             AChar         iCode        Code for insertion of residues.
+// 31 - 38        Real(8.3)     x            Orthogonal coordinates for X in Angstroms.
+// 39 - 46        Real(8.3)     y            Orthogonal coordinates for Y in Angstroms.
+// 47 - 54        Real(8.3)     z            Orthogonal coordinates for Z in Angstroms.
+// 55 - 60        Real(6.2)     occupancy    Occupancy.
+// 61 - 66        Real(6.2)     tempFactor   Temperature factor.
+// 77 - 78        LString(2)    element      Element symbol, right-justified.
+// 79 - 80        LString(2)    charge       Charge  on the atom.
+// =============================================================================
+//         1         2         3         4         5         6         7
+//123456789012345678901234567890123456789012345678901234567890123456789012345678
+//ATOM      1  N   ILE A  16      60.614  71.140 -10.592  1.00  7.38           N
+//ATOM      2  CA  ILE A  16      60.793  72.149  -9.511  1.00  6.91           C
+                            case ATOM:
+                                hetatm = false;
+                            case HETATM:
+                            if (!line.substring(17, 20).trim().equals("HOH")) {
+                                int serial = Hybrid36.decode(5, line.substring(6, 11));
+                                String name = line.substring(12, 16).trim();
+                                if (name.toUpperCase().contains("1H") || name.toUpperCase().contains("2H")
+                                        || name.toUpperCase().contains("3H")) {
+                                    // VERSION3_2 is presently just a placeholder for "anything non-standard".
+                                    fileStandard = VERSION3_2;
+                                }
+                                Character altLoc = line.substring(16, 17).toUpperCase().charAt(0);
+                                if (!altLoc.equals(' ') && !altLoc.equals('A')
+                                        && !altLoc.equals(currentAltLoc)) {
+                                    break;
+                                }
+                                String resName = line.substring(17, 20).trim();
+                                Character chainID = line.substring(21, 22).charAt(0);
+                                
+                                List<String> segIDList = segidMap.get(chainID);
+                                if (segIDList == null) {
+                                    logger.log(Level.WARNING, String.format(" No "
+                                            + "known segment ID corresponds to "
+                                            + "chain ID %s", chainID.toString()));
+                                    break;
+                                }
+                                
+                                String segID = segIDList.get(0);
+                                if (segIDList.size() > 1) {
+                                    logger.log(Level.WARNING, String.format(" "
+                                            + "Multiple segment IDs correspond to"
+                                            + "chain ID %s; assuming %s", 
+                                            chainID.toString(), segID));
+                                }
+                                
+                                int resSeq = Hybrid36.decode(4, line.substring(22, 26));
+                                
+                                double[] d = new double[3];
+                                d[0] = new Double(line.substring(30, 38).trim());
+                                d[1] = new Double(line.substring(38, 46).trim());
+                                d[2] = new Double(line.substring(46, 54).trim());
+                                double occupancy = 1.0;
+                                double tempFactor = 1.0;
+                                Atom newAtom = new Atom(0, name, altLoc, d, resName, resSeq,
+                                        chainID, occupancy, tempFactor, segID);
+                                newAtom.setHetero(hetatm);
+                                // Check if this is a modified residue.
+                                if (modres.containsKey(resName.toUpperCase())) {
+                                    newAtom.setModRes(true);
+                                }
+
+                                Atom returnedAtom = activeMolecularAssembly.findAtom(newAtom);
+                                if (returnedAtom != null) {
+                                    returnedAtom.setXYZ(d);
+                                    double[] retXYZ = new double[3];
+                                    returnedAtom.getXYZ(retXYZ);
+                                } else {
+                                    logger.log(Level.WARNING, String.format(" "
+                                            + "Could not find atom %s in assembly", 
+                                            newAtom.toString()));
+                                }
+                                break;
+                            }
+                            case ENDMDL:
+                            case END: // Technically speaking, END should be at the end of the file, not end of the model.
+                                logger.log(Level.FINE, String.format(" Model %d successfully read", modelsRead));
+                                modelDone = true;
+                            default:
+                                break;
+                        }
+                    } catch (Exception ex) {
+                        // Do nothing; it's not an ATOM/HETATM line.
+                    }
+                    if (modelDone) {
+                        break;
+                    }
+                    line = br.readLine();
+                }
+                br.close();
+                return true;
+            } catch (Exception ex) {
+                logger.log(Level.WARNING, String.format(" Exception reading model %d: %s", modelsRead, ex.toString()));
+                return false;
+            }
+        }
         return false;
     }
 
@@ -3361,6 +3516,14 @@ public final class PDBFilter extends SystemFilter {
         segIDs.add(newSegID);
         currentChainID = c;
         currentSegID = newSegID;
+        
+        if (segidMap.containsKey(c)) {
+            segidMap.get(c).add(newSegID);
+        } else {
+            List<String> newChainList = new ArrayList<>();
+            newChainList.add(newSegID);
+            segidMap.put(c, newChainList);
+        }
 
         return newSegID;
     }
@@ -3376,6 +3539,8 @@ public final class PDBFilter extends SystemFilter {
         CRYST1,
         DBREF,
         END,
+        MODEL,
+        ENDMDL,
         HELIX,
         HETATM,
         LINK,
