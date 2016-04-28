@@ -49,6 +49,7 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.Loop;
+import java.util.ArrayList;
 
 /**
  * @author Armin Avdic
@@ -197,18 +198,14 @@ public class MCLoop implements MonteCarloListener {
 
         // Randomly choose a target sub portion of loop to KIC.
         int midResidue;
-        
-
         midResidue = ThreadLocalRandom.current().nextInt(firstResidue + 1, endResidue);
-        
-        List <double[]> loopSolutions;
-        
+   
+        List <double[]> loopSolutions;     
         loopSolutions = loop.generateLoops(midResidue - 1, midResidue + 1);
 
-        for(int i = 1; i < this.iterations; i++){
+        for(int i = 1; i < iterations; i++){
             //pick random subloop
             midResidue = ThreadLocalRandom.current().nextInt(firstResidue + 1, endResidue);
-
             //pick random solution
             if (loopSolutions.size() > 0){
                 List <double[]> tempLoops = loop.generateLoops(midResidue - 1, midResidue + 1,loopSolutions.get(rng.nextInt(loopSolutions.size())));
@@ -216,8 +213,9 @@ public class MCLoop implements MonteCarloListener {
                     loopSolutions.add(tempLoop);
                 }
             } else {
-                loopSolutions = loop.generateLoops(midResidue - 1, midResidue + 1,loopSolutions.get(rng.nextInt(loopSolutions.size())));
+                loopSolutions = loop.generateLoops(midResidue - 1, midResidue + 1);
             }
+                    
         }
         int numLoopsFound = loopSolutions.size();
         // Check whether KIC found alternative loops
@@ -277,6 +275,7 @@ public class MCLoop implements MonteCarloListener {
             return true;
         }
         double criterion = exp(-dE / kT);
+
         double metropolis = random();
         sb.append(String.format("     criterion:  %9.4f\n", criterion));
         sb.append(String.format("     rng:        %9.4f\n", metropolis));
