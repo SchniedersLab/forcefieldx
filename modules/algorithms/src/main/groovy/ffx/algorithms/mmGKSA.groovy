@@ -193,7 +193,7 @@ if (useLigand) {
         atom.setUse(false);
     }
     double protE = functs.returnEnergy(mola);
-    for (Atom atom : atoms) {
+    for (Atom atom : ligAtoms) {
         atom.setUse(true);
     }
     
@@ -219,7 +219,7 @@ if (useLigand) {
             atom.setUse(false);
         }
         protE = functs.returnEnergy(mola);
-        for (Atom atom : atoms) {
+        for (Atom atom : ligAtoms) {
             atom.setUse(true);
         }
         
