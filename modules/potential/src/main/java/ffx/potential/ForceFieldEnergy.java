@@ -1312,11 +1312,20 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
     
     /**
-     * Return the non-bonded components of energy.
-     * @return 
+     * Return the non-bonded components of energy (vdW, electrostatics, solvation).
+     * @return Nonbonded energy
      */
     public double getNonbondedEnergy() {
-        return totalNonBondedEnergy;
+        return getNonbondedEnergy(true);
+    }
+    
+    /**
+     * Return the non-bonded components of energy (vdW, electrostatics).
+     * @param includeSolv Include solvation energy
+     * @return Nonbonded energy
+     */
+    public double getNonbondedEnergy(boolean includeSolv) {
+        return (includeSolv ? (totalNonBondedEnergy + solvationEnergy) : totalNonBondedEnergy);
     }
 
     /**
