@@ -1310,6 +1310,14 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     public double getTotalEnergy() {
         return totalEnergy;
     }
+    
+    /**
+     * Return the non-bonded components of energy.
+     * @return 
+     */
+    public double getNonbondedEnergy() {
+        return totalNonBondedEnergy;
+    }
 
     /**
      * <p>

@@ -179,20 +179,24 @@ if (useLigand) {
     List<Double> ligandEnergies = new ArrayList<>();
     List<Double> proteinEnergies = new ArrayList<>();
     
-    double totE = functs.returnEnergy(mola);
+    ForceFieldEnergy energy = functs.energy(mola);
+    double totE = energy.getNonbondedEnergy();
     
     for (Atom atom : protAtoms) {
         atom.setUse(false);
     }
-    double ligE = functs.returnEnergy(mola);
+    
+    functs.energy(mola);
+    double ligE = energy.getNonbondedEnergy();
     for (Atom atom : protAtoms) {
         atom.setUse(true);
     }
-    
     for (Atom atom : ligAtoms) {
         atom.setUse(false);
     }
-    double protE = functs.returnEnergy(mola);
+    
+    functs.energy(mola);
+    double protE = energy.getNonbondedEnergy();
     for (Atom atom : ligAtoms) {
         atom.setUse(true);
     }
@@ -201,24 +205,28 @@ if (useLigand) {
     totalEnergies.add(totE);
     ligandEnergies.add(ligE);
     proteinEnergies.add(protE);
-    meanEnergy += totE;
+    meanEnergy += (totE - ligE - protE);
+    logger.info(String.format(" Average nonbonded energy so far: %10.4f", (meanEnergy / (double) nSnapshots)));
     
     // Can replace with do-while when Groovy implements do-while.
     while (filter.readNext()) {
-        totE = functs.returnEnergy(mola);
+        functs.energy(mola);
+        totE = energy.getNonbondedEnergy();
         
         for (Atom atom : protAtoms) {
             atom.setUse(false);
         }
-        ligE = functs.returnEnergy(mola);
+        functs.energy(mola);
+        ligE = energy.getNonbondedEnergy();
+        
         for (Atom atom : protAtoms) {
             atom.setUse(true);
         }
-        
         for (Atom atom : ligAtoms) {
             atom.setUse(false);
         }
-        protE = functs.returnEnergy(mola);
+        functs.energy(mola);
+        protE = energy.getNonbondedEnergy();
         for (Atom atom : ligAtoms) {
             atom.setUse(true);
         }
@@ -228,7 +236,8 @@ if (useLigand) {
         ligandEnergies.add(ligE);
         proteinEnergies.add(protE);
         ++nSnapshots;
-        meanEnergy += totE;
+        meanEnergy += (totE - ligE - protE);
+        logger.info(String.format(" Average nonbonded energy so far: %10.4f", (meanEnergy / (double) nSnapshots)));
     }
 } else {
     double totE = functs.returnEnergy(mola);
@@ -236,6 +245,7 @@ if (useLigand) {
     logger.info(String.format(" Total:   %10.4f", totE));
     totalEnergies.add(totE);
     meanEnergy += totE;
+    logger.info(String.format(" Average energy so far: %10.4f", (meanEnergy / (double) nSnapshots)));
     
     // Can replace with do-while when Groovy implements do-while.
     while (filter.readNext()) {
@@ -245,6 +255,7 @@ if (useLigand) {
         totalEnergies.add(totE);
         ++nSnapshots;
         meanEnergy += totE;
+        logger.info(String.format(" Average energy so far: %10.4f", (meanEnergy / (double) nSnapshots)));
     }
 }
 
