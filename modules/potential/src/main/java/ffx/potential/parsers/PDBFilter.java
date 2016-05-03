@@ -651,6 +651,14 @@ public final class PDBFilter extends SystemFilter {
                                 chainID = line.substring(21, 22).charAt(0);
                                 segID = getSegID(chainID);
                                 resSeq = Hybrid36.decode(4, line.substring(22, 26));
+                                char insertionCode = line.charAt(26);
+                                if (insertionCode != ' ') {
+                                    logger.warning(String.format(" Insertion code "
+                                            + "for residue %s-%d%c discarded. FFX "
+                                            + "may not function correctly; residues "
+                                            + "should be renumbered sequentially", 
+                                            resName, resSeq, insertionCode));
+                                }
                                 printAtom = false;
                                 if (mutate && chainID.equals(mutateChainID) && mutateResID == resSeq) {
                                     String atomName = name.toUpperCase();
@@ -741,6 +749,14 @@ public final class PDBFilter extends SystemFilter {
                             chainID = line.substring(21, 22).charAt(0);
                             segID = getSegID(chainID);
                             resSeq = Hybrid36.decode(4, line.substring(22, 26));
+                            char insertionCode = line.charAt(26);
+                            if (insertionCode != ' ') {
+                                    logger.warning(String.format(" Insertion code "
+                                            + "for residue %s-%d%c discarded. FFX "
+                                            + "may not function correctly; residues "
+                                            + "should be renumbered sequentially", 
+                                            resName, resSeq, insertionCode));
+                            }
                             d = new double[3];
                             d[0] = new Double(line.substring(30, 38).trim());
                             d[1] = new Double(line.substring(38, 46).trim());

@@ -67,6 +67,12 @@ public class MMgksa {
     private double solvWt = 1.0;
     private double vdwWt = 1.0;
     
+    /**
+     * Constructs an MMgksa instance on a single assembly (not for binding).
+     * @param mola
+     * @param functs
+     * @param filter 
+     */
     public MMgksa(MolecularAssembly mola, PotentialsFunctions functs, SystemFilter filter) {
         this.mola = mola;
         this.functs = functs;
@@ -77,6 +83,14 @@ public class MMgksa {
         docking = false;
     }
     
+    /**
+     * Constructs an MMgksa instance for MM-GKSA binding scoring.
+     * @param mola
+     * @param functs
+     * @param filter
+     * @param proteinAtoms Atoms for first binding partner
+     * @param ligandAtoms Atoms for second binding partner
+     */
     public MMgksa(MolecularAssembly mola, PotentialsFunctions functs, SystemFilter filter, 
             Atom[] proteinAtoms, Atom[] ligandAtoms) {
         this.mola = mola;
@@ -90,6 +104,10 @@ public class MMgksa {
         docking = true;
     }
     
+    /**
+     * Sets atoms to be ignored entirely.
+     * @param ignored 
+     */
     public void setIgnoredAtoms(Atom[] ignored) {
         ignoreAtoms = new Atom[ignored.length];
         System.arraycopy(ignored, 0, ignoreAtoms, 0, ignored.length);
@@ -98,14 +116,26 @@ public class MMgksa {
         }
     }
     
+    /**
+     * Assigns weight to electrostatics.
+     * @param eWt 
+     */
     public void setElectrostaticsWeight(double eWt) {
         this.elecWt = eWt;
     }
     
+    /**
+     * Assigns weight to solvation.
+     * @param sWt 
+     */
     public void setSolvationWeight(double sWt) {
         this.solvWt = sWt;
     }
     
+    /**
+     * Assigns weight to van der Waals energy.
+     * @param vWt 
+     */
     public void setVdwWeight(double vWt) {
         this.vdwWt = vWt;
     }
@@ -206,12 +236,15 @@ public class MMgksa {
                 
                 logger.info(String.format(" %10d frames read, %10d frames "
                         + "evaluated", counter, nEvals));
-                logger.info(String.format("%15c%15s%15s%15s%15s", ' ', "Energy",
+                logger.info(formatHeader());
+                logger.info(formatEnergy("Running Mean", meanE, meanElecE, meanSolvE, meanVdwE));
+                logger.info(formatEnergy("Snapshot", totE, totElecE, totSolvE, totVdwE));
+                /*logger.info(String.format("%15c%15s%15s%15s%15s", ' ', "Energy",
                         "Electrostatic", "Solvation", "van der Waals"));
                 logger.info(String.format("%-15s  %13.5f  %13.5f  %13.5f  %13.5f", 
                         "Running Mean", meanE, meanElecE, meanSolvE, meanVdwE));
                 logger.info(String.format("%-15s  %13.5f  %13.5f  %13.5f  %13.5f", 
-                        "Snapshot", totE, totElecE, totSolvE, totVdwE));
+                        "Snapshot", totE, totElecE, totSolvE, totVdwE));*/
             }
         } while (filter.readNext() && (maxEvals < 0 || nEvals < maxEvals));
         
@@ -248,7 +281,7 @@ public class MMgksa {
         return sb.toString();
     }
     
-    public double weightEnergy(double elec, double solv, double vdW) {
+    private double weightEnergy(double elec, double solv, double vdW) {
         return (elecWt * elec) + (solvWt * solv) + (vdwWt * vdW);
     }
 }
