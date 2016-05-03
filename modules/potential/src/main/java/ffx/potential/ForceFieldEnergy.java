@@ -2216,8 +2216,21 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         return polarizationEnergy;
     }
 
+    /**
+     * Returns total electrostatic energy
+     * @param includeSolvation Whether to include solvation energy
+     * @return Electrostatic energy
+     */
+    public double getTotalElectrostaticEnergy(boolean includeSolvation) {
+        return (includeSolvation ? getTotalElectrostaticEnergy() : totalElectrostaticEnergy);
+    }
+    
     public double getTotalElectrostaticEnergy() {
         return totalElectrostaticEnergy + solvationEnergy;
+    }
+    
+    public double getElectrostaticEnergy() {
+        return totalElectrostaticEnergy;
     }
     
     public double getSolvationEnergy() {

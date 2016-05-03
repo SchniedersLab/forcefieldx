@@ -1,3 +1,4 @@
+
 /**
  * Title: Force Field X.
  *
@@ -49,6 +50,7 @@ import groovy.lang.MissingMethodException;
 
 // FFX Imports
 
+import ffx.algorithms.MMgksa
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
 import ffx.potential.MolecularAssembly;
@@ -56,35 +58,13 @@ import ffx.potential.parsers.SystemFilter;
 import ffx.potential.utils.PotentialsFunctions
 import ffx.potential.utils.PotentialsUtils
 
-// Default convergence criteria.
-double eps = 1.0;
+// Default weight parameters
+double elecWt = 1.0;
+double solvWt = 1.0;
+double vdwWt = 1.0;
 
-// First softcore atom for topology 1.
-double s = -1;
-
-// First softcore atom for topology 2.
-double s2 = -1;
-
-// Last softcore atom for topology 1.
-double f = -2;
-
-// Last softcore atom for topology 2.
-double f2 = -2;
-
-// First atom for no electrostatics.
-int noElecStart = 1;
-
-// Last atom for no electrostatics.
-int noElecStop = -2;
-
-// First atom of the 2nd topology for no electrostatics.
-int noElecStart2 = 1;
-
-// Last atom of the 2nd topology for no electrostatics.
-int noElecStop2 = -2;
-
-// Fixed lambda value.
-double lambda = -1;
+int maxFrames = -1;
+int freq = 1;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
@@ -97,6 +77,11 @@ def cli = new CliBuilder(usage:' ffxc mmGKSA [options] <filename>');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.l(longOpt:'ligand', args:1, argName:'0', 'Ligand atoms');
 cli.i(longOpt:'ignore', args:1, argName:'0', 'Atoms to ignore (not in ligand or protein)');
+cli.f(longOpt:'frequency', args:1, argName:'1', 'Evaluate every nth frame');
+cli.m(longOpt:'maxFrames', args:1, argName:'-1', 'Evaluate at most this many frames (-1 to evaluate to end of file)');
+cli.e(longOpt:'electrostaticWeight', args:1, argName:'1.0', 'Weight to electrostatic interactions.');
+cli.s(longOpt:'solvationWeight', args:1, argName:'1.0', 'Weight to solvation interactions.');
+cli.v(longOpt:'vanDerWaalsWeight', args:1, argName:'1.0', 'Weight to van der Waals interactions');
 
 def options = cli.parse(args); 
     
@@ -121,18 +106,35 @@ SystemFilter filter = functs.getFilter();
 Atom[] atoms = mola.getAtomArray();
 int nAtoms = atoms.length;
 
+Set<Atom> iAtoms = new HashSet<>();
 if (options.i) {
     String[] optiToks = options.i.split(",");
     for (String itok : optiToks) {
         try {
             int[] inactAtoms = SystemFilter.parseAtNumArg("", itok, nAtoms);
             for (int i = inactAtoms[0]; i <= inactAtoms[1]; i++) {
-                atoms[i].setUse(false);
+                iAtoms.add(atoms[i]);
             }
         } catch (IllegalArgumentException ex) {
             logger.warning(ex.toString());
         }
     }
+}
+
+if (options.e) {
+    elecWt = Double.parseDouble(options.e);
+}
+if (options.s) {
+    solvWt = Double.parseDouble(options.s);
+}
+if (options.v) {
+    vdwWt = Double.parseDouble(options.v);
+}
+if (options.f) {
+    freq = Integer.parseInt(options.f);
+}
+if (options.m) {
+    maxFrames = Integer.parseInt(options.m);
 }
 
 boolean useLigand = false;
@@ -171,7 +173,25 @@ if (options.l) {
     logger.info(" Scoring trajectory without binding calculations");
 }
 
-List<Double> totalEnergies = new ArrayList<>();
+MMgksa mmGKSA;
+if (useLigand) {
+    mmGKSA = new MMgksa(mola, functs, filter, protAtoms, ligAtoms);
+} else {
+    mmGKSA = new MMgksa(mola, functs, filter);
+}
+
+if (!iAtoms.isEmpty()) {
+    Atom[] iAtArray = new Atom[iAtoms.size()];
+    iAtoms.toArray(iAtArray);
+    mmGKSA.setIgnoredAtoms(iAtArray);
+}
+
+mmGKSA.setElectrostaticsWeight(elecWt);
+mmGKSA.setSolvationWeight(solvWt);
+mmGKSA.setVdwWeight(vdwWt);
+mmGKSA.runMMgksa(freq, maxFrames);
+
+/**List<Double> totalEnergies = new ArrayList<>();
 double meanEnergy = 0;
 int nSnapshots = 1;
 
@@ -260,4 +280,4 @@ if (useLigand) {
 }
 
 meanEnergy /= ((double) nSnapshots);
-logger.info(String.format(" Mean energy: %12.6f", meanEnergy));
+logger.info(String.format(" Mean energy: %12.6f", meanEnergy));*/
