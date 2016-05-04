@@ -148,6 +148,16 @@ public final class PDBFilter extends SystemFilter {
     private final List<String> segIDs = new ArrayList<>();
     private final Map<Character, List<String>> segidMap = new HashMap<>();
     /**
+     * Maps a chain to the number of insertion codes encountered in that chain.
+     */
+    private final Map<Character, Integer> inscodeCount = new HashMap<>();
+    /**
+     * Maps chainIDResNumInsCode to renumbered chainIDResNum. For example, 
+     * residue 52A in chain C might be renumbered to residue 53, and mapped as 
+     * "C52A" to "C53".
+     */
+    private final Map<String, String> pdbToNewResMap = new HashMap<>();
+    /**
      * List of modified residues *
      */
     private final Map<String, String> modres = new HashMap<>();
@@ -426,6 +436,7 @@ public final class PDBFilter extends SystemFilter {
                  */
                 currentChainID = null;
                 currentSegID = null;
+                boolean containsInsCode = false;
                 /**
                  * Read the first line of the file.
                  */
@@ -651,14 +662,37 @@ public final class PDBFilter extends SystemFilter {
                                 chainID = line.substring(21, 22).charAt(0);
                                 segID = getSegID(chainID);
                                 resSeq = Hybrid36.decode(4, line.substring(22, 26));
+                                
                                 char insertionCode = line.charAt(26);
-                                if (insertionCode != ' ') {
-                                    logger.warning(String.format(" Insertion code "
-                                            + "for residue %s-%d%c discarded. FFX "
-                                            + "may not function correctly; residues "
-                                            + "should be renumbered sequentially", 
-                                            resName, resSeq, insertionCode));
+                                if (insertionCode != ' ' && !containsInsCode) {
+                                    containsInsCode = true;
+                                    logger.warning(" FFX support for files with "
+                                            + "insertion codes is experimental. "
+                                            + "Residues will be renumbered to "
+                                            + "eliminate insertion codes (52A "
+                                            + "becomes 53, 53 becomes 54, etc)");
                                 }
+                                
+                                int offset = inscodeCount.getOrDefault(chainID, 0);
+                                String pdbResNum = String.format("%c%d%c", chainID, resSeq, insertionCode);
+                                if (!pdbToNewResMap.containsKey(pdbResNum)) {
+                                    if (insertionCode != ' ') {
+                                        ++offset;
+                                        inscodeCount.put(chainID, offset);
+                                    }
+                                    resSeq += offset;
+                                    if (offset != 0) {
+                                        logger.info(String.format(" Chain %c "
+                                                + "residue %s-%s renumbered to %c %s-%d", 
+                                                chainID, pdbResNum.substring(1).trim(), 
+                                                resName, chainID, resName, resSeq));
+                                    }
+                                    String newNum = String.format("%c%d", chainID, resSeq);
+                                    pdbToNewResMap.put(pdbResNum, newNum);
+                                } else {
+                                    resSeq += offset;
+                                }
+                                
                                 printAtom = false;
                                 if (mutate && chainID.equals(mutateChainID) && mutateResID == resSeq) {
                                     String atomName = name.toUpperCase();
@@ -749,14 +783,37 @@ public final class PDBFilter extends SystemFilter {
                             chainID = line.substring(21, 22).charAt(0);
                             segID = getSegID(chainID);
                             resSeq = Hybrid36.decode(4, line.substring(22, 26));
+
                             char insertionCode = line.charAt(26);
-                            if (insertionCode != ' ') {
-                                    logger.warning(String.format(" Insertion code "
-                                            + "for residue %s-%d%c discarded. FFX "
-                                            + "may not function correctly; residues "
-                                            + "should be renumbered sequentially", 
-                                            resName, resSeq, insertionCode));
+                            if (insertionCode != ' ' && !containsInsCode) {
+                                containsInsCode = true;
+                                logger.warning(" FFX support for files with "
+                                        + "insertion codes is experimental. "
+                                        + "Residues will be renumbered to "
+                                        + "eliminate insertion codes (52A "
+                                        + "becomes 53, 53 becomes 54, etc)");
                             }
+
+                            int offset = inscodeCount.getOrDefault(chainID, 0);
+                            String pdbResNum = String.format("%c%d%c", chainID, resSeq, insertionCode);
+                            if (!pdbToNewResMap.containsKey(pdbResNum)) {
+                                if (insertionCode != ' ') {
+                                    ++offset;
+                                    inscodeCount.put(chainID, offset);
+                                }
+                                resSeq += offset;
+                                if (offset != 0) {
+                                    logger.info(String.format(" Chain %c "
+                                            + "molecule %s-%s renumbered to %c %s-%d",
+                                            chainID, pdbResNum.substring(1).trim(),
+                                            resName, chainID, resName, resSeq));
+                                }
+                                String newNum = String.format("%c%d", chainID, resSeq);
+                                pdbToNewResMap.put(pdbResNum, newNum);
+                            } else {
+                                resSeq += offset;
+                            }
+                            
                             d = new double[3];
                             d[0] = new Double(line.substring(30, 38).trim());
                             d[1] = new Double(line.substring(38, 46).trim());
@@ -1884,11 +1941,58 @@ public final class PDBFilter extends SystemFilter {
     private List<Bond> locateDisulfideBonds(List<String> ssbonds) {
         List<Bond> ssBondList = new ArrayList<>();
         for (String ssbond : ssbonds) {
+            // =============================================================================
+            // The SSBOND record identifies each disulfide bond in protein and polypeptide
+            // structures by identifying the two residues involved in the bond.
+            // The disulfide bond distance is included after the symmetry operations at
+            // the end of the SSBOND record.
+            //
+            //  8 - 10        Integer         serNum       Serial number.
+            // 12 - 14        LString(3)      "CYS"        Residue name.
+            // 16             Character       chainID1     Chain identifier.
+            // 18 - 21        Integer         seqNum1      Residue sequence number.
+            // 22             AChar           icode1       Insertion code.
+            // 26 - 28        LString(3)      "CYS"        Residue name.
+            // 30             Character       chainID2     Chain identifier.
+            // 32 - 35        Integer         seqNum2      Residue sequence number.
+            // 36             AChar           icode2       Insertion code.
+            // 60 - 65        SymOP           sym1         Symmetry oper for 1st resid
+            // 67 - 72        SymOP           sym2         Symmetry oper for 2nd resid
+            // 74 – 78        Real(5.2)      Length        Disulfide bond distance
+            //
+            // If SG of cysteine is disordered then there are possible alternate linkages.
+            // wwPDB practice is to put together all possible SSBOND records. This is
+            // problematic because the alternate location identifier is not specified in
+            // the SSBOND record.
+            // =============================================================================
             try {
-                Polymer c1 = activeMolecularAssembly.getChain(ssbond.substring(15, 16));
-                Polymer c2 = activeMolecularAssembly.getChain(ssbond.substring(29, 30));
-                Residue r1 = c1.getResidue(Hybrid36.decode(4, ssbond.substring(17, 21)));
-                Residue r2 = c2.getResidue(Hybrid36.decode(4, ssbond.substring(31, 35)));
+                char c1ch = ssbond.charAt(15);
+                char c2ch = ssbond.charAt(29);
+                Polymer c1 = activeMolecularAssembly.getChain(String.format("%c", c1ch));
+                Polymer c2 = activeMolecularAssembly.getChain(String.format("%c", c2ch));
+                
+                String origResNum1 = ssbond.substring(17, 21).trim();
+                char insChar1 = ssbond.charAt(21);
+                String origResNum2 = ssbond.substring(31, 35).trim();
+                char insChar2 = ssbond.charAt(35);
+                
+                String pdbResNum1 = String.format("%c%s%c", c1ch, origResNum1, insChar1);
+                String pdbResNum2 = String.format("%c%s%c", c2ch, origResNum2, insChar2);
+                String resnum1 = pdbToNewResMap.get(pdbResNum1);
+                String resnum2 = pdbToNewResMap.get(pdbResNum2);
+                if (resnum1 == null) {
+                    logger.warning(String.format(" Could not find residue %s for SS-bond %s", pdbResNum1, ssbond));
+                    continue;
+                }
+                if (resnum2 == null) {
+                    logger.warning(String.format(" Could not find residue %s for SS-bond %s", pdbResNum2, ssbond));
+                    continue;
+                }
+                
+                Residue r1 = c1.getResidue(Integer.parseInt(resnum1.substring(1)));
+                Residue r2 = c2.getResidue(Integer.parseInt(resnum2.substring(1)));
+                /*Residue r1 = c1.getResidue(Hybrid36.decode(4, ssbond.substring(17, 21)));
+                Residue r2 = c2.getResidue(Hybrid36.decode(4, ssbond.substring(31, 35)));*/
                 List<Atom> atoms1 = r1.getAtomList();
                 List<Atom> atoms2 = r2.getAtomList();
                 Atom SG1 = null;
