@@ -372,6 +372,9 @@ public class MMgksa {
         }
     }
     
+    /**
+     * Functional interface for above.
+     */
     private interface getE {
         public double getEnergy();
     }
