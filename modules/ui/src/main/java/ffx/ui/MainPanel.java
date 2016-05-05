@@ -1321,7 +1321,8 @@ public final class MainPanel extends JPanel implements ActionListener,
         if (extension.equalsIgnoreCase("ffx") || extension.equalsIgnoreCase("groovy")) {
             ModelingShell shell = getModelingShell();
             shell.runFFXScript(file);
-            if (java.awt.GraphicsEnvironment.isHeadless()) {
+            boolean shutDown = Boolean.parseBoolean(System.getProperty("ffx.shutDown","true"));
+            if (java.awt.GraphicsEnvironment.isHeadless() && shutDown) {
                 exit();
             } else {
                 return null;
