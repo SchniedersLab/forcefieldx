@@ -59,14 +59,6 @@ public class RefinementModel {
     private static final Logger logger = Logger.getLogger(RefinementModel.class.getName());
 
     /**
-     * An atom list that only includes those with their "use" flag set to true.
-     */
-    protected List<Atom> usedAtomList;
-    /**
-     * An atom array that only includes those with their "use" flag set to true.
-     */
-    protected final Atom[] usedAtoms;
-    /**
      * Map between atom in different molecular assemblies.
      */
     protected List<Integer>[] xIndex;
@@ -74,13 +66,13 @@ public class RefinementModel {
     protected ArrayList<ArrayList<Molecule>> altMolecules;
 
     /**
-     * An atom array that only includes active atoms.
+     * An atom list.
      */
-    protected final List<Atom> activeAtomList;
+    protected final List<Atom> totalAtomList;
     /**
-     * An atom array that only includes active atoms.
+     * An atom array.
      */
-    protected final Atom[] activeAtoms;
+    protected final Atom[] totalAtomArray;
 
     /**
      * <p>
@@ -114,17 +106,17 @@ public class RefinementModel {
         ArrayList<MSNode> nodeList0 = assembly[0].getNodeList();
         ArrayList<Residue> tempResidues = null;
         ArrayList<Molecule> tempMolecules = null;
-        boolean altconf;
+        boolean alternateConformer;
 
         /**
          * By residue/molecule.
          */
         for (int i = 0; i < nodeList0.size(); i++) {
-            altconf = false;
+            alternateConformer = false;
             MSNode iNode = nodeList0.get(i);
 
             /**
-             * first set up alternate residue restraint list.
+             * First set up alternate residue restraint list.
              */
             for (Atom a : iNode.getAtomList()) {
                 if (!a.getUse()) {
@@ -136,7 +128,7 @@ public class RefinementModel {
                         tempResidues = new ArrayList<>();
                         tempResidues.add((Residue) iNode);
                         altResidues.add(tempResidues);
-                        altconf = true;
+                        alternateConformer = true;
                         break;
                     } else if (iNode instanceof Molecule) {
                         if (refinemolocc) {
@@ -144,12 +136,12 @@ public class RefinementModel {
                             tempMolecules.add((Molecule) iNode);
                             altMolecules.add(tempMolecules);
                         }
-                        altconf = true;
+                        alternateConformer = true;
                         break;
                     }
                 }
             }
-            if (altconf) {
+            if (alternateConformer) {
                 for (int j = 1; j < assembly.length; j++) {
                     ArrayList<MSNode> nlist = assembly[j].getNodeList();
                     MSNode node = nlist.get(i);
@@ -185,11 +177,9 @@ public class RefinementModel {
         }
 
         /**
-         * Create the activeAtomList and usedAtomList, which will be used for SF
-         * calc.
+         * Create the atomList to be used for SF calculations.
          */
-        usedAtomList = new ArrayList<>();
-        activeAtomList = new ArrayList<>();
+        totalAtomList = new ArrayList<>();
 
         /**
          * Root list.
@@ -202,12 +192,8 @@ public class RefinementModel {
             }
             a.setFormFactorIndex(index);
             xIndex[0].add(index);
-            usedAtomList.add(a);
             index++;
-            if (a.isActive()) {
-                activeAtomList.add(a);
-            }
-
+            totalAtomList.add(a);
         }
 
         // Now add cross references to root and any alternate atoms not in root
@@ -224,17 +210,14 @@ public class RefinementModel {
                     a.setFormFactorIndex(root.getFormFactorIndex());
                 } else {
                     xIndex[i].add(index);
-                    usedAtomList.add(a);
                     index++;
-                    if (a.isActive()) {
-                        activeAtomList.add(a);
-                    }
+                    totalAtomList.add(a);
                 }
             }
         }
-        usedAtoms = usedAtomList.toArray(new Atom[usedAtomList.size()]);
-        activeAtoms = activeAtomList.toArray(new Atom[activeAtomList.size()]);
 
+        totalAtomArray = totalAtomList.toArray(new Atom[totalAtomList.size()]);
+        
         for (ArrayList<Residue> list : altResidues) {
             if (list.size() == 1) {
                 Residue r = list.get(0);

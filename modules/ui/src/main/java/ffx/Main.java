@@ -238,6 +238,7 @@ public class Main extends JFrame {
             logger.info(String.format(" Starting up rank %d on %s.\n", rank, hostName));
         }
         HeadlessMain m = new HeadlessMain(commandLineFile, argList, logHandler);
+        mainPanel = m.mainPanel;
     }
 
     /**
@@ -465,7 +466,7 @@ public class Main extends JFrame {
     /**
      * This is the main application wrapper.
      */
-    public MainPanel mainPanel;
+    public static MainPanel mainPanel;
     /**
      * Rank of this process for a multi-process Parallel Java FFX job.
      */

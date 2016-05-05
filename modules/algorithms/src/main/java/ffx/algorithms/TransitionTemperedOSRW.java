@@ -385,14 +385,14 @@ public class TransitionTemperedOSRW implements Potential {
     private int window = 1000;
 
     private boolean osrwOptimization = false;
-    private int osrwOptimizationFrequency = 1000;
+    private int osrwOptimizationFrequency = 10000;
     private double osrwOptimizationLambdaCutoff = 0.5;
     private double osrwOptimizationEps = 0.1;
     private double osrwOptimizationTolerance = 1.0e-8;
     private MolecularAssembly molecularAssembly;
     private PDBFilter pdbFilter;
     private File pdbFile;
-    
+
     /**
      * OSRW Asynchronous MultiWalker Constructor.
      *
@@ -415,11 +415,11 @@ public class TransitionTemperedOSRW implements Potential {
             double temperature, double dt, double printInterval,
             double saveInterval, boolean asynchronous,
             AlgorithmListener algorithmListener) {
-        this(lambdaInterface, potential, lambdaFile, histogramFile, properties, 
-                temperature, dt, printInterval, saveInterval, asynchronous, 
+        this(lambdaInterface, potential, lambdaFile, histogramFile, properties,
+                temperature, dt, printInterval, saveInterval, asynchronous,
                 true, algorithmListener);
     }
-    
+
     /**
      * OSRW Asynchronous MultiWalker Constructor.
      *
@@ -525,7 +525,7 @@ public class TransitionTemperedOSRW implements Potential {
                 logger.info(" Histogram restart file could not be found and will be ignored.");
             }
         }
-        
+
         energyCount = -1;
 
         /**
@@ -637,7 +637,7 @@ public class TransitionTemperedOSRW implements Potential {
         if (state == STATE.FAST) {
             return e;
         }
-        
+
         if (osrwOptimization && lambda > osrwOptimizationLambdaCutoff) {
             if (energyCount % osrwOptimizationFrequency == 0) {
                 logger.info(String.format(" OSRW Minimization (Step %d)", energyCount));
@@ -663,10 +663,10 @@ public class TransitionTemperedOSRW implements Potential {
                 if (minEnergy < osrwOptimum) {
                     osrwOptimum = minEnergy;
                     logger.info(String.format(" New minimum energy found: %16.8f (Step %d).", osrwOptimum,energyCount));
-                    osrwOptimumCoords = potential.getCoordinates(osrwOptimumCoords);                
+                    osrwOptimumCoords = potential.getCoordinates(osrwOptimumCoords);
                     if (pdbFilter.writeFile(pdbFile, false)) {
                         logger.info(String.format(" Wrote PDB file to " + pdbFile.getName()));
-                    }                
+                    }
                 }
 
                 // Revert to the coordinates and gradient prior to optimization.
@@ -678,7 +678,7 @@ public class TransitionTemperedOSRW implements Potential {
                 }
             }
         }
-                
+
         double biasEnergy = 0.0;
         dEdLambda = lambdaInterface.getdEdL();
         d2EdLambda2 = lambdaInterface.getd2EdL2();
@@ -1142,7 +1142,7 @@ public class TransitionTemperedOSRW implements Potential {
         totalWeight = 0;
         StringBuilder stringBuilder = new StringBuilder();
         if (print) {
-            stringBuilder.append(" Weight    Lambda Bins    F_Lambda Bins   <   F_L  >       dG        G\n");
+            stringBuilder.append(" Weight    Lambda Bins    F_Lambda Bins   <   F_L  >  Max F_L     dG        G\n");
         }
         for (int iL = 0; iL < lambdaBins; iL++) {
             int ulFL = -1;
@@ -1169,12 +1169,13 @@ public class TransitionTemperedOSRW implements Potential {
             // The FL range sampled for lambda bin [iL*dL .. (iL+1)*dL]
             double lla = 0.0;
             double ula = 0.0;
+            double maxBias = 0;
             if (ulFL == -1) {
                 FLambda[iL] = 0.0;
+                minFL = 0.0;
             } else {
                 double ensembleAverageFLambda = 0.0;
                 double partitionFunction = 0.0;
-                double maxBias = 0;
                 for (int jFL = llFL; jFL <= ulFL; jFL++) {
                     double currentFLambda = minFLambda + jFL * dFL + dFL_2;
                     double kernel = evaluateKernel(iL, jFL);
@@ -1212,9 +1213,9 @@ public class TransitionTemperedOSRW implements Potential {
                 if (ulL > 1.0) {
                     ulL = 1.0;
                 }
-                stringBuilder.append(String.format(" %6.2e  %5.3f %5.3f   %7.1f %7.1f   %8.3f  %8.3f %8.3f\n",
+                stringBuilder.append(String.format(" %6.2e  %5.3f %5.3f   %7.1f %7.1f   %8.3f  %8.3f  %8.3f %8.3f\n",
                         lambdaCount, llL, ulL, lla, ula,
-                        FLambda[iL], deltaFreeEnergy, freeEnergy));
+                        FLambda[iL], maxBias, deltaFreeEnergy, freeEnergy));
             }
         }
 
@@ -1224,6 +1225,7 @@ public class TransitionTemperedOSRW implements Potential {
 
         if (abs(freeEnergy - previousFreeEnergy) > 0.001) {
             if (print) {
+                stringBuilder.append(String.format(" Minimum Bias %8.3f", minFL));
                 logger.info(stringBuilder.toString());
                 previousFreeEnergy = freeEnergy;
             }
@@ -1349,11 +1351,11 @@ public class TransitionTemperedOSRW implements Potential {
         this.lambda = lambda;
         theta = Math.asin(Math.sqrt(lambda));
     }
-    
+
     /**
-     * Sets the Dama et al tempering parameter, as a multiple of kbT. T is 
+     * Sets the Dama et al tempering parameter, as a multiple of kbT. T is
      * presently assumed to be 298.0K.
-     * @param kbtMult 
+     * @param kbtMult
      */
     public void setDeltaT(double kbtMult) {
         deltaT = R * 298.0 * kbtMult;
@@ -1362,7 +1364,7 @@ public class TransitionTemperedOSRW implements Potential {
     public LambdaInterface getLambdaInterface(){
         return lambdaInterface;
     }
-    
+
     public void setTraversalOutput(File lambdaOneFile, MolecularAssembly topology1, File lambdaZeroFile, MolecularAssembly topology2) {
         this.writeTraversalSnapshots = true;
         this.lambdaOneFile = lambdaOneFile;
@@ -1449,7 +1451,7 @@ public class TransitionTemperedOSRW implements Potential {
     public void setOSRWOptimum(double prevOSRWOptimum) {
         osrwOptimum = prevOSRWOptimum;
     }
-    
+
     public double getOSRWOptimum(){
         return osrwOptimum;
     }
@@ -1461,7 +1463,7 @@ public class TransitionTemperedOSRW implements Potential {
             return null;
         }
     }
-    
+
     public void setOptimization(boolean osrwOptimization, MolecularAssembly molAss) {
         this.osrwOptimization = osrwOptimization;
         this.molecularAssembly = molAss;
@@ -1471,9 +1473,9 @@ public class TransitionTemperedOSRW implements Potential {
             pdbFile = new File(fileName + "_opt.pdb");
             pdbFilter = new PDBFilter(new File(fileName + "_opt.pdb"), molecularAssembly, null, null);
         }
-        
+
     }
-        
+
     @Override
     public double[] getMass() {
         return potential.getMass();
@@ -1544,9 +1546,9 @@ public class TransitionTemperedOSRW implements Potential {
     public double[] getPreviousAcceleration(double[] previousAcceleration) {
         return potential.getPreviousAcceleration(previousAcceleration);
     }
-    
+
     /**
-     * Returns the number of energy evaluations performed by this ttOSRW, 
+     * Returns the number of energy evaluations performed by this ttOSRW,
      * including those picked up in the lambda file.
      * @return Number of energy steps taken by this walker.
      */
@@ -1644,7 +1646,7 @@ public class TransitionTemperedOSRW implements Potential {
         public TTOSRWLambdaReader(Reader reader) {
             super(reader);
         }
-        
+
         public void readLambdaFile() {
             readLambdaFile(true);
         }

@@ -311,8 +311,13 @@ public class RealSpaceData implements DataContainer {
         // Zero out the realSpacedUdL energy.
         realSpacedUdL = 0.0;
         // Initialize gradient to zero; allocate space if necessary.
-        int nUsedAtoms = refinementModel.usedAtoms.length;
-        int nActive = refinementModel.activeAtoms.length;
+        int nActive = 0;
+        int nAtoms = refinementModel.totalAtomArray.length;
+        for (int i = 0; i < nAtoms; i++) {
+            if (refinementModel.totalAtomArray[i].isActive()) {
+                nActive++;
+            }
+        }
 
         int nGrad = nActive * 3;
         if (realSpaceGradient == null || realSpaceGradient.length < nGrad) {
@@ -331,7 +336,14 @@ public class RealSpaceData implements DataContainer {
             double sum = 0.0;
             TriCubicSpline spline = new TriCubicSpline();
             int index = 0;
-            for (Atom a : refinementModel.usedAtoms) {
+            for (Atom a : refinementModel.totalAtomArray) {
+                /**
+                 * Only include atoms in the target function that have their use
+                 * flag set to true.
+                 */
+                if (!a.getUse()) {
+                    continue;
+                }
                 double lambdai = 1.0;
                 double dUdL = 0.0;
                 if (lambdaTerm && a.applyLambda()) {
@@ -431,13 +443,15 @@ public class RealSpaceData implements DataContainer {
         }
 
         int index = 0;
-        for (Atom a : refinementModel.activeAtoms) {
-            int gradIndex = index * 3;
-            int gx = gradIndex;
-            int gy = gradIndex + 1;
-            int gz = gradIndex + 2;
-            a.addToXYZGradient(realSpaceGradient[gx], realSpaceGradient[gy], realSpaceGradient[gz]);
-            index++;
+        for (Atom a : refinementModel.totalAtomArray) {
+            if (a.isActive()) {
+                int gradIndex = index * 3;
+                int gx = gradIndex;
+                int gy = gradIndex + 1;
+                int gz = gradIndex + 2;
+                a.addToXYZGradient(realSpaceGradient[gx], realSpaceGradient[gy], realSpaceGradient[gz]);
+                index++;
+            }
         }
 
         return realSpaceEnergy;
@@ -452,22 +466,37 @@ public class RealSpaceData implements DataContainer {
     }
 
     public double[] getRealSpaceGradient(double gradient[]) {
-        int nAtoms = refinementModel.activeAtoms.length;
-        if (gradient == null || gradient.length < nAtoms * 3) {
-            gradient = new double[nAtoms * 3];
+        int nAtoms = refinementModel.totalAtomArray.length;
+        int nActiveAtoms = 0;
+        for (int i=0; i<nAtoms; i++) {
+            if (refinementModel.totalAtomArray[i].isActive()) {
+                nActiveAtoms++;
+            }
         }
-        for (int i = 0; i < nAtoms * 3; i++) {
+
+        if (gradient == null || gradient.length < nActiveAtoms * 3) {
+            gradient = new double[nActiveAtoms * 3];
+        }
+        for (int i = 0; i < nActiveAtoms * 3; i++) {
             gradient[i] += realSpaceGradient[i];
         }
         return gradient;
     }
 
     public double[] getdEdXdL(double gradient[]) {
-        int nAtoms = refinementModel.activeAtoms.length;
-        if (gradient == null || gradient.length < nAtoms * 3) {
-            gradient = new double[nAtoms * 3];
+        int nAtoms = refinementModel.totalAtomArray.length;
+        int nActiveAtoms = 0;
+        for (int i=0; i<nAtoms; i++) {
+            if (refinementModel.totalAtomArray[i].isActive()) {
+                nActiveAtoms++;
+            }
         }
-        for (int i = 0; i < nAtoms * 3; i++) {
+
+        if (gradient == null || gradient.length < nActiveAtoms * 3) {
+            gradient = new double[nActiveAtoms * 3];
+        }
+
+        for (int i = 0; i < nActiveAtoms * 3; i++) {
             gradient[i] += realSpacedUdXdL[i];
         }
         return gradient;
@@ -487,7 +516,7 @@ public class RealSpaceData implements DataContainer {
      */
     @Override
     public Atom[] getAtomArray() {
-        return refinementModel.usedAtoms;
+        return refinementModel.totalAtomArray;
     }
 
     /**
@@ -495,7 +524,7 @@ public class RealSpaceData implements DataContainer {
      */
     @Override
     public Atom[] getActiveAtomArray() {
-        return refinementModel.activeAtoms;
+        return getAtomArray();
     }
 
     /**

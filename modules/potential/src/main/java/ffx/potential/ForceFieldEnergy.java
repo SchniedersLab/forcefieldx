@@ -117,7 +117,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private final VanDerWaals vanderWaals;
     private final ParticleMeshEwald particleMeshEwald;
     private final NCSRestraint ncsRestraint;
-    private final List<CoordRestraint> coordRestraints; 
+    private final List<CoordRestraint> coordRestraints;
     private final CoordRestraint autoCoordRestraint;
     private final COMRestraint comRestraint;
     private int nAtoms;
@@ -207,7 +207,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private double xyz[] = null;
 
     private Resolution resolution = Resolution.AMOEBA;
-    
+
     /**
      * <p>
      * Constructor for ForceFieldEnergy.</p>
@@ -1224,7 +1224,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 restrainEnergy = autoCoordRestraint.residual(gradient, print);
                 coordRestraintTime += System.nanoTime();
             }*/
-            
             if (restrainTerm && !coordRestraints.isEmpty()) {
                 coordRestraintTime = -System.nanoTime();
                 for (CoordRestraint restraint : coordRestraints) {
@@ -1310,17 +1309,20 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     public double getTotalEnergy() {
         return totalEnergy;
     }
-    
+
     /**
-     * Return the non-bonded components of energy (vdW, electrostatics, solvation).
+     * Return the non-bonded components of energy (vdW, electrostatics,
+     * solvation).
+     *
      * @return Nonbonded energy
      */
     public double getNonbondedEnergy() {
         return getNonbondedEnergy(true);
     }
-    
+
     /**
      * Return the non-bonded components of energy (vdW, electrostatics).
+     *
      * @param includeSolv Include solvation energy
      * @return Nonbonded energy
      */
@@ -2218,21 +2220,22 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
     /**
      * Returns total electrostatic energy
+     *
      * @param includeSolvation Whether to include solvation energy
      * @return Electrostatic energy
      */
     public double getTotalElectrostaticEnergy(boolean includeSolvation) {
         return (includeSolvation ? getTotalElectrostaticEnergy() : totalElectrostaticEnergy);
     }
-    
+
     public double getTotalElectrostaticEnergy() {
         return totalElectrostaticEnergy + solvationEnergy;
     }
-    
+
     public double getElectrostaticEnergy() {
         return totalElectrostaticEnergy;
     }
-    
+
     public double getSolvationEnergy() {
         return solvationEnergy;
     }
