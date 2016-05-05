@@ -132,6 +132,8 @@ boolean runMCLoop = false;
 // Transition Tempered OSRW
 boolean runTTOSRW = false;
 
+// Local minimization mode
+boolean localMin = false;
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
@@ -140,8 +142,10 @@ def cli = new CliBuilder(usage:' ffxc loopBuilder [options] <filename1>');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.e(longOpt:'eps', args:1, argName:'1.0', 'RMS gradient convergence criteria');
 cli.n(longOpt:'steps', args:1, argName:'10000', 'Number of molecular dynamics steps.');
+cli.c(longOpt:'chain', args:1, argName:' ', 'Single character chain name to limit optimization to single chain.');
 cli.d(longOpt:'dt', args:1, argName:'2.5', 'Time discretization step (fsec).');
 cli.r(longOpt:'report', args:1, argName:'0.01', 'Interval to report thermodyanamics (psec).');
+cli.m(longOpt:'minimize','Local minimization of loop residues (need -s and -f flags).');
 cli.w(longOpt:'write', args:1, argName:'100.0', 'Interval to write out coordinates (psec).');
 cli.t(longOpt:'temperature', args:1, argName:'298.15', 'Temperature in degrees Kelvin.');
 cli.g(longOpt:'bias', args:1, argName:'0.01', 'Gaussian bias magnitude (kcal/mol).');
@@ -167,6 +171,16 @@ if (options.s && options.f) {
     loopStop = Integer.parseInt(options.f);
 } else if (options.s || options.f){
     logger.info("Starting atom and final atom numbers are need to use this option.");
+}
+
+// Chain Name.
+if (options.c) {
+    chain = options.c.toCharacter();
+}
+
+// Local minimization mode
+if (options.m) {
+    localMin = true;
 }
 
 // Set Monte Carlo step frequency
@@ -308,10 +322,11 @@ Atom[] atoms = active.getAtomArray();
 if(options.s && options.f){
     for (int i = 0; i < atoms.length; i++){
         Atom ai = atoms[i];
-        if(ai.getResidueNumber() >= loopStart && ai.getResidueNumber() <= loopStop){
-            ai.setBuilt(true);
+        if(!options.c || chain == ai.getChainID()){
+            if(ai.getResidueNumber() >= loopStart && ai.getResidueNumber() <= loopStop){
+                ai.setBuilt(true);
+            }
         }
-
     }
 } else {
     //create array of built residues
@@ -352,8 +367,12 @@ logger.info("\n Running minimize on built atoms of " + active.getName());
 logger.info(" RMS gradient convergence criteria: " + eps);
 
 // Minimization without vdW.
-e = minimize(eps);
-energy();
+if (localMin){
+    runOSRW = false;
+} else {
+    e = minimize(eps);
+    energy();
+}
 
 boolean loopBuildError = false;
 
@@ -417,6 +436,7 @@ if(runOSRW){
         molDyn.addMCListener(mcLoop);
         mcLoop.addMolDyn(molDyn);
         mcLoop.addLambdaInterface(osrw.getLambdaInterface());
+        mcLoop.setIterations(20);
 
     }
 

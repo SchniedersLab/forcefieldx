@@ -651,6 +651,11 @@
                 <enabled>true</enabled>
             </releases>
         </repository>
+        <repository>
+            <id>biojava-legacy-repo</id>
+            <name>BioJava's Git based legacy maven repo</name>
+            <url>https://github.com/biojava/maven-repo/raw/master/</url>
+        </repository>
     </repositories>
     <reporting>
         <plugins>
@@ -849,6 +854,7 @@
         <jcuda.version>6.5.0</jcuda.version>
         <jocl.version>2.3.1</jocl.version>
         <junit.version>4.12</junit.version>
+        <biojava.version>3.0.8</biojava.version>
     </properties>
     <modules>
         <module>modules/algorithms</module>

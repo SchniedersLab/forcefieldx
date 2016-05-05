@@ -41,6 +41,7 @@ import java.io.File;
 
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.parsers.SystemFilter;
 
 /**
  * The PotentialsFunctions interface specifies utility methods such as opening
@@ -98,6 +99,12 @@ public interface PotentialsFunctions {
     public ForceFieldEnergy energy(MolecularAssembly assembly);
 
     public double returnEnergy(MolecularAssembly assembly);
+    
+    /**
+     * Returns the last SystemFilter created by this (may be null).
+     * @return 
+     */
+    public SystemFilter getFilter();
 
     // Subsequent methods were when I was duplicating MainPanel's open() methods,
     // instead of its openWait() methods.

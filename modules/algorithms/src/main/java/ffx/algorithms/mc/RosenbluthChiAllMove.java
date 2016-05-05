@@ -96,19 +96,37 @@ public class RosenbluthChiAllMove implements MCMove {
     private SnapshotWriter snapshotWriter = null;
     private int moveNumber = 0;
     private boolean torsionSampling = System.getProperty("cbmc-torsionSampler") != null ? true : false;
+    private boolean randInts = System.getProperty("cbmc-randInts") != null ? true : false;
+    private boolean noSnaps = System.getProperty("cbmc-noSnaps") != null ? true : false;
+    private boolean printTestSets = System.getProperty("cbmc-printTestSets") != null ? true : false;
+    private boolean logTimings = System.getProperty("cbmc-logTimings") != null ? true : false;
     private double tolerance = 0.1;
     private final MolecularAssembly mola;
+    private final boolean doChi[] = new boolean[4];
+    private boolean accepted = false;
+    private static int numAccepted = 0;
     
     public enum MODE {
         EXPENSIVE, CHEAP, CHEAPINDIV, CHEAPDIFFS, CONTROL, CTRL_ALL;
     }
-    private MODE mode = MODE.valueOf(System.getProperty("cbmc-type"));
+    private final MODE mode;
     private final double CATASTROPHE_THRESHOLD = -10000;
+    public double origEnergy = 0.0;
     public double finalEnergy = 0.0;
+    double proposedChis[] = new double[4];
+    private long startTime, endTime, took;
+    private final double NS_TO_MS = 0.000001;
     
     public RosenbluthChiAllMove(MolecularAssembly mola, Residue target, 
             int testSetSize, ForceFieldEnergy ffe, double temperature, 
             boolean writeSnapshots, int moveNumber, boolean verbose) {
+        if (System.getProperty("cbmc-type") != null) {
+            mode = MODE.valueOf(System.getProperty("cbmc-type"));
+        } else {
+            logger.severe("CBMC: must specify a bias type.");
+            mode = MODE.CHEAP;
+        }
+        this.startTime = System.nanoTime();
         this.mola = mola;
         this.target = target;
         this.testSetSize = testSetSize;
@@ -120,7 +138,15 @@ public class RosenbluthChiAllMove implements MCMove {
         if (writeSnapshots) {
             snapshotWriter = new SnapshotWriter(mola, false);
         }
+        doChi[0] = System.getProperty("cbmc-doChi0") != null ? true : false;
+        doChi[1] = System.getProperty("cbmc-doChi1") != null ? true : false;
+        doChi[2] = System.getProperty("cbmc-doChi2") != null ? true : false;
+        doChi[3] = System.getProperty("cbmc-doChi3") != null ? true : false;
+        if (!doChi[0] && !doChi[1] && !doChi[2] && !doChi[3]) {
+            doChi[0] = true; doChi[1] = true; doChi[2] = true; doChi[3] = true;
+        }
         updateAll();
+        origEnergy = totalEnergy();
         if (torsionSampling) {
             logger.info(" Torsion Sampler engaged!");
             HashMap<Integer,BackBondedList> map = createBackBondedMap(AminoAcid3.valueOf(target.getName()));
@@ -140,53 +166,27 @@ public class RosenbluthChiAllMove implements MCMove {
                 engage_cheap();
                 break;
             case CHEAPINDIV:
+                logger.severe("CBMC: this bias type is not yet supported.");
                 engage_cheap();
                 break;
             case CHEAPDIFFS:
+                logger.severe("CBMC: this bias type is not yet supported.");
                 engage_diffs();
                 break;
             case CONTROL:
-                logger.severe("CBMC type/constructor mismatch.");
-                engage_control();
-                break;
-            case CTRL_ALL:
-                logger.severe("CBMC type/constructor mismatch.");
-                engage_controlAll();
-                break;
-            default:
-                logger.severe("Unknown CBMC type.");
-                break;
-        }
-    }
-    
-    /**
-     * ONLY FOR THE CONTROL MOVE.
-     */
-    public RosenbluthChiAllMove(MolecularAssembly mola, Residue target, 
-            ForceFieldEnergy ffe, double temperature, 
-            int moveNumber, boolean verbose) {
-        this.mola = mola;
-        this.target = target;
-        this.ffe = ffe;
-        this.beta = 1 / (BOLTZMANN * temperature);
-        this.moveNumber = moveNumber;
-        this.verbose = verbose;
-        this.origState = target.storeState();
-        this.testSetSize = -1;
-        switch (mode) {
-            case CONTROL:
+                logger.severe("CBMC: Use CTRL_ALL validation instead.");
                 engage_control();
                 break;
             case CTRL_ALL:
                 engage_controlAll();
                 break;
             default:
-                logger.severe("CBMC type/constructor mismatch.");
+                logger.severe("CBMC: Unknown biasing type requested.");
                 break;
         }
     }
 
-    private void engage_cheap() {
+    private boolean engage_cheap() {
         report.append(String.format(" Rosenbluth CBMC Move: %4d  (%s)\n", moveNumber, target));
         
         AminoAcid3 name = AminoAcid3.valueOf(target.getName());
@@ -215,7 +215,7 @@ public class RosenbluthChiAllMove implements MCMove {
             Wn = -1.0;
             Wo = 1000;
             logger.info(report.toString());
-            return;
+            return false;
         }
 
         // Choose a proposal move from amongst this trial set (bn).
@@ -226,9 +226,12 @@ public class RosenbluthChiAllMove implements MCMove {
             running += uExtBolt;
             if (rng < running) {
                 proposedMove = newTrialSet.rotamer[j];
+                proposedChis = newTrialSet.theta;
                 double prob = uExtBolt / Wn * 100;
-                report.append(String.format("       Chose %d   %7.4f\t  %4.1f%%\n", 
-                        j+1, newTrialSet.uExt[j], prob));
+                if (printTestSets) {
+                    report.append(String.format("       Chose %d   %7.4f\t  %4.1f%%\n", 
+                            j+1, newTrialSet.uExt[j], prob));
+                }
                 break;
             }
         }
@@ -242,8 +245,10 @@ public class RosenbluthChiAllMove implements MCMove {
         }
         double ouExt = totalEnergy() - ouDep;       // original-conf uExt
         double ouExtBolt = FastMath.exp(-beta * ouExt);
-        report.append(String.format("       %3s %d:  %9.5g  %9.5g  %9.5g\n",
-                "bko", 0, ouDep, ouExt, ouExtBolt));
+        if (printTestSets) {
+            report.append(String.format("       %3s %d:  %9.5g  %9.5g  %9.5g\n",
+                    "bko", 0, ouDep, ouExt, ouExtBolt));
+        }
         writeSnapshot("bko", true);
         TrialSet oldTrialSet = cheapTorsionSet(allTors, testSetSize - 1, "bko");
         Wo = ouExtBolt + oldTrialSet.sumExtBolt();
@@ -251,6 +256,8 @@ public class RosenbluthChiAllMove implements MCMove {
         report.append(String.format("    Wo Total:  %11.4g\n", Wo));
         report.append(String.format("    Wn/Wo:     %11.4g", Wn/Wo));
         
+        RotamerLibrary.applyRotamer(target, proposedMove);
+        proposedChis = RotamerLibrary.measureRotamer(target, false);
         finalEnergy = totalEnergy();
         if (finalEnergy < CATASTROPHE_THRESHOLD) {
             report.append("\nWARNING: Multipole catastrophe in CMBC.\n");
@@ -260,14 +267,57 @@ public class RosenbluthChiAllMove implements MCMove {
             Wn = -1.0;
             Wo = 1000;
             logger.info(report.toString());
-            return;
+            return false;
         }
         
-        target.revertState(origState);
-        updateAll();
-        if (verbose) {
-            logger.info(report.toString());
+        double criterion = Math.min(1, Wn / Wo);
+        rng = ThreadLocalRandom.current().nextDouble();
+        report.append(String.format("    rng:    %5.2f\n", rng));
+        if (rng < criterion) {
+            accepted = true;
+            numAccepted++;
+            updateAll();
+            write();
+            report.append(String.format(" Accepted! %5d    NewEnergy: %.4f    Chi:", numAccepted, finalEnergy));
+            for (int k = 0; k < proposedChis.length; k++) {
+                report.append(String.format(" %7.2f", proposedChis[k]));
+            }
+            report.append(String.format("\n"));
+        } else {
+            accepted = false;
+            target.revertState(origState);
+            updateAll();
+            report.append(String.format(" Denied.   %5d    OldEnergy: %.4f    Chi:", numAccepted, origEnergy));
+            for (int k = 0; k < chi.length; k++) {
+                report.append(String.format(" %7.2f", chi[k]));
+            }
+            report.append(String.format("\n"));
         }
+        
+        endTime = System.nanoTime();
+        double took = (endTime - startTime) * NS_TO_MS;
+        if (logTimings) {
+            report.append(String.format("   Timing (ms): %.2f", took));
+        }
+        logger.info(report.toString());
+        return accepted;
+    }
+    
+    private PDBFilter writer;
+    private void write() {
+        if (noSnaps) {
+            return;
+        }
+        if (writer == null) {
+            writer = new PDBFilter(mola.getFile(), mola, null, null);
+        }
+        String filename = FilenameUtils.removeExtension(mola.getFile().toString());
+        filename = mola.getFile().getAbsolutePath();
+        if (!filename.contains("_mc")) {
+            filename = FilenameUtils.removeExtension(filename) + "_mc.pdb";
+        }
+        File file = new File(filename);
+        writer.writeFile(file, false);
     }
     
     private void engage_diffs() {
@@ -341,6 +391,7 @@ public class RosenbluthChiAllMove implements MCMove {
         // Collects data for plot of uTors vs. theta.
         // This is for finding the appropriate offset to add to each uTors such that the minimum is zero.
 //        double origChi[] = RotamerLibrary.measureRotamer(target, false);
+        updateAll();
         double origChi[] = measureLysine(target, false);
         StringBuilder sb = new StringBuilder();
         sb.append(String.format(" Torsion Sampling for %s\n", target.getName()));
@@ -366,6 +417,8 @@ public class RosenbluthChiAllMove implements MCMove {
             sb.append(String.format(" Resi chi0 chi1 chi2 chi3 List<uTors> uTorsSum uTotal\n"));
             logger.info(sb.toString());
             sb = new StringBuilder();
+            boolean doChi0 = false, doChi1 = false;
+            boolean doChi2 = true, doChi3 = true;
             double increment = 1.0;
             for (double chi0 = -180.0; chi0 < +180.0; chi0 += increment) {
                 for (double chi1 = -180.0; chi1 <= +180.0; chi1 += increment) {
@@ -373,10 +426,26 @@ public class RosenbluthChiAllMove implements MCMove {
                         for (double chi3 = -180.0; chi3 <= +180.0; chi3 += increment) {
                             sb.append(String.format(" %3s", target.getName()));
                             double newChi[] = new double[4];
-                            newChi[0] = chi0;
-                            newChi[1] = chi1;
-                            newChi[2] = chi2;
-                            newChi[3] = chi3;
+                            if (doChi0) {
+                                newChi[0] = chi0;
+                            } else {
+                                newChi[0] = origChi[0];
+                            }
+                            if (doChi1) {
+                                newChi[1] = chi1;
+                            } else {
+                                newChi[1] = origChi[1];
+                            }
+                            if (doChi2) {
+                                newChi[2] = chi2;
+                            } else {
+                                newChi[2] = origChi[2];
+                            }
+                            if (doChi3) {
+                                newChi[3] = chi3;
+                            } else {
+                                newChi[3] = origChi[3];
+                            }
                             Torsion chi0Tors = allTors.get(0);
                             Torsion chi1Tors = allTors.get(1);
                             Torsion chi2Tors = allTors.get(2);
@@ -405,8 +474,20 @@ public class RosenbluthChiAllMove implements MCMove {
                             sb.append(String.format("\n"));
                             logger.info(sb.toString());
                             sb = new StringBuilder();
+                            if (!doChi3) {
+                                break;
+                            }
+                        }
+                        if (!doChi2) {
+                            break;
                         }
                     }
+                    if (!doChi1) {
+                        break;
+                    }
+                }
+                if (!doChi0) {
+                    break;
                 }
             }
         } else {
@@ -569,7 +650,9 @@ public class RosenbluthChiAllMove implements MCMove {
      * Instead, each member of the test set is a full set of chi angles, the COMBINATION of which is drawn from the Boltzmann.
      */
     private TrialSet cheapTorsionSet(List<Torsion> allTors, int setSize, String snapSuffix) {
-        report.append(String.format("    TrialSet_Cheap (uDep uExt)\n"));
+        if (printTestSets) {
+            report.append(String.format("    TrialSet_Cheap (uDep uExt)\n"));
+        }
         TrialSet trialSet = new TrialSet(setSize);
         double origChi[] = RotamerLibrary.measureRotamer(target, false);
         int i = 0;
@@ -577,23 +660,33 @@ public class RosenbluthChiAllMove implements MCMove {
             double newChi[] = new double[origChi.length];
             System.arraycopy(origChi, 0, newChi, 0, origChi.length);
             for (int k = 0; k < origChi.length; k++) {
-                newChi[k] = rand.nextDouble(360.0) - 180;
+                if (doChi[k]) {
+                    if (randInts) {
+                        newChi[k] = rand.nextInt(360) - 180;
+                    } else {
+                        newChi[k] = rand.nextDouble(360.0) - 180;
+                    }
+                }
             }
+//            report.append(String.format(" newChi:"));
+//            for (int k = 0; k < origChi.length; k++) {
+//                report.append(String.format(" %.2f", newChi[k]));
+//            }
+//            report.append("\n");
             Rotamer newState = createRotamer(target, newChi);
             RotamerLibrary.applyRotamer(target, newState);
             double uTors = 0;
-            for (Torsion tors : allTors) {
-                uTors += tors.energy(false);
-            }
             for (int j = 0; j < allTors.size(); j++) {
-                uTors += allTors.get(j).energy(false);
-                double offset = 0;
-                try {
-                    offset = TORSION_OFFSET_AMPRO13.valueOf(target.getName()+j).offset;
-                } catch (IllegalArgumentException ex) {
-                    logger.warning(ex.getMessage());
+                if (doChi[j]) {
+                    uTors += allTors.get(j).energy(false);
+                    double offset = 0;
+                    try {
+                        offset = TORSION_OFFSET_AMPRO13.valueOf(target.getName()+j).offset;
+                    } catch (IllegalArgumentException ex) {
+                        logger.warning(ex.getMessage());
+                    }
+                    uTors += offset;
                 }
-                uTors += offset;
             }
             double criterion = FastMath.exp(-beta * uTors);
             double rng = rand.nextDouble();
@@ -604,11 +697,13 @@ public class RosenbluthChiAllMove implements MCMove {
                 trialSet.uExt[i] = totalEnergy() - uTors;
                 i++;
                 writeSnapshot(snapSuffix, true);
-                if (i < 5 || i > setSize - 1) {
-                    report.append(String.format("       %3s %d:      %5.2f\t%5.2f\n",
-                            snapSuffix, i, trialSet.uDep[i-1], trialSet.uExt[i-1]));
-                } else if (i == 5) {
-                    report.append(String.format("       ...\n"));
+                if (printTestSets) {
+                    if (i < 5 || i > setSize - 1) {
+                        report.append(String.format("       %3s %d:      %5.2f\t%5.2f\n",
+                                snapSuffix, i, trialSet.uDep[i-1], trialSet.uExt[i-1]));
+                    } else if (i == 5) {
+                        report.append(String.format("       ...\n"));
+                    }
                 }
             }
         }
@@ -794,6 +889,7 @@ public class RosenbluthChiAllMove implements MCMove {
         report.append(String.format("    orig, final, dU:  %.2g %.2g %.2g\n", origEnergy, finalEnergy, dU));
         report.append(String.format("    crit, rng:        %.2g %.2g\n", criterion, rng));
         if (rng < criterion) {
+            accepted = true;
             report.append(String.format("    Accepted!\n"));
             PDBFilter writer = new PDBFilter(mola.getFile(), mola, null, null);
             String filename = FilenameUtils.removeExtension(mola.getFile().toString());
@@ -804,6 +900,7 @@ public class RosenbluthChiAllMove implements MCMove {
             File file = new File(filename);
             writer.writeFile(file, false);
         } else {
+            accepted = false;
             report.append(String.format("    Denied.\n"));
             target.revertState(origState);
         }
@@ -827,9 +924,12 @@ public class RosenbluthChiAllMove implements MCMove {
         double newChi[] = new double[origChi.length];
         System.arraycopy(origChi, 0, newChi, 0, origChi.length);
         for (int i = 0; i < origChi.length; i++) {
-            double theta = rand.nextDouble(360.0) - 180;
-            newChi[i] = theta;
+            if (doChi[i]) {
+                double theta = rand.nextDouble(360.0) - 180;
+                newChi[i] = theta;
+            }
         }
+        proposedChis = newChi;
         Rotamer newState = createRotamer(target, newChi);
         RotamerLibrary.applyRotamer(target, newState);
         
@@ -850,31 +950,52 @@ public class RosenbluthChiAllMove implements MCMove {
         double rng = rand.nextDouble();
         report.append(String.format("    move (thetas):    "));
         for (int i = 0; i < newChi.length; i++) {
-            report.append(String.format("%.2g ", newChi[i]));
+            report.append(String.format("%7.2f ", newChi[i]));
         }
         report.append(String.format("\n"));
         report.append(String.format("    orig, final, dU:  %.2g %.2g %.2g\n", origEnergy, finalEnergy, dU));
         report.append(String.format("    crit, rng:        %.2g %.2g\n", criterion, rng));
         if (rng < criterion) {
-            report.append(String.format("    Accepted!  NewSystemEnergy: %.4f\n", finalEnergy));
-            PDBFilter writer = new PDBFilter(mola.getFile(), mola, null, null);
-            String filename = FilenameUtils.removeExtension(mola.getFile().toString());
-            filename = mola.getFile().getAbsolutePath();
-            if (!filename.contains("_mc")) {
-                filename = FilenameUtils.removeExtension(filename) + "_mc.pdb";
+            accepted = true;
+            numAccepted++;
+            report.append(String.format(" Accepted! %5d    NewEnergy: %.4f    Chi:", numAccepted, finalEnergy));
+            for (int k = 0; k < proposedChis.length; k++) {
+                report.append(String.format(" %7.2f", proposedChis[k]));
             }
-            File file = new File(filename);
-            writer.writeFile(file, false);
+            report.append(String.format("\n"));
+            updateAll();
+            if (!noSnaps) {
+                PDBFilter writer = new PDBFilter(mola.getFile(), mola, null, null);
+                String filename = FilenameUtils.removeExtension(mola.getFile().toString());
+                filename = mola.getFile().getAbsolutePath();
+                if (!filename.contains("_mc")) {
+                    filename = FilenameUtils.removeExtension(filename) + "_mc.pdb";
+                }
+                File file = new File(filename);
+                writer.writeFile(file, false);
+            }
         } else {
-            report.append(String.format("    Denied.\n"));
+            accepted = false;
+            report.append(String.format(" Denied.   %5d    NewEnergy: %.4f    Chi:", numAccepted, origEnergy));
+            for (int k = 0; k < origChi.length; k++) {
+                report.append(String.format(" %7.2f", origChi[k]));
+            }
+            report.append(String.format("\n"));
             target.revertState(origState);
         }
         
         updateAll();
-        if (verbose) {
-            logger.info(report.toString());
+        endTime = System.nanoTime();
+        double took = (endTime - startTime) * NS_TO_MS;
+        if (logTimings) {
+            report.append(String.format("   Timing (ms): %.2f", took));
         }
-        return (rng < criterion);
+        logger.info(report.toString());
+        return accepted;
+    }
+    
+    public boolean wasAccepted() {
+        return accepted;
     }
     
     private Rotamer createRotamer(AminoAcid3 name, double chi[]) {
@@ -1255,9 +1376,13 @@ public class RosenbluthChiAllMove implements MCMove {
     }
     
     private void writeSnapshot(String suffix, boolean append) {
-        if (snapshotWriter != null) {
+        if (snapshotWriter != null && !noSnaps) {
             snapshotWriter.write(suffix, append);
         }
+    }
+    
+    public MODE getMode() {
+        return mode;
     }
     
     private class SnapshotWriter {

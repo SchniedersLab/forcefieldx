@@ -51,6 +51,7 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.parsers.PDBFilter;
+import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XYZFilter;
 
 /**
@@ -65,6 +66,7 @@ public class PotentialsUtils implements PotentialsFunctions {
     private static final Logger logger = Logger.getLogger(PotentialsUtils.class.getName());
     private final long initTime;
     private long interTime;
+    private SystemFilter lastFilter;
 
     public PotentialsUtils() {
         initTime = System.nanoTime();
@@ -107,6 +109,7 @@ public class PotentialsUtils implements PotentialsFunctions {
     public MolecularAssembly[] open(String file) {
         PotentialsFileOpener opener = new PotentialsFileOpener(file);
         opener.run();
+        lastFilter = opener.getFilter();
         return opener.getAllAssemblies();
     }
 
@@ -121,6 +124,7 @@ public class PotentialsUtils implements PotentialsFunctions {
     public MolecularAssembly[] open(String[] files) {
         PotentialsFileOpener opener = new PotentialsFileOpener(files);
         opener.run();
+        lastFilter = opener.getFilter();
         return opener.getAllAssemblies();
     }
 
@@ -474,6 +478,11 @@ public class PotentialsUtils implements PotentialsFunctions {
             }
             return energy.energy(false, true);
         }
+    }
+    
+    @Override
+    public SystemFilter getFilter() {
+        return lastFilter;
     }
 }
 

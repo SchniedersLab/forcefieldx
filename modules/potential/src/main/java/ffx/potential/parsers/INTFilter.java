@@ -345,4 +345,9 @@ public class INTFilter extends SystemFilter {
          */
         return false;
     }
+    
+    @Override
+    public boolean readNext() {
+        return false;
+    }
 }

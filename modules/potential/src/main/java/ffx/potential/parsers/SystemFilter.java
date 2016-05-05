@@ -308,6 +308,12 @@ public abstract class SystemFilter {
     public boolean fileRead() {
         return fileRead;
     }
+    
+    /**
+     * Reads the next model if applicable (currently, ARC files only).
+     * @return If next model read.
+     */
+    public abstract boolean readNext();
 
     /**
      * <p>
@@ -734,7 +740,7 @@ public abstract class SystemFilter {
      * @throws IllegalArgumentException if an invalid argument
      * @return An int[2] with start, end indices (inclusive).
      */
-    private int[] parseAtNumArg(String keyType, String st, int nAtoms) throws IllegalArgumentException {
+    public static int[] parseAtNumArg(String keyType, String st, int nAtoms) throws IllegalArgumentException {
         Matcher m = intrangePattern.matcher(st);
         if (m.matches()) {
             int start = Integer.parseInt(m.group(1)) - 1;

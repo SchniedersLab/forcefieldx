@@ -351,6 +351,60 @@ public class XYZFilter extends SystemFilter {
         }
         return false;
     }
+    
+    /*public boolean readNextNew() throws IOException {
+        try {
+            Atom[] atoms = activeMolecularAssembly.getAtomArray();
+            int nAtoms = atoms.length;
+            if (bin == null) {
+                bin = new BufferedReader(new FileReader(currentFile));
+                snapShot = 1;
+            }
+            double[][] coords = new double[nAtoms][3];
+            boolean success = true;
+            
+            // Start with header line.
+            String line = bin.readLine();
+            for (int i = -1; i < nAtoms; i++) {
+                try {
+                    if (line == null) {
+                        logger.info(String.format(" End of archive reached for %s", activeMolecularAssembly));
+                        bin.close();
+                        return false;
+                    }
+                    line = line.trim();
+                    String[] toks = line.split("\\s+");
+                    if (i == -1) {
+                        String filename = toks[1];
+                        logger.info(String.format(" Reading snapshot %d of %s", snapShot++, filename));
+                    } else {
+                        for (int j = 0; j < 3; j++) {
+                            coords[i][j] = Double.parseDouble(toks[j + 2]);
+                        }
+                    }
+                    line = bin.readLine();
+                } catch (IOException | NumberFormatException exc) {
+                    success = false;
+                    logger.warning(String.format(" Exception reading coords for atom %d: %s", i, exc.toString()));
+                }
+            }
+
+            if (success) {
+                for (int i = 0; i < nAtoms; i++) {
+                    atoms[i].setXYZ(coords[i]);
+                }
+                return true;
+            } else {
+                logger.warning(String.format(" Failed to move atoms for snapshot %d", (snapShot - 1)));
+                return false;
+            }
+            
+        } catch (Exception ex) {
+            logger.info(String.format(" Exception %s while reading archive %s", ex.toString(), activeMolecularAssembly));
+            //return false;
+            throw ex;
+        }
+    }*/
 
     /**
      * Reads the next snap-shot of an archive into the activeMolecularAssembly.
@@ -359,13 +413,14 @@ public class XYZFilter extends SystemFilter {
      *
      * @return true if successful.
      */
+    @Override
     public boolean readNext() {
         try {
             String data = null;
             Atom atoms[] = activeMolecularAssembly.getAtomArray();
             int nSystem = atoms.length;
 
-            if (bin == null || !bin.ready()) {
+            if (bin == null/* || !bin.ready()*/) {
                 bin = new BufferedReader(new FileReader(currentFile));
                 // Read past the first N + 1 non-blank lines
                 for (int i = 0; i < nSystem + 1; i++) {
@@ -394,7 +449,7 @@ public class XYZFilter extends SystemFilter {
                     return false;
                 }
             } catch (Exception e) {
-                logger.severe(e.toString());
+                logger.warning(e.toString());
                 return false;
             }
             for (int i = 0; i < nSystem; i++) {
@@ -420,6 +475,7 @@ public class XYZFilter extends SystemFilter {
                 }
                 atoms[i].moveTo(x, y, z);
             }
+            return true;
         } catch (FileNotFoundException e) {
             String message = String.format("Exception opening file %s.", currentFile);
             logger.log(Level.WARNING, message, e);

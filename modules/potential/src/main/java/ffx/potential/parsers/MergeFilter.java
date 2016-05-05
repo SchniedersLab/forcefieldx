@@ -83,4 +83,9 @@ public class MergeFilter extends SystemFilter {
     public boolean writeFile(File saveFile, boolean append) {
         return false;
     }
+    
+    @Override
+    public boolean readNext() {
+        return false;
+    }
 }

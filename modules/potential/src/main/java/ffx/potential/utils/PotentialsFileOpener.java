@@ -88,6 +88,7 @@ public class PotentialsFileOpener implements FileOpener {
     private MolecularAssembly activeAssembly; // Presently, will just be the first element of assemblies.
     private List<CompositeConfiguration> propertyList;
     private CompositeConfiguration activeProperties;
+    private SystemFilter filter;
 
     public PotentialsFileOpener(File file) {
         if (!file.exists() || !file.isFile()) {
@@ -246,7 +247,6 @@ public class PotentialsFileOpener implements FileOpener {
                 }
             }
             assembly.setForceField(forceField);
-            SystemFilter filter;
             if (new PDBFileFilter().acceptDeep(fileI)) {
                 filter = new PDBFilter(fileI, assembly, forceField, properties);
             } else if (new XYZFileFilter().acceptDeep(fileI)) {
@@ -353,5 +353,9 @@ public class PotentialsFileOpener implements FileOpener {
     @Override
     public CompositeConfiguration[] getAllProperties() {
         return propertyList.toArray(new CompositeConfiguration[propertyList.size()]);
+    }
+    
+    public SystemFilter getFilter() {
+        return filter;
     }
 }

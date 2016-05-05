@@ -142,6 +142,9 @@ boolean runMCLoop = false;
 // Transition Tempered OSRW
 boolean runTTOSRW = false;
 
+// Local minimization mode
+boolean localMin = false;
+
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
@@ -151,6 +154,7 @@ cli.h(longOpt:'help', 'Print this help message.');
 cli.e(longOpt:'eps', args:1, argName:'1.0', 'RMS gradient convergence criteria');
 cli.n(longOpt:'steps', args:1, argName:'10000', 'Number of molecular dynamics steps.');
 cli.d(longOpt:'dt', args:1, argName:'2.5', 'Time discretization step (fsec).');
+cli.m(longOpt:'minimize','Local minimization of loop residues (need -s and -f flags).');
 cli.r(longOpt:'report', args:1, argName:'0.01', 'Interval to report thermodyanamics (psec).');
 cli.w(longOpt:'write', args:1, argName:'100.0', 'Interval to write out coordinates (psec).');
 cli.t(longOpt:'temperature', args:1, argName:'298.15', 'Temperature in degrees Kelvin.');
@@ -222,6 +226,11 @@ if (options.osrw){
 // Gaussian bias magnitude (kcal/mol).
 if (options.g) {
     biasMag = Double.parseDouble(options.g);
+}
+
+// Local minimization mode
+if (options.m) {
+    localMin = true;
 }
 
 // Run Simulated Annealing
@@ -341,13 +350,14 @@ Atom[] atoms = active.getAtomArray();
 if(options.s && options.f){
     for (int i = 0; i < atoms.length; i++){
         Atom ai = atoms[i];
-        if(ai.getResidueNumber() >= loopStart && ai.getResidueNumber() <= loopStop){
-            ai.setBuilt(true);
+        if(!options.c || chain == ai.getChainID()){
+            if(ai.getResidueNumber() >= loopStart && ai.getResidueNumber() <= loopStop){
+                ai.setBuilt(true);
+            }
         }
-
     }
 } else {
-    // Create array of built residues.
+    //create array of built residues
     ArrayList<Residue> loopResidues = new ArrayList<>();
     for (int i = 0; i < active.getChains().size(); i++){
         ArrayList<Residue> allResidues = active.getChains()[i].getResidues();
@@ -375,6 +385,7 @@ for (int i = 0; i <= atoms.length; i++) {
     if (ai.getBuilt()) {
         ai.setActive(true);
         ai.setUse(true);
+        logger.info(String.format(ai.getAtomType().toString() + " %d",ai.getResidueNumber()));
     } else {
         ai.setActive(false);
         ai.setUse(true);
@@ -384,14 +395,20 @@ for (int i = 0; i <= atoms.length; i++) {
 logger.info("\n Running minimize on built atoms of " + active.getName());
 logger.info(" RMS gradient convergence criteria: " + eps);
 
-// Minimization without vdW.
-RealSpaceData realSpaceData = new RealSpaceData(active, active.getProperties(),
-    mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
-RefinementMinimize refinementMinimize = new RefinementMinimize(realSpaceData, RefinementMode.COORDINATES);
-refinementMinimize.minimize(eps);
-energy();
 
-boolean loopBuildError = false;
+
+
+    RealSpaceData realSpaceData = new RealSpaceData(active, active.getProperties(),
+        mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
+    RefinementMinimize refinementMinimize = new RefinementMinimize(realSpaceData, RefinementMode.COORDINATES);
+    
+if (localMin){
+    runOSRW = false;
+} else {
+    // Minimization without vdW.
+    refinementMinimize.minimize(eps);
+    energy();
+}
 
 if(runOSRW){
     // Run OSRW.
@@ -471,7 +488,7 @@ if(runOSRW){
         molDyn.addMCListener(mcLoop);
         mcLoop.addMolDyn(molDyn);
         mcLoop.addLambdaInterface(osrw.getLambdaInterface());
-
+        mcLoop.setIterations(20);
     }
 
     molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities,

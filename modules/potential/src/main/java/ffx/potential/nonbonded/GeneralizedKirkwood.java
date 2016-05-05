@@ -4846,7 +4846,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                  * Find overlaps with the current sphere.
                  */
                 for (int i = lb; i <= ub; i++) {
-                    if (skip.get(i)) {
+                    if (skip.get(i) || !use[i]) {
                         continue;
                     }
                     int list[] = neighborLists[0][i];
@@ -4857,7 +4857,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             continue;
                         }
                         pair(i, k);
-                        if (!skip.get(k)) {
+                        if (!skip.get(k) || !use[k]) {
                             pair(k, i);
                         }
                     }
@@ -5037,7 +5037,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                  * Compute the area and derivatives of current "ir" sphere
                  */
                 for (int ir = lb; ir <= ub; ir++) {
-                    if (skip.get(ir)) {
+                    if (skip.get(ir) || !use[ir]) {
                         continue;
                     }
                     double xi = x[ir];
