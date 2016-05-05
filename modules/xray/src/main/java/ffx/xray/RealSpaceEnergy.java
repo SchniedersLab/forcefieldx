@@ -39,8 +39,6 @@ package ffx.xray;
 
 import java.util.logging.Logger;
 
-import static java.util.Arrays.fill;
-
 import ffx.numerics.Potential;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
@@ -66,18 +64,6 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
      * conformers.
      */
     private final RefinementModel refinementModel;
-    /**
-     * The use array contains a list of atoms to USE in the refinement.
-     */
-    private final Atom useArray[];
-    /**
-     * The active array contains a list of atom that move during the refinement.
-     */
-    private final Atom activeAtoms[];
-    /**
-     * The number of active atoms.
-     */
-    private final int nActive;
     /**
      * The number of parameters that are being refined.
      */
@@ -123,27 +109,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         this.realSpaceData = realSpaceData;
         this.refinementModel = realSpaceData.getRefinementModel();
         this.refinementMode = refinementMode;
-        this.useArray = refinementModel.usedAtoms;
         this.nXYZ = nxyz;
-
-        int count = 0;
-        for (Atom a : useArray) {
-            if (a.isActive()) {
-                count++;
-            }
-        }
-
-        this.nXYZ = count * 3;
-        nActive = count;
-        activeAtoms = new Atom[count];
-        count = 0;
-        for (Atom a : useArray) {
-            if (a.isActive()) {
-                activeAtoms[count] = a;
-                count++;
-            }
-        }
-
         setRefinementBooleans();
     }
 
@@ -204,9 +170,11 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         }
 
         if (refineXYZ) {
-            for (Atom a : activeAtoms) {
-                a.setXYZGradient(0.0, 0.0, 0.0);
-                a.setLambdaXYZGradient(0.0, 0.0, 0.0);
+            for (Atom a : refinementModel.totalAtomArray) {
+                if (a.isActive()) {
+                    a.setXYZGradient(0.0, 0.0, 0.0);
+                    a.setLambdaXYZGradient(0.0, 0.0, 0.0);
+                }
             }
         }
 
@@ -246,9 +214,11 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         }
 
         if (refineXYZ) {
-            for (Atom a : activeAtoms) {
-                a.setXYZGradient(0.0, 0.0, 0.0);
-                a.setLambdaXYZGradient(0.0, 0.0, 0.0);
+            for (Atom a : refinementModel.totalAtomArray) {
+                if (a.isActive()) {
+                    a.setXYZGradient(0.0, 0.0, 0.0);
+                    a.setLambdaXYZGradient(0.0, 0.0, 0.0);
+                }
             }
         }
 
@@ -304,11 +274,13 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         assert (g != null);
         double grad[] = new double[3];
         int index = 0;
-        for (Atom a : activeAtoms) {
-            a.getXYZGradient(grad);
-            g[index++] = grad[0];
-            g[index++] = grad[1];
-            g[index++] = grad[2];
+        for (Atom a : refinementModel.totalAtomArray) {
+            if (a.isActive()) {
+                a.getXYZGradient(grad);
+                g[index++] = grad[0];
+                g[index++] = grad[1];
+                g[index++] = grad[2];
+            }
         }
     }
 
@@ -322,8 +294,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
             x = new double[n];
         }
         int index = 0;
-        for (int i = 0; i < nActive; i++) {
-            Atom a = activeAtoms[i];
+        for (Atom a : refinementModel.totalAtomArray) {
             if (a.isActive()) {
                 x[index++] = a.getX();
                 x[index++] = a.getY();
@@ -342,11 +313,13 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         assert (x != null);
         double xyz[] = new double[3];
         int index = 0;
-        for (Atom a : activeAtoms) {
-            xyz[0] = x[index++];
-            xyz[1] = x[index++];
-            xyz[2] = x[index++];
-            a.moveTo(xyz);
+        for (Atom a : refinementModel.totalAtomArray) {
+            if (a.isActive()) {
+                xyz[0] = x[index++];
+                xyz[1] = x[index++];
+                xyz[2] = x[index++];
+                a.moveTo(xyz);
+            }
         }
     }
 
@@ -354,7 +327,8 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
      * {@inheritDoc}
      */
     @Override
-    public void setScaling(double[] scaling) {
+    public void setScaling(double[] scaling
+    ) {
         optimizationScaling = scaling;
     }
 
@@ -374,11 +348,13 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         double mass[] = new double[nXYZ];
         int i = 0;
         if (refineXYZ) {
-            for (Atom a : activeAtoms) {
-                double m = a.getMass();
-                mass[i++] = m;
-                mass[i++] = m;
-                mass[i++] = m;
+            for (Atom a : refinementModel.totalAtomArray) {
+                if (a.isActive()) {
+                    double m = a.getMass();
+                    mass[i++] = m;
+                    mass[i++] = m;
+                    mass[i++] = m;
+                }
             }
         }
         return mass;
@@ -404,7 +380,8 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
      * {@inheritDoc}
      */
     @Override
-    public void setLambda(double lambda) {
+    public void setLambda(double lambda
+    ) {
         if (lambda <= 1.0 && lambda >= 0.0) {
             this.lambda = lambda;
             realSpaceData.setLambda(lambda);
@@ -442,7 +419,8 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
      * {@inheritDoc}
      */
     @Override
-    public void getdEdXdL(double[] gradient) {
+    public void getdEdXdL(double[] gradient
+    ) {
         realSpaceData.getdEdXdL(gradient);
     }
 
@@ -453,6 +431,13 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
      */
     @Override
     public VARIABLE_TYPE[] getVariableTypes() {
+
+        int nActive = 0;
+        for (Atom a : refinementModel.totalAtomArray) {
+            if (a.isActive()) {
+                nActive++;
+            }
+        }
 
         VARIABLE_TYPE type[] = new VARIABLE_TYPE[nActive * 3];
 
@@ -471,103 +456,121 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
     }
 
     @Override
-    public void setEnergyTermState(STATE state) {
+    public void setEnergyTermState(STATE state
+    ) {
         this.state = state;
     }
 
     @Override
-    public void setVelocity(double[] velocity) {
+    public void setVelocity(double[] velocity
+    ) {
         if (velocity == null) {
             return;
         }
         int index = 0;
         double vel[] = new double[3];
-        for (int i = 0; i < nActive; i++) {
-            vel[0] = velocity[index++];
-            vel[1] = velocity[index++];
-            vel[2] = velocity[index++];
-            activeAtoms[i].setVelocity(vel);
+        for (Atom a : refinementModel.totalAtomArray) {
+            if (a.isActive()) {
+                vel[0] = velocity[index++];
+                vel[1] = velocity[index++];
+                vel[2] = velocity[index++];
+                a.setVelocity(vel);
+            }
         }
     }
 
     @Override
-    public void setAcceleration(double[] acceleration) {
+    public void setAcceleration(double[] acceleration
+    ) {
         if (acceleration == null) {
             return;
         }
         int index = 0;
         double accel[] = new double[3];
-        for (int i = 0; i < nActive; i++) {
-            accel[0] = acceleration[index++];
-            accel[1] = acceleration[index++];
-            accel[2] = acceleration[index++];
-            activeAtoms[i].setAcceleration(accel);
+        for (Atom a : refinementModel.totalAtomArray) {
+            if (a.isActive()) {
+                accel[0] = acceleration[index++];
+                accel[1] = acceleration[index++];
+                accel[2] = acceleration[index++];
+                a.setAcceleration(accel);
+            }
         }
     }
 
     @Override
-    public void setPreviousAcceleration(double[] previousAcceleration) {
+    public void setPreviousAcceleration(double[] previousAcceleration
+    ) {
         if (previousAcceleration == null) {
             return;
         }
         int index = 0;
         double prev[] = new double[3];
-        for (int i = 0; i < nActive; i++) {
-            prev[0] = previousAcceleration[index++];
-            prev[1] = previousAcceleration[index++];
-            prev[2] = previousAcceleration[index++];
-            activeAtoms[i].setPreviousAcceleration(prev);
+        for (Atom a : refinementModel.totalAtomArray) {
+            if (a.isActive()) {
+                prev[0] = previousAcceleration[index++];
+                prev[1] = previousAcceleration[index++];
+                prev[2] = previousAcceleration[index++];
+                a.setPreviousAcceleration(prev);
+            }
         }
     }
 
     @Override
-    public double[] getVelocity(double[] velocity) {
+    public double[] getVelocity(double[] velocity
+    ) {
         int n = getNumberOfVariables();
         if (velocity == null || velocity.length < n) {
             velocity = new double[n];
         }
         int index = 0;
         double v[] = new double[3];
-        for (int i = 0; i < nActive; i++) {
-            Atom a = activeAtoms[i];
-            a.getVelocity(v);
-            velocity[index++] = v[0];
-            velocity[index++] = v[1];
-            velocity[index++] = v[2];
+        for (Atom a : refinementModel.totalAtomArray) {
+            if (a.isActive()) {
+                a.getVelocity(v);
+                velocity[index++] = v[0];
+                velocity[index++] = v[1];
+                velocity[index++] = v[2];
+            }
         }
         return velocity;
     }
 
     @Override
-    public double[] getAcceleration(double[] acceleration) {
+    public double[] getAcceleration(double[] acceleration
+    ) {
         int n = getNumberOfVariables();
         if (acceleration == null || acceleration.length < n) {
             acceleration = new double[n];
         }
         int index = 0;
-        double a[] = new double[3];
-        for (int i = 0; i < nActive; i++) {
-            activeAtoms[i].getAcceleration(a);
-            acceleration[index++] = a[0];
-            acceleration[index++] = a[1];
-            acceleration[index++] = a[2];
+        double acc[] = new double[3];
+        for (Atom a : refinementModel.totalAtomArray) {
+            if (a.isActive()) {
+                a.getAcceleration(acc);
+                acceleration[index++] = acc[0];
+                acceleration[index++] = acc[1];
+                acceleration[index++] = acc[2];
+            }
         }
         return acceleration;
     }
 
     @Override
-    public double[] getPreviousAcceleration(double[] previousAcceleration) {
+    public double[] getPreviousAcceleration(double[] previousAcceleration
+    ) {
         int n = getNumberOfVariables();
         if (previousAcceleration == null || previousAcceleration.length < n) {
             previousAcceleration = new double[n];
         }
         int index = 0;
-        double a[] = new double[3];
-        for (int i = 0; i < nActive; i++) {
-            activeAtoms[i].getPreviousAcceleration(a);
-            previousAcceleration[index++] = a[0];
-            previousAcceleration[index++] = a[1];
-            previousAcceleration[index++] = a[2];
+        double prev[] = new double[3];
+        for (Atom a : refinementModel.totalAtomArray) {
+            if (a.isActive()) {
+                a.getPreviousAcceleration(prev);
+                previousAcceleration[index++] = prev[0];
+                previousAcceleration[index++] = prev[1];
+                previousAcceleration[index++] = prev[2];
+            }
         }
         return previousAcceleration;
     }

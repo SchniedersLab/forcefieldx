@@ -71,10 +71,6 @@ import ffx.xray.RefinementMinimize.RefinementMode;
 
 import static ffx.xray.CrystalReciprocalSpace.SolventModel.POLYNOMIAL;
 
-import static java.util.Arrays.fill;
-import static java.util.Arrays.fill;
-import static java.util.Arrays.fill;
-
 /**
  * <p>
  * DiffractionData class.</p>
@@ -352,7 +348,7 @@ public class DiffractionData implements DataContainer {
         refinementModel = new RefinementModel(assembly, refinemolocc);
 
         // initialize atomic form factors
-        for (Atom a : refinementModel.usedAtoms) {
+        for (Atom a : refinementModel.totalAtomArray) {
             a.setFormFactorIndex(-1);
             XRayFormFactor atomff
                     = new XRayFormFactor(a, use_3g, 2.0);
@@ -384,14 +380,14 @@ public class DiffractionData implements DataContainer {
         parallelTeam = new ParallelTeam();
         for (int i = 0; i < n; i++) {
             crs_fc[i] = new CrystalReciprocalSpace(reflectionList[i],
-                    refinementModel.usedAtoms, parallelTeam, parallelTeam,
+                    refinementModel.totalAtomArray, parallelTeam, parallelTeam,
                     false, dataFiles[i].neutron);
             refinementData[i].setCrystalReciprocalSpace_fc(crs_fc[i]);
             crs_fc[i].setUse3G(use_3g);
             crs_fc[i].setWeight(dataFiles[i].weight);
             crs_fc[i].lambdaTerm = lambdaTerm;
             crs_fs[i] = new CrystalReciprocalSpace(reflectionList[i],
-                    refinementModel.usedAtoms, parallelTeam, parallelTeam,
+                    refinementModel.totalAtomArray, parallelTeam, parallelTeam,
                     true, dataFiles[i].neutron, solventmodel);
             refinementData[i].setCrystalReciprocalSpace_fs(crs_fs[i]);
             crs_fs[i].setUse3G(use_3g);
@@ -419,7 +415,7 @@ public class DiffractionData implements DataContainer {
         RefinementModel tmprefinementmodel = new RefinementModel(assembly, refinemolocc);
 
         // initialize atomic form factors
-        for (Atom a : tmprefinementmodel.usedAtoms) {
+        for (Atom a : tmprefinementmodel.totalAtomArray) {
             a.setFormFactorIndex(-1);
             XRayFormFactor atomff
                     = new XRayFormFactor(a, use_3g, 2.0);
@@ -448,11 +444,11 @@ public class DiffractionData implements DataContainer {
         // set up FFT and run it
         for (int i = 0; i < n; i++) {
             crs_fc[i] = new CrystalReciprocalSpace(reflectionList[i],
-                    tmprefinementmodel.usedAtoms, parallelTeam, parallelTeam,
+                    tmprefinementmodel.totalAtomArray, parallelTeam, parallelTeam,
                     false, dataFiles[i].neutron);
             refinementData[i].setCrystalReciprocalSpace_fc(crs_fc[i]);
             crs_fs[i] = new CrystalReciprocalSpace(reflectionList[i],
-                    tmprefinementmodel.usedAtoms, parallelTeam, parallelTeam,
+                    tmprefinementmodel.totalAtomArray, parallelTeam, parallelTeam,
                     true, dataFiles[i].neutron, solventModel);
             refinementData[i].setCrystalReciprocalSpace_fs(crs_fs[i]);
         }
@@ -554,19 +550,15 @@ public class DiffractionData implements DataContainer {
     /**
      * {@inheritDoc}
      *
-     * return the usedAtoms for the model associated with this data
+     * return the atom array for the model associated with this data
      */
     @Override
     public Atom[] getAtomArray() {
-        return refinementModel.usedAtoms;
+        return refinementModel.totalAtomArray;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public Atom[] getActiveAtomArray() {
-        return refinementModel.activeAtoms;
+        return getAtomArray();
     }
 
     /**
@@ -679,7 +671,11 @@ public class DiffractionData implements DataContainer {
     public void printStats() {
         int nat = 0;
         int nnonh = 0;
-        for (Atom a : refinementModel.usedAtomList) {
+        /**
+         * Note - we are including inactive and/or un-used atoms in the
+         * following loop.
+         */
+        for (Atom a : refinementModel.totalAtomList) {
             if (a.getOccupancy() == 0.0) {
                 continue;
             }

@@ -120,7 +120,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
         this.diffractiondata = diffractiondata;
         this.refinementmodel = diffractiondata.getRefinementModel();
         this.refinementMode = refinementmode;
-        this.atomarray = refinementmodel.usedAtoms;
+        this.atomarray = refinementmodel.totalAtomArray;
         this.nAtoms = atomarray.length;
         this.nxyz = nxyz;
         this.nb = nb;
