@@ -640,7 +640,7 @@ public abstract class SystemFilter {
                 continue;
             }
             logger.info(String.format(" Adding lambda-disabled coordinate restraint "
-                    + "with force constant %10.4f", forceconst));
+                    + "with force constant %10.4f kcal/mol/A", forceconst));
             Set<Atom> restraintAtoms = new HashSet<>();
             
             for (int i = 1; i < toks.length; i++) {
@@ -680,7 +680,7 @@ public abstract class SystemFilter {
             String[] toks = coordRestraint.split("\\s+");
             double forceconst = Double.parseDouble(toks[0]);
             logger.info(String.format(" Adding lambda-enabled coordinate restraint "
-                    + "with force constant %10.4f", forceconst));
+                    + "with force constant %10.4f kcal/mol/A", forceconst));
             Set<Atom> restraintAtoms = new HashSet<>();
             
             for (int i = 1; i < toks.length; i++) {

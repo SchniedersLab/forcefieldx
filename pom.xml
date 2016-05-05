@@ -759,7 +759,7 @@
                     <linkXref>true</linkXref>
                     <minimumTokens>500</minimumTokens>
                     <aggregate>true</aggregate>
-                    <targetJdk>1.7</targetJdk>
+                    <targetJdk>1.8</targetJdk>
                     <minimumPriority>2</minimumPriority>
                 </configuration>
                 <reportSets>
@@ -823,8 +823,8 @@
         <snapshot.repo>file:lib</snapshot.repo>
         <release.repo>file:release</release.repo>
         <!-- Control the source version and target JRE version -->
-        <compileVersion>1.7</compileVersion>
-        <targetVersion>1.7</targetVersion>
+        <compileVersion>1.8</compileVersion>
+        <targetVersion>1.8</targetVersion>
         <!-- Setting the source encoding is required for builds
         that are platform independent. -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

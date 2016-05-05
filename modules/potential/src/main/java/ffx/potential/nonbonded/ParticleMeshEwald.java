@@ -1835,6 +1835,22 @@ public class ParticleMeshEwald implements LambdaInterface {
     public double getGKEnergy() {
         return generalizedKirkwoodEnergy;
     }
+    
+    public double getCavitationEnergy(boolean throwError) {
+        return generalizedKirkwood.getCavitationEnergy(throwError);
+    }
+    
+    public double getDispersionEnergy(boolean throwError) {
+        return generalizedKirkwood.getDispersionEnergy(throwError);
+    }
+    
+    public double getCavitationEnergy() {
+        return generalizedKirkwood.getCavitationEnergy(false);
+    }
+    
+    public double getDispersionEnergy() {
+        return generalizedKirkwood.getDispersionEnergy(false);
+    }
 
     /**
      * <p>

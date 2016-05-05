@@ -40,8 +40,14 @@ package ffx.algorithms;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
+import ffx.potential.nonbonded.GeneralizedKirkwood;
+import ffx.potential.nonbonded.GeneralizedKirkwood.NonPolar;
+import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.SystemFilter;
 import ffx.potential.utils.PotentialsFunctions;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -66,6 +72,14 @@ public class MMgksa {
     private double elecWt = 1.0;
     private double solvWt = 1.0;
     private double vdwWt = 1.0;
+    private boolean decompose = false;
+    /**
+     * Only used if decompose is true; if so, prints out cavitation and dispersion
+     * components.
+     */
+    private NonPolar nonPolar = NonPolar.NONE;
+    private EnergyTerm[] terms;
+    private final EnergyTerm gksaTerm;
     
     /**
      * Constructs an MMgksa instance on a single assembly (not for binding).
@@ -81,6 +95,12 @@ public class MMgksa {
         proteinAtoms = new Atom[0];
         ligandAtoms = new Atom[0];
         docking = false;
+        gksaTerm = new EnergyTerm("MM-GKSA", () -> {
+            double e = (energy.getElectrostaticEnergy() * elecWt);
+            e += (energy.getSolvationEnergy() * solvWt);
+            e += (energy.getVanDerWaalsEnergy() * vdwWt);
+            return e;
+        });
     }
     
     /**
@@ -102,6 +122,12 @@ public class MMgksa {
         this.ligandAtoms = new Atom[ligandAtoms.length];
         System.arraycopy(ligandAtoms, 0, this.ligandAtoms, 0, ligandAtoms.length);
         docking = true;
+        gksaTerm = new EnergyTerm("MM-GKSA", () -> {
+            double e = (energy.getElectrostaticEnergy() * elecWt);
+            e += (energy.getSolvationEnergy() * solvWt);
+            e += (energy.getVanDerWaalsEnergy() * vdwWt);
+            return e;
+        });
     }
     
     /**
@@ -149,139 +175,204 @@ public class MMgksa {
     }
     
     /**
-     * Evaluates binding or average protein energy.
-     * @param frequency Evaluate energy every X frames
-     * @param maxEvals Negative value runs to end of trajectory.
+     * Sets the appropriate solvation terms.
+     * @return 
      */
-    public void runMMgksa(int frequency, int maxEvals) {
-        double meanElecE = 0.0;
-        double meanSolvE = 0.0;
-        double meanVdwE = 0.0;
-        double meanE = 0.0;
-        int nEvals = 0;
-        // Total frames read.
-        int counter = 0;
+    private List<EnergyTerm> getSolvationTerms() {
+        List<EnergyTerm> termList = new ArrayList<>();
+        EnergyTerm solvationTerm = new EnergyTerm("Solvation", energy::getSolvationEnergy); // May not be used.
+        if (decompose) {
+            EnergyTerm cavTerm = new EnergyTerm("Cavitation", energy::getCavitationEnergy);
+            EnergyTerm dispTerm = new EnergyTerm("Dispersion", energy::getDispersionEnergy);
+            switch (nonPolar) {
+                case CAV_DISP:
+                    getE elecSolv = () -> {
+                        double e = energy.getSolvationEnergy();
+                        e -= energy.getCavitationEnergy();
+                        e -= energy.getDispersionEnergy();
+                        return e;
+                    };
+                    termList.add(new EnergyTerm("Elec. solv", elecSolv));
+                    termList.add(cavTerm);
+                    termList.add(dispTerm);
+                    break;
+                case CAV:
+                    elecSolv = () -> (energy.getSolvationEnergy() - energy.getCavitationEnergy());
+                    termList.add(new EnergyTerm("Elec. solv", elecSolv));
+                    termList.add(cavTerm);
+                    break;
+                case BORN_CAV_DISP:
+                    elecSolv = () -> (energy.getSolvationEnergy() - energy.getDispersionEnergy());
+                    termList.add(new EnergyTerm("Elec. solv", elecSolv));
+                    termList.add(dispTerm);
+                    break;
+                default:
+                    termList.add(solvationTerm);
+                    break;
+            }
+        } else {
+            termList.add(solvationTerm);
+        }
+        return termList;
+    }
+    
+    /**
+     * Autodetects which energy terms are to be printed.
+     */
+    private void setEnergyTerms() {
+        List<EnergyTerm> termSet = new ArrayList<>();
+        //getE tot = this::weightEnergy;
+        //termSet.add(new EnergyTerm("Total", tot));
         
+        if (elecWt != 0.0) {
+            if (decompose) {
+                termSet.add(new EnergyTerm("Multipoles", energy::getPermanentMultipoleEnergy));
+                termSet.add(new EnergyTerm("Polarization", energy::getPolarizationEnergy));
+            } else {
+                termSet.add(new EnergyTerm("Electrostatics", energy::getElectrostaticEnergy));
+            }
+        }
+        
+        if (solvWt != 0.0) {
+            termSet.addAll(getSolvationTerms());
+        }
+        
+        if (vdwWt != 0.0) {
+            termSet.add(new EnergyTerm("van der Waals", energy::getVanDerWaalsEnergy));
+        }
+        terms = new EnergyTerm[termSet.size()];
+        termSet.toArray(terms);
+    }
+    
+    public void setDecompose(boolean decompose) {
+        this.decompose = decompose;
+        try {
+            String cavModel = mola.getForceField().getString(ForceField.ForceFieldString.CAVMODEL, "CAV_DISP").toUpperCase();
+            nonPolar = GeneralizedKirkwood.getNonPolarModel(cavModel);
+        } catch (Exception ex) {
+            nonPolar = NonPolar.NONE;
+        }
+    }
+    
+    /**
+     * Evaluates and decomposes energy of the system.
+     * @return MMGKSA energy components.
+     */
+    private double[] currentEnergies() {
+        functs.energy(mola);
+        int nTerms = terms.length;
+        double[] energies = new double[nTerms];
+        for (int i = 0; i < nTerms; i++) {
+            energies[i] = terms[i].en();
+        }
+        return energies;
+    }
+    
+    public void runMMgksa(int frequency, int maxEvals) {
+        setEnergyTerms();
+        int nTerms = terms.length;
+        double[] meanE = new double[nTerms];
+        double meanGKSA = 0.0;
+        Arrays.fill(meanE, 0.0);
+        int nEvals = 0;
+        int counter = 0;
         do {
             if (counter++ % frequency != 0) {
                 continue;
             }
             ++nEvals;
-            functs.energy(mola);
-            double totElecE = energy.getElectrostaticEnergy();
-            double totSolvE = energy.getSolvationEnergy();
-            double totVdwE = energy.getVanDerWaalsEnergy();
-            double totE = weightEnergy(totElecE, totSolvE, totVdwE);
-            
+            double[] totE = currentEnergies();
+            double totGKSA = gksaTerm.en();
             if (docking) {
-                for (Atom atom : proteinAtoms) {
-                    atom.setUse(false);
-                }
-                functs.energy(mola);
-                double ligElecE = energy.getElectrostaticEnergy();
-                double ligSolvE = energy.getSolvationEnergy();
-                double ligVdwE = energy.getVanDerWaalsEnergy();
-                double ligE = weightEnergy(ligElecE, ligSolvE, ligVdwE);
-                for (Atom atom : proteinAtoms) {
-                    atom.setUse(true);
-                }
-                
                 for (Atom atom : ligandAtoms) {
                     atom.setUse(false);
                 }
-                functs.energy(mola);
-                double protElecE = energy.getElectrostaticEnergy();
-                double protSolvE = energy.getSolvationEnergy();
-                double protVdwE = energy.getVanDerWaalsEnergy();
-                double protE = weightEnergy(protElecE, protSolvE, protVdwE);
+                double[] protE = currentEnergies();
+                double protGKSA = gksaTerm.en();
                 for (Atom atom : ligandAtoms) {
                     atom.setUse(true);
                 }
                 
-                double elec = totElecE - ligElecE - protElecE;
-                double solv = totSolvE - ligSolvE - protSolvE;
-                double vdw = totVdwE - ligVdwE - protVdwE;
-                double e = totE - ligE - protE;
+                for (Atom atom : proteinAtoms) {
+                    atom.setUse(false);
+                }
+                double[] ligE = currentEnergies();
+                double ligGKSA = gksaTerm.en();
+                for (Atom atom : proteinAtoms) {
+                    atom.setUse(true);
+                }
                 
-                meanElecE += (elec - meanElecE) / nEvals;
-                meanSolvE += (solv - meanSolvE) / nEvals;
-                meanVdwE += (vdw - meanVdwE) / nEvals;
-                meanE += (e - meanE) / nEvals;
+                double[] snapE = new double[nTerms];
+                for (int i = 0; i < nTerms; i++) {
+                    snapE[i] = totE[i] - (protE[i] + ligE[i]);
+                }
+                double snapGKSA = totGKSA - (protGKSA + ligGKSA);
                 
-                logger.info(String.format(" %-10d frames read, %-10d frames "
-                        + "evaluated", counter, nEvals));
-                logger.info(formatHeader());
-                logger.info(formatEnergy("Running Mean", meanE, meanElecE, meanSolvE, meanVdwE));
-                logger.info(formatEnergy("Snapshot", e, elec, solv, vdw));
-                logger.info(formatEnergy("Complex", totE, totElecE, totSolvE, totVdwE));
-                logger.info(formatEnergy("Protein", protE, protElecE, protSolvE, protVdwE));
-                logger.info(formatEnergy("Ligand", ligE, ligElecE, ligSolvE, ligVdwE));
-                /*logger.info(String.format("%15s%15s%15s%15s%15s", " ", "Energy", 
-                        "Electrostatic", "Solvation", "van der Waals"));
-                logger.info(String.format("%-15s  %13.5f  %13.5f  %13.5f  %13.5f", 
-                        "Running Mean", meanE, meanElecE, meanSolvE, meanVdwE));
-                logger.info(String.format("%-15s  %13.5f  %13.5f  %13.5f  %13.5f", 
-                        "Snapshot", e, elec, solv, vdw));
-                logger.info(String.format("%-15s  %13.5f  %13.5f  %13.5f  %13.5f", 
-                        "Complex", totE, totElecE, totSolvE, totVdwE));
-                logger.info(String.format("%-15s  %13.5f  %13.5f  %13.5f  %13.5f", 
-                        "Protein", protE, protElecE, protSolvE, protVdwE));
-                logger.info(String.format("%-15s  %13.5f  %13.5f  %13.5f  %13.5f", 
-                        "Ligand", ligE, ligElecE, ligSolvE, ligVdwE));*/
-            } else {
-                meanElecE += (totElecE - meanElecE) / nEvals;
-                meanSolvE += (totSolvE - meanSolvE) / nEvals;
-                meanVdwE += (totVdwE - meanVdwE) / nEvals;
-                meanE += (totE - meanE) / nEvals;
+                for (int i = 0; i < nTerms; i++) {
+                    meanE[i] += (snapE[i] - meanE[i]) / nEvals;
+                }
+                meanGKSA += (snapGKSA - meanGKSA) / nEvals;
                 
                 logger.info(String.format(" %10d frames read, %10d frames "
                         + "evaluated", counter, nEvals));
                 logger.info(formatHeader());
-                logger.info(formatEnergy("Running Mean", meanE, meanElecE, meanSolvE, meanVdwE));
-                logger.info(formatEnergy("Snapshot", totE, totElecE, totSolvE, totVdwE));
-                /*logger.info(String.format("%15c%15s%15s%15s%15s", ' ', "Energy",
-                        "Electrostatic", "Solvation", "van der Waals"));
-                logger.info(String.format("%-15s  %13.5f  %13.5f  %13.5f  %13.5f", 
-                        "Running Mean", meanE, meanElecE, meanSolvE, meanVdwE));
-                logger.info(String.format("%-15s  %13.5f  %13.5f  %13.5f  %13.5f", 
-                        "Snapshot", totE, totElecE, totSolvE, totVdwE));*/
+                logger.info(formatEnergy("Running Mean", meanGKSA, meanE));
+                logger.info(formatEnergy("Snapshot", snapGKSA, snapE));
+                logger.info(formatEnergy("Complex", totGKSA, totE));
+                logger.info(formatEnergy("Protein", protGKSA, protE));
+                logger.info(formatEnergy("Ligand", ligGKSA, ligE));
             }
         } while (filter.readNext() && (maxEvals < 0 || nEvals < maxEvals));
-        
+
         logger.info(String.format(" MM-GKSA evaluation complete, %10d frames "
-                + "read, %11.6f kcal/mol mean energy", nEvals, meanE));
+                + "read, %11.6f kcal/mol mean energy", nEvals, meanGKSA));
     }
     
     private String formatHeader() {
-        StringBuilder sb = new StringBuilder(String.format("%15s%15s", " ", "Energy"));
-        if (elecWt != 0.0) {
-            sb.append(String.format("%15s", "Electrostatic"));
-        }
-        if (solvWt != 0.0) {
-            sb.append(String.format("%15s", "Solvation"));
-        }
-        if (vdwWt != 0.0) {
-            sb.append(String.format("%15s", "van der Waals"));
+        StringBuilder sb = new StringBuilder(String.format("%15s%15s", " ", "GKSA"));
+        for (EnergyTerm term : terms) {
+            sb.append(String.format("%15s", term.toString()));
         }
         return sb.toString();
     }
     
-    private String formatEnergy(String title, double total, double electro, double solv, double vdW) {
+    private String formatEnergy(String title, double gksa, double[] energies) {
         StringBuilder sb = new StringBuilder(String.format("%-15s", title));
-        sb.append(String.format("  %13.5f", total));
-        if (elecWt != 0.0) {
-            sb.append(String.format("  %13.5f", electro));
-        }
-        if (solvWt != 0.0) {
-            sb.append(String.format("  %13.5f", solv));
-        }
-        if (vdwWt != 0.0) {
-            sb.append(String.format("  %13.5f", vdW));
+        sb.append(String.format("  %13.5f", gksa));
+        for (double e : energies) {
+            sb.append(String.format("  %13.5f", e));
         }
         return sb.toString();
     }
     
-    private double weightEnergy(double elec, double solv, double vdW) {
-        return (elecWt * elec) + (solvWt * solv) + (vdwWt * vdW);
+    /**
+     * Has a name, and some method to grab an energy.
+     */
+    private class EnergyTerm {
+        private final String name;
+        private final getE method;
+        
+        public EnergyTerm(String name, getE method) {
+            this.name = name;
+            this.method = method;
+        }
+        
+        public double en() {
+            //return method.getEnergy(energy);
+            return method.getEnergy();
+        }
+        
+        public String getName() {
+            return name;
+        }
+        
+        @Override
+        public String toString() {
+            return getName();
+        }
+    }
+    
+    private interface getE {
+        public double getEnergy();
     }
 }

@@ -64,6 +64,7 @@ double vdwWt = 1.0;
 
 int maxFrames = -1;
 int freq = 1;
+boolean decompose = false;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
@@ -81,6 +82,7 @@ cli.m(longOpt:'maxFrames', args:1, argName:'-1', 'Evaluate at most this many fra
 cli.e(longOpt:'electrostaticWeight', args:1, argName:'1.0', 'Weight to electrostatic interactions.');
 cli.s(longOpt:'solvationWeight', args:1, argName:'1.0', 'Weight to solvation interactions.');
 cli.v(longOpt:'vanDerWaalsWeight', args:1, argName:'1.0', 'Weight to van der Waals interactions');
+cli.d(longOpt:'decompose', args:1, argName:'false', 'Decompose electrostatics and solvation to components.');
 
 def options = cli.parse(args); 
     
@@ -135,6 +137,9 @@ if (options.f) {
 if (options.m) {
     maxFrames = Integer.parseInt(options.m);
 }
+if (options.d) {
+    decompose = Boolean.parseBoolean(options.d);
+}
 
 boolean useLigand = false;
 Atom[] ligAtoms;
@@ -188,6 +193,7 @@ if (!iAtoms.isEmpty()) {
 mmGKSA.setElectrostaticsWeight(elecWt);
 mmGKSA.setSolvationWeight(solvWt);
 mmGKSA.setVdwWeight(vdwWt);
+mmGKSA.setDecompose(decompose);
 mmGKSA.runMMgksa(freq, maxFrames);
 
 /**List<Double> totalEnergies = new ArrayList<>();

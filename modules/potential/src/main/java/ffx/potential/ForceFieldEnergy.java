@@ -2237,6 +2237,14 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         return solvationEnergy;
     }
     
+    public double getCavitationEnergy() {
+        return particleMeshEwald.getCavitationEnergy(false);
+    }
+    
+    public double getDispersionEnergy() {
+        return particleMeshEwald.getDispersionEnergy(false);
+    }
+    
     public int getSolvationInteractions() {
         return nGKInteractions;
     }

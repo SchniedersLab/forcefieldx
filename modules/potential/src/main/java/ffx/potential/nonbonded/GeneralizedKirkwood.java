@@ -226,6 +226,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
     private long pmfTime = 0;
     private long dispersionTime = 0;
     private long cavitationTime = 0;
+    private double dispersionEnergy = 0.0;
+    private double cavitationEnergy = 0.0;
     /**
      * Use base radii defined by AtomType rather than by atomic number.
      */
@@ -376,26 +378,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
         NonPolar nonpolarModel = NonPolar.CAV_DISP;
         try {
             String cavModel = forceField.getString(ForceField.ForceFieldString.CAVMODEL, "CAV_DISP").toUpperCase();
-            switch (cavModel) {
-                case "CAV":
-                    nonpolarModel = NonPolar.CAV;
-                    break;
-                case "CAV_DISP":
-                    nonpolarModel = NonPolar.CAV_DISP;
-                    break;
-                case "HYDROPHOBIC_PMF":
-                    nonpolarModel = NonPolar.HYDROPHOBIC_PMF;
-                    break;
-                case "BORN_SOLV":
-                    nonpolarModel = NonPolar.BORN_SOLV;
-                    break;
-                case "BORN_CAV_DISP":
-                    nonpolarModel = NonPolar.BORN_CAV_DISP;
-                    break;
-                case "NONE":
-                default:
-                    nonpolarModel = NonPolar.NONE;
-                    logger.info(" No non-polar term will be used.");
+            nonpolarModel = getNonPolarModel(cavModel);
+            if (nonpolarModel == NonPolar.NONE) {
+                logger.info(" No non-polar term will be used.");
             }
         } catch (Exception ex) {
             nonpolarModel = NonPolar.NONE;
@@ -896,18 +881,22 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     gkEnergyRegion.getEnergy(), gkTime * 1e-9));
             switch (nonPolar) {
                 case CAV:
+                    cavitationEnergy = cavitationRegion.getEnergy();
                     logger.info(format(" Cavitation          %16.8f %10.3f",
-                            cavitationRegion.getEnergy(), cavitationTime * 1e-9));
+                            cavitationEnergy, cavitationTime * 1e-9));
                     break;
                 case CAV_DISP:
+                    cavitationEnergy = cavitationRegion.getEnergy();
+                    dispersionEnergy = dispersionRegion.getEnergy();
                     logger.info(format(" Cavitation          %16.8f %10.3f",
-                            cavitationRegion.getEnergy(), cavitationTime * 1e-9));
+                            cavitationEnergy, cavitationTime * 1e-9));
                     logger.info(format(" Dispersion          %16.8f %10.3f",
-                            dispersionRegion.getEnergy(), dispersionTime * 1e-9));
+                            dispersionEnergy, dispersionTime * 1e-9));
                     break;
                 case BORN_CAV_DISP:
+                    dispersionEnergy = dispersionRegion.getEnergy();
                     logger.info(format(" Dispersion          %16.8f %10.3f",
-                            dispersionRegion.getEnergy(), dispersionTime * 1e-9));
+                            dispersionEnergy, dispersionTime * 1e-9));
                     break;
                 case HYDROPHOBIC_PMF:
                 case BORN_SOLV:
@@ -944,6 +933,48 @@ public class GeneralizedKirkwood implements LambdaInterface {
         }
     }
 
+    /**
+     * Returns the cavitation component (if applicable) of GK energy. If this GK
+     * is operating without a cavitation term, it either returns 0, or throws
+     * an error if throwError is true.
+     * @param throwError
+     * @return Cavitation energy
+     */
+    public double getCavitationEnergy(boolean throwError) {
+        switch (nonPolar) {
+            case CAV:
+            case CAV_DISP:
+                return cavitationEnergy;
+            default:
+                if (throwError) {
+                    throw new IllegalArgumentException(" GK is operating without a cavitation term");
+                } else {
+                    return 0.0;
+                }
+        }
+    }
+    
+    /**
+     * Returns the dispersion component (if applicable) of GK energy. If this GK
+     * is operating without a dispersion term, it either returns 0, or throws
+     * an error if throwError is true.
+     * @param throwError
+     * @return Cavitation energy
+     */
+    public double getDispersionEnergy(boolean throwError) {
+        switch (nonPolar) {
+            case CAV_DISP:
+            case BORN_CAV_DISP:
+                return dispersionEnergy;
+            default:
+                if (throwError) {
+                    throw new IllegalArgumentException(" GK is operating without a dispersion term");
+                } else {
+                    return 0.0;
+                }
+        }
+    }
+    
     /**
      * <p>
      * getInteractions</p>
@@ -1008,8 +1039,26 @@ public class GeneralizedKirkwood implements LambdaInterface {
     @Override
     public void getdEdXdL(double[] gradient) {
     }
+    
+    public static NonPolar getNonPolarModel(String nonpolarModel) {
+        switch (nonpolarModel) {
+            case "CAV":
+                return NonPolar.CAV;
+            case "CAV_DISP":
+                return NonPolar.CAV_DISP;
+            case "HYDROPHOBIC_PMF":
+                return NonPolar.HYDROPHOBIC_PMF;
+            case "BORN_SOLV":
+                return NonPolar.BORN_SOLV;
+            case "BORN_CAV_DISP":
+                return NonPolar.BORN_CAV_DISP;
+            case "NONE":
+            default:
+                return NonPolar.NONE;
+        }
+    }
 
-    private enum NonPolar {
+    public enum NonPolar {
 
         CAV, CAV_DISP, HYDROPHOBIC_PMF, BORN_CAV_DISP, BORN_SOLV, NONE
     }
