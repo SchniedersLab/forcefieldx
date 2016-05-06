@@ -59,38 +59,6 @@
             </plugin>
         </plugins>
     </build>
-    <profiles>
-        <profile>
-            <id>ffx.jarsigner</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-jarsigner-plugin</artifactId>
-                        <version>1.2</version>
-                        <configuration>
-                            <archive>target/numerics-${project.version}.jar</archive>
-                            <alias>FFXKey</alias>
-                            <storepass>${storepass}</storepass>
-                            <keypass>${keypass}</keypass>
-                            <removeExistingSignatures>true</removeExistingSignatures>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>sign</id>
-                                <phase>install</phase>
-                                <goals>
-                                    <goal>sign</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
     <dependencies>
         <dependency>
             <groupId>commons-math</groupId>
