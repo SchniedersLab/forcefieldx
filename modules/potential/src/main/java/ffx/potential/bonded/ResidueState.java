@@ -66,10 +66,18 @@ public class ResidueState {
     private final Residue res;
     private final HashMap<Atom, double[]> atomMap;
     private final Atom[] atoms;
+    private final boolean isNeutralTerminus;
     
     public ResidueState(Residue parent, Residue res) {
         this.parent = parent;
         this.res = res;
+        if (res.getPreviousResidue() == null) {
+            isNeutralTerminus = (res.getAtomNode("H3") == null);
+        } else if (res.getNextResidue() == null) {
+            isNeutralTerminus = (res.getAtomNode("HO") != null);
+        } else {
+            isNeutralTerminus = false;
+        }
         
         List<Atom> atomList = res.getAtomList();
         int nAtoms = atomList.size();
@@ -90,6 +98,10 @@ public class ResidueState {
     
     public Residue getStateResidue() {
         return res;
+    }
+    
+    public boolean getIsNeutralTerminus() {
+        return isNeutralTerminus;
     }
     
     public Atom[] getAtoms() {

@@ -1712,9 +1712,13 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
      *
      * @param g an array of double.
      */
-    public void getGradients(double g[]) {
+    public double[] getGradients(double g[]) {
         assert (g != null);
         double grad[] = new double[3];
+        int n = getNumberOfVariables();
+        if (g.length < n) {
+            g = new double[n];
+        }
         int index = 0;
         for (int i = 0; i < nAtoms; i++) {
             Atom a = atoms[i];
@@ -1735,6 +1739,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 g[index++] = gz;
             }
         }
+        return g;
     }
 
     /**

@@ -71,6 +71,7 @@ public class ForceField {
      * A map between a force field name and its internal parameter file.
      */
     private static final Map<ForceFieldName, URL> forceFields = new EnumMap<>(ForceFieldName.class);
+    private static final boolean noRenumbering = System.getProperty("noPatchRenumbering") != null;
 
     static {
         ClassLoader cl = ForceField.class.getClassLoader();
@@ -292,7 +293,9 @@ public class ForceField {
      * @param bioTypeOffset
      */
     public void renumberForceField(int classOffset, int typeOffset, int bioTypeOffset) {
-
+        if (noRenumbering) {
+            return;
+        }
         for (AngleType angleType : angleTypes.values()) {
             angleType.incrementClasses(classOffset);
         }
@@ -1238,6 +1241,24 @@ public class ForceField {
         System.out.println(toString(type));
     }
 
+    public void printMultipoleTypes() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format(" Loaded multipole types: \n"));
+        for (String key : multipoleTypes.keySet()) {
+            sb.append(String.format(" m %s : \n", key, multipoleTypes.get(key).key));
+        }
+        logger.info(sb.toString());
+    }
+    
+    public void printAtomTypes() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format(" Loaded atom types: \n"));
+        for (String key : atomTypes.keySet()) {
+            sb.append(String.format(" a %s : \n", key, atomTypes.get(key).key));
+        }
+        logger.info(sb.toString());
+    }
+    
     /**
      * Return a String for any Force Field keyword.
      *

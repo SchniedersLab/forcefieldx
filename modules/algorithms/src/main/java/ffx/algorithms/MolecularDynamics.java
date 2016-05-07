@@ -50,6 +50,7 @@ import org.apache.commons.io.FilenameUtils;
 import ffx.algorithms.Integrator.Integrators;
 import ffx.algorithms.Thermostat.Thermostats;
 import ffx.numerics.Potential;
+import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.parsers.DYNFilter;
 import ffx.potential.parsers.PDBFilter;
@@ -222,12 +223,17 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * Reinitialize the MD engine after a chemical change.
      */
     public void reInit() {
-        potential.getCoordinates(x);
         mass = potential.getMass();
         numberOfVariables = potential.getNumberOfVariables();
+        x = potential.getCoordinates(x);
         v = potential.getVelocity(v);
         a = potential.getAcceleration(a);
         aPrevious = potential.getPreviousAcceleration(aPrevious);
+        if (potential instanceof ForceFieldEnergy) {
+            grad = ((ForceFieldEnergy) potential).getGradients(grad);
+        } else if (grad.length < numberOfVariables) {
+            grad = new double[numberOfVariables];
+        }
         thermostat.setNumberOfVariables(numberOfVariables, x, v, mass, potential.getVariableTypes());
         integrator.setNumberOfVariables(numberOfVariables, x, v, a, aPrevious, mass);
     }
@@ -635,7 +641,14 @@ public class MolecularDynamics implements Runnable, Terminatable {
          */
         long time = System.nanoTime();
         for (int step = 1; step <= nSteps; step++) {
-
+            if (monteCarloListener != null) {
+                long startTime = System.nanoTime();
+                monteCarloListener.mcUpdate(molecularAssembly);
+                x = potential.getCoordinates(x);
+                long took = (long) ((System.nanoTime() - startTime) * 1e-6);
+                // logger.info(String.format(" mcUpdate() took: %d ms", took));
+            }
+            
             /**
              * Do the half-step thermostat operation.
              */
@@ -746,14 +759,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
              */
             if (algorithmListener != null && step % printFrequency == 0) {
                 algorithmListener.algorithmUpdate(molecularAssembly);
-            }
-
-            if (monteCarloListener != null) {
-                long startTime = System.nanoTime();
-                monteCarloListener.mcUpdate(molecularAssembly);
-                potential.getCoordinates(x);
-                long took = (long) ((System.nanoTime() - startTime) * 1e-6);
-                // logger.info(String.format(" mcUpdate() took: %d ms", took));
             }
 
             /**

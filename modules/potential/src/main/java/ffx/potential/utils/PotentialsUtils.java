@@ -47,6 +47,8 @@ import org.apache.commons.io.FilenameUtils;
 import ffx.crystal.Crystal;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.Atom;
+import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldString;
@@ -483,6 +485,28 @@ public class PotentialsUtils implements PotentialsFunctions {
     @Override
     public SystemFilter getFilter() {
         return lastFilter;
+    }
+    
+    public static void analysis(MolecularAssembly molas[]) {
+        for (MolecularAssembly mola : molas) {
+            analysis(mola);
+        }
+    }
+    
+    public static void analysis(MolecularAssembly mola) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format(" Atom Array: (array_pos, xyz_index, resName, atomName, typeNum, classNum) \n"));
+        Atom atoms[] = mola.getAtomArray();
+        for (int i = 0; i < atoms.length; i++) {
+            String resName = atoms[i].getResidueName();
+            String atomName = atoms[i].toShortString();
+            AtomType atomType = atoms[i].getAtomType();
+            int typeNum = atomType.type;
+            int classNum = atomType.atomClass;
+            int xyzIndex = atoms[i].xyzIndex;
+            sb.append(String.format("   %d: %d %s %s %d %d\n", i, xyzIndex, resName, atomName, typeNum, classNum));
+        }
+        logger.info(sb.toString());
     }
 }
 

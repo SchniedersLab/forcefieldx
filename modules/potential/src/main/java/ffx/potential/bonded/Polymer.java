@@ -305,6 +305,17 @@ public class Polymer extends MSGroup {
         residueNode.insert(multiResidue, index);
         multiResidue.add(residue);
     }
+    
+    public void addMultiTerminus(Residue residue, MultiTerminus multiTerminus) {
+        ArrayList<MSNode> children = residue.getChildList();
+        for (MSNode child : children) {
+            multiTerminus.add(child);
+        }
+        MSNode residueNode = getAtomNode();
+        int index = residueNode.getIndex(residue);
+        residueNode.remove(index);
+        residueNode.insert(multiTerminus, index);
+    }
 
     /**
      * Get the Phi Psi List for the Polymer

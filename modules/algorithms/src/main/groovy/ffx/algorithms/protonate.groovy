@@ -92,7 +92,8 @@ Character chainID = ' ';
 int resID = -1;
 List<String> resList = new ArrayList<>();
 double window = 2.0;
-
+boolean dynamics = true;
+boolean titrateTermini = false;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
@@ -117,6 +118,8 @@ cli.rw(longOpt:'resWindow', args:1, 'Titrate all residues with intrinsic pKa wit
 cli.pH(longOpt:'pH', args:1, argName:'7.4', 'Constant simulation pH.');
 cli.mc(longOpt:'mcStepFreq', args:1, argName:'10', 'Number of MD steps between Monte-Carlo protonation changes.')
 cli.mcr(longOpt: 'rotamerStepFreq', args:1, argName:'0', 'Number of MD steps between Monte-Carlo rotamer changes.')
+cli.mcD(longOpt: 'dynamics', args:1, argName:'true', 'Include dynamics.');
+cli.tt(longOpt: 'titrateTermini', args:1, argName:'false', 'Titrate amino acid chain ends.');
 def options = cli.parse(args);
 
 if (options.h) {
@@ -143,6 +146,15 @@ if (options.rl) {
     for (String t : tok) {
         resList.add(t);
     }
+}
+
+if (options.tt) {
+    titrateTermini = true;
+    System.setProperty("cphmd-termini","true");
+}
+
+if (options.mcD) {
+    dynamics = Boolean.parseBoolean(options.mcD);
 }
 
 if (options.rw) {
@@ -217,6 +229,8 @@ if (options.i) {
     }
 }
 
+System.setProperty("forcefield","AMOEBA_PROTEIN_2013");
+
 List<String> arguments = options.arguments();
 String modelfilename = null;
 if (arguments != null && arguments.size() > 0) {
@@ -260,6 +274,13 @@ if (options.ra) {
 
 // finalize the Multi-Residue machinery
 mcProt.readyUp();
+
+if (!dynamics) {
+    for (int i = 0; i < nSteps; i++) {
+        mcProt.mcUpdate();
+    }
+    return;
+}
 
 // and away we go!
 molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
