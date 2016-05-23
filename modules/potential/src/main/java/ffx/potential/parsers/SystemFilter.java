@@ -161,6 +161,15 @@ public abstract class SystemFilter {
     private static final Pattern intrangePattern = Pattern.compile("(\\d+)-(\\d+)");
     
     private static final Logger logger = Logger.getLogger(SystemFilter.class.getName());
+    protected static final boolean dieOnMissingAtom; // Defaults to false.
+    static {
+        String dieOn = System.getProperty("trajectory-dieOnMissing");
+        if (dieOn == null) {
+            dieOnMissingAtom = false;
+        } else {
+            dieOnMissingAtom = Boolean.parseBoolean(dieOn);
+        }
+    }
     /**
      * The atomList is filled by filters that extend SystemFilter.
      */
@@ -314,6 +323,19 @@ public abstract class SystemFilter {
      * @return If next model read.
      */
     public abstract boolean readNext();
+    
+    /**
+     * Reads the next model if applicable (currently, ARC files only).
+     * @param resetPosition Resets to first frame.
+     * @return If next model read.
+     */
+    public abstract boolean readNext(boolean resetPosition);
+    
+    /**
+     * Attempts to close any open resources associated with the underlying file;
+     * primarily to be used when finished reading a trajectory.
+     */
+    public abstract void closeReader();
 
     /**
      * <p>

@@ -86,6 +86,17 @@ public class MergeFilter extends SystemFilter {
     
     @Override
     public boolean readNext() {
+        return readNext(false);
+    }
+
+    @Override
+    public boolean readNext(boolean resetPosition) {
         return false;
+    }
+
+    @Override
+    public void closeReader() {
+        //logger.fine(" Reading trajectories not yet supported for MergeFilter");
+        // No logger set for MergeFilter.
     }
 }

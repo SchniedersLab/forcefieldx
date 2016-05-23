@@ -405,6 +405,11 @@ public class XYZFilter extends SystemFilter {
             throw ex;
         }
     }*/
+    
+    @Override
+    public boolean readNext() {
+        return readNext(false);
+    }
 
     /**
      * Reads the next snap-shot of an archive into the activeMolecularAssembly.
@@ -414,13 +419,13 @@ public class XYZFilter extends SystemFilter {
      * @return true if successful.
      */
     @Override
-    public boolean readNext() {
+    public boolean readNext(boolean resetPosition) {
         try {
-            String data = null;
+            String data;
             Atom atoms[] = activeMolecularAssembly.getAtomArray();
             int nSystem = atoms.length;
 
-            if (bin == null/* || !bin.ready()*/) {
+            if (bin == null || resetPosition/* || !bin.ready()*/) {
                 bin = new BufferedReader(new FileReader(currentFile));
                 // Read past the first N + 1 non-blank lines
                 for (int i = 0; i < nSystem + 1; i++) {
@@ -445,6 +450,9 @@ public class XYZFilter extends SystemFilter {
                 int nArchive = Integer.parseInt(data.trim().split(" +")[0]);
                 if (nArchive != nSystem) {
                     String message = String.format("Number of atoms mismatch (Archive: %d, System: %d).", nArchive, nSystem);
+                    if (dieOnMissingAtom) {
+                        logger.severe(message);
+                    }
                     logger.warning(message);
                     return false;
                 }
@@ -485,6 +493,15 @@ public class XYZFilter extends SystemFilter {
             logger.log(Level.WARNING, message, e);
         }
         return false;
+    }
+    
+    @Override
+    public void closeReader() {
+        try {
+            bin.close();
+        } catch (IOException ex) {
+            logger.warning(String.format(" Exception in closing XYZ filter: %s", ex.toString()));
+        }
     }
 
     /**
