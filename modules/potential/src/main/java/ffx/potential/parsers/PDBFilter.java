@@ -220,7 +220,7 @@ public final class PDBFilter extends SystemFilter {
      * Keep track of the current MODEL in the file.
      */
     private int modelsRead = 1;
-    private Map<MolecularAssembly, BufferedReader> readers;
+    private final Map<MolecularAssembly, BufferedReader> readers = new HashMap<>();
 
     /**
      * <p>
