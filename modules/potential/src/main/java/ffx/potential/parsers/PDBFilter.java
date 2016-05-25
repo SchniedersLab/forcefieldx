@@ -533,6 +533,7 @@ public final class PDBFilter extends SystemFilter {
 // 64 - 66        Residue name   resName      Residue name.
 // 68 - 70        Residue name   resName      Residue name.
 // =============================================================================
+                            activeMolecularAssembly.addHeaderLine(line);
                             chainID = line.substring(11, 12).toUpperCase().charAt(0);
                             int serNum = Integer.parseInt(line.substring(7, 10).trim());
                             String[] chain = seqres.get(chainID);
@@ -555,6 +556,7 @@ public final class PDBFilter extends SystemFilter {
                             String modResName = line.substring(12, 15).trim();
                             String stdName = line.substring(24, 27).trim();
                             modres.put(modResName.toUpperCase(), stdName.toUpperCase());
+                            activeMolecularAssembly.addHeaderLine(line);
 // =============================================================================
 //  1 -  6        Record name     "MODRES"
 //  8 - 11        IDcode          idCode         ID code of this entry.
@@ -1215,6 +1217,15 @@ public final class PDBFilter extends SystemFilter {
             }
             fw = new FileWriter(newFile, append);
             bw = new BufferedWriter(fw);
+            /**
+             * Will come before CRYST1 and ATOM records, but after anything 
+             * written by writeFileWithHeader (particularly X-ray refinement
+             * statistics).
+             */
+            String[] headerLines = activeMolecularAssembly.getHeaderLines();
+            for (String line : headerLines) {
+                bw.write(String.format("%s\n", line));
+            }
 // =============================================================================
 // The CRYST1 record presents the unit cell parameters, space group, and Z
 // value. If the structure was not determined by crystallographic means, CRYST1

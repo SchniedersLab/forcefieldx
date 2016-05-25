@@ -147,6 +147,7 @@ public class MolecularAssembly extends MSGroup {
     private URL vrmlURL = null;
     private boolean visible = false;
     private final ArrayList<BranchGroup> myNewShapes = new ArrayList<>();
+    private final List<String> headerLines = new ArrayList<>();
 
     // Constructors
     /**
@@ -222,6 +223,24 @@ public class MolecularAssembly extends MSGroup {
             position = MIDDLE_RESIDUE;
         }
         return position;
+    }
+    
+    /**
+     * Adds a header line to this MolecularAssembly (particularly for PDB formats)
+     * @param line Line to add.
+     */
+    public void addHeaderLine(String line) {
+        headerLines.add(line);
+    }
+    
+    /**
+     * Gets the header lines associated with this MolecularAssembly (particularly for PDB)
+     * @return Header lines.
+     */
+    public String[] getHeaderLines() {
+        String[] ret = new String[headerLines.size()];
+        headerLines.toArray(ret);
+        return ret;
     }
 
     /**
