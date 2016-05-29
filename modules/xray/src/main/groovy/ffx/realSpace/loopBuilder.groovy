@@ -395,13 +395,10 @@ for (int i = 0; i <= atoms.length; i++) {
 logger.info("\n Running minimize on built atoms of " + active.getName());
 logger.info(" RMS gradient convergence criteria: " + eps);
 
+RealSpaceData realSpaceData = new RealSpaceData(active, active.getProperties(),
+    mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
+RefinementMinimize refinementMinimize = new RefinementMinimize(realSpaceData, RefinementMode.COORDINATES);
 
-
-
-    RealSpaceData realSpaceData = new RealSpaceData(active, active.getProperties(),
-        mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
-    RefinementMinimize refinementMinimize = new RefinementMinimize(realSpaceData, RefinementMode.COORDINATES);
-    
 if (localMin){
     runOSRW = false;
 } else {
