@@ -158,31 +158,37 @@ public class RosenbluthChiAllMove implements MCMove {
             torsionSampler(allTors);
             System.exit(0);
         }
-        switch (mode) {
-            case EXPENSIVE:
-                engage_expensive();
-                break;
-            case CHEAP:
-                engage_cheap();
-                break;
-            case CHEAPINDIV:
-                logger.severe("CBMC: this bias type is not yet supported.");
-                engage_cheap();
-                break;
-            case CHEAPDIFFS:
-                logger.severe("CBMC: this bias type is not yet supported.");
-                engage_diffs();
-                break;
-            case CONTROL:
-                logger.severe("CBMC: Use CTRL_ALL validation instead.");
-                engage_control();
-                break;
-            case CTRL_ALL:
-                engage_controlAll();
-                break;
-            default:
-                logger.severe("CBMC: Unknown biasing type requested.");
-                break;
+        try {
+            switch (mode) {
+                case EXPENSIVE:
+                    engage_expensive();
+                    break;
+                case CHEAP:
+                    engage_cheap();
+                    break;
+                case CHEAPINDIV:
+                    logger.severe("CBMC: this bias type is not yet supported.");
+                    engage_cheap();
+                    break;
+                case CHEAPDIFFS:
+                    logger.severe("CBMC: this bias type is not yet supported.");
+                    engage_diffs();
+                    break;
+                case CONTROL:
+                    logger.severe("CBMC: Use CTRL_ALL validation instead.");
+                    engage_control();
+                    break;
+                case CTRL_ALL:
+                    engage_controlAll();
+                    break;
+                default:
+                    logger.severe("CBMC: Unknown biasing type requested.");
+                    break;
+            }
+        } catch (ArithmeticException ex) {
+            target.revertState(origState);
+            accepted = false;
+            return;
         }
     }
 

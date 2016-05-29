@@ -56,6 +56,7 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.nonbonded.CoordRestraint;
 import ffx.potential.parameters.ForceField;
+import static ffx.potential.parsers.SystemFilter.parseAtNumArg;
 
 /**
  * The ConversionFilter class is the base class for most Force Field X parsers
@@ -605,6 +606,36 @@ public abstract class ConversionFilter {
                 coordRestraints.add(new CoordRestraint(ats, forceField, true, forceconst));
             } else {
                 logger.warning(String.format(" Empty or unparseable restraint argument %s", coordRestraint));
+            }
+        }
+
+        String[] noElStrings = properties.getStringArray("noElectro");
+        for (String noE : noElStrings) {
+            String[] toks = noE.split("\\s+");
+            for (String tok : toks) {
+                try {
+                    int[] noERange = parseAtNumArg("noElectro", tok, nmolaAtoms);
+                    for (int i = noERange[0]; i <= noERange[1]; i++) {
+                        molaAtoms[i].setElectrostatics(false);
+                    }
+                    logger.log(Level.INFO, String.format(" Disabled electrostatics "
+                            + "for atoms %d-%d", noERange[0] + 1, noERange[1] + 1));
+                } catch (IllegalArgumentException ex) {
+                    boolean atomFound = false;
+                    for (Atom atom : molaAtoms) {
+                        if (atom.getName().equalsIgnoreCase(tok)) {
+                            atomFound = true;
+                            atom.setElectrostatics(false);
+                        }
+                    }
+                    if (atomFound) {
+                        logger.info(String.format(" Disabled electrostatics for atoms with name %s", tok));
+                    } else {
+                        logger.log(Level.INFO, String.format(" No electrostatics "
+                                + "input %s could not be parsed as a numerical "
+                                + "range or atom type present in assembly", tok));
+                    }
+                }
             }
         }
     }

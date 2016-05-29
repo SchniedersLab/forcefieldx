@@ -161,6 +161,15 @@ public abstract class SystemFilter {
     private static final Pattern intrangePattern = Pattern.compile("(\\d+)-(\\d+)");
     
     private static final Logger logger = Logger.getLogger(SystemFilter.class.getName());
+    protected static final boolean dieOnMissingAtom; // Defaults to false.
+    static {
+        String dieOn = System.getProperty("trajectory-dieOnMissing");
+        if (dieOn == null) {
+            dieOnMissingAtom = false;
+        } else {
+            dieOnMissingAtom = Boolean.parseBoolean(dieOn);
+        }
+    }
     /**
      * The atomList is filled by filters that extend SystemFilter.
      */
@@ -314,6 +323,19 @@ public abstract class SystemFilter {
      * @return If next model read.
      */
     public abstract boolean readNext();
+    
+    /**
+     * Reads the next model if applicable (currently, ARC files only).
+     * @param resetPosition Resets to first frame.
+     * @return If next model read.
+     */
+    public abstract boolean readNext(boolean resetPosition);
+    
+    /**
+     * Attempts to close any open resources associated with the underlying file;
+     * primarily to be used when finished reading a trajectory.
+     */
+    public abstract void closeReader();
 
     /**
      * <p>
@@ -713,6 +735,36 @@ public abstract class SystemFilter {
                 coordRestraints.add(new CoordRestraint(ats, forceField, true, forceconst));
             } else {
                 logger.warning(String.format(" Empty or unparseable restraint argument %s", coordRestraint));
+            }
+        }
+        
+        String[] noElStrings = properties.getStringArray("noElectro");
+        for (String noE : noElStrings) {
+            String[] toks = noE.split("\\s+");
+            for (String tok : toks) {
+                try {
+                    int[] noERange = parseAtNumArg("noElectro", tok, nmolaAtoms);
+                    for (int i = noERange[0]; i <= noERange[1]; i++) {
+                        molaAtoms[i].setElectrostatics(false);
+                    }
+                    logger.log(Level.INFO, String.format(" Disabled electrostatics "
+                            + "for atoms %d-%d", noERange[0]+1, noERange[1]+1));
+                } catch (IllegalArgumentException ex) {
+                    boolean atomFound = false;
+                    for (Atom atom : molaAtoms) {
+                        if (atom.getName().equalsIgnoreCase(tok)) {
+                            atomFound = true;
+                            atom.setElectrostatics(false);
+                        }
+                    }
+                    if (atomFound) {
+                        logger.info(String.format(" Disabled electrostatics for atoms with name %s", tok));
+                    } else {
+                        logger.log(Level.INFO, String.format(" No electrostatics "
+                                + "input %s could not be parsed as a numerical "
+                                + "range or atom type present in assembly", tok));
+                    }
+                }
             }
         }
     }

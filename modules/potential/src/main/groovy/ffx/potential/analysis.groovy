@@ -1,3 +1,4 @@
+
 /**
  * Title: Force Field X.
  *
@@ -35,68 +36,41 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.potential.parsers;
 
-import java.io.File;
-import java.util.ArrayList;
+// ENERGY
 
-import ffx.potential.MolecularAssembly;
+// Groovy Imports
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Bond;
+import ffx.potential.parameters.AtomType
+import ffx.potential.utils.PotentialsUtils
+import groovy.util.CliBuilder;
 
-/**
- * The MergeFilter class allows Force Field X to treat merging of Systems just
- * like opening a file from a hard disk or socket.
- *
- * @author Michael J. Schnieders
- * @since 1.0
- *
- */
-public class MergeFilter extends SystemFilter {
+// Things below this line normally do not need to be changed.
+// ===============================================================================================
 
-    /**
-     * <p>
-     * Constructor for MergeFilter.</p>
-     *
-     * @param f a {@link ffx.potential.MolecularAssembly} object.
-     * @param a a {@link java.util.ArrayList} object.
-     * @param b a {@link java.util.ArrayList} object.
-     */
-    public MergeFilter(MolecularAssembly f, ArrayList<Atom> a, ArrayList<Bond> b) {
-        super(new File(""), f, null, null);
-        atomList = a;
-        bondList = b;
-    }
+// Create the command line parser.
+def cli = new CliBuilder(usage:' ffxc energy [options] <filename>');
+cli.h(longOpt:'help', 'Print this help message.');
+def options = cli.parse(args);
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean readFile() {
-        return true;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean writeFile(File saveFile, boolean append) {
-        return false;
-    }
-    
-    @Override
-    public boolean readNext() {
-        return readNext(false);
-    }
-
-    @Override
-    public boolean readNext(boolean resetPosition) {
-        return false;
-    }
-
-    @Override
-    public void closeReader() {
-        //logger.fine(" Reading trajectories not yet supported for MergeFilter");
-        // No logger set for MergeFilter.
-    }
+if (options.h) {
+    return cli.usage();
 }
+
+List<String> arguments = options.arguments();
+String modelfilename = null;
+if (arguments != null && arguments.size() > 0) {
+    // Read in command line.
+    modelfilename = arguments.get(0);
+    active = open(modelfilename);
+} else if (active == null) {
+    return cli.usage();
+} else {
+    modelfilename = active.getFile();
+}
+
+logger.info("\n Analysis of " + modelfilename);
+PotentialsUtils potUtil = new PotentialsUtils();
+potUtil.analysis(active);
+
+energy();

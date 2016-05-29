@@ -260,7 +260,7 @@ public class MultiResidue extends Residue {
     public void setFinalized(boolean t) {
         activeResidue.setFinalized(t);
     }
-
+    
     @Override
     public void setOutOfPlaneBends(MSNode t) {
         activeResidue.setOutOfPlaneBends(t);
@@ -481,46 +481,52 @@ public class MultiResidue extends Residue {
             Atom H1 = (Atom) fromResidue.getAtomNode("H1");
             Atom H2 = (Atom) fromResidue.getAtomNode("H2");
             Atom H3 = (Atom) fromResidue.getAtomNode("H3");
-            if (nextRes == null) { // If both are null
-                Atom OXT = (Atom) fromResidue.getAtomNode("OXT");
-                OXT.removeFromParent();
-                OXT.clearGeometry();
-                OXT.setResName(resName);
-                toResidue.addMSNode(OXT);
-            }
 
             H1.removeFromParent();
             H2.removeFromParent();
-            H3.removeFromParent();
-
             H1.clearGeometry();
             H2.clearGeometry();
-            H3.clearGeometry();
-
             H1.setResName(resName);
             H2.setResName(resName);
-            H3.setResName(resName);
-
             toResidue.addMSNode(H1);
             toResidue.addMSNode(H2);
-            toResidue.addMSNode(H3);
+            
+            if (H3 != null) {
+                H3.removeFromParent();
+                H3.clearGeometry();
+                H3.setResName(resName);
+                toResidue.addMSNode(H3);
+            }
         } else {
             Atom H = (Atom) fromResidue.getAtomNode("H");
             H.removeFromParent();
             H.clearGeometry();
             H.setResName(resName);
             toResidue.addMSNode(H);
-
-            if (nextRes == null) {
-                Atom OXT = (Atom) fromResidue.getAtomNode("OXT");
+        }
+        
+        if (nextRes == null) {
+            Atom OXT = (Atom) fromResidue.getAtomNode("OXT");
+            if (OXT != null) {
                 OXT.removeFromParent();
                 OXT.clearGeometry();
                 OXT.setResName(resName);
                 toResidue.addMSNode(OXT);
+            } else {
+                Atom OH = (Atom) fromResidue.getAtomNode("OH");
+                Atom HO = (Atom) fromResidue.getAtomNode("HO");
+                OH.removeFromParent();
+                OH.clearGeometry();
+                OH.setResName(resName);
+                toResidue.addMSNode(OH);
+                HO.removeFromParent();
+                HO.clearGeometry();
+                HO.setResName(resName);
+                toResidue.addMSNode(HO);
             }
         }
     }
-
+    
     /**
      * Update Atom references to local geometry.
      *

@@ -88,7 +88,7 @@ public class Stochastic extends Integrator {
         temperature = 298.15;
         random = new Random();
     }
-
+    
     /**
      * Set the stochastic dynamics time-step.
      *
@@ -241,7 +241,7 @@ public class Stochastic extends Integrator {
     @Override
     public void setNumberOfVariables(int nVariables, double x[], double v[],
             double a[], double aPrevious[], double mass[]) {
-        super.setNumberOfVariables(nVariables, x, v, a, mass);
+        super.setNumberOfVariables(nVariables, x, v, a, aPrevious, mass);
         if (nVariables > vfric.length) {
             vfric = new double[nVariables];
             vrand = new double[nVariables];

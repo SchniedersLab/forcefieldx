@@ -50,15 +50,18 @@ import java.awt.GridLayout;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.time.Month;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Hashtable;
@@ -931,13 +934,97 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
     }
     /**
-     * Constant <code>version="Version 1.0.0-BETA"</code>
+     * Constant <code>version="1.0.0-BETA"</code>
      */
-    public static final String version = "Version 1.0.0-BETA";
+    public static final String version = "1.0.0-BETA";
     /**
      * Constant <code>date="February 2016"</code>
      */
     public static final String date = "February 2016";
+    
+    private static final String commitVersion;
+    private static final String commitDate;
+    private static final String commitSCM; // Presently using Git.
+    /**
+     * Attempts to initialize version, date, and SCM versioning from 
+     * target/ffx-mvn.properties. Fallback is to use defaults from above.
+     */
+    static {
+        /* Dynamically set date.
+        YearMonth now = YearMonth.now();
+        Month month = now.getMonth();
+        int year = now.getYear();
+        String newDate = String.format("%s %d", month.toString(), year);*/
+        
+        String basedir = System.getProperty("basedir");
+        File mvnProps = new File(basedir + "/target/ffx-mvn.properties");
+        String cVers = version + "-unknown";
+        String cDate = date;
+        String cSCM = "";
+        if (mvnProps.exists()) {
+            try (BufferedReader br = new BufferedReader(new FileReader(mvnProps))) {
+                String ffxVers = "1.0.0-BETA";
+                String ffxvProp = "ffx.version=";
+                
+                /*String gitTag = "unknown";
+                String gtProp = "git.tag=";*/
+                
+                String commitsCount = "";
+                String ccProp = "git.commitsCount=";
+                
+                String timeProp = "timestamp=";
+                
+                String scmProp = "git.revision=";
+                
+                String line = br.readLine();
+                while (line != null) {
+                    line = line.trim();
+                    if (line.startsWith(ffxvProp)) {
+                        ffxVers = line.replaceFirst(ffxvProp, "");
+                    }/* else if (line.startsWith(gtProp)) {
+                        gitTag = line.replaceFirst(gtProp, "");
+                    } */else if (line.startsWith(ccProp)) {
+                        commitsCount = line.replaceFirst(ccProp, "");
+                    } else if (line.startsWith(timeProp)) {
+                        String timeStr = line.replaceFirst(timeProp, "");
+                        // Expected to be MM-dd-yyyy
+                        String[] timeToks = timeStr.split("-");
+                        try {
+                            String year = timeToks[2];
+                            int mon = Integer.parseInt(timeToks[0]);
+                            Month month = Month.of(mon);
+                            String mstr = month.toString();
+                            cDate = String.format("%c%s %s", mstr.charAt(0), mstr.substring(1).toLowerCase(), year);
+                        } catch (Exception ex) {
+                            cDate = date;
+                        }
+                    } else if (line.startsWith(scmProp) && !line.contains("UNKNOWN_REVISION")) {
+                        String scm = line.replaceFirst(scmProp, "");
+                        cSCM = String.format("        %s %s \n", "SCM version ", scm);
+                    }
+                    line = br.readLine();
+                }
+                
+                StringBuilder sb = new StringBuilder(ffxVers).append("-");
+                /*if (gitTag.isEmpty()) {
+                    sb.append("unknown");
+                } else {
+                    sb.append(gitTag);
+                }*/
+                
+                if (!commitsCount.isEmpty()) {
+                    sb.append(commitsCount);
+                } else {
+                    sb.append("unknown");
+                }
+                cVers = sb.toString();
+            } catch (Exception ex) {
+            }
+        }
+        commitVersion = cVers;
+        commitDate = cDate;
+        commitSCM = cSCM;
+    }
     /**
      * Constant
      */
@@ -952,7 +1039,8 @@ public final class MainPanel extends JPanel implements ActionListener,
      * Constant
      */
     public static final String aboutString
-            = "        " + version + "  " + date + " \n"
+            = "        Version " + commitVersion + "  " + commitDate + " \n"
+            + commitSCM // Will contain its own spacing/newline, or be empty.
             + "\n        Copyright (c)  Michael J. Schnieders    2001-2016 \n"
             + "        Portions Copyright (c)  Timothy D. Fenn 2009-2016 \n"
             + "\n"

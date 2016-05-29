@@ -326,6 +326,7 @@ public class MMgksa {
 
         logger.info(String.format(" MM-GKSA evaluation complete, %10d frames "
                 + "read, %11.6f kcal/mol mean energy", nEvals, meanGKSA));
+        filter.closeReader();
     }
     
     private String formatHeader() {
