@@ -87,6 +87,7 @@ import ffx.xray.RealSpaceFile;
 import ffx.xray.RefinementEnergy;
 import ffx.xray.RefinementMinimize;
 import ffx.xray.RefinementMinimize.RefinementMode;
+import ffx.xray.Looptimizer;
 
 // Default convergence criteria.
 double eps = 0.1;
@@ -145,11 +146,16 @@ boolean runTTOSRW = false;
 // Local minimization mode
 boolean localMin = false;
 
+// Check if OSRW found any loop
+boolean loopBuildError = false;
+
+// x-ray minimization mode for OSRW
+boolean runXRayMinimizer = false;
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc loopBuilder [options] <filename1>');
+def cli = new CliBuilder(usage:' ffxc loopBuilder [options] <pdbFile> <realSpaceMapFile> <diffractionDataFile>');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.e(longOpt:'eps', args:1, argName:'1.0', 'RMS gradient convergence criteria');
 cli.n(longOpt:'steps', args:1, argName:'10000', 'Number of molecular dynamics steps.');
@@ -165,8 +171,9 @@ cli.sa(longOpt:'simulated annealing', 'Run simulated annealing.');
 cli.rot(longOpt:'rotamer', 'Run rotamer optimization.');
 cli.mc(longOpt:'MC Loop','Run Monte Carlo KIC');
 cli.a(longOpt:'all', 'Run optimal pipeline of algorithms.');
-cli.s(longOpt:'start', args:1, argName:'1', 'Starting atom of existing loop.');
-cli.f(longOpt:'final', args:1, argName:'-1', 'Final atom of an existing loop.');
+cli.x(longOpt:'X-ray Minimize', 'Run x-ray based quenching during OSRW.');
+cli.s(longOpt:'start', args:1, argName:'1', 'Starting residue of existing loop.');
+cli.f(longOpt:'final', args:1, argName:'-1', 'Final residue of an existing loop.');
 cli.mcn(longOpt:'mcStepFreq', args:1, argName:'10', 'Number of MD steps between Monte-Carlo protonation changes.')
 
 def options = cli.parse(args);
@@ -233,6 +240,10 @@ if (options.m) {
     localMin = true;
 }
 
+// use x-ray minimization
+if (options.x) {
+    runXRayMinimizer = true;
+}
 // Run Simulated Annealing
 if (options.sa){
     runSimulatedAnnealing = true;
@@ -271,7 +282,9 @@ if(!(options.s && options.f)){
 }
 
 // Initial force field will not include non-bonded iteractions.
-System.setProperty("vdwterm", "false");
+// Using property to build xray radii. 
+// TODO: Fix dependence on vdw in xray refinement 
+System.setProperty("vdwterm", "true");
 
 List<String> arguments = options.arguments();
 String filename = null;
@@ -315,32 +328,6 @@ if (!dyn.exists()) {
 
 open(filename);
 
-// If this is a multi-process job, set the structure file to come from the subdirectory.
-if (size > 1) {
-    active.setFile(structureFile);
-}
-
-// Set up real space map data (can be multiple files)
-List mapFiles = new ArrayList();
-int nDiffractionData = 0;
-if (arguments.size() > 1) {
-    String dataFileName = arguments.get(1);
-    if (FilenameUtils.isExtension(dataFileName, "map")) {
-        RealSpaceFile realspacefile = new RealSpaceFile(dataFileName, 1.0);
-        mapFiles.add(realspacefile);
-    } else {
-        DiffractionFile diffractionFile = new DiffractionFile(dataFileName, 1.0, false);
-        DiffractionData diffractionData = new DiffractionData(systems, systems[0].getProperties(), SolventModel.POLYNOMIAL, diffractionFile);
-        diffractionData.scaleBulkFit();
-        diffractionData.printStats();
-        String mapFileName = String.format("%s_ffx_%d", FilenameUtils.removeExtension(dataFileName), ++nDiffractionData);
-        diffractionData.writeMaps(mapFileName);
-        mapFiles.add(new RealSpaceFile(mapFileName + "_2fofc.map", 1.0));
-    }
-}
-
-// Get a reference to the first system's ForceFieldEnergy.
-ForceFieldEnergy forceFieldEnergy = active.getPotentialEnergy();
 // Set built atoms active/use flags to true (false for other atoms).
 Atom[] atoms = active.getAtomArray();
 
@@ -380,6 +367,9 @@ if(options.s && options.f){
     }
 }
 
+// Get a reference to the first system's ForceFieldEnergy.
+ForceFieldEnergy forceFieldEnergy = active.getPotentialEnergy();
+
 for (int i = 0; i <= atoms.length; i++) {
     Atom ai = atoms[i - 1];
     if (ai.getBuilt()) {
@@ -392,15 +382,48 @@ for (int i = 0; i <= atoms.length; i++) {
     }
 }
 
+// If this is a multi-process job, set the structure file to come from the subdirectory.
+if (size > 1) {
+    active.setFile(structureFile);
+}
+
+DiffractionFile diffractionFile = null;
+DiffractionData diffractionData = null;
+// Set up real space map data (can be multiple files)
+List mapFiles = new ArrayList();
+int nDiffractionData = 0;
+if (arguments.size() > 1) {
+    String dataFileName = arguments.get(1);
+    if (FilenameUtils.isExtension(dataFileName, "map")) {
+        RealSpaceFile realspacefile = new RealSpaceFile(dataFileName, 1.0);
+        mapFiles.add(realspacefile);
+    } else {
+        diffractionFile = new DiffractionFile(dataFileName, 1.0, false);
+        diffractionData = new DiffractionData(systems, systems[0].getProperties(), SolventModel.POLYNOMIAL, diffractionFile);
+        diffractionData.scaleBulkFit();
+        diffractionData.printStats();
+        String mapFileName = String.format("%s_ffx_%d", FilenameUtils.removeExtension(dataFileName), ++nDiffractionData);
+        diffractionData.writeMaps(mapFileName);
+        mapFiles.add(new RealSpaceFile(mapFileName + "_2fofc.map", 1.0));
+    }
+}
+
+if (arguments.size() > 1 && runXRayMinimizer) { 
+    String xrayDataFileName = arguments.get(2);
+    diffractionFile = new DiffractionFile(xrayDataFileName, 1.0, false);
+    diffractionData = new DiffractionData(active, active.getProperties(), SolventModel.POLYNOMIAL, diffractionFile);
+}
+
 logger.info("\n Running minimize on built atoms of " + active.getName());
 logger.info(" RMS gradient convergence criteria: " + eps);
 
+//Reset force field energy without vdw term
+System.setProperty("vdwterm", "false");
+forceFieldEnergy = active.getPotentialEnergy();
 
-
-
-    RealSpaceData realSpaceData = new RealSpaceData(active, active.getProperties(),
-        mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
-    RefinementMinimize refinementMinimize = new RefinementMinimize(realSpaceData, RefinementMode.COORDINATES);
+RealSpaceData realSpaceData = new RealSpaceData(active, active.getProperties(),
+    mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
+RefinementMinimize refinementMinimize = new RefinementMinimize(realSpaceData, RefinementMode.COORDINATES);
     
 if (localMin){
     runOSRW = false;
@@ -472,7 +495,7 @@ if(runOSRW){
             lambdaRestart, histogramRestart, active.getProperties(),
             (temperature), timeStep, printInterval, saveInterval, asynchronous, sh);
     } else {
-        osrw =  new OSRW(refinementEnergy, refinementEnergy, lambdaRestart, histogramRestart, active.getProperties(),
+        osrw =  new Looptimizer(refinementEnergy, refinementEnergy, lambdaRestart, histogramRestart, active.getProperties(),
             (temperature), timeStep, printInterval, saveInterval, asynchronous, sh);
     }
 
@@ -491,6 +514,9 @@ if(runOSRW){
         mcLoop.setIterations(20);
     }
 
+    if(runXRayMinimizer){
+        osrw.setData(diffractionData);
+    }
     molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities,
         fileType, restartInterval, dyn);
 
