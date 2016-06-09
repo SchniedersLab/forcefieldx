@@ -282,8 +282,8 @@ if(!(options.s && options.f)){
 }
 
 // Initial force field will not include non-bonded iteractions.
-// Using property to build xray radii. 
-// TODO: Fix dependence on vdw in xray refinement 
+// Using property to build xray radii.
+// TODO: Fix dependence on vdw in xray refinement
 System.setProperty("vdwterm", "true");
 
 List<String> arguments = options.arguments();
@@ -408,7 +408,7 @@ if (arguments.size() > 1) {
     }
 }
 
-if (arguments.size() > 1 && runXRayMinimizer) { 
+if (arguments.size() > 1 && runXRayMinimizer) {
     String xrayDataFileName = arguments.get(2);
     diffractionFile = new DiffractionFile(xrayDataFileName, 1.0, false);
     diffractionData = new DiffractionData(active, active.getProperties(), SolventModel.POLYNOMIAL, diffractionFile);

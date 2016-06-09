@@ -59,7 +59,7 @@ double eps = 1.0;
 // ===============================================================================================
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc crystalMinimize [options] <filename1> [filename2]');
+def cli = new CliBuilder(usage:' ffxc crystalMinimize [options] <filename1>');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.e(longOpt:'eps', args:1, argName:'1.0', 'RMS gradient convergence criteria');
 cli.p(longOpt:'polarization', args:1, 'polarization model: [none / direct / mutual]');
@@ -93,7 +93,6 @@ XtalEnergy xtalEnergy = new XtalEnergy(forceFieldEnergy, active);
 
 // Do the minimization
 CrystalMinimize crystalMinimize = new CrystalMinimize(active, xtalEnergy, sh);
-
 
 e = crystalMinimize.minimize(eps);
 

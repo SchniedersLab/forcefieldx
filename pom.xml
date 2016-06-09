@@ -552,6 +552,7 @@
                     </descriptors>
                     <finalName>ffx-${project.version}</finalName>
                     <outputDirectory>${project.build.directory}/site</outputDirectory>
+                    <tarLongFileMode>posix</tarLongFileMode>
                 </configuration>
                 <executions>
                     <execution>

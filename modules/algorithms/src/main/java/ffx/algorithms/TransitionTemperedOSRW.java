@@ -347,9 +347,9 @@ public class TransitionTemperedOSRW implements Potential {
     private boolean tempering = false;
     /**
      * The Dama et al. transition-tempering rate parameter. A reasonable value
-     * is about 2 kT.
+     * is about 2 to 4 kT.
      */
-    private double deltaT = 2.0 * R * 298.0;
+    private double deltaT = 4.0 * R * 298.0;
     /**
      * The Dama et al. transition-tempering weight: temperingWeight =
      * exp(-max(G(L,F_L))/deltaT)
@@ -1360,7 +1360,7 @@ public class TransitionTemperedOSRW implements Potential {
     public void setDeltaT(double kbtMult) {
         deltaT = R * 298.0 * kbtMult;
     }
-    
+
     public LambdaInterface getLambdaInterface(){
         return lambdaInterface;
     }
