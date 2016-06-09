@@ -1,3 +1,4 @@
+
 /**
  * Title: Force Field X.
  *
@@ -50,10 +51,12 @@ import edu.rit.pj.Comm;
 
 // Force Field X Imports
 import ffx.algorithms.OSRW;
+import ffx.algorithms.TransitionTemperedOSRW
 import ffx.potential.ForceFieldEnergy;
 
 // Printing out PMF information.
 boolean pmf = false;
+boolean tempered = false;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
@@ -62,6 +65,7 @@ boolean pmf = false;
 def cli = new CliBuilder(usage:' ffxc osrwHistogram [options] <filename>');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.p(longOpt:'PMF', args:0, 'Print out potential of mean force information.');
+cli.t(longOpt:'tempered', args:0, 'Histogram for transition-tempered OSRW.');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -75,6 +79,9 @@ String filename = arguments.get(0);
 // PMF?
 if (options.p) {
     pmf = true;
+}
+if (options.t) {
+    tempered = true;
 }
 
 println("\n Evaluating OSRW Histogram for " + filename);
@@ -123,11 +130,31 @@ double saveInterval = 100.0;
 // Temperture in degrees Kelvin.
 double temperature = 298.15;
 
-// Wrap the potential energy inside an OSRW instance.
-OSRW osrw = new OSRW(energy, energy, lambdaRestart, histogramRestart, active.getProperties(),
-    temperature, timeStep, printInterval, saveInterval, asynchronous, sh);
-
-if (pmf){
-    osrw.evaluatePMF();
+if (tempered) {
+    TransitionTemperedOSRW ttosrw = new TransitionTemperedOSRW(energy, energy, lambdaRestart, histogramRestart, active.getProperties(),
+        temperature, timeStep, printInterval, saveInterval, asynchronous, sh);
+    
+    if (pmf) {
+        ttosrw.evaluatePMF();
+    }
+} else {
+    try {
+        // Wrap the potential energy inside an OSRW instance.
+        OSRW osrw = new OSRW(energy, energy, lambdaRestart, histogramRestart, active.getProperties(),
+            temperature, timeStep, printInterval, saveInterval, asynchronous, sh);
+        
+        if (pmf){
+            osrw.evaluatePMF();
+        }
+    } catch (NumberFormatException ex) {
+        // Catch block does not presently work, as OSRW runs a logger.severe, quitting
+        // FFX instead of allowing a chance to catch the exception.
+        logger.warning(String.format(" Number format exception in parsing histogram file for %s; trying to parse as ttOSRW histogram.", histogramRestart));
+        TransitionTemperedOSRW ttosrw = new TransitionTemperedOSRW(energy, energy, lambdaRestart, histogramRestart, active.getProperties(),
+            temperature, timeStep, printInterval, saveInterval, asynchronous, sh);
+        
+        if (pmf) {
+            ttosrw.evaluatePMF();
+        }
+    }
 }
-
