@@ -362,6 +362,8 @@ public final class PDBFilter extends SystemFilter {
                     try (BufferedReader cr = new BufferedReader(new FileReader(file))) {
                         String line = cr.readLine();
                         while (line != null) {
+                            // Replace all tabs w/ 4x spaces
+                            line = line.replaceAll("\t", "    ");
                             String identity = line;
                             if (line.length() > 6) {
                                 identity = line.substring(0, 6);
@@ -446,6 +448,8 @@ public final class PDBFilter extends SystemFilter {
                  * Parse until END or ENDMDL is found, or to the end of the file.
                  */
                 while (line != null) {
+                    // Replace all tabs w/ 4x spaces
+                    line = line.replaceAll("\t", "    ");
                     String identity = line;
                     if (line.length() > 6) {
                         identity = line.substring(0, 6);
