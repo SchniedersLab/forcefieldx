@@ -144,6 +144,7 @@ cli.e(longOpt:'eps', args:1, argName:'1.0', 'RMS gradient convergence criteria')
 cli.n(longOpt:'steps', args:1, argName:'10000', 'Number of molecular dynamics steps.');
 cli.c(longOpt:'chain', args:1, argName:' ', 'Single character chain name to limit optimization to single chain.');
 cli.d(longOpt:'dt', args:1, argName:'2.5', 'Time discretization step (fsec).');
+cli.i(longOpt:'integrator', args:1, argName:'Beeman', 'Integrator: [Beeman / Respa / Stochastic]');
 cli.r(longOpt:'report', args:1, argName:'0.01', 'Interval to report thermodyanamics (psec).');
 cli.m(longOpt:'minimize','Local minimization of loop residues (need -s and -f flags).');
 cli.w(longOpt:'write', args:1, argName:'100.0', 'Interval to write out coordinates (psec).');
@@ -191,6 +192,15 @@ if (options.mcn) {
 // Load the time steps in femtoseconds.
 if (options.d) {
     timeStep = Double.parseDouble(options.d);
+}
+
+// Integrator.
+if (options.i) {
+    try {
+        integrator = Integrators.valueOf(options.i.toUpperCase());
+    } catch (Exception e) {
+        integrator = Integrators.BEEMAN;
+    }
 }
 
 // Report interval in picoseconds.
@@ -491,7 +501,9 @@ if (runSimulatedAnnealing) {
     // Thermostats [ ADIABATIC, BERENDSEN, BUSSI ]
     thermostat = Thermostats.BERENDSEN;
     // Integrators [ BEEMAN, RESPA, STOCHASTIC]
-    integrator = Integrators.RESPA;
+    if (!options.i) {
+        integrator = Integrators.RESPA;
+    }
 
     SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(active, forceFieldEnergy, active.getProperties(), null, thermostat, integrator);
     simulatedAnnealing.annealToTargetValues(heatUpTemperatures, steps, timeStep);

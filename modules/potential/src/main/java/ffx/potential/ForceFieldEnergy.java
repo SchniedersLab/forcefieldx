@@ -2481,4 +2481,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         return previousAcceleration;
     }
 
+    public Bond[] getBonds() {
+        return bonds;
+    }
+    
 }
