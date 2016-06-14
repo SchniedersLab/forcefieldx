@@ -82,11 +82,15 @@ import static ffx.utilities.HashCodeUtil.hash;
 public class Atom extends MSNode implements Comparable<Atom> {
 
     public enum Resolution {
-
-        FIXEDCHARGE, AMOEBA
+        FIXEDCHARGE, AMOEBA;
+    }
+    
+    public enum GradientMode {
+        LAMBDA, LAMEDH;
     }
 
     private Resolution resolution = Resolution.AMOEBA;
+    private GradientMode gradMode = GradientMode.LAMBDA;
 
     public void setResolution(Resolution resolution) {
         this.resolution = resolution;
@@ -262,6 +266,10 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @since 1.0
      */
     private final double xyzLambdaGradient[] = new double[3];
+    /**
+     * Array of XYZ lamedh gradient.
+     */
+    private final double xyzLamedhGradient[] = new double[3];
     /**
      * Array of occupancy values for each altLoc.
      *
@@ -876,7 +884,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     public boolean applyLambda() {
         return applyState;
     }
-
+    
     /**
      * <p>
      * setApplyLambda</p>
@@ -2320,10 +2328,20 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     public void setLambdaXYZGradient(double x, double y, double z) {
         if (active) {
-            xyzLambdaGradient[0] = x;
-            xyzLambdaGradient[1] = y;
-            xyzLambdaGradient[2] = z;
+            if (gradMode == GradientMode.LAMEDH) {
+                xyzLamedhGradient[0] = x;
+                xyzLamedhGradient[1] = y;
+                xyzLamedhGradient[2] = z;
+            } else {
+                xyzLambdaGradient[0] = x;
+                xyzLambdaGradient[1] = y;
+                xyzLambdaGradient[2] = z;
+            }
         }
+    }
+    
+    public void setGradientMode(GradientMode mode) {
+        this.gradMode = mode;
     }
 
     /**
@@ -2352,9 +2370,15 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     public void addToLambdaXYZGradient(double x, double y, double z) {
         if (active) {
-            xyzLambdaGradient[0] += x;
-            xyzLambdaGradient[1] += y;
-            xyzLambdaGradient[2] += z;
+            if (gradMode == GradientMode.LAMEDH) {
+                xyzLamedhGradient[0] += x;
+                xyzLamedhGradient[1] += y;
+                xyzLamedhGradient[2] += z;
+            } else {
+                xyzLambdaGradient[0] += x;
+                xyzLambdaGradient[1] += y;
+                xyzLambdaGradient[2] += z;
+            }            
         }
     }
 
@@ -2383,9 +2407,15 @@ public class Atom extends MSNode implements Comparable<Atom> {
         if (x == null) {
             x = new double[3];
         }
-        x[0] = xyzLambdaGradient[0];
-        x[1] = xyzLambdaGradient[1];
-        x[2] = xyzLambdaGradient[2];
+        if (gradMode == GradientMode.LAMEDH) {
+            x[0] = xyzLamedhGradient[0];
+            x[1] = xyzLamedhGradient[1];
+            x[2] = xyzLamedhGradient[2];
+        } else {
+            x[0] = xyzLambdaGradient[0];
+            x[1] = xyzLambdaGradient[1];
+            x[2] = xyzLambdaGradient[2];
+        }
     }
 
     /**

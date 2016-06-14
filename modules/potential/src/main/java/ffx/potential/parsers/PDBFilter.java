@@ -221,7 +221,11 @@ public final class PDBFilter extends SystemFilter {
      */
     private int modelsRead = 1;
     private final Map<MolecularAssembly, BufferedReader> readers = new HashMap<>();
-
+    /**
+     * Tracks output MODEL numbers. Unused if below zero.
+     */
+    private int modelsWritten = -1;
+    
     /**
      * <p>
      * Constructor for PDBFilter.</p>
@@ -326,7 +330,11 @@ public final class PDBFilter extends SystemFilter {
         listMode = set;
         listOutput = new ArrayList<>();
     }
-
+    
+    public void setModelNumbering(boolean set) {
+        modelsWritten = 0;
+    }
+    
     public ArrayList<String> getListOutput() {
         return listOutput;
     }
@@ -1198,6 +1206,7 @@ public final class PDBFilter extends SystemFilter {
         StringBuilder sb = new StringBuilder("ATOM  ");
         StringBuilder anisouSB = new StringBuilder("ANISOU");
         StringBuilder terSB = new StringBuilder("TER   ");
+        StringBuilder model = null;
         for (int i = 6; i < 80; i++) {
             sb.append(' ');
             anisouSB.append(' ');
@@ -1209,6 +1218,11 @@ public final class PDBFilter extends SystemFilter {
             File newFile = saveFile;
             if (!append) {
                 newFile = version(saveFile);
+            } else if (modelsWritten >= 0) {
+                model = new StringBuilder(String.format("MODEL     %-4d", ++modelsWritten));
+                for (int i = 15; i < 80; i++) {
+                    model.append(' ');
+                }
             }
             activeMolecularAssembly.setFile(newFile);
             activeMolecularAssembly.setName(newFile.getName());
@@ -1225,6 +1239,14 @@ public final class PDBFilter extends SystemFilter {
             String[] headerLines = activeMolecularAssembly.getHeaderLines();
             for (String line : headerLines) {
                 bw.write(String.format("%s\n", line));
+            }
+            if (model != null) {
+                if (!listMode) {
+                    bw.write(model.toString());
+                    bw.newLine();
+                } else {
+                    listOutput.add(model.toString());
+                }
             }
 // =============================================================================
 // The CRYST1 record presents the unit cell parameters, space group, and Z
@@ -1542,12 +1564,13 @@ public final class PDBFilter extends SystemFilter {
                 }
                 resID++;
             }
-
+            
+            String end = model != null ? "ENDMDL" : "END";
             if (!listMode) {
-                bw.write("END");
+                bw.write(end);
                 bw.newLine();
             } else {
-                listOutput.add("END");
+                listOutput.add(end);
             }
             bw.close();
         } catch (Exception e) {
@@ -3108,6 +3131,7 @@ public final class PDBFilter extends SystemFilter {
                         break;
                     }
                     line = currentReader.readLine();
+                    
                 }
                 return true;
             } catch (IOException ex) {
