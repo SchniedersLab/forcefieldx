@@ -50,8 +50,7 @@ import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.parameters.ForceField;
 
 /**
- * Compute the potential energy and derivatives for a dual-topology AMOEBA
- * system.
+ * Compute the potential energy and derivatives for a dual-topology system.
  *
  * @author Michael J. Schnieders
  *

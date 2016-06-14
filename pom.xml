@@ -433,6 +433,49 @@
                     <artifactId>exec-maven-plugin</artifactId>
                     <version>1.4.0</version>
                 </plugin>
+                <!--<plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <inherited>false</inherited>
+                    <artifactId>buildnumber-maven-plugin</artifactId>
+                    <version>1.4</version>
+                    <executions>
+                        <execution>
+                            <phase>validate</phase>
+                            <goals>
+                                <goal>create</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                    <configuration>
+                        <doCheck>false</doCheck>
+                        <doUpdate>false</doUpdate>
+                        <getRevisionOnlyOnce>true</getRevisionOnlyOnce>
+                        <revisionOnScmFailure>revisionNotFound</revisionOnScmFailure>
+                    </configuration>
+                </plugin>-->
+                <plugin>
+                    <groupId>ru.concerteza.buildnumber</groupId>
+                    <inherited>false</inherited>
+                    <artifactId>maven-jgit-buildnumber-plugin</artifactId>
+                    <version>1.2.9</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <inherited>false</inherited>
+                    <artifactId>properties-maven-plugin</artifactId>
+                    <version>1.0.0</version>
+                    <!--<executions>
+                        <execution>
+                            <phase>initialize</phase>
+                            <goals>
+                                <goal>write-project-properties</goal>
+                            </goals>
+                            <configuration>
+                                <outputFile>${basedir}/target/ffx-mvn.properties</outputFile>
+                            </configuration>
+                        </execution>
+                    </executions>-->
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
@@ -509,6 +552,7 @@
                     </descriptors>
                     <finalName>ffx-${project.version}</finalName>
                     <outputDirectory>${project.build.directory}/site</outputDirectory>
+                    <tarLongFileMode>posix</tarLongFileMode>
                 </configuration>
                 <executions>
                     <execution>
@@ -574,6 +618,60 @@
                     </execution>
                 </executions>
             </plugin -->
+            <!--<plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <inherited>false</inherited>
+                <artifactId>buildnumber-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>create</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <doCheck>false</doCheck>
+                    <doUpdate>false</doUpdate>
+                    <getRevisionOnlyOnce>true</getRevisionOnlyOnce>
+                    <revisionOnScmFailure>revisionNotFound</revisionOnScmFailure>
+                </configuration>
+            </plugin>-->
+            <plugin>
+                <groupId>ru.concerteza.buildnumber</groupId>
+                <inherited>false</inherited>
+                <artifactId>maven-jgit-buildnumber-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>git-buildnumber</id>
+                        <goals>
+                            <goal>extract-buildnumber</goal>
+                        </goals>
+                        <phase>prepare-package</phase>
+                        <!--<configuration>
+                            <javaScriptBuildnumberCallback>
+                                "${ffx.version}" + "-" + tag + "-" + commitsCount
+                            </javaScriptBuildnumberCallback>
+                        </configuration>-->
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <inherited>false</inherited>
+                <artifactId>properties-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>write-project-properties</goal>
+                        </goals>
+                        <configuration>
+                            <outputFile>${basedir}/target/ffx-mvn.properties</outputFile>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
     <profiles>
@@ -830,6 +928,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.build.timestamp.format>MM-dd-yyyy</maven.build.timestamp.format>
         <timestamp>${maven.build.timestamp}</timestamp>
+        <!-- Version of FFX  -->
+        <ffx.version>1.0.0-BETA</ffx.version>
         <!-- Skip most website reports by default -->
         <assembly.skipAssembly>false</assembly.skipAssembly>
         <changes.jira.skip>true</changes.jira.skip>

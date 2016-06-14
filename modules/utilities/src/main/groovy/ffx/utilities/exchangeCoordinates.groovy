@@ -59,6 +59,7 @@ def cli = new CliBuilder(usage:' ffxc exchangeCoordinates -i [start] -f [end] <t
 cli.h(longOpt:'help', 'Print this help message.');
 cli.i(longOpt:'start', args:1, argName:'-1', 'Start residue.');
 cli.f(longOpt:'finish', args:1, argName:'-1', 'End residue.');
+cli.x(longOpt:'start-2', args:1, argName:'-1','Alternative start residue.');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -81,6 +82,13 @@ if (options.i) {
     logger.info(String.format("Error reading start and end positions"));
 }
 
+int startPosition2 = startPosition;
+int endPosition2 = endPosition;
+// Sets where second start and stop occur for pdb files with different residue numbers
+if (options.x) {
+    startPosition2 = Integer.parseInt(options.x);
+} 
+
 open(toFile);
 MolecularAssembly original = active;
 Polymer[] toPolymers = original.getChains();
@@ -91,9 +99,9 @@ open(fromFile);
 Polymer[] fromPolymers = active.getChains();
 
 for (int i=startPosition; i<=endPosition; i++) {
-    Residue fromResidue = fromPolymers[0].getResidue(i);
+    Residue fromResidue = fromPolymers[0].getResidue(i - startPosition + startPosition2);
     Residue toResidue = toPolymers[0].getResidue(i);
-
+    
     AminoAcidUtils.copyResidue(fromResidue, toResidue);
 }
 
