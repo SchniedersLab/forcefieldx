@@ -63,6 +63,7 @@ import java.io.FileNotFoundException;
 import java.util.Arrays;
 import java.io.CharArrayReader;
 import static java.lang.System.out;
+import ffx.potential.ForceFieldEnergy
 import java.lang.ArrayIndexOutOfBoundsException;
 import java.lang.IndexOutOfBoundsException;
 import java.lang.String;
@@ -100,9 +101,6 @@ String patch5 = arguments.get(5);
 String patch6 = arguments.get(6);
 //String fullPatch = arguments.get(7);
 
-//systems = open(xyzname);
-//energy();
-
 //define file opener class, then read map file, and print to screen
 //remember to build mvn in ffx dir. in a separate terminal window, not the build in Netbeans, before running stitch
 /*try {
@@ -132,15 +130,6 @@ if (!myMap.get("StringKey").equals("StringValue")) {
     System.out.println("Error!");
 }
 
-/*HashMap<Integer,Double> vdwMap = new HashMap<>();
-vdwMap.put(509, 2.58);
-
-HashMap<List<Integer>,Integer> typeMap = new HashMap<>();
-List<Integer> chlorides = new ArrayList<>();
-chlorides.add(409);
-chlorides.add(411);
-typeMap.put(chlorides, 509);*/
-
 open("CMB.pdb");
 MolecularAssembly CMB = (MolecularAssembly) active;
 open("CPP.pdb");
@@ -161,6 +150,15 @@ ForceField ndfFF = NDF.getForceField();
 ForceField posFF = POS.getForceField();
 ForceField agnFF = AGN.getForceField();
 
+ForceFieldEnergy cmbEnergy = CMB.getPotentialEnergy();
+
+// Loop over force field terms from ForceFieldEnergy instances
+
+// Bonds
+
+Bond bonds[] = cmbEnergy.getBonds();
+
+
 List<MolecularAssembly> molecularAssemblies = new ArrayList<>();
 molecularAssemblies.add(CMB);
 molecularAssemblies.add(CPP);
@@ -168,6 +166,7 @@ molecularAssemblies.add(FBN);
 molecularAssemblies.add(NDF);
 molecularAssemblies.add(POS);
 molecularAssemblies.add(AGN);
+
 
 
 PatchCombiner pc = new PatchCombiner(molecularAssemblies, mapname, patch1, patch2, patch3, patch4, patch5, patch6);
