@@ -855,6 +855,7 @@
         <jocl.version>2.3.1</jocl.version>
         <junit.version>4.12</junit.version>
         <biojava.version>3.0.8</biojava.version>
+        <cdk.version>1.5.13</cdk.version>
     </properties>
     <modules>
         <module>modules/algorithms</module>

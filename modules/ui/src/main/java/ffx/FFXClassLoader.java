@@ -86,6 +86,7 @@ public class FFXClassLoader extends URLClassLoader {
         "org.apache.commons.lang3",
         "org.apache.commons.math3",
         "org.jogamp",
+        "org.openscience.cdk",
         "edu.rit.pj",
         "jcuda"};
     static final List<String> FFX_FILES;
@@ -136,6 +137,37 @@ public class FFXClassLoader extends URLClassLoader {
             "commons-lang/commons-lang3.jar",
             "commons-logging/commons-logging.jar",
             "commons-math/commons-math3.jar",
+            // CDK Libraries
+            "org.openscience.cdk/cdk-interfaces.jar",
+            "org.openscience.cdk/cdk-ioformats.jar",
+            "org.openscience.cdk/cdk-standard.jar",
+            "org.openscience.cdk/cdk-qsarmolecular.jar",
+            "org.openscience.cdk/cdk-charges.jar",
+            "org.openscience.cdk/cdk-smarts.jar",
+            "org.openscience.cdk/cdk-reaction.jar",
+            "org.openscience.cdk/cdk-fragment.jar",
+            "org.openscience.cdk/cdk-dict.jar",
+            "org.openscience.cdk/cdk-qsar.jar",
+            "org.openscience.cdk/cdk-formula.jar",
+            "org.openscience.cdk/cdk-hash.jar",
+            "org.openscience.cdk/cdk-atomtype.jar",
+            "org.openscience.cdk/cdk-isomorphism.jar",
+            "org.openscience.cdk/cdk-valencycheck.jar",
+            "org.openscience.cdk/cdk-smiles.jar",
+            "org.openscience.cdk/",
+            "org.openscience.cdk/cdk-io.jar",
+            "org.openscience.cdk/cdk-core.jar",
+            "org.openscience.cdk/cdk-silent.jar",
+            "org.openscience.cdk/cdk-inchi.jar",
+            "org.openscience.cdk/cdk-builder3d.jar",
+            "org.openscience.cdk/cdk-forcefield.jar",
+            "org.openscience.cdk/cdk-sdg.jar",
+            "org.openscience.cdk/cdk-data.jar",
+            //Google Libraraies
+            "com.google.guava/guava.jar",
+            //ebi.beam Libraries
+            "uk.ac.ebi.beam/beam-core.jar",
+            "uk.ac.ebi.beam/beam-func.jar",
             // Mac OS X Extensions
             "macosx/AppleJavaExtensions.jar",
             // Java Help
