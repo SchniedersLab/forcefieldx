@@ -156,8 +156,8 @@ cli.sa(longOpt:'simulated annealing', 'Run simulated annealing.');
 cli.rot(longOpt:'rotamer', 'Run rotamer optimization.');
 cli.mc(longOpt:'MC Loop','Run Monte Carlo KIC');
 cli.a(longOpt:'all', 'Run optimal pipeline of algorithms.');
-cli.s(longOpt:'start', args:1, argName:'1', 'Starting atom of existing loop.');
-cli.f(longOpt:'final', args:1, argName:'-1', 'Final atom of an existing loop.');
+cli.s(longOpt:'start', args:1, argName:'1', 'Starting residue of existing loop.');
+cli.f(longOpt:'final', args:1, argName:'-1', 'Final residue of an existing loop.');
 cli.mcn(longOpt:'mcStepFreq', args:1, argName:'10', 'Number of MD steps between Monte-Carlo protonation changes.')
 
 def options = cli.parse(args);
