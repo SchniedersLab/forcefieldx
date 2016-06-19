@@ -2738,8 +2738,10 @@ public final class PDBFilter extends SystemFilter {
                     subChain = new ArrayList<Residue>();
                     subChain.add(residue);
                     subChains.add(subChain);
-                    sb.append(format("\n C-N distance of %6.2f A for %s and %s.",
-                            r, previousResidue.toString(), residue.toString()));
+                    char ch1 = previousResidue.getChainID();
+                    char ch2 = residue.getChainID();
+                    sb.append(format("\n C-N distance of %6.2f A for %c-%s and %c-%s.",
+                            r, ch1, previousResidue.toString(), ch2, residue.toString()));
                 } else {
                     /**
                      * Continue the current chain.
