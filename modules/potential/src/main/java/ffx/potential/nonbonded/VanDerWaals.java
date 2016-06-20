@@ -81,6 +81,7 @@ import static ffx.potential.parameters.ForceField.ForceFieldString.RADIUSSIZE;
 import static ffx.potential.parameters.ForceField.ForceFieldString.RADIUSTYPE;
 import static ffx.potential.parameters.ForceField.ForceFieldString.VDWTYPE;
 import static ffx.potential.parameters.ForceField.toEnumForm;
+import java.util.stream.IntStream;
 
 /**
  * The van der Waals class computes the buffered 14-7 van der Waals interaction
@@ -1121,8 +1122,11 @@ public class VanDerWaals implements MaskingInterface,
     }
     
     public double[] getdEdLdh() {
-        // TODO PRIO
-        throw new UnsupportedOperationException();
+        double dEdLdh[] = new double[numESVs];
+        for (int i = 0; i < numESVs; i++) {
+            dEdLdh[i] = shareddEdLdh[i].get();
+        }
+        return dEdLdh;
     }
 
     /**
@@ -1149,8 +1153,31 @@ public class VanDerWaals implements MaskingInterface,
     }
     
     public double[][] getdEdXdLdh() {
-        // TODO PRIO
-        throw new UnsupportedOperationException();
+        double dEdXdLdh[][] = new double[numESVs][nAtoms];
+        double ldhgx[][] = lamedhGradX[0];
+        double ldhgy[][] = lamedhGradY[0];
+        double ldhgz[][] = lamedhGradZ[0];
+        int index = 0;
+        /* TODO Find how to get finality in these.
+        IntStream.range(0, nAtoms)
+            .filter(i -> atoms[i].isActive() && atom2esv.get(i) != null)
+            .mapToObj(i -> atom2esv.get(i))
+            .forEach(iESV -> {
+                dEdXdLdh[iESV][index++] += ldhgx[iESV][i];
+                dEdXdLdh[iESV][index++] += ldhgy[iESV][i];
+                dEdXdLdh[iESV][index++] += ldhgz[iESV][i];
+            });
+        */
+        for (int i = 0; i < nAtoms; i++) {
+            if (atoms[i].isActive() && atom2esv.get(i) != null) {
+                for (Integer iESV : atom2esv.get(i)) {
+                    dEdXdLdh[iESV][index++] += ldhgx[iESV][i];
+                    dEdXdLdh[iESV][index++] += ldhgy[iESV][i];
+                    dEdXdLdh[iESV][index++] += ldhgz[iESV][i];
+                }
+            }            
+        }
+        return dEdXdLdh;
     }
 
     /**
@@ -1165,8 +1192,11 @@ public class VanDerWaals implements MaskingInterface,
     }
     
     public double[] getd2EdLdh2() {
-        // TODO PRIO
-        throw new UnsupportedOperationException();
+        double d2EdLdh2[] = new double[numESVs];
+        for (int i = 0; i < numESVs; i++) {
+            d2EdLdh2[i] = sharedd2EdLdh2[i].get();
+        }
+        return d2EdLdh2;
     }
 
     /**
