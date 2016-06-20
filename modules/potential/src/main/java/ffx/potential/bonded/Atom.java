@@ -85,12 +85,12 @@ public class Atom extends MSNode implements Comparable<Atom> {
         FIXEDCHARGE, AMOEBA;
     }
     
-    public enum GradientMode {
+    public enum ESVMode {
         LAMBDA, LAMEDH;
     }
 
     private Resolution resolution = Resolution.AMOEBA;
-    private GradientMode gradMode = GradientMode.LAMBDA;
+    private ESVMode esvMode = ESVMode.LAMBDA;
 
     public void setResolution(Resolution resolution) {
         this.resolution = resolution;
@@ -357,6 +357,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     private double globalDipole[] = null;
     private double globalQuadrupole[][] = null;
     private boolean applyState = false;
+    private boolean lamedhState = false;
     // solvation
     private double bornRadius;
     // Connectivity information.
@@ -893,6 +894,14 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     public void setApplyLambda(boolean applyState) {
         this.applyState = applyState;
+    }
+    
+    public boolean applyLamedh() {
+        return lamedhState;
+    }
+    
+    public void setApplyLamedh(boolean applyState) {
+        this.lamedhState = applyState;
     }
 
     /**
@@ -2328,7 +2337,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     public void setLambdaXYZGradient(double x, double y, double z) {
         if (active) {
-            if (gradMode == GradientMode.LAMEDH) {
+            if (esvMode == ESVMode.LAMEDH) {
                 xyzLamedhGradient[0] = x;
                 xyzLamedhGradient[1] = y;
                 xyzLamedhGradient[2] = z;
@@ -2340,8 +2349,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
         }
     }
     
-    public void setGradientMode(GradientMode mode) {
-        this.gradMode = mode;
+    public void setESVMode(ESVMode mode) {
+        this.esvMode = mode;
     }
 
     /**
@@ -2370,7 +2379,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     public void addToLambdaXYZGradient(double x, double y, double z) {
         if (active) {
-            if (gradMode == GradientMode.LAMEDH) {
+            if (esvMode == ESVMode.LAMEDH) {
                 xyzLamedhGradient[0] += x;
                 xyzLamedhGradient[1] += y;
                 xyzLamedhGradient[2] += z;
@@ -2407,7 +2416,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
         if (x == null) {
             x = new double[3];
         }
-        if (gradMode == GradientMode.LAMEDH) {
+        if (esvMode == ESVMode.LAMEDH) {
             x[0] = xyzLamedhGradient[0];
             x[1] = xyzLamedhGradient[1];
             x[2] = xyzLamedhGradient[2];
