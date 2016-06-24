@@ -163,6 +163,14 @@ public class FFXClassLoader extends URLClassLoader {
             "org.openscience.cdk/cdk-forcefield.jar",
             "org.openscience.cdk/cdk-sdg.jar",
             "org.openscience.cdk/cdk-data.jar",
+            "org.openscience.cdk/cdk-extra.jar",
+            "org.openscience.cdk/cdk-smsd.jar",
+            "org.openscience.cdk/cdk-core.jar",
+            "org.openscience.cdk/cdk-dict.jar",
+            "org.openscience.cdk/cdk-formula.jar",
+            "org.openscience.cdk/cdk-interfaces.jar",
+            "org.openscience.cdk/cdk-ioformats.jar",
+            "org.openscience.cdk/cdk-standard.jar",
             //Google Libraraies
             "com.google.guava/guava.jar",
             //ebi.beam Libraries
