@@ -1,5 +1,7 @@
 package ffx.potential.extended;
 
+import ffx.numerics.Potential;
+import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.ROLS;
@@ -37,14 +39,14 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 public abstract class ExtendedVariable {
     
     // System handles
-    private final MolecularAssembly mola;
     private static int esvIndexer = 0;
     public final int index;
-    protected List<Atom> atoms;
+    protected Potential potential;
+    protected List<Atom> atoms = new ArrayList<>();
     
     // Thermo variables
-    private double temperature = 298.15;            // Kelvin
-    private double dt = 1.0;                        // femtoseconds
+    public final double temperature;            // Kelvin
+    public final double dt;                     // femtoseconds
     
     // Lamedh variables
     protected double lamedh;                        // ESVs travel on {0,1}
@@ -54,12 +56,19 @@ public abstract class ExtendedVariable {
     private final double thetaFriction = 1.0e-19;   // from OSRW, reasonably 60/ps
     private final Random stochasticRandom = ThreadLocalRandom.current();
     
-    public ExtendedVariable(MolecularAssembly mola, double temperature, double dt) {
-        this.mola = mola;
+    public ExtendedVariable(Potential potential, double temperature, double dt) {
+        this.potential = potential;
         this.temperature = temperature;
         this.dt = dt;
         this.index = esvIndexer++;
-        setLamedh(1.0);
+        this.lamedh = 1.0;
+        theta = Math.asin(Math.sqrt(lamedh));
+    }
+    
+    public ExtendedVariable(Potential potential, double temperature, double dt, double initialLamedh) {
+        this(potential, temperature, dt);
+        this.lamedh = initialLamedh;
+        theta = Math.asin(Math.sqrt(lamedh));
     }
     
     public List<Atom> getAtoms() {
@@ -93,11 +102,13 @@ public abstract class ExtendedVariable {
 
         double sinTheta = sin(theta);
         lamedh = sinTheta * sinTheta;
+        ((ForceFieldEnergy) potential).updateLamedh();
     }
     
     public final void setLamedh(double lamedh) {
         this.lamedh = lamedh;
         theta = Math.asin(Math.sqrt(lamedh));
+        ((ForceFieldEnergy) potential).updateLamedh();
     }
     public final double getLamedh() {
         return lamedh;
@@ -107,7 +118,7 @@ public abstract class ExtendedVariable {
     }
     
     /**
-     * Declared abstract as a reminder to fill local array and update Atom fields.
+     * Declared abstract as a reminder to both fill local array and update Atom fields.
      */
     protected abstract void setAtoms();
     /**

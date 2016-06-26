@@ -539,6 +539,20 @@ public class Protonate implements MonteCarloListener {
         return avail;
     }
     
+    /**
+     * Provides titration info as a utility.
+     */
+    public static List<Titration> titrationLookup(Residue res) {
+        AminoAcid3 source = AminoAcid3.valueOf(res.getName());
+        List<Titration> avail = new ArrayList<>();
+        for (Titration titr : Titration.values()) {
+            if (titr.source.equals(source)) {   // relies on the weird dual-direction enum
+                avail.add(titr);
+            }
+        }
+        return avail;
+    }
+    
     private void meltdown() {
         writeSnapshot(".meltdown-");
         forceFieldEnergy.energy(false, true);

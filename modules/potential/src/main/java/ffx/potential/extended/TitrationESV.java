@@ -1,19 +1,26 @@
 package ffx.potential.extended;
 
-import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.BondedUtils;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MultiResidue;
+import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.ROLS;
 import ffx.potential.bonded.Residue;
+import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
+import ffx.potential.extended.TitrationESV.TitrationUtils.Titr;
+import ffx.potential.parameters.ForceField;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalDouble;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.IntStream;
+import static java.lang.String.format;
+import java.util.Arrays;
 
 /**
  * An extended system variable that allows continuous fractional protonation of an amino acid.
@@ -23,44 +30,54 @@ import java.util.stream.Collectors;
 public final class TitrationESV extends ExtendedVariable {
     
     // System handles
+    private static final Logger logger = Logger.getLogger(TitrationESV.class.getName());
     private final ForceFieldEnergy ffe;
+    private final MultiResidue titrating;
+    
     // Handles on scaled terms
     private Residue residueOne, residueZero;    // One*lamedh + Zero*(1-lamedh)
     private List<Atom> atomsOne, atomsZero;     // just those that are changing with lamedh
     private List<ROLS> rolsOne, rolsZero;
+    private static final List<String> backboneNames = Arrays.asList("N","CA","C","O","HA","H");
     
-    public TitrationESV(MultiResidue titrating, MolecularAssembly mola, double temperature, double dt) {
-        super(mola, temperature, dt);
-        Potential potential = mola.getPotentialEnergy();
+    public TitrationESV(Residue res, MolecularAssembly mola, double temperature, double dt) {
+        super(mola.getPotentialEnergy(), temperature, dt, 1.0);
         ffe = (potential instanceof ForceFieldEnergy) ? (ForceFieldEnergy) potential : null;
         if (ffe == null) {
             throw new UnsupportedOperationException("Lamedh ESVs not yet implemented for non-forcefield or hybrid potentials.");
         }
-        setLamedh(1.0);
-        List<Residue> members = titrating.getConsideredResidues();
-        if (members.size() > 2) {
-            throw new UnsupportedOperationException("TitrationESV not yet implemented for MultiResidues with >2 states.");
+        AminoAcid3 aa = res.getAminoAcid3();
+        if (aa == AminoAcid3.HIE) {
+            throw new UnsupportedOperationException("3-way HIS Ldh under construction.");
         }
+        titrating = TitrationUtils.titrationFactory(mola, mola.getForceField(), ffe, res);
+        
         residueOne = titrating.getActive();
-        residueZero = members.get(0).equals(residueOne) ? members.get(1) : members.get(0);
-        for (MSNode node : residueOne.getTerms().getChildList()) {
-            if (node instanceof ROLS) {
-                rolsOne.add((ROLS) node);
-            }
-        }
-        for (MSNode node : residueZero.getTerms().getChildList()) {
-            if (node instanceof ROLS) {
-                rolsZero.add((ROLS) node);
-            }
-        }
+        residueZero = titrating.getInactive().get(0);
+        rolsOne = new ArrayList<>();
+        residueOne.getTerms().getChildList()
+                .parallelStream().filter(node -> node instanceof ROLS)
+                .forEachOrdered(node -> rolsOne.add((ROLS) node));
+        rolsZero = new ArrayList<>();
+        residueZero.getTerms().getChildList()
+                .parallelStream().filter(node -> node instanceof ROLS)
+                .forEachOrdered(node -> rolsZero.add((ROLS) node));
         setAtoms();
+        describe();
     }
     
     @Override
     protected void setAtoms() {
-        atoms = new ArrayList<>();
-        atoms.addAll(residueOne.getAtomList());
-        atoms.addAll(residueZero.getAtomList());
+        atomsOne = new ArrayList<>();
+        atomsZero = new ArrayList<>();
+        List<Atom> backboneAtoms = new ArrayList<>();
+        backboneNames.parallelStream().forEach(name -> {
+            backboneAtoms.add((Atom) residueOne.getAtomNode(name));
+        });
+        residueOne.getAtomList().parallelStream().filter(a -> !backboneAtoms.contains(a)).forEachOrdered(atomsOne::add);
+        residueZero.getAtomList().parallelStream().filter(a -> !backboneAtoms.contains(a)).forEachOrdered(atomsZero::add);
+        atoms.addAll(atomsOne);
+        atoms.addAll(atomsZero);
         atoms.parallelStream().forEach(a -> a.setApplyLamedh(true));
     }
     
@@ -71,12 +88,268 @@ public final class TitrationESV extends ExtendedVariable {
     
     @Override
     public OptionalDouble getROLSScaling(ROLS rols) {
-        if (rolsOne.contains(rols)) {
-            return OptionalDouble.of(lamedh);
-        } else if (rolsZero.contains(rols)) {
-            return OptionalDouble.of(1.0 - lamedh);
+        for (ROLS termNode : rolsOne) {
+            if (((MSNode) termNode).getChildList().contains(rols)) {
+                return OptionalDouble.of(lamedh);
+            }
         }
+        for (ROLS termNode : rolsZero) {
+            if (((MSNode) termNode).getChildList().contains(rols)) {
+                return OptionalDouble.of(1.0 - lamedh);
+            }
+        }
+//        if (rolsOne.contains(rols)) {
+//            return OptionalDouble.of(lamedh);
+//        } else if (rolsZero.contains(rols)) {
+//            return OptionalDouble.of(1.0 - lamedh);
+//        }
         return OptionalDouble.empty();
+    }
+    
+    @Override
+    public String toString() {
+        return format("Titration ESV %d: %s", index, titrating);
+    }
+    
+    /**
+     * List all the atoms and bonded terms associated with each end state.
+     */
+    public void describe() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(this.toString() + format("\n"));
+        sb.append(format("    Atoms (State 1): \n"));
+        atomsOne.stream().forEachOrdered(a -> sb.append(format("   %s\n", a)));
+        sb.append(format("    ROLS (State 1):  \n"));
+        rolsOne.stream().forEachOrdered(r -> sb.append( format("      %s\n", r)));
+        sb.append(format("    Atoms (State 0): \n"));
+        atomsZero.stream().forEachOrdered(a -> sb.append(format("   %s\n", a)));
+        sb.append(format("    ROLS (State 0):  \n"));
+        rolsZero.stream().forEachOrdered(r -> sb.append( format("      %s\n", r)));
+        logger.info(sb.toString());
+    }
+    
+    /**
+     * Helper methods to define titration-specific phenomena.
+     */
+    public static class TitrationUtils {
+
+        public static MultiResidue titrationFactory(MolecularAssembly mola, 
+                ForceField ff, ForceFieldEnergy ffe, Residue res) {
+            // Create new titration state.
+            Titr t = TitrationUtils.titrationLookup(res, false);
+            String targetName = (t.target != res.getAminoAcid3()) ? t.target.toString() : t.source.toString();
+            int resNumber = res.getResidueNumber();
+            Residue.ResidueType resType = res.getResidueType();
+            Residue newRes = new Residue(targetName, resNumber, resType);
+            // Wrap both states in a MultiResidue.
+            MultiResidue multiRes = new MultiResidue(res, ff, ffe);
+            Polymer polymer = findResiduePolymer(res, mola);
+            polymer.addMultiResidue(multiRes);
+            multiRes.addResidue(newRes);
+            multiRes.setActiveResidue(res);
+            propagateInactiveResidues(multiRes);
+            ffe.reInit();
+            logger.info(String.format(" Added Ldh-coupled titrating group: %s", res));
+            return multiRes;
+        }
+        
+        public static Titr titrationLookup(Residue res, boolean HIE) {
+            AminoAcid3 source = AminoAcid3.valueOf(res.getName());
+            if (source == AminoAcid3.HIS || source == AminoAcid3.HID || source == AminoAcid3.HIE) {
+                return (HIE ? Titr.ZtoH : Titr.UtoH);
+            }
+            for (Titr titr : Titr.values()) {
+                if (titr.source == source || titr.target == source) {
+                    return titr;
+                }
+            }
+            logger.log(Level.SEVERE, "No titraiton lookup found for residue {0}", res);
+            return null;
+        }
+
+        private static Polymer findResiduePolymer(Residue residue, MolecularAssembly mola) {
+            Polymer polymers[] = mola.getChains();
+            Optional<Polymer> polymer = IntStream.range(0,polymers.length).parallel()
+                    .mapToObj(i -> polymers[i])
+                    .filter(p -> p.getChainID().compareTo(residue.getChainID()) == 0)
+                    .findAny();
+            if (!polymer.isPresent()) {
+                logger.log(Level.SEVERE, " Polymer not found for residue {0}", residue);
+            }
+            return polymer.get();
+        }
+        
+        /**
+         * Copies atomic coordinates from each active residue to its inactive
+         * counterparts. Inactive hydrogen coordinates are updated by geometry
+         * with the propagated heavies.
+         */
+        private static void propagateInactiveResidues(MultiResidue multiRes) {
+            // Propagate all atom coordinates from active residues to their inactive counterparts.
+            Residue active = multiRes.getActive();
+            String activeResName = active.getName();
+            List<Residue> inactives = multiRes.getInactive();
+            for (Atom activeAtom : active.getAtomList()) {
+                String activeName = activeAtom.getName();
+                for (Residue inactive : inactives) {
+                    Atom inactiveAtom = (Atom) inactive.getAtomNode(activeName);
+                    if (inactiveAtom != null) {
+                        // Propagate position and gradient.
+                        double activeXYZ[] = activeAtom.getXYZ(null);
+                        inactiveAtom.setXYZ(activeXYZ);
+                        double grad[] = new double[3];
+                        activeAtom.getXYZGradient(grad);
+                        inactiveAtom.setXYZGradient(grad[0], grad[1], grad[2]);
+                        // Propagate velocity, acceleration, and previous acceleration.
+                        double activeVelocity[] = new double[3];
+                        activeAtom.getVelocity(activeVelocity);
+                        inactiveAtom.setVelocity(activeVelocity);
+                        double activeAccel[] = new double[3];
+                        activeAtom.getAcceleration(activeAccel);
+                        inactiveAtom.setAcceleration(activeAccel);
+                        double activePrevAcc[] = new double[3];
+                        activeAtom.getPreviousAcceleration(activePrevAcc);
+                        inactiveAtom.setPreviousAcceleration(activePrevAcc);
+                    } else {
+                        if (activeName.equals("C") || activeName.equals("O") || activeName.equals("N") || activeName.equals("CA")
+                                || activeName.equals("H") || activeName.equals("HA")) {
+                            // Backbone atoms aren't supposed to exist in inactive multiResidue components; so no problem.
+                        } else if ((activeResName.equals("LYS") && activeName.equals("HZ3"))
+                                || (activeResName.equals("TYR") && activeName.equals("HH"))
+                                || (activeResName.equals("CYS") && activeName.equals("HG"))
+                                || (activeResName.equals("HIS") && (activeName.equals("HD1") || activeName.equals("HE2")))
+                                || (activeResName.equals("HID") && activeName.equals("HD1"))
+                                || (activeResName.equals("HIE") && activeName.equals("HE2"))
+                                || (activeResName.equals("ASH") && activeName.equals("HD2"))
+                                || (activeResName.equals("GLH") && activeName.equals("HE2"))) {
+                            // These titratable protons are handled below; so no problem.
+                        } else {
+                            // Now we have a problem.
+                            logger.warning(String.format("Couldn't copy atom_xyz: %s: %s, %s",
+                                    multiRes, activeName, activeAtom.toString()));
+                        }
+                    }
+                }
+            }
+
+            // If inactive residue is a protonated form, move the stranded hydrogen to new coords (based on propagated heavies).
+            // Also give the stranded hydrogen a maxwell velocity and remove its accelerations.
+            for (Residue inactive : inactives) {
+                List<Atom> resetMe = new ArrayList<>();
+                switch (inactive.getName()) {
+                    case "LYS": {
+                        Atom HZ3 = (Atom) inactive.getAtomNode("HZ3");
+                        Atom NZ = (Atom) inactive.getAtomNode("NZ");
+                        Atom CE = (Atom) inactive.getAtomNode("CE");
+                        Atom HZ1 = (Atom) inactive.getAtomNode("HZ1");
+                        BondedUtils.intxyz(HZ3, NZ, 1.02, CE, 109.5, HZ1, 109.5, -1);
+                        resetMe.add(HZ3);
+                        break;
+                    }
+                    case "ASH": {
+                        Atom HD2 = (Atom) inactive.getAtomNode("HD2");
+                        Atom OD2 = (Atom) inactive.getAtomNode("OD2");
+                        Atom CG = (Atom) inactive.getAtomNode("CG");
+                        Atom OD1 = (Atom) inactive.getAtomNode("OD1");
+                        BondedUtils.intxyz(HD2, OD2, 0.98, CG, 108.7, OD1, 0.0, 0);
+                        resetMe.add(HD2);
+                        break;
+                    }
+                    case "GLH": {
+                        Atom HE2 = (Atom) inactive.getAtomNode("HE2");
+                        Atom OE2 = (Atom) inactive.getAtomNode("OE2");
+                        Atom CD = (Atom) inactive.getAtomNode("CD");
+                        Atom OE1 = (Atom) inactive.getAtomNode("OE1");
+                        BondedUtils.intxyz(HE2, OE2, 0.98, CD, 108.7, OE1, 0.0, 0);
+                        resetMe.add(HE2);
+                        break;
+                    }
+                    case "HIS": {
+                        Atom HE2 = (Atom) inactive.getAtomNode("HE2");
+                        Atom NE2 = (Atom) inactive.getAtomNode("NE2");
+                        Atom CD2 = (Atom) inactive.getAtomNode("CD2");
+                        Atom CE1 = (Atom) inactive.getAtomNode("CE1");
+                        Atom HD1 = (Atom) inactive.getAtomNode("HD1");
+                        Atom ND1 = (Atom) inactive.getAtomNode("ND1");
+                        Atom CG = (Atom) inactive.getAtomNode("CG");
+                        Atom CB = (Atom) inactive.getAtomNode("CB");
+                        BondedUtils.intxyz(HE2, NE2, 1.02, CD2, 126.0, CE1, 126.0, 1);
+                        BondedUtils.intxyz(HD1, ND1, 1.02, CG, 126.0, CB, 0.0, 0);
+                        resetMe.add(HE2);
+                        resetMe.add(HD1);
+                        break;
+                    }
+                    case "HID": {
+                        Atom HD1 = (Atom) inactive.getAtomNode("HD1");
+                        Atom ND1 = (Atom) inactive.getAtomNode("ND1");
+                        Atom CG = (Atom) inactive.getAtomNode("CG");
+                        Atom CB = (Atom) inactive.getAtomNode("CB");
+                        BondedUtils.intxyz(HD1, ND1, 1.02, CG, 126.0, CB, 0.0, 0);
+                        resetMe.add(HD1);
+                        break;
+                    }
+                    case "HIE": {
+                        Atom HE2 = (Atom) inactive.getAtomNode("HE2");
+                        Atom NE2 = (Atom) inactive.getAtomNode("NE2");
+                        Atom CD2 = (Atom) inactive.getAtomNode("CD2");
+                        Atom CE1 = (Atom) inactive.getAtomNode("CE1");
+                        BondedUtils.intxyz(HE2, NE2, 1.02, CD2, 126.0, CE1, 126.0, 1);
+                        resetMe.add(HE2);
+                        break;
+                    }
+                    case "CYS": {
+                        Atom HG = (Atom) inactive.getAtomNode("HG");
+                        Atom SG = (Atom) inactive.getAtomNode("SG");
+                        Atom CB = (Atom) inactive.getAtomNode("CB");
+                        Atom CA = (Atom) inactive.getAtomNode("CA");
+                        BondedUtils.intxyz(HG, SG, 1.34, CB, 96.0, CA, 180.0, 0);
+                        resetMe.add(HG);
+                        break;
+                    }
+                    case "TYR": {
+                        Atom HH = (Atom) inactive.getAtomNode("HH");
+                        Atom OH = (Atom) inactive.getAtomNode("OH");
+                        Atom CZ = (Atom) inactive.getAtomNode("CZ");
+                        Atom CE2 = (Atom) inactive.getAtomNode("CE2");
+                        BondedUtils.intxyz(HH, OH, 0.97, CZ, 108.0, CE2, 0.0, 0);
+                        resetMe.add(HH);
+                        break;
+                    }
+                    default:
+                }
+                for (Atom a : resetMe) {
+                    a.setXYZGradient(0, 0, 0);
+                    a.setVelocity(ThermoConstants.maxwellIndividual(a.getMass()));
+                    a.setAcceleration(new double[]{0, 0, 0});
+                    a.setPreviousAcceleration(new double[]{0, 0, 0});
+                }
+            }
+        }
+    
+        /**
+         * All described as protonation reactions.
+         */
+        public enum Titr {            
+            ctoC( 8.18, +60.168, AminoAcid3.CYD, AminoAcid3.CYS),
+            Dtod( 3.90, +53.188, AminoAcid3.ASP, AminoAcid3.ASH),
+            Etoe( 4.25, +59.390, AminoAcid3.GLU, AminoAcid3.GLH),
+            ktoK(10.53, -50.440, AminoAcid3.LYD, AminoAcid3.LYS),
+            ytoY(10.07, +34.961, AminoAcid3.TYD, AminoAcid3.TYR),
+            UtoH( 6.00, -42.923, AminoAcid3.HID, AminoAcid3.HIS),
+            ZtoH( 6.00, +00.000, AminoAcid3.HIE, AminoAcid3.HIS),
+            TerminusNH3toNH2 (8.23, +00.00, AminoAcid3.UNK, AminoAcid3.UNK),
+            TerminusCOOHtoCOO(3.55, +00.00, AminoAcid3.UNK, AminoAcid3.UNK);
+
+            public final double pKa, refEnergy;
+            public final AminoAcid3 source, target;
+
+            Titr(double pKa, double refEnergy, AminoAcid3 source, AminoAcid3 target) {
+                this.pKa = pKa;
+                this.refEnergy = refEnergy;
+                this.source = source;
+                this.target = target;
+            }
+        }
     }
     
 }
