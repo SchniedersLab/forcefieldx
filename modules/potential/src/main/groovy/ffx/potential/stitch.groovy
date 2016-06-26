@@ -77,6 +77,11 @@ import java.util.HashMap;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
+/**
+ * PolType parameter stitching code
+ * 
+ * @author Rae Ann Corrigan
+ */
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
@@ -91,46 +96,73 @@ List<String> arguments = options.arguments();
 if (options.h || arguments == null) {
     return cli.usage();
 } 
+
+//TODO: Generalize Stitch 
+List<MolecularAssembly> molecularAssemblies = new ArrayList<>();
 // Read in command line.
+//General
 String mapname = arguments.get(0);
+//while there is a "next argument", make it a string and name it "patch#"
+for(int i = 1; i < (arguments.size() - 1 ); i++){
+    String strBegin = "patch";
+    String strEnd = Integer.toString(i);
+    String strName = strBegin.concat(strEnd);
+    
+    strName = arguments.get(i);
+    
+    System.out.println("Args name test: ");
+    System.out.println(arguments.getAt(i));
+    
+    //open MolecularAssemblies for each pdb; named the same as the patches
+    //name PDBs to open
+    String pdbname = arguments.getAt(i);
+    pdbname = pdbname.replaceAll("patch","pdb");
+    String patchname = arguments.getAt(i);
+    patchname = patchname.replaceAll(".patch", "\0");
+    String ffname = patchname.concat("FF");
+    String ffename = patchname.concat("energy");
+    
+    System.out.println("PDB name: "+pdbname);
+    System.out.println("Patchname: "+patchname);
+    System.out.println("ForceField name: "+ffname);
+    System.out.println("ForceField Energy name: "+ffename+"\n");
+    
+    //open Molecular assembiles accordingly
+    open(pdbname);
+    //MolecularAssembly [patchname] = (MolecularAssembly) active;
+    //molecularAssemblies.add([patchname]);
+    
+    //Forcefields and forcefield energies
+    //ForceField [ffname] = [patchname].getForceField();
+    //ForceFieldEnergy [ffename] = [patchname].getPotentialEnergy();
+
+    // Loop over force field terms from ForceFieldEnergy instances
+
+    // Bonds
+
+    //Bond bonds[] = [ffename].getBonds();
+}
+
+System.out.println();
+
+//Specific to Vemurafenib
+/*String mapname = arguments.get(0);
 String patch1 = arguments.get(1);
 String patch2 = arguments.get(2);
 String patch3 = arguments.get(3);
 String patch4 = arguments.get(4);
 String patch5 = arguments.get(5);
 String patch6 = arguments.get(6);
-//String fullPatch = arguments.get(7);
+//String fullPatch = arguments.get(7);*/
 
-//define file opener class, then read map file, and print to screen
-//remember to build mvn in ffx dir. in a separate terminal window, not the build in Netbeans, before running stitch
-/*try {
-    File file = new File(mapname);
-    FileReader fileReader = new FileReader(file);
-    BufferedReader bufferedReader = new BufferedReader(fileReader);
-    StringBuffer stringBuffer = new StringBuffer();
-    String line;
-    while ((line = bufferedReader.readLine()) != null) {
-        String[] parts = (line.split(Pattern.quote(" : ")));
-        String AtomName = parts[0];
-        String FragCode = parts[1];
-        String fAtomName = parts[2];
-        String TypeNum = parts[3];
-    }
-    fileReader.close();
-    //System.out.println(Arrays.toString(parts));
-} catch (IOException e) {
-    e.printStackTrace();
-}*/
-
-
-
-HashMap<String,String> myMap = new HashMap<>();
+/*HashMap<String,String> myMap = new HashMap<>();
 myMap.put("StringKey", "StringValue");
 if (!myMap.get("StringKey").equals("StringValue")) {
-    System.out.println("Error!");
-}
+System.out.println("Error!");
+}*/
 
-open("CMB.pdb");
+//Specific to Vemurafenib
+/*open("CMB.pdb");
 MolecularAssembly CMB = (MolecularAssembly) active;
 open("CPP.pdb");
 MolecularAssembly CPP = (MolecularAssembly) active;
@@ -148,29 +180,20 @@ ForceField cppFF = CPP.getForceField();
 ForceField fbnFF = FBN.getForceField();
 ForceField ndfFF = NDF.getForceField();
 ForceField posFF = POS.getForceField();
-ForceField agnFF = AGN.getForceField();
+ForceField agnFF = AGN.getForceField();*/
 
-ForceFieldEnergy cmbEnergy = CMB.getPotentialEnergy();
-
-// Loop over force field terms from ForceFieldEnergy instances
-
-// Bonds
-
-Bond bonds[] = cmbEnergy.getBonds();
-
-
-List<MolecularAssembly> molecularAssemblies = new ArrayList<>();
-molecularAssemblies.add(CMB);
+//Specific to Vemurafenib
+/*molecularAssemblies.add(CMB);
 molecularAssemblies.add(CPP);
 molecularAssemblies.add(FBN);
 molecularAssemblies.add(NDF);
 molecularAssemblies.add(POS);
-molecularAssemblies.add(AGN);
+molecularAssemblies.add(AGN);*/
 
 
 
-PatchCombiner pc = new PatchCombiner(molecularAssemblies, mapname, patch1, patch2, patch3, patch4, patch5, patch6);
+/*PatchCombiner pc = new PatchCombiner(molecularAssemblies, mapname, patch1, patch2, patch3, patch4, patch5, patch6);
 pc.myMethod();
-
+ */
 return;
 

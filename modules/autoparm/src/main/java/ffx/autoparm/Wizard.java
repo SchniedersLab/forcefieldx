@@ -63,7 +63,7 @@ import org.openscience.cdk.tools.manipulator.AtomContainerManipulator;
 /**
  * Convert SDF file data to SMILES strings, fragment
  *
- * @author Rae Corrigan
+ * @author Rae Ann Corrigan
  */
 public class Wizard {
 
@@ -76,7 +76,10 @@ public class Wizard {
         LOGGER.setLevel(Level.FINEST);
     }
 
-    public int readSDF() throws FileNotFoundException, IOException {
+    String fullSmi = new String();
+    String fullSmi_aro = new String();
+    
+    public String readSDF() throws FileNotFoundException, IOException {
         int records_read = 0;
         int records_processed = 0;
         int records_error = 0;
@@ -111,7 +114,7 @@ public class Wizard {
                     /**
                      * Generate SMILES and assign as properties
                      */
-                    assignSMILES(molecule);
+                    fullSmi_aro = assignSMILES(molecule);
                     //System.out.println("\nFinished assignSMILES\n");
 
                     /**
@@ -153,13 +156,13 @@ public class Wizard {
                 x.printStackTrace();
             }*/
         }
-        return records_read;
+        return fullSmi_aro;
     }
 
     private XLogPDescriptor xlogp;
     private ALOGPDescriptor alogp;
 
-    protected void assignSMILES(IAtomContainer molecule) throws Exception {
+    protected String assignSMILES(IAtomContainer molecule) throws Exception {
         //molecule.setProperty(FIELD.SMILES_Kekule.name(), SmilesGenerator.isomeric().create(molecule));
         //molecule.setProperty(FIELD.SMILES_Aromatic.name(), new SmilesGenerator().aromatic().create(molecule));
 
@@ -173,6 +176,8 @@ public class Wizard {
         System.out.print(",");
         System.out.print(smi2);
         System.out.println();
+        
+        return smi2;
     }
 
     protected void calculateLogP(IAtomContainer molecule) throws Exception {

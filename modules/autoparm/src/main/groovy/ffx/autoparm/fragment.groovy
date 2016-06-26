@@ -37,12 +37,6 @@
  * exception statement from your version.
  */
 
-/**
- * SDF to SMILES Converter
- * Auto-fragmenting algorithm
- * 
- * @author Rae Corrigan
- */
 
 // Groovy Imports
 import groovy.util.CliBuilder
@@ -52,11 +46,18 @@ import groovy.lang.MissingPropertyException
 import ffx.autoparm.Fragmenter
 import ffx.autoparm.Wizard
 
+/**
+ * SDF to SMILES Converter
+ * Auto-fragmenting algorithm
+ * 
+ * @author Rae Ann Corrigan
+ */
+
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc sdfToSMILES [options] <filename>');
+def cli = new CliBuilder(usage:' ffxc fragment [options] <filename>');
 cli.h(longOpt:'help', 'Print this help message.');
 def options = cli.parse(args);
 
@@ -68,12 +69,13 @@ if (options.h || arguments == null) {
 
 // Read in command line.
 String sdffile = arguments.get(0);
+String smi = new String();
 
 Wizard wi = new Wizard(sdffile);
-wi.readSDF();
+smi = wi.readSDF();
 
 System.out.println("\nFinished Wizard, calling Fragmenter\n");
-Fragmenter fr = new Fragmenter(sdffile);
+Fragmenter fr = new Fragmenter(sdffile, smi);
 fr.readSDF();
 
 return;
