@@ -2134,7 +2134,7 @@ public class VanDerWaals implements MaskingInterface,
 //                                if (i == k) {
 //                                    selfScale = 0.5;
 //                                }
-                                final double selfScale = (i == k) ? 1.0 : 0.5;
+                                final double selfScale = (i == k) ? 0.5 : 1.0;
                                 final double r = sqrt(r2);
                                 double alpha = 0.0;
                                 double lambda5 = 1.0;

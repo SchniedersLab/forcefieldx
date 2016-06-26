@@ -1631,9 +1631,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     @Override
     public void setLambda(double lambda) {
         if (lambda <= 1.0 && lambda >= 0.0) {
-// ******************* TODO REMOVE TESTING ****************************
-            lambda = 1.0;
-// ******************* TODO REMOVE TESTING ****************************
             this.lambda = lambda;
             if (vanderWaalsTerm) {
                 vanderWaals.setLambda(lambda);
