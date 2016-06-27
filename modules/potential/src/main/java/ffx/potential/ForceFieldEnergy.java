@@ -2106,21 +2106,21 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     /**
      * Element-wise sum over a list of 2D double arrays.
      */
-    private static double[][] eleSum2DArrays(List<double[][]> terms, int numESVs, int nAtoms) {
+    private static double[][] eleSum2DArrays(List<double[][]> terms, int numESVs, int nVars) {
         if (terms == null || terms.isEmpty()) {
             throw new NullPointerException("Summing an empty or null terms list.");
         }
-        double[][] termSum = new double[numESVs][nAtoms];
+        double[][] termSum = new double[numESVs][nVars];
         for (int iTerm = 0; iTerm < terms.size(); iTerm++) {
             double[][] currentTerm = terms.get(iTerm);
             if (currentTerm.length != numESVs) {
                 throw new IndexOutOfBoundsException();
             }
             for (int iESV = 0; iESV < numESVs; iESV++) {
-                if (currentTerm[iESV].length != nAtoms) {
+                if (currentTerm[iESV].length != nVars) {
                     throw new IndexOutOfBoundsException();
                 }
-                for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
+                for (int iAtom = 0; iAtom < nVars; iAtom++) {
                     termSum[iESV][iAtom] += currentTerm[iESV][iAtom];
                 }
             }
@@ -2159,7 +2159,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             if (comTerm && comRestraint != null) {
                 comRestraint.getdEdXdL(gradients);
             }
-            if (lambdaTorsions) {       // SDL: This block is collecting ALL bonded term gradients?
+            if (lambdaTorsions) {
                 double grad[] = new double[3];
                 int index = 0;
                 for (int i = 0; i < nAtoms; i++) {

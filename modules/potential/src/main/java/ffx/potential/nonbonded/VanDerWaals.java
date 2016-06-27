@@ -1167,16 +1167,14 @@ public class VanDerWaals implements MaskingInterface,
         double ldhgx[][] = lamedhGradX[0];
         double ldhgy[][] = lamedhGradY[0];
         double ldhgz[][] = lamedhGradZ[0];
-        int index = 0;
         for (int i = 0; i < nAtoms; i++) {
+            int ii = i*3;
             Atom ai = atoms[i];
             if (ai.isActive()) {
                 for (ExtendedVariable esv : esvList) {
-                    if (esv.containsAtom(ai)) {
-                        dEdXdLdh[esv.index][index++] += ldhgx[esv.index][i];
-                        dEdXdLdh[esv.index][index++] += ldhgy[esv.index][i];
-                        dEdXdLdh[esv.index][index++] += ldhgz[esv.index][i];
-                    }
+                    dEdXdLdh[esv.index][ii]   += ldhgx[esv.index][i];
+                    dEdXdLdh[esv.index][ii+1] += ldhgy[esv.index][i];
+                    dEdXdLdh[esv.index][ii+2] += ldhgz[esv.index][i];
                 }
             }
         }
@@ -1347,8 +1345,6 @@ public class VanDerWaals implements MaskingInterface,
         private final ExpandLoop expandLoop[];
         private final VanDerWaalsLoop vanDerWaalsLoop[];
         private final ReductionLoop reductionLoop[];
-        private final int deepPrint = System.getProperty("vdw-deepPrint") == null ? -1 
-                : Integer.parseInt(System.getProperty("vdw-deepPrint"));
 
         public VanDerWaalsRegion() {
             initializationLoop = new InitializationLoop[threadCount];
@@ -1720,7 +1716,6 @@ public class VanDerWaals implements MaskingInterface,
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
-            private List<Double> printed = new ArrayList<>();
 
             public VanDerWaalsLoop() {
                 super();
@@ -1770,7 +1765,6 @@ public class VanDerWaals implements MaskingInterface,
                     mask = new double[nAtoms];
                     fill(mask, 1.0);
                 }
-                printed = new ArrayList<>();
             }
 
             @Override
@@ -1882,19 +1876,12 @@ public class VanDerWaals implements MaskingInterface,
                                         (1) At intermediate lamedh, they are derivatives w.r.t. lamedh.
                                         (2) At zero or unity lamedh, they reduce to the derivates w.r.t. lambda.
                                 */
-                                dsc1dL = -2.0 * vdwLambdaAlpha * lamedh * (1.0 - lambdaL*lamedh);
-                                d2sc1dL2 = 2.0 * vdwLambdaAlpha * lamedh * lamedh;
-                                dsc2dL = lamedh * vdwLambdaExponent * pow(lambdaL, vdwLambdaExponent - 1.0);
-                                d2sc2dL2 = lamedh * vdwLambdaExponent * (vdwLambdaExponent - 1.0) * pow(lambdaL, vdwLambdaExponent - 2.0);
+                                dsc1dL = -2.0 * vdwLambdaAlpha * lambdaL * (1.0 - lambdaL*lamedh);
+                                d2sc1dL2 = 2.0 * vdwLambdaAlpha * lambdaL * lambdaL;
+                                dsc2dL = lambdaL * vdwLambdaExponent * pow(lambdaL*lamedh, vdwLambdaExponent - 1.0);
+                                d2sc2dL2 = lambdaL*lambdaL * vdwLambdaExponent*(vdwLambdaExponent - 1.0) * pow(lambdaL*lamedh, vdwLambdaExponent - 2.0);
                                 alpha = sc1;
                                 lambda5 = sc2;
-                                if (k == deepPrint) {
-                                    if (!printed.contains(lamedh)) {
-                                        logger.info(format(" (DEEP vdW) atom,ldh,lbd,derivs: %3d,%4.2f,%4.2f  ...  "
-                                                + "%.4f,%.4f,%.4f,%.4f,%.4f,%.4f", k,lamedh,lambdaL,sc1,sc2,dsc1dL,d2sc1dL2,dsc2dL,d2sc2dL2));
-                                        printed.add(lamedh);
-                                    }
-                                }
                             }
                             if (soft) {
                                 alpha = sc1;
@@ -2019,12 +2006,10 @@ public class VanDerWaals implements MaskingInterface,
                                     lzi_local[redk] -= redkv * dedldz;
                                 }
                                 if (lamedhTerm) {
-                                    esvList.stream().filter(esv -> esv.containsAtom(atomk)).forEach(esv -> {
+                                    esvList.stream().forEach(esv -> {
                                         ldh_xi_local[esv.index][k] -= (red * dedldx);
                                         ldh_yi_local[esv.index][k] -= (red * dedldy);
                                         ldh_zi_local[esv.index][k] -= (red * dedldz);
-                                    });
-                                    esvList.stream().filter(esv -> esv.containsAtom(atoms[redk])).forEach(esv -> {
                                         ldh_xi_local[esv.index][redk] -= (redkv * dedldx);
                                         ldh_yi_local[esv.index][redk] -= (redkv * dedldy);
                                         ldh_zi_local[esv.index][redk] -= (redkv * dedldz);
@@ -2051,16 +2036,12 @@ public class VanDerWaals implements MaskingInterface,
                     }
                     if (lamedhTerm) {
                         for (ExtendedVariable esv : esvList) {
-                            if (esv.containsAtom(atoms[i])) {
-                                ldh_xi_local[esv.index][i] += lxi;
-                                ldh_yi_local[esv.index][i] += lyi;
-                                ldh_zi_local[esv.index][i] += lzi;
-                            }
-                            if (esv.containsAtom(atoms[redi])) {
-                                ldh_xi_local[esv.index][redi] += lxredi;
-                                ldh_yi_local[esv.index][redi] += lyredi;
-                                ldh_zi_local[esv.index][redi] += lzredi;
-                            }
+                            ldh_xi_local[esv.index][i] += lxi;
+                            ldh_yi_local[esv.index][i] += lyi;
+                            ldh_zi_local[esv.index][i] += lzi;
+                            ldh_xi_local[esv.index][redi] += lxredi;
+                            ldh_yi_local[esv.index][redi] += lyredi;
+                            ldh_zi_local[esv.index][redi] += lzredi;
                         }
                     }
                     removeMask(mask, i);
@@ -2130,10 +2111,6 @@ public class VanDerWaals implements MaskingInterface,
                             int a2 = atomClass[k] * 2;
                             final double irv = radEpsi[a2 + RADMIN];
                             if (r2 <= off2 && irv > 0) {
-//                                double selfScale = 1.0;
-//                                if (i == k) {
-//                                    selfScale = 0.5;
-//                                }
                                 final double selfScale = (i == k) ? 0.5 : 1.0;
                                 final double r = sqrt(r2);
                                 double alpha = 0.0;
@@ -2152,18 +2129,22 @@ public class VanDerWaals implements MaskingInterface,
                                             lamedhk *= esv.getLamedh();
                                         }
                                     }
-                                    double lamedh = (lamedhi < lamedhk) ? lamedhi : lamedhk;
+//                                    double lamedh = (lamedhi < lamedhk) ? lamedhi : lamedhk;
+                                    double lamedh = lamedhi * lamedhk;
                                     if (lamedhi != lamedhk) {
-                                        logger.info(format(" Found different ESVs attached to atoms %d,%d; using min(%.2f,%.2f)",
-                                                i, k, lamedhi, lamedhk));
+                                        logger.info(format(" (vdW) Found different lamedh on atoms %d,%d (%4.2f,%4.2f); using %4.2f",
+                                                i, k, lamedhi, lamedhk, lamedh));
+                                    } else {
+                                        logger.info(format(" (vdW) Found same lamedh on atoms %d,%d (%4.2f); using %4.2f",
+                                                i, k, lamedhi, lamedh));
                                     }
                                     final double lambdaL = (lambdaTerm) ? lambda : 1.0;
                                     sc1 = vdwLambdaAlpha * (1.0 - lambdaL*lamedh) * (1.0 - lambdaL*lamedh);
                                     sc2 = lamedh * pow(lambdaL, vdwLambdaExponent);
-                                    dsc1dL = -2.0 * vdwLambdaAlpha * lamedh * (1.0 - lambdaL*lamedh);
-                                    d2sc1dL2 = 2.0 * vdwLambdaAlpha * lamedh * lamedh;
-                                    dsc2dL = lamedh * vdwLambdaExponent * pow(lambdaL, vdwLambdaExponent - 1.0);
-                                    d2sc2dL2 = lamedh * vdwLambdaExponent * (vdwLambdaExponent - 1.0) * pow(lambdaL, vdwLambdaExponent - 2.0);
+                                    dsc1dL = -2.0 * vdwLambdaAlpha * lambdaL * (1.0 - lambdaL*lamedh);
+                                    d2sc1dL2 = 2.0 * vdwLambdaAlpha * lambdaL * lambdaL;
+                                    dsc2dL = lambdaL * vdwLambdaExponent * pow(lambdaL*lamedh, vdwLambdaExponent - 1.0);
+                                    d2sc2dL2 = lambdaL*lambdaL * vdwLambdaExponent*(vdwLambdaExponent - 1.0) * pow(lambdaL*lamedh, vdwLambdaExponent - 2.0);
                                     alpha = sc1;
                                     lambda5 = sc2;
                                 }
@@ -2303,12 +2284,10 @@ public class VanDerWaals implements MaskingInterface,
                                         lzi_local[redk] -= redkv * dedldzk;
                                     }
                                     if (lamedhTerm) {
-                                        esvList.stream().filter(esv -> esv.containsAtom(atomk)).forEach(esv -> {
+                                        esvList.stream().forEach(esv -> {
                                             ldh_xi_local[esv.index][k] -= (red * dedldxk);
                                             ldh_yi_local[esv.index][k] -= (red * dedldyk);
                                             ldh_zi_local[esv.index][k] -= (red * dedldzk);
-                                        });
-                                        esvList.stream().filter(esv -> esv.containsAtom(atomk)).forEach(esv -> {
                                             ldh_xi_local[esv.index][redk] -= (redkv * dedldxk);
                                             ldh_yi_local[esv.index][redk] -= (redkv * dedldyk);
                                             ldh_zi_local[esv.index][redk] -= (redkv * dedldzk);
@@ -2335,16 +2314,12 @@ public class VanDerWaals implements MaskingInterface,
                         }
                         if (lamedhTerm) {
                             for (ExtendedVariable esv : esvList) {
-                                if (esv.containsAtom(atoms[i])) {
-                                    ldh_xi_local[esv.index][i] += lxi;
-                                    ldh_yi_local[esv.index][i] += lyi;
-                                    ldh_zi_local[esv.index][i] += lzi;
-                                }
-                                if (esv.containsAtom(atoms[redi])) {
-                                    ldh_xi_local[esv.index][i] += lxredi;
-                                    ldh_yi_local[esv.index][i] += lyredi;
-                                    ldh_zi_local[esv.index][i] += lzredi;
-                                }
+                                ldh_xi_local[esv.index][i] += lxi;
+                                ldh_yi_local[esv.index][i] += lyi;
+                                ldh_zi_local[esv.index][i] += lzi;
+                                ldh_xi_local[esv.index][i] += lxredi;
+                                ldh_yi_local[esv.index][i] += lyredi;
+                                ldh_zi_local[esv.index][i] += lzredi;
                             }
                         }
                     }
@@ -2415,11 +2390,9 @@ public class VanDerWaals implements MaskingInterface,
                         double ldhzt[][] = lamedhGradZ[t];
                         for (int i = lb; i <= ub; i++) {
                             for (ExtendedVariable esv : esvList) {
-                                if (esv.containsAtom(atoms[i])) {
-                                    ldhx[esv.index][i] += ldhxt[esv.index][i];
-                                    ldhy[esv.index][i] += ldhyt[esv.index][i];
-                                    ldhz[esv.index][i] += ldhzt[esv.index][i];
-                                }
+                                ldhx[esv.index][i] += ldhxt[esv.index][i];
+                                ldhy[esv.index][i] += ldhyt[esv.index][i];
+                                ldhz[esv.index][i] += ldhzt[esv.index][i];
                             }
                         }
                     }

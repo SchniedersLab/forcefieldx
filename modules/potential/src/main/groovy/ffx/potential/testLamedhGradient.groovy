@@ -1,3 +1,4 @@
+
 /**
  * Title: Force Field X.
  *
@@ -202,9 +203,13 @@ if (arguments.size() == 1) {
     logger.info(" Initializing Topology 1\n");
 }
 
-// Turn on computation of lambda derivatives
-System.setProperty("lambdaterm","true");
+// Turn on computation of ESV derivatives
 System.setProperty("lamedhterm","true");
+if (!fixedLambda) {
+    System.setProperty("lambdaterm","true");
+} else {
+    System.setProperty("lambdaterm","false");
+}
 
 // Relative free energies via the DualTopologyEnergy class require different
 // default OSRW parameters than absolute free energies.
@@ -229,6 +234,7 @@ System.setProperty("torsionterm", "false");
 System.setProperty("tortorterm", "false");
 System.setProperty("pitorsterm", "false");
 System.setProperty("mpoleterm", "false");
+System.setProperty("vdw-cutoff", "1000");
 
 // Open the first topology.
 open(filename);
@@ -365,6 +371,8 @@ double[] x = new double[n];
 double[] gradient = new double[n];
 double[] lambdaGrad = new double[n];
 double[][] lambdaGradFD = new double[2][n];
+// Container for numeric dEdXdLdh
+double[][] lamedhGradFD = new double[2][n];
 
 // Number of independent atoms.
 assert(n % 3 == 0);
@@ -468,9 +476,6 @@ for (int j=0; j<3; j++) {
     double[] dEdLdh = forceFieldEnergy.getdEdLdh();
     double[] d2EdLdh2 = forceFieldEnergy.getd2EdLdh2();
     double[][] dEdXdLdh = forceFieldEnergy.getdEdXdLdh();
-    
-    // Container for numeric dEdLdh
-    double[][] lamedhGradFD = new double[2][n];
 
     // Calculate the finite-difference dEdLambda, d2EdLambda2 and dEdLambdadX
     // Plus step
@@ -512,29 +517,22 @@ for (int j=0; j<3; j++) {
     double dEdLdhSum = 0.0;
     double d2EdLdh2Sum = 0.0;
     double[] dEdXdLdhSum = new double[n];
-    for (int i = 0; i < numLdh; i++) {
-        dEdLdhSum += dEdLdh[i];
-        d2EdLdh2Sum += d2EdLdh2[i];
-        for (int k = 0; k < n; k++) {
-            dEdXdLdhSum[k] += dEdXdLdh[i][k];
+    for (int iESV = 0; iESV < numLdh; iESV++) {
+        dEdLdhSum += dEdLdh[iESV];
+        d2EdLdh2Sum += d2EdLdh2[iESV];
+        for (int iAtom = 0; iAtom < n; iAtom++) {
+            dEdXdLdhSum[iAtom] += dEdXdLdh[iESV][iAtom];
         }
     }
-    
-    // TODO REMOVE ******************************************* TESTING
-    // TODO Discover why this yields the right answer.
-    dEdLdhSum *= 2;
-    d2EdLdh2Sum *= 6;
-    // TODO REMOVE ******************************************* TESTING
     
     if (!fixedLambda) {
         double dEdLFD = (lp - lm) / lbdWidth;
         double d2EdL2FD = (dedlp - dedlm) / lbdWidth;
     }
     double dEdLdhFD = (ldhPlus - ldhMinus) / ldhWidth;
-    logger.info(String.format("ldhPlus, ldhMinus, ldhWidth: %.8f, %.8f, %.8f", ldhPlus, ldhMinus, ldhWidth));
     double d2EdLdh2FD = (dEdLdhPlusSum - dEdLdhMinusSum) / ldhWidth;
-    logger.info(String.format("dEdLdhPlusSum, dEdLdhMinusSum: %.8f, %.8f", dEdLdhPlusSum, dEdLdhMinusSum));
-
+//    logger.info(String.format("ldhPlus, ldhMinus, ldhWidth: %.6g, %.6g, %.6g", ldhPlus, ldhMinus, ldhWidth));
+//    logger.info(String.format("dEdLdhPlusSum, dEdLdhMinusSum: %.6g, %.6g", dEdLdhPlusSum, dEdLdhMinusSum));
 //    logger.info(String.format("numLdh, dEdLdh[0], dEdLdhSum: %d, %.8f, %.8f", numLdh, dEdLdh[0], dEdLdhSum));
     
     if (!fixedLambda) {
@@ -577,14 +575,14 @@ for (int j=0; j<3; j++) {
     
     boolean passed = true;
 
-    for (int i = 0; i < 1; i++) {   // TODO should be nAtoms
+    for (int i = 0; i < nAtoms; i++) {   // TODO should be nAtoms
         int ii = i * 3;
         if (!fixedLambda) {
             double dX = (lambdaGradFD[0][ii] - lambdaGradFD[1][ii]) / lbdWidth;
             double dXa = lambdaGrad[ii];
             double eX = dX - dXa;
         }
-        double dXdLdhFD = (lamedhGradFD[0][ii] - lamedhGradFD[1][ii]) / lbdWidth;
+        double dXdLdhFD = (lamedhGradFD[0][ii] - lamedhGradFD[1][ii]) / ldhWidth;
         double dXdLdhAna = dEdXdLdhSum[ii];
         double eXLdh = dXdLdhFD - dXdLdhAna;
         ii++;
@@ -593,7 +591,7 @@ for (int j=0; j<3; j++) {
             double dYa = lambdaGrad[ii];
             double eY = dY - dYa;
         }
-        double dYdLdhFD = (lamedhGradFD[0][ii] - lamedhGradFD[1][ii]) / lbdWidth;
+        double dYdLdhFD = (lamedhGradFD[0][ii] - lamedhGradFD[1][ii]) / ldhWidth;
         double dYdLdhAna = dEdXdLdhSum[ii];
         double eYLdh = dYdLdhFD - dYdLdhAna;
         ii++;
@@ -602,9 +600,16 @@ for (int j=0; j<3; j++) {
             double dZa = lambdaGrad[ii];
             double eZ = dZ - dZa;
         }
-        double dZdLdhFD = (lamedhGradFD[0][ii] - lamedhGradFD[1][ii]) / lbdWidth;
+        double dZdLdhFD = (lamedhGradFD[0][ii] - lamedhGradFD[1][ii]) / ldhWidth;
         double dZdLdhAna = dEdXdLdhSum[ii];
         double eZLdh = dZdLdhFD - dZdLdhAna;
+//        logger.info(String.format("i,dXYZ,gradFD[x,y,z][0,1]: %d, (%.6g %.6g %.6g), %.6g %.6g %.6g %.6g %.6g %.6g", 
+//                i, dXdLdhFD, dYdLdhFD, dZdLdhFD, 
+//                lamedhGradFD[0][ii-2], lamedhGradFD[1][ii-2], 
+//                lamedhGradFD[0][ii-1], lamedhGradFD[1][ii-1], 
+//                lamedhGradFD[0][ii],   lamedhGradFD[1][ii]  ));
+//        logger.info(String.format("i,dXYZ,gradFD[x,y,z][0,1]: %d, (%10.8f %10.8f %10.8f), (%10.8f %10.8f %10.8f)", 
+//                i, dXdLdhFD, dYdLdhFD, dZdLdhFD, dXdLdhAna, dYdLdhAna, dZdLdhAna));
 
         if (!fixedLambda) {
             double error = Math.sqrt(eX * eX + eY * eY + eZ * eZ);
@@ -629,7 +634,9 @@ for (int j=0; j<3; j++) {
         }
     }
     if (passed) {
-        logger.info(String.format(" dE/dX/dL passed for all atoms"));
+        if (!fixedLambda) {
+            logger.info(String.format(" dE/dX/dL passed for all atoms"));
+        }
         logger.info(String.format(" dE/dX/dLdh passed for all atoms"));
     }
 
@@ -651,7 +658,7 @@ double[] numeric = new double[3];
 double avLen = 0.0;
 int nFailures = 0;
 double avGrad = 0.0;
-for (int i = 0; i < 0; i++) {   // TODO should be nAtoms
+for (int i = 0; i < nAtoms; i++) {
     int i3 = i*3;
     int i0 = i3 + 0;
     int i1 = i3 + 1;
@@ -659,30 +666,30 @@ for (int i = 0; i < 0; i++) {   // TODO should be nAtoms
 
     // Find numeric dX
     double orig = x[i0];
-    x[i0] = x[i0] + lbdStep;
-    double e = potential.energyAndGradient(x,lambdaGradFD[0]);
-    x[i0] = orig - lbdStep;
-    e -= potential.energyAndGradient(x,lambdaGradFD[1]);
+    x[i0] = x[i0] + ldhStep;
+    double e = potential.energyAndGradient(x,lamedhGradFD[0]);
+    x[i0] = orig - ldhStep;
+    e -= potential.energyAndGradient(x,lamedhGradFD[1]);
     x[i0] = orig;
-    numeric[0] = e / lbdWidth;
+    numeric[0] = e / ldhWidth;
 
     // Find numeric dY
     orig = x[i1];
-    x[i1] = x[i1] + lbdStep;
-    e = potential.energyAndGradient(x,lambdaGradFD[0]);
-    x[i1] = orig - lbdStep;
-    e -= potential.energyAndGradient(x,lambdaGradFD[1]);
+    x[i1] = x[i1] + ldhStep;
+    e = potential.energyAndGradient(x,lamedhGradFD[0]);
+    x[i1] = orig - ldhStep;
+    e -= potential.energyAndGradient(x,lamedhGradFD[1]);
     x[i1] = orig;
-    numeric[1] = e / lbdWidth;
+    numeric[1] = e / ldhWidth;
 
     // Find numeric dZ
     orig = x[i2];
-    x[i2] = x[i2] + lbdStep;
-    e = potential.energyAndGradient(x,lambdaGradFD[0]);
-    x[i2] = orig - lbdStep;
-    e -= potential.energyAndGradient(x,lambdaGradFD[1]);
+    x[i2] = x[i2] + ldhStep;
+    e = potential.energyAndGradient(x,lamedhGradFD[0]);
+    x[i2] = orig - ldhStep;
+    e -= potential.energyAndGradient(x,lamedhGradFD[1]);
     x[i2] = orig;
-    numeric[2] = e / lbdWidth;
+    numeric[2] = e / ldhWidth;
 
     double dx = gradient[i0] - numeric[0];
     double dy = gradient[i1] - numeric[1];
