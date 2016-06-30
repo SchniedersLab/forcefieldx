@@ -148,6 +148,7 @@ public class Fragmenter {
     List<Integer> indicelist = new ArrayList<>();
     List<String> finallist = new ArrayList<>();
     int[][] map = null;
+    int[][] mapfinal = null;
 
     protected void fragment(IAtomContainer molecule) throws Exception {
         //MurckoFragmenter implimentation
@@ -256,10 +257,20 @@ public class Fragmenter {
         //pass finalArray to smilesToObject to convert non-substructure fragments to SDF
         smilesToObject(finalArray, full);
 
+        //basic idea: if map column is empty, cut it out of final map before printing
+        //implementation: create new final map and only include the filled in columns
+        mapfinal = new int[molecule.getAtomCount()][fragcounter];
+
+        for (int row = 0; row < map.length; row++) {
+            for (int col = 0; col < fragcounter; col++) {
+                mapfinal[row][col] = map[row][col];
+            }
+        }
+
         System.out.println("Map: ");
-        for (int pc = 0; pc < map.length; pc++) {
-            for (int pc2 = 0; pc2 < map[pc].length; pc2++) {
-                System.out.print(map[pc][pc2] + "   ");
+        for (int pc = 0; pc < mapfinal.length; pc++) {
+            for (int pc2 = 0; pc2 < mapfinal[pc].length; pc2++) {
+                System.out.print(mapfinal[pc][pc2] + "   ");
             }
             System.out.println();
         }
@@ -525,7 +536,7 @@ public class Fragmenter {
         } catch (IOException e) {
             System.out.println(e);
         }
-        
+
         //set #cols to 3 instead of 2 if decide to use sod
         String[][] fragbonds = new String[fragrows][2];
         String[][] fullbonds = new String[fullrows][2];
@@ -576,16 +587,15 @@ public class Fragmenter {
                         fullbonds[counter][1] = atom2;
                     } else {
                         a2 = Character.toString(char5);
-                        
+
                         atom2 = a2;
                         fullbonds[counter][1] = atom2;
                     }
-                    
+
                     //set sod (maybe; increase #cols in bonds array to 3 if so)
                     /*char char8 = test.charAt(8);
                     sod = Character.toString(char8);
                     fullbonds[counter][2] = sod;*/
-
                     counter++;
                 }
             }
@@ -593,7 +603,7 @@ public class Fragmenter {
         } catch (IOException e) {
             System.out.println(e);
         }
-        
+
         //fill arrays of bonds for frag molecule
         try {
             FileReader fragfr = new FileReader(sdfFromSMILES);
@@ -639,16 +649,15 @@ public class Fragmenter {
                         fragbonds[counter][1] = atom2;
                     } else {
                         a2 = Character.toString(char5);
-                        
+
                         atom2 = a2;
                         fragbonds[counter][1] = atom2;
                     }
-                    
+
                     //set sod (maybe; increase #cols in bonds array to 3 if so)
                     /*char char8 = test.charAt(8);
                     sod = Character.toString(char8);
                     fragbonds[counter][2] = sod;*/
-
                     counter++;
                 }
             }
@@ -656,11 +665,11 @@ public class Fragmenter {
         } catch (IOException e) {
             System.out.println(e);
         }
-        
+
         //Print tests for atom and bond arrays
-        /*System.out.println("fullAtoms: "+Arrays.toString(fullAtoms));
-        System.out.println("fragAtoms: "+Arrays.toString(fragAtoms));
-        
+        System.out.println("fullAtoms: " + Arrays.toString(fullAtoms));
+        System.out.println("fragAtoms: " + Arrays.toString(fragAtoms));
+
         System.out.println("Fullbonds: ");
         for (int pc = 0; pc < fullbonds.length; pc++) {
             for (int pc2 = 0; pc2 < fullbonds[pc].length; pc2++) {
@@ -668,260 +677,329 @@ public class Fragmenter {
             }
             System.out.println();
         }
-        
+
         System.out.println("Fragbonds: ");
         for (int pc = 0; pc < fragbonds.length; pc++) {
             for (int pc2 = 0; pc2 < fragbonds[pc].length; pc2++) {
                 System.out.print(fragbonds[pc][pc2] + "   ");
             }
             System.out.println();
-        }*/
-       
-       //now mapping!
-       
-       try{
-       
-       int numFragBonds = 0;
-       int numFullBonds = 0;
-       
-       //System.out.println("fragbonds.length: "+fragbonds.length+"\n"+"fullbonds.length: "+fullbonds.length+"\n");
-       
-       for(int fullit = 0; fullit < fullAtoms.length; fullit++){
-           
-           List<Integer> fullBondsToCheck = new ArrayList<>();
-           
-           String testFullAtom = fullAtoms[fullit];
-           int finterval = fullit+1;
-           String fullInterval = Integer.toString(finterval);
-           System.out.println("TESTFULLATOM                     = "+testFullAtom+"");
-           System.out.println("FULLINTERVAL                     = " +fullInterval+"\n"+"---------------------------------------");
-           
-           for(int fragit = 0; fragit < fragAtoms.length; fragit++){
-               
-                List<Integer> bondsToCheck = new ArrayList<>();
-               
-               String testFragAtom = fragAtoms[fragit];
-               int interval = fragit+1;
-               String fragInterval = Integer.toString(interval);
-               
-               
-               
-               //if atoms are of the same element
-               if(testFullAtom.equals(testFragAtom)){
-                   //look at bonds
-                   System.out.println("          ATOMS MATCHED!");
+        }
+
+        //now mapping!
+        try {
+
+            int numFragBonds = 0;
+            int numFullBonds = 0;
+
+            //System.out.println("fragbonds.length: "+fragbonds.length+"\n"+"fullbonds.length: "+fullbonds.length+"\n");
+            for (int fullit = 0; fullit < fullAtoms.length; fullit++) {
+
+                List<Integer> fullBondsToCheck = new ArrayList<>();
+
+                String testFullAtom = fullAtoms[fullit];
+                int finterval = fullit + 1;
+                String fullInterval = Integer.toString(finterval);
+                //System.out.println("TESTFULLATOM                     = "+testFullAtom+"");
+                //System.out.println("FULLINTERVAL                     = " +fullInterval+"\n"+"---------------------------------------");
+
+                for (int fragit = 0; fragit < fragAtoms.length; fragit++) {
+
+                    List<Integer> bondsToCheck = new ArrayList<>();
+
+                    String testFragAtom = fragAtoms[fragit];
+                    int interval = fragit + 1;
+                    String fragInterval = Integer.toString(interval);
+
+                    //if atoms are of the same element
+                    if (testFullAtom.equals(testFragAtom)) {
+                        //look at bonds
+                        /*System.out.println("          ATOMS MATCHED!");
                    System.out.println("testFragAtom = "+testFragAtom);
-                   System.out.println("fragInterval = "+fragInterval+"\n");
-                   
-                   for(int bondC = 0; bondC < fragbonds.length; bondC++){
-                       //for(int bondC2 = 0; bondC2 < fragbonds[bondC].length; bondC2++){
-                           if(fragbonds[bondC][0].equals(fragInterval) || fragbonds[bondC][1].equals(fragInterval)){
-                               //System.out.println("Found fragbond");
-                               if(!bondsToCheck.contains(bondC)){
-                                   //System.out.println("Added bond number "+bondC+" to the frag bonds to check\n");
-                                   bondsToCheck.add(bondC);
-                                   numFragBonds++;
-                               }
-                           }
-                       //}
-                   } //checked fragbonds
-                   
-                   for(int bondCo = 0; bondCo < fullbonds.length; bondCo++){
-                       //for(int bondCo2 = 0; bondCo2 < fullbonds[bondCo].length; bondCo2++){
-                           if(fullbonds[bondCo][0].equals(fullInterval) || fullbonds[bondCo][1].equals(fullInterval)){
-                               
-                               if(!fullBondsToCheck.contains(bondCo)){
-                                   //System.out.println("Found fullbond");
-                                   //System.out.println("Added bond number "+bondCo+" to the full bonds to check\n");
-                                   fullBondsToCheck.add(bondCo);
-                                   numFullBonds++;
-                               } else{
-                                   //System.out.println("Found full bond "+ bondCo+", but it was already in the check array\n");
-                               }
-                           }
-                       //}
-                   } //checked fullbonds
-                   
-                  System.out.println("bondsToCheck: "+Arrays.toString(bondsToCheck.toArray())+"\n");
-                  System.out.println("fullBondsToCheck: "+Arrays.toString(fullBondsToCheck.toArray())+"\n");
-                   
-                   //match bonding
-                   //create full and frag bond ArraysLists
-                   List<String> fragBondList = new ArrayList<>();
-                   List<String> fullBondList = new ArrayList<>();
-                   
-                   //location of the atoms in fragAtoms array
-                   String atom1num; 
-                   String atom2num;
-                   int atom1Int;
-                   int atom2Int;
-                   
-                   //actual atoms in fragAtoms array
-                   String atom1;
-                   String atom2;
-                   
-                   //atoms of bond string
-                   String atomsOfBond;
-                   
-                   //fill fragBondList
-                   for(int i = 0; i < bondsToCheck.size(); i++){
-                       
-                       //bond = the row in Fragbonds
-                       int bond = bondsToCheck.get(i);
-                       atom1num = fragbonds[bond][0];
-                       atom2num = fragbonds[bond][1];
-                       
-                       atom1Int = Integer.parseInt(atom1num);
-                       atom2Int = Integer.parseInt(atom2num);
-                       
-                       //determine which atoms are part of the bond of interest 
-                       atom1 = fragAtoms[atom1Int-1];
-                       atom2 = fragAtoms[atom2Int-1];
-                       
-                       atomsOfBond = atom1.concat(atom2);
-                       fragBondList.add(atomsOfBond);
-                   }
-                   
-                   //location of the atom sin fullAtoms array
-                   String fatom1num;
-                   String fatom2num;
-                   int fatom1Int;
-                   int fatom2Int;
-                   
-                   //actual atoms in fullAtoms array
-                   String fatom1;
-                   String fatom2;
-                   
-                   //atoms of bond string
-                   String fatomsOfBond;
-                   
-                   //fill fullBondList
-                   for(int i = 0; i < fullBondsToCheck.size(); i++){
-                       
-                       //bond = the row in fullbonds
-                       int bond = fullBondsToCheck.get(i);
-                       fatom1num = fullbonds[bond][0];
-                       fatom2num = fullbonds[bond][1];
-                       
-                       fatom1Int = Integer.parseInt(fatom1num);
-                       fatom2Int = Integer.parseInt(fatom2num);
-                       
-                       //determine which atoms are part of the bond of interest
-                       fatom1 = fullAtoms[fatom1Int-1];
-                       fatom2 = fullAtoms[fatom2Int-1];
-                       
-                       fatomsOfBond = fatom1.concat(fatom2);
-                       fullBondList.add(fatomsOfBond);
-                       
-                   }
-                   
-                   //print fragBondList and fullBondList as a test
-                   System.out.println("--------------------");
+                   System.out.println("fragInterval = "+fragInterval+"\n");*/
+
+                        for (int bondC = 0; bondC < fragbonds.length; bondC++) {
+                            if (fragbonds[bondC][0].equals(fragInterval) || fragbonds[bondC][1].equals(fragInterval)) {
+                                //System.out.println("Found fragbond");
+                                if (!bondsToCheck.contains(bondC)) {
+                                    //System.out.println("Added bond number "+bondC+" to the frag bonds to check\n");
+                                    bondsToCheck.add(bondC);
+                                    numFragBonds++;
+                                }
+                            }
+                        } //checked fragbonds
+
+                        for (int bondCo = 0; bondCo < fullbonds.length; bondCo++) {
+                            if (fullbonds[bondCo][0].equals(fullInterval) || fullbonds[bondCo][1].equals(fullInterval)) {
+
+                                if (!fullBondsToCheck.contains(bondCo)) {
+                                    //System.out.println("Found fullbond");
+                                    //System.out.println("Added bond number "+bondCo+" to the full bonds to check\n");
+                                    fullBondsToCheck.add(bondCo);
+                                    numFullBonds++;
+                                } else {
+                                    //System.out.println("Found full bond "+ bondCo+", but it was already in the check array\n");
+                                }
+                            }
+                        } //checked fullbonds
+
+                        //System.out.println("bondsToCheck: "+Arrays.toString(bondsToCheck.toArray())+"\n");
+                        //System.out.println("fullBondsToCheck: "+Arrays.toString(fullBondsToCheck.toArray())+"\n");
+                        //match bonding
+                        //create full and frag bond ArraysLists
+                        List<String> fragBondList = new ArrayList<>();
+                        List<String> fullBondList = new ArrayList<>();
+
+                        //location of the atoms in fragAtoms array
+                        String atom1num = null;
+                        String atom2num = null;
+                        int atom1Int = 0;
+                        int atom2Int = 0;
+
+                        //actual atoms in fragAtoms array
+                        String atom1;
+                        String atom2;
+
+                        //atoms of bond string
+                        String atomsOfBond;
+
+                        //fill fragBondList
+                        for (int i = 0; i < bondsToCheck.size(); i++) {
+
+                            //bond = the row in Fragbonds
+                            int bond = bondsToCheck.get(i);
+                            atom1num = fragbonds[bond][0];
+                            atom2num = fragbonds[bond][1];
+
+                            atom1Int = Integer.parseInt(atom1num);
+                            atom2Int = Integer.parseInt(atom2num);
+
+                            //determine which atoms are part of the bond of interest 
+                            atom1 = fragAtoms[atom1Int - 1];
+                            atom2 = fragAtoms[atom2Int - 1];
+
+                            atomsOfBond = atom1.concat(atom2);
+                            fragBondList.add(atomsOfBond);
+                        }
+
+                        /*//START HERE FOR FRAGMENT EXTRA
+                        //Additional bonds for deeper checking  
+                        int numExtraAtoms = bondsToCheck.size();
+                        //string arrays for the extra bonded atoms; no atom should have more than 
+                        //four bonded atoms (in the drugs I've seen), so none will have more than
+                        //three extra atoms (exB as in extra bonds)
+                        List<String> exB1 = new ArrayList<>();
+                        List<String> exB2 = new ArrayList<>();
+                        List<String> exB3 = new ArrayList<>();
+                        List<String> exB4 = new ArrayList<>();
+                        List<Integer> extraBondsToCheck = new ArrayList<>();
+
+                        for (int extraCount = 0; extraCount < numExtraAtoms; extraCount++) {
+
+                            //set atom number for deeper checking
+                            // each atom that frag test atom is bonded to
+                            // reset for each fragment bondToCheck
+                            int atomN = 0;
+                            if (!atom1num.equals(fragInterval)) {
+                                int frA = Integer.parseInt(atom1num);
+                                atomN = frA;
+                            } else {
+                                int frA = Integer.parseInt(atom2num);
+                                atomN = frA;
+                            }
+
+                            //find the bonds atomN is part of, not including the original bondToCheck
+                            for (int bondC = 0; bondC < fragbonds.length; bondC++) {
+                                if (fragbonds[bondC][0].equals(atomN) || fragbonds[bondC][1].equals(atomN)
+                                        && !fragbonds[bondC][0].equals(fragInterval) && !fragbonds[bondC][1].equals(fragInterval)) {
+                                    if (!extraBondsToCheck.contains(bondC)) {
+
+                                        extraBondsToCheck.add(bondC);
+
+                                    }
+                                }
+                            } //checked fragbonds
+
+                            //name and number of atom to add to exB's
+                            //get the atom that isn't "atomN" in each extra bond
+                            int atomA = 0;
+                            String atomSA;
+                            
+                            String atomNumberS = Integer.toString(atomN);
+
+                            for (int extraFragIt = 0; extraFragIt < extraBondsToCheck.size(); extraFragIt++) {
+                                
+                                //bond number within fragbonds
+                                int ebtcB = extraBondsToCheck.get(extraFragIt);
+                                
+                                //gets number of the atom of interest; bound to bonded atom of original test atom
+                                if(!fragbonds[ebtcB][0].equals(atomNumberS)){
+                                    atomA = Integer.parseInt(fragbonds[ebtcB][0]);
+                                } else{
+                                    atomA = Integer.parseInt(fragbonds[ebtcB][1]);
+                                }
+                                
+                                //gets atomic symbol of the atom of interset; bound to the bonded atom of the original test atom
+                                atomSA = fragAtoms[atomA];
+                                
+                                switch (extraCount) {
+                                    case 0:
+                                        exB1.add(atomSA);
+                                        break;
+                                    case 1:
+                                        exB2.add(atomSA);
+                                        break;
+                                    case 2:
+                                        exB3.add(atomSA);
+                                        break;
+                                //end switch
+                                    case 3:
+                                        exB3.add(atomSA);
+                                        break;
+                                    default:
+                                        break;
+                                }
+                            }
+
+                        }
+
+                        //END EXTRA FOR FRAGMENT*/
+                        //location of the atoms in fullAtoms array
+                        String fatom1num;
+                        String fatom2num;
+                        int fatom1Int;
+                        int fatom2Int;
+
+                        //actual atoms in fullAtoms array
+                        String fatom1;
+                        String fatom2;
+
+                        //atoms of bond string
+                        String fatomsOfBond;
+
+                        //fill fullBondList
+                        for (int i = 0; i < fullBondsToCheck.size(); i++) {
+
+                            //bond = the row in fullbonds
+                            int bond = fullBondsToCheck.get(i);
+                            fatom1num = fullbonds[bond][0];
+                            fatom2num = fullbonds[bond][1];
+
+                            fatom1Int = Integer.parseInt(fatom1num);
+                            fatom2Int = Integer.parseInt(fatom2num);
+
+                            //determine which atoms are part of the bond of interest
+                            fatom1 = fullAtoms[fatom1Int - 1];
+                            fatom2 = fullAtoms[fatom2Int - 1];
+
+                            fatomsOfBond = fatom1.concat(fatom2);
+                            fullBondList.add(fatomsOfBond);
+
+                        }
+
+                        //print fragBondList and fullBondList as a test
+                        /*System.out.println("--------------------");
                    System.out.println("fragBondList: ");
                    System.out.println(Arrays.toString(fragBondList.toArray())+"\n");
-                   System.out.println("fullBondList: "+Arrays.toString(fullBondList.toArray())+"\n");
-                   
-                   //iteration through bond lists
-                   boolean bondfound = false;
-                   List<Integer> alreadyPresent = new ArrayList<>();
-                   int bondCount = 0;
-                   
-                   if(fullBondList.size() == fragBondList.size()){  //makes sure tested atoms have same number of bonds
-                        while(!bondfound){
-                            int bondCOrig = bondCount;
-                            boolean check = true;
-                            for(int i = 0; i < fullBondList.size(); i++){
-                                System.out.println("          Mapping\n");
-                                //split bond entry into characters
-                                String bond = fullBondList.get(i);
-                                char firstc = bond.charAt(0);
-                                String first = Character.toString(firstc);
-                                char secondc = bond.charAt(1);
-                                String second = Character.toString(secondc);
-                                String bondOp = second.concat(first);
-                                
-                                //for CCl bond
-                                if(bond.length() == 3){
-                                    char firstch = bond.charAt(0);
-                                    String ch1 = Character.toString(firstch);
-                                    char secondch = bond.charAt(1);
-                                    String ch2 = Character.toString(secondch);
-                                    char thirdch = bond.charAt(2);
-                                    String ch3 = Character.toString(thirdch);
-                                    String at1 = ch1.concat(ch2);
-                                    
-                                    bondOp = ch3.concat(at1);
-                                    
-                                }
+                   System.out.println("fullBondList: "+Arrays.toString(fullBondList.toArray())+"\n");*/
+                        //iteration through bond lists
+                        boolean bondfound = false;
+                        List<Integer> alreadyPresent = new ArrayList<>();
+                        int bondCount = 0;
 
-                                //iterate thru fragBondList to see if entry contains first and second
-                                //while(!bondfound2){
-                                    for(int j = 0; j < fragBondList.size(); j++){
+                        if (fullBondList.size() == fragBondList.size()) {  //makes sure tested atoms have same number of bonds
+                            while (!bondfound) {
+                                int bondCOrig = bondCount;
+                                boolean check = true;
+                                for (int i = 0; i < fullBondList.size(); i++) {
+                                    //System.out.println("          Mapping\n");
+                                    //split bond entry into characters
+                                    String bond = fullBondList.get(i);
+                                    char firstc = bond.charAt(0);
+                                    String first = Character.toString(firstc);
+                                    char secondc = bond.charAt(1);
+                                    String second = Character.toString(secondc);
+                                    String bondOp = second.concat(first);
+
+                                    //for CCl bond
+                                    if (bond.length() == 3) {
+                                        char firstch = bond.charAt(0);
+                                        String ch1 = Character.toString(firstch);
+                                        char secondch = bond.charAt(1);
+                                        String ch2 = Character.toString(secondch);
+                                        char thirdch = bond.charAt(2);
+                                        String ch3 = Character.toString(thirdch);
+                                        String at1 = ch1.concat(ch2);
+
+                                        bondOp = ch3.concat(at1);
+
+                                    }
+
+                                    //iterate thru fragBondList to see if entry contains first and second
+                                    //while(!bondfound2){
+                                    for (int j = 0; j < fragBondList.size(); j++) {
                                         String test = fragBondList.get(j);
-                                        System.out.println("Test: "+test+"\nbond: "+bond+"\nbondOp: "+bondOp);
+                                        // System.out.println("Test: "+test+"\nbond: "+bond+"\nbondOp: "+bondOp);
 
                                         //if the tested frag bond involves the same atoms as the full bond
                                         //previously if(test.contains(first) && test.contains(second)){
-                                        if(test.equals(bond) || test.equals(bondOp)){
+                                        if (test.equals(bond) || test.equals(bondOp)) {
                                             //remove the bond from frag bonds list
                                             fragBondList.remove(j);
-                                            //fullBondList.remove(i);
                                             bondCount++;
-                                            
-                                            System.out.println("fullBondList.size() = "+fullBondList.size());
+
+                                            /*System.out.println("fullBondList.size() = "+fullBondList.size());
                                             System.out.println("Bond count = "+bondCount);
                                             System.out.println("j = "+j);
                                             System.out.println("fragBondList.size() = "+fragBondList.size());
-                                            System.out.println("fragBondList current = "+Arrays.toString(fragBondList.toArray())+"\n");
-
-                                            if(bondCount == fullBondList.size() && check){
+                                            System.out.println("fragBondList current = "+Arrays.toString(fragBondList.toArray())+"\n");*/
+                                            if (bondCount == fullBondList.size() && check) {
                                                 //bondfound
                                                 bondfound = true;
 
-                                                for(int k = 0; k < fullAtoms.length; k++){
+                                                for (int k = 0; k < fullAtoms.length; k++) {
                                                     alreadyPresent.add(map[k][fragcounter]);
                                                 }
-                                                
+
                                                 //map it!
-                                                if(map[finterval-1][fragcounter] == 0 && !alreadyPresent.contains(interval)){
-                                                     map[finterval-1][fragcounter] = interval;
-                                                     //alreadyPresent.add(interval);
-                                                     System.out.println("Mapped Successfully\n");
+                                                if (map[finterval - 1][fragcounter] == 0 && !alreadyPresent.contains(interval)) {
+                                                    map[finterval - 1][fragcounter] = interval;
+                                                    //alreadyPresent.add(interval);
+                                                    //System.out.println("Mapped Successfully\n");
                                                 }
                                             }
-                                        } else{
-                                            System.out.println("     Bond didn't match\n");
+                                        } else {
+                                            //System.out.println("     Bond didn't match\n");
                                         }
-                                    } 
-                                    
+                                    }
+
                                     //System.out.println("bondCOrig: "+bondCOrig+"\nbondCount: "+bondCount+"\n");
                                     //if one of the full bonds was not found in frag array
-                                    if(bondCOrig == bondCount){
+                                    if (bondCOrig == bondCount) {
                                         check = false;
-                                        System.out.println("Check is FALSE\n");
+                                        //System.out.println("Check is FALSE\n");
                                     }
-                                    
+
                                     /*if(fragBondList.size() > 0){
                                         if(!fragBondList.get(0).contains("H")){
                                             check = false;
                                             System.out.println("Check is FALSE\n");
                                         }
                                     }*/
-                                       //}
-                                    }
-                            
-                            
-                            bondfound = true;
-                        } //end while(!bondfound)
-                   } 
-               } 
-               
-           }
-       } 
+                                    //}
+                                }
 
-       } catch(ArrayIndexOutOfBoundsException a){
-           a.printStackTrace();
-       }
+                                bondfound = true;
+                            } //end while(!bondfound)
+                        }
+                    }
+
+                }
+            }
+
+        } catch (ArrayIndexOutOfBoundsException a) {
+            a.printStackTrace();
+        }
     }
 
 } //end Fragmenter
