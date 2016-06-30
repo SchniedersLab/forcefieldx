@@ -1,3 +1,4 @@
+
 /**
  * Title: Force Field X.
  *
@@ -51,6 +52,10 @@ import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.DualTopologyEnergy;
 import ffx.potential.ForceFieldEnergy;
+import ffx.potential.bonded.Polymer;
+import ffx.potential.bonded.Residue
+import ffx.potential.extended.ExtendedVariable;
+import ffx.potential.extended.TitrationESV;
 //import edu.rit.pj.ParallelTeam;
 
 // First ligand atom.
@@ -85,10 +90,12 @@ int noElecStop2 = -1;
 
 // Initial lambda value.
 double initialLambda = 0.5;
-double[] initialLamedh;
 
 // Print out the energy for each step.
 boolean print = false;
+
+// Fix lambda at 1.0 and do not treat it.
+boolean fixedLambda = true;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
@@ -96,52 +103,29 @@ boolean print = false;
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc testLamedhGradient [options] <XYZ|PDB> [Topology 2 XYZ|PDB]');
 cli.h(longOpt:'help', 'Print this help message.');
-cli.s(longOpt:'start', args:1, argName:'1', 'Starting ligand atom.');
-cli.s2(longOpt:'start2', args:1, argName:'1', 'Starting ligand atom for the 2nd topology.');
-cli.f(longOpt:'final', args:1, argName:'n', 'Final ligand atom.');
-cli.f2(longOpt:'final2', args:1, argName:'n', 'Final ligand atom for the 2nd topology.');
-cli.as(longOpt:'activeStart', args:1, argName:'1', 'Starting active atom.');
-cli.af(longOpt:'activeFinal', args:1, argName:'n', 'Final active atom.');
-cli.es(longOpt:'noElecStart', args:1, argName:'1', 'No Electrostatics Starting Atom.');
-cli.es2(longOpt:'noElecStart2', args:1, argName:'1', 'No Electrostatics Starting Atom for the 2nd Topology.');
-cli.ef(longOpt:'noElecFinal', args:1, argName:'-1', 'No Electrostatics Final Atom.');
-cli.ef2(longOpt:'noElecfinal2', args:1, argName:'-1', 'No Electrostatics Final Atom for the 2nd topology.');
-cli.ldh(longOpt:'lamedh', args:Option.UNLIMITED_VALUES, required:true, valueSeparator:',' as char, 'Array of lamedh values to test.');
-cli.lbd(longOpt:'lambda', args:1, argName:'1.0', 'Apply additional lambda scaling to target atoms.');
+cli.s(longOpt:'start', args:1, argName:'1', '(Lbd) Starting ligand atom.');
+cli.s2(longOpt:'start2', args:1, argName:'1', '(Lbd) Starting ligand atom for the 2nd topology.');
+cli.f(longOpt:'final', args:1, argName:'n', '(Lbd) Final ligand atom.');
+cli.f2(longOpt:'final2', args:1, argName:'n', '(Lbd) Final ligand atom for the 2nd topology.');
+cli.as(longOpt:'activeStart', args:1, argName:'1', '(Lbd) Starting active atom.');
+cli.af(longOpt:'activeFinal', args:1, argName:'n', '(Lbd) Final active atom.');
+cli.es(longOpt:'noElecStart', args:1, argName:'1', '(Lbd) No Electrostatics Starting Atom.');
+cli.es2(longOpt:'noElecStart2', args:1, argName:'1', '(Lbd) No Electrostatics Starting Atom for the 2nd Topology.');
+cli.ef(longOpt:'noElecFinal', args:1, argName:'-1', '(Lbd) No Electrostatics Final Atom.');
+cli.ef2(longOpt:'noElecfinal2', args:1, argName:'-1', '(Lbd) No Electrostatics Final Atom for the 2nd topology.');
+cli.ldh(longOpt:'lamedh', args:1, 'Array of lamedh (Ldh) values to test.');
+cli.lbd(longOpt:'lambda', args:1, argName:'1.0', 'Initial lambda (Lbd) scaling, if present.');
+cli.rl(longOpt:'resList', args:1, '(Ldh) Titrate a list of residues (eg A4.A8.B2.B34)');
 cli.v(longOpt:'verbose', 'Print out the energy for each step.');
-
-/* For reference
-    void testUnlimitedArgs() {
-        CliBuilder cli = new CliBuilder()
-        cli.with {
-            a longOpt: 'arguments', args: Option.UNLIMITED_VALUES, required: true, valueSeparator: ',' as char,
-                    'Two arguments, separated by a comma'
-        }
-        def args = ['-a', 'arg1,arg2,arg3']
-        def options = cli.parse(args)
- 
-        assert (options)
-        assertEquals('First arg is available with the -a option. ', 'arg1', options.a)
-        assertEquals('Should be a list of args, in order.', ['arg1', 'arg2', 'arg3'], options.as)
- 
-        def args2 = ['-a', 'argOnly']
-        def options2 = cli.parse(args2)
- 
-        assert (options)
-        assertEquals('First arg is available with the -a option.', 'argOnly', options2.a)
-        assertEquals('Should be a list of args, with a single entry.', ['argOnly'], options2.as)
- 
-        def args3 = []
-        //this will automagically print the usage string and any validation errors to System.out
-        def options3 = cli.parse(args3)
-        assertNull(options3)
-    }
-*/
+cli.fl(longOpt:'fixedLambda', args:1, argName:true, 'Fix lambda at 1.0 and do not treat it.')
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
 if (options.h || arguments == null || arguments.size() < 1) {
     return cli.usage();
+}
+if (!options.ldh || !options.rl) {
+    return cli.usage("Requires both --resList and --lamedh.")
 }
 
 // Read in command line file.
@@ -197,18 +181,9 @@ if (options.ef2) {
     noElecStop2 = Integer.parseInt(options.ef2);
 }
 
-// Starting lamedh array.
-if (options.ldh) {
-    int numArgs = options.ldhs.length;
-    initialLamedh = new double[numArgs];
-    for (int i = 0; i < numArgs; i++) {
-        initialLamedh[i] = Double.parseDouble(options.ldhs[i]);
-    }
-}
-
 // Fixed lambda value.
 if (options.lbd) {
-    initialLambda = Double.parseDouble(options.lambda);
+    initialLambda = Double.parseDouble(options.lbd);
 }
 
 // Print the energy for each step.
@@ -216,22 +191,25 @@ if (options.v) {
     print = true;
 }
 
-/*int nThreads = ParallelTeam.getDefaultThreadCount() / 2;
-System.setProperty("FF_THREADS", String.valueOf(nThreads));*/
-logger.info("Under Construction");
-System.exit(0);
+if (options.fl) {
+    fixedLambda = Boolean.parseBoolean(options.fl);
+}
 
 if (arguments.size() == 1) {
-    logger.info("\n Testing lambda derivatives for " + filename);
+    logger.info("\n Testing lamedh derivatives for " + filename);
 } else {
     String filename2 = arguments.get(1);
     logger.info("\n Testing lamedh derivatives for [" + filename + "," + filename2 + "] dual topology\n");
     logger.info(" Initializing Topology 1\n");
 }
 
-// Turn on computation of lambda derivatives
-System.setProperty("lambdaterm","true");
+// Turn on computation of ESV derivatives
 System.setProperty("lamedhterm","true");
+if (!fixedLambda) {
+    System.setProperty("lambdaterm","true");
+} else {
+    System.setProperty("lambdaterm","false");
+}
 
 // Relative free energies via the DualTopologyEnergy class require different
 // default OSRW parameters than absolute free energies.
@@ -248,8 +226,57 @@ if (arguments.size() > 1) {
     System.setProperty("no-ligand-condensed-scf","false");
 }
 
+System.setProperty("bondterm", "false");
+System.setProperty("angleterm", "false");
+System.setProperty("strbndterm", "false");
+System.setProperty("opbendterm", "false");
+System.setProperty("torsionterm", "false");
+System.setProperty("tortorterm", "false");
+System.setProperty("pitorsterm", "false");
+System.setProperty("mpoleterm", "false");
+System.setProperty("vdw-cutoff", "1000");
+
 // Open the first topology.
 open(filename);
+
+// Parse the required lamedh arguments and create TitrationESV objects.
+def String[] ldhTokens = (options.ldh).tokenize(',');
+def String[] rlTokens = (options.rl).tokenize(',');
+if (ldhTokens.length != rlTokens.length) {
+    logger.severe("Dimension mismatch: --resList and --lamedh.");
+}
+int numLdh = ldhTokens.length;
+for (int i = 0; i < numLdh; i++) {
+    logger.info(" (Groovy) Ldh: " + rlTokens[i] + ", " + ldhTokens[i]);
+}
+
+List<ExtendedVariable> esvList = new ArrayList<>();
+Polymer[] polymers = active.getChains();
+double[] initialLamedh = new double[numLdh];
+double temperature = 298.15;
+double dt = 1.0;
+for (int i = 0; i < numLdh; i++) {
+    initialLamedh[i] = Double.parseDouble(ldhTokens[i]);
+    
+    Character chainID = rlTokens[i].charAt(0);
+    int resNum = Integer.parseInt(rlTokens[i].substring(1));
+    Optional<Residue> target = new Optional<>();
+    for (Polymer p : polymers) {
+        if (p.getChainID().equals(chainID)) {
+            target = p.getResidues().parallelStream()
+                .filter {res -> res.getResidueNumber() == resNum}
+                .findFirst();
+            break;
+        }
+    }
+    if (!target.isPresent()) {
+        logger.severe("Couldn't find target residue " + rlTokens[i]);
+    }
+    
+    TitrationESV esv = new TitrationESV(target.get(), active, temperature, dt);
+    active.getPotentialEnergy().addExtendedVariable(esv);
+    esvList.add(esv);
+}
 
 // Select ligand atoms
 Atom[] atoms = active.getAtomArray();
@@ -259,27 +286,25 @@ int n = atoms.length;
 for (int i = ligandStart; i <= ligandStop; i++) {
     Atom ai = atoms[i - 1];
     ai.setApplyLambda(true);
-    ai.setApplyLamedh(true);
     ai.print();
 }
 
 // Only support active atoms for single topology
 if (arguments.size() == 1) {
-// Apply active atom selection
-if (activeStop > activeStart && activeStart > 0 && activeStop <= n) {
-    // Make all atoms inactive.
-    for (int i = 0; i <= n; i++) {
-        Atom ai = atoms[i - 1];
-        ai.setActive(false);
-    }
-    // Make requested atoms active.
-    for (int i = activeStart; i <= activeStop; i++) {
-        Atom ai = atoms[i - 1];
-        ai.setActive(true);
+    // Apply active atom selection
+    if (activeStop > activeStart && activeStart > 0 && activeStop <= n) {
+        // Make all atoms inactive.
+        for (int i = 0; i <= n; i++) {
+            Atom ai = atoms[i - 1];
+            ai.setActive(false);
+        }
+        // Make requested atoms active.
+        for (int i = activeStart; i <= activeStop; i++) {
+            Atom ai = atoms[i - 1];
+            ai.setActive(true);
+        }
     }
 }
-}
-
 
 // Apply the no electrostatics atom selection
 if (noElecStart < 1) {
@@ -298,14 +323,7 @@ potential = active.getPotentialEnergy();
 ForceFieldEnergy forceFieldEnergy = active.getPotentialEnergy();
 // Turn off checks for overlapping atoms, which is expected for lambda=0.
 forceFieldEnergy.getCrystal().setSpecialPositionCutoff(0.0);
-
 LambdaInterface lambdaInterface = active.getPotentialEnergy();
-
-/*if (nThreads % 2 == 1) {
-    // Second topology gets the leftover thread.
-    nThreads++;
-    System.setProperty("FF_THREADS", String.valueOf(nThreads));
-}*/
 
 // Check for a 2nd topology.
 if (arguments.size() > 1) {
@@ -323,7 +341,6 @@ if (arguments.size() > 1) {
     for (int i = ligandStart2; i <= ligandStop2; i++) {
         Atom ai = atoms[i - 1];
         ai.setApplyLambda(true);
-        ai.setApplyLamedh(true);
     }
 
     // Apply the no electrostatics atom selection
@@ -354,7 +371,7 @@ double[] x = new double[n];
 double[] gradient = new double[n];
 double[] lambdaGrad = new double[n];
 double[][] lambdaGradFD = new double[2][n];
-double[] lamedhGrad = new double[n];
+// Container for numeric dEdXdLdh
 double[][] lamedhGradFD = new double[2][n];
 
 // Number of independent atoms.
@@ -362,14 +379,24 @@ assert(n % 3 == 0);
 int nAtoms = n / 3;
 
 // Compute the Lambda = 0.0 energy.
-lambda = 0.0;
-lambdaInterface.setLambda(lambda);
+if (!fixedLambda) {
+    double lambda = 0.0;
+    lambdaInterface.setLambda(lambda);
+}
+for (ExtendedVariable esv : esvList) {
+    esv.setLamedh(0.0);
+}
 potential.getCoordinates(x);
 double e0 = potential.energyAndGradient(x,gradient);
 
 // Compute the Lambda = 1.0 energy.
-double lambda = 1.0;
-lambdaInterface.setLambda(lambda);
+if (!fixedLambda) {
+    lambda = 1.0;
+    lambdaInterface.setLambda(lambda);
+}
+for (ExtendedVariable esv : esvList) {
+    esv.setLamedh(1.0);
+}
 double e1 = potential.energyAndGradient(x,gradient);
 
 logger.info(String.format(" E(0):      %20.8f.", e0));
@@ -377,8 +404,10 @@ logger.info(String.format(" E(1):      %20.8f.", e1));
 logger.info(String.format(" E(1)-E(0): %20.8f.\n", e1-e0));
 
 // Finite-difference step size.
-double step = 1.0e-5;
-double width = 2.0 * step;
+double lbdStep = 1.0e-5;
+double lbdWidth = 2.0 * lbdStep;
+double ldhStep = 1.0e-5;
+double ldhWidth = 2.0 * ldhStep;
 
 // Error tolerence
 double errTol = 1.0e-3;
@@ -387,92 +416,239 @@ double expGrad = 1000.0;
 
 // Test Lambda gradient in the neighborhood of the lambda variable.
 for (int j=0; j<3; j++) {
-    lambda = initialLambda - 0.01 + 0.01 * j;
-
-    if (lambda - step < 0.0) {
+    if (!fixedLambda) {
+        lambda = initialLambda - 0.01 + 0.01 * j;
+        if (lambda - lbdStep < 0.0) {
+            continue;
+        }
+        if (lambda + lbdStep > 1.0) {
+            continue;
+        }
+    } else {
+        lambda = 1.0;
+        lbdStep = 0.0;
+        lbdWidth = 0.0;
+    }
+    
+    // Initialize lamedh arrays
+    double[] lamedh = new double[numLdh];
+    double[] lamedhPlus = new double[numLdh];
+    double[] lamedhMinus = new double[numLdh];
+    boolean oob = false;
+    for (int i = 0; i < numLdh; i++) {
+        lamedh[i] = initialLamedh[i] - 0.01 + 0.01 * j;
+        if (lamedh[i] - lbdStep < 0.0 || lamedh[i] + lbdStep > 1.0) {
+            oob = true;
+            break;
+        }
+    }
+    if (oob) {
         continue;
     }
-    if (lambda + step > 1.0) {
-        continue;
+    for (int i = 0; i < numLdh; i++) {
+        lamedhPlus[i] = lamedh[i] + ldhStep;
+        lamedhMinus[i] = lamedh[i] - ldhStep;
     }
 
-    logger.info(String.format(" Current lambda value %6.4f", lambda));
-    lambdaInterface.setLambda(lambda);
+    logger.info(String.format(" Current lambda value:  %6.4f", lambda));
+    logger.info(String.format(" Current lamedh values: %s", Arrays.toString(lamedh)));
+    if (!fixedLambda) {
+        lambdaInterface.setLambda(lambda);
+    }
+    for (ExtendedVariable esv : esvList) {
+        esv.setLamedh(lamedh[esv.index]);
+    }
 
     // Calculate the energy, dE/dX, dE/dL, d2E/dL2 and dE/dL/dX
     double e = potential.energyAndGradient(x,gradient);
 
     // Analytic dEdL, d2E/dL2 and dE/dL/dX
-    double dEdL = lambdaInterface.getdEdL();
-    double d2EdL2 = lambdaInterface.getd2EdL2();
-    for (int i = 0; i < n; i++) {
-        lambdaGrad[i] = 0.0;
+    if (!fixedLambda) {
+        double dEdL = lambdaInterface.getdEdL();
+        double d2EdL2 = lambdaInterface.getd2EdL2();
+        for (int i = 0; i < n; i++) {
+            lambdaGrad[i] = 0.0;
+        }
+        potential.getdEdXdL(lambdaGrad);
     }
-    potential.getdEdXdL(lambdaGrad);
+
+    // Analytic dEdLdh, d2E/dLdh2 and dE/dX/dLdh
+    double[] dEdLdh = forceFieldEnergy.getdEdLdh();
+    double[] d2EdLdh2 = forceFieldEnergy.getd2EdLdh2();
+    double[][] dEdXdLdh = forceFieldEnergy.getdEdXdLdh();
 
     // Calculate the finite-difference dEdLambda, d2EdLambda2 and dEdLambdadX
-    lambdaInterface.setLambda(lambda + step);
-    double lp = potential.energyAndGradient(x,lambdaGradFD[0]);
-    double dedlp = lambdaInterface.getdEdL();
-    lambdaInterface.setLambda(lambda - step);
-    double lm = potential.energyAndGradient(x,lambdaGradFD[1]);
-    double dedlm = lambdaInterface.getdEdL();
-
-    double dEdLFD = (lp - lm) / width;
-    double d2EdL2FD = (dedlp - dedlm) / width;
-
-    double err = Math.abs(dEdLFD - dEdL);
-    if (err < errTol) {
-        logger.info(String.format(" dE/dL passed:   %10.6f", err));
-    } else {
-        logger.info(String.format(" dE/dL failed: %10.6f", err));
+    // Plus step
+    if (!fixedLambda) {
+        lambdaInterface.setLambda(lambda + lbdStep);
     }
-    logger.info(String.format(" Numeric:   %15.8f", dEdLFD));
-    logger.info(String.format(" Analytic:  %15.8f", dEdL));
-
-    err = Math.abs(d2EdL2FD - d2EdL2);
-    if (err < errTol) {
-        logger.info(String.format(" d2E/dL2 passed: %10.6f", err));
-    } else {
-        logger.info(String.format(" d2E/dL2 failed: %10.6f", err));
+    for (ExtendedVariable esv : esvList) {
+        esv.setLamedh(lamedhPlus[esv.index]);
     }
-    logger.info(String.format(" Numeric:   %15.8f", d2EdL2FD));
-    logger.info(String.format(" Analytic:  %15.8f", d2EdL2));
+    if (!fixedLambda) {
+        double lp = potential.energyAndGradient(x,lambdaGradFD[0]);
+        double dedlp = lambdaInterface.getdEdL();
+    }
+    double ldhPlus = potential.energyAndGradient(x,lamedhGradFD[0]);
+    double[] dEdLdhPlus = forceFieldEnergy.getdEdLdh();
+    double dEdLdhPlusSum = 0.0;
+    for (int i = 0; i < numLdh; i++) {
+        dEdLdhPlusSum += dEdLdhPlus[i];
+    }
+    
+    // Minus step
+    if (!fixedLambda) {
+        lambdaInterface.setLambda(lambda - lbdStep);
+    }
+    for (ExtendedVariable esv : esvList) {
+        esv.setLamedh(lamedhMinus[esv.index]);
+    }
+    if (!fixedLambda) {
+        double lm = potential.energyAndGradient(x,lambdaGradFD[1]);
+        double dedlm = lambdaInterface.getdEdL();
+    }
+    double ldhMinus = potential.energyAndGradient(x,lamedhGradFD[1]);
+    double[] dEdLdhMinus = forceFieldEnergy.getdEdLdh();
+    double dEdLdhMinusSum = 0.0;
+    for (int i = 0; i < numLdh; i++) {
+        dEdLdhMinusSum += dEdLdhMinus[i];
+    }
 
+    double dEdLdhSum = 0.0;
+    double d2EdLdh2Sum = 0.0;
+    double[] dEdXdLdhSum = new double[n];
+    for (int iESV = 0; iESV < numLdh; iESV++) {
+        dEdLdhSum += dEdLdh[iESV];
+        d2EdLdh2Sum += d2EdLdh2[iESV];
+        for (int iAtom = 0; iAtom < n; iAtom++) {
+            dEdXdLdhSum[iAtom] += dEdXdLdh[iESV][iAtom];
+        }
+    }
+    
+    if (!fixedLambda) {
+        double dEdLFD = (lp - lm) / lbdWidth;
+        double d2EdL2FD = (dedlp - dedlm) / lbdWidth;
+    }
+    double dEdLdhFD = (ldhPlus - ldhMinus) / ldhWidth;
+    double d2EdLdh2FD = (dEdLdhPlusSum - dEdLdhMinusSum) / ldhWidth;
+//    logger.info(String.format("ldhPlus, ldhMinus, ldhWidth: %.6g, %.6g, %.6g", ldhPlus, ldhMinus, ldhWidth));
+//    logger.info(String.format("dEdLdhPlusSum, dEdLdhMinusSum: %.6g, %.6g", dEdLdhPlusSum, dEdLdhMinusSum));
+//    logger.info(String.format("numLdh, dEdLdh[0], dEdLdhSum: %d, %.8f, %.8f", numLdh, dEdLdh[0], dEdLdhSum));
+    
+    if (!fixedLambda) {
+        double err = Math.abs(dEdLFD - dEdL);
+        if (err < errTol) {
+            logger.info(String.format(" dE/dL passed:   %10.6f", err));
+        } else {
+            logger.info(String.format(" dE/dL failed: %10.6f", err));
+        }
+        logger.info(String.format(" Numeric:   %15.8f", dEdLFD));
+        logger.info(String.format(" Analytic:  %15.8f", dEdL));
+    }
+    double errLdh = Math.abs(dEdLdhFD - dEdLdhSum);
+    if (errLdh < errTol) {
+        logger.info(String.format(" dE/dLdh passed:   %10.6f", errLdh));
+    } else {
+        logger.info(String.format(" dE/dLdh failed: %10.6f", errLdh));
+    }
+    logger.info(String.format(" Numeric:   %15.8f", dEdLdhFD));
+    logger.info(String.format(" Analytic:  %15.8f", dEdLdhSum));
+
+    if (!fixedLambda) {
+        err = Math.abs(d2EdL2FD - d2EdL2);
+        if (err < errTol) {
+            logger.info(String.format(" d2E/dL2 passed: %10.6f", err));
+        } else {
+            logger.info(String.format(" d2E/dL2 failed: %10.6f", err));
+        }
+        logger.info(String.format(" Numeric:   %15.8f", d2EdL2FD));
+        logger.info(String.format(" Analytic:  %15.8f", d2EdL2));
+    }
+    errLdh = Math.abs(d2EdLdh2FD - d2EdLdh2Sum);
+    if (errLdh < errTol) {
+        logger.info(String.format(" d2E/dLdh2 passed: %10.6f", errLdh));
+    } else {
+        logger.info(String.format(" d2E/dLdh2 failed: %10.6f", errLdh));
+    }
+    logger.info(String.format(" Numeric:   %15.8f", d2EdLdh2FD));
+    logger.info(String.format(" Analytic:  %15.8f", d2EdLdh2Sum));
+    
     boolean passed = true;
 
-    for (int i = 0; i < nAtoms; i++) {
+    for (int i = 0; i < nAtoms; i++) {   // TODO should be nAtoms
         int ii = i * 3;
-        double dX = (lambdaGradFD[0][ii] - lambdaGradFD[1][ii]) / width;
-        double dXa = lambdaGrad[ii];
-        double eX = dX - dXa;
+        if (!fixedLambda) {
+            double dX = (lambdaGradFD[0][ii] - lambdaGradFD[1][ii]) / lbdWidth;
+            double dXa = lambdaGrad[ii];
+            double eX = dX - dXa;
+        }
+        double dXdLdhFD = (lamedhGradFD[0][ii] - lamedhGradFD[1][ii]) / ldhWidth;
+        double dXdLdhAna = dEdXdLdhSum[ii];
+        double eXLdh = dXdLdhFD - dXdLdhAna;
         ii++;
-        double dY = (lambdaGradFD[0][ii] - lambdaGradFD[1][ii]) / width;
-        double dYa = lambdaGrad[ii];
-        double eY = dY - dYa;
+        if (!fixedLambda) {
+            double dY = (lambdaGradFD[0][ii] - lambdaGradFD[1][ii]) / lbdWidth;
+            double dYa = lambdaGrad[ii];
+            double eY = dY - dYa;
+        }
+        double dYdLdhFD = (lamedhGradFD[0][ii] - lamedhGradFD[1][ii]) / ldhWidth;
+        double dYdLdhAna = dEdXdLdhSum[ii];
+        double eYLdh = dYdLdhFD - dYdLdhAna;
         ii++;
-        double dZ = (lambdaGradFD[0][ii] - lambdaGradFD[1][ii]) / width;
-        double dZa = lambdaGrad[ii];
-        double eZ = dZ - dZa;
+        if (!fixedLambda) {
+            double dZ = (lambdaGradFD[0][ii] - lambdaGradFD[1][ii]) / lbdWidth;
+            double dZa = lambdaGrad[ii];
+            double eZ = dZ - dZa;
+        }
+        double dZdLdhFD = (lamedhGradFD[0][ii] - lamedhGradFD[1][ii]) / ldhWidth;
+        double dZdLdhAna = dEdXdLdhSum[ii];
+        double eZLdh = dZdLdhFD - dZdLdhAna;
+//        logger.info(String.format("i,dXYZ,gradFD[x,y,z][0,1]: %d, (%.6g %.6g %.6g), %.6g %.6g %.6g %.6g %.6g %.6g", 
+//                i, dXdLdhFD, dYdLdhFD, dZdLdhFD, 
+//                lamedhGradFD[0][ii-2], lamedhGradFD[1][ii-2], 
+//                lamedhGradFD[0][ii-1], lamedhGradFD[1][ii-1], 
+//                lamedhGradFD[0][ii],   lamedhGradFD[1][ii]  ));
+//        logger.info(String.format("i,dXYZ,gradFD[x,y,z][0,1]: %d, (%10.8f %10.8f %10.8f), (%10.8f %10.8f %10.8f)", 
+//                i, dXdLdhFD, dYdLdhFD, dZdLdhFD, dXdLdhAna, dYdLdhAna, dZdLdhAna));
 
-        double error = Math.sqrt(eX * eX + eY * eY + eZ * eZ);
-        if (error < errTol) {
-            logger.fine(String.format(" dE/dX/dL for Atom %d passed: %10.6f", i + 1, error));
+        if (!fixedLambda) {
+            double error = Math.sqrt(eX * eX + eY * eY + eZ * eZ);
+            if (error < errTol) {
+                logger.fine(String.format(" dE/dX/dL for Atom %d passed: %10.6f", i + 1, error));
+            } else {
+                logger.info(String.format(" dE/dX/dL for Atom %d failed: %10.6f", i + 1, error));
+                logger.info(String.format(" Analytic: (%15.8f, %15.8f, %15.8f)", dXa,dYa,dZa));
+                logger.info(String.format(" Numeric:  (%15.8f, %15.8f, %15.8f)", dX, dY, dZ));
+                passed = false;
+            }
+        }
+        
+        double errorLdh = Math.sqrt(eXLdh*eXLdh + eYLdh*eYLdh + eZLdh*eZLdh);
+        if (errorLdh < errTol) {
+            logger.fine(String.format(" dE/dX/dLdh for Atom %d passed: %10.6f", i + 1, errorLdh));
         } else {
-            logger.info(String.format(" dE/dX/dL for Atom %d failed: %10.6f", i + 1, error));
-            logger.info(String.format(" Analytic: (%15.8f, %15.8f, %15.8f)", dXa,dYa,dZa));
-            logger.info(String.format(" Numeric:  (%15.8f, %15.8f, %15.8f)", dX, dY, dZ));
+            logger.info(String.format(" dE/dX/dLdh for Atom %d failed: %10.6f", i + 1, errorLdh));
+            logger.info(String.format(" Analytic: (%15.8f, %15.8f, %15.8f)", dXdLdhAna,dYdLdhAna,dZdLdhAna));
+            logger.info(String.format(" Numeric:  (%15.8f, %15.8f, %15.8f)", dXdLdhFD, dYdLdhFD, dZdLdhFD));
             passed = false;
         }
     }
     if (passed) {
-        logger.info(String.format(" dE/dX/dL passed for all atoms"));
+        if (!fixedLambda) {
+            logger.info(String.format(" dE/dX/dL passed for all atoms"));
+        }
+        logger.info(String.format(" dE/dX/dLdh passed for all atoms"));
     }
 
     logger.info("");
 }
 
-lambdaInterface.setLambda(initialLambda);
+if (!fixedLambda) {
+    lambdaInterface.setLambda(initialLambda);
+}
+for (ExtendedVariable esv : esvList) {
+    esv.setLamedh(initialLamedh[esv.index]);
+}
 potential.getCoordinates(x);
 potential.energyAndGradient(x,gradient);
 
@@ -482,7 +658,7 @@ double[] numeric = new double[3];
 double avLen = 0.0;
 int nFailures = 0;
 double avGrad = 0.0;
-for (int i=0; i<nAtoms; i++) {
+for (int i = 0; i < nAtoms; i++) {
     int i3 = i*3;
     int i0 = i3 + 0;
     int i1 = i3 + 1;
@@ -490,30 +666,30 @@ for (int i=0; i<nAtoms; i++) {
 
     // Find numeric dX
     double orig = x[i0];
-    x[i0] = x[i0] + step;
-    double e = potential.energyAndGradient(x,lambdaGradFD[0]);
-    x[i0] = orig - step;
-    e -= potential.energyAndGradient(x,lambdaGradFD[1]);
+    x[i0] = x[i0] + ldhStep;
+    double e = potential.energyAndGradient(x,lamedhGradFD[0]);
+    x[i0] = orig - ldhStep;
+    e -= potential.energyAndGradient(x,lamedhGradFD[1]);
     x[i0] = orig;
-    numeric[0] = e / width;
+    numeric[0] = e / ldhWidth;
 
     // Find numeric dY
     orig = x[i1];
-    x[i1] = x[i1] + step;
-    e = potential.energyAndGradient(x,lambdaGradFD[0]);
-    x[i1] = orig - step;
-    e -= potential.energyAndGradient(x,lambdaGradFD[1]);
+    x[i1] = x[i1] + ldhStep;
+    e = potential.energyAndGradient(x,lamedhGradFD[0]);
+    x[i1] = orig - ldhStep;
+    e -= potential.energyAndGradient(x,lamedhGradFD[1]);
     x[i1] = orig;
-    numeric[1] = e / width;
+    numeric[1] = e / ldhWidth;
 
     // Find numeric dZ
     orig = x[i2];
-    x[i2] = x[i2] + step;
-    e = potential.energyAndGradient(x,lambdaGradFD[0]);
-    x[i2] = orig - step;
-    e -= potential.energyAndGradient(x,lambdaGradFD[1]);
+    x[i2] = x[i2] + ldhStep;
+    e = potential.energyAndGradient(x,lamedhGradFD[0]);
+    x[i2] = orig - ldhStep;
+    e -= potential.energyAndGradient(x,lamedhGradFD[1]);
     x[i2] = orig;
-    numeric[2] = e / width;
+    numeric[2] = e / ldhWidth;
 
     double dx = gradient[i0] - numeric[0];
     double dy = gradient[i1] - numeric[1];

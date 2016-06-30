@@ -215,15 +215,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     /*      Extended System Variables       */
     private int numESVs;
     private List<ExtendedVariable> esvList;
-    /**
-     * [nAtoms] Takes form of Optional since indexing is by atom.
-     */
-    private OptionalDouble[] lamedh;
-    /**
-     * Maps an atom index onto the ESV(s) coupled to it.
-     */
-    private HashMap<Integer,List<Integer>> atom2esv;
     private StringBuilder lamedhLogger;
+    private final boolean ESV_DEBUG = false;
     /****************************************/
 
     private Resolution resolution = Resolution.AMOEBA;
@@ -1104,7 +1097,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 atoms[i].setLambdaXYZGradient(0.0, 0.0, 0.0);
             }
         }
-
+        
         if (bondTerm) {
             bondTime = System.nanoTime();
             for (int i = 0; i < nBonds; i++) {
@@ -1349,9 +1342,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         totalNonBondedEnergy = vanDerWaalsEnergy + totalElectrostaticEnergy + relativeSolvationEnergy;
         totalEnergy = totalBondedEnergy + totalNonBondedEnergy + solvationEnergy;
 
-        if (numESVs > 0) {
+        if (ESV_DEBUG && numESVs > 0) {
             logger.info(lamedhLogger.toString());
-            lamedhLogger = new StringBuilder(String.format(" Lamedh Scaling: \n"));
+            lamedhLogger = new StringBuilder(String.format(" Lamedh Scaling: "));
         }
         if (print || printOverride) {
             StringBuilder sb = new StringBuilder("\n");
@@ -1680,46 +1673,33 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
     
     /**
-     * Multiplies an [nAtom] array of OptionalDouble scalings to the existing scaling array.
-     * Use the reset flag to override current scalings instead.
+     * Delivers the ESV list down into terms that handle lamedh themselves.
      */
-    public void setLamedh(OptionalDouble[] ldh, boolean reset) {
-        if (ldh.length != nAtoms) {
-            throw new IndexOutOfBoundsException();
-        }
-        if (lamedh == null || reset) {
-            lamedh = ldh;
-        }
-        for (int i = 0; i < nAtoms; i++) {
-            if (ldh[i].isPresent()) {
-                if (lamedh[i].isPresent()) {
-                    lamedh[i] = OptionalDouble.of(lamedh[i].getAsDouble() * ldh[i].getAsDouble());
-                } else {
-                    lamedh[i] = ldh[i];
-                }
-            }
+    public void updateLamedh() {
+        if (esvList == null) {
+            esvList = new ArrayList<>();
         }
         if (vanderWaalsTerm) {
-            vanderWaals.setLamedh(numESVs, lamedh, atom2esv);
+            vanderWaals.setLamedh(esvList);
         }
         if (multipoleTerm) {
-            // TODO particleMeshEwald.setLamedh(lamedh);
+            // TODO particleMeshEwald.setLamedh(esvList);
         }
         if (restraintBondTerm && restraintBonds != null) {
             for (int i = 0; i < restraintBonds.length; i++) {
-                // TODO restraintBonds[i].setLamedh(lamedh);
+                // TODO restraintBonds[i].setLamedh(esvList);
             }
         }
         if (ncsTerm && ncsRestraint != null) {
-            // TODO ncsRestraint.setLamedh(lamedh);
+            // TODO ncsRestraint.setLamedh(esvList);
         }
         if (restrainTerm && !coordRestraints.isEmpty()) {
             for (CoordRestraint restraint : coordRestraints) {
-                // TODO restraint.setLamedh(lamedh);
+                // TODO restraint.setLamedh(esvList);
             }
         }
         if (comTerm && comRestraint != null) {
-            // TODO comRestraint.setLamedh(lamedh);
+            // TODO comRestraint.setLamedh(esvList);
         }
     }
     
@@ -1738,8 +1718,10 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             OptionalDouble scale = esv.getROLSScaling(rols);
             if (scale.isPresent()) {
                 totalScale *= esv.getROLSScaling(rols).getAsDouble();
-                lamedhLogger.append(String.format(" Scaling by lamedh[%d] (%4.2f) : ROLS %s (%4.2f)\n",
-                        esv.index, scale, rols.toString(), totalScale));
+                if (ESV_DEBUG) {
+                    lamedhLogger.append(String.format(" Scaling by lamedh[%d] (%4.2f) : ROLS %s (%4.2f)\n",
+                            esv.index, scale.getAsDouble(), rols.toString(), totalScale));
+                }
             }
         }
         return totalScale;
@@ -1896,20 +1878,11 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     public void addExtendedVariable(ExtendedVariable esv) {
         if (esvList == null) {
             esvList = new ArrayList<>();
-            atom2esv = new HashMap<>();
         }
         esvList.add(esv);
-        IntStream.range(0,nAtoms).filter(i -> esv.containsAtom(atoms[i]))
-            .forEach(i -> {
-                if (atom2esv.containsKey(i)) {
-                    atom2esv.get(i).add(esv.index);
-                } else {
-                    atom2esv.put(i, Arrays.asList(esv.index));
-                }
-            });
-        numESVs++;
-        logger.info(String.format(" Added ESV: %s\n", esv));
-        lamedhLogger = new StringBuilder(String.format(" Lamedh Scaling: \n"));
+        numESVs = esvList.size();
+        logger.info(String.format(" ForceFieldEnergy acquired ESV: %s\n", esv));
+        lamedhLogger = new StringBuilder(String.format(" Lamedh Scaling: "));
     }
     
     public void checkAtoms() {
@@ -2054,57 +2027,58 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         List<double[]> terms = new ArrayList<>();
         if (!lambdaBondedTerms) {
             if (vanderWaalsTerm) {
-                terms.add(vanderWaals.getdEdLdh());
+                double[] vdw = vanderWaals.getdEdLdh();
+                terms.add(vdw);
             }
             if (multipoleTerm) {
-                // TODO terms.add(particleMeshEwald.getdEdL());
+                // TODO terms.add(particleMeshEwald.getdEdLdh());
             }
             if (restraintBondTerm) {
                 for (int i = 0; i < nRestraintBonds; i++) {
-                    // TODO terms.add(restraintBonds[i].getdEdL());
+                    // TODO terms.add(restraintBonds[i].getdEdLdh());
                 }
             }
             if (ncsTerm && ncsRestraint != null) {
-                // TODO terms.add(ncsRestraint.getdEdL());
+                // TODO terms.add(ncsRestraint.getdEdLdh());
             }
             if (restrainTerm && !coordRestraints.isEmpty()) {
                 for (CoordRestraint restraint : coordRestraints) {
-                    // TODO terms.add(restraint.getdEdL());
+                    // TODO terms.add(restraint.getdEdLdh());
                 }
             }
             if (comTerm && comRestraint != null) {
-                // TODO terms.add(comRestraint.getdEdL());
+                // TODO terms.add(comRestraint.getdEdLdh());
             }
         }
         if (terms.isEmpty()) {
             return new double[numESVs]; // zeroes
         }
-        if (DEBUG) {
-            StringBuilder sb = new StringBuilder();
-            long time = System.nanoTime();
-            double[] seq = eleSum1DArrays(terms, numESVs);
-            long seqTime = System.nanoTime() - time;
-            time = System.nanoTime();
-            double[] para = parallelEleSum1DArrays(terms);
-            long paraTime = System.nanoTime() - time;
-            sb.append(String.format(" DEBUG: 1DArraySum \n"));
-            sb.append(String.format("   seq: (%.2f ms) %s\n", seqTime*1.0e-6, Arrays.toString(seq)));
-            sb.append(String.format("  para: (%.2f ms) %s\n", paraTime*1.0e-6, Arrays.toString(para)));
-            logger.info(sb.toString());
-        }
+        // Timing sequential vs. stream-based parallel array summation.
+//        if (false) {
+//            StringBuilder sb = new StringBuilder();
+//            long time = System.nanoTime();
+//            double[] seq = eleSum1DArrays(terms, numESVs);
+//            long seqTime = System.nanoTime() - time;
+//            time = System.nanoTime();
+//            double[] para = parallelEleSum1DArrays(terms);
+//            long paraTime = System.nanoTime() - time;
+//            sb.append(String.format(" DEBUG: 1DArraySum \n"));
+//            sb.append(String.format("   seq: (%.2f ms) %s\n", seqTime*1.0e-6, Arrays.toString(seq)));
+//            sb.append(String.format("  para: (%.2f ms) %s\n", paraTime*1.0e-6, Arrays.toString(para)));
+//            logger.info(sb.toString());
+//        }
         return eleSum1DArrays(terms, numESVs);
     }
     
-    private static final boolean DEBUG = true;
     private static double[] parallelEleSum1DArrays(List<double[]> terms) {
         if (terms == null || terms.isEmpty()) {
             throw new NullPointerException("Summing an empty or null terms list.");
         }
         int numElements = terms.get(0).length;
-        if (!terms.stream().allMatch(term -> term != null && term.length == numElements)) {
+        if (!terms.parallelStream().allMatch(term -> term != null && term.length == numElements)) {
             throw new IndexOutOfBoundsException("Variable lengths encountered in term list.");
         }
-        return IntStream.range(0,numElements)
+        return IntStream.range(0,numElements).parallel()
                 .mapToDouble(
                     idx -> terms.parallelStream().collect(
                         Collectors.summingDouble(term -> term[idx]))
@@ -2114,14 +2088,15 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     /**
      * Element-wise sum over a list of 1D double arrays.
      */
-    private static double[] eleSum1DArrays(List<double[]> terms, int size) {
-        double[] termSum = new double[size];
+    private static double[] eleSum1DArrays(List<double[]> terms, int numESVs) {
+        double[] termSum = new double[terms.size()];
         for (int iTerm = 0; iTerm < terms.size(); iTerm++) {
             double[] currentTerm = terms.get(iTerm);
-            if (currentTerm.length != size) {
+            if (currentTerm.length != numESVs) {
+                logger.warning(format("iTerm %d length: %d, numESVs: %d", iTerm, terms.get(iTerm).length, numESVs));
                 throw new IndexOutOfBoundsException();
             }
-            for (int iESV = 0; iESV < size; iESV++) {
+            for (int iESV = 0; iESV < numESVs; iESV++) {
                 termSum[iESV] += currentTerm[iESV];
             }
         }
@@ -2131,21 +2106,21 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     /**
      * Element-wise sum over a list of 2D double arrays.
      */
-    private static double[][] eleSum2DArrays(List<double[][]> terms, int outerSize, int innerSize) {
+    private static double[][] eleSum2DArrays(List<double[][]> terms, int numESVs, int nVars) {
         if (terms == null || terms.isEmpty()) {
             throw new NullPointerException("Summing an empty or null terms list.");
         }
-        double[][] termSum = new double[outerSize][innerSize];
+        double[][] termSum = new double[numESVs][nVars];
         for (int iTerm = 0; iTerm < terms.size(); iTerm++) {
             double[][] currentTerm = terms.get(iTerm);
-            if (currentTerm.length != outerSize) {
+            if (currentTerm.length != numESVs) {
                 throw new IndexOutOfBoundsException();
             }
-            for (int iESV = 0; iESV < outerSize; iESV++) {
-                if (currentTerm[iESV].length != innerSize) {
+            for (int iESV = 0; iESV < numESVs; iESV++) {
+                if (currentTerm[iESV].length != nVars) {
                     throw new IndexOutOfBoundsException();
                 }
-                for (int iAtom = 0; iAtom < innerSize; iAtom++) {
+                for (int iAtom = 0; iAtom < nVars; iAtom++) {
                     termSum[iESV][iAtom] += currentTerm[iESV][iAtom];
                 }
             }
@@ -2184,7 +2159,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             if (comTerm && comRestraint != null) {
                 comRestraint.getdEdXdL(gradients);
             }
-            if (lambdaTorsions) {       // SDL: This block is collecting ALL bonded term gradients?
+            if (lambdaTorsions) {
                 double grad[] = new double[3];
                 int index = 0;
                 for (int i = 0; i < nAtoms; i++) {
@@ -2228,9 +2203,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             // TODO terms.add(comRestraint.getdEdXdLdh());
         }
         if (terms.isEmpty()) {
-            return new double[numESVs][nAtoms];
+            return new double[numESVs][3 * nAtoms];
         }
-        return eleSum2DArrays(terms, numESVs, nAtoms);
+        return eleSum2DArrays(terms, numESVs, 3 * nAtoms);
     }
 
     /**
@@ -2239,10 +2214,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     @Override
     public double getLambda() {
         return lambda;
-    }
-    
-    public OptionalDouble[] getLamedh() {
-        return lamedh;
     }
 
     /**
@@ -2290,11 +2261,36 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         return d2EdLambda2;
     }
     
-    public OptionalDouble[] getd2EdLdh2() {
-        OptionalDouble[] d2EdLdh2 = new OptionalDouble[nAtoms];
-        fill(d2EdLdh2, OptionalDouble.empty());
-        // TODO PRIO
-        return d2EdLdh2;
+    public double[] getd2EdLdh2() {
+        List<double[]> terms = new ArrayList<>();
+        if (!lambdaBondedTerms) {
+            if (vanderWaalsTerm) {
+                terms.add(vanderWaals.getd2EdLdh2());
+            }
+            if (multipoleTerm) {
+                // TODO terms.add(particleMeshEwald.getd2EdLdh2());
+            }
+            if (restraintBondTerm) {
+                for (int i = 0; i < nRestraintBonds; i++) {
+                    // TODO terms.add(restraintBonds[i].getd2EdLdh2());
+                }
+            }
+            if (ncsTerm && ncsRestraint != null) {
+                // TODO terms.add(ncsRestraint.getd2EdLdh2());
+            }
+            if (restrainTerm && !coordRestraints.isEmpty()) {
+                for (CoordRestraint restraint : coordRestraints) {
+                    // TODO terms.add(restraint.getd2EdLdh2());
+                }
+            }
+            if (comTerm && comRestraint != null) {
+                // TODO terms.add(comRestraint.getd2EdLdh2());
+            }
+        }
+        if (terms.isEmpty()) {
+            return new double[numESVs]; // zeroes
+        }
+        return eleSum1DArrays(terms, numESVs);
     }
 
     /**

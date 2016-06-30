@@ -84,13 +84,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     public enum Resolution {
         FIXEDCHARGE, AMOEBA;
     }
-    
-    public enum ESVMode {
-        LAMBDA, LAMEDH;
-    }
 
     private Resolution resolution = Resolution.AMOEBA;
-    private ESVMode esvMode = ESVMode.LAMBDA;
 
     public void setResolution(Resolution resolution) {
         this.resolution = resolution;
@@ -2337,20 +2332,18 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     public void setLambdaXYZGradient(double x, double y, double z) {
         if (active) {
-            if (esvMode == ESVMode.LAMEDH) {
-                xyzLamedhGradient[0] = x;
-                xyzLamedhGradient[1] = y;
-                xyzLamedhGradient[2] = z;
-            } else {
-                xyzLambdaGradient[0] = x;
-                xyzLambdaGradient[1] = y;
-                xyzLambdaGradient[2] = z;
-            }
+            xyzLambdaGradient[0] = x;
+            xyzLambdaGradient[1] = y;
+            xyzLambdaGradient[2] = z;
         }
     }
     
-    public void setESVMode(ESVMode mode) {
-        this.esvMode = mode;
+    public void setLamedhXYZGradient(double x, double y, double z) {
+        if (active) {
+            xyzLamedhGradient[0] = x;
+            xyzLamedhGradient[1] = y;
+            xyzLamedhGradient[2] = z;
+        }
     }
 
     /**
@@ -2379,15 +2372,17 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     public void addToLambdaXYZGradient(double x, double y, double z) {
         if (active) {
-            if (esvMode == ESVMode.LAMEDH) {
-                xyzLamedhGradient[0] += x;
-                xyzLamedhGradient[1] += y;
-                xyzLamedhGradient[2] += z;
-            } else {
-                xyzLambdaGradient[0] += x;
-                xyzLambdaGradient[1] += y;
-                xyzLambdaGradient[2] += z;
-            }            
+            xyzLambdaGradient[0] += x;
+            xyzLambdaGradient[1] += y;
+            xyzLambdaGradient[2] += z;
+        }
+    }
+    
+    public void addToLamedhXYZGradient(double x, double y, double z) {
+        if (active) {
+            xyzLamedhGradient[0] += x;
+            xyzLamedhGradient[1] += y;
+            xyzLamedhGradient[2] += z;
         }
     }
 
@@ -2416,15 +2411,19 @@ public class Atom extends MSNode implements Comparable<Atom> {
         if (x == null) {
             x = new double[3];
         }
-        if (esvMode == ESVMode.LAMEDH) {
-            x[0] = xyzLamedhGradient[0];
-            x[1] = xyzLamedhGradient[1];
-            x[2] = xyzLamedhGradient[2];
-        } else {
-            x[0] = xyzLambdaGradient[0];
-            x[1] = xyzLambdaGradient[1];
-            x[2] = xyzLambdaGradient[2];
+        x[0] = xyzLambdaGradient[0];
+        x[1] = xyzLambdaGradient[1];
+        x[2] = xyzLambdaGradient[2];
+    }
+    
+    public double[] getLamedhXYZGradient(double x[]) {
+        if (x == null) {
+            x = new double[3];
         }
+        x[0] = xyzLamedhGradient[0];
+        x[1] = xyzLamedhGradient[1];
+        x[2] = xyzLamedhGradient[2];
+        return x;
     }
 
     /**

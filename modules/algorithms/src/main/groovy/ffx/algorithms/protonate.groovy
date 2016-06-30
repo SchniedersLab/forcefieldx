@@ -117,9 +117,9 @@ cli.rn(longOpt:'resName', args:1, 'Titrate a list of residue names (eg "LYS,TYR,
 cli.rw(longOpt:'resWindow', args:1, 'Titrate all residues with intrinsic pKa within [arg] units of simulation pH.');
 cli.pH(longOpt:'pH', args:1, argName:'7.4', 'Constant simulation pH.');
 cli.mc(longOpt:'mcStepFreq', args:1, argName:'10', 'Number of MD steps between Monte-Carlo protonation changes.')
-cli.mcr(longOpt: 'rotamerStepFreq', args:1, argName:'0', 'Number of MD steps between Monte-Carlo rotamer changes.')
-cli.mcD(longOpt: 'dynamics', args:1, argName:'true', 'Include dynamics.');
-cli.tt(longOpt: 'titrateTermini', args:1, argName:'false', 'Titrate amino acid chain ends.');
+cli.mcr(longOpt:'rotamerStepFreq', args:1, argName:'0', 'Number of MD steps between Monte-Carlo rotamer changes.')
+cli.mcD(longOpt:'dynamics', args:1, argName:'true', 'Include dynamics.');
+cli.tt(longOpt:'titrateTermini', args:1, argName:'false', 'Titrate amino acid chain ends.');
 def options = cli.parse(args);
 
 if (options.h) {
