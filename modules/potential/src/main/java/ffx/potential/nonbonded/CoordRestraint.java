@@ -98,7 +98,7 @@ public class CoordRestraint implements LambdaInterface {
     public CoordRestraint(Atom[] atoms, ForceField forceField) {
         this(atoms, forceField, true);
     }
-    
+
     /**
      * This CoordRestraint is based on the unit cell parameters and symmetry
      * operators of the supplied crystal.
@@ -110,7 +110,7 @@ public class CoordRestraint implements LambdaInterface {
     public CoordRestraint(Atom[] atoms, ForceField forceField, boolean useLambda) {
         this(atoms, forceField, useLambda, forceField.getDouble(ForceField.ForceFieldDouble.RESTRAINT_K, 10.0));
     }
-    
+
     /**
      * This CoordRestraint is based on the unit cell parameters and symmetry
      * operators of the supplied crystal.
@@ -157,7 +157,7 @@ public class CoordRestraint implements LambdaInterface {
 //            setPlaneAtoms();
 //        }
     }
-    
+
     public int getNumAtoms() {
         return nAtoms;
     }
@@ -172,7 +172,7 @@ public class CoordRestraint implements LambdaInterface {
             atom2Index = Integer.parseInt(tokens[1]);
             atom3Index = Integer.parseInt(tokens[2]);
         }
-        
+
         //xyzAtomRestraints uses atom types to restrain specific atoms. This can result in more
         //atoms being restrained than desired since atom types are not unique to each atom.
         String atomTypeRestraints = System.getProperty("xyzAtomRestraints");
@@ -314,7 +314,7 @@ public class CoordRestraint implements LambdaInterface {
 //                definePlane1 = atom.getAtomType();
 //            } else if (atom.getXYZIndex() == planeAtom2) {
 //                definePlane2 = atom.getAtomType();
-//                
+//
 //                //Should the following else if statetment be == planeAtom3??
 //
 //            } else if (atom.getXYZIndex() == planeAtom3) {

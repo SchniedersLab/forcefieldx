@@ -63,8 +63,8 @@ import edu.rit.pj.reduction.SharedInteger;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
+import ffx.numerics.MultipoleTensor;
 import ffx.numerics.Potential;
-import ffx.numerics.TensorRecursion;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
@@ -6653,7 +6653,7 @@ public class PME_2 implements Potential {
     /**
      * Number of unique tensors for given order.
      */
-    public static final int tensorCount = TensorRecursion.tensorCount(3);
+    public static final int tensorCount = MultipoleTensor.tensorCount(3);
     private final double sfPhi[] = new double[tensorCount];
     private final double sPhi[] = new double[tensorCount];
 

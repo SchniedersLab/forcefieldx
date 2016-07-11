@@ -46,6 +46,6 @@ import org.junit.runners.Suite.SuiteClasses;
  */
 @RunWith(Suite.class)
 @SuiteClasses({ErfTest.class, SquareRootTest.class,
-    TensorRecursionTest.class, UniformBSplineTest.class})
+    MultipoleTensorTest.class, UniformBSplineTest.class})
 public class NumericsTestSuite {
 }
