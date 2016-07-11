@@ -37,11 +37,18 @@
  */
 package ffx.potential.parameters;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
+import java.util.logging.Logger;
 
 import static org.apache.commons.math3.util.FastMath.pow;
+
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Bond;
 
 /**
  * The PolarizeType class defines an isotropic atomic polarizability.
@@ -51,6 +58,8 @@ import static org.apache.commons.math3.util.FastMath.pow;
  *
  */
 public final class PolarizeType extends BaseType implements Comparator<String> {
+
+    private static final Logger logger = Logger.getLogger(PolarizeType.class.getName());
 
     private static final double sixth = 1.0 / 6.0;
     /**
@@ -248,6 +257,161 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
         double thole = (polarizeType1.thole + polarizeType2.thole) / 2.0;
         double polarizability = (polarizeType1.polarizability + polarizeType2.polarizability) / 2.0;
         return new PolarizeType(atomType, thole, polarizability, polarizationGroup);
+    }
+
+    public static void assignPolarizationGroups(Atom atoms[], int ip11[][], int ip12[][], int ip13[][]) {
+        /**
+         * Find directly connected group members for each atom.
+         */
+        List<Integer> group = new ArrayList<>();
+        List<Integer> polarizationGroup = new ArrayList<>();
+        //int g11 = 0;
+        for (Atom ai : atoms) {
+            group.clear();
+            polarizationGroup.clear();
+            Integer index = ai.getXYZIndex() - 1;
+            group.add(index);
+            polarizationGroup.add(ai.getType());
+            PolarizeType polarizeType = ai.getPolarizeType();
+            if (polarizeType != null) {
+                if (polarizeType.polarizationGroup != null) {
+                    for (int i : polarizeType.polarizationGroup) {
+                        if (!polarizationGroup.contains(i)) {
+                            polarizationGroup.add(i);
+                        }
+                    }
+                    growGroup(polarizationGroup, group, ai);
+                    Collections.sort(group);
+                    ip11[index] = new int[group.size()];
+                    int j = 0;
+                    for (int k : group) {
+                        ip11[index][j++] = k;
+                    }
+                } else {
+                    ip11[index] = new int[group.size()];
+                    int j = 0;
+                    for (int k : group) {
+                        ip11[index][j++] = k;
+                    }
+                }
+                //g11 += ip11[index].length;
+                //System.out.println(format("%d %d", index + 1, g11));
+            } else {
+                String message = "The polarize keyword was not found for atom "
+                        + (index + 1) + " with type " + ai.getType();
+                logger.severe(message);
+            }
+        }
+        /**
+         * Find 1-2 group relationships.
+         */
+        int nAtoms = atoms.length;
+        int mask[] = new int[nAtoms];
+        List<Integer> list = new ArrayList<>();
+        List<Integer> keep = new ArrayList<>();
+        for (int i = 0; i < nAtoms; i++) {
+            mask[i] = -1;
+        }
+        for (int i = 0; i < nAtoms; i++) {
+            list.clear();
+            for (int j : ip11[i]) {
+                list.add(j);
+                mask[j] = i;
+            }
+            keep.clear();
+            for (int j : list) {
+                Atom aj = atoms[j];
+                ArrayList<Bond> bonds = aj.getBonds();
+                for (Bond b : bonds) {
+                    Atom ak = b.get1_2(aj);
+                    int k = ak.getXYZIndex() - 1;
+                    if (mask[k] != i) {
+                        keep.add(k);
+                    }
+                }
+            }
+            list.clear();
+            for (int j : keep) {
+                for (int k : ip11[j]) {
+                    list.add(k);
+                }
+            }
+            Collections.sort(list);
+            ip12[i] = new int[list.size()];
+            int j = 0;
+            for (int k : list) {
+                ip12[i][j++] = k;
+            }
+        }
+        /**
+         * Find 1-3 group relationships.
+         */
+        for (int i = 0; i < nAtoms; i++) {
+            mask[i] = -1;
+        }
+        for (int i = 0; i < nAtoms; i++) {
+            for (int j : ip11[i]) {
+                mask[j] = i;
+            }
+            for (int j : ip12[i]) {
+                mask[j] = i;
+            }
+            list.clear();
+            for (int j : ip12[i]) {
+                for (int k : ip12[j]) {
+                    if (mask[k] != i) {
+                        if (!list.contains(k)) {
+                            list.add(k);
+                        }
+                    }
+                }
+            }
+            ip13[i] = new int[list.size()];
+            Collections.sort(list);
+            int j = 0;
+            for (int k : list) {
+                ip13[i][j++] = k;
+            }
+        }
+    }
+
+    /**
+     * A recursive method that checks all atoms bonded to the seed atom for
+     * inclusion in the polarization group. The method is called on each newly
+     * found group member.
+     *
+     * @param polarizationGroup Atom types that should be included in the group.
+     * @param group XYZ indeces of current group members.
+     * @param seed The bonds of the seed atom are queried for inclusion in the
+     * group.
+     */
+    private static void growGroup(List<Integer> polarizationGroup,
+            List<Integer> group, Atom seed) {
+        List<Bond> bonds = seed.getBonds();
+        for (Bond bi : bonds) {
+            Atom aj = bi.get1_2(seed);
+            int tj = aj.getType();
+            boolean added = false;
+            for (int g : polarizationGroup) {
+                if (g == tj) {
+                    Integer index = aj.getXYZIndex() - 1;
+                    if (!group.contains(index)) {
+                        group.add(index);
+                        added = true;
+                        break;
+                    }
+                }
+            }
+            if (added) {
+                PolarizeType polarizeType = aj.getPolarizeType();
+                for (int i : polarizeType.polarizationGroup) {
+                    if (!polarizationGroup.contains(i)) {
+                        polarizationGroup.add(i);
+                    }
+                }
+                growGroup(polarizationGroup, group, aj);
+            }
+        }
     }
 
 }

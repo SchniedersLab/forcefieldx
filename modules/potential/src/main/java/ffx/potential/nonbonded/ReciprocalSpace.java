@@ -59,7 +59,7 @@ import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
 
 import ffx.crystal.Crystal;
-import ffx.numerics.TensorRecursion;
+import ffx.numerics.MultipoleTensor;
 import ffx.numerics.fft.Complex;
 import ffx.numerics.fft.Complex3DCuda;
 import ffx.numerics.fft.Complex3DOpenCL;
@@ -2953,6 +2953,6 @@ public class ReciprocalSpace {
     private final double transformFieldMatrix[][] = new double[10][10];
     private final double transformMultipoleMatrix[][] = new double[10][10];
     private final double a[][] = new double[3][3];
-    private static final int tensorCount = TensorRecursion.tensorCount(3);
+    private static final int tensorCount = MultipoleTensor.tensorCount(3);
     private static final double toSeconds = 1.0e-9;
 }

@@ -40,9 +40,21 @@ package ffx.potential.parameters;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.logging.Logger;
 
 import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.random;
+
+import ffx.potential.bonded.Angle;
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Bond;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
 
 /**
  * The MultipoleType class defines a multipole in its local frame.
@@ -61,7 +73,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      */
     public enum MultipoleFrameDefinition {
 
-        ZTHENX, BISECTOR, ZTHENBISECTOR, TRISECTOR
+        ZONLY, ZTHENX, BISECTOR, ZTHENBISECTOR, TRISECTOR
     }
     /**
      * Conversion from electron-Angstroms to Debyes
@@ -216,6 +228,424 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
             String message = String.format("Multipole is not traceless: %7.5f",
                     sum);
             logger.warning(message + "\n" + toBohrString());
+        }
+    }
+
+    public static boolean assignMultipole(Atom atom, ForceField forceField,
+            double multipole[], int i, int axisAtom[][], MultipoleFrameDefinition frame[]) {
+        AtomType atomType = atom.getAtomType();
+        if (atomType == null) {
+            String message = " Multipoles can only be assigned to atoms that have been typed.";
+            logger.severe(message);
+            return false;
+        }
+
+        PolarizeType polarizeType = forceField.getPolarizeType(atomType.getKey());
+        if (polarizeType != null) {
+            atom.setPolarizeType(polarizeType);
+        } else {
+            String message = " No polarization type was found for " + atom.toString();
+            logger.fine(message);
+            double polarizability = 0.0;
+            double thole = 0.0;
+            int polarizationGroup[] = null;
+            polarizeType = new PolarizeType(atomType.type,
+                    polarizability, thole, polarizationGroup);
+            forceField.addForceFieldType(polarizeType);
+            atom.setPolarizeType(polarizeType);
+        }
+
+        String key;
+        // No reference atoms.
+        key = atomType.getKey() + " 0 0";
+        MultipoleType multipoleType = forceField.getMultipoleType(key);
+        if (multipoleType != null) {
+            atom.setMultipoleType(multipoleType, null);
+            multipole[t000] = multipoleType.charge;
+            multipole[t100] = multipoleType.dipole[0];
+            multipole[t010] = multipoleType.dipole[1];
+            multipole[t001] = multipoleType.dipole[2];
+            multipole[t200] = multipoleType.quadrupole[0][0];
+            multipole[t020] = multipoleType.quadrupole[1][1];
+            multipole[t002] = multipoleType.quadrupole[2][2];
+            multipole[t110] = multipoleType.quadrupole[0][1];
+            multipole[t101] = multipoleType.quadrupole[0][2];
+            multipole[t011] = multipoleType.quadrupole[1][2];
+            axisAtom[i] = null;
+            frame[i] = multipoleType.frameDefinition;
+            return true;
+        }
+
+        // No bonds.
+        List<Bond> bonds = atom.getBonds();
+        if (bonds == null || bonds.size() < 1) {
+            String message = "Multipoles can only be assigned after bonded relationships are defined.\n";
+            logger.severe(message);
+        }
+
+        // 1 reference atom.
+        for (Bond b : bonds) {
+            Atom atom2 = b.get1_2(atom);
+            key = atomType.getKey() + " " + atom2.getAtomType().getKey() + " 0";
+            multipoleType = multipoleType = forceField.getMultipoleType(key);
+            if (multipoleType != null) {
+                int multipoleReferenceAtoms[] = new int[1];
+                multipoleReferenceAtoms[0] = atom2.xyzIndex - 1;
+                atom.setMultipoleType(multipoleType, null);
+                multipole[t000] = multipoleType.charge;
+                multipole[t100] = multipoleType.dipole[0];
+                multipole[t010] = multipoleType.dipole[1];
+                multipole[t001] = multipoleType.dipole[2];
+                multipole[t200] = multipoleType.quadrupole[0][0];
+                multipole[t020] = multipoleType.quadrupole[1][1];
+                multipole[t002] = multipoleType.quadrupole[2][2];
+                multipole[t110] = multipoleType.quadrupole[0][1];
+                multipole[t101] = multipoleType.quadrupole[0][2];
+                multipole[t011] = multipoleType.quadrupole[1][2];
+                axisAtom[i] = multipoleReferenceAtoms;
+                frame[i] = multipoleType.frameDefinition;
+                return true;
+            }
+        }
+
+        // 2 reference atoms.
+        for (Bond b : bonds) {
+            Atom atom2 = b.get1_2(atom);
+            String key2 = atom2.getAtomType().getKey();
+            for (Bond b2 : bonds) {
+                if (b == b2) {
+                    continue;
+                }
+                Atom atom3 = b2.get1_2(atom);
+                String key3 = atom3.getAtomType().getKey();
+                key = atomType.getKey() + " " + key2 + " " + key3;
+                multipoleType = forceField.getMultipoleType(key);
+                if (multipoleType != null) {
+                    int multipoleReferenceAtoms[] = new int[2];
+                    multipoleReferenceAtoms[0] = atom2.xyzIndex - 1;
+                    multipoleReferenceAtoms[1] = atom3.xyzIndex - 1;
+                    atom.setMultipoleType(multipoleType, null);
+                    multipole[t000] = multipoleType.charge;
+                    multipole[t100] = multipoleType.dipole[0];
+                    multipole[t010] = multipoleType.dipole[1];
+                    multipole[t001] = multipoleType.dipole[2];
+                    multipole[t200] = multipoleType.quadrupole[0][0];
+                    multipole[t020] = multipoleType.quadrupole[1][1];
+                    multipole[t002] = multipoleType.quadrupole[2][2];
+                    multipole[t110] = multipoleType.quadrupole[0][1];
+                    multipole[t101] = multipoleType.quadrupole[0][2];
+                    multipole[t011] = multipoleType.quadrupole[1][2];
+                    axisAtom[i] = multipoleReferenceAtoms;
+                    frame[i] = multipoleType.frameDefinition;
+                    return true;
+                }
+            }
+        }
+
+        /**
+         * 3 reference atoms.
+         */
+        for (Bond b : bonds) {
+            Atom atom2 = b.get1_2(atom);
+            String key2 = atom2.getAtomType().getKey();
+            for (Bond b2 : bonds) {
+                if (b == b2) {
+                    continue;
+                }
+                Atom atom3 = b2.get1_2(atom);
+                String key3 = atom3.getAtomType().getKey();
+                for (Bond b3 : bonds) {
+                    if (b == b3 || b2 == b3) {
+                        continue;
+                    }
+                    Atom atom4 = b3.get1_2(atom);
+                    String key4 = atom4.getAtomType().getKey();
+                    key = atomType.getKey() + " " + key2 + " " + key3 + " " + key4;
+                    multipoleType = forceField.getMultipoleType(key);
+                    if (multipoleType != null) {
+                        int multipoleReferenceAtoms[] = new int[3];
+                        multipoleReferenceAtoms[0] = atom2.xyzIndex - 1;
+                        multipoleReferenceAtoms[1] = atom3.xyzIndex - 1;
+                        multipoleReferenceAtoms[2] = atom4.xyzIndex - 1;
+                        atom.setMultipoleType(multipoleType, null);
+                        multipole[t000] = multipoleType.charge;
+                        multipole[t100] = multipoleType.dipole[0];
+                        multipole[t010] = multipoleType.dipole[1];
+                        multipole[t001] = multipoleType.dipole[2];
+                        multipole[t200] = multipoleType.quadrupole[0][0];
+                        multipole[t020] = multipoleType.quadrupole[1][1];
+                        multipole[t002] = multipoleType.quadrupole[2][2];
+                        multipole[t110] = multipoleType.quadrupole[0][1];
+                        multipole[t101] = multipoleType.quadrupole[0][2];
+                        multipole[t011] = multipoleType.quadrupole[1][2];
+                        axisAtom[i] = multipoleReferenceAtoms;
+                        frame[i] = multipoleType.frameDefinition;
+                        return true;
+                    }
+                }
+                List<Angle> angles = atom.getAngles();
+                for (Angle angle : angles) {
+                    Atom atom4 = angle.get1_3(atom);
+                    if (atom4 != null) {
+                        String key4 = atom4.getAtomType().getKey();
+                        key = atomType.getKey() + " " + key2 + " " + key3 + " " + key4;
+                        multipoleType = forceField.getMultipoleType(key);
+                        if (multipoleType != null) {
+                            int multipoleReferenceAtoms[] = new int[3];
+                            multipoleReferenceAtoms[0] = atom2.xyzIndex - 1;
+                            multipoleReferenceAtoms[1] = atom3.xyzIndex - 1;
+                            multipoleReferenceAtoms[2] = atom4.xyzIndex - 1;
+                            atom.setMultipoleType(multipoleType, null);
+                            multipole[t000] = multipoleType.charge;
+                            multipole[t100] = multipoleType.dipole[0];
+                            multipole[t010] = multipoleType.dipole[1];
+                            multipole[t001] = multipoleType.dipole[2];
+                            multipole[t200] = multipoleType.quadrupole[0][0];
+                            multipole[t020] = multipoleType.quadrupole[1][1];
+                            multipole[t002] = multipoleType.quadrupole[2][2];
+                            multipole[t110] = multipoleType.quadrupole[0][1];
+                            multipole[t101] = multipoleType.quadrupole[0][2];
+                            multipole[t011] = multipoleType.quadrupole[1][2];
+                            axisAtom[i] = multipoleReferenceAtoms;
+                            frame[i] = multipoleType.frameDefinition;
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+
+        /**
+         * Revert to a 2 reference atom definition that may include a 1-3 site.
+         * For example a hydrogen on water.
+         */
+        for (Bond b : bonds) {
+            Atom atom2 = b.get1_2(atom);
+            String key2 = atom2.getAtomType().getKey();
+            List<Angle> angles = atom.getAngles();
+            for (Angle angle : angles) {
+                Atom atom3 = angle.get1_3(atom);
+                if (atom3 != null) {
+                    String key3 = atom3.getAtomType().getKey();
+                    key = atomType.getKey() + " " + key2 + " " + key3;
+                    multipoleType = forceField.getMultipoleType(key);
+                    if (multipoleType != null) {
+                        int multipoleReferenceAtoms[] = new int[2];
+                        multipoleReferenceAtoms[0] = atom2.xyzIndex - 1;
+                        multipoleReferenceAtoms[1] = atom3.xyzIndex - 1;
+                        atom.setMultipoleType(multipoleType, null);
+                        multipole[t000] = multipoleType.charge;
+                        multipole[t100] = multipoleType.dipole[0];
+                        multipole[t010] = multipoleType.dipole[1];
+                        multipole[t001] = multipoleType.dipole[2];
+                        multipole[t200] = multipoleType.quadrupole[0][0];
+                        multipole[t020] = multipoleType.quadrupole[1][1];
+                        multipole[t002] = multipoleType.quadrupole[2][2];
+                        multipole[t110] = multipoleType.quadrupole[0][1];
+                        multipole[t101] = multipoleType.quadrupole[0][2];
+                        multipole[t011] = multipoleType.quadrupole[1][2];
+                        axisAtom[i] = multipoleReferenceAtoms;
+                        frame[i] = multipoleType.frameDefinition;
+                        return true;
+                    }
+                    for (Angle angle2 : angles) {
+                        Atom atom4 = angle2.get1_3(atom);
+                        if (atom4 != null && atom4 != atom3) {
+                            String key4 = atom4.getAtomType().getKey();
+                            key = atomType.getKey() + " " + key2 + " " + key3 + " " + key4;
+                            multipoleType = forceField.getMultipoleType(key);
+                            if (multipoleType != null) {
+                                int multipoleReferenceAtoms[] = new int[3];
+                                multipoleReferenceAtoms[0] = atom2.xyzIndex - 1;
+                                multipoleReferenceAtoms[1] = atom3.xyzIndex - 1;
+                                multipoleReferenceAtoms[2] = atom4.xyzIndex - 1;
+                                atom.setMultipoleType(multipoleType, null);
+                                multipole[t000] = multipoleType.charge;
+                                multipole[t100] = multipoleType.dipole[0];
+                                multipole[t010] = multipoleType.dipole[1];
+                                multipole[t001] = multipoleType.dipole[2];
+                                multipole[t200] = multipoleType.quadrupole[0][0];
+                                multipole[t020] = multipoleType.quadrupole[1][1];
+                                multipole[t002] = multipoleType.quadrupole[2][2];
+                                multipole[t110] = multipoleType.quadrupole[0][1];
+                                multipole[t101] = multipoleType.quadrupole[0][2];
+                                multipole[t011] = multipoleType.quadrupole[1][2];
+                                axisAtom[i] = multipoleReferenceAtoms;
+                                frame[i] = multipoleType.frameDefinition;
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    public static void checkMultipoleChirality(MultipoleFrameDefinition frame,
+            double localOrigin[], double frameCoords[][],
+            double dipole[], double quadrupole[][]) {
+        if (frame != MultipoleFrameDefinition.ZTHENX) {
+            return;
+        }
+        double zAxis[] = new double[3];
+        double xAxis[] = new double[3];
+        double yAxis[] = new double[3];
+        double yMinOrigin[] = new double[3];
+        zAxis[0] = frameCoords[0][0];
+        zAxis[1] = frameCoords[0][1];
+        zAxis[2] = frameCoords[0][2];
+        xAxis[0] = frameCoords[1][0];
+        xAxis[1] = frameCoords[1][1];
+        xAxis[2] = frameCoords[1][2];
+        yAxis[0] = frameCoords[2][0];
+        yAxis[1] = frameCoords[2][1];
+        yAxis[2] = frameCoords[2][2];
+        diff(localOrigin, yAxis, yMinOrigin);
+        diff(zAxis, yAxis, zAxis);
+        diff(xAxis, yAxis, xAxis);
+        double c1 = zAxis[1] * xAxis[2] - zAxis[2] * xAxis[1];
+        double c2 = xAxis[1] * yMinOrigin[2] - xAxis[2] * yMinOrigin[1];
+        double c3 = yMinOrigin[1] * zAxis[2] - yMinOrigin[2] * zAxis[1];
+        double vol = yMinOrigin[0] * c1 + zAxis[0] * c2 + xAxis[0] * c3;
+        if (vol < 0.0) {
+            dipole[1] = -dipole[1];
+            quadrupole[0][1] = -quadrupole[0][1];
+            quadrupole[1][0] = -quadrupole[1][0];
+            quadrupole[1][2] = -quadrupole[1][2];
+            quadrupole[2][1] = -quadrupole[2][1];
+        }
+    }
+
+    public static void getRotationMatrix(MultipoleFrameDefinition frame,
+            double localOrigin[], double frameCoords[][], double rotmat[][]) {
+        double zAxis[] = new double[3];
+        double xAxis[] = new double[3];
+        switch (frame) {
+            case BISECTOR:
+                zAxis[0] = frameCoords[0][0];
+                zAxis[1] = frameCoords[0][1];
+                zAxis[2] = frameCoords[0][2];
+                xAxis[0] = frameCoords[1][0];
+                xAxis[1] = frameCoords[1][1];
+                xAxis[2] = frameCoords[1][2];
+                diff(zAxis, localOrigin, zAxis);
+                norm(zAxis, zAxis);
+                diff(xAxis, localOrigin, xAxis);
+                norm(xAxis, xAxis);
+                sum(xAxis, zAxis, zAxis);
+                norm(zAxis, zAxis);
+                rotmat[0][2] = zAxis[0];
+                rotmat[1][2] = zAxis[1];
+                rotmat[2][2] = zAxis[2];
+                double dot = dot(xAxis, zAxis);
+                scalar(zAxis, dot, zAxis);
+                diff(xAxis, zAxis, xAxis);
+                norm(xAxis, xAxis);
+                break;
+            case ZTHENBISECTOR:
+                double yAxis[] = new double[3];
+                zAxis[0] = frameCoords[0][0];
+                zAxis[1] = frameCoords[0][1];
+                zAxis[2] = frameCoords[0][2];
+                xAxis[0] = frameCoords[1][0];
+                xAxis[1] = frameCoords[1][1];
+                xAxis[2] = frameCoords[1][2];
+                yAxis[0] = frameCoords[2][0];
+                yAxis[1] = frameCoords[2][1];
+                yAxis[2] = frameCoords[2][2];
+                diff(zAxis, localOrigin, zAxis);
+                norm(zAxis, zAxis);
+                rotmat[0][2] = zAxis[0];
+                rotmat[1][2] = zAxis[1];
+                rotmat[2][2] = zAxis[2];
+                diff(xAxis, localOrigin, xAxis);
+                norm(xAxis, xAxis);
+                diff(yAxis, localOrigin, yAxis);
+                norm(yAxis, yAxis);
+                sum(xAxis, yAxis, xAxis);
+                norm(xAxis, xAxis);
+                dot = dot(xAxis, zAxis);
+                scalar(zAxis, dot, zAxis);
+                diff(xAxis, zAxis, xAxis);
+                norm(xAxis, xAxis);
+                break;
+            case ZONLY:
+                zAxis[0] = frameCoords[0][0];
+                zAxis[1] = frameCoords[0][1];
+                zAxis[2] = frameCoords[0][2];
+                diff(zAxis, localOrigin, zAxis);
+                norm(zAxis, zAxis);
+                rotmat[0][2] = zAxis[0];
+                rotmat[1][2] = zAxis[1];
+                rotmat[2][2] = zAxis[2];
+                xAxis[0] = random();
+                xAxis[1] = random();
+                xAxis[2] = random();
+                dot = dot(xAxis, zAxis);
+                scalar(zAxis, dot, zAxis);
+                diff(xAxis, zAxis, xAxis);
+                norm(xAxis, xAxis);
+                break;
+            case ZTHENX:
+            default:
+                zAxis[0] = frameCoords[0][0];
+                zAxis[1] = frameCoords[0][1];
+                zAxis[2] = frameCoords[0][2];
+                xAxis[0] = frameCoords[1][0];
+                xAxis[1] = frameCoords[1][1];
+                xAxis[2] = frameCoords[1][2];
+                diff(zAxis, localOrigin, zAxis);
+                norm(zAxis, zAxis);
+                rotmat[0][2] = zAxis[0];
+                rotmat[1][2] = zAxis[1];
+                rotmat[2][2] = zAxis[2];
+                diff(xAxis, localOrigin, xAxis);
+                dot = dot(xAxis, zAxis);
+                scalar(zAxis, dot, zAxis);
+                diff(xAxis, zAxis, xAxis);
+                norm(xAxis, xAxis);
+        }
+        // Set the X elements.
+        rotmat[0][0] = xAxis[0];
+        rotmat[1][0] = xAxis[1];
+        rotmat[2][0] = xAxis[2];
+        // Set the Y elements.
+        rotmat[0][1] = rotmat[2][0] * rotmat[1][2] - rotmat[1][0] * rotmat[2][2];
+        rotmat[1][1] = rotmat[0][0] * rotmat[2][2] - rotmat[2][0] * rotmat[0][2];
+        rotmat[2][1] = rotmat[1][0] * rotmat[0][2] - rotmat[0][0] * rotmat[1][2];
+    }
+
+    public static void rotateDipole(double rotmat[][], double dipole[],
+            double rotatedDipole[]) {
+        for (int i = 0; i < 3; i++) {
+            double[] rotmati = rotmat[i];
+            for (int j = 0; j < 3; j++) {
+                rotatedDipole[i] += rotmati[j] * dipole[j];
+            }
+        }
+    }
+
+    public static void rotateMultipole(double rotmat[][], double dipole[],
+            double quadrupole[][], double rotatedDipole[], double rotatedQuadrupole[][]) {
+        for (int i = 0; i < 3; i++) {
+            double[] rotmati = rotmat[i];
+            double[] quadrupolei = rotatedQuadrupole[i];
+            for (int j = 0; j < 3; j++) {
+                double[] rotmatj = rotmat[j];
+                rotatedDipole[i] += rotmati[j] * dipole[j];
+                if (j < i) {
+                    quadrupolei[j] = rotatedQuadrupole[j][i];
+                } else {
+                    for (int k = 0; k < 3; k++) {
+                        double[] localQuadrupolek = quadrupole[k];
+                        quadrupolei[j] += rotmati[k]
+                                * (rotmatj[0] * localQuadrupolek[0]
+                                + rotmatj[1] * localQuadrupolek[1]
+                                + rotmatj[2] * localQuadrupolek[2]);
+                    }
+                }
+            }
         }
     }
 
