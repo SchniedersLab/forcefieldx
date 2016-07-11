@@ -88,6 +88,7 @@ double initialLambda = 0.5;
 
 // Print out the energy for each step.
 boolean print = false;
+boolean vdwOnly = false;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
@@ -107,6 +108,7 @@ cli.ef(longOpt:'noElecFinal', args:1, argName:'-1', 'No Electrostatics Final Ato
 cli.ef2(longOpt:'noElecfinal2', args:1, argName:'-1', 'No Electrostatics Final Atom for the 2nd topology.');
 cli.l(longOpt:'lambda', args:1, argName:'0.5', 'Lambda value to test.');
 cli.v(longOpt:'verbose', 'Print out the energy for each step.');
+cli.vO(longOpt:'vdwOnly', 'Compute solely vdW for lamedh benchmarking.')
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -204,6 +206,18 @@ if (arguments.size() > 1) {
     System.setProperty("ligand-vapor-elec","false");
     // Condensed phase polarization, without the ligand present, is unecessary.
     System.setProperty("no-ligand-condensed-scf","false");
+}
+
+if (vdwOnly) {
+    System.setProperty("bondterm", "false");
+    System.setProperty("angleterm", "false");
+    System.setProperty("strbndterm", "false");
+    System.setProperty("opbendterm", "false");
+    System.setProperty("torsionterm", "false");
+    System.setProperty("tortorterm", "false");
+    System.setProperty("pitorsterm", "false");
+    System.setProperty("mpoleterm", "false");
+    System.setProperty("vdw-cutoff", "1000");
 }
 
 // Open the first topology.

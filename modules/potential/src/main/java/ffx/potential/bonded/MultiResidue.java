@@ -681,7 +681,7 @@ public class MultiResidue extends Residue {
         }
         return ret;
     }
-
+    
     /**
      * Returns a copy of this MultiResidue's consideredResidues array.
      *

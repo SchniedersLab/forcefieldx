@@ -82,8 +82,7 @@ import static ffx.utilities.HashCodeUtil.hash;
 public class Atom extends MSNode implements Comparable<Atom> {
 
     public enum Resolution {
-
-        FIXEDCHARGE, AMOEBA
+        FIXEDCHARGE, AMOEBA;
     }
 
     private Resolution resolution = Resolution.AMOEBA;
@@ -263,6 +262,10 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     private final double xyzLambdaGradient[] = new double[3];
     /**
+     * Array of XYZ lamedh gradient.
+     */
+    private final double xyzLamedhGradient[] = new double[3];
+    /**
      * Array of occupancy values for each altLoc.
      *
      * @since 1.0
@@ -349,6 +352,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     private double globalDipole[] = null;
     private double globalQuadrupole[][] = null;
     private boolean applyState = false;
+    private boolean lamedhState = false;
     // solvation
     private double bornRadius;
     // Connectivity information.
@@ -876,7 +880,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     public boolean applyLambda() {
         return applyState;
     }
-
+    
     /**
      * <p>
      * setApplyLambda</p>
@@ -885,6 +889,14 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     public void setApplyLambda(boolean applyState) {
         this.applyState = applyState;
+    }
+    
+    public boolean applyLamedh() {
+        return lamedhState;
+    }
+    
+    public void setApplyLamedh(boolean applyState) {
+        this.lamedhState = applyState;
     }
 
     /**
@@ -2325,6 +2337,14 @@ public class Atom extends MSNode implements Comparable<Atom> {
             xyzLambdaGradient[2] = z;
         }
     }
+    
+    public void setLamedhXYZGradient(double x, double y, double z) {
+        if (active) {
+            xyzLamedhGradient[0] = x;
+            xyzLamedhGradient[1] = y;
+            xyzLamedhGradient[2] = z;
+        }
+    }
 
     /**
      * <p>
@@ -2357,6 +2377,14 @@ public class Atom extends MSNode implements Comparable<Atom> {
             xyzLambdaGradient[2] += z;
         }
     }
+    
+    public void addToLamedhXYZGradient(double x, double y, double z) {
+        if (active) {
+            xyzLamedhGradient[0] += x;
+            xyzLamedhGradient[1] += y;
+            xyzLamedhGradient[2] += z;
+        }
+    }
 
     /**
      * <p>
@@ -2386,6 +2414,16 @@ public class Atom extends MSNode implements Comparable<Atom> {
         x[0] = xyzLambdaGradient[0];
         x[1] = xyzLambdaGradient[1];
         x[2] = xyzLambdaGradient[2];
+    }
+    
+    public double[] getLamedhXYZGradient(double x[]) {
+        if (x == null) {
+            x = new double[3];
+        }
+        x[0] = xyzLamedhGradient[0];
+        x[1] = xyzLamedhGradient[1];
+        x[2] = xyzLamedhGradient[2];
+        return x;
     }
 
     /**

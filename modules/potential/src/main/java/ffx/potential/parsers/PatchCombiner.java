@@ -58,7 +58,7 @@ import ffx.potential.MolecularAssembly;
 /**
  * Patch Combiner merges multiple patch files.
  *
- * @author Rae Corrigan
+ * @author Rae Ann Corrigan
  */
 public class PatchCombiner {
 

@@ -297,8 +297,8 @@ public class MultiTerminus extends Residue {
                 N.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.N.chrgType)));
                 H1.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.H1.chrgType)));
                 H2.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.H2.chrgType)));
-//                intxyz(H1, N, 1.02, CA, 109.5, C, 180.0, 0);
-//                intxyz(H2, N, 1.02, CA, 109.5, C, 60.0, 0);
+                intxyz(H1, N, 1.02, CA, 109.5, C, 180.0, 0);
+                intxyz(H2, N, 1.02, CA, 109.5, C, 60.0, 0);
                 intxyz(H3, N, 1.02, CA, 109.5, C, -60.0, 0);
                 maxwellMe(H3, temperature);
                 this.getAtomNode().add(H3);

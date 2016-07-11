@@ -211,13 +211,17 @@ public class Protonate implements MonteCarloListener {
             this.debugLogLevel = Integer.parseInt(debugLogLevel);
         }
         String overrideFlag = System.getProperty("cphmd-override");
-        if (overrideFlag != null && overrideFlag.equalsIgnoreCase("accept")) {
-            logger.info(" OVERRIDE: Accepting all MC moves.");
-            mcTitrationOverride = MCOverride.ACCEPT;
-        }
-        if (overrideFlag != null && overrideFlag.equalsIgnoreCase("reject")) {
-            logger.info(" OVERRIDE: Rejecting all MC moves.");
-            mcTitrationOverride = MCOverride.REJECT;
+        if (overrideFlag != null) {
+            if (overrideFlag.equalsIgnoreCase("accept")) {
+                logger.info(" OVERRIDE: Accepting all MC moves.");
+                mcTitrationOverride = MCOverride.ACCEPT;
+            } else if (overrideFlag.equalsIgnoreCase("reject")) {
+                logger.info(" OVERRIDE: Rejecting all MC moves.");
+                mcTitrationOverride = MCOverride.REJECT;
+            } else if (overrideFlag.equalsIgnoreCase("once")) {
+                logger.info(" OVERRIDE: Accept first move only.");
+                mcTitrationOverride = MCOverride.ONCE;
+            }
         }
         String beforeAfter = System.getProperty("cphmd-snapshots");
         if (beforeAfter != null) {
@@ -535,6 +539,20 @@ public class Protonate implements MonteCarloListener {
         return avail;
     }
     
+    /**
+     * Provides titration info as a utility.
+     */
+    public static List<Titration> titrationLookup(Residue res) {
+        AminoAcid3 source = AminoAcid3.valueOf(res.getName());
+        List<Titration> avail = new ArrayList<>();
+        for (Titration titr : Titration.values()) {
+            if (titr.source.equals(source)) {   // relies on the weird dual-direction enum
+                avail.add(titr);
+            }
+        }
+        return avail;
+    }
+    
     private void meltdown() {
         writeSnapshot(".meltdown-");
         forceFieldEnergy.energy(false, true);
@@ -818,11 +836,13 @@ public class Protonate implements MonteCarloListener {
         TitrationType type = null;
         
         if (target.end == MultiTerminus.END.NTERM) {
-            pKaref = 10.0;
-            dG_ref = 0.0;
+            pKaref = 8.23;
+            dG_ref = 85.4929;
+            type = target.isCharged ? TitrationType.DEP : TitrationType.PROT;
         } else if (target.end == MultiTerminus.END.CTERM) {
-            pKaref = 3.0;
-            dG_ref = 0.0;
+            pKaref = 3.55;
+            dG_ref = -61.3825;
+            type = target.isCharged ? TitrationType.PROT : TitrationType.DEP;
         }
         boolean beganCharged = target.isCharged;
         target.titrateTerminus_v1(thermostat.getCurrentTemperature());
@@ -845,17 +865,17 @@ public class Protonate implements MonteCarloListener {
          * dG_ref = electrostatic component of the transition energy for the
          * reference compound
          */
-        double prefix = Math.log(10) * kT * (pH - pKaref);
+        double pHterm = Math.log(10) * kT * (pH - pKaref);
         if (type == TitrationType.DEP) {
-            prefix = -prefix;
+            pHterm = -pHterm;
         }
         // Change this to use a single value for reference and then switch based on reaction.
         // Either positive ref == deprotonation or == standard -> nonstandard transition.
         if (type == TitrationType.PROT) {
             dG_ref = -dG_ref;
         }
-        double postfix = dG_elec - dG_ref;
-        double dG_MC = prefix + postfix;
+        double ddGterm = dG_elec - dG_ref;
+        double dG_MC = pHterm + ddGterm;
 
 //        StringBuilder sb = new StringBuilder();
 //        sb.append(String.format(" Assessing possible MC protonation step:\n"));
@@ -873,7 +893,7 @@ public class Protonate implements MonteCarloListener {
             sb.append(String.format("     %sn --> %sc\n", startString, target.toString()));
         }
         sb.append(String.format("     dG_ref:  %7.2f                pKaref:  %7.2f\n", dG_ref, pKaref));
-        sb.append(String.format("     pH_term: %9.4f              elec_term: %10.4f\n", prefix, postfix));
+        sb.append(String.format("     pH_term: %9.4f              elec_term: %10.4f\n", pHterm, ddGterm));
         sb.append(String.format("     dG_elec: %9.4f              dG_MC:     %10.4f\n", dG_elec, dG_MC));
         sb.append(String.format("     -----\n"));
 
@@ -887,11 +907,16 @@ public class Protonate implements MonteCarloListener {
         double criterion = exp(-dG_MC / kT);
         double metropolis = random();
         sb.append(String.format("     crit:    %9.4f              rng:       %10.4f\n", criterion, metropolis));
-        if ((metropolis < criterion && mcTitrationOverride != MCOverride.REJECT) || mcTitrationOverride == MCOverride.ACCEPT) {
+        if ((metropolis < criterion && mcTitrationOverride != MCOverride.REJECT)
+                || mcTitrationOverride == MCOverride.ACCEPT
+                || mcTitrationOverride == MCOverride.ONCE) {
             numMovesAccepted++;
             long took = System.nanoTime() - startTime;
             sb.append(String.format("     Accepted!                                                %1.3f", took * NS_TO_SEC));
             logger.info(sb.toString());
+            if (mcTitrationOverride == MCOverride.ONCE) {
+                mcTitrationOverride = MCOverride.REJECT;
+            }
             return true;
         }
 
@@ -1565,7 +1590,10 @@ public class Protonate implements MonteCarloListener {
         HtoU(6.00, +42.923, TitrationType.DEP, AminoAcid3.HIS, AminoAcid3.HID),
         UtoH(6.00, -42.923, TitrationType.PROT, AminoAcid3.HID, AminoAcid3.HIS),
         HtoZ(6.00, +00.000, TitrationType.DEP, AminoAcid3.HIS, AminoAcid3.HIE),
-        ZtoH(6.00, +00.000, TitrationType.PROT, AminoAcid3.HIE, AminoAcid3.HIS);
+        ZtoH(6.00, +00.000, TitrationType.PROT, AminoAcid3.HIE, AminoAcid3.HIS),
+        
+        TerminusNH3toNH2 (8.23, +00.00, TitrationType.DEP, AminoAcid3.UNK, AminoAcid3.UNK),
+        TerminusCOOtoCOOH(3.55, +00.00, TitrationType.PROT, AminoAcid3.UNK, AminoAcid3.UNK);
 
         public final double pKa, refEnergy;
         public final TitrationType type;
@@ -1606,7 +1634,7 @@ public class Protonate implements MonteCarloListener {
 
     private enum MCOverride {
 
-        ACCEPT, REJECT, NONE;
+        ACCEPT, REJECT, ONCE, NONE;
     }
 
     private enum StepType {
