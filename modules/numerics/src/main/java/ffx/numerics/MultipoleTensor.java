@@ -3012,11 +3012,10 @@ public class MultipoleTensor {
 
         order5QI(z);
 
-        double rotMat[][] = new double[3][3];
-        //rotateMultipoles(r, Qi, Qk, rotMat);
+        setQIRotationMatrix(r);
+        multipoleItoQI(Qi);
+        multipoleKtoQI(Qk);
 
-        // setMultipoleI(Qi);
-        // setMultipoleK(Qk);
         EiQI5();
         double energy = dotK();
 
@@ -3035,7 +3034,7 @@ public class MultipoleTensor {
         EzQI5();
         qiFi[2] = -dotK();
 
-        rotateVectors(rotMat, qiFi, qiTi, qiTk, Fi, Ti, Tk);
+        vectorsToGlobal(qiFi, qiTi, qiTk, Fi, Ti, Tk);
 
         Fk[0] = -Fi[0];
         Fk[1] = -Fi[1];
@@ -3322,95 +3321,7 @@ public class MultipoleTensor {
         R122 = T[t122];
     }
 
-    private void rotateVectors(double rotMat[][], double v1[], double v2[],
-            double v3[], double rv1[], double rv2[], double rv3[]) {
-        for (int i = 0; i < 3; i++) {
-            double[] rotmati = rotMat[i];
-            rv1[i] = 0.0;
-            rv2[i] = 0.0;
-            rv3[i] = 0.0;
-            for (int j = 0; j < 3; j++) {
-                rv1[i] += rotmati[j] * v1[j];
-                rv2[i] += rotmati[j] * v2[j];
-                rv3[i] += rotmati[j] * v3[j];
-            }
-        }
-    }
-
-    private void rotateMultipoles(double r[], double Qi[], double Qk[], double rotmat[][]) {
-
-        getRotationMatrix(r, rotmat);
-
-        // Transpose
-        double xy = rotmat[0][1];
-        double xz = rotmat[0][2];
-        double yz = rotmat[1][2];
-        rotmat[0][1] = rotmat[1][0];
-        rotmat[0][2] = rotmat[2][0];
-        rotmat[1][2] = rotmat[2][1];
-        rotmat[1][0] = xy;
-        rotmat[2][0] = xz;
-        rotmat[2][1] = yz;
-
-        double dipole[] = {Qi[1], Qi[2], Qi[3]};
-        double quadrupole[][]
-                = {{Qi[4], Qi[7], Qi[8]},
-                {Qi[7], Qi[5], Qi[9]},
-                {Qi[8], Qi[9], Qi[6]}};
-        double rotatedDipole[] = new double[3];
-        double rotatedQuadrupole[][] = new double[3][3];
-        rotateMultipole(rotmat, dipole, quadrupole, rotatedDipole, rotatedQuadrupole);
-        qi = Qi[0];
-        dxi = rotatedDipole[0];
-        dyi = rotatedDipole[1];
-        dzi = rotatedDipole[2];
-        qxxi = rotatedQuadrupole[0][0];
-        qyyi = rotatedQuadrupole[1][1];
-        qzzi = rotatedQuadrupole[2][2];
-        qxyi = rotatedQuadrupole[0][1];
-        qxzi = rotatedQuadrupole[0][2];
-        qyzi = rotatedQuadrupole[1][2];
-
-        dipole[0] = Qk[1];
-        dipole[1] = Qk[2];
-        dipole[2] = Qk[3];
-        quadrupole[0][0] = Qk[4];
-        quadrupole[1][1] = Qk[5];
-        quadrupole[2][2] = Qk[6];
-        quadrupole[0][1] = Qk[7];
-        quadrupole[1][0] = Qk[7];
-        quadrupole[0][2] = Qk[8];
-        quadrupole[2][0] = Qk[8];
-        quadrupole[1][2] = Qk[9];
-        quadrupole[2][1] = Qk[9];
-        rotatedDipole = new double[3];
-        rotatedQuadrupole = new double[3][3];
-        rotateMultipole(rotmat, dipole, quadrupole, rotatedDipole, rotatedQuadrupole);
-        qk = Qk[0];
-        dxk = rotatedDipole[0];
-        dyk = rotatedDipole[1];
-        dzk = rotatedDipole[2];
-        qxxk = rotatedQuadrupole[0][0];
-        qyyk = rotatedQuadrupole[1][1];
-        qzzk = rotatedQuadrupole[2][2];
-        qxyk = rotatedQuadrupole[0][1];
-        qxzk = rotatedQuadrupole[0][2];
-        qyzk = rotatedQuadrupole[1][2];
-
-        // Transpose
-        xy = rotmat[0][1];
-        xz = rotmat[0][2];
-        yz = rotmat[1][2];
-        rotmat[0][1] = rotmat[1][0];
-        rotmat[0][2] = rotmat[2][0];
-        rotmat[1][2] = rotmat[2][1];
-        rotmat[1][0] = xy;
-        rotmat[2][0] = xz;
-        rotmat[2][1] = yz;
-
-    }
-
-    private void getRotationMatrix(double r[], double rotmat[][]) {
+    private void setQIRotationMatrix(double r[]) {
         double zAxis[] = {r[0], r[1], r[2]};
         double xAxis[] = new double[3];
         xAxis[0] = r[0] + 1.0;
@@ -3418,46 +3329,161 @@ public class MultipoleTensor {
         xAxis[2] = r[2];
 
         norm(zAxis, zAxis);
-        rotmat[0][2] = zAxis[0];
-        rotmat[1][2] = zAxis[1];
-        rotmat[2][2] = zAxis[2];
+        ir02 = zAxis[0];
+        ir12 = zAxis[1];
+        ir22 = zAxis[2];
 
         double dot = dot(xAxis, zAxis);
         scalar(zAxis, dot, zAxis);
         diff(xAxis, zAxis, xAxis);
         norm(xAxis, xAxis);
 
-        // Set the X elements.
-        rotmat[0][0] = xAxis[0];
-        rotmat[1][0] = xAxis[1];
-        rotmat[2][0] = xAxis[2];
-        // Set the Y elements.
-        rotmat[0][1] = rotmat[2][0] * rotmat[1][2] - rotmat[1][0] * rotmat[2][2];
-        rotmat[1][1] = rotmat[0][0] * rotmat[2][2] - rotmat[2][0] * rotmat[0][2];
-        rotmat[2][1] = rotmat[1][0] * rotmat[0][2] - rotmat[0][0] * rotmat[1][2];
+        ir00 = xAxis[0];
+        ir10 = xAxis[1];
+        ir20 = xAxis[2];
+        ir01 = ir20 * ir12 - ir10 * ir22;
+        ir11 = ir00 * ir22 - ir20 * ir02;
+        ir21 = ir10 * ir02 - ir00 * ir12;
+
+        // Set the forward elements as the transpose of the inverse matrix.
+        r00 = ir00;
+        r11 = ir11;
+        r22 = ir22;
+        r01 = ir10;
+        r02 = ir20;
+        r10 = ir01;
+        r12 = ir21;
+        r20 = ir02;
+        r21 = ir12;
+
     }
 
-    private void rotateMultipole(double rotmat[][], double dipole[],
-            double quadrupole[][], double rotatedDipole[], double rotatedQuadrupole[][]) {
-        for (int i = 0; i < 3; i++) {
-            double[] rotmati = rotmat[i];
-            double[] quadrupolei = rotatedQuadrupole[i];
-            for (int j = 0; j < 3; j++) {
-                double[] rotmatj = rotmat[j];
-                rotatedDipole[i] += rotmati[j] * dipole[j];
-                if (j < i) {
-                    quadrupolei[j] = rotatedQuadrupole[j][i];
-                } else {
-                    for (int k = 0; k < 3; k++) {
-                        double[] localQuadrupolek = quadrupole[k];
-                        quadrupolei[j] += rotmati[k]
-                                * (rotmatj[0] * localQuadrupolek[0]
-                                + rotmatj[1] * localQuadrupolek[1]
-                                + rotmatj[2] * localQuadrupolek[2]);
-                    }
-                }
-            }
-        }
+    private void multipoleItoQI(double Qi[]) {
+
+        qi = Qi[0];
+
+        double dx = Qi[1];
+        double dy = Qi[2];
+        double dz = Qi[3];
+
+        dxi = r00 * dx + r01 * dy + r02 * dz;
+        dyi = r10 * dx + r11 * dy + r12 * dz;
+        dzi = r20 * dx + r21 * dy + r22 * dz;
+
+        double qxx = Qi[4];
+        double qyy = Qi[5];
+        double qzz = Qi[6];
+        double qxy = Qi[7];
+        double qxz = Qi[8];
+        double qyz = Qi[9];
+
+        // i=0, j=0
+        // qij   r0k *  r00 * qkx + r01 * qky + r02 * qkz
+        qxxi = r00 * (r00 * qxx + r01 * qxy + r02 * qxz)
+                + r01 * (r00 * qxy + r01 * qyy + r02 * qyz)
+                + r02 * (r00 * qxz + r01 * qyz + r02 * qzz);
+
+        // i=0, j=1
+        // qij   rik *  rj0 * qkx + rj1 * qky + rj2 * qkz
+        qxyi = r00 * (r10 * qxx + r11 * qxy + r12 * qxz)
+                + r01 * (r10 * qxy + r11 * qyy + r12 * qyz)
+                + r02 * (r10 * qxz + r11 * qyz + r12 * qzz);
+
+        // i=0, j=2
+        // qij   rik *  rj0 * qkx + rj1 * qky + rj2 * qkz
+        qxzi = r00 * (r20 * qxx + r21 * qxy + r22 * qxz)
+                + r01 * (r20 * qxy + r21 * qyy + r22 * qyz)
+                + r02 * (r20 * qxz + r21 * qyz + r22 * qzz);
+
+        // i=1, j=1
+        // qij   rik *  rj0 * qkx + rj1 * qky + rj2 * qkz
+        qyyi = r10 * (r10 * qxx + r11 * qxy + r12 * qxz)
+                + r11 * (r10 * qxy + r11 * qyy + r12 * qyz)
+                + r12 * (r10 * qxz + r11 * qyz + r12 * qzz);
+
+        // i=1, j=2
+        // qij   r1k *  r20 * qkx + r21 * qky + r22 * qkz
+        qyzi = r10 * (r20 * qxx + r21 * qxy + r22 * qxz)
+                + r11 * (r20 * qxy + r21 * qyy + r22 * qyz)
+                + r12 * (r20 * qxz + r21 * qyz + r22 * qzz);
+
+        // i=2, j=2
+        // qij   r2k *  r20 * qkx + r21 * qky + r22 * qkz
+        qzzi = r20 * (r20 * qxx + r21 * qxy + r22 * qxz)
+                + r21 * (r20 * qxy + r21 * qyy + r22 * qyz)
+                + r22 * (r20 * qxz + r21 * qyz + r22 * qzz);
+    }
+
+    private void multipoleKtoQI(double Qk[]) {
+
+        qk = Qk[0];
+
+        double dx = Qk[1];
+        double dy = Qk[2];
+        double dz = Qk[3];
+
+        dxk = r00 * dx + r01 * dy + r02 * dz;
+        dyk = r10 * dx + r11 * dy + r12 * dz;
+        dzk = r20 * dx + r21 * dy + r22 * dz;
+
+        double qxx = Qk[4];
+        double qyy = Qk[5];
+        double qzz = Qk[6];
+        double qxy = Qk[7];
+        double qxz = Qk[8];
+        double qyz = Qk[9];
+
+        // i=0, j=0
+        // qij   r0k *  r00 * qkx + r01 * qky + r02 * qkz
+        qxxk = r00 * (r00 * qxx + r01 * qxy + r02 * qxz)
+                + r01 * (r00 * qxy + r01 * qyy + r02 * qyz)
+                + r02 * (r00 * qxz + r01 * qyz + r02 * qzz);
+
+        // i=0, j=1
+        // qij   rik *  rj0 * qkx + rj1 * qky + rj2 * qkz
+        qxyk = r00 * (r10 * qxx + r11 * qxy + r12 * qxz)
+                + r01 * (r10 * qxy + r11 * qyy + r12 * qyz)
+                + r02 * (r10 * qxz + r11 * qyz + r12 * qzz);
+
+        // i=0, j=2
+        // qij   rik *  rj0 * qkx + rj1 * qky + rj2 * qkz
+        qxzk = r00 * (r20 * qxx + r21 * qxy + r22 * qxz)
+                + r01 * (r20 * qxy + r21 * qyy + r22 * qyz)
+                + r02 * (r20 * qxz + r21 * qyz + r22 * qzz);
+
+        // i=1, j=1
+        // qij   rik *  rj0 * qkx + rj1 * qky + rj2 * qkz
+        qyyk = r10 * (r10 * qxx + r11 * qxy + r12 * qxz)
+                + r11 * (r10 * qxy + r11 * qyy + r12 * qyz)
+                + r12 * (r10 * qxz + r11 * qyz + r12 * qzz);
+
+        // i=1, j=2
+        // qij   r1k *  r20 * qkx + r21 * qky + r22 * qkz
+        qyzk = r10 * (r20 * qxx + r21 * qxy + r22 * qxz)
+                + r11 * (r20 * qxy + r21 * qyy + r22 * qyz)
+                + r12 * (r20 * qxz + r21 * qyz + r22 * qzz);
+
+        // i=2, j=2
+        // qij   r2k *  r20 * qkx + r21 * qky + r22 * qkz
+        qzzk = r20 * (r20 * qxx + r21 * qxy + r22 * qxz)
+                + r21 * (r20 * qxy + r21 * qyy + r22 * qyz)
+                + r22 * (r20 * qxz + r21 * qyz + r22 * qzz);
+    }
+
+    private void vectorsToGlobal(double v1[], double v2[],
+            double v3[], double rv1[], double rv2[], double rv3[]) {
+        // Get the X component of each rotated vector.
+        rv1[0] = ir00 * v1[0] + ir01 * v1[1] + ir02 * v1[2];
+        rv2[0] = ir00 * v2[0] + ir01 * v2[1] + ir02 * v2[2];
+        rv3[0] = ir00 * v3[0] + ir01 * v3[1] + ir02 * v3[2];
+        // Get the Y component of each rotated vector.
+        rv1[1] = ir10 * v1[0] + ir11 * v1[1] + ir12 * v1[2];
+        rv2[1] = ir10 * v2[0] + ir11 * v2[1] + ir12 * v2[2];
+        rv3[1] = ir10 * v3[0] + ir11 * v3[1] + ir12 * v3[2];
+        // Get the Z component of each rotated vector.
+        rv1[2] = ir20 * v1[0] + ir21 * v1[1] + ir22 * v1[2];
+        rv2[2] = ir20 * v2[0] + ir21 * v2[1] + ir22 * v2[2];
+        rv3[2] = ir20 * v3[0] + ir21 * v3[1] + ir22 * v3[2];
     }
 
     private double qi;
@@ -3482,16 +3508,15 @@ public class MultipoleTensor {
     private double qxzk;
     private double qyzk;
 
-    private double E000; // Potential
-    private double E100; // X Component of the Field
-    private double E010; // Y Component of the Field
-    private double E001; // Z Component of the Field
-    private double E200; // XX Component of the Field Gradient
-    private double E020; // YY Component of the Field Gradient
-    private double E002; // ZZ Component of the Field Gradient
-    private double E110; // XY Component of the Field Gradient
-    private double E101; // XZ Component of the Field Gradient
-    private double E011; // YZ Component of the Field Gradient
+    // Rotation Matrix from Global to QI.
+    private double r00, r01, r02;
+    private double r10, r11, r12;
+    private double r20, r21, r22;
+
+    // Rotation Matrix from QI to Global.
+    private double ir00, ir01, ir02;
+    private double ir10, ir11, ir12;
+    private double ir20, ir21, ir22;
 
     // l + m + n = 0 (1)
     private double R000;
@@ -3555,6 +3580,17 @@ public class MultipoleTensor {
     private double R221;
     private double R212;
     private double R122;
+
+    private double E000; // Potential
+    private double E100; // X Component of the Field
+    private double E010; // Y Component of the Field
+    private double E001; // Z Component of the Field
+    private double E200; // XX Component of the Field Gradient
+    private double E020; // YY Component of the Field Gradient
+    private double E002; // ZZ Component of the Field Gradient
+    private double E110; // XY Component of the Field Gradient
+    private double E101; // XZ Component of the Field Gradient
+    private double E011; // YZ Component of the Field Gradient
 
     // l + m + n = 0 (1)
     public final int t000;
