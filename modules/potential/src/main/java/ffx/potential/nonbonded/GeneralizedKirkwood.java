@@ -98,8 +98,6 @@ import static ffx.potential.parameters.MultipoleType.t100;
 import static ffx.potential.parameters.MultipoleType.t101;
 import static ffx.potential.parameters.MultipoleType.t110;
 import static ffx.potential.parameters.MultipoleType.t200;
-import java.util.function.Consumer;
-import java.util.function.UnaryOperator;
 
 /**
  * This Generalized Kirkwood class implements GK for the AMOEBA polarizable
@@ -262,13 +260,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
     private final HashMap<Integer, Double> radiiByNumberMap = new HashMap<>();
     private final ForceField forceField;
     
-    private static final Consumer<String> WARN_METHOD;
+    private static final Level GK_WARN_LEVEL;
     static {
         String suppressGKwarnings = System.getProperty("gk-suppressWarnings");
         if (suppressGKwarnings != null && Boolean.parseBoolean(suppressGKwarnings)) {
-            WARN_METHOD = logger::fine;
+            GK_WARN_LEVEL = Level.FINE;
         } else {
-            WARN_METHOD = logger::warning;
+            GK_WARN_LEVEL = Level.WARNING;
         }
     }
 
@@ -5111,7 +5109,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     boolean moved = false;
                     surface(xi, yi, zi, rri, rri2, rrisq, wght, moved, ir);
                     if (area[ir] < 0.0) {
-                        WARN_METHOD.accept(String.format(" Negative surface area set to 0 for atom %d.", ir));
+                        logger.log(GK_WARN_LEVEL, String.format(" Negative surface area set to 0 for atom %d.", ir));
                         //logger.warning(String.format(" Negative surface area set to 0 for atom %d.", ir));
                         area[ir] = 0.0;
                         /**
@@ -5555,7 +5553,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                  logger.warning(String.format(" Connectivity error at atom %d.", ir));
                  } else {
                  */
-                WARN_METHOD.accept(String.format(" Connectivity error at atom %d", ir));
+                logger.log(GK_WARN_LEVEL, String.format(" Connectivity error at atom %d", ir));
                 //logger.warning(String.format(" Connectivity error at atom %d.", ir));
                 area[ir] = 0.0;
                 /*
