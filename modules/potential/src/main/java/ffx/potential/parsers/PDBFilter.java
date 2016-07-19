@@ -99,8 +99,10 @@ import static ffx.potential.bonded.ResidueEnumerations.getAminoAcid;
 import static ffx.potential.bonded.ResidueEnumerations.nucleicAcidList;
 import static ffx.potential.parsers.PDBFilter.PDBFileStandard.VERSION3_2;
 import static ffx.potential.parsers.PDBFilter.PDBFileStandard.VERSION3_3;
+import ffx.utilities.StringUtils;
 import static ffx.utilities.StringUtils.padLeft;
 import static ffx.utilities.StringUtils.padRight;
+import static java.lang.String.format;
 
 /**
  * The PDBFilter class parses data from a Protein DataBank (*.PDB) file. The
@@ -2842,8 +2844,53 @@ public final class PDBFilter extends SystemFilter {
         } else {
             sb.setCharAt(16, ' ');
         }
-        sb.replace(30, 66, String.format("%8.3f%8.3f%8.3f%6.2f%6.2f",
-                xyz[0], xyz[1], xyz[2], atom.getOccupancy(), atom.getTempFactor()));
+        
+        /*sb.replace(30, 66, String.format("%8.3f%8.3f%8.3f%6.2f%6.2f",
+                xyz[0], xyz[1], xyz[2], atom.getOccupancy(), atom.getTempFactor()));*/
+        
+        /**
+         * On the following code:
+         * #1: StringBuilder.replace will allow for longer strings, expanding the
+         * StringBuilder's length if necessary.
+         * #2: sb was never re-initialized, so if there was overflow, sb would
+         * continue to be > 80 characters long, resulting in broken PDB files
+         * #3: It may be wiser to have XYZ coordinates result in shutdown, not
+         * truncation of coordinates.
+         * #4: Excessive B-factors aren't much of an issue; if the B-factor is
+         * past 999.99, that's the difference between "density extends to Venus"
+         * and "density extends to Pluto".
+         */
+        
+        StringBuilder decimals = new StringBuilder();
+        for (int i = 0; i < 3; i++) {
+            try {
+                decimals.append(StringUtils.fwFpDec(xyz[i], 8, 3));
+            } catch (IllegalArgumentException ex) {
+                String newValue = StringUtils.fwFpTrunc(xyz[i], 8, 3);
+                logger.info(String.format(" XYZ %d coordinate %8.3f for atom %s "
+                        + "overflowed bounds of 8.3f string specified by PDB "
+                        + "format; truncating value to %s", i, xyz[i], atom.toString(), 
+                        newValue));
+                decimals.append(newValue);
+            }
+        }
+        try {
+            decimals.append(StringUtils.fwFpDec(atom.getOccupancy(), 6, 2));
+        } catch (IllegalArgumentException ex) {
+            logger.severe(String.format(" Occupancy %f for atom %s is impossible; "
+                    + "value must be between 0 and 1", atom.getOccupancy(), atom.toString()));
+        }
+        try {
+            decimals.append(StringUtils.fwFpDec(atom.getTempFactor(), 6, 2));
+        } catch (IllegalArgumentException ex) {
+            String newValue = StringUtils.fwFpTrunc(atom.getTempFactor(), 6, 2);
+            logger.info(String.format(" Atom temp factor %6.2f for atom %s overflowed "
+                    + "bounds of 6.2f string specified by PDB format; truncating "
+                    + "value to %s", atom.getTempFactor(), atom.toString(), newValue));
+            decimals.append(newValue);
+        }
+        sb.replace(30, 66, decimals.toString());
+        
         name = Atom.ElementSymbol.values()[atom.getAtomicNumber() - 1].toString();
         name = name.toUpperCase();
         if (atom.isDeuterium()) {
