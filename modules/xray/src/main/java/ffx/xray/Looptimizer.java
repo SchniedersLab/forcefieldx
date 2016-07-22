@@ -67,15 +67,14 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 import edu.rit.mp.DoubleBuf;
 import edu.rit.pj.Comm;
 import edu.rit.pj.cluster.JobBackend;
+
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Minimize;
 import ffx.algorithms.Thermostat;
-
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.parsers.PDBFilter;
-
 
 /**
  * An implementation of the Orthogonal Space Random Walk algorithm.
@@ -303,10 +302,10 @@ public class Looptimizer implements Potential {
 
     /*
     * Holds x-ray data for RefinementMinimize
-    */ 
+     */
     private DiffractionData diffractionData;
     private boolean useXRayMinimizer = false;
-    
+
     /**
      * Interval between how often the free energy is updated from the count
      * matrix.
@@ -602,14 +601,14 @@ public class Looptimizer implements Potential {
                 potential.setEnergyTermState(Potential.STATE.BOTH);
 
                 // Optimize the system.
-                if(useXRayMinimizer){
-                    RefinementMinimize refinementMinimize = new RefinementMinimize(diffractionData); 
+                if (useXRayMinimizer) {
+                    RefinementMinimize refinementMinimize = new RefinementMinimize(diffractionData);
                     refinementMinimize.minimize(osrwOptimizationEps);
                 } else {
                     Minimize minimize = new Minimize(null, potential, null);
                     minimize.minimize(osrwOptimizationEps);
                 }
-                
+
                 // Remove the scaling of coordinates & gradient set by the minimizer.
                 potential.setScaling(null);
 
@@ -617,18 +616,18 @@ public class Looptimizer implements Potential {
                 lambdaInterface.setLambda(lambda);
 
                 double minValue;
-                if(useXRayMinimizer){
+                if (useXRayMinimizer) {
                     // Collect the minimum R value.
-                    minValue = diffractionData.getRCrystalStat();  
+                    minValue = diffractionData.getRCrystalStat();
                 } else {
                     // Collect the minimum energy.
                     minValue = potential.getTotalEnergy();
                 }
-                
+
                 // If a new minimum has been found, save its coordinates.
                 if (minValue < osrwOptimum) {
                     osrwOptimum = minValue;
-                    if(useXRayMinimizer){
+                    if (useXRayMinimizer) {
                         logger.info(String.format(" New minimum R found: %16.8f (Step %d).", osrwOptimum, energyCount));
                     } else {
                         logger.info(String.format(" New minimum energy found: %16.8f (Step %d).", osrwOptimum, energyCount));
@@ -1459,11 +1458,11 @@ public class Looptimizer implements Potential {
         return state;
     }
 
-    public void setData(DiffractionData diffractionData){
-        this.diffractionData = diffractionData; 
+    public void setData(DiffractionData diffractionData) {
+        this.diffractionData = diffractionData;
         this.useXRayMinimizer = true;
     }
-    
+
     private class OSRWHistogramWriter extends PrintWriter {
 
         public OSRWHistogramWriter(Writer writer) {

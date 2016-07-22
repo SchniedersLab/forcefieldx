@@ -468,7 +468,7 @@ public class RealSpaceData implements DataContainer {
     public double[] getRealSpaceGradient(double gradient[]) {
         int nAtoms = refinementModel.totalAtomArray.length;
         int nActiveAtoms = 0;
-        for (int i=0; i<nAtoms; i++) {
+        for (int i = 0; i < nAtoms; i++) {
             if (refinementModel.totalAtomArray[i].isActive()) {
                 nActiveAtoms++;
             }
@@ -486,7 +486,7 @@ public class RealSpaceData implements DataContainer {
     public double[] getdEdXdL(double gradient[]) {
         int nAtoms = refinementModel.totalAtomArray.length;
         int nActiveAtoms = 0;
-        for (int i=0; i<nAtoms; i++) {
+        for (int i = 0; i < nAtoms; i++) {
             if (refinementModel.totalAtomArray[i].isActive()) {
                 nActiveAtoms++;
             }
@@ -524,7 +524,16 @@ public class RealSpaceData implements DataContainer {
      */
     @Override
     public Atom[] getActiveAtomArray() {
-        return getAtomArray();
+        ArrayList<Atom> atoms = new ArrayList();
+        Atom[] usedAtoms = getAtomArray();
+        int nUse = usedAtoms.length;
+        for (int i = 0; i < nUse; i++) {
+            if (usedAtoms[i].isActive()) {
+                atoms.add(usedAtoms[i]);
+            }
+        }
+        Atom[] activeAtoms = atoms.toArray(new Atom[atoms.size()]);
+        return activeAtoms;
     }
 
     /**

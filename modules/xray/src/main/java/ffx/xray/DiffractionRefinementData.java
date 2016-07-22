@@ -275,14 +275,12 @@ public class DiffractionRefinementData {
             }
         }
 
-        if (logger.isLoggable(Level.WARNING)) {
+        if (logger.isLoggable(Level.INFO)) {
             StringBuilder sb = new StringBuilder();
-            sb.append("\ninternally flagging Rfree reflections\n");
-            sb.append("  flagging 5% of observed data reflections\n");
-            sb.append(String.format("  selected %d of %d reflections\n",
-                    nfree, n));
-
-            logger.warning(sb.toString());
+            sb.append("\n Internally flagging Rfree reflections:\n");
+            sb.append("  Flagging 5% of observed data reflections\n");
+            sb.append(String.format("  Selected %d of %d reflections\n", nfree, n));
+            logger.info(sb.toString());
         }
     }
 
@@ -331,11 +329,11 @@ public class DiffractionRefinementData {
             }
         }
 
-        if (logger.isLoggable(Level.WARNING)) {
+        if (logger.isLoggable(Level.INFO)) {
             StringBuilder sb = new StringBuilder();
-            sb.append("\n Internally converting intensities to amplitudes:\n");
-            sb.append("  This does NOT use French & Wilson scaling.\n");
-            logger.warning(sb.toString());
+            sb.append("\n Internally converting intensities to amplitudes;\n");
+            sb.append(" note this does not use French & Wilson scaling.\n");
+            logger.info(sb.toString());
         }
     }
 

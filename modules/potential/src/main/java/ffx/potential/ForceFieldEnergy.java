@@ -624,7 +624,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                         vanderWaals.getNeighborList(), ELEC_FORM.PAM, parallelTeam);
             }
             double charge = molecularAssembly.getCharge(checkAllNodeCharges);
-            logger.info(String.format(" Overall system charge:            %10.6e", charge));
+            logger.info(String.format("\n Overall system charge:            %10.3f", charge));
         } else {
             particleMeshEwald = null;
         }
@@ -1097,7 +1097,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 atoms[i].setLambdaXYZGradient(0.0, 0.0, 0.0);
             }
         }
-        
+
         if (bondTerm) {
             bondTime = System.nanoTime();
             for (int i = 0; i < nBonds; i++) {
@@ -1671,7 +1671,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             logger.warning(message);
         }
     }
-    
+
     /**
      * Delivers the ESV list down into terms that handle lamedh themselves.
      */
@@ -1702,15 +1702,15 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             // TODO comRestraint.setLamedh(esvList);
         }
     }
-    
+
     public void setPrintOverride(boolean set) {
         this.printOverride = set;
     }
-    
+
     /**
      * Get amount by which this term should be scaled d/t any ESVs.
      * @param rols
-     * @return 
+     * @return
      */
     private double lamedhScaling(ROLS rols) {
         double totalScale = 1.0;
@@ -1726,7 +1726,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
         return totalScale;
     }
-    
+
     /**
      * {@inheritDoc}
      */
@@ -1787,7 +1787,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
         return e;
     }
-    
+
     /**
      * {@inheritDoc}
      */
@@ -1874,7 +1874,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             }
         }
     }
-    
+
     public void addExtendedVariable(ExtendedVariable esv) {
         if (esvList == null) {
             esvList = new ArrayList<>();
@@ -1884,7 +1884,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         logger.info(String.format(" ForceFieldEnergy acquired ESV: %s\n", esv));
         lamedhLogger = new StringBuilder(String.format(" Lamedh Scaling: "));
     }
-    
+
     public void checkAtoms() {
         double vel[] = new double[3];
         double accel[] = new double[3];
@@ -2019,7 +2019,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
         return dEdLambda;
     }
-    
+
     /**
      * @return [numESVs] gradient w.r.t. each lamedh
      */
@@ -2069,7 +2069,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 //        }
         return eleSum1DArrays(terms, numESVs);
     }
-    
+
     private static double[] parallelEleSum1DArrays(List<double[]> terms) {
         if (terms == null || terms.isEmpty()) {
             throw new NullPointerException("Summing an empty or null terms list.");
@@ -2084,7 +2084,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                         Collectors.summingDouble(term -> term[idx]))
                 ).toArray();
     }
-    
+
     /**
      * Element-wise sum over a list of 1D double arrays.
      */
@@ -2102,7 +2102,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
         return termSum;
     }
-    
+
     /**
      * Element-wise sum over a list of 2D double arrays.
      */
@@ -2174,7 +2174,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             }
         }
     }
-    
+
     /**
      * @return [numESVs][nAtoms]
      */
@@ -2260,7 +2260,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
         return d2EdLambda2;
     }
-    
+
     public double[] getd2EdLdh2() {
         List<double[]> terms = new ArrayList<>();
         if (!lambdaBondedTerms) {
@@ -2546,15 +2546,15 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     public double getSolvationEnergy() {
         return solvationEnergy;
     }
-    
+
     public double getCavitationEnergy() {
         return particleMeshEwald.getCavitationEnergy(false);
     }
-    
+
     public double getDispersionEnergy() {
         return particleMeshEwald.getDispersionEnergy(false);
     }
-    
+
     public int getSolvationInteractions() {
         return nGKInteractions;
     }
@@ -2712,5 +2712,5 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     public Bond[] getBonds() {
         return bonds;
     }
-    
+
 }

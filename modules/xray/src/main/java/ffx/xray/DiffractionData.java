@@ -654,11 +654,11 @@ public class DiffractionData implements DataContainer {
 
     /*
     * Return R value for OSRW x-ray minimization
-    */
-    public double getRCrystalStat(){
+     */
+    public double getRCrystalStat() {
         return crystalStats[0].getR();
     }
-    
+
     /**
      * print scale and R statistics for all datasets associated with the model
      */

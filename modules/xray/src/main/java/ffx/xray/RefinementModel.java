@@ -217,7 +217,7 @@ public class RefinementModel {
         }
 
         totalAtomArray = totalAtomList.toArray(new Atom[totalAtomList.size()]);
-        
+
         for (ArrayList<Residue> list : altResidues) {
             if (list.size() == 1) {
                 Residue r = list.get(0);
