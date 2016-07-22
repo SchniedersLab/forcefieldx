@@ -43,12 +43,93 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import org.apache.commons.math3.util.FastMath;
 
 /**
  * @author Michael Schnieders
  */
 public class StringUtils {
-
+    
+    /**
+     * Prints a fixed-width decimal, similar to String.format(%width.precf, val),
+     * but ensuring the resulting string is never longer than width. If the result
+     * would end in a period (such as 14.), will leave off decimal. Will throw
+     * an exception if the value cannot be formatted in the specified width.
+     * 
+     * @param val Value to print
+     * @param width Width of field
+     * @param prec Number of decimal places
+     * @return Formatted string
+     */
+    public static String fwDec(double val, int width, int prec) throws IllegalArgumentException {
+        if (width < 1 || prec < 0) {
+            throw new IllegalArgumentException(" Must have width >= 1 and precision >= 0");
+        }
+        int w1 = width - 1;
+        double maxVal = FastMath.pow(10.0, width);
+        double minVal = maxVal / -10.0;
+        
+        if (val >= maxVal) {
+            throw new IllegalArgumentException(String.format(" Value %f exceeded the maximum of %f enforced by width %d", val, maxVal, width));
+        } else if (val <= minVal) {
+            throw new IllegalArgumentException(String.format(" Value %f is less than the minumum of %f enforced by width %d", val, minVal, width));
+        }
+        
+        String str = String.format("%" + width + "." + prec + "f", val);
+        if (str.charAt(w1) == '.') {
+            return " " + str.substring(0, w1);
+        } else {
+            return str.substring(0, width);
+        }        
+    }
+    
+    /**
+     * Prints a fixed-width decimal using String.format conventions, throwing an
+     * error if the value cannot be formatted within that space.
+     * @param val
+     * @param width
+     * @param prec
+     * @return
+     * @throws IllegalArgumentException 
+     */
+    public static String fwFpDec(double val, int width, int prec) throws IllegalArgumentException {
+        String str = String.format("%" + width + "." + prec + "f", val);
+        if (str.length() > width) {
+            throw new IllegalArgumentException(String.format(" Value %f cannot fit in width %d with precision %d", val, width, prec));
+        } else {
+            return str;
+        }
+    }
+    
+    /**
+     * Prints a fixed-width decimal using String.format conventions, reducing the
+     * value if necessary to fit within the width.
+     * @param val
+     * @param width
+     * @param prec
+     * @return 
+     */
+    public static String fwFpTrunc(double val, int width, int prec) {
+        String str = String.format("%" + width + "." + prec + "f", val);
+        if (str.length() > width) {
+            StringBuilder sb;
+            if (val < 0) {
+                sb = new StringBuilder("-");
+            } else {
+                sb = new StringBuilder("9");
+            }
+            for (int i = 0; i < (width - prec - 2); i++) {
+                sb.append("9");
+            }
+            sb.append(".");
+            for (int i = 0; i < prec; i++) {
+                sb.append("9");
+            }
+            str = sb.toString();
+        }
+        return str;
+    }
+    
     /**
      * <p>
      * padRight</p>
