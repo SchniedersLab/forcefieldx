@@ -1672,37 +1672,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
     }
 
-    /**
-     * Delivers the ESV list down into terms that handle lamedh themselves.
-     */
-    public void updateLamedh() {
-        if (esvList == null) {
-            esvList = new ArrayList<>();
-        }
-        if (vanderWaalsTerm) {
-            vanderWaals.setLamedh(esvList);
-        }
-        if (multipoleTerm) {
-            // TODO particleMeshEwald.setLamedh(esvList);
-        }
-        if (restraintBondTerm && restraintBonds != null) {
-            for (int i = 0; i < restraintBonds.length; i++) {
-                // TODO restraintBonds[i].setLamedh(esvList);
-            }
-        }
-        if (ncsTerm && ncsRestraint != null) {
-            // TODO ncsRestraint.setLamedh(esvList);
-        }
-        if (restrainTerm && !coordRestraints.isEmpty()) {
-            for (CoordRestraint restraint : coordRestraints) {
-                // TODO restraint.setLamedh(esvList);
-            }
-        }
-        if (comTerm && comRestraint != null) {
-            // TODO comRestraint.setLamedh(esvList);
-        }
-    }
-
     public void setPrintOverride(boolean set) {
         this.printOverride = set;
     }
