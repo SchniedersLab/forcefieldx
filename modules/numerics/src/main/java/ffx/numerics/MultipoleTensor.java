@@ -3025,34 +3025,43 @@ public class MultipoleTensor {
     public double interact5QI(double r[], double Qi[], double Qk[],
             double Fi[], double Fk[], double Ti[], double Tk[]) {
 
+        // Find the QI Tensor.
         double z[] = {0.0, 0.0, r(r)};
-
         order5QI(z);
 
+        // Find the rotation matrix from the Global frame to the QI frame.
         setQIRotationMatrix(r);
+
+        // Rotate multipole I and K.
         multipoleItoQI(Qi);
         multipoleKtoQI(Qk);
 
+        // Compute the potential due to site I at site K.
         EiQI5();
+
+        // Dot the potential, field, field gradient with multipole K.
         double energy = dotK();
 
-        double qiFi[] = new double[3];
-        double qiTi[] = new double[3];
-        double qiTk[] = new double[3];
+        // Compute the torque on site K due to the field from site I.
+        torqueK(Tk);
 
-        torqueK(qiTk);
+        // Compute the field at site I due to site K.
         EkQI5();
-        torqueI(qiTi);
+        // Compute the torque on site I due to the field from site K.
+        torqueI(Ti);
 
+        // Compute the force on site I F = {-dE/dx, -dE/dy, -dE/dz}.
         ExQI5();
-        qiFi[0] = -dotK();
+        Fi[0] = -dotK();
         EyQI5();
-        qiFi[1] = -dotK();
+        Fi[1] = -dotK();
         EzQI5();
-        qiFi[2] = -dotK();
+        Fi[2] = -dotK();
 
-        vectorsToGlobal(qiFi, qiTi, qiTk, Fi, Ti, Tk);
+        // Rotate the force and torques from the QI frame into the Global frame.
+        vectorsToGlobal(Fi, Ti, Tk);
 
+        // Set the force on site K as -Fi.
         Fk[0] = -Fi[0];
         Fk[1] = -Fi[1];
         Fk[2] = -Fi[2];
@@ -3626,21 +3635,30 @@ public class MultipoleTensor {
     }
 
     private void vectorsToGlobal(double v1[], double v2[],
-            double v3[], double rv1[], double rv2[], double rv3[]) {
-        // Get the X component of each rotated vector.
-        rv1[0] = ir00 * v1[0] + ir01 * v1[1] + ir02 * v1[2];
-        rv2[0] = ir00 * v2[0] + ir01 * v2[1] + ir02 * v2[2];
-        rv3[0] = ir00 * v3[0] + ir01 * v3[1] + ir02 * v3[2];
-        // Get the Y component of each rotated vector.
-        rv1[1] = ir10 * v1[0] + ir11 * v1[1] + ir12 * v1[2];
-        rv2[1] = ir10 * v2[0] + ir11 * v2[1] + ir12 * v2[2];
-        rv3[1] = ir10 * v3[0] + ir11 * v3[1] + ir12 * v3[2];
-        // Get the Z component of each rotated vector.
-        rv1[2] = ir20 * v1[0] + ir21 * v1[1] + ir22 * v1[2];
-        rv2[2] = ir20 * v2[0] + ir21 * v2[1] + ir22 * v2[2];
-        rv3[2] = ir20 * v3[0] + ir21 * v3[1] + ir22 * v3[2];
+            double v3[]) {
+        double vx = v1[0];
+        double vy = v1[1];
+        double vz = v1[2];
+        v1[0] = ir00 * vx + ir01 * vy + ir02 * vz;
+        v1[1] = ir10 * vx + ir11 * vy + ir12 * vz;
+        v1[2] = ir20 * vx + ir21 * vy + ir22 * vz;
+
+        vx = v2[0];
+        vy = v2[1];
+        vz = v2[2];
+        v2[0] = ir00 * vx + ir01 * vy + ir02 * vz;
+        v2[1] = ir10 * vx + ir11 * vy + ir12 * vz;
+        v2[2] = ir20 * vx + ir21 * vy + ir22 * vz;
+
+        vx = v3[0];
+        vy = v3[1];
+        vz = v3[2];
+        v3[0] = ir00 * vx + ir01 * vy + ir02 * vz;
+        v3[1] = ir10 * vx + ir11 * vy + ir12 * vz;
+        v3[2] = ir20 * vx + ir21 * vy + ir22 * vz;
     }
 
+    // Multipole components for atom i.
     private double qi;
     private double dxi;
     private double dyi;
@@ -3652,6 +3670,7 @@ public class MultipoleTensor {
     private double qxzi;
     private double qyzi;
 
+    // Multipole components for atom k.
     private double qk;
     private double dxk;
     private double dyk;
@@ -3673,6 +3692,7 @@ public class MultipoleTensor {
     private double ir10, ir11, ir12;
     private double ir20, ir21, ir22;
 
+    // Cartesian tensor elements (for 1/R, erfc(Beta*R)/R or Thole damping.
     // l + m + n = 0 (1)
     private double R000;
     // l + m + n = 1 (3)   4
@@ -3736,6 +3756,7 @@ public class MultipoleTensor {
     private double R212;
     private double R122;
 
+    // Components of the potential, field and field gradient.
     private double E000; // Potential
     private double E100; // X Component of the Field
     private double E010; // Y Component of the Field
