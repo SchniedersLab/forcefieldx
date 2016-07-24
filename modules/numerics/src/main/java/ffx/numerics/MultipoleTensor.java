@@ -134,6 +134,9 @@ public class MultipoleTensor {
         this.order = order;
         this.operator = operator;
         this.beta = beta;
+        if (operator == OPERATOR.SCREENED_COULOMB && beta == 0.0) {
+            logger.severe("Created SCREENED_COULOMB MultipoleTensor with zero beta.");
+        }
 
         setOperator(operator);
 
@@ -211,6 +214,7 @@ public class MultipoleTensor {
         this.operator = operator;
         switch (operator) {
             case SCREENED_COULOMB:
+                // Sagui et al. Eq. 2.28
                 double prefactor = 2.0 * beta / sqrtPI;
                 double twoBeta2 = -2.0 * beta * beta;
                 for (int n = 0; n <= order; n++) {
@@ -225,6 +229,7 @@ public class MultipoleTensor {
                      * Math.pow(-1.0, j) returns positive for all j, with -1.0
                      * as the // argument rather than -1. This is a bug?
                      */
+                    // Challacombe Eq. 21, first two factors.
                     T000j[n] = pow(-1, n) * doubleFactorial(2 * n - 1);
                 }
         }
@@ -246,8 +251,8 @@ public class MultipoleTensor {
      * @param aiak
      */
     public void setTholeDamping(double damp, double aiak) {
-        this.damp = damp;
-        this.aiak = aiak;
+        this.damp = damp;   // == PME's pgamma
+        this.aiak = aiak;   // == 1/(alphai*alphak)^6 where alpha is polarizability
     }
 
     /**
@@ -256,17 +261,22 @@ public class MultipoleTensor {
      * @param r Cartesian vector.
      * @param T000 Location to store the source terms.
      * @param damp Thole damping for this interaction.
-     * @param aiak Polarizability of (site i * site k)^6.
+     * @param aiak Inverse of the polarizability product to the sixth, ie 1/(site i * site k)^6.
      */
     private void source(double r[], double T000[]) {
         final double x = r[0];
         final double y = r[1];
         final double z = r[2];
         final double r2 = (x * x + y * y + z * z);
+        if (r2 == 0.0) {
+            throw new ArithmeticException();
+        }
 
         switch (operator) {
             case SCREENED_COULOMB:
-                // Sagui et al. Eq. 2.28.
+                // Sagui et al. Eq. 2.22
+                // "beta" here == "aewald" from PME which is *NOT* "beta" from PME
+                // (What PME calls "beta" (now "lambdaBufferDist") is the lambda buffer, which stays out of this class.)
                 double R = sqrt(r2);
                 double betaR = beta * R;
                 double betaR2 = betaR * betaR;
@@ -307,7 +317,8 @@ public class MultipoleTensor {
                 break;
             case COULOMB:
             default:
-                // Challacombe et al. Equation 40.
+                // Challacombe et al. Equation 21, last factor.
+                // == (1/r) * (1/r^3) * (1/r^5) * (1/r^7) * ...
                 ir2 = 1.0 / r2;
                 ir = sqrt(ir2);
                 for (int n = 0; n < o1; n++) {
@@ -1607,7 +1618,7 @@ public class MultipoleTensor {
         R401 = z * term4001;
     }
 
-    public void Ek5() {
+    private void Ei5() {
         double term000 = 0.0;
         term000 += qi * R000;
         term000 += dxi * R100;
@@ -1750,7 +1761,7 @@ public class MultipoleTensor {
         E011 = term011;
     }
 
-    public void Ei5() {
+    private void Ek5() {
         double term000 = 0.0;
         term000 += qk * R000;
         term000 += dxk * R100;
@@ -1893,7 +1904,7 @@ public class MultipoleTensor {
         E011 = term011;
     }
 
-    public void Ex5() {
+    private void Ex5() {
         double term100 = 0.0;
         term100 += qi * R100;
         term100 += dxi * R200;
@@ -2036,7 +2047,7 @@ public class MultipoleTensor {
         E011 = term111;
     }
 
-    public void Ey5() {
+    private void Ey5() {
         double term010 = 0.0;
         term010 += qi * R010;
         term010 += dxi * R110;
@@ -2179,7 +2190,7 @@ public class MultipoleTensor {
         E011 = term021;
     }
 
-    public void Ez5() {
+    private void Ez5() {
         double term001 = 0.0;
         term001 += qi * R001;
         term001 += dxi * R101;
@@ -2322,7 +2333,7 @@ public class MultipoleTensor {
         E011 = term012;
     }
 
-    public void EkQI5() {
+    private void EiQI5() {
         double term000 = 0.0;
         term000 += qi * R000;
         term000 += dzi * R001;
@@ -2389,7 +2400,7 @@ public class MultipoleTensor {
         E011 = term011;
     }
 
-    public void EiQI5() {
+    private void EkQI5() {
         double term000 = 0.0;
         term000 += qk * R000;
         term000 += dzk * R001;
@@ -2456,7 +2467,7 @@ public class MultipoleTensor {
         E011 = term011;
     }
 
-    public void ExQI5() {
+    private void ExQI5() {
         double term100 = 0.0;
         term100 += dxi * R200;
         double term1002 = 0.0;
@@ -2519,7 +2530,7 @@ public class MultipoleTensor {
         E011 = term111;
     }
 
-    public void EyQI5() {
+    private void EyQI5() {
         double term010 = 0.0;
         term010 += dyi * R020;
         double term0102 = 0.0;
@@ -2582,7 +2593,7 @@ public class MultipoleTensor {
         E011 = term021;
     }
 
-    public void EzQI5() {
+    private void EzQI5() {
         double term001 = 0.0;
         term001 += qi * R001;
         term001 += dzi * R002;
@@ -2976,19 +2987,22 @@ public class MultipoleTensor {
         return 0.0;
     }
 
+    /**
+     * Pass in PRE-Lambda-BUFFERED r[] separation.
+     */
     public double interact5(double r[], double Qi[], double Qk[],
             double Fi[], double Fk[], double Ti[], double Tk[]) {
         order5(r);
         setMultipoleI(Qi);
         setMultipoleK(Qk);
 
-        Ek5();
+        Ei5();
         double energy = dotK();
-
+        
         // Torques
         torqueK(Tk);
-        Ei5();
-        torqueI(Tk);
+        Ek5();
+        torqueI(Ti);
 
         // Forces
         Ex5();
@@ -3005,6 +3019,9 @@ public class MultipoleTensor {
         return energy;
     }
 
+    /**
+     * Pass in PRE-Lambda-BUFFERED r[] separation.
+     */
     public double interact5QI(double r[], double Qi[], double Qk[],
             double Fi[], double Fk[], double Ti[], double Tk[]) {
 
@@ -3042,7 +3059,102 @@ public class MultipoleTensor {
 
         return energy;
     }
+    
+    private void validate(boolean print) {
+        double[] qiVals = new double[]{qi,dxi,dyi,dzi,qxxi,qyyi,qzzi,qxyi,qxzi,qyzi};
+        double[] qkVals = new double[]{qk,dxk,dyk,dzk,qxxk,qyyk,qzzk,qxyk,qxzk,qyzk};
+        double[] exxxVals = new double[]{E000,E100,E010,E001,E200,E020,E002,E110,E101,E011};
+        double[] rxxxVals = new double[]{R000,  R100,R010,R001,
+            
+                                                R200,R020,R002,R110,R101,R011,
+            
+                                                R300,R120,R102,R210,R201,R111,
+                                                R210,R030,R012,R120,R111,R021,
+                                                R201,R021,R003,R111,R102,R012,
+                                                             
+                                                R400,R220,R202,R310,R301,R211,
+                                                R220,R040,R022,R130,R121,R031,
+                                                R202,R022,R004,R112,R103,R013};
+        double[][] all = new double[][]{qiVals, qkVals, exxxVals, rxxxVals};
+        if (!print) {
+            for (int i = 0; i < all.length; i++) {
+                for (int j = 0; j < all[i].length; j++) {
+                    if (Double.isNaN(all[i][j])) {        logger.warning(format("MT::validate(): NaN @ (%d,%d)", i, j)); }
+                    if (Double.isInfinite(all[i][j])) {   logger.warning(format("MT::validate(): Inf @ (%d,%d)", i, j)); }
+                }
+            }
+        } else {
+            logger.info(format("MT::ALL_VALS: %s", formArr(all)));
+        }
+    }
+    
+    private void nanWarning(double energy, double[] r, double[] Qi, double[] Qk, 
+            double[] Fi, double[] Fk, double[] Ti, double[] Tk) {
+        StringBuilder sb = new StringBuilder();
+        if (Double.isInfinite(energy)) {
+            sb.append(format("DotK infinite: \n"));
+        } else if (Double.isNaN(energy)) {
+            sb.append(format("DotK was NaN:  \n"));
+        }
+        sb.append(format(" r:  %s\n Qi: %s\n Qk: %s\n Fi: %s\n Fk: %s\n Ti: %s\n Tk: %s\n", 
+                formArr(r), formArr(Qi), formArr(Qk), formArr(Fi), formArr(Fk), formArr(Ti), formArr(Tk)));
+        double total = qk * E000;
+        double total2 = qxyi * E110;
+//        sb.append(format("DotK components:"
+//                + "\n (1) %.4f %.4f %.4f %.4f %.4f\n (2) %.4f %.4f %.4f %.4f %.4f"
+//                + "\n (3) %.4f %.4f %.4f %.4f %.4f\n (4) %.4f %.4f %.4f %.4f %.4f"
+//                + "\n (5) %.4f %.4f %.4f", 
+//                E000, E100, E010, E001, E200,
+//                E020, E002, E110, E101, E011,
+//                  qi,  dxi,  dyi,  dzi, qxxi,
+//                qyyi, qzzi, qxyi, qxzi, qyzi,
+//                  qk,  dxk,  dyk,  dzk, qxxk,
+//                qyyk, qzzk, qxyi, qxzk, qyzk,
+//                total, total2, total + 2.0*total2));
+        double[] Exxx = new double[]{E000,E100,E010,E001,E200,E020,E002,E110,E010,E001};
+        double[] mpoleI = new double[]{qi,dxi,dyi,dzi,qxxi,qyyi,qzzi,qxyi,qxzi,qyzi};
+        double[] mpoleK = new double[]{qk,dxk,dyk,dzk,qxxk,qyyk,qzzk,qxyk,qxzk,qyzk};
+        sb.append(format("DotK components:\n Exxx:   %s\n mpoleI: %s\n mpoleK: %s", 
+                formArr(Exxx), formArr(mpoleI), formArr(mpoleK)));
+        (new ArithmeticException()).printStackTrace();
+        logger.warning(sb.toString());
+    }
 
+    // Helper method for logging distance and multipole arrays.
+    private static String formArr(double[] x) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
+        for (int i = 0; i < x.length; i++) {
+            sb.append(String.format("%.4f", x[i]));
+            if (i + 1 < x.length) {
+                sb.append(", ");
+            }
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
+    // Helper method for logging distance and multipole arrays.
+    private static String formArr(double[][] x) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < x.length; i++) {
+            sb.append("\n[");
+            if (i == 0) { sb.append("["); }
+            for (int j = 0; j < x[i].length; j++) {
+                sb.append(String.format("%.4f", x[i][j]));
+                if (j + 1 < x[i].length) {
+                    sb.append(", ");
+                }
+            }
+            sb.append("]");
+            if (i + 1 < x.length) {
+                sb.append("; ");
+            }
+        }
+        sb.append("]\n");
+        return sb.toString();
+    }
+    
     public static void main(String args[]) {
         if (args == null || args.length < 4) {
             logger.info(" Usage: java ffx.numerics.TensorRecursion order dx dy dz");
@@ -3055,20 +3167,52 @@ public class MultipoleTensor {
 
         double n2 = 710643;
         double cycles = 10;
+        
+//        // Steve's Tests
+//        MultipoleTensor sdlMultipoleTensor;
+//        double[] srTest, sQi, sQk, sFi, sFk, sTi, sTk;
+//        double sEglob, sEqint;
+//        // Test A
+//        sdlMultipoleTensor = new MultipoleTensor(OPERATOR.COULOMB, 5, 0.0);
+//        srTest = new double[]{0.0, 1.0, 0.0};
+//        sQi = new double[] {-1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+//        sQk = new double[] { 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+//        sFi = new double[3];
+//        sFk = new double[3];
+//        sTi = new double[3];
+//        sTk = new double[3];
+//        sEglob = sdlMultipoleTensor.interact5(   srTest, sQi, sQk, sFi, sFk, sTi, sTk);
+//        sEqint = sdlMultipoleTensor.interact5QI( srTest, sQi, sQk, sFi, sFk, sTi, sTk);
+//        logger.info(String.format(" r,Qi,Qk,e_GF,e_QI: %s %s %s %.4f %.4f", 
+//                formArr(srTest), formArr(sQi), formArr(sQk), sEglob, sEqint));
+//        // Test B
+//        sdlMultipoleTensor = new MultipoleTensor(OPERATOR.COULOMB, 5, 0.0);
+//        srTest = new double[]{0.0, 1.0, 0.0};
+//        sQi = new double[] { 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+//        sQk = new double[] { 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+//        sFi = new double[3];
+//        sFk = new double[3];
+//        sTi = new double[3];
+//        sTk = new double[3];
+//        sEglob = sdlMultipoleTensor.interact5(   srTest, sQi, sQk, sFi, sFk, sTi, sTk);
+//        sEqint = sdlMultipoleTensor.interact5QI( srTest, sQi, sQk, sFi, sFk, sTi, sTk);
+//        logger.info(String.format(" r,Qi,Qk,e_GF,e_QI: %s %s %s %.4f %.4f", 
+//                formArr(srTest), formArr(sQi), formArr(sQk), sEglob, sEqint));
+        
+        MultipoleTensor multipoleTensor = new MultipoleTensor(OPERATOR.SCREENED_COULOMB, order, 1e-6);
 
-        MultipoleTensor multipoleTensor;
-        multipoleTensor = new MultipoleTensor(OPERATOR.COULOMB, order, 0.0);
-
-        double Fi[] = new double[3];
-        double Fk[] = new double[3];
-        double Ti[] = new double[3];
-        double Tk[] = new double[3];
-        double Qi[] = {0.11,
-            0.21, 0.31, 0.41,
-            -0.51, -0.61, 1.12, 0.71, 0.81, 0.91};
-        double Qk[] = {0.11,
-            0.21, 0.31, 0.41,
-            -0.51, -0.61, 1.12, 0.7, 0.81, 0.91};
+        double[] Fi = new double[3];
+        double[] Fk = new double[3];
+        double[] Ti = new double[3];
+        double[] Tk = new double[3];
+        double[] Qi = new double[]
+                {0.11,
+                 0.21, 0.31, 0.41,
+                -0.51,-0.61, 1.12, 0.71, 0.81, 0.91};
+        double[] Qk = new double[]
+                {0.11,
+                 0.21, 0.31, 0.41,
+                -0.51,-0.61, 1.12, 0.70, 0.81, 0.91};
 
         for (int j = 0; j < cycles; j++) {
             long timeGlobalT = -System.nanoTime();
@@ -3085,7 +3229,10 @@ public class MultipoleTensor {
                 r[0] = Math.random();
                 r[1] = Math.random();
                 r[2] = Math.random();
-                multipoleTensor.interact5(r, Qi, Qk, Fi, Fk, Ti, Tk);
+                double e = multipoleTensor.interact5(r, Qi, Qk, Fi, Fk, Ti, Tk);
+                if (Double.isNaN(e) || Double.isInfinite(e)) {
+                    multipoleTensor.nanWarning(e, r, Qi, Qk, Fi, Fk, Ti, Tk);
+                }
             }
             timeGlobal += System.nanoTime();
 
@@ -3103,7 +3250,10 @@ public class MultipoleTensor {
                 r[0] = 0.0;
                 r[1] = 0.0;
                 r[2] = Math.random();
-                multipoleTensor.interact5QI(r, Qi, Qk, Fi, Fk, Ti, Tk);
+                double e = multipoleTensor.interact5QI(r, Qi, Qk, Fi, Fk, Ti, Tk);
+                if (Double.isNaN(e) || Double.isInfinite(e)) {
+                    multipoleTensor.nanWarning(e, r, Qi, Qk, Fi, Fk, Ti, Tk);
+                }
             }
             timeQI += System.nanoTime();
 
@@ -3337,6 +3487,11 @@ public class MultipoleTensor {
         scalar(zAxis, dot, zAxis);
         diff(xAxis, zAxis, xAxis);
         norm(xAxis, xAxis);
+        /* This handles the diabolical case of r = (1.0,0.0,0.0), which yields x-x.z*z = 0.0 -> norm NaN.
+           Commented to avoid branching in inner loops; activate as necessary.      */
+//        if (Double.isNaN(xAxis[0])) {
+//            xAxis = new double[]{0.0, 0.0, 0.0};
+//        }
 
         ir00 = xAxis[0];
         ir10 = xAxis[1];
@@ -3355,11 +3510,11 @@ public class MultipoleTensor {
         r12 = ir21;
         r20 = ir02;
         r21 = ir12;
-
+        
     }
 
     private void multipoleItoQI(double Qi[]) {
-
+                
         qi = Qi[0];
 
         double dx = Qi[1];

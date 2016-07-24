@@ -1672,37 +1672,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
     }
     
-    /**
-     * Delivers the ESV list down into terms that handle lamedh themselves.
-     */
-    public void updateLamedh() {
-        if (esvList == null) {
-            esvList = new ArrayList<>();
-        }
-        if (vanderWaalsTerm) {
-            vanderWaals.setLamedh(esvList);
-        }
-        if (multipoleTerm) {
-            // TODO particleMeshEwald.setLamedh(esvList);
-        }
-        if (restraintBondTerm && restraintBonds != null) {
-            for (int i = 0; i < restraintBonds.length; i++) {
-                // TODO restraintBonds[i].setLamedh(esvList);
-            }
-        }
-        if (ncsTerm && ncsRestraint != null) {
-            // TODO ncsRestraint.setLamedh(esvList);
-        }
-        if (restrainTerm && !coordRestraints.isEmpty()) {
-            for (CoordRestraint restraint : coordRestraints) {
-                // TODO restraint.setLamedh(esvList);
-            }
-        }
-        if (comTerm && comRestraint != null) {
-            // TODO comRestraint.setLamedh(esvList);
-        }
-    }
-    
     public void setPrintOverride(boolean set) {
         this.printOverride = set;
     }
@@ -1881,6 +1850,31 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
         esvList.add(esv);
         numESVs = esvList.size();
+        
+        // Pass new ESV into terms which handle it explicitly (e.g. vdW and PME).
+        if (vanderWaalsTerm) {
+            vanderWaals.setESVList(esvList);
+        }
+        if (multipoleTerm) {
+            particleMeshEwald.setESVList(esvList);
+        }
+        if (restraintBondTerm && restraintBonds != null) {
+            for (int i = 0; i < restraintBonds.length; i++) {
+                // TODO restraintBonds[i].setLamedh(esvList);
+            }
+        }
+        if (ncsTerm && ncsRestraint != null) {
+            // TODO ncsRestraint.setLamedh(esvList);
+        }
+        if (restrainTerm && !coordRestraints.isEmpty()) {
+            for (CoordRestraint restraint : coordRestraints) {
+                // TODO restraint.setLamedh(esvList);
+            }
+        }
+        if (comTerm && comRestraint != null) {
+            // TODO comRestraint.setLamedh(esvList);
+        }
+        
         logger.info(String.format(" ForceFieldEnergy acquired ESV: %s\n", esv));
         lamedhLogger = new StringBuilder(String.format(" Lamedh Scaling: "));
     }

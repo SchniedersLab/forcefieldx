@@ -1085,7 +1085,7 @@ public class VanDerWaals implements MaskingInterface,
         }
     }
     
-    public void setLamedh(List<ExtendedVariable> esvList) {
+    public void setESVList(List<ExtendedVariable> esvList) {
         if (!lamedhTerm) {
             logger.severe("Lamedh invoked on improperly constructed VanDerWaals object.");
         }
@@ -1924,6 +1924,7 @@ public class VanDerWaals implements MaskingInterface,
                             final double dtaper = (r2 <= cut2) ? 0.0 
                                     : multiplicativeSwitch.dtaper(r, r2, r3, r4);
                             e += eij * taper;
+//                            log(i,k,r,e);
                             count++;
                             if (!(gradient || (lambdaTerm && soft) || (lamedhTerm && hasLamedh))) {
                                 continue;
