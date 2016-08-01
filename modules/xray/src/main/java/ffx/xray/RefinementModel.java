@@ -75,6 +75,15 @@ public class RefinementModel {
     protected final Atom[] totalAtomArray;
 
     /**
+     * An atom list.
+     */
+    protected final List<Atom> activeAtomList;
+    /**
+     * An atom array.
+     */
+    protected final Atom[] activeAtomArray;
+
+    /**
      * <p>
      * Constructor for RefinementModel.</p>
      *
@@ -182,6 +191,11 @@ public class RefinementModel {
         totalAtomList = new ArrayList<>();
 
         /**
+         * Create the activeAtomList (i.e. atoms that can move).
+         */
+        activeAtomList = new ArrayList<>();
+
+        /**
          * Root list.
          */
         atomList = assembly[0].getAtomList();
@@ -194,6 +208,9 @@ public class RefinementModel {
             xIndex[0].add(index);
             index++;
             totalAtomList.add(a);
+            if (a.isActive()) {
+                activeAtomList.add(a);
+            }
         }
 
         // Now add cross references to root and any alternate atoms not in root
@@ -212,11 +229,15 @@ public class RefinementModel {
                     xIndex[i].add(index);
                     index++;
                     totalAtomList.add(a);
+                    if (a.isActive()) {
+                        activeAtomList.add(a);
+                    }
                 }
             }
         }
 
         totalAtomArray = totalAtomList.toArray(new Atom[totalAtomList.size()]);
+        activeAtomArray = activeAtomList.toArray(new Atom[activeAtomList.size()]);
         
         for (ArrayList<Residue> list : altResidues) {
             if (list.size() == 1) {
