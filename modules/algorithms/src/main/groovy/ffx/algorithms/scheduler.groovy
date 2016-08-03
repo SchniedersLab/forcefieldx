@@ -47,14 +47,14 @@ import groovy.util.CliBuilder;
 // Determine the number of CPUs per node
 int CPUs = Runtime.getRuntime().availableProcessors();
 String cpuString = CPUs.toString();
-String memory = "1G";
+String memory = "2G";
 
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc scheduler dummy ');
 cli.e(longOpt:'hostfile', args:1, argName:'PE_HOSTFILE', 'Environment variable that points to the host file.');
 cli.p(longOpt:'cpus', args:1, argName:cpuString, 'The number of processor cores (threads) per process.');
 cli.h(longOpt:'help', 'Print this help message.');
-cli.m(longOpt:'memory', args:1, argName:'1G', 'String value of -Xmx to pass to worker nodes.');
+cli.m(longOpt:'memory', args:1, argName:'2G', 'String value of -Xmx to pass to worker nodes.');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -84,24 +84,30 @@ if (options.e) {
 }
 // Read in the Parallel Environment Host File environment variable.
 String hostsFile = System.getenv(hostfileName);
+// Default to using only the current node (i.e. "localhost")
+String[] hostnames = new String[1]; 
+hostnames[0] = "localhost";
+
 if (hostsFile == null) {
-    logger.severe("The " + hostfileName + " environment variable is empty.");
-}
-
-// Check that the supplied file exists and is readable.
-File host = new File(hostsFile);
-if (!host.exists() || !host.canRead()) {
-    logger.severe("The file path specified by the " + hostfileName
+    logger.info(" The " + hostfileName + " environment variable is empty.");
+    logger.info(" Only localhost will be used.\n");
+} else {
+   // Check that the supplied file exists and is readable.
+   File host = new File(hostsFile);
+   if (!host.exists() || !host.canRead()) {
+      logger.info(" The file path specified by the " + hostfileName
         + " environment variable does not exist or cannot be read.");
-}
-
-// Read in the hosts.
-List nodes = host.readLines();
-String[] hostnames = new String[nodes.size()];
-int i=0;
-for (line in nodes) {
-    hostnames[i] = line.split(" +")[0];
-    i++;
+      logger.info(" Only localhost will be used.\n");
+   } else {
+      // Read in the hosts.
+      List nodes = host.readLines();
+      hostnames = new String[nodes.size()];
+      int i=0;
+      for (line in nodes) {
+        hostnames[i] = line.split(" +")[0];
+        i++;
+      }
+   }
 }
 
 // Create the Parallel Java cluster configuration file.
