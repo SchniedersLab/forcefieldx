@@ -418,21 +418,34 @@ public class FFXClassLoader extends URLClassLoader {
             }
         }
 
+        ByteArrayOutputStream out = null;
+        BufferedInputStream in = null;
         try {
             // Read class input content to a byte array
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            BufferedInputStream in = new BufferedInputStream(classInputStream);
+            out = new ByteArrayOutputStream();
+            in = new BufferedInputStream(classInputStream);
             byte[] buffer = new byte[8192];
             int size;
             while ((size = in.read(buffer)) != -1) {
                 out.write(buffer, 0, size);
             }
-            in.close();
             // Define class
             return defineClass(name, out.toByteArray(), 0, out.size(),
                     this.protectionDomain);
         } catch (IOException ex) {
             throw new ClassNotFoundException("Class " + name, ex);
+        } finally {
+            try {
+                if (in != null) {
+                    in.close();
+                }
+                if (out != null) {
+                    out.close();
+                }
+            } catch (IOException e) {
+                throw new ClassNotFoundException("Class " + name, e);
+            }
+
         }
     }
 
