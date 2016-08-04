@@ -71,6 +71,8 @@ import ffx.xray.RefinementMinimize.RefinementMode;
 
 import static ffx.xray.CrystalReciprocalSpace.SolventModel.POLYNOMIAL;
 
+import static java.util.Arrays.fill;
+
 /**
  * <p>
  * DiffractionData class.</p>
@@ -110,7 +112,7 @@ public class DiffractionData implements DataContainer {
     public final double bsimweight;
     public final double bnonzeroweight;
     public final double bmass;
-    public final boolean residuebfactor;
+    public final boolean residueBFactor;
     public final int nResidueBFactor;
     public final boolean addAnisou;
     public final boolean refinemolocc;
@@ -256,7 +258,7 @@ public class DiffractionData implements DataContainer {
         bsimweight = properties.getDouble("bsimweight", 1.0);
         bnonzeroweight = properties.getDouble("bnonzeroweight", 1.0);
         bmass = properties.getDouble("bmass", 5.0);
-        residuebfactor = properties.getBoolean("residuebfactor", false);
+        residueBFactor = properties.getBoolean("residuebfactor", false);
         nResidueBFactor = properties.getInt("nresiduebfactor", 1);
         addAnisou = properties.getBoolean("addanisou", false);
         refinemolocc = properties.getBoolean("refinemolocc", false);
@@ -334,7 +336,7 @@ public class DiffractionData implements DataContainer {
             sb.append("  Similarity weight (bsimweight): ").append(bsimweight).append("\n");
             sb.append("  Non-zero weight (bnonzeroweight): ").append(bnonzeroweight).append("\n");
             sb.append("  Lagrangian mass (bmass): ").append(bmass).append("\n");
-            sb.append("  Refined by residue (residuebfactor): ").append(residuebfactor).append("\n");
+            sb.append("  Refined by residue (residuebfactor): ").append(residueBFactor).append("\n");
             sb.append("    (if true, num. residues per B (nresiduebfactor): ").append(nResidueBFactor).append(")\n");
             sb.append("  Add ANISOU for refinement (addanisou): ").append(addAnisou).append("\n\n");
             sb.append("  Occupancies\n");

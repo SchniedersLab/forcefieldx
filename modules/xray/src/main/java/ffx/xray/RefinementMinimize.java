@@ -158,17 +158,31 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         dataContainer = data;
         this.listener = listener;
         this.refinementMode = refinementMode;
-
         refinementModel = data.getRefinementModel();
         atomArray = data.getAtomArray();
         nAtoms = atomArray.length;
-        activeAtomArray = data.getActiveAtomArray();
-        nActive = activeAtomArray.length;
         refinementEnergy = new RefinementEnergy(data, refinementMode, null);
         nXYZ = refinementEnergy.nXYZ;
         nB = refinementEnergy.nBFactor;
         nOcc = refinementEnergy.nOccupancy;
         n = refinementEnergy.getNumberOfVariables();
+        logger.info(String.format(" RefinementMinimize varianbles %d (nXYZ %d, nB %d, nOcc %d)", n, nXYZ, nB, nOcc));
+
+        // Fill an active atom array.
+        int count = 0;
+        for (Atom a : atomArray) {
+            if (a.isActive()) {
+                count++;
+            }
+        }
+        nActive = count;
+        activeAtomArray = new Atom[count];
+        count = 0;
+        for (Atom a : atomArray) {
+            if (a.isActive()) {
+                activeAtomArray[count++] = a;
+            }
+        }
 
         x = new double[n];
         grad = new double[n];
@@ -209,8 +223,8 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
             int i = nXYZ;
             int resnum = -1;
             if (data instanceof DiffractionData) {
-                DiffractionData diffractiondata = (DiffractionData) data;
-                int nres = diffractiondata.nResidueBFactor + 1;
+                DiffractionData diffractionData = (DiffractionData) data;
+                int nres = diffractionData.nResidueBFactor + 1;
                 for (Atom a : activeAtomArray) {
                     // Ignore hydrogens or inactive atoms.
                     if (a.getAtomicNumber() == 1) {
@@ -221,11 +235,10 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                             scaling[i + j] = anisouscale;
                         }
                         i += 6;
-                    } else if (diffractiondata.residuebfactor) {
+                    } else if (diffractionData.residueBFactor) {
                         if (resnum != a.getResidueNumber()) {
-                            if (nres >= diffractiondata.nResidueBFactor) {
-                                if (resnum > -1
-                                        && i < nXYZ + nB - 1) {
+                            if (nres >= diffractionData.nResidueBFactor) {
+                                if (resnum > -1 && i < nXYZ + nB - 1) {
                                     i++;
                                 }
                                 if (i < nXYZ + nB) {

@@ -303,10 +303,10 @@ public class Looptimizer implements Potential {
 
     /*
     * Holds x-ray data for RefinementMinimize
-    */ 
+    */
     private DiffractionData diffractionData;
     private boolean useXRayMinimizer = false;
-    
+
     /**
      * Interval between how often the free energy is updated from the count
      * matrix.
@@ -368,7 +368,7 @@ public class Looptimizer implements Potential {
     private int window = 1000;
 
     private boolean osrwOptimization = false;
-    private int osrwOptimizationFrequency = 10000;
+    private int osrwOptimizationFrequency = 500;
     private double osrwOptimizationLambdaCutoff = 0.5;
     private double osrwOptimizationEps = 0.1;
     private double osrwOptimizationTolerance = 1.0e-8;
@@ -603,13 +603,13 @@ public class Looptimizer implements Potential {
 
                 // Optimize the system.
                 if(useXRayMinimizer){
-                    RefinementMinimize refinementMinimize = new RefinementMinimize(diffractionData); 
+                    RefinementMinimize refinementMinimize = new RefinementMinimize(diffractionData);
                     refinementMinimize.minimize(osrwOptimizationEps);
                 } else {
                     Minimize minimize = new Minimize(null, potential, null);
                     minimize.minimize(osrwOptimizationEps);
                 }
-                
+
                 // Remove the scaling of coordinates & gradient set by the minimizer.
                 potential.setScaling(null);
 
@@ -619,12 +619,12 @@ public class Looptimizer implements Potential {
                 double minValue;
                 if(useXRayMinimizer){
                     // Collect the minimum R value.
-                    minValue = diffractionData.getRCrystalStat();  
+                    minValue = diffractionData.getRCrystalStat();
                 } else {
                     // Collect the minimum energy.
                     minValue = potential.getTotalEnergy();
                 }
-                
+
                 // If a new minimum has been found, save its coordinates.
                 if (minValue < osrwOptimum) {
                     osrwOptimum = minValue;
@@ -1460,10 +1460,10 @@ public class Looptimizer implements Potential {
     }
 
     public void setData(DiffractionData diffractionData){
-        this.diffractionData = diffractionData; 
+        this.diffractionData = diffractionData;
         this.useXRayMinimizer = true;
     }
-    
+
     private class OSRWHistogramWriter extends PrintWriter {
 
         public OSRWHistogramWriter(Writer writer) {

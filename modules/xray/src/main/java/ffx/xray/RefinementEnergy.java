@@ -195,8 +195,23 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         refinementModel = data.getRefinementModel();
         atomArray = data.getAtomArray();
         nAtoms = atomArray.length;
-        activeAtomArray = data.getActiveAtomArray();
-        nActive = activeAtomArray.length;
+
+        // Fill an active atom array.
+        int count = 0;
+        for (Atom a : atomArray) {
+            if (a.isActive()) {
+                count++;
+            }
+        }
+        nActive = count;
+        activeAtomArray = new Atom[count];
+        count = 0;
+        for (Atom a : atomArray) {
+            if (a.isActive()) {
+                activeAtomArray[count++] = a;
+            }
+        }
+
         xIndex = refinementModel.xIndex;
         thermostat = null;
         kTScale = 1.0;
@@ -216,30 +231,30 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
             case OCCUPANCIES:
             case BFACTORS_AND_OCCUPANCIES:
                 if (data instanceof DiffractionData) {
-                    DiffractionData diffractiondata = (DiffractionData) data;
+                    DiffractionData diffractionData = (DiffractionData) data;
                     // bfactor params
                     if (refinementMode == RefinementMode.BFACTORS
                             || refinementMode == RefinementMode.BFACTORS_AND_OCCUPANCIES
                             || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS
                             || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
                         int resnum = -1;
-                        int nres = diffractiondata.nResidueBFactor + 1;
+                        int nres = diffractionData.nResidueBFactor + 1;
                         for (Atom a : atomArray) {
                             // Ignore hydrogens and atoms that are not active.
                             if (a.getAtomicNumber() == 1 || !a.isActive()) {
                                 continue;
                             }
                             if (a.getAnisou(null) == null) {
-                                if (diffractiondata.addAnisou) {
+                                if (diffractionData.addAnisou) {
                                     double anisou[] = new double[6];
                                     double u = b2u(a.getTempFactor());
                                     anisou[0] = anisou[1] = anisou[2] = u;
                                     anisou[3] = anisou[4] = anisou[5] = 0.0;
                                     a.setAnisou(anisou);
                                     nBFactor += 6;
-                                } else if (diffractiondata.residuebfactor) {
+                                } else if (diffractionData.residueBFactor) {
                                     if (resnum != a.getResidueNumber()) {
-                                        if (nres >= diffractiondata.nResidueBFactor) {
+                                        if (nres >= diffractionData.nResidueBFactor) {
                                             nBFactor++;
                                             nres = 1;
                                         } else {
@@ -254,8 +269,8 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
                                 nBFactor += 6;
                             }
                         }
-                        if (diffractiondata.residuebfactor) {
-                            if (nres < diffractiondata.nResidueBFactor) {
+                        if (diffractionData.residueBFactor) {
+                            if (nres < diffractionData.nResidueBFactor) {
                                 nBFactor--;
                             }
                         }
@@ -283,6 +298,8 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         }
 
         n = nXYZ + nBFactor + nOccupancy;
+        logger.info(String.format(" RefinementEnergy variables %d (nXYZ %d, nB %d, nOcc %d)",
+                n, nXYZ, nBFactor, nOccupancy));
 
         // initialize force field and Xray energies
         for (MolecularAssembly molecularAssembly : molecularAssemblies) {
@@ -295,16 +312,16 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         }
 
         if (data instanceof DiffractionData) {
-            DiffractionData diffractiondata = (DiffractionData) data;
-            if (!diffractiondata.scaled[0]) {
-                diffractiondata.printStats();
+            DiffractionData diffractionData = (DiffractionData) data;
+            if (!diffractionData.scaled[0]) {
+                diffractionData.printStats();
             }
-            dataEnergy = new XRayEnergy(diffractiondata, nXYZ, nBFactor, nOccupancy,
+            dataEnergy = new XRayEnergy(diffractionData, nXYZ, nBFactor, nOccupancy,
                     refinementMode);
             dataEnergy.setScaling(null);
         } else if (data instanceof RealSpaceData) {
-            RealSpaceData realspacedata = (RealSpaceData) data;
-            dataEnergy = new RealSpaceEnergy(realspacedata, nXYZ, 0, 0,
+            RealSpaceData realSpaceData = (RealSpaceData) data;
+            dataEnergy = new RealSpaceEnergy(realSpaceData, nXYZ, 0, 0,
                     refinementMode);
             dataEnergy.setScaling(null);
         }
@@ -314,7 +331,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         gChemical = new double[assemblySize][];
         for (int i = 0; i < assemblySize; i++) {
             int len = molecularAssemblies[i].getActiveAtomArray().length * 3;
-            logger.info(" RefinementEnergy: Number of Parameters: " + len);
+            logger.info(" RefinementEnergy: MolecularAssembly nXYZ: " + len);
             xChemical[i] = new double[len];
             gChemical[i] = new double[len];
         }
