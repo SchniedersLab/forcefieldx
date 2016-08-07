@@ -113,6 +113,14 @@ public class MultipoleTensor {
      * approximately 50% slower than the linear work array.
      */
     private final double work[];
+    /**
+     * Store the separation
+     */
+    private double x;
+    private double y;
+    private double z;
+    private double r2;
+    private double R;
 
     /**
      * <p>
@@ -134,9 +142,6 @@ public class MultipoleTensor {
         this.order = order;
         this.operator = operator;
         this.beta = beta;
-        if (operator == OPERATOR.SCREENED_COULOMB && beta == 0.0) {
-            logger.severe("Created SCREENED_COULOMB MultipoleTensor with zero beta.");
-        }
 
         setOperator(operator);
 
@@ -212,7 +217,14 @@ public class MultipoleTensor {
      */
     public final void setOperator(OPERATOR operator) {
         this.operator = operator;
-        switch (operator) {
+
+        OPERATOR op = operator;
+        if (operator == OPERATOR.SCREENED_COULOMB && beta == 0.0) {
+            // Switch to the Coulomb operator.
+            op = OPERATOR.COULOMB;
+        }
+
+        switch (op) {
             case SCREENED_COULOMB:
                 // Sagui et al. Eq. 2.28
                 double prefactor = 2.0 * beta / sqrtPI;
@@ -255,29 +267,39 @@ public class MultipoleTensor {
         this.aiak = aiak;   // == 1/(alphai*alphak)^6 where alpha is polarizability
     }
 
+    private void setR(double r[]) {
+        x = r[0];
+        y = r[1];
+        z = r[2];
+        r2 = (x * x + y * y + z * z);
+        if (r2 == 0.0) {
+            throw new ArithmeticException();
+        }
+        R = sqrt(r2);
+    }
+
     /**
      * Generate source terms for the Challacombe et al. recursion.
      *
      * @param r Cartesian vector.
      * @param T000 Location to store the source terms.
      * @param damp Thole damping for this interaction.
-     * @param aiak Inverse of the polarizability product to the sixth, ie 1/(site i * site k)^6.
+     * @param aiak Inverse of the polarizability product to the sixth, ie
+     * 1/(site i * site k)^6.
      */
-    private void source(double r[], double T000[]) {
-        final double x = r[0];
-        final double y = r[1];
-        final double z = r[2];
-        final double r2 = (x * x + y * y + z * z);
-        if (r2 == 0.0) {
-            throw new ArithmeticException();
+    private void source(double T000[]) {
+
+        OPERATOR op = operator;
+        if (operator == OPERATOR.SCREENED_COULOMB && beta == 0.0) {
+            // Switch to the Coulomb operator.
+            op = OPERATOR.COULOMB;
         }
 
-        switch (operator) {
+        switch (op) {
             case SCREENED_COULOMB:
                 // Sagui et al. Eq. 2.22
                 // "beta" here == "aewald" from PME which is *NOT* "beta" from PME
                 // (What PME calls "beta" (now "lambdaBufferDist") is the lambda buffer, which stays out of this class.)
-                double R = sqrt(r2);
                 double betaR = beta * R;
                 double betaR2 = betaR * betaR;
                 double iBetaR2 = 1.0 / (2.0 * betaR2);
@@ -295,8 +317,8 @@ public class MultipoleTensor {
                 break;
             case THOLE_FIELD:
                 assert (order <= 4);
-                double ir2 = 1.0 / r2;
-                double ir = sqrt(ir2);
+                double ir = 1.0 / R;
+                double ir2 = ir * ir;
                 for (int n = 0; n < o1; n++) {
                     T000[n] = T000j[n] * ir;
                     ir *= ir2;
@@ -304,7 +326,7 @@ public class MultipoleTensor {
                 /**
                  * Add the Thole damping terms: edamp = exp(-damp*u^3).
                  */
-                double u = sqrt(r2) / aiak;
+                double u = R / aiak;
                 double u3 = damp * pow(u, 3);
                 double u6 = u3 * u3;
                 double u9 = u6 * u3;
@@ -319,8 +341,8 @@ public class MultipoleTensor {
             default:
                 // Challacombe et al. Equation 21, last factor.
                 // == (1/r) * (1/r^3) * (1/r^5) * (1/r^7) * ...
-                ir2 = 1.0 / r2;
-                ir = sqrt(ir2);
+                ir = 1.0 / R;
+                ir2 = ir * ir;
                 for (int n = 0; n < o1; n++) {
                     T000[n] = T000j[n] * ir;
                     ir *= ir2;
@@ -485,7 +507,8 @@ public class MultipoleTensor {
      * @param aiak Polarizability of (site i * site k)^6.
      */
     public void noStorageRecursion(double r[], double tensor[]) {
-        source(r, T000);
+        setR(r);
+        source(T000);
         // 1/r
         tensor[0] = T000[0];
         // Find (d/dx)^l for l = 1..order (m = 0, n = 0)
@@ -523,7 +546,8 @@ public class MultipoleTensor {
      */
     public void noStorageRecursionQI(double r[], double tensor[]) {
         assert (r[0] == 0.0 && r[1] == 0.0);
-        source(r, T000);
+        setR(r);
+        source(T000);
         // 1/r
         tensor[0] = T000[0];
         // Find (d/dx)^l for l = 1..order (m = 0, n = 0)
@@ -664,10 +688,8 @@ public class MultipoleTensor {
      * @since 1.0
      */
     public void recursion(final double r[], final double tensor[]) {
-        source(r, work);
-        final double x = r[0];
-        final double y = r[1];
-        final double z = r[2];
+        setR(r);
+        source(work);
         tensor[0] = work[0];
         // Find (d/dx)^l for l = 1..order (m = 0, n = 0)
         // Any (d/dx) term can be formed as
@@ -790,11 +812,9 @@ public class MultipoleTensor {
      * @since 1.0
      */
     public void recursionQI(final double r[], final double tensor[]) {
-        final double x = r[0];
-        final double y = r[1];
-        final double z = r[2];
+        setR(r);
         assert (x == 0.0 && y == 0.0);
-        source(r, work);
+        source(work);
         tensor[0] = work[0];
         // Find (d/dx)^l for l = 1..order (m = 0, n = 0)
         // Any (d/dx) term can be formed as
@@ -914,10 +934,8 @@ public class MultipoleTensor {
      * @since 1.0
      */
     public String codeTensorRecursion(final double r[], final double tensor[]) {
-        final double x = r[0];
-        final double y = r[1];
-        final double z = r[2];
-        source(r, work);
+        setR(r);
+        source(work);
         StringBuilder sb = new StringBuilder();
         tensor[0] = work[0];
         if (work[0] > 0) {
@@ -1095,11 +1113,9 @@ public class MultipoleTensor {
      * @since 1.0
      */
     public String codeTensorRecursionQI(final double r[], final double tensor[]) {
-        final double x = r[0];
-        final double y = r[1];
-        final double z = r[2];
+        setR(r);
         assert (x == 0.0 && y == 0.0);
-        source(r, work);
+        source(work);
         StringBuilder sb = new StringBuilder();
         tensor[0] = work[0];
         if (work[0] > 0) {
@@ -1277,16 +1293,13 @@ public class MultipoleTensor {
      * @param damp Thole damping for this interaction.
      * @param aiak Polarizability of (site i * site k)^6.
      */
-    public void order4(final double r[]) {
-        source(r, work);
+    public void order4() {
+        source(work);
         double term0000 = work[0];
         double term0001 = work[1];
         double term0002 = work[2];
         double term0003 = work[3];
         double term0004 = work[4];
-        final double x = r[0];
-        final double y = r[1];
-        final double z = r[2];
         R000 = term0000;
         R100 = x * term0001;
         double term1001 = x * term0002;
@@ -1366,16 +1379,13 @@ public class MultipoleTensor {
      * @param damp Thole damping for this interaction.
      * @param aiak Polarizability of (site i * site k)^6.
      */
-    public void order4QI(final double r[]) {
-        source(r, work);
+    public void order4QI() {
+        source(work);
         double term0000 = work[0];
         double term0001 = work[1];
         double term0002 = work[2];
         double term0003 = work[3];
         double term0004 = work[4];
-        final double x = r[0];
-        final double y = r[1];
-        final double z = r[2];
         R000 = term0000;
         R200 = term0001;
         double term2001 = term0002;
@@ -1414,17 +1424,14 @@ public class MultipoleTensor {
      * @param damp Thole damping for this interaction.
      * @param aiak Polarizability of (site i * site k)^6.
      */
-    public void order5(final double r[]) {
-        source(r, work);
+    public void order5() {
+        source(work);
         double term0000 = work[0];
         double term0001 = work[1];
         double term0002 = work[2];
         double term0003 = work[3];
         double term0004 = work[4];
         double term0005 = work[5];
-        final double x = r[0];
-        final double y = r[1];
-        final double z = r[2];
         R000 = term0000;
         R100 = x * term0001;
         double term1001 = x * term0002;
@@ -1559,12 +1566,8 @@ public class MultipoleTensor {
      * @param damp Thole damping for this interaction.
      * @param aiak Polarizability of (site i * site k)^6.
      */
-    public void order5QI(final double r[]) {
-        final double x = r[0];
-        final double y = r[1];
-        final double z = r[2];
-        assert (x == 0.0 && y == 0.0);
-        source(r, work);
+    public void order5QI() {
+        source(work);
         double term0000 = work[0];
         double term0001 = work[1];
         double term0002 = work[2];
@@ -1619,145 +1622,115 @@ public class MultipoleTensor {
     }
 
     private void Ei5() {
-        double term000 = 0.0;
-        term000 += qi * R000;
-        term000 += dxi * R100;
-        term000 += dyi * R010;
-        term000 += dzi * R001;
+        double term000 = qi * R000;
+        term000 -= dxi * R100;
+        term000 -= dyi * R010;
+        term000 -= dzi * R001;
         term000 += qxxi * R200;
         term000 += qyyi * R020;
         term000 += qzzi * R002;
-        double term0002 = 0.0;
-        term0002 += qxyi * R110;
-        term0002 += qxzi * R101;
-        term0002 += qyzi * R011;
-        term000 += 2.0 * term0002;
+        term000 += qxyi * R110;
+        term000 += qxzi * R101;
+        term000 += qyzi * R011;
         E000 = term000;
-        double term100 = 0.0;
-        term100 += qi * R100;
-        term100 += dxi * R200;
-        term100 += dyi * R110;
-        term100 += dzi * R101;
+        double term100 = qi * R100;
+        term100 -= dxi * R200;
+        term100 -= dyi * R110;
+        term100 -= dzi * R101;
         term100 += qxxi * R300;
         term100 += qyyi * R120;
         term100 += qzzi * R102;
-        double term1002 = 0.0;
-        term1002 += qxyi * R210;
-        term1002 += qxzi * R201;
-        term1002 += qyzi * R111;
-        term100 += 2.0 * term1002;
+        term100 += qxyi * R210;
+        term100 += qxzi * R201;
+        term100 += qyzi * R111;
         E100 = term100;
-        double term010 = 0.0;
-        term010 += qi * R010;
-        term010 += dxi * R110;
-        term010 += dyi * R020;
-        term010 += dzi * R011;
+        double term010 = qi * R010;
+        term010 -= dxi * R110;
+        term010 -= dyi * R020;
+        term010 -= dzi * R011;
         term010 += qxxi * R210;
         term010 += qyyi * R030;
         term010 += qzzi * R012;
-        double term0102 = 0.0;
-        term0102 += qxyi * R120;
-        term0102 += qxzi * R111;
-        term0102 += qyzi * R021;
-        term010 += 2.0 * term0102;
+        term010 += qxyi * R120;
+        term010 += qxzi * R111;
+        term010 += qyzi * R021;
         E010 = term010;
-        double term001 = 0.0;
-        term001 += qi * R001;
-        term001 += dxi * R101;
-        term001 += dyi * R011;
-        term001 += dzi * R002;
+        double term001 = qi * R001;
+        term001 -= dxi * R101;
+        term001 -= dyi * R011;
+        term001 -= dzi * R002;
         term001 += qxxi * R201;
         term001 += qyyi * R021;
         term001 += qzzi * R003;
-        double term0012 = 0.0;
-        term0012 += qxyi * R111;
-        term0012 += qxzi * R102;
-        term0012 += qyzi * R012;
-        term001 += 2.0 * term0012;
+        term001 += qxyi * R111;
+        term001 += qxzi * R102;
+        term001 += qyzi * R012;
         E001 = term001;
-        double term200 = 0.0;
-        term200 += qi * R200;
-        term200 += dxi * R300;
-        term200 += dyi * R210;
-        term200 += dzi * R201;
+        double term200 = qi * R200;
+        term200 -= dxi * R300;
+        term200 -= dyi * R210;
+        term200 -= dzi * R201;
         term200 += qxxi * R400;
         term200 += qyyi * R220;
         term200 += qzzi * R202;
-        double term2002 = 0.0;
-        term2002 += qxyi * R310;
-        term2002 += qxzi * R301;
-        term2002 += qyzi * R211;
-        term200 += 2.0 * term2002;
+        term200 += qxyi * R310;
+        term200 += qxzi * R301;
+        term200 += qyzi * R211;
         E200 = term200;
-        double term020 = 0.0;
-        term020 += qi * R020;
-        term020 += dxi * R120;
-        term020 += dyi * R030;
-        term020 += dzi * R021;
+        double term020 = qi * R020;
+        term020 -= dxi * R120;
+        term020 -= dyi * R030;
+        term020 -= dzi * R021;
         term020 += qxxi * R220;
         term020 += qyyi * R040;
         term020 += qzzi * R022;
-        double term0202 = 0.0;
-        term0202 += qxyi * R130;
-        term0202 += qxzi * R121;
-        term0202 += qyzi * R031;
-        term020 += 2.0 * term0202;
+        term020 += qxyi * R130;
+        term020 += qxzi * R121;
+        term020 += qyzi * R031;
         E020 = term020;
-        double term002 = 0.0;
-        term002 += qi * R002;
-        term002 += dxi * R102;
-        term002 += dyi * R012;
-        term002 += dzi * R003;
+        double term002 = qi * R002;
+        term002 -= dxi * R102;
+        term002 -= dyi * R012;
+        term002 -= dzi * R003;
         term002 += qxxi * R202;
         term002 += qyyi * R022;
         term002 += qzzi * R004;
-        double term0022 = 0.0;
-        term0022 += qxyi * R112;
-        term0022 += qxzi * R103;
-        term0022 += qyzi * R013;
-        term002 += 2.0 * term0022;
+        term002 += qxyi * R112;
+        term002 += qxzi * R103;
+        term002 += qyzi * R013;
         E002 = term002;
-        double term110 = 0.0;
-        term110 += qi * R110;
-        term110 += dxi * R210;
-        term110 += dyi * R120;
-        term110 += dzi * R111;
+        double term110 = qi * R110;
+        term110 -= dxi * R210;
+        term110 -= dyi * R120;
+        term110 -= dzi * R111;
         term110 += qxxi * R310;
         term110 += qyyi * R130;
         term110 += qzzi * R112;
-        double term1102 = 0.0;
-        term1102 += qxyi * R220;
-        term1102 += qxzi * R211;
-        term1102 += qyzi * R121;
-        term110 += 2.0 * term1102;
+        term110 += qxyi * R220;
+        term110 += qxzi * R211;
+        term110 += qyzi * R121;
         E110 = term110;
-        double term101 = 0.0;
-        term101 += qi * R101;
-        term101 += dxi * R201;
-        term101 += dyi * R111;
-        term101 += dzi * R102;
+        double term101 = qi * R101;
+        term101 -= dxi * R201;
+        term101 -= dyi * R111;
+        term101 -= dzi * R102;
         term101 += qxxi * R301;
         term101 += qyyi * R121;
         term101 += qzzi * R103;
-        double term1012 = 0.0;
-        term1012 += qxyi * R211;
-        term1012 += qxzi * R202;
-        term1012 += qyzi * R112;
-        term101 += 2.0 * term1012;
+        term101 += qxyi * R211;
+        term101 += qxzi * R202;
+        term101 += qyzi * R112;
         E101 = term101;
-        double term011 = 0.0;
-        term011 += qi * R011;
-        term011 += dxi * R111;
-        term011 += dyi * R021;
-        term011 += dzi * R012;
+        double term011 = qi * R011;
+        term011 -= dxi * R111;
+        term011 -= dyi * R021;
+        term011 -= dzi * R012;
         term011 += qxxi * R211;
         term011 += qyyi * R031;
         term011 += qzzi * R013;
-        double term0112 = 0.0;
-        term0112 += qxyi * R121;
-        term0112 += qxzi * R112;
-        term0112 += qyzi * R022;
-        term011 += 2.0 * term0112;
+        term011 += qxyi * R121;
+        term011 += qxzi * R112;
+        term011 += qyzi * R022;
         E011 = term011;
     }
 
@@ -1770,11 +1743,9 @@ public class MultipoleTensor {
         term000 += qxxk * R200;
         term000 += qyyk * R020;
         term000 += qzzk * R002;
-        double term0002 = 0.0;
-        term0002 += qxyk * R110;
-        term0002 += qxzk * R101;
-        term0002 += qyzk * R011;
-        term000 += 2.0 * term0002;
+        term000 += qxyk * R110;
+        term000 += qxzk * R101;
+        term000 += qyzk * R011;
         E000 = term000;
         double term100 = 0.0;
         term100 += qk * R100;
@@ -1784,11 +1755,9 @@ public class MultipoleTensor {
         term100 += qxxk * R300;
         term100 += qyyk * R120;
         term100 += qzzk * R102;
-        double term1002 = 0.0;
-        term1002 += qxyk * R210;
-        term1002 += qxzk * R201;
-        term1002 += qyzk * R111;
-        term100 += 2.0 * term1002;
+        term100 += qxyk * R210;
+        term100 += qxzk * R201;
+        term100 += qyzk * R111;
         E100 = term100;
         double term010 = 0.0;
         term010 += qk * R010;
@@ -1798,11 +1767,9 @@ public class MultipoleTensor {
         term010 += qxxk * R210;
         term010 += qyyk * R030;
         term010 += qzzk * R012;
-        double term0102 = 0.0;
-        term0102 += qxyk * R120;
-        term0102 += qxzk * R111;
-        term0102 += qyzk * R021;
-        term010 += 2.0 * term0102;
+        term010 += qxyk * R120;
+        term010 += qxzk * R111;
+        term010 += qyzk * R021;
         E010 = term010;
         double term001 = 0.0;
         term001 += qk * R001;
@@ -1812,11 +1779,9 @@ public class MultipoleTensor {
         term001 += qxxk * R201;
         term001 += qyyk * R021;
         term001 += qzzk * R003;
-        double term0012 = 0.0;
-        term0012 += qxyk * R111;
-        term0012 += qxzk * R102;
-        term0012 += qyzk * R012;
-        term001 += 2.0 * term0012;
+        term001 += qxyk * R111;
+        term001 += qxzk * R102;
+        term001 += qyzk * R012;
         E001 = term001;
         double term200 = 0.0;
         term200 += qk * R200;
@@ -1826,11 +1791,9 @@ public class MultipoleTensor {
         term200 += qxxk * R400;
         term200 += qyyk * R220;
         term200 += qzzk * R202;
-        double term2002 = 0.0;
-        term2002 += qxyk * R310;
-        term2002 += qxzk * R301;
-        term2002 += qyzk * R211;
-        term200 += 2.0 * term2002;
+        term200 += qxyk * R310;
+        term200 += qxzk * R301;
+        term200 += qyzk * R211;
         E200 = term200;
         double term020 = 0.0;
         term020 += qk * R020;
@@ -1840,11 +1803,9 @@ public class MultipoleTensor {
         term020 += qxxk * R220;
         term020 += qyyk * R040;
         term020 += qzzk * R022;
-        double term0202 = 0.0;
-        term0202 += qxyk * R130;
-        term0202 += qxzk * R121;
-        term0202 += qyzk * R031;
-        term020 += 2.0 * term0202;
+        term020 += qxyk * R130;
+        term020 += qxzk * R121;
+        term020 += qyzk * R031;
         E020 = term020;
         double term002 = 0.0;
         term002 += qk * R002;
@@ -1854,11 +1815,9 @@ public class MultipoleTensor {
         term002 += qxxk * R202;
         term002 += qyyk * R022;
         term002 += qzzk * R004;
-        double term0022 = 0.0;
-        term0022 += qxyk * R112;
-        term0022 += qxzk * R103;
-        term0022 += qyzk * R013;
-        term002 += 2.0 * term0022;
+        term002 += qxyk * R112;
+        term002 += qxzk * R103;
+        term002 += qyzk * R013;
         E002 = term002;
         double term110 = 0.0;
         term110 += qk * R110;
@@ -1868,11 +1827,9 @@ public class MultipoleTensor {
         term110 += qxxk * R310;
         term110 += qyyk * R130;
         term110 += qzzk * R112;
-        double term1102 = 0.0;
-        term1102 += qxyk * R220;
-        term1102 += qxzk * R211;
-        term1102 += qyzk * R121;
-        term110 += 2.0 * term1102;
+        term110 += qxyk * R220;
+        term110 += qxzk * R211;
+        term110 += qyzk * R121;
         E110 = term110;
         double term101 = 0.0;
         term101 += qk * R101;
@@ -1882,11 +1839,9 @@ public class MultipoleTensor {
         term101 += qxxk * R301;
         term101 += qyyk * R121;
         term101 += qzzk * R103;
-        double term1012 = 0.0;
-        term1012 += qxyk * R211;
-        term1012 += qxzk * R202;
-        term1012 += qyzk * R112;
-        term101 += 2.0 * term1012;
+        term101 += qxyk * R211;
+        term101 += qxzk * R202;
+        term101 += qyzk * R112;
         E101 = term101;
         double term011 = 0.0;
         term011 += qk * R011;
@@ -1896,697 +1851,543 @@ public class MultipoleTensor {
         term011 += qxxk * R211;
         term011 += qyyk * R031;
         term011 += qzzk * R013;
-        double term0112 = 0.0;
-        term0112 += qxyk * R121;
-        term0112 += qxzk * R112;
-        term0112 += qyzk * R022;
-        term011 += 2.0 * term0112;
+        term011 += qxyk * R121;
+        term011 += qxzk * R112;
+        term011 += qyzk * R022;
         E011 = term011;
     }
 
     private void Ex5() {
         double term100 = 0.0;
         term100 += qi * R100;
-        term100 += dxi * R200;
-        term100 += dyi * R110;
-        term100 += dzi * R101;
+        term100 -= dxi * R200;
+        term100 -= dyi * R110;
+        term100 -= dzi * R101;
         term100 += qxxi * R300;
         term100 += qyyi * R120;
         term100 += qzzi * R102;
-        double term1002 = 0.0;
-        term1002 += qxyi * R210;
-        term1002 += qxzi * R201;
-        term1002 += qyzi * R111;
-        term100 += 2.0 * term1002;
+        term100 += qxyi * R210;
+        term100 += qxzi * R201;
+        term100 += qyzi * R111;
         E000 = term100;
         double term200 = 0.0;
         term200 += qi * R200;
-        term200 += dxi * R300;
-        term200 += dyi * R210;
-        term200 += dzi * R201;
+        term200 -= dxi * R300;
+        term200 -= dyi * R210;
+        term200 -= dzi * R201;
         term200 += qxxi * R400;
         term200 += qyyi * R220;
         term200 += qzzi * R202;
-        double term2002 = 0.0;
-        term2002 += qxyi * R310;
-        term2002 += qxzi * R301;
-        term2002 += qyzi * R211;
-        term200 += 2.0 * term2002;
+        term200 += qxyi * R310;
+        term200 += qxzi * R301;
+        term200 += qyzi * R211;
         E100 = term200;
         double term110 = 0.0;
         term110 += qi * R110;
-        term110 += dxi * R210;
-        term110 += dyi * R120;
-        term110 += dzi * R111;
+        term110 -= dxi * R210;
+        term110 -= dyi * R120;
+        term110 -= dzi * R111;
         term110 += qxxi * R310;
         term110 += qyyi * R130;
         term110 += qzzi * R112;
-        double term1102 = 0.0;
-        term1102 += qxyi * R220;
-        term1102 += qxzi * R211;
-        term1102 += qyzi * R121;
-        term110 += 2.0 * term1102;
+        term110 += qxyi * R220;
+        term110 += qxzi * R211;
+        term110 += qyzi * R121;
         E010 = term110;
         double term101 = 0.0;
         term101 += qi * R101;
-        term101 += dxi * R201;
-        term101 += dyi * R111;
-        term101 += dzi * R102;
+        term101 -= dxi * R201;
+        term101 -= dyi * R111;
+        term101 -= dzi * R102;
         term101 += qxxi * R301;
         term101 += qyyi * R121;
         term101 += qzzi * R103;
-        double term1012 = 0.0;
-        term1012 += qxyi * R211;
-        term1012 += qxzi * R202;
-        term1012 += qyzi * R112;
-        term101 += 2.0 * term1012;
+        term101 += qxyi * R211;
+        term101 += qxzi * R202;
+        term101 += qyzi * R112;
         E001 = term101;
         double term300 = 0.0;
         term300 += qi * R300;
-        term300 += dxi * R400;
-        term300 += dyi * R310;
-        term300 += dzi * R301;
+        term300 -= dxi * R400;
+        term300 -= dyi * R310;
+        term300 -= dzi * R301;
         term300 += qxxi * R500;
         term300 += qyyi * R320;
         term300 += qzzi * R302;
-        double term3002 = 0.0;
-        term3002 += qxyi * R410;
-        term3002 += qxzi * R401;
-        term3002 += qyzi * R311;
-        term300 += 2.0 * term3002;
+        term300 += qxyi * R410;
+        term300 += qxzi * R401;
+        term300 += qyzi * R311;
         E200 = term300;
         double term120 = 0.0;
         term120 += qi * R120;
-        term120 += dxi * R220;
-        term120 += dyi * R130;
-        term120 += dzi * R121;
+        term120 -= dxi * R220;
+        term120 -= dyi * R130;
+        term120 -= dzi * R121;
         term120 += qxxi * R320;
         term120 += qyyi * R140;
         term120 += qzzi * R122;
-        double term1202 = 0.0;
-        term1202 += qxyi * R230;
-        term1202 += qxzi * R221;
-        term1202 += qyzi * R131;
-        term120 += 2.0 * term1202;
+        term120 += qxyi * R230;
+        term120 += qxzi * R221;
+        term120 += qyzi * R131;
         E020 = term120;
         double term102 = 0.0;
         term102 += qi * R102;
-        term102 += dxi * R202;
-        term102 += dyi * R112;
-        term102 += dzi * R103;
+        term102 -= dxi * R202;
+        term102 -= dyi * R112;
+        term102 -= dzi * R103;
         term102 += qxxi * R302;
         term102 += qyyi * R122;
         term102 += qzzi * R104;
-        double term1022 = 0.0;
-        term1022 += qxyi * R212;
-        term1022 += qxzi * R203;
-        term1022 += qyzi * R113;
-        term102 += 2.0 * term1022;
+        term102 += qxyi * R212;
+        term102 += qxzi * R203;
+        term102 += qyzi * R113;
         E002 = term102;
         double term210 = 0.0;
         term210 += qi * R210;
-        term210 += dxi * R310;
-        term210 += dyi * R220;
-        term210 += dzi * R211;
+        term210 -= dxi * R310;
+        term210 -= dyi * R220;
+        term210 -= dzi * R211;
         term210 += qxxi * R410;
         term210 += qyyi * R230;
         term210 += qzzi * R212;
-        double term2102 = 0.0;
-        term2102 += qxyi * R320;
-        term2102 += qxzi * R311;
-        term2102 += qyzi * R221;
-        term210 += 2.0 * term2102;
+        term210 += qxyi * R320;
+        term210 += qxzi * R311;
+        term210 += qyzi * R221;
         E110 = term210;
         double term201 = 0.0;
         term201 += qi * R201;
-        term201 += dxi * R301;
-        term201 += dyi * R211;
-        term201 += dzi * R202;
+        term201 -= dxi * R301;
+        term201 -= dyi * R211;
+        term201 -= dzi * R202;
         term201 += qxxi * R401;
         term201 += qyyi * R221;
         term201 += qzzi * R203;
-        double term2012 = 0.0;
-        term2012 += qxyi * R311;
-        term2012 += qxzi * R302;
-        term2012 += qyzi * R212;
-        term201 += 2.0 * term2012;
+        term201 += qxyi * R311;
+        term201 += qxzi * R302;
+        term201 += qyzi * R212;
         E101 = term201;
         double term111 = 0.0;
         term111 += qi * R111;
-        term111 += dxi * R211;
-        term111 += dyi * R121;
-        term111 += dzi * R112;
+        term111 -= dxi * R211;
+        term111 -= dyi * R121;
+        term111 -= dzi * R112;
         term111 += qxxi * R311;
         term111 += qyyi * R131;
         term111 += qzzi * R113;
-        double term1112 = 0.0;
-        term1112 += qxyi * R221;
-        term1112 += qxzi * R212;
-        term1112 += qyzi * R122;
-        term111 += 2.0 * term1112;
+        term111 += qxyi * R221;
+        term111 += qxzi * R212;
+        term111 += qyzi * R122;
         E011 = term111;
     }
 
     private void Ey5() {
         double term010 = 0.0;
         term010 += qi * R010;
-        term010 += dxi * R110;
-        term010 += dyi * R020;
-        term010 += dzi * R011;
+        term010 -= dxi * R110;
+        term010 -= dyi * R020;
+        term010 -= dzi * R011;
         term010 += qxxi * R210;
         term010 += qyyi * R030;
         term010 += qzzi * R012;
-        double term0102 = 0.0;
-        term0102 += qxyi * R120;
-        term0102 += qxzi * R111;
-        term0102 += qyzi * R021;
-        term010 += 2.0 * term0102;
+        term010 += qxyi * R120;
+        term010 += qxzi * R111;
+        term010 += qyzi * R021;
         E000 = term010;
         double term110 = 0.0;
         term110 += qi * R110;
-        term110 += dxi * R210;
-        term110 += dyi * R120;
-        term110 += dzi * R111;
+        term110 -= dxi * R210;
+        term110 -= dyi * R120;
+        term110 -= dzi * R111;
         term110 += qxxi * R310;
         term110 += qyyi * R130;
         term110 += qzzi * R112;
-        double term1102 = 0.0;
-        term1102 += qxyi * R220;
-        term1102 += qxzi * R211;
-        term1102 += qyzi * R121;
-        term110 += 2.0 * term1102;
+        term110 += qxyi * R220;
+        term110 += qxzi * R211;
+        term110 += qyzi * R121;
         E100 = term110;
         double term020 = 0.0;
         term020 += qi * R020;
-        term020 += dxi * R120;
-        term020 += dyi * R030;
-        term020 += dzi * R021;
+        term020 -= dxi * R120;
+        term020 -= dyi * R030;
+        term020 -= dzi * R021;
         term020 += qxxi * R220;
         term020 += qyyi * R040;
         term020 += qzzi * R022;
-        double term0202 = 0.0;
-        term0202 += qxyi * R130;
-        term0202 += qxzi * R121;
-        term0202 += qyzi * R031;
-        term020 += 2.0 * term0202;
+        term020 += qxyi * R130;
+        term020 += qxzi * R121;
+        term020 += qyzi * R031;
         E010 = term020;
         double term011 = 0.0;
         term011 += qi * R011;
-        term011 += dxi * R111;
-        term011 += dyi * R021;
-        term011 += dzi * R012;
+        term011 -= dxi * R111;
+        term011 -= dyi * R021;
+        term011 -= dzi * R012;
         term011 += qxxi * R211;
         term011 += qyyi * R031;
         term011 += qzzi * R013;
-        double term0112 = 0.0;
-        term0112 += qxyi * R121;
-        term0112 += qxzi * R112;
-        term0112 += qyzi * R022;
-        term011 += 2.0 * term0112;
+        term011 += qxyi * R121;
+        term011 += qxzi * R112;
+        term011 += qyzi * R022;
         E001 = term011;
         double term210 = 0.0;
         term210 += qi * R210;
-        term210 += dxi * R310;
-        term210 += dyi * R220;
-        term210 += dzi * R211;
+        term210 -= dxi * R310;
+        term210 -= dyi * R220;
+        term210 -= dzi * R211;
         term210 += qxxi * R410;
         term210 += qyyi * R230;
         term210 += qzzi * R212;
-        double term2102 = 0.0;
-        term2102 += qxyi * R320;
-        term2102 += qxzi * R311;
-        term2102 += qyzi * R221;
-        term210 += 2.0 * term2102;
+        term210 += qxyi * R320;
+        term210 += qxzi * R311;
+        term210 += qyzi * R221;
         E200 = term210;
         double term030 = 0.0;
         term030 += qi * R030;
-        term030 += dxi * R130;
-        term030 += dyi * R040;
-        term030 += dzi * R031;
+        term030 -= dxi * R130;
+        term030 -= dyi * R040;
+        term030 -= dzi * R031;
         term030 += qxxi * R230;
         term030 += qyyi * R050;
         term030 += qzzi * R032;
-        double term0302 = 0.0;
-        term0302 += qxyi * R140;
-        term0302 += qxzi * R131;
-        term0302 += qyzi * R041;
-        term030 += 2.0 * term0302;
+        term030 += qxyi * R140;
+        term030 += qxzi * R131;
+        term030 += qyzi * R041;
         E020 = term030;
         double term012 = 0.0;
         term012 += qi * R012;
-        term012 += dxi * R112;
-        term012 += dyi * R022;
-        term012 += dzi * R013;
+        term012 -= dxi * R112;
+        term012 -= dyi * R022;
+        term012 -= dzi * R013;
         term012 += qxxi * R212;
         term012 += qyyi * R032;
         term012 += qzzi * R014;
-        double term0122 = 0.0;
-        term0122 += qxyi * R122;
-        term0122 += qxzi * R113;
-        term0122 += qyzi * R023;
-        term012 += 2.0 * term0122;
+        term012 += qxyi * R122;
+        term012 += qxzi * R113;
+        term012 += qyzi * R023;
         E002 = term012;
         double term120 = 0.0;
         term120 += qi * R120;
-        term120 += dxi * R220;
-        term120 += dyi * R130;
-        term120 += dzi * R121;
+        term120 -= dxi * R220;
+        term120 -= dyi * R130;
+        term120 -= dzi * R121;
         term120 += qxxi * R320;
         term120 += qyyi * R140;
         term120 += qzzi * R122;
-        double term1202 = 0.0;
-        term1202 += qxyi * R230;
-        term1202 += qxzi * R221;
-        term1202 += qyzi * R131;
-        term120 += 2.0 * term1202;
+        term120 += qxyi * R230;
+        term120 += qxzi * R221;
+        term120 += qyzi * R131;
         E110 = term120;
         double term111 = 0.0;
         term111 += qi * R111;
-        term111 += dxi * R211;
-        term111 += dyi * R121;
-        term111 += dzi * R112;
+        term111 -= dxi * R211;
+        term111 -= dyi * R121;
+        term111 -= dzi * R112;
         term111 += qxxi * R311;
         term111 += qyyi * R131;
         term111 += qzzi * R113;
-        double term1112 = 0.0;
-        term1112 += qxyi * R221;
-        term1112 += qxzi * R212;
-        term1112 += qyzi * R122;
-        term111 += 2.0 * term1112;
+        term111 += qxyi * R221;
+        term111 += qxzi * R212;
+        term111 += qyzi * R122;
         E101 = term111;
         double term021 = 0.0;
         term021 += qi * R021;
-        term021 += dxi * R121;
-        term021 += dyi * R031;
-        term021 += dzi * R022;
+        term021 -= dxi * R121;
+        term021 -= dyi * R031;
+        term021 -= dzi * R022;
         term021 += qxxi * R221;
         term021 += qyyi * R041;
         term021 += qzzi * R023;
-        double term0212 = 0.0;
-        term0212 += qxyi * R131;
-        term0212 += qxzi * R122;
-        term0212 += qyzi * R032;
-        term021 += 2.0 * term0212;
+        term021 += qxyi * R131;
+        term021 += qxzi * R122;
+        term021 += qyzi * R032;
         E011 = term021;
     }
 
     private void Ez5() {
         double term001 = 0.0;
         term001 += qi * R001;
-        term001 += dxi * R101;
-        term001 += dyi * R011;
-        term001 += dzi * R002;
+        term001 -= dxi * R101;
+        term001 -= dyi * R011;
+        term001 -= dzi * R002;
         term001 += qxxi * R201;
         term001 += qyyi * R021;
         term001 += qzzi * R003;
-        double term0012 = 0.0;
-        term0012 += qxyi * R111;
-        term0012 += qxzi * R102;
-        term0012 += qyzi * R012;
-        term001 += 2.0 * term0012;
+        term001 += qxyi * R111;
+        term001 += qxzi * R102;
+        term001 += qyzi * R012;
         E000 = term001;
         double term101 = 0.0;
         term101 += qi * R101;
-        term101 += dxi * R201;
-        term101 += dyi * R111;
-        term101 += dzi * R102;
+        term101 -= dxi * R201;
+        term101 -= dyi * R111;
+        term101 -= dzi * R102;
         term101 += qxxi * R301;
         term101 += qyyi * R121;
         term101 += qzzi * R103;
-        double term1012 = 0.0;
-        term1012 += qxyi * R211;
-        term1012 += qxzi * R202;
-        term1012 += qyzi * R112;
-        term101 += 2.0 * term1012;
+        term101 += qxyi * R211;
+        term101 += qxzi * R202;
+        term101 += qyzi * R112;
         E100 = term101;
         double term011 = 0.0;
         term011 += qi * R011;
-        term011 += dxi * R111;
-        term011 += dyi * R021;
-        term011 += dzi * R012;
+        term011 -= dxi * R111;
+        term011 -= dyi * R021;
+        term011 -= dzi * R012;
         term011 += qxxi * R211;
         term011 += qyyi * R031;
         term011 += qzzi * R013;
-        double term0112 = 0.0;
-        term0112 += qxyi * R121;
-        term0112 += qxzi * R112;
-        term0112 += qyzi * R022;
-        term011 += 2.0 * term0112;
+        term011 += qxyi * R121;
+        term011 += qxzi * R112;
+        term011 += qyzi * R022;
         E010 = term011;
         double term002 = 0.0;
         term002 += qi * R002;
-        term002 += dxi * R102;
-        term002 += dyi * R012;
-        term002 += dzi * R003;
+        term002 -= dxi * R102;
+        term002 -= dyi * R012;
+        term002 -= dzi * R003;
         term002 += qxxi * R202;
         term002 += qyyi * R022;
         term002 += qzzi * R004;
-        double term0022 = 0.0;
-        term0022 += qxyi * R112;
-        term0022 += qxzi * R103;
-        term0022 += qyzi * R013;
-        term002 += 2.0 * term0022;
+        term002 += qxyi * R112;
+        term002 += qxzi * R103;
+        term002 += qyzi * R013;
         E001 = term002;
         double term201 = 0.0;
         term201 += qi * R201;
-        term201 += dxi * R301;
-        term201 += dyi * R211;
-        term201 += dzi * R202;
+        term201 -= dxi * R301;
+        term201 -= dyi * R211;
+        term201 -= dzi * R202;
         term201 += qxxi * R401;
         term201 += qyyi * R221;
         term201 += qzzi * R203;
-        double term2012 = 0.0;
-        term2012 += qxyi * R311;
-        term2012 += qxzi * R302;
-        term2012 += qyzi * R212;
-        term201 += 2.0 * term2012;
+        term201 += qxyi * R311;
+        term201 += qxzi * R302;
+        term201 += qyzi * R212;
         E200 = term201;
         double term021 = 0.0;
         term021 += qi * R021;
-        term021 += dxi * R121;
-        term021 += dyi * R031;
-        term021 += dzi * R022;
+        term021 -= dxi * R121;
+        term021 -= dyi * R031;
+        term021 -= dzi * R022;
         term021 += qxxi * R221;
         term021 += qyyi * R041;
         term021 += qzzi * R023;
-        double term0212 = 0.0;
-        term0212 += qxyi * R131;
-        term0212 += qxzi * R122;
-        term0212 += qyzi * R032;
-        term021 += 2.0 * term0212;
+        term021 += qxyi * R131;
+        term021 += qxzi * R122;
+        term021 += qyzi * R032;
         E020 = term021;
         double term003 = 0.0;
         term003 += qi * R003;
-        term003 += dxi * R103;
-        term003 += dyi * R013;
-        term003 += dzi * R004;
+        term003 -= dxi * R103;
+        term003 -= dyi * R013;
+        term003 -= dzi * R004;
         term003 += qxxi * R203;
         term003 += qyyi * R023;
         term003 += qzzi * R005;
-        double term0032 = 0.0;
-        term0032 += qxyi * R113;
-        term0032 += qxzi * R104;
-        term0032 += qyzi * R014;
-        term003 += 2.0 * term0032;
+        term003 += qxyi * R113;
+        term003 += qxzi * R104;
+        term003 += qyzi * R014;
         E002 = term003;
         double term111 = 0.0;
         term111 += qi * R111;
-        term111 += dxi * R211;
-        term111 += dyi * R121;
-        term111 += dzi * R112;
+        term111 -= dxi * R211;
+        term111 -= dyi * R121;
+        term111 -= dzi * R112;
         term111 += qxxi * R311;
         term111 += qyyi * R131;
         term111 += qzzi * R113;
-        double term1112 = 0.0;
-        term1112 += qxyi * R221;
-        term1112 += qxzi * R212;
-        term1112 += qyzi * R122;
-        term111 += 2.0 * term1112;
+        term111 += qxyi * R221;
+        term111 += qxzi * R212;
+        term111 += qyzi * R122;
         E110 = term111;
         double term102 = 0.0;
         term102 += qi * R102;
-        term102 += dxi * R202;
-        term102 += dyi * R112;
-        term102 += dzi * R103;
+        term102 -= dxi * R202;
+        term102 -= dyi * R112;
+        term102 -= dzi * R103;
         term102 += qxxi * R302;
         term102 += qyyi * R122;
         term102 += qzzi * R104;
-        double term1022 = 0.0;
-        term1022 += qxyi * R212;
-        term1022 += qxzi * R203;
-        term1022 += qyzi * R113;
-        term102 += 2.0 * term1022;
+        term102 += qxyi * R212;
+        term102 += qxzi * R203;
+        term102 += qyzi * R113;
         E101 = term102;
         double term012 = 0.0;
         term012 += qi * R012;
-        term012 += dxi * R112;
-        term012 += dyi * R022;
-        term012 += dzi * R013;
+        term012 -= dxi * R112;
+        term012 -= dyi * R022;
+        term012 -= dzi * R013;
         term012 += qxxi * R212;
         term012 += qyyi * R032;
         term012 += qzzi * R014;
-        double term0122 = 0.0;
-        term0122 += qxyi * R122;
-        term0122 += qxzi * R113;
-        term0122 += qyzi * R023;
-        term012 += 2.0 * term0122;
+        term012 += qxyi * R122;
+        term012 += qxzi * R113;
+        term012 += qyzi * R023;
         E011 = term012;
     }
 
     private void EiQI5() {
-        double term000 = 0.0;
-        term000 += qi * R000;
-        term000 += dzi * R001;
+        double term000 = qi * R000;
+        term000 -= dzi * R001;
         term000 += qxxi * R200;
         term000 += qyyi * R020;
         term000 += qzzi * R002;
         E000 = term000;
-        double term100 = 0.0;
-        term100 += dxi * R200;
-        double term1002 = 0.0;
-        term1002 += qxzi * R201;
-        term100 += 2.0 * term1002;
+        double term100 = -dxi * R200;
+        term100 += qxzi * R201;
         E100 = term100;
-        double term010 = 0.0;
-        term010 += dyi * R020;
-        double term0102 = 0.0;
-        term0102 += qyzi * R021;
-        term010 += 2.0 * term0102;
+        double term010 = -dyi * R020;
+        term010 += qyzi * R021;
         E010 = term010;
-        double term001 = 0.0;
-        term001 += qi * R001;
-        term001 += dzi * R002;
+        double term001 = qi * R001;
+        term001 -= dzi * R002;
         term001 += qxxi * R201;
         term001 += qyyi * R021;
         term001 += qzzi * R003;
         E001 = term001;
-        double term200 = 0.0;
-        term200 += qi * R200;
-        term200 += dzi * R201;
+        double term200 = qi * R200;
+        term200 -= dzi * R201;
         term200 += qxxi * R400;
         term200 += qyyi * R220;
         term200 += qzzi * R202;
         E200 = term200;
-        double term020 = 0.0;
-        term020 += qi * R020;
-        term020 += dzi * R021;
+        double term020 = qi * R020;
+        term020 -= dzi * R021;
         term020 += qxxi * R220;
         term020 += qyyi * R040;
         term020 += qzzi * R022;
         E020 = term020;
-        double term002 = 0.0;
-        term002 += qi * R002;
-        term002 += dzi * R003;
+        double term002 = qi * R002;
+        term002 -= dzi * R003;
         term002 += qxxi * R202;
         term002 += qyyi * R022;
         term002 += qzzi * R004;
         E002 = term002;
-        double term110 = 0.0;
-        double term1102 = 0.0;
-        term1102 += qxyi * R220;
-        term110 += 2.0 * term1102;
+        double term110 = qxyi * R220;
         E110 = term110;
-        double term101 = 0.0;
-        term101 += dxi * R201;
-        double term1012 = 0.0;
-        term1012 += qxzi * R202;
-        term101 += 2.0 * term1012;
+        double term101 = -dxi * R201;
+        term101 += qxzi * R202;
         E101 = term101;
-        double term011 = 0.0;
-        term011 += dyi * R021;
-        double term0112 = 0.0;
-        term0112 += qyzi * R022;
-        term011 += 2.0 * term0112;
+        double term011 = -dyi * R021;
+        term011 += qyzi * R022;
         E011 = term011;
     }
 
     private void EkQI5() {
-        double term000 = 0.0;
-        term000 += qk * R000;
+        double term000 = qk * R000;
         term000 += dzk * R001;
         term000 += qxxk * R200;
         term000 += qyyk * R020;
         term000 += qzzk * R002;
         E000 = term000;
-        double term100 = 0.0;
-        term100 += dxk * R200;
-        double term1002 = 0.0;
-        term1002 += qxzk * R201;
-        term100 += 2.0 * term1002;
+        double term100 = dxk * R200;
+        term100 += qxzk * R201;
         E100 = term100;
-        double term010 = 0.0;
-        term010 += dyk * R020;
-        double term0102 = 0.0;
-        term0102 += qyzk * R021;
-        term010 += 2.0 * term0102;
+        double term010 = dyk * R020;
+        term010 += qyzk * R021;
         E010 = term010;
-        double term001 = 0.0;
-        term001 += qk * R001;
+        double term001 = qk * R001;
         term001 += dzk * R002;
         term001 += qxxk * R201;
         term001 += qyyk * R021;
         term001 += qzzk * R003;
         E001 = term001;
-        double term200 = 0.0;
-        term200 += qk * R200;
+        double term200 = qk * R200;
         term200 += dzk * R201;
         term200 += qxxk * R400;
         term200 += qyyk * R220;
         term200 += qzzk * R202;
         E200 = term200;
-        double term020 = 0.0;
-        term020 += qk * R020;
+        double term020 = qk * R020;
         term020 += dzk * R021;
         term020 += qxxk * R220;
         term020 += qyyk * R040;
         term020 += qzzk * R022;
         E020 = term020;
-        double term002 = 0.0;
-        term002 += qk * R002;
+        double term002 = qk * R002;
         term002 += dzk * R003;
         term002 += qxxk * R202;
         term002 += qyyk * R022;
         term002 += qzzk * R004;
         E002 = term002;
-        double term110 = 0.0;
-        double term1102 = 0.0;
-        term1102 += qxyk * R220;
-        term110 += 2.0 * term1102;
+        double term110 = qxyk * R220;
         E110 = term110;
-        double term101 = 0.0;
-        term101 += dxk * R201;
-        double term1012 = 0.0;
-        term1012 += qxzk * R202;
-        term101 += 2.0 * term1012;
+        double term101 = dxk * R201;
+        term101 += qxzk * R202;
         E101 = term101;
-        double term011 = 0.0;
-        term011 += dyk * R021;
-        double term0112 = 0.0;
-        term0112 += qyzk * R022;
-        term011 += 2.0 * term0112;
+        double term011 = dyk * R021;
+        term011 += qyzk * R022;
         E011 = term011;
     }
 
     private void ExQI5() {
-        double term100 = 0.0;
-        term100 += dxi * R200;
-        double term1002 = 0.0;
-        term1002 += qxzi * R201;
-        term100 += 2.0 * term1002;
+        double term100 = -dxi * R200;
+        term100 += qxzi * R201;
         E000 = term100;
-        double term200 = 0.0;
-        term200 += qi * R200;
-        term200 += dzi * R201;
+        double term200 = qi * R200;
+        term200 -= dzi * R201;
         term200 += qxxi * R400;
         term200 += qyyi * R220;
         term200 += qzzi * R202;
         E100 = term200;
-        double term110 = 0.0;
-        double term1102 = 0.0;
-        term1102 += qxyi * R220;
-        term110 += 2.0 * term1102;
+        double term110 = qxyi * R220;
         E010 = term110;
-        double term101 = 0.0;
-        term101 += dxi * R201;
-        double term1012 = 0.0;
-        term1012 += qxzi * R202;
-        term101 += 2.0 * term1012;
+        double term101 = -dxi * R201;
+        term101 += qxzi * R202;
         E001 = term101;
-        double term300 = 0.0;
-        term300 += dxi * R400;
-        double term3002 = 0.0;
-        term3002 += qxzi * R401;
-        term300 += 2.0 * term3002;
+        double term300 = -dxi * R400;
+        term300 += qxzi * R401;
         E200 = term300;
-        double term120 = 0.0;
-        term120 += dxi * R220;
-        double term1202 = 0.0;
-        term1202 += qxzi * R221;
-        term120 += 2.0 * term1202;
+        double term120 = -dxi * R220;
+        term120 += qxzi * R221;
         E020 = term120;
-        double term102 = 0.0;
-        term102 += dxi * R202;
-        double term1022 = 0.0;
-        term1022 += qxzi * R203;
-        term102 += 2.0 * term1022;
+        double term102 = -dxi * R202;
+        term102 += qxzi * R203;
         E002 = term102;
-        double term210 = 0.0;
-        term210 += dyi * R220;
-        double term2102 = 0.0;
-        term2102 += qyzi * R221;
-        term210 += 2.0 * term2102;
+        double term210 = -dyi * R220;
+        term210 += qyzi * R221;
         E110 = term210;
-        double term201 = 0.0;
-        term201 += qi * R201;
-        term201 += dzi * R202;
+        double term201 = qi * R201;
+        term201 -= dzi * R202;
         term201 += qxxi * R401;
         term201 += qyyi * R221;
         term201 += qzzi * R203;
         E101 = term201;
-        double term111 = 0.0;
-        double term1112 = 0.0;
-        term1112 += qxyi * R221;
-        term111 += 2.0 * term1112;
+        double term111 = qxyi * R221;
         E011 = term111;
     }
 
     private void EyQI5() {
-        double term010 = 0.0;
-        term010 += dyi * R020;
-        double term0102 = 0.0;
-        term0102 += qyzi * R021;
-        term010 += 2.0 * term0102;
+        double term010 = -dyi * R020;
+        term010 += qyzi * R021;
         E000 = term010;
-        double term110 = 0.0;
-        double term1102 = 0.0;
-        term1102 += qxyi * R220;
-        term110 += 2.0 * term1102;
+        double term110 = qxyi * R220;
         E100 = term110;
-        double term020 = 0.0;
-        term020 += qi * R020;
-        term020 += dzi * R021;
+        double term020 = qi * R020;
+        term020 -= dzi * R021;
         term020 += qxxi * R220;
         term020 += qyyi * R040;
         term020 += qzzi * R022;
         E010 = term020;
-        double term011 = 0.0;
-        term011 += dyi * R021;
-        double term0112 = 0.0;
-        term0112 += qyzi * R022;
-        term011 += 2.0 * term0112;
+        double term011 = -dyi * R021;
+        term011 += qyzi * R022;
         E001 = term011;
-        double term210 = 0.0;
-        term210 += dyi * R220;
-        double term2102 = 0.0;
-        term2102 += qyzi * R221;
-        term210 += 2.0 * term2102;
+        double term210 = -dyi * R220;
+        term210 += qyzi * R221;
         E200 = term210;
-        double term030 = 0.0;
-        term030 += dyi * R040;
-        double term0302 = 0.0;
-        term0302 += qyzi * R041;
-        term030 += 2.0 * term0302;
+        double term030 = -dyi * R040;
+        term030 += qyzi * R041;
         E020 = term030;
-        double term012 = 0.0;
-        term012 += dyi * R022;
-        double term0122 = 0.0;
-        term0122 += qyzi * R023;
-        term012 += 2.0 * term0122;
+        double term012 = -dyi * R022;
+        term012 += qyzi * R023;
         E002 = term012;
-        double term120 = 0.0;
-        term120 += dxi * R220;
-        double term1202 = 0.0;
-        term1202 += qxzi * R221;
-        term120 += 2.0 * term1202;
+        double term120 = -dxi * R220;
+        term120 += qxzi * R221;
         E110 = term120;
-        double term111 = 0.0;
-        double term1112 = 0.0;
-        term1112 += qxyi * R221;
-        term111 += 2.0 * term1112;
+        double term111 = qxyi * R221;
         E101 = term111;
-        double term021 = 0.0;
-        term021 += qi * R021;
-        term021 += dzi * R022;
+        double term021 = qi * R021;
+        term021 -= dzi * R022;
         term021 += qxxi * R221;
         term021 += qyyi * R041;
         term021 += qzzi * R023;
@@ -2594,69 +2395,49 @@ public class MultipoleTensor {
     }
 
     private void EzQI5() {
-        double term001 = 0.0;
-        term001 += qi * R001;
-        term001 += dzi * R002;
+        double term001 = qi * R001;
+        term001 -= dzi * R002;
         term001 += qxxi * R201;
         term001 += qyyi * R021;
         term001 += qzzi * R003;
         E000 = term001;
-        double term101 = 0.0;
-        term101 += dxi * R201;
-        double term1012 = 0.0;
-        term1012 += qxzi * R202;
-        term101 += 2.0 * term1012;
+        double term101 = -dxi * R201;
+        term101 += qxzi * R202;
         E100 = term101;
-        double term011 = 0.0;
-        term011 += dyi * R021;
-        double term0112 = 0.0;
-        term0112 += qyzi * R022;
-        term011 += 2.0 * term0112;
+        double term011 = -dyi * R021;
+        term011 += qyzi * R022;
         E010 = term011;
-        double term002 = 0.0;
-        term002 += qi * R002;
-        term002 += dzi * R003;
+        double term002 = qi * R002;
+        term002 -= dzi * R003;
         term002 += qxxi * R202;
         term002 += qyyi * R022;
         term002 += qzzi * R004;
         E001 = term002;
-        double term201 = 0.0;
-        term201 += qi * R201;
-        term201 += dzi * R202;
+        double term201 = qi * R201;
+        term201 -= dzi * R202;
         term201 += qxxi * R401;
         term201 += qyyi * R221;
         term201 += qzzi * R203;
         E200 = term201;
-        double term021 = 0.0;
-        term021 += qi * R021;
-        term021 += dzi * R022;
+        double term021 = qi * R021;
+        term021 -= dzi * R022;
         term021 += qxxi * R221;
         term021 += qyyi * R041;
         term021 += qzzi * R023;
         E020 = term021;
-        double term003 = 0.0;
-        term003 += qi * R003;
-        term003 += dzi * R004;
+        double term003 = qi * R003;
+        term003 -= dzi * R004;
         term003 += qxxi * R203;
         term003 += qyyi * R023;
         term003 += qzzi * R005;
         E002 = term003;
-        double term111 = 0.0;
-        double term1112 = 0.0;
-        term1112 += qxyi * R221;
-        term111 += 2.0 * term1112;
+        double term111 = qxyi * R221;
         E110 = term111;
-        double term102 = 0.0;
-        term102 += dxi * R202;
-        double term1022 = 0.0;
-        term1022 += qxzi * R203;
-        term102 += 2.0 * term1022;
+        double term102 = -dxi * R202;
+        term102 += qxzi * R203;
         E101 = term102;
-        double term012 = 0.0;
-        term012 += dyi * R022;
-        double term0122 = 0.0;
-        term0122 += qyzi * R023;
-        term012 += 2.0 * term0122;
+        double term012 = -dyi * R022;
+        term012 += qyzi * R023;
         E011 = term012;
     }
 
@@ -2665,16 +2446,18 @@ public class MultipoleTensor {
         double dx = dyi * E001 - dzi * E010;
         double dy = dzi * E100 - dxi * E001;
         double dz = dxi * E010 - dyi * E100;
+
         // Torque on quadrupole moments due to the gradient of the field.
-        double qx = qxyi * E101 + qyyi * E011 + qyzi * E002
-                - (qxzi * E110 + qyzi * E020 + qzzi * E011);
-        double qy = qxzi * E200 + qyzi * E110 + qzzi * E101
-                - (qxxi * E101 + qxyi * E011 + qxzi * E002);
-        double qz = qxxi * E110 + qxyi * E020 + qxzi * E011
-                - (qxyi * E200 + qyyi * E110 + qyzi * E101);
-        torque[0] = dx + 2.0 * qx;
-        torque[1] = dy + 2.0 * qy;
-        torque[2] = dz + 2.0 * qz;
+        double qx = qxyi * E101 + 2.0 * qyyi * E011 + qyzi * E002
+                - (qxzi * E110 + qyzi * E020 + 2.0 * qzzi * E011);
+        double qy = qxzi * E200 + qyzi * E110 + 2.0 * qzzi * E101
+                - (2.0 * qxxi * E101 + qxyi * E011 + qxzi * E002);
+        double qz = 2.0 * qxxi * E110 + qxyi * E020 + qxzi * E011
+                - (qxyi * E200 + 2.0 * qyyi * E110 + qyzi * E101);
+
+        torque[0] = dx - qx;
+        torque[1] = dy - qy;
+        torque[2] = dz - qz;
     }
 
     public void torqueK(double torque[]) {
@@ -2682,16 +2465,18 @@ public class MultipoleTensor {
         double dx = dyk * E001 - dzk * E010;
         double dy = dzk * E100 - dxk * E001;
         double dz = dxk * E010 - dyk * E100;
+
         // Torque on quadrupole moments due to the gradkent of the fkeld.
-        double qx = qxyk * E101 + qyyk * E011 + qyzk * E002
-                - (qxzk * E110 + qyzk * E020 + qzzk * E011);
-        double qy = qxzk * E200 + qyzk * E110 + qzzk * E101
-                - (qxxk * E101 + qxyk * E011 + qxzk * E002);
-        double qz = qxxk * E110 + qxyk * E020 + qxzk * E011
-                - (qxyk * E200 + qyyk * E110 + qyzk * E101);
-        torque[0] = dx + 2.0 * qx;
-        torque[1] = dy + 2.0 * qy;
-        torque[2] = dz + 2.0 * qz;
+        double qx = qxyk * E101 + 2.0 * qyyk * E011 + qyzk * E002
+                - (qxzk * E110 + qyzk * E020 + 2.0 * qzzk * E011);
+        double qy = qxzk * E200 + qyzk * E110 + 2.0 * qzzk * E101
+                - (2.0 * qxxk * E101 + qxyk * E011 + qxzk * E002);
+        double qz = 2.0 * qxxk * E110 + qxyk * E020 + qxzk * E011
+                - (qxyk * E200 + 2.0 * qyyk * E110 + qyzk * E101);
+
+        torque[0] = -(dx + qx);
+        torque[1] = -(dy + qy);
+        torque[2] = -(dz + qz);
     }
 
     /**
@@ -2898,10 +2683,10 @@ public class MultipoleTensor {
         total += qxxk * E200;
         total += qyyk * E020;
         total += qzzk * E002;
-        double total2 = qxyi * E110;
-        total2 += qxzk * E101;
-        total2 += qyzk * E011;
-        return total + 2.0 * total2;
+        total += qxyk * E110;
+        total += qxzk * E101;
+        total += qyzk * E011;
+        return total;
     }
 
     public double codeInteract5(double r[], double Qi[], double Qk[],
@@ -2930,32 +2715,6 @@ public class MultipoleTensor {
         logger.log(Level.INFO, sb.toString());
 
         return 0.0;
-    }
-
-    private void setMultipoleI(double Qi[]) {
-        qi = Qi[0];
-        dxi = Qi[1];
-        dyi = Qi[2];
-        dzi = Qi[3];
-        qxxi = Qi[4];
-        qyyi = Qi[5];
-        qzzi = Qi[6];
-        qxyi = Qi[7];
-        qxzi = Qi[8];
-        qyzi = Qi[9];
-    }
-
-    private void setMultipoleK(double Qk[]) {
-        qk = Qk[0];
-        dxk = Qk[1];
-        dyk = Qk[2];
-        dzk = Qk[3];
-        qxxk = Qk[4];
-        qyyk = Qk[5];
-        qzzk = Qk[6];
-        qxyk = Qk[7];
-        qxzk = Qk[8];
-        qyzk = Qk[9];
     }
 
     public double codeInteractQI5(double r[], double Qi[], double Qk[],
@@ -2987,18 +2746,16 @@ public class MultipoleTensor {
         return 0.0;
     }
 
-    /**
-     * Pass in PRE-Lambda-BUFFERED r[] separation.
-     */
     public double interact5(double r[], double Qi[], double Qk[],
             double Fi[], double Fk[], double Ti[], double Tk[]) {
-        order5(r);
+        setR(r);
+        order5();
         setMultipoleI(Qi);
         setMultipoleK(Qk);
 
         Ei5();
         double energy = dotK();
-        
+
         // Torques
         torqueK(Tk);
         Ek5();
@@ -3020,14 +2777,49 @@ public class MultipoleTensor {
     }
 
     /**
-     * Pass in PRE-Lambda-BUFFERED r[] separation.
+     * Re-use R, Qi, and Qk from a previous call.
+     *
+     * @param Fi Output force on i.
+     * @param Fk Output force on k.
+     * @param Ti Output torque on i.
+     * @param Tk Output torque on k.
+     *
+     * @return the energy.
      */
+    public double interact5(double Fi[], double Fk[], double Ti[], double Tk[]) {
+        order5();
+
+        Ei5();
+        double energy = dotK();
+
+        // Torques
+        torqueK(Tk);
+
+        Ek5();
+        torqueI(Ti);
+
+        // Forces
+        Ex5();
+        Fi[0] = -dotK();
+        Ey5();
+        Fi[1] = -dotK();
+        Ez5();
+        Fi[2] = -dotK();
+
+        Fk[0] = -Fi[0];
+        Fk[1] = -Fi[1];
+        Fk[2] = -Fi[2];
+
+        return energy;
+    }
+
     public double interact5QI(double r[], double Qi[], double Qk[],
             double Fi[], double Fk[], double Ti[], double Tk[]) {
 
         // Find the QI Tensor.
         double z[] = {0.0, 0.0, r(r)};
-        order5QI(z);
+        setR(z);
+        order5QI();
 
         // Find the rotation matrix from the Global frame to the QI frame.
         setQIRotationMatrix(r);
@@ -3059,7 +2851,7 @@ public class MultipoleTensor {
         Fi[2] = -dotK();
 
         // Rotate the force and torques from the QI frame into the Global frame.
-        vectorsToGlobal(Fi, Ti, Tk);
+        qiToGlobal(Fi, Ti, Tk);
 
         // Set the force on site K as -Fi.
         Fk[0] = -Fi[0];
@@ -3068,36 +2860,83 @@ public class MultipoleTensor {
 
         return energy;
     }
-    
+
+    /**
+     * Re-use R, Qi, Qk and rotation matrices from a previous call.
+     *
+     * @param Fi Output force on i.
+     * @param Fk Output force on k.
+     * @param Ti Output torque on i.
+     * @param Tk Output torque on k.
+     *
+     * @return the energy.
+     */
+    public double interact5QI(double Fi[], double Fk[], double Ti[], double Tk[]) {
+        order5QI();
+
+        // Compute the potential due to site I at site K.
+        EiQI5();
+
+        // Dot the potential, field, field gradient with multipole K.
+        double energy = dotK();
+
+        // Compute the torque on site K due to the field from site I.
+        torqueK(Tk);
+
+        // Compute the field at site I due to site K.
+        EkQI5();
+        // Compute the torque on site I due to the field from site K.
+        torqueI(Ti);
+
+        // Compute the force on site I F = {-dE/dx, -dE/dy, -dE/dz}.
+        ExQI5();
+        Fi[0] = -dotK();
+        EyQI5();
+        Fi[1] = -dotK();
+        EzQI5();
+        Fi[2] = -dotK();
+
+        // Rotate the force and torques from the QI frame into the Global frame.
+        qiToGlobal(Fi, Ti, Tk);
+
+        // Set the force on site K as -Fi.
+        Fk[0] = -Fi[0];
+        Fk[1] = -Fi[1];
+        Fk[2] = -Fi[2];
+
+        return energy;
+    }
+
     private void validate(boolean print) {
-        double[] qiVals = new double[]{qi,dxi,dyi,dzi,qxxi,qyyi,qzzi,qxyi,qxzi,qyzi};
-        double[] qkVals = new double[]{qk,dxk,dyk,dzk,qxxk,qyyk,qzzk,qxyk,qxzk,qyzk};
-        double[] exxxVals = new double[]{E000,E100,E010,E001,E200,E020,E002,E110,E101,E011};
-        double[] rxxxVals = new double[]{R000,  R100,R010,R001,
-            
-                                                R200,R020,R002,R110,R101,R011,
-            
-                                                R300,R120,R102,R210,R201,R111,
-                                                R210,R030,R012,R120,R111,R021,
-                                                R201,R021,R003,R111,R102,R012,
-                                                             
-                                                R400,R220,R202,R310,R301,R211,
-                                                R220,R040,R022,R130,R121,R031,
-                                                R202,R022,R004,R112,R103,R013};
+        double[] qiVals = new double[]{qi, dxi, dyi, dzi, qxxi, qyyi, qzzi, qxyi, qxzi, qyzi};
+        double[] qkVals = new double[]{qk, dxk, dyk, dzk, qxxk, qyyk, qzzk, qxyk, qxzk, qyzk};
+        double[] exxxVals = new double[]{E000, E100, E010, E001, E200, E020, E002, E110, E101, E011};
+        double[] rxxxVals = new double[]{R000, R100, R010, R001,
+            R200, R020, R002, R110, R101, R011,
+            R300, R120, R102, R210, R201, R111,
+            R210, R030, R012, R120, R111, R021,
+            R201, R021, R003, R111, R102, R012,
+            R400, R220, R202, R310, R301, R211,
+            R220, R040, R022, R130, R121, R031,
+            R202, R022, R004, R112, R103, R013};
         double[][] all = new double[][]{qiVals, qkVals, exxxVals, rxxxVals};
         if (!print) {
             for (int i = 0; i < all.length; i++) {
                 for (int j = 0; j < all[i].length; j++) {
-                    if (Double.isNaN(all[i][j])) {        logger.warning(format("MT::validate(): NaN @ (%d,%d)", i, j)); }
-                    if (Double.isInfinite(all[i][j])) {   logger.warning(format("MT::validate(): Inf @ (%d,%d)", i, j)); }
+                    if (Double.isNaN(all[i][j])) {
+                        logger.warning(format("MT::validate(): NaN @ (%d,%d)", i, j));
+                    }
+                    if (Double.isInfinite(all[i][j])) {
+                        logger.warning(format("MT::validate(): Inf @ (%d,%d)", i, j));
+                    }
                 }
             }
         } else {
             logger.info(format("MT::ALL_VALS: %s", formArr(all)));
         }
     }
-    
-    private void nanWarning(double energy, double[] r, double[] Qi, double[] Qk, 
+
+    private void nanWarning(double energy, double[] r, double[] Qi, double[] Qk,
             double[] Fi, double[] Fk, double[] Ti, double[] Tk) {
         StringBuilder sb = new StringBuilder();
         if (Double.isInfinite(energy)) {
@@ -3105,14 +2944,14 @@ public class MultipoleTensor {
         } else if (Double.isNaN(energy)) {
             sb.append(format("DotK was NaN:  \n"));
         }
-        sb.append(format(" r:  %s\n Qi: %s\n Qk: %s\n Fi: %s\n Fk: %s\n Ti: %s\n Tk: %s\n", 
+        sb.append(format(" r:  %s\n Qi: %s\n Qk: %s\n Fi: %s\n Fk: %s\n Ti: %s\n Tk: %s\n",
                 formArr(r), formArr(Qi), formArr(Qk), formArr(Fi), formArr(Fk), formArr(Ti), formArr(Tk)));
         double total = qk * E000;
         double total2 = qxyi * E110;
 //        sb.append(format("DotK components:"
 //                + "\n (1) %.4f %.4f %.4f %.4f %.4f\n (2) %.4f %.4f %.4f %.4f %.4f"
 //                + "\n (3) %.4f %.4f %.4f %.4f %.4f\n (4) %.4f %.4f %.4f %.4f %.4f"
-//                + "\n (5) %.4f %.4f %.4f", 
+//                + "\n (5) %.4f %.4f %.4f",
 //                E000, E100, E010, E001, E200,
 //                E020, E002, E110, E101, E011,
 //                  qi,  dxi,  dyi,  dzi, qxxi,
@@ -3120,10 +2959,10 @@ public class MultipoleTensor {
 //                  qk,  dxk,  dyk,  dzk, qxxk,
 //                qyyk, qzzk, qxyi, qxzk, qyzk,
 //                total, total2, total + 2.0*total2));
-        double[] Exxx = new double[]{E000,E100,E010,E001,E200,E020,E002,E110,E010,E001};
-        double[] mpoleI = new double[]{qi,dxi,dyi,dzi,qxxi,qyyi,qzzi,qxyi,qxzi,qyzi};
-        double[] mpoleK = new double[]{qk,dxk,dyk,dzk,qxxk,qyyk,qzzk,qxyk,qxzk,qyzk};
-        sb.append(format("DotK components:\n Exxx:   %s\n mpoleI: %s\n mpoleK: %s", 
+        double[] Exxx = new double[]{E000, E100, E010, E001, E200, E020, E002, E110, E010, E001};
+        double[] mpoleI = new double[]{qi, dxi, dyi, dzi, qxxi, qyyi, qzzi, qxyi, qxzi, qyzi};
+        double[] mpoleK = new double[]{qk, dxk, dyk, dzk, qxxk, qyyk, qzzk, qxyk, qxzk, qyzk};
+        sb.append(format("DotK components:\n Exxx:   %s\n mpoleI: %s\n mpoleK: %s",
                 formArr(Exxx), formArr(mpoleI), formArr(mpoleK)));
         (new ArithmeticException()).printStackTrace();
         logger.warning(sb.toString());
@@ -3148,7 +2987,9 @@ public class MultipoleTensor {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < x.length; i++) {
             sb.append("\n[");
-            if (i == 0) { sb.append("["); }
+            if (i == 0) {
+                sb.append("[");
+            }
             for (int j = 0; j < x[i].length; j++) {
                 sb.append(String.format("%.4f", x[i][j]));
                 if (j + 1 < x[i].length) {
@@ -3163,7 +3004,7 @@ public class MultipoleTensor {
         sb.append("]\n");
         return sb.toString();
     }
-    
+
     public static void main(String args[]) {
         if (args == null || args.length < 4) {
             logger.info(" Usage: java ffx.numerics.TensorRecursion order dx dy dz");
@@ -3176,7 +3017,7 @@ public class MultipoleTensor {
 
         double n2 = 710643;
         double cycles = 10;
-        
+
 //        // Steve's Tests
 //        MultipoleTensor sdlMultipoleTensor;
 //        double[] srTest, sQi, sQk, sFi, sFk, sTi, sTk;
@@ -3192,7 +3033,7 @@ public class MultipoleTensor {
 //        sTk = new double[3];
 //        sEglob = sdlMultipoleTensor.interact5(   srTest, sQi, sQk, sFi, sFk, sTi, sTk);
 //        sEqint = sdlMultipoleTensor.interact5QI( srTest, sQi, sQk, sFi, sFk, sTi, sTk);
-//        logger.info(String.format(" r,Qi,Qk,e_GF,e_QI: %s %s %s %.4f %.4f", 
+//        logger.info(String.format(" r,Qi,Qk,e_GF,e_QI: %s %s %s %.4f %.4f",
 //                formArr(srTest), formArr(sQi), formArr(sQk), sEglob, sEqint));
 //        // Test B
 //        sdlMultipoleTensor = new MultipoleTensor(OPERATOR.COULOMB, 5, 0.0);
@@ -3205,23 +3046,20 @@ public class MultipoleTensor {
 //        sTk = new double[3];
 //        sEglob = sdlMultipoleTensor.interact5(   srTest, sQi, sQk, sFi, sFk, sTi, sTk);
 //        sEqint = sdlMultipoleTensor.interact5QI( srTest, sQi, sQk, sFi, sFk, sTi, sTk);
-//        logger.info(String.format(" r,Qi,Qk,e_GF,e_QI: %s %s %s %.4f %.4f", 
+//        logger.info(String.format(" r,Qi,Qk,e_GF,e_QI: %s %s %s %.4f %.4f",
 //                formArr(srTest), formArr(sQi), formArr(sQk), sEglob, sEqint));
-        
         MultipoleTensor multipoleTensor = new MultipoleTensor(OPERATOR.SCREENED_COULOMB, order, 1e-6);
 
         double[] Fi = new double[3];
         double[] Fk = new double[3];
         double[] Ti = new double[3];
         double[] Tk = new double[3];
-        double[] Qi = new double[]
-                {0.11,
-                 0.21, 0.31, 0.41,
-                -0.51,-0.61, 1.12, 0.71, 0.81, 0.91};
-        double[] Qk = new double[]
-                {0.11,
-                 0.21, 0.31, 0.41,
-                -0.51,-0.61, 1.12, 0.70, 0.81, 0.91};
+        double[] Qi = new double[]{0.11,
+            0.21, 0.31, 0.41,
+            -0.51, -0.61, 1.12, 0.71, 0.81, 0.91};
+        double[] Qk = new double[]{0.11,
+            0.21, 0.31, 0.41,
+            -0.51, -0.61, 1.12, 0.70, 0.81, 0.91};
 
         for (int j = 0; j < cycles; j++) {
             long timeGlobalT = -System.nanoTime();
@@ -3229,7 +3067,8 @@ public class MultipoleTensor {
                 r[0] = Math.random();
                 r[1] = Math.random();
                 r[2] = Math.random();
-                multipoleTensor.order5(r);
+                multipoleTensor.setR(r);
+                multipoleTensor.order5();
             }
             timeGlobalT += System.nanoTime();
 
@@ -3250,7 +3089,8 @@ public class MultipoleTensor {
                 r[0] = Math.random();
                 r[1] = Math.random();
                 r[2] = Math.random();
-                multipoleTensor.order5QI(r);
+                multipoleTensor.setR(r);
+                multipoleTensor.order5QI();
             }
             timeQIT += System.nanoTime();
 
@@ -3519,11 +3359,40 @@ public class MultipoleTensor {
         r12 = ir21;
         r20 = ir02;
         r21 = ir12;
-        
+
+    }
+
+    private static final double ONE_THIRD = 1.0 / 3.0;
+    private static final double TWO_THIRD = 2.0 / 3.0;
+
+    private void setMultipoleI(double Qi[]) {
+        qi = Qi[0];
+        dxi = Qi[1];
+        dyi = Qi[2];
+        dzi = Qi[3];
+        qxxi = Qi[4] * ONE_THIRD;
+        qyyi = Qi[5] * ONE_THIRD;
+        qzzi = Qi[6] * ONE_THIRD;
+        qxyi = Qi[7] * TWO_THIRD;
+        qxzi = Qi[8] * TWO_THIRD;
+        qyzi = Qi[9] * TWO_THIRD;
+    }
+
+    private void setMultipoleK(double Qk[]) {
+        qk = Qk[0];
+        dxk = Qk[1];
+        dyk = Qk[2];
+        dzk = Qk[3];
+        qxxk = Qk[4] * ONE_THIRD;
+        qyyk = Qk[5] * ONE_THIRD;
+        qzzk = Qk[6] * ONE_THIRD;
+        qxyk = Qk[7] * TWO_THIRD;
+        qxzk = Qk[8] * TWO_THIRD;
+        qyzk = Qk[9] * TWO_THIRD;
     }
 
     private void multipoleItoQI(double Qi[]) {
-                
+
         qi = Qi[0];
 
         double dx = Qi[1];
@@ -3534,12 +3403,12 @@ public class MultipoleTensor {
         dyi = r10 * dx + r11 * dy + r12 * dz;
         dzi = r20 * dx + r21 * dy + r22 * dz;
 
-        double qxx = Qi[4];
-        double qyy = Qi[5];
-        double qzz = Qi[6];
-        double qxy = Qi[7];
-        double qxz = Qi[8];
-        double qyz = Qi[9];
+        double qxx = Qi[4] * ONE_THIRD;
+        double qyy = Qi[5] * ONE_THIRD;
+        double qzz = Qi[6] * ONE_THIRD;
+        double qxy = Qi[7] * ONE_THIRD;
+        double qxz = Qi[8] * ONE_THIRD;
+        double qyz = Qi[9] * ONE_THIRD;
 
         // i=0, j=0
         // qij   r0k *  r00 * qkx + r01 * qky + r02 * qkz
@@ -3552,12 +3421,14 @@ public class MultipoleTensor {
         qxyi = r00 * (r10 * qxx + r11 * qxy + r12 * qxz)
                 + r01 * (r10 * qxy + r11 * qyy + r12 * qyz)
                 + r02 * (r10 * qxz + r11 * qyz + r12 * qzz);
+        qxyi *= 2.0;
 
         // i=0, j=2
         // qij   rik *  rj0 * qkx + rj1 * qky + rj2 * qkz
         qxzi = r00 * (r20 * qxx + r21 * qxy + r22 * qxz)
                 + r01 * (r20 * qxy + r21 * qyy + r22 * qyz)
                 + r02 * (r20 * qxz + r21 * qyz + r22 * qzz);
+        qxzi *= 2.0;
 
         // i=1, j=1
         // qij   rik *  rj0 * qkx + rj1 * qky + rj2 * qkz
@@ -3570,12 +3441,14 @@ public class MultipoleTensor {
         qyzi = r10 * (r20 * qxx + r21 * qxy + r22 * qxz)
                 + r11 * (r20 * qxy + r21 * qyy + r22 * qyz)
                 + r12 * (r20 * qxz + r21 * qyz + r22 * qzz);
+        qyzi *= 2.0;
 
         // i=2, j=2
         // qij   r2k *  r20 * qkx + r21 * qky + r22 * qkz
         qzzi = r20 * (r20 * qxx + r21 * qxy + r22 * qxz)
                 + r21 * (r20 * qxy + r21 * qyy + r22 * qyz)
                 + r22 * (r20 * qxz + r21 * qyz + r22 * qzz);
+
     }
 
     private void multipoleKtoQI(double Qk[]) {
@@ -3590,12 +3463,12 @@ public class MultipoleTensor {
         dyk = r10 * dx + r11 * dy + r12 * dz;
         dzk = r20 * dx + r21 * dy + r22 * dz;
 
-        double qxx = Qk[4];
-        double qyy = Qk[5];
-        double qzz = Qk[6];
-        double qxy = Qk[7];
-        double qxz = Qk[8];
-        double qyz = Qk[9];
+        double qxx = Qk[4] * ONE_THIRD;
+        double qyy = Qk[5] * ONE_THIRD;
+        double qzz = Qk[6] * ONE_THIRD;
+        double qxy = Qk[7] * ONE_THIRD;
+        double qxz = Qk[8] * ONE_THIRD;
+        double qyz = Qk[9] * ONE_THIRD;
 
         // i=0, j=0
         // qij   r0k *  r00 * qkx + r01 * qky + r02 * qkz
@@ -3608,12 +3481,14 @@ public class MultipoleTensor {
         qxyk = r00 * (r10 * qxx + r11 * qxy + r12 * qxz)
                 + r01 * (r10 * qxy + r11 * qyy + r12 * qyz)
                 + r02 * (r10 * qxz + r11 * qyz + r12 * qzz);
+        qxyk *= 2.0;
 
         // i=0, j=2
         // qij   rik *  rj0 * qkx + rj1 * qky + rj2 * qkz
         qxzk = r00 * (r20 * qxx + r21 * qxy + r22 * qxz)
                 + r01 * (r20 * qxy + r21 * qyy + r22 * qyz)
                 + r02 * (r20 * qxz + r21 * qyz + r22 * qzz);
+        qxzk *= 2.0;
 
         // i=1, j=1
         // qij   rik *  rj0 * qkx + rj1 * qky + rj2 * qkz
@@ -3626,6 +3501,7 @@ public class MultipoleTensor {
         qyzk = r10 * (r20 * qxx + r21 * qxy + r22 * qxz)
                 + r11 * (r20 * qxy + r21 * qyy + r22 * qyz)
                 + r12 * (r20 * qxz + r21 * qyz + r22 * qzz);
+        qyzk *= 2.0;
 
         // i=2, j=2
         // qij   r2k *  r20 * qkx + r21 * qky + r22 * qkz
@@ -3634,7 +3510,7 @@ public class MultipoleTensor {
                 + r22 * (r20 * qxz + r21 * qyz + r22 * qzz);
     }
 
-    private void vectorsToGlobal(double v1[], double v2[],
+    private void qiToGlobal(double v1[], double v2[],
             double v3[]) {
         double vx = v1[0];
         double vy = v1[1];

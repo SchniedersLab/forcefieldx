@@ -893,7 +893,7 @@ public class CrystalReciprocalSpace {
     }
 
     /**
-     * Set atom coordinates.
+     * Set atomic coordinates.
      *
      * @param coords new coordinate positions (3 params per atom)
      */
@@ -905,6 +905,7 @@ public class CrystalReciprocalSpace {
         int index = 0;
         for (int i = 0; i < nAtoms; i++) {
             if (!atoms[i].isActive()) {
+                // Coordinates for inactive atoms do not change.
                 continue;
             }
             xyz[0] = coords[index++];

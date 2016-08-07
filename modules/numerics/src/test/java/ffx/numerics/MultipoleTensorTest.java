@@ -149,10 +149,10 @@ public class MultipoleTensorTest {
         multipoleTensor.noStorageRecursion(r, noStorageTensor);
         multipoleTensor.recursion(r, tensor);
         if (order == 4) {
-            multipoleTensor.order4(r);
+            multipoleTensor.order4();
             multipoleTensor.getTensor(fastTensor);
         } else if (order == 5) {
-            multipoleTensor.order5(r);
+            multipoleTensor.order5();
             multipoleTensor.getTensor(fastTensor);
         }
         for (int i = 0; i < tensorCount; i++) {
@@ -179,11 +179,11 @@ public class MultipoleTensorTest {
         multipoleTensor.recursionQI(r, tensor);
         if (order == 4) {
             multipoleTensor.setTensor(fastTensor);
-            multipoleTensor.order4QI(r);
+            multipoleTensor.order4QI();
             multipoleTensor.getTensor(fastTensor);
         } else if (order == 5) {
             multipoleTensor.setTensor(fastTensor);
-            multipoleTensor.order5QI(r);
+            multipoleTensor.order5QI();
             multipoleTensor.getTensor(fastTensor);
         }
         for (int i = 0; i < tensorCount; i++) {
@@ -239,12 +239,12 @@ public class MultipoleTensorTest {
                 tensorsPx, tensorsNx, tensorsPy, tensorsNy, tensorsPz, tensorsNz);
 
         if (order == 5) {
-            multipoleTensor.order5(r);
+            multipoleTensor.order5();
             multipoleTensor.getTensor(tensor);
             tensorFiniteDifference(multipoleTensor, delta2,
                     tensorsPx, tensorsNx, tensorsPy, tensorsNy, tensorsPz, tensorsNz);
         } else if (order == 4) {
-            multipoleTensor.order4(r);
+            multipoleTensor.order4();
             multipoleTensor.getTensor(tensor);
             tensorFiniteDifference(multipoleTensor, delta2,
                     tensorsPx, tensorsNx, tensorsPy, tensorsNy, tensorsPz, tensorsNz);
@@ -278,11 +278,11 @@ public class MultipoleTensorTest {
         tensorFiniteDifferenceQI(multipoleTensor, delta2, tensorsPz, tensorsNz);
 
         if (order == 5) {
-            multipoleTensor.order5QI(r);
+            multipoleTensor.order5QI();
             multipoleTensor.getTensor(tensor);
             tensorFiniteDifferenceQI(multipoleTensor, delta2, tensorsPz, tensorsNz);
         } else if (order == 5) {
-            multipoleTensor.order4QI(r);
+            multipoleTensor.order4QI();
             multipoleTensor.getTensor(tensor);
             tensorFiniteDifferenceQI(multipoleTensor, delta2, tensorsPz, tensorsNz);
         }
