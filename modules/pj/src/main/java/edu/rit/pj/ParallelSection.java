@@ -90,7 +90,7 @@ package edu.rit.pj;
  * <P>
  * Normally, at the end of the parallel section group, the parallel team threads
  * wait for each other at a barrier. To eliminate this barrier wait, include
- * {@link BarrierAction#NO_WAIT BarrierAction.NO_WAIT} in the <TT>execute()</TT>
+ * {@link edu.rit.pj.BarrierAction#NO_WAIT BarrierAction.NO_WAIT} in the <TT>execute()</TT>
  * method call:
  * <PRE>
  *     new ParallelTeam(2).execute (new ParallelRegion()
@@ -200,6 +200,7 @@ public abstract class ParallelSection
      * The <TT>run()</TT> method must be implemented in a subclass.
      *
      * @exception Exception The <TT>run()</TT> method may throw any exception.
+     * @throws java.lang.Exception if any.
      */
     public abstract void run()
             throws Exception;

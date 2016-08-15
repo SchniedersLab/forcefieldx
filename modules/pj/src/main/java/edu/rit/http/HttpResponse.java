@@ -190,7 +190,6 @@ public class HttpResponse {
      * stream of the given socket.
      *
      * @param theSocket Socket.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theSocket</TT> is null.
      */
@@ -208,7 +207,6 @@ public class HttpResponse {
      * is STATUS_200_OK.
      *
      * @param theStatusCode Status code.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theStatusCode</TT> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if the HTTP
@@ -229,7 +227,6 @@ public class HttpResponse {
      * type is <TT>"text/html"</TT>.
      *
      * @param theContentType Content type.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theContentType</TT> is null.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
@@ -256,7 +253,6 @@ public class HttpResponse {
      * set is the platform default character set.
      *
      * @param theCharset Character set.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theCharset</TT> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if the HTTP
@@ -279,7 +275,6 @@ public class HttpResponse {
      * of the entity body.
      *
      * @param theContentLength Content length.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <TT>theContentLength</TT> is less than 0.
      * @exception IllegalStateException (unchecked exception) Thrown if the HTTP
@@ -300,7 +295,6 @@ public class HttpResponse {
      *
      * @param theHeaderName Header name.
      * @param theHeaderValue Header value.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theHeaderName</TT> or
      * <TT>theHeaderValue</TT> is null.
@@ -336,8 +330,8 @@ public class HttpResponse {
      * socket output stream.
      *
      * @return Print writer.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public PrintWriter getPrintWriter()
             throws IOException {
@@ -349,6 +343,7 @@ public class HttpResponse {
      * written to the socket output stream.
      *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void close()
             throws IOException {

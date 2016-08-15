@@ -4319,6 +4319,16 @@ public class MultipoleTensor {
         return sb.toString();
     }
 
+    // Rotation Matrix from Global to QI.
+    private double r00, r01, r02;
+    private double r10, r11, r12;
+    private double r20, r21, r22;
+
+    // Rotation Matrix from QI to Global.
+    private double ir00, ir01, ir02;
+    private double ir10, ir11, ir12;
+    private double ir20, ir21, ir22;
+
     // Multipole components for atom i.
     private double qi;
     private double dxi;
@@ -4373,15 +4383,17 @@ public class MultipoleTensor {
     private double syk;
     private double szk;
 
-    // Rotation Matrix from Global to QI.
-    private double r00, r01, r02;
-    private double r10, r11, r12;
-    private double r20, r21, r22;
-
-    // Rotation Matrix from QI to Global.
-    private double ir00, ir01, ir02;
-    private double ir10, ir11, ir12;
-    private double ir20, ir21, ir22;
+    // Components of the potential, field and field gradient.
+    private double E000; // Potential
+    private double E100; // X Component of the Field
+    private double E010; // Y Component of the Field
+    private double E001; // Z Component of the Field
+    private double E200; // XX Component of the Field Gradient
+    private double E020; // YY Component of the Field Gradient
+    private double E002; // ZZ Component of the Field Gradient
+    private double E110; // XY Component of the Field Gradient
+    private double E101; // XZ Component of the Field Gradient
+    private double E011; // YZ Component of the Field Gradient
 
     // Cartesian tensor elements (for 1/R, erfc(Beta*R)/R or Thole damping.
     // l + m + n = 0 (1)
@@ -4446,18 +4458,6 @@ public class MultipoleTensor {
     private double R221;
     private double R212;
     private double R122;
-
-    // Components of the potential, field and field gradient.
-    private double E000; // Potential
-    private double E100; // X Component of the Field
-    private double E010; // Y Component of the Field
-    private double E001; // Z Component of the Field
-    private double E200; // XX Component of the Field Gradient
-    private double E020; // YY Component of the Field Gradient
-    private double E002; // ZZ Component of the Field Gradient
-    private double E110; // XY Component of the Field Gradient
-    private double E101; // XZ Component of the Field Gradient
-    private double E011; // YZ Component of the Field Gradient
 
     // l + m + n = 0 (1)
     public final int t000;

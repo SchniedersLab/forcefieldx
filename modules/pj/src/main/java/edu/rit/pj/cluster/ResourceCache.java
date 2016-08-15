@@ -67,7 +67,6 @@ public class ResourceCache {
      * may not have been found.
      *
      * @param name Resource name.
-     *
      * @return True if this resource cache contains resource information for
      * <TT>name</TT>, false otherwise.
      */
@@ -83,7 +82,6 @@ public class ResourceCache {
      * information is available.
      *
      * @param name Resource name.
-     *
      * @return True if this resource cache contains the resource content for
      * <TT>name</TT>, false otherwise.
      */
@@ -99,11 +97,10 @@ public class ResourceCache {
      * resource cache knows the content was not found.
      *
      * @param name Resource name.
-     *
      * @return Resource content, or null if not found.
-     *
      * @exception InterruptedException Thrown if the calling thread is
      * interrupted while blocked in this method.
+     * @throws java.lang.InterruptedException if any.
      */
     public synchronized byte[] get(String name)
             throws InterruptedException {
@@ -121,7 +118,6 @@ public class ResourceCache {
      * resource content was not found or no resource information is available.
      *
      * @param name Resource name.
-     *
      * @return Resource content, or null if not found or no information is
      * available.
      */

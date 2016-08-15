@@ -87,7 +87,6 @@ public class SharedFloat
      * value.
      *
      * @param value New value.
-     *
      * @return Previous value.
      */
     public float getAndSet(float value) {
@@ -100,7 +99,6 @@ public class SharedFloat
      *
      * @param expect Expected value.
      * @param update Updated value.
-     *
      * @return True if the update happened, false otherwise.
      */
     public boolean compareAndSet(float expect,
@@ -114,7 +112,6 @@ public class SharedFloat
      *
      * @param expect Expected value.
      * @param update Updated value.
-     *
      * @return True if the update happened, false otherwise.
      */
     public boolean weakCompareAndSet(float expect,
@@ -161,7 +158,6 @@ public class SharedFloat
      * value.
      *
      * @param value Value to add.
-     *
      * @return Previous value.
      */
     public float getAndAdd(float value) {
@@ -214,7 +210,6 @@ public class SharedFloat
      * Add the given value to this reduction variable and return the new value.
      *
      * @param value Value to add.
-     *
      * @return New value.
      */
     public float addAndGet(float value) {
@@ -236,7 +231,6 @@ public class SharedFloat
      *
      * @param value Value.
      * @param op Binary operation.
-     *
      * @return (This variable) <I>op</I> (<TT>value</TT>).
      */
     public float reduce(float value,

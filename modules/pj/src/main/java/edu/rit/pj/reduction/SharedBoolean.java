@@ -86,7 +86,6 @@ public class SharedBoolean {
      * value.
      *
      * @param value New value.
-     *
      * @return Previous value.
      */
     public boolean getAndSet(boolean value) {
@@ -99,7 +98,6 @@ public class SharedBoolean {
      *
      * @param expect Expected value.
      * @param update Updated value.
-     *
      * @return True if the update happened, false otherwise.
      */
     public boolean compareAndSet(boolean expect,
@@ -113,7 +111,6 @@ public class SharedBoolean {
      *
      * @param expect Expected value.
      * @param update Updated value.
-     *
      * @return True if the update happened, false otherwise.
      */
     public boolean weakCompareAndSet(boolean expect,
@@ -128,7 +125,6 @@ public class SharedBoolean {
      *
      * @param value Value.
      * @param op Binary operation.
-     *
      * @return (This variable) <I>op</I> (<TT>value</TT>).
      */
     public boolean reduce(boolean value,

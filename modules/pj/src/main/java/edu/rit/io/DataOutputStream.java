@@ -64,8 +64,8 @@ public class DataOutputStream
      * written, either 0 (if <TT>v</TT> is false) or 1 (if <TT>v</TT> is true).
      *
      * @param v Boolean value.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void writeBoolean(boolean v)
             throws IOException {
@@ -100,8 +100,8 @@ public class DataOutputStream
      * </UL>
      *
      * @param v Integer value.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void writeInt(int v)
             throws IOException {
@@ -156,8 +156,8 @@ public class DataOutputStream
      * </UL>
      *
      * @param v Integer value.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void writeUnsignedInt(int v)
             throws IOException {
@@ -231,8 +231,8 @@ public class DataOutputStream
      * </UL>
      *
      * @param v Integer value.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void writeLong(long v)
             throws IOException {
@@ -338,8 +338,8 @@ public class DataOutputStream
      * </UL>
      *
      * @param v Integer value.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void writeUnsignedLong(long v)
             throws IOException {
@@ -406,8 +406,8 @@ public class DataOutputStream
      * <TT>Float.floatToRawIntBits(v)</TT>.
      *
      * @param v Float value.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void writeFloat(float v)
             throws IOException {
@@ -424,8 +424,8 @@ public class DataOutputStream
      * <TT>Double.doubleToRawLongBits(v)</TT>.
      *
      * @param v Double value.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void writeDouble(double v)
             throws IOException {
@@ -446,8 +446,8 @@ public class DataOutputStream
      * character of the string is written using <TT>writeUnsignedInt()</TT>.
      *
      * @param v String value.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void writeString(String v)
             throws IOException {

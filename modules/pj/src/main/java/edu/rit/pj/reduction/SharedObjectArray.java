@@ -37,7 +37,6 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
  * java.util.concurrent.atomic.AtomicReferenceArray.
  *
  * @param <T> Object data type.
- *
  * @author Alan Kaminsky
  * @version 24-Aug-2007
  */
@@ -52,7 +51,6 @@ public class SharedObjectArray<T> {
      * Each array element is initially null.
      *
      * @param len Length.
-     *
      * @exception NegativeArraySizeException (unchecked exception) Thrown if
      * <TT>len</TT> &lt; 0.
      */
@@ -65,7 +63,6 @@ public class SharedObjectArray<T> {
      * from the given array.
      *
      * @param array Array to copy.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>array</TT> is null.
      */
@@ -87,7 +84,6 @@ public class SharedObjectArray<T> {
      * Returns this array reduction variable's current value at the given index.
      *
      * @param i Index.
-     *
      * @return Current value.
      */
     public T get(int i) {
@@ -111,7 +107,6 @@ public class SharedObjectArray<T> {
      *
      * @param i Index.
      * @param value New value.
-     *
      * @return Previous value.
      */
     public T getAndSet(int i,
@@ -126,7 +121,6 @@ public class SharedObjectArray<T> {
      * @param i Index.
      * @param expect Expected value.
      * @param update Updated value.
-     *
      * @return True if the update happened, false otherwise.
      */
     public boolean compareAndSet(int i,
@@ -143,7 +137,6 @@ public class SharedObjectArray<T> {
      * @param i Index.
      * @param expect Expected value.
      * @param update Updated value.
-     *
      * @return True if the update happened, false otherwise.
      */
     public boolean weakCompareAndSet(int i,
@@ -161,7 +154,6 @@ public class SharedObjectArray<T> {
      * @param i Index.
      * @param value Value.
      * @param op Binary operation.
-     *
      * @return (This array <TT>[i]</TT>) <I>op</I> (<TT>value</TT>).
      */
     public T reduce(int i,
@@ -188,7 +180,6 @@ public class SharedObjectArray<T> {
      *
      * @param src Source array.
      * @param op Binary operation.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>src</TT> is null. Thrown if
      * <TT>op</TT> is null.
@@ -213,9 +204,9 @@ public class SharedObjectArray<T> {
      * @param dstoff Index of first element to update in this array.
      * @param src Source array.
      * @param srcoff Index of first element to update from in the source array.
+     * @param srcoff Index of first element to update from in the source array.
      * @param len Number of array elements to update.
      * @param op Binary operation.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>src</TT> is null. Thrown if
      * <TT>op</TT> is null.

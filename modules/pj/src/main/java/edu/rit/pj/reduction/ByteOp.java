@@ -48,7 +48,6 @@ public abstract class ByteOp
      *
      * @param x First argument.
      * @param y Second argument.
-     *
      * @return (<TT>x</TT> <I>op</I> <TT>y</TT>), where <I>op</I> stands for
      * this binary operation.
      */

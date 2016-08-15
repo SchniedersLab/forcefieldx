@@ -167,6 +167,7 @@ public class JobInfo {
      * @param jobnum The job number.
      * @param state The job's state.
      * @param stateTime The time when the job entered its current state.
+     * @param stateTime The time when the job entered its current state.
      * @param username The job's user name.
      * @param Nn The number of backend nodes in the job.
      * @param Np The number of processes in the job.

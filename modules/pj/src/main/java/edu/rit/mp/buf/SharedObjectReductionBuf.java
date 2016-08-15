@@ -54,7 +54,6 @@ class SharedObjectReductionBuf<T>
      * @param item SharedObject object that wraps the item.
      * @param op Binary operation.
      * @param theBuf Underlying object buffer.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>op</TT> is null.
      */
@@ -78,6 +77,7 @@ class SharedObjectReductionBuf<T>
      *
      * @param i Item index in the range 0 .. <TT>length()</TT>-1.
      * @param item Item to be stored at index <TT>i</TT>.
+     * @param item Item to be stored at index <TT>i</TT>.
      */
     public void put(int i,
             T item) {
@@ -87,11 +87,10 @@ class SharedObjectReductionBuf<T>
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Create a buffer for performing parallel reduction using the given binary
      * operation. The results of the reduction are placed into this buffer.
-     *
-     * @param op Binary operation.
-     *
      * @exception ClassCastException (unchecked exception) Thrown if this
      * buffer's element data type and the given binary operation's argument data
      * type are not the same.

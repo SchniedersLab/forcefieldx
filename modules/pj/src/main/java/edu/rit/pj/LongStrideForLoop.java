@@ -181,7 +181,7 @@ package edu.rit.pj;
  * <P>
  * Normally, at the end of the parallel for loop, the parallel team threads wait
  * for each other at a barrier. To eliminate this barrier wait, include
- * {@link BarrierAction#NO_WAIT BarrierAction.NO_WAIT} in the <TT>execute()</TT>
+ * {@link edu.rit.pj.BarrierAction#NO_WAIT BarrierAction.NO_WAIT} in the <TT>execute()</TT>
  * method call:
  * <PRE>
  *     new ParallelRegion()
@@ -266,7 +266,7 @@ public abstract class LongStrideForLoop
      * <P>
      * The <TT>schedule()</TT> method may be overridden in a subclass to return
      * the desired schedule. If not overridden, the default is a runtime
-     * schedule (see {@link LongSchedule#runtime()}).
+     * schedule (see {@link edu.rit.pj.LongSchedule#runtime()}).
      *
      * @return Schedule for this parallel for loop.
      */
@@ -282,6 +282,7 @@ public abstract class LongStrideForLoop
      * overridden, the <TT>start()</TT> method does nothing.
      *
      * @exception Exception The <TT>start()</TT> method may throw any exception.
+     * @throws java.lang.Exception if any.
      */
     public void start()
             throws Exception {
@@ -298,8 +299,8 @@ public abstract class LongStrideForLoop
      * @param first First loop index.
      * @param last Last loop index.
      * @param stride Loop index stride, always positive.
-     *
      * @exception Exception The <TT>run()</TT> method may throw any exception.
+     * @throws java.lang.Exception if any.
      */
     public abstract void run(long first,
             long last,
@@ -315,6 +316,7 @@ public abstract class LongStrideForLoop
      *
      * @exception Exception The <TT>finish()</TT> method may throw any
      * exception.
+     * @throws java.lang.Exception if any.
      */
     public void finish()
             throws Exception {
@@ -341,13 +343,13 @@ public abstract class LongStrideForLoop
      * or the <TT>ordered()</TT> method must not be called at all.
      *
      * @param theSection Parallel section to execute in order.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theSection</TT> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel for loop.
      * @exception Exception Thrown if <TT>theSection</TT>'s <TT>run()</TT>
      * method throws an exception.
+     * @throws java.lang.Exception if any.
      */
     public final void ordered(ParallelSection theSection)
             throws Exception {

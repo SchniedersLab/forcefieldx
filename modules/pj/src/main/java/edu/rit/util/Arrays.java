@@ -47,16 +47,16 @@ public class Arrays {
      * (object) is created using the given class's no-argument constructor.
      *
      * @param <T> Array element data type.
-     * @param <ST> Data type of the objects to be created.
      * @param array Array.
      * @param type Class for the objects to be created.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception InstantiationException Thrown if an instance of the given
      * class cannot be instantiated.
      * @exception IllegalAccessException Thrown if the given class or its
      * no-argument constructor is not accessible.
+     * @throws java.lang.InstantiationException if any.
+     * @throws java.lang.IllegalAccessException if any.
      */
     public static <T, ST extends T> void allocate(T[] array,
             Class<ST> type)
@@ -70,11 +70,9 @@ public class Arrays {
      * no-argument constructor.
      *
      * @param <T> Array element data type.
-     * @param <ST> Data type of the objects to be created.
      * @param array Array.
      * @param range Range of indexes to allocate.
      * @param type Class for the objects to be created.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -83,6 +81,8 @@ public class Arrays {
      * class cannot be instantiated.
      * @exception IllegalAccessException Thrown if the given class or its
      * no-argument constructor is not accessible.
+     * @throws java.lang.InstantiationException if any.
+     * @throws java.lang.IllegalAccessException if any.
      */
     public static <T, ST extends T> void allocate(T[] array,
             Range range,
@@ -108,7 +108,6 @@ public class Arrays {
      *
      * @param matrix Matrix.
      * @param ncols Number of columns in each row.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception NegativeArraySizeException (unchecked exception) Thrown if
@@ -127,7 +126,6 @@ public class Arrays {
      * @param matrix Matrix.
      * @param rowRange Range of row indexes to allocate.
      * @param ncols Number of columns in each row.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -158,7 +156,6 @@ public class Arrays {
      *
      * @param matrix Matrix.
      * @param ncols Number of columns in each row.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception NegativeArraySizeException (unchecked exception) Thrown if
@@ -177,7 +174,6 @@ public class Arrays {
      * @param matrix Matrix.
      * @param rowRange Range of row indexes to allocate.
      * @param ncols Number of columns in each row.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -208,7 +204,6 @@ public class Arrays {
      *
      * @param matrix Matrix.
      * @param ncols Number of columns in each row.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception NegativeArraySizeException (unchecked exception) Thrown if
@@ -227,7 +222,6 @@ public class Arrays {
      * @param matrix Matrix.
      * @param rowRange Range of row indexes to allocate.
      * @param ncols Number of columns in each row.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -258,7 +252,6 @@ public class Arrays {
      *
      * @param matrix Matrix.
      * @param ncols Number of columns in each row.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception NegativeArraySizeException (unchecked exception) Thrown if
@@ -277,7 +270,6 @@ public class Arrays {
      * @param matrix Matrix.
      * @param rowRange Range of row indexes to allocate.
      * @param ncols Number of columns in each row.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -308,7 +300,6 @@ public class Arrays {
      *
      * @param matrix Matrix.
      * @param ncols Number of columns in each row.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception NegativeArraySizeException (unchecked exception) Thrown if
@@ -327,7 +318,6 @@ public class Arrays {
      * @param matrix Matrix.
      * @param rowRange Range of row indexes to allocate.
      * @param ncols Number of columns in each row.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -358,7 +348,6 @@ public class Arrays {
      *
      * @param matrix Matrix.
      * @param ncols Number of columns in each row.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception NegativeArraySizeException (unchecked exception) Thrown if
@@ -377,7 +366,6 @@ public class Arrays {
      * @param matrix Matrix.
      * @param rowRange Range of row indexes to allocate.
      * @param ncols Number of columns in each row.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -408,7 +396,6 @@ public class Arrays {
      *
      * @param matrix Matrix.
      * @param ncols Number of columns in each row.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception NegativeArraySizeException (unchecked exception) Thrown if
@@ -427,7 +414,6 @@ public class Arrays {
      * @param matrix Matrix.
      * @param rowRange Range of row indexes to allocate.
      * @param ncols Number of columns in each row.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -458,7 +444,6 @@ public class Arrays {
      *
      * @param matrix Matrix.
      * @param ncols Number of columns in each row.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception NegativeArraySizeException (unchecked exception) Thrown if
@@ -477,7 +462,6 @@ public class Arrays {
      * @param matrix Matrix.
      * @param rowRange Range of row indexes to allocate.
      * @param ncols Number of columns in each row.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -509,11 +493,9 @@ public class Arrays {
      * (object) is created using the given class's no-argument constructor.
      *
      * @param <T> Matrix element data type.
-     * @param <ST> Data type of the objects to be created.
      * @param matrix Matrix.
      * @param ncols Number of columns in each row.
      * @param type Class for the objects to be created.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception NegativeArraySizeException (unchecked exception) Thrown if
@@ -522,6 +504,8 @@ public class Arrays {
      * class cannot be instantiated.
      * @exception IllegalAccessException Thrown if the given class or its
      * no-argument constructor is not accessible.
+     * @throws java.lang.InstantiationException if any.
+     * @throws java.lang.IllegalAccessException if any.
      */
     public static <T, ST extends T> void allocate(T[][] matrix,
             int ncols,
@@ -542,12 +526,10 @@ public class Arrays {
      * (object) is created using the given class's no-argument constructor.
      *
      * @param <T> Matrix element data type.
-     * @param <ST> Data type of the objects to be created.
      * @param matrix Matrix.
      * @param rowRange Range of row indexes to allocate.
      * @param ncols Number of columns in each row.
      * @param type Class for the objects to be created.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -559,6 +541,8 @@ public class Arrays {
      * class cannot be instantiated.
      * @exception IllegalAccessException Thrown if the given class or its
      * no-argument constructor is not accessible.
+     * @throws java.lang.InstantiationException if any.
+     * @throws java.lang.IllegalAccessException if any.
      */
     public static <T, ST extends T> void allocate(T[][] matrix,
             Range rowRange,
@@ -579,13 +563,11 @@ public class Arrays {
      * class's no-argument constructor.
      *
      * @param <T> Matrix element data type.
-     * @param <ST> Data type of the objects to be created.
      * @param matrix Matrix.
      * @param rowRange Range of row indexes to allocate.
      * @param ncols Number of columns in each row.
      * @param colRange Range of column indexes to allocate.
      * @param type Class for the objects to be created.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -598,6 +580,8 @@ public class Arrays {
      * class cannot be instantiated.
      * @exception IllegalAccessException Thrown if the given class or its
      * no-argument constructor is not accessible.
+     * @throws java.lang.InstantiationException if any.
+     * @throws java.lang.IllegalAccessException if any.
      */
     public static <T, ST extends T> void allocate(T[][] matrix,
             Range rowRange,
@@ -635,7 +619,6 @@ public class Arrays {
      *
      * @param <T> Array element data type.
      * @param array Array.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      */
@@ -650,7 +633,6 @@ public class Arrays {
      * @param <T> Array element data type.
      * @param array Array.
      * @param range Range of indexes to deallocate.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -676,7 +658,6 @@ public class Arrays {
      * the full row index range (0..<TT>matrix.length</TT>-1) is set to null.
      *
      * @param matrix Matrix.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      */
@@ -691,7 +672,6 @@ public class Arrays {
      *
      * @param matrix Matrix.
      * @param rowRange Range of row indexes to deallocate.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -717,7 +697,6 @@ public class Arrays {
      * full row index range (0..<TT>matrix.length</TT>-1) is set to null.
      *
      * @param matrix Matrix.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      */
@@ -731,7 +710,6 @@ public class Arrays {
      *
      * @param matrix Matrix.
      * @param rowRange Range of row indexes to deallocate.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -757,7 +735,6 @@ public class Arrays {
      * the full row index range (0..<TT>matrix.length</TT>-1) is set to null.
      *
      * @param matrix Matrix.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      */
@@ -772,7 +749,6 @@ public class Arrays {
      *
      * @param matrix Matrix.
      * @param rowRange Range of row indexes to deallocate.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -798,7 +774,6 @@ public class Arrays {
      * the full row index range (0..<TT>matrix.length</TT>-1) is set to null.
      *
      * @param matrix Matrix.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      */
@@ -813,7 +788,6 @@ public class Arrays {
      *
      * @param matrix Matrix.
      * @param rowRange Range of row indexes to deallocate.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -839,7 +813,6 @@ public class Arrays {
      * full row index range (0..<TT>matrix.length</TT>-1) is set to null.
      *
      * @param matrix Matrix.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      */
@@ -854,7 +827,6 @@ public class Arrays {
      *
      * @param matrix Matrix.
      * @param rowRange Range of row indexes to deallocate.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -880,7 +852,6 @@ public class Arrays {
      * the full row index range (0..<TT>matrix.length</TT>-1) is set to null.
      *
      * @param matrix Matrix.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      */
@@ -895,7 +866,6 @@ public class Arrays {
      *
      * @param matrix Matrix.
      * @param rowRange Range of row indexes to deallocate.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -921,7 +891,6 @@ public class Arrays {
      * full row index range (0..<TT>matrix.length</TT>-1) is set to null.
      *
      * @param matrix Matrix.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      */
@@ -935,7 +904,6 @@ public class Arrays {
      *
      * @param matrix Matrix.
      * @param rowRange Range of row indexes to deallocate.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -961,7 +929,6 @@ public class Arrays {
      * full row index range (0..<TT>matrix.length</TT>-1) is set to null.
      *
      * @param matrix Matrix.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      */
@@ -976,7 +943,6 @@ public class Arrays {
      *
      * @param matrix Matrix.
      * @param rowRange Range of row indexes to deallocate.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -1003,7 +969,6 @@ public class Arrays {
      *
      * @param <T> Matrix element data type.
      * @param matrix Matrix.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      */
@@ -1019,7 +984,6 @@ public class Arrays {
      * @param <T> Matrix element data type.
      * @param matrix Matrix.
      * @param rowRange Range of row indexes to deallocate.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -1049,7 +1013,6 @@ public class Arrays {
      * @param matrix Matrix.
      * @param rowRange Range of row indexes to deallocate.
      * @param colRange Range of column indexes to deallocate.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -1093,9 +1056,10 @@ public class Arrays {
      *
      * @param src Source array.
      * @param srcRange Range of source elements.
+     * @param srcRange Range of source elements.
      * @param dst Destination array.
      * @param dstRange Range of destination elements.
-     *
+     * @param dstRange Range of destination elements.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -1156,9 +1120,10 @@ public class Arrays {
      *
      * @param src Source array.
      * @param srcRange Range of source elements.
+     * @param srcRange Range of source elements.
      * @param dst Destination array.
      * @param dstRange Range of destination elements.
-     *
+     * @param dstRange Range of destination elements.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -1219,9 +1184,10 @@ public class Arrays {
      *
      * @param src Source array.
      * @param srcRange Range of source elements.
+     * @param srcRange Range of source elements.
      * @param dst Destination array.
      * @param dstRange Range of destination elements.
-     *
+     * @param dstRange Range of destination elements.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -1282,9 +1248,10 @@ public class Arrays {
      *
      * @param src Source array.
      * @param srcRange Range of source elements.
+     * @param srcRange Range of source elements.
      * @param dst Destination array.
      * @param dstRange Range of destination elements.
-     *
+     * @param dstRange Range of destination elements.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -1345,9 +1312,10 @@ public class Arrays {
      *
      * @param src Source array.
      * @param srcRange Range of source elements.
+     * @param srcRange Range of source elements.
      * @param dst Destination array.
      * @param dstRange Range of destination elements.
-     *
+     * @param dstRange Range of destination elements.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -1408,9 +1376,10 @@ public class Arrays {
      *
      * @param src Source array.
      * @param srcRange Range of source elements.
+     * @param srcRange Range of source elements.
      * @param dst Destination array.
      * @param dstRange Range of destination elements.
-     *
+     * @param dstRange Range of destination elements.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -1471,9 +1440,10 @@ public class Arrays {
      *
      * @param src Source array.
      * @param srcRange Range of source elements.
+     * @param srcRange Range of source elements.
      * @param dst Destination array.
      * @param dstRange Range of destination elements.
-     *
+     * @param dstRange Range of destination elements.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -1534,9 +1504,10 @@ public class Arrays {
      *
      * @param src Source array.
      * @param srcRange Range of source elements.
+     * @param srcRange Range of source elements.
      * @param dst Destination array.
      * @param dstRange Range of destination elements.
-     *
+     * @param dstRange Range of destination elements.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -1599,13 +1570,13 @@ public class Arrays {
      * to the array elements are copied from the source array to the destination
      * array.
      *
-     * @param <ST> Source array element data type.
      * @param <DT> Destination array element data type.
      * @param src Source array.
      * @param srcRange Range of source elements.
+     * @param srcRange Range of source elements.
      * @param dst Destination array.
      * @param dstRange Range of destination elements.
-     *
+     * @param dstRange Range of destination elements.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -1673,10 +1644,13 @@ public class Arrays {
      * @param src Source matrix.
      * @param srcRowRange Range of source rows.
      * @param srcColRange Range of source columns.
+     * @param srcRowRange Range of source rows.
+     * @param srcColRange Range of source columns.
      * @param dst Destination matrix.
      * @param dstRowRange Range of destination rows.
      * @param dstColRange Range of destination columns.
-     *
+     * @param dstRowRange Range of destination rows.
+     * @param dstColRange Range of destination columns.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -1742,10 +1716,13 @@ public class Arrays {
      * @param src Source matrix.
      * @param srcRowRange Range of source rows.
      * @param srcColRange Range of source columns.
+     * @param srcRowRange Range of source rows.
+     * @param srcColRange Range of source columns.
      * @param dst Destination matrix.
      * @param dstRowRange Range of destination rows.
      * @param dstColRange Range of destination columns.
-     *
+     * @param dstRowRange Range of destination rows.
+     * @param dstColRange Range of destination columns.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -1811,10 +1788,13 @@ public class Arrays {
      * @param src Source matrix.
      * @param srcRowRange Range of source rows.
      * @param srcColRange Range of source columns.
+     * @param srcRowRange Range of source rows.
+     * @param srcColRange Range of source columns.
      * @param dst Destination matrix.
      * @param dstRowRange Range of destination rows.
      * @param dstColRange Range of destination columns.
-     *
+     * @param dstRowRange Range of destination rows.
+     * @param dstColRange Range of destination columns.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -1880,10 +1860,13 @@ public class Arrays {
      * @param src Source matrix.
      * @param srcRowRange Range of source rows.
      * @param srcColRange Range of source columns.
+     * @param srcRowRange Range of source rows.
+     * @param srcColRange Range of source columns.
      * @param dst Destination matrix.
      * @param dstRowRange Range of destination rows.
      * @param dstColRange Range of destination columns.
-     *
+     * @param dstRowRange Range of destination rows.
+     * @param dstColRange Range of destination columns.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -1949,10 +1932,13 @@ public class Arrays {
      * @param src Source matrix.
      * @param srcRowRange Range of source rows.
      * @param srcColRange Range of source columns.
+     * @param srcRowRange Range of source rows.
+     * @param srcColRange Range of source columns.
      * @param dst Destination matrix.
      * @param dstRowRange Range of destination rows.
      * @param dstColRange Range of destination columns.
-     *
+     * @param dstRowRange Range of destination rows.
+     * @param dstColRange Range of destination columns.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -2018,10 +2004,13 @@ public class Arrays {
      * @param src Source matrix.
      * @param srcRowRange Range of source rows.
      * @param srcColRange Range of source columns.
+     * @param srcRowRange Range of source rows.
+     * @param srcColRange Range of source columns.
      * @param dst Destination matrix.
      * @param dstRowRange Range of destination rows.
      * @param dstColRange Range of destination columns.
-     *
+     * @param dstRowRange Range of destination rows.
+     * @param dstColRange Range of destination columns.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -2087,10 +2076,13 @@ public class Arrays {
      * @param src Source matrix.
      * @param srcRowRange Range of source rows.
      * @param srcColRange Range of source columns.
+     * @param srcRowRange Range of source rows.
+     * @param srcColRange Range of source columns.
      * @param dst Destination matrix.
      * @param dstRowRange Range of destination rows.
      * @param dstColRange Range of destination columns.
-     *
+     * @param dstRowRange Range of destination rows.
+     * @param dstColRange Range of destination columns.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -2156,10 +2148,13 @@ public class Arrays {
      * @param src Source matrix.
      * @param srcRowRange Range of source rows.
      * @param srcColRange Range of source columns.
+     * @param srcRowRange Range of source rows.
+     * @param srcColRange Range of source columns.
      * @param dst Destination matrix.
      * @param dstRowRange Range of destination rows.
      * @param dstColRange Range of destination columns.
-     *
+     * @param dstRowRange Range of destination rows.
+     * @param dstColRange Range of destination columns.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -2226,15 +2221,17 @@ public class Arrays {
      * to the matrix elements are copied from the source matrix to the
      * destination matrix.
      *
-     * @param <ST> Source matrix element data type.
      * @param <DT> Destination matrix element data type.
      * @param src Source matrix.
+     * @param srcRowRange Range of source rows.
+     * @param srcColRange Range of source columns.
      * @param srcRowRange Range of source rows.
      * @param srcColRange Range of source columns.
      * @param dst Destination matrix.
      * @param dstRowRange Range of destination rows.
      * @param dstColRange Range of destination columns.
-     *
+     * @param dstRowRange Range of destination rows.
+     * @param dstColRange Range of destination columns.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -2291,7 +2288,6 @@ public class Arrays {
      * <TT>array</TT> is null, 0 is returned.
      *
      * @param array Array.
-     *
      * @return Number of elements in <TT>array</TT>.
      */
     public static int length(boolean[] array) {
@@ -2303,7 +2299,6 @@ public class Arrays {
      * <TT>array</TT> is null, 0 is returned.
      *
      * @param array Array.
-     *
      * @return Number of elements in <TT>array</TT>.
      */
     public static int length(byte[] array) {
@@ -2315,7 +2310,6 @@ public class Arrays {
      * <TT>array</TT> is null, 0 is returned.
      *
      * @param array Array.
-     *
      * @return Number of elements in <TT>array</TT>.
      */
     public static int length(char[] array) {
@@ -2327,7 +2321,6 @@ public class Arrays {
      * <TT>array</TT> is null, 0 is returned.
      *
      * @param array Array.
-     *
      * @return Number of elements in <TT>array</TT>.
      */
     public static int length(double[] array) {
@@ -2339,7 +2332,6 @@ public class Arrays {
      * <TT>array</TT> is null, 0 is returned.
      *
      * @param array Array.
-     *
      * @return Number of elements in <TT>array</TT>.
      */
     public static int length(float[] array) {
@@ -2351,7 +2343,6 @@ public class Arrays {
      * <TT>array</TT> is null, 0 is returned.
      *
      * @param array Array.
-     *
      * @return Number of elements in <TT>array</TT>.
      */
     public static int length(int[] array) {
@@ -2363,7 +2354,6 @@ public class Arrays {
      * <TT>array</TT> is null, 0 is returned.
      *
      * @param array Array.
-     *
      * @return Number of elements in <TT>array</TT>.
      */
     public static int length(long[] array) {
@@ -2375,7 +2365,6 @@ public class Arrays {
      * <TT>array</TT> is null, 0 is returned.
      *
      * @param array Array.
-     *
      * @return Number of elements in <TT>array</TT>.
      */
     public static int length(short[] array) {
@@ -2388,7 +2377,6 @@ public class Arrays {
      *
      * @param <T> Array element data type.
      * @param array Array.
-     *
      * @return Number of elements in <TT>array</TT>.
      */
     public static <T> int length(T[] array) {
@@ -2401,7 +2389,6 @@ public class Arrays {
      * <TT>matrix</TT> is null, 0 is returned.
      *
      * @param matrix Matrix.
-     *
      * @return Number of rows in <TT>matrix</TT>.
      */
     public static int rowLength(boolean[][] matrix) {
@@ -2413,7 +2400,6 @@ public class Arrays {
      * <TT>matrix</TT> is null, 0 is returned.
      *
      * @param matrix Matrix.
-     *
      * @return Number of rows in <TT>matrix</TT>.
      */
     public static int rowLength(byte[][] matrix) {
@@ -2425,7 +2411,6 @@ public class Arrays {
      * <TT>matrix</TT> is null, 0 is returned.
      *
      * @param matrix Matrix.
-     *
      * @return Number of rows in <TT>matrix</TT>.
      */
     public static int rowLength(char[][] matrix) {
@@ -2437,7 +2422,6 @@ public class Arrays {
      * <TT>matrix</TT> is null, 0 is returned.
      *
      * @param matrix Matrix.
-     *
      * @return Number of rows in <TT>matrix</TT>.
      */
     public static int rowLength(double[][] matrix) {
@@ -2449,7 +2433,6 @@ public class Arrays {
      * <TT>matrix</TT> is null, 0 is returned.
      *
      * @param matrix Matrix.
-     *
      * @return Number of rows in <TT>matrix</TT>.
      */
     public static int rowLength(float[][] matrix) {
@@ -2461,7 +2444,6 @@ public class Arrays {
      * <TT>matrix</TT> is null, 0 is returned.
      *
      * @param matrix Matrix.
-     *
      * @return Number of rows in <TT>matrix</TT>.
      */
     public static int rowLength(int[][] matrix) {
@@ -2473,7 +2455,6 @@ public class Arrays {
      * <TT>matrix</TT> is null, 0 is returned.
      *
      * @param matrix Matrix.
-     *
      * @return Number of rows in <TT>matrix</TT>.
      */
     public static int rowLength(long[][] matrix) {
@@ -2485,7 +2466,6 @@ public class Arrays {
      * <TT>matrix</TT> is null, 0 is returned.
      *
      * @param matrix Matrix.
-     *
      * @return Number of rows in <TT>matrix</TT>.
      */
     public static int rowLength(short[][] matrix) {
@@ -2498,7 +2478,6 @@ public class Arrays {
      *
      * @param <T> Matrix element data type.
      * @param matrix Matrix.
-     *
      * @return Number of rows in <TT>matrix</TT>.
      */
     public static <T> int rowLength(T[][] matrix) {
@@ -2512,9 +2491,7 @@ public class Arrays {
      *
      * @param matrix Matrix.
      * @param i Row index.
-     *
      * @return Number of rows in <TT>matrix</TT>.
-     *
      * @exception ArrayIndexOutOfBoundsException (unchecked exception) Thrown if
      * <TT>i</TT> is out of bounds.
      */
@@ -2530,9 +2507,7 @@ public class Arrays {
      *
      * @param matrix Matrix.
      * @param i Row index.
-     *
      * @return Number of rows in <TT>matrix</TT>.
-     *
      * @exception ArrayIndexOutOfBoundsException (unchecked exception) Thrown if
      * <TT>i</TT> is out of bounds.
      */
@@ -2548,9 +2523,7 @@ public class Arrays {
      *
      * @param matrix Matrix.
      * @param i Row index.
-     *
      * @return Number of rows in <TT>matrix</TT>.
-     *
      * @exception ArrayIndexOutOfBoundsException (unchecked exception) Thrown if
      * <TT>i</TT> is out of bounds.
      */
@@ -2566,9 +2539,7 @@ public class Arrays {
      *
      * @param matrix Matrix.
      * @param i Row index.
-     *
      * @return Number of rows in <TT>matrix</TT>.
-     *
      * @exception ArrayIndexOutOfBoundsException (unchecked exception) Thrown if
      * <TT>i</TT> is out of bounds.
      */
@@ -2584,9 +2555,7 @@ public class Arrays {
      *
      * @param matrix Matrix.
      * @param i Row index.
-     *
      * @return Number of rows in <TT>matrix</TT>.
-     *
      * @exception ArrayIndexOutOfBoundsException (unchecked exception) Thrown if
      * <TT>i</TT> is out of bounds.
      */
@@ -2602,9 +2571,7 @@ public class Arrays {
      *
      * @param matrix Matrix.
      * @param i Row index.
-     *
      * @return Number of rows in <TT>matrix</TT>.
-     *
      * @exception ArrayIndexOutOfBoundsException (unchecked exception) Thrown if
      * <TT>i</TT> is out of bounds.
      */
@@ -2620,9 +2587,7 @@ public class Arrays {
      *
      * @param matrix Matrix.
      * @param i Row index.
-     *
      * @return Number of rows in <TT>matrix</TT>.
-     *
      * @exception ArrayIndexOutOfBoundsException (unchecked exception) Thrown if
      * <TT>i</TT> is out of bounds.
      */
@@ -2638,9 +2603,7 @@ public class Arrays {
      *
      * @param matrix Matrix.
      * @param i Row index.
-     *
      * @return Number of rows in <TT>matrix</TT>.
-     *
      * @exception ArrayIndexOutOfBoundsException (unchecked exception) Thrown if
      * <TT>i</TT> is out of bounds.
      */
@@ -2657,9 +2620,7 @@ public class Arrays {
      * @param <T> Matrix element data type.
      * @param matrix Matrix.
      * @param i Row index.
-     *
      * @return Number of rows in <TT>matrix</TT>.
-     *
      * @exception ArrayIndexOutOfBoundsException (unchecked exception) Thrown if
      * <TT>i</TT> is out of bounds.
      */

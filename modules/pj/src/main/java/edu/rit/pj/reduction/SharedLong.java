@@ -86,7 +86,6 @@ public class SharedLong
      * value.
      *
      * @param value New value.
-     *
      * @return Previous value.
      */
     public long getAndSet(long value) {
@@ -99,7 +98,6 @@ public class SharedLong
      *
      * @param expect Expected value.
      * @param update Updated value.
-     *
      * @return True if the update happened, false otherwise.
      */
     public boolean compareAndSet(long expect,
@@ -113,7 +111,6 @@ public class SharedLong
      *
      * @param expect Expected value.
      * @param update Updated value.
-     *
      * @return True if the update happened, false otherwise.
      */
     public boolean weakCompareAndSet(long expect,
@@ -144,7 +141,6 @@ public class SharedLong
      * value.
      *
      * @param value Value to add.
-     *
      * @return Previous value.
      */
     public long getAndAdd(long value) {
@@ -173,7 +169,6 @@ public class SharedLong
      * Add the given value to this reduction variable and return the new value.
      *
      * @param value Value to add.
-     *
      * @return New value.
      */
     public long addAndGet(long value) {
@@ -187,7 +182,6 @@ public class SharedLong
      *
      * @param value Value.
      * @param op Binary operation.
-     *
      * @return (This variable) <I>op</I> (<TT>value</TT>).
      */
     public long reduce(long value,

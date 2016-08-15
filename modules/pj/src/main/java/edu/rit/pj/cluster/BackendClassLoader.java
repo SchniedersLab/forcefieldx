@@ -98,12 +98,9 @@ public class BackendClassLoader
 
 // Hidden operations.
     /**
+     * {@inheritDoc}
+     *
      * Find the class with the given name.
-     *
-     * @param className Fully-qualified class name.
-     *
-     * @return Class object.
-     *
      * @exception ClassNotFoundException Thrown if the class could not be found.
      */
     protected Class<?> findClass(String className)
@@ -135,12 +132,9 @@ public class BackendClassLoader
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Find the resource with the given name.
-     *
-     * @param name Resource name.
-     *
-     * @return URL for reading the resource, or null if the resource could not
-     * be found.
      */
     protected URL findResource(String name) {
         try {

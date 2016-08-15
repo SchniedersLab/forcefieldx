@@ -123,7 +123,6 @@ public class DoubleMatrixFile {
      * @param R Number of rows.
      * @param C Number of columns.
      * @param theMatrix Underlying matrix.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theMatrix</TT> is null.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
@@ -172,7 +171,6 @@ public class DoubleMatrixFile {
      * @param R Number of rows.
      * @param C Number of columns.
      * @param theMatrix Underlying matrix.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theMatrix</TT> is null.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
@@ -201,14 +199,13 @@ public class DoubleMatrixFile {
      * as an instance of class java.io.BufferedOutputStream.
      *
      * @param theStream Output stream.
-     *
      * @return Writer object with which to write this matrix file.
-     *
      * @exception IllegalStateException (unchecked exception) Thrown if this
      * matrix file object is uninitialized.
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theStream</TT> is null.
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public Writer prepareToWrite(OutputStream theStream)
             throws IOException {
@@ -234,14 +231,13 @@ public class DoubleMatrixFile {
      * an instance of class java.io.BufferedInputStream.
      *
      * @param theStream Input stream.
-     *
      * @return Reader object with which to read this matrix file.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theStream</TT> is null.
      * @exception IOException Thrown if an I/O error occurred.
      * @exception InvalidMatrixFileException (subclass of IOException) Thrown if
      * the input stream's contents were invalid.
+     * @throws java.io.IOException if any.
      */
     public Reader prepareToRead(InputStream theStream)
             throws IOException {
@@ -262,6 +258,9 @@ public class DoubleMatrixFile {
      * <P>
      * Usage: java edu.rit.io.DoubleMatrixFile <I>outfile</I> <I>infile1</I>
      * [ <I>infile2</I> . . . ]
+     *
+     * @param args an array of {@link java.lang.String} objects.
+     * @throws java.lang.Exception if any.
      */
     public static void main(String[] args)
             throws Exception {

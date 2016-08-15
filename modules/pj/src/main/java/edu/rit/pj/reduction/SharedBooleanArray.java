@@ -52,7 +52,6 @@ public class SharedBooleanArray {
      * Each array element is initially <TT>false</TT>.
      *
      * @param len Length.
-     *
      * @exception NegativeArraySizeException (unchecked exception) Thrown if
      * <TT>len</TT> &lt; 0.
      */
@@ -65,7 +64,6 @@ public class SharedBooleanArray {
      * copied from the given array.
      *
      * @param array Array to copy.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>array</TT> is null.
      */
@@ -92,7 +90,6 @@ public class SharedBooleanArray {
      * Returns this array reduction variable's current value at the given index.
      *
      * @param i Index.
-     *
      * @return Current value.
      */
     public boolean get(int i) {
@@ -116,7 +113,6 @@ public class SharedBooleanArray {
      *
      * @param i Index.
      * @param value New value.
-     *
      * @return Previous value.
      */
     public boolean getAndSet(int i,
@@ -131,7 +127,6 @@ public class SharedBooleanArray {
      * @param i Index.
      * @param expect Expected value.
      * @param update Updated value.
-     *
      * @return True if the update happened, false otherwise.
      */
     public boolean compareAndSet(int i,
@@ -148,7 +143,6 @@ public class SharedBooleanArray {
      * @param i Index.
      * @param expect Expected value.
      * @param update Updated value.
-     *
      * @return True if the update happened, false otherwise.
      */
     public boolean weakCompareAndSet(int i,
@@ -166,7 +160,6 @@ public class SharedBooleanArray {
      * @param i Index.
      * @param value Value.
      * @param op Binary operation.
-     *
      * @return (This array <TT>[i]</TT>) <I>op</I> (<TT>value</TT>).
      */
     public boolean reduce(int i,
@@ -193,7 +186,6 @@ public class SharedBooleanArray {
      *
      * @param src Source array.
      * @param op Binary operation.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>src</TT> is null. Thrown if
      * <TT>op</TT> is null.
@@ -218,9 +210,9 @@ public class SharedBooleanArray {
      * @param dstoff Index of first element to update in this array.
      * @param src Source array.
      * @param srcoff Index of first element to update from in the source array.
+     * @param srcoff Index of first element to update from in the source array.
      * @param len Number of array elements to update.
      * @param op Binary operation.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>src</TT> is null. Thrown if
      * <TT>op</TT> is null.

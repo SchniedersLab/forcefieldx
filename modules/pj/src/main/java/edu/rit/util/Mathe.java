@@ -51,9 +51,7 @@ public class Mathe {
      * </UL>
      *
      * @param x Input.
-     *
      * @return Floor(<TT>x</TT><SUP>1/2</SUP>).
-     *
      * @exception ArithmeticException (unchecked exception) Thrown if <TT>x</TT>
      * &lt; 0.
      */

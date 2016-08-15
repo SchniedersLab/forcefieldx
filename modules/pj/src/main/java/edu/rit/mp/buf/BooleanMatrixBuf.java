@@ -87,27 +87,24 @@ public class BooleanMatrixBuf
 
 // Exported operations.
     /**
+     * {@inheritDoc}
+     *
      * Obtain the given item from this buffer.
      * <P>
      * The <TT>get()</TT> method must not block the calling thread; if it does,
      * all message I/O in MP will be blocked.
-     *
-     * @param i Item index in the range 0 .. <TT>length()</TT>-1.
-     *
-     * @return Item at index <TT>i</TT>.
      */
     public boolean get(int i) {
         return myMatrix[i2r(i) * myRowStride + myLowerRow][i2c(i) * myColStride + myLowerCol];
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Store the given item in this buffer.
      * <P>
      * The <TT>put()</TT> method must not block the calling thread; if it does,
      * all message I/O in MP will be blocked.
-     *
-     * @param i Item index in the range 0 .. <TT>length()</TT>-1.
-     * @param item Item to be stored at index <TT>i</TT>.
      */
     public void put(int i,
             boolean item) {
@@ -115,13 +112,12 @@ public class BooleanMatrixBuf
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Copy items from the given buffer to this buffer. The number of items
      * copied is this buffer's length or <TT>theSrc</TT>'s length, whichever is
      * smaller. If <TT>theSrc</TT> is this buffer, the <TT>copy()</TT> method
      * does nothing.
-     *
-     * @param theSrc Source of items to copy into this buffer.
-     *
      * @exception ClassCastException (unchecked exception) Thrown if
      * <TT>theSrc</TT>'s item data type is not the same as this buffer's item
      * data type.
@@ -138,11 +134,10 @@ public class BooleanMatrixBuf
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Create a buffer for performing parallel reduction using the given binary
      * operation. The results of the reduction are placed into this buffer.
-     *
-     * @param op Binary operation.
-     *
      * @exception ClassCastException (unchecked exception) Thrown if this
      * buffer's element data type and the given binary operation's argument data
      * type are not the same.
@@ -153,16 +148,12 @@ public class BooleanMatrixBuf
 
 // Hidden operations.
     /**
+     * {@inheritDoc}
+     *
      * Send as many items as possible from this buffer to the given byte buffer.
      * <P>
      * The <TT>sendItems()</TT> method must not block the calling thread; if it
      * does, all message I/O in MP will be blocked.
-     *
-     * @param i Index of first item to send, in the range 0 ..
-     * <TT>length</TT>-1.
-     * @param buffer Byte buffer.
-     *
-     * @return Number of items sent.
      */
     protected int sendItems(int i,
             ByteBuffer buffer) {
@@ -190,18 +181,13 @@ public class BooleanMatrixBuf
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Receive as many items as possible from the given byte buffer to this
      * buffer.
      * <P>
      * The <TT>receiveItems()</TT> method must not block the calling thread; if
      * it does, all message I/O in MP will be blocked.
-     *
-     * @param i Index of first item to receive, in the range 0 ..
-     * <TT>length</TT>-1.
-     * @param num Maximum number of items to receive.
-     * @param buffer Byte buffer.
-     *
-     * @return Number of items received.
      */
     protected int receiveItems(int i,
             int num,

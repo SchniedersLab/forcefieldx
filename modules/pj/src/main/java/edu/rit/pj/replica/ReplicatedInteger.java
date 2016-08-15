@@ -142,7 +142,6 @@ public class ReplicatedInteger
      * used. The world communicator is used.
      *
      * @param op Reduction operator.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>op</TT> is null.
      */
@@ -157,7 +156,6 @@ public class ReplicatedInteger
      *
      * @param op Reduction operator.
      * @param initialValue Initial value.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>op</TT> is null.
      */
@@ -174,7 +172,6 @@ public class ReplicatedInteger
      * @param op Reduction operator.
      * @param initialValue Initial value.
      * @param tag Message tag.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>op</TT> is null. Thrown if
      * <TT>comm</TT> is null.
@@ -193,7 +190,6 @@ public class ReplicatedInteger
      * @param initialValue Initial value.
      * @param tag Message tag.
      * @param comm Communicator.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>op</TT> is null. Thrown if
      * <TT>comm</TT> is null.
@@ -235,10 +231,9 @@ public class ReplicatedInteger
      * processes in the communicator.
      *
      * @param value Value.
-     *
      * @return (This variable) <I>op</I> (<TT>value</TT>).
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public int reduce(int value)
             throws IOException {

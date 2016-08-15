@@ -87,7 +87,6 @@ public class SharedDouble
      * value.
      *
      * @param value New value.
-     *
      * @return Previous value.
      */
     public double getAndSet(double value) {
@@ -100,7 +99,6 @@ public class SharedDouble
      *
      * @param expect Expected value.
      * @param update Updated value.
-     *
      * @return True if the update happened, false otherwise.
      */
     public boolean compareAndSet(double expect,
@@ -114,7 +112,6 @@ public class SharedDouble
      *
      * @param expect Expected value.
      * @param update Updated value.
-     *
      * @return True if the update happened, false otherwise.
      */
     public boolean weakCompareAndSet(double expect,
@@ -161,7 +158,6 @@ public class SharedDouble
      * value.
      *
      * @param value Value to add.
-     *
      * @return Previous value.
      */
     public double getAndAdd(double value) {
@@ -214,7 +210,6 @@ public class SharedDouble
      * Add the given value to this reduction variable and return the new value.
      *
      * @param value Value to add.
-     *
      * @return New value.
      */
     public double addAndGet(double value) {
@@ -236,7 +231,6 @@ public class SharedDouble
      *
      * @param value Value.
      * @param op Binary operation.
-     *
      * @return (This variable) <I>op</I> (<TT>value</TT>).
      */
     public double reduce(double value,

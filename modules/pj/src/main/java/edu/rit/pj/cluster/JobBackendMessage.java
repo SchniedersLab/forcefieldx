@@ -72,8 +72,7 @@ public abstract class JobBackendMessage
      *
      * @param theJobFrontend Job Frontend that is calling this method.
      * @param errmsg Error message string.
-     *
-     * @return "Cancel job" message.
+     * @return a {@link edu.rit.pj.cluster.JobBackendMessage} object.
      */
     public static JobBackendMessage cancelJob(JobFrontendRef theJobFrontend,
             String errmsg) {
@@ -100,8 +99,7 @@ public abstract class JobBackendMessage
      * @param mainClassName Fully qualified class name of the Java main program
      * class to execute.
      * @param args Array of 0 or more Java command line arguments.
-     *
-     * @return "Commence job" message.
+     * @return a {@link edu.rit.pj.cluster.JobBackendMessage} object.
      */
     public static JobBackendMessage commenceJob(JobFrontendRef theJobFrontend,
             InetSocketAddress[] middlewareAddress,
@@ -118,8 +116,7 @@ public abstract class JobBackendMessage
      * Construct a new "job finished" message.
      *
      * @param theJobFrontend Job frontend that is calling this method.
-     *
-     * @return "Job finished" message.
+     * @return a {@link edu.rit.pj.cluster.JobBackendMessage} object.
      */
     public static JobBackendMessage jobFinished(JobFrontendRef theJobFrontend) {
         return new JobFinishedMessage(theJobFrontend);
@@ -129,8 +126,7 @@ public abstract class JobBackendMessage
      * Construct a new "renew lease" message.
      *
      * @param theJobFrontend Job Frontend that is calling this method.
-     *
-     * @return "Renew lease" message.
+     * @return a {@link edu.rit.pj.cluster.JobBackendMessage} object.
      */
     public static JobBackendMessage renewLease(JobFrontendRef theJobFrontend) {
         return new RenewLeaseMessage(theJobFrontend);
@@ -142,8 +138,7 @@ public abstract class JobBackendMessage
      * @param theJobFrontend Job Frontend that is calling this method.
      * @param resourceName Resource name.
      * @param content Resource content, or null if resource not found.
-     *
-     * @return "Report resource" message.
+     * @return a {@link edu.rit.pj.cluster.JobBackendMessage} object.
      */
     public static JobBackendMessage reportResource(JobFrontendRef theJobFrontend,
             String resourceName,
@@ -157,8 +152,7 @@ public abstract class JobBackendMessage
      * @param theJobFrontend Job Frontend that is calling this method.
      * @param resourceName Resource name.
      * @param content Resource content, or null if resource not found.
-     *
-     * @return "Report resource" message.
+     * @return a {@link edu.rit.pj.cluster.JobBackendMessage} object.
      */
     public static JobBackendMessage reportResource(JobFrontendRef theJobFrontend,
             String resourceName,
@@ -173,8 +167,7 @@ public abstract class JobBackendMessage
      * @param bfd Backend file descriptor.
      * @param ffd Frontend file descriptor if success.
      * @param exc Null if success, exception if failure.
-     *
-     * @return "Output file open result" message.
+     * @return a {@link edu.rit.pj.cluster.JobBackendMessage} object.
      */
     public static JobBackendMessage outputFileOpenResult(JobFrontendRef theJobFrontend,
             int bfd,
@@ -189,8 +182,7 @@ public abstract class JobBackendMessage
      * @param theJobFrontend Job Frontend that is calling this method.
      * @param ffd Frontend file descriptor.
      * @param exc Null if success, exception if failure.
-     *
-     * @return "Output file write result" message.
+     * @return a {@link edu.rit.pj.cluster.JobBackendMessage} object.
      */
     public static JobBackendMessage outputFileWriteResult(JobFrontendRef theJobFrontend,
             int ffd,
@@ -204,8 +196,7 @@ public abstract class JobBackendMessage
      * @param theJobFrontend Job Frontend that is calling this method.
      * @param ffd Frontend file descriptor.
      * @param exc Null if success, exception if failure.
-     *
-     * @return "Output file flush result" message.
+     * @return a {@link edu.rit.pj.cluster.JobBackendMessage} object.
      */
     public static JobBackendMessage outputFileFlushResult(JobFrontendRef theJobFrontend,
             int ffd,
@@ -219,8 +210,7 @@ public abstract class JobBackendMessage
      * @param theJobFrontend Job Frontend that is calling this method.
      * @param ffd Frontend file descriptor.
      * @param exc Null if success, exception if failure.
-     *
-     * @return "Output file close result" message.
+     * @return a {@link edu.rit.pj.cluster.JobBackendMessage} object.
      */
     public static JobBackendMessage outputFileCloseResult(JobFrontendRef theJobFrontend,
             int ffd,
@@ -235,8 +225,7 @@ public abstract class JobBackendMessage
      * @param bfd Backend file descriptor.
      * @param ffd Frontend file descriptor if success.
      * @param exc Null if success, exception if failure.
-     *
-     * @return "Input file open result" message.
+     * @return a {@link edu.rit.pj.cluster.JobBackendMessage} object.
      */
     public static JobBackendMessage inputFileOpenResult(JobFrontendRef theJobFrontend,
             int bfd,
@@ -252,8 +241,7 @@ public abstract class JobBackendMessage
      * @param ffd Frontend file descriptor.
      * @param len Number of bytes read, or -1 if EOF.
      * @param exc Null if success, exception if failure.
-     *
-     * @return "Input file read result" message.
+     * @return a {@link edu.rit.pj.cluster.JobBackendMessage} object.
      */
     public static JobBackendMessage inputFileReadResult(JobFrontendRef theJobFrontend,
             int ffd,
@@ -269,8 +257,7 @@ public abstract class JobBackendMessage
      * @param ffd Frontend file descriptor.
      * @param len Number of bytes skipped.
      * @param exc Null if success, exception if failure.
-     *
-     * @return "Input file skip result" message.
+     * @return a {@link edu.rit.pj.cluster.JobBackendMessage} object.
      */
     public static JobBackendMessage inputFileSkipResult(JobFrontendRef theJobFrontend,
             int ffd,
@@ -285,8 +272,7 @@ public abstract class JobBackendMessage
      * @param theJobFrontend Job Frontend that is calling this method.
      * @param ffd Frontend file descriptor.
      * @param exc Null if success, exception if failure.
-     *
-     * @return "Input file close result" message.
+     * @return a {@link edu.rit.pj.cluster.JobBackendMessage} object.
      */
     public static JobBackendMessage inputFileCloseResult(JobFrontendRef theJobFrontend,
             int ffd,
@@ -301,8 +287,8 @@ public abstract class JobBackendMessage
      *
      * @param theJobBackend Job Backend on which to invoke the method.
      * @param theJobFrontend Job Frontend that is calling the method.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void invoke(JobBackendRef theJobBackend,
             JobFrontendRef theJobFrontend)
@@ -311,10 +297,9 @@ public abstract class JobBackendMessage
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Write this job backend message to the given object output stream.
-     *
-     * @param out Object output stream.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void writeExternal(ObjectOutput out)
@@ -322,10 +307,9 @@ public abstract class JobBackendMessage
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Read this job backend message from the given object input stream.
-     *
-     * @param in Object input stream.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      * @exception ClassNotFoundException Thrown if a class needed to read this
      * job backend message could not be found.

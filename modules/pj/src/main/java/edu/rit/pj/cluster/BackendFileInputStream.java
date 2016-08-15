@@ -115,9 +115,9 @@ public class BackendFileInputStream
      * Read a byte from this input stream. The byte is returned as an
      * <TT>int</TT> in the range 0 .. 255.
      *
-     * @return Byte, or -1 if the end-of-stream was encountered.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @return a int.
+     * @throws java.io.IOException if any.
      */
     public int read()
             throws IOException {
@@ -130,13 +130,12 @@ public class BackendFileInputStream
      * Read the given byte array from this input stream.
      *
      * @param buf Byte array.
-     *
      * @return Number of bytes actually read, or -1 if the end-of-stream was
      * encountered.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>buf</TT> is null.
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public int read(byte[] buf)
             throws IOException {
@@ -144,15 +143,9 @@ public class BackendFileInputStream
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Read a portion of the given byte array from this input stream.
-     *
-     * @param buf Byte array.
-     * @param off Index of first byte to read.
-     * @param len Number of bytes to read.
-     *
-     * @return Number of bytes actually read, or -1 if the end-of-stream was
-     * encountered.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>buf</TT> is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
@@ -178,12 +171,9 @@ public class BackendFileInputStream
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Skip the given number of bytes from this input stream.
-     *
-     * @param len Number of bytes to skip.
-     *
-     * @return Number of bytes actually skipped.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public long skip(long len)
@@ -201,6 +191,7 @@ public class BackendFileInputStream
      * Close this input stream.
      *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void close()
             throws IOException {

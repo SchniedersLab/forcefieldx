@@ -37,7 +37,6 @@ import java.util.concurrent.atomic.AtomicReference;
  * java.util.concurrent.atomic.AtomicReference.
  *
  * @param <T> Object data type.
- *
  * @author Alan Kaminsky
  * @version 20-Jun-2007
  */
@@ -87,7 +86,6 @@ public class SharedObject<T> {
      * value.
      *
      * @param value New value.
-     *
      * @return Previous value.
      */
     public T getAndSet(T value) {
@@ -100,7 +98,6 @@ public class SharedObject<T> {
      *
      * @param expect Expected value.
      * @param update Updated value.
-     *
      * @return True if the update happened, false otherwise.
      */
     public boolean compareAndSet(T expect,
@@ -114,7 +111,6 @@ public class SharedObject<T> {
      *
      * @param expect Expected value.
      * @param update Updated value.
-     *
      * @return True if the update happened, false otherwise.
      */
     public boolean weakCompareAndSet(T expect,
@@ -129,7 +125,6 @@ public class SharedObject<T> {
      *
      * @param value Value.
      * @param op Binary operation.
-     *
      * @return (This variable) <I>op</I> (<TT>value</TT>).
      */
     public T reduce(T value,

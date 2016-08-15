@@ -41,8 +41,8 @@ public interface JobSchedulerRef {
      *
      * @param theJobFrontend Job frontend that is calling this method.
      * @param name Backend node name.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void backendFailed(JobFrontendRef theJobFrontend,
             String name)
@@ -53,8 +53,8 @@ public interface JobSchedulerRef {
      *
      * @param theJobFrontend Job frontend that is calling this method.
      * @param errmsg Error message string.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void cancelJob(JobFrontendRef theJobFrontend,
             String errmsg)
@@ -64,8 +64,8 @@ public interface JobSchedulerRef {
      * Report that a job finished.
      *
      * @param theJobFrontend Job frontend that is calling this method.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void jobFinished(JobFrontendRef theJobFrontend)
             throws IOException;
@@ -74,8 +74,8 @@ public interface JobSchedulerRef {
      * Renew the lease on a job.
      *
      * @param theJobFrontend Job frontend that is calling this method.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void renewLease(JobFrontendRef theJobFrontend)
             throws IOException;
@@ -86,8 +86,8 @@ public interface JobSchedulerRef {
      * @param theJobFrontend Job frontend that is calling this method.
      * @param rank Process rank.
      * @param comment Comment string.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void reportComment(JobFrontendRef theJobFrontend,
             int rank,
@@ -102,8 +102,8 @@ public interface JobSchedulerRef {
      * @param Nn Number of backend nodes.
      * @param Np Number of processes.
      * @param Nt Number of CPUs per process. 0 means "all CPUs."
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void requestJob(JobFrontendRef theJobFrontend,
             String username,

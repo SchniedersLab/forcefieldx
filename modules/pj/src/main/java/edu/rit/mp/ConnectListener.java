@@ -44,9 +44,10 @@ public interface ConnectListener {
      * <TT>connect()</TT> method is called by code in the same process.
      *
      * @param theChannelGroup Channel group that is calling this method.
+     * @param theChannelGroup Channel group that is calling this method.
      * @param theChannel Newly created channel.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void nearEndConnected(ChannelGroup theChannelGroup,
             Channel theChannel)
@@ -59,9 +60,10 @@ public interface ConnectListener {
      * request is received from another process.
      *
      * @param theChannelGroup Channel group that is calling this method.
+     * @param theChannelGroup Channel group that is calling this method.
      * @param theChannel Newly created channel.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void farEndConnected(ChannelGroup theChannelGroup,
             Channel theChannel)

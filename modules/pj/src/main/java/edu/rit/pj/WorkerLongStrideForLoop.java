@@ -201,7 +201,7 @@ public abstract class WorkerLongStrideForLoop
      * <P>
      * The <TT>schedule()</TT> method may be overridden in a subclass to return
      * the desired schedule. If not overridden, the default is a runtime
-     * schedule (see {@link LongSchedule#runtime()}).
+     * schedule (see {@link edu.rit.pj.LongSchedule#runtime()}).
      *
      * @return Schedule for this worker for loop.
      */
@@ -217,6 +217,7 @@ public abstract class WorkerLongStrideForLoop
      * overridden, the <TT>start()</TT> method does nothing.
      *
      * @exception Exception The <TT>start()</TT> method may throw any exception.
+     * @throws java.lang.Exception if any.
      */
     public void start()
             throws Exception {
@@ -235,8 +236,8 @@ public abstract class WorkerLongStrideForLoop
      * @param comm Communicator.
      * @param wRank Worker process rank.
      * @param tag Message tag.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void sendTaskInput(LongRange range,
             Comm comm,
@@ -258,8 +259,8 @@ public abstract class WorkerLongStrideForLoop
      * @param comm Communicator.
      * @param mRank Master process rank.
      * @param tag Message tag.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void receiveTaskInput(LongRange range,
             Comm comm,
@@ -279,8 +280,8 @@ public abstract class WorkerLongStrideForLoop
      * @param first First loop index.
      * @param last Last loop index.
      * @param stride Loop index stride, always positive.
-     *
      * @exception Exception The <TT>run()</TT> method may throw any exception.
+     * @throws java.lang.Exception if any.
      */
     public abstract void run(long first,
             long last,
@@ -300,8 +301,8 @@ public abstract class WorkerLongStrideForLoop
      * @param comm Communicator.
      * @param mRank Master process rank.
      * @param tag Message tag.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void sendTaskOutput(LongRange range,
             Comm comm,
@@ -323,8 +324,8 @@ public abstract class WorkerLongStrideForLoop
      * @param comm Communicator.
      * @param wRank Worker process rank.
      * @param tag Message tag.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void receiveTaskOutput(LongRange range,
             Comm comm,
@@ -342,6 +343,7 @@ public abstract class WorkerLongStrideForLoop
      *
      * @exception Exception The <TT>finish()</TT> method may throw any
      * exception.
+     * @throws java.lang.Exception if any.
      */
     public void finish()
             throws Exception {

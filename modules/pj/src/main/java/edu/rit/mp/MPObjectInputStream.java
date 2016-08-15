@@ -48,8 +48,8 @@ class MPObjectInputStream
      * be used.
      *
      * @param in Underlying input stream.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public MPObjectInputStream(InputStream in)
             throws IOException {
@@ -62,8 +62,8 @@ class MPObjectInputStream
      *
      * @param in Underlying input stream.
      * @param cl Alternate class loader, or null.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public MPObjectInputStream(InputStream in,
             ClassLoader cl)
@@ -74,13 +74,10 @@ class MPObjectInputStream
 
 // Hidden operations.
     /**
+     * {@inheritDoc}
+     *
      * Load the local class equivalent of the specified stream class
      * description.
-     *
-     * @param desc Stream class description.
-     *
-     * @return Local class.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      * @exception ClassNotFoundException Thrown if the local class could not be
      * found.

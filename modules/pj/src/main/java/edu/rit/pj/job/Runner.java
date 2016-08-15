@@ -134,6 +134,9 @@ public class Runner {
 // Main program.
     /**
      * Main program.
+     *
+     * @param args an array of {@link java.lang.String} objects.
+     * @throws java.lang.Exception if any.
      */
     public static void main(String[] args)
             throws Exception {

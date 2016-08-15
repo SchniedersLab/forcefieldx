@@ -141,9 +141,11 @@ public class BackendInfo {
      * @param totalCpus The total number of CPUs in the backend.
      * @param state The backend's state.
      * @param stateTime The time when the backend entered its current state.
+     * @param stateTime The time when the backend entered its current state.
      * @param host The host name for SSH remote logins to the backend.
      * @param jvm The full pathname for executing the Java Virtual Machine (JVM)
      * on the backend.
+     * @param jvmflags Array of command line flags for the JVM (zero or more).
      * @param classpath The Java class path for the Parallel Java Library on the
      * backend.
      * @param jvmflags Array of command line flags for the JVM (zero or more).

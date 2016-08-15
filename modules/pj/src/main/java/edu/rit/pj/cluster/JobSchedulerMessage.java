@@ -65,8 +65,7 @@ public abstract class JobSchedulerMessage
      *
      * @param theJobFrontend Job frontend that is calling this method.
      * @param name Backend node name.
-     *
-     * @return "Backend failed" message.
+     * @return a {@link edu.rit.pj.cluster.JobSchedulerMessage} object.
      */
     public static JobSchedulerMessage backendFailed(JobFrontendRef theJobFrontend,
             String name) {
@@ -78,8 +77,7 @@ public abstract class JobSchedulerMessage
      *
      * @param theJobFrontend Job frontend that is calling this method.
      * @param errmsg Error message string.
-     *
-     * @return "Cancel job" message.
+     * @return a {@link edu.rit.pj.cluster.JobSchedulerMessage} object.
      */
     public static JobSchedulerMessage cancelJob(JobFrontendRef theJobFrontend,
             String errmsg) {
@@ -90,8 +88,7 @@ public abstract class JobSchedulerMessage
      * Construct a new "job finished" message.
      *
      * @param theJobFrontend Job frontend that is calling this method.
-     *
-     * @return "Job finished" message.
+     * @return a {@link edu.rit.pj.cluster.JobSchedulerMessage} object.
      */
     public static JobSchedulerMessage jobFinished(JobFrontendRef theJobFrontend) {
         return new JobFinishedMessage(theJobFrontend);
@@ -101,8 +98,7 @@ public abstract class JobSchedulerMessage
      * Construct a new "renew lease" message.
      *
      * @param theJobFrontend Job frontend that is calling this method.
-     *
-     * @return "Renew lease" message.
+     * @return a {@link edu.rit.pj.cluster.JobSchedulerMessage} object.
      */
     public static JobSchedulerMessage renewLease(JobFrontendRef theJobFrontend) {
         return new RenewLeaseMessage(theJobFrontend);
@@ -114,8 +110,7 @@ public abstract class JobSchedulerMessage
      * @param theJobFrontend Job frontend that is calling this method.
      * @param rank Process rank.
      * @param comment Comment string.
-     *
-     * @return "Report comment" message.
+     * @return a {@link edu.rit.pj.cluster.JobSchedulerMessage} object.
      */
     public static JobSchedulerMessage reportComment(JobFrontendRef theJobFrontend,
             int rank,
@@ -131,8 +126,8 @@ public abstract class JobSchedulerMessage
      * @param Nn Number of backend nodes.
      * @param Np Number of processes.
      * @param Nt Number of CPUs per process. 0 means "all CPUs."
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @return a {@link edu.rit.pj.cluster.JobSchedulerMessage} object.
      */
     public static JobSchedulerMessage requestJob(JobFrontendRef theJobFrontend,
             String username,
@@ -149,8 +144,8 @@ public abstract class JobSchedulerMessage
      *
      * @param theJobScheduler Job Scheduler on which to invoke the method.
      * @param theJobFrontend Job Frontend that is calling the method.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void invoke(JobSchedulerRef theJobScheduler,
             JobFrontendRef theJobFrontend)
@@ -159,10 +154,9 @@ public abstract class JobSchedulerMessage
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Write this job scheduler message to the given object output stream.
-     *
-     * @param out Object output stream.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void writeExternal(ObjectOutput out)
@@ -170,10 +164,9 @@ public abstract class JobSchedulerMessage
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Read this job scheduler message from the given object input stream.
-     *
-     * @param in Object input stream.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void readExternal(ObjectInput in)

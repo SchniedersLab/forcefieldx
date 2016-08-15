@@ -45,10 +45,9 @@ public class Packing {
      *
      * @param src Source array of bytes to pack.
      * @param srcPos Index of first byte to pack.
-     *
+     * @param srcPos Index of first byte to pack.
      * @return Elements <TT>src[srcPos]</TT> through <TT>src[srcPos+3]</TT>
      * packed into an integer in little-endian order.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>src</TT> is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
@@ -71,10 +70,9 @@ public class Packing {
      *
      * @param src Source array of bytes to pack.
      * @param srcPos Index of first byte to pack.
-     *
+     * @param srcPos Index of first byte to pack.
      * @return Elements <TT>src[srcPos]</TT> through <TT>src[srcPos+3]</TT>
      * packed into an integer in big-endian order.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>src</TT> is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
@@ -100,10 +98,11 @@ public class Packing {
      *
      * @param src Source array of bytes to pack.
      * @param srcPos Index of first byte to pack.
+     * @param srcPos Index of first byte to pack.
      * @param dst Destination array of packed integers.
      * @param dstPos Index of first packed integer.
+     * @param dstPos Index of first packed integer.
      * @param len Number of integers (not bytes!) to pack.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>src</TT> is null. Thrown if
      * <TT>dst</TT> is null.
@@ -135,10 +134,11 @@ public class Packing {
      *
      * @param src Source array of bytes to pack.
      * @param srcPos Index of first byte to pack.
+     * @param srcPos Index of first byte to pack.
      * @param dst Destination array of packed integers.
      * @param dstPos Index of first packed integer.
+     * @param dstPos Index of first packed integer.
      * @param len Number of integers (not bytes!) to pack.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>src</TT> is null. Thrown if
      * <TT>dst</TT> is null.
@@ -168,10 +168,9 @@ public class Packing {
      *
      * @param src Source array of bytes to pack.
      * @param srcPos Index of first byte to pack.
-     *
+     * @param srcPos Index of first byte to pack.
      * @return Elements <TT>src[srcPos]</TT> through <TT>src[srcPos+7]</TT>
      * packed into a long integer in little-endian order.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>src</TT> is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
@@ -194,10 +193,9 @@ public class Packing {
      *
      * @param src Source array of bytes to pack.
      * @param srcPos Index of first byte to pack.
-     *
+     * @param srcPos Index of first byte to pack.
      * @return Elements <TT>src[srcPos]</TT> through <TT>src[srcPos+7]</TT>
      * packed into a long integer in big-endian order.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>src</TT> is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
@@ -223,10 +221,11 @@ public class Packing {
      *
      * @param src Source array of bytes to pack.
      * @param srcPos Index of first byte to pack.
+     * @param srcPos Index of first byte to pack.
      * @param dst Destination array of packed long integers.
      * @param dstPos Index of first packed long integer.
+     * @param dstPos Index of first packed long integer.
      * @param len Number of long integers (not bytes!) to pack.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>src</TT> is null. Thrown if
      * <TT>dst</TT> is null.
@@ -258,10 +257,11 @@ public class Packing {
      *
      * @param src Source array of bytes to pack.
      * @param srcPos Index of first byte to pack.
+     * @param srcPos Index of first byte to pack.
      * @param dst Destination array of packed long integers.
      * @param dstPos Index of first packed long integer.
+     * @param dstPos Index of first packed long integer.
      * @param len Number of long integers (not bytes!) to pack.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>src</TT> is null. Thrown if
      * <TT>dst</TT> is null.
@@ -293,7 +293,7 @@ public class Packing {
      * @param src Source integer to unpack.
      * @param dst Destination array to receive unpacked bytes.
      * @param dstPos Index of first unpacked byte.
-     *
+     * @param dstPos Index of first unpacked byte.
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>dst</TT> is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
@@ -319,7 +319,7 @@ public class Packing {
      * @param src Source integer to unpack.
      * @param dst Destination array to receive unpacked bytes.
      * @param dstPos Index of first unpacked byte.
-     *
+     * @param dstPos Index of first unpacked byte.
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>dst</TT> is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
@@ -345,10 +345,11 @@ public class Packing {
      *
      * @param src Source array of integers to unpack.
      * @param srcPos Index of first integer to unpack.
+     * @param srcPos Index of first integer to unpack.
      * @param dst Destination array to receive unpacked bytes.
      * @param dstPos Index of first unpacked byte.
+     * @param dstPos Index of first unpacked byte.
      * @param len Number of integers (not bytes!) to unpack.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>src</TT> is null. Thrown if
      * <TT>dst</TT> is null.
@@ -380,10 +381,11 @@ public class Packing {
      *
      * @param src Source array of integers to unpack.
      * @param srcPos Index of first integer to unpack.
+     * @param srcPos Index of first integer to unpack.
      * @param dst Destination array to receive unpacked bytes.
      * @param dstPos Index of first unpacked byte.
+     * @param dstPos Index of first unpacked byte.
      * @param len Number of integers (not bytes!) to unpack.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>src</TT> is null. Thrown if
      * <TT>dst</TT> is null.
@@ -415,7 +417,7 @@ public class Packing {
      * @param src Source long integer to unpack.
      * @param dst Destination array to receive unpacked bytes.
      * @param dstPos Index of first unpacked byte.
-     *
+     * @param dstPos Index of first unpacked byte.
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>dst</TT> is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
@@ -441,7 +443,7 @@ public class Packing {
      * @param src Source long integer to unpack.
      * @param dst Destination array to receive unpacked bytes.
      * @param dstPos Index of first unpacked byte.
-     *
+     * @param dstPos Index of first unpacked byte.
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>dst</TT> is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
@@ -467,10 +469,11 @@ public class Packing {
      *
      * @param src Source array of long integers to unpack.
      * @param srcPos Index of first long integer to unpack.
+     * @param srcPos Index of first long integer to unpack.
      * @param dst Destination array to receive unpacked bytes.
      * @param dstPos Index of first unpacked byte.
+     * @param dstPos Index of first unpacked byte.
      * @param len Number of integers (not bytes!) to unpack.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>src</TT> is null. Thrown if
      * <TT>dst</TT> is null.
@@ -502,10 +505,11 @@ public class Packing {
      *
      * @param src Source array of long integers to unpack.
      * @param srcPos Index of first long integer to unpack.
+     * @param srcPos Index of first long integer to unpack.
      * @param dst Destination array to receive unpacked bytes.
      * @param dstPos Index of first unpacked byte.
+     * @param dstPos Index of first unpacked byte.
      * @param len Number of integers (not bytes!) to unpack.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>src</TT> is null. Thrown if
      * <TT>dst</TT> is null.

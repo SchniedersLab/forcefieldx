@@ -66,9 +66,9 @@ public class CommRequest {
      *
      * @return False if the message passing operation has not finished, true if
      * the message passing operation has finished successfully.
-     *
      * @exception IOException Thrown if the message passing operation has
      * finished and an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public boolean isFinished()
             throws IOException {
@@ -97,8 +97,8 @@ public class CommRequest {
      * <TT>waitForFinish()</TT> method immediately returns null.
      *
      * @return Status object for a receive operation, otherwise null.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public CommStatus waitForFinish()
             throws IOException {

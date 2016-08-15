@@ -127,7 +127,6 @@ public class Range
      * @param lb Lower bound <I>L</I>.
      * @param ub Upper bound <I>U</I>.
      * @param stride Stride <I>S</I> &gt;= 1.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <I>S</I> &lt; 1.
      */
@@ -198,7 +197,6 @@ public class Range
      * <TT>this.ub()</TT>. (The stride does not affect the outcome.)
      *
      * @param value Value to test.
-     *
      * @return True if this range contains the given <TT>value</TT>, false
      * otherwise.
      */
@@ -213,7 +211,6 @@ public class Range
      * the outcome.)
      *
      * @param range Range to test.
-     *
      * @return True if this range contains the given <TT>range</TT>, false
      * otherwise.
      */
@@ -235,9 +232,7 @@ public class Range
      * @param size Number of subranges, <TT>size</TT> &gt;= 1.
      * @param rank Rank of the desired subrange, 0 &lt;= <TT>rank</TT> &lt;
      * <TT>size</TT>.
-     *
      * @return Subrange.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <TT>size</TT> or <TT>rank</TT> is out of bounds.
      */
@@ -279,9 +274,7 @@ public class Range
      * of the returned subranges may be empty.
      *
      * @param size Number of subranges, size &gt;= 1.
-     *
      * @return Array of subranges.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <TT>size</TT> is out of bounds.
      */
@@ -333,9 +326,7 @@ public class Range
      *
      * @param N1 Number of integers to discard (must be &gt;= 0).
      * @param N2 Number of integers to include in the chunk (must be &gt;= 0).
-     *
      * @return Chunk.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <TT>N1</TT> or <TT>N2</TT> is out of bounds.
      */
@@ -358,12 +349,10 @@ public class Range
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Determine if this range is equal to the given object. Two ranges are
      * equal if they both have the same lower bound, stride, and length.
-     *
-     * @param obj Object to test.
-     *
-     * @return True if this range is equal to <TT>obj</TT>, false otherwise.
      */
     public boolean equals(Object obj) {
         return obj instanceof Range
@@ -374,6 +363,8 @@ public class Range
 
     /**
      * Returns a hash code for this range.
+     *
+     * @return a int.
      */
     public int hashCode() {
         return (((this.lb << 10) + this.stride) << 10) + this.length;
@@ -385,6 +376,8 @@ public class Range
      * <I>U</I> is the upper bound. If the stride is greater than 1, the format
      * is <TT>"<I>L</I>..<I>U</I>;<I>S</I>"</TT>, where <I>L</I> is the lower
      * bound, <I>U</I> is the upper bound, and <I>S</I> is the stride.
+     *
+     * @return a {@link java.lang.String} object.
      */
     public String toString() {
         StringBuilder b = new StringBuilder();
@@ -399,10 +392,9 @@ public class Range
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Write this range to the given object output stream.
-     *
-     * @param out Object output stream.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void writeExternal(ObjectOutput out)
@@ -413,10 +405,9 @@ public class Range
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Read this range from the given object input stream.
-     *
-     * @param in Object input stream.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void readExternal(ObjectInput in)

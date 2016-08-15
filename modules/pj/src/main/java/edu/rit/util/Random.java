@@ -148,12 +148,12 @@ public abstract class Random
      * be allowed. See the PRNG algorithm subclass for further information.
      *
      * @param seed Seed.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if the
      * PRNG algorithm does not allow the given seed value.
      * @exception TypeNotPresentException (unchecked exception) Thrown if a PRNG
      * instance could not be constructed. The chained exception gives further
      * information about the problem.
+     * @return a {@link edu.rit.util.Random} object.
      */
     public static Random getInstance(long seed) {
         String algorithm = System.getProperty("pj.prng");
@@ -171,12 +171,12 @@ public abstract class Random
      * @param seed Seed.
      * @param algorithm Fully-qualified name of the class to construct. This
      * must be a subclass of class Random.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if the
      * PRNG algorithm does not allow the given seed value.
      * @exception TypeNotPresentException (unchecked exception) Thrown if a PRNG
      * instance could not be constructed. The chained exception gives further
      * information about the problem.
+     * @return a {@link edu.rit.util.Random} object.
      */
     public static Random getInstance(long seed,
             String algorithm) {
@@ -196,7 +196,6 @@ public abstract class Random
      * be allowed. See the PRNG algorithm subclass for further information.
      *
      * @param seed Seed.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if the
      * PRNG algorithm does not allow the given seed value.
      */
@@ -240,9 +239,7 @@ public abstract class Random
      * returned.
      *
      * @param skip Number of positions to skip.
-     *
      * @return Boolean value.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <TT>skip</TT> &lt;= 0.
      */
@@ -272,9 +269,7 @@ public abstract class Random
      * &minus;128 through 127 is returned with a probability of 1/2<SUP>8</SUP>.
      *
      * @param skip Number of positions to skip.
-     *
      * @return Byte value in the range &minus;128 through 127 inclusive.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <TT>skip</TT> &lt;= 0.
      */
@@ -303,10 +298,8 @@ public abstract class Random
      * range 0 through 255 is returned with a probability of 1/2<SUP>8</SUP>.
      *
      * @param skip Number of positions to skip.
-     *
      * @return Unsigned byte value (as an <TT>int</TT>) in the range 0 through
      * 255 inclusive.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <TT>skip</TT> &lt;= 0.
      */
@@ -336,10 +329,8 @@ public abstract class Random
      * with a probability of 1/2<SUP>16</SUP>.
      *
      * @param skip Number of positions to skip.
-     *
      * @return Character value in the range <TT>'&#92;u0000'</TT> through
      * <TT>'&#92;uFFFF'</TT> inclusive.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <TT>skip</TT> &lt;= 0.
      */
@@ -368,9 +359,7 @@ public abstract class Random
      * 1/2<SUP>16</SUP>.
      *
      * @param skip Number of positions to skip.
-     *
      * @return Short value in the range &minus;32768 through 32767 inclusive.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <TT>skip</TT> &lt;= 0.
      */
@@ -400,10 +389,8 @@ public abstract class Random
      * 1/2<SUP>16</SUP>.
      *
      * @param skip Number of positions to skip.
-     *
      * @return Unsigned short value (as an <TT>int</TT>) in the range 0 through
      * 65535 inclusive.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <TT>skip</TT> &lt;= 0.
      */
@@ -433,10 +420,8 @@ public abstract class Random
      * of 1/2<SUP>32</SUP>.
      *
      * @param skip Number of positions to skip.
-     *
      * @return Integer value in the range &minus;2147483648 through 2147483647
      * inclusive.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <TT>skip</TT> &lt;= 0.
      */
@@ -453,9 +438,7 @@ public abstract class Random
      * <I>N</I>&minus;1 is returned with a probability of 1/<I>N</I>.
      *
      * @param n Range of values to return.
-     *
      * @return Integer value in the range 0 through <I>N</I>&minus;1 inclusive.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <I>N</I> &lt;= 0.
      */
@@ -474,9 +457,7 @@ public abstract class Random
      *
      * @param n Range of values to return.
      * @param skip Number of positions to skip.
-     *
      * @return Integer value in the range 0 through <I>N</I>&minus;1 inclusive.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <I>N</I> &lt;= 0. Thrown if
      * <TT>skip</TT> &lt;= 0.
@@ -508,10 +489,8 @@ public abstract class Random
      * probability of 1/2<SUP>64</SUP>.
      *
      * @param skip Number of positions to skip.
-     *
      * @return Long value in the range &minus;9223372036854775808 through
      * 9223372036854775807 inclusive.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <TT>skip</TT> &lt;= 0.
      */
@@ -543,9 +522,7 @@ public abstract class Random
      * to 1.0 (exclusive).
      *
      * @param skip Number of positions to skip.
-     *
      * @return Float value.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <TT>skip</TT> &lt;= 0.
      */
@@ -581,9 +558,7 @@ public abstract class Random
      * to 1.0 (exclusive).
      *
      * @param skip Number of positions to skip.
-     *
      * @return Double value.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <TT>skip</TT> &lt;= 0.
      */
@@ -611,7 +586,6 @@ public abstract class Random
      * in this PRNG's sequence.
      *
      * @param skip Number of positions to skip, assumed to be &gt; 0.
-     *
      * @return Pseudorandom value.
      */
     protected abstract long next(long skip);

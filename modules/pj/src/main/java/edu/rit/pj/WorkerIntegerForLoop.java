@@ -199,7 +199,7 @@ public abstract class WorkerIntegerForLoop
      * <P>
      * The <TT>schedule()</TT> method may be overridden in a subclass to return
      * the desired schedule. If not overridden, the default is a runtime
-     * schedule (see {@link IntegerSchedule#runtime()}).
+     * schedule (see {@link edu.rit.pj.IntegerSchedule#runtime()}).
      *
      * @return Schedule for this worker for loop.
      */
@@ -215,6 +215,7 @@ public abstract class WorkerIntegerForLoop
      * overridden, the <TT>start()</TT> method does nothing.
      *
      * @exception Exception The <TT>start()</TT> method may throw any exception.
+     * @throws java.lang.Exception if any.
      */
     public void start()
             throws Exception {
@@ -233,8 +234,8 @@ public abstract class WorkerIntegerForLoop
      * @param comm Communicator.
      * @param wRank Worker process rank.
      * @param tag Message tag.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void sendTaskInput(Range range,
             Comm comm,
@@ -256,8 +257,8 @@ public abstract class WorkerIntegerForLoop
      * @param comm Communicator.
      * @param mRank Master process rank.
      * @param tag Message tag.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void receiveTaskInput(Range range,
             Comm comm,
@@ -276,8 +277,8 @@ public abstract class WorkerIntegerForLoop
      *
      * @param first First loop index.
      * @param last Last loop index.
-     *
      * @exception Exception The <TT>run()</TT> method may throw any exception.
+     * @throws java.lang.Exception if any.
      */
     public abstract void run(int first,
             int last)
@@ -296,8 +297,8 @@ public abstract class WorkerIntegerForLoop
      * @param comm Communicator.
      * @param mRank Master process rank.
      * @param tag Message tag.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void sendTaskOutput(Range range,
             Comm comm,
@@ -319,8 +320,8 @@ public abstract class WorkerIntegerForLoop
      * @param comm Communicator.
      * @param wRank Worker process rank.
      * @param tag Message tag.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void receiveTaskOutput(Range range,
             Comm comm,
@@ -338,6 +339,7 @@ public abstract class WorkerIntegerForLoop
      *
      * @exception Exception The <TT>finish()</TT> method may throw any
      * exception.
+     * @throws java.lang.Exception if any.
      */
     public void finish()
             throws Exception {

@@ -53,7 +53,6 @@ public class PrintStreamLogger
      * Construct a new print stream logger that logs to the given print stream.
      *
      * @param out Print stream.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>out</TT> is null.
      */
@@ -75,19 +74,18 @@ public class PrintStreamLogger
     }
 
     /**
-     * Log the given exception.
+     * {@inheritDoc}
      *
-     * @param exc Exception.
+     * Log the given exception.
      */
     public void log(Throwable exc) {
         log(System.currentTimeMillis(), null, exc);
     }
 
     /**
-     * Log the given message and exception.
+     * {@inheritDoc}
      *
-     * @param msg Message.
-     * @param exc Exception.
+     * Log the given message and exception.
      */
     public void log(String msg,
             Throwable exc) {
@@ -106,10 +104,9 @@ public class PrintStreamLogger
     }
 
     /**
-     * Log the given date and exception.
+     * {@inheritDoc}
      *
-     * @param date Date and time in milliseconds since midnight 01-Jan-1970 UTC.
-     * @param exc Exception.
+     * Log the given date and exception.
      */
     public void log(long date,
             Throwable exc) {
@@ -117,11 +114,9 @@ public class PrintStreamLogger
     }
 
     /**
-     * Log the given date, message, and exception.
+     * {@inheritDoc}
      *
-     * @param date Date and time in milliseconds since midnight 01-Jan-1970 UTC.
-     * @param msg Message.
-     * @param exc Exception.
+     * Log the given date, message, and exception.
      */
     public void log(long date,
             String msg,

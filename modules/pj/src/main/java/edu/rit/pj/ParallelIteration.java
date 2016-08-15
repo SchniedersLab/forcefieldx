@@ -170,7 +170,7 @@ package edu.rit.pj;
  * <P>
  * Normally, at the end of the parallel iteration, the parallel team threads
  * wait for each other at a barrier. To eliminate this barrier wait, include
- * {@link BarrierAction#NO_WAIT BarrierAction.NO_WAIT} in the <TT>execute()</TT>
+ * {@link edu.rit.pj.BarrierAction#NO_WAIT BarrierAction.NO_WAIT} in the <TT>execute()</TT>
  * method call:
  * <PRE>
  *     new ParallelRegion()
@@ -226,7 +226,6 @@ package edu.rit.pj;
  * iterations unperformed.
  *
  * @param <T> Data type of the items iterated over.
- *
  * @author Alan Kaminsky
  * @version 11-Nov-2007
  */
@@ -258,6 +257,7 @@ public abstract class ParallelIteration<T>
      * overridden, the <TT>start()</TT> method does nothing.
      *
      * @exception Exception The <TT>start()</TT> method may throw any exception.
+     * @throws java.lang.Exception if any.
      */
     public void start()
             throws Exception {
@@ -270,8 +270,8 @@ public abstract class ParallelIteration<T>
      * The <TT>run()</TT> method must be overridden in a subclass.
      *
      * @param item Item.
-     *
      * @exception Exception The <TT>run()</TT> method may throw any exception.
+     * @throws java.lang.Exception if any.
      */
     public abstract void run(T item)
             throws Exception;
@@ -285,6 +285,7 @@ public abstract class ParallelIteration<T>
      *
      * @exception Exception The <TT>finish()</TT> method may throw any
      * exception.
+     * @throws java.lang.Exception if any.
      */
     public void finish()
             throws Exception {
@@ -310,13 +311,13 @@ public abstract class ParallelIteration<T>
      * or the <TT>ordered()</TT> method must not be called at all.
      *
      * @param theSection Parallel section to execute in order.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theSection</TT> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel iteration.
      * @exception Exception Thrown if <TT>theSection</TT>'s <TT>run()</TT>
      * method throws an exception.
+     * @throws java.lang.Exception if any.
      */
     public final void ordered(ParallelSection theSection)
             throws Exception {

@@ -103,9 +103,7 @@ public abstract class IntegerSchedule
      * <TT>theChunkSize</TT>.
      *
      * @param theChunkSize Chunk size, &gt;= 1.
-     *
      * @return Dynamic schedule object.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <TT>theChunkSize</TT> &lt; 1.
      */
@@ -140,9 +138,7 @@ public abstract class IntegerSchedule
      * <TT>theChunkSize</TT>.
      *
      * @param theChunkSize Minimum chunk size, &gt;= 1.
-     *
      * @return Self-guided schedule object.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <TT>theChunkSize</TT> &lt; 1.
      */
@@ -162,7 +158,6 @@ public abstract class IntegerSchedule
      * </PRE>
      *
      * @return Schedule object.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if the
      * <TT>"pj.schedule"</TT> property value cannot be parsed.
      */
@@ -184,9 +179,7 @@ public abstract class IntegerSchedule
      *
      * @param defaultSchedule Schedule to use if the <TT>"pj.schedule"</TT>
      * Java property is not specified.
-     *
      * @return Schedule object.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if the
      * <TT>"pj.schedule"</TT> property value cannot be parsed.
      */
@@ -229,9 +222,7 @@ public abstract class IntegerSchedule
      * </UL>
      *
      * @param s String to parse.
-     *
      * @return Schedule object.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>s</TT> is null.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
@@ -388,7 +379,6 @@ public abstract class IntegerSchedule
      * thread safe.
      *
      * @param theThreadIndex Thread index in the range 0 .. <I>K</I>-1.
-     *
      * @return Chunk of iterations, or null if no more iterations.
      */
     public abstract Range next(int theThreadIndex);

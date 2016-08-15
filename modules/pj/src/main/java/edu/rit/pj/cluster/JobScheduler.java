@@ -297,11 +297,9 @@ public class JobScheduler
 
 // Exported operations.
     /**
+     * {@inheritDoc}
+     *
      * Report that a backend node failed.
-     *
-     * @param theJobFrontend Job frontend that is calling this method.
-     * @param name Backend node name.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public synchronized void backendFailed(JobFrontendRef theJobFrontend,
@@ -323,11 +321,9 @@ public class JobScheduler
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Cancel a job.
-     *
-     * @param theJobFrontend Job frontend that is calling this method.
-     * @param errmsg Error message string.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public synchronized void cancelJob(JobFrontendRef theJobFrontend,
@@ -338,10 +334,9 @@ public class JobScheduler
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Report that a job finished.
-     *
-     * @param theJobFrontend Job frontend that is calling this method.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public synchronized void jobFinished(JobFrontendRef theJobFrontend)
@@ -351,10 +346,9 @@ public class JobScheduler
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Renew the lease on a job.
-     *
-     * @param theJobFrontend Job frontend that is calling this method.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public synchronized void renewLease(JobFrontendRef theJobFrontend)
@@ -364,12 +358,9 @@ public class JobScheduler
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Report a comment for a process.
-     *
-     * @param theJobFrontend Job frontend that is calling this method.
-     * @param rank Process rank.
-     * @param comment Comment string.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public synchronized void reportComment(JobFrontendRef theJobFrontend,
@@ -380,14 +371,9 @@ public class JobScheduler
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Request that a job be scheduled.
-     *
-     * @param theJobFrontend Job frontend that is calling this method.
-     * @param username User name.
-     * @param Nn Number of backend nodes.
-     * @param Np Number of processes.
-     * @param Nt Number of CPUs per process. 0 means "all CPUs."
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public synchronized void requestJob(JobFrontendRef theJobFrontend,
@@ -1656,6 +1642,9 @@ public class JobScheduler
 // Main program.
     /**
      * Job Scheduler main program.
+     *
+     * @param args an array of {@link java.lang.String} objects.
+     * @throws java.lang.Exception if any.
      */
     public static void main(String[] args)
             throws Exception {

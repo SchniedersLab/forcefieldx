@@ -65,9 +65,9 @@ public class DataInputStream
      * is 0, false is returned; otherwise true is returned.
      *
      * @return Boolean value.
-     *
      * @exception EOFException Thrown if the end of the stream is encountered.
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public boolean readBoolean()
             throws IOException {
@@ -84,9 +84,9 @@ public class DataInputStream
      * returned.
      *
      * @return Byte value.
-     *
      * @exception EOFException Thrown if the end of the stream is encountered.
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public byte readByte()
             throws IOException {
@@ -99,9 +99,9 @@ public class DataInputStream
      * returned.
      *
      * @return Short value.
-     *
      * @exception EOFException Thrown if the end of the stream is encountered.
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public short readShort()
             throws IOException {
@@ -114,9 +114,9 @@ public class DataInputStream
      * returned.
      *
      * @return Character value.
-     *
      * @exception EOFException Thrown if the end of the stream is encountered.
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public char readChar()
             throws IOException {
@@ -153,9 +153,9 @@ public class DataInputStream
      * </UL>
      *
      * @return Integer value.
-     *
      * @exception EOFException Thrown if the end of the stream is encountered.
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public int readInt()
             throws IOException {
@@ -242,9 +242,9 @@ public class DataInputStream
      * byte is returned.
      *
      * @return Byte value.
-     *
      * @exception EOFException Thrown if the end of the stream is encountered.
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public byte readUnsignedByte()
             throws IOException {
@@ -257,9 +257,9 @@ public class DataInputStream
      * the short is returned.
      *
      * @return Short value.
-     *
      * @exception EOFException Thrown if the end of the stream is encountered.
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public short readUnsignedShort()
             throws IOException {
@@ -272,9 +272,9 @@ public class DataInputStream
      * and the char is returned.
      *
      * @return Character value.
-     *
      * @exception EOFException Thrown if the end of the stream is encountered.
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public char readUnsignedChar()
             throws IOException {
@@ -311,9 +311,9 @@ public class DataInputStream
      * </UL>
      *
      * @return Integer value.
-     *
      * @exception EOFException Thrown if the end of the stream is encountered.
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public int readUnsignedInt()
             throws IOException {
@@ -438,9 +438,9 @@ public class DataInputStream
      * </UL>
      *
      * @return Long value.
-     *
      * @exception EOFException Thrown if the end of the stream is encountered.
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public long readLong()
             throws IOException {
@@ -716,9 +716,9 @@ public class DataInputStream
      * </UL>
      *
      * @return Long value.
-     *
      * @exception EOFException Thrown if the end of the stream is encountered.
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public long readUnsignedLong()
             throws IOException {
@@ -941,9 +941,9 @@ public class DataInputStream
      * <TT>Float.intBitsToFloat(v)</TT> is returned.
      *
      * @return Float value.
-     *
      * @exception EOFException Thrown if the end of the stream is encountered.
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public float readFloat()
             throws IOException {
@@ -978,9 +978,9 @@ public class DataInputStream
      * <TT>Double.longBitsToDouble(v)</TT> is returned.
      *
      * @return Double value.
-     *
      * @exception EOFException Thrown if the end of the stream is encountered.
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public double readDouble()
             throws IOException {
@@ -1035,9 +1035,9 @@ public class DataInputStream
      * string is read using <TT>readUnsignedInt()</TT>.
      *
      * @return String value.
-     *
      * @exception EOFException Thrown if the end of the stream is encountered.
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public String readString()
             throws IOException {

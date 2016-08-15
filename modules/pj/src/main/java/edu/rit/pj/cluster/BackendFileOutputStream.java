@@ -107,8 +107,8 @@ public class BackendFileOutputStream
      * eight bits are written.
      *
      * @param b Byte.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void write(int b)
             throws IOException {
@@ -119,10 +119,10 @@ public class BackendFileOutputStream
      * Write the given byte array to this output stream.
      *
      * @param buf Byte array.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>buf</TT> is null.
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void write(byte[] buf)
             throws IOException {
@@ -130,12 +130,9 @@ public class BackendFileOutputStream
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Write a portion of the given byte array to this output stream.
-     *
-     * @param buf Byte array.
-     * @param off Index of first byte to write.
-     * @param len Number of bytes to write.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>buf</TT> is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
@@ -159,6 +156,7 @@ public class BackendFileOutputStream
      * Flush this output stream.
      *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void flush()
             throws IOException {
@@ -171,6 +169,7 @@ public class BackendFileOutputStream
      * Close this output stream.
      *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void close()
             throws IOException {

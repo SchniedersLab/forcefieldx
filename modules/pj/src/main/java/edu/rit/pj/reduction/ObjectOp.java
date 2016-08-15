@@ -54,7 +54,6 @@ package edu.rit.pj.reduction;
  * </UL>
  *
  * @param <T> Object data type.
- *
  * @author Alan Kaminsky
  * @version 30-Mar-2008
  */
@@ -75,7 +74,6 @@ public abstract class ObjectOp<T>
      *
      * @param x First argument.
      * @param y Second argument.
-     *
      * @return (<TT>x</TT> <I>op</I> <TT>y</TT>), where <I>op</I> stands for
      * this binary operation.
      */

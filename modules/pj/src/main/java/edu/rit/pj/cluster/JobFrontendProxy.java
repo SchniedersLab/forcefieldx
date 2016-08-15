@@ -53,6 +53,7 @@ public class JobFrontendProxy
      * in the given channel group to send messages to the job frontend process.
      *
      * @param theChannelGroup Channel group.
+     * @param theChannelGroup Channel group.
      * @param theChannel Channel.
      */
     public JobFrontendProxy(ChannelGroup theChannelGroup,
@@ -62,17 +63,9 @@ public class JobFrontendProxy
 
 // Exported operations.
     /**
+     * {@inheritDoc}
+     *
      * Assign a backend process to the job.
-     *
-     * @param theJobScheduler Job Scheduler that is calling this method.
-     * @param name Backend node name.
-     * @param host Host name for SSH remote login.
-     * @param jvm Full pathname of Java Virtual Machine.
-     * @param classpath Java class path for PJ Library.
-     * @param jvmflags Array of JVM command line flags.
-     * @param shellCommand Shell command string.
-     * @param Nt Number of CPUs assigned to the process.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void assignBackend(JobSchedulerRef theJobScheduler,
@@ -89,13 +82,10 @@ public class JobFrontendProxy
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Assign a job number to the job. The host name for the job frontend's
      * middleware channel group is also specified.
-     *
-     * @param theJobScheduler Job Scheduler that is calling this method.
-     * @param jobnum Job number.
-     * @param pjhost Host name for middleware channel group.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void assignJobNumber(JobSchedulerRef theJobScheduler,
@@ -106,11 +96,9 @@ public class JobFrontendProxy
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Cancel the job.
-     *
-     * @param theJobScheduler Job Scheduler that is calling this method.
-     * @param errmsg Error message string.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void cancelJob(JobSchedulerRef theJobScheduler,
@@ -123,8 +111,8 @@ public class JobFrontendProxy
      * Renew the lease on the job.
      *
      * @param theJobScheduler Job Scheduler that is calling this method.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void renewLease(JobSchedulerRef theJobScheduler)
             throws IOException {
@@ -132,10 +120,9 @@ public class JobFrontendProxy
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Report that a backend process has finished executing the job.
-     *
-     * @param theJobBackend Job Backend that is calling this method.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void backendFinished(JobBackendRef theJobBackend)
@@ -144,18 +131,9 @@ public class JobFrontendProxy
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Report that a backend process is ready to commence executing the job.
-     *
-     * @param theJobBackend Job Backend that is calling this method.
-     * @param rank Rank of the job backend process.
-     * @param middlewareAddress Host/port to which the job backend process is
-     * listening for middleware messages.
-     * @param worldAddress Host/port to which the job backend process is
-     * listening for the world communicator.
-     * @param frontendAddress Host/port to which the job backend process is
-     * listening for the frontend communicator, or null if the frontend
-     * communicator does not exist.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void backendReady(JobBackendRef theJobBackend,
@@ -169,11 +147,9 @@ public class JobFrontendProxy
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Cancel the job.
-     *
-     * @param theJobBackend Job Backend that is calling this method.
-     * @param errmsg Error message string.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void cancelJob(JobBackendRef theJobBackend,
@@ -183,10 +159,9 @@ public class JobFrontendProxy
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Renew the lease on the job.
-     *
-     * @param theJobBackend Job Backend that is calling this method.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void renewLease(JobBackendRef theJobBackend)
@@ -195,11 +170,9 @@ public class JobFrontendProxy
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Request the given resource from this job frontend's class loader.
-     *
-     * @param theJobBackend Job Backend that is calling this method.
-     * @param resourceName Resource name.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void requestResource(JobBackendRef theJobBackend,
@@ -209,13 +182,9 @@ public class JobFrontendProxy
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Open the given output file for writing or appending.
-     *
-     * @param theJobBackend Job Backend that is calling this method.
-     * @param bfd Backend file descriptor.
-     * @param file File.
-     * @param append True to append, false to overwrite.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void outputFileOpen(JobBackendRef theJobBackend,
@@ -227,16 +196,11 @@ public class JobFrontendProxy
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Write the given bytes to the given output file. <TT>fd</TT> = 1 refers to
      * the job's standard output stream; <TT>fd</TT> = 2 refers to the job's
      * standard error stream; other values refer to a previously opened file.
-     *
-     * @param theJobBackend Job Backend that is calling this method.
-     * @param ffd Frontend file descriptor.
-     * @param buf Array of bytes to write.
-     * @param off Index of first byte to write.
-     * @param len Number of bytes to write.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void outputFileWrite(JobBackendRef theJobBackend,
@@ -251,11 +215,9 @@ public class JobFrontendProxy
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Flush accumulated bytes to the given output file.
-     *
-     * @param theJobBackend Job Backend that is calling this method.
-     * @param ffd Frontend file descriptor.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void outputFileFlush(JobBackendRef theJobBackend,
@@ -265,11 +227,9 @@ public class JobFrontendProxy
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Close the given output file.
-     *
-     * @param theJobBackend Job Backend that is calling this method.
-     * @param ffd Frontend file descriptor.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void outputFileClose(JobBackendRef theJobBackend,
@@ -279,12 +239,9 @@ public class JobFrontendProxy
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Open the given input file for reading.
-     *
-     * @param theJobBackend Job Backend that is calling this method.
-     * @param bfd Backend file descriptor.
-     * @param file File.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void inputFileOpen(JobBackendRef theJobBackend,
@@ -295,14 +252,11 @@ public class JobFrontendProxy
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Read bytes from the given input file. <TT>ffd</TT> = 1 refers to the
      * job's standard input stream; other values refer to a previously opened
      * file.
-     *
-     * @param theJobBackend Job Backend that is calling this method.
-     * @param ffd Frontend file descriptor.
-     * @param len Number of bytes to read.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void inputFileRead(JobBackendRef theJobBackend,
@@ -313,12 +267,9 @@ public class JobFrontendProxy
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Skip bytes from the given input file.
-     *
-     * @param theJobBackend Job Backend that is calling this method.
-     * @param ffd Frontend file descriptor.
-     * @param len Number of bytes to skip.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void inputFileSkip(JobBackendRef theJobBackend,
@@ -329,11 +280,9 @@ public class JobFrontendProxy
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Close the given input file.
-     *
-     * @param theJobBackend Job Backend that is calling this method.
-     * @param ffd Frontend file descriptor.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void inputFileClose(JobBackendRef theJobBackend,
@@ -343,12 +292,9 @@ public class JobFrontendProxy
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Report a comment for a process.
-     *
-     * @param theJobBackend Job backend that is calling this method.
-     * @param rank Process rank.
-     * @param comment Comment string.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void reportComment(JobBackendRef theJobBackend,

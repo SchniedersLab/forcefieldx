@@ -102,7 +102,6 @@ public class WorkerTeam {
      * given communicator for message passing.
      *
      * @param comm Communicator to use for message passing.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>comm</TT> is null.
      */
@@ -158,7 +157,6 @@ public class WorkerTeam {
      * Execute the given worker region.
      *
      * @param theRegion Worker region.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theRegion</TT> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if this
@@ -167,6 +165,7 @@ public class WorkerTeam {
      * @exception Exception Exception thrown by the worker region's
      * <TT>start()</TT>,
      * <TT>run()</TT>, or <TT>finish()</TT> methods.
+     * @throws java.lang.Exception if any.
      */
     public final void execute(WorkerRegion theRegion)
             throws Exception {
@@ -235,7 +234,6 @@ public class WorkerTeam {
      * Returns the worker region of code that this worker team is executing.
      *
      * @return Worker region.
-     *
      * @exception IllegalStateException (unchecked exception) Thrown if this
      * worker team is not executing a worker region.
      */
@@ -281,9 +279,7 @@ public class WorkerTeam {
      * the given index.
      *
      * @param w Worker index.
-     *
      * @return Worker process rank.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <TT>w</TT> is not in the range 0 ..
      * <TT>getTotalThreadCount()</TT>&minus;1.

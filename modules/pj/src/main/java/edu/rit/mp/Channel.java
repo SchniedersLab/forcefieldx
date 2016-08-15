@@ -154,6 +154,8 @@ public abstract class Channel {
 
     /**
      * Returns a string version of this channel.
+     *
+     * @return a {@link java.lang.String} object.
      */
     public String toString() {
         return getClass().getName()

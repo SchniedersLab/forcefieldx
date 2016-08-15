@@ -95,7 +95,6 @@ public class Stdio {
      * default is <TT>System.in</TT>.
      *
      * @param stream Standard input stream.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>stream</TT> is null.
      */
@@ -111,7 +110,6 @@ public class Stdio {
      * default is <TT>System.out</TT>.
      *
      * @param stream Standard output stream.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>stream</TT> is null.
      */
@@ -127,7 +125,6 @@ public class Stdio {
      * default is <TT>System.err</TT>.
      *
      * @param stream Standard error stream.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>stream</TT> is null.
      */

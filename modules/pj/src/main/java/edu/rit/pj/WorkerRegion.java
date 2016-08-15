@@ -137,6 +137,7 @@ public abstract class WorkerRegion
      * overridden, the <TT>start()</TT> method does nothing.
      *
      * @exception Exception The <TT>start()</TT> method may throw any exception.
+     * @throws java.lang.Exception if any.
      */
     public void start()
             throws Exception {
@@ -149,6 +150,7 @@ public abstract class WorkerRegion
      * The <TT>run()</TT> method must be implemented in a subclass.
      *
      * @exception Exception The <TT>run()</TT> method may throw any exception.
+     * @throws java.lang.Exception if any.
      */
     public abstract void run()
             throws Exception;
@@ -162,6 +164,7 @@ public abstract class WorkerRegion
      *
      * @exception Exception The <TT>finish()</TT> method may throw any
      * exception.
+     * @throws java.lang.Exception if any.
      */
     public void finish()
             throws Exception {
@@ -181,13 +184,13 @@ public abstract class WorkerRegion
      * @param first First loop index.
      * @param last Last loop index.
      * @param theLoop Worker for loop.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theLoop</TT> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * worker team is executing this worker region.
      * @exception Exception Thrown if one of <TT>theLoop</TT>'s methods throws
      * an exception.
+     * @throws java.lang.Exception if any.
      */
     public final void execute(int first,
             int last,
@@ -238,7 +241,6 @@ public abstract class WorkerRegion
      * @param last Last loop index.
      * @param stride Loop index stride, &gt;= 1.
      * @param theLoop Worker for loop.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <TT>stride</TT> &lt; 1.
      * @exception NullPointerException (unchecked exception) Thrown if
@@ -247,6 +249,7 @@ public abstract class WorkerRegion
      * worker team is executing this worker region.
      * @exception Exception Thrown if one of <TT>theLoop</TT>'s methods throws
      * an exception.
+     * @throws java.lang.Exception if any.
      */
     public final void execute(int first,
             int last,
@@ -299,13 +302,13 @@ public abstract class WorkerRegion
      * @param first First loop index.
      * @param last Last loop index.
      * @param theLoop Worker for loop.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theLoop</TT> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * worker team is executing this worker region.
      * @exception Exception Thrown if one of <TT>theLoop</TT>'s methods throws
      * an exception.
+     * @throws java.lang.Exception if any.
      */
     public final void execute(long first,
             long last,
@@ -356,7 +359,6 @@ public abstract class WorkerRegion
      * @param last Last loop index.
      * @param stride Loop index stride, &gt;= 1.
      * @param theLoop Worker for loop.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <TT>stride</TT> &lt; 1.
      * @exception NullPointerException (unchecked exception) Thrown if
@@ -365,6 +367,7 @@ public abstract class WorkerRegion
      * worker team is executing this worker region.
      * @exception Exception Thrown if one of <TT>theLoop</TT>'s methods throws
      * an exception.
+     * @throws java.lang.Exception if any.
      */
     public final void execute(long first,
             long last,
@@ -416,7 +419,6 @@ public abstract class WorkerRegion
      * @param <T> Data type of the items iterated over.
      * @param theArray Array containing the items.
      * @param theIteration Worker iteration.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if this is
      * the master process and
      * <TT>theArray</TT> is null. Thrown if <TT>theIteration</TT> is null.
@@ -424,6 +426,7 @@ public abstract class WorkerRegion
      * worker team is executing this worker region.
      * @exception Exception Thrown if one of <TT>theIteration</TT>'s methods
      * throws an exception.
+     * @throws java.lang.Exception if any.
      */
     public final <T> void execute(T[] theArray,
             WorkerIteration<T> theIteration)
@@ -472,7 +475,6 @@ public abstract class WorkerRegion
      * @param <T> Data type of the items iterated over.
      * @param theIterator Iterator over the items.
      * @param theIteration Worker iteration.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if this is
      * the master process and
      * <TT>theIterator</TT> is null. Thrown if <TT>theIteration</TT> is null.
@@ -480,6 +482,7 @@ public abstract class WorkerRegion
      * worker team is executing this worker region.
      * @exception Exception Thrown if one of <TT>theIteration</TT>'s methods
      * throws an exception.
+     * @throws java.lang.Exception if any.
      */
     public final <T> void execute(Iterator<T> theIterator,
             WorkerIteration<T> theIteration)
@@ -529,7 +532,6 @@ public abstract class WorkerRegion
      * @param <T> Data type of the items iterated over.
      * @param theIterable Iterable collection containing the items.
      * @param theIteration Worker iteration.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if this is
      * the master process and
      * <TT>theIterable</TT> is null. Thrown if <TT>theIteration</TT> is null.
@@ -537,6 +539,7 @@ public abstract class WorkerRegion
      * worker team is executing this worker region.
      * @exception Exception Thrown if one of <TT>theIteration</TT>'s methods
      * throws an exception.
+     * @throws java.lang.Exception if any.
      */
     public final <T> void execute(Iterable<T> theIterable,
             WorkerIteration<T> theIteration)

@@ -89,7 +89,6 @@ public class SharedCharacter
      * value.
      *
      * @param value New value.
-     *
      * @return Previous value.
      */
     public char getAndSet(char value) {
@@ -102,7 +101,6 @@ public class SharedCharacter
      *
      * @param expect Expected value.
      * @param update Updated value.
-     *
      * @return True if the update happened, false otherwise.
      */
     public boolean compareAndSet(char expect,
@@ -116,7 +114,6 @@ public class SharedCharacter
      *
      * @param expect Expected value.
      * @param update Updated value.
-     *
      * @return True if the update happened, false otherwise.
      */
     public boolean weakCompareAndSet(char expect,
@@ -159,7 +156,6 @@ public class SharedCharacter
      * value.
      *
      * @param value Value to add.
-     *
      * @return Previous value.
      */
     public char getAndAdd(char value) {
@@ -206,7 +202,6 @@ public class SharedCharacter
      * Add the given value to this reduction variable and return the new value.
      *
      * @param value Value to add.
-     *
      * @return New value.
      */
     public char addAndGet(char value) {
@@ -226,7 +221,6 @@ public class SharedCharacter
      *
      * @param value Value.
      * @param op Binary operation.
-     *
      * @return (This variable) <I>op</I> (<TT>value</TT>).
      */
     public char reduce(char value,

@@ -131,9 +131,9 @@ public class IORequest {
      *
      * @return False if this I/O request has not finished, true if this I/O
      * request has finished successfully.
-     *
      * @exception IOException Thrown if this I/O request has finished and an I/O
      * error occurred.
+     * @throws java.io.IOException if any.
      */
     public synchronized boolean isFinished()
             throws IOException {
@@ -152,8 +152,8 @@ public class IORequest {
      *
      * @return Receive status for a receive operation, or null for a send
      * operation.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public synchronized Status waitForFinish()
             throws IOException {
