@@ -99,7 +99,7 @@ public class MultipoleTensor {
     /**
      * Ewald parameter.
      */
-    private double beta;
+    private final double beta;
     /**
      * Thole damping parameters.
      */
@@ -535,8 +535,6 @@ public class MultipoleTensor {
      *
      * @param r double[] vector between two sites.
      * @param tensor double[] length must be at least binomial(order + 3, 3).
-     * @param damp Thole damping for this interaction.
-     * @param aiak Polarizability of (site i * site k)^6.
      */
     public void noStorageRecursion(double r[], double tensor[]) {
         setR(r);
@@ -573,8 +571,6 @@ public class MultipoleTensor {
      *
      * @param r double[] vector between two sites. r[0] and r[1] must equal 0.0.
      * @param tensor double[] length must be at least binomial(order + 3, 3).
-     * @param damp Thole damping for this interaction.
-     * @param aiak Polarizability of (site i * site k)^6.
      */
     public void noStorageRecursionQI(double r[], double tensor[]) {
         assert (r[0] == 0.0 && r[1] == 0.0);
@@ -715,8 +711,6 @@ public class MultipoleTensor {
      * <p>
      * @param r double[] vector between two sites.
      * @param tensor double[] length must be at least binomial(order + 3, 3).
-     * @param damp Thole damping for this interaction.
-     * @param aiak Polarizability of (site i * site k)^6.
      * @since 1.0
      */
     public void recursion(final double r[], final double tensor[]) {
@@ -839,8 +833,6 @@ public class MultipoleTensor {
      *
      * @param r double[] vector between two sites (assumes r[0] and r[1] = 0.0).
      * @param tensor double[] length must be at least binomial(order + 3, 3).
-     * @param damp Thole damping for this interaction.
-     * @param aiak Polarizability of (site i * site k)^6.
      * @since 1.0
      */
     public void recursionQI(final double r[], final double tensor[]) {
@@ -959,8 +951,6 @@ public class MultipoleTensor {
      *
      * @param r double[] vector between two sites.
      * @param tensor double[] length must be at least binomial(order + 3, 3).
-     * @param damp Thole damping for this interaction.
-     * @param aiak Polarizability of (site i * site k)^6.
      * @return Java code for the tensor recursion.
      *
      * @since 1.0
@@ -1319,7 +1309,6 @@ public class MultipoleTensor {
      * Contract multipole moments with their respective electrostatic potential
      * derivatives.
      *
-     * @param Q array of Cartesian multipole moments
      * @param T array of electrostatic potential and partial derivatives
      * @param l apply (d/dx)^l to the potential
      * @param m apply (d/dy)^l to the potential
@@ -1346,7 +1335,6 @@ public class MultipoleTensor {
      * Contract multipole moments with their respective electrostatic potential
      * derivatives.
      *
-     * @param Q array of Cartesian multipole moments
      * @param T array of electrostatic potential and partial derivatives
      * @param l apply (d/dx)^l to the potential
      * @param m apply (d/dy)^l to the potential
@@ -1436,9 +1424,7 @@ public class MultipoleTensor {
     /**
      * Collect the field at R due to Q multipole moments at the origin.
      *
-     * @param Q Cartesian multipole moments at the origin.
      * @param T Electrostatic potential and partial derivatives
-     * @param E The components of the field at R.
      * @param l apply (d/dx)^l to the potential
      * @param m apply (d/dy)^l to the potential
      * @param n apply (d/dz)^l to the potential
@@ -1454,19 +1440,16 @@ public class MultipoleTensor {
         E110 = contract(T, l + 1, n + 1, m);
         E101 = contract(T, l + 1, m, n + 1);
         E011 = contract(T, l, m + 1, n + 1);
-        return;
     }
 
     /**
      * Collect the field at R due to Q multipole moments at the origin.
      *
-     * @param Q Cartesian multipole moments at the origin.
      * @param T Electrostatic potential and partial derivatives
-     * @param E The components of the field at R.
      * @param l apply (d/dx)^l to the potential
-     * @param sb
      * @param m apply (d/dy)^l to the potential
      * @param n apply (d/dz)^l to the potential
+     * @param sb
      */
     public void codeField(double T[], int l, int m, int n, StringBuilder sb) {
         E000 = codeContract(T, l, m, n, sb);
@@ -1572,11 +1555,6 @@ public class MultipoleTensor {
      * Hard coded computation of all Cartesian multipole tensors up to 4th
      * order, in the global frame, which is sufficient for quadrupole-induced
      * dipole forces.
-     *
-     * @param r Separation between particles i and k
-     * @param tensor the Cartesian multipole tensors in the global frame.
-     * @param damp Thole damping for this interaction.
-     * @param aiak Polarizability of (site i * site k)^6.
      */
     public void order4() {
         source(work);
@@ -1657,12 +1635,6 @@ public class MultipoleTensor {
      * Hard coded computation of all Cartesian multipole tensors up to 4th
      * order, based on a quasi-internal frame, which is sufficient for
      * quadrupole-induced dipole forces.
-     *
-     * @param r Separation between particles i and k.
-     * @param tensor the Cartesian multipole tensors in the quasi-internal
-     * frame.
-     * @param damp Thole damping for this interaction.
-     * @param aiak Polarizability of (site i * site k)^6.
      */
     public void order4QI() {
         source(work);
@@ -1703,11 +1675,6 @@ public class MultipoleTensor {
      * Hard coded computation of all Cartesian multipole tensors up to 5th
      * order, in the global frame, which is sufficient for quadrupole-quadrupole
      * forces.
-     *
-     * @param r Separation between particles i and k
-     * @param tensor the Cartesian multipole tensors in the global frame.
-     * @param damp Thole damping for this interaction.
-     * @param aiak Polarizability of (site i * site k)^6.
      */
     public void order5() {
         source(work);
@@ -1844,12 +1811,6 @@ public class MultipoleTensor {
      * Hard coded computation of all Cartesian multipole tensors up to 5th
      * order, based on a quasi-internal frame, which is sufficient for
      * quadrupole-quadrupole forces.
-     *
-     * @param r Separation between particles i and k.
-     * @param tensor the Cartesian multipole tensors in the quasi-internal
-     * frame.
-     * @param damp Thole damping for this interaction.
-     * @param aiak Polarizability of (site i * site k)^6.
      */
     public void order5QI() {
         source(work);
@@ -2767,46 +2728,6 @@ public class MultipoleTensor {
         term011 -= uyi * R021;
         term011 -= uzi * R012;
         E011 = term011;
-        double term300 = -uxi * R400;
-        term300 -= uyi * R310;
-        term300 -= uzi * R301;
-        E300 = term300;
-        double term030 = -uxi * R130;
-        term030 -= uyi * R040;
-        term030 -= uzi * R031;
-        E030 = term030;
-        double term003 = -uxi * R103;
-        term003 -= uyi * R013;
-        term003 -= uzi * R004;
-        E030 = term003;
-        double term210 = -uxi * R310;
-        term210 -= uyi * R220;
-        term210 -= uzi * R211;
-        E210 = term210;
-        double term201 = -uxi * R301;
-        term201 -= uyi * R211;
-        term201 -= uzi * R202;
-        E201 = term201;
-        double term120 = -uxi * R220;
-        term120 -= uyi * R130;
-        term120 -= uzi * R121;
-        E120 = term120;
-        double term021 = -uxi * R121;
-        term021 -= uyi * R031;
-        term021 -= uzi * R022;
-        E021 = term021;
-        double term102 = -uxi * R202;
-        term102 -= uyi * R112;
-        term102 -= uzi * R103;
-        E102 = term102;
-        double term012 = -uxi * R112;
-        term012 -= uyi * R022;
-        term012 -= uzi * R013;
-        E012 = term012;
-        double term111 = -uxi * R211;
-        term111 -= uyi * R121;
-        term111 -= uzi * R112;
-        E111 = term111;
     }
 
     private void inducedKField() {
@@ -3465,7 +3386,6 @@ public class MultipoleTensor {
      * Re-use R, Qi, and Qk from a previous call.
      *
      * @param Fi Output force on i.
-     * @param Fk Output force on k.
      * @param Ti Output torque on i.
      * @param Tk Output torque on k.
      *
@@ -3587,7 +3507,6 @@ public class MultipoleTensor {
      * Re-use R, Qi, Qk and rotation matrices from a previous call.
      *
      * @param Fi Output force on i.
-     * @param Fk Output force on k.
      * @param Ti Output torque on i.
      * @param Tk Output torque on k.
      *
@@ -3696,7 +3615,7 @@ public class MultipoleTensor {
         Fi[0] -= dotMultipoleI();
         inducedKdYQI();
         Fi[1] -= dotMultipoleI();
-        inducedKdZ();
+        inducedKdZQI();
         Fi[2] -= dotMultipoleI();
 
         // Rotate the force and torques from the QI frame into the Global frame.
@@ -4539,16 +4458,6 @@ public class MultipoleTensor {
     private double E110; // XY Component of the Field Gradient
     private double E101; // XZ Component of the Field Gradient
     private double E011; // YZ Component of the Field Gradient
-    private double E300;
-    private double E030;
-    private double E003;
-    private double E210;
-    private double E201;
-    private double E120;
-    private double E021;
-    private double E102;
-    private double E012;
-    private double E111;
 
     // l + m + n = 0 (1)
     public final int t000;

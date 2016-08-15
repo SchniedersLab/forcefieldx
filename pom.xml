@@ -983,7 +983,7 @@
         <!-- Skip most website reports by default -->
         <assembly.skipAssembly>false</assembly.skipAssembly>
         <changes.jira.skip>true</changes.jira.skip>
-        <checkstyle.skip>false</checkstyle.skip>
+        <checkstyle.skip>true</checkstyle.skip>
         <dependencyDetails>false</dependencyDetails>
         <maven.javadoc.skip>false</maven.javadoc.skip>
         <maven.jxr.skip>false</maven.jxr.skip>
