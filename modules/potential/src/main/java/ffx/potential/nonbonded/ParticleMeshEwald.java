@@ -4968,8 +4968,8 @@ public class ParticleMeshEwald implements LambdaInterface {
                 final double findmpy = temp3 * ddsc3y + temp5 * ddsc5y;
                 final double findmpz = temp3 * ddsc3z + temp5 * ddsc5z;
 
-                // if (i == 0 && k < 5)
                 //    logger.info(format(" Excluded (%d,%d) (%16.8f %16.8f %16.8f), %16.8f %16.8f", i, k, ttm2rix, ttm2riy, ttm2riz, scaled, scalep));
+
                 /*
                  * Modify the forces for partially excluded interactions.
                  */
@@ -5006,12 +5006,10 @@ public class ParticleMeshEwald implements LambdaInterface {
                 ttm3iz = ttm3iz - ttm3riz;
 
                 /**
-                if (i == 0 && k < 5) {
                     logger.info(format(" Force    (%d,%d) (%16.8f %16.8f %16.8f)", i, k, ftm2ix, ftm2iy, ftm2iz));
                     logger.info(format(" Torquei  (%d,%d) (%16.8f %16.8f %16.8f)", i, k, ttm2ix, ttm2iy, ttm2iz));
                     logger.info(format(" Torquek  (%d,%d) (%16.8f %16.8f %16.8f)", i, k, ttm3ix, ttm3iy, ttm3iz));
                     logger.info(format(" Energy   (%d,%d) (%16.8f %16.8f %16.8f)", i, k, ereal, efix, ereal - efix));
-                }
                 */
 
                 double scalar = ELECTRIC * polarizationScale * selfScale;
@@ -5628,10 +5626,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                     Tk[0] -= TkT[0];
                     Tk[1] -= TkT[1];
                     Tk[2] -= TkT[2];
-                    // if (i == 0 && k < 5) {
                     //    logger.info(format(" Thole    (%d,%d) (%16.8f %16.8f %16.8f)", i, k, TiT[0], TiT[1], TiT[2]));
-                    // }
-
                 }
 
                 /**
@@ -5651,14 +5646,10 @@ public class ParticleMeshEwald implements LambdaInterface {
                     Tk[0] -= TkC[0];
                     Tk[1] -= TkC[1];
                     Tk[2] -= TkC[2];
-                    // if (i == 0 && k < 5) {
                     //    logger.info(format(" Coulomb  (%d,%d) (%16.8f %16.8f %16.8f)", i, k, TiC[0], TiC[1], TiC[2]));
-                    // }
-
                 }
 
                 /**
-                if (i == 0 && k < 5) {
                     logger.info(format(" Force  (%d,%d) (%16.8f %16.8f %16.8f) %16.8f %16.8f ",
                             i, k, Fi[0], Fi[1], Fi[2], scaled, scalep));
                     logger.info(format(" Torquei(%d,%d) (%16.8f %16.8f %16.8f)",
@@ -5666,7 +5657,6 @@ public class ParticleMeshEwald implements LambdaInterface {
                     logger.info(format(" Torquek(%d,%d) (%16.8f %16.8f %16.8f)",
                             i, k, Tk[0], Tk[1], Tk[2]));
                     logger.info(format(" Energy (%d,%d) (%16.8f %16.8f %16.8f)", i, k, ereal, efix, ereal - efix));
-                }
                 */
 
                 final double e = selfScale * 0.5 * (ereal - efix);
