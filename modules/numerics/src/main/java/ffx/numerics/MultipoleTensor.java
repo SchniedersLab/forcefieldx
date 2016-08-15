@@ -93,10 +93,41 @@ public class MultipoleTensor {
      * 2) the screened Coulomb operator erfc(R)/R.
      *
      */
-    private final double T000j[];
+    private double T000j[];
+    private final double coulomb[];
+    private final double screened[];
+    /**
+     * Ewald parameter.
+     */
     private double beta;
+    /**
+     * Thole damping parameters.
+     */
     private double damp;
+    /**
+     * 1/(alphai*alphak)^6 where alpha is polarizability.
+     */
     private double aiak;
+    /**
+     * Separation distance.
+     */
+    private double R;
+    /**
+     * Separation distance squared.
+     */
+    private double r2;
+    /**
+     * Xk - Xi.
+     */
+    private double x;
+    /**
+     * Yk - Yi.
+     */
+    private double y;
+    /**
+     * Yk - Yi.
+     */
+    private double z;
     private final int o1;
     private final int il;
     private final int im;
@@ -113,14 +144,6 @@ public class MultipoleTensor {
      * approximately 50% slower than the linear work array.
      */
     private final double work[];
-    /**
-     * Store the separation
-     */
-    private double x;
-    private double y;
-    private double z;
-    private double r2;
-    private double R;
 
     /**
      * <p>
@@ -138,10 +161,29 @@ public class MultipoleTensor {
         in = im * o1;
         size = (order + 1) * (order + 2) * (order + 3) / 6;
         work = new double[in * o1];
-        T000j = new double[o1];
+
         this.order = order;
         this.operator = operator;
         this.beta = beta;
+
+        // Auxillary terms for Coulomb and Thole Screening.
+        coulomb = new double[o1];
+        for (int n = 0; n <= order; n++) {
+            /**
+             * Math.pow(-1.0, j) returns positive for all j, with -1.0 as the //
+             * argument rather than -1. This is a bug?
+             */
+            // Challacombe Eq. 21, first two factors.
+            coulomb[n] = pow(-1, n) * doubleFactorial(2 * n - 1);
+        }
+
+        // Auxillary terms for screened Coulomb (Sagui et al. Eq. 2.28)
+        screened = new double[o1];
+        double prefactor = 2.0 * beta / sqrtPI;
+        double twoBeta2 = -2.0 * beta * beta;
+        for (int n = 0; n <= order; n++) {
+            screened[n] = prefactor * pow(twoBeta2, n);
+        }
 
         setOperator(operator);
 
@@ -226,45 +268,33 @@ public class MultipoleTensor {
 
         switch (op) {
             case SCREENED_COULOMB:
-                // Sagui et al. Eq. 2.28
-                double prefactor = 2.0 * beta / sqrtPI;
-                double twoBeta2 = -2.0 * beta * beta;
-                for (int n = 0; n <= order; n++) {
-                    T000j[n] = prefactor * pow(twoBeta2, n);
-                }
+                T000j = screened;
                 break;
             default:
             case THOLE_FIELD:
             case COULOMB:
-                for (int n = 0; n <= order; n++) {
-                    /**
-                     * Math.pow(-1.0, j) returns positive for all j, with -1.0
-                     * as the // argument rather than -1. This is a bug?
-                     */
-                    // Challacombe Eq. 21, first two factors.
-                    T000j[n] = pow(-1, n) * doubleFactorial(2 * n - 1);
-                }
+                T000j = coulomb;
         }
-    }
-
-    /**
-     * Set the Ewald beta parameters.
-     *
-     * @param beta
-     */
-    public void setEwaldBeta(double beta) {
-        this.beta = beta;
     }
 
     /**
      * Set the Thole damping parameters.
      *
      * @param damp
-     * @param aiak
+     * @param aiak 1/(alphai*alphak)^6 where alpha is polarizability
      */
     public void setTholeDamping(double damp, double aiak) {
         this.damp = damp;   // == PME's pgamma
         this.aiak = aiak;   // == 1/(alphai*alphak)^6 where alpha is polarizability
+    }
+
+    public boolean applyDamping() {
+        double rdamp = R * aiak;
+        double test = -damp * rdamp * rdamp * rdamp;
+        if (test > -50.0) {
+            return true;
+        }
+        return false;
     }
 
     private void setR(double r[]) {
@@ -291,7 +321,7 @@ public class MultipoleTensor {
 
         OPERATOR op = operator;
         if (operator == OPERATOR.SCREENED_COULOMB && beta == 0.0) {
-            // Switch to the Coulomb operator.
+            // Generate tensors for the Coulomb operator.
             op = OPERATOR.COULOMB;
         }
 
@@ -326,16 +356,16 @@ public class MultipoleTensor {
                 /**
                  * Add the Thole damping terms: edamp = exp(-damp*u^3).
                  */
-                double u = R / aiak;
-                double u3 = damp * pow(u, 3);
+                double u = R * aiak;
+                double u3 = damp * u * u * u;
                 double u6 = u3 * u3;
                 double u9 = u6 * u3;
                 double expU3 = exp(-u3);
                 T000[0] = 0.0; // The zeroth order term is not calculated for Thole damping.
                 T000[1] *= expU3;
                 T000[2] *= (1.0 + u3) * expU3;
-                T000[3] *= (1.0 + u3 + (3.0 / 5.0) * u6) * expU3;
-                T000[4] *= (1.0 + u3 + (18.0 * u6 + 9.0 * u9) / 35.0) * expU3;
+                T000[3] *= (1.0 + u3 + threeFifths * u6) * expU3;
+                T000[4] *= (1.0 + u3 + (18.0 * u6 + 9.0 * u9) * oneThirtyFifth) * expU3;
                 break;
             case COULOMB:
             default:
@@ -349,6 +379,8 @@ public class MultipoleTensor {
                 }
         }
     }
+    private static final double threeFifths = 3.0 / 5.0;
+    private static final double oneThirtyFifth = 1.0 / 35.0;
 
     /**
      * Log the tensors.
@@ -1284,6 +1316,259 @@ public class MultipoleTensor {
     }
 
     /**
+     * Contract multipole moments with their respective electrostatic potential
+     * derivatives.
+     *
+     * @param Q array of Cartesian multipole moments
+     * @param T array of electrostatic potential and partial derivatives
+     * @param l apply (d/dx)^l to the potential
+     * @param m apply (d/dy)^l to the potential
+     * @param n apply (d/dz)^l to the potential
+     * @return the contracted interaction.
+     */
+    public double contract(double T[], int l, int m, int n) {
+        double total = 0.0;
+        double total2 = 0.0;
+        total += qi * T[ti(l, m, n)];
+        total += dxi * T[ti(l + 1, m, n)];
+        total += dyi * T[ti(l, m + 1, n)];
+        total += dzi * T[ti(l, m, n + 1)];
+        total += qxxi * T[ti(l + 2, m, n)];
+        total += qyyi * T[ti(l, m + 2, n)];
+        total += qzzi * T[ti(l, m, n + 2)];
+        total2 += qxyi * T[ti(l + 1, m + 1, n)];
+        total2 += qxzi * T[ti(l + 1, m, n + 1)];
+        total2 += qyzi * T[ti(l, m + 1, n + 1)];
+        return total + 2.0 * total2;
+    }
+
+    /**
+     * Contract multipole moments with their respective electrostatic potential
+     * derivatives.
+     *
+     * @param Q array of Cartesian multipole moments
+     * @param T array of electrostatic potential and partial derivatives
+     * @param l apply (d/dx)^l to the potential
+     * @param m apply (d/dy)^l to the potential
+     * @param n apply (d/dz)^l to the potential
+     * @param sb the code will be appended to the StringBuilfer.
+     * @return the contracted interaction.
+     */
+    public double codeContract(double T[], int l, int m, int n, StringBuilder sb) {
+        double total = 0.0;
+        String name = term(l, m, n);
+        sb.append(format("double %s = 0.0;\n", name));
+        StringBuilder sb1 = new StringBuilder();
+        double term = qi * T[ti(l, m, n)];
+        if (term != 0) {
+            total += term;
+            sb1.append(format("%s += q000i * T[%s];\n", name, tlmn(l, m, n)));
+        }
+        term = dxi * T[ti(l + 1, m, n)];
+        if (term != 0) {
+            total += term;
+            sb1.append(format("%s += q100i * T[%s];\n", name, tlmn(l + 1, m, n)));
+        }
+        term = dyi * T[ti(l, m + 1, n)];
+        if (term != 0) {
+            total += term;
+            sb1.append(format("%s += q010i * T[%s];\n", name, tlmn(l, m + 1, n)));
+        }
+        term = dzi * T[ti(l, m, n + 1)];
+        if (term != 0) {
+            total += term;
+            sb1.append(format("%s += q001i * T[%s];\n", name, tlmn(l, m, n + 1)));
+        }
+        StringBuilder traceSB = new StringBuilder();
+        double trace = 0.0;
+        term = qxxi * T[ti(l + 2, m, n)];
+        if (term != 0) {
+            trace += term;
+            // logger.info(format(" Qxx: %16.15f T: %16.15f Term: %16.15f", q200, T[ti(l + 2, m, n)], term));
+            traceSB.append(format("%s += q200i * T[%s];\n", name, tlmn(l + 2, m, n)));
+        }
+        term = qyyi * T[ti(l, m + 2, n)];
+        if (term != 0) {
+            trace += term;
+            // logger.info(format(" Qyy: %16.15f T: %16.15f Term: %16.15f", q020, T[ti(l, m + 2, n)], term));
+            traceSB.append(format("%s += q020i * T[%s];\n", name, tlmn(l, m + 2, n)));
+        }
+        term = qzzi * T[ti(l, m, n + 2)];
+        if (term != 0) {
+            trace += term;
+            // logger.info(format(" Qzz: %16.15f T: %16.15f Term: %16.15f", q002, T[ti(l, m, n + 2)], term));
+            traceSB.append(format("%s += q002i * T[%s];\n", name, tlmn(l, m, n + 2)));
+        }
+        total += trace;
+        if (total != 0) {
+            sb.append(sb1.toString());
+            if (trace != 0) {
+                //logger.info(format(" Trace: %16.15f", trace));
+                sb.append(traceSB);
+            }
+        }
+        StringBuilder sb2 = new StringBuilder();
+        double total2 = 0.0;
+        term = qxyi * T[ti(l + 1, m + 1, n)];
+        if (term != 0) {
+            total2 += term;
+            sb2.append(format("%s2 += q110i * T[%s];\n", name, tlmn(l + 1, m + 1, n)));
+        }
+        term = qxzi * T[ti(l + 1, m, n + 1)];
+        if (term != 0) {
+            total2 += term;
+            sb2.append(format("%s2 += q101i * T[%s];\n", name, tlmn(l + 1, m, n + 1)));
+        }
+        term = qyzi * T[ti(l, m + 1, n + 1)];
+        if (term != 0) {
+            total2 += term;
+            sb2.append(format("%s2 += q011i * T[%s];\n", name, tlmn(l, m + 1, n + 1)));
+        }
+        if (total2 != 0.0) {
+            sb.append(format("double %s2 = 0.0;\n", name));
+            sb.append(sb2);
+            total += 2.0 * total2;
+            sb.append(format("%s += 2.0 * %s2;\n", name, name));
+        }
+        return total;
+    }
+
+    /**
+     * Collect the field at R due to Q multipole moments at the origin.
+     *
+     * @param Q Cartesian multipole moments at the origin.
+     * @param T Electrostatic potential and partial derivatives
+     * @param E The components of the field at R.
+     * @param l apply (d/dx)^l to the potential
+     * @param m apply (d/dy)^l to the potential
+     * @param n apply (d/dz)^l to the potential
+     */
+    public void field(double T[], int l, int m, int n) {
+        E000 = contract(T, l, m, n);
+        E100 = contract(T, l + 1, m, n);
+        E010 = contract(T, l, m + 1, n);
+        E001 = contract(T, l, m, n + 1);
+        E200 = contract(T, l + 2, m, n);
+        E020 = contract(T, l, m + 2, n);
+        E002 = contract(T, l, m, n + 2);
+        E110 = contract(T, l + 1, n + 1, m);
+        E101 = contract(T, l + 1, m, n + 1);
+        E011 = contract(T, l, m + 1, n + 1);
+        return;
+    }
+
+    /**
+     * Collect the field at R due to Q multipole moments at the origin.
+     *
+     * @param Q Cartesian multipole moments at the origin.
+     * @param T Electrostatic potential and partial derivatives
+     * @param E The components of the field at R.
+     * @param l apply (d/dx)^l to the potential
+     * @param sb
+     * @param m apply (d/dy)^l to the potential
+     * @param n apply (d/dz)^l to the potential
+     */
+    public void codeField(double T[], int l, int m, int n, StringBuilder sb) {
+        E000 = codeContract(T, l, m, n, sb);
+        if (E000 != 0) {
+            sb.append(format("e000 = %s;\n", term(l, m, n)));
+        }
+        E100 = codeContract(T, l + 1, m, n, sb);
+        if (E100 != 0) {
+            sb.append(format("e100 = %s;\n", term(l + 1, m, n)));
+        }
+        E010 = codeContract(T, l, m + 1, n, sb);
+        if (E100 != 0) {
+            sb.append(format("e010 = %s;\n", term(l, m + 1, n)));
+        }
+        E001 = codeContract(T, l, m, n + 1, sb);
+        if (E001 != 0) {
+            sb.append(format("e001 = %s;\n", term(l, m, n + 1)));
+        }
+        E200 = codeContract(T, l + 2, m, n, sb);
+        if (E200 != 0) {
+            sb.append(format("e200 = %s;\n", term(l + 2, m, n)));
+        }
+        E020 = codeContract(T, l, m + 2, n, sb);
+        if (E020 != 0) {
+            sb.append(format("e020 = %s;\n", term(l, m + 2, n)));
+        }
+        E002 = codeContract(T, l, m, n + 2, sb);
+        if (E002 != 0) {
+            sb.append(format("e002 = %s;\n", term(l, m, n + 2)));
+        }
+        E110 = codeContract(T, l + 1, m + 1, n, sb);
+        if (E110 != 0) {
+            sb.append(format("e110 = %s;\n", term(l + 1, m + 1, n)));
+        }
+        E101 = codeContract(T, l + 1, m, n + 1, sb);
+        if (E101 != 0) {
+            sb.append(format("e101 = %s;\n", term(l + 1, m, n + 1)));
+        }
+        E011 = codeContract(T, l, m + 1, n + 1, sb);
+        if (E011 != 0) {
+            sb.append(format("e011 = %s;\n", term(l, m + 1, n + 1)));
+        }
+    }
+
+    public double codeInteract5(double r[], double Qi[], double Qk[],
+            double Fi[], double Fk[], double Ti[], double Tk[]) {
+        double T[] = new double[tensorCount(5)];
+        recursion(r, T);
+
+        setMultipoleI(Qi);
+        setMultipoleK(Qk);
+
+        StringBuilder sb = new StringBuilder("\n\npublic void E5(double T[]) {\n");
+        codeField(T, 0, 0, 0, sb);
+        sb.append("}\n");
+
+        sb.append("\n\npublic void Ex5(double T[]) {\n");
+        codeField(T, 1, 0, 0, sb);
+        sb.append("}\n");
+
+        sb.append("\n\npublic void Ey5(double T[]) {\n");
+        codeField(T, 0, 1, 0, sb);
+        sb.append("}\n");
+
+        sb.append("\n\npublic void Ez5(double T[]) {\n");
+        codeField(T, 0, 0, 1, sb);
+        sb.append("}\n");
+        logger.log(Level.INFO, sb.toString());
+
+        return 0.0;
+    }
+
+    public double codeInteractQI5(double r[], double Qi[], double Qk[],
+            double Fi[], double Fk[], double Ti[], double Tk[]) {
+        double T[] = new double[tensorCount(5)];
+        assert (r[0] == 0.0 && r[1] == 0.0);
+
+        recursionQI(r, T);
+        setMultipoleI(Qi);
+        setMultipoleK(Qk);
+
+        StringBuilder sb = new StringBuilder("\n\npublic void EQI5(double T[]) {\n");
+        codeField(T, 0, 0, 0, sb);
+        sb.append("}\n");
+
+        sb.append("\n\npublic void ExQI5(double T[]) {\n");
+        codeField(T, 1, 0, 0, sb);
+        sb.append("}\n");
+
+        sb.append("\n\npublic void EyQI5(double T[]) {\n");
+        codeField(T, 0, 1, 0, sb);
+        sb.append("}\n");
+
+        sb.append("\n\npublic void EzQI5(double T[]) {\n");
+        codeField(T, 0, 0, 1, sb);
+        sb.append("}\n");
+        logger.log(Level.INFO, sb.toString());
+
+        return 0.0;
+    }
+
+    /**
      * Hard coded computation of all Cartesian multipole tensors up to 4th
      * order, in the global frame, which is sufficient for quadrupole-induced
      * dipole forces.
@@ -1621,7 +1906,7 @@ public class MultipoleTensor {
         R401 = z * term4001;
     }
 
-    private void Ei5() {
+    private void multipoleIField() {
         double term000 = qi * R000;
         term000 -= dxi * R100;
         term000 -= dyi * R010;
@@ -1734,7 +2019,7 @@ public class MultipoleTensor {
         E011 = term011;
     }
 
-    private void Ek5() {
+    private void multipoleKField() {
         double term000 = 0.0;
         term000 += qk * R000;
         term000 += dxk * R100;
@@ -1857,7 +2142,7 @@ public class MultipoleTensor {
         E011 = term011;
     }
 
-    private void Ex5() {
+    private void multipoleIdX() {
         double term100 = 0.0;
         term100 += qi * R100;
         term100 -= dxi * R200;
@@ -1980,7 +2265,7 @@ public class MultipoleTensor {
         E011 = term111;
     }
 
-    private void Ey5() {
+    private void multipoleIdY() {
         double term010 = 0.0;
         term010 += qi * R010;
         term010 -= dxi * R110;
@@ -2103,7 +2388,7 @@ public class MultipoleTensor {
         E011 = term021;
     }
 
-    private void Ez5() {
+    private void multipoleIdZ() {
         double term001 = 0.0;
         term001 += qi * R001;
         term001 -= dxi * R101;
@@ -2226,7 +2511,7 @@ public class MultipoleTensor {
         E011 = term012;
     }
 
-    private void EiQI5() {
+    private void multipoleIFieldQI() {
         double term000 = qi * R000;
         term000 -= dzi * R001;
         term000 += qxxi * R200;
@@ -2273,7 +2558,7 @@ public class MultipoleTensor {
         E011 = term011;
     }
 
-    private void EkQI5() {
+    private void multipoleKFieldQI() {
         double term000 = qk * R000;
         term000 += dzk * R001;
         term000 += qxxk * R200;
@@ -2320,7 +2605,7 @@ public class MultipoleTensor {
         E011 = term011;
     }
 
-    private void ExQI5() {
+    private void multipoleIdXQI() {
         double term100 = -dxi * R200;
         term100 += qxzi * R201;
         E000 = term100;
@@ -2357,7 +2642,7 @@ public class MultipoleTensor {
         E011 = term111;
     }
 
-    private void EyQI5() {
+    private void multipoleIdYQI() {
         double term010 = -dyi * R020;
         term010 += qyzi * R021;
         E000 = term010;
@@ -2394,7 +2679,7 @@ public class MultipoleTensor {
         E011 = term021;
     }
 
-    private void EzQI5() {
+    private void multipoleIdZQI() {
         double term001 = qi * R001;
         term001 -= dzi * R002;
         term001 += qxxi * R201;
@@ -2441,7 +2726,667 @@ public class MultipoleTensor {
         E011 = term012;
     }
 
-    public void torqueI(double torque[]) {
+    private void inducedIField() {
+        double term000 = -uxi * R100;
+        term000 -= uyi * R010;
+        term000 -= uzi * R001;
+        E000 = term000;
+        double term100 = -uxi * R200;
+        term100 -= uyi * R110;
+        term100 -= uzi * R101;
+        E100 = term100;
+        double term010 = -uxi * R110;
+        term010 -= uyi * R020;
+        term010 -= uzi * R011;
+        E010 = term010;
+        double term001 = -uxi * R101;
+        term001 -= uyi * R011;
+        term001 -= uzi * R002;
+        E001 = term001;
+        double term200 = -uxi * R300;
+        term200 -= uyi * R210;
+        term200 -= uzi * R201;
+        E200 = term200;
+        double term020 = -uxi * R120;
+        term020 -= uyi * R030;
+        term020 -= uzi * R021;
+        E020 = term020;
+        double term002 = -uxi * R102;
+        term002 -= uyi * R012;
+        term002 -= uzi * R003;
+        E002 = term002;
+        double term110 = -uxi * R210;
+        term110 -= uyi * R120;
+        term110 -= uzi * R111;
+        E110 = term110;
+        double term101 = -uxi * R201;
+        term101 -= uyi * R111;
+        term101 -= uzi * R102;
+        E101 = term101;
+        double term011 = -uxi * R111;
+        term011 -= uyi * R021;
+        term011 -= uzi * R012;
+        E011 = term011;
+        double term300 = -uxi * R400;
+        term300 -= uyi * R310;
+        term300 -= uzi * R301;
+        E300 = term300;
+        double term030 = -uxi * R130;
+        term030 -= uyi * R040;
+        term030 -= uzi * R031;
+        E030 = term030;
+        double term003 = -uxi * R103;
+        term003 -= uyi * R013;
+        term003 -= uzi * R004;
+        E030 = term003;
+        double term210 = -uxi * R310;
+        term210 -= uyi * R220;
+        term210 -= uzi * R211;
+        E210 = term210;
+        double term201 = -uxi * R301;
+        term201 -= uyi * R211;
+        term201 -= uzi * R202;
+        E201 = term201;
+        double term120 = -uxi * R220;
+        term120 -= uyi * R130;
+        term120 -= uzi * R121;
+        E120 = term120;
+        double term021 = -uxi * R121;
+        term021 -= uyi * R031;
+        term021 -= uzi * R022;
+        E021 = term021;
+        double term102 = -uxi * R202;
+        term102 -= uyi * R112;
+        term102 -= uzi * R103;
+        E102 = term102;
+        double term012 = -uxi * R112;
+        term012 -= uyi * R022;
+        term012 -= uzi * R013;
+        E012 = term012;
+        double term111 = -uxi * R211;
+        term111 -= uyi * R121;
+        term111 -= uzi * R112;
+        E111 = term111;
+    }
+
+    private void inducedKField() {
+        double term000 = uxk * R100;
+        term000 += uyk * R010;
+        term000 += uzk * R001;
+        E000 = term000;
+        double term100 = uxk * R200;
+        term100 += uyk * R110;
+        term100 += uzk * R101;
+        E100 = term100;
+        double term010 = uxk * R110;
+        term010 += uyk * R020;
+        term010 += uzk * R011;
+        E010 = term010;
+        double term001 = uxk * R101;
+        term001 += uyk * R011;
+        term001 += uzk * R002;
+        E001 = term001;
+        double term200 = uxk * R300;
+        term200 += uyk * R210;
+        term200 += uzk * R201;
+        E200 = term200;
+        double term020 = uxk * R120;
+        term020 += uyk * R030;
+        term020 += uzk * R021;
+        E020 = term020;
+        double term002 = uxk * R102;
+        term002 += uyk * R012;
+        term002 += uzk * R003;
+        E002 = term002;
+        double term110 = uxk * R210;
+        term110 += uyk * R120;
+        term110 += uzk * R111;
+        E110 = term110;
+        double term101 = uxk * R201;
+        term101 += uyk * R111;
+        term101 += uzk * R102;
+        E101 = term101;
+        double term011 = uxk * R111;
+        term011 += uyk * R021;
+        term011 += uzk * R012;
+        E011 = term011;
+    }
+
+    private void inducedIFieldCR() {
+        double term000 = -sxi * R100;
+        term000 -= syi * R010;
+        term000 -= szi * R001;
+        E000 = term000;
+        double term100 = -sxi * R200;
+        term100 -= syi * R110;
+        term100 -= szi * R101;
+        E100 = term100;
+        double term010 = -sxi * R110;
+        term010 -= syi * R020;
+        term010 -= szi * R011;
+        E010 = term010;
+        double term001 = -sxi * R101;
+        term001 -= syi * R011;
+        term001 -= szi * R002;
+        E001 = term001;
+        double term200 = -sxi * R300;
+        term200 -= syi * R210;
+        term200 -= szi * R201;
+        E200 = term200;
+        double term020 = -sxi * R120;
+        term020 -= syi * R030;
+        term020 -= szi * R021;
+        E020 = term020;
+        double term002 = -sxi * R102;
+        term002 -= syi * R012;
+        term002 -= szi * R003;
+        E002 = term002;
+        double term110 = -sxi * R210;
+        term110 -= syi * R120;
+        term110 -= szi * R111;
+        E110 = term110;
+        double term101 = -sxi * R201;
+        term101 -= syi * R111;
+        term101 -= szi * R102;
+        E101 = term101;
+        double term011 = -sxi * R111;
+        term011 -= syi * R021;
+        term011 -= szi * R012;
+        E011 = term011;
+    }
+
+    private void inducedKFieldCR() {
+        double term000 = sxk * R100;
+        term000 += syk * R010;
+        term000 += szk * R001;
+        E000 = term000;
+        double term100 = sxk * R200;
+        term100 += syk * R110;
+        term100 += szk * R101;
+        E100 = term100;
+        double term010 = sxk * R110;
+        term010 += syk * R020;
+        term010 += szk * R011;
+        E010 = term010;
+        double term001 = sxk * R101;
+        term001 += syk * R011;
+        term001 += szk * R002;
+        E001 = term001;
+        double term200 = sxk * R300;
+        term200 += syk * R210;
+        term200 += szk * R201;
+        E200 = term200;
+        double term020 = sxk * R120;
+        term020 += syk * R030;
+        term020 += szk * R021;
+        E020 = term020;
+        double term002 = sxk * R102;
+        term002 += syk * R012;
+        term002 += szk * R003;
+        E002 = term002;
+        double term110 = sxk * R210;
+        term110 += syk * R120;
+        term110 += szk * R111;
+        E110 = term110;
+        double term101 = sxk * R201;
+        term101 += syk * R111;
+        term101 += szk * R102;
+        E101 = term101;
+        double term011 = sxk * R111;
+        term011 += syk * R021;
+        term011 += szk * R012;
+        E011 = term011;
+    }
+
+    private void inducedIdX() {
+        double term100 = 0.0;
+        term100 -= sxi * R200;
+        term100 -= syi * R110;
+        term100 -= szi * R101;
+        E000 = term100;
+        double term200 = 0.0;
+        term200 -= sxi * R300;
+        term200 -= syi * R210;
+        term200 -= szi * R201;
+        E100 = term200;
+        double term110 = 0.0;
+        term110 -= sxi * R210;
+        term110 -= syi * R120;
+        term110 -= szi * R111;
+        E010 = term110;
+        double term101 = 0.0;
+        term101 -= sxi * R201;
+        term101 -= syi * R111;
+        term101 -= szi * R102;
+        E001 = term101;
+        double term300 = 0.0;
+        term300 -= sxi * R400;
+        term300 -= syi * R310;
+        term300 -= szi * R301;
+        E200 = term300;
+        double term120 = 0.0;
+        term120 -= sxi * R220;
+        term120 -= syi * R130;
+        term120 -= szi * R121;
+        E020 = term120;
+        double term102 = 0.0;
+        term102 -= sxi * R202;
+        term102 -= syi * R112;
+        term102 -= szi * R103;
+        E002 = term102;
+        double term210 = 0.0;
+        term210 -= sxi * R310;
+        term210 -= syi * R220;
+        term210 -= szi * R211;
+        E110 = term210;
+        double term201 = 0.0;
+        term201 -= sxi * R301;
+        term201 -= syi * R211;
+        term201 -= szi * R202;
+        E101 = term201;
+        double term111 = 0.0;
+        term111 -= sxi * R211;
+        term111 -= syi * R121;
+        term111 -= szi * R112;
+        E011 = term111;
+    }
+
+    private void inducedIdY() {
+        double term010 = 0.0;
+        term010 -= sxi * R110;
+        term010 -= syi * R020;
+        term010 -= szi * R011;
+        E000 = term010;
+        double term110 = 0.0;
+        term110 -= sxi * R210;
+        term110 -= syi * R120;
+        term110 -= szi * R111;
+        E100 = term110;
+        double term020 = 0.0;
+        term020 -= sxi * R120;
+        term020 -= syi * R030;
+        term020 -= szi * R021;
+        E010 = term020;
+        double term011 = 0.0;
+        term011 -= sxi * R111;
+        term011 -= syi * R021;
+        term011 -= szi * R012;
+        E001 = term011;
+        double term210 = 0.0;
+        term210 -= sxi * R310;
+        term210 -= syi * R220;
+        term210 -= szi * R211;
+        E200 = term210;
+        double term030 = 0.0;
+        term030 -= sxi * R130;
+        term030 -= syi * R040;
+        term030 -= szi * R031;
+        E020 = term030;
+        double term012 = 0.0;
+        term012 -= sxi * R112;
+        term012 -= syi * R022;
+        term012 -= szi * R013;
+        E002 = term012;
+        double term120 = 0.0;
+        term120 -= sxi * R220;
+        term120 -= syi * R130;
+        term120 -= szi * R121;
+        E110 = term120;
+        double term111 = 0.0;
+        term111 -= sxi * R211;
+        term111 -= syi * R121;
+        term111 -= szi * R112;
+        E101 = term111;
+        double term021 = 0.0;
+        term021 -= sxi * R121;
+        term021 -= syi * R031;
+        term021 -= szi * R022;
+        E011 = term021;
+    }
+
+    private void inducedIdZ() {
+        double term001 = 0.0;
+        term001 -= sxi * R101;
+        term001 -= syi * R011;
+        term001 -= szi * R002;
+        E000 = term001;
+        double term101 = 0.0;
+        term101 -= sxi * R201;
+        term101 -= syi * R111;
+        term101 -= szi * R102;
+        E100 = term101;
+        double term011 = 0.0;
+        term011 -= sxi * R111;
+        term011 -= syi * R021;
+        term011 -= szi * R012;
+        E010 = term011;
+        double term002 = 0.0;
+        term002 -= sxi * R102;
+        term002 -= syi * R012;
+        term002 -= szi * R003;
+        E001 = term002;
+        double term201 = 0.0;
+        term201 -= sxi * R301;
+        term201 -= syi * R211;
+        term201 -= szi * R202;
+        E200 = term201;
+        double term021 = 0.0;
+        term021 -= sxi * R121;
+        term021 -= syi * R031;
+        term021 -= szi * R022;
+        E020 = term021;
+        double term003 = 0.0;
+        term003 -= sxi * R103;
+        term003 -= syi * R013;
+        term003 -= szi * R004;
+        E002 = term003;
+        double term111 = 0.0;
+        term111 -= sxi * R211;
+        term111 -= syi * R121;
+        term111 -= szi * R112;
+        E110 = term111;
+        double term102 = 0.0;
+        term102 -= sxi * R202;
+        term102 -= syi * R112;
+        term102 -= szi * R103;
+        E101 = term102;
+        double term012 = 0.0;
+        term012 -= sxi * R112;
+        term012 -= syi * R022;
+        term012 -= szi * R013;
+        E011 = term012;
+    }
+
+    private void inducedKdX() {
+        double term100 = 0.0;
+        term100 += sxk * R200;
+        term100 += syk * R110;
+        term100 += szk * R101;
+        E000 = term100;
+        double term200 = 0.0;
+        term200 += sxk * R300;
+        term200 += syk * R210;
+        term200 += szk * R201;
+        E100 = term200;
+        double term110 = 0.0;
+        term110 += sxk * R210;
+        term110 += syk * R120;
+        term110 += szk * R111;
+        E010 = term110;
+        double term101 = 0.0;
+        term101 += sxk * R201;
+        term101 += syk * R111;
+        term101 += szk * R102;
+        E001 = term101;
+        double term300 = 0.0;
+        term300 += sxk * R400;
+        term300 += syk * R310;
+        term300 += szk * R301;
+        E200 = term300;
+        double term120 = 0.0;
+        term120 += sxk * R220;
+        term120 += syk * R130;
+        term120 += szk * R121;
+        E020 = term120;
+        double term102 = 0.0;
+        term102 += sxk * R202;
+        term102 += syk * R112;
+        term102 += szk * R103;
+        E002 = term102;
+        double term210 = 0.0;
+        term210 += sxk * R310;
+        term210 += syk * R220;
+        term210 += szk * R211;
+        E110 = term210;
+        double term201 = 0.0;
+        term201 += sxk * R301;
+        term201 += syk * R211;
+        term201 += szk * R202;
+        E101 = term201;
+        double term111 = 0.0;
+        term111 += sxk * R211;
+        term111 += syk * R121;
+        term111 += szk * R112;
+        E011 = term111;
+    }
+
+    private void inducedKdY() {
+        double term010 = 0.0;
+        term010 += sxk * R110;
+        term010 += syk * R020;
+        term010 += szk * R011;
+        E000 = term010;
+        double term110 = 0.0;
+        term110 += sxk * R210;
+        term110 += syk * R120;
+        term110 += szk * R111;
+        E100 = term110;
+        double term020 = 0.0;
+        term020 += sxk * R120;
+        term020 += syk * R030;
+        term020 += szk * R021;
+        E010 = term020;
+        double term011 = 0.0;
+        term011 += sxk * R111;
+        term011 += syk * R021;
+        term011 += szk * R012;
+        E001 = term011;
+        double term210 = 0.0;
+        term210 += sxk * R310;
+        term210 += syk * R220;
+        term210 += szk * R211;
+        E200 = term210;
+        double term030 = 0.0;
+        term030 += sxk * R130;
+        term030 += syk * R040;
+        term030 += szk * R031;
+        E020 = term030;
+        double term012 = 0.0;
+        term012 += sxk * R112;
+        term012 += syk * R022;
+        term012 += szk * R013;
+        E002 = term012;
+        double term120 = 0.0;
+        term120 += sxk * R220;
+        term120 += syk * R130;
+        term120 += szk * R121;
+        E110 = term120;
+        double term111 = 0.0;
+        term111 += sxk * R211;
+        term111 += syk * R121;
+        term111 += szk * R112;
+        E101 = term111;
+        double term021 = 0.0;
+        term021 += sxk * R121;
+        term021 += syk * R031;
+        term021 += szk * R022;
+        E011 = term021;
+    }
+
+    private void inducedKdZ() {
+        double term001 = 0.0;
+        term001 += sxk * R101;
+        term001 += syk * R011;
+        term001 += szk * R002;
+        E000 = term001;
+        double term101 = 0.0;
+        term101 += sxk * R201;
+        term101 += syk * R111;
+        term101 += szk * R102;
+        E100 = term101;
+        double term011 = 0.0;
+        term011 += sxk * R111;
+        term011 += syk * R021;
+        term011 += szk * R012;
+        E010 = term011;
+        double term002 = 0.0;
+        term002 += sxk * R102;
+        term002 += syk * R012;
+        term002 += szk * R003;
+        E001 = term002;
+        double term201 = 0.0;
+        term201 += sxk * R301;
+        term201 += syk * R211;
+        term201 += szk * R202;
+        E200 = term201;
+        double term021 = 0.0;
+        term021 += sxk * R121;
+        term021 += syk * R031;
+        term021 += szk * R022;
+        E020 = term021;
+        double term003 = 0.0;
+        term003 += sxk * R103;
+        term003 += syk * R013;
+        term003 += szk * R004;
+        E002 = term003;
+        double term111 = 0.0;
+        term111 += sxk * R211;
+        term111 += syk * R121;
+        term111 += szk * R112;
+        E110 = term111;
+        double term102 = 0.0;
+        term102 += sxk * R202;
+        term102 += syk * R112;
+        term102 += szk * R103;
+        E101 = term102;
+        double term012 = 0.0;
+        term012 += sxk * R112;
+        term012 += syk * R022;
+        term012 += szk * R013;
+        E011 = term012;
+    }
+
+    private void inducedIFieldQI() {
+        E000 = -uzi * R001;
+        E100 = -uxi * R200;
+        E010 = -uyi * R020;
+        E001 = -uzi * R002;
+        E200 = -uzi * R201;
+        E020 = -uzi * R021;
+        E002 = -uzi * R003;
+        E110 = 0.0;
+        E101 = -uxi * R201;
+        E011 = -uyi * R021;
+    }
+
+    private void inducedKFieldQI() {
+        E000 = uzk * R001;
+        E100 = uxk * R200;
+        E010 = uyk * R020;
+        E001 = uzk * R002;
+        E200 = uzk * R201;
+        E020 = uzk * R021;
+        E002 = uzk * R003;
+        E110 = 0.0;
+        E101 = uxk * R201;
+        E011 = uyk * R021;
+    }
+
+    private void inducedIFieldCRQI() {
+        E000 = -szi * R001;
+        E100 = -sxi * R200;
+        E010 = -syi * R020;
+        E001 = -szi * R002;
+        E200 = -szi * R201;
+        E020 = -szi * R021;
+        E002 = -szi * R003;
+        E110 = 0.0;
+        E101 = -sxi * R201;
+        E011 = -syi * R021;
+    }
+
+    private void inducedKFieldCRQI() {
+        E000 = szk * R001;
+        E100 = sxk * R200;
+        E010 = syk * R020;
+        E001 = szk * R002;
+        E200 = szk * R201;
+        E020 = szk * R021;
+        E002 = szk * R003;
+        E110 = 0.0;
+        E101 = sxk * R201;
+        E011 = syk * R021;
+    }
+
+    private void inducedIdXQI() {
+        E000 = -sxi * R200;
+        E100 = -szi * R201;
+        E010 = 0.0;
+        E001 = -sxi * R201;
+        E200 = -sxi * R400;
+        E020 = -sxi * R220;
+        E002 = -sxi * R202;
+        E110 = -syi * R220;
+        E101 = -szi * R202;
+        E011 = 0.0;
+    }
+
+    private void inducedIdYQI() {
+        E000 = -syi * R020;
+        E100 = 0.0;
+        E010 = -szi * R021;
+        E001 = -syi * R021;
+        E200 = -syi * R220;
+        E020 = -syi * R040;
+        E002 = -syi * R022;
+        E110 = -sxi * R220;
+        E101 = 0.0;
+        E011 = -szi * R022;
+    }
+
+    private void inducedIdZQI() {
+        E000 = -szi * R002;
+        E100 = -sxi * R201;
+        E010 = -syi * R021;
+        E001 = -szi * R003;
+        E200 = -szi * R202;
+        E020 = -szi * R022;
+        E002 = -szi * R004;
+        E110 = 0.0;
+        E101 = -sxi * R202;
+        E011 = -syi * R022;
+    }
+
+    private void inducedKdXQI() {
+        E000 = sxk * R200;
+        E100 = szk * R201;
+        E010 = 0.0;
+        E001 = sxk * R201;
+        E200 = sxk * R400;
+        E020 = sxk * R220;
+        E002 = sxk * R202;
+        E110 = syk * R220;
+        E101 = szk * R202;
+        E011 = 0.0;
+    }
+
+    private void inducedKdYQI() {
+        E000 = syk * R020;
+        E100 = 0.0;
+        E010 = szk * R021;
+        E001 = syk * R021;
+        E200 = syk * R220;
+        E020 = syk * R040;
+        E002 = syk * R022;
+        E110 = sxk * R220;
+        E101 = 0.0;
+        E011 = szk * R022;
+    }
+
+    private void inducedKdZQI() {
+        E000 = szk * R002;
+        E100 = sxk * R201;
+        E010 = syk * R021;
+        E001 = szk * R003;
+        E200 = szk * R202;
+        E020 = szk * R022;
+        E002 = szk * R004;
+        E110 = 0.0;
+        E101 = sxk * R202;
+        E011 = syk * R022;
+    }
+
+    private void multipoleITorque(double torque[]) {
         // Torque on dipole moments due to the field.
         double dx = dyi * E001 - dzi * E010;
         double dy = dzi * E100 - dxi * E001;
@@ -2460,7 +3405,7 @@ public class MultipoleTensor {
         torque[2] = dz - qz;
     }
 
-    public void torqueK(double torque[]) {
+    private void multipoleKTorque(double torque[]) {
         // Torque on dipole moments due to the field.
         double dx = dyk * E001 - dzk * E010;
         double dy = dzk * E100 - dxk * E001;
@@ -2479,203 +3424,7 @@ public class MultipoleTensor {
         torque[2] = -(dz + qz);
     }
 
-    /**
-     * Contract multipole moments with their respective electrostatic potential
-     * derivatives.
-     *
-     * @param Q array of Cartesian multipole moments
-     * @param T array of electrostatic potential and partial derivatives
-     * @param l apply (d/dx)^l to the potential
-     * @param m apply (d/dy)^l to the potential
-     * @param n apply (d/dz)^l to the potential
-     * @return the contracted interaction.
-     */
-    public double contract(double T[], int l, int m, int n) {
-        double total = 0.0;
-        double total2 = 0.0;
-        total += qi * T[ti(l, m, n)];
-        total += dxi * T[ti(l + 1, m, n)];
-        total += dyi * T[ti(l, m + 1, n)];
-        total += dzi * T[ti(l, m, n + 1)];
-        total += qxxi * T[ti(l + 2, m, n)];
-        total += qyyi * T[ti(l, m + 2, n)];
-        total += qzzi * T[ti(l, m, n + 2)];
-        total2 += qxyi * T[ti(l + 1, m + 1, n)];
-        total2 += qxzi * T[ti(l + 1, m, n + 1)];
-        total2 += qyzi * T[ti(l, m + 1, n + 1)];
-        return total + 2.0 * total2;
-    }
-
-    /**
-     * Contract multipole moments with their respective electrostatic potential
-     * derivatives.
-     *
-     * @param Q array of Cartesian multipole moments
-     * @param T array of electrostatic potential and partial derivatives
-     * @param l apply (d/dx)^l to the potential
-     * @param m apply (d/dy)^l to the potential
-     * @param n apply (d/dz)^l to the potential
-     * @param sb the code will be appended to the StringBuilfer.
-     * @return the contracted interaction.
-     */
-    public double codeContract(double T[], int l, int m, int n, StringBuilder sb) {
-        double total = 0.0;
-        String name = term(l, m, n);
-        sb.append(format("double %s = 0.0;\n", name));
-        StringBuilder sb1 = new StringBuilder();
-        double term = qi * T[ti(l, m, n)];
-        if (term != 0) {
-            total += term;
-            sb1.append(format("%s += q000i * T[%s];\n", name, tlmn(l, m, n)));
-        }
-        term = dxi * T[ti(l + 1, m, n)];
-        if (term != 0) {
-            total += term;
-            sb1.append(format("%s += q100i * T[%s];\n", name, tlmn(l + 1, m, n)));
-        }
-        term = dyi * T[ti(l, m + 1, n)];
-        if (term != 0) {
-            total += term;
-            sb1.append(format("%s += q010i * T[%s];\n", name, tlmn(l, m + 1, n)));
-        }
-        term = dzi * T[ti(l, m, n + 1)];
-        if (term != 0) {
-            total += term;
-            sb1.append(format("%s += q001i * T[%s];\n", name, tlmn(l, m, n + 1)));
-        }
-        StringBuilder traceSB = new StringBuilder();
-        double trace = 0.0;
-        term = qxxi * T[ti(l + 2, m, n)];
-        if (term != 0) {
-            trace += term;
-            // logger.info(format(" Qxx: %16.15f T: %16.15f Term: %16.15f", q200, T[ti(l + 2, m, n)], term));
-            traceSB.append(format("%s += q200i * T[%s];\n", name, tlmn(l + 2, m, n)));
-        }
-        term = qyyi * T[ti(l, m + 2, n)];
-        if (term != 0) {
-            trace += term;
-            // logger.info(format(" Qyy: %16.15f T: %16.15f Term: %16.15f", q020, T[ti(l, m + 2, n)], term));
-            traceSB.append(format("%s += q020i * T[%s];\n", name, tlmn(l, m + 2, n)));
-        }
-        term = qzzi * T[ti(l, m, n + 2)];
-        if (term != 0) {
-            trace += term;
-            // logger.info(format(" Qzz: %16.15f T: %16.15f Term: %16.15f", q002, T[ti(l, m, n + 2)], term));
-            traceSB.append(format("%s += q002i * T[%s];\n", name, tlmn(l, m, n + 2)));
-        }
-        total += trace;
-        if (total != 0) {
-            sb.append(sb1.toString());
-            if (trace != 0) {
-                //logger.info(format(" Trace: %16.15f", trace));
-                sb.append(traceSB);
-            }
-        }
-        StringBuilder sb2 = new StringBuilder();
-        double total2 = 0.0;
-        term = qxyi * T[ti(l + 1, m + 1, n)];
-        if (term != 0) {
-            total2 += term;
-            sb2.append(format("%s2 += q110i * T[%s];\n", name, tlmn(l + 1, m + 1, n)));
-        }
-        term = qxzi * T[ti(l + 1, m, n + 1)];
-        if (term != 0) {
-            total2 += term;
-            sb2.append(format("%s2 += q101i * T[%s];\n", name, tlmn(l + 1, m, n + 1)));
-        }
-        term = qyzi * T[ti(l, m + 1, n + 1)];
-        if (term != 0) {
-            total2 += term;
-            sb2.append(format("%s2 += q011i * T[%s];\n", name, tlmn(l, m + 1, n + 1)));
-        }
-        if (total2 != 0.0) {
-            sb.append(format("double %s2 = 0.0;\n", name));
-            sb.append(sb2);
-            total += 2.0 * total2;
-            sb.append(format("%s += 2.0 * %s2;\n", name, name));
-        }
-        return total;
-    }
-
-    /**
-     * Collect the field at R due to Q multipole moments at the origin.
-     *
-     * @param Q Cartesian multipole moments at the origin.
-     * @param T Electrostatic potential and partial derivatives
-     * @param E The components of the field at R.
-     * @param l apply (d/dx)^l to the potential
-     * @param m apply (d/dy)^l to the potential
-     * @param n apply (d/dz)^l to the potential
-     */
-    public void field(double T[], int l, int m, int n) {
-        E000 = contract(T, l, m, n);
-        E100 = contract(T, l + 1, m, n);
-        E010 = contract(T, l, m + 1, n);
-        E001 = contract(T, l, m, n + 1);
-        E200 = contract(T, l + 2, m, n);
-        E020 = contract(T, l, m + 2, n);
-        E002 = contract(T, l, m, n + 2);
-        E110 = contract(T, l + 1, n + 1, m);
-        E101 = contract(T, l + 1, m, n + 1);
-        E011 = contract(T, l, m + 1, n + 1);
-        return;
-    }
-
-    /**
-     * Collect the field at R due to Q multipole moments at the origin.
-     *
-     * @param Q Cartesian multipole moments at the origin.
-     * @param T Electrostatic potential and partial derivatives
-     * @param E The components of the field at R.
-     * @param l apply (d/dx)^l to the potential
-     * @param sb
-     * @param m apply (d/dy)^l to the potential
-     * @param n apply (d/dz)^l to the potential
-     */
-    public void codeField(double T[], int l, int m, int n, StringBuilder sb) {
-        E000 = codeContract(T, l, m, n, sb);
-        if (E000 != 0) {
-            sb.append(format("e000 = %s;\n", term(l, m, n)));
-        }
-        E100 = codeContract(T, l + 1, m, n, sb);
-        if (E100 != 0) {
-            sb.append(format("e100 = %s;\n", term(l + 1, m, n)));
-        }
-        E010 = codeContract(T, l, m + 1, n, sb);
-        if (E100 != 0) {
-            sb.append(format("e010 = %s;\n", term(l, m + 1, n)));
-        }
-        E001 = codeContract(T, l, m, n + 1, sb);
-        if (E001 != 0) {
-            sb.append(format("e001 = %s;\n", term(l, m, n + 1)));
-        }
-        E200 = codeContract(T, l + 2, m, n, sb);
-        if (E200 != 0) {
-            sb.append(format("e200 = %s;\n", term(l + 2, m, n)));
-        }
-        E020 = codeContract(T, l, m + 2, n, sb);
-        if (E020 != 0) {
-            sb.append(format("e020 = %s;\n", term(l, m + 2, n)));
-        }
-        E002 = codeContract(T, l, m, n + 2, sb);
-        if (E002 != 0) {
-            sb.append(format("e002 = %s;\n", term(l, m, n + 2)));
-        }
-        E110 = codeContract(T, l + 1, m + 1, n, sb);
-        if (E110 != 0) {
-            sb.append(format("e110 = %s;\n", term(l + 1, m + 1, n)));
-        }
-        E101 = codeContract(T, l + 1, m, n + 1, sb);
-        if (E101 != 0) {
-            sb.append(format("e101 = %s;\n", term(l + 1, m, n + 1)));
-        }
-        E011 = codeContract(T, l, m + 1, n + 1, sb);
-        if (E011 != 0) {
-            sb.append(format("e011 = %s;\n", term(l, m + 1, n + 1)));
-        }
-    }
-
-    private double dotK() {
+    private double dotMultipoleK() {
         double total = qk * E000;
         total += dxk * E100;
         total += dyk * E010;
@@ -2689,91 +3438,27 @@ public class MultipoleTensor {
         return total;
     }
 
-    public double codeInteract5(double r[], double Qi[], double Qk[],
-            double Fi[], double Fk[], double Ti[], double Tk[]) {
-        double T[] = new double[tensorCount(5)];
-        recursion(r, T);
-
-        setMultipoleI(Qi);
-        setMultipoleK(Qk);
-
-        StringBuilder sb = new StringBuilder("\n\npublic void E5(double T[]) {\n");
-        codeField(T, 0, 0, 0, sb);
-        sb.append("}\n");
-
-        sb.append("\n\npublic void Ex5(double T[]) {\n");
-        codeField(T, 1, 0, 0, sb);
-        sb.append("}\n");
-
-        sb.append("\n\npublic void Ey5(double T[]) {\n");
-        codeField(T, 0, 1, 0, sb);
-        sb.append("}\n");
-
-        sb.append("\n\npublic void Ez5(double T[]) {\n");
-        codeField(T, 0, 0, 1, sb);
-        sb.append("}\n");
-        logger.log(Level.INFO, sb.toString());
-
-        return 0.0;
+    private double dotMultipoleI() {
+        double total = qi * E000;
+        total -= dxi * E100;
+        total -= dyi * E010;
+        total -= dzi * E001;
+        total += qxxi * E200;
+        total += qyyi * E020;
+        total += qzzi * E002;
+        total += qxyi * E110;
+        total += qxzi * E101;
+        total += qyzi * E011;
+        return total;
     }
 
-    public double codeInteractQI5(double r[], double Qi[], double Qk[],
-            double Fi[], double Fk[], double Ti[], double Tk[]) {
-        double T[] = new double[tensorCount(5)];
-        assert (r[0] == 0.0 && r[1] == 0.0);
-
-        recursionQI(r, T);
-        setMultipoleI(Qi);
-        setMultipoleK(Qk);
-
-        StringBuilder sb = new StringBuilder("\n\npublic void EQI5(double T[]) {\n");
-        codeField(T, 0, 0, 0, sb);
-        sb.append("}\n");
-
-        sb.append("\n\npublic void ExQI5(double T[]) {\n");
-        codeField(T, 1, 0, 0, sb);
-        sb.append("}\n");
-
-        sb.append("\n\npublic void EyQI5(double T[]) {\n");
-        codeField(T, 0, 1, 0, sb);
-        sb.append("}\n");
-
-        sb.append("\n\npublic void EzQI5(double T[]) {\n");
-        codeField(T, 0, 0, 1, sb);
-        sb.append("}\n");
-        logger.log(Level.INFO, sb.toString());
-
-        return 0.0;
-    }
-
-    public double interact5(double r[], double Qi[], double Qk[],
-            double Fi[], double Fk[], double Ti[], double Tk[]) {
+    public double multipoleEnergy(double r[], double Qi[], double Qk[],
+            double Fi[], double Ti[], double Tk[]) {
         setR(r);
-        order5();
         setMultipoleI(Qi);
         setMultipoleK(Qk);
 
-        Ei5();
-        double energy = dotK();
-
-        // Torques
-        torqueK(Tk);
-        Ek5();
-        torqueI(Ti);
-
-        // Forces
-        Ex5();
-        Fi[0] = -dotK();
-        Ey5();
-        Fi[1] = -dotK();
-        Ez5();
-        Fi[2] = -dotK();
-
-        Fk[0] = -Fi[0];
-        Fk[1] = -Fi[1];
-        Fk[2] = -Fi[2];
-
-        return energy;
+        return multipoleEnergy(Fi, Ti, Tk);
     }
 
     /**
@@ -2786,40 +3471,107 @@ public class MultipoleTensor {
      *
      * @return the energy.
      */
-    public double interact5(double Fi[], double Fk[], double Ti[], double Tk[]) {
+    public double multipoleEnergy(double Fi[], double Ti[], double Tk[]) {
         order5();
-
-        Ei5();
-        double energy = dotK();
-
+        multipoleIField();
+        double energy = dotMultipoleK();
         // Torques
-        torqueK(Tk);
+        multipoleKTorque(Tk);
+        multipoleKField();
+        multipoleITorque(Ti);
+        // Forces
+        multipoleIdX();
+        Fi[0] = -dotMultipoleK();
+        multipoleIdY();
+        Fi[1] = -dotMultipoleK();
+        multipoleIdZ();
+        Fi[2] = -dotMultipoleK();
+        return energy;
+    }
 
-        Ek5();
-        torqueI(Ti);
+    public double polarizationEnergy(double Ui[], double UiCR[], double Uk[], double UkCR[],
+            double Fi[], double Ti[], double Tk[]) {
+        return polarizationEnergy(Ui, UiCR, Uk, UkCR, 1.0, 1.0, 1.0, Fi, Ti, Tk);
+    }
+
+    public double polarizationEnergy(double Ui[], double UiCR[], double Uk[], double UkCR[],
+            double scaleField, double scaleEnergy, double scaleMutual,
+            double Fi[], double Ti[], double Tk[]) {
+        setDipoleI(Ui, UiCR);
+        setDipoleK(Uk, UkCR);
+        return polarizationEnergy(scaleField, scaleEnergy, scaleMutual, Fi, Ti, Tk);
+    }
+
+    public double polarizationEnergy(double scaleField, double scaleEnergy, double scaleMutual,
+            double Fi[], double Ti[], double Tk[]) {
+        // Generate tensors.
+        order4();
+
+        // Find the potential, field, etc at k due to the induced dipole i.
+        inducedIField();
+        // Energy of multipole k in the field of induced dipole i.
+        double energy = scaleEnergy * dotMultipoleK();
+
+        /**
+         * Get the induced-induced portion of the force.
+         */
+        Fi[0] = -0.5 * scaleMutual * (pxk * E200 + pyk * E110 + pzk * E101);
+        Fi[1] = -0.5 * scaleMutual * (pxk * E110 + pyk * E020 + pzk * E011);
+        Fi[2] = -0.5 * scaleMutual * (pxk * E101 + pyk * E011 + pzk * E002);
+
+        // Find the potential, field, etc at i due to the induced dipole k.
+        inducedKField();
+        // Energy of multipole i in the field of induced dipole k.
+        energy += scaleEnergy * dotMultipoleI();
+
+        /**
+         * Get the induced-induced portion of the force.
+         */
+        Fi[0] += 0.5 * scaleMutual * (pxi * E200 + pyi * E110 + pzi * E101);
+        Fi[1] += 0.5 * scaleMutual * (pxi * E110 + pyi * E020 + pzi * E011);
+        Fi[2] += 0.5 * scaleMutual * (pxi * E101 + pyi * E011 + pzi * E002);
+
+        /**
+         * Apply scale factors directly to induced dipole components for
+         * efficiency and convenience in computing remaining force terms and
+         * torques.
+         */
+        scaleInduced(scaleField, scaleEnergy);
+
+        // Find the potential, field, etc at k due to (ind + indCR) at i.
+        inducedIFieldCR();
+        // Torque on multipole k.
+        multipoleKTorque(Tk);
+
+        // Find the potential, field, etc at i due to (ind + indCR) at k.
+        inducedKFieldCR();
+        // Torque on multipole i.
+        multipoleITorque(Ti);
 
         // Forces
-        Ex5();
-        Fi[0] = -dotK();
-        Ey5();
-        Fi[1] = -dotK();
-        Ez5();
-        Fi[2] = -dotK();
+        inducedIdX();
+        Fi[0] -= dotMultipoleK();
+        inducedIdY();
+        Fi[1] -= dotMultipoleK();
+        inducedIdZ();
+        Fi[2] -= dotMultipoleK();
 
-        Fk[0] = -Fi[0];
-        Fk[1] = -Fi[1];
-        Fk[2] = -Fi[2];
+        inducedKdX();
+        Fi[0] -= dotMultipoleI();
+        inducedKdY();
+        Fi[1] -= dotMultipoleI();
+        inducedKdZ();
+        Fi[2] -= dotMultipoleI();
 
         return energy;
     }
 
-    public double interact5QI(double r[], double Qi[], double Qk[],
-            double Fi[], double Fk[], double Ti[], double Tk[]) {
+    public double multipoleEnergyQI(double r[], double Qi[], double Qk[],
+            double Fi[], double Ti[], double Tk[]) {
 
         // Find the QI Tensor.
         double z[] = {0.0, 0.0, r(r)};
         setR(z);
-        order5QI();
 
         // Find the rotation matrix from the Global frame to the QI frame.
         setQIRotationMatrix(r);
@@ -2828,37 +3580,7 @@ public class MultipoleTensor {
         multipoleItoQI(Qi);
         multipoleKtoQI(Qk);
 
-        // Compute the potential due to site I at site K.
-        EiQI5();
-
-        // Dot the potential, field, field gradient with multipole K.
-        double energy = dotK();
-
-        // Compute the torque on site K due to the field from site I.
-        torqueK(Tk);
-
-        // Compute the field at site I due to site K.
-        EkQI5();
-        // Compute the torque on site I due to the field from site K.
-        torqueI(Ti);
-
-        // Compute the force on site I F = {-dE/dx, -dE/dy, -dE/dz}.
-        ExQI5();
-        Fi[0] = -dotK();
-        EyQI5();
-        Fi[1] = -dotK();
-        EzQI5();
-        Fi[2] = -dotK();
-
-        // Rotate the force and torques from the QI frame into the Global frame.
-        qiToGlobal(Fi, Ti, Tk);
-
-        // Set the force on site K as -Fi.
-        Fk[0] = -Fi[0];
-        Fk[1] = -Fi[1];
-        Fk[2] = -Fi[2];
-
-        return energy;
+        return multipoleEnergyQI(Fi, Ti, Tk);
     }
 
     /**
@@ -2871,38 +3593,114 @@ public class MultipoleTensor {
      *
      * @return the energy.
      */
-    public double interact5QI(double Fi[], double Fk[], double Ti[], double Tk[]) {
+    public double multipoleEnergyQI(double Fi[], double Ti[], double Tk[]) {
         order5QI();
 
         // Compute the potential due to site I at site K.
-        EiQI5();
+        multipoleIFieldQI();
 
         // Dot the potential, field, field gradient with multipole K.
-        double energy = dotK();
+        double energy = dotMultipoleK();
 
         // Compute the torque on site K due to the field from site I.
-        torqueK(Tk);
+        multipoleKTorque(Tk);
 
         // Compute the field at site I due to site K.
-        EkQI5();
+        multipoleKFieldQI();
         // Compute the torque on site I due to the field from site K.
-        torqueI(Ti);
+        multipoleITorque(Ti);
 
         // Compute the force on site I F = {-dE/dx, -dE/dy, -dE/dz}.
-        ExQI5();
-        Fi[0] = -dotK();
-        EyQI5();
-        Fi[1] = -dotK();
-        EzQI5();
-        Fi[2] = -dotK();
+        multipoleIdXQI();
+        Fi[0] = -dotMultipoleK();
+        multipoleIdYQI();
+        Fi[1] = -dotMultipoleK();
+        multipoleIdZQI();
+        Fi[2] = -dotMultipoleK();
 
         // Rotate the force and torques from the QI frame into the Global frame.
         qiToGlobal(Fi, Ti, Tk);
 
-        // Set the force on site K as -Fi.
-        Fk[0] = -Fi[0];
-        Fk[1] = -Fi[1];
-        Fk[2] = -Fi[2];
+        return energy;
+    }
+
+    public double polarizationEnergyQI(double Ui[], double UiCR[], double Uk[], double UkCR[],
+            double Fi[], double Ti[], double Tk[]) {
+        return polarizationEnergyQI(Ui, UiCR, Uk, UkCR, 1.0, 1.0, 1.0, Fi, Ti, Tk);
+    }
+
+    public double polarizationEnergyQI(double Ui[], double UiCR[], double Uk[], double UkCR[],
+            double scaleField, double scaleEnergy, double scaleMutual,
+            double Fi[], double Ti[], double Tk[]) {
+        dipoleItoQI(Ui, UiCR);
+        dipoleKtoQI(Uk, UkCR);
+        return polarizationEnergyQI(scaleField, scaleEnergy, scaleMutual, Fi, Ti, Tk);
+    }
+
+    public double polarizationEnergyQI(double scaleField, double scaleEnergy, double scaleMutual,
+            double Fi[], double Ti[], double Tk[]) {
+
+        // Generate tensors.
+        order4QI();
+
+        // Find the potential, field, etc at k due to the induced dipole i.
+        inducedIFieldQI();
+        // Energy of multipole k in the field of induced dipole i.
+        double energy = scaleEnergy * dotMultipoleK();
+
+        /**
+         * Get the induced-induced portion of the force.
+         */
+        Fi[0] = -0.5 * scaleMutual * (pxk * E200 + pyk * E110 + pzk * E101);
+        Fi[1] = -0.5 * scaleMutual * (pxk * E110 + pyk * E020 + pzk * E011);
+        Fi[2] = -0.5 * scaleMutual * (pxk * E101 + pyk * E011 + pzk * E002);
+
+        // Find the potential, field, etc at i due to the induced dipole k.
+        inducedKFieldQI();
+        // Energy of multipole i in the field of induced dipole k.
+        energy += scaleEnergy * dotMultipoleI();
+
+        /**
+         * Get the induced-induced portion of the force.
+         */
+        Fi[0] += 0.5 * scaleMutual * (pxi * E200 + pyi * E110 + pzi * E101);
+        Fi[1] += 0.5 * scaleMutual * (pxi * E110 + pyi * E020 + pzi * E011);
+        Fi[2] += 0.5 * scaleMutual * (pxi * E101 + pyi * E011 + pzi * E002);
+
+        /**
+         * Apply scale factors directly to induced dipole components for
+         * efficiency and convenience in computing remaining force terms and
+         * torques.
+         */
+        scaleInduced(scaleField, scaleEnergy);
+
+        // Find the potential, field, etc at k due to (ind + indCR) at i.
+        inducedIFieldCRQI();
+        // Torque on multipole k.
+        multipoleKTorque(Tk);
+
+        // Find the potential, field, etc at i due to (ind + indCR) at k.
+        inducedKFieldCRQI();
+        // Torque on multipole i.
+        multipoleITorque(Ti);
+
+        // Forces
+        inducedIdXQI();
+        Fi[0] -= dotMultipoleK();
+        inducedIdYQI();
+        Fi[1] -= dotMultipoleK();
+        inducedIdZQI();
+        Fi[2] -= dotMultipoleK();
+
+        inducedKdXQI();
+        Fi[0] -= dotMultipoleI();
+        inducedKdYQI();
+        Fi[1] -= dotMultipoleI();
+        inducedKdZ();
+        Fi[2] -= dotMultipoleI();
+
+        // Rotate the force and torques from the QI frame into the Global frame.
+        qiToGlobal(Fi, Ti, Tk);
 
         return energy;
     }
@@ -2936,75 +3734,6 @@ public class MultipoleTensor {
         }
     }
 
-    private void nanWarning(double energy, double[] r, double[] Qi, double[] Qk,
-            double[] Fi, double[] Fk, double[] Ti, double[] Tk) {
-        StringBuilder sb = new StringBuilder();
-        if (Double.isInfinite(energy)) {
-            sb.append(format("DotK infinite: \n"));
-        } else if (Double.isNaN(energy)) {
-            sb.append(format("DotK was NaN:  \n"));
-        }
-        sb.append(format(" r:  %s\n Qi: %s\n Qk: %s\n Fi: %s\n Fk: %s\n Ti: %s\n Tk: %s\n",
-                formArr(r), formArr(Qi), formArr(Qk), formArr(Fi), formArr(Fk), formArr(Ti), formArr(Tk)));
-        double total = qk * E000;
-        double total2 = qxyi * E110;
-//        sb.append(format("DotK components:"
-//                + "\n (1) %.4f %.4f %.4f %.4f %.4f\n (2) %.4f %.4f %.4f %.4f %.4f"
-//                + "\n (3) %.4f %.4f %.4f %.4f %.4f\n (4) %.4f %.4f %.4f %.4f %.4f"
-//                + "\n (5) %.4f %.4f %.4f",
-//                E000, E100, E010, E001, E200,
-//                E020, E002, E110, E101, E011,
-//                  qi,  dxi,  dyi,  dzi, qxxi,
-//                qyyi, qzzi, qxyi, qxzi, qyzi,
-//                  qk,  dxk,  dyk,  dzk, qxxk,
-//                qyyk, qzzk, qxyi, qxzk, qyzk,
-//                total, total2, total + 2.0*total2));
-        double[] Exxx = new double[]{E000, E100, E010, E001, E200, E020, E002, E110, E010, E001};
-        double[] mpoleI = new double[]{qi, dxi, dyi, dzi, qxxi, qyyi, qzzi, qxyi, qxzi, qyzi};
-        double[] mpoleK = new double[]{qk, dxk, dyk, dzk, qxxk, qyyk, qzzk, qxyk, qxzk, qyzk};
-        sb.append(format("DotK components:\n Exxx:   %s\n mpoleI: %s\n mpoleK: %s",
-                formArr(Exxx), formArr(mpoleI), formArr(mpoleK)));
-        (new ArithmeticException()).printStackTrace();
-        logger.warning(sb.toString());
-    }
-
-    // Helper method for logging distance and multipole arrays.
-    private static String formArr(double[] x) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("[");
-        for (int i = 0; i < x.length; i++) {
-            sb.append(String.format("%.4f", x[i]));
-            if (i + 1 < x.length) {
-                sb.append(", ");
-            }
-        }
-        sb.append("]");
-        return sb.toString();
-    }
-
-    // Helper method for logging distance and multipole arrays.
-    private static String formArr(double[][] x) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < x.length; i++) {
-            sb.append("\n[");
-            if (i == 0) {
-                sb.append("[");
-            }
-            for (int j = 0; j < x[i].length; j++) {
-                sb.append(String.format("%.4f", x[i][j]));
-                if (j + 1 < x[i].length) {
-                    sb.append(", ");
-                }
-            }
-            sb.append("]");
-            if (i + 1 < x.length) {
-                sb.append("; ");
-            }
-        }
-        sb.append("]\n");
-        return sb.toString();
-    }
-
     public static void main(String args[]) {
         if (args == null || args.length < 4) {
             logger.info(" Usage: java ffx.numerics.TensorRecursion order dx dy dz");
@@ -3031,8 +3760,8 @@ public class MultipoleTensor {
 //        sFk = new double[3];
 //        sTi = new double[3];
 //        sTk = new double[3];
-//        sEglob = sdlMultipoleTensor.interact5(   srTest, sQi, sQk, sFi, sFk, sTi, sTk);
-//        sEqint = sdlMultipoleTensor.interact5QI( srTest, sQi, sQk, sFi, sFk, sTi, sTk);
+//        sEglob = sdlMultipoleTensor.multipoleEnergy(   srTest, sQi, sQk, sFi, sFk, sTi, sTk);
+//        sEqint = sdlMultipoleTensor.multipoleEnergyQI( srTest, sQi, sQk, sFi, sFk, sTi, sTk);
 //        logger.info(String.format(" r,Qi,Qk,e_GF,e_QI: %s %s %s %.4f %.4f",
 //                formArr(srTest), formArr(sQi), formArr(sQk), sEglob, sEqint));
 //        // Test B
@@ -3044,14 +3773,13 @@ public class MultipoleTensor {
 //        sFk = new double[3];
 //        sTi = new double[3];
 //        sTk = new double[3];
-//        sEglob = sdlMultipoleTensor.interact5(   srTest, sQi, sQk, sFi, sFk, sTi, sTk);
-//        sEqint = sdlMultipoleTensor.interact5QI( srTest, sQi, sQk, sFi, sFk, sTi, sTk);
+//        sEglob = sdlMultipoleTensor.multipoleEnergy(   srTest, sQi, sQk, sFi, sFk, sTi, sTk);
+//        sEqint = sdlMultipoleTensor.multipoleEnergyQI( srTest, sQi, sQk, sFi, sFk, sTi, sTk);
 //        logger.info(String.format(" r,Qi,Qk,e_GF,e_QI: %s %s %s %.4f %.4f",
 //                formArr(srTest), formArr(sQi), formArr(sQk), sEglob, sEqint));
         MultipoleTensor multipoleTensor = new MultipoleTensor(OPERATOR.SCREENED_COULOMB, order, 1e-6);
 
         double[] Fi = new double[3];
-        double[] Fk = new double[3];
         double[] Ti = new double[3];
         double[] Tk = new double[3];
         double[] Qi = new double[]{0.11,
@@ -3077,9 +3805,9 @@ public class MultipoleTensor {
                 r[0] = Math.random();
                 r[1] = Math.random();
                 r[2] = Math.random();
-                double e = multipoleTensor.interact5(r, Qi, Qk, Fi, Fk, Ti, Tk);
+                double e = multipoleTensor.multipoleEnergy(r, Qi, Qk, Fi, Ti, Tk);
                 if (Double.isNaN(e) || Double.isInfinite(e)) {
-                    multipoleTensor.nanWarning(e, r, Qi, Qk, Fi, Fk, Ti, Tk);
+                    multipoleTensor.nanWarning(e, r, Qi, Qk, Fi, Ti, Tk);
                 }
             }
             timeGlobal += System.nanoTime();
@@ -3099,9 +3827,9 @@ public class MultipoleTensor {
                 r[0] = 0.0;
                 r[1] = 0.0;
                 r[2] = Math.random();
-                double e = multipoleTensor.interact5QI(r, Qi, Qk, Fi, Fk, Ti, Tk);
+                double e = multipoleTensor.multipoleEnergyQI(r, Qi, Qk, Fi, Ti, Tk);
                 if (Double.isNaN(e) || Double.isInfinite(e)) {
-                    multipoleTensor.nanWarning(e, r, Qi, Qk, Fi, Fk, Ti, Tk);
+                    multipoleTensor.nanWarning(e, r, Qi, Qk, Fi, Ti, Tk);
                 }
             }
             timeQI += System.nanoTime();
@@ -3365,6 +4093,45 @@ public class MultipoleTensor {
     private static final double ONE_THIRD = 1.0 / 3.0;
     private static final double TWO_THIRD = 2.0 / 3.0;
 
+    private void setDipoleI(double Ui[], double UiCR[]) {
+        uxi = Ui[0];
+        uyi = Ui[1];
+        uzi = Ui[2];
+        pxi = UiCR[0];
+        pyi = UiCR[1];
+        pzi = UiCR[2];
+    }
+
+    private void setDipoleK(double Uk[], double UkCR[]) {
+        uxk = Uk[0];
+        uyk = Uk[1];
+        uzk = Uk[2];
+        pxk = UkCR[0];
+        pyk = UkCR[1];
+        pzk = UkCR[2];
+    }
+
+    private void scaleInduced(double scaleField, double scaleEnergy) {
+        uxi *= scaleEnergy;
+        uyi *= scaleEnergy;
+        uzi *= scaleEnergy;
+        pxi *= scaleField;
+        pyi *= scaleField;
+        pzi *= scaleField;
+        sxi = 0.5 * (uxi + pxi);
+        syi = 0.5 * (uyi + pyi);
+        szi = 0.5 * (uzi + pzi);
+        uxk *= scaleEnergy;
+        uyk *= scaleEnergy;
+        uzk *= scaleEnergy;
+        pxk *= scaleField;
+        pyk *= scaleField;
+        pzk *= scaleField;
+        sxk = 0.5 * (uxk + pxk);
+        syk = 0.5 * (uyk + pyk);
+        szk = 0.5 * (uzk + pzk);
+    }
+
     private void setMultipoleI(double Qi[]) {
         qi = Qi[0];
         dxi = Qi[1];
@@ -3389,6 +4156,36 @@ public class MultipoleTensor {
         qxyk = Qk[7] * TWO_THIRD;
         qxzk = Qk[8] * TWO_THIRD;
         qyzk = Qk[9] * TWO_THIRD;
+    }
+
+    private void dipoleItoQI(double Ui[], double UiCR[]) {
+        double dx = Ui[0];
+        double dy = Ui[1];
+        double dz = Ui[2];
+        uxi = r00 * dx + r01 * dy + r02 * dz;
+        uyi = r10 * dx + r11 * dy + r12 * dz;
+        uzi = r20 * dx + r21 * dy + r22 * dz;
+        dx = UiCR[0];
+        dy = UiCR[1];
+        dz = UiCR[2];
+        pxi = r00 * dx + r01 * dy + r02 * dz;
+        pyi = r10 * dx + r11 * dy + r12 * dz;
+        pzi = r20 * dx + r21 * dy + r22 * dz;
+    }
+
+    private void dipoleKtoQI(double Uk[], double UkCR[]) {
+        double dx = Uk[0];
+        double dy = Uk[1];
+        double dz = Uk[2];
+        uxk = r00 * dx + r01 * dy + r02 * dz;
+        uyk = r10 * dx + r11 * dy + r12 * dz;
+        uzk = r20 * dx + r21 * dy + r22 * dz;
+        dx = UkCR[0];
+        dy = UkCR[1];
+        dz = UkCR[2];
+        pxk = r00 * dx + r01 * dy + r02 * dz;
+        pyk = r10 * dx + r11 * dy + r12 * dz;
+        pzk = r20 * dx + r21 * dy + r22 * dz;
     }
 
     private void multipoleItoQI(double Qi[]) {
@@ -3534,6 +4331,75 @@ public class MultipoleTensor {
         v3[2] = ir20 * vx + ir21 * vy + ir22 * vz;
     }
 
+    private void nanWarning(double energy, double[] r, double[] Qi, double[] Qk,
+            double[] Fi, double[] Ti, double[] Tk) {
+        StringBuilder sb = new StringBuilder();
+        if (Double.isInfinite(energy)) {
+            sb.append(format("DotK infinite: \n"));
+        } else if (Double.isNaN(energy)) {
+            sb.append(format("DotK was NaN:  \n"));
+        }
+        sb.append(format(" r:  %s\n Qi: %s\n Qk: %s\n Fi: %s\n Ti: %s\n Tk: %s\n",
+                formArr(r), formArr(Qi), formArr(Qk), formArr(Fi), formArr(Ti), formArr(Tk)));
+        double total = qk * E000;
+        double total2 = qxyi * E110;
+//        sb.append(format("DotK components:"
+//                + "\n (1) %.4f %.4f %.4f %.4f %.4f\n (2) %.4f %.4f %.4f %.4f %.4f"
+//                + "\n (3) %.4f %.4f %.4f %.4f %.4f\n (4) %.4f %.4f %.4f %.4f %.4f"
+//                + "\n (5) %.4f %.4f %.4f",
+//                E000, E100, E010, E001, E200,
+//                E020, E002, E110, E101, E011,
+//                  qi,  dxi,  dyi,  dzi, qxxi,
+//                qyyi, qzzi, qxyi, qxzi, qyzi,
+//                  qk,  dxk,  dyk,  dzk, qxxk,
+//                qyyk, qzzk, qxyi, qxzk, qyzk,
+//                total, total2, total + 2.0*total2));
+        double[] Exxx = new double[]{E000, E100, E010, E001, E200, E020, E002, E110, E010, E001};
+        double[] mpoleI = new double[]{qi, dxi, dyi, dzi, qxxi, qyyi, qzzi, qxyi, qxzi, qyzi};
+        double[] mpoleK = new double[]{qk, dxk, dyk, dzk, qxxk, qyyk, qzzk, qxyk, qxzk, qyzk};
+        sb.append(format("DotK components:\n Exxx:   %s\n mpoleI: %s\n mpoleK: %s",
+                formArr(Exxx), formArr(mpoleI), formArr(mpoleK)));
+        (new ArithmeticException()).printStackTrace();
+        logger.warning(sb.toString());
+    }
+
+    // Helper method for logging distance and multipole arrays.
+    private static String formArr(double[] x) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
+        for (int i = 0; i < x.length; i++) {
+            sb.append(String.format("%.4f", x[i]));
+            if (i + 1 < x.length) {
+                sb.append(", ");
+            }
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
+    // Helper method for logging distance and multipole arrays.
+    private static String formArr(double[][] x) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < x.length; i++) {
+            sb.append("\n[");
+            if (i == 0) {
+                sb.append("[");
+            }
+            for (int j = 0; j < x[i].length; j++) {
+                sb.append(String.format("%.4f", x[i][j]));
+                if (j + 1 < x[i].length) {
+                    sb.append(", ");
+                }
+            }
+            sb.append("]");
+            if (i + 1 < x.length) {
+                sb.append("; ");
+            }
+        }
+        sb.append("]\n");
+        return sb.toString();
+    }
+
     // Multipole components for atom i.
     private double qi;
     private double dxi;
@@ -3546,6 +4412,21 @@ public class MultipoleTensor {
     private double qxzi;
     private double qyzi;
 
+    // Induced dipole components for atom i.
+    private double uxi;
+    private double uyi;
+    private double uzi;
+
+    // Induced dipole CR components for atom i.
+    private double pxi;
+    private double pyi;
+    private double pzi;
+
+    // Induced dipole + Induced dipole CR components for atom i.
+    private double sxi;
+    private double syi;
+    private double szi;
+
     // Multipole components for atom k.
     private double qk;
     private double dxk;
@@ -3557,6 +4438,21 @@ public class MultipoleTensor {
     private double qxyk;
     private double qxzk;
     private double qyzk;
+
+    // Induced dipole components for atom k.
+    private double uxk;
+    private double uyk;
+    private double uzk;
+
+    // Induced dipole CR components for atom k.
+    private double pxk;
+    private double pyk;
+    private double pzk;
+
+    // Induced dipole + Induced dipole CR components for atom k.
+    private double sxk;
+    private double syk;
+    private double szk;
 
     // Rotation Matrix from Global to QI.
     private double r00, r01, r02;
@@ -3643,6 +4539,16 @@ public class MultipoleTensor {
     private double E110; // XY Component of the Field Gradient
     private double E101; // XZ Component of the Field Gradient
     private double E011; // YZ Component of the Field Gradient
+    private double E300;
+    private double E030;
+    private double E003;
+    private double E210;
+    private double E201;
+    private double E120;
+    private double E021;
+    private double E102;
+    private double E012;
+    private double E111;
 
     // l + m + n = 0 (1)
     public final int t000;
