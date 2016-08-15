@@ -37,6 +37,7 @@
  */
 package ffx.potential.nonbonded;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -689,7 +690,8 @@ public class ParticleMeshEwald implements LambdaInterface {
     private final boolean reciprocalSpaceTerm;
     private final ReciprocalSpace reciprocalSpace;
     private final ReciprocalEnergyRegion reciprocalEnergyRegion;
-    private final ParallelRegion realSpaceEnergyRegion;
+    private final RealSpaceEnergyRegion realSpaceEnergyRegion;
+    private final RealSpaceEnergyRegionQI realSpaceEnergyRegionQI;
     private final ReduceRegion reduceRegion;
     private final GeneralizedKirkwood generalizedKirkwood;
     /**
@@ -702,11 +704,12 @@ public class ParticleMeshEwald implements LambdaInterface {
     private long bornRadiiTotal, gkEnergyTotal;
     private ELEC_FORM elecForm = ELEC_FORM.PAM;
     private static final double TO_SECONDS = 1.0e-9;
+    private static final double TO_MS = 1.0e-6;
     /**
      * Tensor type and debug flags.
      */
     private final boolean useQI = (System.getProperty("pme-qi") != null);
-    private final boolean DEBUG = (System.getProperty("debug") != null);
+    private final int DEBUG = System.getProperty("debug") != null ? Integer.parseInt(System.getProperty("debug")) : 0;
     /**
      * The sqrt of PI.
      */
@@ -1084,8 +1087,8 @@ public class ParticleMeshEwald implements LambdaInterface {
         inducedDipoleFieldRegion = new InducedDipoleFieldRegion(realSpaceTeam);
         directRegion = new DirectRegion(maxThreads);
         sorRegion = new SORRegion(maxThreads);
-        realSpaceEnergyRegion = (useQI) ? new RealSpaceEnergyRegionQI(maxThreads)
-                : new RealSpaceEnergyRegion(maxThreads);
+        realSpaceEnergyRegion = new RealSpaceEnergyRegion(maxThreads);
+        realSpaceEnergyRegionQI = new RealSpaceEnergyRegionQI(maxThreads);
         reduceRegion = new ReduceRegion(maxThreads);
         realSpacePermTime = new long[maxThreads];
         realSpaceEnergyTime = new long[maxThreads];
@@ -1553,8 +1556,7 @@ public class ParticleMeshEwald implements LambdaInterface {
         int maxCount = Integer.MIN_VALUE;
 
         for (int i = 0; i < maxThreads; i++) {
-            int count = (useQI) ? ((RealSpaceEnergyRegionQI) realSpaceEnergyRegion).realSpaceEnergyLoop[i].getCount()
-                    : ((RealSpaceEnergyRegion) realSpaceEnergyRegion).realSpaceEnergyLoop[i].getCount();
+            int count = realSpaceEnergyRegion.realSpaceEnergyLoop[i].getCount();
             logger.info(String.format("    %3d   %7.4f %7.4f %7.4f %10d", i,
                     realSpacePermTime[i] * TO_SECONDS, realSpaceSCFTime[i] * TO_SECONDS,
                     realSpaceEnergyTime[i] * TO_SECONDS, count));
@@ -1567,8 +1569,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             minCount = min(count, minCount);
             maxCount = max(count, maxCount);
         }
-        int inter = (useQI) ? ((RealSpaceEnergyRegionQI) realSpaceEnergyRegion).getInteractions()
-                : ((RealSpaceEnergyRegion) realSpaceEnergyRegion).getInteractions();
+        int inter = realSpaceEnergyRegion.getInteractions();
         logger.info(String.format(" Min      %7.4f %7.4f %7.4f %10d",
                 minPerm * TO_SECONDS, minSCF * TO_SECONDS,
                 minEnergy * TO_SECONDS, minCount));
@@ -1904,23 +1905,20 @@ public class ParticleMeshEwald implements LambdaInterface {
             realSpaceEnergyTotal -= System.nanoTime();
             parallelTeam.execute(realSpaceEnergyRegion);
             realSpaceEnergyTotal += System.nanoTime();
-            ereal = (useQI) ? ((RealSpaceEnergyRegionQI) realSpaceEnergyRegion).getPermanentEnergy()
-                    : ((RealSpaceEnergyRegion) realSpaceEnergyRegion).getPermanentEnergy();
-            ereali = (useQI) ? ((RealSpaceEnergyRegionQI) realSpaceEnergyRegion).getPolarizationEnergy()
-                    : ((RealSpaceEnergyRegion) realSpaceEnergyRegion).getPolarizationEnergy();
-            if (useQI && DEBUG) {
-                ParallelRegion rsEnergyQI = new RealSpaceEnergyRegionQI(maxThreads);
+            ereal = realSpaceEnergyRegion.getPermanentEnergy();
+            ereali = realSpaceEnergyRegion.getPolarizationEnergy();
+            if (useQI && DEBUG > 0) {
                 long realSpaceEnergyTotalQI = -System.nanoTime();
-                parallelTeam.execute(rsEnergyQI);
+                parallelTeam.execute(realSpaceEnergyRegionQI);
                 realSpaceEnergyTotalQI += System.nanoTime();
-                double ereal_QI = ((RealSpaceEnergyRegionQI) rsEnergyQI).getPermanentEnergy();
-                double ereali_QI = ((RealSpaceEnergyRegionQI) rsEnergyQI).getPolarizationEnergy();
-                logger.info(format(" (perm,pol): glob (%12.6f  %12.6f)\n"
-                        + "               qi (%12.6f  %12.6f)",
-                        ereal, ereali, ereal_QI, ereali_QI));
+                double ereal_QI =  realSpaceEnergyRegionQI.getPermanentEnergy();
+                double ereali_QI = realSpaceEnergyRegionQI.getPolarizationEnergy();
+                logger.info(format(" (perm,pol,time): glob (%12.6f  %12.6f) %8.3f ms\n"
+                               +   "                    qi (%12.6f  %12.6f) %8.3f ms",
+                        ereal, ereali, realSpaceEnergyTotal * TO_MS, 
+                        ereal_QI, ereali_QI, realSpaceEnergyTotalQI * TO_MS));
             }
-            interactions += (useQI) ? ((RealSpaceEnergyRegionQI) realSpaceEnergyRegion).getInteractions()
-                    : ((RealSpaceEnergyRegion) realSpaceEnergyRegion).getInteractions();
+            interactions += realSpaceEnergyRegion.getInteractions();
         } catch (Exception e) {
             String message = "Exception computing the electrostatic energy.\n";
             logger.log(Level.SEVERE, message, e);
@@ -4487,6 +4485,16 @@ public class ParticleMeshEwald implements LambdaInterface {
                 final double ereal = gl0 * bn0 + (gl1 + gl6) * bn1 + (gl2 + gl7 + gl8) * bn2 + (gl3 + gl5) * bn3 + gl4 * bn4;
                 final double efix = scale1 * (gl0 * rr1 + (gl1 + gl6) * rr3 + (gl2 + gl7 + gl8) * rr5 + (gl3 + gl5) * rr7 + gl4 * rr9);
                 final double e = selfScale * l2 * (ereal - efix);
+                
+                if (DEBUG > 1) {
+                    if (i == 0) {
+                        logger.info(format(" (GlobalFrame-0) ai,ak,e;ereal,efix,scale: (%s,%s,%.4f) (%.4f,%.4f,%.4f)", 
+                                atoms[i].toNameNumberString(), atoms[k].toNameNumberString(), 
+                                e, ereal, efix, scale));
+                    }
+//                    logger.info(format(" (GlobalFrame) e,ereal,efix,ss,l2: %.4f %.4f %.4f %.4f %.4f", e, ereal, efix, selfScale, l2));
+                }
+                
                 if (gradient) {
                     final double gf1 = bn1 * gl0 + bn2 * (gl1 + gl6) + bn3 * (gl2 + gl7 + gl8) + bn4 * (gl3 + gl5) + bn5 * gl4;
                     final double gf2 = -ck * bn1 + sc4 * bn2 - sc6 * bn3;
@@ -4578,6 +4586,14 @@ public class ParticleMeshEwald implements LambdaInterface {
                         ltxk_local[k] += prefactor * ttm3x;
                         ltyk_local[k] += prefactor * ttm3y;
                         ltzk_local[k] += prefactor * ttm3z;
+                        if (DEBUG > 0 && i == 0) {
+                            double Fi[] = new double[]{ftm2x,ftm2y,ftm2z};
+                            double Ti[] = new double[]{ttm2x,ttm2y,ttm2z};
+                            double Tk[] = new double[]{ttm3x,ttm3y,ttm3z};
+                            logger.info(format("(Gb) dUdLdX t1: i,k,pref,Fi,Ti,Tk: %d, %d, %.3f, %s, %s, %s", 
+                                    i, k, prefactor,
+                                    formatArray(Fi),formatArray(Ti),formatArray(Tk)));
+                        }
                     }
                 }
                 if (lambdaTerm && soft) {
@@ -5464,6 +5480,11 @@ public class ParticleMeshEwald implements LambdaInterface {
                         dx_local[0] = xk - xi;
                         dx_local[1] = yk - yi;
                         dx_local[2] = zk - zi;
+                        // In QI frame, add lambda buffer to z-axis only.
+                        final double dx_buff[] = new double[3];
+                        dx_buff[0] = dx_local[0];
+                        dx_buff[1] = dx_local[1];
+                        dx_buff[2] = (soft) ? dx_local[2] + lBufferDistance : dx_local[2];
                         r2 = crystal.image(dx_local);
                         final double globalMultipolek[] = neighborMultipole[k];
                         final double inducedDipolek[] = neighborInducedDipole[k];
@@ -5474,8 +5495,15 @@ public class ParticleMeshEwald implements LambdaInterface {
                         scalep = maskingp_local[k];
                         scaled = maskingd_local[k];
                         if (doPermanentRealSpace) {
-                            double ei = permanentPair(dx_local, globalMultipolei, globalMultipolek);
-//                            log(" (QuasiInternal)  ", i,k,r,ei);
+                            double ei = 0.0;
+                            try {
+                                ei = permanentPair(dx_buff, globalMultipolei, globalMultipolek);
+//                                log(" (QuasiInternal)  ", i,k,r,ei);
+                            } catch (ArithmeticException ex) {
+                                logger.info(format(" i,k,l,lB,dx,dxBuff: %d, %d, %.2f, %.2f, %s, %s", 
+                                        i, k, lambda, lBufferDistance, formatArray(dx_local), formatArray(dx_buff)));
+                                throw ex;
+                            }
                             if (Double.isNaN(ei) || Double.isInfinite(ei)) {
                                 logPermanentError(ei, i, k, globalMultipolei, globalMultipolek);
                             }
@@ -5531,6 +5559,15 @@ public class ParticleMeshEwald implements LambdaInterface {
                 }
 
                 final double e = selfScale * l2 * (ereal - efix);
+                if (DEBUG > 1) {
+                    if (i == 0) {
+                        logger.info(format(" (QuasiInternal-0) ai,ak,e;ereal,efix,scale,l2: (%s,%s,%.4f) (%.4f,%.4f,%.4f) %.2f", 
+                                atoms[i].toNameNumberString(), atoms[k].toNameNumberString(), 
+                                e, ereal, efix, scale, l2));
+                        
+                    }
+//                    logger.info(format(" (QuasiInternal) e,ereal,efix,ss,l2: %.4f %.4f %.4f %.4f %.4f", e, ereal, efix, selfScale, l2));
+                }
                 if (gradient) {
                     double prefactor = ELECTRIC * selfScale * l2;
                     gX[i] += prefactor * Fi[0];
@@ -5563,6 +5600,11 @@ public class ParticleMeshEwald implements LambdaInterface {
                         ltxk_local[k] += prefactor * Tk[0];
                         ltyk_local[k] += prefactor * Tk[1];
                         ltzk_local[k] += prefactor * Tk[2];
+                        if (DEBUG > 0 && i == 0) {
+                            logger.info(format("(QI) dUdLdX t1: i,k,pref,Fi,Ti,Tk: %d, %d, %.3f, %s, %s, %s", 
+                                    i, k, prefactor,
+                                    formatArray(Fi),formatArray(Ti),formatArray(Tk)));
+                        }
                     }
                     /*
                     if (lamedhTerm && softLdh) {
