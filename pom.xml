@@ -111,20 +111,75 @@
             <timezone>-5</timezone>
         </developer>
         <developer>
-            <id>jpark7</id>
-            <name>Jooyeon "Julia" Park</name>
-            <email>jooyeon-park@uiowa.edu</email>
-            <organization>BME BS/MS Fast Track Student, Schnieders Lab, The U. of Iowa</organization>
+            <id>mrtollefson</id>
+            <name>Mallory R. Tollefson</name>
+            <email>mallory-tollefson@uiowa.edu</email>
+            <organization>Biomedical Engineering Graduate Student, Schnieders Lab, The U. of Iowa</organization>
             <organizationUrl>http://www.uiowa.edu</organizationUrl>
             <roles>
                 <role>
-                    Drug Crystal Structure, Thermodynamics and Solubility
+                    Pathogenicity Prediction of Missense Mutations Implicated in Hearing Loss
+                </role>
+                <role>
+                    Structure Optimization
                 </role>
             </roles>
             <timezone>-5</timezone>
         </developer>
         <developer>
-            <id>shibgao</id>
+            <id>tcolling</id>
+            <name>Timothy Collingsworth</name>
+            <email>timothy-collingsworth@uiowa.edu</email>
+            <organization>Biochemistry Graduate Student, Schnieders Lab, The U. of Iowa</organization>
+            <organizationUrl>http://www.uiowa.edu</organizationUrl>
+            <roles>
+                <role>
+                    Constant PH Protein-Ligand Binding
+                </role>
+            </roles>
+            <timezone>-5</timezone>
+        </developer>
+        <developer>
+            <id>jhauer</id>
+            <name>Jill J. Hauer</name>
+            <email>jillhauer17@gmail.com</email>
+            <organization>Genetics Graduate Student, Schnieders Lab, The U. of Iowa</organization>
+            <organizationUrl>http://www.uiowa.edu</organizationUrl>
+            <roles>
+                <role>
+                    Pathogenicity Prediction and Thermodynamics of Missense Mutations
+                </role>
+            </roles>
+            <timezone>-5</timezone>
+        </developer>
+        <developer>
+            <id>hbernabe</id>
+            <name>Hernan Bernabe</name>
+            <email>hernan-bernabe@uiowa.edu</email>
+            <organization>Biomedical Engineering Graduate Student, Schnieders Lab, The U. of Iowa</organization>
+            <organizationUrl>http://www.uiowa.edu</organizationUrl>
+            <roles>
+                <role>
+                    Thermodynamics of Missense Mutations
+                </role>
+            </roles>
+            <timezone>-5</timezone>
+        </developer>
+    </developers>
+    <contributors>
+        <contributor>
+            <name>William T. A. Tollefson</name>
+            <email>william.t.tollefson@rockwellcollins.com</email>
+            <organization>Software Engineer, Rockwell Collins</organization>
+            <organizationUrl>http://rockwellcollins.com</organizationUrl>
+            <roles>
+                <role>
+                    Modeling of Missense Mutations Implicated in Inherited Deafness
+                </role>
+            </roles>
+            <timezone>-5</timezone>
+        </contributor>
+        <contributor>
             <name>Shibo "Hylia" Gao</name>
             <email>gaosh01@luther.edu</email>
             <organization>2013 BSURF Student, Biochemistry, The U. of Iowa</organization>
@@ -135,9 +190,8 @@
                 </role>
             </roles>
             <timezone>-5</timezone>
-        </developer>
-        <developer>
-            <id>avlynn</id>
+        </contributor>
+        <contributor>
             <name>Ava M. Lynn</name>
             <email>ava-lynn@uiowa.edu</email>
             <organization>Undergraduate Student, Schnieders Lab, The U. of Iowa</organization>
@@ -148,35 +202,31 @@
                 </role>
             </roles>
             <timezone>-5</timezone>
-        </developer>
-        <developer>
-            <id>inessler</id>
+        </contributor>
+        <contributor>
             <name>Ian J. Nessler</name>
-            <email>ian-nessler@uiowa.edu</email>
-            <organization>Undergraduate Student, Schnieders Lab, The U. of Iowa</organization>
-            <organizationUrl>http://www.uiowa.edu</organizationUrl>
+            <email>inessler@umich.edu</email>
+            <organization>Chemical Engineering Graduate Student, The U. of Michigan</organization>
+            <organizationUrl>https://www.umich.edu</organizationUrl>
             <roles>
                 <role>
                     Drug Crystal Structure, Thermodynamics and Solubility
                 </role>
             </roles>
             <timezone>-5</timezone>
-        </developer>
-        <developer>
-            <id>wtollefson</id>
-            <name>William T. A. Tollefson</name>
-            <email>william-tollefson@uiowa.edu</email>
-            <organization>Undergraduate Student, Schnieders Lab, The U. of Iowa</organization>
-            <organizationUrl>http://www.uiowa.edu</organizationUrl>
+        </contributor>
+        <contributor>
+            <name>Jooyeon "Julia" Park</name>
+            <email>julia-park@gmail.com</email>
+            <organization>Dental Student, The U. of Pennsylvania</organization>
+            <organizationUrl>http://www.upenn.edu</organizationUrl>
             <roles>
                 <role>
-                    Modeling of Missense Mutations Implicated in Inherited Deafness
+                    Drug Crystal Structure, Thermodynamics and Solubility
                 </role>
             </roles>
             <timezone>-5</timezone>
-        </developer>
-    </developers>
-    <contributors>
+        </contributor>
         <contributor>
             <name>Pengyu Ren</name>
             <email>pren@mail.utexas.edu</email>
