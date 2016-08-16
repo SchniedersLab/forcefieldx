@@ -289,7 +289,7 @@ public class MultipoleTensor {
     }
 
     public void generateTensor() {
-        switch(order) {
+        switch (order) {
             case 5:
                 generateTensor5();
                 break;
@@ -297,7 +297,7 @@ public class MultipoleTensor {
                 generateTensor4();
                 break;
             default:
-                double r[] = {x,y,z};
+                double r[] = {x, y, z};
                 recursion(r, work);
         }
     }
@@ -366,6 +366,15 @@ public class MultipoleTensor {
         if (r2 == 0.0) {
             throw new ArithmeticException();
         }
+        R = sqrt(r2);
+    }
+
+    public void setR_QI(double r[]) {
+        x = 0.0;
+        y = 0.0;
+        z = r(r);
+        setQIRotationMatrix(r);
+        r2 = (x * x + y * y + z * z);
         R = sqrt(r2);
     }
 
@@ -1985,7 +1994,7 @@ public class MultipoleTensor {
      *
      * @return the energy.
      */
-    private double multipoleEnergyQI(double Fi[], double Ti[], double Tk[]) {
+    public double multipoleEnergyQI(double Fi[], double Ti[], double Tk[]) {
         //order5QI();
 
         // Compute the potential due to site I at site K.
@@ -2080,12 +2089,11 @@ public class MultipoleTensor {
         return energy;
     }
 
-    private double polarizationEnergyQI(double scaleField, double scaleEnergy, double scaleMutual,
+    public double polarizationEnergyQI(double scaleField, double scaleEnergy, double scaleMutual,
             double Fi[], double Ti[], double Tk[]) {
 
         // Generate tensors.
         //order4QI();
-
         // Find the potential, field, etc at k due to the induced dipole i.
         inducedIFieldQI();
         // Energy of multipole k in the field of induced dipole i.
@@ -4032,6 +4040,11 @@ public class MultipoleTensor {
         }
     }
 
+    public void setMultipolesQI(double Qi[], double Qk[]) {
+        multipoleItoQI(Qi);
+        multipoleKtoQI(Qk);
+    }
+
     public void setDipoles(double Ui[], double UiCR[], double Uk[], double UkCR[]) {
         switch (coordinates) {
             case GLOBAL:
@@ -4044,6 +4057,11 @@ public class MultipoleTensor {
                 dipoleKtoQI(Uk, UkCR);
                 break;
         }
+    }
+
+    public void setDipolesQI(double Ui[], double UiCR[], double Uk[], double UkCR[]) {
+        dipoleItoQI(Ui, UiCR);
+        dipoleKtoQI(Uk, UkCR);
     }
 
     private void setDipoleI(double Ui[], double UiCR[]) {
