@@ -42,14 +42,14 @@
 import groovy.util.CliBuilder
 import groovy.lang.MissingPropertyException
 
-//FFX Imports
+// FFX Imports
 import ffx.autoparm.Fragmenter
 import ffx.autoparm.Wizard
 
 /**
  * SDF to SMILES Converter
  * Auto-fragmenting algorithm
- * 
+ *
  * @author Rae Ann Corrigan
  */
 
@@ -65,17 +65,17 @@ List<String> arguments = options.arguments();
 //if (options.h || arguments == null || arguments.size() != 1){ original code
 if (options.h || arguments == null) {
     return cli.usage();
-} 
+}
 
-// Read in command line.
-String sdffile = arguments.get(0);
-String smi = new String();
+// Read in command line argument.
+String filename = arguments.get(0);
 
-Wizard wi = new Wizard(sdffile);
-smi = wi.readSDF();
+Wizard wi = new Wizard(filename);
 
-System.out.println("\nFinished Wizard, calling Fragmenter\n");
-Fragmenter fr = new Fragmenter(sdffile, smi);
-fr.readSDF();
+String smileString = wi.readSDF();
 
-return;
+logger.info(String.format("\n Fragmenting %s\n", filename));
+
+Fragmenter fragmenter = new Fragmenter(filename, smileString);
+fragmenter.readSDF();
+

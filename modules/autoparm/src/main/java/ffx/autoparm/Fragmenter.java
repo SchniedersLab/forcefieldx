@@ -47,6 +47,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Logger;
+
 import org.openscience.cdk.atomtype.CDKAtomTypeMatcher;
 import org.openscience.cdk.exception.CDKException;
 import org.openscience.cdk.exception.InvalidSmilesException;
@@ -74,12 +76,14 @@ import org.openscience.cdk.tools.manipulator.AtomTypeManipulator;
  */
 public class Fragmenter {
 
-    protected String sdffile;
-    protected String smi;
+    private final static Logger logger = Logger.getLogger(Fragmenter.class.getName());
 
-    public Fragmenter(String sdffile, String smi) {
-        this.sdffile = sdffile;
-        this.smi = smi;
+    protected String filename;
+    protected String smilesString;
+
+    public Fragmenter(String filename, String smilesString) {
+        this.filename = filename;
+        this.smilesString = smilesString;
     }
 
     private enum FIELD {
@@ -94,7 +98,7 @@ public class Fragmenter {
     private static final int SIZE = 30;
 
     public void readSDF() throws FileNotFoundException, IOException {
-        File file = new File(sdffile);
+        File file = new File(filename);
         BufferedReader read = null;
 
         try {
@@ -201,8 +205,8 @@ public class Fragmenter {
                 IAtomContainer tester = rhList.get(u);
 
                 //is "Query" is a substructure of "Tester"
-                //makes sure query and tester aren't the same molecule and that 
-                //     query is smaller than tester (substructures have to be 
+                //makes sure query and tester aren't the same molecule and that
+                //     query is smaller than tester (substructures have to be
                 //     smaller than the main structure)
                 if (pattern.matches(tester) && (tester != query) && (tester.getAtomCount() > query.getAtomCount()) && (tester.getAtomCount() < SIZE)) {
                     indicelist.add(t);
@@ -248,7 +252,7 @@ public class Fragmenter {
             map[q][0] = (q + 1);
         }
 
-        String full = smi;
+        String full = smilesString;
         System.out.println("fullSmiles: " + full + "\n");
 
         //write SMILES file
@@ -379,35 +383,47 @@ public class Fragmenter {
 
     }
 
-    protected File writeSDF(IAtomContainer sm, int n) throws Exception {
-        //convert SMILES to sdf's
-        //entry number in SMILES array, to aid in file naming
-        int j = n;
-        String fileBegin = "fragment.sdf_";
-        String fileEnd = Integer.toString(j);
-        String filename = fileBegin.concat(fileEnd);
-        System.out.print("filename: ");
-        System.out.println(filename);
-        System.out.println();
+    protected File writeSDF(IAtomContainer iAtomContainer, int n) throws Exception {
 
-        SDFWriter swrite = new SDFWriter();
+        String fileBegin = "fragment";
+        String fileEnd = Integer.toString(n);
+        String dirName = fileBegin.concat(fileEnd);
+
+        // Make a subdirectory.
+        File dir = new File(dirName);
+        if (!dir.exists()) {
+            dir.mkdir();
+        }
+
+        String filename = dirName.concat(File.separator).concat(dirName.concat(".sdf"));
+        logger.info(String.format(" Writing %s", filename));
+
+        BufferedWriter bufferedWriter = null;
+        FileWriter fileWriter = null;
+        SDFWriter sdfWriter = null;
         File sdfFromSMILES = new File(filename);
 
         try {
-            FileWriter filew = new FileWriter(sdfFromSMILES.getAbsoluteFile());
-            BufferedWriter out = new BufferedWriter(filew);
-
-            swrite.setWriter(out);
-            swrite.write(sm);
-            out.close();
+            fileWriter = new FileWriter(sdfFromSMILES.getAbsoluteFile());
+            bufferedWriter = new BufferedWriter(fileWriter);
+            sdfWriter = new SDFWriter();
+            sdfWriter.setWriter(bufferedWriter);
+            sdfWriter.write(iAtomContainer);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.warning(e.toString());
         } finally {
-            swrite.close();
+            if (fileWriter != null) {
+                fileWriter.close();
+            }
+            if (bufferedWriter != null) {
+                bufferedWriter.close();
+            }
+            if (sdfWriter != null) {
+                sdfWriter.close();
+            }
         }
 
         return sdfFromSMILES;
-
     }
 
     protected void map(File sdfFromSMILES, int col, int fragsize, int fullsize) throws FileNotFoundException {
@@ -417,7 +433,7 @@ public class Fragmenter {
 
         //read full SDF file
         try {
-            File file = new File(sdffile);
+            File file = new File(filename);
             FileReader fullfr = new FileReader(file);
             BufferedReader fullbr = new BufferedReader(fullfr);
             String line;
@@ -502,7 +518,7 @@ public class Fragmenter {
         int fragrows = 0;
 
         try {
-            File file = new File(sdffile);
+            File file = new File(filename);
             FileReader fullfr = new FileReader(file);
             BufferedReader fullbr = new BufferedReader(fullfr);
             String line;
@@ -543,7 +559,7 @@ public class Fragmenter {
 
         //fill arrays of bonds for full molecule
         try {
-            File file = new File(sdffile);
+            File file = new File(filename);
             FileReader fullfr = new FileReader(file);
             BufferedReader fullbr = new BufferedReader(fullfr);
             String line;
@@ -774,7 +790,7 @@ public class Fragmenter {
                             atom1Int = Integer.parseInt(atom1num);
                             atom2Int = Integer.parseInt(atom2num);
 
-                            //determine which atoms are part of the bond of interest 
+                            //determine which atoms are part of the bond of interest
                             atom1 = fragAtoms[atom1Int - 1];
                             atom2 = fragAtoms[atom2Int - 1];
 
@@ -783,9 +799,9 @@ public class Fragmenter {
                         }
 
                         /*//START HERE FOR FRAGMENT EXTRA
-                        //Additional bonds for deeper checking  
+                        //Additional bonds for deeper checking
                         int numExtraAtoms = bondsToCheck.size();
-                        //string arrays for the extra bonded atoms; no atom should have more than 
+                        //string arrays for the extra bonded atoms; no atom should have more than
                         //four bonded atoms (in the drugs I've seen), so none will have more than
                         //three extra atoms (exB as in extra bonds)
                         List<String> exB1 = new ArrayList<>();
@@ -824,24 +840,24 @@ public class Fragmenter {
                             //get the atom that isn't "atomN" in each extra bond
                             int atomA = 0;
                             String atomSA;
-                            
+
                             String atomNumberS = Integer.toString(atomN);
 
                             for (int extraFragIt = 0; extraFragIt < extraBondsToCheck.size(); extraFragIt++) {
-                                
+
                                 //bond number within fragbonds
                                 int ebtcB = extraBondsToCheck.get(extraFragIt);
-                                
+
                                 //gets number of the atom of interest; bound to bonded atom of original test atom
                                 if(!fragbonds[ebtcB][0].equals(atomNumberS)){
                                     atomA = Integer.parseInt(fragbonds[ebtcB][0]);
                                 } else{
                                     atomA = Integer.parseInt(fragbonds[ebtcB][1]);
                                 }
-                                
+
                                 //gets atomic symbol of the atom of interset; bound to the bonded atom of the original test atom
                                 atomSA = fragAtoms[atomA];
-                                
+
                                 switch (extraCount) {
                                     case 0:
                                         exB1.add(atomSA);
@@ -1007,20 +1023,20 @@ public class Fragmenter {
 //Code for reference
 //XYZ writer
 /*protected void writeXYZ(IAtomContainer sm, int n) throws Exception{
-        
+
         int j = n;
         String fileBegin = "fragment.xyz_";
         String fileEnd = Integer.toString(j);
         String filename = fileBegin.concat(fileEnd);
         System.out.println("XYZ name: "+filename+"\n");
-        
+
         XYZWriter xyzWrite = new XYZWriter();
-        
+
         try{
             File xyzFromSMILES = new File(filename);
             FileWriter filew = new FileWriter(xyzFromSMILES.getAbsoluteFile());
             BufferedWriter out = new BufferedWriter(filew);
-            
+
             xyzWrite.setWriter(out);
             xyzWrite.writeMolecule(sm);
             out.close();
@@ -1030,7 +1046,7 @@ public class Fragmenter {
             xyzWrite.close();
         }
     }*/
-//Things I've tried for mapping 
+//Things I've tried for mapping
 //Tried using AtomTypeMatcher and affiliated functions
 /*for (int mapC = 0; mapC < full.getAtomCount(); mapC++) {
                 CDKAtomTypeMatcher mapmatch = CDKAtomTypeMatcher.getInstance(full.getBuilder());
@@ -1064,7 +1080,7 @@ public class Fragmenter {
                         toFragTypes.add(fragmapmatch.findMatchingAtomType(mol, toFragTest.get(typeC2)));
                     }
                     System.out.println("toFragTypes size: "+toFragTypes.size());
-                    
+
                     int maxsize = 0;
                     //sets counter variable to the maximum length of connected atom array
                     if(toFragTypes.size() > toFullTypes.size()){
@@ -1072,9 +1088,9 @@ public class Fragmenter {
                     } else{
                         maxsize = toFullTypes.size();
                     }
-                    
+
                     int matchingConnectedAtoms = 1;
-                    
+
                     //if the connected atoms don't match, then set the test variable to 0 (false)
                     for(int conCount = 0; conCount < maxsize; conCount++){
                         if(toFullTypes.get(conCount) != toFragTypes.get(conCount)){
@@ -1091,7 +1107,7 @@ public class Fragmenter {
                         //enter number of matching fragAtom into mapping array
                         //in same row as matched testFullAtom
                         //in fragcounter col
-                        //checks to see if the map col for the corresponding fragment 
+                        //checks to see if the map col for the corresponding fragment
                         //already contains the fnum
                         int mapcheck = 0;
                         for (int colCount = 0; colCount < full.getAtomCount(); colCount++) {
@@ -1102,7 +1118,7 @@ public class Fragmenter {
 
                         //if the fnum isn't already in the frag column
                         if (mapcheck == 0) {
-                            
+
                             //and there's not something already in the designated indice
                             if (map[indice][fragcounter] == 0) {
                                 //set the indice to the found fnum
@@ -1137,16 +1153,16 @@ public class Fragmenter {
             int row = 0;
             for(int dgm = 0; dgm < mol.getAtomCount(); dgm++){
                 DefaultRGraphAtomMatcher drgam = new DefaultRGraphAtomMatcher(full, mol.getAtom(dgm),bondMatch);
-                
+
                 if(drgam.matches(full, mol.getAtom(dgm))){
-                    //determine row 
-                    
+                    //determine row
+
                     //returns -1 if atom not found (which apparently it's not...
                     //row = full.getAtomNumber(mol.getAtom(dgm));
                     System.out.println("Row: "+row);
                     for(int count = 0; count < full.getAtomCount(); count++){
                         if(full.getAtom(count) == mol.getAtom(dgm) && (map[count][fragcounter] == 0)){
-                            
+
                             row = count;
                         }
                     }
@@ -1167,7 +1183,7 @@ public class Fragmenter {
             for(molAC = 0; molAC < mol.getAtomCount(); molAC++){
                 molAtoms[molAC] = mol.getAtom(molAC);
             }
-            
+
             System.out.println("Made IAtom array\n");
             System.out.println(Arrays.toString(fullAtoms));
             System.out.println();
