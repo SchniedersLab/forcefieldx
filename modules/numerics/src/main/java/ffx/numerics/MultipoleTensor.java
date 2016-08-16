@@ -84,7 +84,16 @@ public class MultipoleTensor {
         COULOMB, SCREENED_COULOMB, THOLE_FIELD
     };
 
+    /**
+     * Global and Quasi-Internal (QI) coordinate systems are supported.
+     */
+    public enum COORDINATES {
+        GLOBAL, QI
+    };
+
     private OPERATOR operator;
+    private COORDINATES coordinates;
+
     private final int order;
     /**
      * These are the "source" terms for the recursion. Source terms exist for
@@ -153,7 +162,7 @@ public class MultipoleTensor {
      * @param order The order of the tensor.
      * @param beta The screening parameter.
      */
-    public MultipoleTensor(OPERATOR operator, int order, double beta) {
+    public MultipoleTensor(OPERATOR operator, COORDINATES coordinates, int order, double beta) {
         assert (order > 0);
         o1 = order + 1;
         il = o1;
@@ -164,6 +173,7 @@ public class MultipoleTensor {
 
         this.order = order;
         this.operator = operator;
+        this.coordinates = coordinates;
         this.beta = beta;
 
         // Auxillary terms for Coulomb and Thole Screening.
@@ -275,6 +285,47 @@ public class MultipoleTensor {
             case COULOMB:
                 T000j = coulomb;
         }
+
+    }
+
+    public void generateTensor() {
+        switch(order) {
+            case 5:
+                generateTensor5();
+                break;
+            case 4:
+                generateTensor4();
+                break;
+            default:
+                double r[] = {x,y,z};
+                recursion(r, work);
+        }
+    }
+
+    public void generateTensor4() {
+        switch (coordinates) {
+            case QI:
+                order4QI();
+                break;
+            case GLOBAL:
+            default:
+                order4();
+        }
+    }
+
+    public void generateTensor5() {
+        switch (coordinates) {
+            case QI:
+                order5QI();
+                break;
+            case GLOBAL:
+            default:
+                order5();
+        }
+    }
+
+    public void setCoordinateSystem(COORDINATES coordinates) {
+        this.coordinates = coordinates;
     }
 
     /**
@@ -297,15 +348,46 @@ public class MultipoleTensor {
         return false;
     }
 
-    private void setR(double r[]) {
-        x = r[0];
-        y = r[1];
-        z = r[2];
+    public void setR(double r[]) {
+        switch (coordinates) {
+            case QI:
+                x = 0.0;
+                y = 0.0;
+                z = r(r);
+                setQIRotationMatrix(r);
+                break;
+            case GLOBAL:
+                x = r[0];
+                y = r[1];
+                z = r[2];
+                break;
+        }
         r2 = (x * x + y * y + z * z);
         if (r2 == 0.0) {
             throw new ArithmeticException();
         }
         R = sqrt(r2);
+    }
+
+    public double multipoleEnergy(double Fi[], double Ti[], double Tk[]) {
+        switch (coordinates) {
+            case GLOBAL:
+            default:
+                return multipoleEnergyGlobal(Fi, Ti, Tk);
+            case QI:
+                return multipoleEnergyQI(Fi, Ti, Tk);
+        }
+    }
+
+    public double polarizationEnergy(double scaleField, double scaleEnergy, double scaleMutual,
+            double Fi[], double Ti[], double Tk[]) {
+        switch (coordinates) {
+            case GLOBAL:
+            default:
+                return polarizationEnergyGlobal(scaleField, scaleEnergy, scaleMutual, Fi, Ti, Tk);
+            case QI:
+                return polarizationEnergyQI(scaleField, scaleEnergy, scaleMutual, Fi, Ti, Tk);
+        }
     }
 
     /**
@@ -1867,6 +1949,205 @@ public class MultipoleTensor {
         R401 = z * term4001;
     }
 
+    /**
+     * Re-use R, Qi, and Qk from a previous call.
+     *
+     * @param Fi Output force on i.
+     * @param Ti Output torque on i.
+     * @param Tk Output torque on k.
+     *
+     * @return the energy.
+     */
+    private double multipoleEnergyGlobal(double Fi[], double Ti[], double Tk[]) {
+        //order5();
+        multipoleIField();
+        double energy = dotMultipoleK();
+        // Torques
+        multipoleKTorque(Tk);
+        multipoleKField();
+        multipoleITorque(Ti);
+        // Forces
+        multipoleIdX();
+        Fi[0] = -dotMultipoleK();
+        multipoleIdY();
+        Fi[1] = -dotMultipoleK();
+        multipoleIdZ();
+        Fi[2] = -dotMultipoleK();
+        return energy;
+    }
+
+    /**
+     * Re-use Qi and Qk from a previous call.
+     *
+     * @param Fi Output force on i.
+     * @param Ti Output torque on i.
+     * @param Tk Output torque on k.
+     *
+     * @return the energy.
+     */
+    private double multipoleEnergyQI(double Fi[], double Ti[], double Tk[]) {
+        //order5QI();
+
+        // Compute the potential due to site I at site K.
+        multipoleIFieldQI();
+
+        // Dot the potential, field, field gradient with multipole K.
+        double energy = dotMultipoleK();
+
+        // Compute the torque on site K due to the field from site I.
+        multipoleKTorque(Tk);
+
+        // Compute the field at site I due to site K.
+        multipoleKFieldQI();
+        // Compute the torque on site I due to the field from site K.
+        multipoleITorque(Ti);
+
+        // Compute the force on site I F = {-dE/dx, -dE/dy, -dE/dz}.
+        multipoleIdXQI();
+        Fi[0] = -dotMultipoleK();
+        multipoleIdYQI();
+        Fi[1] = -dotMultipoleK();
+        multipoleIdZQI();
+        Fi[2] = -dotMultipoleK();
+
+        // Rotate the force and torques from the QI frame into the Global frame.
+        qiToGlobal(Fi, Ti, Tk);
+
+        return energy;
+    }
+
+    private double polarizationEnergyGlobal(double scaleField, double scaleEnergy, double scaleMutual,
+            double Fi[], double Ti[], double Tk[]) {
+        // Generate tensors.
+        //order4();
+
+        // Find the potential, field, etc at k due to the induced dipole i.
+        inducedIField();
+        // Energy of multipole k in the field of induced dipole i.
+        double energy = scaleEnergy * dotMultipoleK();
+
+        /**
+         * Get the induced-induced portion of the force.
+         */
+        Fi[0] = -0.5 * scaleMutual * (pxk * E200 + pyk * E110 + pzk * E101);
+        Fi[1] = -0.5 * scaleMutual * (pxk * E110 + pyk * E020 + pzk * E011);
+        Fi[2] = -0.5 * scaleMutual * (pxk * E101 + pyk * E011 + pzk * E002);
+
+        // Find the potential, field, etc at i due to the induced dipole k.
+        inducedKField();
+        // Energy of multipole i in the field of induced dipole k.
+        energy += scaleEnergy * dotMultipoleI();
+
+        /**
+         * Get the induced-induced portion of the force.
+         */
+        Fi[0] += 0.5 * scaleMutual * (pxi * E200 + pyi * E110 + pzi * E101);
+        Fi[1] += 0.5 * scaleMutual * (pxi * E110 + pyi * E020 + pzi * E011);
+        Fi[2] += 0.5 * scaleMutual * (pxi * E101 + pyi * E011 + pzi * E002);
+
+        /**
+         * Apply scale factors directly to induced dipole components for
+         * efficiency and convenience in computing remaining force terms and
+         * torques.
+         */
+        scaleInduced(scaleField, scaleEnergy);
+
+        // Find the potential, field, etc at k due to (ind + indCR) at i.
+        inducedIFieldCR();
+        // Torque on multipole k.
+        multipoleKTorque(Tk);
+
+        // Find the potential, field, etc at i due to (ind + indCR) at k.
+        inducedKFieldCR();
+        // Torque on multipole i.
+        multipoleITorque(Ti);
+
+        // Forces
+        inducedIdX();
+        Fi[0] -= dotMultipoleK();
+        inducedIdY();
+        Fi[1] -= dotMultipoleK();
+        inducedIdZ();
+        Fi[2] -= dotMultipoleK();
+
+        inducedKdX();
+        Fi[0] -= dotMultipoleI();
+        inducedKdY();
+        Fi[1] -= dotMultipoleI();
+        inducedKdZ();
+        Fi[2] -= dotMultipoleI();
+
+        return energy;
+    }
+
+    private double polarizationEnergyQI(double scaleField, double scaleEnergy, double scaleMutual,
+            double Fi[], double Ti[], double Tk[]) {
+
+        // Generate tensors.
+        //order4QI();
+
+        // Find the potential, field, etc at k due to the induced dipole i.
+        inducedIFieldQI();
+        // Energy of multipole k in the field of induced dipole i.
+        double energy = scaleEnergy * dotMultipoleK();
+
+        /**
+         * Get the induced-induced portion of the force.
+         */
+        Fi[0] = -0.5 * scaleMutual * (pxk * E200 + pyk * E110 + pzk * E101);
+        Fi[1] = -0.5 * scaleMutual * (pxk * E110 + pyk * E020 + pzk * E011);
+        Fi[2] = -0.5 * scaleMutual * (pxk * E101 + pyk * E011 + pzk * E002);
+
+        // Find the potential, field, etc at i due to the induced dipole k.
+        inducedKFieldQI();
+        // Energy of multipole i in the field of induced dipole k.
+        energy += scaleEnergy * dotMultipoleI();
+
+        /**
+         * Get the induced-induced portion of the force.
+         */
+        Fi[0] += 0.5 * scaleMutual * (pxi * E200 + pyi * E110 + pzi * E101);
+        Fi[1] += 0.5 * scaleMutual * (pxi * E110 + pyi * E020 + pzi * E011);
+        Fi[2] += 0.5 * scaleMutual * (pxi * E101 + pyi * E011 + pzi * E002);
+
+        /**
+         * Apply scale factors directly to induced dipole components for
+         * efficiency and convenience in computing remaining force terms and
+         * torques.
+         */
+        scaleInduced(scaleField, scaleEnergy);
+
+        // Find the potential, field, etc at k due to (ind + indCR) at i.
+        inducedIFieldCRQI();
+        // Torque on multipole k.
+        multipoleKTorque(Tk);
+
+        // Find the potential, field, etc at i due to (ind + indCR) at k.
+        inducedKFieldCRQI();
+        // Torque on multipole i.
+        multipoleITorque(Ti);
+
+        // Forces
+        inducedIdXQI();
+        Fi[0] -= dotMultipoleK();
+        inducedIdYQI();
+        Fi[1] -= dotMultipoleK();
+        inducedIdZQI();
+        Fi[2] -= dotMultipoleK();
+
+        inducedKdXQI();
+        Fi[0] -= dotMultipoleI();
+        inducedKdYQI();
+        Fi[1] -= dotMultipoleI();
+        inducedKdZQI();
+        Fi[2] -= dotMultipoleI();
+
+        // Rotate the force and torques from the QI frame into the Global frame.
+        qiToGlobal(Fi, Ti, Tk);
+
+        return energy;
+    }
+
     private void multipoleIField() {
         double term000 = qi * R000;
         term000 -= dxi * R100;
@@ -3373,257 +3654,6 @@ public class MultipoleTensor {
         return total;
     }
 
-    public double multipoleEnergy(double r[], double Qi[], double Qk[],
-            double Fi[], double Ti[], double Tk[]) {
-        setR(r);
-        setMultipoleI(Qi);
-        setMultipoleK(Qk);
-
-        return multipoleEnergy(Fi, Ti, Tk);
-    }
-
-    /**
-     * Re-use R, Qi, and Qk from a previous call.
-     *
-     * @param Fi Output force on i.
-     * @param Ti Output torque on i.
-     * @param Tk Output torque on k.
-     *
-     * @return the energy.
-     */
-    public double multipoleEnergy(double Fi[], double Ti[], double Tk[]) {
-        order5();
-        multipoleIField();
-        double energy = dotMultipoleK();
-        // Torques
-        multipoleKTorque(Tk);
-        multipoleKField();
-        multipoleITorque(Ti);
-        // Forces
-        multipoleIdX();
-        Fi[0] = -dotMultipoleK();
-        multipoleIdY();
-        Fi[1] = -dotMultipoleK();
-        multipoleIdZ();
-        Fi[2] = -dotMultipoleK();
-        return energy;
-    }
-
-    public double polarizationEnergy(double Ui[], double UiCR[], double Uk[], double UkCR[],
-            double Fi[], double Ti[], double Tk[]) {
-        return polarizationEnergy(Ui, UiCR, Uk, UkCR, 1.0, 1.0, 1.0, Fi, Ti, Tk);
-    }
-
-    public double polarizationEnergy(double Ui[], double UiCR[], double Uk[], double UkCR[],
-            double scaleField, double scaleEnergy, double scaleMutual,
-            double Fi[], double Ti[], double Tk[]) {
-        setDipoleI(Ui, UiCR);
-        setDipoleK(Uk, UkCR);
-        return polarizationEnergy(scaleField, scaleEnergy, scaleMutual, Fi, Ti, Tk);
-    }
-
-    public double polarizationEnergy(double scaleField, double scaleEnergy, double scaleMutual,
-            double Fi[], double Ti[], double Tk[]) {
-        // Generate tensors.
-        order4();
-
-        // Find the potential, field, etc at k due to the induced dipole i.
-        inducedIField();
-        // Energy of multipole k in the field of induced dipole i.
-        double energy = scaleEnergy * dotMultipoleK();
-
-        /**
-         * Get the induced-induced portion of the force.
-         */
-        Fi[0] = -0.5 * scaleMutual * (pxk * E200 + pyk * E110 + pzk * E101);
-        Fi[1] = -0.5 * scaleMutual * (pxk * E110 + pyk * E020 + pzk * E011);
-        Fi[2] = -0.5 * scaleMutual * (pxk * E101 + pyk * E011 + pzk * E002);
-
-        // Find the potential, field, etc at i due to the induced dipole k.
-        inducedKField();
-        // Energy of multipole i in the field of induced dipole k.
-        energy += scaleEnergy * dotMultipoleI();
-
-        /**
-         * Get the induced-induced portion of the force.
-         */
-        Fi[0] += 0.5 * scaleMutual * (pxi * E200 + pyi * E110 + pzi * E101);
-        Fi[1] += 0.5 * scaleMutual * (pxi * E110 + pyi * E020 + pzi * E011);
-        Fi[2] += 0.5 * scaleMutual * (pxi * E101 + pyi * E011 + pzi * E002);
-
-        /**
-         * Apply scale factors directly to induced dipole components for
-         * efficiency and convenience in computing remaining force terms and
-         * torques.
-         */
-        scaleInduced(scaleField, scaleEnergy);
-
-        // Find the potential, field, etc at k due to (ind + indCR) at i.
-        inducedIFieldCR();
-        // Torque on multipole k.
-        multipoleKTorque(Tk);
-
-        // Find the potential, field, etc at i due to (ind + indCR) at k.
-        inducedKFieldCR();
-        // Torque on multipole i.
-        multipoleITorque(Ti);
-
-        // Forces
-        inducedIdX();
-        Fi[0] -= dotMultipoleK();
-        inducedIdY();
-        Fi[1] -= dotMultipoleK();
-        inducedIdZ();
-        Fi[2] -= dotMultipoleK();
-
-        inducedKdX();
-        Fi[0] -= dotMultipoleI();
-        inducedKdY();
-        Fi[1] -= dotMultipoleI();
-        inducedKdZ();
-        Fi[2] -= dotMultipoleI();
-
-        return energy;
-    }
-
-    public double multipoleEnergyQI(double r[], double Qi[], double Qk[],
-            double Fi[], double Ti[], double Tk[]) {
-
-        // Find the QI Tensor.
-        double z[] = {0.0, 0.0, r(r)};
-        setR(z);
-
-        // Find the rotation matrix from the Global frame to the QI frame.
-        setQIRotationMatrix(r);
-
-        // Rotate multipole I and K.
-        multipoleItoQI(Qi);
-        multipoleKtoQI(Qk);
-
-        return multipoleEnergyQI(Fi, Ti, Tk);
-    }
-
-    /**
-     * Re-use R, Qi, Qk and rotation matrices from a previous call.
-     *
-     * @param Fi Output force on i.
-     * @param Ti Output torque on i.
-     * @param Tk Output torque on k.
-     *
-     * @return the energy.
-     */
-    public double multipoleEnergyQI(double Fi[], double Ti[], double Tk[]) {
-        order5QI();
-
-        // Compute the potential due to site I at site K.
-        multipoleIFieldQI();
-
-        // Dot the potential, field, field gradient with multipole K.
-        double energy = dotMultipoleK();
-
-        // Compute the torque on site K due to the field from site I.
-        multipoleKTorque(Tk);
-
-        // Compute the field at site I due to site K.
-        multipoleKFieldQI();
-        // Compute the torque on site I due to the field from site K.
-        multipoleITorque(Ti);
-
-        // Compute the force on site I F = {-dE/dx, -dE/dy, -dE/dz}.
-        multipoleIdXQI();
-        Fi[0] = -dotMultipoleK();
-        multipoleIdYQI();
-        Fi[1] = -dotMultipoleK();
-        multipoleIdZQI();
-        Fi[2] = -dotMultipoleK();
-
-        // Rotate the force and torques from the QI frame into the Global frame.
-        qiToGlobal(Fi, Ti, Tk);
-
-        return energy;
-    }
-
-    public double polarizationEnergyQI(double Ui[], double UiCR[], double Uk[], double UkCR[],
-            double Fi[], double Ti[], double Tk[]) {
-        return polarizationEnergyQI(Ui, UiCR, Uk, UkCR, 1.0, 1.0, 1.0, Fi, Ti, Tk);
-    }
-
-    public double polarizationEnergyQI(double Ui[], double UiCR[], double Uk[], double UkCR[],
-            double scaleField, double scaleEnergy, double scaleMutual,
-            double Fi[], double Ti[], double Tk[]) {
-        dipoleItoQI(Ui, UiCR);
-        dipoleKtoQI(Uk, UkCR);
-        return polarizationEnergyQI(scaleField, scaleEnergy, scaleMutual, Fi, Ti, Tk);
-    }
-
-    public double polarizationEnergyQI(double scaleField, double scaleEnergy, double scaleMutual,
-            double Fi[], double Ti[], double Tk[]) {
-
-        // Generate tensors.
-        order4QI();
-
-        // Find the potential, field, etc at k due to the induced dipole i.
-        inducedIFieldQI();
-        // Energy of multipole k in the field of induced dipole i.
-        double energy = scaleEnergy * dotMultipoleK();
-
-        /**
-         * Get the induced-induced portion of the force.
-         */
-        Fi[0] = -0.5 * scaleMutual * (pxk * E200 + pyk * E110 + pzk * E101);
-        Fi[1] = -0.5 * scaleMutual * (pxk * E110 + pyk * E020 + pzk * E011);
-        Fi[2] = -0.5 * scaleMutual * (pxk * E101 + pyk * E011 + pzk * E002);
-
-        // Find the potential, field, etc at i due to the induced dipole k.
-        inducedKFieldQI();
-        // Energy of multipole i in the field of induced dipole k.
-        energy += scaleEnergy * dotMultipoleI();
-
-        /**
-         * Get the induced-induced portion of the force.
-         */
-        Fi[0] += 0.5 * scaleMutual * (pxi * E200 + pyi * E110 + pzi * E101);
-        Fi[1] += 0.5 * scaleMutual * (pxi * E110 + pyi * E020 + pzi * E011);
-        Fi[2] += 0.5 * scaleMutual * (pxi * E101 + pyi * E011 + pzi * E002);
-
-        /**
-         * Apply scale factors directly to induced dipole components for
-         * efficiency and convenience in computing remaining force terms and
-         * torques.
-         */
-        scaleInduced(scaleField, scaleEnergy);
-
-        // Find the potential, field, etc at k due to (ind + indCR) at i.
-        inducedIFieldCRQI();
-        // Torque on multipole k.
-        multipoleKTorque(Tk);
-
-        // Find the potential, field, etc at i due to (ind + indCR) at k.
-        inducedKFieldCRQI();
-        // Torque on multipole i.
-        multipoleITorque(Ti);
-
-        // Forces
-        inducedIdXQI();
-        Fi[0] -= dotMultipoleK();
-        inducedIdYQI();
-        Fi[1] -= dotMultipoleK();
-        inducedIdZQI();
-        Fi[2] -= dotMultipoleK();
-
-        inducedKdXQI();
-        Fi[0] -= dotMultipoleI();
-        inducedKdYQI();
-        Fi[1] -= dotMultipoleI();
-        inducedKdZQI();
-        Fi[2] -= dotMultipoleI();
-
-        // Rotate the force and torques from the QI frame into the Global frame.
-        qiToGlobal(Fi, Ti, Tk);
-
-        return energy;
-    }
-
     private void validate(boolean print) {
         double[] qiVals = new double[]{qi, dxi, dyi, dzi, qxxi, qyyi, qzzi, qxyi, qxzi, qyzi};
         double[] qkVals = new double[]{qk, dxk, dyk, dzk, qxxk, qyyk, qzzk, qxyk, qxzk, qyzk};
@@ -3666,37 +3696,8 @@ public class MultipoleTensor {
         double n2 = 710643;
         double cycles = 10;
 
-//        // Steve's Tests
-//        MultipoleTensor sdlMultipoleTensor;
-//        double[] srTest, sQi, sQk, sFi, sFk, sTi, sTk;
-//        double sEglob, sEqint;
-//        // Test A
-//        sdlMultipoleTensor = new MultipoleTensor(OPERATOR.COULOMB, 5, 0.0);
-//        srTest = new double[]{0.0, 1.0, 0.0};
-//        sQi = new double[] {-1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-//        sQk = new double[] { 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-//        sFi = new double[3];
-//        sFk = new double[3];
-//        sTi = new double[3];
-//        sTk = new double[3];
-//        sEglob = sdlMultipoleTensor.multipoleEnergy(   srTest, sQi, sQk, sFi, sFk, sTi, sTk);
-//        sEqint = sdlMultipoleTensor.multipoleEnergyQI( srTest, sQi, sQk, sFi, sFk, sTi, sTk);
-//        logger.info(String.format(" r,Qi,Qk,e_GF,e_QI: %s %s %s %.4f %.4f",
-//                formArr(srTest), formArr(sQi), formArr(sQk), sEglob, sEqint));
-//        // Test B
-//        sdlMultipoleTensor = new MultipoleTensor(OPERATOR.COULOMB, 5, 0.0);
-//        srTest = new double[]{0.0, 1.0, 0.0};
-//        sQi = new double[] { 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-//        sQk = new double[] { 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-//        sFi = new double[3];
-//        sFk = new double[3];
-//        sTi = new double[3];
-//        sTk = new double[3];
-//        sEglob = sdlMultipoleTensor.multipoleEnergy(   srTest, sQi, sQk, sFi, sFk, sTi, sTk);
-//        sEqint = sdlMultipoleTensor.multipoleEnergyQI( srTest, sQi, sQk, sFi, sFk, sTi, sTk);
-//        logger.info(String.format(" r,Qi,Qk,e_GF,e_QI: %s %s %s %.4f %.4f",
-//                formArr(srTest), formArr(sQi), formArr(sQk), sEglob, sEqint));
-        MultipoleTensor multipoleTensor = new MultipoleTensor(OPERATOR.SCREENED_COULOMB, order, 1e-6);
+        MultipoleTensor multipoleTensor = new MultipoleTensor(
+                OPERATOR.SCREENED_COULOMB, COORDINATES.GLOBAL, order, 1e-6);
 
         double[] Fi = new double[3];
         double[] Ti = new double[3];
@@ -3724,7 +3725,9 @@ public class MultipoleTensor {
                 r[0] = Math.random();
                 r[1] = Math.random();
                 r[2] = Math.random();
-                double e = multipoleTensor.multipoleEnergy(r, Qi, Qk, Fi, Ti, Tk);
+                multipoleTensor.setR(r);
+                multipoleTensor.setMultipoles(Qi, Qk);
+                double e = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
                 if (Double.isNaN(e) || Double.isInfinite(e)) {
                     multipoleTensor.nanWarning(e, r, Qi, Qk, Fi, Ti, Tk);
                 }
@@ -3742,11 +3745,14 @@ public class MultipoleTensor {
             timeQIT += System.nanoTime();
 
             long timeQI = -System.nanoTime();
+            multipoleTensor.setCoordinateSystem(COORDINATES.QI);
             for (int i = 0; i < n2; i++) {
                 r[0] = 0.0;
                 r[1] = 0.0;
                 r[2] = Math.random();
-                double e = multipoleTensor.multipoleEnergyQI(r, Qi, Qk, Fi, Ti, Tk);
+                multipoleTensor.setR(r);
+                multipoleTensor.setMultipoles(Qi, Qk);
+                double e = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
                 if (Double.isNaN(e) || Double.isInfinite(e)) {
                     multipoleTensor.nanWarning(e, r, Qi, Qk, Fi, Ti, Tk);
                 }
@@ -4011,6 +4017,34 @@ public class MultipoleTensor {
 
     private static final double ONE_THIRD = 1.0 / 3.0;
     private static final double TWO_THIRD = 2.0 / 3.0;
+
+    public void setMultipoles(double Qi[], double Qk[]) {
+        switch (coordinates) {
+            case GLOBAL:
+            default:
+                setMultipoleI(Qi);
+                setMultipoleK(Qk);
+                break;
+            case QI:
+                multipoleItoQI(Qi);
+                multipoleKtoQI(Qk);
+                break;
+        }
+    }
+
+    public void setDipoles(double Ui[], double UiCR[], double Uk[], double UkCR[]) {
+        switch (coordinates) {
+            case GLOBAL:
+            default:
+                setDipoleI(Ui, UiCR);
+                setDipoleK(Uk, UkCR);
+                break;
+            case QI:
+                dipoleItoQI(Ui, UiCR);
+                dipoleKtoQI(Uk, UkCR);
+                break;
+        }
+    }
 
     private void setDipoleI(double Ui[], double UiCR[]) {
         uxi = Ui[0];

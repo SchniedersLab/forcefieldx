@@ -37,7 +37,6 @@
  */
 package ffx.potential.nonbonded;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -72,6 +71,7 @@ import edu.rit.util.Range;
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.numerics.MultipoleTensor;
+import ffx.numerics.MultipoleTensor.COORDINATES;
 import ffx.numerics.MultipoleTensor.OPERATOR;
 import ffx.numerics.VectorMath;
 import ffx.potential.bonded.Angle;
@@ -1911,11 +1911,11 @@ public class ParticleMeshEwald implements LambdaInterface {
                 long realSpaceEnergyTotalQI = -System.nanoTime();
                 parallelTeam.execute(realSpaceEnergyRegionQI);
                 realSpaceEnergyTotalQI += System.nanoTime();
-                double ereal_QI =  realSpaceEnergyRegionQI.getPermanentEnergy();
+                double ereal_QI = realSpaceEnergyRegionQI.getPermanentEnergy();
                 double ereali_QI = realSpaceEnergyRegionQI.getPolarizationEnergy();
                 logger.info(format(" (perm,pol,time): glob (%12.6f  %12.6f) %8.3f ms\n"
-                               +   "                    qi (%12.6f  %12.6f) %8.3f ms",
-                        ereal, ereali, realSpaceEnergyTotal * TO_MS, 
+                        + "                    qi (%12.6f  %12.6f) %8.3f ms",
+                        ereal, ereali, realSpaceEnergyTotal * TO_MS,
                         ereal_QI, ereali_QI, realSpaceEnergyTotalQI * TO_MS));
             }
             interactions += realSpaceEnergyRegion.getInteractions();
@@ -4485,16 +4485,16 @@ public class ParticleMeshEwald implements LambdaInterface {
                 final double ereal = gl0 * bn0 + (gl1 + gl6) * bn1 + (gl2 + gl7 + gl8) * bn2 + (gl3 + gl5) * bn3 + gl4 * bn4;
                 final double efix = scale1 * (gl0 * rr1 + (gl1 + gl6) * rr3 + (gl2 + gl7 + gl8) * rr5 + (gl3 + gl5) * rr7 + gl4 * rr9);
                 final double e = selfScale * l2 * (ereal - efix);
-                
+
                 if (DEBUG > 1) {
                     if (i == 0) {
-                        logger.info(format(" (GlobalFrame-0) ai,ak,e;ereal,efix,scale: (%s,%s,%.4f) (%.4f,%.4f,%.4f)", 
-                                atoms[i].toNameNumberString(), atoms[k].toNameNumberString(), 
+                        logger.info(format(" (GlobalFrame-0) ai,ak,e;ereal,efix,scale: (%s,%s,%.4f) (%.4f,%.4f,%.4f)",
+                                atoms[i].toNameNumberString(), atoms[k].toNameNumberString(),
                                 e, ereal, efix, scale));
                     }
 //                    logger.info(format(" (GlobalFrame) e,ereal,efix,ss,l2: %.4f %.4f %.4f %.4f %.4f", e, ereal, efix, selfScale, l2));
                 }
-                
+
                 if (gradient) {
                     final double gf1 = bn1 * gl0 + bn2 * (gl1 + gl6) + bn3 * (gl2 + gl7 + gl8) + bn4 * (gl3 + gl5) + bn5 * gl4;
                     final double gf2 = -ck * bn1 + sc4 * bn2 - sc6 * bn3;
@@ -4587,12 +4587,12 @@ public class ParticleMeshEwald implements LambdaInterface {
                         ltyk_local[k] += prefactor * ttm3y;
                         ltzk_local[k] += prefactor * ttm3z;
                         if (DEBUG > 0 && i == 0) {
-                            double Fi[] = new double[]{ftm2x,ftm2y,ftm2z};
-                            double Ti[] = new double[]{ttm2x,ttm2y,ttm2z};
-                            double Tk[] = new double[]{ttm3x,ttm3y,ttm3z};
-                            logger.info(format("(Gb) dUdLdX t1: i,k,pref,Fi,Ti,Tk: %d, %d, %.3f, %s, %s, %s", 
+                            double Fi[] = new double[]{ftm2x, ftm2y, ftm2z};
+                            double Ti[] = new double[]{ttm2x, ttm2y, ttm2z};
+                            double Tk[] = new double[]{ttm3x, ttm3y, ttm3z};
+                            logger.info(format("(Gb) dUdLdX t1: i,k,pref,Fi,Ti,Tk: %d, %d, %.3f, %s, %s, %s",
                                     i, k, prefactor,
-                                    formatArray(Fi),formatArray(Ti),formatArray(Tk)));
+                                    formatArray(Fi), formatArray(Ti), formatArray(Tk)));
                         }
                     }
                 }
@@ -5022,12 +5022,14 @@ public class ParticleMeshEwald implements LambdaInterface {
                 ttm3iz = ttm3iz - ttm3riz;
 
                 /**
-                    logger.info(format(" Force    (%d,%d) (%16.8f %16.8f %16.8f)", i, k, ftm2ix, ftm2iy, ftm2iz));
-                    logger.info(format(" Torquei  (%d,%d) (%16.8f %16.8f %16.8f)", i, k, ttm2ix, ttm2iy, ttm2iz));
-                    logger.info(format(" Torquek  (%d,%d) (%16.8f %16.8f %16.8f)", i, k, ttm3ix, ttm3iy, ttm3iz));
-                    logger.info(format(" Energy   (%d,%d) (%16.8f %16.8f %16.8f)", i, k, ereal, efix, ereal - efix));
-                */
-
+                 * logger.info(format(" Force (%d,%d) (%16.8f %16.8f %16.8f)",
+                 * i, k, ftm2ix, ftm2iy, ftm2iz)); logger.info(format(" Torquei
+                 * (%d,%d) (%16.8f %16.8f %16.8f)", i, k, ttm2ix, ttm2iy,
+                 * ttm2iz)); logger.info(format(" Torquek (%d,%d) (%16.8f %16.8f
+                 * %16.8f)", i, k, ttm3ix, ttm3iy, ttm3iz));
+                 * logger.info(format(" Energy (%d,%d) (%16.8f %16.8f %16.8f)",
+                 * i, k, ereal, efix, ereal - efix));
+                 */
                 double scalar = ELECTRIC * polarizationScale * selfScale;
                 gX[i] += scalar * ftm2ix;
                 gY[i] += scalar * ftm2iy;
@@ -5170,8 +5172,11 @@ public class ParticleMeshEwald implements LambdaInterface {
 
             // Force and torque contributions for a single interaction.
             private final double[] Fi, Ti, Tk;
+            private final double[] permFi, permTi, permTk;
+            private final double[] polFi, polTi, polTk;
             private final double[] FiC, TiC, TkC;
             private final double[] FiT, TiT, TkT;
+            private final double[] energy;
             private final MultipoleTensor tensor;
 
             // Extra padding to avert cache interference.
@@ -5186,13 +5191,21 @@ public class ParticleMeshEwald implements LambdaInterface {
                 Fi = new double[3];
                 Ti = new double[3];
                 Tk = new double[3];
+                permFi = new double[3];
+                permTi = new double[3];
+                permTk = new double[3];
+                polFi = new double[3];
+                polTi = new double[3];
+                polTk = new double[3];
                 FiC = new double[3];
                 TiC = new double[3];
                 TkC = new double[3];
                 FiT = new double[3];
                 TiT = new double[3];
                 TkT = new double[3];
-                tensor = new MultipoleTensor(OPERATOR.SCREENED_COULOMB, 5, aewald);
+                energy = new double[2];
+                tensor = new MultipoleTensor(
+                        OPERATOR.SCREENED_COULOMB, COORDINATES.QI, 5, aewald);
             }
 
             private void init() {
@@ -5494,34 +5507,39 @@ public class ParticleMeshEwald implements LambdaInterface {
                         scale = masking_local[k];
                         scalep = maskingp_local[k];
                         scaled = maskingd_local[k];
-                        if (doPermanentRealSpace) {
-                            double ei = 0.0;
-                            try {
-                                ei = permanentPair(dx_buff, globalMultipolei, globalMultipolek);
-//                                log(" (QuasiInternal)  ", i,k,r,ei);
-                            } catch (ArithmeticException ex) {
-                                logger.info(format(" i,k,l,lB,dx,dxBuff: %d, %d, %.2f, %.2f, %s, %s", 
-                                        i, k, lambda, lBufferDistance, formatArray(dx_local), formatArray(dx_buff)));
-                                throw ex;
-                            }
-                            if (Double.isNaN(ei) || Double.isInfinite(ei)) {
-                                logPermanentError(ei, i, k, globalMultipolei, globalMultipolek);
-                            }
-                            permanentEnergy += ei;
-                            count++;
-                        }
-                        if (polarization != Polarization.NONE && doPolarization) {
-                            // Polarization does not use the softcore tensors (so don't include buffer distance here).
-                            double damp = min(pti, ptk);
-                            double aiak = pdi * pdk;
-                            double ei = polarizationPair(dx_local, globalMultipolei, globalMultipolek,
-                                    inducedDipolei, inducedDipolek, inducedDipolepi, inducedDipolepk,
-                                    damp, aiak);
-                            if (Double.isNaN(ei) || Double.isInfinite(ei)) {
-                                logPolarizationError(ei, i, k, inducedDipolei, inducedDipolek);
-                            }
-                            inducedEnergy += ei;
-                        }
+
+                        double damp = min(pti, ptk);
+                        double aiak = pdi * pdk;
+                        double energy[] = new double[2];
+                        double eTotal = pair(dx_local, globalMultipolei, globalMultipolek,
+                                inducedDipolei, inducedDipolek, inducedDipolepi, inducedDipolepk,
+                                damp, aiak, energy);
+                        permanentEnergy += energy[0];
+                        inducedEnergy += energy[1];
+                        count++;
+
+                        /**
+                         * if (doPermanentRealSpace) { double ei = 0.0; try { ei
+                         * = permanentPair(dx_buff, globalMultipolei,
+                         * globalMultipolek); } catch (ArithmeticException ex) {
+                         * logger.info(format(" i,k,l,lB,dx,dxBuff: %d, %d,
+                         * %.2f, %.2f, %s, %s", i, k, lambda, lBufferDistance,
+                         * formatArray(dx_local), formatArray(dx_buff))); throw
+                         * ex; } if (Double.isNaN(ei) || Double.isInfinite(ei))
+                         * { logPermanentError(ei, i, k, globalMultipolei,
+                         * globalMultipolek); } permanentEnergy += ei; count++;
+                         * } if (polarization != Polarization.NONE &&
+                         * doPolarization) { // Polarization does not use the
+                         * softcore tensors (so don't include buffer distance
+                         * here). double damp = min(pti, ptk); double aiak = pdi
+                         * * pdk; double ei = polarizationPair(dx_local,
+                         * globalMultipolei, globalMultipolek, inducedDipolei,
+                         * inducedDipolek, inducedDipolepi, inducedDipolepk,
+                         * damp, aiak); if (Double.isNaN(ei) ||
+                         * Double.isInfinite(ei)) { logPolarizationError(ei, i,
+                         * k, inducedDipolei, inducedDipolek); } inducedEnergy
+                         * += ei; }
+                         */
                     }
                     /**
                      * Reset masking scale factors.
@@ -5532,42 +5550,102 @@ public class ParticleMeshEwald implements LambdaInterface {
                 }
             }
 
-            /**
-             * Evaluate the real space permanent energy for a pair of multipole
-             * sites.
-             *
-             * @return the permanent multipole energy.
-             */
-            private double permanentPair(double[] r, double[] Qi, double[] Qk) {
+            private double pair(double[] r, double[] Qi, double[] Qk,
+                    double[] ui, double[] uk, double[] uiCR, double[] ukCR,
+                    double damp, double aiak, double energy[]) {
+
+                /**
+                 * Compute screened real space interactions.
+                 */
+                tensor.setR(r);
+                tensor.setMultipoles(Qi, Qk);
                 tensor.setOperator(OPERATOR.SCREENED_COULOMB);
-                final double ereal = tensor.multipoleEnergyQI(r, Qi, Qk, Fi, Ti, Tk);
-                double efix = 0.0;
+                tensor.generateTensor5();
+
+                double ePermScreened = 0.0;
+                if (doPermanentRealSpace) {
+                    ePermScreened = tensor.multipoleEnergy(permFi, permTi, permTk);
+                }
+
+                double mutualScale = 1.0;
+                if (polarization == Polarization.DIRECT) {
+                    mutualScale = 0.0;
+                }
+                double ePolScreened = 0.0;
+                if (polarization != Polarization.NONE && doPolarization) {
+                    tensor.setDipoles(ui, uiCR, uk, ukCR);
+                    ePolScreened = tensor.polarizationEnergy(
+                            1.0, 1.0, mutualScale, polFi, polTi, polTk);
+                }
+
+                /**
+                 * Subtract away masked Coulomb interactions included in PME.
+                 */
                 double scale1 = 1.0 - scale;
-
-                if (scale1 != 0.0) {
+                double scaled1 = 1.0 - scaled;
+                double scalep1 = 1.0 - scalep;
+                if (scale1 != 0.0 || scaled1 != 0.0 || scalep1 != 0.0) {
                     tensor.setOperator(OPERATOR.COULOMB);
-                    efix = scale1 * tensor.multipoleEnergyQI(FiC, TiC, TkC);
-                    Fi[0] -= scale1 * FiC[0];
-                    Fi[1] -= scale1 * FiC[1];
-                    Fi[2] -= scale1 * FiC[2];
-                    Ti[0] -= scale1 * TiC[0];
-                    Ti[1] -= scale1 * TiC[1];
-                    Ti[2] -= scale1 * TiC[2];
-                    Tk[0] -= scale1 * TkC[0];
-                    Tk[1] -= scale1 * TkC[1];
-                    Tk[2] -= scale1 * TkC[2];
+                    tensor.generateTensor5();
                 }
 
-                final double e = selfScale * l2 * (ereal - efix);
-                if (DEBUG > 1) {
-                    if (i == 0) {
-                        logger.info(format(" (QuasiInternal-0) ai,ak,e;ereal,efix,scale,l2: (%s,%s,%.4f) (%.4f,%.4f,%.4f) %.2f", 
-                                atoms[i].toNameNumberString(), atoms[k].toNameNumberString(), 
-                                e, ereal, efix, scale, l2));
-                        
-                    }
-//                    logger.info(format(" (QuasiInternal) e,ereal,efix,ss,l2: %.4f %.4f %.4f %.4f %.4f", e, ereal, efix, selfScale, l2));
+                double ePermCoulomb = 0.0;
+                if (doPermanentRealSpace && scale1 != 0.0) {
+                    ePermCoulomb = scale1 * tensor.multipoleEnergy(FiC, TiC, TkC);
+                    permFi[0] -= scale1 * FiC[0];
+                    permFi[1] -= scale1 * FiC[1];
+                    permFi[2] -= scale1 * FiC[2];
+                    permTi[0] -= scale1 * TiC[0];
+                    permTi[1] -= scale1 * TiC[1];
+                    permTi[2] -= scale1 * TiC[2];
+                    permTk[0] -= scale1 * TkC[0];
+                    permTk[1] -= scale1 * TkC[1];
+                    permTk[2] -= scale1 * TkC[2];
                 }
+
+                double ePolCoulomb = 0.0;
+                double eThole = 0.0;
+                if (polarization != Polarization.NONE && doPolarization) {
+                    if (scaled1 != 0.0 || scalep1 != 0.0) {
+                        ePolCoulomb += tensor.polarizationEnergy(
+                                scaled1, scalep1, 0.0, FiC, TiC, TkC);
+                        polFi[0] -= FiC[0];
+                        polFi[1] -= FiC[1];
+                        polFi[2] -= FiC[2];
+                        polTi[0] -= TiC[0];
+                        polTi[1] -= TiC[1];
+                        polTi[2] -= TiC[2];
+                        polTk[0] -= TkC[0];
+                        polTk[1] -= TkC[1];
+                        polTk[2] -= TkC[2];
+                    }
+
+                    /**
+                     * Account for Thole Damping.
+                     */
+                    tensor.setTholeDamping(damp, aiak);
+                    boolean applyThole = tensor.applyDamping();
+                    if (applyThole) {
+                        tensor.setOperator(OPERATOR.THOLE_FIELD);
+                        tensor.generateTensor4();
+                        tensor.setDipoles(ui, uiCR, uk, ukCR);
+
+                        eThole = tensor.polarizationEnergy(scaled, scalep, mutualScale, FiT, TiT, TkT);
+                        polFi[0] -= FiT[0];
+                        polFi[1] -= FiT[1];
+                        polFi[2] -= FiT[2];
+                        polTi[0] -= TiT[0];
+                        polTi[1] -= TiT[1];
+                        polTi[2] -= TiT[2];
+                        polTk[0] -= TkT[0];
+                        polTk[1] -= TkT[1];
+                        polTk[2] -= TkT[2];
+                    }
+                }
+
+                final double ePerm = selfScale * l2 * (ePermScreened - ePermCoulomb);
+                energy[0] = ePerm;
+
                 if (gradient) {
                     double prefactor = ELECTRIC * selfScale * l2;
                     gX[i] += prefactor * Fi[0];
@@ -5600,110 +5678,14 @@ public class ParticleMeshEwald implements LambdaInterface {
                         ltxk_local[k] += prefactor * Tk[0];
                         ltyk_local[k] += prefactor * Tk[1];
                         ltzk_local[k] += prefactor * Tk[2];
-                        if (DEBUG > 0 && i == 0) {
-                            logger.info(format("(QI) dUdLdX t1: i,k,pref,Fi,Ti,Tk: %d, %d, %.3f, %s, %s, %s", 
-                                    i, k, prefactor,
-                                    formatArray(Fi),formatArray(Ti),formatArray(Tk)));
-                        }
                     }
-                    /*
-                    if (lamedhTerm && softLdh) {
-                        for (ExtendedVariable esv : esvList) {
-                            double prefactorLdh = ELECTRIC * selfScale
-                                    * dEdLdhSign[esv.index] * dldhPowPerm[esv.index];
-                            ldhgX[esv.index][i] += prefactorLdh * rgXYZ[0];
-                            ldhgY[esv.index][i] += prefactorLdh * rgXYZ[1];
-                            ldhgZ[esv.index][i] += prefactorLdh * rgXYZ[2];
-                            ldhtX[esv.index][i] += prefactorLdh * rtXYZi[0];
-                            ldhtY[esv.index][i] += prefactorLdh * rtXYZi[1];
-                            ldhtZ[esv.index][i] += prefactorLdh * rtXYZi[2];
-                            ldhxk_local[esv.index][k] -= prefactorLdh * rgXYZ[0];
-                            ldhyk_local[esv.index][k] -= prefactorLdh * rgXYZ[1];
-                            ldhzk_local[esv.index][k] -= prefactorLdh * rgXYZ[2];
-                            ldhtxk_local[esv.index][k] += prefactorLdh * rtXYZk[0];
-                            ldhtyk_local[esv.index][k] += prefactorLdh * rtXYZk[1];
-                            ldhtzk_local[esv.index][k] += prefactorLdh * rtXYZk[2];
-                        }
-                    } */
                 }
 
-                return e;
-            }
-
-            /**
-             * Evaluate the polarization energy for a pair of polarizable
-             * multipole sites.
-             *
-             * @return the polarization energy.
-             */
-            private double polarizationPair(double[] r, double[] Qi, double[] Qk,
-                    double[] ui, double[] uk, double[] uiCR, double[] ukCR,
-                    double damp, double aiak) {
-
-                double mutualScale = 1.0;
-                if (polarization == Polarization.DIRECT) {
-                    mutualScale = 0.0;
-                }
-
-                tensor.setOperator(OPERATOR.SCREENED_COULOMB);
-                final double ereal = tensor.polarizationEnergyQI(ui, uiCR, uk, ukCR, 1.0, 1.0, mutualScale, Fi, Ti, Tk);
-                // logger.info(format(" Screened (%d,%d) (%16.8f %16.8f %16.8f)", i, k, Fi[0], Fi[1], Fi[2]));
-
-                double efix = 0.0;
-                /**
-                 * Account for Thole Damping.
-                 */
-                tensor.setTholeDamping(damp, aiak);
-                boolean applyThole = tensor.applyDamping();
-                if (applyThole) {
-                    // Apply Thole scaling to induced dipole components.
-                    tensor.setOperator(OPERATOR.THOLE_FIELD);
-                    efix = tensor.polarizationEnergyQI(ui, uiCR, uk, ukCR, scaled, scalep, mutualScale, FiT, TiT, TkT);
-                    Fi[0] -= FiT[0];
-                    Fi[1] -= FiT[1];
-                    Fi[2] -= FiT[2];
-                    Ti[0] -= TiT[0];
-                    Ti[1] -= TiT[1];
-                    Ti[2] -= TiT[2];
-                    Tk[0] -= TkT[0];
-                    Tk[1] -= TkT[1];
-                    Tk[2] -= TkT[2];
-                    //    logger.info(format(" Thole    (%d,%d) (%16.8f %16.8f %16.8f)", i, k, TiT[0], TiT[1], TiT[2]));
-                }
-
-                /**
-                 * Account for masked interactions.
-                 */
-                double scaled1 = 1.0 - scaled;
-                double scalep1 = 1.0 - scalep;
-                if (scaled1 != 0.0 || scalep1 != 0.0) {
-                    tensor.setOperator(OPERATOR.COULOMB);
-                    efix += tensor.polarizationEnergyQI(ui, uiCR, uk, ukCR, scaled1, scalep1, 0.0, FiC, TiC, TkC);
-                    Fi[0] -= FiC[0];
-                    Fi[1] -= FiC[1];
-                    Fi[2] -= FiC[2];
-                    Ti[0] -= TiC[0];
-                    Ti[1] -= TiC[1];
-                    Ti[2] -= TiC[2];
-                    Tk[0] -= TkC[0];
-                    Tk[1] -= TkC[1];
-                    Tk[2] -= TkC[2];
-                    //    logger.info(format(" Coulomb  (%d,%d) (%16.8f %16.8f %16.8f)", i, k, TiC[0], TiC[1], TiC[2]));
-                }
-
-                /**
-                    logger.info(format(" Force  (%d,%d) (%16.8f %16.8f %16.8f) %16.8f %16.8f ",
-                            i, k, Fi[0], Fi[1], Fi[2], scaled, scalep));
-                    logger.info(format(" Torquei(%d,%d) (%16.8f %16.8f %16.8f)",
-                            i, k, Ti[0], Ti[1], Ti[2]));
-                    logger.info(format(" Torquek(%d,%d) (%16.8f %16.8f %16.8f)",
-                            i, k, Tk[0], Tk[1], Tk[2]));
-                    logger.info(format(" Energy (%d,%d) (%16.8f %16.8f %16.8f)", i, k, ereal, efix, ereal - efix));
-                */
-
-                final double e = selfScale * 0.5 * (ereal - efix);
+                final double e = selfScale * 0.5 * (ePolScreened - ePolCoulomb - eThole);
                 if (!(gradient || lambdaTerm || lamedhTerm)) {
-                    return polarizationScale * e;
+                    double ePol = polarizationScale * e;
+                    energy[1] = ePol;
+                    return ePerm + ePol;
                 }
 
                 double scalar = ELECTRIC * polarizationScale * selfScale;
@@ -5736,28 +5718,129 @@ public class ParticleMeshEwald implements LambdaInterface {
                     ltyk_local[k] += scalar * Tk[1];
                     ltzk_local[k] += scalar * Tk[2];
                 }
-                if (lamedhTerm) {
-                    for (ExtendedVariable esv : esvList) {
-                        dUdLdh[esv.index] += dEdLdhSign[esv.index] * dldhPowPol[esv.index] * e;
-                        d2UdLdh2[esv.index] += dEdLdhSign[esv.index] * d2ldhPowPol[esv.index] * e;
-                        scalar = ELECTRIC * dEdLdhSign[esv.index] * dldhPowPol[esv.index] * selfScale;
-                        ldhgX[esv.index][i] += scalar * Fi[0];
-                        ldhgY[esv.index][i] += scalar * Fi[1];
-                        ldhgZ[esv.index][i] += scalar * Fi[2];
-                        ldhtX[esv.index][i] += scalar * Ti[0];
-                        ldhtY[esv.index][i] += scalar * Ti[1];
-                        ldhtZ[esv.index][i] += scalar * Ti[2];
-                        ldhxk_local[esv.index][k] -= scalar * Fi[0];
-                        ldhyk_local[esv.index][k] -= scalar * Fi[1];
-                        ldhzk_local[esv.index][k] -= scalar * Fi[2];
-                        ldhtxk_local[esv.index][k] += scalar * Tk[0];
-                        ldhtyk_local[esv.index][k] += scalar * Tk[1];
-                        ldhtzk_local[esv.index][k] += scalar * Tk[2];
-                    }
-                }
-                return polarizationScale * e;
+
+                double ePol = polarizationScale * e;
+                energy[1] = ePol;
+
+                return ePerm + ePol;
             }
 
+            /**
+             * private double permanentPair(double[] r, double[] Qi, double[]
+             * Qk) { tensor.setOperator(OPERATOR.SCREENED_COULOMB); final double
+             * ereal = tensor.multipoleEnergyQI(r, Qi, Qk, Fi, Ti, Tk);
+             *
+             * double efix = 0.0; double scale1 = 1.0 - scale; if (scale1 !=
+             * 0.0) { tensor.setOperator(OPERATOR.COULOMB); efix = scale1 *
+             * tensor.multipoleEnergyQI(FiC, TiC, TkC); Fi[0] -= scale1 *
+             * FiC[0]; Fi[1] -= scale1 * FiC[1]; Fi[2] -= scale1 * FiC[2]; Ti[0]
+             * -= scale1 * TiC[0]; Ti[1] -= scale1 * TiC[1]; Ti[2] -= scale1 *
+             * TiC[2]; Tk[0] -= scale1 * TkC[0]; Tk[1] -= scale1 * TkC[1]; Tk[2]
+             * -= scale1 * TkC[2]; } final double e = selfScale * l2 * (ereal -
+             * efix); if (gradient) { double prefactor = ELECTRIC * selfScale *
+             * l2; gX[i] += prefactor * Fi[0]; gY[i] += prefactor * Fi[1]; gZ[i]
+             * += prefactor * Fi[2]; tX[i] += prefactor * Ti[0]; tY[i] +=
+             * prefactor * Ti[1]; tZ[i] += prefactor * Ti[2]; gxk_local[k] -=
+             * prefactor * Fi[0]; gyk_local[k] -= prefactor * Fi[1];
+             * gzk_local[k] -= prefactor * Fi[2]; txk_local[k] += prefactor *
+             * Tk[0]; tyk_local[k] += prefactor * Tk[1]; tzk_local[k] +=
+             * prefactor * Tk[2];
+             *
+             * if (lambdaTerm && soft) { prefactor = ELECTRIC * selfScale *
+             * dEdLSign * dlPowPerm; lgX[i] += prefactor * Fi[0]; lgY[i] +=
+             * prefactor * Fi[1]; lgZ[i] += prefactor * Fi[2]; ltX[i] +=
+             * prefactor * Ti[0]; ltY[i] += prefactor * Ti[1]; ltZ[i] +=
+             * prefactor * Ti[2]; lxk_local[k] -= prefactor * Fi[0];
+             * lyk_local[k] -= prefactor * Fi[1]; lzk_local[k] -= prefactor *
+             * Fi[2]; ltxk_local[k] += prefactor * Tk[0]; ltyk_local[k] +=
+             * prefactor * Tk[1]; ltzk_local[k] += prefactor * Tk[2]; } if
+             * (lamedhTerm && softLdh) { for (ExtendedVariable esv : esvList) {
+             * double prefactorLdh = ELECTRIC * selfScale dEdLdhSign[esv.index]
+             * * dldhPowPerm[esv.index]; ldhgX[esv.index][i] += prefactorLdh *
+             * rgXYZ[0]; ldhgY[esv.index][i] += prefactorLdh * rgXYZ[1];
+             * ldhgZ[esv.index][i] += prefactorLdh * rgXYZ[2];
+             * ldhtX[esv.index][i] += prefactorLdh * rtXYZi[0];
+             * ldhtY[esv.index][i] += prefactorLdh * rtXYZi[1];
+             * ldhtZ[esv.index][i] += prefactorLdh * rtXYZi[2];
+             * ldhxk_local[esv.index][k] -= prefactorLdh * rgXYZ[0];
+             * ldhyk_local[esv.index][k] -= prefactorLdh * rgXYZ[1];
+             * ldhzk_local[esv.index][k] -= prefactorLdh * rgXYZ[2];
+             * ldhtxk_local[esv.index][k] += prefactorLdh * rtXYZk[0];
+             * ldhtyk_local[esv.index][k] += prefactorLdh * rtXYZk[1];
+             * ldhtzk_local[esv.index][k] += prefactorLdh * rtXYZk[2]; } } }
+             *
+             * return e; }
+             */
+            /**
+             * private double polarizationPair(double[] r, double[] Qi, double[]
+             * Qk, double[] ui, double[] uk, double[] uiCR, double[] ukCR,
+             * double damp, double aiak) {
+             *
+             * double mutualScale = 1.0; if (polarization ==
+             * Polarization.DIRECT) { mutualScale = 0.0; }
+             *
+             * tensor.setOperator(OPERATOR.SCREENED_COULOMB); final double ereal
+             * = tensor.polarizationEnergyQI(ui, uiCR, uk, ukCR, 1.0, 1.0,
+             * mutualScale, Fi, Ti, Tk); // logger.info(format(" Screened
+             * (%d,%d) (%16.8f %16.8f %16.8f)", i, k, Fi[0], Fi[1], Fi[2]));
+             *
+             * double efix = 0.0;
+             *
+             * tensor.setTholeDamping(damp, aiak); boolean applyThole =
+             * tensor.applyDamping(); if (applyThole) { // Apply Thole scaling
+             * to induced dipole components.
+             * tensor.setOperator(OPERATOR.THOLE_FIELD); efix =
+             * tensor.polarizationEnergyQI(ui, uiCR, uk, ukCR, scaled, scalep,
+             * mutualScale, FiT, TiT, TkT); Fi[0] -= FiT[0]; Fi[1] -= FiT[1];
+             * Fi[2] -= FiT[2]; Ti[0] -= TiT[0]; Ti[1] -= TiT[1]; Ti[2] -=
+             * TiT[2]; Tk[0] -= TkT[0]; Tk[1] -= TkT[1]; Tk[2] -= TkT[2]; //
+             * logger.info(format(" Thole (%d,%d) (%16.8f %16.8f %16.8f)", i, k,
+             * TiT[0], TiT[1], TiT[2])); }
+             *
+             * double scaled1 = 1.0 - scaled; double scalep1 = 1.0 - scalep; if
+             * (scaled1 != 0.0 || scalep1 != 0.0) {
+             * tensor.setOperator(OPERATOR.COULOMB); efix +=
+             * tensor.polarizationEnergyQI(ui, uiCR, uk, ukCR, scaled1, scalep1,
+             * 0.0, FiC, TiC, TkC); Fi[0] -= FiC[0]; Fi[1] -= FiC[1]; Fi[2] -=
+             * FiC[2]; Ti[0] -= TiC[0]; Ti[1] -= TiC[1]; Ti[2] -= TiC[2]; Tk[0]
+             * -= TkC[0]; Tk[1] -= TkC[1]; Tk[2] -= TkC[2]; //
+             * logger.info(format(" Coulomb (%d,%d) (%16.8f %16.8f %16.8f)", i,
+             * k, TiC[0], TiC[1], TiC[2])); }
+             *
+             * final double e = selfScale * 0.5 * (ereal - efix); if (!(gradient
+             * || lambdaTerm || lamedhTerm)) { return polarizationScale * e; }
+             *
+             * double scalar = ELECTRIC * polarizationScale * selfScale; gX[i]
+             * += scalar * Fi[0]; gY[i] += scalar * Fi[1]; gZ[i] += scalar *
+             * Fi[2]; tX[i] += scalar * Ti[0]; tY[i] += scalar * Ti[1]; tZ[i] +=
+             * scalar * Ti[2]; gxk_local[k] -= scalar * Fi[0]; gyk_local[k] -=
+             * scalar * Fi[1]; gzk_local[k] -= scalar * Fi[2]; txk_local[k] +=
+             * scalar * Tk[0]; tyk_local[k] += scalar * Tk[1]; tzk_local[k] +=
+             * scalar * Tk[2]; if (lambdaTerm) { dUdL += dEdLSign * dlPowPol *
+             * e; d2UdL2 += dEdLSign * d2lPowPol * e; scalar = ELECTRIC *
+             * dEdLSign * dlPowPol * selfScale; lgX[i] += scalar * Fi[0]; lgY[i]
+             * += scalar * Fi[1]; lgZ[i] += scalar * Fi[2]; ltX[i] += scalar *
+             * Ti[0]; ltY[i] += scalar * Ti[1]; ltZ[i] += scalar * Ti[2];
+             * lxk_local[k] -= scalar * Fi[0]; lyk_local[k] -= scalar * Fi[1];
+             * lzk_local[k] -= scalar * Fi[2]; ltxk_local[k] += scalar * Tk[0];
+             * ltyk_local[k] += scalar * Tk[1]; ltzk_local[k] += scalar * Tk[2];
+             * } if (lamedhTerm) { for (ExtendedVariable esv : esvList) {
+             * dUdLdh[esv.index] += dEdLdhSign[esv.index] *
+             * dldhPowPol[esv.index] * e; d2UdLdh2[esv.index] +=
+             * dEdLdhSign[esv.index] * d2ldhPowPol[esv.index] * e; scalar =
+             * ELECTRIC * dEdLdhSign[esv.index] * dldhPowPol[esv.index] *
+             * selfScale; ldhgX[esv.index][i] += scalar * Fi[0];
+             * ldhgY[esv.index][i] += scalar * Fi[1]; ldhgZ[esv.index][i] +=
+             * scalar * Fi[2]; ldhtX[esv.index][i] += scalar * Ti[0];
+             * ldhtY[esv.index][i] += scalar * Ti[1]; ldhtZ[esv.index][i] +=
+             * scalar * Ti[2]; ldhxk_local[esv.index][k] -= scalar * Fi[0];
+             * ldhyk_local[esv.index][k] -= scalar * Fi[1];
+             * ldhzk_local[esv.index][k] -= scalar * Fi[2];
+             * ldhtxk_local[esv.index][k] += scalar * Tk[0];
+             * ldhtyk_local[esv.index][k] += scalar * Tk[1];
+             * ldhtzk_local[esv.index][k] += scalar * Tk[2]; } } return
+             * polarizationScale * e; }
+             */
             private void applyScaleFactors(Atom ai) {
                 for (Atom ak : ai.get1_5s()) {
                     masking_local[ak.xyzIndex - 1] = m15scale;
