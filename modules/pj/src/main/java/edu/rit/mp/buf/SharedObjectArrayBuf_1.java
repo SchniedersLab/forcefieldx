@@ -42,7 +42,6 @@ import edu.rit.util.Range;
  * class for further information.
  *
  * @param <T> Data type of the objects in the buffer.
- *
  * @author Alan Kaminsky
  * @version 01-Apr-2012
  */
@@ -64,14 +63,12 @@ public class SharedObjectArrayBuf_1<T>
 
 // Exported operations.
     /**
+     * {@inheritDoc}
+     *
      * Obtain the given item from this buffer.
      * <P>
      * The <TT>get()</TT> method must not block the calling thread; if it does,
      * all message I/O in MP will be blocked.
-     *
-     * @param i Item index in the range 0 .. <TT>length()</TT>-1.
-     *
-     * @return Item at index <TT>i</TT>.
      */
     public T get(int i) {
         return myArray.get(myArrayOffset + i);
@@ -85,6 +82,7 @@ public class SharedObjectArrayBuf_1<T>
      *
      * @param i Item index in the range 0 .. <TT>length()</TT>-1.
      * @param item Item to be stored at index <TT>i</TT>.
+     * @param item Item to be stored at index <TT>i</TT>.
      */
     public void put(int i,
             T item) {
@@ -93,11 +91,10 @@ public class SharedObjectArrayBuf_1<T>
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Create a buffer for performing parallel reduction using the given binary
      * operation. The results of the reduction are placed into this buffer.
-     *
-     * @param op Binary operation.
-     *
      * @exception ClassCastException (unchecked exception) Thrown if this
      * buffer's element data type and the given binary operation's argument data
      * type are not the same.

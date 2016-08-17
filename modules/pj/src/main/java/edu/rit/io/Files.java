@@ -49,7 +49,6 @@ public class Files {
      *
      * @param file File.
      * @param rank Rank.
-     *
      * @return File with rank appended.
      */
     public static File fileForRank(File file,
@@ -66,7 +65,6 @@ public class Files {
      *
      * @param filename File name.
      * @param rank Rank.
-     *
      * @return File name with rank appended.
      */
     public static String fileNameForRank(String filename,
@@ -84,7 +82,6 @@ public class Files {
      *
      * @param file File.
      * @param suffix Suffix.
-     *
      * @return File with suffix appended.
      */
     public static File fileAppend(File file,
@@ -101,7 +98,6 @@ public class Files {
      *
      * @param filename File name.
      * @param suffix Suffix.
-     *
      * @return File name with suffix appended.
      */
     public static String fileNameAppend(String filename,
@@ -124,7 +120,6 @@ public class Files {
      *
      * @param file File.
      * @param prefix Prefix.
-     *
      * @return File with prefix prepended.
      */
     public static File filePrepend(File file,
@@ -143,7 +138,6 @@ public class Files {
      *
      * @param filename File name.
      * @param prefix Prefix.
-     *
      * @return File name with prefix prepended.
      */
     public static String fileNamePrepend(String filename,

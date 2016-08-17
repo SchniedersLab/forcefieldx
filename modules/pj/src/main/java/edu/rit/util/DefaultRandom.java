@@ -77,9 +77,9 @@ public class DefaultRandom
 
 // Exported operations.
     /**
-     * Set this PRNG's seed. Any seed value is allowed.
+     * {@inheritDoc}
      *
-     * @param seed Seed.
+     * Set this PRNG's seed. Any seed value is allowed.
      */
     public void setSeed(long seed) {
         this.seed = hash(seed);
@@ -97,12 +97,10 @@ public class DefaultRandom
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Return the 64-bit pseudorandom value the given number of positions ahead
      * in this PRNG's sequence.
-     *
-     * @param skip Number of positions to skip, assumed to be &gt; 0.
-     *
-     * @return Pseudorandom value.
      */
     protected long next(long skip) {
         seed += skip;

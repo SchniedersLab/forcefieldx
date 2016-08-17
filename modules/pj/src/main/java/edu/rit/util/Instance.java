@@ -78,9 +78,7 @@ public class Instance {
      * loader is used.
      *
      * @param s Constructor expression string.
-     *
      * @return New instance.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <TT>s</TT> does not obey the required syntax.
      * @exception ClassNotFoundException Thrown if the given class cannot be
@@ -93,6 +91,11 @@ public class Instance {
      * because the calling method does not have access to the given constructor.
      * @exception InvocationTargetException Thrown if the given constructor
      * throws an exception.
+     * @throws java.lang.ClassNotFoundException if any.
+     * @throws java.lang.NoSuchMethodException if any.
+     * @throws java.lang.InstantiationException if any.
+     * @throws java.lang.IllegalAccessException if any.
+     * @throws java.lang.reflect.InvocationTargetException if any.
      */
     public static Object newInstance(String s)
             throws

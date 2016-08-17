@@ -37,8 +37,7 @@
  */
 package ffx.autoparm;
 
-//Java Imports
-//import java.io.BufferedReader;
+// Java Imports
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -46,15 +45,12 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import org.openscience.cdk.aromaticity.Aromaticity;
 import org.openscience.cdk.aromaticity.ElectronDonation;
 import org.openscience.cdk.graph.Cycles;
 import org.openscience.cdk.interfaces.IAtomContainer;
 import org.openscience.cdk.io.iterator.IteratingSDFReader;
-import org.openscience.cdk.qsar.DescriptorValue;
-import org.openscience.cdk.qsar.descriptors.molecular.ALOGPDescriptor;
-import org.openscience.cdk.qsar.descriptors.molecular.XLogPDescriptor;
-import org.openscience.cdk.qsar.result.DoubleArrayResult;
 import org.openscience.cdk.silent.SilentChemObjectBuilder;
 import org.openscience.cdk.smiles.SmilesGenerator;
 import org.openscience.cdk.tools.CDKHydrogenAdder;
@@ -68,139 +64,77 @@ import org.openscience.cdk.tools.manipulator.AtomContainerManipulator;
 public class Wizard {
 
     protected Aromaticity aromaticity = new Aromaticity(ElectronDonation.cdk(), Cycles.cdkAromaticSet());
-    protected String sdffile;
-    private final static Logger LOGGER = Logger.getLogger(Wizard.class.getName());
+    protected String filename;
+    private String fullSmiles;
+
+    private final static Logger logger = Logger.getLogger(Wizard.class.getName());
 
     public Wizard(String sdffile) {
-        this.sdffile = sdffile;
-        LOGGER.setLevel(Level.FINEST);
+        this.filename = sdffile;
     }
 
-    String fullSmi = new String();
-    String fullSmi_aro = new String();
-    
     public String readSDF() throws FileNotFoundException, IOException {
-        int records_read = 0;
-        int records_processed = 0;
-        int records_error = 0;
-
-        File file = new File(sdffile);
-
-        BufferedReader read = null;
-
+        int recordsRead = 0;
+        File file = new File(filename);
+        BufferedReader bufferedReader = null;
         try {
             FileReader fileReader = new FileReader(file);
-            read = new BufferedReader(fileReader);
-
+            bufferedReader = new BufferedReader(fileReader);
         } catch (IOException e) {
+            logger.warning(String.format(" Could not open %s.\n %s\n", filename, e.toString()));
+            return null;
         }
 
         IteratingSDFReader reader = null;
-
         try {
-            reader = new IteratingSDFReader(read, SilentChemObjectBuilder.getInstance());
-            LOGGER.log(Level.INFO, String.format("\nReading %s", file.getAbsoluteFile()));
-            System.out.println();
+            reader = new IteratingSDFReader(bufferedReader, SilentChemObjectBuilder.getInstance());
+            logger.info(String.format("\n Reading %s", file.getAbsoluteFile()));
             while (reader.hasNext()) {
-
                 IAtomContainer molecule = reader.next();
-
-                records_read++;
+                recordsRead++;
                 try {
                     AtomContainerManipulator.percieveAtomTypesAndConfigureAtoms(molecule);
                     CDKHydrogenAdder.getInstance(SilentChemObjectBuilder.getInstance()).addImplicitHydrogens(molecule);
-
                     aromaticity.apply(molecule);
                     /**
-                     * Generate SMILES and assign as properties
+                     * Generate SMILES.
                      */
-                    fullSmi_aro = assignSMILES(molecule);
-                    //System.out.println("\nFinished assignSMILES\n");
-
+                    fullSmiles = assignSMILES(molecule);
                     /**
-                     * Descriptor calculation
+                     * Return the smiles string of the first molecule.
                      */
-                    //calculateLogP(molecule);
-                    //System.out.println("Finished calculateLogP");
-                    /**
-                     * Write as plain comma delimited
-                     */
-                    /*for (FIELD field : FIELD.values()) {
-                        Object value = molecule.getProperty(field.name());
-                        writer.write(value == null ? "" : value.toString());
-                        writer.write(",");
-                    }
-                    writer.write("\n");
-                    //records_processed++;;
-                    System.out.println("Finished writing");*/
+                    break;
                 } catch (Exception x) {
-                    System.err.println("*");
-                    records_error++;
-                    LOGGER.log(Level.SEVERE, String.format("[Record %d] Error %s\n", records_read, file.getAbsoluteFile()), x);
+                    logger.log(Level.SEVERE, String.format("[Record %d] Error %s\n", recordsRead, file.getAbsoluteFile()), x);
                 }
             }
         } catch (Exception x) {
-            x.printStackTrace();
-            LOGGER.log(Level.SEVERE, String.format("[Record %d] Error %s\n", records_read, file.getAbsoluteFile()), x);
+            logger.log(Level.SEVERE, String.format("[Record %d] Error %s\n", recordsRead, file.getAbsoluteFile()), x);
         } finally {
             try {
                 reader.close();
             } catch (Exception x) {
+                logger.warning(" Error closing file reader\n " + x.toString());
             }
-            /*try {
-
-                writer.close();
-                System.out.println("Closed writer\n");
-
-            } catch (Exception x) {
-                x.printStackTrace();
-            }*/
         }
-        return fullSmi_aro;
+        return fullSmiles;
     }
-
-    private XLogPDescriptor xlogp;
-    private ALOGPDescriptor alogp;
 
     protected String assignSMILES(IAtomContainer molecule) throws Exception {
-        //molecule.setProperty(FIELD.SMILES_Kekule.name(), SmilesGenerator.isomeric().create(molecule));
-        //molecule.setProperty(FIELD.SMILES_Aromatic.name(), new SmilesGenerator().aromatic().create(molecule));
+        //String absoluteSmiles = SmilesGenerator.absolute().create(molecule);
+        //String uniqueSmiles = SmilesGenerator.unique().create(molecule);
+        //String genericSmiles = SmilesGenerator.generic().create(molecule);
+        String isomericSmiles = SmilesGenerator.isomeric().create(molecule);
 
-        SmilesGenerator sg1 = SmilesGenerator.isomeric();
-        String smi1 = sg1.create(molecule);
-        SmilesGenerator sg2 = new SmilesGenerator().aromatic();
-        String smi2 = sg2.create(molecule);
+        SmilesGenerator aromaticSmileGenerator = new SmilesGenerator().aromatic();
+        String aromaticSmiles = aromaticSmileGenerator.create(molecule);
 
-        System.out.println("SMILES_Kekule,SMILES_Aromatic");
-        System.out.print(smi1);
-        System.out.print(",");
-        System.out.print(smi2);
-        System.out.println();
-        
-        return smi2;
-    }
-
-    protected void calculateLogP(IAtomContainer molecule) throws Exception {
-        if (xlogp == null) {
-            xlogp = new XLogPDescriptor();
-        }
-        if (alogp == null) {
-            alogp = new ALOGPDescriptor();
-        }
-
-        DescriptorValue value = xlogp.calculate(molecule);
-        String[] names = value.getNames();
-        for (String name : names) {
-            molecule.setProperty(name, value.getValue().toString());
-        }
-
-        value = alogp.calculate(molecule);
-        names = value.getNames();
-        if (value.getValue() instanceof DoubleArrayResult) {
-            for (int i = 0; i < names.length; i++) {
-                molecule.setProperty(names[i], ((DoubleArrayResult) value.getValue()).get(i));
-            }
-        }
+        //logger.info(String.format(" Absolute Smiles: %s", absoluteSmiles));
+        //logger.info(String.format(" Unique Smiles: %s", uniqueSmiles));
+        //logger.info(String.format(" Generic Smiles: %s", genericSmiles));
+        logger.info(String.format(" Isomeric Smiles: %s", isomericSmiles));
+        logger.info(String.format(" Aromatic Smiles: %s", aromaticSmiles));
+        return aromaticSmiles;
     }
 
 }

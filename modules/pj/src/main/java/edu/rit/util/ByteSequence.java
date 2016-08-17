@@ -55,7 +55,6 @@ public class ByteSequence {
      * array.
      *
      * @param buf Byte array to copy.
-     *
      * @exception NullPointerException Thrown if <TT>buf</TT> is null.
      */
     public ByteSequence(byte[] buf) {
@@ -69,7 +68,6 @@ public class ByteSequence {
      * @param buf Byte array to copy.
      * @param off Index of first byte to copy.
      * @param len Number of bytes to copy.
-     *
      * @exception NullPointerException Thrown if <TT>buf</TT> is null.
      * @exception IndexOutOfBoundsException Thrown if <TT>off</TT> &lt; 0,
      * <TT>len</TT> &lt; 0, or
@@ -96,8 +94,8 @@ public class ByteSequence {
      * the byte sequence's length is 0.
      *
      * @param theInputStream Input stream, or null.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public ByteSequence(InputStream theInputStream)
             throws IOException {
@@ -124,7 +122,6 @@ public class ByteSequence {
      * sequence.
      *
      * @param theByteSequence Byte sequence to copy.
-     *
      * @exception NullPointerException Thrown if <TT>theByteSequence</TT> is
      * null.
      */
@@ -164,9 +161,7 @@ public class ByteSequence {
      * smaller.
      *
      * @param buf Buffer to hold the copy.
-     *
      * @return Actual number of bytes copied.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>buf</TT> is null.
      */
@@ -183,9 +178,7 @@ public class ByteSequence {
      * @param buf Buffer to hold the copy.
      * @param off Index in <TT>buf</TT> at which to start copying.
      * @param len Maximum number of bytes to copy.
-     *
      * @return Actual number of bytes copied.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>buf</TT> is null.
      * @exception IndexOutOfBoundsException Thrown if <TT>off</TT> &lt; 0,
@@ -217,8 +210,8 @@ public class ByteSequence {
      * Write this byte sequence's contents to the given output stream.
      *
      * @param theOutputStream Output stream.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void write(OutputStream theOutputStream)
             throws IOException {
@@ -235,8 +228,8 @@ public class ByteSequence {
      * Write this byte sequence's contents to the given data output stream.
      *
      * @param theOutputStream Data output stream.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void write(DataOutput theOutputStream)
             throws IOException {

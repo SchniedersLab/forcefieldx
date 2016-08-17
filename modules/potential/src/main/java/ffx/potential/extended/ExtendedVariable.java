@@ -102,13 +102,11 @@ public abstract class ExtendedVariable {
 
         double sinTheta = sin(theta);
         lamedh = sinTheta * sinTheta;
-        ((ForceFieldEnergy) potential).updateLamedh();
     }
     
     public final void setLamedh(double lamedh) {
         this.lamedh = lamedh;
         theta = Math.asin(Math.sqrt(lamedh));
-        ((ForceFieldEnergy) potential).updateLamedh();
     }
     public final double getLamedh() {
         return lamedh;

@@ -51,7 +51,6 @@ public class SharedLongMatrix {
      *
      * @param rows Number of rows.
      * @param cols Number of columns.
-     *
      * @exception NegativeArraySizeException (unchecked exception) Thrown if
      * <TT>rows</TT> &lt; 0 or <TT>cols</TT>
      * &lt; 0.
@@ -70,7 +69,6 @@ public class SharedLongMatrix {
      * <TT>matrix</TT> have the same number of columns.
      *
      * @param matrix Matrix to copy.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>matrix</TT> is null or any row of
      * <TT>matrix</TT> is null.
@@ -107,7 +105,6 @@ public class SharedLongMatrix {
      *
      * @param r Row index.
      * @param c Column index.
-     *
      * @return Current value.
      */
     public long get(int r,
@@ -136,7 +133,6 @@ public class SharedLongMatrix {
      * @param r Row index.
      * @param c Column index.
      * @param value New value.
-     *
      * @return Previous value.
      */
     public long getAndSet(int r,
@@ -154,7 +150,6 @@ public class SharedLongMatrix {
      * @param c Column index.
      * @param expect Expected value.
      * @param update Updated value.
-     *
      * @return True if the update happened, false otherwise.
      */
     public boolean compareAndSet(int r,
@@ -173,7 +168,6 @@ public class SharedLongMatrix {
      * @param c Column index.
      * @param expect Expected value.
      * @param update Updated value.
-     *
      * @return True if the update happened, false otherwise.
      */
     public boolean weakCompareAndSet(int r,
@@ -189,7 +183,6 @@ public class SharedLongMatrix {
      *
      * @param r Row index.
      * @param c Column index.
-     *
      * @return Previous value.
      */
     public long getAndIncrement(int r,
@@ -203,7 +196,6 @@ public class SharedLongMatrix {
      *
      * @param r Row index.
      * @param c Column index.
-     *
      * @return Previous value.
      */
     public long getAndDecrement(int r,
@@ -218,7 +210,6 @@ public class SharedLongMatrix {
      * @param r Row index.
      * @param c Column index.
      * @param value Value to add.
-     *
      * @return Previous value.
      */
     public long getAndAdd(int r,
@@ -233,7 +224,6 @@ public class SharedLongMatrix {
      *
      * @param r Row index.
      * @param c Column index.
-     *
      * @return New value.
      */
     public long incrementAndGet(int r,
@@ -247,7 +237,6 @@ public class SharedLongMatrix {
      *
      * @param r Row index.
      * @param c Column index.
-     *
      * @return New value.
      */
     public long decrementAndGet(int r,
@@ -262,7 +251,6 @@ public class SharedLongMatrix {
      * @param r Row index.
      * @param c Column index.
      * @param value Value to add.
-     *
      * @return New value.
      */
     public long addAndGet(int r,
@@ -281,7 +269,6 @@ public class SharedLongMatrix {
      * @param c Column index.
      * @param value Value.
      * @param op Binary operation.
-     *
      * @return (This matrix <TT>[r,c]</TT>) <I>op</I> (<TT>value</TT>).
      */
     public long reduce(int r,
@@ -310,7 +297,6 @@ public class SharedLongMatrix {
      *
      * @param src Source matrix.
      * @param op Binary operation.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>src</TT> is null. Thrown if
      * <TT>op</TT> is null.
@@ -342,10 +328,13 @@ public class SharedLongMatrix {
      * matrix.
      * @param srccol Column index of first element to update from in the source
      * matrix.
+     * @param srcrow Row index of first element to update from in the source
+     * matrix.
+     * @param srccol Column index of first element to update from in the source
+     * matrix.
      * @param rowlen Number of rows to update.
      * @param collen Number of columns to update.
      * @param op Binary operation.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>src</TT> is null. Thrown if
      * <TT>op</TT> is null.

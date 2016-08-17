@@ -153,9 +153,9 @@ public class TimerThread
      * <TT>action()</TT> method.
      *
      * @param theTimerTask Timer task.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theTimerTask</TT> is null.
+     * @return a {@link edu.rit.util.Timer} object.
      */
     public Timer createTimer(TimerTask theTimerTask) {
         return new Timer(this, theTimerTask);

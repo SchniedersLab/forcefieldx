@@ -42,6 +42,8 @@ import java.util.logging.Logger;
 
 import static java.util.Arrays.fill;
 
+import static org.apache.commons.math3.util.FastMath.PI;
+
 import ffx.numerics.Potential;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
@@ -56,18 +58,6 @@ import static ffx.numerics.VectorMath.b2u;
 import static ffx.numerics.VectorMath.determinant3;
 import static ffx.numerics.VectorMath.u2b;
 
-import static java.util.Arrays.fill;
-
-import static ffx.numerics.VectorMath.determinant3;
-
-import static java.util.Arrays.fill;
-
-import static ffx.numerics.VectorMath.determinant3;
-
-import static java.util.Arrays.fill;
-
-import static ffx.numerics.VectorMath.determinant3;
-
 /**
  * Combine the X-ray target and chemical potential energy.
  *
@@ -79,21 +69,23 @@ public class XRayEnergy implements LambdaInterface, Potential {
 
     private static final Logger logger = Logger.getLogger(XRayEnergy.class.getName());
     private static final double kBkcal = kB / convert;
-    private static final double eightpi2 = 8.0 * Math.PI * Math.PI;
-    private static final double eightpi23 = eightpi2 * eightpi2 * eightpi2;
-    private final DiffractionData diffractiondata;
-    private final RefinementModel refinementmodel;
-    private final Atom atomarray[];
+    private static final double eightPI2 = 8.0 * PI * PI;
+    private static final double eightPI23 = eightPI2 * eightPI2 * eightPI2;
+    private final DiffractionData diffractionData;
+    private final RefinementModel refinementModel;
+    private final Atom atomArray[];
+    private final Atom activeAtomArray[];
     private final int nAtoms;
-    private int nxyz;
-    private int nb;
-    private int nocc;
+    private final int nActiveAtoms;
+    private int nXYZ;
+    private int nB;
+    private int nOCC;
     private RefinementMode refinementMode;
-    private boolean refinexyz = false;
-    private boolean refineocc = false;
-    private boolean refineb = false;
-    private boolean xrayterms = true;
-    private boolean restraintterms = true;
+    private boolean refineXYZ = false;
+    private boolean refineOCC = false;
+    private boolean refineB = false;
+    private boolean xrayTerms = true;
+    private boolean restraintTerms = true;
     protected double[] optimizationScaling = null;
     private double bmass;
     private double kTbnonzero;
@@ -107,38 +99,57 @@ public class XRayEnergy implements LambdaInterface, Potential {
     /**
      * Diffraction data energy target
      *
-     * @param diffractiondata {@link DiffractionData} object to associate with
+     * @param diffractionData {@link DiffractionData} object to associate with
      * the target
-     * @param nxyz number of xyz parameters
-     * @param nb number of b factor parameters
-     * @param nocc number of occupancy parameters
-     * @param refinementmode the {@link RefinementMinimize.RefinementMode} type
+     * @param nXYZ number of xyz parameters
+     * @param nB number of b factor parameters
+     * @param nOCC number of occupancy parameters
+     * @param refinementMode the {@link RefinementMinimize.RefinementMode} type
      * of refinement requested
      */
-    public XRayEnergy(DiffractionData diffractiondata, int nxyz, int nb, int nocc,
-            RefinementMode refinementmode) {
-        this.diffractiondata = diffractiondata;
-        this.refinementmodel = diffractiondata.getRefinementModel();
-        this.refinementMode = refinementmode;
-        this.atomarray = refinementmodel.totalAtomArray;
-        this.nAtoms = atomarray.length;
-        this.nxyz = nxyz;
-        this.nb = nb;
-        this.nocc = nocc;
+    public XRayEnergy(DiffractionData diffractionData, int nXYZ, int nB, int nOCC,
+            RefinementMode refinementMode) {
+        this.diffractionData = diffractionData;
+        this.refinementModel = diffractionData.getRefinementModel();
+        this.refinementMode = refinementMode;
+        this.atomArray = refinementModel.totalAtomArray;
+        this.nAtoms = atomArray.length;
+        this.nXYZ = nXYZ;
+        this.nB = nB;
+        this.nOCC = nOCC;
 
-        bmass = diffractiondata.bmass;
-        kTbnonzero = 0.5 * kBkcal * temp * diffractiondata.bnonzeroweight;
-        kTbsim = kBkcal * temp * diffractiondata.bsimweight;
-        occmass = diffractiondata.occmass;
+        bmass = diffractionData.bmass;
+        kTbnonzero = 0.5 * kBkcal * temp * diffractionData.bnonzeroweight;
+        kTbsim = kBkcal * temp * diffractionData.bsimweight;
+        occmass = diffractionData.occmass;
+
+        // Fill an active atom array.
+        int count = 0;
+        for (Atom a : atomArray) {
+            if (a.isActive()) {
+                count++;
+            }
+        }
+        nActiveAtoms = count;
+        activeAtomArray = new Atom[count];
+        count = 0;
+        for (Atom a : atomArray) {
+            if (a.isActive()) {
+                activeAtomArray[count++] = a;
+            }
+        }
 
         setRefinementBooleans();
 
-        if (refineb) {
+        if (refineB) {
             logger.info(" B-Factor Refinement Parameters");
             logger.info(" Temperature:                 " + temp);
-            logger.info(" Non-zero restraint weight:   " + diffractiondata.bnonzeroweight);
-            logger.info(" Similarity restraint weight: " + diffractiondata.bsimweight);
+            logger.info(" Non-zero restraint weight:   " + diffractionData.bnonzeroweight);
+            logger.info(" Similarity restraint weight: " + diffractionData.bsimweight);
         }
+
+        logger.info(String.format(" RefinementEnergy variables %d (nXYZ %d, nB %d, nOcc %d)",
+                nXYZ+nB+nOCC, nXYZ, nB, nOCC));
     }
 
     /**
@@ -157,29 +168,29 @@ public class XRayEnergy implements LambdaInterface, Potential {
             }
         }
 
-        if (refinexyz) {
+        if (refineXYZ) {
             // update coordinates
-            diffractiondata.setFFTCoordinates(x);
+            diffractionData.setFFTCoordinates(x);
         }
-        if (refineb) {
+        if (refineB) {
             // update B factors
             setBFactors(x);
         }
-        if (refineocc) {
+        if (refineOCC) {
             // update occupancies
             setOccupancies(x);
         }
 
-        if (xrayterms) {
+        if (xrayTerms) {
             // compute new structure factors
-            diffractiondata.computeAtomicDensity();
+            diffractionData.computeAtomicDensity();
 
             // compute crystal likelihood
-            e = diffractiondata.computeLikelihood();
+            e = diffractionData.computeLikelihood();
         }
 
-        if (restraintterms) {
-            if (refineb) {
+        if (restraintTerms) {
+            if (refineB) {
                 // add B restraints
                 e += getBFactorRestraints();
             }
@@ -214,18 +225,18 @@ public class XRayEnergy implements LambdaInterface, Potential {
             }
         }
 
-        if (refinexyz) {
-            for (Atom a : atomarray) {
+        if (refineXYZ) {
+            for (Atom a : activeAtomArray) {
                 a.setXYZGradient(0.0, 0.0, 0.0);
                 a.setLambdaXYZGradient(0.0, 0.0, 0.0);
             }
 
             // update coordinates
-            diffractiondata.setFFTCoordinates(x);
+            diffractionData.setFFTCoordinates(x);
         }
 
-        if (refineb) {
-            for (Atom a : atomarray) {
+        if (refineB) {
+            for (Atom a : activeAtomArray) {
                 a.setTempFactorGradient(0.0);
                 if (a.getAnisou(null) != null) {
                     if (a.getAnisouGradient(null) == null) {
@@ -244,8 +255,8 @@ public class XRayEnergy implements LambdaInterface, Potential {
             setBFactors(x);
         }
 
-        if (refineocc) {
-            for (Atom a : atomarray) {
+        if (refineOCC) {
+            for (Atom a : activeAtomArray) {
                 a.setOccupancyGradient(0.0);
             }
 
@@ -253,24 +264,24 @@ public class XRayEnergy implements LambdaInterface, Potential {
             setOccupancies(x);
         }
 
-        if (xrayterms) {
+        if (xrayTerms) {
             // compute new structure factors
-            diffractiondata.computeAtomicDensity();
+            diffractionData.computeAtomicDensity();
 
             // compute crystal likelihood
-            e = diffractiondata.computeLikelihood();
+            e = diffractionData.computeLikelihood();
 
             // compute the crystal gradients
-            diffractiondata.computeAtomicGradients(refinementMode);
+            diffractionData.computeAtomicGradients(refinementMode);
 
-            if (refinexyz) {
+            if (refineXYZ) {
                 // pack gradients into gradient array
                 getXYZGradients(g);
             }
         }
 
-        if (restraintterms) {
-            if (refineb) {
+        if (restraintTerms) {
+            if (refineB) {
                 // add B restraints
                 e += getBFactorRestraints();
 
@@ -278,7 +289,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
                 getBFactorGradients(g);
             }
 
-            if (refineocc) {
+            if (refineOCC) {
                 // pack gradients into gradient array
                 getOccupancyGradients(g);
             }
@@ -326,48 +337,48 @@ public class XRayEnergy implements LambdaInterface, Potential {
      */
     private void setRefinementBooleans() {
         // reset, if previously set
-        refinexyz = false;
-        refineb = false;
-        refineocc = false;
+        refineXYZ = false;
+        refineB = false;
+        refineOCC = false;
 
         if (refinementMode == RefinementMode.COORDINATES
                 || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS
                 || refinementMode == RefinementMode.COORDINATES_AND_OCCUPANCIES
                 || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-            refinexyz = true;
+            refineXYZ = true;
         }
 
         if (refinementMode == RefinementMode.BFACTORS
                 || refinementMode == RefinementMode.BFACTORS_AND_OCCUPANCIES
                 || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS
                 || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-            refineb = true;
+            refineB = true;
         }
 
         if (refinementMode == RefinementMode.OCCUPANCIES
                 || refinementMode == RefinementMode.BFACTORS_AND_OCCUPANCIES
                 || refinementMode == RefinementMode.COORDINATES_AND_OCCUPANCIES
                 || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-            refineocc = true;
+            refineOCC = true;
         }
     }
 
     /**
-     * get the number of xyz parameters being fit
+     * Get the number of xyz parameters being fit.
      *
      * @return the number of xyz parameters
      */
     public int getNXYZ() {
-        return nxyz;
+        return nXYZ;
     }
 
     /**
      * set the number of xyz parameters
      *
-     * @param nxyz requested number of xyz parameters
+     * @param nXYZ requested number of xyz parameters
      */
-    public void setNXYZ(int nxyz) {
-        this.nxyz = nxyz;
+    public void setNXYZ(int nXYZ) {
+        this.nXYZ = nXYZ;
     }
 
     /**
@@ -376,16 +387,16 @@ public class XRayEnergy implements LambdaInterface, Potential {
      * @return the number of B factor parameters
      */
     public int getNB() {
-        return nb;
+        return nB;
     }
 
     /**
      * set the number of B factor parameters
      *
-     * @param nb requested number of B factor parameters
+     * @param nB requested number of B factor parameters
      */
-    public void setNB(int nb) {
-        this.nb = nb;
+    public void setNB(int nB) {
+        this.nB = nB;
     }
 
     /**
@@ -394,16 +405,16 @@ public class XRayEnergy implements LambdaInterface, Potential {
      * @return the number of occupancy parameters
      */
     public int getNOcc() {
-        return nocc;
+        return nOCC;
     }
 
     /**
      * set the number of occupancy parameters
      *
-     * @param nocc requested number of occupancy parameters
+     * @param nOCC requested number of occupancy parameters
      */
-    public void setNOcc(int nocc) {
-        this.nocc = nocc;
+    public void setNOcc(int nOCC) {
+        this.nOCC = nOCC;
     }
 
     /**
@@ -414,10 +425,10 @@ public class XRayEnergy implements LambdaInterface, Potential {
     public void getBFactorGradients(double g[]) {
         assert (g != null);
         double grad[] = null;
-        int index = nxyz;
+        int index = nXYZ;
         int resnum = -1;
-        int nres = diffractiondata.nResidueBFactor + 1;
-        for (Atom a : atomarray) {
+        int nres = diffractionData.nResidueBFactor + 1;
+        for (Atom a : activeAtomArray) {
             // ignore hydrogens!!!
             if (a.getAtomicNumber() == 1) {
                 continue;
@@ -430,11 +441,11 @@ public class XRayEnergy implements LambdaInterface, Potential {
                 g[index++] = grad[3];
                 g[index++] = grad[4];
                 g[index++] = grad[5];
-            } else if (diffractiondata.residuebfactor) {
+            } else if (diffractionData.residueBFactor) {
                 if (resnum != a.getResidueNumber()) {
-                    if (nres >= diffractiondata.nResidueBFactor) {
+                    if (nres >= diffractionData.nResidueBFactor) {
                         if (resnum > -1
-                                && index < nxyz + nb - 1) {
+                                && index < nXYZ + nB - 1) {
                             index++;
                         }
                         nres = 1;
@@ -453,16 +464,16 @@ public class XRayEnergy implements LambdaInterface, Potential {
     }
 
     /**
-     * fill gradient array with occupancy gradients
+     * Fill gradient array with occupancy gradients.
      *
      * @param g array to add gradients to
      */
     public void getOccupancyGradients(double g[]) {
         double ave;
-        int index = nxyz + nb;
+        int index = nXYZ + nB;
 
-        // first: alternate residues
-        for (ArrayList<Residue> list : refinementmodel.altResidues) {
+        // First: Alternate Residues
+        for (ArrayList<Residue> list : refinementModel.altResidues) {
             ave = 0.0;
             for (Residue r : list) {
                 for (Atom a : r.getAtomList()) {
@@ -485,8 +496,8 @@ public class XRayEnergy implements LambdaInterface, Potential {
             }
         }
 
-        // now the molecules (HETATMs)
-        for (ArrayList<Molecule> list : refinementmodel.altMolecules) {
+        // Now the molecules (HETATMs).
+        for (ArrayList<Molecule> list : refinementModel.altMolecules) {
             ave = 0.0;
             for (Molecule m : list) {
                 for (Atom a : m.getAtomList()) {
@@ -519,7 +530,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
         assert (g != null);
         double grad[] = new double[3];
         int index = 0;
-        for (Atom a : atomarray) {
+        for (Atom a : activeAtomArray) {
             a.getXYZGradient(grad);
             g[index++] = grad[0];
             g[index++] = grad[1];
@@ -537,8 +548,8 @@ public class XRayEnergy implements LambdaInterface, Potential {
         int index = 0;
         fill(x, 0.0);
 
-        if (refinexyz) {
-            for (Atom a : atomarray) {
+        if (refineXYZ) {
+            for (Atom a : activeAtomArray) {
                 a.getXYZ(xyz);
                 x[index++] = xyz[0];
                 x[index++] = xyz[1];
@@ -546,12 +557,12 @@ public class XRayEnergy implements LambdaInterface, Potential {
             }
         }
 
-        if (refineb) {
+        if (refineB) {
             double anisou[] = null;
             int resnum = -1;
             int nat = 0;
-            int nres = diffractiondata.nResidueBFactor + 1;
-            for (Atom a : atomarray) {
+            int nres = diffractionData.nResidueBFactor + 1;
+            for (Atom a : activeAtomArray) {
                 // ignore hydrogens!!!
                 if (a.getAtomicNumber() == 1) {
                     continue;
@@ -564,11 +575,11 @@ public class XRayEnergy implements LambdaInterface, Potential {
                     x[index++] = anisou[3];
                     x[index++] = anisou[4];
                     x[index++] = anisou[5];
-                } else if (diffractiondata.residuebfactor) {
+                } else if (diffractionData.residueBFactor) {
                     if (resnum != a.getResidueNumber()) {
-                        if (nres >= diffractiondata.nResidueBFactor) {
+                        if (nres >= diffractionData.nResidueBFactor) {
                             if (resnum > -1
-                                    && index < nxyz + nb - 1) {
+                                    && index < nXYZ + nB - 1) {
                                 x[index] /= nat;
                                 index++;
                             }
@@ -589,15 +600,15 @@ public class XRayEnergy implements LambdaInterface, Potential {
                 }
             }
 
-            if (diffractiondata.residuebfactor) {
+            if (diffractionData.residueBFactor) {
                 if (nat > 1) {
                     x[index] /= nat;
                 }
             }
         }
 
-        if (refineocc) {
-            for (ArrayList<Residue> list : refinementmodel.altResidues) {
+        if (refineOCC) {
+            for (ArrayList<Residue> list : refinementModel.altResidues) {
                 for (Residue r : list) {
                     for (Atom a : r.getAtomList()) {
                         if (a.getOccupancy() < 1.0) {
@@ -607,7 +618,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
                     }
                 }
             }
-            for (ArrayList<Molecule> list : refinementmodel.altMolecules) {
+            for (ArrayList<Molecule> list : refinementModel.altMolecules) {
                 for (Molecule m : list) {
                     for (Atom a : m.getAtomList()) {
                         if (a.getOccupancy() < 1.0) {
@@ -629,22 +640,22 @@ public class XRayEnergy implements LambdaInterface, Potential {
      */
     public void setBFactors(double x[]) {
         double tmpanisou[] = new double[6];
-        int index = nxyz;
+        int index = nXYZ;
         int nneg = 0;
         int resnum = -1;
-        int nres = diffractiondata.nResidueBFactor + 1;
-        for (Atom a : atomarray) {
+        int nres = diffractionData.nResidueBFactor + 1;
+        for (Atom a : activeAtomArray) {
             // ignore hydrogens!!!
             if (a.getAtomicNumber() == 1) {
                 continue;
             }
             if (a.getAnisou(null) == null) {
                 double biso = x[index];
-                if (diffractiondata.residuebfactor) {
+                if (diffractionData.residueBFactor) {
                     if (resnum != a.getResidueNumber()) {
-                        if (nres >= diffractiondata.nResidueBFactor) {
+                        if (nres >= diffractionData.nResidueBFactor) {
                             if (resnum > -1
-                                    && index < nxyz + nb - 1) {
+                                    && index < nXYZ + nB - 1) {
                                 index++;
                                 biso = x[index];
                             }
@@ -704,7 +715,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
         }
 
         // set hydrogen based on bonded atom
-        for (Atom a : atomarray) {
+        for (Atom a : activeAtomArray) {
             if (a.getAtomicNumber() == 1) {
                 Atom b = a.getBonds().get(0).get1_2(a);
                 a.setTempFactor(b.getTempFactor());
@@ -718,11 +729,10 @@ public class XRayEnergy implements LambdaInterface, Potential {
      * @param x current parameters to set coordinates with
      */
     public void setCoordinates(double x[]) {
-        int n = getNumberOfVariables();
         assert (x != null);
         double xyz[] = new double[3];
         int index = 0;
-        for (Atom a : atomarray) {
+        for (Atom a : activeAtomArray) {
             xyz[0] = x[index++];
             xyz[1] = x[index++];
             xyz[2] = x[index++];
@@ -737,8 +747,8 @@ public class XRayEnergy implements LambdaInterface, Potential {
      */
     public void setOccupancies(double x[]) {
         double occ = 0.0;
-        int index = nxyz + nb;
-        for (ArrayList<Residue> list : refinementmodel.altResidues) {
+        int index = nXYZ + nB;
+        for (ArrayList<Residue> list : refinementModel.altResidues) {
             for (Residue r : list) {
                 occ = x[index++];
                 for (Atom a : r.getAtomList()) {
@@ -748,7 +758,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
                 }
             }
         }
-        for (ArrayList<Molecule> list : refinementmodel.altMolecules) {
+        for (ArrayList<Molecule> list : refinementModel.altMolecules) {
             for (Molecule m : list) {
                 occ = x[index++];
                 for (Atom a : m.getAtomList()) {
@@ -776,7 +786,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
         double gradu[] = new double[6];
         double e = 0.0;
 
-        for (Atom a : atomarray) {
+        for (Atom a : activeAtomArray) {
             double biso = a.getTempFactor();
             // ignore hydrogens!!!
             if (a.getAtomicNumber() == 1) {
@@ -828,7 +838,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
                 det1 = determinant3(anisou1);
 
                 // non-zero restraint: -kTln[Z], Z is ADP partition function
-                e += u2b(-kTbnonzero * Math.log(det1 * eightpi2 * Math.PI));
+                e += u2b(-kTbnonzero * Math.log(det1 * eightPI2 * Math.PI));
                 gradu[0] = u2b(-kTbnonzero * ((anisou1[1] * anisou1[2] - anisou1[5] * anisou1[5]) / det1));
                 gradu[1] = u2b(-kTbnonzero * ((anisou1[0] * anisou1[2] - anisou1[4] * anisou1[4]) / det1));
                 gradu[2] = u2b(-kTbnonzero * ((anisou1[0] * anisou1[1] - anisou1[3] * anisou1[3]) / det1));
@@ -865,8 +875,8 @@ public class XRayEnergy implements LambdaInterface, Potential {
                     anisou2 = a2.getAnisou(anisou2);
                     det2 = determinant3(anisou2);
                     bdiff = det1 - det2;
-                    e += eightpi23 * kTbsim * Math.pow(bdiff, 2.0);
-                    gradb = eightpi23 * 2.0 * kTbsim * bdiff;
+                    e += eightPI23 * kTbsim * Math.pow(bdiff, 2.0);
+                    gradb = eightPI23 * 2.0 * kTbsim * bdiff;
 
                     // parent atom
                     gradu[0] = gradb * (anisou1[1] * anisou1[2] - anisou1[5] * anisou1[5]);
@@ -912,10 +922,10 @@ public class XRayEnergy implements LambdaInterface, Potential {
      */
     @Override
     public double[] getMass() {
-        double mass[] = new double[nxyz + nb + nocc];
+        double mass[] = new double[nXYZ + nB + nOCC];
         int i = 0;
-        if (refinexyz) {
-            for (Atom a : atomarray) {
+        if (refineXYZ) {
+            for (Atom a : activeAtomArray) {
                 double m = a.getMass();
                 mass[i++] = m;
                 mass[i++] = m;
@@ -923,14 +933,14 @@ public class XRayEnergy implements LambdaInterface, Potential {
             }
         }
 
-        if (refineb) {
-            for (int j = i; j < nxyz + nb; i++, j++) {
+        if (refineB) {
+            for (int j = i; j < nXYZ + nB; i++, j++) {
                 mass[j] = bmass;
             }
         }
 
-        if (refineocc) {
-            for (int j = i; j < nxyz + nb + nocc; i++, j++) {
+        if (refineOCC) {
+            for (int j = i; j < nXYZ + nB + nOCC; i++, j++) {
                 mass[j] = occmass;
             }
         }
@@ -950,7 +960,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
      */
     @Override
     public int getNumberOfVariables() {
-        return nxyz + nb + nocc;
+        return nXYZ + nB + nOCC;
     }
 
     /**
@@ -960,7 +970,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
     public void setLambda(double lambda) {
         if (lambda <= 1.0 && lambda >= 0.0) {
             this.lambda = lambda;
-            diffractiondata.setLambda(lambda);
+            diffractionData.setLambda(lambda);
         } else {
             String message = String.format("Lambda value %8.3f is not in the range [0..1].", lambda);
             logger.warning(message);
@@ -980,13 +990,13 @@ public class XRayEnergy implements LambdaInterface, Potential {
      */
     @Override
     public double getdEdL() {
-        diffractiondata.setLambda(1.0);
+        diffractionData.setLambda(1.0);
         // compute new structure factors
-        diffractiondata.computeAtomicDensity();
+        diffractionData.computeAtomicDensity();
 
         // compute crystal likelihood
-        double e = diffractiondata.computeLikelihood();
-        diffractiondata.setLambda(lambda);
+        double e = diffractionData.computeLikelihood();
+        diffractionData.setLambda(lambda);
 
         return e;
     }
@@ -1005,7 +1015,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
     @Override
     public void getdEdXdL(double[] gradient) {
         // compute the crystal gradients
-        diffractiondata.computeAtomicGradients(refinementMode);
+        diffractionData.computeAtomicGradients(refinementMode);
 
         // pack gradients into gradient array
         getXYZGradients(gradient);
@@ -1018,24 +1028,24 @@ public class XRayEnergy implements LambdaInterface, Potential {
      */
     @Override
     public VARIABLE_TYPE[] getVariableTypes() {
-        VARIABLE_TYPE vtypes[] = new VARIABLE_TYPE[nxyz + nb + nocc];
+        VARIABLE_TYPE vtypes[] = new VARIABLE_TYPE[nXYZ + nB + nOCC];
         int i = 0;
-        if (refinexyz) {
-            for (Atom a : atomarray) {
+        if (refineXYZ) {
+            for (Atom a : activeAtomArray) {
                 vtypes[i++] = VARIABLE_TYPE.X;
                 vtypes[i++] = VARIABLE_TYPE.Y;
                 vtypes[i++] = VARIABLE_TYPE.Z;
             }
         }
 
-        if (refineb) {
-            for (int j = i; j < nxyz + nb; i++, j++) {
+        if (refineB) {
+            for (int j = i; j < nXYZ + nB; i++, j++) {
                 vtypes[j] = VARIABLE_TYPE.OTHER;
             }
         }
 
-        if (refineocc) {
-            for (int j = i; j < nxyz + nb + nocc; i++, j++) {
+        if (refineOCC) {
+            for (int j = i; j < nXYZ + nB + nOCC; i++, j++) {
                 vtypes[j] = VARIABLE_TYPE.OTHER;
             }
         }
@@ -1055,16 +1065,16 @@ public class XRayEnergy implements LambdaInterface, Potential {
         this.state = state;
         switch (state) {
             case FAST:
-                xrayterms = false;
-                restraintterms = true;
+                xrayTerms = false;
+                restraintTerms = true;
                 break;
             case SLOW:
-                xrayterms = true;
-                restraintterms = false;
+                xrayTerms = true;
+                restraintTerms = false;
                 break;
             default:
-                xrayterms = true;
-                restraintterms = true;
+                xrayTerms = true;
+                restraintTerms = true;
         }
     }
 

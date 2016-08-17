@@ -63,8 +63,8 @@ public class LineBufferedOutputStream
      * significant 8 bits of <TT>b</TT> are written.
      *
      * @param b Byte.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void write(int b)
             throws IOException {
@@ -78,10 +78,10 @@ public class LineBufferedOutputStream
      * Write the given byte array to this line buffered output stream.
      *
      * @param buf Byte array.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>buf</TT> is null.
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void write(byte[] buf)
             throws IOException {
@@ -89,13 +89,10 @@ public class LineBufferedOutputStream
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Write a portion of the given byte array to this line buffered output
      * stream.
-     *
-     * @param buf Byte array.
-     * @param off Index of first byte to write.
-     * @param len Number of bytes to write.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>buf</TT> is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
@@ -131,6 +128,7 @@ public class LineBufferedOutputStream
      * nothing.
      *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void flush()
             throws IOException {
@@ -140,6 +138,7 @@ public class LineBufferedOutputStream
      * Close this line buffered output stream.
      *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void close()
             throws IOException {

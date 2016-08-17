@@ -85,10 +85,9 @@ public class BackendFileReader {
      * Open a backend file input stream on the given file.
      *
      * @param file File.
-     *
      * @return Backend file input stream.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public BackendFileInputStream open(File file)
             throws IOException {
@@ -138,7 +137,6 @@ public class BackendFileReader {
      * @param ffd Frontend file descriptor.
      * @param len Number of bytes read, or -1 if EOF.
      * @param exc Null if success, exception if failure.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void inputFileReadResult(JobFrontendRef theJobFrontend,
@@ -161,7 +159,6 @@ public class BackendFileReader {
      * @param ffd Frontend file descriptor.
      * @param len Number of bytes skipped.
      * @param exc Null if success, exception if failure.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void inputFileSkipResult(JobFrontendRef theJobFrontend,
@@ -183,7 +180,6 @@ public class BackendFileReader {
      * @param theJobFrontend Job Frontend that is calling this method.
      * @param ffd Frontend file descriptor.
      * @param exc Null if success, exception if failure.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void inputFileCloseResult(JobFrontendRef theJobFrontend,

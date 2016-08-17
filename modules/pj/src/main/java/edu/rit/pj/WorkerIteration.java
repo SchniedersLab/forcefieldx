@@ -165,7 +165,6 @@ import java.io.IOException;
  * However, the other worker threads in the worker team continue to execute.
  *
  * @param <T> Data type of the items iterated over.
- *
  * @author Alan Kaminsky
  * @version 07-Oct-2010
  */
@@ -189,6 +188,7 @@ public abstract class WorkerIteration<T>
      * overridden, the <TT>start()</TT> method does nothing.
      *
      * @exception Exception The <TT>start()</TT> method may throw any exception.
+     * @throws java.lang.Exception if any.
      */
     public void start()
             throws Exception {
@@ -207,8 +207,8 @@ public abstract class WorkerIteration<T>
      * @param comm Communicator.
      * @param wRank Worker process rank.
      * @param tag Message tag.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void sendTaskInput(T item,
             Comm comm,
@@ -230,8 +230,8 @@ public abstract class WorkerIteration<T>
      * @param comm Communicator.
      * @param mRank Master process rank.
      * @param tag Message tag.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void receiveTaskInput(T item,
             Comm comm,
@@ -247,8 +247,8 @@ public abstract class WorkerIteration<T>
      * The <TT>run()</TT> method must be overridden in a subclass.
      *
      * @param item Item.
-     *
      * @exception Exception The <TT>run()</TT> method may throw any exception.
+     * @throws java.lang.Exception if any.
      */
     public abstract void run(T item)
             throws Exception;
@@ -267,8 +267,8 @@ public abstract class WorkerIteration<T>
      * @param comm Communicator.
      * @param mRank Master process rank.
      * @param tag Message tag.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void sendTaskOutput(T item,
             Comm comm,
@@ -291,8 +291,8 @@ public abstract class WorkerIteration<T>
      * @param comm Communicator.
      * @param wRank Worker process rank.
      * @param tag Message tag.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void receiveTaskOutput(T item,
             Comm comm,
@@ -310,6 +310,7 @@ public abstract class WorkerIteration<T>
      *
      * @exception Exception The <TT>finish()</TT> method may throw any
      * exception.
+     * @throws java.lang.Exception if any.
      */
     public void finish()
             throws Exception {

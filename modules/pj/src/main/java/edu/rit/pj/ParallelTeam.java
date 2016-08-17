@@ -99,7 +99,6 @@ public class ParallelTeam {
      * Construct a new parallel team with the given number of threads.
      *
      * @param K Number of threads.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <I>K</I> is less than 1.
      */
@@ -121,7 +120,6 @@ public class ParallelTeam {
      * Execute the given parallel region.
      *
      * @param theRegion Parallel region.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theRegion</TT> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if this
@@ -130,6 +128,7 @@ public class ParallelTeam {
      * @exception Exception Exception thrown by the parallel region's
      * <TT>start()</TT>,
      * <TT>run()</TT>, or <TT>finish()</TT> methods.
+     * @throws java.lang.Exception if any.
      */
     public final void execute(ParallelRegion theRegion)
             throws Exception {
@@ -201,7 +200,6 @@ public class ParallelTeam {
      * Returns the parallel region of code that this parallel team is executing.
      *
      * @return Parallel region.
-     *
      * @exception IllegalStateException (unchecked exception) Thrown if this
      * parallel team is not executing a parallel region.
      */
@@ -234,7 +232,6 @@ public class ParallelTeam {
      * </PRE>
      *
      * @return Default number of threads for a parallel team.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if the
      * <TT>"pj.nt"</TT> property value is not an integer greater than or equal
      * to 1.
@@ -330,8 +327,8 @@ public class ParallelTeam {
      * Useful if you are repetitively constructing ParallelTeam objects, although
      * it is slightly more elegant just to keep the same ParallelTeam objects through
      * the entire execution of a program.
-     * 
-     * @throws java.lang.Exception
+     *
+     * @throws java.lang.Exception if any.
      */
     public void shutdown() throws Exception {
         if (isActive) {

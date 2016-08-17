@@ -55,7 +55,6 @@ class SharedUnsigned16BitIntegerArrayReductionBuf
      * @param theArray Shared array.
      * @param theRange Range of array elements to include in the buffer.
      * @param op Binary operation.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>op</TT> is null.
      */
@@ -71,13 +70,12 @@ class SharedUnsigned16BitIntegerArrayReductionBuf
 
 // Exported operations.
     /**
+     * {@inheritDoc}
+     *
      * Store the given item in this buffer.
      * <P>
      * The <TT>put()</TT> method must not block the calling thread; if it does,
      * all message I/O in MP will be blocked.
-     *
-     * @param i Item index in the range 0 .. <TT>length()</TT>-1.
-     * @param item Item to be stored at index <TT>i</TT>.
      */
     public void put(int i,
             int item) {
@@ -85,11 +83,10 @@ class SharedUnsigned16BitIntegerArrayReductionBuf
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Create a buffer for performing parallel reduction using the given binary
      * operation. The results of the reduction are placed into this buffer.
-     *
-     * @param op Binary operation.
-     *
      * @exception ClassCastException (unchecked exception) Thrown if this
      * buffer's element data type and the given binary operation's argument data
      * type are not the same.
@@ -100,18 +97,13 @@ class SharedUnsigned16BitIntegerArrayReductionBuf
 
 // Hidden operations.
     /**
+     * {@inheritDoc}
+     *
      * Receive as many items as possible from the given byte buffer to this
      * buffer.
      * <P>
      * The <TT>receiveItems()</TT> method must not block the calling thread; if
      * it does, all message I/O in MP will be blocked.
-     *
-     * @param i Index of first item to receive, in the range 0 ..
-     * <TT>length</TT>-1.
-     * @param num Maximum number of items to receive.
-     * @param buffer Byte buffer.
-     *
-     * @return Number of items received.
      */
     protected int receiveItems(int i,
             int num,

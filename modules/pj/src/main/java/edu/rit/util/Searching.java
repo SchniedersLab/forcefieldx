@@ -282,7 +282,6 @@ public class Searching {
      * @param x Array to be searched.
      * @param a Element to be searched for.
      * @param helper Helper object.
-     *
      * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
@@ -308,7 +307,6 @@ public class Searching {
      * @param x Array to be searched.
      * @param a Element to be searched for.
      * @param helper Helper object.
-     *
      * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
@@ -362,7 +360,6 @@ public class Searching {
      * @param x Array to be searched.
      * @param a Element to be searched for.
      * @param helper Helper object.
-     *
      * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
@@ -388,7 +385,6 @@ public class Searching {
      * @param x Array to be searched.
      * @param a Element to be searched for.
      * @param helper Helper object.
-     *
      * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
@@ -442,7 +438,6 @@ public class Searching {
      * @param x Array to be searched.
      * @param a Element to be searched for.
      * @param helper Helper object.
-     *
      * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
@@ -468,7 +463,6 @@ public class Searching {
      * @param x Array to be searched.
      * @param a Element to be searched for.
      * @param helper Helper object.
-     *
      * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
@@ -522,7 +516,6 @@ public class Searching {
      * @param x Array to be searched.
      * @param a Element to be searched for.
      * @param helper Helper object.
-     *
      * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
@@ -548,7 +541,6 @@ public class Searching {
      * @param x Array to be searched.
      * @param a Element to be searched for.
      * @param helper Helper object.
-     *
      * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
@@ -602,7 +594,6 @@ public class Searching {
      * @param x Array to be searched.
      * @param a Element to be searched for.
      * @param helper Helper object.
-     *
      * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
@@ -628,7 +619,6 @@ public class Searching {
      * @param x Array to be searched.
      * @param a Element to be searched for.
      * @param helper Helper object.
-     *
      * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
@@ -682,7 +672,6 @@ public class Searching {
      * @param x Array to be searched.
      * @param a Element to be searched for.
      * @param helper Helper object.
-     *
      * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
@@ -708,7 +697,6 @@ public class Searching {
      * @param x Array to be searched.
      * @param a Element to be searched for.
      * @param helper Helper object.
-     *
      * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
@@ -762,7 +750,6 @@ public class Searching {
      * @param x Array to be searched.
      * @param a Element to be searched for.
      * @param helper Helper object.
-     *
      * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
@@ -788,7 +775,6 @@ public class Searching {
      * @param x Array to be searched.
      * @param a Element to be searched for.
      * @param helper Helper object.
-     *
      * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
@@ -843,7 +829,6 @@ public class Searching {
      * @param x Array to be searched.
      * @param a Element to be searched for.
      * @param helper Helper object.
-     *
      * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
@@ -870,7 +855,6 @@ public class Searching {
      * @param x Array to be searched.
      * @param a Element to be searched for.
      * @param helper Helper object.
-     *
      * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
@@ -925,7 +909,6 @@ public class Searching {
      * @param x Array to be searched.
      * @param a Element to be searched for.
      * @param comp Comparator.
-     *
      * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
@@ -952,7 +935,6 @@ public class Searching {
      * @param x Array to be searched.
      * @param a Element to be searched for.
      * @param comp Comparator.
-     *
      * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
@@ -1004,10 +986,8 @@ public class Searching {
      * method) is used to compare elements for equality only. An
      * <I>O</I>(<I>n</I>) linear search algorithm is used.
      *
-     * @param <T> Array element data type.
      * @param x Array to be searched.
      * @param a Element to be searched for.
-     *
      * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
@@ -1029,10 +1009,8 @@ public class Searching {
      * otherwise, the <TT>searchSorted()</TT> method's behavior is not
      * specified. An <I>O</I>(log <I>n</I>) binary search algorithm is used.
      *
-     * @param <T> Array element data type.
      * @param x Array to be searched.
      * @param a Element to be searched for.
-     *
      * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */

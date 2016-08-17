@@ -49,12 +49,10 @@ public class CommPattern {
      * range 0 .. <TT>size</TT>-1.
      * @param root Rank of the root process for the broadcast. Must be in the
      * range 0 .. <TT>size</TT>-1.
-     *
      * @return Array of process ranks for the parallel broadcast pattern. The
      * element at index 0 is the parent process rank, or -1 if there is no
      * parent process. The elements at indexes 1 and above, if any, are the
      * child process ranks.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if any
      * argument is illegal.
      */

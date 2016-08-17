@@ -46,12 +46,13 @@ public interface JobFrontendRef {
      * @param name Backend node name.
      * @param host Host name for SSH remote login.
      * @param jvm Full pathname of Java Virtual Machine.
+     * @param jvmflags Array of JVM command line flags.
      * @param classpath Java class path for PJ Library.
      * @param jvmflags Array of JVM command line flags.
      * @param shellCommand Shell command string.
      * @param Nt Number of CPUs assigned to the process.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void assignBackend(JobSchedulerRef theJobScheduler,
             String name,
@@ -70,8 +71,8 @@ public interface JobFrontendRef {
      * @param theJobScheduler Job Scheduler that is calling this method.
      * @param jobnum Job number.
      * @param pjhost Host name for middleware channel group.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void assignJobNumber(JobSchedulerRef theJobScheduler,
             int jobnum,
@@ -83,8 +84,8 @@ public interface JobFrontendRef {
      *
      * @param theJobScheduler Job Scheduler that is calling this method.
      * @param errmsg Error message string.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void cancelJob(JobSchedulerRef theJobScheduler,
             String errmsg)
@@ -94,8 +95,8 @@ public interface JobFrontendRef {
      * Renew the lease on the job.
      *
      * @param theJobScheduler Job Scheduler that is calling this method.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void renewLease(JobSchedulerRef theJobScheduler)
             throws IOException;
@@ -104,8 +105,8 @@ public interface JobFrontendRef {
      * Report that a backend process has finished executing the job.
      *
      * @param theJobBackend Job Backend that is calling this method.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void backendFinished(JobBackendRef theJobBackend)
             throws IOException;
@@ -122,8 +123,8 @@ public interface JobFrontendRef {
      * @param frontendAddress Host/port to which the job backend process is
      * listening for the frontend communicator, or null if the frontend
      * communicator does not exist.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void backendReady(JobBackendRef theJobBackend,
             int rank,
@@ -137,8 +138,8 @@ public interface JobFrontendRef {
      *
      * @param theJobBackend Job Backend that is calling this method.
      * @param errmsg Error message string.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void cancelJob(JobBackendRef theJobBackend,
             String errmsg)
@@ -148,8 +149,8 @@ public interface JobFrontendRef {
      * Renew the lease on the job.
      *
      * @param theJobBackend Job Backend that is calling this method.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void renewLease(JobBackendRef theJobBackend)
             throws IOException;
@@ -159,8 +160,8 @@ public interface JobFrontendRef {
      *
      * @param theJobBackend Job Backend that is calling this method.
      * @param resourceName Resource name.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void requestResource(JobBackendRef theJobBackend,
             String resourceName)
@@ -173,8 +174,8 @@ public interface JobFrontendRef {
      * @param bfd Backend file descriptor.
      * @param file File.
      * @param append True to append, false to overwrite.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void outputFileOpen(JobBackendRef theJobBackend,
             int bfd,
@@ -192,8 +193,8 @@ public interface JobFrontendRef {
      * @param buf Array of bytes to write.
      * @param off Index of first byte to write.
      * @param len Number of bytes to write.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void outputFileWrite(JobBackendRef theJobBackend,
             int ffd,
@@ -207,8 +208,8 @@ public interface JobFrontendRef {
      *
      * @param theJobBackend Job Backend that is calling this method.
      * @param ffd Frontend file descriptor.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void outputFileFlush(JobBackendRef theJobBackend,
             int ffd)
@@ -219,8 +220,8 @@ public interface JobFrontendRef {
      *
      * @param theJobBackend Job Backend that is calling this method.
      * @param ffd Frontend file descriptor.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void outputFileClose(JobBackendRef theJobBackend,
             int ffd)
@@ -232,8 +233,8 @@ public interface JobFrontendRef {
      * @param theJobBackend Job Backend that is calling this method.
      * @param bfd Backend file descriptor.
      * @param file File.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void inputFileOpen(JobBackendRef theJobBackend,
             int bfd,
@@ -248,8 +249,8 @@ public interface JobFrontendRef {
      * @param theJobBackend Job Backend that is calling this method.
      * @param ffd Frontend file descriptor.
      * @param len Number of bytes to read.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void inputFileRead(JobBackendRef theJobBackend,
             int ffd,
@@ -262,8 +263,8 @@ public interface JobFrontendRef {
      * @param theJobBackend Job Backend that is calling this method.
      * @param ffd Frontend file descriptor.
      * @param len Number of bytes to skip.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void inputFileSkip(JobBackendRef theJobBackend,
             int ffd,
@@ -275,8 +276,8 @@ public interface JobFrontendRef {
      *
      * @param theJobBackend Job Backend that is calling this method.
      * @param ffd Frontend file descriptor.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void inputFileClose(JobBackendRef theJobBackend,
             int ffd)
@@ -288,8 +289,8 @@ public interface JobFrontendRef {
      * @param theJobBackend Job backend that is calling this method.
      * @param rank Process rank.
      * @param comment Comment string.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void reportComment(JobBackendRef theJobBackend,
             int rank,

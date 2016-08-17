@@ -259,6 +259,16 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     private final HashMap<Integer, Double> radiiByNumberMap = new HashMap<>();
     private final ForceField forceField;
+    
+    private static final Level GK_WARN_LEVEL;
+    static {
+        String suppressGKwarnings = System.getProperty("gk-suppressWarnings");
+        if (suppressGKwarnings != null && Boolean.parseBoolean(suppressGKwarnings)) {
+            GK_WARN_LEVEL = Level.FINE;
+        } else {
+            GK_WARN_LEVEL = Level.WARNING;
+        }
+    }
 
     /**
      * <p>
@@ -5099,7 +5109,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     boolean moved = false;
                     surface(xi, yi, zi, rri, rri2, rrisq, wght, moved, ir);
                     if (area[ir] < 0.0) {
-                        logger.warning(String.format(" Negative surface area set to 0 for atom %d.", ir));
+                        logger.log(GK_WARN_LEVEL, String.format(" Negative surface area set to 0 for atom %d.", ir));
+                        //logger.warning(String.format(" Negative surface area set to 0 for atom %d.", ir));
                         area[ir] = 0.0;
                         /**
                          * xi = xi + rmove; yi = yi + rmove; zi = zi + rmove;
@@ -5542,7 +5553,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                  logger.warning(String.format(" Connectivity error at atom %d.", ir));
                  } else {
                  */
-                logger.warning(String.format(" Connectivity error at atom %d.", ir));
+                logger.log(GK_WARN_LEVEL, String.format(" Connectivity error at atom %d", ir));
+                //logger.warning(String.format(" Connectivity error at atom %d.", ir));
                 area[ir] = 0.0;
                 /*
                  moved = true;

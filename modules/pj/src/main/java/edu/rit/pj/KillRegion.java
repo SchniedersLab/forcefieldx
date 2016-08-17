@@ -34,11 +34,14 @@
 package edu.rit.pj;
 
 /**
- * Provides a mechanism to shut down a ParallelTeam's threads, enabling garbage 
+ * Provides a mechanism to shut down a ParallelTeam's threads, enabling garbage
  * collection.
+ *
  * @author JacobLitman
+ * @version $Id: $Id
  */
 public class KillRegion extends ParallelRegion {
+    /** {@inheritDoc} */
     @Override
     public void run() throws Exception {
         // Does precisely nothing save exist.

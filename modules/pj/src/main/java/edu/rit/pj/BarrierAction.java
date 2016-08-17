@@ -91,6 +91,7 @@ public abstract class BarrierAction
      * The <TT>run()</TT> method must be implemented in a subclass.
      *
      * @exception Exception The <TT>run()</TT> method may throw any exception.
+     * @throws java.lang.Exception if any.
      */
     public abstract void run()
             throws Exception;

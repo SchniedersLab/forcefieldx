@@ -87,7 +87,6 @@ public class SharedByte
      * value.
      *
      * @param value New value.
-     *
      * @return Previous value.
      */
     public byte getAndSet(byte value) {
@@ -100,7 +99,6 @@ public class SharedByte
      *
      * @param expect Expected value.
      * @param update Updated value.
-     *
      * @return True if the update happened, false otherwise.
      */
     public boolean compareAndSet(byte expect,
@@ -114,7 +112,6 @@ public class SharedByte
      *
      * @param expect Expected value.
      * @param update Updated value.
-     *
      * @return True if the update happened, false otherwise.
      */
     public boolean weakCompareAndSet(byte expect,
@@ -157,7 +154,6 @@ public class SharedByte
      * value.
      *
      * @param value Value to add.
-     *
      * @return Previous value.
      */
     public byte getAndAdd(byte value) {
@@ -204,7 +200,6 @@ public class SharedByte
      * Add the given value to this reduction variable and return the new value.
      *
      * @param value Value to add.
-     *
      * @return New value.
      */
     public byte addAndGet(byte value) {
@@ -224,7 +219,6 @@ public class SharedByte
      *
      * @param value Value.
      * @param op Binary operation.
-     *
      * @return (This variable) <I>op</I> (<TT>value</TT>).
      */
     public byte reduce(byte value,

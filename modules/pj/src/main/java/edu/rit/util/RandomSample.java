@@ -60,9 +60,7 @@ public class RandomSample {
      * @param prng Pseudorandom number generator.
      * @param n Number of items in the sample.
      * @param N Number of items in the set.
-     *
      * @return Iterator over the sample.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <I>n</I> &lt; 0 or <I>N</I> &lt; 0.
      */
@@ -150,9 +148,7 @@ public class RandomSample {
      * @param n Number of items in the sample.
      * @param N Number of items in the set.
      * @param buf Array in which to store the sampled items.
-     *
      * @return Number of sampled items actually stored in <TT>buf</TT>.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <I>n</I> &lt; 0 or <I>N</I> &lt; 0.
      * @exception NullPointerException (unchecked exception) Thrown if
@@ -214,9 +210,7 @@ public class RandomSample {
      * @param prng Pseudorandom number generator.
      * @param n Number of items in the sample.
      * @param N Number of items in the set.
-     *
      * @return Iterator over the sample.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <I>n</I> &lt; 0 or <I>N</I> &lt; 0.
      */
@@ -304,9 +298,7 @@ public class RandomSample {
      * @param n Number of items in the sample.
      * @param N Number of items in the set.
      * @param buf Array in which to store the sampled items.
-     *
      * @return Number of sampled items actually stored in <TT>buf</TT>.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <I>n</I> &lt; 0 or <I>N</I> &lt; 0.
      * @exception NullPointerException (unchecked exception) Thrown if

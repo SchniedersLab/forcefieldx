@@ -349,8 +349,8 @@ public class FrontendFileReader {
      * @param theJobBackend Job Backend that is calling this method.
      * @param bfd Backend file descriptor.
      * @param file File.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void inputFileOpen(JobBackendRef theJobBackend,
             int bfd,
@@ -367,8 +367,8 @@ public class FrontendFileReader {
      * @param theJobBackend Job Backend that is calling this method.
      * @param ffd Frontend file descriptor.
      * @param len Number of bytes to read.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void inputFileRead(JobBackendRef theJobBackend,
             int ffd,
@@ -392,8 +392,8 @@ public class FrontendFileReader {
      * @param theJobBackend Job Backend that is calling this method.
      * @param ffd Frontend file descriptor.
      * @param len Number of bytes to skip.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void inputFileSkip(JobBackendRef theJobBackend,
             int ffd,
@@ -416,8 +416,8 @@ public class FrontendFileReader {
      *
      * @param theJobBackend Job Backend that is calling this method.
      * @param ffd Frontend file descriptor.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void inputFileClose(JobBackendRef theJobBackend,
             int ffd)

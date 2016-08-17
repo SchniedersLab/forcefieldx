@@ -53,7 +53,6 @@ public class StreamFile {
      * processor.
      *
      * @param theFile File.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theFile</TT> is null.
      */
@@ -90,8 +89,8 @@ public class StreamFile {
      * output stream.
      *
      * @return Output stream.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public OutputStream getOutputStream()
             throws IOException {
@@ -115,10 +114,9 @@ public class StreamFile {
      * output stream.
      *
      * @param append True to append, false to overwrite.
-     *
      * @return Output stream.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public OutputStream getOutputStream(boolean append)
             throws IOException {
@@ -144,8 +142,8 @@ public class StreamFile {
      * input stream.
      *
      * @return Input stream.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public InputStream getInputStream()
             throws IOException {
@@ -158,12 +156,9 @@ public class StreamFile {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Determine if this stream file is equal to the given object.
-     *
-     * @param obj Object to test.
-     *
-     * @return True if this stream file is equal to <TT>obj</TT>, false
-     * otherwise.
      */
     public boolean equals(Object obj) {
         return (obj instanceof StreamFile)

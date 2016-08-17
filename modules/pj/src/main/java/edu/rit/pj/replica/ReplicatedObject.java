@@ -91,7 +91,6 @@ import java.util.concurrent.atomic.AtomicReference;
  * java.util.concurrent.atomic.AtomicReference.
  *
  * @param <T> Object data type.
- *
  * @author Alan Kaminsky
  * @version 13-Sep-2008
  */
@@ -143,7 +142,6 @@ public class ReplicatedObject<T> {
      * is used. The world communicator is used.
      *
      * @param op Reduction operator.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>op</TT> is null.
      */
@@ -158,7 +156,6 @@ public class ReplicatedObject<T> {
      *
      * @param op Reduction operator.
      * @param initialValue Initial value.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>op</TT> is null.
      */
@@ -175,7 +172,6 @@ public class ReplicatedObject<T> {
      * @param op Reduction operator.
      * @param initialValue Initial value.
      * @param tag Message tag.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>op</TT> is null. Thrown if
      * <TT>comm</TT> is null.
@@ -194,7 +190,6 @@ public class ReplicatedObject<T> {
      * @param initialValue Initial value.
      * @param tag Message tag.
      * @param comm Communicator.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>op</TT> is null. Thrown if
      * <TT>comm</TT> is null.
@@ -236,10 +231,9 @@ public class ReplicatedObject<T> {
      * processes in the communicator.
      *
      * @param value Value.
-     *
      * @return (This variable) <I>op</I> (<TT>value</TT>).
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public T reduce(T value)
             throws IOException {

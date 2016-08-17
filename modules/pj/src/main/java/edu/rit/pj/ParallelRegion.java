@@ -130,6 +130,7 @@ public abstract class ParallelRegion
      * overridden, the <TT>start()</TT> method does nothing.
      *
      * @exception Exception The <TT>start()</TT> method may throw any exception.
+     * @throws java.lang.Exception if any.
      */
     public void start()
             throws Exception {
@@ -142,6 +143,7 @@ public abstract class ParallelRegion
      * The <TT>run()</TT> method must be implemented in a subclass.
      *
      * @exception Exception The <TT>run()</TT> method may throw any exception.
+     * @throws java.lang.Exception if any.
      */
     public abstract void run()
             throws Exception;
@@ -155,6 +157,7 @@ public abstract class ParallelRegion
      *
      * @exception Exception The <TT>finish()</TT> method may throw any
      * exception.
+     * @throws java.lang.Exception if any.
      */
     public void finish()
             throws Exception {
@@ -175,13 +178,13 @@ public abstract class ParallelRegion
      * @param first First loop index.
      * @param last Last loop index.
      * @param theLoop Parallel for loop.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theLoop</TT> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel region.
      * @exception Exception Thrown if one of <TT>theLoop</TT>'s methods throws
      * an exception.
+     * @throws java.lang.Exception if any.
      */
     public final void execute(int first,
             int last,
@@ -207,7 +210,6 @@ public abstract class ParallelRegion
      * @param last Last loop index.
      * @param theLoop Parallel for loop.
      * @param action Barrier action.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theLoop</TT> is null. Thrown if
      * <TT>action</TT> is null.
@@ -215,6 +217,7 @@ public abstract class ParallelRegion
      * parallel team is executing this parallel region.
      * @exception Exception Thrown if one of <TT>theLoop</TT>'s methods throws
      * an exception.
+     * @throws java.lang.Exception if any.
      */
     public final void execute(int first,
             int last,
@@ -311,7 +314,6 @@ public abstract class ParallelRegion
      * @param last Last loop index.
      * @param stride Loop index stride, &gt;= 1.
      * @param theLoop Parallel for loop.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <TT>stride</TT> &lt; 1.
      * @exception NullPointerException (unchecked exception) Thrown if
@@ -320,6 +322,7 @@ public abstract class ParallelRegion
      * parallel team is executing this parallel region.
      * @exception Exception Thrown if one of <TT>theLoop</TT>'s methods throws
      * an exception.
+     * @throws java.lang.Exception if any.
      */
     public final void execute(int first,
             int last,
@@ -348,7 +351,6 @@ public abstract class ParallelRegion
      * @param stride Loop index stride, &gt;= 1.
      * @param theLoop Parallel for loop.
      * @param action Barrier action.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <TT>stride</TT> &lt; 1.
      * @exception NullPointerException (unchecked exception) Thrown if
@@ -358,6 +360,7 @@ public abstract class ParallelRegion
      * parallel team is executing this parallel region.
      * @exception Exception Thrown if one of <TT>theLoop</TT>'s methods throws
      * an exception.
+     * @throws java.lang.Exception if any.
      */
     public final void execute(int first,
             int last,
@@ -456,13 +459,13 @@ public abstract class ParallelRegion
      * @param first First loop index.
      * @param last Last loop index.
      * @param theLoop Parallel for loop.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theLoop</TT> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel region.
      * @exception Exception Thrown if one of <TT>theLoop</TT>'s methods throws
      * an exception.
+     * @throws java.lang.Exception if any.
      */
     public final void execute(long first,
             long last,
@@ -488,7 +491,6 @@ public abstract class ParallelRegion
      * @param last Last loop index.
      * @param theLoop Parallel for loop.
      * @param action Barrier action.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theLoop</TT> is null. Thrown if
      * <TT>action</TT> is null.
@@ -496,6 +498,7 @@ public abstract class ParallelRegion
      * parallel team is executing this parallel region.
      * @exception Exception Thrown if one of <TT>theLoop</TT>'s methods throws
      * an exception.
+     * @throws java.lang.Exception if any.
      */
     public final void execute(long first,
             long last,
@@ -592,7 +595,6 @@ public abstract class ParallelRegion
      * @param last Last loop index.
      * @param stride Loop index stride, &gt;= 1.
      * @param theLoop Parallel for loop.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <TT>stride</TT> &lt; 1.
      * @exception NullPointerException (unchecked exception) Thrown if
@@ -601,6 +603,7 @@ public abstract class ParallelRegion
      * parallel team is executing this parallel region.
      * @exception Exception Thrown if one of <TT>theLoop</TT>'s methods throws
      * an exception.
+     * @throws java.lang.Exception if any.
      */
     public final void execute(long first,
             long last,
@@ -629,7 +632,6 @@ public abstract class ParallelRegion
      * @param stride Loop index stride, &gt;= 1.
      * @param theLoop Parallel for loop.
      * @param action Barrier action.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <TT>stride</TT> &lt; 1.
      * @exception NullPointerException (unchecked exception) Thrown if
@@ -639,6 +641,7 @@ public abstract class ParallelRegion
      * parallel team is executing this parallel region.
      * @exception Exception Thrown if one of <TT>theLoop</TT>'s methods throws
      * an exception.
+     * @throws java.lang.Exception if any.
      */
     public final void execute(long first,
             long last,
@@ -736,7 +739,6 @@ public abstract class ParallelRegion
      * @param <T> Data type of the items iterated over.
      * @param theArray Array containing the items.
      * @param theIteration Parallel iteration.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theArray</TT> is null or
      * <TT>theIteration</TT> is null.
@@ -744,6 +746,7 @@ public abstract class ParallelRegion
      * parallel team is executing this parallel region.
      * @exception Exception Thrown if one of <TT>theIteration</TT>'s methods
      * throws an exception.
+     * @throws java.lang.Exception if any.
      */
     public final <T> void execute(T[] theArray,
             ParallelIteration<T> theIteration)
@@ -767,7 +770,6 @@ public abstract class ParallelRegion
      * @param theArray Array containing the items.
      * @param theIteration Parallel iteration.
      * @param action Barrier action.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theArray</TT> is null. Thrown if
      * <TT>theIteration</TT> is null. Thrown if <TT>action</TT> is null.
@@ -775,6 +777,7 @@ public abstract class ParallelRegion
      * parallel team is executing this parallel region.
      * @exception Exception Thrown if one of <TT>theIteration</TT>'s methods
      * throws an exception.
+     * @throws java.lang.Exception if any.
      */
     public final <T> void execute(T[] theArray,
             ParallelIteration<T> theIteration,
@@ -870,7 +873,6 @@ public abstract class ParallelRegion
      * @param <T> Data type of the items iterated over.
      * @param theIterator Iterator over the items.
      * @param theIteration Parallel iteration.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theIterator</TT> is null or
      * <TT>theIteration</TT> is null.
@@ -878,6 +880,7 @@ public abstract class ParallelRegion
      * parallel team is executing this parallel region.
      * @exception Exception Thrown if one of <TT>theIteration</TT>'s methods
      * throws an exception.
+     * @throws java.lang.Exception if any.
      */
     public final <T> void execute(Iterator<T> theIterator,
             ParallelIteration<T> theIteration)
@@ -901,7 +904,6 @@ public abstract class ParallelRegion
      * @param theIterator Iterator over the items.
      * @param theIteration Parallel iteration.
      * @param action Barrier action.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theIterator</TT> is null. Thrown if <TT>theIteration</TT> is null.
      * Thrown if <TT>action</TT> is null.
@@ -909,6 +911,7 @@ public abstract class ParallelRegion
      * parallel team is executing this parallel region.
      * @exception Exception Thrown if one of <TT>theIteration</TT>'s methods
      * throws an exception.
+     * @throws java.lang.Exception if any.
      */
     public final <T> void execute(Iterator<T> theIterator,
             ParallelIteration<T> theIteration,
@@ -1004,7 +1007,6 @@ public abstract class ParallelRegion
      * @param <T> Data type of the items iterated over.
      * @param theIterable Iterable collection containing the items.
      * @param theIteration Parallel iteration.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theIterable</TT> is null or
      * <TT>theIteration</TT> is null.
@@ -1012,6 +1014,7 @@ public abstract class ParallelRegion
      * parallel team is executing this parallel region.
      * @exception Exception Thrown if one of <TT>theIteration</TT>'s methods
      * throws an exception.
+     * @throws java.lang.Exception if any.
      */
     public final <T> void execute(Iterable<T> theIterable,
             ParallelIteration<T> theIteration)
@@ -1036,7 +1039,6 @@ public abstract class ParallelRegion
      * @param theIterable Iterable collection containing the items.
      * @param theIteration Parallel iteration.
      * @param action Barrier action.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theIterable</TT> is null. Thrown if <TT>theIteration</TT> is null.
      * Thrown if <TT>action</TT> is null.
@@ -1044,6 +1046,7 @@ public abstract class ParallelRegion
      * parallel team is executing this parallel region.
      * @exception Exception Thrown if one of <TT>theIteration</TT>'s methods
      * throws an exception.
+     * @throws java.lang.Exception if any.
      */
     public final <T> void execute(Iterable<T> theIterable,
             ParallelIteration<T> theIteration,
@@ -1137,13 +1140,13 @@ public abstract class ParallelRegion
      * threads must call the <TT>execute()</TT> method.
      *
      * @param section Parallel section.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>section</TT> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel region.
      * @exception Exception Thrown if the parallel section's <TT>run()</TT>
      * method throws an exception.
+     * @throws java.lang.Exception if any.
      */
     public final void execute(ParallelSection section)
             throws Exception {
@@ -1164,7 +1167,6 @@ public abstract class ParallelRegion
      *
      * @param section Parallel section.
      * @param action Barrier action.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>section</TT> is null. Thrown if
      * <TT>action</TT> is null.
@@ -1172,6 +1174,7 @@ public abstract class ParallelRegion
      * parallel team is executing this parallel region.
      * @exception Exception Thrown if the parallel section's <TT>run()</TT>
      * method throws an exception.
+     * @throws java.lang.Exception if any.
      */
     public final void execute(ParallelSection section,
             BarrierAction action)
@@ -1192,7 +1195,6 @@ public abstract class ParallelRegion
      *
      * @param section1 First parallel section.
      * @param section2 Second parallel section.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>section1</TT> is null. Thrown if
      * <TT>section2</TT> is null.
@@ -1200,6 +1202,7 @@ public abstract class ParallelRegion
      * parallel team is executing this parallel region.
      * @exception Exception Thrown if one of the parallel sections'
      * <TT>run()</TT> methods throws an exception.
+     * @throws java.lang.Exception if any.
      */
     public final void execute(ParallelSection section1,
             ParallelSection section2)
@@ -1223,7 +1226,6 @@ public abstract class ParallelRegion
      * @param section1 First parallel section.
      * @param section2 Second parallel section.
      * @param action Barrier action.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>section1</TT> is null. Thrown if
      * <TT>section2</TT> is null. Thrown if <TT>action</TT> is null.
@@ -1231,6 +1233,7 @@ public abstract class ParallelRegion
      * parallel team is executing this parallel region.
      * @exception Exception Thrown if one of the parallel sections'
      * <TT>run()</TT> methods throws an exception.
+     * @throws java.lang.Exception if any.
      */
     public final void execute(ParallelSection section1,
             ParallelSection section2,
@@ -1254,7 +1257,6 @@ public abstract class ParallelRegion
      * @param section1 First parallel section.
      * @param section2 Second parallel section.
      * @param section3 Third parallel section.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>section1</TT> is null. Thrown if
      * <TT>section2</TT> is null. Thrown if <TT>section3</TT> is null.
@@ -1262,6 +1264,7 @@ public abstract class ParallelRegion
      * parallel team is executing this parallel region.
      * @exception Exception Thrown if one of the parallel sections'
      * <TT>run()</TT> methods throws an exception.
+     * @throws java.lang.Exception if any.
      */
     public final void execute(ParallelSection section1,
             ParallelSection section2,
@@ -1287,7 +1290,6 @@ public abstract class ParallelRegion
      * @param section2 Second parallel section.
      * @param section3 Third parallel section.
      * @param action Barrier action.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>section1</TT> is null. Thrown if
      * <TT>section2</TT> is null. Thrown if <TT>section3</TT> is null. Thrown if
@@ -1296,6 +1298,7 @@ public abstract class ParallelRegion
      * parallel team is executing this parallel region.
      * @exception Exception Thrown if one of the parallel sections'
      * <TT>run()</TT> methods throws an exception.
+     * @throws java.lang.Exception if any.
      */
     public final void execute(ParallelSection section1,
             ParallelSection section2,
@@ -1318,13 +1321,13 @@ public abstract class ParallelRegion
      * threads must call the <TT>execute()</TT> method.
      *
      * @param sections Parallel sections.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any of
      * the <TT>sections</TT> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel region.
      * @exception Exception Thrown if one of the parallel sections'
      * <TT>run()</TT> methods throws an exception.
+     * @throws java.lang.Exception if any.
      */
     public final void execute(ParallelSection[] sections)
             throws Exception {
@@ -1345,13 +1348,13 @@ public abstract class ParallelRegion
      *
      * @param sections Parallel sections.
      * @param action Barrier action.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any of
      * the <TT>sections</TT> is null. Thrown if <TT>action</TT> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel region.
      * @exception Exception Thrown if one of the parallel sections'
      * <TT>run()</TT> methods throws an exception.
+     * @throws java.lang.Exception if any.
      */
     public final void execute(ParallelSection[] sections,
             BarrierAction action)
@@ -1398,13 +1401,13 @@ public abstract class ParallelRegion
      * called the <TT>run()</TT> method (after unlocking the lock).
      *
      * @param theSection Parallel section to execute in the critical region.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theSection</TT> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel region.
      * @exception Exception Thrown if <TT>theSection</TT>'s <TT>run()</TT>
      * method throws an exception.
+     * @throws java.lang.Exception if any.
      */
     public final void critical(ParallelSection theSection)
             throws Exception {
@@ -1429,13 +1432,13 @@ public abstract class ParallelRegion
      * called the <TT>run()</TT> method (after unlocking the lock).
      *
      * @param theSection Parallel section to execute in the critical region.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theSection</TT> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel region.
      * @exception Exception Thrown if <TT>theSection</TT>'s <TT>run()</TT>
      * method throws an exception.
+     * @throws java.lang.Exception if any.
      */
     public final void criticalNonexclusive(ParallelSection theSection)
             throws Exception {
@@ -1458,7 +1461,6 @@ public abstract class ParallelRegion
      *
      * @param theLock Lock.
      * @param theSection Parallel section to execute in the critical region.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theLock</TT> is null or
      * <TT>theSection</TT> is null.
@@ -1466,6 +1468,7 @@ public abstract class ParallelRegion
      * parallel team is executing this parallel region.
      * @exception Exception Thrown if <TT>theSection</TT>'s <TT>run()</TT>
      * method throws an exception.
+     * @throws java.lang.Exception if any.
      */
     public final void critical(Lock theLock,
             ParallelSection theSection)
@@ -1512,7 +1515,6 @@ public abstract class ParallelRegion
      *
      * @param theLock Lock.
      * @param theSection Parallel section to execute in the critical region.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theLock</TT> is null or
      * <TT>theSection</TT> is null.
@@ -1520,6 +1522,7 @@ public abstract class ParallelRegion
      * parallel team is executing this parallel region.
      * @exception Exception Thrown if <TT>theSection</TT>'s <TT>run()</TT>
      * method throws an exception.
+     * @throws java.lang.Exception if any.
      */
     public final void criticalNonexclusive(Lock theLock,
             ParallelSection theSection)
@@ -1574,13 +1577,13 @@ public abstract class ParallelRegion
      * <TT>barrier()</TT> method.
      *
      * @param action Barrier action.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>action</TT> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel region.
      * @exception Exception Thrown if <TT>theSection</TT>'s <TT>run()</TT>
      * method throws an exception.
+     * @throws java.lang.Exception if any.
      */
     public final void barrier(BarrierAction action)
             throws Exception {

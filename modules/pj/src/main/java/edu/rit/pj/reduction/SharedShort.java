@@ -87,7 +87,6 @@ public class SharedShort
      * value.
      *
      * @param value New value.
-     *
      * @return Previous value.
      */
     public short getAndSet(short value) {
@@ -100,7 +99,6 @@ public class SharedShort
      *
      * @param expect Expected value.
      * @param update Updated value.
-     *
      * @return True if the update happened, false otherwise.
      */
     public boolean compareAndSet(short expect,
@@ -114,7 +112,6 @@ public class SharedShort
      *
      * @param expect Expected value.
      * @param update Updated value.
-     *
      * @return True if the update happened, false otherwise.
      */
     public boolean weakCompareAndSet(short expect,
@@ -157,7 +154,6 @@ public class SharedShort
      * value.
      *
      * @param value Value to add.
-     *
      * @return Previous value.
      */
     public short getAndAdd(short value) {
@@ -204,7 +200,6 @@ public class SharedShort
      * Add the given value to this reduction variable and return the new value.
      *
      * @param value Value to add.
-     *
      * @return New value.
      */
     public short addAndGet(short value) {
@@ -224,7 +219,6 @@ public class SharedShort
      *
      * @param value Value.
      * @param op Binary operation.
-     *
      * @return (This variable) <I>op</I> (<TT>value</TT>).
      */
     public short reduce(short value,

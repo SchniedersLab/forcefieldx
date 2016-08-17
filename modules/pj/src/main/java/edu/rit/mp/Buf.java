@@ -102,7 +102,6 @@ public abstract class Buf {
      * does nothing.
      *
      * @param theSrc Source of items to copy into this buffer.
-     *
      * @exception ClassCastException (unchecked exception) Thrown if
      * <TT>theSrc</TT>'s item data type is not the same as this buffer's item
      * data type.
@@ -126,7 +125,6 @@ public abstract class Buf {
      * referring to the same <TT>item</TT>.
      *
      * @param item Item.
-     *
      * @exception ClassCastException (unchecked exception) Thrown if the
      * <TT>item</TT>'s data type is not the same as this buffer's item data
      * type.
@@ -145,10 +143,10 @@ public abstract class Buf {
      * <I>D</I> to <I>S</I>).
      *
      * @param op Binary operation.
-     *
      * @exception ClassCastException (unchecked exception) Thrown if this
      * buffer's element data type and the given binary operation's argument data
      * type are not the same.
+     * @return a {@link edu.rit.mp.Buf} object.
      */
     public abstract Buf getReductionBuf(Op op);
 
@@ -156,6 +154,8 @@ public abstract class Buf {
      * Create a temporary buffer with the same type of items and the same length
      * as this buffer. The new buffer items are stored in a newly created array,
      * separate from the storage for this buffer's items.
+     *
+     * @return a {@link edu.rit.mp.Buf} object.
      */
     public abstract Buf getTemporaryBuf();
 
@@ -178,7 +178,6 @@ public abstract class Buf {
      * @param i Index of first item to send, in the range 0 ..
      * <TT>length</TT>-1.
      * @param buffer Byte buffer.
-     *
      * @return Number of items sent.
      */
     protected abstract int sendItems(int i,
@@ -216,7 +215,6 @@ public abstract class Buf {
      * <TT>length</TT>-1.
      * @param num Maximum number of items to receive.
      * @param buffer Byte buffer.
-     *
      * @return Number of items received.
      */
     protected abstract int receiveItems(int i,

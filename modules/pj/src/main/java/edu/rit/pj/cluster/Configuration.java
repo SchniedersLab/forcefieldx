@@ -183,10 +183,10 @@ public class Configuration {
      * the given file.
      *
      * @param configfile Configuration file name.
-     *
      * @exception IOException Thrown if an I/O error occurred while reading the
      * configuration file. Thrown if there was an error in the configuration
      * file.
+     * @throws java.io.IOException if any.
      */
     public Configuration(String configfile)
             throws IOException {
@@ -272,7 +272,6 @@ public class Configuration {
      * Returns information about the given backend processor.
      *
      * @param i Index in the range 0 .. <TT>getBackendCount()-1</TT>.
-     *
      * @return Backend information object.
      */
     public BackendInfo getBackendInfo(int i) {

@@ -65,8 +65,6 @@ class GuidedIntegerSchedule
      * Construct a new self-guided schedule object with a minimum chunk size of
      * 1.
      *
-     * @param theChunkSize Minimum chunk size.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <TT>theChunkSize</TT> is less than 1.
      */
@@ -78,7 +76,6 @@ class GuidedIntegerSchedule
      * Construct a new self-guided schedule object.
      *
      * @param theChunkSize Minimum chunk size.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <TT>theChunkSize</TT> is less than 1.
      */
@@ -97,7 +94,6 @@ class GuidedIntegerSchedule
      * array of one string, namely the minimum chunk size, an integer &gt;= 1.
      *
      * @param args Array of argument strings.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <TT>args</TT> is not an array of one string. Thrown if the minimum chunk
      * size is less than 1.
@@ -135,15 +131,13 @@ class GuidedIntegerSchedule
 
 // Hidden operations.
     /**
+     * {@inheritDoc}
+     *
      * Start generating chunks of iterations for a parallel for loop using this
      * schedule.
      * <P>
      * The <TT>start()</TT> method is only called by a single thread in the
      * Parallel Java middleware.
-     *
-     * @param K Number of threads in the parallel team.
-     * @param theLoopRange Range of iterations for the entire parallel for loop.
-     * The stride may be 1 or greater.
      */
     public void start(int K,
             Range theLoopRange) {
@@ -154,6 +148,8 @@ class GuidedIntegerSchedule
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Obtain the next chunk of iterations for the given thread index. If there
      * are more iterations, a range object is returned whose lower bound, upper
      * bound, and stride specify the chunk of iterations to perform. The
@@ -165,10 +161,6 @@ class GuidedIntegerSchedule
      * The <TT>next()</TT> method is called by multiple parallel team threads in
      * the Parallel Java middleware. The <TT>next()</TT> method must be multiple
      * thread safe.
-     *
-     * @param theThreadIndex Thread index in the range 0 .. <I>K</I>-1.
-     *
-     * @return Chunk of iterations, or null if no more iterations.
      */
     public Range next(int theThreadIndex) {
         for (;;) {

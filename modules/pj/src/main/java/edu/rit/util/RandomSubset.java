@@ -216,7 +216,6 @@ public class RandomSubset
      *
      * @param prng Underlying PRNG.
      * @param N Size of original set.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>prng</TT> is null.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
@@ -237,7 +236,6 @@ public class RandomSubset
      * @param N Size of original set.
      * @param dense False to use the sparse implementation, true to use the
      * dense implementation.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>prng</TT> is null.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
@@ -272,7 +270,6 @@ public class RandomSubset
      * Returns the next integer in the random subset.
      *
      * @return Next integer in the random subset.
-     *
      * @exception NoSuchElementException (unchecked exception) Thrown if all the
      * integers in the original set have been used up.
      */
@@ -303,9 +300,7 @@ public class RandomSubset
      * returned <TT>i</TT>, then this method does nothing.
      *
      * @param i Integer to remove.
-     *
      * @return This random subset object.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <TT>i</TT> is not in the range 0 through <I>N</I>&minus;1 inclusive.
      */

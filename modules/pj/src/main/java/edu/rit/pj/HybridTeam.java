@@ -24,11 +24,10 @@
 //******************************************************************************
 package edu.rit.pj;
 
-import edu.rit.mp.IntegerBuf;
-
-import edu.rit.util.Range;
-
 import java.io.IOException;
+
+import edu.rit.mp.IntegerBuf;
+import edu.rit.util.Range;
 
 /**
  * Class HybridTeam provides a team of threads, distributed across the processes
@@ -87,6 +86,7 @@ public class HybridTeam
      * <TT>"pj.nt"</TT> property value is not an integer greater than or equal
      * to 1.
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public HybridTeam()
             throws IOException {
@@ -98,10 +98,10 @@ public class HybridTeam
      * and using the world communicator for message passing.
      *
      * @param K Number of threads per process.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <I>K</I> is less than 1.
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public HybridTeam(int K)
             throws IOException {
@@ -123,13 +123,13 @@ public class HybridTeam
      * </PRE>
      *
      * @param comm Communicator to use for message passing.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if the
      * <TT>"pj.nt"</TT> property value is not an integer greater than or equal
      * to 1.
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>comm</TT> is null.
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public HybridTeam(Comm comm)
             throws IOException {
@@ -142,12 +142,12 @@ public class HybridTeam
      *
      * @param K Number of threads per process.
      * @param comm Communicator to use for message passing.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <I>K</I> is less than 1.
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>comm</TT> is null.
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public HybridTeam(int K,
             Comm comm)
@@ -209,7 +209,6 @@ public class HybridTeam
      * </PRE>
      *
      * @return Default number of threads per process for a hybrid team.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if the
      * <TT>"pj.nt"</TT> property value is not an integer greater than or equal
      * to 1.
@@ -223,12 +222,10 @@ public class HybridTeam
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Determine the rank of the process that contains the worker thread with
      * the given index.
-     *
-     * @param w Worker index.
-     *
-     * @return Worker process rank.
      *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <TT>w</TT> is not in the range 0 ..

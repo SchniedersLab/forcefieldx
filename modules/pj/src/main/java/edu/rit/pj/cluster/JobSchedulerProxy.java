@@ -46,6 +46,7 @@ public class JobSchedulerProxy
      * in the given channel group to send messages to the job scheduler process.
      *
      * @param theChannelGroup Channel group.
+     * @param theChannelGroup Channel group.
      * @param theChannel Channel.
      */
     public JobSchedulerProxy(ChannelGroup theChannelGroup,
@@ -55,11 +56,9 @@ public class JobSchedulerProxy
 
 // Exported operations.
     /**
+     * {@inheritDoc}
+     *
      * Report that a backend node failed.
-     *
-     * @param theJobFrontend Job frontend that is calling this method.
-     * @param name Backend node name.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void backendFailed(JobFrontendRef theJobFrontend,
@@ -69,11 +68,9 @@ public class JobSchedulerProxy
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Cancel a job.
-     *
-     * @param theJobFrontend Job frontend that is calling this method.
-     * @param errmsg Error message string.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void cancelJob(JobFrontendRef theJobFrontend,
@@ -83,10 +80,9 @@ public class JobSchedulerProxy
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Report that a job finished.
-     *
-     * @param theJobFrontend Job frontend that is calling this method.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void jobFinished(JobFrontendRef theJobFrontend)
@@ -95,10 +91,9 @@ public class JobSchedulerProxy
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Renew the lease on a job.
-     *
-     * @param theJobFrontend Job frontend that is calling this method.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void renewLease(JobFrontendRef theJobFrontend)
@@ -107,12 +102,9 @@ public class JobSchedulerProxy
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Report a comment for a process.
-     *
-     * @param theJobFrontend Job frontend that is calling this method.
-     * @param rank Process rank.
-     * @param comment Comment string.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void reportComment(JobFrontendRef theJobFrontend,
@@ -123,14 +115,9 @@ public class JobSchedulerProxy
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Request that a job be scheduled.
-     *
-     * @param theJobFrontend Job frontend that is calling this method.
-     * @param username User name.
-     * @param Nn Number of backend nodes.
-     * @param Np Number of processes.
-     * @param Nt Number of CPUs per process. 0 means "all CPUs."
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void requestJob(JobFrontendRef theJobFrontend,

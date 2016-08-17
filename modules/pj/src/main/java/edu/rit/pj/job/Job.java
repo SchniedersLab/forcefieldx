@@ -118,7 +118,6 @@ public class Job
      * @param theJobNumber Job number.
      * @param theDescription Job description.
      * @param theMainClassName Fully qualified name of main class.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theMainClassName</TT> is null.
      */
@@ -156,7 +155,6 @@ public class Job
      * Add the given argument string to this job.
      *
      * @param arg Argument string.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>arg</TT> is null.
      */
@@ -172,7 +170,6 @@ public class Job
      * file does not exist.
      *
      * @param file File.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>file</TT> is null.
      */
@@ -189,7 +186,6 @@ public class Job
      * if it does not exist. The file is overwritten if it does exist.
      *
      * @param file File.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>file</TT> is null.
      */
@@ -206,7 +202,6 @@ public class Job
      * is created if it does not exist.
      *
      * @param file File.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>file</TT> is null.
      */
@@ -223,7 +218,6 @@ public class Job
      * it does not exist. The file is overwritten if it does exist.
      *
      * @param file File.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>file</TT> is null.
      */
@@ -240,7 +234,6 @@ public class Job
      * is created if it does not exist.
      *
      * @param file File.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>file</TT> is null.
      */
@@ -350,10 +343,9 @@ public class Job
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Write this job to the given object output stream.
-     *
-     * @param out Object output stream.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void writeExternal(ObjectOutput out)
@@ -374,10 +366,9 @@ public class Job
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Read this job from the given object input stream.
-     *
-     * @param in Object input stream.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      * @exception ClassNotFoundException Thrown if an object's class could not
      * be found.

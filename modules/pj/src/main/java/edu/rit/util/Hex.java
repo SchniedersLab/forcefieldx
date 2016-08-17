@@ -46,7 +46,6 @@ public class Hex {
      * Convert the given <TT>byte</TT> value to a two-digit hexadecimal string.
      *
      * @param val Value.
-     *
      * @return Hexadecimal string.
      */
     public static String toString(byte val) {
@@ -60,7 +59,6 @@ public class Hex {
      * Convert the given <TT>char</TT> value to a four-digit hexadecimal string.
      *
      * @param val Value.
-     *
      * @return Hexadecimal string.
      */
     public static String toString(char val) {
@@ -77,7 +75,6 @@ public class Hex {
      * string.
      *
      * @param val Value.
-     *
      * @return Hexadecimal string.
      */
     public static String toString(short val) {
@@ -94,7 +91,6 @@ public class Hex {
      * string.
      *
      * @param val Value.
-     *
      * @return Hexadecimal string.
      */
     public static String toString(int val) {
@@ -115,7 +111,6 @@ public class Hex {
      * string.
      *
      * @param val Value.
-     *
      * @return Hexadecimal string.
      */
     public static String toString(long val) {
@@ -144,9 +139,7 @@ public class Hex {
      * is converted to two hexadecimal digits.
      *
      * @param val Byte array.
-     *
      * @return Hexadecimal string.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>val</TT> is null.
      */
@@ -161,9 +154,7 @@ public class Hex {
      * @param val Byte array.
      * @param off Index of first byte to convert.
      * @param len Number of bytes to convert.
-     *
      * @return Hexadecimal string.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>val</TT> is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
@@ -193,9 +184,7 @@ public class Hex {
      * significant digit. Any extra high-order digits in the string are omitted.
      *
      * @param str Hexadecimal string.
-     *
      * @return Value.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>str</TT> is null.
      * @exception IllegalArgumentException (unchecked exception) Thrown if any
@@ -214,9 +203,7 @@ public class Hex {
      * significant digit. Any extra high-order digits in the string are omitted.
      *
      * @param str Hexadecimal string.
-     *
      * @return Value.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>str</TT> is null.
      * @exception IllegalArgumentException (unchecked exception) Thrown if any
@@ -235,9 +222,7 @@ public class Hex {
      * significant digit. Any extra high-order digits in the string are omitted.
      *
      * @param str Hexadecimal string.
-     *
      * @return Value.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>str</TT> is null.
      * @exception IllegalArgumentException (unchecked exception) Thrown if any
@@ -256,9 +241,7 @@ public class Hex {
      * significant digit. Any extra high-order digits in the string are omitted.
      *
      * @param str Hexadecimal string.
-     *
      * @return Value.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>str</TT> is null.
      * @exception IllegalArgumentException (unchecked exception) Thrown if any
@@ -282,9 +265,7 @@ public class Hex {
      * significant digit. Any extra high-order digits in the string are omitted.
      *
      * @param str Hexadecimal string.
-     *
      * @return Value.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>str</TT> is null.
      * @exception IllegalArgumentException (unchecked exception) Thrown if any
@@ -312,9 +293,7 @@ public class Hex {
      * newly allocated byte array is returned.
      *
      * @param str Hexadecimal string.
-     *
      * @return Value (byte array).
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>str</TT> is null.
      * @exception IllegalArgumentException (unchecked exception) Thrown if any
@@ -343,7 +322,6 @@ public class Hex {
      *
      * @param str Hexadecimal string.
      * @param val Byte array in which to store converted value.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>str</TT> is null or <TT>val</TT>
      * is null.
@@ -373,7 +351,6 @@ public class Hex {
      * @param val Byte array in which to store converted value.
      * @param off Index of first byte to store.
      * @param len Number of bytes to store.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>str</TT> is null or <TT>val</TT>
      * is null.

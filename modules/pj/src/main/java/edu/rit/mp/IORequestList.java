@@ -66,7 +66,6 @@ class IORequestList {
      * The first matching I/O request, if any, is returned.
      *
      * @param theIORequest I/O request.
-     *
      * @return Matching I/O request removed from this list, or null if there was
      * no match.
      */
@@ -90,7 +89,6 @@ class IORequestList {
      * @param channel Channel.
      * @param tag Message tag.
      * @param type Message type.
-     *
      * @return Matching I/O request removed from this list, or null if there was
      * no match.
      */
@@ -113,11 +111,10 @@ class IORequestList {
      * this list, then remove it. The first matching I/O request is returned.
      *
      * @param theIORequest I/O request.
-     *
      * @return Matching I/O request removed from this list.
-     *
      * @exception InterruptedException Thrown if the calling thread was
      * interrupted while blocked in this method.
+     * @throws java.lang.InterruptedException if any.
      */
     public synchronized IORequest waitForMatch(IORequest theIORequest)
             throws InterruptedException {
@@ -134,12 +131,13 @@ class IORequestList {
      * message type to be added to this list, then remove it. The first matching
      * I/O request is returned.
      *
-     * @param theIORequest I/O request.
-     *
      * @return Matching I/O request removed from this list.
-     *
      * @exception InterruptedException Thrown if the calling thread was
      * interrupted while blocked in this method.
+     * @param channel a {@link edu.rit.mp.Channel} object.
+     * @param tag a {@link java.lang.Integer} object.
+     * @param type a byte.
+     * @throws java.lang.InterruptedException if any.
      */
     public synchronized IORequest waitForMatch(Channel channel,
             Integer tag,

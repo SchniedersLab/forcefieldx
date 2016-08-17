@@ -316,10 +316,10 @@ public class ChannelGroup {
      * The channel group will log error messages on the standard error.
      *
      * @param theListenAddress Host and port at which to listen.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theListenAddress</TT> is null.
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public ChannelGroup(InetSocketAddress theListenAddress)
             throws IOException {
@@ -336,11 +336,11 @@ public class ChannelGroup {
      * The channel group will log error messages on the standard error.
      *
      * @param theServerSocketChannel Server socket channel.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theServerSocketChannel</TT> is null.
      * @exception IOException Thrown if an I/O error occurred. Thrown if
      * <TT>theServerSocketChannel</TT> is not bound.
+     * @throws java.io.IOException if any.
      */
     public ChannelGroup(ServerSocketChannel theServerSocketChannel)
             throws IOException {
@@ -356,7 +356,6 @@ public class ChannelGroup {
      * The channel group will log error messages using the given logger.
      *
      * @param theLogger Logger for error messages.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theLogger</TT> is null.
      */
@@ -384,10 +383,10 @@ public class ChannelGroup {
      *
      * @param theListenAddress Host and port at which to listen.
      * @param theLogger Logger for error messages.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theListenAddress</TT> is null. Thrown if <TT>theLogger</TT> is null.
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public ChannelGroup(InetSocketAddress theListenAddress,
             Logger theLogger)
@@ -407,12 +406,12 @@ public class ChannelGroup {
      *
      * @param theServerSocketChannel Server socket channel.
      * @param theLogger Logger for error messages.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theServerSocketChannel</TT> is null. Thrown if <TT>theLogger</TT> is
      * null.
      * @exception IOException Thrown if an I/O error occurred. Thrown if
      * <TT>theServerSocketChannel</TT> is not bound.
+     * @throws java.io.IOException if any.
      */
     public ChannelGroup(ServerSocketChannel theServerSocketChannel,
             Logger theLogger)
@@ -459,12 +458,12 @@ public class ChannelGroup {
      * actively listening, call the <TT>startListening()</TT> method.
      *
      * @param theListenAddress Host and port at which to listen.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theListenAddress</TT> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if
      * listening has already started.
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public synchronized void listen(InetSocketAddress theListenAddress)
             throws IOException {
@@ -482,13 +481,13 @@ public class ChannelGroup {
      * listening, call the <TT>startListening()</TT> method.
      *
      * @param theServerSocketChannel Server socket channel.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theServerSocketChannel</TT> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if
      * listening has already started.
      * @exception IOException Thrown if an I/O error occurred. Thrown if
      * <TT>theServerSocketChannel</TT> is not bound.
+     * @throws java.io.IOException if any.
      */
     public synchronized void listen(ServerSocketChannel theServerSocketChannel)
             throws IOException {
@@ -558,10 +557,9 @@ public class ChannelGroup {
      * <TT>nearEndConnected()</TT> method to report the new channel.
      *
      * @param theFarEndAddress Host and port of far end channel group.
-     *
      * @return New channel.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public Channel connect(InetSocketAddress theFarEndAddress)
             throws IOException {
@@ -611,11 +609,11 @@ public class ChannelGroup {
      *
      * @param theChannel Channel.
      * @param theSrc Item source buffer.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theChannel</TT> is null or
      * <TT>theSrc</TT> is null.
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void send(Channel theChannel,
             Buf theSrc)
@@ -639,11 +637,11 @@ public class ChannelGroup {
      * @param theChannel Channel.
      * @param theTag Message tag.
      * @param theSrc Item source buffer.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theChannel</TT> is null or
      * <TT>theSrc</TT> is null.
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void send(Channel theChannel,
             int theTag,
@@ -670,11 +668,11 @@ public class ChannelGroup {
      * @param theChannel Channel.
      * @param theSrc Item source buffer.
      * @param theIORequest IORequest object.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theChannel</TT> is null,
      * <TT>theSrc</TT> is null, or <TT>theIORequest</TT> is null.
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void sendNoWait(Channel theChannel,
             Buf theSrc,
@@ -700,11 +698,11 @@ public class ChannelGroup {
      * @param theTag Message tag.
      * @param theSrc Item source buffer.
      * @param theIORequest IORequest object.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theChannel</TT> is null,
      * <TT>theSrc</TT> is null, or <TT>theIORequest</TT> is null.
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void sendNoWait(Channel theChannel,
             int theTag,
@@ -741,12 +739,11 @@ public class ChannelGroup {
      *
      * @param theChannel Channel, or null to receive from any channel.
      * @param theDst Item destination buffer.
-     *
      * @return Status object giving the outcome of the message reception.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theDst</TT> is null.
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public Status receive(Channel theChannel,
             Buf theDst)
@@ -772,12 +769,11 @@ public class ChannelGroup {
      * @param theChannel Channel, or null to receive from any channel.
      * @param theTag Message tag.
      * @param theDst Item destination buffer.
-     *
      * @return Status object giving the outcome of the message reception.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theDst</TT> is null.
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public Status receive(Channel theChannel,
             int theTag,
@@ -805,12 +801,11 @@ public class ChannelGroup {
      * @param theChannel Channel, or null to receive from any channel.
      * @param theTagRange Message tag range, or null to receive any tag.
      * @param theDst Item destination buffer.
-     *
      * @return Status object giving the outcome of the message reception.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theDst</TT> is null.
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public Status receive(Channel theChannel,
             Range theTagRange,
@@ -843,11 +838,11 @@ public class ChannelGroup {
      * @param theChannel Channel, or null to receive from any channel.
      * @param theDst Item destination buffer.
      * @param theIORequest IORequest object.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theDst</TT> is null or
      * <TT>theIORequest</TT> is null.
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void receiveNoWait(Channel theChannel,
             Buf theDst,
@@ -874,11 +869,11 @@ public class ChannelGroup {
      * @param theTag Message tag.
      * @param theDst Item destination buffer.
      * @param theIORequest IORequest object.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theDst</TT> is null or
      * <TT>theIORequest</TT> is null.
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void receiveNoWait(Channel theChannel,
             int theTag,
@@ -907,11 +902,11 @@ public class ChannelGroup {
      * @param theTagRange Message tag range, or null to receive any tag.
      * @param theDst Item destination buffer.
      * @param theIORequest IORequest object.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theDst</TT> is null or
      * <TT>theIORequest</TT> is null.
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void receiveNoWait(Channel theChannel,
             Range theTagRange,

@@ -56,10 +56,11 @@ public class ReduceArrays {
      *
      * @param src Source array.
      * @param srcRange Range of source elements.
+     * @param srcRange Range of source elements.
      * @param dst Destination array.
      * @param dstRange Range of destination elements.
+     * @param dstRange Range of destination elements.
      * @param op Binary operation.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -118,10 +119,11 @@ public class ReduceArrays {
      *
      * @param src Source array.
      * @param srcRange Range of source elements.
+     * @param srcRange Range of source elements.
      * @param dst Destination array.
      * @param dstRange Range of destination elements.
+     * @param dstRange Range of destination elements.
      * @param op Binary operation.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -180,10 +182,11 @@ public class ReduceArrays {
      *
      * @param src Source array.
      * @param srcRange Range of source elements.
+     * @param srcRange Range of source elements.
      * @param dst Destination array.
      * @param dstRange Range of destination elements.
+     * @param dstRange Range of destination elements.
      * @param op Binary operation.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -242,10 +245,11 @@ public class ReduceArrays {
      *
      * @param src Source array.
      * @param srcRange Range of source elements.
+     * @param srcRange Range of source elements.
      * @param dst Destination array.
      * @param dstRange Range of destination elements.
+     * @param dstRange Range of destination elements.
      * @param op Binary operation.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -304,10 +308,11 @@ public class ReduceArrays {
      *
      * @param src Source array.
      * @param srcRange Range of source elements.
+     * @param srcRange Range of source elements.
      * @param dst Destination array.
      * @param dstRange Range of destination elements.
+     * @param dstRange Range of destination elements.
      * @param op Binary operation.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -366,10 +371,11 @@ public class ReduceArrays {
      *
      * @param src Source array.
      * @param srcRange Range of source elements.
+     * @param srcRange Range of source elements.
      * @param dst Destination array.
      * @param dstRange Range of destination elements.
+     * @param dstRange Range of destination elements.
      * @param op Binary operation.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -428,10 +434,11 @@ public class ReduceArrays {
      *
      * @param src Source array.
      * @param srcRange Range of source elements.
+     * @param srcRange Range of source elements.
      * @param dst Destination array.
      * @param dstRange Range of destination elements.
+     * @param dstRange Range of destination elements.
      * @param op Binary operation.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -490,10 +497,11 @@ public class ReduceArrays {
      *
      * @param src Source array.
      * @param srcRange Range of source elements.
+     * @param srcRange Range of source elements.
      * @param dst Destination array.
      * @param dstRange Range of destination elements.
+     * @param dstRange Range of destination elements.
      * @param op Binary operation.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -550,14 +558,14 @@ public class ReduceArrays {
      * each corresponding source array element <I>S</I> in the source range,
      * <I>D</I> is set to <I>D op S</I>.
      *
-     * @param <ST> Source array element data type.
      * @param <DT> Destination array element data type.
      * @param src Source array.
      * @param srcRange Range of source elements.
+     * @param srcRange Range of source elements.
      * @param dst Destination array.
      * @param dstRange Range of destination elements.
+     * @param dstRange Range of destination elements.
      * @param op Binary operation.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -622,11 +630,14 @@ public class ReduceArrays {
      * @param src Source matrix.
      * @param srcRowRange Range of source rows.
      * @param srcColRange Range of source columns.
+     * @param srcRowRange Range of source rows.
+     * @param srcColRange Range of source columns.
      * @param dst Destination matrix.
      * @param dstRowRange Range of destination rows.
      * @param dstColRange Range of destination columns.
+     * @param dstRowRange Range of destination rows.
+     * @param dstColRange Range of destination columns.
      * @param op Binary operation.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -697,11 +708,14 @@ public class ReduceArrays {
      * @param src Source matrix.
      * @param srcRowRange Range of source rows.
      * @param srcColRange Range of source columns.
+     * @param srcRowRange Range of source rows.
+     * @param srcColRange Range of source columns.
      * @param dst Destination matrix.
      * @param dstRowRange Range of destination rows.
      * @param dstColRange Range of destination columns.
+     * @param dstRowRange Range of destination rows.
+     * @param dstColRange Range of destination columns.
      * @param op Binary operation.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -772,11 +786,14 @@ public class ReduceArrays {
      * @param src Source matrix.
      * @param srcRowRange Range of source rows.
      * @param srcColRange Range of source columns.
+     * @param srcRowRange Range of source rows.
+     * @param srcColRange Range of source columns.
      * @param dst Destination matrix.
      * @param dstRowRange Range of destination rows.
      * @param dstColRange Range of destination columns.
+     * @param dstRowRange Range of destination rows.
+     * @param dstColRange Range of destination columns.
      * @param op Binary operation.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -843,11 +860,14 @@ public class ReduceArrays {
      * @param src Source matrix.
      * @param srcRowRange Range of source rows.
      * @param srcColRange Range of source columns.
+     * @param srcRowRange Range of source rows.
+     * @param srcColRange Range of source columns.
      * @param dst Destination matrix.
      * @param dstRowRange Range of destination rows.
      * @param dstColRange Range of destination columns.
+     * @param dstRowRange Range of destination rows.
+     * @param dstColRange Range of destination columns.
      * @param op Binary operation.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -918,11 +938,14 @@ public class ReduceArrays {
      * @param src Source matrix.
      * @param srcRowRange Range of source rows.
      * @param srcColRange Range of source columns.
+     * @param srcRowRange Range of source rows.
+     * @param srcColRange Range of source columns.
      * @param dst Destination matrix.
      * @param dstRowRange Range of destination rows.
      * @param dstColRange Range of destination columns.
+     * @param dstRowRange Range of destination rows.
+     * @param dstColRange Range of destination columns.
      * @param op Binary operation.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -993,11 +1016,14 @@ public class ReduceArrays {
      * @param src Source matrix.
      * @param srcRowRange Range of source rows.
      * @param srcColRange Range of source columns.
+     * @param srcRowRange Range of source rows.
+     * @param srcColRange Range of source columns.
      * @param dst Destination matrix.
      * @param dstRowRange Range of destination rows.
      * @param dstColRange Range of destination columns.
+     * @param dstRowRange Range of destination rows.
+     * @param dstColRange Range of destination columns.
      * @param op Binary operation.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -1068,11 +1094,14 @@ public class ReduceArrays {
      * @param src Source matrix.
      * @param srcRowRange Range of source rows.
      * @param srcColRange Range of source columns.
+     * @param srcRowRange Range of source rows.
+     * @param srcColRange Range of source columns.
      * @param dst Destination matrix.
      * @param dstRowRange Range of destination rows.
      * @param dstColRange Range of destination columns.
+     * @param dstRowRange Range of destination rows.
+     * @param dstColRange Range of destination columns.
      * @param op Binary operation.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -1143,11 +1172,14 @@ public class ReduceArrays {
      * @param src Source matrix.
      * @param srcRowRange Range of source rows.
      * @param srcColRange Range of source columns.
+     * @param srcRowRange Range of source rows.
+     * @param srcColRange Range of source columns.
      * @param dst Destination matrix.
      * @param dstRowRange Range of destination rows.
      * @param dstColRange Range of destination columns.
+     * @param dstRowRange Range of destination rows.
+     * @param dstColRange Range of destination columns.
      * @param op Binary operation.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
@@ -1215,16 +1247,18 @@ public class ReduceArrays {
      * column ranges and each corresponding source matrix element <I>S</I> in
      * the source row and column ranges, <I>D</I> is set to <I>D op S</I>.
      *
-     * @param <ST> Source matrix element data type.
      * @param <DT> Destination matrix element data type.
      * @param src Source matrix.
+     * @param srcRowRange Range of source rows.
+     * @param srcColRange Range of source columns.
      * @param srcRowRange Range of source rows.
      * @param srcColRange Range of source columns.
      * @param dst Destination matrix.
      * @param dstRowRange Range of destination rows.
      * @param dstColRange Range of destination columns.
+     * @param dstRowRange Range of destination rows.
+     * @param dstColRange Range of destination columns.
      * @param op Binary operation.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any

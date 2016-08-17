@@ -65,7 +65,6 @@ public abstract class ParallelConstruct {
      * Returns the parallel team that is executing this parallel construct.
      *
      * @return Parallel team.
-     *
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel construct.
      */
@@ -81,7 +80,6 @@ public abstract class ParallelConstruct {
      * executing this parallel construct.
      *
      * @return Parallel region.
-     *
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel construct.
      */
@@ -97,7 +95,6 @@ public abstract class ParallelConstruct {
      * parallel construct.
      *
      * @return Number of threads in the thread team.
-     *
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel construct.
      */
@@ -114,7 +111,6 @@ public abstract class ParallelConstruct {
      *
      * @return Index of the calling thread in the range 0 ..
      * <TT>getThreadCount()-1</TT>.
-     *
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel construct. Thrown if the thread
      * calling

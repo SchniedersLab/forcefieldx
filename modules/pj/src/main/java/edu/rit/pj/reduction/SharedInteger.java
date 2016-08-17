@@ -86,7 +86,6 @@ public class SharedInteger
      * value.
      *
      * @param value New value.
-     *
      * @return Previous value.
      */
     public int getAndSet(int value) {
@@ -99,7 +98,6 @@ public class SharedInteger
      *
      * @param expect Expected value.
      * @param update Updated value.
-     *
      * @return True if the update happened, false otherwise.
      */
     public boolean compareAndSet(int expect,
@@ -113,7 +111,6 @@ public class SharedInteger
      *
      * @param expect Expected value.
      * @param update Updated value.
-     *
      * @return True if the update happened, false otherwise.
      */
     public boolean weakCompareAndSet(int expect,
@@ -144,7 +141,6 @@ public class SharedInteger
      * value.
      *
      * @param value Value to add.
-     *
      * @return Previous value.
      */
     public int getAndAdd(int value) {
@@ -173,7 +169,6 @@ public class SharedInteger
      * Add the given value to this reduction variable and return the new value.
      *
      * @param value Value to add.
-     *
      * @return New value.
      */
     public int addAndGet(int value) {
@@ -187,7 +182,6 @@ public class SharedInteger
      *
      * @param value Value.
      * @param op Binary operation.
-     *
      * @return (This variable) <I>op</I> (<TT>value</TT>).
      */
     public int reduce(int value,

@@ -63,8 +63,8 @@ import edu.rit.pj.reduction.SharedInteger;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
+import ffx.numerics.MultipoleTensor;
 import ffx.numerics.Potential;
-import ffx.numerics.TensorRecursion;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
@@ -100,6 +100,4086 @@ import static ffx.potential.parameters.MultipoleType.t100;
 import static ffx.potential.parameters.MultipoleType.t101;
 import static ffx.potential.parameters.MultipoleType.t110;
 import static ffx.potential.parameters.MultipoleType.t200;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.transpose3;
 
 /**
  * This Particle Mesh Ewald class implements PME for the AMOEBA polarizable
@@ -6653,7 +10733,7 @@ public class PME_2 implements Potential {
     /**
      * Number of unique tensors for given order.
      */
-    public static final int tensorCount = TensorRecursion.tensorCount(3);
+    public static final int tensorCount = MultipoleTensor.tensorCount(3);
     private final double sfPhi[] = new double[tensorCount];
     private final double sPhi[] = new double[tensorCount];
 

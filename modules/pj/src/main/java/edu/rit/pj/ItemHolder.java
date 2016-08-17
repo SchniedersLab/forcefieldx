@@ -65,10 +65,9 @@ class ItemHolder<T>
 
 // Exported operations.
     /**
+     * {@inheritDoc}
+     *
      * Write this object holder to the given object output stream.
-     *
-     * @param out Object output stream.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void writeExternal(ObjectOutput out)
@@ -78,10 +77,9 @@ class ItemHolder<T>
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Read this object holder from the given object input stream.
-     *
-     * @param in Object input stream.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      * @exception ClassNotFoundException Thrown if the class of the object could
      * not be found.

@@ -70,12 +70,12 @@ public abstract class JobFrontendMessage
      * @param name Backend node name.
      * @param host Host name for SSH remote login.
      * @param jvm Full pathname of Java Virtual Machine.
+     * @param jvmflags Array of JVM command line flags.
      * @param classpath Java class path for PJ Library.
      * @param jvmflags Array of JVM command line flags.
      * @param shellCommand Shell command string.
      * @param Nt Number of CPUs assigned to the process.
-     *
-     * @return "Assign backend" message.
+     * @return a {@link edu.rit.pj.cluster.JobFrontendMessage} object.
      */
     public static JobFrontendMessage assignBackend(JobSchedulerRef theJobScheduler,
             String name,
@@ -95,8 +95,7 @@ public abstract class JobFrontendMessage
      * @param theJobScheduler Job Scheduler that is calling this method.
      * @param jobnum Job number.
      * @param pjhost Host name for middleware channel group.
-     *
-     * @return "Assign job number" message.
+     * @return a {@link edu.rit.pj.cluster.JobFrontendMessage} object.
      */
     public static JobFrontendMessage assignJobNumber(JobSchedulerRef theJobScheduler,
             int jobnum,
@@ -109,8 +108,7 @@ public abstract class JobFrontendMessage
      *
      * @param theJobScheduler Job Scheduler that is calling this method.
      * @param errmsg Error message string.
-     *
-     * @return "Cancel job" message.
+     * @return a {@link edu.rit.pj.cluster.JobFrontendMessage} object.
      */
     public static JobFrontendMessage cancelJob(JobSchedulerRef theJobScheduler,
             String errmsg) {
@@ -121,8 +119,7 @@ public abstract class JobFrontendMessage
      * Construct a new "renew lease" message.
      *
      * @param theJobScheduler Job Scheduler that is calling this method.
-     *
-     * @return "Renew lease" message.
+     * @return a {@link edu.rit.pj.cluster.JobFrontendMessage} object.
      */
     public static JobFrontendMessage renewLease(JobSchedulerRef theJobScheduler) {
         return new RenewLeaseMessage(theJobScheduler);
@@ -132,8 +129,7 @@ public abstract class JobFrontendMessage
      * Construct a new "backend finished" message.
      *
      * @param theJobBackend Job Backend that is calling this method.
-     *
-     * @return "Backend finished" message.
+     * @return a {@link edu.rit.pj.cluster.JobFrontendMessage} object.
      */
     public static JobFrontendMessage backendFinished(JobBackendRef theJobBackend) {
         return new BackendFinishedMessage(theJobBackend);
@@ -151,8 +147,7 @@ public abstract class JobFrontendMessage
      * @param frontendAddress Host/port to which the job backend process is
      * listening for the frontend communicator, or null if the frontend
      * communicator does not exist.
-     *
-     * @return "Backend ready" message.
+     * @return a {@link edu.rit.pj.cluster.JobFrontendMessage} object.
      */
     public static JobFrontendMessage backendReady(JobBackendRef theJobBackend,
             int rank,
@@ -168,8 +163,7 @@ public abstract class JobFrontendMessage
      *
      * @param theJobBackend Job Backend that is calling this method.
      * @param errmsg Error message string.
-     *
-     * @return "Cancel job" message.
+     * @return a {@link edu.rit.pj.cluster.JobFrontendMessage} object.
      */
     public static JobFrontendMessage cancelJob(JobBackendRef theJobBackend,
             String errmsg) {
@@ -180,8 +174,7 @@ public abstract class JobFrontendMessage
      * Construct a new "renew lease" message.
      *
      * @param theJobBackend Job Backend that is calling this method.
-     *
-     * @return "Renew lease" message.
+     * @return a {@link edu.rit.pj.cluster.JobFrontendMessage} object.
      */
     public static JobFrontendMessage renewLease(JobBackendRef theJobBackend) {
         return new RenewLeaseMessage(theJobBackend);
@@ -192,8 +185,7 @@ public abstract class JobFrontendMessage
      *
      * @param theJobBackend Job Backend that is calling this method.
      * @param resourceName Resource name.
-     *
-     * @return "Request resource" message.
+     * @return a {@link edu.rit.pj.cluster.JobFrontendMessage} object.
      */
     public static JobFrontendMessage requestResource(JobBackendRef theJobBackend,
             String resourceName) {
@@ -207,8 +199,7 @@ public abstract class JobFrontendMessage
      * @param bfd Backend file descriptor.
      * @param file File.
      * @param append True to append, false to overwrite.
-     *
-     * @return "Output file open" message.
+     * @return a {@link edu.rit.pj.cluster.JobFrontendMessage} object.
      */
     public static JobFrontendMessage outputFileOpen(JobBackendRef theJobBackend,
             int bfd,
@@ -223,8 +214,7 @@ public abstract class JobFrontendMessage
      * @param theJobBackend Job Backend that is calling this method.
      * @param ffd Frontend file descriptor.
      * @param len Number of bytes to write.
-     *
-     * @return "Output file write" message.
+     * @return a {@link edu.rit.pj.cluster.JobFrontendMessage} object.
      */
     public static JobFrontendMessage outputFileWrite(JobBackendRef theJobBackend,
             int ffd,
@@ -237,8 +227,7 @@ public abstract class JobFrontendMessage
      *
      * @param theJobBackend Job Backend that is calling this method.
      * @param ffd Frontend file descriptor.
-     *
-     * @return "Flush file" message.
+     * @return a {@link edu.rit.pj.cluster.JobFrontendMessage} object.
      */
     public static JobFrontendMessage outputFileFlush(JobBackendRef theJobBackend,
             int ffd) {
@@ -250,8 +239,7 @@ public abstract class JobFrontendMessage
      *
      * @param theJobBackend Job Backend that is calling this method.
      * @param ffd Frontend file descriptor.
-     *
-     * @return "Output file close" message.
+     * @return a {@link edu.rit.pj.cluster.JobFrontendMessage} object.
      */
     public static JobFrontendMessage outputFileClose(JobBackendRef theJobBackend,
             int ffd) {
@@ -264,8 +252,7 @@ public abstract class JobFrontendMessage
      * @param theJobBackend Job Backend that is calling this method.
      * @param bfd Backend file descriptor.
      * @param file File.
-     *
-     * @return "Input file open" message.
+     * @return a {@link edu.rit.pj.cluster.JobFrontendMessage} object.
      */
     public static JobFrontendMessage inputFileOpen(JobBackendRef theJobBackend,
             int bfd,
@@ -279,8 +266,7 @@ public abstract class JobFrontendMessage
      * @param theJobBackend Job Backend that is calling this method.
      * @param ffd Frontend file descriptor.
      * @param len Number of bytes to read.
-     *
-     * @return "Input file read" message.
+     * @return a {@link edu.rit.pj.cluster.JobFrontendMessage} object.
      */
     public static JobFrontendMessage inputFileRead(JobBackendRef theJobBackend,
             int ffd,
@@ -294,8 +280,7 @@ public abstract class JobFrontendMessage
      * @param theJobBackend Job Backend that is calling this method.
      * @param ffd Frontend file descriptor.
      * @param len Number of bytes to skip.
-     *
-     * @return "Input file skip" message.
+     * @return a {@link edu.rit.pj.cluster.JobFrontendMessage} object.
      */
     public static JobFrontendMessage inputFileSkip(JobBackendRef theJobBackend,
             int ffd,
@@ -308,8 +293,7 @@ public abstract class JobFrontendMessage
      *
      * @param theJobBackend Job Backend that is calling this method.
      * @param ffd Frontend file descriptor.
-     *
-     * @return "Input file close" message.
+     * @return a {@link edu.rit.pj.cluster.JobFrontendMessage} object.
      */
     public static JobFrontendMessage inputFileClose(JobBackendRef theJobBackend,
             int ffd) {
@@ -322,8 +306,7 @@ public abstract class JobFrontendMessage
      * @param theJobBackend Job backend that is calling this method.
      * @param rank Process rank.
      * @param comment Comment string.
-     *
-     * @return "Report comment" message.
+     * @return a {@link edu.rit.pj.cluster.JobFrontendMessage} object.
      */
     public static JobFrontendMessage reportComment(JobBackendRef theJobBackend,
             int rank,
@@ -338,8 +321,8 @@ public abstract class JobFrontendMessage
      *
      * @param theJobFrontend Job Frontend on which to invoke the method.
      * @param theJobScheduler Job Scheduler that is calling the method.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void invoke(JobFrontendRef theJobFrontend,
             JobSchedulerRef theJobScheduler)
@@ -354,8 +337,8 @@ public abstract class JobFrontendMessage
      *
      * @param theJobFrontend Job Frontend on which to invoke the method.
      * @param theJobBackend Job Backend that is calling the method.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void invoke(JobFrontendRef theJobFrontend,
             JobBackendRef theJobBackend)
@@ -364,10 +347,9 @@ public abstract class JobFrontendMessage
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Write this job frontend message to the given object output stream.
-     *
-     * @param out Object output stream.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void writeExternal(ObjectOutput out)
@@ -375,10 +357,9 @@ public abstract class JobFrontendMessage
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Read this job frontend message from the given object input stream.
-     *
-     * @param in Object input stream.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      * @exception ClassNotFoundException Thrown if a class needed to read this
      * job backend message could not be found.

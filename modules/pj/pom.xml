@@ -15,4 +15,21 @@
     <packaging>jar</packaging>
     <name>Parallel Java</name>
     <description>Minor modifications to Parallel Java</description>
+    <build>
+        <pluginManagement>
+            <!-- Explicitly define plugin versions for reproducible builds -->
+            <plugins>
+                <plugin>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>2.10.3</version>
+                    <inherited>true</inherited>
+                    <configuration>
+                        <author>true</author>
+                        <defaultAuthor>Alan Kaminsky</defaultAuthor>
+                        <defaultSince>1.0</defaultSince>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
 </project>

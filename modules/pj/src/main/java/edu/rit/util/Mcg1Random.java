@@ -130,7 +130,6 @@ public class Mcg1Random
      * Construct a new PRNG with the given seed. The seed must not be 0.
      *
      * @param seed Seed.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <TT>seed</TT> = 0.
      */
@@ -140,10 +139,9 @@ public class Mcg1Random
 
 // Exported operations.
     /**
+     * {@inheritDoc}
+     *
      * Set this PRNG's seed. The seed must not be 0.
-     *
-     * @param seed Seed.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <TT>seed</TT> = 0.
      */
@@ -197,12 +195,10 @@ public class Mcg1Random
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Return the 64-bit pseudorandom value the given number of positions ahead
      * in this PRNG's sequence.
-     *
-     * @param skip Number of positions to skip, assumed to be &gt; 0.
-     *
-     * @return Pseudorandom value.
      */
     protected long next(long skip) {
         // Compute seed * A^skip (mod M).

@@ -56,6 +56,7 @@ public class JobBackendProxy
      * in the given channel group to send messages to the job backend process.
      *
      * @param theChannelGroup Channel group.
+     * @param theChannelGroup Channel group.
      * @param theChannel Channel.
      */
     public JobBackendProxy(ChannelGroup theChannelGroup,
@@ -65,11 +66,9 @@ public class JobBackendProxy
 
 // Exported operations.
     /**
+     * {@inheritDoc}
+     *
      * Cancel the job.
-     *
-     * @param theJobFrontend Job Frontend that is calling this method.
-     * @param errmsg Error message string.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void cancelJob(JobFrontendRef theJobFrontend,
@@ -98,8 +97,8 @@ public class JobBackendProxy
      * @param mainClassName Fully qualified class name of the Java main program
      * class to execute.
      * @param args Array of 0 or more Java command line arguments.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void commenceJob(JobFrontendRef theJobFrontend,
             InetSocketAddress[] middlewareAddress,
@@ -114,10 +113,9 @@ public class JobBackendProxy
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Report that the job finished.
-     *
-     * @param theJobFrontend Job frontend that is calling this method.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void jobFinished(JobFrontendRef theJobFrontend)
@@ -126,10 +124,9 @@ public class JobBackendProxy
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Renew the lease on the job.
-     *
-     * @param theJobFrontend Job Frontend that is calling this method.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void renewLease(JobFrontendRef theJobFrontend)
@@ -143,8 +140,8 @@ public class JobBackendProxy
      * @param theJobFrontend Job Frontend that is calling this method.
      * @param resourceName Resource name.
      * @param content Resource content, or null if resource not found.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void reportResource(JobFrontendRef theJobFrontend,
             String resourceName,
@@ -154,12 +151,9 @@ public class JobBackendProxy
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Report the content for a previously-requested resource.
-     *
-     * @param theJobFrontend Job Frontend that is calling this method.
-     * @param resourceName Resource name.
-     * @param content Resource content, or null if resource not found.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void reportResource(JobFrontendRef theJobFrontend,
@@ -170,13 +164,9 @@ public class JobBackendProxy
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Report the result of opening the given output file.
-     *
-     * @param theJobFrontend Job Frontend that is calling this method.
-     * @param bfd Backend file descriptor.
-     * @param ffd Frontend file descriptor if success.
-     * @param exc Null if success, exception if failure.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void outputFileOpenResult(JobFrontendRef theJobFrontend,
@@ -188,12 +178,9 @@ public class JobBackendProxy
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Report the result of writing the given output file.
-     *
-     * @param theJobFrontend Job Frontend that is calling this method.
-     * @param ffd Frontend file descriptor.
-     * @param exc Null if success, exception if failure.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void outputFileWriteResult(JobFrontendRef theJobFrontend,
@@ -204,12 +191,9 @@ public class JobBackendProxy
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Report the result of flushing the given output file.
-     *
-     * @param theJobFrontend Job Frontend that is calling this method.
-     * @param ffd Frontend file descriptor.
-     * @param exc Null if success, exception if failure.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void outputFileFlushResult(JobFrontendRef theJobFrontend,
@@ -220,12 +204,9 @@ public class JobBackendProxy
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Report the result of closing the given output file.
-     *
-     * @param theJobFrontend Job Frontend that is calling this method.
-     * @param ffd Frontend file descriptor.
-     * @param exc Null if success, exception if failure.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void outputFileCloseResult(JobFrontendRef theJobFrontend,
@@ -236,13 +217,9 @@ public class JobBackendProxy
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Report the result of opening the given input file.
-     *
-     * @param theJobFrontend Job Frontend that is calling this method.
-     * @param bfd Backend file descriptor.
-     * @param ffd Frontend file descriptor if success.
-     * @param exc Null if success, exception if failure.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void inputFileOpenResult(JobFrontendRef theJobFrontend,
@@ -254,14 +231,9 @@ public class JobBackendProxy
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Report the result of reading the given input file.
-     *
-     * @param theJobFrontend Job Frontend that is calling this method.
-     * @param ffd Frontend file descriptor.
-     * @param buf Bytes read.
-     * @param len Number of bytes read, or -1 if EOF.
-     * @param exc Null if success, exception if failure.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void inputFileReadResult(JobFrontendRef theJobFrontend,
@@ -277,13 +249,9 @@ public class JobBackendProxy
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Report the result of skipping the given input file.
-     *
-     * @param theJobFrontend Job Frontend that is calling this method.
-     * @param ffd Frontend file descriptor.
-     * @param len Number of bytes skipped.
-     * @param exc Null if success, exception if failure.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void inputFileSkipResult(JobFrontendRef theJobFrontend,
@@ -295,12 +263,9 @@ public class JobBackendProxy
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Report the result of closing the given input file.
-     *
-     * @param theJobFrontend Job Frontend that is calling this method.
-     * @param ffd Frontend file descriptor.
-     * @param exc Null if success, exception if failure.
-     *
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void inputFileCloseResult(JobFrontendRef theJobFrontend,

@@ -52,7 +52,6 @@ public class SharedByteArray {
      * array element is initially 0.
      *
      * @param len Length.
-     *
      * @exception NegativeArraySizeException (unchecked exception) Thrown if
      * <TT>len</TT> &lt; 0.
      */
@@ -65,7 +64,6 @@ public class SharedByteArray {
      * from the given array.
      *
      * @param array Array to copy.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>array</TT> is null.
      */
@@ -92,7 +90,6 @@ public class SharedByteArray {
      * Returns this array reduction variable's current value at the given index.
      *
      * @param i Index.
-     *
      * @return Current value.
      */
     public byte get(int i) {
@@ -116,7 +113,6 @@ public class SharedByteArray {
      *
      * @param i Index.
      * @param value New value.
-     *
      * @return Previous value.
      */
     public byte getAndSet(int i,
@@ -131,7 +127,6 @@ public class SharedByteArray {
      * @param i Index.
      * @param expect Expected value.
      * @param update Updated value.
-     *
      * @return True if the update happened, false otherwise.
      */
     public boolean compareAndSet(int i,
@@ -148,7 +143,6 @@ public class SharedByteArray {
      * @param i Index.
      * @param expect Expected value.
      * @param update Updated value.
-     *
      * @return True if the update happened, false otherwise.
      */
     public boolean weakCompareAndSet(int i,
@@ -162,7 +156,6 @@ public class SharedByteArray {
      * the previous value.
      *
      * @param i Index.
-     *
      * @return Previous value.
      */
     public byte getAndIncrement(int i) {
@@ -180,7 +173,6 @@ public class SharedByteArray {
      * return the previous value.
      *
      * @param i Index.
-     *
      * @return Previous value.
      */
     public byte getAndDecrement(int i) {
@@ -199,7 +191,6 @@ public class SharedByteArray {
      *
      * @param i Index.
      * @param value Value to add.
-     *
      * @return Previous value.
      */
     public byte getAndAdd(int i,
@@ -218,7 +209,6 @@ public class SharedByteArray {
      * the new value.
      *
      * @param i Index.
-     *
      * @return New value.
      */
     public byte incrementAndGet(int i) {
@@ -236,7 +226,6 @@ public class SharedByteArray {
      * return the new value.
      *
      * @param i Index.
-     *
      * @return New value.
      */
     public byte decrementAndGet(int i) {
@@ -255,7 +244,6 @@ public class SharedByteArray {
      *
      * @param i Index.
      * @param value Value to add.
-     *
      * @return New value.
      */
     public byte addAndGet(int i,
@@ -278,7 +266,6 @@ public class SharedByteArray {
      * @param i Index.
      * @param value Value.
      * @param op Binary operation.
-     *
      * @return (This array <TT>[i]</TT>) <I>op</I> (<TT>value</TT>).
      */
     public byte reduce(int i,
@@ -305,7 +292,6 @@ public class SharedByteArray {
      *
      * @param src Source array.
      * @param op Binary operation.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>src</TT> is null. Thrown if
      * <TT>op</TT> is null.
@@ -330,9 +316,9 @@ public class SharedByteArray {
      * @param dstoff Index of first element to update in this array.
      * @param src Source array.
      * @param srcoff Index of first element to update from in the source array.
+     * @param srcoff Index of first element to update from in the source array.
      * @param len Number of array elements to update.
      * @param op Binary operation.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>src</TT> is null. Thrown if
      * <TT>op</TT> is null.

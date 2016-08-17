@@ -101,7 +101,6 @@ public abstract class Unsigned8BitIntegerBuf
      * Construct a new signed 8-bit integer buffer.
      *
      * @param theLength Number of items.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <TT>theLength</TT> &lt; 0.
      */
@@ -135,7 +134,6 @@ public abstract class Unsigned8BitIntegerBuf
      * item is stored in the <TT>item</TT> field of the buffer.
      *
      * @param item Initial value of the <TT>item</TT> field.
-     *
      * @return Buffer.
      */
     public static Unsigned8BitIntegerItemBuf buffer(int item) {
@@ -147,9 +145,7 @@ public abstract class Unsigned8BitIntegerBuf
      * encompasses all the elements in <TT>theArray</TT>.
      *
      * @param theArray Array.
-     *
      * @return Buffer.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theArray</TT> is null.
      */
@@ -168,9 +164,7 @@ public abstract class Unsigned8BitIntegerBuf
      *
      * @param theArray Array.
      * @param theRange Range of elements to include.
-     *
      * @return Buffer.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theArray</TT> is null or
      * <TT>theRange</TT> is null.
@@ -203,9 +197,7 @@ public abstract class Unsigned8BitIntegerBuf
      *
      * @param theArray Array.
      * @param theRanges Array of ranges of elements to include.
-     *
      * @return Array of buffers.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theArray</TT> is null or
      * <TT>theRanges</TT> or any element thereof is null.
@@ -229,9 +221,7 @@ public abstract class Unsigned8BitIntegerBuf
      * <TT>theMatrix</TT>.
      *
      * @param theMatrix Matrix.
-     *
      * @return Buffer.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theMatrix</TT> is null.
      */
@@ -252,9 +242,7 @@ public abstract class Unsigned8BitIntegerBuf
      *
      * @param theMatrix Matrix.
      * @param theRowRange Range of rows to include.
-     *
      * @return Buffer.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theMatrix</TT> is null or
      * <TT>theRowRange</TT> is null.
@@ -289,9 +277,7 @@ public abstract class Unsigned8BitIntegerBuf
      *
      * @param theMatrix Matrix.
      * @param theRowRanges Array of ranges of rows to include.
-     *
      * @return Array of buffers.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theMatrix</TT> is null or
      * <TT>theRowRanges</TT> or any element thereof is null.
@@ -317,9 +303,7 @@ public abstract class Unsigned8BitIntegerBuf
      *
      * @param theMatrix Matrix.
      * @param theColRange Range of columns to include.
-     *
      * @return Buffer.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theMatrix</TT> is null or
      * <TT>theColRange</TT> is null.
@@ -354,9 +338,7 @@ public abstract class Unsigned8BitIntegerBuf
      *
      * @param theMatrix Matrix.
      * @param theColRanges Array of ranges of columns to include.
-     *
      * @return Array of buffers.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theMatrix</TT> is null or
      * <TT>theColRanges</TT> or any element thereof is null.
@@ -383,9 +365,7 @@ public abstract class Unsigned8BitIntegerBuf
      * @param theMatrix Matrix.
      * @param theRowRange Range of rows to include.
      * @param theColRange Range of columns to include.
-     *
      * @return Buffer.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theMatrix</TT> is null,
      * <TT>theRowRange</TT> is null, or <TT>theColRange</TT> is null.
@@ -428,9 +408,7 @@ public abstract class Unsigned8BitIntegerBuf
      * @param theMatrix Matrix.
      * @param theRowRanges Array of ranges of rows to include.
      * @param theColRanges Array of ranges of columns to include.
-     *
      * @return Array of buffers.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theMatrix</TT> is null,
      * <TT>theRowRanges</TT> or any element thereof is null, or
@@ -464,9 +442,9 @@ public abstract class Unsigned8BitIntegerBuf
      * actual item.
      *
      * @param item SharedInteger object that wraps the item.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>item</TT> is null.
+     * @return a {@link edu.rit.mp.Unsigned8BitIntegerBuf} object.
      */
     public static Unsigned8BitIntegerBuf buffer(SharedInteger item) {
         if (item == null) {
@@ -480,9 +458,7 @@ public abstract class Unsigned8BitIntegerBuf
      * buffer encompasses all the elements in <TT>theArray</TT>.
      *
      * @param theArray Array.
-     *
      * @return Buffer.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theArray</TT> is null.
      */
@@ -501,9 +477,7 @@ public abstract class Unsigned8BitIntegerBuf
      *
      * @param theArray Array.
      * @param theRange Range of elements to include.
-     *
      * @return Buffer.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theArray</TT> is null or
      * <TT>theRange</TT> is null.
@@ -536,9 +510,7 @@ public abstract class Unsigned8BitIntegerBuf
      *
      * @param theArray Array.
      * @param theRanges Array of ranges of elements to include.
-     *
      * @return Array of buffers.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theArray</TT> is null or
      * <TT>theRanges</TT> or any element thereof is null.
@@ -563,7 +535,6 @@ public abstract class Unsigned8BitIntegerBuf
      * all message I/O in MP will be blocked.
      *
      * @param i Item index in the range 0 .. <TT>length()</TT>-1.
-     *
      * @return Item at index <TT>i</TT>.
      */
     public abstract int get(int i);
@@ -576,11 +547,14 @@ public abstract class Unsigned8BitIntegerBuf
      *
      * @param i Item index in the range 0 .. <TT>length()</TT>-1.
      * @param item Item to be stored at index <TT>i</TT>.
+     * @param item Item to be stored at index <TT>i</TT>.
      */
     public abstract void put(int i,
             int item);
 
     /**
+     * {@inheritDoc}
+     *
      * Copy items from the given buffer to this buffer. The number of items
      * copied is this buffer's length or <TT>theSrc</TT>'s length, whichever is
      * smaller. If <TT>theSrc</TT> is this buffer, the <TT>copy()</TT> method
@@ -589,9 +563,6 @@ public abstract class Unsigned8BitIntegerBuf
      * The default implementation of the <TT>copy()</TT> method calls the
      * <TT>defaultCopy()</TT> method. A subclass can override the
      * <TT>copy()</TT> method to use a more efficient algorithm.
-     *
-     * @param theSrc Source of items to copy into this buffer.
-     *
      * @exception ClassCastException (unchecked exception) Thrown if
      * <TT>theSrc</TT>'s item data type is not the same as this buffer's item
      * data type.
@@ -603,14 +574,13 @@ public abstract class Unsigned8BitIntegerBuf
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Fill this buffer with the given item. The <TT>item</TT> is assigned to
      * each element in this buffer.
      * <P>
      * The <TT>item</TT> must be an instance of class Integer. If the
      * <TT>item</TT> is null, 0 is assigned to each element in this buffer.
-     *
-     * @param item Item.
-     *
      * @exception ClassCastException (unchecked exception) Thrown if the
      * <TT>item</TT>'s data type is not the same as this buffer's item data
      * type.
@@ -626,6 +596,8 @@ public abstract class Unsigned8BitIntegerBuf
      * Create a temporary buffer with the same type of items and the same length
      * as this buffer. The new buffer items are stored in a newly created array,
      * separate from the storage for this buffer's items.
+     *
+     * @return a {@link edu.rit.mp.Buf} object.
      */
     public Buf getTemporaryBuf() {
         return buffer(new int[myLength]);

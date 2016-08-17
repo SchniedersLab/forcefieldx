@@ -65,7 +65,6 @@ public abstract class WorkerConstruct {
      * Returns the worker team that is executing this worker construct.
      *
      * @return Worker team.
-     *
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * worker team is executing this worker construct.
      */
@@ -81,7 +80,6 @@ public abstract class WorkerConstruct {
      * this worker construct.
      *
      * @return Worker region.
-     *
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * worker team is executing this worker construct.
      */
@@ -98,7 +96,6 @@ public abstract class WorkerConstruct {
      * master thread if any.
      *
      * @return Number of worker threads in the current process.
-     *
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * worker team is executing this worker construct.
      */
@@ -115,7 +112,6 @@ public abstract class WorkerConstruct {
      * master thread.
      *
      * @return Number of worker threads in all processes.
-     *
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * worker team is executing this worker construct.
      */
@@ -135,7 +131,6 @@ public abstract class WorkerConstruct {
      * master thread's index is &minus;1.
      *
      * @return Index of the calling thread.
-     *
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * worker team is executing this worker construct. Thrown if the thread
      * calling
@@ -152,7 +147,6 @@ public abstract class WorkerConstruct {
      *
      * @return True if the calling thread is the master thread, false if the
      * calling thread is a worker thread.
-     *
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * worker team is executing this worker construct. Thrown if the thread
      * calling

@@ -114,7 +114,6 @@ public class HttpRequest {
      * of the given socket.
      *
      * @param theSocket Socket.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theSocket</TT> is null.
      */
@@ -144,7 +143,6 @@ public class HttpRequest {
      * Obtain this HTTP request's method.
      *
      * @return Method string, e.g. <TT>"GET"</TT>, <TT>"POST"</TT>.
-     *
      * @exception IllegalStateException (unchecked exception) Thrown if this
      * HTTP request is invalid.
      */
@@ -159,7 +157,6 @@ public class HttpRequest {
      * Obtain this HTTP request's URI.
      *
      * @return URI string.
-     *
      * @exception IllegalStateException (unchecked exception) Thrown if this
      * HTTP request is invalid.
      */
@@ -175,7 +172,6 @@ public class HttpRequest {
      *
      * @return HTTP version string, e.g. <TT>"HTTP/1.0"</TT>,
      * <TT>"HTTP/1.1"</TT>.
-     *
      * @exception IllegalStateException (unchecked exception) Thrown if this
      * HTTP request is invalid.
      */
@@ -190,10 +186,8 @@ public class HttpRequest {
      * Obtain the value of the given header in this HTTP request.
      *
      * @param theHeaderName Header name.
-     *
      * @return Header value, or null if there is no header for
      * <TT>theHeaderName</TT>.
-     *
      * @exception IllegalStateException (unchecked exception) Thrown if this
      * HTTP request is invalid.
      */
@@ -211,7 +205,6 @@ public class HttpRequest {
      * corresponding header value.
      *
      * @return Unmodifiable collection of header name-value mappings.
-     *
      * @exception IllegalStateException (unchecked exception) Thrown if this
      * HTTP request is invalid.
      */

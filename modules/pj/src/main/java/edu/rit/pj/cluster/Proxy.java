@@ -52,6 +52,7 @@ public abstract class Proxy {
      * channel group to send messages to the far end process.
      *
      * @param theChannelGroup Channel group.
+     * @param theChannelGroup Channel group.
      * @param theChannel Channel.
      */
     public Proxy(ChannelGroup theChannelGroup,
@@ -65,8 +66,8 @@ public abstract class Proxy {
      * Send the given message to this proxy's far end process.
      *
      * @param theMessage Message.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void send(Message theMessage)
             throws IOException {
@@ -81,8 +82,8 @@ public abstract class Proxy {
      *
      * @param theTag Message tag.
      * @param theSrc Item source buffer.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void send(int theTag,
             Buf theSrc)
@@ -100,10 +101,9 @@ public abstract class Proxy {
      * fully received.
      *
      * @param theDst Item destination buffer.
-     *
      * @return Status object giving the outcome of the message reception.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public Status receive(Buf theDst)
             throws IOException {
@@ -122,10 +122,9 @@ public abstract class Proxy {
      *
      * @param theTag Message tag, or null to receive any tag.
      * @param theDst Item destination buffer.
-     *
      * @return Status object giving the outcome of the message reception.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public Status receive(Integer theTag,
             Buf theDst)

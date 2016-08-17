@@ -202,7 +202,6 @@ public class Timer {
      * @param theFirstTime Absolute time at which to perform the first action.
      * @param theRepetitionInterval Interval between successive actions
      * (milliseconds).
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <TT>theRepetitionInterval</TT> &lt;= 0.
      */
@@ -229,7 +228,6 @@ public class Timer {
      * action (milliseconds).
      * @param theRepetitionInterval Interval between successive actions
      * (milliseconds).
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <TT>theRepetitionInterval</TT> &lt;= 0.
      */
@@ -254,7 +252,6 @@ public class Timer {
      * @param theFirstTime Absolute time at which to perform the first action.
      * @param theRepetitionInterval Interval between successive actions
      * (milliseconds).
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <TT>theRepetitionInterval</TT> &lt;= 0.
      */
@@ -281,7 +278,6 @@ public class Timer {
      * action (milliseconds).
      * @param theRepetitionInterval Interval between successive actions
      * (milliseconds).
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <TT>theRepetitionInterval</TT> &lt;= 0.
      */
@@ -359,6 +355,8 @@ public class Timer {
 
     /**
      * Returns this timer's timer task.
+     *
+     * @return a {@link edu.rit.util.TimerTask} object.
      */
     public TimerTask getTimerTask() {
         return myTimerTask;

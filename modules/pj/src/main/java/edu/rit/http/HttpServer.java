@@ -120,8 +120,8 @@ public abstract class HttpServer {
      *
      * @param address Host and port to which the HTTP server will listen for
      * connections.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public HttpServer(InetSocketAddress address)
             throws IOException {
@@ -136,8 +136,8 @@ public abstract class HttpServer {
      * connections.
      * @param logger Error message logger. If null, the HTTP server will print
      * error messages on the standard error.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public HttpServer(InetSocketAddress address,
             Logger logger)
@@ -165,6 +165,7 @@ public abstract class HttpServer {
      * Close this HTTP server.
      *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void close()
             throws IOException {
@@ -179,8 +180,8 @@ public abstract class HttpServer {
      *
      * @param theRequest HTTP request.
      * @param theResponse HTTP response.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     protected abstract void process(HttpRequest theRequest,
             HttpResponse theResponse)

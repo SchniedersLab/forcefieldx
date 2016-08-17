@@ -38,10 +38,8 @@
 package ffx.potential.nonbonded;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.OptionalDouble;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -82,20 +80,17 @@ import static ffx.potential.parameters.ForceField.ForceFieldString.RADIUSSIZE;
 import static ffx.potential.parameters.ForceField.ForceFieldString.RADIUSTYPE;
 import static ffx.potential.parameters.ForceField.ForceFieldString.VDWTYPE;
 import static ffx.potential.parameters.ForceField.toEnumForm;
-import java.util.Arrays;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.IntConsumer;
-import java.util.stream.IntStream;
 
 /**
- * The van der Waals class computes the buffered 14-7 van der Waals interaction
- * used by the AMOEBA force field in parallel using a {@link NeighborList} for
- * any {@link Crystal}.
+ * The van der Waals class computes van der Waals interaction in parallel using
+ * a {@link NeighborList} for any {@link Crystal}. The repulsive power (e.g.
+ * 12), attractive power (e.g. 6) and buffering (e.g. for the AMOEBA
+ * buffered-14-7) can all be specified such that both Lennard-Jones and AMOEBA
+ * are supported.
  *
  * @author Michael J. Schnieders
- * @since 1.0
  *
+ * @since 1.0
  */
 public class VanDerWaals implements MaskingInterface,
         LambdaInterface {
@@ -131,15 +126,18 @@ public class VanDerWaals implements MaskingInterface,
     private RADIUS_RULE radiusRule = RADIUS_RULE.CUBIC_MEAN;
     private RADIUS_SIZE radiusSize = RADIUS_SIZE.DIAMETER;
     private RADIUS_TYPE radiusType = RADIUS_TYPE.R_MIN;
-    private double vdw12Scale = 0.0;
-    private double vdw13Scale = 0.0;
-    private double vdw14Scale = 1.0;
-    private double vdw15Scale = 1.0;
+    private double scale12 = 0.0;
+    private double scale13 = 0.0;
+    private double scale14 = 1.0;
+    private double scale15 = 1.0;
 
+    /**
+     * This field specifies resolution for multi-scale modeling.
+     */
     private Resolution resolution = null;
 
     /**
-     * Crystal parameters.
+     * Boundary conditions and crystal symmetry.
      */
     private Crystal crystal;
     /**
@@ -184,11 +182,29 @@ public class VanDerWaals implements MaskingInterface,
     private boolean softCoreInit;
     private static final byte HARD = 0;
     private static final byte SOFT = 1;
+    /**
+     * Specification of the molecular index for each atom.
+     */
     private int molecule[];
+    /**
+     * Turn on inter-molecular softcore interactions using molecular index.
+     */
     private boolean intermolecularSoftcore = false;
+    /**
+     * Turn on intra-molecular softcore interactions using molecular index.
+     */
     private boolean intramolecularSoftcore = false;
+    /**
+     * Current value of the lambda state variable.
+     */
     private double lambda = 1.0;
+    /**
+     * Exponent on lambda.
+     */
     private double vdwLambdaExponent = 1.0;
+    /**
+     * Offset in Angstroms.
+     */
     private double vdwLambdaAlpha = 0.05;
     private double sc1 = 0.0;
     private double sc2 = 1.0;
@@ -319,9 +335,6 @@ public class VanDerWaals implements MaskingInterface,
     private final long vdwTime[];
     private final long reductionTime[];
     private long initializationTotal, vdwTotal, reductionTotal;
-    private long initStreamTotal, vdwStreamTotal, redStreamTotal;
-    private final boolean getStreamTimings = (System.getProperty("vdwStream") != null);
-
     private final MultiplicativeSwitch multiplicativeSwitch;
 
     /**
@@ -398,24 +411,24 @@ public class VanDerWaals implements MaskingInterface,
         /**
          * Define masking rules.
          */
-        vdw12Scale = forceField.getDouble(ForceFieldDouble.VDW_12_SCALE, 0.0);
-        vdw13Scale = forceField.getDouble(ForceFieldDouble.VDW_13_SCALE, 0.0);
-        vdw14Scale = forceField.getDouble(ForceFieldDouble.VDW_14_SCALE, 1.0);
-        vdw15Scale = forceField.getDouble(ForceFieldDouble.VDW_15_SCALE, 1.0);
+        scale12 = forceField.getDouble(ForceFieldDouble.VDW_12_SCALE, 0.0);
+        scale13 = forceField.getDouble(ForceFieldDouble.VDW_13_SCALE, 0.0);
+        scale14 = forceField.getDouble(ForceFieldDouble.VDW_14_SCALE, 1.0);
+        scale15 = forceField.getDouble(ForceFieldDouble.VDW_15_SCALE, 1.0);
         /**
          * The convention in TINKER is a vdw-14-scale factor of 2.0 means to
          * scale by 0.5.
          */
-        if (vdw12Scale > 1.0) {
-            vdw12Scale = 1.0 / vdw12Scale;
+        if (scale12 > 1.0) {
+            scale12 = 1.0 / scale12;
         }
-        if (vdw13Scale > 1.0) {
-            vdw13Scale = 1.0 / vdw13Scale;
+        if (scale13 > 1.0) {
+            scale13 = 1.0 / scale13;
         }
-        if (vdw14Scale > 1.0) {
-            vdw14Scale = 1.0 / vdw14Scale;
+        if (scale14 > 1.0) {
+            scale14 = 1.0 / scale14;
         }
-        if (vdw15Scale != 1.0) {
+        if (scale15 != 1.0) {
             logger.severe(" Van Der Waals 1-5 masking rules are not supported.");
         }
 
@@ -455,6 +468,9 @@ public class VanDerWaals implements MaskingInterface,
         }
         radEps = new double[maxClass + 1][2 * (maxClass + 1)];
 
+        /**
+         * Scale factor to convert to vdW size to Rmin.
+         */
         double radScale;
         switch (radiusSize) {
             case DIAMETER:
@@ -592,6 +608,11 @@ public class VanDerWaals implements MaskingInterface,
             logger.info(String.format(" The van der Waals cutoff has been set to %f", ewaldOff));
         }
 
+        /**
+         * Define the multiplicative switch, which sets vdW energy to zero at
+         * the cutoff distance using a window that begin at 90% of the cutoff
+         * distance.
+         */
         double vdwtaper = 0.9 * vdwcut;
         cut = vdwtaper;
         off = vdwcut;
@@ -611,17 +632,7 @@ public class VanDerWaals implements MaskingInterface,
          * the first neighborlist.
          */
         try {
-            this.parallelTeam.execute(vanDerWaalsRegion);
-            if (getStreamTimings) {
-                initStreamTotal = -System.nanoTime();
-                IntConsumer cons = new InitStreamConsumer();
-                IntStream.range(0,nAtoms).parallel().forEach(cons);
-                initStreamTotal += System.nanoTime();
-                logger.info(String.format(" Stream   %7.4f %7.4f %7.4f %7.4f %10d\n",
-                        initStreamTotal * 1e-9, vdwStreamTotal * 1e-9, redStreamTotal * 1e-9,
-                        (initStreamTotal + vdwStreamTotal + redStreamTotal) * 1e-9,
-                        sharedInteractions.get()));
-            }
+            parallelTeam.execute(vanDerWaalsRegion);
         } catch (Exception e) {
             String message = " Fatal exception executing van Der Waals Region.\n";
             logger.log(Level.SEVERE, message, e);
@@ -746,7 +757,7 @@ public class VanDerWaals implements MaskingInterface,
                     angleMask[i][j++] = ak.xyzIndex - 1;
                 }
             }
-            if (vdw14Scale != 1.0) {
+            if (scale14 != 1.0) {
                 ArrayList<Torsion> torsions = ai.getTorsions();
                 int numTorsions = 0;
                 for (Torsion torsion : torsions) {
@@ -963,22 +974,22 @@ public class VanDerWaals implements MaskingInterface,
      */
     @Override
     public void applyMask(final double mask[], final int i) {
-        if (vdw14Scale != 1.0) {
+        if (scale14 != 1.0) {
             final int[] torsionMaski = torsionMask[i];
             final int n14 = torsionMaski.length;
             for (int m = 0; m < n14; m++) {
-                mask[torsionMaski[m]] = vdw14Scale;
+                mask[torsionMaski[m]] = scale14;
             }
         }
         final int[] angleMaski = angleMask[i];
         final int n13 = angleMaski.length;
         for (int m = 0; m < n13; m++) {
-            mask[angleMaski[m]] = vdw13Scale;
+            mask[angleMaski[m]] = scale13;
         }
         final int[] bondMaski = bondMask[i];
         final int n12 = bondMaski.length;
         for (int m = 0; m < n12; m++) {
-            mask[bondMaski[m]] = vdw12Scale;
+            mask[bondMaski[m]] = scale12;
         }
     }
 
@@ -1084,8 +1095,8 @@ public class VanDerWaals implements MaskingInterface,
             longRangeCorrection = 0.0;
         }
     }
-    
-    public void setLamedh(List<ExtendedVariable> esvList) {
+
+    public void setESVList(List<ExtendedVariable> esvList) {
         if (!lamedhTerm) {
             logger.severe("Lamedh invoked on improperly constructed VanDerWaals object.");
         }
@@ -1124,7 +1135,7 @@ public class VanDerWaals implements MaskingInterface,
         }
         return shareddEdL.get();
     }
-    
+
     public double[] getdEdLdh() {
         if (shareddEdLdh == null || !lamedhTerm) {
             return null;
@@ -1158,23 +1169,23 @@ public class VanDerWaals implements MaskingInterface,
             }
         }
     }
-    
+
     public double[][] getdEdXdLdh() {
         if (lamedhGradX == null || !lamedhTerm) {
             return null;
         }
-        double dEdXdLdh[][] = new double[numESVs][nAtoms*3];
+        double dEdXdLdh[][] = new double[numESVs][nAtoms * 3];
         double ldhgx[][] = lamedhGradX[0];
         double ldhgy[][] = lamedhGradY[0];
         double ldhgz[][] = lamedhGradZ[0];
         for (int i = 0; i < nAtoms; i++) {
-            int ii = i*3;
+            int ii = i * 3;
             Atom ai = atoms[i];
             if (ai.isActive()) {
                 for (ExtendedVariable esv : esvList) {
-                    dEdXdLdh[esv.index][ii]   += ldhgx[esv.index][i];
-                    dEdXdLdh[esv.index][ii+1] += ldhgy[esv.index][i];
-                    dEdXdLdh[esv.index][ii+2] += ldhgz[esv.index][i];
+                    dEdXdLdh[esv.index][ii] += ldhgx[esv.index][i];
+                    dEdXdLdh[esv.index][ii + 1] += ldhgy[esv.index][i];
+                    dEdXdLdh[esv.index][ii + 2] += ldhgz[esv.index][i];
                 }
             }
         }
@@ -1191,7 +1202,7 @@ public class VanDerWaals implements MaskingInterface,
         }
         return sharedd2EdL2.get();
     }
-    
+
     public double[] getd2EdLdh2() {
         if (sharedd2EdLdh2 == null || !lamedhTerm) {
             return null;
@@ -1259,86 +1270,6 @@ public class VanDerWaals implements MaskingInterface,
         }
     }
 
-    private class InitStreamConsumer implements IntConsumer {
-        private final List<SymOp> symOps = crystal.spaceGroup.symOps;
-        private final double sp2 = crystal.getSpecialPositionCutoff() * crystal.getSpecialPositionCutoff();
-        private final double in[] = new double[3];
-        private final double out[] = new double[3];
-
-        @Override
-        public void accept(int i) {
-            int i3 = i*3;
-            Atom atom = atoms[i];
-            coordinates[i3 + XX] = atom.getX();
-            coordinates[i3 + YY] = atom.getY();
-            coordinates[i3 + ZZ] = atom.getZ();
-            use[i] = atom.getUse();
-
-            if (gradient) {
-                if (gradX[0] == null || gradX[0].length < nAtoms) {
-                    gradX[0] = new double[nAtoms];
-                    gradY[0] = new double[nAtoms];
-                    gradZ[0] = new double[nAtoms];
-                } else {
-                    fill(gradX[0], 0.0);
-                    fill(gradY[0], 0.0);
-                    fill(gradZ[0], 0.0);
-                }
-            }
-
-            /**
-             * Set up the local coordinate array for the asymmetric unit,
-             * applying reduction factors to the hydrogen atoms.
-             */
-            int iX = i3 + XX;
-            int iY = i3 + YY;
-            int iZ = i3 + ZZ;
-            double x = coordinates[iX];
-            double y = coordinates[iY];
-            double z = coordinates[iZ];
-            int redIndex = reductionIndex[i];
-            if (redIndex >= 0) {
-                int r3 = redIndex * 3;
-                double rx = coordinates[r3++];
-                double ry = coordinates[r3++];
-                double rz = coordinates[r3];
-                double a = reductionValue[i];
-                reducedXYZ[iX] = a * (x - rx) + rx;
-                reducedXYZ[iY] = a * (y - ry) + ry;
-                reducedXYZ[iZ] = a * (z - rz) + rz;
-                double[] rxyz = {reducedXYZ[iX], reducedXYZ[iY], reducedXYZ[iZ]};
-                atoms[i].setRedXYZ(rxyz);
-            } else {
-                reducedXYZ[iX] = x;
-                reducedXYZ[iY] = y;
-                reducedXYZ[iZ] = z;
-            }
-
-            IntStream.range(1, nSymm).parallel().forEach(iSymOp -> {
-                SymOp symOp = symOps.get(iSymOp);
-                double xyz[] = reduced[iSymOp];
-                in[0] = reducedXYZ[iX];
-                in[1] = reducedXYZ[iY];
-                in[2] = reducedXYZ[iZ];
-                crystal.applySymOp(in, out, symOp);
-                xyz[iX] = out[0];
-                xyz[iY] = out[1];
-                xyz[iZ] = out[2];
-
-                /**
-                 * Check if the atom is at a special position.
-                 */
-                double dx = in[0] - out[0];
-                double dy = in[1] - out[1];
-                double dz = in[2] - out[2];
-                double r2 = dx * dx + dy * dy + dz * dz;
-                if (r2 < sp2) {
-                    logger.log(Level.WARNING, " Atom may be at a special position: {0}", atoms[i].toString());
-                }
-            });
-        }
-    }
-    
     private class VanDerWaalsRegion extends ParallelRegion {
 
         private final InitializationLoop initializationLoop[];
@@ -1484,7 +1415,7 @@ public class VanDerWaals implements MaskingInterface,
             if (threadIndex == 0 && logger.isLoggable(Level.FINE)) {
 
                 double total = (initializationTotal + vdwTotal + reductionTotal) * 1e-9;
-                
+
                 logger.info(String.format("\n van der Waals: %7.4f (sec)", total));
                 logger.info(" Thread    Init    Energy  Reduce  Total     Counts");
                 long initMax = 0;
@@ -1528,7 +1459,7 @@ public class VanDerWaals implements MaskingInterface,
                         reductionTotal * 1e-9, totalActual * 1e-9, sharedInteractions.get()));
             }
         }
-        
+
         /**
          * Update the local coordinate array and initialize reduction variables.
          */
@@ -1869,17 +1800,17 @@ public class VanDerWaals implements MaskingInterface,
                                     logger.info(format(" Multiple ESVs attached to atom %d; using product %.2f", lamedh));
                                 }
                                 final double lambdaL = (lambdaTerm) ? lambda : 1.0;
-                                sc1 = vdwLambdaAlpha * (1.0 - lambdaL*lamedh) * (1.0 - lambdaL*lamedh);
+                                sc1 = vdwLambdaAlpha * (1.0 - lambdaL * lamedh) * (1.0 - lambdaL * lamedh);
                                 sc2 = lamedh * pow(lambdaL, vdwLambdaExponent);
                                 /*  Since lambda statistics are collected only at fixed lamedh,
                                     the following derivative definitions are dual-purpose:
                                         (1) At intermediate lamedh, they are derivatives w.r.t. lamedh.
                                         (2) At zero or unity lamedh, they reduce to the derivates w.r.t. lambda.
-                                */
-                                dsc1dL = -2.0 * vdwLambdaAlpha * lambdaL * (1.0 - lambdaL*lamedh);
+                                 */
+                                dsc1dL = -2.0 * vdwLambdaAlpha * lambdaL * (1.0 - lambdaL * lamedh);
                                 d2sc1dL2 = 2.0 * vdwLambdaAlpha * lambdaL * lambdaL;
-                                dsc2dL = lambdaL * vdwLambdaExponent * pow(lambdaL*lamedh, vdwLambdaExponent - 1.0);
-                                d2sc2dL2 = lambdaL*lambdaL * vdwLambdaExponent*(vdwLambdaExponent - 1.0) * pow(lambdaL*lamedh, vdwLambdaExponent - 2.0);
+                                dsc2dL = lambdaL * vdwLambdaExponent * pow(lambdaL * lamedh, vdwLambdaExponent - 1.0);
+                                d2sc2dL2 = lambdaL * lambdaL * vdwLambdaExponent * (vdwLambdaExponent - 1.0) * pow(lambdaL * lamedh, vdwLambdaExponent - 2.0);
                                 alpha = sc1;
                                 lambda5 = sc2;
                             }
@@ -1919,11 +1850,12 @@ public class VanDerWaals implements MaskingInterface,
                             final double r3 = r2 * r;
                             final double r4 = r2 * r2;
                             final double r5 = r2 * r3;
-                            final double taper = (r2 <= cut2) ? 1.0 
+                            final double taper = (r2 <= cut2) ? 1.0
                                     : multiplicativeSwitch.taper(r, r2, r3, r4, r5);
-                            final double dtaper = (r2 <= cut2) ? 0.0 
+                            final double dtaper = (r2 <= cut2) ? 0.0
                                     : multiplicativeSwitch.dtaper(r, r2, r3, r4);
                             e += eij * taper;
+//                            log(i,k,r,e);
                             count++;
                             if (!(gradient || (lambdaTerm && soft) || (lamedhTerm && hasLamedh))) {
                                 continue;
@@ -2139,12 +2071,12 @@ public class VanDerWaals implements MaskingInterface,
                                                 i, k, lamedhi, lamedh));
                                     }
                                     final double lambdaL = (lambdaTerm) ? lambda : 1.0;
-                                    sc1 = vdwLambdaAlpha * (1.0 - lambdaL*lamedh) * (1.0 - lambdaL*lamedh);
+                                    sc1 = vdwLambdaAlpha * (1.0 - lambdaL * lamedh) * (1.0 - lambdaL * lamedh);
                                     sc2 = lamedh * pow(lambdaL, vdwLambdaExponent);
-                                    dsc1dL = -2.0 * vdwLambdaAlpha * lambdaL * (1.0 - lambdaL*lamedh);
+                                    dsc1dL = -2.0 * vdwLambdaAlpha * lambdaL * (1.0 - lambdaL * lamedh);
                                     d2sc1dL2 = 2.0 * vdwLambdaAlpha * lambdaL * lambdaL;
-                                    dsc2dL = lambdaL * vdwLambdaExponent * pow(lambdaL*lamedh, vdwLambdaExponent - 1.0);
-                                    d2sc2dL2 = lambdaL*lambdaL * vdwLambdaExponent*(vdwLambdaExponent - 1.0) * pow(lambdaL*lamedh, vdwLambdaExponent - 2.0);
+                                    dsc2dL = lambdaL * vdwLambdaExponent * pow(lambdaL * lamedh, vdwLambdaExponent - 1.0);
+                                    d2sc2dL2 = lambdaL * lambdaL * vdwLambdaExponent * (vdwLambdaExponent - 1.0) * pow(lambdaL * lamedh, vdwLambdaExponent - 2.0);
                                     alpha = sc1;
                                     lambda5 = sc2;
                                 }
@@ -2184,9 +2116,9 @@ public class VanDerWaals implements MaskingInterface,
                                 final double r3 = r2 * r;
                                 final double r4 = r2 * r2;
                                 final double r5 = r2 * r3;
-                                final double taper = (r2 <= cut2) ? 1.0 
+                                final double taper = (r2 <= cut2) ? 1.0
                                         : multiplicativeSwitch.taper(r, r2, r3, r4, r5);
-                                final double dtaper = (r2 <= cut2) ? 0.0 
+                                final double dtaper = (r2 <= cut2) ? 0.0
                                         : multiplicativeSwitch.dtaper(r, r2, r3, r4);
                                 e += selfScale * eij * taper;
                                 count++;

@@ -69,7 +69,6 @@ public abstract class JobGenerator
      * set's contents thereafter will not affect the job numbers to be omitted.
      *
      * @param theOmittedJobNumbers Set of job numbers to be omitted.
-     *
      * @exception NullPointerException (unchecked exception) Thrown if
      * <TT>theOmittedJobNumbers</TT> is null.
      */
@@ -133,6 +132,7 @@ public abstract class JobGenerator
      * <TT>theJobNumber</TT>.
      *
      * @param theJobNumber Job number (0 .. <I>N</I>&minus;1).
+     * @return a {@link edu.rit.pj.job.Job} object.
      */
     protected abstract Job createJob(int theJobNumber);
 

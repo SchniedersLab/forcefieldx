@@ -356,8 +356,8 @@ public class FrontendFileWriter {
      * @param bfd Backend file descriptor.
      * @param file File.
      * @param append True to append, false to overwrite.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void outputFileOpen(JobBackendRef theJobBackend,
             int bfd,
@@ -375,8 +375,8 @@ public class FrontendFileWriter {
      * @param theJobBackend Job Backend that is calling this method.
      * @param ffd Frontend file descriptor.
      * @param len Number of bytes to write.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void outputFileWrite(JobBackendRef theJobBackend,
             int ffd,
@@ -399,8 +399,8 @@ public class FrontendFileWriter {
      *
      * @param theJobBackend Job Backend that is calling this method.
      * @param ffd Frontend file descriptor.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void outputFileFlush(JobBackendRef theJobBackend,
             int ffd)
@@ -422,8 +422,8 @@ public class FrontendFileWriter {
      *
      * @param theJobBackend Job Backend that is calling this method.
      * @param ffd Frontend file descriptor.
-     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException if any.
      */
     public void outputFileClose(JobBackendRef theJobBackend,
             int ffd)

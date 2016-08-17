@@ -460,7 +460,6 @@ public class Sorting {
      *
      * @param x Array to be sorted.
      * @param helper Helper object.
-     *
      * @return The array that was sorted (<TT>x</TT>).
      */
     public static byte[] sort(byte[] x,
@@ -526,7 +525,6 @@ public class Sorting {
      *
      * @param x Array to be sorted.
      * @param helper Helper object.
-     *
      * @return The array that was sorted (<TT>x</TT>).
      */
     public static char[] sort(char[] x,
@@ -592,7 +590,6 @@ public class Sorting {
      *
      * @param x Array to be sorted.
      * @param helper Helper object.
-     *
      * @return The array that was sorted (<TT>x</TT>).
      */
     public static short[] sort(short[] x,
@@ -658,7 +655,6 @@ public class Sorting {
      *
      * @param x Array to be sorted.
      * @param helper Helper object.
-     *
      * @return The array that was sorted (<TT>x</TT>).
      */
     public static int[] sort(int[] x,
@@ -724,7 +720,6 @@ public class Sorting {
      *
      * @param x Array to be sorted.
      * @param helper Helper object.
-     *
      * @return The array that was sorted (<TT>x</TT>).
      */
     public static long[] sort(long[] x,
@@ -790,7 +785,6 @@ public class Sorting {
      *
      * @param x Array to be sorted.
      * @param helper Helper object.
-     *
      * @return The array that was sorted (<TT>x</TT>).
      */
     public static float[] sort(float[] x,
@@ -856,7 +850,6 @@ public class Sorting {
      *
      * @param x Array to be sorted.
      * @param helper Helper object.
-     *
      * @return The array that was sorted (<TT>x</TT>).
      */
     public static double[] sort(double[] x,
@@ -923,7 +916,6 @@ public class Sorting {
      * @param <T> Data type of the array elements.
      * @param x Array to be sorted.
      * @param helper Helper object.
-     *
      * @return The array that was sorted (<TT>x</TT>).
      */
     public static <T> T[] sort(T[] x,
