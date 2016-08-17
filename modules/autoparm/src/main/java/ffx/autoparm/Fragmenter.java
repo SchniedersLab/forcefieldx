@@ -57,6 +57,7 @@ import org.openscience.cdk.fragment.MurckoFragmenter;
 import org.openscience.cdk.interfaces.IAtom;
 import org.openscience.cdk.interfaces.IAtomContainer;
 import org.openscience.cdk.interfaces.IAtomType;
+import org.openscience.cdk.io.CIFReader;
 import org.openscience.cdk.io.SDFWriter;
 import org.openscience.cdk.io.iterator.IteratingSDFReader;
 import org.openscience.cdk.isomorphism.Pattern;
@@ -69,13 +70,26 @@ import org.openscience.cdk.tools.manipulator.AtomContainerManipulator;
 import org.openscience.cdk.tools.manipulator.AtomTypeManipulator;
 
 /**
- * Splits large molecules into fragments for PolType Input: full molecule SDF
+ * Splits large molecules into fragments for PolType
+ * Maps fragments to full molecule
+ * 
+ * Input: full molecule SDF
  * Output: individual fragment SDFs
  *
  * @author Rae Ann Corrigan
  */
 public class Fragmenter {
 
+<<<<<<< HEAD
+    protected String sdffile;
+    protected String ciffile;
+    protected String smi;
+
+    public Fragmenter(String sdffile, String ciffile, String smi) {
+        this.sdffile = sdffile;
+        this.ciffile = ciffile;
+        this.smi = smi;
+=======
     private final static Logger logger = Logger.getLogger(Fragmenter.class.getName());
 
     protected String filename;
@@ -84,19 +98,44 @@ public class Fragmenter {
     public Fragmenter(String filename, String smilesString) {
         this.filename = filename;
         this.smilesString = smilesString;
+>>>>>>> 4cd5ab25c313c11549d9b95a2be7474928867362
     }
 
-    private enum FIELD {
+    /*private enum FIELD {
         XLogP,
         ALogP,
         ALogp2,
         AMR,
         SMILES_Kekule,
         SMILES_Aromatic
-    }
+    }*/
 
     private static final int SIZE = 30;
+    
+    //reads in full molecule CIF
+    public void readCIF() throws FileNotFoundException, IOException{
+        File cfile = new File(ciffile);
+        BufferedReader cread = null;
+        
+        try{
+            FileReader cfileReader = new FileReader(cfile);
+            cread = new BufferedReader(cfileReader);
+        } catch(IOException e){
+            e.printStackTrace();
+        }
+        
+        CIFReader creader = null;
+        
+        try{
+            creader = new CIFReader(cread);
+            
+        } catch (Exception x){
+            x.printStackTrace();
+        }
+        
+    } //end "readCIF" cif reader
 
+    //reads in full molecule SDF
     public void readSDF() throws FileNotFoundException, IOException {
         File file = new File(filename);
         BufferedReader read = null;
@@ -137,7 +176,7 @@ public class Fragmenter {
             } catch (Exception x) {
             }
         }
-    }
+    } // end "readSDF" sdf reader
 
     String[] fArray = new String[]{"For SMILES"};
     String[] frame = new String[]{"For Frameworks"};
@@ -154,6 +193,8 @@ public class Fragmenter {
     int[][] map = null;
     int[][] mapfinal = null;
 
+    //fragments full molecule according to exhaustive and Murcko fragmentation algorithms
+    //exhaustive fragments used in further functions
     protected void fragment(IAtomContainer molecule) throws Exception {
         //MurckoFragmenter implimentation
         MurckoFragmenter murk = new MurckoFragmenter();
@@ -279,8 +320,9 @@ public class Fragmenter {
             System.out.println();
         }
 
-    }
+    } //end "fragment" fragmenter
 
+    //Convert SMILES strings to an object to be passed on to converter
     protected void smilesToObject(String[] smilesArr, String fullsmi) throws Exception {
 
         String fullsm = fullsmi;
@@ -289,10 +331,12 @@ public class Fragmenter {
             //entry number in SMILES array to be used later in SDF writing
             int num = i;
             //System.out.println("\nPassing SMILES string to doConversion\n");
+            
+            //doConversion call
             doConversion(content, num, fullsm);
         }
 
-    }
+    } //end "smilesToObject" converter
 
     int fragcounter = 1;
 
@@ -304,7 +348,7 @@ public class Fragmenter {
         //entry number in SMILES array to be used later in SDF writing
         int number = num;
 
-        //Parse SMILES for full drug
+        //Parse SMILES for full drug molecule
         try {
             SmilesParser fullp = new SmilesParser(SilentChemObjectBuilder.getInstance());
             full = fullp.parseSmiles(fullsmi);
@@ -320,7 +364,7 @@ public class Fragmenter {
             System.out.println(ise.toString());
         }
 
-        //AtomTypeMatcher for full drug
+        //AtomTypeMatcher for full drug molecule
         try {
             CDKAtomTypeMatcher match = CDKAtomTypeMatcher.getInstance(full.getBuilder());
             for (IAtom fatom : full.atoms()) {
@@ -342,7 +386,7 @@ public class Fragmenter {
             System.out.println(e);
         }
 
-        //CDKHydrogenAdder for full drug
+        //CDKHydrogenAdder for full drug molecule
         try {
             CDKHydrogenAdder fha = CDKHydrogenAdder.getInstance(full.getBuilder());
             fha.addImplicitHydrogens(full);
@@ -381,7 +425,7 @@ public class Fragmenter {
             fragcounter++;
         }
 
-    }
+    } //end "doConversion" IAtomContainer to 3D model converter
 
     protected File writeSDF(IAtomContainer iAtomContainer, int n) throws Exception {
 
@@ -424,8 +468,14 @@ public class Fragmenter {
         }
 
         return sdfFromSMILES;
-    }
+<<<<<<< HEAD
 
+    } //end "writeSDF" sdf writer
+=======
+    }
+>>>>>>> 4cd5ab25c313c11549d9b95a2be7474928867362
+
+    //maps fragment atoms to original/full molecule atoms
     protected void map(File sdfFromSMILES, int col, int fragsize, int fullsize) throws FileNotFoundException {
 
         String[] fragAtoms = new String[fragsize];
@@ -567,6 +617,8 @@ public class Fragmenter {
             while ((line = fullbr.readLine()) != null) {
                 String test = line;
 
+                //bond lines in SDF files end in either a 1+0's sequence or a 2+0's sequence
+                //depending on if they are a single or double bond
                 if (test.contains(" 1  0  0  0  0") || test.contains(" 2  0  0  0  0")) {
                     //variables for bond components
                     //atoms involved and if the bond is single (s) or double (d)
@@ -629,6 +681,8 @@ public class Fragmenter {
             while ((line = fragbr.readLine()) != null) {
                 String test = line;
 
+                //bond lines in SDF files end in either a 1+0's sequence or a 2+0's sequence
+                //depending on if they are a single or double bond
                 if (test.contains(" 1  0  0  0  0") || test.contains(" 2  0  0  0  0")) {
                     //variables for bond components
                     //atoms involved and if the bond is single (s) or double (d)
@@ -731,8 +785,8 @@ public class Fragmenter {
                     if (testFullAtom.equals(testFragAtom)) {
                         //look at bonds
                         /*System.out.println("          ATOMS MATCHED!");
-                   System.out.println("testFragAtom = "+testFragAtom);
-                   System.out.println("fragInterval = "+fragInterval+"\n");*/
+                        System.out.println("testFragAtom = "+testFragAtom);
+                        System.out.println("fragInterval = "+fragInterval+"\n");*/
 
                         for (int bondC = 0; bondC < fragbonds.length; bondC++) {
                             if (fragbonds[bondC][0].equals(fragInterval) || fragbonds[bondC][1].equals(fragInterval)) {
