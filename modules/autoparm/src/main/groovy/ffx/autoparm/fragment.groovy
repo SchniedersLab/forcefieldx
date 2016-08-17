@@ -69,13 +69,14 @@ if (options.h || arguments == null) {
 
 // Read in command line.
 String sdffile = arguments.get(0);
+String ciffile = arguments.get(1);
 String smi = new String();
 
 Wizard wi = new Wizard(sdffile);
 smi = wi.readSDF();
 
 System.out.println("\nFinished Wizard, calling Fragmenter\n");
-Fragmenter fr = new Fragmenter(sdffile, smi);
+Fragmenter fr = new Fragmenter(sdffile, ciffile, smi);
 fr.readSDF();
 
 return;
