@@ -48,15 +48,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
-
+import java.lang.String;
+import org.openscience.cdk.DefaultChemObjectBuilder;
 import org.openscience.cdk.atomtype.CDKAtomTypeMatcher;
 import org.openscience.cdk.exception.CDKException;
 import org.openscience.cdk.exception.InvalidSmilesException;
 import org.openscience.cdk.fragment.ExhaustiveFragmenter;
-import org.openscience.cdk.fragment.MurckoFragmenter;
 import org.openscience.cdk.interfaces.IAtom;
 import org.openscience.cdk.interfaces.IAtomContainer;
 import org.openscience.cdk.interfaces.IAtomType;
+import org.openscience.cdk.interfaces.IChemFile;
+import org.openscience.cdk.interfaces.IChemObject;
+import org.openscience.cdk.interfaces.IChemObjectBuilder;
 import org.openscience.cdk.io.CIFReader;
 import org.openscience.cdk.io.SDFWriter;
 import org.openscience.cdk.io.iterator.IteratingSDFReader;
@@ -99,6 +102,7 @@ public class Fragmenter {
         SMILES_Kekule,
         SMILES_Aromatic
     }*/
+
     private static final int SIZE = 30;
 
     //reads in full molecule CIF
@@ -113,11 +117,12 @@ public class Fragmenter {
             e.printStackTrace();
         }
 
+        IChemObjectBuilder build = DefaultChemObjectBuilder.getInstance();
+        IChemFile cif = build.newInstance(IChemFile.class, ciffile);
         CIFReader creader = null;
-
         try {
             creader = new CIFReader(cread);
-
+            creader.read(cif);
         } catch (Exception x) {
             x.printStackTrace();
         }
@@ -167,9 +172,6 @@ public class Fragmenter {
         }
     } // end "readSDF" sdf reader
 
-    String[] fArray = new String[]{"For SMILES"};
-    String[] frame = new String[]{"For Frameworks"};
-    String[] rings = new String[]{"For Ring Systems"};
     String[] eArray = new String[]{"For Exh Fragments"};
     String[] eatArray = new String[]{"For testing for eaten fragments"};
     String[] rhArray = new String[]{"For removed-hydrogen SMILES"};
@@ -185,13 +187,6 @@ public class Fragmenter {
     //fragments full molecule according to exhaustive and Murcko fragmentation algorithms
     //exhaustive fragments used in further functions
     protected void fragment(IAtomContainer molecule) throws Exception {
-        //MurckoFragmenter implimentation
-        MurckoFragmenter murk = new MurckoFragmenter();
-        murk.generateFragments(molecule);
-        System.out.println("MURCKO FRAGMENTS");
-        fArray = murk.getFragments();
-
-        System.out.println(Arrays.toString(fArray));
 
         //ExhaustiveFragmenter implimentation
         ExhaustiveFragmenter exh = new ExhaustiveFragmenter();
@@ -286,7 +281,6 @@ public class Fragmenter {
         System.out.println("fullSmiles: " + full + "\n");
 
         //write SMILES file
-        //pass fArray to smilesToObject to convert Murcko fragments to SDF
         //pass eArray to smilesToObject to convert Exhaustive fragments to SDF
         //pass finalArray to smilesToObject to convert non-substructure fragments to SDF
         smilesToObject(finalArray, full);
@@ -1059,6 +1053,16 @@ public class Fragmenter {
 } //end Fragmenter
 
 //Code for reference
+
+//String[] fArray = new String[]{"For SMILES"};
+//MurckoFragmenter implimentation
+        //MurckoFragmenter murk = new MurckoFragmenter();
+        //murk.generateFragments(molecule);
+        //System.out.println("MURCKO FRAGMENTS");
+        //fArray = murk.getFragments();
+
+        //System.out.println(Arrays.toString(fArray));
+
 //XYZ writer
 /*protected void writeXYZ(IAtomContainer sm, int n) throws Exception{
 
