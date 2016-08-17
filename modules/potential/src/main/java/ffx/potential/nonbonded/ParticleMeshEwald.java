@@ -5547,9 +5547,13 @@ public class ParticleMeshEwald implements LambdaInterface {
                  * Compute screened real space interactions.
                  */
                 tensor.setR_QI(r);
+                // Add buffer.
+
                 tensor.setMultipolesQI(Qi, Qk);
                 tensor.setDipolesQI(ui, uiCR, uk, ukCR);
                 tensor.setOperator(OPERATOR.SCREENED_COULOMB);
+
+                // Order 6 QI
                 tensor.order5QI();
 
                 double ePermScreened = tensor.multipoleEnergyQI(permFi, permTi, permTk);

@@ -70,35 +70,25 @@ import org.openscience.cdk.tools.manipulator.AtomContainerManipulator;
 import org.openscience.cdk.tools.manipulator.AtomTypeManipulator;
 
 /**
- * Splits large molecules into fragments for PolType
- * Maps fragments to full molecule
- * 
- * Input: full molecule SDF
- * Output: individual fragment SDFs
+ * Splits large molecules into fragments for PolType Maps fragments to full
+ * molecule
+ *
+ * Input: full molecule SDF Output: individual fragment SDFs
  *
  * @author Rae Ann Corrigan
  */
 public class Fragmenter {
 
-<<<<<<< HEAD
     protected String sdffile;
     protected String ciffile;
     protected String smi;
+
+    private final static Logger logger = Logger.getLogger(Fragmenter.class.getName());
 
     public Fragmenter(String sdffile, String ciffile, String smi) {
         this.sdffile = sdffile;
         this.ciffile = ciffile;
         this.smi = smi;
-=======
-    private final static Logger logger = Logger.getLogger(Fragmenter.class.getName());
-
-    protected String filename;
-    protected String smilesString;
-
-    public Fragmenter(String filename, String smilesString) {
-        this.filename = filename;
-        this.smilesString = smilesString;
->>>>>>> 4cd5ab25c313c11549d9b95a2be7474928867362
     }
 
     /*private enum FIELD {
@@ -109,35 +99,34 @@ public class Fragmenter {
         SMILES_Kekule,
         SMILES_Aromatic
     }*/
-
     private static final int SIZE = 30;
-    
+
     //reads in full molecule CIF
-    public void readCIF() throws FileNotFoundException, IOException{
+    public void readCIF() throws FileNotFoundException, IOException {
         File cfile = new File(ciffile);
         BufferedReader cread = null;
-        
-        try{
+
+        try {
             FileReader cfileReader = new FileReader(cfile);
             cread = new BufferedReader(cfileReader);
-        } catch(IOException e){
+        } catch (IOException e) {
             e.printStackTrace();
         }
-        
+
         CIFReader creader = null;
-        
-        try{
+
+        try {
             creader = new CIFReader(cread);
-            
-        } catch (Exception x){
+
+        } catch (Exception x) {
             x.printStackTrace();
         }
-        
+
     } //end "readCIF" cif reader
 
     //reads in full molecule SDF
     public void readSDF() throws FileNotFoundException, IOException {
-        File file = new File(filename);
+        File file = new File(sdffile);
         BufferedReader read = null;
 
         try {
@@ -293,7 +282,7 @@ public class Fragmenter {
             map[q][0] = (q + 1);
         }
 
-        String full = smilesString;
+        String full = smi;
         System.out.println("fullSmiles: " + full + "\n");
 
         //write SMILES file
@@ -331,7 +320,7 @@ public class Fragmenter {
             //entry number in SMILES array to be used later in SDF writing
             int num = i;
             //System.out.println("\nPassing SMILES string to doConversion\n");
-            
+
             //doConversion call
             doConversion(content, num, fullsm);
         }
@@ -468,12 +457,7 @@ public class Fragmenter {
         }
 
         return sdfFromSMILES;
-<<<<<<< HEAD
-
-    } //end "writeSDF" sdf writer
-=======
     }
->>>>>>> 4cd5ab25c313c11549d9b95a2be7474928867362
 
     //maps fragment atoms to original/full molecule atoms
     protected void map(File sdfFromSMILES, int col, int fragsize, int fullsize) throws FileNotFoundException {
@@ -483,7 +467,7 @@ public class Fragmenter {
 
         //read full SDF file
         try {
-            File file = new File(filename);
+            File file = new File(sdffile);
             FileReader fullfr = new FileReader(file);
             BufferedReader fullbr = new BufferedReader(fullfr);
             String line;
@@ -568,7 +552,7 @@ public class Fragmenter {
         int fragrows = 0;
 
         try {
-            File file = new File(filename);
+            File file = new File(sdffile);
             FileReader fullfr = new FileReader(file);
             BufferedReader fullbr = new BufferedReader(fullfr);
             String line;
@@ -609,7 +593,7 @@ public class Fragmenter {
 
         //fill arrays of bonds for full molecule
         try {
-            File file = new File(filename);
+            File file = new File(sdffile);
             FileReader fullfr = new FileReader(file);
             BufferedReader fullbr = new BufferedReader(fullfr);
             String line;
