@@ -48,6 +48,7 @@ import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import static ffx.numerics.Erf.erfc;
+import static ffx.numerics.VectorMath.binomial;
 import static ffx.numerics.VectorMath.diff;
 import static ffx.numerics.VectorMath.dot;
 import static ffx.numerics.VectorMath.doubleFactorial;
@@ -260,6 +261,35 @@ public class MultipoleTensor {
         t221 = ti(2, 2, 1, order);
         t212 = ti(2, 1, 2, order);
         t122 = ti(1, 2, 2, order);
+        // l + m + n = 6 (28) 84
+        t600 = ti(6, 0, 0, order);
+        t060 = ti(0, 6, 0, order);
+        t006 = ti(0, 0, 6, order);
+        t510 = ti(5, 1, 0, order);
+        t501 = ti(5, 0, 1, order);
+        t150 = ti(1, 5, 0, order);
+        t051 = ti(0, 5, 1, order);
+        t105 = ti(1, 0, 5, order);
+        t015 = ti(0, 1, 5, order);
+        t420 = ti(4, 2, 0, order);
+        t402 = ti(4, 0, 2, order);
+        t240 = ti(2, 4, 0, order);
+        t042 = ti(0, 4, 2, order);
+        t204 = ti(2, 0, 4, order);
+        t024 = ti(0, 2, 4, order);
+        t411 = ti(4, 1, 1, order);
+        t141 = ti(1, 4, 1, order);
+        t114 = ti(1, 1, 4, order);
+        t330 = ti(3, 3, 0, order);
+        t303 = ti(3, 0, 3, order);
+        t033 = ti(0, 3, 3, order);
+        t321 = ti(3, 2, 1, order);
+        t231 = ti(2, 3, 1, order);
+        t213 = ti(2, 1, 3, order);
+        t312 = ti(3, 1, 2, order);
+        t132 = ti(1, 3, 2, order);
+        t123 = ti(1, 2, 3, order);
+        t222 = ti(2, 2, 2, order);
     }
 
     /**
@@ -528,7 +558,7 @@ public class MultipoleTensor {
      * @since 1.0
      */
     public static int tensorCount(int order) {
-        long ret = VectorMath.binomial(order + 3, 3);
+        long ret = binomial(order + 3, 3);
         assert (ret < Integer.MAX_VALUE);
         return (int) ret;
     }
@@ -562,6 +592,10 @@ public class MultipoleTensor {
      * @return int in the range (0..binomial(order + 3, 3) - 1)
      */
     public static int ti(int dx, int dy, int dz, int order) {
+        if (dx < 0 || dy < 0 || dz < 0 || dx + dy + dz > order) {
+            return -1;
+        }
+
         int size = (order + 1) * (order + 2) * (order + 3) / 6;
         /**
          * We only get to the top of the tetrahedron if dz = order, otherwise
@@ -1052,7 +1086,7 @@ public class MultipoleTensor {
         StringBuilder sb = new StringBuilder();
         tensor[0] = work[0];
         if (work[0] > 0) {
-            sb.append(format("tensor[%s] = %s;\n", tlmn(0, 0, 0), term(0, 0, 0, 0)));
+            sb.append(format("%s = %s;\n", rlmn(0, 0, 0), term(0, 0, 0, 0)));
         }
         // Find (d/dx)^l for l = 1..order (m = 0, n = 0)
         // Any (d/dx) term can be formed as
@@ -1062,7 +1096,7 @@ public class MultipoleTensor {
         double previous = work[1];
         // Store the l=1 tensor T100 (d/dx)
         tensor[ti(1, 0, 0)] = x * previous;
-        sb.append(format("tensor[%s] = x * %s;\n", tlmn(1, 0, 0), term(0, 0, 0, 1)));
+        sb.append(format("%s = x * %s;\n", rlmn(1, 0, 0), term(0, 0, 0, 1)));
         // Starting the loop at l=2 avoids an if statement.
         for (int l = 2; l < o1; l++) {
             // Initial condition for the inner loop is formation of T100(l-1).
@@ -1093,11 +1127,11 @@ public class MultipoleTensor {
             tensor[ti(l, 0, 0)] = x * current + (l - 1) * previous;
             previous = current;
             if (l > 2) {
-                sb.append(format("tensor[%s] = x * %s + %d * %s;\n",
-                        tlmn(l, 0, 0), term(l - 1, 0, 0, 1), (l - 1), term(l - 2, 0, 0, 1)));
+                sb.append(format("%s = x * %s + %d * %s;\n",
+                        rlmn(l, 0, 0), term(l - 1, 0, 0, 1), (l - 1), term(l - 2, 0, 0, 1)));
             } else {
-                sb.append(format("tensor[%s] = x * %s + %s;\n",
-                        tlmn(l, 0, 0), term(l - 1, 0, 0, 1), term(l - 2, 0, 0, 1), l, 0, 0));
+                sb.append(format("%s = x * %s + %s;\n",
+                        rlmn(l, 0, 0), term(l - 1, 0, 0, 1), term(l - 2, 0, 0, 1), l, 0, 0));
             }
         }
         // Find (d/dx)^l * (d/dy)^m for l+m = 1..order (m > 0, n = 0)
@@ -1108,7 +1142,7 @@ public class MultipoleTensor {
             // Tl10 = y * Tl001
             previous = work[l * il + 1];
             tensor[ti(l, 1, 0)] = y * previous;
-            sb.append(format("tensor[%s] = y * %s;\n", tlmn(l, 1, 0), term(l, 0, 0, 1)));
+            sb.append(format("%s = y * %s;\n", rlmn(l, 1, 0), term(l, 0, 0, 1)));
             for (int m = 2; m + l < o1; m++) {
                 // Tl10(m-1) = y * Tl00m;
                 int iw = l * il + m;
@@ -1138,11 +1172,11 @@ public class MultipoleTensor {
                 tensor[ti(l, m, 0)] = y * current + (m - 1) * previous;
                 previous = current;
                 if (m > 2) {
-                    sb.append(format("tensor[%s] = y * %s + %d * %s;\n",
-                            tlmn(l, m, 0), term(l, m - 1, 0, 1), (m - 1), term(l, m - 2, 0, 1)));
+                    sb.append(format("%s = y * %s + %d * %s;\n",
+                            rlmn(l, m, 0), term(l, m - 1, 0, 1), (m - 1), term(l, m - 2, 0, 1)));
                 } else {
-                    sb.append(format("tensor[%s] = y * %s + %s;\n",
-                            tlmn(l, m, 0), term(l, m - 1, 0, 1), term(l, m - 2, 0, 1)));
+                    sb.append(format("%s = y * %s + %s;\n",
+                            rlmn(l, m, 0), term(l, m - 1, 0, 1), term(l, m - 2, 0, 1)));
                 }
 
             }
@@ -1158,7 +1192,7 @@ public class MultipoleTensor {
                 final int lilmim = l * il + m * im;
                 previous = work[lilmim + 1];
                 tensor[ti(l, m, 1)] = z * previous;
-                sb.append(format("tensor[%s] = z * %s;\n", tlmn(l, m, 1), term(l, m, 0, 1), l, m, 1));
+                sb.append(format("%s = z * %s;\n", rlmn(l, m, 1), term(l, m, 0, 1), l, m, 1));
                 for (int n = 2; lm + n < o1; n++) {
                     // Tlm1(n-1) = z * Tlm0n;
                     int iw = lilmim + n;
@@ -1188,11 +1222,11 @@ public class MultipoleTensor {
                     tensor[ti(l, m, n)] = z * current + n1 * previous;
                     previous = current;
                     if (n > 2) {
-                        sb.append(format("tensor[%s] = z * %s + %d * %s;\n",
-                                tlmn(l, m, n), term(l, m, n - 1, 1), (n - 1), term(l, m, n - 2, 1), l, m, n));
+                        sb.append(format("%s = z * %s + %d * %s;\n",
+                                rlmn(l, m, n), term(l, m, n - 1, 1), (n - 1), term(l, m, n - 2, 1), l, m, n));
                     } else {
-                        sb.append(format("tensor[%s] = z * %s + %s;\n",
-                                tlmn(l, m, n), term(l, m, n - 1, 1), term(l, m, n - 2, 1), l, m, n));
+                        sb.append(format("%s = z * %s + %s;\n",
+                                rlmn(l, m, n), term(l, m, n - 1, 1), term(l, m, n - 2, 1), l, m, n));
                     }
                 }
             }
@@ -1232,7 +1266,7 @@ public class MultipoleTensor {
         StringBuilder sb = new StringBuilder();
         tensor[0] = work[0];
         if (work[0] > 0) {
-            sb.append(format("tensor[%s] = %s;\n", tlmn(0, 0, 0), term(0, 0, 0, 0)));
+            sb.append(format("%s = %s;\n", rlmn(0, 0, 0), term(0, 0, 0, 0)));
         }
         // Find (d/dx)^l for l = 1..order (m = 0, n = 0)
         // Any (d/dx) term can be formed as
@@ -1278,9 +1312,9 @@ public class MultipoleTensor {
             previous = current;
             if (tensor[index] != 0) {
                 if (l > 2) {
-                    sb.append(format("tensor[%s] = %d * %s;\n", tlmn(l, 0, 0), (l - 1), term(l - 2, 0, 0, 1)));
+                    sb.append(format("%s = %d * %s;\n", rlmn(l, 0, 0), (l - 1), term(l - 2, 0, 0, 1)));
                 } else {
-                    sb.append(format("tensor[%s] = %s;\n", tlmn(l, 0, 0), term(l - 2, 0, 0, 1)));
+                    sb.append(format("%s = %s;\n", rlmn(l, 0, 0), term(l - 2, 0, 0, 1)));
                 }
             }
         }
@@ -1324,9 +1358,9 @@ public class MultipoleTensor {
                 previous = current;
                 if (tensor[index] != 0) {
                     if (m > 2) {
-                        sb.append(format("tensor[%s] = %d * %s;\n", tlmn(l, m, 0), (m - 1), term(l, m - 2, 0, 1)));
+                        sb.append(format("%s = %d * %s;\n", rlmn(l, m, 0), (m - 1), term(l, m - 2, 0, 1)));
                     } else {
-                        sb.append(format("tensor[%s] = %s;\n", tlmn(l, m, 0), term(l, m - 2, 0, 1)));
+                        sb.append(format("%s = %s;\n", rlmn(l, m, 0), term(l, m - 2, 0, 1)));
                     }
                 }
 
@@ -1345,7 +1379,7 @@ public class MultipoleTensor {
                 int index = ti(l, m, 1);
                 tensor[index] = z * previous;
                 if (tensor[index] != 0) {
-                    sb.append(format("tensor[%s] = z * %s;\n", tlmn(l, m, 1), term(l, m, 0, 1)));
+                    sb.append(format("%s = z * %s;\n", rlmn(l, m, 1), term(l, m, 0, 1)));
                 }
                 for (int n = 2; lm + n < o1; n++) {
                     // Tlm1(n-1) = z * Tlm0n;
@@ -1383,11 +1417,11 @@ public class MultipoleTensor {
                     previous = current;
                     if (tensor[index] != 0) {
                         if (n > 2) {
-                            sb.append(format("tensor[%s] = z * %s + %d * %s;\n",
-                                    tlmn(l, m, n), term(l, m, n - 1, 1), (n - 1), term(l, m, n - 2, 1)));
+                            sb.append(format("%s = z * %s + %d * %s;\n",
+                                    rlmn(l, m, n), term(l, m, n - 1, 1), (n - 1), term(l, m, n - 2, 1)));
                         } else {
-                            sb.append(format("tensor[%s] = z * %s + %s;\n",
-                                    tlmn(l, m, n), term(l, m, n - 1, 1), term(l, m, n - 2, 1)));
+                            sb.append(format("%s = z * %s + %s;\n",
+                                    rlmn(l, m, n), term(l, m, n - 1, 1), term(l, m, n - 2, 1)));
                         }
                     }
                 }
@@ -1956,6 +1990,316 @@ public class MultipoleTensor {
         R203 = z * term2021 + 2 * term2011;
         R221 = z * term2201;
         R401 = z * term4001;
+    }
+
+    /**
+     * Hard coded computation of all Cartesian multipole tensors up to 5th
+     * order, in the global frame, which is sufficient for quadrupole-quadrupole
+     * forces and orthogonal space sampling.
+     */
+    public void order6() {
+        source(work);
+        double term0000 = work[0];
+        double term0001 = work[1];
+        double term0002 = work[2];
+        double term0003 = work[3];
+        double term0004 = work[4];
+        double term0005 = work[5];
+        double term0006 = work[6];
+        R000 = term0000;
+        R100 = x * term0001;
+        double term1001 = x * term0002;
+        R200 = x * term1001 + term0001;
+        double term1002 = x * term0003;
+        double term2001 = x * term1002 + term0002;
+        R300 = x * term2001 + 2 * term1001;
+        double term1003 = x * term0004;
+        double term2002 = x * term1003 + term0003;
+        double term3001 = x * term2002 + 2 * term1002;
+        R400 = x * term3001 + 3 * term2001;
+        double term1004 = x * term0005;
+        double term2003 = x * term1004 + term0004;
+        double term3002 = x * term2003 + 2 * term1003;
+        double term4001 = x * term3002 + 3 * term2002;
+        R500 = x * term4001 + 4 * term3001;
+        double term1005 = x * term0006;
+        double term2004 = x * term1005 + term0005;
+        double term3003 = x * term2004 + 2 * term1004;
+        double term4002 = x * term3003 + 3 * term2003;
+        double term5001 = x * term4002 + 4 * term3002;
+        R600 = x * term5001 + 5 * term4001;
+        R010 = y * term0001;
+        double term0101 = y * term0002;
+        R020 = y * term0101 + term0001;
+        double term0102 = y * term0003;
+        double term0201 = y * term0102 + term0002;
+        R030 = y * term0201 + 2 * term0101;
+        double term0103 = y * term0004;
+        double term0202 = y * term0103 + term0003;
+        double term0301 = y * term0202 + 2 * term0102;
+        R040 = y * term0301 + 3 * term0201;
+        double term0104 = y * term0005;
+        double term0203 = y * term0104 + term0004;
+        double term0302 = y * term0203 + 2 * term0103;
+        double term0401 = y * term0302 + 3 * term0202;
+        R050 = y * term0401 + 4 * term0301;
+        double term0105 = y * term0006;
+        double term0204 = y * term0105 + term0005;
+        double term0303 = y * term0204 + 2 * term0104;
+        double term0402 = y * term0303 + 3 * term0203;
+        double term0501 = y * term0402 + 4 * term0302;
+        R060 = y * term0501 + 5 * term0401;
+        R110 = y * term1001;
+        double term1101 = y * term1002;
+        R120 = y * term1101 + term1001;
+        double term1102 = y * term1003;
+        double term1201 = y * term1102 + term1002;
+        R130 = y * term1201 + 2 * term1101;
+        double term1103 = y * term1004;
+        double term1202 = y * term1103 + term1003;
+        double term1301 = y * term1202 + 2 * term1102;
+        R140 = y * term1301 + 3 * term1201;
+        double term1104 = y * term1005;
+        double term1203 = y * term1104 + term1004;
+        double term1302 = y * term1203 + 2 * term1103;
+        double term1401 = y * term1302 + 3 * term1202;
+        R150 = y * term1401 + 4 * term1301;
+        R210 = y * term2001;
+        double term2101 = y * term2002;
+        R220 = y * term2101 + term2001;
+        double term2102 = y * term2003;
+        double term2201 = y * term2102 + term2002;
+        R230 = y * term2201 + 2 * term2101;
+        double term2103 = y * term2004;
+        double term2202 = y * term2103 + term2003;
+        double term2301 = y * term2202 + 2 * term2102;
+        R240 = y * term2301 + 3 * term2201;
+        R310 = y * term3001;
+        double term3101 = y * term3002;
+        R320 = y * term3101 + term3001;
+        double term3102 = y * term3003;
+        double term3201 = y * term3102 + term3002;
+        R330 = y * term3201 + 2 * term3101;
+        R410 = y * term4001;
+        double term4101 = y * term4002;
+        R420 = y * term4101 + term4001;
+        R510 = y * term5001;
+        R001 = z * term0001;
+        double term0011 = z * term0002;
+        R002 = z * term0011 + term0001;
+        double term0012 = z * term0003;
+        double term0021 = z * term0012 + term0002;
+        R003 = z * term0021 + 2 * term0011;
+        double term0013 = z * term0004;
+        double term0022 = z * term0013 + term0003;
+        double term0031 = z * term0022 + 2 * term0012;
+        R004 = z * term0031 + 3 * term0021;
+        double term0014 = z * term0005;
+        double term0023 = z * term0014 + term0004;
+        double term0032 = z * term0023 + 2 * term0013;
+        double term0041 = z * term0032 + 3 * term0022;
+        R005 = z * term0041 + 4 * term0031;
+        double term0015 = z * term0006;
+        double term0024 = z * term0015 + term0005;
+        double term0033 = z * term0024 + 2 * term0014;
+        double term0042 = z * term0033 + 3 * term0023;
+        double term0051 = z * term0042 + 4 * term0032;
+        R006 = z * term0051 + 5 * term0041;
+        R011 = z * term0101;
+        double term0111 = z * term0102;
+        R012 = z * term0111 + term0101;
+        double term0112 = z * term0103;
+        double term0121 = z * term0112 + term0102;
+        R013 = z * term0121 + 2 * term0111;
+        double term0113 = z * term0104;
+        double term0122 = z * term0113 + term0103;
+        double term0131 = z * term0122 + 2 * term0112;
+        R014 = z * term0131 + 3 * term0121;
+        double term0114 = z * term0105;
+        double term0123 = z * term0114 + term0104;
+        double term0132 = z * term0123 + 2 * term0113;
+        double term0141 = z * term0132 + 3 * term0122;
+        R015 = z * term0141 + 4 * term0131;
+        R021 = z * term0201;
+        double term0211 = z * term0202;
+        R022 = z * term0211 + term0201;
+        double term0212 = z * term0203;
+        double term0221 = z * term0212 + term0202;
+        R023 = z * term0221 + 2 * term0211;
+        double term0213 = z * term0204;
+        double term0222 = z * term0213 + term0203;
+        double term0231 = z * term0222 + 2 * term0212;
+        R024 = z * term0231 + 3 * term0221;
+        R031 = z * term0301;
+        double term0311 = z * term0302;
+        R032 = z * term0311 + term0301;
+        double term0312 = z * term0303;
+        double term0321 = z * term0312 + term0302;
+        R033 = z * term0321 + 2 * term0311;
+        R041 = z * term0401;
+        double term0411 = z * term0402;
+        R042 = z * term0411 + term0401;
+        R051 = z * term0501;
+        R101 = z * term1001;
+        double term1011 = z * term1002;
+        R102 = z * term1011 + term1001;
+        double term1012 = z * term1003;
+        double term1021 = z * term1012 + term1002;
+        R103 = z * term1021 + 2 * term1011;
+        double term1013 = z * term1004;
+        double term1022 = z * term1013 + term1003;
+        double term1031 = z * term1022 + 2 * term1012;
+        R104 = z * term1031 + 3 * term1021;
+        double term1014 = z * term1005;
+        double term1023 = z * term1014 + term1004;
+        double term1032 = z * term1023 + 2 * term1013;
+        double term1041 = z * term1032 + 3 * term1022;
+        R105 = z * term1041 + 4 * term1031;
+        R111 = z * term1101;
+        double term1111 = z * term1102;
+        R112 = z * term1111 + term1101;
+        double term1112 = z * term1103;
+        double term1121 = z * term1112 + term1102;
+        R113 = z * term1121 + 2 * term1111;
+        double term1113 = z * term1104;
+        double term1122 = z * term1113 + term1103;
+        double term1131 = z * term1122 + 2 * term1112;
+        R114 = z * term1131 + 3 * term1121;
+        R121 = z * term1201;
+        double term1211 = z * term1202;
+        R122 = z * term1211 + term1201;
+        double term1212 = z * term1203;
+        double term1221 = z * term1212 + term1202;
+        R123 = z * term1221 + 2 * term1211;
+        R131 = z * term1301;
+        double term1311 = z * term1302;
+        R132 = z * term1311 + term1301;
+        R141 = z * term1401;
+        R201 = z * term2001;
+        double term2011 = z * term2002;
+        R202 = z * term2011 + term2001;
+        double term2012 = z * term2003;
+        double term2021 = z * term2012 + term2002;
+        R203 = z * term2021 + 2 * term2011;
+        double term2013 = z * term2004;
+        double term2022 = z * term2013 + term2003;
+        double term2031 = z * term2022 + 2 * term2012;
+        R204 = z * term2031 + 3 * term2021;
+        R211 = z * term2101;
+        double term2111 = z * term2102;
+        R212 = z * term2111 + term2101;
+        double term2112 = z * term2103;
+        double term2121 = z * term2112 + term2102;
+        R213 = z * term2121 + 2 * term2111;
+        R221 = z * term2201;
+        double term2211 = z * term2202;
+        R222 = z * term2211 + term2201;
+        R231 = z * term2301;
+        R301 = z * term3001;
+        double term3011 = z * term3002;
+        R302 = z * term3011 + term3001;
+        double term3012 = z * term3003;
+        double term3021 = z * term3012 + term3002;
+        R303 = z * term3021 + 2 * term3011;
+        R311 = z * term3101;
+        double term3111 = z * term3102;
+        R312 = z * term3111 + term3101;
+        R321 = z * term3201;
+        R401 = z * term4001;
+        double term4011 = z * term4002;
+        R402 = z * term4011 + term4001;
+        R411 = z * term4101;
+        R501 = z * term5001;
+    }
+
+    /**
+     * Hard coded computation of all Cartesian multipole tensors up to 6th
+     * order, based on a quasi-internal frame, which is sufficient for
+     * quadrupole-quadrupole forces and orthogonal space sampling.
+     */
+    public void order6QI() {
+        source(work);
+        double term0000 = work[0];
+        double term0001 = work[1];
+        double term0002 = work[2];
+        double term0003 = work[3];
+        double term0004 = work[4];
+        double term0005 = work[5];
+        double term0006 = work[6];
+        R000 = term0000;
+        R200 = term0001;
+        double term2001 = term0002;
+        double term2002 = term0003;
+        R400 = 3 * term2001;
+        double term2003 = term0004;
+        double term4001 = 3 * term2002;
+        double term2004 = term0005;
+        double term4002 = 3 * term2003;
+        R600 = 5 * term4001;
+        R020 = term0001;
+        double term0201 = term0002;
+        double term0202 = term0003;
+        R040 = 3 * term0201;
+        double term0203 = term0004;
+        double term0401 = 3 * term0202;
+        double term0204 = term0005;
+        double term0402 = 3 * term0203;
+        R060 = 5 * term0401;
+        R220 = term2001;
+        double term2201 = term2002;
+        double term2202 = term2003;
+        R240 = 3 * term2201;
+        R420 = term4001;
+        R001 = z * term0001;
+        double term0011 = z * term0002;
+        R002 = z * term0011 + term0001;
+        double term0012 = z * term0003;
+        double term0021 = z * term0012 + term0002;
+        R003 = z * term0021 + 2 * term0011;
+        double term0013 = z * term0004;
+        double term0022 = z * term0013 + term0003;
+        double term0031 = z * term0022 + 2 * term0012;
+        R004 = z * term0031 + 3 * term0021;
+        double term0014 = z * term0005;
+        double term0023 = z * term0014 + term0004;
+        double term0032 = z * term0023 + 2 * term0013;
+        double term0041 = z * term0032 + 3 * term0022;
+        R005 = z * term0041 + 4 * term0031;
+        double term0015 = z * term0006;
+        double term0024 = z * term0015 + term0005;
+        double term0033 = z * term0024 + 2 * term0014;
+        double term0042 = z * term0033 + 3 * term0023;
+        double term0051 = z * term0042 + 4 * term0032;
+        R006 = z * term0051 + 5 * term0041;
+        R021 = z * term0201;
+        double term0211 = z * term0202;
+        R022 = z * term0211 + term0201;
+        double term0212 = z * term0203;
+        double term0221 = z * term0212 + term0202;
+        R023 = z * term0221 + 2 * term0211;
+        double term0213 = z * term0204;
+        double term0222 = z * term0213 + term0203;
+        double term0231 = z * term0222 + 2 * term0212;
+        R024 = z * term0231 + 3 * term0221;
+        R041 = z * term0401;
+        double term0411 = z * term0402;
+        R042 = z * term0411 + term0401;
+        R201 = z * term2001;
+        double term2011 = z * term2002;
+        R202 = z * term2011 + term2001;
+        double term2012 = z * term2003;
+        double term2021 = z * term2012 + term2002;
+        R203 = z * term2021 + 2 * term2011;
+        double term2013 = z * term2004;
+        double term2022 = z * term2013 + term2003;
+        double term2031 = z * term2022 + 2 * term2012;
+        R204 = z * term2031 + 3 * term2021;
+        R221 = z * term2201;
+        double term2211 = z * term2202;
+        R222 = z * term2211 + term2201;
+        R401 = z * term4001;
+        double term4011 = z * term4002;
+        R402 = z * term4011 + term4001;
     }
 
     /**
@@ -3693,7 +4037,7 @@ public class MultipoleTensor {
 
     public static void main(String args[]) {
         if (args == null || args.length < 4) {
-            logger.info(" Usage: java ffx.numerics.TensorRecursion order dx dy dz");
+            logger.info(" Usage: java ffx.numerics.MultipoleTensor order dx dy dz");
         }
         int order = Integer.parseInt(args[0]);
         double dx = Double.parseDouble(args[1]);
@@ -3703,6 +4047,8 @@ public class MultipoleTensor {
 
         double n2 = 710643;
         double cycles = 10;
+
+        logger.info(format(" 6th Order Tensor Count: %d", tensorCount(6)));
 
         MultipoleTensor multipoleTensor = new MultipoleTensor(
                 OPERATOR.SCREENED_COULOMB, COORDINATES.GLOBAL, order, 1e-6);
@@ -3724,7 +4070,7 @@ public class MultipoleTensor {
                 r[1] = Math.random();
                 r[2] = Math.random();
                 multipoleTensor.setR(r);
-                multipoleTensor.order5();
+                multipoleTensor.order6();
             }
             timeGlobalT += System.nanoTime();
 
@@ -3742,18 +4088,18 @@ public class MultipoleTensor {
             }
             timeGlobal += System.nanoTime();
 
+            multipoleTensor.setCoordinateSystem(COORDINATES.QI);
             long timeQIT = -System.nanoTime();
             for (int i = 0; i < n2; i++) {
                 r[0] = Math.random();
                 r[1] = Math.random();
                 r[2] = Math.random();
                 multipoleTensor.setR(r);
-                multipoleTensor.order5QI();
+                multipoleTensor.order6QI();
             }
             timeQIT += System.nanoTime();
 
             long timeQI = -System.nanoTime();
-            multipoleTensor.setCoordinateSystem(COORDINATES.QI);
             for (int i = 0; i < n2; i++) {
                 r[0] = 0.0;
                 r[1] = 0.0;
@@ -3771,10 +4117,13 @@ public class MultipoleTensor {
                     timeGlobalT * 1.0e-9, timeGlobal * 1.0e-9, timeQIT * 1.0e-9, timeQI * 1.0e-9));
         }
 
-        // String string = tensorRecursion.codeTensorRecursion(r, tensors, damp, aiak);
-        // logger.info(" Java Code:\n" + string);
-        // string = tensorRecursion.codeTensorRecursionQI(r, tensors, damp, aiak);
-        // logger.info(" Java Code:\n" + string);
+        /**
+        double tensors[] = new double[MultipoleTensor.tensorCount(order)];
+        String string = multipoleTensor.codeTensorRecursion(r, tensors);
+        logger.info(" Java Code:\n" + string);
+        string = multipoleTensor.codeTensorRecursionQI(r, tensors);
+        logger.info(" Java Code:\n" + string);
+        */
     }
 
     /**
@@ -3813,6 +4162,18 @@ public class MultipoleTensor {
      */
     private static String tlmn(int l, int m, int n) {
         return String.format("t%d%d%d", l, m, n);
+    }
+
+    /**
+     * Convenience method for writing out tensor indeces.
+     *
+     * @param l number of d/dx partial derivatives.
+     * @param m number of d/dx partial derivatives.
+     * @param n number of d/dx partial derivatives.
+     * @return a String of the form <code>Rlmn</code>.
+     */
+    private static String rlmn(int l, int m, int n) {
+        return String.format("R%d%d%d", l, m, n);
     }
 
     public void getTensor(double T[]) {
@@ -4510,6 +4871,35 @@ public class MultipoleTensor {
     private double R221;
     private double R212;
     private double R122;
+    // l + m + n = 6 (28) 84
+    private double R600;
+    private double R060;
+    private double R006;
+    private double R510;
+    private double R501;
+    private double R150;
+    private double R051;
+    private double R105;
+    private double R015;
+    private double R420;
+    private double R402;
+    private double R240;
+    private double R042;
+    private double R204;
+    private double R024;
+    private double R411;
+    private double R141;
+    private double R114;
+    private double R330;
+    private double R303;
+    private double R033;
+    private double R321;
+    private double R231;
+    private double R213;
+    private double R312;
+    private double R132;
+    private double R123;
+    private double R222;
 
     // l + m + n = 0 (1)
     public final int t000;
@@ -4573,5 +4963,33 @@ public class MultipoleTensor {
     public final int t221;
     public final int t212;
     public final int t122;
-
+    // l + m + n = 6 (28) 84
+    public final int t600;
+    public final int t060;
+    public final int t006;
+    public final int t510;
+    public final int t501;
+    public final int t150;
+    public final int t051;
+    public final int t105;
+    public final int t015;
+    public final int t420;
+    public final int t402;
+    public final int t240;
+    public final int t042;
+    public final int t204;
+    public final int t024;
+    public final int t411;
+    public final int t141;
+    public final int t114;
+    public final int t330;
+    public final int t303;
+    public final int t033;
+    public final int t321;
+    public final int t231;
+    public final int t213;
+    public final int t312;
+    public final int t132;
+    public final int t123;
+    public final int t222;
 }

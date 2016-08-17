@@ -395,13 +395,13 @@ public class Fragmenter {
             dir.mkdir();
         }
 
-        String filename = dirName.concat(File.separator).concat(dirName.concat(".sdf"));
-        logger.info(String.format(" Writing %s", filename));
+        String fragName = dirName.concat(File.separator).concat(dirName.concat(".sdf"));
+        logger.info(String.format(" Writing %s", fragName));
 
         BufferedWriter bufferedWriter = null;
         FileWriter fileWriter = null;
         SDFWriter sdfWriter = null;
-        File sdfFromSMILES = new File(filename);
+        File sdfFromSMILES = new File(fragName);
 
         try {
             fileWriter = new FileWriter(sdfFromSMILES.getAbsoluteFile());

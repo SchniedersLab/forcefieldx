@@ -52,7 +52,7 @@
                         <argument>-classpath</argument>
                         <classpath/>
                         <argument>ffx.numerics.MultipoleTensor</argument>
-                        <argument>5</argument>
+                        <argument>6</argument>
                         <argument>1.1</argument>
                         <argument>1.2</argument>
                         <argument>1.3</argument>
