@@ -89,6 +89,7 @@ double initialLambda = 0.5;
 // Print out the energy for each step.
 boolean print = false;
 boolean vdwOnly = false;
+boolean pmeOnly = true;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
@@ -108,7 +109,8 @@ cli.ef(longOpt:'noElecFinal', args:1, argName:'-1', 'No Electrostatics Final Ato
 cli.ef2(longOpt:'noElecfinal2', args:1, argName:'-1', 'No Electrostatics Final Atom for the 2nd topology.');
 cli.l(longOpt:'lambda', args:1, argName:'0.5', 'Lambda value to test.');
 cli.v(longOpt:'verbose', 'Print out the energy for each step.');
-cli.vO(longOpt:'vdwOnly', 'Compute solely vdW for lamedh benchmarking.')
+cli.vO(longOpt:'vdwOnly', 'Compute solely vdW for lamedh benchmarking.');
+cli.pO(longOpt:'pmeOnly', 'Compute solely PME for lamedh benchmarking.');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -179,6 +181,14 @@ if (options.v) {
     print = true;
 }
 
+if (options.vO && options.pO) {
+    return cli.usage();
+} else if (options.vO) {
+    vdwOnly = true;
+} else if (options.pO) {
+    pmeOnly = true;
+}
+
 /*int nThreads = ParallelTeam.getDefaultThreadCount() / 2;
 System.setProperty("FF_THREADS", String.valueOf(nThreads));*/
 
@@ -209,6 +219,9 @@ if (arguments.size() > 1) {
 }
 
 if (vdwOnly) {
+    System.setProperty("vdwterm", "true");
+    System.setProperty("vdw-cutoff", "1000");
+    
     System.setProperty("bondterm", "false");
     System.setProperty("angleterm", "false");
     System.setProperty("strbndterm", "false");
@@ -217,7 +230,19 @@ if (vdwOnly) {
     System.setProperty("tortorterm", "false");
     System.setProperty("pitorsterm", "false");
     System.setProperty("mpoleterm", "false");
-    System.setProperty("vdw-cutoff", "1000");
+}
+
+if (pmeOnly) {
+    System.setProperty("mpoleterm", "true");
+    
+    System.setProperty("bondterm", "false");
+    System.setProperty("angleterm", "false");
+    System.setProperty("strbndterm", "false");
+    System.setProperty("opbendterm", "false");
+    System.setProperty("torsionterm", "false");
+    System.setProperty("tortorterm", "false");
+    System.setProperty("pitorsterm", "false");
+    System.setProperty("vdwterm", "false");
 }
 
 // Open the first topology.
@@ -277,6 +302,10 @@ LambdaInterface lambdaInterface = active.getPotentialEnergy();
     nThreads++;
     System.setProperty("FF_THREADS", String.valueOf(nThreads));
 }*/
+
+// Hook this up to double-decoupling (single-state) and retest vdW.
+// Watch that lambda gets injected at FFE rather than needing DT.
+// Apply PME to the water dimer test case (ie. disappearing one molecule therefrom).
 
 // Check for a 2nd topology.
 if (arguments.size() > 1) {

@@ -2018,11 +2018,21 @@ public class MultipoleTensor {
         Fi[1] = -dotMultipoleK();
         multipoleIdZQI();
         Fi[2] = -dotMultipoleK();
+        
+        unrotateddZ = Fi[2];
 
         // Rotate the force and torques from the QI frame into the Global frame.
         qiToGlobal(Fi, Ti, Tk);
+        
+        rotateddZ = Fi[2];
 
         return energy;
+    }
+    
+    public double unrotateddZ, rotateddZ;
+    private double offset = 0.0;
+    public void setOffset(double offset) {
+        this.offset = offset;
     }
 
     private double polarizationEnergyGlobal(double scaleField, double scaleEnergy, double scaleMutual,
