@@ -89,7 +89,7 @@ double initialLambda = 0.5;
 // Print out the energy for each step.
 boolean print = false;
 boolean vdwOnly = false;
-boolean pmeOnly = true;
+boolean pmeOnly = false;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
