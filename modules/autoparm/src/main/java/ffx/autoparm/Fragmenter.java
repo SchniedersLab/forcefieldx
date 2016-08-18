@@ -82,26 +82,26 @@ import org.openscience.cdk.tools.manipulator.AtomTypeManipulator;
  */
 public class Fragmenter {
 
-//<<<<<<< HEAD
     protected String sdffile;
     protected String ciffile;
     protected String smi;
+
+    private final static Logger logger = Logger.getLogger(Fragmenter.class.getName());
 
     public Fragmenter(String sdffile, String ciffile, String smi) {
         this.sdffile = sdffile;
         this.ciffile = ciffile;
         this.smi = smi;
-        //=======
-    private final static Logger logger = Logger.getLogger(Fragmenter.class.getName());
-
-    protected String filename;
-    protected String smilesString;
-
-    public Fragmenter(String filename, String smilesString) {
-        this.filename = filename;
-        this.smilesString = smilesString;
-//>>>>>>> 4cd5ab25c313c11549d9b95a2be7474928867362
     }
+
+    /*private enum FIELD {
+        XLogP,
+        ALogP,
+        ALogp2,
+        AMR,
+        SMILES_Kekule,
+        SMILES_Aromatic
+    }*/
 
     private static final int SIZE = 30;
 
@@ -116,16 +116,13 @@ public class Fragmenter {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        
+
         IChemObjectBuilder build = DefaultChemObjectBuilder.getInstance();
         IChemFile cif = build.newInstance(IChemFile.class, ciffile);
-
         CIFReader creader = null;
-
         try {
             creader = new CIFReader(cread);
             creader.read(cif);
-
         } catch (Exception x) {
             x.printStackTrace();
         }
@@ -134,7 +131,7 @@ public class Fragmenter {
 
     //reads in full molecule SDF
     public void readSDF() throws FileNotFoundException, IOException {
-        File file = new File(filename);
+        File file = new File(sdffile);
         BufferedReader read = null;
 
         try {
@@ -280,7 +277,7 @@ public class Fragmenter {
             map[q][0] = (q + 1);
         }
 
-        String full = smilesString;
+        String full = smi;
         System.out.println("fullSmiles: " + full + "\n");
 
         //write SMILES file
@@ -425,13 +422,13 @@ public class Fragmenter {
             dir.mkdir();
         }
 
-        String filename = dirName.concat(File.separator).concat(dirName.concat(".sdf"));
-        logger.info(String.format(" Writing %s", filename));
+        String fragName = dirName.concat(File.separator).concat(dirName.concat(".sdf"));
+        logger.info(String.format(" Writing %s", fragName));
 
         BufferedWriter bufferedWriter = null;
         FileWriter fileWriter = null;
         SDFWriter sdfWriter = null;
-        File sdfFromSMILES = new File(filename);
+        File sdfFromSMILES = new File(fragName);
 
         try {
             fileWriter = new FileWriter(sdfFromSMILES.getAbsoluteFile());
@@ -454,12 +451,7 @@ public class Fragmenter {
         }
 
         return sdfFromSMILES;
-//<<<<<<< HEAD
-
-    } //end "writeSDF" sdf writer
-//=======
-    // }
-//>>>>>>> 4cd5ab25c313c11549d9b95a2be7474928867362
+    }
 
     //maps fragment atoms to original/full molecule atoms
     protected void map(File sdfFromSMILES, int col, int fragsize, int fullsize) throws FileNotFoundException {
@@ -469,7 +461,7 @@ public class Fragmenter {
 
         //read full SDF file
         try {
-            File file = new File(filename);
+            File file = new File(sdffile);
             FileReader fullfr = new FileReader(file);
             BufferedReader fullbr = new BufferedReader(fullfr);
             String line;
@@ -554,7 +546,7 @@ public class Fragmenter {
         int fragrows = 0;
 
         try {
-            File file = new File(filename);
+            File file = new File(sdffile);
             FileReader fullfr = new FileReader(file);
             BufferedReader fullbr = new BufferedReader(fullfr);
             String line;
@@ -595,7 +587,7 @@ public class Fragmenter {
 
         //fill arrays of bonds for full molecule
         try {
-            File file = new File(filename);
+            File file = new File(sdffile);
             FileReader fullfr = new FileReader(file);
             BufferedReader fullbr = new BufferedReader(fullfr);
             String line;
