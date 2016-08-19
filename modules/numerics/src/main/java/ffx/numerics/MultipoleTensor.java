@@ -2339,7 +2339,11 @@ public class MultipoleTensor {
      * @return the energy.
      */
     public double multipoleEnergyQI(double Fi[], double Ti[], double Tk[]) {
-        //order5QI();
+        if (order > 5) {
+            order6QI();
+        } else {
+            order5QI();
+        }
 
         // Compute the potential due to site I at site K.
         multipoleIFieldQI();
@@ -2362,11 +2366,29 @@ public class MultipoleTensor {
         Fi[1] = -dotMultipoleK();
         multipoleIdZQI();
         Fi[2] = -dotMultipoleK();
+        
+        // Fi[2] == dEdZ == dEdL
+        dEdZ = Fi[2];
+        // Now get d2EdL2 == d2EdZ2:
+        multipoleIdZ2QI();
+        d2EdZ2 = -dotMultipoleK();
 
         // Rotate the force and torques from the QI frame into the Global frame.
         qiToGlobal(Fi, Ti, Tk);
-
+        
         return energy;
+    }
+    
+    private double dEdZ, d2EdZ2;
+    private double offset = 0.0;
+    public void setOffset(double offset) {
+        this.offset = offset;
+    }
+    public double getdEdZ() {
+        return dEdZ;
+    }
+    public double getd2EdZ2() {
+        return d2EdZ2;
     }
 
     private double polarizationEnergyGlobal(double scaleField, double scaleEnergy, double scaleMutual,
@@ -3317,6 +3339,56 @@ public class MultipoleTensor {
         E101 = term102;
         double term012 = -dyi * R022;
         term012 += qyzi * R023;
+        E011 = term012;
+    }
+    
+    private void multipoleIdZ2QI() {
+        if (order < 6) {
+            logger.severe("Use higher order tensor for lambda derivatives.");
+        }
+        double term001 = qi * R002;
+        term001 -= dzi * R003;
+        term001 += qxxi * R202;
+        term001 += qyyi * R022;
+        term001 += qzzi * R004;
+        E000 = term001;
+        double term101 = -dxi * R202;
+        term101 += qxzi * R203;
+        E100 = term101;
+        double term011 = -dyi * R022;
+        term011 += qyzi * R023;
+        E010 = term011;
+        double term002 = qi * R003;
+        term002 -= dzi * R004;
+        term002 += qxxi * R203;
+        term002 += qyyi * R023;
+        term002 += qzzi * R005;
+        E001 = term002;
+        double term201 = qi * R202;
+        term201 -= dzi * R203;
+        term201 += qxxi * R402;
+        term201 += qyyi * R222;
+        term201 += qzzi * R204;
+        E200 = term201;
+        double term021 = qi * R022;
+        term021 -= dzi * R023;
+        term021 += qxxi * R222;
+        term021 += qyyi * R042;
+        term021 += qzzi * R024;
+        E020 = term021;
+        double term003 = qi * R004;
+        term003 -= dzi * R005;
+        term003 += qxxi * R204;
+        term003 += qyyi * R024;
+        term003 += qzzi * R006;
+        E002 = term003;
+        double term111 = qxyi * R222;
+        E110 = term111;
+        double term102 = -dxi * R203;
+        term102 += qxzi * R204;
+        E101 = term102;
+        double term012 = -dyi * R023;
+        term012 += qyzi * R024;
         E011 = term012;
     }
 

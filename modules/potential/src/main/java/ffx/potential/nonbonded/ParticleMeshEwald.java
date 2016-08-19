@@ -710,6 +710,11 @@ public class ParticleMeshEwald implements LambdaInterface {
      */
     private final boolean useQI = (System.getProperty("pme-qi") != null);
     private final int DEBUG = System.getProperty("debug") != null ? Integer.parseInt(System.getProperty("debug")) : 0;
+    private final int pmeI = (System.getProperty("pme-i") != null) ? 
+            Integer.parseInt(System.getProperty("pme-i")) : 0;
+    private final int pmeK = (System.getProperty("pme-k") != null) ? 
+            Integer.parseInt(System.getProperty("pme-k")) : 4;
+    private final boolean unityPrefactor = (System.getProperty("pme-unityPre") != null);
     /**
      * The sqrt of PI.
      */
@@ -1913,10 +1918,12 @@ public class ParticleMeshEwald implements LambdaInterface {
                 realSpaceEnergyTotalQI += System.nanoTime();
                 double ereal_QI = realSpaceEnergyRegionQI.getPermanentEnergy();
                 double ereali_QI = realSpaceEnergyRegionQI.getPolarizationEnergy();
-                logger.info(format(" (perm,pol,time): glob (%12.6f  %12.6f) %8.3f ms\n"
-                        + "                    qi (%12.6f  %12.6f) %8.3f ms",
-                        ereal, ereali, realSpaceEnergyTotal * TO_MS,
-                        ereal_QI, ereali_QI, realSpaceEnergyTotalQI * TO_MS));
+                if (lambdaMode == LambdaMode.OFF || lambdaMode == LambdaMode.CONDENSED) {
+                    logger.info(format(" (perm,pol,time): glob (%12.6f  %12.6f) %8.3f ms\n"
+                            + "                    qi (%12.6f  %12.6f) %8.3f ms",
+                            ereal, ereali, realSpaceEnergyTotal * TO_MS,
+                            ereal_QI, ereali_QI, realSpaceEnergyTotalQI * TO_MS));
+                }
             }
             interactions += realSpaceEnergyRegion.getInteractions();
         } catch (Exception e) {
@@ -4495,6 +4502,7 @@ public class ParticleMeshEwald implements LambdaInterface {
 //                    logger.info(format(" (GlobalFrame) e,ereal,efix,ss,l2: %.4f %.4f %.4f %.4f %.4f", e, ereal, efix, selfScale, l2));
                 }
 
+                double pref1 = 0.0, pref2 = 0.0;
                 if (gradient) {
                     final double gf1 = bn1 * gl0 + bn2 * (gl1 + gl6) + bn3 * (gl2 + gl7 + gl8) + bn4 * (gl3 + gl5) + bn5 * gl4;
                     final double gf2 = -ck * bn1 + sc4 * bn2 - sc6 * bn3;
@@ -4556,6 +4564,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                         ttm3z -= scale1 * ttm3rz;
                     }
                     double prefactor = ELECTRIC * selfScale * l2;
+                    pref1 = prefactor;
                     gX[i] += prefactor * ftm2x;
                     gY[i] += prefactor * ftm2y;
                     gZ[i] += prefactor * ftm2z;
@@ -4586,14 +4595,6 @@ public class ParticleMeshEwald implements LambdaInterface {
                         ltxk_local[k] += prefactor * ttm3x;
                         ltyk_local[k] += prefactor * ttm3y;
                         ltzk_local[k] += prefactor * ttm3z;
-                        if (DEBUG > 0 && i == 0) {
-                            double Fi[] = new double[]{ftm2x, ftm2y, ftm2z};
-                            double Ti[] = new double[]{ttm2x, ttm2y, ttm2z};
-                            double Tk[] = new double[]{ttm3x, ttm3y, ttm3z};
-                            logger.info(format("(Gb) dUdLdX t1: i,k,pref,Fi,Ti,Tk: %d, %d, %.3f, %s, %s, %s",
-                                    i, k, prefactor,
-                                    formatArray(Fi), formatArray(Ti), formatArray(Tk)));
-                        }
                     }
                 }
                 if (lambdaTerm && soft) {
@@ -4618,6 +4619,17 @@ public class ParticleMeshEwald implements LambdaInterface {
                             + dlPowPerm * dlAlpha * dFixdL)
                             + l2 * d2lAlpha * dFixdL
                             + l2 * dlAlpha * dlAlpha * d2FixdL2);
+                    
+                    if (DEBUG > 0 && i == pmeI && k == pmeK) {
+                        double[] compsShared = new double[]{e,l2,lAlpha,selfScale,dEdLSign,dlAlpha};
+                        double[] compsdU = new double[]{dRealdL-dFixdL,dRealdL,dFixdL,dlPowPerm};
+                        double[] compsd2U = new double[]{d2RealdL2-d2FixdL2,d2RealdL2,d2FixdL2,d2lPowPerm,d2lAlpha};
+                        logger.info(format("GB dUdL shared/d1/d2: %s\n"
+                                +          "                      %s\n"
+                                +          "                      %s", 
+                                formatArray(compsShared), formatArray(compsdU), formatArray(compsd2U)));
+                    }
+                    
                     /**
                      * Collect terms for dU/dL/dX
                      *
@@ -4707,6 +4719,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                      * d[lPow*dlAlpha*dRealdL]/dX
                      */
                     double prefactor = ELECTRIC * selfScale * l2 * dlAlpha;
+                    pref2 = prefactor;
                     lgX[i] += prefactor * ftm2x;
                     lgY[i] += prefactor * ftm2y;
                     lgZ[i] += prefactor * ftm2z;
@@ -4720,6 +4733,15 @@ public class ParticleMeshEwald implements LambdaInterface {
                     ltyk_local[k] += prefactor * ttm3y;
                     ltzk_local[k] += prefactor * ttm3z;
                 }
+                
+                if (DEBUG > 0 && i == pmeI && k == pmeK) {
+                    double lgti[] = new double[]{lgX[i],lgY[i],lgZ[i],ltX[i],ltY[i],ltZ[i]};
+                    double lgtk[] = new double[]{lxk_local[k], lyk_local[k], lzk_local[k],
+                                                ltxk_local[k],ltyk_local[k],ltzk_local[k]};
+                    logger.info(format("(Gb%d-%d) pref1,pref2,lgi,lti;lgk,ltk: %.2f,%.2f,%s,%s", 
+                            i, k, pref1, pref2, formatArray(lgti), formatArray(lgtk)));
+                }
+                
                 return e;
             }
 
@@ -5182,6 +5204,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             private final double[] FiC, TiC, TkC;
             private final double[] FiT, TiT, TkT;
             private final double[] energy;
+
             private final MultipoleTensor tensor;
 
             // Extra padding to avert cache interference.
@@ -5209,8 +5232,9 @@ public class ParticleMeshEwald implements LambdaInterface {
                 TiT = new double[3];
                 TkT = new double[3];
                 energy = new double[2];
+                int order = (lambdaTerm) ? 6 : 5;
                 tensor = new MultipoleTensor(
-                        OPERATOR.SCREENED_COULOMB, COORDINATES.QI, 5, aewald);
+                        OPERATOR.SCREENED_COULOMB, COORDINATES.QI, order, aewald);
             }
 
             private void init() {
@@ -5498,12 +5522,21 @@ public class ParticleMeshEwald implements LambdaInterface {
                         dx_local[0] = xk - xi;
                         dx_local[1] = yk - yi;
                         dx_local[2] = zk - zi;
-                        // In QI frame, add lambda buffer to z-axis only.
-                        final double dx_buff[] = new double[3];
-                        dx_buff[0] = dx_local[0];
-                        dx_buff[1] = dx_local[1];
-                        dx_buff[2] = (soft) ? dx_local[2] + lBufferDistance : dx_local[2];
                         r2 = crystal.image(dx_local);
+                        
+                        // TODO: Decide on treatment here.
+                        double[] dx_buff_1, dx_buff_2;
+                        // Option 1: In QI frame, add lambda buffer to z-axis only.
+                        dx_buff_1 = new double[]{dx_local[0], dx_local[1], dx_local[2] + lBufferDistance};
+                        // Option 2: Divide the lambda-derived distance offset equally among x,y,z coords.
+                        // 1/3 (-x - y - z (+/-) Sqrt[(x + y + z)^2 + 3 \[Beta]])
+                        double r = sqrt(r2 + lBufferDistance);
+                        double dxyz = dx_local[0] + dx_local[1] + dx_local[2];
+                        double bufferPerDim = (-dxyz + sqrt(dxyz*dxyz + 3*lBufferDistance)) / 3.0;
+                        dx_buff_2 = new double[]
+                            {dx_local[0], dx_local[1], dx_local[2] + bufferPerDim};
+                        final double[] dx_buff = (System.getProperty("pme-lamBuffMode2") != null) ? dx_buff_2 : dx_buff_1;
+                        
                         final double globalMultipolek[] = neighborMultipole[k];
                         final double inducedDipolek[] = neighborInducedDipole[k];
                         final double inducedDipolepk[] = neighborInducedDipolep[k];
@@ -5514,14 +5547,14 @@ public class ParticleMeshEwald implements LambdaInterface {
                         scaled = maskingd_local[k];
                         double damp = min(pti, ptk);
                         double aiak = pdi * pdk;
-                        if (doPermanentRealSpace && doPolarization && polarization != Polarization.NONE) {
+                        if (false && doPermanentRealSpace && doPolarization && polarization != Polarization.NONE) {
                             double eTotal = pairPermPol(dx_local, globalMultipolei, globalMultipolek,
                                     inducedDipolei, inducedDipolek, inducedDipolepi, inducedDipolepk,
                                     damp, aiak, energy);
                             permanentEnergy += energy[0];
                             inducedEnergy += energy[1];
                             count++;
-                        } else if (doPermanentRealSpace) {
+                        } else if (true || doPermanentRealSpace) {
                             permanentEnergy += pairPerm(dx_local, globalMultipolei, globalMultipolek);
                             count++;
                         } else {
@@ -5702,15 +5735,22 @@ public class ParticleMeshEwald implements LambdaInterface {
             }
 
             private double pairPerm(double[] r, double[] Qi, double[] Qk) {
+                double dScreendL = 0.0, d2ScreendL2 = 0.0;
+                double dCouldL = 0.0, d2CouldL2 = 0.0;
+                double dPermdL = 0.0, d2PermdL2 = 0.0;
                 /**
                  * Compute screened real space interactions.
                  */
                 tensor.setR_QI(r);
                 tensor.setMultipolesQI(Qi, Qk);
                 tensor.setOperator(OPERATOR.SCREENED_COULOMB);
-                tensor.order5QI();
-
+                tensor.order6QI();
+                
                 double ePermScreened = tensor.multipoleEnergyQI(permFi, permTi, permTk);
+                dScreendL = tensor.getdEdZ();
+                d2ScreendL2 = tensor.getd2EdZ2();
+                dPermdL = dScreendL;
+                d2PermdL2 = d2ScreendL2;
 
                 /**
                  * Subtract away masked Coulomb interactions included in PME.
@@ -5718,7 +5758,13 @@ public class ParticleMeshEwald implements LambdaInterface {
                 double scale1 = 1.0 - scale;
                 double ePermCoulomb = 0.0;
                 if (scale1 != 0.0) {
+                    tensor.setOperator(OPERATOR.COULOMB);
                     ePermCoulomb = scale1 * tensor.multipoleEnergyQI(FiC, TiC, TkC);
+                    dCouldL = tensor.getdEdZ();
+                    d2CouldL2 = tensor.getd2EdZ2();
+                    dPermdL -= dCouldL;
+                    d2PermdL2 -= d2CouldL2;
+                    
                     permFi[0] -= scale1 * FiC[0];
                     permFi[1] -= scale1 * FiC[1];
                     permFi[2] -= scale1 * FiC[2];
@@ -5731,44 +5777,113 @@ public class ParticleMeshEwald implements LambdaInterface {
                 }
 
                 final double ePerm = selfScale * l2 * (ePermScreened - ePermCoulomb);
-
+                
                 if (!gradient) {
                     return ePerm;
                 }
-
-                double prefactor = ELECTRIC * selfScale * l2;
-                gX[i] += prefactor * permFi[0];
-                gY[i] += prefactor * permFi[1];
-                gZ[i] += prefactor * permFi[2];
-                tX[i] += prefactor * permTi[0];
-                tY[i] += prefactor * permTi[1];
-                tZ[i] += prefactor * permTi[2];
-                gxk_local[k] -= prefactor * permFi[0];
-                gyk_local[k] -= prefactor * permFi[1];
-                gzk_local[k] -= prefactor * permFi[2];
-                txk_local[k] += prefactor * permTk[0];
-                tyk_local[k] += prefactor * permTk[1];
-                tzk_local[k] += prefactor * permTk[2];
-                /**
-                 * This is dU/dL/dX for the first term of dU/dL: d[dlPow *
-                 * ereal]/dx
-                 */
-                if (lambdaTerm && soft) {
-                    prefactor = ELECTRIC * selfScale * dEdLSign * dlPowPerm;
-                    lgX[i] += prefactor * permFi[0];
-                    lgY[i] += prefactor * permFi[1];
-                    lgZ[i] += prefactor * permFi[2];
-                    ltX[i] += prefactor * permTi[0];
-                    ltY[i] += prefactor * permTi[1];
-                    ltZ[i] += prefactor * permTi[2];
-                    lxk_local[k] -= prefactor * permFi[0];
-                    lyk_local[k] -= prefactor * permFi[1];
-                    lzk_local[k] -= prefactor * permFi[2];
-                    ltxk_local[k] += prefactor * permTk[0];
-                    ltyk_local[k] += prefactor * permTk[1];
-                    ltzk_local[k] += prefactor * permTk[2];
+                
+                double scalar = ELECTRIC * selfScale * l2;
+                gX[i] += scalar * permFi[0];
+                gY[i] += scalar * permFi[1];
+                gZ[i] += scalar * permFi[2];
+                tX[i] += scalar * permTi[0];
+                tY[i] += scalar * permTi[1];
+                tZ[i] += scalar * permTi[2];
+                gxk_local[k] -= scalar * permFi[0];
+                gyk_local[k] -= scalar * permFi[1];
+                gzk_local[k] -= scalar * permFi[2];
+                txk_local[k] += scalar * permTk[0];
+                tyk_local[k] += scalar * permTk[1];
+                tzk_local[k] += scalar * permTk[2];
+                
+                double pref1 = 0.0, pref2 = 0.0;                
+                if (lambdaTerm) {
+                    if (unityPrefactor) {
+                        double S = 1.0, dSdL = 0.0, d2SdL2 = 0.0;
+                        double P = ePerm, dPdL = dPermdL, d2PdL2 = d2PermdL2;
+                        double F = (1.0 - lambda), dFdL = -1.0, d2FdL2 = 0.0;
+                        double dPdF = (dFdL != 0.0) ? dPdL / dFdL : 0.0;
+                        double d2PdF2 = (d2FdL2 != 0.0) ? d2PdL2 / d2FdL2 : 0.0;
+                        dUdL += (dSdL * P) + (S * dPdF * dFdL);
+                        d2UdL2 += (d2SdL2 * P) + (dSdL * S * dPdF * dFdL)
+                                + ((dSdL * dPdF) + (S * d2PdF2)) * dFdL
+                                + (S * dPdF * d2FdL2);
+                        dUdL *= selfScale;
+                        d2UdL2 *= selfScale;
+                        
+                        if (DEBUG > 0 && i == pmeI && k == pmeK) {
+                            double[] compsShared = new double[]{ePerm,l2,lAlpha,selfScale,dEdLSign,dlAlpha};
+                            double[] compsdU = new double[]{dPermdL,dScreendL,dCouldL,dlPowPerm};
+                            double[] compsd2U = new double[]{d2PermdL2,d2ScreendL2,d2CouldL2,d2lPowPerm,d2lAlpha};
+                            logger.info(format("QI dUdL shared/d1/d2: %s\n"
+                                    +          "                      %s\n"
+                                    +          "                      %s", 
+                                    formatArray(compsShared), formatArray(compsdU), formatArray(compsd2U)));
+                        }
+                    } else {
+                        double dEdL = dPermdL;
+                        double d2EdL2 = d2PermdL2;
+                        dUdL += selfScale * (dEdLSign * dlPowPerm * ePerm + l2 * dlAlpha * dEdL);
+                        d2UdL2 += selfScale * (dEdLSign * (d2lPowPerm * ePerm
+                                + dlPowPerm * dlAlpha * dEdL
+                                + dlPowPerm * dlAlpha * dEdL)
+                                + l2 * d2lAlpha * dEdL
+                                + l2 * dlAlpha * dlAlpha * d2EdL2);
+                    }
+                    
+                    /**
+                     * This is dU/dL/dX for the first term of dU/dL: d[dlPow *
+                     * ereal]/dx
+                     */
+                    scalar = ELECTRIC * selfScale * dEdLSign * dlPowPerm;
+                    if (unityPrefactor) {
+                        scalar = ELECTRIC * selfScale * lambda;
+//                        logger.warning(format("UnityPrefactor failed, scalar = %.4g", scalar));
+                    }
+                    pref1 = scalar;
+                    lgX[i] += scalar * permFi[0];
+                    lgY[i] += scalar * permFi[1];
+                    lgZ[i] += scalar * permFi[2];
+                    ltX[i] += scalar * permTi[0];
+                    ltY[i] += scalar * permTi[1];
+                    ltZ[i] += scalar * permTi[2];
+                    lxk_local[k] -= scalar * permFi[0];
+                    lyk_local[k] -= scalar * permFi[1];
+                    lzk_local[k] -= scalar * permFi[2];
+                    ltxk_local[k] += scalar * permTk[0];
+                    ltyk_local[k] += scalar * permTk[1];
+                    ltzk_local[k] += scalar * permTk[2];
+                    /**
+                     * Add in dU/dL/dX for the second term of dU/dL:
+                     * d[lPow*dlAlpha*dRealdL]/dX
+                     */
+                    // No additional call to MT; use 6th order tensor instead.
+                    scalar = ELECTRIC * selfScale * l2 * dlAlpha;
+                    pref2 = scalar;
+                    if (unityPrefactor) {
+                        scalar = ELECTRIC * selfScale;
+                    }
+                    lgX[i] += scalar * permFi[0];
+                    lgY[i] += scalar * permFi[1];
+                    lgZ[i] += scalar * permFi[2];
+                    ltX[i] += scalar * permTi[0];
+                    ltY[i] += scalar * permTi[1];
+                    ltZ[i] += scalar * permTi[2];
+                    lxk_local[k] -= scalar * permFi[0];
+                    lyk_local[k] -= scalar * permFi[1];
+                    lzk_local[k] -= scalar * permFi[2];
+                    ltxk_local[k] += scalar * permTk[0];
+                    ltyk_local[k] += scalar * permTk[1];
+                    ltzk_local[k] += scalar * permTk[2];
                 }
-
+                
+                if (DEBUG > 0 && i == pmeI && k == pmeK) {
+                    double lgti[] = new double[]{lgX[i],lgY[i],lgZ[i],ltX[i],ltY[i],ltZ[i]};
+                    double lgtk[] = new double[]{lxk_local[k], lyk_local[k], lzk_local[k],
+                                                ltxk_local[k],ltyk_local[k],ltzk_local[k]};
+                    logger.info(format("(Qi%d-%d) pref1,pref2,lgi,lti;lgk,ltk: %.2f,%.2f,%s,%s", 
+                            i, k, pref1, pref2, formatArray(lgti), formatArray(lgtk)));
+                }
                 return ePerm;
             }
 
@@ -7525,8 +7640,8 @@ public class ParticleMeshEwald implements LambdaInterface {
          * then df/dL = -dlAlpha / f and dg/dL = dlAlpha * g^3
          */
         lAlpha = permLambdaAlpha * (1.0 - lambda) * (1.0 - lambda);
-        dlAlpha = permLambdaAlpha * (1.0 - lambda);
-        d2lAlpha = -permLambdaAlpha;
+        dlAlpha = -2.0 * permLambdaAlpha * (1.0 - lambda);
+        d2lAlpha = 2.0 * permLambdaAlpha;
 
         lPowPerm = pow(lambda, permLambdaExponent);
         dlPowPerm = permLambdaExponent * pow(lambda, permLambdaExponent - 1.0);
@@ -7563,11 +7678,23 @@ public class ParticleMeshEwald implements LambdaInterface {
             dlPowPol *= polLambdaScale;
             d2lPowPol *= (polLambdaScale * polLambdaScale);
         }
-
+        
         if (generalizedKirkwoodTerm) {
             generalizedKirkwood.setLambda(lambda);
         }
 
+        if (unityPrefactor) {
+            dEdLSign = 1.0;
+            lAlpha = 1.0;
+            dlAlpha = 0.0;
+            d2lAlpha = 0.0;
+            lPowPerm = lambda;
+            dlPowPerm = 1.0;
+            d2lPowPerm = 0.0;
+            lPowPol = 1.0;
+            dlPowPol = 0.0;
+            d2lPowPol = 0.0;
+        }
     }
 
     /**
@@ -9413,7 +9540,11 @@ public class ParticleMeshEwald implements LambdaInterface {
         StringBuilder sb = new StringBuilder();
         sb.append("[");
         for (int i = 0; i < x.length; i++) {
-            sb.append(format("%.4f", x[i]));
+            if (pmeFormat != null) {
+                sb.append(format(pmeFormat, x[i]));
+            } else {
+                sb.append(format("%.4f", x[i]));
+            }
             if (i + 1 < x.length) {
                 sb.append(", ");
             }
@@ -9421,6 +9552,8 @@ public class ParticleMeshEwald implements LambdaInterface {
         sb.append("]");
         return sb.toString();
     }
+    
+    private final String pmeFormat = System.getProperty("pme-format");
 
     /**
      * Helper method for logging distance and multipole arrays.
