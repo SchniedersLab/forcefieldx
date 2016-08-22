@@ -176,6 +176,11 @@ public class MultipoleTensor {
         this.operator = operator;
         this.coordinates = coordinates;
         this.beta = beta;
+        if (operator == OPERATOR.SCREENED_COULOMB && beta == 0.0) {
+            logger.warning("Tried beta of zero for screened coulomb tensor.");
+            // Switch to the Coulomb operator.
+            operator = OPERATOR.COULOMB;
+        }
 
         // Auxillary terms for Coulomb and Thole Screening.
         coulomb = new double[o1];
@@ -302,6 +307,7 @@ public class MultipoleTensor {
 
         OPERATOR op = operator;
         if (operator == OPERATOR.SCREENED_COULOMB && beta == 0.0) {
+            logger.warning("Tried beta of zero for screened coulomb tensor.");
             // Switch to the Coulomb operator.
             op = OPERATOR.COULOMB;
         }
@@ -399,13 +405,17 @@ public class MultipoleTensor {
         R = sqrt(r2);
     }
 
-    public void setR_QI(double r[]) {
+    public void setR_QI(double r[], double buffer) {
         x = 0.0;
         y = 0.0;
-        z = r(r);
+        z = r(r) + buffer;
         setQIRotationMatrix(r);
         r2 = (x * x + y * y + z * z);
         R = sqrt(r2);
+    }
+    
+    public void setR_QI(double[] r) {
+        setR_QI(r, 0.0);
     }
 
     public double multipoleEnergy(double Fi[], double Ti[], double Tk[]) {
@@ -2369,26 +2379,53 @@ public class MultipoleTensor {
         
         // Fi[2] == dEdZ == dEdL
         dEdZ = Fi[2];
-        // Now get d2EdL2 == d2EdZ2:
-        multipoleIdZ2QI();
-        d2EdZ2 = -dotMultipoleK();
+        if (order > 5) {
+            // Now get d2EdL2 == d2EdZ2:
+            multipoleIdZ2QI();
+            d2EdZ2 = -dotMultipoleK();
+        }
 
         // Rotate the force and torques from the QI frame into the Global frame.
         qiToGlobal(Fi, Ti, Tk);
         
+        dEdZrot = Fi[2];
+        if (order > 5) {
+            multipoleIdZ2QI();
+            d2EdZrot2 = -dotMultipoleK();
+        }
+        
         return energy;
     }
     
-    private double dEdZ, d2EdZ2;
+    private final MultipoleTensor.COORDINATES dzOut = (System.getProperty("mt-dzOut") != null) ?
+            COORDINATES.valueOf(System.getProperty("mt-dzOut")) : COORDINATES.QI;
+    private double dEdZ, d2EdZ2, dEdZrot, d2EdZrot2;
     private double offset = 0.0;
     public void setOffset(double offset) {
         this.offset = offset;
     }
+    
+    static {
+        if (System.getProperty("mt-dzOut") != null) {
+            System.out.println("mt-dzOut: " + COORDINATES.valueOf(System.getProperty("mt-dzOut")).toString());
+        } else {
+            System.out.println("mt-dzOut: defaulting to COORDINATES.QI");
+        }
+    }
+    
     public double getdEdZ() {
-        return dEdZ;
+        if (dzOut == COORDINATES.QI) {
+            return dEdZ;
+        } else {
+            return dEdZrot;
+        }
     }
     public double getd2EdZ2() {
-        return d2EdZ2;
+        if (dzOut == COORDINATES.QI) {
+            return d2EdZ2;
+        } else {
+            return d2EdZrot2;
+        }
     }
 
     private double polarizationEnergyGlobal(double scaleField, double scaleEnergy, double scaleMutual,

@@ -1341,6 +1341,10 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 + torsionTorsionEnergy + ncsEnergy + restrainEnergy;
         totalNonBondedEnergy = vanDerWaalsEnergy + totalElectrostaticEnergy + relativeSolvationEnergy;
         totalEnergy = totalBondedEnergy + totalNonBondedEnergy + solvationEnergy;
+        
+        if (pmeOnly) {
+            totalEnergy = particleMeshEwald.getPermanentEnergy();
+        }
 
         if (ESV_DEBUG && numESVs > 0) {
             logger.info(lamedhLogger.toString());
@@ -1969,6 +1973,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         return nActive * 3;
     }
 
+    private final boolean pmeOnly = System.getProperty("ffe-pmeOnly") != null;
+    
     /**
      * {@inheritDoc}
      */
@@ -1976,11 +1982,17 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     public double getdEdL() {
         double dEdLambda = 0.0;
         if (!lambdaBondedTerms) {
+            if (pmeOnly) {
+                dEdLambda = particleMeshEwald.getdEdL();
+                logger.info(format("    SDL PME dEdL:   %.6g", dEdLambda));
+                return dEdLambda;
+            }
             if (vanderWaalsTerm) {
                 dEdLambda = vanderWaals.getdEdL();
             }
             if (multipoleTerm) {
                 dEdLambda += particleMeshEwald.getdEdL();
+                logger.info(format("    SDL PME dEdL:   %.6g", particleMeshEwald.getdEdL()));
             }
             if (restraintBondTerm) {
                 for (int i = 0; i < nRestraintBonds; i++) {
@@ -2010,6 +2022,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     dEdLambda += torsionTorsions[i].getdEdL();
                 }
             }
+        } else {
+            logger.info("    SDL PME dEdL:   lambdaBondedTerms was set?");
         }
         return dEdLambda;
     }
@@ -2217,11 +2231,17 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     public double getd2EdL2() {
         double d2EdLambda2 = 0.0;
         if (!lambdaBondedTerms) {
+            if (pmeOnly) {
+                d2EdLambda2 = particleMeshEwald.getd2EdL2();
+                logger.info(format("    SDL PME d2EdL2: %.6g", d2EdLambda2));
+                return d2EdLambda2;
+            }
             if (vanderWaalsTerm) {
                 d2EdLambda2 = vanderWaals.getd2EdL2();
             }
             if (multipoleTerm) {
                 d2EdLambda2 += particleMeshEwald.getd2EdL2();
+                logger.info(format("    SDL PME d2EdL2: %.6g", particleMeshEwald.getd2EdL2()));
             }
             if (restraintBondTerm) {
                 for (int i = 0; i < nRestraintBonds; i++) {
@@ -2251,6 +2271,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     d2EdLambda2 += torsionTorsions[i].getd2EdL2();
                 }
             }
+        } else {
+            logger.info("    SDL PME d2EdL2: lambdaBondedTerms was set?");
         }
         return d2EdLambda2;
     }
