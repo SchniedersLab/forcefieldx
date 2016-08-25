@@ -1,4 +1,11 @@
+#### [Toward polarizable AMOEBA thermodynamics at fixed charge efficiency using a dual force field approach][dualff]
 
+<p align="center">
+<a href="download.html"><img src="images/DualFF.png" alt="Download"/></a>
+</p>
+Nessler, I., Litman, J., and M. Schnieders
+<i>Physical Chemistry Chemical Physics</i>
+<b>2016</b>.
 #### [Dead-End Elimination with a Polarizable Force Field Repacks PCNA Models][polardee]
 
 <p align="center">
@@ -33,6 +40,7 @@ Shi, Y., Schnieders, M. J., Piquemal, J.-P., and P. Ren, <i>Reviews in Computati
 Fenn, T. D. and M. J. Schnieders, <i>Acta Crystallographica Section D</i>
 <b>2011</b> 67, (11), 957-65.
 
+[dualff]: http://dx.doi.org/10.1039/C6CP02595A
 [polardee]: http://dx.doi.org/10.1016/j.bpj.2015.06.062
 [xtaltherm]: http://dx.doi.org/10.1021/ct500180m
 [amoeba]: http://dx.doi.org/10.1002/SERIES6143
