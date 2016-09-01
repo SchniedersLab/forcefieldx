@@ -39,7 +39,6 @@ package ffx.potential;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.OptionalDouble;
 import java.util.logging.Level;
@@ -63,7 +62,6 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Atom.Resolution;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.BondedTerm;
-import ffx.potential.extended.ExtendedVariable;
 import ffx.potential.bonded.ImproperTorsion;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.MSNode;
@@ -80,11 +78,14 @@ import ffx.potential.bonded.StretchBend;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.bonded.TorsionTorsion;
 import ffx.potential.bonded.UreyBradley;
+import ffx.potential.extended.ExtendedVariable;
 import ffx.potential.nonbonded.COMRestraint;
 import ffx.potential.nonbonded.CoordRestraint;
 import ffx.potential.nonbonded.NCSRestraint;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.ELEC_FORM;
+import ffx.potential.nonbonded.ParticleMeshEwaldCart;
+import ffx.potential.nonbonded.ParticleMeshEwaldQI;
 import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
@@ -211,13 +212,17 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private VARIABLE_TYPE[] variableTypes = null;
     private double xyz[] = null;
     private boolean printOverride = false;
-    /****************************************/
+    /**
+     * *************************************
+     */
     /*      Extended System Variables       */
     private int numESVs;
     private List<ExtendedVariable> esvList;
     private StringBuilder lamedhLogger;
     private final boolean ESV_DEBUG = false;
-    /****************************************/
+    /**
+     * *************************************
+     */
 
     private Resolution resolution = Resolution.AMOEBA;
 
@@ -615,12 +620,22 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             vanderWaals = null;
         }
 
+        boolean pmeQI = (System.getProperty("pme-qi") != null);
+
         if (multipoleTerm) {
             if (name.contains("OPLS") || name.contains("AMBER")) {
-                particleMeshEwald = new ParticleMeshEwald(atoms, molecule, forceField, crystal,
-                        vanderWaals.getNeighborList(), ELEC_FORM.FIXED_CHARGE, parallelTeam);
+                if (!pmeQI) {
+                    particleMeshEwald = new ParticleMeshEwaldCart(atoms, molecule, forceField, crystal,
+                            vanderWaals.getNeighborList(), ELEC_FORM.FIXED_CHARGE, parallelTeam);
+                } else {
+                    particleMeshEwald = new ParticleMeshEwaldQI(atoms, molecule, forceField, crystal,
+                            vanderWaals.getNeighborList(), ELEC_FORM.FIXED_CHARGE, parallelTeam);
+                }
+            } else if (pmeQI) {
+                particleMeshEwald = new ParticleMeshEwaldCart(atoms, molecule, forceField, crystal,
+                        vanderWaals.getNeighborList(), ELEC_FORM.PAM, parallelTeam);
             } else {
-                particleMeshEwald = new ParticleMeshEwald(atoms, molecule, forceField, crystal,
+                particleMeshEwald = new ParticleMeshEwaldQI(atoms, molecule, forceField, crystal,
                         vanderWaals.getNeighborList(), ELEC_FORM.PAM, parallelTeam);
             }
             double charge = molecularAssembly.getCharge(checkAllNodeCharges);
@@ -1341,7 +1356,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 + torsionTorsionEnergy + ncsEnergy + restrainEnergy;
         totalNonBondedEnergy = vanDerWaalsEnergy + totalElectrostaticEnergy + relativeSolvationEnergy;
         totalEnergy = totalBondedEnergy + totalNonBondedEnergy + solvationEnergy;
-        
+
         if (pmeOnly) {
             totalEnergy = particleMeshEwald.getPermanentEnergy();
         }
@@ -1682,6 +1697,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
     /**
      * Get amount by which this term should be scaled d/t any ESVs.
+     *
      * @param rols
      * @return
      */
@@ -1854,7 +1870,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
         esvList.add(esv);
         numESVs = esvList.size();
-        
+
         // Pass new ESV into terms which handle it explicitly (e.g. vdW and PME).
         if (vanderWaalsTerm) {
             vanderWaals.setESVList(esvList);
@@ -1878,7 +1894,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         if (comTerm && comRestraint != null) {
             // TODO comRestraint.setLamedh(esvList);
         }
-        
+
         logger.info(String.format(" ForceFieldEnergy acquired ESV: %s\n", esv));
         lamedhLogger = new StringBuilder(String.format(" Lamedh Scaling: "));
     }
@@ -1974,7 +1990,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     private final boolean pmeOnly = System.getProperty("ffe-pmeOnly") != null;
-    
+
     /**
      * {@inheritDoc}
      */
@@ -2086,10 +2102,10 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         if (!terms.parallelStream().allMatch(term -> term != null && term.length == numElements)) {
             throw new IndexOutOfBoundsException("Variable lengths encountered in term list.");
         }
-        return IntStream.range(0,numElements).parallel()
+        return IntStream.range(0, numElements).parallel()
                 .mapToDouble(
-                    idx -> terms.parallelStream().collect(
-                        Collectors.summingDouble(term -> term[idx]))
+                        idx -> terms.parallelStream().collect(
+                                Collectors.summingDouble(term -> term[idx]))
                 ).toArray();
     }
 

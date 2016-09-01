@@ -177,7 +177,7 @@ public class PMEWisdom {
          * is chosen.
          */
         double beta = 0.42;
-        double cutoff = ParticleMeshEwald.ewaldCutoff(beta, maxCutoff, 1e-10);
+        double cutoff = ParticleMeshEwaldCart.ewaldCutoff(beta, maxCutoff, 1e-10);
 
         forceField.addForceFieldDouble(ForceFieldDouble.EWALD_CUTOFF, cutoff);
         forceField.addForceFieldDouble(ForceFieldDouble.EWALD_ALPHA, beta);
@@ -188,7 +188,7 @@ public class PMEWisdom {
                 parallelTeam);
         neighborList.buildList(coordinates, neighborLists, null, true, true);
 
-        ParticleMeshEwald particleMeshEwald = null;
+        ParticleMeshEwaldCart particleMeshEwald = null;
         //ParticleMeshEwald particleMeshEwald = new ParticleMeshEwald(molecularAssembly,
         //        crystal, neighborList, ELEC_FORM.PAM, parallelTeam);
 
@@ -205,7 +205,7 @@ public class PMEWisdom {
         double realSpaceTolerance = 1.0e-6;
         double rmsGradientTolerance = 1.0e-5;
         beta = 0.42;
-        cutoff = ParticleMeshEwald.ewaldCutoff(beta, maxCutoff, realSpaceTolerance);
+        cutoff = ParticleMeshEwaldCart.ewaldCutoff(beta, maxCutoff, realSpaceTolerance);
 
         while (true) {
             long newTime = findPMEGridSpacing(cutoff, beta, 6, 0.6,
@@ -213,7 +213,7 @@ public class PMEWisdom {
             if (newTime < bestTime) {
                 bestTime = newTime;
                 beta -= 0.02;
-                cutoff = ParticleMeshEwald.ewaldCutoff(beta, maxCutoff,
+                cutoff = ParticleMeshEwaldCart.ewaldCutoff(beta, maxCutoff,
                         realSpaceTolerance);
                 if (cutoff > maxCutoff) {
                     logger.info("Breaking due to large real space cutoff.");
@@ -229,7 +229,7 @@ public class PMEWisdom {
             }
         }
         beta += 0.02;
-        cutoff = ParticleMeshEwald.ewaldCutoff(beta, maxCutoff,
+        cutoff = ParticleMeshEwaldCart.ewaldCutoff(beta, maxCutoff,
                 realSpaceTolerance);
 
     }
@@ -257,7 +257,7 @@ public class PMEWisdom {
             forceField.addForceFieldDouble(ForceFieldDouble.EWALD_ALPHA, alpha);
             forceField.addForceFieldDouble(ForceFieldDouble.PME_MESH_DENSITY, spacing);
             forceField.addForceFieldInteger(ForceFieldInteger.PME_ORDER, order);
-            ParticleMeshEwald particleMeshEwald = null;
+            ParticleMeshEwaldCart particleMeshEwald = null;
             //ParticleMeshEwald particleMeshEwald = new ParticleMeshEwald(
             //        molecularAssembly, crystal, neighborList, ELEC_FORM.PAM, parallelTeam);
 
@@ -292,7 +292,7 @@ public class PMEWisdom {
         forceField.addForceFieldInteger(ForceField.ForceFieldInteger.PME_ORDER,
                 order);
 
-        ParticleMeshEwald particleMeshEwald = null;
+        ParticleMeshEwaldCart particleMeshEwald = null;
         // ParticleMeshEwald particleMeshEwald = new ParticleMeshEwald(
         //        molecularAssembly, crystal, neighborList, ELEC_FORM.PAM, parallelTeam);
 
