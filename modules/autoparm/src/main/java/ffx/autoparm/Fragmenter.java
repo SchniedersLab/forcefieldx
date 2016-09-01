@@ -94,37 +94,40 @@ public class Fragmenter {
         this.smi = smi;
     }
 
-    /*private enum FIELD {
-        XLogP,
-        ALogP,
-        ALogp2,
-        AMR,
-        SMILES_Kekule,
-        SMILES_Aromatic
-    }*/
-
     private static final int SIZE = 30;
 
     //reads in full molecule CIF
     public void readCIF() throws FileNotFoundException, IOException {
-        File cfile = new File(ciffile);
-        BufferedReader cread = null;
-
-        try {
-            FileReader cfileReader = new FileReader(cfile);
-            cread = new BufferedReader(cfileReader);
-        } catch (IOException e) {
+        
+        try{
+            BufferedReader cread = new BufferedReader(new FileReader(ciffile));
+            String line;
+            
+            while ((line = cread.readLine()) != null){
+                //test to see if the line read in contains unique atom name info.
+                //if there is a space at indice 3 and it's the correct length
+                if(line.startsWith(" ", 3) && (line.length()>50) && line.length() < 100){
+                    
+                    String str4 = Character.toString(line.charAt(4));
+                    String str5 = Character.toString(line.charAt(5));
+                    String str6 = Character.toString(line.charAt(6));
+                    String str7 = Character.toString(line.charAt(7));
+                    
+                    
+                    String start = str4.concat(str5);
+                    String atomName = start.concat(str6);
+                    
+                    if(line.charAt(7) != ' '){
+                        atomName = atomName.concat(str7);
+                    }
+                    
+                    System.out.println("Atom Name: "+atomName);
+                }
+                
+            }
+            
+        } catch (IOException e){
             e.printStackTrace();
-        }
-
-        IChemObjectBuilder build = DefaultChemObjectBuilder.getInstance();
-        IChemFile cif = build.newInstance(IChemFile.class, ciffile);
-        CIFReader creader = null;
-        try {
-            creader = new CIFReader(cread);
-            creader.read(cif);
-        } catch (Exception x) {
-            x.printStackTrace();
         }
 
     } //end "readCIF" cif reader
@@ -187,7 +190,7 @@ public class Fragmenter {
     //fragments full molecule according to exhaustive and Murcko fragmentation algorithms
     //exhaustive fragments used in further functions
     protected void fragment(IAtomContainer molecule) throws Exception {
-
+        
         //ExhaustiveFragmenter implimentation
         ExhaustiveFragmenter exh = new ExhaustiveFragmenter();
         exh.setMinimumFragmentSize(20);

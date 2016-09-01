@@ -69,8 +69,9 @@ if (options.h || arguments == null) {
 
 // Read in command line argument.
 String filename = arguments.get(0);
-
+String smiles = new String();
 Wizard wi = new Wizard(filename);
+smiles = wi.readSDF();
 
 // Read in command line.
 String sdffile = arguments.get(0);
@@ -79,7 +80,8 @@ String smi = new String();
 
 logger.info(String.format("\n Fragmenting %s\n", sdffile));
 
-System.out.println("\nFinished Wizard, calling Fragmenter\n");
-Fragmenter fr = new Fragmenter(sdffile, ciffile, smi);
+//System.out.println("\nFinished Wizard, calling Fragmenter\n");
+Fragmenter fr = new Fragmenter(sdffile, ciffile, smiles);
+fr.readCIF();
 fr.readSDF();
 
