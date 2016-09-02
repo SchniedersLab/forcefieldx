@@ -37,20 +37,16 @@
  */
 package ffx.numerics;
 
-import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
-/**
- * The IntegrationTest is a JUnit test for the Integration program that ensures
+/**The IntegrationTest is a JUnit test for the Integration program that ensures
  * that the integrals are calculated correctly. This test is run using known 
  * integrals calculated with the equation y=10sin(6x)-7cos(5x)+11sin(8x).
+ * 
  * @author ceoconnell
  */
-
 public class IntegrationTest {
     
     /**
@@ -69,15 +65,17 @@ public class IntegrationTest {
     @Before
     public void setUp() {
         // Instantiate the knownIntegral array.
-        knownIntegral = new double[3];
+        knownIntegral = new double[4];
         
         /*The answers are in the order of the trapezoidal integral first, the
-        Simpson's second, and Boole's third. The integrals are calculated with 
-        the bounds 1 and 201 with an interval of .1.
+        Simpson's second, Boole's third, and rectangular method last. The 
+        integrals are calculated with the bounds 1 and 201 with an interval of 
+        .1.
         */
-        knownIntegral[0] = -2.184522513411486;
-        knownIntegral[1] = -2.282016152342985;
-        knownIntegral[2] = -2.277082319301032;
+        knownIntegral[0] = 2.9684353512887753;
+        knownIntegral[1] = 2.9687126459508564;
+        knownIntegral[2] = 2.968712622691869;
+        knownIntegral[3] = 2.936215172510247;
     }
 
     /**
@@ -86,16 +84,17 @@ public class IntegrationTest {
     @Test
     public void integrationTest() {
 
-        /**Calculate the integrals using the trapezoidal, Simpson's, and Boole's
-        methods using the bounds 1 to 201 and an interval of .1.
-        */
-        double[] calculatedIntegral = new double[3];
-        calculatedIntegral[0] = Integration.trapIntegral(1,201,.1);
-        calculatedIntegral[1] = Integration.SimpsonIntegral(1,201,.1);
-        calculatedIntegral[2] = Integration.BooleIntegral(1,201,.1);
+        /**Calculate the integrals using the left hand trapezoidal, Simpson's, 
+         * and Boole's methods using the bounds 1 to 201 and an interval of .1.
+        */ 
+        double[] calculatedIntegral = new double[4];
+        calculatedIntegral[0] = Integration.trapInputLeft(Integration.generateTestDataLeft_v1());
+        calculatedIntegral[1] = Integration.SimpsonInputLeft(Integration.generateTestDataLeft_v1());
+        calculatedIntegral[2] = Integration.BooleInputLeft(Integration.generateTestDataLeft_v1());
+        calculatedIntegral[3] = Integration.rectangularMethodLeft(Integration.generateTestDataLeft_v1());
         
         // Assert that the known integrals and calculated integrals are the same.
-        for (int i=0;i<3;i++){
+        for (int i=0;i<4;i++){
         assertEquals(knownIntegral[i],calculatedIntegral[i], DELTA);
         }
     }

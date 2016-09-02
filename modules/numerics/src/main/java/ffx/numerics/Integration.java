@@ -37,166 +37,446 @@
  */
 package ffx.numerics;
 
-import static java.lang.Math.cos;
-import static java.lang.Math.sin;
+import java.text.DecimalFormat;
 
 /**
  * This program integrates using three methods: the trapezoidal method,
  * Simpson's Three Point Integration, and Boole's Five Point Integration
- * @author ceoconnell
+ *
+ * @author Claire O'Connell
  */
-
 public class Integration {
 
-    public static void main(String[] args){  
-        System.out.print("Rough integral approximations and errors for y=10sin(6x)-7cos(5x)+11sin(8x)\n");
-        trapIntegral(1,201,.25); 
-        SimpsonIntegral(1,201,.25); 
-        BooleIntegral(1,201,.25); 
-        
-        System.out.print("\nSmooth integral approximations and errors for y=10sin(6x)-7cos(5x)+11sin(8x)\n");
-        trapIntegral(1,201,.1); 
-        SimpsonIntegral(1,201,.1); 
-        BooleIntegral(1,201,.1); 
-        
-        //trapIntegral(1,201,.05); 
-        //SimpsonIntegral(1,201,.05); 
-        //BooleIntegral(1,201,.05); 
+    private final static double[] x = new double[202];
+    static {
+        for (int i = 0; i < 202; i++) {
+            x[i] = 0; //TODO 
+        }
     }
     
-    public static double trapIntegral(int lowerBound, int upperBound, double intervalSize){
-        int a, n, i;
-        double arraySize = (upperBound-lowerBound)*(1.0/intervalSize)+1;
-        int size = (int) Math.ceil(arraySize);
-        double sum, total, area, trapInt = 0, trapError;
-        double[] y = new double [size];
-        double[] x = new double [size];
-        
-        //Make sure that the interval is compatible with the trapezoidal method
-        //Array size must be integer
-        if (size != arraySize){
-            System.out.print("Interval not compatible with trapezoidal integration\n");
-            return -0;
-        }
-        
-        for (i=0; i<(size);i++){
-            x[i]=lowerBound+(double)intervalSize*i;
-            y[i]=10*sin(6*x[i])-7*cos(5*x[i])+11*sin(8*x[i]);
-        }
-        n = x.length;
-        
-        a=0;
-        sum=0;
-        total=0;
-        for (a=0;a<n-1;a++){
-            if (a > 0){
-                area = (y[a+1]+y[a])/(double)2*(x[a+1]-x[a]); 
-                sum = area + total;
-                total = sum;   
-            }
-            if (a == n-2){
-                trapInt = sum;
-                System.out.print("\nThe trapezoidal integral is " + trapInt + "\n");
-                trapError = -2.2783 - trapInt;
-                System.out.print("Trapezoidal error = " + trapError + "\n");
-                 
-            }
-            if (a == 0){
-                area = (y[a+1]+y[a])/(double)2*(x[a+1]-x[a]);
-                total = area;
-                //System.out.print("Total " + total + "\n");
-            }
-        }
-       return trapInt; 
-}
-   
-    public static double SimpsonIntegral(int lowerBound, int upperBound, double intervalSize){
-            int a, n, i;
-            double arraySize = (upperBound-lowerBound)*(1.0/intervalSize)+1;
-            int size = (int) Math.ceil(arraySize);
-            double sum, total, area, SimpsonInt = 0, SimpsonError;
-            double[] y = new double [size];
-            double[] x = new double [size];
+    public static void main(String[] args) {
+        double trapInt, BooleInt, SimpsonInt, rectInt, testAnswer;
+        double trapError = 0, BooleError = 0, SimpsonError = 0, rectError = 0;
+        double avgTrap, avgSimpson, avgBoole, avgRect;
+        double trapErrorR, SimpsonErrorR, BooleErrorR, rectErrorR;
+        double trapIntRight, SimpsonIntRight, BooleIntRight, rectIntRight;
+        double avgTrapError, avgSimpsonError, avgBooleError, avgRectError;
+        DecimalFormat decimalFormat = new DecimalFormat("#.00");
 
-            //Make sure that the interval is compatible with the Simpson's method
-            //Array size must be multiple of 2n+1
-            if (size != arraySize){
-                System.out.print("Interval not compatible with Simpson's Three Point Integration\n");
-                return -0;
-            }
+        System.out.print("The left handed integrals are: \n");
+        trapInt = trapInputLeft(generateTestDataLeft_v1());
+        SimpsonInt = SimpsonInputLeft(generateTestDataLeft_v1());
+        BooleInt = BooleInputLeft(generateTestDataLeft_v1());
+        rectInt = rectangularMethodLeft(generateTestDataLeft_v1());
 
-            for (i=0; i<(size);i++){
-                x[i]=lowerBound+intervalSize*i;
-                y[i]=10*sin(6*x[i])-7*cos(5*x[i])+11*sin(8*x[i]);
-            }
-            n = x.length;
+        testAnswer = 2.98393938659796;
+        trapError = Math.abs(trapInt - testAnswer) / testAnswer * 100;
+        SimpsonError = Math.abs(SimpsonInt - testAnswer) / testAnswer * 100;
+        BooleError = Math.abs(BooleInt - testAnswer) / testAnswer * 100;
+        rectError = Math.abs(rectInt - testAnswer) / testAnswer * 100;
 
-            a=0;
-            sum=0;
-            total=0;
-            for (a=0;a<n-2;a+=2){
-                if (a > 0){
-                    area = (1.0/3.0)*(x[a+1]-x[a])*(y[a]+4*y[a+1]+y[a+2]); 
-                    sum = area + total;
-                    total = sum;    
-                }
-                if (a == n-3){
-                    SimpsonInt = sum;
-                    System.out.print("The Simpson's Three Point integral is " + SimpsonInt + "\n");
-                    SimpsonError = -2.2783 - SimpsonInt;
-                    System.out.print("Simpson's error = " + SimpsonError + "\n");
-                }
-                if (a == 0){
-                    area = (1.0/3.0)*(x[a+1]-x[a])*(y[a]+4*y[a+1]+y[a+2]); 
-                    total = area;
-                }
-            }
+        System.out.print("\nLeft hand errors by integration method \n\n");
+        System.out.print("Trapezoidal error  " + decimalFormat.format(trapError) + "%\n");
+        System.out.print("Simpson error      " + decimalFormat.format(SimpsonError) + "%\n");
+        System.out.print("Boole error        " + decimalFormat.format(BooleError) + "%\n");
+        System.out.print("Rectangular error  " + decimalFormat.format(rectError) + "%\n");
 
-       return SimpsonInt;    
+        System.out.print("\nThe right handed integrals are: \n");
+        trapIntRight = trapInputRight(generateTestDataRight_v1()); 
+        SimpsonIntRight = SimpsonInputRight(generateTestDataRight_v1());
+        BooleIntRight = BooleInputRight(generateTestDataRight_v1());
+        rectIntRight = rectangularMethodRight(generateTestDataRight_v1());
+
+        trapErrorR = Math.abs(trapIntRight - testAnswer) / testAnswer * 100;
+        SimpsonErrorR = Math.abs(SimpsonIntRight - testAnswer) / testAnswer * 100;
+        BooleErrorR = Math.abs(BooleIntRight - testAnswer) / testAnswer * 100;
+        rectErrorR = Math.abs(rectIntRight - testAnswer) / testAnswer * 100;
+
+        System.out.print("\nRight hand errors by integration method \n\n");
+        System.out.print("Trapezoidal error  " + decimalFormat.format(trapErrorR) + "%\n");
+        System.out.print("Simpson error      " + decimalFormat.format(SimpsonErrorR) + "%\n");
+        System.out.print("Boole error        " + decimalFormat.format(BooleErrorR) + "%\n");
+        System.out.print("Rectangular error  " + decimalFormat.format(rectErrorR) + "%\n");
+
+        System.out.print("\nAverage Integrals\n\n");
+        avgTrap = averageIntegral(trapInt, trapIntRight);
+        avgSimpson = averageIntegral(SimpsonInt, SimpsonIntRight);
+        avgBoole = averageIntegral(BooleInt, BooleIntRight);
+        avgRect = averageIntegral(rectInt, rectIntRight);
+
+        avgTrapError = Math.abs(avgTrap - testAnswer) / testAnswer * 100;
+        avgSimpsonError = Math.abs(avgSimpson - testAnswer) / testAnswer * 100;
+        avgBooleError = Math.abs(avgBoole - testAnswer) / testAnswer * 100;
+        avgRectError = Math.abs(avgRect - testAnswer) / testAnswer * 100;
+
+        System.out.print("\nAveraged errors by integration method \n\n");
+        System.out.print("Trapezoidal error  " + decimalFormat.format(avgTrapError) + "%\n");
+        System.out.print("Simpson error      " + decimalFormat.format(avgSimpsonError) + "%\n");
+        System.out.print("Boole error        " + decimalFormat.format(avgBooleError) + "%\n");
+        System.out.print("Rectangular error  " + decimalFormat.format(avgRectError) + "%\n");
     }
 
-    public static double BooleIntegral(int lowerBound, int upperBound, double intervalSize){
-            int a, n, i;
-            double arraySize = (upperBound-lowerBound)*(1.0/intervalSize)+1;
-            int size = (int) Math.ceil(arraySize);
-            double sum, total, area, BooleInt = 0, BooleError;
-            double[] y = new double [size];
-            double[] x = new double [size];
+    public static double averageIntegral(double leftInt, double rightInt) {
+        double avgInt = 0;
 
-            //Make sure interval is compatible with the five point method
-            //Array size must be multiple of 4n+1
-            if (size != arraySize){
-                System.out.print("Interval not compatible with Boole's Five Point Integration\n");
-                return -0;
+        avgInt = (leftInt + rightInt) / 2.0;
+        System.out.print("Average integral " + avgInt + "\n");
+        return avgInt;
+    }
+
+    public static double[] generateTestDataLeft_v1() {
+        double y[] = new double[201];
+        double x[] = new double[201];
+
+        x[0] = 0;
+        x[1] = .0025;
+        for (int i = 2; i < 201; i++) {
+            x[i] = .0025 + .005 * (i - 1);
+        }
+
+        for (int i = 0; i < 201; i++) {
+            y[i] = 10 * Math.sin(6 * x[i]) - 7 * Math.cos(5 * x[i]) + 11 * Math.sin(8 * x[i]);
+        }
+
+        return y;
+    }
+
+    public static double[] generateTestDataRight_v1() {
+        double y[] = new double[201];
+        double x[] = new double[201];
+
+        for (int i = 0; i < 200; i++) {
+            x[i] = .0025 + .005 * i;
+        }
+        x[200] = 1.0;
+
+        for (int i = 0; i < 201; i++) {
+            y[i] = 10 * Math.sin(6 * x[i]) - 7 * Math.cos(5 * x[i]) + 11 * Math.sin(8 * x[i]);
+        }
+
+        return y;
+    }
+
+    public static double trapInputLeft(double[] inputData) {
+        double trapIntegral = 0, sum, area, total;
+        double[] x = new double[201];
+        int n = 0;
+
+        x[0] = 0;
+        x[1] = .0025;
+        //Initializes the normal sized bins 
+        for (int i = 2; i < 201; i++) {
+            x[i] = .0025 + .005 * (i - 1);
+        }
+
+        /*for (int j=0;j<201;j++){
+         System.out.print("x[" + j + "]= " + x[j] + "\n");
+         }
+         */
+        n = x.length;
+
+        sum = 0;
+        total = 0;
+        for (int a = 0; a < n - 1; a++) {
+            if (a > 0) {
+                area = (inputData[a + 1] + inputData[a]) / (double) 2 * (x[a + 1] - x[a]);
+                sum = area + total;
+                total = sum;
+            }
+            if (a == n - 2) {
+                trapIntegral = sum;
+                System.out.print("\nThe trapezoidal integral is " + trapIntegral + "\n");
+            }
+            if (a == 0) {
+                area = (inputData[a + 1] + inputData[a]) / (double) 2 * (x[a + 1] - x[a]);
+                total = area;
+            }
+        }
+
+        return trapIntegral;
+    }
+
+    public static double SimpsonInputLeft(double[] inputData) {
+        double SimpsonIntegral = 0, SimpsonError, sum, area = 0, total;
+        double lowerTrapArea, upperTrapArea;
+        double[] x = new double[201];
+        int n;
+
+        x[0] = 0;
+        x[1] = .0025;
+        //Initializes the normal sized bins 
+        for (int i = 2; i < 201; i++) {
+            x[i] = .0025 + .005 * (i - 1);
+        }
+
+        /*for (int j=0;j<201;j++){
+         System.out.print("x[" + j + "]= " + x[j] + "\n");
+         }     
+         */
+        n = x.length;
+
+        sum = 0;
+        total = 0;
+        for (int a = 1; a < n - 2; a += 2) {
+            if (a > 0) {
+                area = (1.0 / 3.0) * (x[a + 1] - x[a]) * (inputData[a] + 4 * inputData[a + 1] + inputData[a + 2]);
+                sum = area + total;
+                total = sum;
+            }
+            if (a == n - 4) {
+                SimpsonIntegral = sum;
             }
 
-            for (i=0; i<(size);i++){
-                x[i]=lowerBound+intervalSize*i;
-                y[i]=10*sin(6*x[i])-7*cos(5*x[i])+11*sin(8*x[i]);
-            }
-            n = x.length;
+        }
 
-            a=0;
-            sum=0;
-            total=0;
-            for (a=0;a<n-4;a+=4){
-                if (a > 0){
-                    area = (2.0/45.0)*(x[a+1]-x[a])*(7*y[a]+32*y[a+1]+12*y[a+2]+32*y[a+3]+7*y[a+4]); 
-                    sum = area + total;
-                    total = sum;  
-                }
-                if (a == n-5){
-                    BooleInt = sum;
-                    System.out.print("The Boole's Three Point integral is " + BooleInt + "\n");
-                    BooleError = -2.2783 - BooleInt;
-                    System.out.print("Boole's error = " + BooleError + "\n");
-                }
-                if (a == 0){
-                    area = (2.0/45.0)*(x[a+1]-x[a])*(7*y[a]+32*y[a+1]+12*y[a+2]+32*y[a+3]+7*y[a+4]); 
-                    total = area;
-                }
+        lowerTrapArea = (inputData[0] + inputData[1]) / (double) 2 * (x[1] - x[0]);
+        SimpsonIntegral += lowerTrapArea;
+        upperTrapArea = (inputData[n - 2] + inputData[n - 1]) / (double) 2 * (x[n - 1] - x[n - 2]);
+        SimpsonIntegral += upperTrapArea;
+
+        System.out.print("The Simpson's Three Point integral with two trapezoidal integrals is " + SimpsonIntegral + "\n");
+
+        return SimpsonIntegral;
+    }
+
+    public static double BooleInputLeft(double[] inputData) {
+        double BooleIntegral = 0, sum, area = 0, total;
+        double lowerTrapArea, upperTrapArea, BooleSimpsonIntegral;
+        double upperSimpsonArea, upperTrapArea3 = 0;
+        double[] x = new double[201];
+        int n;
+
+        x[0] = 0;
+        x[1] = .0025;
+        //Initializes the normal sized bins 
+        for (int i = 2; i < 201; i++) {
+            x[i] = .0025 + .005 * (i - 1);
+        }
+        /*
+         for (int j=0;j<201;j++){
+         System.out.print("x[" + j + "]= " + x[j] + "\n");
+         }
+         */
+        n = x.length;
+
+        sum = 0;
+        total = 0;
+        for (int a = 1; a < n - 4; a += 4) {
+            if (a > 0) {
+                area = (2.0 / 45.0) * (x[a + 1] - x[a]) * (7 * inputData[a] + 32 * inputData[a + 1] + 12 * inputData[a + 2] + 32 * inputData[a + 3] + 7 * inputData[a + 4]);
+                sum = area + total;
+                total = sum;
+            }
+            if (a == n - 8) { //interval not compatible with 201 bins because of the half sized bin on the end
+                BooleIntegral = sum;
+            }
+        }
+
+        BooleSimpsonIntegral = BooleIntegral;
+        lowerTrapArea = (inputData[0] + inputData[1]) / (double) 2 * (x[1] - x[0]);
+        BooleIntegral += lowerTrapArea;
+        BooleSimpsonIntegral += lowerTrapArea;
+
+        //Calculates the remaining upper bins with one Simpson's and one trapezoidal integral
+        upperSimpsonArea = (1.0 / 3.0) * (x[n - 3] - x[n - 4]) * (inputData[n - 4] + 4 * inputData[n - 3] + inputData[n - 2]);
+        upperTrapArea = (inputData[n - 2] + inputData[n - 1]) / (double) 2 * (x[n - 1] - x[n - 2]);
+        BooleSimpsonIntegral += (upperSimpsonArea + upperTrapArea);
+        System.out.print("The Boole's Five Point integral with one Simpson and two trapezoidal integrals is " + BooleSimpsonIntegral + "\n");
+
+        //Calculates the remaining upper bins using three trapezoidal integrals
+        for (int a = 0; a < 3; a++) {
+            area = (inputData[a + 198] + inputData[a + 197]) / (double) 2 * (x[a + 198] - x[a + 197]);
+            upperTrapArea3 += area;
+        }
+        BooleIntegral += upperTrapArea3;
+        System.out.print("The Boole's Five Point integral with four trapezoidal integrals is " + BooleIntegral + "\n");
+
+        return BooleSimpsonIntegral;
+    }
+
+    public static double rectangularMethodLeft(double[] inputData) {
+        double rectangularIntegral = 0, sum = 0, area = 0;
+        double[] x = new double[201];
+        double[] y = new double[201];
+        int n;
+        x[0] = 0;
+        x[1] = .0025;
+        //Initializes the normal sized bins 
+        for (int i = 2; i < 201; i++) {
+            x[i] = .0025 + .005 * (i - 1);
+        }
+
+        y = generateTestDataLeft_v1();
+
+        for (int a = 0; a < 200; a++) {
+            area = (x[a + 1] - x[a]) * y[a];
+            rectangularIntegral += area;
+        }
+
+        System.out.print("The old integration method is " + rectangularIntegral + "\n");
+        return rectangularIntegral;
+    }
+
+    public static double trapInputRight(double[] inputData) {
+        double trapIntegral = 0, sum, area, total;
+        double[] x = new double[201];
+        int n = 0;
+
+        //Initializes the normal sized bins 
+        for (int i = 0; i < 201; i++) {
+            x[i] = .0025 + .005 * i;
+        }
+        x[200] = 1.0;
+        /*for (int j=0;j<201;j++){
+         System.out.print("x[" + j + "]= " + x[j] + "\n");
+         }
+         */
+        n = x.length;
+
+        sum = 0;
+        total = 0;
+        for (int a = 0; a < n - 1; a++) {
+            if (a > 0) {
+                area = (inputData[a + 1] + inputData[a]) / (double) 2 * (x[a + 1] - x[a]);
+                sum = area + total;
+                total = sum;
+            }
+            if (a == n - 2) {
+                trapIntegral = sum;
+                System.out.print("\nThe trapezoidal integral is " + trapIntegral + "\n");
+
+            }
+            if (a == 0) {
+                area = (inputData[a + 1] + inputData[a]) / (double) 2 * (x[a + 1] - x[a]);
+                total = area;
+            }
+        }
+
+        return trapIntegral;
+    }
+
+    //SIMPSON AND BOOLE RIGHT HAND METHODS ARE CURRENTLY NOT FUNCTIONAL :)
+    public static double SimpsonInputRight(double[] inputData) {
+        double SimpsonIntegral = 0, sum, area = 0, total;
+        double upperTrapArea = 0;
+        double[] x = new double[201];
+        int n;
+
+        //Initializes the normal sized bins 
+        for (int i = 0; i < 200; i++) {
+            x[i] = .0025 + .005 * i;
+        }
+        x[200] = 1.0;
+
+        /*for (int j=0;j<201;j++){
+         System.out.print("x[" + j + "]= " + x[j] + "\n");
+         }
+         */
+        n = x.length;
+
+        sum = 0;
+        total = 0;
+        for (int a = 0; a < n - 4; a += 2) {
+            if (a > 0) {
+                area = (1.0 / 3.0) * (x[a + 1] - x[a]) * (inputData[a] + 4 * inputData[a + 1] + inputData[a + 2]);
+                sum = area + total;
+                total = sum;
+            }
+            if (a == n - 5) {
+                SimpsonIntegral = sum;
             }
 
-       return BooleInt;    
-    }   
+        }
+        for (int a = 0; a < 2; a++) {
+            area = (inputData[n - 2 + a] + inputData[n - 3 + a]) / (double) 2 * (x[n - 2 + a] - x[n - 3 + a]);
+            upperTrapArea += area;
+        }
+        SimpsonIntegral += upperTrapArea;
+
+        System.out.print("The Simpson's Three Point integral is " + SimpsonIntegral + "\n");
+                //System.out.print("Total " + total + "\n");
+
+        return SimpsonIntegral;
+    }
+
+    public static double BooleInputRight(double[] inputData) {
+        double BooleIntegral = 0, BooleError, sum, area = 0, total;
+        double upperTrapArea2 = 0, BooleSimpsonIntegral, BooleTrapIntegral;
+        double upperSimpsonArea, upperTrapArea4 = 0;
+        double[] x = new double[201];
+        int n;
+
+        //Initializes the normal sized bins 
+        for (int i = 0; i < 201; i++) {
+            x[i] = .0025 + .005 * i;
+        }
+        x[200] = 1.0;
+        /*for (int j=0;j<201;j++){
+         System.out.print("x[" + j + "]= " + x[j] + "\n");
+         }
+         */
+        n = x.length;
+
+        sum = 0;
+        total = 0;
+        for (int a = 0; a < n - 6; a += 4) {
+            if (a > 0) {
+                area = (2.0 / 45.0) * (x[a + 1] - x[a]) * (7 * inputData[a] + 32 * inputData[a + 1] + 12 * inputData[a + 2] + 32 * inputData[a + 3] + 7 * inputData[a + 4]);
+                sum = area + total;
+                total = sum;
+            }
+            if (a == n - 9) {//interval not compatible with 201 bins
+                BooleIntegral = sum;
+                    //System.out.print("The Boole's Five Point integral is " + BooleIntegral + "\n");
+
+            }
+        }
+
+        BooleSimpsonIntegral = BooleIntegral;
+        BooleTrapIntegral = BooleIntegral;
+
+        //Calculates the remaining upper bins with one Simpson's and two trapezoidal integral
+        upperSimpsonArea = (1.0 / 3.0) * (x[n - 4] - x[n - 5]) * (inputData[n - 5] + 4 * inputData[n - 4] + inputData[n - 3]);
+        for (int a = 0; a < 2; a++) {
+            area = (inputData[n - 2] + inputData[n - 1]) / (double) 2 * (x[n - 1] - x[n - 2]);
+            upperTrapArea2 += area;
+        }
+
+        BooleSimpsonIntegral += (upperSimpsonArea + upperTrapArea2);
+        System.out.print("The Boole's Five Point integral with one Simpson and two trapezoidal integrals is " + BooleSimpsonIntegral + "\n");
+
+        //Calculates the remaining upper bins using three trapezoidal integrals
+        for (int a = 0; a < 4; a++) {
+            area = (inputData[a + n - 4] + inputData[a + n - 5]) / (double) 2 * (x[a + n - 4] - x[a + n - 5]);
+            upperTrapArea4 += area;
+        }
+        BooleTrapIntegral += upperTrapArea4;
+        System.out.print("The Boole's Five Point integral with four trapezoidal integrals is " + BooleTrapIntegral + "\n");
+
+        return BooleTrapIntegral;
+    }
+
+    public static double rectangularMethodRight(double[] inputData) {
+        double rectangularIntegral = 0, sum = 0, area = 0;
+        double[] x = new double[201];
+        double[] y = new double[201];
+        int n;
+
+        //Initializes the normal sized bins 
+        for (int i = 0; i < 201; i++) {
+            x[i] = .0025 + .005 * i;
+        }
+        x[200] = 1.0;
+
+        y = generateTestDataRight_v1();
+
+        for (int a = 0; a < 200; a++) {
+            area = (x[a + 1] - x[a]) * y[a];
+            rectangularIntegral += area;
+        }
+
+        System.out.print("The old integration method is " + rectangularIntegral + "\n");
+        return rectangularIntegral;
+    }
+
 }
