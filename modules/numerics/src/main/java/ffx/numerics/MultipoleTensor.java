@@ -177,7 +177,7 @@ public class MultipoleTensor {
         this.coordinates = coordinates;
         this.beta = beta;
         if (operator == OPERATOR.SCREENED_COULOMB && beta == 0.0) {
-            logger.warning("Tried beta of zero for screened coulomb tensor.");
+            // logger.warning("Tried beta of zero for screened coulomb tensor.");
             // Switch to the Coulomb operator.
             operator = OPERATOR.COULOMB;
         }
@@ -307,7 +307,7 @@ public class MultipoleTensor {
 
         OPERATOR op = operator;
         if (operator == OPERATOR.SCREENED_COULOMB && beta == 0.0) {
-            logger.warning("Tried beta of zero for screened coulomb tensor.");
+            // logger.warning("Tried beta of zero for screened coulomb tensor.");
             // Switch to the Coulomb operator.
             op = OPERATOR.COULOMB;
         }
@@ -406,12 +406,29 @@ public class MultipoleTensor {
     }
 
     public void setR_QI(double r[], double buffer) {
-        x = 0.0;
-        y = 0.0;
-        z = r(r) + buffer;
-        setQIRotationMatrix(r);
-        r2 = (x * x + y * y + z * z);
-        R = sqrt(r2);
+        this.buffer = buffer;
+        if (System.getProperty("mt-specialBuffer") != null) {
+            logger.info("Applying buffer: SPECIAL");
+            double[] dx_local = r;
+            double dxyz = dx_local[0] + dx_local[1] + dx_local[2];
+            double buffPerDim = (-dxyz + sqrt(dxyz*dxyz + 3*buffer)) / 3.0;    // here buffer = lBufferDistance
+            double[] dx_buff = new double[]{dx_local[0] + buffPerDim, dx_local[1] + buffPerDim, dx_local[2] + buffPerDim};
+            r = dx_buff;
+            x = 0.0;
+            y = 0.0;
+            z = r(r);
+            setQIRotationMatrix(r);
+            r2 = (x * x + y * y + z * z);
+            R = sqrt(r2);
+        } else {
+            setQIRotationMatrix(r);
+            double rx = r[0];
+            double ry = r[1];
+            double rz = r[2] + buffer;
+            r2 = (rx*rx + ry*ry + rz*rz);
+            R = sqrt(r2);
+            x = 0.0; y = 0.0; z = R;
+        }
     }
     
     public void setR_QI(double[] r) {
@@ -2397,33 +2414,44 @@ public class MultipoleTensor {
         return energy;
     }
     
-    private final MultipoleTensor.COORDINATES dzOut = (System.getProperty("mt-dzOut") != null) ?
-            COORDINATES.valueOf(System.getProperty("mt-dzOut")) : COORDINATES.QI;
+    private final MultipoleTensor.COORDINATES dzOut = (System.getProperty("pme-bufferCoords") != null) ?
+            COORDINATES.valueOf(System.getProperty("pme-bufferCoords")) : COORDINATES.QI;
+    private final int DEBUG = System.getProperty("debug") != null ? Integer.parseInt(System.getProperty("debug")) : 0;
+    private static boolean printOptBufferCoords = true, printOptBufferCoords2 = true;
     private double dEdZ, d2EdZ2, dEdZrot, d2EdZrot2;
     private double offset = 0.0;
     public void setOffset(double offset) {
         this.offset = offset;
     }
     
-    static {
-        if (System.getProperty("mt-dzOut") != null) {
-            System.out.println("mt-dzOut: " + COORDINATES.valueOf(System.getProperty("mt-dzOut")).toString());
-        } else {
-            System.out.println("mt-dzOut: defaulting to COORDINATES.QI");
-        }
-    }
-    
     public double getdEdZ() {
         if (dzOut == COORDINATES.QI) {
+            if (printOptBufferCoords) {
+                logger.info(format(" (* OPTS *) : MT returning QI frame dZ:      %g", dEdZ));
+                printOptBufferCoords = false;
+            }
             return dEdZ;
         } else {
+            if (printOptBufferCoords) {
+                logger.info(format(" (* OPTS *) : MT returning GLOBAL FRAME dZ:  %g", dEdZ));
+                printOptBufferCoords = false;
+            }
             return dEdZrot;
         }
     }
+    
     public double getd2EdZ2() {
         if (dzOut == COORDINATES.QI) {
+            if (printOptBufferCoords2) {
+                logger.info(format(" (* OPTS *) : MT returning QI frame dZ2:     %g", d2EdZ2));
+                printOptBufferCoords2 = false;
+            }
             return d2EdZ2;
         } else {
+            if (printOptBufferCoords2) {
+                logger.info(format(" (* OPTS *) : MT returning GLOBAL FRAME dZ2: %g", d2EdZ2));
+                printOptBufferCoords2 = false;
+            }
             return d2EdZrot2;
         }
     }
@@ -4450,9 +4478,13 @@ public class MultipoleTensor {
         R212 = T[t212];
         R122 = T[t122];
     }
+    
+    private double buffer = 0.0;
+    private boolean zAxisOption = (System.getProperty("mt-zAxisOption") != null);
 
     private void setQIRotationMatrix(double r[]) {
-        double zAxis[] = {r[0], r[1], r[2]};
+        double zAxis[] = zAxisOption ? (new double[]{r[0], r[1], r[2] + buffer})
+                                     : (new double[]{r[0], r[1], r[2]});
         double xAxis[] = new double[3];
         xAxis[0] = r[0] + 1.0;
         xAxis[1] = r[1];

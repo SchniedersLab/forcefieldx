@@ -39,6 +39,7 @@ package ffx.potential.nonbonded;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -171,7 +172,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
      * are being turned on/off.
      */
     private final boolean lambdaTerm;
-    private final boolean lamedhTerm;
+    private boolean esvTerm;
     /**
      * If true, compute coordinate gradient.
      */
@@ -268,7 +269,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
 
     /**
      * *************************************************************************
-     * Lambda state variables.
+     * Lambda and Extended state variables.
      */
     private enum LambdaMode {
 
@@ -598,13 +599,11 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
     /**
      * Partial derivative with respect to Lambda.
      */
-    private final SharedDouble shareddEdLambda;
     private final SharedDouble shareddEdLambdaQI;
     private final SharedDouble[] shareddEdLdh;
     /**
      * Second partial derivative with respect to Lambda.
      */
-    private final SharedDouble sharedd2EdLambda2;
     private final SharedDouble sharedd2EdLambda2QI;
     private final SharedDouble[] sharedd2EdLdh2;
     /**
@@ -658,7 +657,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
     private final boolean reciprocalSpaceTerm;
     private final ReciprocalSpace reciprocalSpace;
     private final ReciprocalEnergyRegion reciprocalEnergyRegion;
-    private final RealSpaceEnergyRegion realSpaceEnergyRegion;
     private final RealSpaceEnergyRegionQI realSpaceEnergyRegionQI;
     private final ReduceRegion reduceRegion;
     private final GeneralizedKirkwood generalizedKirkwood;
@@ -668,7 +666,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
     private final long realSpacePermTime[];
     private final long realSpaceEnergyTime[];
     private final long realSpaceSCFTime[];
-    private long realSpacePermTotal, realSpaceEnergyTotal, realSpaceSCFTotal;
     private long realSpacePermTotalQI, realSpaceEnergyTotalQI, realSpaceSCFTotalQI;
     private long bornRadiiTotal, gkEnergyTotal;
     private ELEC_FORM elecForm = ELEC_FORM.PAM;
@@ -677,19 +674,21 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
     /**
      * Tensor type and debug flags.
      */
-    private final boolean useQI = (System.getProperty("pme-qi") != null);
     private final int DEBUG = System.getProperty("debug") != null ? Integer.parseInt(System.getProperty("debug")) : 0;
     private final int pmeI = (System.getProperty("pme-i") != null)
             ? Integer.parseInt(System.getProperty("pme-i")) : 0;
     private final int pmeK = (System.getProperty("pme-k") != null)
             ? Integer.parseInt(System.getProperty("pme-k")) : 4;
-    private final boolean unityPrefactor = false;
-    private final boolean bufferAfterRotation = System.getProperty("pme-bufferLate") != null;
-    private final Integer lambdaBufferMode = (System.getProperty("pme-lamBuff") != null)
-            ? Integer.parseInt(System.getProperty("pme-lamBuff")) : 1;
-    private boolean useNewAlphas = false;
-    private boolean returnQIEnergy = System.getProperty("pme-qiEnergy") != null;
-    private final List<String> msgs = new ArrayList<>();
+    private final COORDINATES lambdaBufferCoords = (System.getProperty("pme-bufferCoords") != null)
+            ? COORDINATES.valueOf(System.getProperty("pme-bufferCoords")) : COORDINATES.QI;
+    private final int lambdaBufferMode = (System.getProperty("pme-bufferMode") != null)
+            ? Integer.parseInt(System.getProperty("pme-bufferMode")) : 0;
+    private int Fmode = (System.getProperty("pme-Fmode") != null)
+            ? Integer.parseInt(System.getProperty("pme-Fmode")) : 0;
+    private int Dmode = (System.getProperty("pme-Dmode") != null)
+            ? Integer.parseInt(System.getProperty("pme-Dmode")) : 0;
+    private static boolean printOptBufferCoords = true, printOptBufferMode = true,
+            printOptDebug = true, printOptFmode = true, printOptDmode = true;
     /**
      * The sqrt of PI.
      */
@@ -713,14 +712,15 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
         this.molecule = molecule;
         this.forceField = forceField;
         this.crystal = crystal;
-        this.parallelTeam = parallelTeam;
+        // TODO REMOVE
+        this.parallelTeam = new ParallelTeam(2);
         this.neighborList = neighborList;
         this.elecForm = elecForm;
         neighborLists = neighborList.getNeighborList();
         permanentSchedule = neighborList.getPairwiseSchedule();
         nAtoms = atoms.length;
         nSymm = crystal.spaceGroup.getNumberOfSymOps();
-        maxThreads = parallelTeam.getThreadCount();
+        maxThreads = parallelTeam.getThreadCount() + 1;
 
         polsor = forceField.getDouble(ForceFieldDouble.POLAR_SOR, 0.70);
         poleps = forceField.getDouble(ForceFieldDouble.POLAR_EPS, 1e-5);
@@ -748,7 +748,10 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
         useQuadrupoles = forceField.getBoolean(ForceFieldBoolean.USE_QUADRUPOLES, true);
         rotateMultipoles = forceField.getBoolean(ForceFieldBoolean.ROTATE_MULTIPOLES, true);
         lambdaTerm = forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false);
-        lamedhTerm = forceField.getBoolean(ForceFieldBoolean.LAMEDHTERM, false);
+        esvTerm = forceField.getBoolean(ForceFieldBoolean.ESVTERM, false);
+        if (DEBUG > 0) {    // TODO REMOVE
+            esvTerm = false;
+        }
 
         if (!crystal.aperiodic()) {
             off = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, 7.0);
@@ -821,7 +824,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
             pcgIterRegion2 = null;
         }
 
-        if (lambdaTerm || lamedhTerm) {
+        if (lambdaTerm || esvTerm) {
             /**
              * Values of PERMANENT_LAMBDA_ALPHA below 2 can lead to unstable
              * trajectories.
@@ -891,7 +894,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                     ForceField.ForceFieldBoolean.INTRAMOLECULAR_SOFTCORE, false);
         }
 
-        if (lamedhTerm) {
+        if (esvTerm) {
             // It turns out that the alpha and exponent parameters must be shared with lambda.
 //            permLamedhAlpha = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMEDH_ALPHA, 2.0);
 //            if (permLamedhAlpha < 0.0 || permLamedhAlpha > 3.0) {
@@ -954,13 +957,9 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
         gpuFFT = method != FFTMethod.PJ;
 
         if (lambdaTerm) {
-            shareddEdLambda = new SharedDouble();
-            sharedd2EdLambda2 = new SharedDouble();
             shareddEdLambdaQI = new SharedDouble();
             sharedd2EdLambda2QI = new SharedDouble();
         } else {
-            shareddEdLambda = null;
-            sharedd2EdLambda2 = null;
             shareddEdLambdaQI = null;
             sharedd2EdLambda2QI = null;
             lambdaGrad = null;
@@ -971,7 +970,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
             vaporEwaldSchedule = null;
             vacuumRanges = null;
         }
-        if (lamedhTerm) {
+        if (esvTerm) {
             shareddEdLdh = new SharedDouble[numESVs];
             sharedd2EdLdh2 = new SharedDouble[numESVs];
             for (int i = 0; i < numESVs; i++) {
@@ -1071,7 +1070,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
         inducedDipoleFieldRegion = new InducedDipoleFieldRegion(realSpaceTeam);
         directRegion = new DirectRegion(maxThreads);
         sorRegion = new SORRegion(maxThreads);
-        realSpaceEnergyRegion = new RealSpaceEnergyRegion(maxThreads);
         realSpaceEnergyRegionQI = new RealSpaceEnergyRegionQI(maxThreads);
         reduceRegion = new ReduceRegion(maxThreads);
         realSpacePermTime = new long[maxThreads];
@@ -1103,7 +1101,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
             sb.append(format(" Vapor Electrostatics:                    %B\n", doLigandVaporElec));
             logger.info(sb.toString());
         }
-        if (lamedhTerm) {
+        if (esvTerm) {
             StringBuilder sb = new StringBuilder(" ESV Parameters\n");
 //            sb.append(format(" Permanent Multipole Softcore Alpha:      %5.3f\n", permLamedhAlpha));
 //            sb.append(format(" Permanent Multipole Lamedh Exponent:     %5.3f\n", permLamedhExponent));
@@ -1144,7 +1142,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                 vecCR = new double[3][nAtoms];
             }
             if (scfPredictor != SCFPredictor.NONE) {
-                if (lambdaTerm || lamedhTerm) {
+                if (lambdaTerm || esvTerm) {
                     predictorInducedDipole = new double[3][predictorOrder][nAtoms][3];
                     predictorInducedDipoleCR = new double[3][predictorOrder][nAtoms][3];
                 } else {
@@ -1164,7 +1162,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                 lambdaGrad = new double[maxThreads][3][nAtoms];
                 lambdaTorque = new double[maxThreads][3][nAtoms];
             }
-            if (lamedhTerm) {
+            if (esvTerm) {
                 lamedhGrad = new double[maxThreads][3][numESVs][nAtoms];
                 lamedhTorque = new double[maxThreads][3][numESVs][nAtoms];
                 polarizationScaleLdh = new double[numESVs];
@@ -1417,9 +1415,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
             realSpaceEnergyTime[i] = 0;
             realSpaceSCFTime[i] = 0;
         }
-        realSpacePermTotal = 0;
-        realSpaceEnergyTotal = 0;
-        realSpaceSCFTotal = 0;
         realSpacePermTotalQI = 0;
         realSpaceEnergyTotalQI = 0;
         realSpaceSCFTotalQI = 0;
@@ -1433,12 +1428,10 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
          * Initialize Lambda variables.
          */
         if (lambdaTerm) {
-            shareddEdLambda.set(0.0);
-            sharedd2EdLambda2.set(0.0);
             shareddEdLambdaQI.set(0.0);
             sharedd2EdLambda2QI.set(0.0);
         }
-        if (lamedhTerm) {
+        if (esvTerm) {
             for (ExtendedVariable esv : esvList) {
                 shareddEdLdh[esv.index].set(0.0);
                 sharedd2EdLdh2[esv.index].set(0.0);
@@ -1448,7 +1441,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
         permanentScale = 1.0;
         doPolarization = true;
         polarizationScale = 1.0;
-        if (lamedhTerm) {
+        if (esvTerm) {
             fill(polarizationScaleLdh, 1.0);
         }
 
@@ -1467,7 +1460,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
             logger.log(Level.SEVERE, message, e);
         }
 
-        if (!lambdaTerm && !lamedhTerm) {
+        if (!lambdaTerm && !esvTerm) {
             lambdaMode = LambdaMode.OFF;
             energy = computeEnergy(print);
         } else {
@@ -1479,25 +1472,27 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
             if (logger.isLoggable(Level.FINE)) {
                 logger.fine(String.format(" Solvated energy: %20.8f", energy));
             }
-            /**
-             * Condensed phase SCF without ligand atoms.
-             */
-            lambdaMode = LambdaMode.CONDENSED_NO_LIGAND;
-            double temp = energy;
-            energy = condensedNoLigandSCF();
-            if (logger.isLoggable(Level.FINE)) {
-                logger.fine(String.format(" Step 2 energy:   %20.8f", energy - temp));
-            }
-
-            /**
-             * Vapor ligand electrostatics.
-             */
-            if (doLigandVaporElec) {
-                lambdaMode = LambdaMode.VAPOR;
-                temp = energy;
-                energy = vaporElec();
+            if (DEBUG < 1) {
+                /**
+                 * Condensed phase SCF without ligand atoms.
+                 */
+                lambdaMode = LambdaMode.CONDENSED_NO_LIGAND;
+                double temp = energy;
+                energy = condensedNoLigandSCF();
                 if (logger.isLoggable(Level.FINE)) {
-                    logger.fine(String.format(" Vacuum energy:   %20.8f", energy - temp));
+                    logger.fine(String.format(" Step 2 energy:   %20.8f", energy - temp));
+                }
+
+                /**
+                 * Vapor ligand electrostatics.
+                 */
+                if (doLigandVaporElec) {
+                    lambdaMode = LambdaMode.VAPOR;
+                    temp = energy;
+                    energy = vaporElec();
+                    if (logger.isLoggable(Level.FINE)) {
+                        logger.fine(String.format(" Vacuum energy:   %20.8f", energy - temp));
+                    }
                 }
             }
         }
@@ -1507,7 +1502,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
          * to electrostatic gradient to the total XYZ gradient.
          */
         boolean reduce = (System.getProperty("pme-skipReduceRegion") == null);
-        if (gradient || lambdaTerm || lamedhTerm) {
+        if (gradient || lambdaTerm || esvTerm) {
             try {
                 if (reduce) {
                     parallelTeam.execute(reduceRegion);
@@ -1529,13 +1524,17 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                 reciprocalSpace.printTimings();
             }
         }
-
+        
+        // TODO REMOVE
+        if (DEBUG > 0 && polarizationEnergy != 0.0) {
+            logger.warning(format("Non-zero polarization energy: %g", polarizationEnergy));
+        }
         return permanentMultipoleEnergy + polarizationEnergy;
     }
 
     private void printRealSpaceTimings() {
 
-        double total = (realSpacePermTotal + realSpaceSCFTotal + realSpaceEnergyTotal) * TO_SECONDS;
+        double total = (realSpacePermTotalQI + realSpaceSCFTotalQI + realSpaceEnergyTotalQI) * TO_SECONDS;
 
         logger.info(String.format("\n Real Space: %7.4f (sec)", total));
         logger.info("           Electric Field");
@@ -1550,7 +1549,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
         int maxCount = Integer.MIN_VALUE;
 
         for (int i = 0; i < maxThreads; i++) {
-            int count = realSpaceEnergyRegion.realSpaceEnergyLoop[i].getCount();
+            int count = realSpaceEnergyRegionQI.realSpaceEnergyLoops[i].getCount();
             logger.info(String.format("    %3d   %7.4f %7.4f %7.4f %10d", i,
                     realSpacePermTime[i] * TO_SECONDS, realSpaceSCFTime[i] * TO_SECONDS,
                     realSpaceEnergyTime[i] * TO_SECONDS, count));
@@ -1563,7 +1562,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
             minCount = min(count, minCount);
             maxCount = max(count, maxCount);
         }
-        int inter = realSpaceEnergyRegion.getInteractions();
+        int inter = realSpaceEnergyRegionQI.getInteractions();
         logger.info(String.format(" Min      %7.4f %7.4f %7.4f %10d",
                 minPerm * TO_SECONDS, minSCF * TO_SECONDS,
                 minEnergy * TO_SECONDS, minCount));
@@ -1574,8 +1573,8 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                 (maxPerm - minPerm) * TO_SECONDS, (maxSCF - minSCF) * TO_SECONDS,
                 (maxEnergy - minEnergy) * TO_SECONDS, (maxCount - minCount)));
         logger.info(String.format(" Actual   %7.4f %7.4f %7.4f %10d",
-                realSpacePermTotal * TO_SECONDS, realSpaceSCFTotal * TO_SECONDS,
-                realSpaceEnergyTotal * TO_SECONDS, inter));
+                realSpacePermTotalQI * TO_SECONDS, realSpaceSCFTotalQI * TO_SECONDS,
+                realSpaceEnergyTotalQI * TO_SECONDS, inter));
     }
 
     /**
@@ -1584,27 +1583,29 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
      * Polarization scaled by lambda.
      */
     private double condensedEnergy() {
-        if (lambda < polLambdaStart) {
-            /**
-             * If the polarization has been completely decoupled, the
-             * contribution of the complete system is zero.
-             *
-             * We can skip the SCF for part 1 for efficiency.
-             */
-            polarizationScale = 0.0;
-            doPolarization = false;
-        } else if (lambda <= polLambdaEnd) {
-            polarizationScale = lPowPol;
-            doPolarization = true;
-        } else {
-            polarizationScale = 1.0;
-            doPolarization = true;
+        if (DEBUG == 0) {
+            if (lambda < polLambdaStart) {
+                /**
+                 * If the polarization has been completely decoupled, the
+                 * contribution of the complete system is zero.
+                 *
+                 * We can skip the SCF for part 1 for efficiency.
+                 */
+                polarizationScale = 0.0;
+                doPolarization = false;
+            } else if (lambda <= polLambdaEnd) {
+                polarizationScale = lPowPol;
+                doPolarization = true;
+            } else {
+                polarizationScale = 1.0;
+                doPolarization = true;
+            }
         }
         doPermanentRealSpace = true;
         permanentScale = lPowPerm;
         dEdLSign = 1.0;
 
-        if (lamedhTerm) {
+        if (esvTerm) {
             double minimumLdh = 1.0;
             for (ExtendedVariable esv : esvList) {
                 if (esv.getLamedh() < minimumLdh) {
@@ -1645,6 +1646,10 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
      * C.) Polarization scaled by (1 - lambda).
      */
     private double condensedNoLigandSCF() {
+        if (DEBUG > 0) {    // TODO REMOVE
+            throw new UnsupportedOperationException();
+        }
+        
         /**
          * Turn off the ligand.
          */
@@ -1711,6 +1716,10 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
      * B.) Polarization scaled as in Step 2 by (1 - lambda).
      */
     private double vaporElec() {
+        if (DEBUG > 0) {    // TODO REMOVE
+            throw new UnsupportedOperationException();
+        }
+        
         for (int i = 0; i < nAtoms; i++) {
             use[i] = atoms[i].applyLambda();
         }
@@ -1816,71 +1825,71 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
         double eselfi = 0.0;
         double erecipi = 0.0;
         double ereali = 0.0;
-        double ereal_QI = 0.0;
-        double ereali_QI = 0.0;
 
-        /**
-         * Find the permanent multipole potential, field, etc.
-         */
-        try {
+//        if (DEBUG == 0) {   // TODO REMOVE
             /**
-             * Compute b-Splines and permanent density.
+             * Find the permanent multipole potential, field, etc.
              */
-            if (reciprocalSpaceTerm && aewald > 0.0) {
-                reciprocalSpace.computeBSplines();
-                reciprocalSpace.splinePermanentMultipoles(globalMultipole, use);
+            try {
+                /**
+                 * Compute b-Splines and permanent density.
+                 */
+                if (reciprocalSpaceTerm && aewald > 0.0) {
+                    reciprocalSpace.computeBSplines();
+                    reciprocalSpace.splinePermanentMultipoles(globalMultipole, use);
+                }
+
+                /**
+                 * The real space contribution can be calculated at the same time
+                 * the reciprocal space convolution is being done.
+                 */
+                sectionTeam.execute(permanentFieldRegion);
+
+                /**
+                 * Collect the reciprocal space field.
+                 */
+                if (reciprocalSpaceTerm && aewald > 0.0) {
+                    reciprocalSpace.computePermanentPhi(cartMultipolePhi);
+                }
+            } catch (Exception e) {
+                String message = "Fatal exception computing the permanent multipole field.\n";
+                logger.log(Level.SEVERE, message, e);
             }
 
             /**
-             * The real space contribution can be calculated at the same time
-             * the reciprocal space convolution is being done.
+             * Compute Born radii if necessary.
              */
-            sectionTeam.execute(permanentFieldRegion);
+            if (generalizedKirkwoodTerm) {
+                bornRadiiTotal -= System.nanoTime();
+                generalizedKirkwood.setUse(use);
+                generalizedKirkwood.computeBornRadii();
+                bornRadiiTotal += System.nanoTime();
+            }
 
             /**
-             * Collect the reciprocal space field.
+             * Do the self-consistent field calculation.
              */
-            if (reciprocalSpaceTerm && aewald > 0.0) {
-                reciprocalSpace.computePermanentPhi(cartMultipolePhi);
-            }
-        } catch (Exception e) {
-            String message = "Fatal exception computing the permanent multipole field.\n";
-            logger.log(Level.SEVERE, message, e);
-        }
-
-        /**
-         * Compute Born radii if necessary.
-         */
-        if (generalizedKirkwoodTerm) {
-            bornRadiiTotal -= System.nanoTime();
-            generalizedKirkwood.setUse(use);
-            generalizedKirkwood.computeBornRadii();
-            bornRadiiTotal += System.nanoTime();
-        }
-
-        /**
-         * Do the self-consistent field calculation.
-         */
-        if (polarization != Polarization.NONE && doPolarization) {
-            selfConsistentField(logger.isLoggable(Level.FINE));
-            if (reciprocalSpaceTerm && aewald > 0.0) {
-                if (gradient && polarization == Polarization.DIRECT) {
-                    try {
-                        reciprocalSpace.splineInducedDipoles(inducedDipole, inducedDipoleCR, use);
-                        sectionTeam.execute(inducedDipoleFieldRegion);
-                        reciprocalSpace.computeInducedPhi(cartesianDipolePhi, cartesianDipolePhiCR);
-                    } catch (Exception ex) {
-                        String message = "Fatal exception computing the induced reciprocal space field.\n";
-                        logger.log(Level.SEVERE, message, ex);
+            if (polarization != Polarization.NONE && doPolarization) {
+                selfConsistentField(logger.isLoggable(Level.FINE));
+                if (reciprocalSpaceTerm && aewald > 0.0) {
+                    if (gradient && polarization == Polarization.DIRECT) {
+                        try {
+                            reciprocalSpace.splineInducedDipoles(inducedDipole, inducedDipoleCR, use);
+                            sectionTeam.execute(inducedDipoleFieldRegion);
+                            reciprocalSpace.computeInducedPhi(cartesianDipolePhi, cartesianDipolePhiCR);
+                        } catch (Exception ex) {
+                            String message = "Fatal exception computing the induced reciprocal space field.\n";
+                            logger.log(Level.SEVERE, message, ex);
+                        }
+                    } else {
+                        reciprocalSpace.cartToFracInducedDipoles(inducedDipole, inducedDipoleCR);
                     }
-                } else {
-                    reciprocalSpace.cartToFracInducedDipoles(inducedDipole, inducedDipoleCR);
+                }
+                if (scfPredictor != SCFPredictor.NONE) {
+                    saveMutualInducedDipoles();
                 }
             }
-            if (scfPredictor != SCFPredictor.NONE) {
-                saveMutualInducedDipoles();
-            }
-        }
+//        } // debug
 
         /**
          * Find the total real space energy. This includes the permanent
@@ -1890,56 +1899,30 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
          * Then compute the permanent and reciprocal space energy.
          */
         try {
-            if (reciprocalSpaceTerm && aewald > 0.0) {
-                parallelTeam.execute(reciprocalEnergyRegion);
-                interactions += nAtoms;
-                eself = reciprocalEnergyRegion.getPermanentSelfEnergy();
-                erecip = reciprocalEnergyRegion.getPermanentReciprocalEnergy();
-                eselfi = reciprocalEnergyRegion.getInducedDipoleSelfEnergy();
-                erecipi = reciprocalEnergyRegion.getInducedDipoleReciprocalEnergy();
-            }
-            if (useQI) {
-                boolean qiFirst = System.getProperty("pme-qiFirst") != null;
-                if (qiFirst) {
-                    realSpaceEnergyTotalQI = -System.nanoTime();
-                    parallelTeam.execute(realSpaceEnergyRegionQI);
-                    realSpaceEnergyTotalQI += System.nanoTime();
-                    ereal_QI = realSpaceEnergyRegionQI.getPermanentEnergy();
-                    ereali_QI = realSpaceEnergyRegionQI.getPolarizationEnergy();
-
-                    realSpaceEnergyTotal -= System.nanoTime();
-                    parallelTeam.execute(realSpaceEnergyRegion);
-                    realSpaceEnergyTotal += System.nanoTime();
-                    ereal = realSpaceEnergyRegion.getPermanentEnergy();
-                    ereali = realSpaceEnergyRegion.getPolarizationEnergy();
-                } else {
-                    realSpaceEnergyTotal -= System.nanoTime();
-                    parallelTeam.execute(realSpaceEnergyRegion);
-                    realSpaceEnergyTotal += System.nanoTime();
-                    ereal = realSpaceEnergyRegion.getPermanentEnergy();
-                    ereali = realSpaceEnergyRegion.getPolarizationEnergy();
-
-                    realSpaceEnergyTotalQI = -System.nanoTime();
-                    parallelTeam.execute(realSpaceEnergyRegionQI);
-                    realSpaceEnergyTotalQI += System.nanoTime();
-                    ereal_QI = realSpaceEnergyRegionQI.getPermanentEnergy();
-                    ereali_QI = realSpaceEnergyRegionQI.getPolarizationEnergy();
+            if (DEBUG == 0) {     // TODO REMOVE
+                if (reciprocalSpaceTerm && aewald > 0.0) {
+                    parallelTeam.execute(reciprocalEnergyRegion);
+                    interactions += nAtoms;
+                    eself = reciprocalEnergyRegion.getPermanentSelfEnergy();
+                    erecip = reciprocalEnergyRegion.getPermanentReciprocalEnergy();
+                    eselfi = reciprocalEnergyRegion.getInducedDipoleSelfEnergy();
+                    erecipi = reciprocalEnergyRegion.getInducedDipoleReciprocalEnergy();
                 }
-                if (lambdaMode == LambdaMode.OFF || lambdaMode == LambdaMode.CONDENSED) {
-                    logger.info(format(" (perm,pol,time): glob (%12.6f  %12.6f) %8.3f ms\n"
-                            + "                    qi (%12.6f  %12.6f) %8.3f ms",
-                            ereal, ereali, realSpaceEnergyTotal * TO_MS,
-                            ereal_QI, ereali_QI, realSpaceEnergyTotalQI * TO_MS));
-                }
-            } else {
-                realSpaceEnergyTotal -= System.nanoTime();
-                parallelTeam.execute(realSpaceEnergyRegion);
-                realSpaceEnergyTotal += System.nanoTime();
-                ereal = realSpaceEnergyRegion.getPermanentEnergy();
-                ereali = realSpaceEnergyRegion.getPolarizationEnergy();
             }
-            interactions += (useQI) ? realSpaceEnergyRegionQI.getInteractions()
-                    : realSpaceEnergyRegion.getInteractions();
+
+            realSpaceEnergyTotalQI = -System.nanoTime();
+            parallelTeam.execute(realSpaceEnergyRegionQI);
+            realSpaceEnergyTotalQI += System.nanoTime();
+            ereal = realSpaceEnergyRegionQI.getPermanentEnergy();
+            if (DEBUG == 0) { // TODO REMOVE
+                ereali = realSpaceEnergyRegionQI.getPolarizationEnergy();
+            }
+            interactions += realSpaceEnergyRegionQI.getInteractions();
+
+            if (DEBUG > 0 && (lambdaMode == LambdaMode.OFF || lambdaMode == LambdaMode.CONDENSED)) {
+                logger.info(format(" (perm,pol,time):  qi (%12.6f  %12.6f) %8.3f ms",
+                        ereal, ereali, realSpaceEnergyTotalQI * TO_MS));
+            }
         } catch (Exception e) {
             String message = "Exception computing the electrostatic energy.\n";
             logger.log(Level.SEVERE, message, e);
@@ -1948,26 +1931,30 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
         /**
          * Compute the generalized Kirkwood solvation free energy.
          */
-        if (generalizedKirkwoodTerm) {
-            gkEnergyTotal -= System.nanoTime();
-            generalizedKirkwoodEnergy += generalizedKirkwood.solvationEnergy(gradient, print);
-            gkInteractions += generalizedKirkwood.getInteractions();
-            gkEnergyTotal += System.nanoTime();
+        if (DEBUG == 0) {   // TODO REMOVE
+            if (generalizedKirkwoodTerm) {
+                gkEnergyTotal -= System.nanoTime();
+                generalizedKirkwoodEnergy += generalizedKirkwood.solvationEnergy(gradient, print);
+                gkInteractions += generalizedKirkwood.getInteractions();
+                gkEnergyTotal += System.nanoTime();
+            }
         }
 
         /**
          * Collect energy terms.
          */
-        if (useQI) {
-            logger.info(format("          morestuff eself,erecip,ereal,ereal_QI: %g %g %g %g",
-                    eself, erecip, ereal, ereal_QI));
-            permanentMultipoleEnergy += eself + erecip + ereal_QI;
+        if (DEBUG > 0) {
+            if (eself != 0.0 || erecip != 0.0) {
+                logger.warning(format("self or recip nonzero: %g %g %g", eself, erecip, ereal));
+            }
+            permanentMultipoleEnergy += ereal;
             polarizationEnergy = 0.0;
             generalizedKirkwoodEnergy = 0.0;
             return permanentMultipoleEnergy;
+        } else {
+            permanentMultipoleEnergy += eself + erecip + ereal;
+            polarizationEnergy += eselfi + erecipi + ereali;
         }
-        permanentMultipoleEnergy += eself + erecip + ereal;
-        polarizationEnergy += eselfi + erecipi + ereali;
 
         /**
          * Log some info.
@@ -2016,6 +2003,9 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
      * @return a double.
      */
     public double getPolarizationEnergy() {
+        if (DEBUG > 0) {    // TODO REMOVE
+            throw new UnsupportedOperationException();
+        }
         return polarizationEnergy;
     }
 
@@ -2026,22 +2016,37 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
      * @return a double.
      */
     public double getGKEnergy() {
+        if (DEBUG > 0) {    // TODO REMOVE
+            throw new UnsupportedOperationException();
+        }
         return generalizedKirkwoodEnergy;
     }
 
     public double getCavitationEnergy(boolean throwError) {
+        if (DEBUG > 0) {    // TODO REMOVE
+            throw new UnsupportedOperationException();
+        }
         return generalizedKirkwood.getCavitationEnergy(throwError);
     }
 
     public double getDispersionEnergy(boolean throwError) {
+        if (DEBUG > 0) {    // TODO REMOVE
+            throw new UnsupportedOperationException();
+        }
         return generalizedKirkwood.getDispersionEnergy(throwError);
     }
 
     public double getCavitationEnergy() {
+        if (DEBUG > 0) {    // TODO REMOVE
+            throw new UnsupportedOperationException();
+        }
         return generalizedKirkwood.getCavitationEnergy(false);
     }
 
     public double getDispersionEnergy() {
+        if (DEBUG > 0) {    // TODO REMOVE
+            throw new UnsupportedOperationException();
+        }
         return generalizedKirkwood.getDispersionEnergy(false);
     }
 
@@ -2367,9 +2372,9 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
             @Override
             public void run() {
                 try {
-                    realSpacePermTotal -= System.nanoTime();
+                    realSpacePermTotalQI -= System.nanoTime();
                     parallelTeam.execute(permanentRealSpaceFieldRegion);
-                    realSpacePermTotal += System.nanoTime();
+                    realSpacePermTotalQI += System.nanoTime();
                 } catch (Exception e) {
                     String message = "Fatal exception computing the real space field.\n";
                     logger.log(Level.SEVERE, message, e);
@@ -3057,9 +3062,9 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
             @Override
             public void run() {
                 try {
-                    realSpaceSCFTotal -= System.nanoTime();
+                    realSpaceSCFTotalQI -= System.nanoTime();
                     pt.execute(polarizationRealSpaceFieldRegion);
-                    realSpaceSCFTotal += System.nanoTime();
+                    realSpaceSCFTotalQI += System.nanoTime();
                 } catch (Exception e) {
                     String message = "Fatal exception computing the real space field.\n";
                     logger.log(Level.SEVERE, message, e);
@@ -3741,1482 +3746,38 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
      * The Real Space Energy Region class parallelizes evaluation of the real
      * space energy and gradient.
      */
-    private class RealSpaceEnergyRegion extends ParallelRegion {
-
-        private double permanentEnergy;
-        private double polarizationEnergy;
-        private final SharedInteger sharedInteractions;
-        private final RealSpaceEnergyLoop realSpaceEnergyLoop[];
-
-        public RealSpaceEnergyRegion(int nt) {
-            sharedInteractions = new SharedInteger();
-            realSpaceEnergyLoop = new RealSpaceEnergyLoop[nt];
-        }
-
-        public double getPermanentEnergy() {
-            return permanentEnergy;
-        }
-
-        public double getPolarizationEnergy() {
-            return polarizationEnergy;
-        }
-
-        public int getInteractions() {
-            return sharedInteractions.get();
-        }
-
-        @Override
-        public void start() {
-            sharedInteractions.set(0);
-            // TODO REMOVE; set old alphas with factoring
-            lAlpha = permLambdaAlpha * (1.0 - lambda) * (1.0 - lambda);
-            dlAlpha = permLambdaAlpha * (1.0 - lambda);
-            d2lAlpha = -permLambdaAlpha;
-            if (System.getProperty("forceAlphas") != null && System.getProperty("forceAlphas").equalsIgnoreCase("new")) {
-                logger.info("Forcing NEW alphas.");
-                lAlpha = permLambdaAlpha * (1.0 - lambda) * (1.0 - lambda);
-                dlAlpha = -2.0 * permLambdaAlpha * (1.0 - lambda);
-                d2lAlpha = 2.0 * permLambdaAlpha;
-            }
-            if (System.getProperty("pme-noZeroing") == null) {
-                // [threadID][X/Y/Z][atomID]
-                for (int i = 0; i < maxThreads; i++) {
-                    for (int j = 0; j < 3; j++) {
-                        fill(grad[i][j], 0.0);
-                        fill(torque[i][j], 0.0);
-                        fill(field[i][j], 0.0);
-                        fill(fieldCR[i][j], 0.0);
-                        if (lambdaTerm) {
-                            fill(lambdaGrad[i][j], 0.0);
-                            fill(lambdaTorque[i][j], 0.0);
-                        }
-                    }
-                }
-            }
-        }
-
-        @Override
-        public void run() {
-            int threadIndex = getThreadIndex();
-            if (realSpaceEnergyLoop[threadIndex] == null) {
-                realSpaceEnergyLoop[threadIndex] = new RealSpaceEnergyLoop();
-            }
-            try {
-                execute(0, nAtoms - 1, realSpaceEnergyLoop[threadIndex]);
-            } catch (Exception e) {
-                String message = "Fatal exception computing the real space energy in thread " + getThreadIndex() + "\n";
-                logger.log(Level.SEVERE, message, e);
-            }
-        }
-
-        @Override
-        public void finish() {
-            permanentEnergy = 0.0;
-            polarizationEnergy = 0.0;
-            for (int i = 0; i < maxThreads; i++) {
-                double e = realSpaceEnergyLoop[i].permanentEnergy;
-                if (Double.isNaN(e)) {
-                    logger.severe(String.format(" The permanent multipole energy of thread %d is %16.8f", i, e));
-                }
-                permanentEnergy += e;
-                double ei = realSpaceEnergyLoop[i].inducedEnergy;
-                if (Double.isNaN(ei)) {
-                    logger.severe(String.format(" The polarization energy of thread %d is %16.8f", i, ei));
-                }
-                polarizationEnergy += ei;
-            }
-            permanentEnergy *= ELECTRIC;
-            polarizationEnergy *= ELECTRIC;
-            if (lambdaTerm) {
-                if (lambdaMode == LambdaMode.OFF || lambdaMode == LambdaMode.CONDENSED) {
-                    logger.info(format("FINISH() GB dEdL,d2EdL2: %.6g %.6g",
-                            shareddEdLambda.get(), sharedd2EdLambda2.get()));
-                }
-            }
-        }
-
-        /**
-         * The Real Space Gradient Loop class contains methods and thread local
-         * variables to parallelize the evaluation of the real space permanent
-         * and polarization energies and gradients.
-         */
-        private class RealSpaceEnergyLoop extends IntegerForLoop {
-
-            private double ci;
-            private double dix, diy, diz;
-            private double qixx, qiyy, qizz, qixy, qixz, qiyz;
-            private double ck;
-            private double dkx, dky, dkz;
-            private double qkxx, qkyy, qkzz, qkxy, qkxz, qkyz;
-            private double uix, uiy, uiz;
-            private double pix, piy, piz;
-            private double xr, yr, zr;
-            private double ukx, uky, ukz;
-            private double pkx, pky, pkz;
-            private double bn0, bn1, bn2, bn3, bn4, bn5, bn6;
-            private double r2, rr1, rr2, rr3, rr5, rr7, rr9, rr11, rr13;
-            private double scale, scale3, scale5, scale7;
-            private double scalep, scaled;
-            private double ddsc3x, ddsc3y, ddsc3z;
-            private double ddsc5x, ddsc5y, ddsc5z;
-            private double ddsc7x, ddsc7y, ddsc7z;
-            private double lambdaBufferDist, l2;
-            private boolean soft;
-            private boolean softLdh;
-            private double selfScale;
-            private double permanentEnergy;
-            private double inducedEnergy;
-            private double dUdL, d2UdL2;
-            private double dUdLdh[], d2UdLdh2[];
-            private int i, k, iSymm, count;
-            private SymOp symOp;
-            private double gX[], gY[], gZ[], tX[], tY[], tZ[];
-            private double lgX[], lgY[], lgZ[], ltX[], ltY[], ltZ[];
-            private double ldhgX[][], ldhgY[][], ldhgZ[][], ldhtX[][], ldhtY[][], ldhtZ[][];
-            private double gxk_local[], gyk_local[], gzk_local[];
-            private double txk_local[], tyk_local[], tzk_local[];
-            private double lxk_local[], lyk_local[], lzk_local[];
-            private double ldhxk_local[][], ldhyk_local[][], ldhzk_local[][];
-            private double ltxk_local[], ltyk_local[], ltzk_local[];
-            private double ldhtxk_local[][], ldhtyk_local[][], ldhtzk_local[][];
-            private double masking_local[];
-            private double maskingp_local[];
-            private double maskingd_local[];
-            private final double dx_local[];
-            private final double rot_local[][];
-            private final double work[][];
-            private final double workLdh[][][];
-
-            // Extra padding to avert cache interference.
-            private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
-            private long pad8, pad9, pada, padb, padc, padd, pade, padf;
-
-            public RealSpaceEnergyLoop() {
-                super();
-                dx_local = new double[3];
-                work = new double[15][3];
-                workLdh = new double[numESVs][15][3];
-                rot_local = new double[3][3];
-            }
-
-            private void init() {
-                if (masking_local == null || masking_local.length < nAtoms) {
-                    txk_local = new double[nAtoms];
-                    tyk_local = new double[nAtoms];
-                    tzk_local = new double[nAtoms];
-                    gxk_local = new double[nAtoms];
-                    gyk_local = new double[nAtoms];
-                    gzk_local = new double[nAtoms];
-                    lxk_local = new double[nAtoms];
-                    lyk_local = new double[nAtoms];
-                    lzk_local = new double[nAtoms];
-                    ltxk_local = new double[nAtoms];
-                    ltyk_local = new double[nAtoms];
-                    ltzk_local = new double[nAtoms];
-                    masking_local = new double[nAtoms];
-                    maskingp_local = new double[nAtoms];
-                    maskingd_local = new double[nAtoms];
-                    fill(masking_local, 1.0);
-                    fill(maskingp_local, 1.0);
-                    fill(maskingd_local, 1.0);
-
-                    ldhxk_local = new double[numESVs][nAtoms];
-                    ldhyk_local = new double[numESVs][nAtoms];
-                    ldhzk_local = new double[numESVs][nAtoms];
-                    ldhtxk_local = new double[numESVs][nAtoms];
-                    ldhtyk_local = new double[numESVs][nAtoms];
-                    ldhtzk_local = new double[numESVs][nAtoms];
-                }
-            }
-
-            @Override
-            public IntegerSchedule schedule() {
-                return realSpaceSchedule;
-            }
-
-            @Override
-            public void start() {
-                init();
-                int threadIndex = getThreadIndex();
-                realSpaceEnergyTime[threadIndex] -= System.nanoTime();
-                permanentEnergy = 0.0;
-                inducedEnergy = 0.0;
-                count = 0;
-                gX = grad[threadIndex][0];
-                gY = grad[threadIndex][1];
-                gZ = grad[threadIndex][2];
-                tX = torque[threadIndex][0];
-                tY = torque[threadIndex][1];
-                tZ = torque[threadIndex][2];
-                if (lambdaTerm) {
-                    dUdL = 0.0;
-                    d2UdL2 = 0.0;
-                    lgX = lambdaGrad[threadIndex][0];
-                    lgY = lambdaGrad[threadIndex][1];
-                    lgZ = lambdaGrad[threadIndex][2];
-                    ltX = lambdaTorque[threadIndex][0];
-                    ltY = lambdaTorque[threadIndex][1];
-                    ltZ = lambdaTorque[threadIndex][2];
-                }
-                if (lamedhTerm) {
-                    dUdLdh = new double[numESVs];
-                    d2UdLdh2 = new double[numESVs];
-                    ldhgX = lamedhGrad[threadIndex][0];
-                    ldhgY = lamedhGrad[threadIndex][1];
-                    ldhgZ = lamedhGrad[threadIndex][2];
-                    ldhtX = lamedhTorque[threadIndex][0];
-                    ldhtY = lamedhTorque[threadIndex][1];
-                    ldhtZ = lamedhTorque[threadIndex][2];
-                }
-            }
-
-            @Override
-            public void run(int lb, int ub) {
-                List<SymOp> symOps = crystal.spaceGroup.symOps;
-                for (iSymm = 0; iSymm < nSymm; iSymm++) {
-                    symOp = symOps.get(iSymm);
-                    if (gradient) {
-                        fill(gxk_local, 0.0);
-                        fill(gyk_local, 0.0);
-                        fill(gzk_local, 0.0);
-                        fill(txk_local, 0.0);
-                        fill(tyk_local, 0.0);
-                        fill(tzk_local, 0.0);
-                    }
-                    if (lambdaTerm) {
-                        fill(lxk_local, 0.0);
-                        fill(lyk_local, 0.0);
-                        fill(lzk_local, 0.0);
-                        fill(ltxk_local, 0.0);
-                        fill(ltyk_local, 0.0);
-                        fill(ltzk_local, 0.0);
-                    }
-                    if (lamedhTerm) {
-                        fill(ldhxk_local, 0.0);
-                        fill(ldhyk_local, 0.0);
-                        fill(ldhzk_local, 0.0);
-                        fill(ldhtxk_local, 0.0);
-                        fill(ldhtyk_local, 0.0);
-                        fill(ldhtzk_local, 0.0);
-                    }
-                    realSpaceChunk(lb, ub);
-                    if (gradient) {
-                        // Turn symmetry mate torques into gradients
-                        if (rotateMultipoles) {
-                            torque(iSymm, txk_local, tyk_local, tzk_local,
-                                    gxk_local, gyk_local, gzk_local,
-                                    work[0], work[1], work[2], work[3], work[4],
-                                    work[5], work[6], work[7], work[8], work[9],
-                                    work[10], work[11], work[12], work[13], work[14]);
-                        }
-                        // Rotate symmetry mate gradients
-                        if (iSymm != 0) {
-                            crystal.applyTransSymRot(nAtoms,
-                                    gxk_local, gyk_local, gzk_local,
-                                    gxk_local, gyk_local, gzk_local,
-                                    symOp, rot_local);
-                        }
-                        // Sum symmetry mate gradients into asymmetric unit gradients
-                        for (int j = 0; j < nAtoms; j++) {
-                            gX[j] += gxk_local[j];
-                            gY[j] += gyk_local[j];
-                            gZ[j] += gzk_local[j];
-                        }
-                    }
-                    if (lambdaTerm) {
-                        // Turn symmetry mate torques into gradients
-                        torque(iSymm, ltxk_local, ltyk_local, ltzk_local,
-                                lxk_local, lyk_local, lzk_local,
-                                work[0], work[1], work[2], work[3], work[4],
-                                work[5], work[6], work[7], work[8], work[9],
-                                work[10], work[11], work[12], work[13], work[14]);
-                        // Rotate symmetry mate gradients
-                        if (iSymm != 0) {
-                            crystal.applyTransSymRot(nAtoms, lxk_local, lyk_local, lzk_local,
-                                    lxk_local, lyk_local, lzk_local, symOp, rot_local);
-                        }
-                        // Sum symmetry mate gradients into asymmetric unit gradients
-                        for (int j = 0; j < nAtoms; j++) {
-                            lgX[j] += lxk_local[j];
-                            lgY[j] += lyk_local[j];
-                            lgZ[j] += lzk_local[j];
-                        }
-                    }
-                    if (lamedhTerm) {
-                        for (ExtendedVariable esv : esvList) {
-                            int i = esv.index;
-                            torque(iSymm, ldhtxk_local[i], ldhtyk_local[i], ldhtzk_local[i],
-                                    ldhxk_local[i], ldhyk_local[i], ldhzk_local[i],
-                                    work[0], work[1], work[2], work[3], work[4],
-                                    work[5], work[6], work[7], work[8], work[9],
-                                    work[10], work[11], work[12], work[13], work[14]);
-                            if (iSymm != 0) {
-                                crystal.applyTransSymRot(nAtoms, ldhxk_local[i], ldhyk_local[i], ldhzk_local[i],
-                                        ldhxk_local[i], ldhyk_local[i], ldhzk_local[i], symOp, rot_local);
-                            }
-                            for (int j = 0; j < nAtoms; j++) {
-                                ldhgX[i][j] += ldhxk_local[i][j];
-                                ldhgY[i][j] += ldhyk_local[i][j];
-                                ldhgZ[i][j] += ldhzk_local[i][j];
-                            }
-                        }
-                    }
-                }
-            }
-
-            public int getCount() {
-                return count;
-            }
-
-            @Override
-            public void finish() {
-                sharedInteractions.addAndGet(count);
-                if (lambdaTerm) {
-                    shareddEdLambda.addAndGet(dUdL * ELECTRIC);
-                    sharedd2EdLambda2.addAndGet(d2UdL2 * ELECTRIC);
-                }
-                if (lamedhTerm) {
-                    for (ExtendedVariable esv : esvList) {
-                        shareddEdLdh[esv.index].addAndGet(dUdLdh[esv.index] * ELECTRIC);
-                        sharedd2EdLdh2[esv.index].addAndGet(d2UdLdh2[esv.index] * ELECTRIC);
-                    }
-                }
-                realSpaceEnergyTime[getThreadIndex()] += System.nanoTime();
-            }
-
-            /**
-             * Evaluate the real space permanent energy and polarization energy
-             * for a chunk of atoms.
-             *
-             * @param lb The lower bound of the chunk.
-             * @param ub The upper bound of the chunk.
-             */
-            private void realSpaceChunk(final int lb, final int ub) {
-                final double x[] = coordinates[0][0];
-                final double y[] = coordinates[0][1];
-                final double z[] = coordinates[0][2];
-                final double mpole[][] = globalMultipole[0];
-                final double ind[][] = inducedDipole[0];
-                final double indp[][] = inducedDipoleCR[0];
-                final int lists[][] = realSpaceLists[iSymm];
-                final double neighborX[] = coordinates[iSymm][0];
-                final double neighborY[] = coordinates[iSymm][1];
-                final double neighborZ[] = coordinates[iSymm][2];
-                final double neighborMultipole[][] = globalMultipole[iSymm];
-                final double neighborInducedDipole[][] = inducedDipole[iSymm];
-                final double neighborInducedDipolep[][] = inducedDipoleCR[iSymm];
-                for (i = lb; i <= ub; i++) {
-                    if (!use[i]) {
-                        continue;
-                    }
-                    final Atom ai = atoms[i];
-                    final int moleculei = molecule[i];
-                    if (iSymm == 0) {
-                        for (Atom ak : ai.get1_5s()) {
-                            masking_local[ak.xyzIndex - 1] = m15scale;
-                        }
-                        for (Torsion torsion : ai.getTorsions()) {
-                            Atom ak = torsion.get1_4(ai);
-                            if (ak != null) {
-                                int index = ak.xyzIndex - 1;
-                                masking_local[index] = m14scale;
-                                for (int j : ip11[i]) {
-                                    if (j == index) {
-                                        maskingp_local[index] = 0.5;
-                                    }
-                                }
-                            }
-                        }
-                        for (Angle angle : ai.getAngles()) {
-                            Atom ak = angle.get1_3(ai);
-                            if (ak != null) {
-                                int index = ak.xyzIndex - 1;
-                                masking_local[index] = m13scale;
-                                maskingp_local[index] = p13scale;
-                            }
-                        }
-                        for (Bond bond : ai.getBonds()) {
-                            int index = bond.get1_2(ai).xyzIndex - 1;
-                            masking_local[index] = m12scale;
-                            maskingp_local[index] = p12scale;
-                        }
-                        for (int j : ip11[i]) {
-                            maskingd_local[j] = d11scale;
-                        }
-                    }
-                    final double xi = x[i];
-                    final double yi = y[i];
-                    final double zi = z[i];
-                    final double globalMultipolei[] = mpole[i];
-                    final double inducedDipolei[] = ind[i];
-                    final double inducedDipolepi[] = indp[i];
-                    ci = globalMultipolei[t000];
-                    dix = globalMultipolei[t100];
-                    diy = globalMultipolei[t010];
-                    diz = globalMultipolei[t001];
-                    qixx = globalMultipolei[t200] * oneThird;
-                    qiyy = globalMultipolei[t020] * oneThird;
-                    qizz = globalMultipolei[t002] * oneThird;
-                    qixy = globalMultipolei[t110] * oneThird;
-                    qixz = globalMultipolei[t101] * oneThird;
-                    qiyz = globalMultipolei[t011] * oneThird;
-                    uix = inducedDipolei[0];
-                    uiy = inducedDipolei[1];
-                    uiz = inducedDipolei[2];
-                    pix = inducedDipolepi[0];
-                    piy = inducedDipolepi[1];
-                    piz = inducedDipolepi[2];
-                    final boolean softi = isSoft[i];
-                    final double pdi = ipdamp[i];
-                    final double pti = thole[i];
-                    final int list[] = lists[i];
-                    final int npair = realSpaceCounts[iSymm][i];
-                    for (int j = 0; j < npair; j++) {
-                        k = list[j];
-                        if (!use[k]) {
-                            continue;
-                        }
-                        boolean sameMolecule = (moleculei == molecule[k]);
-                        if (lambdaMode == LambdaMode.VAPOR) {
-                            if ((intermolecularSoftcore && !sameMolecule)
-                                    || (intramolecularSoftcore && sameMolecule)) {
-                                continue;
-                            }
-                        }
-                        selfScale = 1.0;
-                        if (i == k) {
-                            selfScale = 0.5;
-                        }
-                        lambdaBufferDist = 0.0;
-                        l2 = 1.0;
-                        soft = (softi || isSoft[k]);
-                        if (soft && doPermanentRealSpace) {
-                            lambdaBufferDist = lAlpha;
-                            l2 = permanentScale;
-                        }
-                        softLdh = (hasLamedh[i] || hasLamedh[k]);
-                        if (false && softLdh) {
-                            /*
-                            // lAlpha = α*(1 - L)^2
-                            double lambdaLoc = (lambdaTerm) ? lambda : 1.0;
-                            double lamedh = 1.0;
-                            for (ExtendedVariable esv : esvList) {
-                                if (esv.containsAtom(ai) || esv.containsAtom(atoms[k])) {
-                                    lamedh *= esv.getLamedh();
-                                }
-                            }
-                            // First, just try throwing the combined variable back through setLambda().
-                            setLambda(lambdaLoc * lamedh);
-
-                            /* TODO Test easy (above) vs explicit (below) lambda-lamedh interaction handling.
-                            lAlpha = permLambdaAlpha * (1 - lambdaLoc*lamedh) * (1 - lambdaLoc*lamedh);
-                            // |-- Intentionally missing the factor of (-2) for factorization.
-                            // v   See comment in the setLamba() method.
-                            dlAlpha = permLambdaAlpha * (1.0 - lambdaLoc*lamedh);
-                            d2lAlpha = -permLambdaAlpha;
-
-                            lPowPerm = pow(lambdaLoc*lamedh, permLambdaExponent);
-                            dlPowPerm = permLambdaExponent * pow(lambdaLoc*lamedh, permLambdaExponent - 1.0);
-                            d2lPowPerm = 0.0;
-                            if (permLambdaExponent >= 2.0) {
-                                d2lPowPerm = permLambdaExponent * (permLambdaExponent - 1.0) * pow(lambda, permLambdaExponent - 2.0);
-                            }
-
-                            lPowPol = 1.0;
-                            dlPowPol = 0.0;
-                            d2lPowPol = 0.0;
-                            if (lambda < polLambdaStart) {
-                                lPowPol = 0.0;
-                            } else if (lambda <= polLambdaEnd) {
-                                double polWindow = polLambdaEnd - polLambdaStart;
-                                double polLambdaScale = 1.0 / polWindow;
-                                polLambda = polLambdaScale * (lambda - polLambdaStart);
-                                lPowPol = pow(polLambda, polLambdaExponent);
-                                if (polLambdaExponent >= 1.0) {
-                                    dlPowPol = polLambdaExponent * pow(polLambda, polLambdaExponent - 1.0);
-                                    if (polLambdaExponent >= 2.0) {
-                                        d2lPowPol = polLambdaExponent * (polLambdaExponent - 1.0)
-                                                * pow(polLambda, polLambdaExponent - 2.0);
-                                    }
-                                }
-
-                                dlPowPol *= polLambdaScale;
-                                d2lPowPol *= (polLambdaScale * polLambdaScale);
-                            }
-                             */
-                            lambdaBufferDist = lAlpha;
-                            l2 = permanentScale;
-                        }
-                        final double xk = neighborX[k];
-                        final double yk = neighborY[k];
-                        final double zk = neighborZ[k];
-                        dx_local[0] = xk - xi;
-                        dx_local[1] = yk - yi;
-                        dx_local[2] = zk - zi;
-                        r2 = crystal.image(dx_local);
-                        xr = dx_local[0];
-                        yr = dx_local[1];
-                        zr = dx_local[2];
-                        final double globalMultipolek[] = neighborMultipole[k];
-                        final double inducedDipolek[] = neighborInducedDipole[k];
-                        final double inducedDipolepk[] = neighborInducedDipolep[k];
-                        ck = globalMultipolek[t000];
-                        dkx = globalMultipolek[t100];
-                        dky = globalMultipolek[t010];
-                        dkz = globalMultipolek[t001];
-                        qkxx = globalMultipolek[t200] * oneThird;
-                        qkyy = globalMultipolek[t020] * oneThird;
-                        qkzz = globalMultipolek[t002] * oneThird;
-                        qkxy = globalMultipolek[t110] * oneThird;
-                        qkxz = globalMultipolek[t101] * oneThird;
-                        qkyz = globalMultipolek[t011] * oneThird;
-                        ukx = inducedDipolek[0];
-                        uky = inducedDipolek[1];
-                        ukz = inducedDipolek[2];
-                        pkx = inducedDipolepk[0];
-                        pky = inducedDipolepk[1];
-                        pkz = inducedDipolepk[2];
-                        final double pdk = ipdamp[k];
-                        final double ptk = thole[k];
-                        scale = masking_local[k];
-                        scalep = maskingp_local[k];
-                        scaled = maskingd_local[k];
-                        scale3 = 1.0;
-                        scale5 = 1.0;
-                        scale7 = 1.0;
-                        double r = sqrt(r2 + lambdaBufferDist);
-                        double ralpha = aewald * r;
-                        double exp2a = exp(-ralpha * ralpha);
-                        rr1 = 1.0 / r;
-                        rr2 = rr1 * rr1;
-                        bn0 = erfc(ralpha) * rr1;
-                        bn1 = (bn0 + an0 * exp2a) * rr2;
-                        bn2 = (3.0 * bn1 + an1 * exp2a) * rr2;
-                        bn3 = (5.0 * bn2 + an2 * exp2a) * rr2;
-                        bn4 = (7.0 * bn3 + an3 * exp2a) * rr2;
-                        bn5 = (9.0 * bn4 + an4 * exp2a) * rr2;
-                        bn6 = (11.0 * bn5 + an5 * exp2a) * rr2;
-
-                        if (DEBUG > 0 && i == pmeI && k == pmeK) {
-                            double vals[] = new double[]{xr, yr, zr, r, ralpha, exp2a, rr1, bn0};
-                            logOnce(format("      dist-gb: %s", formatArray(vals)));
-                        }
-
-                        rr3 = rr1 * rr2;
-                        rr5 = 3.0 * rr3 * rr2;
-                        rr7 = 5.0 * rr5 * rr2;
-                        rr9 = 7.0 * rr7 * rr2;
-                        rr11 = 9.0 * rr9 * rr2;
-                        rr13 = 11.0 * rr11 * rr2;
-                        ddsc3x = 0.0;
-                        ddsc3y = 0.0;
-                        ddsc3z = 0.0;
-                        ddsc5x = 0.0;
-                        ddsc5y = 0.0;
-                        ddsc5z = 0.0;
-                        ddsc7x = 0.0;
-                        ddsc7y = 0.0;
-                        ddsc7z = 0.0;
-                        double damp = pdi * pdk;
-                        double pgamma = min(pti, ptk);
-                        double rdamp = r * damp;
-                        damp = -pgamma * rdamp * rdamp * rdamp;
-                        if (damp > -50.0) {
-                            final double expdamp = exp(damp);
-                            scale3 = 1.0 - expdamp;
-                            scale5 = 1.0 - expdamp * (1.0 - damp);
-                            scale7 = 1.0 - expdamp * (1.0 - damp + 0.6 * damp * damp);
-                            final double temp3 = -3.0 * damp * expdamp * rr2;
-                            final double temp5 = -damp;
-                            final double temp7 = -0.2 - 0.6 * damp;
-                            ddsc3x = temp3 * xr;
-                            ddsc3y = temp3 * yr;
-                            ddsc3z = temp3 * zr;
-                            ddsc5x = temp5 * ddsc3x;
-                            ddsc5y = temp5 * ddsc3y;
-                            ddsc5z = temp5 * ddsc3z;
-                            ddsc7x = temp7 * ddsc5x;
-                            ddsc7y = temp7 * ddsc5y;
-                            ddsc7z = temp7 * ddsc5z;
-                        }
-                        if (doPermanentRealSpace) {
-                            double ei = permanentPair();
-                            if (Double.isNaN(ei) || Double.isInfinite(ei)) {
-                                logger.info(crystal.getUnitCell().toString());
-                                logger.info(atoms[i].toString());
-                                logger.info(atoms[k].toString());
-                                logger.severe(String.format(" The permanent multipole energy between atoms %d and %d (%d) is %16.8f at %16.8f A.", i, k, iSymm, ei, r));
-                            }
-                            permanentEnergy += ei;
-                            count++;
-                        }
-                        if (polarization != Polarization.NONE && doPolarization) {
-                            /**
-                             * Polarization does not use the softcore tensors.
-                             */
-                            if ((soft || softLdh) && doPermanentRealSpace) {
-                                scale3 = 1.0;
-                                scale5 = 1.0;
-                                scale7 = 1.0;
-                                r = sqrt(r2);
-                                ralpha = aewald * r;
-                                exp2a = exp(-ralpha * ralpha);
-                                rr1 = 1.0 / r;
-                                rr2 = rr1 * rr1;
-                                bn0 = erfc(ralpha) * rr1;
-                                bn1 = (bn0 + an0 * exp2a) * rr2;
-                                bn2 = (3.0 * bn1 + an1 * exp2a) * rr2;
-                                bn3 = (5.0 * bn2 + an2 * exp2a) * rr2;
-                                bn4 = (7.0 * bn3 + an3 * exp2a) * rr2;
-                                bn5 = (9.0 * bn4 + an4 * exp2a) * rr2;
-                                bn6 = (11.0 * bn5 + an5 * exp2a) * rr2;
-                                rr3 = rr1 * rr2;
-                                rr5 = 3.0 * rr3 * rr2;
-                                rr7 = 5.0 * rr5 * rr2;
-                                rr9 = 7.0 * rr7 * rr2;
-                                rr11 = 9.0 * rr9 * rr2;
-                                ddsc3x = 0.0;
-                                ddsc3y = 0.0;
-                                ddsc3z = 0.0;
-                                ddsc5x = 0.0;
-                                ddsc5y = 0.0;
-                                ddsc5z = 0.0;
-                                ddsc7x = 0.0;
-                                ddsc7y = 0.0;
-                                ddsc7z = 0.0;
-                                damp = pdi * pdk;
-                                //if (damp != 0.0) {
-                                pgamma = min(pti, ptk);
-                                rdamp = r * damp;
-                                damp = -pgamma * rdamp * rdamp * rdamp;
-                                if (damp > -50.0) {
-                                    final double expdamp = exp(damp);
-                                    scale3 = 1.0 - expdamp;
-                                    scale5 = 1.0 - expdamp * (1.0 - damp);
-                                    scale7 = 1.0 - expdamp * (1.0 - damp + 0.6 * damp * damp);
-                                    final double temp3 = -3.0 * damp * expdamp * rr2;
-                                    final double temp5 = -damp;
-                                    final double temp7 = -0.2 - 0.6 * damp;
-                                    ddsc3x = temp3 * xr;
-                                    ddsc3y = temp3 * yr;
-                                    ddsc3z = temp3 * zr;
-                                    ddsc5x = temp5 * ddsc3x;
-                                    ddsc5y = temp5 * ddsc3y;
-                                    ddsc5z = temp5 * ddsc3z;
-                                    ddsc7x = temp7 * ddsc5x;
-                                    ddsc7y = temp7 * ddsc5y;
-                                    ddsc7z = temp7 * ddsc5z;
-                                }
-                                //}
-                            }
-                            double ei = polarizationPair();
-                            if (Double.isNaN(ei) || Double.isInfinite(ei)) {
-                                logger.info(crystal.getUnitCell().toString());
-                                logger.info(atoms[i].toString());
-                                logger.info(format(" with induced dipole: %8.3f %8.3f %8.3f", uix, uiy, uiz));
-                                logger.info(atoms[k].toString());
-                                logger.info(format(" with induced dipole: %8.3f %8.3f %8.3f", ukx, uky, ukz));
-                                logger.severe(String.format(" The polarization energy due to atoms %d and %d (%d) is %10.6f at %10.6f A.", i + 1, k + 1, iSymm, ei, r));
-                            }
-                            inducedEnergy += ei;
-                        }
-                    }
-                    if (iSymm == 0) {
-                        for (Atom ak : ai.get1_5s()) {
-                            int index = ak.xyzIndex - 1;
-                            masking_local[index] = 1.0;
-                        }
-                        for (Torsion torsion : ai.getTorsions()) {
-                            Atom ak = torsion.get1_4(ai);
-                            if (ak != null) {
-                                int index = ak.xyzIndex - 1;
-                                masking_local[index] = 1.0;
-                                for (int j : ip11[i]) {
-                                    if (j == index) {
-                                        maskingp_local[index] = 1.0;
-                                    }
-                                }
-                            }
-                        }
-                        for (Angle angle : ai.getAngles()) {
-                            Atom ak = angle.get1_3(ai);
-                            if (ak != null) {
-                                int index = ak.xyzIndex - 1;
-                                masking_local[index] = 1.0;
-                                maskingp_local[index] = 1.0;
-                            }
-                        }
-                        for (Bond bond : ai.getBonds()) {
-                            int index = bond.get1_2(ai).xyzIndex - 1;
-                            masking_local[index] = 1.0;
-                            maskingp_local[index] = 1.0;
-                        }
-                        for (int j : ip11[i]) {
-                            maskingd_local[j] = 1.0;
-                        }
-                    }
-                }
-            }
-
-            /**
-             * Evaluate the real space permanent energy for a pair of multipole
-             * sites.
-             *
-             * @return the permanent multipole energy.
-             */
-            private double permanentPair() {
-                final double dixdkx = diy * dkz - diz * dky;
-                final double dixdky = diz * dkx - dix * dkz;
-                final double dixdkz = dix * dky - diy * dkx;
-                final double dixrx = diy * zr - diz * yr;
-                final double dixry = diz * xr - dix * zr;
-                final double dixrz = dix * yr - diy * xr;
-                final double dkxrx = dky * zr - dkz * yr;
-                final double dkxry = dkz * xr - dkx * zr;
-                final double dkxrz = dkx * yr - dky * xr;
-                final double qirx = qixx * xr + qixy * yr + qixz * zr;
-                final double qiry = qixy * xr + qiyy * yr + qiyz * zr;
-                final double qirz = qixz * xr + qiyz * yr + qizz * zr;
-                final double qkrx = qkxx * xr + qkxy * yr + qkxz * zr;
-                final double qkry = qkxy * xr + qkyy * yr + qkyz * zr;
-                final double qkrz = qkxz * xr + qkyz * yr + qkzz * zr;
-                final double qiqkrx = qixx * qkrx + qixy * qkry + qixz * qkrz;
-                final double qiqkry = qixy * qkrx + qiyy * qkry + qiyz * qkrz;
-                final double qiqkrz = qixz * qkrx + qiyz * qkry + qizz * qkrz;
-                final double qkqirx = qkxx * qirx + qkxy * qiry + qkxz * qirz;
-                final double qkqiry = qkxy * qirx + qkyy * qiry + qkyz * qirz;
-                final double qkqirz = qkxz * qirx + qkyz * qiry + qkzz * qirz;
-                final double qixqkx = qixy * qkxz + qiyy * qkyz + qiyz * qkzz - qixz * qkxy - qiyz * qkyy - qizz * qkyz;
-                final double qixqky = qixz * qkxx + qiyz * qkxy + qizz * qkxz - qixx * qkxz - qixy * qkyz - qixz * qkzz;
-                final double qixqkz = qixx * qkxy + qixy * qkyy + qixz * qkyz - qixy * qkxx - qiyy * qkxy - qiyz * qkxz;
-                final double rxqirx = yr * qirz - zr * qiry;
-                final double rxqiry = zr * qirx - xr * qirz;
-                final double rxqirz = xr * qiry - yr * qirx;
-                final double rxqkrx = yr * qkrz - zr * qkry;
-                final double rxqkry = zr * qkrx - xr * qkrz;
-                final double rxqkrz = xr * qkry - yr * qkrx;
-                final double rxqikrx = yr * qiqkrz - zr * qiqkry;
-                final double rxqikry = zr * qiqkrx - xr * qiqkrz;
-                final double rxqikrz = xr * qiqkry - yr * qiqkrx;
-                final double rxqkirx = yr * qkqirz - zr * qkqiry;
-                final double rxqkiry = zr * qkqirx - xr * qkqirz;
-                final double rxqkirz = xr * qkqiry - yr * qkqirx;
-                final double qkrxqirx = qkry * qirz - qkrz * qiry;
-                final double qkrxqiry = qkrz * qirx - qkrx * qirz;
-                final double qkrxqirz = qkrx * qiry - qkry * qirx;
-                final double qidkx = qixx * dkx + qixy * dky + qixz * dkz;
-                final double qidky = qixy * dkx + qiyy * dky + qiyz * dkz;
-                final double qidkz = qixz * dkx + qiyz * dky + qizz * dkz;
-                final double qkdix = qkxx * dix + qkxy * diy + qkxz * diz;
-                final double qkdiy = qkxy * dix + qkyy * diy + qkyz * diz;
-                final double qkdiz = qkxz * dix + qkyz * diy + qkzz * diz;
-                final double dixqkrx = diy * qkrz - diz * qkry;
-                final double dixqkry = diz * qkrx - dix * qkrz;
-                final double dixqkrz = dix * qkry - diy * qkrx;
-                final double dkxqirx = dky * qirz - dkz * qiry;
-                final double dkxqiry = dkz * qirx - dkx * qirz;
-                final double dkxqirz = dkx * qiry - dky * qirx;
-                final double rxqidkx = yr * qidkz - zr * qidky;
-                final double rxqidky = zr * qidkx - xr * qidkz;
-                final double rxqidkz = xr * qidky - yr * qidkx;
-                final double rxqkdix = yr * qkdiz - zr * qkdiy;
-                final double rxqkdiy = zr * qkdix - xr * qkdiz;
-                final double rxqkdiz = xr * qkdiy - yr * qkdix;
-                /**
-                 * Calculate the scalar products for permanent multipoles.
-                 */
-                final double sc2 = dix * dkx + diy * dky + diz * dkz;
-                final double sc3 = dix * xr + diy * yr + diz * zr;
-                final double sc4 = dkx * xr + dky * yr + dkz * zr;
-                final double sc5 = qirx * xr + qiry * yr + qirz * zr;
-                final double sc6 = qkrx * xr + qkry * yr + qkrz * zr;
-                final double sc7 = qirx * dkx + qiry * dky + qirz * dkz;
-                final double sc8 = qkrx * dix + qkry * diy + qkrz * diz;
-                final double sc9 = qirx * qkrx + qiry * qkry + qirz * qkrz;
-                final double sc10 = 2.0 * (qixy * qkxy + qixz * qkxz + qiyz * qkyz) + qixx * qkxx + qiyy * qkyy + qizz * qkzz;
-                /**
-                 * Calculate the gl functions for permanent multipoles.
-                 */
-                final double gl0 = ci * ck;
-                final double gl1 = ck * sc3 - ci * sc4;
-                final double gl2 = ci * sc6 + ck * sc5 - sc3 * sc4;
-                final double gl3 = sc3 * sc6 - sc4 * sc5;
-                final double gl4 = sc5 * sc6;
-                final double gl5 = -4.0 * sc9;
-                final double gl6 = sc2;
-                final double gl7 = 2.0 * (sc7 - sc8);
-                final double gl8 = 2.0 * sc10;
-                /**
-                 * Compute the energy contributions for this interaction.
-                 */
-                final double scale1 = 1.0 - scale;
-                final double ereal = gl0 * bn0 + (gl1 + gl6) * bn1 + (gl2 + gl7 + gl8) * bn2 + (gl3 + gl5) * bn3 + gl4 * bn4;
-                final double efix = scale1 * (gl0 * rr1 + (gl1 + gl6) * rr3 + (gl2 + gl7 + gl8) * rr5 + (gl3 + gl5) * rr7 + gl4 * rr9);
-                final double e = selfScale * l2 * (ereal - efix);
-
-                if (DEBUG > 1) {
-                    if (i == 0) {
-                        logger.info(format(" (GlobalFrame-0) ai,ak,e;ereal,efix,scale: (%s,%s,%.4f) (%.4f,%.4f,%.4f)",
-                                atoms[i].toNameNumberString(), atoms[k].toNameNumberString(),
-                                e, ereal, efix, scale));
-                    }
-//                    logger.info(format(" (GlobalFrame) e,ereal,efix,ss,l2: %.4f %.4f %.4f %.4f %.4f", e, ereal, efix, selfScale, l2));
-                }
-
-                double pref0 = 0.0, pref1 = 0.0, pref2 = 0.0;
-                if (gradient) {
-                    final double gf1 = bn1 * gl0 + bn2 * (gl1 + gl6) + bn3 * (gl2 + gl7 + gl8) + bn4 * (gl3 + gl5) + bn5 * gl4;
-                    final double gf2 = -ck * bn1 + sc4 * bn2 - sc6 * bn3;
-                    final double gf3 = ci * bn1 + sc3 * bn2 + sc5 * bn3;
-                    final double gf4 = 2.0 * bn2;
-                    final double gf5 = 2.0 * (-ck * bn2 + sc4 * bn3 - sc6 * bn4);
-                    final double gf6 = 2.0 * (-ci * bn2 - sc3 * bn3 - sc5 * bn4);
-                    final double gf7 = 4.0 * bn3;
-                    /*
-                     * Get the permanent force with screening.
-                     */
-                    double ftm2x = gf1 * xr + gf2 * dix + gf3 * dkx + gf4 * (qkdix - qidkx) + gf5 * qirx + gf6 * qkrx + gf7 * (qiqkrx + qkqirx);
-                    double ftm2y = gf1 * yr + gf2 * diy + gf3 * dky + gf4 * (qkdiy - qidky) + gf5 * qiry + gf6 * qkry + gf7 * (qiqkry + qkqiry);
-                    double ftm2z = gf1 * zr + gf2 * diz + gf3 * dkz + gf4 * (qkdiz - qidkz) + gf5 * qirz + gf6 * qkrz + gf7 * (qiqkrz + qkqirz);
-                    /*
-                     * Get the permanent torque with screening.
-                     */
-                    double ttm2x = -bn1 * dixdkx + gf2 * dixrx + gf4 * (dixqkrx + dkxqirx + rxqidkx - 2.0 * qixqkx) - gf5 * rxqirx - gf7 * (rxqikrx + qkrxqirx);
-                    double ttm2y = -bn1 * dixdky + gf2 * dixry + gf4 * (dixqkry + dkxqiry + rxqidky - 2.0 * qixqky) - gf5 * rxqiry - gf7 * (rxqikry + qkrxqiry);
-                    double ttm2z = -bn1 * dixdkz + gf2 * dixrz + gf4 * (dixqkrz + dkxqirz + rxqidkz - 2.0 * qixqkz) - gf5 * rxqirz - gf7 * (rxqikrz + qkrxqirz);
-
-                    double ttm3x = bn1 * dixdkx + gf3 * dkxrx - gf4 * (dixqkrx + dkxqirx + rxqkdix - 2.0 * qixqkx) - gf6 * rxqkrx - gf7 * (rxqkirx - qkrxqirx);
-                    double ttm3y = bn1 * dixdky + gf3 * dkxry - gf4 * (dixqkry + dkxqiry + rxqkdiy - 2.0 * qixqky) - gf6 * rxqkry - gf7 * (rxqkiry - qkrxqiry);
-                    double ttm3z = bn1 * dixdkz + gf3 * dkxrz - gf4 * (dixqkrz + dkxqirz + rxqkdiz - 2.0 * qixqkz) - gf6 * rxqkrz - gf7 * (rxqkirz - qkrxqirz);
-                    /**
-                     * Handle the case where scaling is used.
-                     */
-                    if (scale1 != 0.0) {
-                        final double gfr1 = rr3 * gl0 + rr5 * (gl1 + gl6) + rr7 * (gl2 + gl7 + gl8) + rr9 * (gl3 + gl5) + rr11 * gl4;
-                        final double gfr2 = -ck * rr3 + sc4 * rr5 - sc6 * rr7;
-                        final double gfr3 = ci * rr3 + sc3 * rr5 + sc5 * rr7;
-                        final double gfr4 = 2.0 * rr5;
-                        final double gfr5 = 2.0 * (-ck * rr5 + sc4 * rr7 - sc6 * rr9);
-                        final double gfr6 = 2.0 * (-ci * rr5 - sc3 * rr7 - sc5 * rr9);
-                        final double gfr7 = 4.0 * rr7;
-                        /*
-                         * Get the permanent force without screening.
-                         */
-                        final double ftm2rx = gfr1 * xr + gfr2 * dix + gfr3 * dkx + gfr4 * (qkdix - qidkx) + gfr5 * qirx + gfr6 * qkrx + gfr7 * (qiqkrx + qkqirx);
-                        final double ftm2ry = gfr1 * yr + gfr2 * diy + gfr3 * dky + gfr4 * (qkdiy - qidky) + gfr5 * qiry + gfr6 * qkry + gfr7 * (qiqkry + qkqiry);
-                        final double ftm2rz = gfr1 * zr + gfr2 * diz + gfr3 * dkz + gfr4 * (qkdiz - qidkz) + gfr5 * qirz + gfr6 * qkrz + gfr7 * (qiqkrz + qkqirz);
-                        /*
-                         * Get the permanent torque without screening.
-                         */
-                        final double ttm2rx = -rr3 * dixdkx + gfr2 * dixrx + gfr4 * (dixqkrx + dkxqirx + rxqidkx - 2.0 * qixqkx) - gfr5 * rxqirx - gfr7 * (rxqikrx + qkrxqirx);
-                        final double ttm2ry = -rr3 * dixdky + gfr2 * dixry + gfr4 * (dixqkry + dkxqiry + rxqidky - 2.0 * qixqky) - gfr5 * rxqiry - gfr7 * (rxqikry + qkrxqiry);
-                        final double ttm2rz = -rr3 * dixdkz + gfr2 * dixrz + gfr4 * (dixqkrz + dkxqirz + rxqidkz - 2.0 * qixqkz) - gfr5 * rxqirz - gfr7 * (rxqikrz + qkrxqirz);
-                        final double ttm3rx = rr3 * dixdkx + gfr3 * dkxrx - gfr4 * (dixqkrx + dkxqirx + rxqkdix - 2.0 * qixqkx) - gfr6 * rxqkrx - gfr7 * (rxqkirx - qkrxqirx);
-                        final double ttm3ry = rr3 * dixdky + gfr3 * dkxry - gfr4 * (dixqkry + dkxqiry + rxqkdiy - 2.0 * qixqky) - gfr6 * rxqkry - gfr7 * (rxqkiry - qkrxqiry);
-                        final double ttm3rz = rr3 * dixdkz + gfr3 * dkxrz - gfr4 * (dixqkrz + dkxqirz + rxqkdiz - 2.0 * qixqkz) - gfr6 * rxqkrz - gfr7 * (rxqkirz - qkrxqirz);
-                        ftm2x -= scale1 * ftm2rx;
-                        ftm2y -= scale1 * ftm2ry;
-                        ftm2z -= scale1 * ftm2rz;
-                        ttm2x -= scale1 * ttm2rx;
-                        ttm2y -= scale1 * ttm2ry;
-                        ttm2z -= scale1 * ttm2rz;
-                        ttm3x -= scale1 * ttm3rx;
-                        ttm3y -= scale1 * ttm3ry;
-                        ttm3z -= scale1 * ttm3rz;
-                    }
-                    double prefactor = ELECTRIC * selfScale * l2;
-                    pref0 = prefactor;
-                    gX[i] += prefactor * ftm2x;
-                    gY[i] += prefactor * ftm2y;
-                    gZ[i] += prefactor * ftm2z;
-                    tX[i] += prefactor * ttm2x;
-                    tY[i] += prefactor * ttm2y;
-                    tZ[i] += prefactor * ttm2z;
-                    gxk_local[k] -= prefactor * ftm2x;
-                    gyk_local[k] -= prefactor * ftm2y;
-                    gzk_local[k] -= prefactor * ftm2z;
-                    txk_local[k] += prefactor * ttm3x;
-                    tyk_local[k] += prefactor * ttm3y;
-                    tzk_local[k] += prefactor * ttm3z;
-                    /**
-                     * This is dU/dL/dX for the first term of dU/dL: d[dlPow *
-                     * ereal]/dx
-                     */
-                    if (lambdaTerm && soft) {
-                        prefactor = ELECTRIC * selfScale * dEdLSign * dlPowPerm;
-                        pref1 = prefactor;
-                        lgX[i] += prefactor * ftm2x;
-                        lgY[i] += prefactor * ftm2y;
-                        lgZ[i] += prefactor * ftm2z;
-                        ltX[i] += prefactor * ttm2x;
-                        ltY[i] += prefactor * ttm2y;
-                        ltZ[i] += prefactor * ttm2z;
-                        lxk_local[k] -= prefactor * ftm2x;
-                        lyk_local[k] -= prefactor * ftm2y;
-                        lzk_local[k] -= prefactor * ftm2z;
-                        ltxk_local[k] += prefactor * ttm3x;
-                        ltyk_local[k] += prefactor * ttm3y;
-                        ltzk_local[k] += prefactor * ttm3z;
-                    }
-                }
-                if (lambdaTerm && soft) {
-                    //double ereal = gl0 * bn0 + (gl1 + gl6) * bn1 + (gl2 + gl7 + gl8) * bn2 + (gl3 + gl5) * bn3 + gl4 * bn4;
-                    double dRealdL = gl0 * bn1 + (gl1 + gl6) * bn2 + (gl2 + gl7 + gl8) * bn3 + (gl3 + gl5) * bn4 + gl4 * bn5;
-                    double d2RealdL2 = gl0 * bn2 + (gl1 + gl6) * bn3 + (gl2 + gl7 + gl8) * bn4 + (gl3 + gl5) * bn5 + gl4 * bn6;
-
-//                    if (!unityPrefactor && System.getProperty("pme-S-gb") == null) {
-                    if (System.getProperty("pme-S-gb") == null) {
-                        String identity = "Gb";
-                        dUdL += selfScale * (dEdLSign * dlPowPerm * ereal + l2 * dlAlpha * dRealdL);
-                        d2UdL2 += selfScale * (dEdLSign * (d2lPowPerm * ereal
-                                + dlPowPerm * dlAlpha * dRealdL
-                                + dlPowPerm * dlAlpha * dRealdL)
-                                + l2 * d2lAlpha * dRealdL
-                                + l2 * dlAlpha * dlAlpha * d2RealdL2);
-
-                        double dFixdL = gl0 * rr3 + (gl1 + gl6) * rr5 + (gl2 + gl7 + gl8) * rr7 + (gl3 + gl5) * rr9 + gl4 * rr11;
-                        double d2FixdL2 = gl0 * rr5 + (gl1 + gl6) * rr7 + (gl2 + gl7 + gl8) * rr9 + (gl3 + gl5) * rr11 + gl4 * rr13;
-                        dFixdL *= scale1;
-                        d2FixdL2 *= scale1;
-                        dUdL -= selfScale * (dEdLSign * dlPowPerm * efix + l2 * dlAlpha * dFixdL);
-                        d2UdL2 -= selfScale * (dEdLSign * (d2lPowPerm * efix
-                                + dlPowPerm * dlAlpha * dFixdL
-                                + dlPowPerm * dlAlpha * dFixdL)
-                                + l2 * d2lAlpha * dFixdL
-                                + l2 * dlAlpha * dlAlpha * d2FixdL2);
-
-//                        if (DEBUG > 0 && i == pmeI && k == pmeK) {
-//                            double[] compsShared = new double[]{e,l2,lAlpha,selfScale,dEdLSign,dlAlpha};
-//                            double[] compsdU = new double[]{dRealdL-dFixdL,dRealdL,dFixdL,dlPowPerm};
-//                            double[] compsd2U = new double[]{d2RealdL2-d2FixdL2,d2RealdL2,d2FixdL2,d2lPowPerm,d2lAlpha};
-//                            double[] lambdas = new double[]{lAlpha,dlAlpha,d2lAlpha,lPowPerm,dlPowPerm,d2lPowPerm,dEdLSign};
-//                            logOnce(format("%s dUdL shared/d1/d2: %s\n"
-//                                    +      "%s                    %s\n"
-//                                    +      "%s                    %s\n"
-//                                    +      "%s                    %s",
-//                                    identity, formatArray(compsShared), identity, formatArray(compsdU),
-//                                    identity, formatArray(compsd2U), identity, formatArray(lambdas)));
-//                        }
-                    } else {
-                        String identity = "GbS";
-                        double dFixdL = gl0 * rr3 + (gl1 + gl6) * rr5 + (gl2 + gl7 + gl8) * rr7 + (gl3 + gl5) * rr9 + gl4 * rr11;
-                        double d2FixdL2 = gl0 * rr5 + (gl1 + gl6) * rr7 + (gl2 + gl7 + gl8) * rr9 + (gl3 + gl5) * rr11 + gl4 * rr13;
-                        dFixdL *= scale1;
-                        d2FixdL2 *= scale1;
-
-                        // l2 = permanentScale = lPowPerm
-                        double E = ereal - efix;
-                        double dEdL = dRealdL - dFixdL;
-                        double d2EdL2 = d2RealdL2 - d2FixdL2;
-                        double S = selfScale * lPowPerm, dSdL = selfScale * dEdLSign * dlPowPerm, d2SdL2 = selfScale * d2lPowPerm;
-                        double P = E, dPdL = dEdL, d2PdL2 = d2EdL2;
-                        double F = lAlpha, dFdL = dlAlpha, d2FdL2 = d2lAlpha;
-                        double dPdF = (dFdL != 0.0) ? dPdL / dFdL : 0.0;
-                        double d2PdF2 = (d2FdL2 != 0.0) ? d2PdL2 / d2FdL2 : 0.0;
-//                      dUdL += selfScale * (dEdLSign * dlPowPerm * ereal + l2 * dlAlpha * dRealdL);
-//                           += (selfScale * selfScale * l2 * (ereal - efix)) + (selfScale * dEdLSign * dlPowPerm * dlAlpha * dPdF);
-//                      Want: dUdL = selfScale*dEdLSign*dlPowPerm*E + selfScale*l2*dlAlpha*dEdL;
-                        // ORIGINAL, TODO WUT: dUdL += (dSdL * P) + (S * dPdF * dFdL);
-                        // TODO nope the new one works (with OLD ALPHAS)
-                        dUdL += (dSdL * P) + (S * dPdL * dFdL);
-                        d2UdL2 += (d2SdL2 * P) + (dSdL * S * dPdF * dFdL)
-                                + ((dSdL * dPdF) + (S * d2PdF2)) * dFdL
-                                + (S * dPdF * d2FdL2);
-
-                        if (DEBUG > 0 && i == pmeI && k == pmeK) {
-                            double[] Es = new double[]{E, dEdL, d2EdL2};
-                            double[] Ss = new double[]{S, dSdL, d2SdL2};
-                            double[] Fs = new double[]{F, dFdL, d2FdL2};
-                            double[] Ps = new double[]{P, dPdL, d2PdL2, dPdF, d2PdF2};
-                            double[] lambdas = new double[]{lAlpha, dlAlpha, d2lAlpha, lPowPerm, dlPowPerm, d2lPowPerm, dEdLSign};
-                            logOnce(format("%s dUdL Ps: %s\n"
-                                    + "%s      Ss: %s\n"
-                                    + "%s      Fs: %s\n"
-                                    + "%s      Ls: %s",
-                                    identity, formatArray(Ps), identity, formatArray(Ss),
-                                    identity, formatArray(Fs), identity, formatArray(lambdas)));
-                        }
-                    }
-
-                    /**
-                     * Collect terms for dU/dL/dX
-                     *
-                     * first term of dU/dL: d[dlPow * ereal] /dx
-                     *
-                     * second term of dU/dL: d[fL2*dfL1dL*dRealdL]/dX
-                     */
-                    final double gf1 = bn2 * gl0 + bn3 * (gl1 + gl6)
-                            + bn4 * (gl2 + gl7 + gl8)
-                            + bn5 * (gl3 + gl5) + bn6 * gl4;
-                    final double gf2 = -ck * bn2 + sc4 * bn3 - sc6 * bn4;
-                    final double gf3 = ci * bn2 + sc3 * bn3 + sc5 * bn4;
-                    final double gf4 = 2.0 * bn3;
-                    final double gf5 = 2.0 * (-ck * bn3 + sc4 * bn4 - sc6 * bn5);
-                    final double gf6 = 2.0 * (-ci * bn3 - sc3 * bn4 - sc5 * bn5);
-                    final double gf7 = 4.0 * bn4;
-                    /*
-                     * Get the permanent force with screening.
-                     */
-                    double ftm2x = gf1 * xr + gf2 * dix + gf3 * dkx
-                            + gf4 * (qkdix - qidkx) + gf5 * qirx
-                            + gf6 * qkrx + gf7 * (qiqkrx + qkqirx);
-                    double ftm2y = gf1 * yr + gf2 * diy + gf3 * dky
-                            + gf4 * (qkdiy - qidky) + gf5 * qiry
-                            + gf6 * qkry + gf7 * (qiqkry + qkqiry);
-                    double ftm2z = gf1 * zr + gf2 * diz + gf3 * dkz
-                            + gf4 * (qkdiz - qidkz) + gf5 * qirz
-                            + gf6 * qkrz + gf7 * (qiqkrz + qkqirz);
-                    /*
-                     * Get the permanent torque with screening.
-                     */
-                    double ttm2x = -bn2 * dixdkx + gf2 * dixrx
-                            + gf4 * (dixqkrx + dkxqirx + rxqidkx - 2.0 * qixqkx)
-                            - gf5 * rxqirx - gf7 * (rxqikrx + qkrxqirx);
-                    double ttm2y = -bn2 * dixdky + gf2 * dixry
-                            + gf4 * (dixqkry + dkxqiry + rxqidky - 2.0 * qixqky)
-                            - gf5 * rxqiry - gf7 * (rxqikry + qkrxqiry);
-                    double ttm2z = -bn2 * dixdkz + gf2 * dixrz
-                            + gf4 * (dixqkrz + dkxqirz + rxqidkz - 2.0 * qixqkz)
-                            - gf5 * rxqirz - gf7 * (rxqikrz + qkrxqirz);
-                    double ttm3x = bn2 * dixdkx + gf3 * dkxrx
-                            - gf4 * (dixqkrx + dkxqirx + rxqkdix - 2.0 * qixqkx)
-                            - gf6 * rxqkrx - gf7 * (rxqkirx - qkrxqirx);
-                    double ttm3y = bn2 * dixdky + gf3 * dkxry
-                            - gf4 * (dixqkry + dkxqiry + rxqkdiy - 2.0 * qixqky)
-                            - gf6 * rxqkry - gf7 * (rxqkiry - qkrxqiry);
-                    double ttm3z = bn2 * dixdkz + gf3 * dkxrz
-                            - gf4 * (dixqkrz + dkxqirz + rxqkdiz - 2.0 * qixqkz)
-                            - gf6 * rxqkrz - gf7 * (rxqkirz - qkrxqirz);
-
-                    /**
-                     * Handle the case where scaling is used.
-                     */
-                    if (scale1 != 0.0) {
-                        final double gfr1 = rr5 * gl0 + rr7 * (gl1 + gl6) + rr9 * (gl2 + gl7 + gl8) + rr11 * (gl3 + gl5) + rr13 * gl4;
-                        final double gfr2 = -ck * rr5 + sc4 * rr7 - sc6 * rr9;
-                        final double gfr3 = ci * rr5 + sc3 * rr7 + sc5 * rr9;
-                        final double gfr4 = 2.0 * rr7;
-                        final double gfr5 = 2.0 * (-ck * rr7 + sc4 * rr9 - sc6 * rr11);
-                        final double gfr6 = 2.0 * (-ci * rr7 - sc3 * rr9 - sc5 * rr11);
-                        final double gfr7 = 4.0 * rr9;
-
-                        //Get the permanent force without screening.
-                        final double ftm2rx = gfr1 * xr + gfr2 * dix + gfr3 * dkx + gfr4 * (qkdix - qidkx) + gfr5 * qirx + gfr6 * qkrx + gfr7 * (qiqkrx + qkqirx);
-                        final double ftm2ry = gfr1 * yr + gfr2 * diy + gfr3 * dky + gfr4 * (qkdiy - qidky) + gfr5 * qiry + gfr6 * qkry + gfr7 * (qiqkry + qkqiry);
-                        final double ftm2rz = gfr1 * zr + gfr2 * diz + gfr3 * dkz + gfr4 * (qkdiz - qidkz) + gfr5 * qirz + gfr6 * qkrz + gfr7 * (qiqkrz + qkqirz);
-
-                        // Get the permanent torque without screening.
-                        final double ttm2rx = -rr5 * dixdkx + gfr2 * dixrx + gfr4 * (dixqkrx + dkxqirx + rxqidkx - 2.0 * qixqkx) - gfr5 * rxqirx - gfr7 * (rxqikrx + qkrxqirx);
-                        final double ttm2ry = -rr5 * dixdky + gfr2 * dixry + gfr4 * (dixqkry + dkxqiry + rxqidky - 2.0 * qixqky) - gfr5 * rxqiry - gfr7 * (rxqikry + qkrxqiry);
-                        final double ttm2rz = -rr5 * dixdkz + gfr2 * dixrz + gfr4 * (dixqkrz + dkxqirz + rxqidkz - 2.0 * qixqkz) - gfr5 * rxqirz - gfr7 * (rxqikrz + qkrxqirz);
-                        final double ttm3rx = rr5 * dixdkx + gfr3 * dkxrx - gfr4 * (dixqkrx + dkxqirx + rxqkdix - 2.0 * qixqkx) - gfr6 * rxqkrx - gfr7 * (rxqkirx - qkrxqirx);
-                        final double ttm3ry = rr5 * dixdky + gfr3 * dkxry - gfr4 * (dixqkry + dkxqiry + rxqkdiy - 2.0 * qixqky) - gfr6 * rxqkry - gfr7 * (rxqkiry - qkrxqiry);
-                        final double ttm3rz = rr5 * dixdkz + gfr3 * dkxrz - gfr4 * (dixqkrz + dkxqirz + rxqkdiz - 2.0 * qixqkz) - gfr6 * rxqkrz - gfr7 * (rxqkirz - qkrxqirz);
-                        ftm2x -= scale1 * ftm2rx;
-                        ftm2y -= scale1 * ftm2ry;
-                        ftm2z -= scale1 * ftm2rz;
-                        ttm2x -= scale1 * ttm2rx;
-                        ttm2y -= scale1 * ttm2ry;
-                        ttm2z -= scale1 * ttm2rz;
-                        ttm3x -= scale1 * ttm3rx;
-                        ttm3y -= scale1 * ttm3ry;
-                        ttm3z -= scale1 * ttm3rz;
-                    }
-                    /**
-                     * Add in dU/dL/dX for the second term of dU/dL:
-                     * d[lPow*dlAlpha*dRealdL]/dX
-                     */
-                    double prefactor = ELECTRIC * selfScale * l2 * dlAlpha;
-                    pref2 = prefactor;
-                    lgX[i] += prefactor * ftm2x;
-                    lgY[i] += prefactor * ftm2y;
-                    lgZ[i] += prefactor * ftm2z;
-                    ltX[i] += prefactor * ttm2x;
-                    ltY[i] += prefactor * ttm2y;
-                    ltZ[i] += prefactor * ttm2z;
-                    lxk_local[k] -= prefactor * ftm2x;
-                    lyk_local[k] -= prefactor * ftm2y;
-                    lzk_local[k] -= prefactor * ftm2z;
-                    ltxk_local[k] += prefactor * ttm3x;
-                    ltyk_local[k] += prefactor * ttm3y;
-                    ltzk_local[k] += prefactor * ttm3z;
-                }
-
-                if (DEBUG > 0 && i == pmeI && k == pmeK) {
-                    String id = format("(Gb%d-%d)", i, k);
-                    // 0: double prefactor = ELECTRIC * selfScale * l2;
-                    // 1: prefactor = ELECTRIC * selfScale * dEdLSign * dlPowPerm;
-                    // 2: double prefactor = ELECTRIC * selfScale * l2 * dlAlpha;
-                    double prefs[] = new double[]{pref0, pref1, pref2};
-                    double lgti[] = new double[]{lgX[i], lgY[i], lgZ[i], ltX[i], ltY[i], ltZ[i]};
-                    double lgtk[] = new double[]{lxk_local[k], lyk_local[k], lzk_local[k],
-                        ltxk_local[k], ltyk_local[k], ltzk_local[k]};
-                    logOnce(format("%s pref012: %s\n"
-                            + "%s lgi,lti: %s\n"
-                            + "%s lgk,ltk: %s",
-                            id, formatArray(prefs), id, formatArray(lgti), id, formatArray(lgtk)));
-                }
-
-                return e;
-            }
-
-            /**
-             * Evaluate the polarization energy for a pair of polarizable
-             * multipole sites.
-             *
-             * @return the polarization energy.
-             */
-            private double polarizationPair() {
-                final double dsc3 = 1.0 - scale3 * scaled;
-                final double dsc5 = 1.0 - scale5 * scaled;
-                final double dsc7 = 1.0 - scale7 * scaled;
-
-                final double psc3 = 1.0 - scale3 * scalep;
-                final double psc5 = 1.0 - scale5 * scalep;
-                final double psc7 = 1.0 - scale7 * scalep;
-
-                final double usc3 = 1.0 - scale3;
-                final double usc5 = 1.0 - scale5;
-
-                final double dixukx = diy * ukz - diz * uky;
-                final double dixuky = diz * ukx - dix * ukz;
-                final double dixukz = dix * uky - diy * ukx;
-                final double dkxuix = dky * uiz - dkz * uiy;
-                final double dkxuiy = dkz * uix - dkx * uiz;
-                final double dkxuiz = dkx * uiy - dky * uix;
-                final double dixukpx = diy * pkz - diz * pky;
-                final double dixukpy = diz * pkx - dix * pkz;
-                final double dixukpz = dix * pky - diy * pkx;
-                final double dkxuipx = dky * piz - dkz * piy;
-                final double dkxuipy = dkz * pix - dkx * piz;
-                final double dkxuipz = dkx * piy - dky * pix;
-                final double dixrx = diy * zr - diz * yr;
-                final double dixry = diz * xr - dix * zr;
-                final double dixrz = dix * yr - diy * xr;
-                final double dkxrx = dky * zr - dkz * yr;
-                final double dkxry = dkz * xr - dkx * zr;
-                final double dkxrz = dkx * yr - dky * xr;
-                final double qirx = qixx * xr + qixy * yr + qixz * zr;
-                final double qiry = qixy * xr + qiyy * yr + qiyz * zr;
-                final double qirz = qixz * xr + qiyz * yr + qizz * zr;
-                final double qkrx = qkxx * xr + qkxy * yr + qkxz * zr;
-                final double qkry = qkxy * xr + qkyy * yr + qkyz * zr;
-                final double qkrz = qkxz * xr + qkyz * yr + qkzz * zr;
-                final double rxqirx = yr * qirz - zr * qiry;
-                final double rxqiry = zr * qirx - xr * qirz;
-                final double rxqirz = xr * qiry - yr * qirx;
-                final double rxqkrx = yr * qkrz - zr * qkry;
-                final double rxqkry = zr * qkrx - xr * qkrz;
-                final double rxqkrz = xr * qkry - yr * qkrx;
-                final double qiukx = qixx * ukx + qixy * uky + qixz * ukz;
-                final double qiuky = qixy * ukx + qiyy * uky + qiyz * ukz;
-                final double qiukz = qixz * ukx + qiyz * uky + qizz * ukz;
-                final double qkuix = qkxx * uix + qkxy * uiy + qkxz * uiz;
-                final double qkuiy = qkxy * uix + qkyy * uiy + qkyz * uiz;
-                final double qkuiz = qkxz * uix + qkyz * uiy + qkzz * uiz;
-                final double qiukpx = qixx * pkx + qixy * pky + qixz * pkz;
-                final double qiukpy = qixy * pkx + qiyy * pky + qiyz * pkz;
-                final double qiukpz = qixz * pkx + qiyz * pky + qizz * pkz;
-                final double qkuipx = qkxx * pix + qkxy * piy + qkxz * piz;
-                final double qkuipy = qkxy * pix + qkyy * piy + qkyz * piz;
-                final double qkuipz = qkxz * pix + qkyz * piy + qkzz * piz;
-                final double uixqkrx = uiy * qkrz - uiz * qkry;
-                final double uixqkry = uiz * qkrx - uix * qkrz;
-                final double uixqkrz = uix * qkry - uiy * qkrx;
-                final double ukxqirx = uky * qirz - ukz * qiry;
-                final double ukxqiry = ukz * qirx - ukx * qirz;
-                final double ukxqirz = ukx * qiry - uky * qirx;
-                final double uixqkrpx = piy * qkrz - piz * qkry;
-                final double uixqkrpy = piz * qkrx - pix * qkrz;
-                final double uixqkrpz = pix * qkry - piy * qkrx;
-                final double ukxqirpx = pky * qirz - pkz * qiry;
-                final double ukxqirpy = pkz * qirx - pkx * qirz;
-                final double ukxqirpz = pkx * qiry - pky * qirx;
-                final double rxqiukx = yr * qiukz - zr * qiuky;
-                final double rxqiuky = zr * qiukx - xr * qiukz;
-                final double rxqiukz = xr * qiuky - yr * qiukx;
-                final double rxqkuix = yr * qkuiz - zr * qkuiy;
-                final double rxqkuiy = zr * qkuix - xr * qkuiz;
-                final double rxqkuiz = xr * qkuiy - yr * qkuix;
-                final double rxqiukpx = yr * qiukpz - zr * qiukpy;
-                final double rxqiukpy = zr * qiukpx - xr * qiukpz;
-                final double rxqiukpz = xr * qiukpy - yr * qiukpx;
-                final double rxqkuipx = yr * qkuipz - zr * qkuipy;
-                final double rxqkuipy = zr * qkuipx - xr * qkuipz;
-                final double rxqkuipz = xr * qkuipy - yr * qkuipx;
-                /**
-                 * Calculate the scalar products for permanent multipoles.
-                 */
-                final double sc3 = dix * xr + diy * yr + diz * zr;
-                final double sc4 = dkx * xr + dky * yr + dkz * zr;
-                final double sc5 = qirx * xr + qiry * yr + qirz * zr;
-                final double sc6 = qkrx * xr + qkry * yr + qkrz * zr;
-                /**
-                 * Calculate the scalar products for polarization components.
-                 */
-                final double sci1 = uix * dkx + uiy * dky + uiz * dkz + dix * ukx + diy * uky + diz * ukz;
-                final double sci3 = uix * xr + uiy * yr + uiz * zr;
-                final double sci4 = ukx * xr + uky * yr + ukz * zr;
-                final double sci7 = qirx * ukx + qiry * uky + qirz * ukz;
-                final double sci8 = qkrx * uix + qkry * uiy + qkrz * uiz;
-                final double scip1 = pix * dkx + piy * dky + piz * dkz + dix * pkx + diy * pky + diz * pkz;
-                final double scip2 = uix * pkx + uiy * pky + uiz * pkz + pix * ukx + piy * uky + piz * ukz;
-                final double scip3 = pix * xr + piy * yr + piz * zr;
-                final double scip4 = pkx * xr + pky * yr + pkz * zr;
-                final double scip7 = qirx * pkx + qiry * pky + qirz * pkz;
-                final double scip8 = qkrx * pix + qkry * piy + qkrz * piz;
-                /**
-                 * Calculate the gl functions for polarization components.
-                 */
-                final double gli1 = ck * sci3 - ci * sci4;
-                final double gli2 = -sc3 * sci4 - sci3 * sc4;
-                final double gli3 = sci3 * sc6 - sci4 * sc5;
-                final double gli6 = sci1;
-                final double gli7 = 2.0 * (sci7 - sci8);
-                final double glip1 = ck * scip3 - ci * scip4;
-                final double glip2 = -sc3 * scip4 - scip3 * sc4;
-                final double glip3 = scip3 * sc6 - scip4 * sc5;
-                final double glip6 = scip1;
-                final double glip7 = 2.0 * (scip7 - scip8);
-                /**
-                 * Compute the energy contributions for this interaction.
-                 */
-                final double ereal = (gli1 + gli6) * bn1 + (gli2 + gli7) * bn2 + gli3 * bn3;
-                final double efix = (gli1 + gli6) * rr3 * psc3 + (gli2 + gli7) * rr5 * psc5 + gli3 * rr7 * psc7;
-
-                final double e = selfScale * 0.5 * (ereal - efix);
-                if (!(gradient || lambdaTerm)) {
-                    return polarizationScale * e;
-                }
-                boolean dorli = false;
-                if (psc3 != 0.0 || dsc3 != 0.0 || usc3 != 0.0) {
-                    dorli = true;
-                }
-                /*
-                 * Get the induced force with screening.
-                 */
-                final double gfi1 = 0.5 * bn2 * (gli1 + glip1 + gli6 + glip6) + 0.5 * bn2 * scip2 + 0.5 * bn3 * (gli2 + glip2 + gli7 + glip7) - 0.5 * bn3 * (sci3 * scip4 + scip3 * sci4) + 0.5 * bn4 * (gli3 + glip3);
-                final double gfi2 = -ck * bn1 + sc4 * bn2 - sc6 * bn3;
-                final double gfi3 = ci * bn1 + sc3 * bn2 + sc5 * bn3;
-                final double gfi4 = 2.0 * bn2;
-                final double gfi5 = bn3 * (sci4 + scip4);
-                final double gfi6 = -bn3 * (sci3 + scip3);
-                double ftm2ix = gfi1 * xr + 0.5 * (gfi2 * (uix + pix) + bn2 * (sci4 * pix + scip4 * uix)
-                        + gfi3 * (ukx + pkx) + bn2 * (sci3 * pkx + scip3 * ukx) + (sci4 + scip4) * bn2 * dix
-                        + (sci3 + scip3) * bn2 * dkx + gfi4 * (qkuix + qkuipx - qiukx - qiukpx)) + gfi5 * qirx + gfi6 * qkrx;
-                double ftm2iy = gfi1 * yr + 0.5 * (gfi2 * (uiy + piy) + bn2 * (sci4 * piy + scip4 * uiy)
-                        + gfi3 * (uky + pky) + bn2 * (sci3 * pky + scip3 * uky) + (sci4 + scip4) * bn2 * diy
-                        + (sci3 + scip3) * bn2 * dky + gfi4 * (qkuiy + qkuipy - qiuky - qiukpy)) + gfi5 * qiry + gfi6 * qkry;
-                double ftm2iz = gfi1 * zr + 0.5 * (gfi2 * (uiz + piz) + bn2 * (sci4 * piz + scip4 * uiz)
-                        + gfi3 * (ukz + pkz) + bn2 * (sci3 * pkz + scip3 * ukz) + (sci4 + scip4) * bn2 * diz
-                        + (sci3 + scip3) * bn2 * dkz + gfi4 * (qkuiz + qkuipz - qiukz - qiukpz)) + gfi5 * qirz + gfi6 * qkrz;
-
-                // logger.info(format(" Screened (%d,%d) (%16.8f %16.8f %16.8f)", i, k, ftm2ix, ftm2iy, ftm2iz));
-
-                /*
-                 * Get the induced torque with screening.
-                 */
-                final double gti2 = 0.5 * bn2 * (sci4 + scip4);
-                final double gti3 = 0.5 * bn2 * (sci3 + scip3);
-                final double gti4 = gfi4;
-                final double gti5 = gfi5;
-                final double gti6 = gfi6;
-                double ttm2ix = -0.5 * bn1 * (dixukx + dixukpx) + gti2 * dixrx - gti5 * rxqirx + 0.5 * gti4 * (ukxqirx + rxqiukx + ukxqirpx + rxqiukpx);
-                double ttm2iy = -0.5 * bn1 * (dixuky + dixukpy) + gti2 * dixry - gti5 * rxqiry + 0.5 * gti4 * (ukxqiry + rxqiuky + ukxqirpy + rxqiukpy);
-                double ttm2iz = -0.5 * bn1 * (dixukz + dixukpz) + gti2 * dixrz - gti5 * rxqirz + 0.5 * gti4 * (ukxqirz + rxqiukz + ukxqirpz + rxqiukpz);
-                double ttm3ix = -0.5 * bn1 * (dkxuix + dkxuipx) + gti3 * dkxrx - gti6 * rxqkrx - 0.5 * gti4 * (uixqkrx + rxqkuix + uixqkrpx + rxqkuipx);
-                double ttm3iy = -0.5 * bn1 * (dkxuiy + dkxuipy) + gti3 * dkxry - gti6 * rxqkry - 0.5 * gti4 * (uixqkry + rxqkuiy + uixqkrpy + rxqkuipy);
-                double ttm3iz = -0.5 * bn1 * (dkxuiz + dkxuipz) + gti3 * dkxrz - gti6 * rxqkrz - 0.5 * gti4 * (uixqkrz + rxqkuiz + uixqkrpz + rxqkuipz);
-                double ftm2rix = 0.0;
-                double ftm2riy = 0.0;
-                double ftm2riz = 0.0;
-                double ttm2rix = 0.0;
-                double ttm2riy = 0.0;
-                double ttm2riz = 0.0;
-                double ttm3rix = 0.0;
-                double ttm3riy = 0.0;
-                double ttm3riz = 0.0;
-                if (dorli) {
-                    /**
-                     * Get the induced force without screening.
-                     */
-                    final double gfri1 = 0.5 * rr5 * ((gli1 + gli6) * psc3 + (glip1 + glip6) * dsc3 + scip2 * usc3)
-                            + 0.5 * rr7 * ((gli7 + gli2) * psc5 + (glip7 + glip2) * dsc5
-                            - (sci3 * scip4 + scip3 * sci4) * usc5)
-                            + 0.5 * rr9 * (gli3 * psc7 + glip3 * dsc7);
-
-                    final double gfri4 = 2.0 * rr5;
-                    final double gfri5 = rr7 * (sci4 * psc7 + scip4 * dsc7);
-                    final double gfri6 = -rr7 * (sci3 * psc7 + scip3 * dsc7);
-                    ftm2rix = gfri1 * xr + 0.5 * (-rr3 * ck * (uix * psc3 + pix * dsc3)
-                            + rr5 * sc4 * (uix * psc5 + pix * dsc5)
-                            - rr7 * sc6 * (uix * psc7 + pix * dsc7))
-                            + (rr3 * ci * (ukx * psc3 + pkx * dsc3)
-                            + rr5 * sc3 * (ukx * psc5 + pkx * dsc5)
-                            + rr7 * sc5 * (ukx * psc7 + pkx * dsc7)) * 0.5
-                            + rr5 * usc5 * (sci4 * pix + scip4 * uix + sci3 * pkx + scip3 * ukx) * 0.5
-                            + 0.5 * (sci4 * psc5 + scip4 * dsc5) * rr5 * dix
-                            + 0.5 * (sci3 * psc5 + scip3 * dsc5) * rr5 * dkx
-                            + 0.5 * gfri4 * ((qkuix - qiukx) * psc5 + (qkuipx - qiukpx) * dsc5)
-                            + gfri5 * qirx + gfri6 * qkrx;
-                    ftm2riy = gfri1 * yr + 0.5 * (-rr3 * ck * (uiy * psc3 + piy * dsc3)
-                            + rr5 * sc4 * (uiy * psc5 + piy * dsc5) - rr7 * sc6 * (uiy * psc7 + piy * dsc7))
-                            + (rr3 * ci * (uky * psc3 + pky * dsc3) + rr5 * sc3 * (uky * psc5 + pky * dsc5)
-                            + rr7 * sc5 * (uky * psc7 + pky * dsc7)) * 0.5 + rr5 * usc5 * (sci4 * piy + scip4 * uiy
-                            + sci3 * pky + scip3 * uky) * 0.5 + 0.5 * (sci4 * psc5 + scip4 * dsc5) * rr5 * diy
-                            + 0.5 * (sci3 * psc5 + scip3 * dsc5) * rr5 * dky + 0.5 * gfri4 * ((qkuiy - qiuky) * psc5
-                            + (qkuipy - qiukpy) * dsc5) + gfri5 * qiry + gfri6 * qkry;
-                    ftm2riz = gfri1 * zr + 0.5 * (-rr3 * ck * (uiz * psc3 + piz * dsc3)
-                            + rr5 * sc4 * (uiz * psc5 + piz * dsc5) - rr7 * sc6 * (uiz * psc7 + piz * dsc7))
-                            + (rr3 * ci * (ukz * psc3 + pkz * dsc3) + rr5 * sc3 * (ukz * psc5 + pkz * dsc5)
-                            + rr7 * sc5 * (ukz * psc7 + pkz * dsc7)) * 0.5 + rr5 * usc5 * (sci4 * piz + scip4 * uiz
-                            + sci3 * pkz + scip3 * ukz) * 0.5 + 0.5 * (sci4 * psc5 + scip4 * dsc5) * rr5 * diz
-                            + 0.5 * (sci3 * psc5 + scip3 * dsc5) * rr5 * dkz + 0.5 * gfri4 * ((qkuiz - qiukz) * psc5
-                            + (qkuipz - qiukpz) * dsc5) + gfri5 * qirz + gfri6 * qkrz;
-
-                    /*
-                     * Get the induced torque without screening.
-                     */
-                    final double gtri2 = 0.5 * rr5 * (sci4 * psc5 + scip4 * dsc5);
-                    final double gtri3 = 0.5 * rr5 * (sci3 * psc5 + scip3 * dsc5);
-                    final double gtri4 = gfri4;
-                    final double gtri5 = gfri5;
-                    final double gtri6 = gfri6;
-                    ttm2rix = -rr3 * (dixukx * psc3 + dixukpx * dsc3) * 0.5
-                            + gtri2 * dixrx - gtri5 * rxqirx + gtri4 * ((ukxqirx + rxqiukx) * psc5
-                            + (ukxqirpx + rxqiukpx) * dsc5) * 0.5;
-                    ttm2riy = -rr3 * (dixuky * psc3 + dixukpy * dsc3) * 0.5
-                            + gtri2 * dixry - gtri5 * rxqiry + gtri4 * ((ukxqiry + rxqiuky) * psc5
-                            + (ukxqirpy + rxqiukpy) * dsc5) * 0.5;
-                    ttm2riz = -rr3 * (dixukz * psc3 + dixukpz * dsc3) * 0.5
-                            + gtri2 * dixrz - gtri5 * rxqirz + gtri4 * ((ukxqirz + rxqiukz) * psc5
-                            + (ukxqirpz + rxqiukpz) * dsc5) * 0.5;
-                    ttm3rix = -rr3 * (dkxuix * psc3 + dkxuipx * dsc3) * 0.5
-                            + gtri3 * dkxrx - gtri6 * rxqkrx - gtri4 * ((uixqkrx + rxqkuix) * psc5
-                            + (uixqkrpx + rxqkuipx) * dsc5) * 0.5;
-                    ttm3riy = -rr3 * (dkxuiy * psc3 + dkxuipy * dsc3) * 0.5
-                            + gtri3 * dkxry - gtri6 * rxqkry - gtri4 * ((uixqkry + rxqkuiy) * psc5
-                            + (uixqkrpy + rxqkuipy) * dsc5) * 0.5;
-                    ttm3riz = -rr3 * (dkxuiz * psc3 + dkxuipz * dsc3) * 0.5
-                            + gtri3 * dkxrz - gtri6 * rxqkrz - gtri4 * ((uixqkrz + rxqkuiz) * psc5
-                            + (uixqkrpz + rxqkuipz) * dsc5) * 0.5;
-                }
-
-                /*
-                 * Account for partially excluded induced interactions.
-                 */
-                double temp3 = 0.5 * rr3 * ((gli1 + gli6) * scalep + (glip1 + glip6) * scaled);
-                double temp5 = 0.5 * rr5 * ((gli2 + gli7) * scalep + (glip2 + glip7) * scaled);
-                final double temp7 = 0.5 * rr7 * (gli3 * scalep + glip3 * scaled);
-                final double fridmpx = temp3 * ddsc3x + temp5 * ddsc5x + temp7 * ddsc7x;
-                final double fridmpy = temp3 * ddsc3y + temp5 * ddsc5y + temp7 * ddsc7y;
-                final double fridmpz = temp3 * ddsc3z + temp5 * ddsc5z + temp7 * ddsc7z;
-
-                /*
-                 * Find some scaling terms for induced-induced force.
-                 */
-                temp3 = 0.5 * rr3 * scip2;
-                temp5 = -0.5 * rr5 * (sci3 * scip4 + scip3 * sci4);
-                final double findmpx = temp3 * ddsc3x + temp5 * ddsc5x;
-                final double findmpy = temp3 * ddsc3y + temp5 * ddsc5y;
-                final double findmpz = temp3 * ddsc3z + temp5 * ddsc5z;
-
-                //    logger.info(format(" Excluded (%d,%d) (%16.8f %16.8f %16.8f), %16.8f %16.8f", i, k, ttm2rix, ttm2riy, ttm2riz, scaled, scalep));
-                /*
-                 * Modify the forces for partially excluded interactions.
-                 */
-                ftm2ix = ftm2ix - fridmpx - findmpx;
-                ftm2iy = ftm2iy - fridmpy - findmpy;
-                ftm2iz = ftm2iz - fridmpz - findmpz;
-                /*
-                 * Correction to convert mutual to direct polarization force.
-                 */
-                if (polarization == Polarization.DIRECT) {
-                    final double gfd = 0.5 * (bn2 * scip2 - bn3 * (scip3 * sci4 + sci3 * scip4));
-                    final double gfdr = 0.5 * (rr5 * scip2 * usc3 - rr7 * (scip3 * sci4 + sci3 * scip4) * usc5);
-                    ftm2ix = ftm2ix - gfd * xr - 0.5 * bn2 * (sci4 * pix + scip4 * uix + sci3 * pkx + scip3 * ukx);
-                    ftm2iy = ftm2iy - gfd * yr - 0.5 * bn2 * (sci4 * piy + scip4 * uiy + sci3 * pky + scip3 * uky);
-                    ftm2iz = ftm2iz - gfd * zr - 0.5 * bn2 * (sci4 * piz + scip4 * uiz + sci3 * pkz + scip3 * ukz);
-                    final double fdirx = gfdr * xr + 0.5 * usc5 * rr5 * (sci4 * pix + scip4 * uix + sci3 * pkx + scip3 * ukx);
-                    final double fdiry = gfdr * yr + 0.5 * usc5 * rr5 * (sci4 * piy + scip4 * uiy + sci3 * pky + scip3 * uky);
-                    final double fdirz = gfdr * zr + 0.5 * usc5 * rr5 * (sci4 * piz + scip4 * uiz + sci3 * pkz + scip3 * ukz);
-                    ftm2ix = ftm2ix + fdirx + findmpx;
-                    ftm2iy = ftm2iy + fdiry + findmpy;
-                    ftm2iz = ftm2iz + fdirz + findmpz;
-                }
-                /**
-                 * Handle the case where scaling is used.
-                 */
-                ftm2ix = ftm2ix - ftm2rix;
-                ftm2iy = ftm2iy - ftm2riy;
-                ftm2iz = ftm2iz - ftm2riz;
-                ttm2ix = ttm2ix - ttm2rix;
-                ttm2iy = ttm2iy - ttm2riy;
-                ttm2iz = ttm2iz - ttm2riz;
-                ttm3ix = ttm3ix - ttm3rix;
-                ttm3iy = ttm3iy - ttm3riy;
-                ttm3iz = ttm3iz - ttm3riz;
-
-                /**
-                 * logger.info(format(" Force (%d,%d) (%16.8f %16.8f %16.8f)",
-                 * i, k, ftm2ix, ftm2iy, ftm2iz)); logger.info(format(" Torquei
-                 * (%d,%d) (%16.8f %16.8f %16.8f)", i, k, ttm2ix, ttm2iy,
-                 * ttm2iz)); logger.info(format(" Torquek (%d,%d) (%16.8f %16.8f
-                 * %16.8f)", i, k, ttm3ix, ttm3iy, ttm3iz));
-                 * logger.info(format(" Energy (%d,%d) (%16.8f %16.8f %16.8f)",
-                 * i, k, ereal, efix, ereal - efix));
-                 */
-                double scalar = ELECTRIC * polarizationScale * selfScale;
-                gX[i] += scalar * ftm2ix;
-                gY[i] += scalar * ftm2iy;
-                gZ[i] += scalar * ftm2iz;
-                tX[i] += scalar * ttm2ix;
-                tY[i] += scalar * ttm2iy;
-                tZ[i] += scalar * ttm2iz;
-                gxk_local[k] -= scalar * ftm2ix;
-                gyk_local[k] -= scalar * ftm2iy;
-                gzk_local[k] -= scalar * ftm2iz;
-                txk_local[k] += scalar * ttm3ix;
-                tyk_local[k] += scalar * ttm3iy;
-                tzk_local[k] += scalar * ttm3iz;
-                if (lambdaTerm) {
-                    dUdL += dEdLSign * dlPowPol * e;
-                    d2UdL2 += dEdLSign * d2lPowPol * e;
-                    scalar = ELECTRIC * dEdLSign * dlPowPol * selfScale;
-                    lgX[i] += scalar * ftm2ix;
-                    lgY[i] += scalar * ftm2iy;
-                    lgZ[i] += scalar * ftm2iz;
-                    ltX[i] += scalar * ttm2ix;
-                    ltY[i] += scalar * ttm2iy;
-                    ltZ[i] += scalar * ttm2iz;
-                    lxk_local[k] -= scalar * ftm2ix;
-                    lyk_local[k] -= scalar * ftm2iy;
-                    lzk_local[k] -= scalar * ftm2iz;
-                    ltxk_local[k] += scalar * ttm3ix;
-                    ltyk_local[k] += scalar * ttm3iy;
-                    ltzk_local[k] += scalar * ttm3iz;
-                }
-                return polarizationScale * e;
-            }
-        }
-    }
-
-    /**
-     * The Real Space Energy Region class parallelizes evaluation of the real
-     * space energy and gradient.
-     */
     private class RealSpaceEnergyRegionQI extends ParallelRegion {
 
         private double permanentEnergy;
         private double polarizationEnergy;
-        private double mutualScale = 1.0;
+        private double mutualScale = (polarization == Polarization.DIRECT || polarization == Polarization.NONE)
+                ? 0.0 : 1.0;
+        private final int nComps = 9;
+        private final int myThreads;
 
         private final SharedInteger sharedInteractions;
-        private final RealSpaceEnergyLoopQI realSpaceEnergyLoop[];
+        private final RealSpaceEnergyLoopQI realSpaceEnergyLoops[];
+        private final double[][][][] compQI;
+        private final SharedDouble[][][] compQIshared;
 
         public RealSpaceEnergyRegionQI(int nt) {
+            logger.info(format("RSE RegionQI passed %d", nt));
+            myThreads = nt;
+            compQI = new double[myThreads][nAtoms][nAtoms][nComps];
+            compQIshared = new SharedDouble[nAtoms][nAtoms][nComps];
             sharedInteractions = new SharedInteger();
-            realSpaceEnergyLoop = new RealSpaceEnergyLoopQI[nt];
+            realSpaceEnergyLoops = new RealSpaceEnergyLoopQI[myThreads];
+            for (int thread = 0; thread < myThreads; thread++) {
+                realSpaceEnergyLoops[thread] = new RealSpaceEnergyLoopQI();
+            }
+            for (int i = 0; i < nAtoms; i++) {
+                for (int k = 0; k < nAtoms; k++) {
+                    for (int comp = 0; comp < nComps; comp++) {
+                        compQIshared[i][k][comp] = new SharedDouble();
+                        compQIshared[i][k][comp].set(0.0);
+                    }
+                }
+            }
         }
 
         public double getPermanentEnergy() {
@@ -5224,6 +3785,9 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
         }
 
         public double getPolarizationEnergy() {
+            if (DEBUG > 0) {    // TODO REMOVE
+                throw new UnsupportedOperationException();
+            }
             return polarizationEnergy;
         }
 
@@ -5234,41 +3798,45 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
         @Override
         public void start() {
             sharedInteractions.set(0);
-            if (polarization == Polarization.DIRECT) {
-                mutualScale = 0.0;
-            }
-            // TODO REMOVE
-            lAlpha = permLambdaAlpha * (1.0 - lambda) * (1.0 - lambda);
-            dlAlpha = -2.0 * permLambdaAlpha * (1.0 - lambda);
-            d2lAlpha = 2.0 * permLambdaAlpha;
-            if (System.getProperty("forceAlphas") != null && System.getProperty("forceAlphas").equalsIgnoreCase("old")) {
-                lAlpha = permLambdaAlpha * (1.0 - lambda) * (1.0 - lambda);
-                dlAlpha = permLambdaAlpha * (1.0 - lambda);
-                d2lAlpha = -permLambdaAlpha;
-            }
-            if (System.getProperty("pme-noZeroing") == null) {
+            if (true) {
                 // [threadID][X/Y/Z][atomID]
-                for (int i = 0; i < maxThreads; i++) {
-                    for (int j = 0; j < 3; j++) {
-                        fill(grad[i][j], 0.0);
-                        fill(torque[i][j], 0.0);
-                        fill(field[i][j], 0.0);
-                        fill(fieldCR[i][j], 0.0);
-                        fill(lambdaGrad[i][j], 0.0);
-                        fill(lambdaTorque[i][j], 0.0);
+                for (int thread = 0; thread < maxThreads; thread++) {
+                    for (int i = 0; i < 3; i++) {
+                        fill(grad[thread][i], 0.0);
+                        fill(torque[thread][i], 0.0);
+                        fill(field[thread][i], 0.0);
+                        fill(fieldCR[thread][i], 0.0);
+                        if (lambdaTerm) {
+                            fill(lambdaGrad[thread][i], 0.0);
+                            fill(lambdaTorque[thread][i], 0.0);
+                        }
                     }
                 }
+                for (int thread = 0; thread < myThreads; thread++) {
+                    for (int i = 0; i < nAtoms; i++) {
+                        for (int k = 0; k < nAtoms; k++) {
+                            for (int component = 0; component < nComps; component++) {
+                                compQI[thread][i][k][component] = 0.0;
+                                compQIshared[i][k][component].set(0.0);
+                            }
+                        }
+                    }
+                }
+            } else {
+                logger.warning("Skipped zeroing!");
             }
+            logger.info(format("PME:start() threads: %d", parallelTeam.getThreadCount()));
         }
 
         @Override
         public void run() {
             int threadIndex = getThreadIndex();
-            if (realSpaceEnergyLoop[threadIndex] == null) {
-                realSpaceEnergyLoop[threadIndex] = new RealSpaceEnergyLoopQI();
-            }
+            // TODO REMOVE
+//            if (realSpaceEnergyLoops[threadIndex] == null) {
+            realSpaceEnergyLoops[threadIndex] = new RealSpaceEnergyLoopQI();
+//            }
             try {
-                execute(0, nAtoms - 1, realSpaceEnergyLoop[threadIndex]);
+                execute(0, nAtoms - 1, realSpaceEnergyLoops[threadIndex]);
             } catch (Exception e) {
                 String message = "Fatal exception computing the real space energy in thread " + getThreadIndex() + "\n";
                 logger.log(Level.SEVERE, message, e);
@@ -5279,23 +3847,116 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
         public void finish() {
             permanentEnergy = 0.0;
             polarizationEnergy = 0.0;
-            for (int i = 0; i < maxThreads; i++) {
-                double e = realSpaceEnergyLoop[i].permanentEnergy;
-                if (Double.isNaN(e)) {
-                    logger.severe(String.format(" The permanent multipole energy of thread %d is %16.8f", i, e));
+            for (int i = 0; i < myThreads; i++) {
+                if (realSpaceEnergyLoops[i] == null) {
+                    logger.warning(format("NULL ENTRY in realSpaceEnergyLoops[%d]!", i));
+                    continue;
                 }
-                permanentEnergy += e;
-                double ei = realSpaceEnergyLoop[i].inducedEnergy;
-                if (Double.isNaN(ei)) {
-                    logger.severe(String.format(" The polarization energy of thread %d is %16.8f", i, ei));
+                double e = realSpaceEnergyLoops[i].permanentEnergy;
+                if (!Double.isFinite(e)) {
+                    // TODO BACK2SEVERE
+                    logger.warning(String.format(" The permanent multipole energy of thread %d is %16.8f", i, e));
+                } else {
+                    permanentEnergy += e;
                 }
-                polarizationEnergy += ei;
+                if (DEBUG == 0) {
+                    double ei = realSpaceEnergyLoops[i].inducedEnergy;
+                    if (Double.isNaN(ei)) {
+                        logger.severe(String.format(" The polarization energy of thread %d is %16.8f", i, ei));
+                    }
+                    polarizationEnergy += ei;
+                }
             }
             permanentEnergy *= ELECTRIC;
             polarizationEnergy *= ELECTRIC;
-            if (lambdaMode == LambdaMode.OFF || lambdaMode == LambdaMode.CONDENSED) {
-                logger.info(format("FINISH() QI dEdL,d2EdL2: %.6g %.6g",
-                        shareddEdLambdaQI.get(), sharedd2EdLambda2QI.get()));
+            if (DEBUG > 0 || (lambdaTerm && (lambdaMode == LambdaMode.CONDENSED))) {
+//                logger.info(format("FINISH() QI dEdL,d2EdL2: %.6g %.6g (%.6g %.6g)", 
+//                        shareddEdLambdaQI.get(), sharedd2EdLambda2QI.get(), 
+//                        shareddEdLambdaQI.get() / ELECTRIC, sharedd2EdLambda2QI.get() / ELECTRIC));
+                if (DEBUG > 0) {
+                    double[][][] compA = new double[nAtoms][nAtoms][nComps];
+                    double[][][] compB = new double[nAtoms][nAtoms][nComps];
+                    double[] compSum = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+                    for (int comp = 0; comp < nComps; comp++) {
+                        for (int i = 0; i < nAtoms; i++) {
+                            for (int k = 0; k < nAtoms; k++) {
+                                compA[i][k][comp] = 0.0;
+                                compB[i][k][comp] = 0.0;
+                                for (int thread = 0; thread < myThreads; thread++) {
+//                                    if (i > 2 || k < 3) {
+//                                        if (compQI[thread][i][k][comp] != 0.0) {
+//                                            double cTempSum = 0.0;
+//                                            double[] cTempThread = new double[maxThreads];
+//                                            for (int tt = 0; tt < maxThreads; tt++) {
+//                                                cTempSum += compQI[tt][i][k][comp];
+//                                                cTempThread[tt] += compQI[tt][i][k][comp];
+//                                            }
+//                                            logger.warning(format("Unexpected nonzero component! i,k,threadSum,threadVals,shared: %d %d %g %s sh:%g\n"
+//                                                    + "                       ^comp1   comp2> i,k,compQIsum,shared: %d %d %g %s sh:%g",
+//                                                    i, k, cTempSum, formatArray(cTempThread), compQIshared[i][k][1].get(),
+//                                                    i, k, cTempSum, formatArray(cTempThread), compQIshared[i][k][2].get()));
+//                                        } else {
+//                                            continue;
+//                                        }
+//                                    }
+                                    compA[i][k][comp] += compQI[thread][i][k][comp];
+                                }
+                                double print[] = compA[i][k];
+                                if (System.getProperty("pme-formulas") != null) {
+                                    logger.info(format("QiS dUdL Formula %d-%d: int %g, t1 %g, t2 %g, run %g, (%.4g * %.4g) + (%.4g * %.4g * %.4g)",
+                                            i, k, print[0], print[1], print[2], print[3], print[4], print[5], print[6], print[7], print[8]));
+                                }
+                                compSum[comp] += compA[i][k][comp];
+                            }
+                        }
+                    }
+                    double[] termSum = new double[]{0.0, 0.0};
+                    for (int i = 0; i < nAtoms; i++) {
+                        for (int k = 0; k < nAtoms; k++) {
+                            for (int comp = 0; comp < nComps; comp++) {
+                                compB[i][k][comp] = 0.0;
+                                for (int thread = 0; thread < myThreads; thread++) {
+                                    compB[i][k][comp] += compQI[thread][i][k][comp];
+                                }
+                            }
+//                            if (i > 2 || k < 3) {
+//                                if (compB[i][k][1] != 0.0 || compB[i][k][2] != 0.0) {
+//                                    logger.warning(format("Unexpected nonzero (B)! i,k,compA,compB,shared: %d %d %g %g %g\n"
+//                                            + "                   ^ele1   ele2> i,k,compA,compB,shared: %d %d %g %g %g",
+//                                            i, k, compA[i][k][1], compB[i][k][1], compQIshared[i][k][1].get(),
+//                                            i, k, compA[i][k][2], compB[i][k][2], compQIshared[i][k][2].get()));
+//                                } else {
+//                                    continue;
+//                                }
+//                            }
+                            termSum[0] += compB[i][k][1];
+                            termSum[1] += compB[i][k][2];
+                            double[] vals = new double[]{termSum[0], termSum[1], compB[i][k][1], compB[i][k][2]};
+                            if (DEBUG > 1) {
+                                logger.info(format("    Creating termSums: i,j,sums,comps: %d,%d,%s", i, k, formatArray(vals)));
+                            }
+                        }
+                    }
+                    if (DEBUG > 0 || (lambdaMode == LambdaMode.CONDENSED || lambdaMode == LambdaMode.OFF)) {
+                        for (int i = 0; i < nAtoms; i++) {
+                            for (int k = 0; k < nAtoms; k++) {
+                                for (int comp = 0; comp < nComps; comp++) {
+                                    if (compA[i][k][comp] != compB[i][k][comp] || compA[i][k][comp] != compQIshared[i][k][comp].get()) {
+                                        logger.info(format("COMP MISMATCH (%d,%d,%d): %g, %g, %g",
+                                                i, k, comp,
+                                                compA[i][k][comp], compB[i][k][comp], compQIshared[i][k][comp].get()));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (DEBUG > 0) {
+                        logger.info(format("QiS TOTALS: dE/dL = %g + %g = %g --> %g + %g = %g    (shdEdLqi %g)",
+                                termSum[0], termSum[1], termSum[0] + termSum[1],
+                                termSum[0]*ELECTRIC, termSum[1]*ELECTRIC, termSum[0]*ELECTRIC + termSum[1]*ELECTRIC,
+                                shareddEdLambdaQI.get()));
+                    }
+                }
             }
         }
 
@@ -5345,11 +4006,14 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
             private final double[] FiT, TiT, TkT;
             private final double[] energy;
 
-            private final MultipoleTensor tensor;
+            private final MultipoleTensor tensorScrn;
+            private final MultipoleTensor tensorCoul;
 
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
+            
+            private final boolean useGlobalTensors = (System.getProperty("pme-globalTensors") != null);
 
             public RealSpaceEnergyLoopQI() {
                 super();
@@ -5373,8 +4037,13 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                 TkT = new double[3];
                 energy = new double[2];
                 int order = (lambdaTerm) ? 6 : 5;
-                tensor = new MultipoleTensor(
+                if (DEBUG > 0 && order != 6) {
+                    throw new UnsupportedOperationException();
+                }
+                tensorScrn = new MultipoleTensor(
                         OPERATOR.SCREENED_COULOMB, COORDINATES.QI, order, aewald);
+                tensorCoul = new MultipoleTensor(
+                        OPERATOR.COULOMB, COORDINATES.QI, order, aewald);
             }
 
             private void init() {
@@ -5393,7 +4062,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                         ltyk_local = new double[nAtoms];
                         ltzk_local = new double[nAtoms];
                     }
-                    if (lamedhTerm) {
+                    if (esvTerm) {
                         ldhxk_local = new double[numESVs][nAtoms];
                         ldhyk_local = new double[numESVs][nAtoms];
                         ldhzk_local = new double[numESVs][nAtoms];
@@ -5440,7 +4109,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                     ltY = lambdaTorque[threadIndex][1];
                     ltZ = lambdaTorque[threadIndex][2];
                 }
-                if (lamedhTerm) {
+                if (esvTerm) {
                     dUdLdh = new double[numESVs];
                     d2UdLdh2 = new double[numESVs];
                     fill(dUdLdh, 0.0);
@@ -5475,7 +4144,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                         fill(ltyk_local, 0.0);
                         fill(ltzk_local, 0.0);
                     }
-                    if (lamedhTerm) {
+                    if (esvTerm) {
                         fill(ldhxk_local, 0.0);
                         fill(ldhyk_local, 0.0);
                         fill(ldhzk_local, 0.0);
@@ -5530,7 +4199,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                             lgZ[j] += lzk_local[j];
                         }
                     }
-                    if (lamedhTerm) {
+                    if (esvTerm) {
                         for (ExtendedVariable esv : esvList) {
                             if (rotateMultipoles) {
                                 int i = esv.index;
@@ -5562,10 +4231,20 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
             public void finish() {
                 sharedInteractions.addAndGet(count);
                 if (lambdaTerm) {
-                    shareddEdLambdaQI.addAndGet(dUdL * ELECTRIC);
-                    sharedd2EdLambda2QI.addAndGet(d2UdL2 * ELECTRIC);
+                    double was = shareddEdLambdaQI.get();
+                    if (!Double.isFinite(was)) {
+                        shareddEdLambdaQI.set(0.0);
+                    }
+                    if (Double.isFinite(dUdL)) {
+                        shareddEdLambdaQI.addAndGet(dUdL * ELECTRIC);
+                    }
+                    logger.info(format("shareddEdLambda Thread%d: %g + ( %g * ELECTRIC = %g ) = %g",
+                            getThreadIndex(), was, dUdL, dUdL * ELECTRIC, shareddEdLambdaQI.get()));
+                    if (Double.isFinite(d2UdL2)) {
+                        sharedd2EdLambda2QI.addAndGet(d2UdL2 * ELECTRIC);
+                    }
                 }
-                if (lamedhTerm) {
+                if (esvTerm) {
                     for (ExtendedVariable esv : esvList) {
                         shareddEdLdh[esv.index].addAndGet(dUdLdh[esv.index] * ELECTRIC);
                         sharedd2EdLdh2[esv.index].addAndGet(d2UdLdh2[esv.index] * ELECTRIC);
@@ -5620,6 +4299,16 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                     final int npair = realSpaceCounts[iSymm][i];
                     for (int j = 0; j < npair; j++) {
                         k = list[j];
+                        if (System.getProperty("pme-SOLO") != null) {
+                            logger.warning("** SOLO INVOKED **");
+                            String prop = System.getProperty("pme-SOLO");
+                            int comma = prop.indexOf(",");
+                            int SOLOi = Integer.parseInt(prop.substring(0, comma));
+                            int SOLOk = Integer.parseInt(prop.substring(comma + 1));
+                            if (i != SOLOi || k != SOLOk) {
+                                continue;
+                            }
+                        }
                         if (!use[k]) {
                             continue;
                         }
@@ -5675,22 +4364,26 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                         double damp = min(pti, ptk);
                         double aiak = pdi * pdk;
                         if (false && doPermanentRealSpace && doPolarization && polarization != Polarization.NONE) {
-                            double eTotal = pairPermPol(dx_local, globalMultipolei, globalMultipolek,
-                                    inducedDipolei, inducedDipolek, inducedDipolepi, inducedDipolepk,
-                                    damp, aiak, energy);
-                            permanentEnergy += energy[0];
-                            inducedEnergy += energy[1];
-                            count++;
+                            throw new UnsupportedOperationException();
+//                            double eTotal = pairPermPol(dx_local, globalMultipolei, globalMultipolek,
+//                                    inducedDipolei, inducedDipolek, inducedDipolepi, inducedDipolepk,
+//                                    damp, aiak, energy);
+//                            permanentEnergy += energy[0];
+//                            inducedEnergy += energy[1];
+//                            count++;
                         } else if (true || doPermanentRealSpace) {
-                            permanentEnergy += pairPerm(dx_local, globalMultipolei, globalMultipolek);
-                            if (DEBUG > 1) {
-                                pairPerm_globalMT(dx_local, globalMultipolei, globalMultipolek);
+                            if (!useGlobalTensors) {
+                                permanentEnergy += pairPerm(dx_local, globalMultipolei, globalMultipolek);
+                            } else {
+                                logger.info(" ** ATTENTION: USING GLOBAL FRAME TENSOR ** ");
+                                permanentEnergy += pairPerm_globalMT(dx_local, globalMultipolei, globalMultipolek);
                             }
                             count++;
                         } else {
-                            inducedEnergy += pairPol(dx_local, globalMultipolei, globalMultipolek,
-                                    inducedDipolei, inducedDipolek, inducedDipolepi, inducedDipolepk,
-                                    damp, aiak);
+                            throw new UnsupportedOperationException();
+//                            inducedEnergy += pairPol(dx_local, globalMultipolei, globalMultipolek,
+//                                    inducedDipolei, inducedDipolek, inducedDipolepi, inducedDipolepk,
+//                                    damp, aiak);
                         }
                     }
                     /**
@@ -5702,13 +4395,15 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                 }
             }
 
+            /*
             private double pairPermPol(double[] r, double[] Qi, double[] Qk,
                     double[] ui, double[] uk, double[] uiCR, double[] ukCR,
                     double damp, double aiak, double energy[]) {
-
+                if (true) {
+                    throw new UnsupportedOperationException();
+                }
                 /**
                  * Compute screened real space interactions.
-                 */
                 tensor.setR_QI(r, lBufferDistance);
                 // Add buffer.
 
@@ -5724,7 +4419,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
 
                 /**
                  * Subtract away masked Coulomb interactions included in PME.
-                 */
                 double scale1 = 1.0 - scale;
                 double scaled1 = 1.0 - scaled;
                 double scalep1 = 1.0 - scalep;
@@ -5762,7 +4456,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
 
                 /**
                  * Account for Thole Damping.
-                 */
                 double eThole = 0.0;
                 tensor.setTholeDamping(damp, aiak);
                 boolean applyThole = tensor.applyDamping();
@@ -5802,7 +4495,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                     /**
                      * This is dU/dL/dX for the first term of dU/dL: d[dlPow *
                      * ereal]/dx
-                     */
                     if (lambdaTerm && soft) {
                         prefactor = ELECTRIC * selfScale * dEdLSign * dlPowPerm;
                         lgX[i] += prefactor * permFi[0];
@@ -5821,7 +4513,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                 }
 
                 final double e = selfScale * 0.5 * (ePolScreened - ePolCoulomb - eThole);
-                if (!(gradient || lambdaTerm || lamedhTerm)) {
+                if (!(gradient || lambdaTerm || esvTerm)) {
                     double ePol = polarizationScale * e;
                     energy[1] = ePol;
                     return ePerm + ePol;
@@ -5863,38 +4555,84 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
 
                 return ePerm + ePol;
             }
+*/
 
             private double pairPerm(double[] r, double[] Qi, double[] Qk) {
                 double dScreendL = 0.0, d2ScreendL2 = 0.0;
                 double dCouldL = 0.0, d2CouldL2 = 0.0;
-                double dPermdL = 0.0, d2PermdL2 = 0.0;
+                double ePerm = 0.0, dPermdL = 0.0, d2PermdL2 = 0.0;
+
+                double should = -2.0*permLambdaAlpha*(1-lambda);
+                if (selfScale != 1.0 || (soft && l2 != permanentScale) || (!soft && l2 != 1.0) || dlAlpha != should) {
+                    if (soft) {
+                        logger.warning(format("                  SOFTFLAG:  %b\n"
+                                +             "selfScale vs 1.0:            %g (%g) %g\n"
+                                +             "l2 vs permScale:             %g (%g) %g\n"
+                                +             "dlAlpha vs should:           %g (%g) %g\n"
+                                +             "lambda,alpha,expo,lPowPerm: [%g  %g  %g  %g]",
+                                soft,
+                                selfScale, 1.0, selfScale - 1.0, 
+                                l2, permanentScale, l2 - permanentScale,
+                                dlAlpha, should, dlAlpha - should, 
+                                lambda, permLambdaAlpha, permLambdaExponent, lPowPerm));
+                    } else {
+                        logger.warning(format("                  SOFTFLAG:  %b\n"
+                                +             "selfScale vs 1.0:            %g (%g) %g\n"
+                                +             "l2 vs 1.0:                   %g (%g) %g\n"
+                                +             "dlAlpha vs should:           %g (%g) %g\n"
+                                +             "lambda,alpha,expo,lPowPerm: [%g  %g  %g  %g]",
+                                soft,
+                                selfScale, 1.0, selfScale - 1.0, 
+                                l2, 1.0, l2 - 1.0,
+                                dlAlpha, should, dlAlpha - should, 
+                                lambda, permLambdaAlpha, permLambdaExponent, lPowPerm));
+                    }
+                }
 
                 /**
                  * Set MultipoleTensor distance; handle lambda buffering.
                  */
-                if (lambdaTerm) {
+                double sqrtRSqPlusBuff = 0.0;
+                double sqrtZSqPlus2 = 0.0;
+                if (soft && lambdaTerm) {
                     double[] dx_buff = new double[3];
-                    if (bufferAfterRotation) {
+                    if (lambdaBufferCoords == COORDINATES.QI) {
+                        if (printOptBufferCoords) {
+                            logger.info(" (* OPTS *) PME passing lambda buffer into MT for QI.");
+                            printOptBufferCoords = false;
+                        }
                         double buff;
                         switch (lambdaBufferMode) {
                             default:
-                            case 1:
+                            case 0:
                                 buff = lBufferDistance;
+                                if (lBufferDistance != permLambdaAlpha*(1.0-lambda)*(1.0-lambda)) {
+                                    logger.warning(format("INCORRECT BUFFER DISTANCE: %g (%g)",
+                                            lBufferDistance, permLambdaAlpha*(1.0-lambda)*(1.0-lambda)));
+                                }
                                 break;
-                            case 2:
+                            case 1:
                                 double dxyz = dx_local[0] + dx_local[1] + dx_local[2];
                                 double bufferPerDim = (-dxyz + sqrt(dxyz * dxyz + 3 * lBufferDistance)) / 3.0;
-                                dx_buff = new double[]{dx_local[0], dx_local[1], dx_local[2] + bufferPerDim};
                                 buff = bufferPerDim;
                                 break;
-                            case 3:
-                                double customBuff = System.getProperty("pme-customBuff") != null
-                                        ? Double.parseDouble(System.getProperty("pme-customBuff")) : 0.218196;
-                                buff = customBuff;
-                                break;
                         }
-                        tensor.setR_QI(dx_local, buff);
+                        if (soft) {
+                            tensorScrn.setR_QI(dx_local, lBufferDistance);
+                            tensorCoul.setR_QI(dx_local, lBufferDistance);
+                        } else {
+                            tensorScrn.setR_QI(dx_local, 0.0);
+                            tensorCoul.setR_QI(dx_local, 0.0);
+                        }
+                        double z = r(dx_local) + buff;
+                        dx_buff = new double[]{dx_local[0], dx_local[1], dx_local[2] + lBufferDistance};
+                        r2 = crystal.image(dx_buff);
+                        sqrtRSqPlusBuff = sqrt(z * z);    // r(r(x^2+y^2+z^2)+buff),{x->0,y->0} == r(x^2+y^2+z^2)+buff
+                        sqrtZSqPlus2 = sqrt(dx_local[2] * dx_local[2] + 2.0);
                     } else {
+                        if (true) { // then BUFFERING WILL BE ROTATED by MultipoleTensor.
+                            throw new UnsupportedOperationException();
+                        }           /*
                         switch (lambdaBufferMode) {
                             default:
                             case 1:
@@ -5923,47 +4661,79 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                                     dx_buff = new double[]{dx_local[0], dx_local[1], dx_local[2] - lBufferDistance};
                                 }
                                 break;
+                            case 6:
+                                double dxyzb = dx_local[0] + dx_local[1] + dx_local[2];
+                                double buffDimB = (-dxyzb + sqrt(dxyzb * dxyzb + 3 * lBufferDistance)) / 3.0;
+                                dx_buff = new double[]{dx_local[0] + buffDimB, dx_local[1] + buffDimB, dx_local[2] + buffDimB};
+                                break;
                         }
                         tensor.setR_QI(dx_buff);
+                        double x = 0.0;
+                        double y = 0.0;
+                        double z = r(dx_buff);  // Try instead to use the find that deriv yields 1/sqrt(z^2+2.0)
                         if (DEBUG > 0 && i == pmeI && k == pmeK) {
                             double vals[] = new double[]{dx_local[2], dx_buff[2], r(dx_buff)};
-                            logger.info(format("      dist-qi: z,zBuff,rBuff: %s", formatArray(vals)));
-                        }
+//                            logger.info(format("      dist-qi: z,zBuff,rBuff: %s", formatArray(vals)));
+                        }           */
                     }
                 } else {
-                    tensor.setR(r);
+                    tensorScrn.setR_QI(dx_local);
+                    tensorCoul.setR_QI(dx_local);
+                    double x = 0.0;
+                    double y = 0.0;
+                    double z = r(dx_local);
+                    double r2 = (x * x + y * y + z * z);
+                    sqrtRSqPlusBuff = sqrt(r2);
                 }
 
                 /**
                  * Compute screened real space interactions.
                  */
-                tensor.setMultipolesQI(Qi, Qk);
-                if (aewald > 0.0) {
-                    tensor.setOperator(OPERATOR.SCREENED_COULOMB);
-                } else if (scale == 1.0 || scale == 0.0) {
-                    tensor.setOperator(OPERATOR.COULOMB);
+                tensorScrn.setMultipolesQI(Qi, Qk);
+                tensorCoul.setMultipolesQI(Qi, Qk);
+                tensorScrn.order6QI();
+                tensorCoul.order6QI();
+                
+//                if (aewald > 0.0) {
+//                    tensorScrn.setOperator(OPERATOR.SCREENED_COULOMB);
+//                } else if (scale == 1.0 || scale == 0.0) {
+//                    tensorScrn.setOperator(OPERATOR.COULOMB);
+//                } else {
+//                    logger.warning(format("aewald,scale: %.4f %.4f", aewald, scale));
+//                }
+
+                double scale1 = 1.0 - scale;
+                double ePermScreened = 0.0, ePermCoulomb = 0.0;
+                if (scale == 1.0) {
+                    ePermCoulomb = tensorCoul.multipoleEnergyQI(permFi, permTi, permTk);
+                    dCouldL = tensorCoul.getdEdZ();
+                    d2CouldL2 = tensorCoul.getd2EdZ2();
+                    ePerm = ePermCoulomb;
+                    dPermdL = dCouldL;
+                    d2PermdL2 = d2CouldL2;
                 } else {
-                    logger.info(format("aewald,scale: %.4f %.4f", aewald, scale));
+                    ePermScreened = tensorScrn.multipoleEnergyQI(permFi, permTi, permTk);
+                    dScreendL = tensorScrn.getdEdZ();
+                    d2ScreendL2 = tensorScrn.getd2EdZ2();
+                    ePerm = ePermScreened;
+                    dPermdL = dScreendL;
+                    d2PermdL2 = d2ScreendL2;
                 }
-                tensor.order6QI();
 
-                double ePermScreened = tensor.multipoleEnergyQI(permFi, permTi, permTk);
-                dScreendL = tensor.getdEdZ();
-                d2ScreendL2 = tensor.getd2EdZ2();
-                dPermdL = dScreendL;
-                d2PermdL2 = d2ScreendL2;
-
+                if (aewald <= 0.0 && ePermScreened != 0.0) {
+                    // TODO REMOVE
+//                    logger.info(format("Non-zero screened energy for zero aewald: %g %g",
+//                            ePermScreened, aewald));
+                }
+                
                 /**
                  * Subtract away masked Coulomb interactions included in PME.
                  */
-                double scale1 = 1.0 - scale;
-                double ePermCoulomb = 0.0;
-                if (scale1 != 0.0) {
-                    tensor.setOperator(OPERATOR.COULOMB);
-                    tensor.order6QI();
-                    ePermCoulomb = scale1 * tensor.multipoleEnergyQI(FiC, TiC, TkC);
-                    dCouldL = tensor.getdEdZ();
-                    d2CouldL2 = tensor.getd2EdZ2();
+                if (scale != 1.0) {
+                    ePermCoulomb = tensorCoul.multipoleEnergyQI(FiC, TiC, TkC);
+                    dCouldL = tensorCoul.getdEdZ();
+                    d2CouldL2 = tensorCoul.getd2EdZ2();
+                    ePerm -= scale1 * ePermCoulomb;
                     dPermdL -= scale1 * dCouldL;
                     d2PermdL2 -= scale1 * d2CouldL2;
 
@@ -5978,14 +4748,57 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                     permTk[2] -= scale1 * TkC[2];
                 }
 
-                final double ePerm = selfScale * l2 * (ePermScreened - ePermCoulomb);
-
-                if (!gradient) {
-                    return ePerm;
+                if (selfScale != 1.0) {
+                    logger.severe(format("Non-unity selfScale: %g %g", selfScale));
+                }
+                if (scale == 1.0 && dPermdL != dCouldL) {
+                    logger.severe("Incorrect dPermdL?");
+                }
+                if (scale == 1.0 && d2PermdL2 != d2CouldL2) {
+                    logger.warning("Incorrect d2PermdL2?");
+                }
+                if (scale1 != (1.0 - scale)) {
+                    logger.severe("Wut?");
+                }
+                if (lPowPerm != lambda || permanentScale != lPowPerm
+                      || (!soft && l2 != 1.0) || (soft && l2 != permanentScale)) {
+                    logger.severe(format("WTF! l2,lPowPerm,lambda: %g %g %g %g", lambda, l2, lPowPerm, permanentScale));
                 }
 
-                double scalar = ELECTRIC * selfScale * l2;
+                double ePermSoftA, ePermSoftB, ePermSoftC;
+                final double e;
+                if (soft) {
+                    ePermSoftA = selfScale * l2 * (ePermScreened - (scale1*ePermCoulomb));
+                    ePermSoftB = selfScale * lPowPerm * (ePermScreened - (scale1 * ePermCoulomb));
+                    ePermSoftC = 1.0 * lambda * ePerm;
+
+//                    if (ePermSoftA != ePermSoftB || ePermSoftA != ePermSoftC || ePermSoftB != ePermSoftC) {
+//                        logger.warning(format("permABC: %g %g %g", ePermSoftA, ePermSoftB, ePermSoftC));
+//                    } else {
+                        logger.info(format(   "         permABC: %g %g %g", ePermSoftA, ePermSoftB, ePermSoftC));
+//                    }
+                    e = selfScale * l2 * ePerm;
+                } else {
+                    final double ePermHard = selfScale * (ePermScreened - (scale1*ePermCoulomb));
+                    e = ePermHard;
+                }
+                final double eReturn = (Double.isFinite(e)) ? e : 0.0;
+/*               from Cart:
+                    final double e = selfScale * l2 * (ereal - efix);
+                    dUdL += selfScale * (dEdLSign * dlPowPerm * ereal + l2 * dlAlpha * dRealdL);
+                    d2UdL2 += selfScale * (dEdLSign * (d2lPowPerm * ereal
+                            + dlPowPerm * dlAlpha * dRealdL
+                            + dlPowPerm * dlAlpha * dRealdL)
+                            + l2 * d2lAlpha * dRealdL
+                            + l2 * dlAlpha * dlAlpha * d2RealdL2);
+*/
+                
+                if (!gradient && !(soft && lambdaTerm)) {
+                    return eReturn;
+                }
+
                 double pref0 = 0.0, pref1 = 0.0, pref2 = 0.0;
+                double scalar = ELECTRIC * selfScale * l2;
                 pref0 = scalar;
                 gX[i] += scalar * permFi[0];
                 gY[i] += scalar * permFi[1];
@@ -6000,7 +4813,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                 tyk_local[k] += scalar * permTk[1];
                 tzk_local[k] += scalar * permTk[2];
 
-                if (lambdaTerm) {
+                if (lambdaTerm && soft) {
                     /**
                      * This is dU/dL/dX for the first term of dU/dL: d[dlPow *
                      * ereal]/dx
@@ -6020,8 +4833,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                     ltyk_local[k] += scalar * permTk[1];
                     ltzk_local[k] += scalar * permTk[2];
 
-//                    if (unityPrefactor || System.getProperty("pme-S-qi") != null) {
-                    if (System.getProperty("pme-S-qi") != null) {
 //                        double E = ereal - efix;
 //                        double dEdL = dRealdL - dFixdL;
 //                        double d2EdL2 = d2RealdL2 - d2FixdL2;
@@ -6035,19 +4846,162 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
 ////                      Want: dUdL = selfScale*dEdLSign*dlPowPerm*E + selfScale*l2*dlAlpha*dEdL;
 //                        dUdL += (dSdL * P) + (S * dPdL * dFdL);
 
-                        // new derivation
-                        double S = selfScale * lPowPerm, dSdL = selfScale * dEdLSign * dlPowPerm, d2SdL2 = selfScale * d2lPowPerm;
-                        double P = ePermScreened - ePermCoulomb, dPdL = dPermdL, d2PdL2 = d2PermdL2;
-                        double F = lAlpha, dFdL = dlAlpha, d2FdL2 = d2lAlpha;
-                        double dPdF = (dFdL != 0.0) ? dPdL / dFdL : 0.0;
-                        double d2PdF2 = (d2FdL2 != 0.0) ? d2PdL2 / d2FdL2 : 0.0;
-                        dUdL += (dSdL * P) + (S * dPdL * dFdL);
-                        // gives selfScale*dEdLSign*dlPowPerm
-                        d2UdL2 += selfScale * ((d2SdL2 * P) + (dSdL * S * dPdF * dFdL)
-                                + ((dSdL * dPdF) + (S * d2PdF2)) * dFdL
-                                + (S * dPdF * d2FdL2));
+//                    double S = lambda, odSdL = 1.0, od2SdL2 = 0.0;
+//                    double P = (ePermScreened - (scale1 * ePermCoulomb));
+//                    double dPdF = (dScreendL - (scale1 * dCouldL));
+//                    double d2PdF2 = (d2ScreendL2 - (scale1 * d2CouldL2));
+                    
+                    // oughtta be equivalent
+                    double S = lPowPerm;
+                    double dSdL = dlPowPerm;
+                    double d2SdL2 = d2lPowPerm;
+                    double P = ePerm;
+                    double dPdF = dPermdL;
+                    double d2PdF2 = d2PermdL2;
+                    
+                    double F, dFdL, d2FdL2;
+                    switch (Fmode) {
+                        default:
+                        case 0:
+                            F = lAlpha;
+                            dFdL = dlAlpha;
+                            d2FdL2 = d2lAlpha;
+                            if (DEBUG > 1) {
+                                logger.info(format(" SDL Fmode0: %g %g %g", F, dFdL, d2FdL2));
+                            }
+                            break;
+                        case 1:
+                            F = lAlpha;
+                            dFdL = dlAlpha / (2 * dx_local[2]);
+                            d2FdL2 = d2lAlpha / (2 * dx_local[2]);    // <-- should fail here
+                            if (DEBUG > 1) {
+                                logger.info(format(" SDL Fmode1: %g %g %g", F, dFdL, d2FdL2));
+                            }
+                            break;
+//                            case 2:
+//                                F = lAlpha;
+//                                dFdL = dlAlpha / sqrtZSqPlus2;
+//                                d2FdL2 = d2lAlpha / sqrtZSqPlus2;
+//                                logger.info(format(" SDL Fmode2: %g %g %g", F, dFdL, d2FdL2));
+//                                break;
+//                            case 3:
+//                                F = permLambdaAlpha*(1-lambda)*(1-lambda);
+//                                dFdL = permLambdaAlpha*(1-lambda);
+//                                d2FdL2 = -permLambdaAlpha;
+//                                logger.info(format(" SDL Fmode3: %g %g %g", F, dFdL, d2FdL2));
+//                                break;
+//                            case 4:
+//                                F = permLambdaAlpha*(1-lambda)*(1-lambda);
+//                                dFdL = permLambdaAlpha*(1-lambda) / sqrtRSqPlusBuff;
+//                                d2FdL2 = -permLambdaAlpha / sqrtRSqPlusBuff;
+//                                logger.info(format(" SDL Fmode4: %g %g %g", F, dFdL, d2FdL2));
+//                                break;
+//                            case 5:
+//                                F = permLambdaAlpha*(1-lambda)*(1-lambda);
+//                                dFdL = permLambdaAlpha*(1-lambda) / sqrtZSqPlus2;
+//                                d2FdL2 = -permLambdaAlpha / sqrtZSqPlus2;
+//                                logger.info(format(" SDL Fmode5: %g %g %g", F, dFdL, d2FdL2));
+//                                break;
+                        }
 
-                        /* original derivation
+//                        double dPdL, d2PdL2;
+////                        double dPdF = (dFdL != 0.0) ? dPdL / dFdL : 0.0;
+////                        double d2PdF2 = (d2FdL2 != 0.0) ? d2PdL2 / d2FdL2 : 0.0;
+//                        if (dFdL == 0.0) {
+//                            dPdL = 0.0;
+//                            logger.warning(format(" Found zero dFdL, setting dPdF = %g", dPdL));
+//                        } else {
+//                            dPdL = dPdF / dFdL;
+//                            logger.info(format(" Finding dPdF: %g / %g = %g\n"
+//                                             + "               %g / %g = %g",
+//                                    dPdF, dFdL, dPdL, 
+//                                    dPdF*ELECTRIC, dFdL*ELECTRIC, dPdL*ELECTRIC));
+//                        }
+//                        if (d2FdL2 == 0.0) {
+//                            d2PdL2 = 0.0;
+//                            logger.warning(format(" Found zero dFdL, setting d2PdF2 = %g", dPdL));
+//                        } else {
+//                            d2PdL2 = d2PdZ2 / d2FdL2;
+//                            logger.info(format(" Finding d2PdF2: %g / %g = %g\n"
+//                                             + "                 %g / %g = %g",
+//                                    d2PdZ2, d2FdL2, d2PdL2, 
+//                                    d2PdZ2*ELECTRIC, d2FdL2*ELECTRIC, d2PdL2*ELECTRIC));
+//                        }
+
+                    double dPdL = dPdF * dFdL;
+                    double d2PdL2 = d2PdF2 * d2FdL2;
+                    
+/*               from Cart:
+                    final double e = selfScale * l2 * (ereal - efix);
+                    dUdL += selfScale * (dEdLSign * dlPowPerm * ereal + l2 * dlAlpha * dRealdL);
+                    d2UdL2 += selfScale * (dEdLSign * (d2lPowPerm * ereal
+                            + dlPowPerm * dlAlpha * dRealdL
+                            + dlPowPerm * dlAlpha * dRealdL)
+                            + l2 * d2lAlpha * dRealdL
+                            + l2 * dlAlpha * dlAlpha * d2RealdL2);
+*/
+
+                    double thisInteraction = 0.0;
+                    double[] components = new double[9];
+                    for (int stuff = 0; stuff < nComps; stuff++) {
+                        components[stuff] = 0.0;
+                    }
+                    if (!soft) {
+                        thisInteraction += (dlPowPerm * ePermScreened + l2*dlAlpha*dScreendL);
+                        thisInteraction -= (dlPowPerm * ePermCoulomb  + l2*dlAlpha*dCouldL);
+                    } else {
+                        switch (Dmode) {
+                            default:    // d(SP)dL = (dSdL*P)+(S*dPdL) = (dSdL*P)+(S*dPdZ*dZdL)
+                            case 0:
+                                thisInteraction = ((dSdL * P) + (S * dPdF * dFdL));
+                                components = new double[]{thisInteraction, dSdL * P, S * dPdF * dFdL, dUdL, dSdL, P, S, dPdF, dFdL, 0.0, 0.0};
+                                break;
+//                            case 1:
+//                                thisInteraction = ((odSdL * oP) + (oS * odPdF * dFdL));
+//                                components = new double[]{thisInteraction, odSdL * oP, oS * odPdL, dUdL, odSdL, oP, oS, odPdF, dFdL, 0.0, 0.0};
+//                                break;
+    //                        case 2:
+    //                            thisInteraction = ((dSdL * l2 * P) + (S * dPdF * dFdL));
+    //                            components = new double[]{thisInteraction, (dSdL * l2 * P), S * dPdF * dFdL, dUdL, dSdL, P, S, dPdF, dFdL};
+    //                            case 4:
+    //                                // Treat the phantom denominator from Maple.
+    //                                thisInteraction = ((dSdL * l2*P) + (S * dPdL * dFdL)) * sqrtZSqPlus2;
+    //                                components = new double[]{thisInteraction, selfScale*dSdL*l2*P * sqrtZSqPlus2, selfScale*S*dPdL*dFdL / sqrtZSqPlus2, sqrtZSqPlus2, dSdL, P, S, dPdL, dFdL};
+    //                                break;
+    //                            case 5:
+    //                                // Treat the phantom denominator from Maple.
+    //                                thisInteraction = ((dSdL * l2*P) + (S * dPdF * dFdL)) * sqrtZSqPlus2;
+    //                                components = new double[]{thisInteraction, selfScale*dSdL*l2*P * sqrtZSqPlus2, selfScale*S*dPdF*dFdL / sqrtZSqPlus2, sqrtZSqPlus2, dSdL, P, S, dPdF, dFdL};
+    //                                break;
+                        }
+                    }
+                    if (DEBUG > 1 || !Double.isFinite(thisInteraction)) {
+                        logger.info(format("    comps thread %d: %s", getThreadIndex(), formatArray(components)));
+                    }
+                    if (Double.isFinite(thisInteraction)) {
+                        dUdL += selfScale * thisInteraction;
+                    } else {
+                        logger.info("Skipped a NaN energy.");
+                    }
+
+                    for (int comp = 0; comp < nComps; comp++) {
+                        if (Double.isFinite(components[comp])) {    // TODO REMOVE
+                            compQI[this.getThreadIndex()][i][k][comp] += components[comp];
+                            compQIshared[i][k][comp].addAndGet(components[comp]);
+                        }
+                    }
+
+                    double val = selfScale * ((d2SdL2 * P) + (dSdL * S * dPdL)
+                            + ((dSdL * dPdL) + (S * d2PdL2)) * dFdL
+                            + (S * dPdL * d2FdL2));
+                    if (Double.isFinite(val)) {
+                        d2UdL2 += val;
+                    }
+//                    d2UdL2 += selfScale * ((d2SdL2 * P) + (dSdL * S * dPdL)
+//                            + ((dSdL * dPdL) + (S * d2PdL2)) * dFdL
+//                            + (S * dPdL * d2FdL2));
+
+                    /* original derivation
                         double S = dEdLSign * dlPowPerm, dSdL = dEdLSign, d2SdL2 = 0.0;
                         double P = ePerm, dPdL = dPermdL, d2PdL2 = d2PermdL2;
                         double F = lAlpha, dFdL = dlAlpha, d2FdL2 = d2lAlpha;
@@ -6057,56 +5011,26 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                         d2UdL2 += selfScale * ((d2SdL2 * P) + (dSdL * S * dPdF * dFdL)
                                 + ((dSdL * dPdF) + (S * d2PdF2)) * dFdL
                                 + (S * dPdF * d2FdL2)); */
-                        if (DEBUG > 0 && i == pmeI && k == pmeK) {
-                            String identity = "QiS";
-                            double[] Ss = new double[]{S, dSdL, d2SdL2};
-                            double[] Fs = new double[]{F, dFdL, d2FdL2};
-                            double[] Ps = new double[]{P, dPdL, d2PdL2, dPdF, d2PdF2};
-                            double[] lambdas = new double[]{lAlpha, dlAlpha, d2lAlpha, lPowPerm, dlPowPerm, d2lPowPerm, dEdLSign};
-                            logOnce(format("%s dUdL Ps: %s\n"
+                    if ((DEBUG > 0 && i == pmeI && k == pmeK && System.getProperty("pme-FPS") != null)
+                            || System.getProperty("pme-allFPS") != null) {
+                        String identity = "QiS";
+                        double[] Ss = new double[]{S, dSdL, d2SdL2};
+                        double[] Fs = new double[]{F, dFdL, d2FdL2};
+                        double[] Ps = new double[]{P, dPdL, d2PdL2, dPdF, d2PdF2};
+                        double[] dZ = new double[]{dScreendL, dCouldL, dScreendL - dCouldL, dPermdL};
+                        double[] lambdas = new double[]{lAlpha, dlAlpha, d2lAlpha, lPowPerm, dlPowPerm, d2lPowPerm, dEdLSign};
+                        if (DEBUG > 1) {
+                            logger.info(format("%s dUdL ik: %d %d\n"
+                                    + "%s      Ps: %s\n"
                                     + "%s      Ss: %s\n"
                                     + "%s      Fs: %s\n"
+                                    + "%s      dZ: %s\n"
                                     + "%s      Ls: %s",
+                                    identity, i, k,
                                     identity, formatArray(Ps), identity, formatArray(Ss),
-                                    identity, formatArray(Fs), identity, formatArray(lambdas)));
+                                    identity, formatArray(Fs), identity, formatArray(dZ),
+                                    identity, formatArray(lambdas)));
                         }
-//                        if (DEBUG > 0 && i == pmeI && k == pmeK) {
-////                            double[] compsShared = new double[]{ePerm,lambda,lAlpha,selfScale,dEdLSign,dlAlpha};
-////                            double[] compsdU = new double[]{dPermdL,dScreendL,dCouldL,dlPowPerm};
-////                            double[] compsd2U = new double[]{d2PermdL2,d2ScreendL2,d2CouldL2,d2lPowPerm,d2lAlpha};
-//                            double rr = sqrt((r[0] * r[0] + r[1] * r[1] + r[2] * r[2]));
-//                            double rr2 = rr * rr;
-//                            double sqrtrr2 = sqrt(rr2);
-//                            double[] compsShared = new double[]{ePerm,lambda,selfScale,l2,sqrtrr2,S,dSdL,P,dPdL,d2PdL2,F};
-//                            double[] compsdU = new double[]{dPermdL,dScreendL,dCouldL,dPdF,dFdL};
-//                            double[] compsd2U = new double[]{d2PermdL2,d2ScreendL2,d2CouldL2,d2PdF2,d2FdL2};
-//                            double[] lambdas = new double[]{lAlpha,dlAlpha,d2lAlpha,lPowPerm,dlPowPerm,d2lPowPerm,dEdLSign};
-//                            logOnce(format("QI dUdL shared/d1/d2: %s\n"
-//                                    +      "                      %s\n"
-//                                    +      "                      %s\n"
-//                                    +      "                      %s",
-//                                    formatArray(compsShared), formatArray(compsdU), formatArray(compsd2U), formatArray(lambdas)));
-//                        }
-                    } else {
-                        double dEdL = dPermdL;
-                        double d2EdL2 = d2PermdL2;
-                        dUdL += selfScale * (dEdLSign * dlPowPerm * ePerm + l2 * dlAlpha * dEdL);
-                        d2UdL2 += selfScale * (dEdLSign * (d2lPowPerm * ePerm
-                                + dlPowPerm * dlAlpha * dEdL
-                                + dlPowPerm * dlAlpha * dEdL)
-                                + l2 * d2lAlpha * dEdL
-                                + l2 * dlAlpha * dlAlpha * d2EdL2);
-
-                        double rr = sqrt((r[0] * r[0] + r[1] * r[1] + r[2] * r[2]));
-                        double rr2 = rr * rr;
-                        double sqrtrr2 = sqrt(rr2);
-                        double[] compsShared = new double[]{ePerm, l2, lAlpha, selfScale, dEdLSign, dlAlpha, r[0], r[1], r[2], sqrtrr2};
-                        double[] compsdU = new double[]{dEdL, dlPowPerm};
-                        double[] compsd2U = new double[]{d2EdL2, d2lPowPerm, d2lAlpha};
-                        logOnce(format("QI-noS dUdL shared/d1/d2: %s\n"
-                                + "                         %s\n"
-                                + "                         %s",
-                                formatArray(compsShared), formatArray(compsdU), formatArray(compsd2U)));
                     }
 
                     /**
@@ -6130,32 +5054,24 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                     ltzk_local[k] += scalar * permTk[2];
                 }
 
-                if (DEBUG > 0 && i == pmeI && k == pmeK) {
+                if (DEBUG > 0 && i == pmeI && k == pmeK && System.getProperty("pme-04") != null) {
                     String id = format("(Qi%d-%d)", i, k);
                     double prefs[] = new double[]{pref0, pref1, pref2};
                     double lgti[] = new double[]{lgX[i], lgY[i], lgZ[i], ltX[i], ltY[i], ltZ[i]};
                     double lgtk[] = new double[]{lxk_local[k], lyk_local[k], lzk_local[k],
                         ltxk_local[k], ltyk_local[k], ltzk_local[k]};
-                    logOnce(format("%s pref012: %s\n"
+                    logger.info(format("%s pref012: %s\n"
                             + "%s lgi,lti: %s\n"
                             + "%s lgk,ltk: %s",
                             id, formatArray(prefs), id, formatArray(lgti), id, formatArray(lgtk)));
-
-//                    if (rotateMultipoles) {
-//                        // Turn symmetry mate torques into gradients
-//                        torque(iSymm, ltxk_local, ltyk_local, ltzk_local,
-//                                lxk_local, lyk_local, lzk_local,
-//                                work[0], work[1], work[2], work[3], work[4],
-//                                work[5], work[6], work[7], work[8], work[9],
-//                                work[10], work[11], work[12], work[13], work[14]);
-//                    }
-//                    logOnce(format("(Pr%d-%d) pref1,pref2,lgi,lti;lgk,ltk: %.2f,%.2f,%s,%s",
-//                            i, k, pref1, pref2, formatArray(lgti), formatArray(lgtk)));
                 }
-                return ePerm;
+                return eReturn;
             }
 
             private double pairPerm_globalMT(double[] r, double[] Qi, double[] Qk) {
+                if (true) {
+                    throw new UnsupportedOperationException();
+                }
                 MultipoleTensor tensor = new MultipoleTensor(
                         OPERATOR.SCREENED_COULOMB, COORDINATES.GLOBAL, 6, aewald);
                 double[] dummy1 = new double[3], dummy2 = new double[3], dummy3 = new double[3];
@@ -6240,7 +5156,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                         double F = lAlpha, dFdL = dlAlpha, d2FdL2 = d2lAlpha;
                         double dPdF = (dFdL != 0.0) ? dPdL / dFdL : 0.0;
                         double d2PdF2 = (d2FdL2 != 0.0) ? d2PdL2 / d2FdL2 : 0.0;
-                        dUdL += (dSdL * P) + (S * dPdF * dFdL);
+                        dUdL += (dSdL * l2 * P) + (S * dPdF * dFdL);       // TODO REMOVE AD-HOC
                         d2UdL2 += (d2SdL2 * P) + (dSdL * S * dPdF * dFdL)
                                 + ((dSdL * dPdF) + (S * d2PdF2)) * dFdL
                                 + (S * dPdF * d2FdL2);
@@ -6249,7 +5165,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                             double[] compsShared = new double[]{ePerm, l2, lAlpha, selfScale, dEdLSign, dlAlpha};
                             double[] compsdU = new double[]{dPermdL, dScreendL, dCouldL, dlPowPerm};
                             double[] compsd2U = new double[]{d2PermdL2, d2ScreendL2, d2CouldL2, d2lPowPerm, d2lAlpha};
-                            logOnce(format("Gmt dUdL shared/d1/d2: %s\n"
+                            logger.info(format("Gmt dUdL shared/d1/d2: %s\n"
                                     + "                       %s\n"
                                     + "                       %s",
                                     formatArray(compsShared), formatArray(compsdU), formatArray(compsd2U)));
@@ -6325,108 +5241,111 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                 return ePerm;
             }
 
-            private double pairPol(double[] r, double[] Qi, double[] Qk,
-                    double[] ui, double[] uk, double[] uiCR, double[] ukCR,
-                    double damp, double aiak) {
-
-                /**
-                 * Compute screened real space interactions.
-                 */
-                tensor.setR_QI(r);
-                tensor.setMultipolesQI(Qi, Qk);
-                tensor.setDipolesQI(ui, uiCR, uk, ukCR);
-                tensor.setOperator(OPERATOR.SCREENED_COULOMB);
-                tensor.order5QI();
-
-                double mutualScale = 1.0;
-                if (polarization == Polarization.DIRECT) {
-                    mutualScale = 0.0;
-                }
-
-                double ePolScreened = tensor.polarizationEnergyQI(
-                        1.0, 1.0, mutualScale, polFi, polTi, polTk);
-
-                /**
-                 * Subtract away masked Coulomb interactions included in PME.
-                 */
-                double scaled1 = 1.0 - scaled;
-                double scalep1 = 1.0 - scalep;
-                double ePolCoulomb = 0.0;
-                if (scaled1 != 0.0 || scalep1 != 0.0) {
-                    tensor.setOperator(OPERATOR.COULOMB);
-                    tensor.order5QI();
-                    ePolCoulomb += tensor.polarizationEnergyQI(
-                            scaled1, scalep1, 0.0, FiC, TiC, TkC);
-                    polFi[0] -= FiC[0];
-                    polFi[1] -= FiC[1];
-                    polFi[2] -= FiC[2];
-                    polTi[0] -= TiC[0];
-                    polTi[1] -= TiC[1];
-                    polTi[2] -= TiC[2];
-                    polTk[0] -= TkC[0];
-                    polTk[1] -= TkC[1];
-                    polTk[2] -= TkC[2];
-                }
-
-                /**
-                 * Subtract away Thole Damped interactions included in PME.
-                 */
-                double eThole = 0.0;
-                tensor.setTholeDamping(damp, aiak);
-                boolean applyThole = tensor.applyDamping();
-                if (applyThole) {
-                    tensor.setOperator(OPERATOR.THOLE_FIELD);
-                    tensor.order4QI();
-                    tensor.setDipolesQI(ui, uiCR, uk, ukCR);
-                    eThole = tensor.polarizationEnergyQI(scaled, scalep, mutualScale, FiT, TiT, TkT);
-                    polFi[0] -= FiT[0];
-                    polFi[1] -= FiT[1];
-                    polFi[2] -= FiT[2];
-                    polTi[0] -= TiT[0];
-                    polTi[1] -= TiT[1];
-                    polTi[2] -= TiT[2];
-                    polTk[0] -= TkT[0];
-                    polTk[1] -= TkT[1];
-                    polTk[2] -= TkT[2];
-                }
-
-                final double e = selfScale * 0.5 * (ePolScreened - ePolCoulomb - eThole);
-                if (!(gradient || lambdaTerm || lamedhTerm)) {
-                    return polarizationScale * e;
-                }
-
-                double scalar = ELECTRIC * polarizationScale * selfScale;
-                gX[i] += scalar * polFi[0];
-                gY[i] += scalar * polFi[1];
-                gZ[i] += scalar * polFi[2];
-                tX[i] += scalar * polTi[0];
-                tY[i] += scalar * polTi[1];
-                tZ[i] += scalar * polTi[2];
-                gxk_local[k] -= scalar * polFi[0];
-                gyk_local[k] -= scalar * polFi[1];
-                gzk_local[k] -= scalar * polFi[2];
-                txk_local[k] += scalar * polTk[0];
-                tyk_local[k] += scalar * polTk[1];
-                tzk_local[k] += scalar * polTk[2];
-                if (lambdaTerm) {
-                    dUdL += dEdLSign * dlPowPol * e;
-                    d2UdL2 += dEdLSign * d2lPowPol * e;
-                    scalar = ELECTRIC * dEdLSign * dlPowPol * selfScale;
-                    lgX[i] += scalar * polFi[0];
-                    lgY[i] += scalar * polFi[1];
-                    lgZ[i] += scalar * polFi[2];
-                    ltX[i] += scalar * polTi[0];
-                    ltY[i] += scalar * polTi[1];
-                    ltZ[i] += scalar * polTi[2];
-                    lxk_local[k] -= scalar * polFi[0];
-                    lyk_local[k] -= scalar * polFi[1];
-                    lzk_local[k] -= scalar * polFi[2];
-                    ltxk_local[k] += scalar * polTk[0];
-                    ltyk_local[k] += scalar * polTk[1];
-                    ltzk_local[k] += scalar * polTk[2];
-                }
-                return polarizationScale * e;
-            }
+//            private double pairPol(double[] r, double[] Qi, double[] Qk,
+//                    double[] ui, double[] uk, double[] uiCR, double[] ukCR,
+//                    double damp, double aiak) {
+//                if (true) {
+//                    throw new UnsupportedOperationException();
+//                }
+//
+//                /**
+//                 * Compute screened real space interactions.
+//                 */
+//                tensor.setR_QI(r);
+//                tensor.setMultipolesQI(Qi, Qk);
+//                tensor.setDipolesQI(ui, uiCR, uk, ukCR);
+//                tensor.setOperator(OPERATOR.SCREENED_COULOMB);
+//                tensor.order5QI();
+//
+//                double mutualScale = 1.0;
+//                if (polarization == Polarization.DIRECT) {
+//                    mutualScale = 0.0;
+//                }
+//
+//                double ePolScreened = tensor.polarizationEnergyQI(
+//                        1.0, 1.0, mutualScale, polFi, polTi, polTk);
+//
+//                /**
+//                 * Subtract away masked Coulomb interactions included in PME.
+//                 */
+//                double scaled1 = 1.0 - scaled;
+//                double scalep1 = 1.0 - scalep;
+//                double ePolCoulomb = 0.0;
+//                if (scaled1 != 0.0 || scalep1 != 0.0) {
+//                    tensor.setOperator(OPERATOR.COULOMB);
+//                    tensor.order5QI();
+//                    ePolCoulomb += tensor.polarizationEnergyQI(
+//                            scaled1, scalep1, 0.0, FiC, TiC, TkC);
+//                    polFi[0] -= FiC[0];
+//                    polFi[1] -= FiC[1];
+//                    polFi[2] -= FiC[2];
+//                    polTi[0] -= TiC[0];
+//                    polTi[1] -= TiC[1];
+//                    polTi[2] -= TiC[2];
+//                    polTk[0] -= TkC[0];
+//                    polTk[1] -= TkC[1];
+//                    polTk[2] -= TkC[2];
+//                }
+//
+//                /**
+//                 * Subtract away Thole Damped interactions included in PME.
+//                 */
+//                double eThole = 0.0;
+//                tensor.setTholeDamping(damp, aiak);
+//                boolean applyThole = tensor.applyDamping();
+//                if (applyThole) {
+//                    tensor.setOperator(OPERATOR.THOLE_FIELD);
+//                    tensor.order4QI();
+//                    tensor.setDipolesQI(ui, uiCR, uk, ukCR);
+//                    eThole = tensor.polarizationEnergyQI(scaled, scalep, mutualScale, FiT, TiT, TkT);
+//                    polFi[0] -= FiT[0];
+//                    polFi[1] -= FiT[1];
+//                    polFi[2] -= FiT[2];
+//                    polTi[0] -= TiT[0];
+//                    polTi[1] -= TiT[1];
+//                    polTi[2] -= TiT[2];
+//                    polTk[0] -= TkT[0];
+//                    polTk[1] -= TkT[1];
+//                    polTk[2] -= TkT[2];
+//                }
+//
+//                final double e = selfScale * 0.5 * (ePolScreened - ePolCoulomb - eThole);
+//                if (!(gradient || lambdaTerm || esvTerm)) {
+//                    return polarizationScale * e;
+//                }
+//
+//                double scalar = ELECTRIC * polarizationScale * selfScale;
+//                gX[i] += scalar * polFi[0];
+//                gY[i] += scalar * polFi[1];
+//                gZ[i] += scalar * polFi[2];
+//                tX[i] += scalar * polTi[0];
+//                tY[i] += scalar * polTi[1];
+//                tZ[i] += scalar * polTi[2];
+//                gxk_local[k] -= scalar * polFi[0];
+//                gyk_local[k] -= scalar * polFi[1];
+//                gzk_local[k] -= scalar * polFi[2];
+//                txk_local[k] += scalar * polTk[0];
+//                tyk_local[k] += scalar * polTk[1];
+//                tzk_local[k] += scalar * polTk[2];
+//                if (lambdaTerm) {
+//                    dUdL += dEdLSign * dlPowPol * e;
+//                    d2UdL2 += dEdLSign * d2lPowPol * e;
+//                    scalar = ELECTRIC * dEdLSign * dlPowPol * selfScale;
+//                    lgX[i] += scalar * polFi[0];
+//                    lgY[i] += scalar * polFi[1];
+//                    lgZ[i] += scalar * polFi[2];
+//                    ltX[i] += scalar * polTi[0];
+//                    ltY[i] += scalar * polTi[1];
+//                    ltZ[i] += scalar * polTi[2];
+//                    lxk_local[k] -= scalar * polFi[0];
+//                    lyk_local[k] -= scalar * polFi[1];
+//                    lzk_local[k] -= scalar * polFi[2];
+//                    ltxk_local[k] += scalar * polTk[0];
+//                    ltyk_local[k] += scalar * polTk[1];
+//                    ltzk_local[k] += scalar * polTk[2];
+//                }
+//                return polarizationScale * e;
+//            }
 
             private void applyScaleFactors(Atom ai) {
                 for (Atom ak : ai.get1_5s()) {
@@ -6656,7 +5575,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                     ltY = lambdaTorque[ti][1];
                     ltZ = lambdaTorque[ti][2];
                 }
-                if (lamedhTerm) {
+                if (esvTerm) {
                     ldhgX = lamedhGrad[ti][0];
                     ldhgY = lamedhGrad[ti][1];
                     ldhgZ = lamedhGrad[ti][2];
@@ -6682,10 +5601,13 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                     }
                 }
                 if (lambdaTerm) {
-                    shareddEdLambda.addAndGet(eSelf * dlPowPerm * dEdLSign);
-                    sharedd2EdLambda2.addAndGet(eSelf * d2lPowPerm * dEdLSign);
+                    if (DEBUG > 0) {
+                        throw new UnsupportedOperationException();
+                    }
+                    shareddEdLambdaQI.addAndGet(eSelf * dlPowPerm * dEdLSign);
+                    sharedd2EdLambda2QI.addAndGet(eSelf * d2lPowPerm * dEdLSign);
                 }
-                if (lamedhTerm) {
+                if (esvTerm) {
                     for (ExtendedVariable esv : esvList) {
                         shareddEdLdh[esv.index].addAndGet(eSelf * dldhPowPerm[esv.index] * dEdLdhSign[esv.index]);
                         sharedd2EdLdh2[esv.index].addAndGet(eSelf * d2ldhPowPerm[esv.index] * dEdLdhSign[esv.index]);
@@ -6727,7 +5649,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                                 + mpole[t101] * phi[t101]
                                 + mpole[t011] * phi[t011]));
                         eRecip += e;
-                        if (gradient || lambdaTerm || lamedhTerm) {
+                        if (gradient || lambdaTerm || esvTerm) {
                             final double fPhi[] = fracMultipolePhi[i];
                             double gx = fmpole[t000] * fPhi[t100] + fmpole[t100] * fPhi[t200] + fmpole[t010] * fPhi[t110]
                                     + fmpole[t001] * fPhi[t101]
@@ -6777,7 +5699,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                                 ltY[i] += dEdLSign * dlPowPerm * ELECTRIC * tqy;
                                 ltZ[i] += dEdLSign * dlPowPerm * ELECTRIC * tqz;
                             }
-                            if (lamedhTerm) {
+                            if (esvTerm) {
                                 for (ExtendedVariable esv : esvList) {
                                     int esvi = esv.index;
                                     dUdLdh[esvi] += dEdLdhSign[esvi] * dldhPowPerm[esvi] * e;
@@ -6796,10 +5718,13 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                 }
 
                 if (lambdaTerm) {
-                    shareddEdLambda.addAndGet(0.5 * dUdL * ELECTRIC);
-                    sharedd2EdLambda2.addAndGet(0.5 * d2UdL2 * ELECTRIC);
+                    if (DEBUG > 0) {
+                        throw new UnsupportedOperationException();
+                    }
+                    shareddEdLambdaQI.addAndGet(0.5 * dUdL * ELECTRIC);
+                    sharedd2EdLambda2QI.addAndGet(0.5 * d2UdL2 * ELECTRIC);
                 }
-                if (lamedhTerm) {
+                if (esvTerm) {
                     for (ExtendedVariable esv : esvList) {
                         shareddEdLdh[esv.index].addAndGet(0.5 * dUdLdh[esv.index] * ELECTRIC);
                         sharedd2EdLdh2[esv.index].addAndGet(0.5 * d2UdL2 * ELECTRIC);
@@ -6848,7 +5773,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                     ltY = lambdaTorque[threadID][1];
                     ltZ = lambdaTorque[threadID][2];
                 }
-                if (lamedhTerm) {
+                if (esvTerm) {
                     ldhgX = lamedhGrad[threadID][0];
                     ldhgY = lamedhGrad[threadID][1];
                     ldhgZ = lamedhGrad[threadID][2];
@@ -6875,10 +5800,13 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                     }
                 }
                 if (lambdaTerm) {
-                    shareddEdLambda.addAndGet(dEdLSign * dlPowPol * eSelf);
-                    sharedd2EdLambda2.addAndGet(dEdLSign * d2lPowPol * eSelf);
+                    if (DEBUG > 0) {
+                        throw new UnsupportedOperationException();
+                    }
+                    shareddEdLambdaQI.addAndGet(dEdLSign * dlPowPol * eSelf);
+                    sharedd2EdLambda2QI.addAndGet(dEdLSign * d2lPowPol * eSelf);
                 }
-                if (lamedhTerm) {
+                if (esvTerm) {
                     for (ExtendedVariable esv : esvList) {
                         shareddEdLdh[esv.index].addAndGet(dEdLdhSign[esv.index] * dldhPowPol[esv.index] * eSelf);
                         sharedd2EdLdh2[esv.index].addAndGet(dEdLdhSign[esv.index] * d2ldhPowPol[esv.index] * eSelf);
@@ -6907,7 +5835,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                                 ltY[i] += dEdLSign * dlPowPol * tiy;
                                 ltZ[i] += dEdLSign * dlPowPol * tiz;
                             }
-                            if (lamedhTerm) {
+                            if (esvTerm) {
                                 for (ExtendedVariable esv : esvList) {
                                     ldhtX[esv.index][i] += dEdLdhSign[esv.index] * dldhPowPol[esv.index] * tix;
                                     ldhtY[esv.index][i] += dEdLdhSign[esv.index] * dldhPowPol[esv.index] * tiy;
@@ -6992,7 +5920,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                                 ltY[i] += dEdLSign * dlPowPol * tqy;
                                 ltZ[i] += dEdLSign * dlPowPol * tqz;
                             }
-                            if (lamedhTerm) {
+                            if (esvTerm) {
                                 for (ExtendedVariable esv : esvList) {
                                     int esvi = esv.index;
                                     ldhgX[esvi][i] += dEdLdhSign[esvi] * dldhPowPol[esvi] * dfx;
@@ -7008,10 +5936,13 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                 }
                 eRecip *= 0.5 * ELECTRIC;
                 if (lambdaTerm) {
-                    shareddEdLambda.addAndGet(dEdLSign * dlPowPol * eRecip);
-                    sharedd2EdLambda2.addAndGet(dEdLSign * d2lPowPol * eRecip);
+                    if (DEBUG > 0) {
+                        throw new UnsupportedOperationException();
+                    }
+                    shareddEdLambdaQI.addAndGet(dEdLSign * dlPowPol * eRecip);
+                    sharedd2EdLambda2QI.addAndGet(dEdLSign * d2lPowPol * eRecip);
                 }
-                if (lamedhTerm) {
+                if (esvTerm) {
                     for (ExtendedVariable esv : esvList) {
                         shareddEdLdh[esv.index].addAndGet(dEdLdhSign[esv.index] * dldhPowPol[esv.index] * eRecip);
                         sharedd2EdLdh2[esv.index].addAndGet(dEdLdhSign[esv.index] * d2ldhPowPol[esv.index] * eRecip);
@@ -7103,7 +6034,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                     fill(ltY, 0.0);
                     fill(ltZ, 0.0);
                 }
-                if (lamedhTerm) {
+                if (esvTerm) {
                     double ldhgX[][] = lamedhGrad[threadID][0];
                     double ldhgY[][] = lamedhGrad[threadID][1];
                     double ldhgZ[][] = lamedhGrad[threadID][2];
@@ -7430,7 +6361,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                 if (lambdaTerm) {
                     lg = lambdaGrad[threadID];
                 }
-                if (lamedhTerm) {
+                if (esvTerm) {
                     ldhg = lamedhGrad[threadID];
                 }
             }
@@ -7447,7 +6378,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                         torque(i, lambdaTorque, lg);
                     }
                 }
-                if (lamedhTerm) {
+                if (esvTerm) {
                     for (int i = lb; i <= ub; i++) {
                         for (ExtendedVariable esv : esvList) {
                             torque(i, lamedhTorque[esv.index], ldhg[esv.index]);
@@ -7662,7 +6593,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                         }
                     }
                 }
-                if (lamedhTerm) {
+                if (esvTerm) {
                     double ldhx[][] = lamedhGrad[0][0];
                     double ldhy[][] = lamedhGrad[0][1];
                     double ldhz[][] = lamedhGrad[0][2];
@@ -8077,17 +7008,17 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
          *
          * then df/dL = -dlAlpha / f and dg/dL = dlAlpha * g^3
          */
-        if (useNewAlphas) {
-            lAlpha = permLambdaAlpha * (1.0 - lambda) * (1.0 - lambda);
-            dlAlpha = -2.0 * permLambdaAlpha * (1.0 - lambda);
-            d2lAlpha = 2.0 * permLambdaAlpha;
-        } else {
-            lAlpha = permLambdaAlpha * (1.0 - lambda) * (1.0 - lambda);
-            dlAlpha = permLambdaAlpha * (1.0 - lambda);
-            d2lAlpha = -permLambdaAlpha;
-        }
+        lAlpha = permLambdaAlpha * (1.0 - lambda) * (1.0 - lambda);
+        dlAlpha = -2.0 * permLambdaAlpha * (1.0 - lambda);
+        d2lAlpha = 2.0 * permLambdaAlpha;
 
         lPowPerm = pow(lambda, permLambdaExponent);
+        if (permLambdaExponent != 1.0) {
+            logger.severe("Non-unity permLambdaExponent??");
+        }
+        if (lambda != 0.0 && lPowPerm <= 0.0) {
+            logger.severe(format("WUT? lambda,lPowPerm: %g %g", lambda, lPowPerm));
+        }
         dlPowPerm = permLambdaExponent * pow(lambda, permLambdaExponent - 1.0);
         d2lPowPerm = 0.0;
         if (permLambdaExponent >= 2.0) {
@@ -8126,34 +7057,13 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
         if (generalizedKirkwoodTerm) {
             generalizedKirkwood.setLambda(lambda);
         }
-
-        if (unityPrefactor && System.getProperty("pme-earlyUnity") != null) {
-            logger.warning("Using EARLY UNITY.");
-            dEdLSign = +1.0;
-            lAlpha = 1.0 * pow((1.0 - lambda), 2.0);            // alpha*(1-L)^2
-            dlAlpha = 1.0 * -2.0 * pow((1.0 - lambda), 1.0);    // -2*alpha*(1-L)
-            d2lAlpha = 1.0 * -2.0 * -1.0;                       // 2*alpha
-            lPowPerm = pow(lambda, 1.0);                        // L^1
-            dlPowPerm = 1.0;                                    // 1.0
-            d2lPowPerm = 0.0;
-            lPowPol = pow(lambda, 1.0);                         // L^1
-            dlPowPol = 1.0;                                     // 1.0
-            d2lPowPol = 0.0;
-            if (lAlpha != (1 - lambda) * (1 - lambda)
-                    || dlAlpha != -2.0 * (1 - lambda)
-                    || d2lAlpha != 2.0
-                    || lPowPerm != lambda || dlPowPerm != 1.0
-                    || lPowPol != lambda || dlPowPol != 1.0) {
-                logger.warning("Unity encountered discrepancy in lambda parameters!");
-            }
-        }
     }
 
     /**
      * Setup extended system (lamedh) variables.
      */
     public void setESVList(List<ExtendedVariable> list) {
-        if (!lamedhTerm) {
+        if (!esvTerm) {
             logger.severe("PME object not constructed for ESV handling.");
         }
         this.esvList = list;
@@ -8261,19 +7171,23 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
      */
     @Override
     public double getdEdL() {
-        if (shareddEdLambda == null || !lambdaTerm) {
+        if (shareddEdLambdaQI == null || !lambdaTerm) {
             logger.warning("Tried to get null/off lambda derivative.");
             return 0.0;
         }
-        double dEdL = (useQI) ? shareddEdLambdaQI.get() : shareddEdLambda.get();
+        double dEdL = shareddEdLambdaQI.get();
+        if (DEBUG > 0) {
+            return dEdL;
+        }
         if (generalizedKirkwoodTerm) {
             dEdL += generalizedKirkwood.getdEdL();
         }
         return dEdL;
     }
 
+    @Override
     public double[] getdEdLdh() {
-        if (shareddEdLdh == null || !lamedhTerm) {
+        if (shareddEdLdh == null || !esvTerm) {
             logger.warning("Called for ESV gradient when lamedhTerm=false.");
             return new double[numESVs];
         }
@@ -8294,19 +7208,23 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
      */
     @Override
     public double getd2EdL2() {
-        if (sharedd2EdLambda2 == null || !lambdaTerm) {
+        if (sharedd2EdLambda2QI == null || !lambdaTerm) {
             logger.warning("Tried to get null/off lambda (second) derivative.");
             return 0.0;
         }
-        double d2EdL2 = (useQI) ? sharedd2EdLambda2QI.get() : sharedd2EdLambda2.get();
+        double d2EdL2 = sharedd2EdLambda2QI.get();
+        if (DEBUG > 0) {
+            return d2EdL2;
+        }
         if (generalizedKirkwoodTerm) {
             d2EdL2 += generalizedKirkwood.getd2EdL2();
         }
         return d2EdL2;
     }
 
+    @Override
     public double[] getd2EdLdh2() {
-        if (sharedd2EdLdh2 == null | !lamedhTerm) {
+        if (sharedd2EdLdh2 == null | !esvTerm) {
             logger.warning("Called for ESV gradient when lamedhTerm=false.");
             return new double[numESVs];
         }
@@ -8344,8 +7262,9 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
         }
     }
 
-    public double[][] getdEdXdLdh(double[][] gradient) {
-        if (lamedhGrad == null || !lamedhTerm) {
+    @Override
+    public double[][] getdEdXdLdh() {
+        if (lamedhGrad == null || !esvTerm) {
             logger.warning("Called for ESV gradient when lamedhTerm=false.");
             return new double[numESVs][nAtoms];
         }
@@ -10030,19 +8949,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
         }
         sb.append("]");
         return sb.toString();
-    }
-
-    private final boolean logOnce = System.getProperty("pme-logOnce") != null;
-
-    private void logOnce(String msg) {
-        if (!logOnce) {
-            logger.info(msg);
-            return;
-        }
-        if (!msgs.contains(msg)) {
-            logger.info(msg);
-            msgs.add(msg);
-        }
     }
 
     /**

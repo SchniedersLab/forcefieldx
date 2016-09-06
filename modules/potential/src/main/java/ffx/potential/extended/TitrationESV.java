@@ -40,8 +40,8 @@ public final class TitrationESV extends ExtendedVariable {
     private List<ROLS> rolsOne, rolsZero;
     private static final List<String> backboneNames = Arrays.asList("N","CA","C","O","HA","H");
     
-    public TitrationESV(Residue res, MolecularAssembly mola, double temperature, double dt) {
-        super(mola.getPotentialEnergy(), temperature, dt, 1.0);
+    public TitrationESV(Residue res, MolecularAssembly mola, double temperature, double dt, double biasMag) {
+        super(mola.getPotentialEnergy(), temperature, dt, 1.0, biasMag);
         ffe = (potential instanceof ForceFieldEnergy) ? (ForceFieldEnergy) potential : null;
         if (ffe == null) {
             throw new UnsupportedOperationException("Lamedh ESVs not yet implemented for non-forcefield or hybrid potentials.");
@@ -66,6 +66,10 @@ public final class TitrationESV extends ExtendedVariable {
         describe();
     }
     
+    public TitrationESV(Residue res, MolecularAssembly mola, double temperature, double dt) {
+        this(res, mola, temperature, dt, 1.0);
+    }
+    
     @Override
     protected void setAtoms() {
         atomsOne = new ArrayList<>();
@@ -81,9 +85,20 @@ public final class TitrationESV extends ExtendedVariable {
         atoms.parallelStream().forEach(a -> a.setApplyLamedh(true));
     }
     
+    /**
+     * Query FFE for derivative terms, add bias.
+     */
     @Override
-    public double getdEdLamedh() {
-        return ffe.getdEdLdh()[index];
+    public double getdEdLdh() {
+        return (ffe.getdEdLdh()[index] + getdBiasdLdh());
+    }
+    
+    /**
+     * Query FFE for derivative terms, add bias.
+     */
+    @Override
+    public double getd2EdLdh2() {
+        return (ffe.getd2EdLdh2()[index] + getd2BiasdLdh2());
     }
     
     @Override
@@ -104,6 +119,31 @@ public final class TitrationESV extends ExtendedVariable {
 //            return OptionalDouble.of(1.0 - lamedh);
 //        }
         return OptionalDouble.empty();
+    }
+    
+    /**
+     * Bias[Mag,Lambda] = Mag - 4*Mag*(Lambda - 0.5)^2;
+     * @return 
+     */
+    @Override
+    public double getBiasEnergy() {
+        return (biasMag - 4*biasMag*(lamedh - 0.5)*(lamedh - 0.5));
+    }
+    
+    /**
+     * dBiasdL = -8*Mag*(Lambda-0.5)
+     */
+    @Override
+    public double getdBiasdLdh() {
+        return (-8*biasMag*(lamedh - 0.5));
+    }
+    
+    /**
+     * d2BiasdL2 = -8*Mag
+     */
+    @Override
+    public double getd2BiasdLdh2() {
+        return -8*biasMag;
     }
     
     @Override
