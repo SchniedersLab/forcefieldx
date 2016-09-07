@@ -1143,11 +1143,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             return totalEnergy;
         }
         
-        // TODO REMOVE
-        if (true) {
-            throw new UnsupportedOperationException();
-        }
-        
         if (bondTerm) {
             bondTime = System.nanoTime();
             for (int i = 0; i < nBonds; i++) {
@@ -1896,9 +1891,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                         || Double.isNaN(gz) || Double.isInfinite(gz)) {
                     String message = format("The gradient of atom %s is (%8.3f,%8.3f,%8.3f).",
                             a.toString(), gx, gy, gz);
-                    // TODO BACK2SEVERE
-                    logger.info(message);
-//                    logger.severe(message);
+                    logger.severe(message);
                 }
                 g[index++] = gx;
                 g[index++] = gy;
