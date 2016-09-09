@@ -217,6 +217,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private VARIABLE_TYPE[] variableTypes = null;
     private double xyz[] = null;
     private boolean printOverride = false;
+    private Level printSDLlevel = Level.FINE;
     /****************************************/
     /*      Extended System Variables       */
     private int numESVs;
@@ -308,6 +309,15 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         comTerm = forceField.getBoolean(ForceFieldBoolean.COMRESTRAINTERM, false);
         lambdaTorsions = forceField.getBoolean(ForceFieldBoolean.LAMBDA_TORSIONS, false);
         esvTerm = forceField.getBoolean(ForceFieldBoolean.ESVTERM, false);
+        
+        String printSDL = System.getProperty("printSDL");
+        if (printSDL != null) {
+            try {
+                printSDLlevel = Level.parse(printSDL);
+            } catch (IllegalArgumentException | NullPointerException ex) {
+                logger.warning(String.format("String passed to printSDL is not a valid Level: %s", printSDL));
+            }
+        }
 
         // For RESPA
         bondTermOrig = bondTerm;
@@ -2062,7 +2072,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         double dEdLambda = 0.0;
         if (pmeOnly) {
             dEdLambda = particleMeshEwald.getdEdL();
-            logger.info(format("    SDL PME dEdL:   %.6g", dEdLambda));
+            //logger.info(format("    SDL PME dEdL:   %.6g", dEdLambda));
+            logger.log(printSDLlevel, format("    SDL PME dEdL:   %.6g", dEdLambda));
             return dEdLambda;
         }
         if (!lambdaBondedTerms) {
@@ -2071,7 +2082,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             }
             if (multipoleTerm) {
                 dEdLambda += particleMeshEwald.getdEdL();
-                logger.info(format("    SDL FFE dEdL:   %.6g", particleMeshEwald.getdEdL()));
+                //logger.info(format("    SDL FFE dEdL:   %.6g", particleMeshEwald.getdEdL()));
+                logger.log(printSDLlevel, format("    SDL FFE dEdL:   %.6g", particleMeshEwald.getdEdL()));
             }
             if (restraintBondTerm) {
                 for (int i = 0; i < nRestraintBonds; i++) {
@@ -2102,7 +2114,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 }
             }
         } else {
-            logger.info("    SDL FFE dEdL:   lambdaBondedTerms was set?");
+            //logger.info("    SDL FFE dEdL:   lambdaBondedTerms was set?");
+            logger.log(printSDLlevel, "    SDL FFE dEdL:   lambdaBondedTerms was set?");
         }
         return dEdLambda;
     }
@@ -2330,7 +2343,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         double d2EdLambda2 = 0.0;
         if (pmeOnly) {
             d2EdLambda2 = particleMeshEwald.getd2EdL2();
-            logger.info(format("    SDL FFE d2EdL2-qi: %.6g", d2EdLambda2));
+            //logger.info(format("    SDL FFE d2EdL2-qi: %.6g", d2EdLambda2));
+            logger.log(printSDLlevel, format("    SDL FFE d2EdL2-qi: %.6g", d2EdLambda2));
             return d2EdLambda2;
         }
         if (!lambdaBondedTerms) {
@@ -2339,7 +2353,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             }
             if (multipoleTerm) {
                 d2EdLambda2 += particleMeshEwald.getd2EdL2();
-                logger.info(format("    SDL FFE d2EdL2: %.6g", particleMeshEwald.getd2EdL2()));
+                //logger.info(format("    SDL FFE d2EdL2: %.6g", particleMeshEwald.getd2EdL2()));
+                logger.log(printSDLlevel, format("    SDL FFE d2EdL2: %.6g", particleMeshEwald.getd2EdL2()));
             }
             if (restraintBondTerm) {
                 for (int i = 0; i < nRestraintBonds; i++) {
@@ -2370,7 +2385,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 }
             }
         } else {
-            logger.info("    SDL FFE d2EdL2: lambdaBondedTerms was set?");
+            //logger.info("    SDL FFE d2EdL2: lambdaBondedTerms was set?");
+            logger.log(printSDLlevel, "    SDL FFE d2EdL2: lambdaBondedTerms was set?");
         }
         return d2EdLambda2;
     }
