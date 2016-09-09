@@ -313,7 +313,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         String printSDL = System.getProperty("printSDL");
         if (printSDL != null) {
             try {
-                printSDLlevel = Level.parse(printSDL);
+                printSDLlevel = Level.parse(printSDL.toUpperCase());
             } catch (IllegalArgumentException | NullPointerException ex) {
                 logger.warning(String.format("String passed to printSDL is not a valid Level: %s", printSDL));
             }
