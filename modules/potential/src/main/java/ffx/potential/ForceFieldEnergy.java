@@ -225,6 +225,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private StringBuilder esvLogger;
     private final boolean ESV_DEBUG = false;
     private final boolean pmeQI = (System.getProperty("pme-qi") != null);
+    private final boolean pmeOnly = (System.getProperty("ffe-pmeOnly") != null);
     /****************************************/
 
     private Resolution resolution = Resolution.AMOEBA;
@@ -309,15 +310,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         comTerm = forceField.getBoolean(ForceFieldBoolean.COMRESTRAINTERM, false);
         lambdaTorsions = forceField.getBoolean(ForceFieldBoolean.LAMBDA_TORSIONS, false);
         esvTerm = forceField.getBoolean(ForceFieldBoolean.ESVTERM, false);
-        
-        String printSDL = System.getProperty("printSDL");
-        if (printSDL != null) {
-            try {
-                printSDLlevel = Level.parse(printSDL.toUpperCase());
-            } catch (IllegalArgumentException | NullPointerException ex) {
-                logger.warning(String.format("String passed to printSDL is not a valid Level: %s", printSDL));
-            }
-        }
 
         // For RESPA
         bondTermOrig = bondTerm;
@@ -1123,13 +1115,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
 
         if (pmeOnly) {
-            if (esvBiasOnly) {
-                logger.severe("Incompatible flags!");
-            }
-            if (printOptPmeOnly) {
-                logger.info(" (* OPTS *) : Only computing PME energy and gradient!");
-                printOptPmeOnly = false;
-            }
             totalElectrostaticEnergy = particleMeshEwald.energy(gradient, print);
             permanentMultipoleEnergy = particleMeshEwald.getPermanentEnergy();
             if (totalElectrostaticEnergy != permanentMultipoleEnergy) {
@@ -1138,20 +1123,17 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             totalEnergy = permanentMultipoleEnergy;
             logger.info(format("FFE returning permanentEnergy = %g %g %g", totalEnergy, totalElectrostaticEnergy, permanentMultipoleEnergy));
             return totalEnergy;
-        } else if (esvBiasOnly) {
-            if (printOptEsvBiasOnly) {
-                logger.info(" (* OPTS *) : Only computing ESVBIAS energy and gradient!");
-                printOptPmeOnly = false;
-            }
-            esvBiasEnergy = 0.0;
-            for (ExtendedVariable esv : esvList) {
-                esvBiasEnergy += esv.getBiasEnergy();
-                esvLogger.append(format("    ESV[%d] with lamedh %.4f contributed bias: %.4f", 
-                        esv.index, esv.getLamedh(), esv.getBiasEnergy()));
-            }
-            totalEnergy = esvBiasEnergy;
-            return totalEnergy;
         }
+//        if (esvBiasOnly) {
+//            esvBiasEnergy = 0.0;
+//            for (ExtendedVariable esv : esvList) {
+//                esvBiasEnergy += esv.getBiasEnergy();
+//                esvLogger.append(format("    ESV[%d] with lamedh %.4f contributed bias: %.4f", 
+//                        esv.index, esv.getLamedh(), esv.getBiasEnergy()));
+//            }
+//            totalEnergy = esvBiasEnergy;
+//            return totalEnergy;
+//        }
         
         if (bondTerm) {
             bondTime = System.nanoTime();
@@ -1847,9 +1829,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
      */
     @Override
     public double energyAndGradient(double x[], double g[]) {
-        if (System.getProperty("debug") != null && optimizationScaling != null) {
-            logger.warning("Optimization scaling IS PRESENT.");
-        }
         /**
          * Un-scale the coordinates.
          */
@@ -2059,10 +2038,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
         return nActive * 3;
     }
-
-    private final boolean pmeOnly = System.getProperty("ffe-pmeOnly") != null;
-    private final boolean esvBiasOnly = System.getProperty("ffe-esvBiasOnly") != null;
-    private static boolean printOptPmeOnly = true, printOptEsvBiasOnly = true;
     
     /**
      * {@inheritDoc}
@@ -2071,10 +2046,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     public double getdEdL() {
         double dEdLambda = 0.0;
         if (pmeOnly) {
-            dEdLambda = particleMeshEwald.getdEdL();
-            //logger.info(format("    SDL PME dEdL:   %.6g", dEdLambda));
-            logger.log(printSDLlevel, format("    SDL PME dEdL:   %.6g", dEdLambda));
-            return dEdLambda;
+            return particleMeshEwald.getdEdL();
         }
         if (!lambdaBondedTerms) {
             if (vanderWaalsTerm) {
@@ -2082,8 +2054,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             }
             if (multipoleTerm) {
                 dEdLambda += particleMeshEwald.getdEdL();
-                //logger.info(format("    SDL FFE dEdL:   %.6g", particleMeshEwald.getdEdL()));
-                logger.log(printSDLlevel, format("    SDL FFE dEdL:   %.6g", particleMeshEwald.getdEdL()));
             }
             if (restraintBondTerm) {
                 for (int i = 0; i < nRestraintBonds; i++) {
@@ -2113,9 +2083,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     dEdLambda += torsionTorsions[i].getdEdL();
                 }
             }
-        } else {
-            //logger.info("    SDL FFE dEdL:   lambdaBondedTerms was set?");
-            logger.log(printSDLlevel, "    SDL FFE dEdL:   lambdaBondedTerms was set?");
         }
         return dEdLambda;
     }
@@ -2139,9 +2106,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             bias[i] = esvList.get(i).getBiasEnergy();
         }
         terms.add(bias);
-        if (esvBiasOnly) {
-            return bias;
-        }
         if (!lambdaBondedTerms) {
             if (vanderWaalsTerm) {
                 double[] vdw = vanderWaals.getdEdLdh();
@@ -2342,10 +2306,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     public double getd2EdL2() {
         double d2EdLambda2 = 0.0;
         if (pmeOnly) {
-            d2EdLambda2 = particleMeshEwald.getd2EdL2();
-            //logger.info(format("    SDL FFE d2EdL2-qi: %.6g", d2EdLambda2));
-            logger.log(printSDLlevel, format("    SDL FFE d2EdL2-qi: %.6g", d2EdLambda2));
-            return d2EdLambda2;
+            return particleMeshEwald.getd2EdL2();
         }
         if (!lambdaBondedTerms) {
             if (vanderWaalsTerm) {
@@ -2353,8 +2314,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             }
             if (multipoleTerm) {
                 d2EdLambda2 += particleMeshEwald.getd2EdL2();
-                //logger.info(format("    SDL FFE d2EdL2: %.6g", particleMeshEwald.getd2EdL2()));
-                logger.log(printSDLlevel, format("    SDL FFE d2EdL2: %.6g", particleMeshEwald.getd2EdL2()));
             }
             if (restraintBondTerm) {
                 for (int i = 0; i < nRestraintBonds; i++) {
@@ -2384,9 +2343,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     d2EdLambda2 += torsionTorsions[i].getd2EdL2();
                 }
             }
-        } else {
-            //logger.info("    SDL FFE d2EdL2: lambdaBondedTerms was set?");
-            logger.log(printSDLlevel, "    SDL FFE d2EdL2: lambdaBondedTerms was set?");
         }
         return d2EdLambda2;
     }
@@ -2398,9 +2354,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             bias[i] = esvList.get(i).getBiasEnergy();
         }
         terms.add(bias);
-        if (esvBiasOnly) {
-            return bias;
-        }
         if (!lambdaBondedTerms) {
             if (vanderWaalsTerm) {
                 terms.add(vanderWaals.getd2EdLdh2());
