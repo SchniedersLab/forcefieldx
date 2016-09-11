@@ -673,22 +673,24 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
     /**
      * Debug flags.
      */
-    private final int DEBUG = System.getProperty("debug") != null ? Integer.parseInt(System.getProperty("debug")) : 0;
-    private final COORDINATES tensorMode = (System.getProperty("pme-tensorMode") != null)
-            ? (COORDINATES.valueOf(System.getProperty("pme-tensorMode"))) : COORDINATES.QI;
-    private final COORDINATES lambdaBufferCoords = (System.getProperty("pme-bufferCoords") != null)
-            ? COORDINATES.valueOf(System.getProperty("pme-bufferCoords")) : COORDINATES.QI;
-    private final MultipoleTensor.RMode Rmode = (System.getProperty("mt-Rmode") != null)
-            ? RMode.valueOf(System.getProperty("mt-Rmode")) : RMode.INDEPENDENT;
-    private int Fmode = (System.getProperty("pme-Fmode") != null)
-            ? Integer.parseInt(System.getProperty("pme-Fmode")) : 0;
-    private int Dmode = (System.getProperty("pme-Dmode") != null)
-            ? Integer.parseInt(System.getProperty("pme-Dmode")) : 0;
-    private int Zmode = (System.getProperty("pme-Zmode") != null)
-            ? Integer.parseInt(System.getProperty("pme-Zmode")) : 0;
-    private final boolean useSharedTensor = (System.getProperty("pme-sharedTensor") != null)
-            ? Boolean.parseBoolean(System.getProperty("pme-sharedTensor")) : true;
-
+    private final int DEBUG = (System.getProperty("debug") != null)
+            ? Integer.parseInt(System.getProperty("debug")) : 0;
+    private final COORDINATES lambdaBufferCoords;
+    private final MultipoleTensor.RMode Rmode;
+    private final int Fmode;
+    private final DLALPHAMODE dlAlphaMode;
+    private final boolean useSharedTensor;
+    private final int d2Mode;
+    private final OPTSET optSet = (System.getProperty("pme-optSet") != null)
+            ? OPTSET.valueOf(System.getProperty("pme-optSet")) : OPTSET.ORIGINAL;
+    
+    private enum DLALPHAMODE {
+        ACTUAL, FACTORED;
+    }
+    public enum OPTSET {
+        Z_SUB, ORIGINAL, CUSTOM;
+    }
+    
     /**
      * The sqrt of PI.
      */
@@ -708,6 +710,39 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
      */
     public ParticleMeshEwaldQI(Atom atoms[], int molecule[], ForceField forceField,
             Crystal crystal, NeighborList neighborList, ELEC_FORM elecForm, ParallelTeam parallelTeam) {
+        switch (optSet) {
+            default:
+            case ORIGINAL:
+                lambdaBufferCoords = COORDINATES.QI;
+                Rmode = RMode.INDEPENDENT;
+                Fmode = 3;
+                dlAlphaMode = DLALPHAMODE.FACTORED;
+                useSharedTensor = true;
+                d2Mode = 0;
+                break;
+            case Z_SUB:
+                lambdaBufferCoords = COORDINATES.QI;
+                Rmode = RMode.Z_SUBSTITUTION;
+                Fmode = 0;
+                dlAlphaMode = DLALPHAMODE.ACTUAL;
+                useSharedTensor = true;
+                d2Mode = 0;
+                break;
+            case CUSTOM:
+                lambdaBufferCoords = (System.getProperty("pme-bufferCoords") != null)
+                    ? COORDINATES.valueOf(System.getProperty("pme-bufferCoords")) : COORDINATES.QI;
+                Rmode = (System.getProperty("mt-Rmode") != null)
+                    ? RMode.valueOf(System.getProperty("mt-Rmode")) : RMode.INDEPENDENT;
+                Fmode = (System.getProperty("pme-Fmode") != null)
+                    ? Integer.parseInt(System.getProperty("pme-Fmode")) : 3;
+                dlAlphaMode = (System.getProperty("pme-dlAlphaMode") != null)
+                    ? DLALPHAMODE.valueOf(System.getProperty("pme-dlAlphaMode")) : DLALPHAMODE.FACTORED;
+                useSharedTensor = (System.getProperty("pme-sharedTensor") != null)
+                    ? Boolean.parseBoolean(System.getProperty("pme-sharedTensor")) : true;
+                d2Mode = (System.getProperty("pme-d2Mode") != null)
+                    ? Integer.parseInt(System.getProperty("pme-d2Mode")) : 0;
+                break;
+        }
         this.atoms = atoms;
         this.molecule = molecule;
         this.forceField = forceField;
@@ -1007,11 +1042,11 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
         StringBuilder config = new StringBuilder();
         config.append(format("\n Quasi-Internal PME Settings\n"));
         config.append(format("          Debug: %d\n", DEBUG));
-        config.append(format("     Coords T,B: %s %s\n", tensorMode.toString(), lambdaBufferCoords.toString()));
-        config.append(format("    Modes F,D,Z: %d %d %d\n", Fmode, Dmode, Zmode));
-        config.append(format("   MT-R,dlAlpha: %s %s\n", Rmode.toString(), dlAlphaMode.toString()));
-        config.append(format(" Chrg,Dipl,Quad: %b %b %b", useCharges, useDipoles, useQuadrupoles));
-        logger.config(config.toString());
+        config.append(format("     BuffCoords: %s \n", lambdaBufferCoords.toString()));
+        config.append(format(" F,MT-R,dlAlpha: %d %s %s\n", Fmode, Rmode.toString(), dlAlphaMode.toString()));
+        config.append(format("         d2Mode: %d\n", d2Mode));
+        config.append(format(" Chrg,Dipl,Quad: %b %b %b\n", useCharges, useDipoles, useQuadrupoles));
+        logger.info(config.toString());
 
         if (gpuFFT) {
             sectionThreads = 2;
@@ -3811,7 +3846,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
         public void finish() {
             permanentEnergy = 0.0;
             polarizationEnergy = 0.0;
-            for (int i = 0; i < myThreads; i++) {
+            for (int i = 0; i < maxThreads; i++) {
                 if (realSpaceEnergyLoops[i] == null) {
                     logger.warning(format("NULL member of realSpaceEnergyLoops[%d]!", i));
                     continue;
@@ -3819,9 +3854,8 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                 double e = realSpaceEnergyLoops[i].permanentEnergy;
                 if (Double.isNaN(e)) {
                     logger.severe(String.format(" The permanent multipole energy of thread %d is %16.8f", i, e));
-                } else {
-                    permanentEnergy += e;
                 }
+                permanentEnergy += e;
                 double ei = realSpaceEnergyLoops[i].inducedEnergy;
                 if (Double.isNaN(ei)) {
                     logger.severe(String.format(" The polarization energy of thread %d is %16.8f", i, ei));
@@ -3830,39 +3864,20 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
             }
             permanentEnergy *= ELECTRIC;
             polarizationEnergy *= ELECTRIC;
-            if (DEBUG > 0 && lambdaTerm && lambdaMode == LambdaMode.CONDENSED) {
-                double[][][] compA = new double[nAtoms][nAtoms][nComps];
-                double[][][] compB = new double[nAtoms][nAtoms][nComps];
-                double[] compSum = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-                for (int comp = 0; comp < nComps; comp++) {
-                    for (int i = 0; i < nAtoms; i++) {
-                        for (int k = 0; k < nAtoms; k++) {
-                            compA[i][k][comp] = 0.0;
-                            compB[i][k][comp] = 0.0;
-                            for (int thread = 0; thread < maxThreads; thread++) {
-                                compA[i][k][comp] += compQI[thread][i][k][comp];
-                            }
-                            double print[] = compA[i][k];
-                            if (System.getProperty("pme-formulas") != null) {
-                                logger.info(format("QiS dUdL Formula %d-%d: int %g, t1 %g, t2 %g, run %g, (%.4g * %.4g) + (%.4g * %.4g * %.4g)",
-                                        i, k, print[0], print[1], print[2], print[3], print[4], print[5], print[6], print[7], print[8]));
-                            }
-                            compSum[comp] += compA[i][k][comp];
-                        }
-                    }
-                }
+            if ((DEBUG > 0 || logger.isLoggable(Level.CONFIG)) && lambdaTerm && lambdaMode == LambdaMode.CONDENSED) {
+                double[][][] compsReduced = new double[nAtoms][nAtoms][nComps];
                 double[] termSum = new double[]{0.0, 0.0};
                 for (int i = 0; i < nAtoms; i++) {
                     for (int k = 0; k < nAtoms; k++) {
                         for (int comp = 0; comp < nComps; comp++) {
-                            compB[i][k][comp] = 0.0;
+                            compsReduced[i][k][comp] = 0.0;
                             for (int thread = 0; thread < maxThreads; thread++) {
-                                compB[i][k][comp] += compQI[thread][i][k][comp];
+                                compsReduced[i][k][comp] += compQI[thread][i][k][comp];
                             }
                         }
-                        termSum[0] += compB[i][k][1];
-                        termSum[1] += compB[i][k][2];
-                        double[] vals = new double[]{termSum[0], termSum[1], compB[i][k][1], compB[i][k][2]};
+                        termSum[0] += compsReduced[i][k][1];
+                        termSum[1] += compsReduced[i][k][2];
+                        double[] vals = new double[]{termSum[0], termSum[1], compsReduced[i][k][1], compsReduced[i][k][2]};
                         if (DEBUG > 1) {
                             logger.info(format("    Creating termSums: i,j,sums,comps: %d,%d,%s", i, k, formatArray(vals)));
                         }
@@ -3872,16 +3887,16 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                     for (int i = 0; i < nAtoms; i++) {
                         for (int k = 0; k < nAtoms; k++) {
                             for (int comp = 0; comp < nComps; comp++) {
-                                if (compA[i][k][comp] != compB[i][k][comp] || compA[i][k][comp] != compQIshared[i][k][comp].get()) {
-                                    logger.info(format("COMP MISMATCH (%d,%d,%d): %g, %g, %g",
+                                if (compsReduced[i][k][comp] != compQIshared[i][k][comp].get()) {
+                                    logger.info(format("COMP MISMATCH (%d,%d,%d): %g, %g",
                                             i, k, comp,
-                                            compA[i][k][comp], compB[i][k][comp], compQIshared[i][k][comp].get()));
+                                            compsReduced[i][k][comp], compQIshared[i][k][comp].get()));
                                 }
                             }
                         }
                     }
                 }
-                logger.fine(format("QiS TOTALS: dE/dL = %g + %g = %g --> %g + %g = %g    (shdEdLqi %g)",
+                logger.config(format("QiS TOTALS: dE/dL = %g + %g = %g --> %g + %g = %g    (shdEdLqi %g)",
                         termSum[0], termSum[1], termSum[0] + termSum[1],
                         termSum[0]*ELECTRIC, termSum[1]*ELECTRIC, termSum[0]*ELECTRIC + termSum[1]*ELECTRIC,
                         shareddEdLambdaQI.get()));
@@ -4508,9 +4523,9 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                 if (soft && lambdaTerm) {
                     if (lambdaBufferCoords == COORDINATES.QI) {
                         logger.fine(" (* OPTS *) PME passing lambda buffer into MT for QI.");
-                        tensorScrn.setR_QI(dx_local, lBufferDistance);
-                        tensorCoul.setR_QI(dx_local, lBufferDistance);
-                        sharedTensor.setR_QI(dx_local, lBufferDistance);
+                        tensorScrn.setR_QI(dx_local, lBufferDistance, Rmode);
+                        tensorCoul.setR_QI(dx_local, lBufferDistance, Rmode);
+                        sharedTensor.setR_QI(dx_local, lBufferDistance, Rmode);
                         r2 = sharedTensor.getR()[4];
                     } else {
                         // then buffering gets rotated by MT
@@ -4559,24 +4574,34 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                         d2PermdL2 = d2CouldL2;
                         logger.fine(format(" res > ePerm,dPerm,d2Perm:   %g %g %g", ePerm, dPermdL, d2PermdL2));
                     } else {
-                       // Subtract away masked Coulomb interactions included in PME.
-                       eScreen = tensorScrn.multipoleEnergyQI(permFi, permTi, permTk);
-                       dScreendL = tensorScrn.getdEdZ();
-                       d2ScreendL2 = tensorScrn.getd2EdZ2();
-                       logger.fine(format(" scrn > ePerm,dPerm,d2Perm:   %g %g %g", eScreen, dScreendL, d2ScreendL2));
-                       eCoul = tensorCoul.multipoleEnergyQI(FiC, TiC, TkC);
-                       dCouldL = tensorCoul.getdEdZ();
-                       d2CouldL2 = tensorCoul.getd2EdZ2();
-                       logger.fine(format(" - coul > ePerm,dPerm,d2Perm: %g %g %g", eCoul, dCouldL, d2CouldL2));
+                        // Subtract away masked Coulomb interactions included in PME.
+                        eScreen = tensorScrn.multipoleEnergyQI(permFi, permTi, permTk);
+                        dScreendL = tensorScrn.getdEdZ();
+                        d2ScreendL2 = tensorScrn.getd2EdZ2();
+                        logger.fine(format(" scrn > ePerm,dPerm,d2Perm:   %g %g %g", eScreen, dScreendL, d2ScreendL2));
+                        eCoul = tensorCoul.multipoleEnergyQI(FiC, TiC, TkC);
+                        dCouldL = tensorCoul.getdEdZ();
+                        d2CouldL2 = tensorCoul.getd2EdZ2();
+                        logger.fine(format(" - coul > ePerm,dPerm,d2Perm: %g %g %g", eCoul, dCouldL, d2CouldL2));
                        
-                       ePerm = eScreen - (scale1*eCoul);
-                       dPermdL = dScreendL - (scale1*dCouldL);
-                       d2PermdL2 = d2ScreendL2 - (scale1*d2CouldL2);
-                       logger.fine(format(" res > ePerm,dPerm,d2Perm:   %g %g %g", ePerm, dPermdL, d2PermdL2));
+                        ePerm = eScreen - (scale1*eCoul);
+                        dPermdL = dScreendL - (scale1*dCouldL);
+                        d2PermdL2 = d2ScreendL2 - (scale1*d2CouldL2);
+                        logger.fine(format(" res > ePerm,dPerm,d2Perm:   %g %g %g", ePerm, dPermdL, d2PermdL2));
+                       
+                        permFi[0] -= scale1 * FiC[0];
+                        permFi[1] -= scale1 * FiC[1];
+                        permFi[2] -= scale1 * FiC[2];
+                        permTi[0] -= scale1 * TiC[0];
+                        permTi[1] -= scale1 * TiC[1];
+                        permTi[2] -= scale1 * TiC[2];
+                        permTk[0] -= scale1 * TkC[0];
+                        permTk[1] -= scale1 * TkC[1];
+                        permTk[2] -= scale1 * TkC[2];
                     }
                 } else {
                     sharedTensor.setOperator(OPERATOR.SCREENED_COULOMB);
-                    sharedTensor.setR_QI(dx_local, lBufferDistance);
+                    sharedTensor.setR_QI(dx_local, lBufferDistance, Rmode);
                     sharedTensor.setMultipolesQI(Qi, Qk);
                     sharedTensor.order6QI();
                     ePerm = sharedTensor.multipoleEnergyQI(permFi, permTi, permTk);
@@ -4586,7 +4611,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                     
                     if (scale1 != 0.0) {
                         sharedTensor.setOperator(OPERATOR.COULOMB);
-                        sharedTensor.setR_QI(dx_local, lBufferDistance);
+                        sharedTensor.setR_QI(dx_local, lBufferDistance, Rmode);
                         sharedTensor.order6QI();
                         ePerm -= scale1 * sharedTensor.multipoleEnergyQI(FiC, TiC, TkC);
                         dPermdL -= scale1 * sharedTensor.getdEdZ();
@@ -4610,69 +4635,21 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                     if (selfScale != 1.0 || (permanentScale != 1.0 && permanentScale != lambda)) {
                         logger.severe(format("Non-unity selfScale: %g %g", selfScale, permanentScale));
                     }
-//                    if (scale == 1.0 && dPerm != dCouldL) {
-//                        logger.severe(format("Incorrect dPerm?   scale,dPerm,dCoul,dReal,dFix: %g %g %g %g %g",
-//                                dPerm,dCouldL,dRealdL,dFixdL,scale));
-//                    }
-//                    if (scale == 1.0 && d2Perm != d2CouldL2) {
-//                        logger.severe("Incorrect d2PermdL2?");
-//                    }
-                    if (scale1 != (1.0 - scale)) {
-                        logger.severe("Wut?");
-                    }
                     if (lPowPerm != lambda || permanentScale != lPowPerm
                           || (!soft && l2 != 1.0) || (soft && l2 != permanentScale)) {
-                        logger.severe(format("WTF! l2,lPowPerm,lambda: %g %g %g %g", lambda, l2, lPowPerm, permanentScale));
-                    }
-
-                    // when soft, l2 = permanentScale = lPowPerm = lambda
-                    // when hard, l2 = 1.0; permScale = lPowPerm = lambda
-                    if ((soft && l2 == permanentScale && l2 == lPowPerm && l2 == lambda)
-                        || (!soft && l2 == 1.0 && permanentScale == lPowPerm && permanentScale == lambda)) {
-                        // you're fine
-                    } else {
-                        logger.severe(format("Something is amiss... %b %g %g %g %g",
-                                soft, l2, permanentScale, lPowPerm, lambda));
-                    }
-                    if ((soft && (l2 != permanentScale || l2 != lambda)) || (!soft && (l2 != 1.0 || permanentScale != lambda))) {
-                        logger.severe(format("Somthing is amiss... %b %g %g %g %g", 
-                                soft, l2, permanentScale, lPowPerm, lambda));
-                    }
-
-                    if (selfScale != 1.0) {
-                        logger.severe("selfScale not unity");
-                    }
-                    if (soft && l2 != permanentScale) {
-                        logger.severe("soft and l2 not permScale");
-                    }
-                    if (!soft && l2 != 1.0) {
-                        logger.severe("hard and l2 not unity");
-                    }
-                    if (permanentScale != lPowPerm || lPowPerm != lambda || permanentScale != lambda) {
-                        logger.severe("permScale != lPowPerm != lambda");
+                        logger.severe(format("Inconsistency > l2,lPowPerm,lambda: %g %g %g %g", lambda, l2, lPowPerm, permanentScale));
                     }
                 }
                 
-/*               from Cart:
-                    final double e = selfScale * l2 * (ereal - efix);
-                    dUdL += selfScale * (dEdLSign * dlPowPerm * ereal + l2 * dlAlpha * dRealdL);
-                    d2UdL2 += selfScale * (dEdLSign * (d2lPowPerm * ereal
-                            + dlPowPerm * dlAlpha * dRealdL
-                            + dlPowPerm * dlAlpha * dRealdL)
-                            + l2 * d2lAlpha * dRealdL
-                            + l2 * dlAlpha * dlAlpha * d2RealdL2);
-*/
                 final double e = selfScale * l2 * ePerm;
                 
                 if (!gradient && !lambdaTerm && !soft) {
                     return e;
                 }
 
-                double pref0 = 0.0, pref1 = 0.0, pref2 = 0.0;
                 double scalar;
                 if (gradient) {
                     scalar = ELECTRIC * selfScale * l2;
-                    pref0 = scalar;
                     gX[i] += scalar * permFi[0];
                     gY[i] += scalar * permFi[1];
                     gZ[i] += scalar * permFi[2];
@@ -4693,7 +4670,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                      * ereal]/dx
                      */
                     scalar = ELECTRIC * selfScale * dEdLSign * dlPowPerm;
-                    pref1 = scalar;
                     lgX[i] += scalar * permFi[0];
                     lgY[i] += scalar * permFi[1];
                     lgZ[i] += scalar * permFi[2];
@@ -4707,59 +4683,35 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                     ltyk_local[k] += scalar * permTk[1];
                     ltzk_local[k] += scalar * permTk[2];
                     
-                    // oughtta be equivalent
                     double S = lPowPerm;                    // lambda
                     double dSdL = dEdLSign * dlPowPerm;     // 1.0
                     double d2SdL2 = d2lPowPerm;             // 0.0
-                                        
+                    
                     double F, dFdL, d2FdL2;
-                    double sdlf, sdlg;
                     switch (Fmode) {
                         default:
                             logger.severe("Invalid Fmode.");
-                        case 0:
+                        case 0:     // broken; should require dlAlphaMode == ACTUAL, mt-Rmode == Z_SUBSTITUTION
                             F = lAlpha;
                             dFdL = dlAlpha;
                             d2FdL2 = d2lAlpha;
-                            logger.config(format(" Fmode%d > F,dFdL,dlAlpha,d2FdL2,d2lAlpha: %g;%g = %g;%g = %g", 
+                            logger.fine(format(" Fmode%d > F,dFdL,dlAlpha,d2FdL2,d2lAlpha: %g;%g = %g;%g = %g", 
                                     Fmode, F, dFdL, dlAlpha, d2FdL2, d2lAlpha));
                             break;
-                        case 1:
+                        case 3:     // works for 1st deriv; requires dlAlphaMode == FACTORED, mt-Rmode == INDEPENDENT
+                            double totalDist = sqrt(crystal.image(dx_local) + lBufferDistance);
                             F = lAlpha;
-                            dFdL = -dlAlpha / r2;
-                            d2FdL2 = d2lAlpha / (2 * dx_local[2]);
-                            logger.fine(format(" Fmode%d > F,dFdL,dlAlpha,r2: %g ... %g = -%g / %g", 
-                                    Fmode, F, dFdL, dlAlpha, r2));
-                            break;
-                        case 2:     // should require dlAlphaMode == ACTUAL, mt-Rmode == 1
-                            sdlf = sqrt(crystal.image(dx_local) + lBufferDistance);
-                            F = lAlpha;
-                            dFdL = -dlAlpha / (2*sdlf);
-                            d2FdL2 = d2lAlpha / (2*r2);
-                            logger.fine(format(" Fmode%d > F,dFdL,dlAlpha,f: %g ... %g = -%g / %g", 
-                                    Fmode, F, dFdL, dlAlpha, sdlf));
-                            break;
-                        case 3:     // requires dlAlphaMode == FACTORED, mt-Rmode == 1
-                            sdlf = sqrt(crystal.image(dx_local) + lBufferDistance);
-                            F = lAlpha;
-                            dFdL = dlAlpha / sdlf;
+                            dFdL = dlAlpha / totalDist;
                             double r2orig = crystal.image(dx_local);
                             double B = lBufferDistance;
                             double a = permLambdaAlpha;
-                            d2FdL2 = a*(r2orig - 2*B) / (B - 2*r2orig);
+                            // second deriv solution to dedz*Q == dedl:
                             // Q -> (\[Alpha] (B + R^2 - 3 \[Alpha] (1 - \[Lambda])^2))/(B - 2 R^2)
-                            logger.config(format(" Fmode%d > F,dFdL,dlAlpha,f: %g ... %g = -%g / %g", 
-                                    Fmode, F, dFdL, dlAlpha, sdlf));
-                            break;
-                        case 4:     // should require lambdaBufferMode == 1, MtLmode == 1
-                            sdlf = sqrt(crystal.image(dx_local) + lBufferDistance);
-                            F = lAlpha;
-                            dFdL = dlAlpha / sdlf;
-                            d2FdL2 = d2lAlpha / (2*sdlf);
+                            d2FdL2 = a*(r2orig - 2*B) / (B - 2*r2orig);
                             logger.fine(format(" Fmode%d > F,dFdL,dlAlpha,f: %g ... %g = -%g / %g", 
-                                    Fmode, F, dFdL, dlAlpha, sdlf));
+                                    Fmode, F, dFdL, dlAlpha, totalDist));
                             break;
-                        }
+                    }
                     
                     /** Old Factoring Method
                       * f = sqrt(r^2 + lAlpha)
@@ -4768,64 +4720,31 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                       * dg/dL = alpha * (1.0 - lambda) / (r^2 + lAlpha)^(3/2)
                       * define dlAlpha = alpha * 1.0 - lambda)
                       * then df/dL = -dlAlpha / f and dg/dL = dlAlpha * g^3   */
-
-//                    double dPdF, asrt;
-//                    switch (Zmode) {
-//                        default:
-//                            logger.severe("Invalid Zmode.");
-//                        case 0:
-//                            dPdF = dRealdL - (scale1 * dFixdL);
-////                            asrt = dRealdL - (scale1 * dFixdL);
-////                            asrt = dPerm;
-//                            asrt = dPdF;
-//                            break;
-//                        case 1:
-//                            dPdF = (dRealdL - scale1*dFixdL) * (d2RealdL2 - scale1*d2FixdL2);
-////                            asrt = dPerm * d2Perm;
-//                            asrt = dPdF;
-//                            break;
-//                        case 2:
-//                            dPdF = (dRealdL*d2RealdL2) - scale1*(dFixdL*d2FixdL2);
-////                            dPdF = (dRealdL*d2RealdL2) - (scale1 * (dFixdL*d2FixdL2));
-//                            asrt = dPdF;
-//                            break;
-//                    }
-                    double dPdF = dPermdL;
-//                    logger.info(format("Zmode%d: dPdF = %g ; scale1,dS,dC,d2S,d2C: %g %g %g %g %g", 
-//                            Zmode, dPdF, scale1, dScreendL, dCouldL, d2ScreendL2, d2CouldL2));
-//                    if (dPdF != asrt) {
-//                        logger.severe(format("dPdF assert fail: %g %g", dPdF, asrt));
-//                    }
-
-                    double thisInteraction = 0.0;
-                    double[] components = new double[9];
-                    for (int stuff = 0; stuff < nComps; stuff++) {
-                        components[stuff] = 0.0;
-                    }
+                    
                     final double P = ePerm;
-//                    if ((scale == 1.0 && P != eCoul) || (scale < 1.0 && P != eScreen - (1.0-scale)*eCoul)) {
-//                        logger.severe(format("Incorrect P!  %g %g %g %g %g", P, scale, scale1, eScreen, eCoul));
-//                    }
-                    final double termA, termB;
-                    switch (Dmode) {
-                        default:    // d(SP)dL = (dSdL*P)+(S*dPdL) = (dSdL*P)+(S*dPdZ*dZdL)
-                            logger.severe("Invalid Dmode.");
-                        case 0:
-                            logger.fine(format("dFdL(mode%d) = %g", Fmode, dFdL));
-                            termA = (dSdL * P);
-                            termB = (S * dPdF * dFdL);
-                            thisInteraction = selfScale * (termA + termB);
-                            components = new double[]{thisInteraction, termA, termB, termA+termB, dSdL, P, S, dPdF, dFdL};
-                            break;
+                    final double dPdF = dPermdL;
+                    final double d2PdF2 = d2PermdL2;
+                    
+                    // d(SP)dL = (dSdL*P)+(S*dPdL) = (dSdL*P)+(S*dPdZ*dZdL)
+                    logger.fine(format("dFdL(mode%d) = %g", Fmode, dFdL));
+                    final double termA = (dSdL * P);
+                    final double termB = (S * dPdF * dFdL);
+                    final double thisInteraction = selfScale * (termA + termB);
+                    final double[] components = new double[]{thisInteraction, termA, termB, termA+termB, dSdL, P, S, dPdF, dFdL};
+                    if (DEBUG > 0 || logger.isLoggable(Level.FINE)) {
+                        StringBuilder sb = new StringBuilder();
+                        sb.append(format("index,lambda,F,D,mode: %s %d %s\n",
+                                lambda, Fmode, lambdaMode.toString()));
+                        sb.append(format("i,k;termA,termB,sum:  %8d   %8d     %8g   %8g   %8g\n"
+                                +        "             comps:  (%8g * %8g) + (%8g * %8g * %8g) = %g\n",
+                                i, k, termA, termB, termA+termB,
+                                dSdL, P, S, dPdF, dFdL, thisInteraction));
+                        if (DEBUG > 0) {
+                            logger.info(sb.toString());
+                        } else {
+                            logger.fine(sb.toString());
+                        }
                     }
-                    StringBuilder sb = new StringBuilder();
-                    sb.append(format("index,lambda,F,D,mode: %s %d %d %s\n",
-                            lambda, Fmode, Dmode, lambdaMode.toString()));
-                    sb.append(format("i,k;termA,termB,sum:  %8d   %8d     %8g   %8g   %8g\n"
-                            +        "             comps:  (%8g * %8g) + (%8g * %8g * %8g) = %g\n",
-                            i, k, termA, termB, termA+termB,
-                            dSdL, P, S, dPdF, dFdL, thisInteraction));
-                    logger.config(sb.toString());
                     if (!Double.isFinite(thisInteraction)) {
                         logger.warning(format("NaN output from PME.\n"
                                             + "    comps thread %d: %s", getThreadIndex(), formatArray(components)));
@@ -4837,13 +4756,22 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                         compQIshared[i][k][comp].addAndGet(components[comp]);
                     }
 
-                    // TODO Fix the second deriv.
                     double dPdL = dPdF * dFdL;
                     double d2PdL2 = d2PermdL2 * d2FdL2;
-                    d2UdL2 += selfScale * ((d2SdL2 * P) + (dSdL * S * dPdL)
-                            + ((dSdL * dPdL) + (S * d2PdL2)) * dFdL
-                            + (S * dPdL * d2FdL2));
-
+                    if (d2Mode == 0) {
+                        d2UdL2 += selfScale * ((d2SdL2 * P) + (dSdL * S * dPdL)
+                                + ((dSdL * dPdF) + (S * d2PdF2)) * dFdL
+                                + (S * dPdF * d2FdL2));
+                    } else if (d2Mode == 1) {
+                        d2UdL2 += selfScale * (dEdLSign * (d2lPowPerm * ePerm
+                                + dlPowPerm * dlAlpha * dPermdL
+                                + dlPowPerm * dlAlpha * dPermdL)
+                                + l2 * d2lAlpha * dPermdL
+                                + l2 * dlAlpha * dlAlpha * d2PermdL2);
+                    } else {
+                        logger.severe("Invalid d2Mode.");
+                    }
+                    
                     /* original derivation
                         double S = dEdLSign * dlPowPerm, dSdL = dEdLSign, d2SdL2 = 0.0;
                         double P = ePerm, dPdL = dPermdL, d2PdL2 = d2PermdL2;
@@ -4854,27 +4782,14 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                         d2UdL2 += selfScale * ((d2SdL2 * P) + (dSdL * S * dPdF * dFdL)
                                 + ((dSdL * dPdF) + (S * d2PdF2)) * dFdL
                                 + (S * dPdF * d2FdL2)); */
-                    if (DEBUG > 0 && System.getProperty("pme-FPS") != null) {
-                        String identity = "QiS";
-                        double[] Ss = new double[]{S, dSdL, d2SdL2};
-                        double[] Fs = new double[]{F, dFdL, d2FdL2};
-                        double[] Ps = new double[]{P, dPdF, dFdL, dPdF * dFdL};
-//                        double[] dZ = new double[]{thisInteraction, dRealdL, dFixdL, dRealdL - dFixdL, dRealdL - scale1*dFixdL, dPermdL};
-                        double[] lambdas = new double[]{lambda, lAlpha, dlAlpha, d2lAlpha, lPowPerm, dlPowPerm, d2lPowPerm, dEdLSign};
-                        if (DEBUG > 1) {
-                            logger.info(format("%s dUdL ik: %d %d\n"
-                                    + "%s      Ps: %s\n"
-                                    + "%s      Ss: %s\n"
-                                    + "%s      Fs: %s\n"
-//                                    + "%s      dZ: %s\n"
-                                    + "%s      Ls: %s",
-                                    identity, i, k,
-                                    identity, formatArray(Ps), identity, formatArray(Ss),
-                                    identity, formatArray(Fs), 
-//                                    identity, formatArray(dZ),
-                                    identity, formatArray(lambdas)));
-                        }
-                    }
+/*               from Cart:
+                    final double e = selfScale * l2 * (ereal - efix);
+                    dUdL += selfScale * (dEdLSign * dlPowPerm * ereal + l2 * dlAlpha * dRealdL);
+                    d2UdL2 += selfScale * (dEdLSign * (d2lPowPerm * ereal
+                            + dlPowPerm * dlAlpha * dRealdL
+                            + dlPowPerm * dlAlpha * dRealdL)
+                            + l2 * d2lAlpha * dRealdL
+                            + l2 * dlAlpha * dlAlpha * d2RealdL2);  */
 
                     /**
                      * Add in dU/dL/dX for the second term of dU/dL:
@@ -4882,7 +4797,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                      */
                     // No additional call to MT; use 6th order tensor instead.
                     scalar = ELECTRIC * selfScale * l2 * dlAlpha;
-                    pref2 = scalar;
                     lgX[i] += scalar * permFi[0];
                     lgY[i] += scalar * permFi[1];
                     lgZ[i] += scalar * permFi[2];
@@ -6766,12 +6680,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
             }
         }
     }
-
-    private enum DLALPHAMODE {
-        ACTUAL, FACTORED;
-    }
-    private final DLALPHAMODE dlAlphaMode = (System.getProperty("pme-dlAlphaMode") != null)
-            ? DLALPHAMODE.valueOf(System.getProperty("pme-dlAlphaMode")) : DLALPHAMODE.ACTUAL;
     
     /**
      * {@inheritDoc}

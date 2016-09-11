@@ -1121,7 +1121,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 logger.warning("FFE detected incorrect debug code path.");
             }
             totalEnergy = permanentMultipoleEnergy;
-            logger.info(format("FFE returning permanentEnergy = %g %g %g", totalEnergy, totalElectrostaticEnergy, permanentMultipoleEnergy));
+            logger.fine(this.toString());
             return totalEnergy;
         }
 //        if (esvBiasOnly) {

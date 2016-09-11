@@ -391,8 +391,6 @@ public class MultipoleTensor {
         R = sqrt(x*x + y*y + z*z);
     }
 
-    private final RMode Rmode = (System.getProperty("mt-Rmode") != null)
-            ? RMode.valueOf(System.getProperty("mt-Rmode")) : RMode.INDEPENDENT;
     public enum RMode {
         Z_SUBSTITUTION, INDEPENDENT;
     }
@@ -409,7 +407,7 @@ public class MultipoleTensor {
         }
     }
     
-    public void setR_QI(double r[], double buffer) {
+    public void setR_QI(double r[], double buffer, RMode Rmode) {
         setQIRotationMatrix(r);
         double rx = r[0], ry = r[1], rz = r[2];
         switch (Rmode) {
@@ -432,7 +430,7 @@ public class MultipoleTensor {
     }
     
     public void setR_QI(double[] r) {
-        setR_QI(r, 0.0);
+        setR_QI(r, 0.0, RMode.INDEPENDENT);
     }
 
     public double multipoleEnergy(double Fi[], double Ti[], double Tk[]) {
@@ -2419,7 +2417,7 @@ public class MultipoleTensor {
     }
     
     private final MultipoleTensor.COORDINATES dzOut = (System.getProperty("pme-bufferCoords") != null)
-            ? COORDINATES.valueOf(System.getProperty("pme-bufferCoords")) : COORDINATES.GLOBAL;
+            ? COORDINATES.valueOf(System.getProperty("pme-bufferCoords")) : COORDINATES.QI;
     private double dEdZ, d2EdZ2, dEdZrot, d2EdZrot2;
     
     public double getdEdZ() {
