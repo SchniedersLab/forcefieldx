@@ -633,7 +633,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
     private final boolean reciprocalSpaceTerm;
     private final ReciprocalSpace reciprocalSpace;
     private final ReciprocalEnergyRegion reciprocalEnergyRegion;
-    private final RealSpaceEnergyRegionQI realSpaceEnergyRegion;
+    private final RealSpaceEnergyRegion realSpaceEnergyRegion;
     private final ReduceRegion reduceRegion;
     private final GeneralizedKirkwood generalizedKirkwood;
     /**
@@ -969,7 +969,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
         inducedDipoleFieldRegion = new InducedDipoleFieldRegion(realSpaceTeam);
         directRegion = new DirectRegion(maxThreads);
         sorRegion = new SORRegion(maxThreads);
-        realSpaceEnergyRegion = new RealSpaceEnergyRegionQI(maxThreads);
+        realSpaceEnergyRegion = new RealSpaceEnergyRegion(maxThreads);
         reduceRegion = new ReduceRegion(maxThreads);
         realSpacePermTime = new long[maxThreads];
         realSpaceEnergyTime = new long[maxThreads];
@@ -3518,7 +3518,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
      * The Real Space Energy Region class parallelizes evaluation of the real
      * space energy and gradient.
      */
-    private class RealSpaceEnergyRegionQI extends ParallelRegion {
+    private class RealSpaceEnergyRegion extends ParallelRegion {
 
         private double permanentEnergy;
         private double polarizationEnergy;
@@ -3527,7 +3527,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
         private final SharedInteger sharedInteractions;
         private final RealSpaceEnergyLoopQI realSpaceEnergyLoop[];
 
-        public RealSpaceEnergyRegionQI(int nt) {
+        public RealSpaceEnergyRegion(int nt) {
             sharedInteractions = new SharedInteger();
             realSpaceEnergyLoop = new RealSpaceEnergyLoopQI[nt];
         }
@@ -3625,7 +3625,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
             private final double work[][];
 
             // Force and torque contributions for a single interaction.
-            //private final double[] Fi, Ti, Tk;
+            private final double[] Fi, Ti, Tk;
             private final double[] permFi, permTi, permTk;
             private final double[] polFi, polTi, polTk;
             private final double[] FiC, TiC, TkC;
@@ -3642,6 +3642,9 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                 dx_local = new double[3];
                 work = new double[15][3];
                 rot_local = new double[3][3];
+                Fi = new double[3];
+                Ti = new double[3];
+                Tk = new double[3];
                 permFi = new double[3];
                 permTi = new double[3];
                 permTk = new double[3];
@@ -3675,7 +3678,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                         ltyk_local = new double[nAtoms];
                         ltzk_local = new double[nAtoms];
                     }
-
                     /*
                     if (lamedhTerm) {
                         ldhxk_local = new double[numESVs][nAtoms];
@@ -3768,7 +3770,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                         fill(ldhtyk_local, 0.0);
                         fill(ldhtzk_local, 0.0);
                     } */
-
                     // Do all the work.
                     realSpaceChunk(lb, ub);
                     // Collect results.
@@ -3837,7 +3838,8 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                                 ldhgZ[i][j] += ldhzk_local[i][j];
                             }
                         }
-                    } */
+                    }
+                    */
                 }
             }
 
@@ -3858,8 +3860,8 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                         shareddEdLdh[esv.index].addAndGet(dUdLdh[esv.index] * ELECTRIC);
                         sharedd2EdLdh2[esv.index].addAndGet(d2UdLdh2[esv.index] * ELECTRIC);
                     }
-                }
-                 */
+                } */
+
                 realSpaceEnergyTime[getThreadIndex()] += System.nanoTime();
             }
 
@@ -4406,33 +4408,13 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                                 i + 1, k + 1, iSymm, ei, sqrt(r2)));
             }
 
-            private void logPermanentError(double ei, int i, int k, double mpoleI[], double mpoleK[]) {
+            private void logPermanentError(double ei, int i, int k) {
                 logger.info(crystal.getUnitCell().toString());
                 logger.info(atoms[i].toString());
                 logger.info(atoms[k].toString());
                 logger.severe(
-                        format(" The permanent multipole energy between atoms %d and %d (%d) is %16.8f at %16.8f A."
-                                + "\n (QuasiInternal) dx,Qi,Qk: %s %s %s", i, k, iSymm, ei,
-                                sqrt(r2),
-                                formatArray(dx_local),
-                                formatArray(mpoleI),
-                                formatArray(mpoleK)));
-            }
-
-            /**
-             * Helper method for logging distance and multipole arrays.
-             */
-            private String formatArray(double[] x) {
-                StringBuilder sb = new StringBuilder();
-                sb.append("[");
-                for (int i = 0; i < x.length; i++) {
-                    sb.append(format("%.4f", x[i]));
-                    if (i + 1 < x.length) {
-                        sb.append(", ");
-                    }
-                }
-                sb.append("]");
-                return sb.toString();
+                        format(" The permanent multipole energy between atoms %d and %d (%d) is %16.8f at %16.8f A.",
+                                i, k, iSymm, ei, sqrt(r2)));
             }
 
         }

@@ -52,8 +52,6 @@ import static org.junit.Assert.assertEquals;
 import ffx.numerics.MultipoleTensor.COORDINATES;
 import ffx.numerics.MultipoleTensor.OPERATOR;
 
-import static java.util.Arrays.fill;
-
 /**
  * Parameterized Test of the MultipoleTensor class.
  *
@@ -368,7 +366,7 @@ public class MultipoleTensorTest {
 
         double expect = analyticdEdF;
         double actual = (posF - negF) / delta2;
-        assertEquals(info + " QI dE/dF", expect, actual, fdTolerance);
+        assertEquals(info + " Global dE/dF", expect, actual, fdTolerance);
         expect = aX;
         actual = (posX - negX) / delta2;
         assertEquals(info + " Force X", expect, actual, fdTolerance);

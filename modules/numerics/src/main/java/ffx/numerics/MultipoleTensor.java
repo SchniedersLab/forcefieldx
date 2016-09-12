@@ -426,17 +426,17 @@ public class MultipoleTensor {
                 z = r(r);
                 setQIRotationMatrix(r[0], r[1], r[2]);
                 break;
+            default:
             case GLOBAL:
                 x = r[0];
                 y = r[1];
                 z = r[2];
-                break;
+                r2 = (x * x + y * y + z * z);
+                if (r2 == 0.0) {
+                    throw new ArithmeticException();
+                }
+                R = sqrt(r2);
         }
-        r2 = (x * x + y * y + z * z);
-        if (r2 == 0.0) {
-            throw new ArithmeticException();
-        }
-        R = sqrt(r2);
     }
 
     public void setR(double r[], double lambdaFunction) {
@@ -453,7 +453,6 @@ public class MultipoleTensor {
                     throw new ArithmeticException();
                 }
                 R = sqrt(r2);
-                break;
         }
     }
 
@@ -568,10 +567,14 @@ public class MultipoleTensor {
                 // == (1/r) * (1/r^3) * (1/r^5) * (1/r^7) * ...
                 ir = 1.0 / R;
                 ir2 = ir * ir;
+                StringBuilder sb = new StringBuilder();
+                sb.append(format("Coulomb shit for R,ir = %g,%g: 000(j),001(j),...\n", R, ir));
                 for (int n = 0; n < o1; n++) {
                     T000[n] = T000j[n] * ir;
+                    sb.append(format("     %g (%g)\n", T000[n], T000j[n]));
                     ir *= ir2;
                 }
+//                logger.info(sb.toString());
         }
     }
     private static final double threeFifths = 3.0 / 5.0;
@@ -773,7 +776,7 @@ public class MultipoleTensor {
      */
     public void noStorageRecursionQI(double r[], double tensor[]) {
         assert (r[0] == 0.0 && r[1] == 0.0);
-        setR(r);
+        setR_QI(r);
         source(T000);
         // 1/r
         tensor[0] = T000[0];
@@ -1035,7 +1038,7 @@ public class MultipoleTensor {
      * @since 1.0
      */
     public void recursionQI(final double r[], final double tensor[]) {
-        setR(r);
+        setR_QI(r);
         assert (x == 0.0 && y == 0.0);
         source(work);
         tensor[0] = work[0];
@@ -1334,7 +1337,7 @@ public class MultipoleTensor {
      * @since 1.0
      */
     public String codeTensorRecursionQI(final double r[], final double tensor[]) {
-        setR(r);
+        setR_QI(r);
         assert (x == 0.0 && y == 0.0);
         source(work);
         StringBuilder sb = new StringBuilder();
@@ -2403,12 +2406,8 @@ public class MultipoleTensor {
         dEdF = -Fi[2];
 
         /**
-        if (order > 5) {
-            // multipoleIdZ2();
-            // d2EdF2 = dotMultipoleK();
-        }
-        */
-
+         * if (order > 5) { // multipoleIdZ2(); // d2EdF2 = dotMultipoleK(); }
+         */
         return energy;
     }
 
@@ -4236,7 +4235,7 @@ public class MultipoleTensor {
                 r[0] = Math.random();
                 r[1] = Math.random();
                 r[2] = Math.random();
-                multipoleTensor.setR(r);
+                multipoleTensor.setR_QI(r);
                 multipoleTensor.order6QI();
             }
             timeQIT += System.nanoTime();
@@ -4246,7 +4245,7 @@ public class MultipoleTensor {
                 r[0] = 0.0;
                 r[1] = 0.0;
                 r[2] = Math.random();
-                multipoleTensor.setR(r);
+                multipoleTensor.setR_QI(r);
                 multipoleTensor.setMultipoles(Qi, Qk);
                 double e = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
                 if (Double.isNaN(e) || Double.isInfinite(e)) {
@@ -4488,7 +4487,6 @@ public class MultipoleTensor {
 
         double zAxis[] = {dx, dy, dz};
         double xAxis[] = {dx + 1.0, dy, dz};
-
         norm(zAxis, zAxis);
         ir02 = zAxis[0];
         ir12 = zAxis[1];
@@ -4498,11 +4496,6 @@ public class MultipoleTensor {
         scalar(zAxis, dot, zAxis);
         diff(xAxis, zAxis, xAxis);
         norm(xAxis, xAxis);
-        /* This handles the diabolical case of r = (1.0,0.0,0.0), which yields x-x.z*z = 0.0 -> norm NaN.
-           Commented to avoid branching in inner loops; activate as necessary.      */
-//        if (Double.isNaN(xAxis[0])) {
-//            xAxis = new double[]{0.0, 0.0, 0.0};
-//        }
 
         ir00 = xAxis[0];
         ir10 = xAxis[1];
@@ -4521,7 +4514,6 @@ public class MultipoleTensor {
         r12 = ir21;
         r20 = ir02;
         r21 = ir12;
-
     }
 
     private static final double ONE_THIRD = 1.0 / 3.0;

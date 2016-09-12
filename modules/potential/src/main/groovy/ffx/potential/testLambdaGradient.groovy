@@ -88,8 +88,7 @@ double initialLambda = 0.5;
 
 // Print out the energy for each step.
 boolean print = false;
-boolean vdwOnly = false;
-boolean pmeOnly = false;
+boolean qi = false;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
@@ -109,8 +108,7 @@ cli.ef(longOpt:'noElecFinal', args:1, argName:'-1', 'No Electrostatics Final Ato
 cli.ef2(longOpt:'noElecfinal2', args:1, argName:'-1', 'No Electrostatics Final Atom for the 2nd topology.');
 cli.l(longOpt:'lambda', args:1, argName:'0.5', 'Lambda value to test.');
 cli.v(longOpt:'verbose', 'Print out the energy for each step.');
-cli.vO(longOpt:'vdwOnly', 'Compute solely vdW for lamedh benchmarking.');
-cli.pO(longOpt:'pmeOnly', 'Compute solely PME for lamedh benchmarking.');
+cli.qi(longOpt:'quasi-internal', 'Use quasi-internal multipole tensors.');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -181,13 +179,14 @@ if (options.v) {
     print = true;
 }
 
-if (options.vO && options.pO) {
-    return cli.usage();
-} else if (options.vO) {
-    vdwOnly = true;
-} else if (options.pO) {
-    pmeOnly = true;
+if (options.qi) {
+    qi = true;
+    System.setProperty("pme-qi","true");
+    System.setProperty("no-ligand-condensed-scf","false");
+    System.setProperty("ligand-vapor-elec","false");
+    System.setProperty("polarization","NONE");
 }
+boolean debug = (System.getProperty("debug") != null);
 
 /*int nThreads = ParallelTeam.getDefaultThreadCount() / 2;
 System.setProperty("FF_THREADS", String.valueOf(nThreads));*/
@@ -216,33 +215,6 @@ if (arguments.size() > 1) {
     System.setProperty("ligand-vapor-elec","false");
     // Condensed phase polarization, without the ligand present, is unecessary.
     System.setProperty("no-ligand-condensed-scf","false");
-}
-
-if (vdwOnly) {
-    System.setProperty("vdwterm", "true");
-    System.setProperty("vdw-cutoff", "1000");
-    
-    System.setProperty("bondterm", "false");
-    System.setProperty("angleterm", "false");
-    System.setProperty("strbndterm", "false");
-    System.setProperty("opbendterm", "false");
-    System.setProperty("torsionterm", "false");
-    System.setProperty("tortorterm", "false");
-    System.setProperty("pitorsterm", "false");
-    System.setProperty("mpoleterm", "false");
-}
-
-if (pmeOnly) {
-    System.setProperty("mpoleterm", "true");
-    
-    System.setProperty("bondterm", "false");
-    System.setProperty("angleterm", "false");
-    System.setProperty("strbndterm", "false");
-    System.setProperty("opbendterm", "false");
-    System.setProperty("torsionterm", "false");
-    System.setProperty("tortorterm", "false");
-    System.setProperty("pitorsterm", "false");
-    System.setProperty("vdwterm", "false");
 }
 
 // Open the first topology.
@@ -418,6 +390,13 @@ for (int j=0; j<3; j++) {
     double dEdLFD = (lp - lm) / width;
     double d2EdL2FD = (dedlp - dedlm) / width;
 
+    if (debug) {
+        logger.info(String.format(" db> Lambda FD Test  lower,center,upper: %g %g %g", lambda - step , lambda, lambda + step));
+        logger.info(String.format(" db> dE/dL   Numeric lp,lm,width,val: %+9.6g %+9.6g %4.2g (%+9.6g)", lp, lm, width, dEdLFD));
+        logger.info(String.format(" db> d2E/dL2 Numeric lp,lm,width,val: %+9.6g %+9.6g %4.2g [%+9.6g]", dedlp, dedlm, width, d2EdL2FD));
+        logger.info(String.format(" db> Analytic vers   l,dEdL,d2EdL2: %4.2f (%+9.6g) [%+9.6g]", lambda, dEdL, d2EdL2));
+    }
+        
     double err = Math.abs(dEdLFD - dEdL);
     if (err < errTol) {
         logger.info(String.format(" dE/dL passed:   %10.6f", err));

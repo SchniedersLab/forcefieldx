@@ -319,14 +319,14 @@ public class Fragmenter {
             //System.out.println("\nPassing SMILES string to doConversion\n");
 
             //doConversion call
-            doConversion(content, num, fullsm);
+            iAtomContainerTo3DModel(content, num, fullsm);
         }
 
     } //end "smilesToObject" converter
 
     int fragcounter = 1;
 
-    protected void doConversion(String smi, int num, String fullsmi) throws Exception {
+    protected void iAtomContainerTo3DModel(String smi, int num, String fullsmi) throws Exception {
         IAtomContainer mol = null;
         IAtomContainer full = null;
         List<IAtom> toFullTest = new ArrayList<>();
@@ -411,7 +411,7 @@ public class Fragmenter {
             fragcounter++;
         }
 
-    } //end "doConversion" IAtomContainer to 3D model converter
+    } //end "iAtomContainerTo3DModel" IAtomContainer to 3D model converter
 
     protected File writeSDF(IAtomContainer iAtomContainer, int n) throws Exception {
 
@@ -427,6 +427,7 @@ public class Fragmenter {
 
         String fragName = dirName.concat(File.separator).concat(dirName.concat(".sdf"));
         logger.info(String.format(" Writing %s", fragName));
+        //System.out.println("fragName: "+fragName+"\n");
 
         BufferedWriter bufferedWriter = null;
         FileWriter fileWriter = null;
@@ -439,6 +440,7 @@ public class Fragmenter {
             sdfWriter = new SDFWriter();
             sdfWriter.setWriter(bufferedWriter);
             sdfWriter.write(iAtomContainer);
+            bufferedWriter.close();
         } catch (IOException e) {
             logger.warning(e.toString());
         } finally {
