@@ -56,6 +56,39 @@ import static ffx.numerics.VectorMath.norm;
 import static ffx.numerics.VectorMath.r;
 import static ffx.numerics.VectorMath.scalar;
 
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+
 /**
  * The MultipoleTensor class computes derivatives of 1/|<b>r</b>| via recursion
  * to arbitrary order for Cartesian multipoles in either a global frame or a
@@ -154,6 +187,7 @@ public class MultipoleTensor {
      * approximately 50% slower than the linear work array.
      */
     private final double work[];
+    private double dEdF, d2EdF2;
 
     /**
      * <p>
@@ -390,7 +424,7 @@ public class MultipoleTensor {
                 x = 0.0;
                 y = 0.0;
                 z = r(r);
-                setQIRotationMatrix(r);
+                setQIRotationMatrix(r[0], r[1], r[2]);
                 break;
             case GLOBAL:
                 x = r[0];
@@ -405,34 +439,47 @@ public class MultipoleTensor {
         R = sqrt(r2);
     }
 
-    public void setR_QI(double r[], double buffer) {
-        this.buffer = buffer;
-        if (System.getProperty("mt-specialBuffer") != null) {
-            logger.info("Applying buffer: SPECIAL");
-            double[] dx_local = r;
-            double dxyz = dx_local[0] + dx_local[1] + dx_local[2];
-            double buffPerDim = (-dxyz + sqrt(dxyz*dxyz + 3*buffer)) / 3.0;    // here buffer = lBufferDistance
-            double[] dx_buff = new double[]{dx_local[0] + buffPerDim, dx_local[1] + buffPerDim, dx_local[2] + buffPerDim};
-            r = dx_buff;
-            x = 0.0;
-            y = 0.0;
-            z = r(r);
-            setQIRotationMatrix(r);
-            r2 = (x * x + y * y + z * z);
-            R = sqrt(r2);
-        } else {
-            setQIRotationMatrix(r);
-            double rx = r[0];
-            double ry = r[1];
-            double rz = r[2] + buffer;
-            r2 = (rx*rx + ry*ry + rz*rz);
-            R = sqrt(r2);
-            x = 0.0; y = 0.0; z = R;
+    public void setR(double r[], double lambdaFunction) {
+        switch (coordinates) {
+            case QI:
+                setR_QI(r, lambdaFunction);
+                break;
+            case GLOBAL:
+                x = r[0];
+                y = r[1];
+                z = r[2] + lambdaFunction;
+                r2 = (x * x + y * y + z * z);
+                if (r2 == 0.0) {
+                    throw new ArithmeticException();
+                }
+                R = sqrt(r2);
+                break;
         }
     }
-    
-    public void setR_QI(double[] r) {
-        setR_QI(r, 0.0);
+
+    public void setR_QI(double r[]) {
+        x = 0.0;
+        y = 0.0;
+        r2 = r[0] * r[0] + r[1] * r[1] + r[2] * r[2];
+        if (r2 == 0.0) {
+            throw new ArithmeticException();
+        }
+        z = sqrt(r2);
+        R = z;
+        setQIRotationMatrix(r[0], r[1], r[2]);
+    }
+
+    public void setR_QI(double r[], double lambdaFunction) {
+        x = 0.0;
+        y = 0.0;
+        double zl = r[2] + lambdaFunction;
+        r2 = r[0] * r[0] + r[1] * r[1] + zl * zl;
+        if (r2 == 0.0) {
+            throw new ArithmeticException();
+        }
+        z = sqrt(r2);
+        R = z;
+        setQIRotationMatrix(r[0], r[1], r[2] + lambdaFunction);
     }
 
     public double multipoleEnergy(double Fi[], double Ti[], double Tk[]) {
@@ -2339,7 +2386,6 @@ public class MultipoleTensor {
      * @return the energy.
      */
     private double multipoleEnergyGlobal(double Fi[], double Ti[], double Tk[]) {
-        //order5();
         multipoleIField();
         double energy = dotMultipoleK();
         // Torques
@@ -2353,6 +2399,16 @@ public class MultipoleTensor {
         Fi[1] = -dotMultipoleK();
         multipoleIdZ();
         Fi[2] = -dotMultipoleK();
+
+        dEdF = -Fi[2];
+
+        /**
+        if (order > 5) {
+            // multipoleIdZ2();
+            // d2EdF2 = dotMultipoleK();
+        }
+        */
+
         return energy;
     }
 
@@ -2366,12 +2422,6 @@ public class MultipoleTensor {
      * @return the energy.
      */
     public double multipoleEnergyQI(double Fi[], double Ti[], double Tk[]) {
-        if (order > 5) {
-            order6QI();
-        } else {
-            order5QI();
-        }
-
         // Compute the potential due to site I at site K.
         multipoleIFieldQI();
 
@@ -2393,73 +2443,30 @@ public class MultipoleTensor {
         Fi[1] = -dotMultipoleK();
         multipoleIdZQI();
         Fi[2] = -dotMultipoleK();
-        
-        // Fi[2] == dEdZ == dEdL
-        dEdZ = Fi[2];
-        if (order > 5) {
-            // Now get d2EdL2 == d2EdZ2:
-            multipoleIdZ2QI();
-            d2EdZ2 = -dotMultipoleK();
-        }
 
         // Rotate the force and torques from the QI frame into the Global frame.
         qiToGlobal(Fi, Ti, Tk);
-        
-        dEdZrot = Fi[2];
+
+        // dEdL = dEdF = -Fi[2]
+        dEdF = -Fi[2];
         if (order > 5) {
             multipoleIdZ2QI();
-            d2EdZrot2 = -dotMultipoleK();
+            d2EdF2 = dotMultipoleK();
         }
-        
+
         return energy;
     }
-    
-    private final MultipoleTensor.COORDINATES dzOut = (System.getProperty("pme-bufferCoords") != null) ?
-            COORDINATES.valueOf(System.getProperty("pme-bufferCoords")) : COORDINATES.QI;
-    private final int DEBUG = System.getProperty("debug") != null ? Integer.parseInt(System.getProperty("debug")) : 0;
-    private static boolean printOptBufferCoords = true, printOptBufferCoords2 = true;
-    private double dEdZ, d2EdZ2, dEdZrot, d2EdZrot2;
-    private double offset = 0.0;
-    public void setOffset(double offset) {
-        this.offset = offset;
+
+    public double getdEdF() {
+        return dEdF;
     }
-    
-    public double getdEdZ() {
-        if (dzOut == COORDINATES.QI) {
-            if (printOptBufferCoords) {
-                logger.info(format(" (* OPTS *) : MT returning QI frame dZ:      %g", dEdZ));
-                printOptBufferCoords = false;
-            }
-            return dEdZ;
-        } else {
-            if (printOptBufferCoords) {
-                logger.info(format(" (* OPTS *) : MT returning GLOBAL FRAME dZ:  %g", dEdZ));
-                printOptBufferCoords = false;
-            }
-            return dEdZrot;
-        }
-    }
-    
+
     public double getd2EdZ2() {
-        if (dzOut == COORDINATES.QI) {
-            if (printOptBufferCoords2) {
-                logger.info(format(" (* OPTS *) : MT returning QI frame dZ2:     %g", d2EdZ2));
-                printOptBufferCoords2 = false;
-            }
-            return d2EdZ2;
-        } else {
-            if (printOptBufferCoords2) {
-                logger.info(format(" (* OPTS *) : MT returning GLOBAL FRAME dZ2: %g", d2EdZ2));
-                printOptBufferCoords2 = false;
-            }
-            return d2EdZrot2;
-        }
+        return d2EdF2;
     }
 
     private double polarizationEnergyGlobal(double scaleField, double scaleEnergy, double scaleMutual,
             double Fi[], double Ti[], double Tk[]) {
-        // Generate tensors.
-        //order4();
 
         // Find the potential, field, etc at k due to the induced dipole i.
         inducedIField();
@@ -2523,8 +2530,6 @@ public class MultipoleTensor {
     public double polarizationEnergyQI(double scaleField, double scaleEnergy, double scaleMutual,
             double Fi[], double Ti[], double Tk[]) {
 
-        // Generate tensors.
-        //order4QI();
         // Find the potential, field, etc at k due to the induced dipole i.
         inducedIFieldQI();
         // Energy of multipole k in the field of induced dipole i.
@@ -3406,7 +3411,7 @@ public class MultipoleTensor {
         term012 += qyzi * R023;
         E011 = term012;
     }
-    
+
     private void multipoleIdZ2QI() {
         if (order < 6) {
             logger.severe("Use higher order tensor for lambda derivatives.");
@@ -4255,12 +4260,12 @@ public class MultipoleTensor {
         }
 
         /**
-        double tensors[] = new double[MultipoleTensor.tensorCount(order)];
-        String string = multipoleTensor.codeTensorRecursion(r, tensors);
-        logger.info(" Java Code:\n" + string);
-        string = multipoleTensor.codeTensorRecursionQI(r, tensors);
-        logger.info(" Java Code:\n" + string);
-        */
+         * double tensors[] = new double[MultipoleTensor.tensorCount(order)];
+         * String string = multipoleTensor.codeTensorRecursion(r, tensors);
+         * logger.info(" Java Code:\n" + string); string =
+         * multipoleTensor.codeTensorRecursionQI(r, tensors); logger.info(" Java
+         * Code:\n" + string);
+         */
     }
 
     /**
@@ -4478,17 +4483,11 @@ public class MultipoleTensor {
         R212 = T[t212];
         R122 = T[t122];
     }
-    
-    private double buffer = 0.0;
-    private boolean zAxisOption = (System.getProperty("mt-zAxisOption") != null);
 
-    private void setQIRotationMatrix(double r[]) {
-        double zAxis[] = zAxisOption ? (new double[]{r[0], r[1], r[2] + buffer})
-                                     : (new double[]{r[0], r[1], r[2]});
-        double xAxis[] = new double[3];
-        xAxis[0] = r[0] + 1.0;
-        xAxis[1] = r[1];
-        xAxis[2] = r[2];
+    private void setQIRotationMatrix(double dx, double dy, double dz) {
+
+        double zAxis[] = {dx, dy, dz};
+        double xAxis[] = {dx + 1.0, dy, dz};
 
         norm(zAxis, zAxis);
         ir02 = zAxis[0];
@@ -5013,9 +5012,14 @@ public class MultipoleTensor {
     private double R212;
     private double R122;
     // l + m + n = 6 (28) 84
+    private double R006;
+    private double R402;
+    private double R042;
+    private double R204;
+    private double R024;
+    private double R222;
     private double R600;
     private double R060;
-    private double R006;
     private double R510;
     private double R501;
     private double R150;
@@ -5023,11 +5027,7 @@ public class MultipoleTensor {
     private double R105;
     private double R015;
     private double R420;
-    private double R402;
     private double R240;
-    private double R042;
-    private double R204;
-    private double R024;
     private double R411;
     private double R141;
     private double R114;
@@ -5040,7 +5040,6 @@ public class MultipoleTensor {
     private double R312;
     private double R132;
     private double R123;
-    private double R222;
 
     // l + m + n = 0 (1)
     public final int t000;
