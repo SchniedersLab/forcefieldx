@@ -108,7 +108,7 @@ cli.ef(longOpt:'noElecFinal', args:1, argName:'-1', 'No Electrostatics Final Ato
 cli.ef2(longOpt:'noElecfinal2', args:1, argName:'-1', 'No Electrostatics Final Atom for the 2nd topology.');
 cli.l(longOpt:'lambda', args:1, argName:'0.5', 'Lambda value to test.');
 cli.v(longOpt:'verbose', 'Print out the energy for each step.');
-cli.qi(longOpt:'quasi-internal', args:1, argName:'false', 'Use quasi-internal multipole tensors.');
+cli.qi(longOpt:'quasi-internal', 'Use quasi-internal multipole tensors.');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -180,14 +180,11 @@ if (options.v) {
 }
 
 if (options.qi) {
-    qi = Boolean.parseBoolean(options.qi);
-    if (qi) {
-        System.setProperty("pme-qi","true");
-        System.setProperty("pme-bufferCoords","QI");
-        System.setProperty("pme-dlAlphaMode","FACTORED");
-        System.setProperty("mt-Rmode","INDEPENDENT");
-        System.setProperty("pme-Fmode","3");
-    }
+    qi = true;
+    System.setProperty("pme-qi","true");
+    System.setProperty("no-ligand-condensed-scf","false");
+    System.setProperty("ligand-vapor-elec","false");
+    System.setProperty("polarization","NONE");
 }
 boolean debug = (System.getProperty("debug") != null);
 

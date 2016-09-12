@@ -679,7 +679,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
     private final MultipoleTensor.RMode Rmode;
     private final int Fmode;
     private final DLALPHAMODE dlAlphaMode;
-    private final boolean useSharedTensor;
     private final int d2Mode;
     private final OPTSET optSet = (System.getProperty("pme-optSet") != null)
             ? OPTSET.valueOf(System.getProperty("pme-optSet")) : OPTSET.ORIGINAL;
@@ -717,7 +716,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                 Rmode = RMode.INDEPENDENT;
                 Fmode = 3;
                 dlAlphaMode = DLALPHAMODE.FACTORED;
-                useSharedTensor = true;
                 d2Mode = 0;
                 break;
             case Z_SUB:
@@ -725,7 +723,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                 Rmode = RMode.Z_SUBSTITUTION;
                 Fmode = 0;
                 dlAlphaMode = DLALPHAMODE.ACTUAL;
-                useSharedTensor = true;
                 d2Mode = 0;
                 break;
             case CUSTOM:
@@ -737,9 +734,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                     ? Integer.parseInt(System.getProperty("pme-Fmode")) : 3;
                 dlAlphaMode = (System.getProperty("pme-dlAlphaMode") != null)
                     ? DLALPHAMODE.valueOf(System.getProperty("pme-dlAlphaMode")) : DLALPHAMODE.FACTORED;
-                useSharedTensor = (System.getProperty("pme-sharedTensor") != null)
-                    ? Boolean.parseBoolean(System.getProperty("pme-sharedTensor")) : true;
-                d2Mode = (System.getProperty("pme-d2Mode") != null)
+                d2Mode = (System.getProperty("pme-d2Mode") != null) 
                     ? Integer.parseInt(System.getProperty("pme-d2Mode")) : 0;
                 break;
         }
@@ -1041,10 +1036,9 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
         
         StringBuilder config = new StringBuilder();
         config.append(format("\n Quasi-Internal PME Settings\n"));
-        config.append(format("          Debug: %d\n", DEBUG));
+        config.append(format("   Debug,d2Mode: %d %d\n", DEBUG, d2Mode));
         config.append(format("     BuffCoords: %s \n", lambdaBufferCoords.toString()));
         config.append(format(" F,MT-R,dlAlpha: %d %s %s\n", Fmode, Rmode.toString(), dlAlphaMode.toString()));
-        config.append(format("         d2Mode: %d\n", d2Mode));
         config.append(format(" Chrg,Dipl,Quad: %b %b %b\n", useCharges, useDipoles, useQuadrupoles));
         logger.info(config.toString());
 
@@ -3910,7 +3904,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
          */
         private class RealSpaceEnergyLoopQI extends IntegerForLoop {
 
-            private double r2;
+            private double r2O, r2B;
             private double scale, scalep, scaled;
             private double lBufferDistance, l2;
             private boolean soft, softLdh;
@@ -4289,7 +4283,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                         dx_local[0] = xk - xi;
                         dx_local[1] = yk - yi;
                         dx_local[2] = zk - zi;
-                        r2 = crystal.image(dx_local);
+                        r2B = crystal.image(dx_local);
 
                         final double globalMultipolek[] = neighborMultipole[k];
                         final double inducedDipolek[] = neighborInducedDipole[k];
@@ -4301,19 +4295,19 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                         scaled = maskingd_local[k];
                         double damp = min(pti, ptk);
                         double aiak = pdi * pdk;
-                        if (doPermanentRealSpace && doPolarization && polarization != Polarization.NONE) {
-                            logger.fine("Skipping unfinished QI polarization loop.");
+                        if (doPermanentRealSpace) {     // TODO prefer pairPermPol once available
+                            permanentEnergy += pairPerm(dx_local, globalMultipolei, globalMultipolek);
+                            count++;
+                        } else if (doPermanentRealSpace && doPolarization && polarization != Polarization.NONE) {
+                            logger.finer("Skipping unfinished QI polarization loop.");
 //                            double eTotal = pairPermPol(dx_local, globalMultipolei, globalMultipolek,
 //                                    inducedDipolei, inducedDipolek, inducedDipolepi, inducedDipolepk,
 //                                    damp, aiak, energy);
 //                            permanentEnergy += energy[0];
 //                            inducedEnergy += energy[1];
 //                            count++;
-                        } else if (doPermanentRealSpace) {
-                            permanentEnergy += pairPerm(dx_local, globalMultipolei, globalMultipolek);
-                            count++;
                         } else {
-                            logger.fine("Skipping unfinished QI induction loop.");
+                            logger.finer("Skipping unfinished QI induction loop.");
 //                            inducedEnergy += pairPol(dx_local, globalMultipolei, globalMultipolek,
 //                                    inducedDipolei, inducedDipolek, inducedDipolepi, inducedDipolepk,
 //                                    damp, aiak);
@@ -4520,116 +4514,58 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                 /**
                  * Set MultipoleTensor distance; handle lambda buffering.
                  */
+                r2O = crystal.image(dx_local);
                 if (soft && lambdaTerm) {
                     if (lambdaBufferCoords == COORDINATES.QI) {
                         logger.fine(" (* OPTS *) PME passing lambda buffer into MT for QI.");
-                        tensorScrn.setR_QI(dx_local, lBufferDistance, Rmode);
-                        tensorCoul.setR_QI(dx_local, lBufferDistance, Rmode);
                         sharedTensor.setR_QI(dx_local, lBufferDistance, Rmode);
-                        r2 = sharedTensor.getR()[4];
                     } else {
                         // then buffering gets rotated by MT
                         logger.severe("Lambda buffer coordinate frame inconsistent with multipole tensor.");
                     }
                 } else {    // hard or !lambdaTerm
                     logger.fine(format("No softcore buffering > i,k: %d %d", i, k));
-                    tensorScrn.setR_QI(dx_local);
-                    tensorCoul.setR_QI(dx_local);
                     sharedTensor.setR_QI(dx_local);
-                    r2 = sharedTensor.getR()[4];
                 }
+                r2B = sharedTensor.getR()[4];
 
                 /**
                  * Compute screened real space interactions.
                  */
                 double ePerm, dPermdL, d2PermdL2;
                 double scale1 = 1.0 - scale;
-                if (!useSharedTensor) {
-                    double eScreen, dScreendL, d2ScreendL2;
-                    double eCoul, dCouldL, d2CouldL2;
-                    tensorScrn.setMultipolesQI(Qi, Qk);
-                    tensorCoul.setMultipolesQI(Qi, Qk);
-                    tensorScrn.order6QI();
-                    tensorCoul.order6QI();                
-
-                    if (aewald > 0.0) {
-                        tensorScrn.setOperator(OPERATOR.SCREENED_COULOMB);
-                    } else if (scale == 1.0 || scale == 0.0) {
-                        tensorScrn.setOperator(OPERATOR.COULOMB);
-                    } else {
-//                        logger.warning(format("Non-zero aewald with partial scale: %g %g", aewald, scale));
-                    }
-
-                    if (scale == 1.0) {
-                        eScreen = 0.0;
-                        dScreendL = 0.0;
-                        d2ScreendL2 = 0.0;
-                        eCoul = tensorCoul.multipoleEnergyQI(permFi, permTi, permTk);
-                        dCouldL = tensorCoul.getdEdZ();
-                        d2CouldL2 = tensorCoul.getd2EdZ2();
-                        logger.fine(format(" no-scale > ePerm,dPerm,d2Perm:   %g %g %g", eCoul, dCouldL, d2CouldL2));
-
-                        ePerm = eCoul;
-                        dPermdL = dCouldL;
-                        d2PermdL2 = d2CouldL2;
-                        logger.fine(format(" res > ePerm,dPerm,d2Perm:   %g %g %g", ePerm, dPermdL, d2PermdL2));
-                    } else {
-                        // Subtract away masked Coulomb interactions included in PME.
-                        eScreen = tensorScrn.multipoleEnergyQI(permFi, permTi, permTk);
-                        dScreendL = tensorScrn.getdEdZ();
-                        d2ScreendL2 = tensorScrn.getd2EdZ2();
-                        logger.fine(format(" scrn > ePerm,dPerm,d2Perm:   %g %g %g", eScreen, dScreendL, d2ScreendL2));
-                        eCoul = tensorCoul.multipoleEnergyQI(FiC, TiC, TkC);
-                        dCouldL = tensorCoul.getdEdZ();
-                        d2CouldL2 = tensorCoul.getd2EdZ2();
-                        logger.fine(format(" - coul > ePerm,dPerm,d2Perm: %g %g %g", eCoul, dCouldL, d2CouldL2));
-                       
-                        ePerm = eScreen - (scale1*eCoul);
-                        dPermdL = dScreendL - (scale1*dCouldL);
-                        d2PermdL2 = d2ScreendL2 - (scale1*d2CouldL2);
-                        logger.fine(format(" res > ePerm,dPerm,d2Perm:   %g %g %g", ePerm, dPermdL, d2PermdL2));
-                       
-                        permFi[0] -= scale1 * FiC[0];
-                        permFi[1] -= scale1 * FiC[1];
-                        permFi[2] -= scale1 * FiC[2];
-                        permTi[0] -= scale1 * TiC[0];
-                        permTi[1] -= scale1 * TiC[1];
-                        permTi[2] -= scale1 * TiC[2];
-                        permTk[0] -= scale1 * TkC[0];
-                        permTk[1] -= scale1 * TkC[1];
-                        permTk[2] -= scale1 * TkC[2];
-                    }
+                if (aewald == 0.0 || scale == 1.0) {
+                    sharedTensor.setOperator(OPERATOR.COULOMB);
                 } else {
                     sharedTensor.setOperator(OPERATOR.SCREENED_COULOMB);
-                    sharedTensor.setR_QI(dx_local, lBufferDistance, Rmode);
-                    sharedTensor.setMultipolesQI(Qi, Qk);
-                    sharedTensor.order6QI();
-                    ePerm = sharedTensor.multipoleEnergyQI(permFi, permTi, permTk);
-                    dPermdL = sharedTensor.getdEdZ();
-                    d2PermdL2 = sharedTensor.getd2EdZ2();
-                    logger.fine(format(" scrn > ePerm,dPerm,d2Perm:   %g %g %g", ePerm, dPermdL, d2PermdL2));
-                    
-                    if (scale1 != 0.0) {
-                        sharedTensor.setOperator(OPERATOR.COULOMB);
-                        sharedTensor.setR_QI(dx_local, lBufferDistance, Rmode);
-                        sharedTensor.order6QI();
-                        ePerm -= scale1 * sharedTensor.multipoleEnergyQI(FiC, TiC, TkC);
-                        dPermdL -= scale1 * sharedTensor.getdEdZ();
-                        d2PermdL2 -= scale1 * sharedTensor.getd2EdZ2();
-                        logger.fine(format(" -coul=res > ePerm,dPerm,d2Perm: %g %g %g", ePerm, dPermdL, d2PermdL2));
-                    
-                        permFi[0] -= scale1 * FiC[0];
-                        permFi[1] -= scale1 * FiC[1];
-                        permFi[2] -= scale1 * FiC[2];
-                        permTi[0] -= scale1 * TiC[0];
-                        permTi[1] -= scale1 * TiC[1];
-                        permTi[2] -= scale1 * TiC[2];
-                        permTk[0] -= scale1 * TkC[0];
-                        permTk[1] -= scale1 * TkC[1];
-                        permTk[2] -= scale1 * TkC[2];
-                    }
                 }
-//                }
+                sharedTensor.setR_QI(dx_local, lBufferDistance, Rmode);
+                sharedTensor.setMultipolesQI(Qi, Qk);
+                sharedTensor.order6QI();
+                ePerm = sharedTensor.multipoleEnergyQI(permFi, permTi, permTk);
+                dPermdL = sharedTensor.getdEdZ();
+                d2PermdL2 = sharedTensor.getd2EdZ2();
+                logger.finer(format(" scrn > ePerm,dPerm,d2Perm:   %g %g %g", ePerm, dPermdL, d2PermdL2));
+
+                if (scale != 1.0) {
+                    sharedTensor.setOperator(OPERATOR.COULOMB);
+                    sharedTensor.setR_QI(dx_local, lBufferDistance, Rmode);
+                    sharedTensor.order6QI();
+                    ePerm -= scale1 * sharedTensor.multipoleEnergyQI(FiC, TiC, TkC);
+                    dPermdL -= scale1 * sharedTensor.getdEdZ();
+                    d2PermdL2 -= scale1 * sharedTensor.getd2EdZ2();
+                    logger.finer(format(" -coul=res > ePerm,dPerm,d2Perm: %g %g %g", ePerm, dPermdL, d2PermdL2));
+
+                    permFi[0] -= scale1 * FiC[0];
+                    permFi[1] -= scale1 * FiC[1];
+                    permFi[2] -= scale1 * FiC[2];
+                    permTi[0] -= scale1 * TiC[0];
+                    permTi[1] -= scale1 * TiC[1];
+                    permTi[2] -= scale1 * TiC[2];
+                    permTk[0] -= scale1 * TkC[0];
+                    permTk[1] -= scale1 * TkC[1];
+                    permTk[2] -= scale1 * TkC[2];
+                }
                 
                 if (DEBUG > 1) {
                     if (selfScale != 1.0 || (permanentScale != 1.0 && permanentScale != lambda)) {
@@ -4688,29 +4624,61 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                     double d2SdL2 = d2lPowPerm;             // 0.0
                     
                     double F, dFdL, d2FdL2;
+                    final double rO = sqrt(r2O);
+                    final double rB = sqrt(r2B);
+                    final double a = permLambdaAlpha, B = lBufferDistance;
                     switch (Fmode) {
                         default:
                             logger.severe("Invalid Fmode.");
                         case 0:     // broken; should require dlAlphaMode == ACTUAL, mt-Rmode == Z_SUBSTITUTION
                             F = lAlpha;
+                            // 2 \[Alpha] (-1 + \[Lambda])
                             dFdL = dlAlpha;
-                            d2FdL2 = d2lAlpha;
+                            // \[Alpha] (-r + 3 \[Alpha] (1 - \[Lambda])^2)
+//                            d2FdL2 = d2lAlpha;
+                            d2FdL2 = a*(-rO + 3*a*(1.0-lambda)*(1.0-lambda));
+                            if (dFdL != -2.0*permLambdaAlpha*(1.0-lambda)) {
+                                logger.warning("Inconsistent dFdL.");
+                            }
                             logger.fine(format(" Fmode%d > F,dFdL,dlAlpha,d2FdL2,d2lAlpha: %g;%g = %g;%g = %g", 
                                     Fmode, F, dFdL, dlAlpha, d2FdL2, d2lAlpha));
                             break;
                         case 3:     // works for 1st deriv; requires dlAlphaMode == FACTORED, mt-Rmode == INDEPENDENT
                             double totalDist = sqrt(crystal.image(dx_local) + lBufferDistance);
                             F = lAlpha;
-                            dFdL = dlAlpha / totalDist;
-                            double r2orig = crystal.image(dx_local);
-                            double B = lBufferDistance;
-                            double a = permLambdaAlpha;
+                            dFdL = dlAlpha / rB;
                             // second deriv solution to dedz*Q == dedl:
                             // Q -> (\[Alpha] (B + R^2 - 3 \[Alpha] (1 - \[Lambda])^2))/(B - 2 R^2)
-                            d2FdL2 = a*(r2orig - 2*B) / (B - 2*r2orig);
-                            logger.fine(format(" Fmode%d > F,dFdL,dlAlpha,f: %g ... %g = -%g / %g", 
-                                    Fmode, F, dFdL, dlAlpha, totalDist));
+//                            d2FdL2 = a*(r2orig - 2*B) / (B - 2*r2orig);
+                            d2FdL2 = a*(r2O - 2*B) / (B - 2*r2O);
+                            logger.fine(format(" Fmode%d > F:       %g\n"
+                                            +  "   dlAlpha,rB,dFdL: %g / %g (%g) = %g\n"
+                                            +  "   r2O,B,d2FdL2:    %g ... %g = %g",
+                                    Fmode, F, dlAlpha, rB, totalDist, dFdL, 
+                                    r2O, B, d2FdL2));
                             break;
+                        case 4:     // works for 1st deriv; requires dlAlphaMode == FACTORED, mt-Rmode == INDEPENDENT
+                            F = lAlpha;
+                            dFdL = -dlAlpha / rO;
+                            // second deriv solution to dedz*Q == dedl:
+                            // Q -> (\[Alpha] (B + R^2 - 3 \[Alpha] (1 - \[Lambda])^2))/(B - 2 R^2)
+//                            d2FdL2 = a*(r2orig - 2*B) / (B - 2*r2orig);
+                            d2FdL2 = a*(r2O - 2*B) / (B - 2*r2O);
+                            logger.fine(format(" Fmode%d > F: %g\n"
+                                            +  "   dlAlpha,rO,dFdL: -%g / %g = %g\n"
+                                            +  "   r2O,B,d2FdL2:     %g ... %g = %g",
+                                    Fmode, F, dlAlpha, rO, dFdL, 
+                                    r2O, B, d2FdL2));
+                            break;
+//                        case 5:     // testing alt 1st, new 2nd
+//                            F = lAlpha;
+//                            // dFdL = -alpha*(1-L)/rO
+//                            dFdL = -dlAlpha / rO;
+//                            // d2FdL2 = (Alpha*(r^2 - 2*Alpha*(1-L^2)) / (-2*r^2 + Alpha*(1-L)^2)
+//                            d2FdL2 = permLambdaAlpha*(r2O - 2*lAlpha) / (-2*r2O + lAlpha);
+//                            logger.fine(format(" Fmode%d > F,dFdL,dlAlpha,f: %g ... %g = -%g / %g (%g .. %g)", 
+//                                    Fmode, F, dFdL, dlAlpha, (-2*r2O + lAlpha), r2O + lAlpha, r2B));
+//                            break;
                     }
                     
                     /** Old Factoring Method
@@ -4756,13 +4724,14 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                         compQIshared[i][k][comp].addAndGet(components[comp]);
                     }
 
-                    double dPdL = dPdF * dFdL;
-                    double d2PdL2 = d2PermdL2 * d2FdL2;
                     if (d2Mode == 0) {
-                        d2UdL2 += selfScale * ((d2SdL2 * P) + (dSdL * S * dPdL)
+                        d2UdL2 += selfScale * ((d2SdL2 * P) + (dSdL * S * dPdF * dFdL)
                                 + ((dSdL * dPdF) + (S * d2PdF2)) * dFdL
                                 + (S * dPdF * d2FdL2));
                     } else if (d2Mode == 1) {
+                        // Q -> (\[Alpha] (B + R^2 - 3 \[Alpha] (1 - \[Lambda])^2))/(B - 2 R^2)
+                        // TODO
+                    } else if (d2Mode == 2) {
                         d2UdL2 += selfScale * (dEdLSign * (d2lPowPerm * ePerm
                                 + dlPowPerm * dlAlpha * dPermdL
                                 + dlPowPerm * dlAlpha * dPermdL)
@@ -5138,7 +5107,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                         indK[0], indK[1], indK[2]));
                 logger.severe(
                         format(" The pol. energy for atoms %d and %d (%d) is %10.6f at %10.6f A.",
-                                i + 1, k + 1, iSymm, ei, sqrt(r2)));
+                                i + 1, k + 1, iSymm, ei, sqrt(r2B)));
             }
 
             private void logPermanentError(double ei, int i, int k, double mpoleI[], double mpoleK[]) {
@@ -5148,7 +5117,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                 logger.severe(
                         format(" The permanent multipole energy between atoms %d and %d (%d) is %16.8f at %16.8f A."
                                 + "\n (QuasiInternal) dx,Qi,Qk: %s %s %s", i, k, iSymm, ei,
-                                sqrt(r2),
+                                sqrt(r2B),
                                 formatArray(dx_local),
                                 formatArray(mpoleI),
                                 formatArray(mpoleK)));
