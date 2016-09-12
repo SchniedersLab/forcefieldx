@@ -6736,6 +6736,21 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             }
         }
     }
+    
+    @Override
+    public double[] getdEdLdh() {
+        throw new UnsupportedOperationException();
+    }
+    
+    @Override
+    public double[] getd2EdLdh2() {
+        throw new UnsupportedOperationException();
+    }
+    
+    @Override
+    public double[][] getdEdXdLdh() {
+        throw new UnsupportedOperationException();
+    }
 
     private void computeInduceDipoleField() {
         try {

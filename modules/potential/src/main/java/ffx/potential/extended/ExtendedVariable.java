@@ -47,6 +47,7 @@ public abstract class ExtendedVariable {
     // Thermo variables
     public final double temperature;            // Kelvin
     public final double dt;                     // femtoseconds
+    public final double biasMag;                // kcal/mol
     
     // Lamedh variables
     protected double lamedh;                        // ESVs travel on {0,1}
@@ -56,19 +57,22 @@ public abstract class ExtendedVariable {
     private final double thetaFriction = 1.0e-19;   // from OSRW, reasonably 60/ps
     private final Random stochasticRandom = ThreadLocalRandom.current();
     
-    public ExtendedVariable(Potential potential, double temperature, double dt) {
+    public ExtendedVariable(Potential potential, double temperature, double dt, double biasMag, double initialLamedh) {
         this.potential = potential;
         this.temperature = temperature;
         this.dt = dt;
         this.index = esvIndexer++;
-        this.lamedh = 1.0;
+        this.biasMag = biasMag;
+        this.lamedh = initialLamedh;
         theta = Math.asin(Math.sqrt(lamedh));
     }
     
-    public ExtendedVariable(Potential potential, double temperature, double dt, double initialLamedh) {
-        this(potential, temperature, dt);
-        this.lamedh = initialLamedh;
-        theta = Math.asin(Math.sqrt(lamedh));
+    public ExtendedVariable(Potential potential, double temperature, double dt, double biasMag) {
+        this(potential, temperature, dt, biasMag, 1.0);
+    }
+    
+    public ExtendedVariable(Potential potential, double temperature, double dt) {
+        this(potential, temperature, dt, 0.0, 1.0);
     }
     
     public List<Atom> getAtoms() {
@@ -83,11 +87,12 @@ public abstract class ExtendedVariable {
     
     /**
      * Propagate lamedh using Langevin dynamics.
+     * Check that temperature goes to the value used below (when set as a constant) even when sim is decoupled.
      */
     public void propagateLamedh() {
         double rt2 = 2.0 * ThermoConstants.R * temperature * thetaFriction / dt;
         double randomForce = sqrt(rt2) * stochasticRandom.nextGaussian() / ThermoConstants.randomConvert;
-        double dEdLamedh = getdEdLamedh();
+        double dEdLamedh = getdEdLdh();
         double dEdL = -dEdLamedh * sin(2.0 * theta);
         halfThetaVelocity = (halfThetaVelocity * (2.0 * thetaMass - thetaFriction * dt)
                 + ThermoConstants.randomConvert2 * 2.0 * dt * (dEdL + randomForce))
@@ -115,6 +120,11 @@ public abstract class ExtendedVariable {
         return index;
     }
     
+    // TODO: Add the harmonic barrier to drive lamedhs to zero/unity.
+    public abstract double getBiasEnergy();
+    public abstract double getdBiasdLdh();
+    public abstract double getd2BiasdLdh2();
+    
     /**
      * Declared abstract as a reminder to both fill local array and update Atom fields.
      */
@@ -122,7 +132,8 @@ public abstract class ExtendedVariable {
     /**
      * Necessary for particle propagation.
      */
-    public abstract double getdEdLamedh();
+    public abstract double getdEdLdh();
+    public abstract double getd2EdLdh2();
     /**
      * Called by ForceFieldEnergy to apply ESVs.
      */

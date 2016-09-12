@@ -177,7 +177,7 @@ public class MultipoleTensor {
         this.coordinates = coordinates;
         this.beta = beta;
         if (operator == OPERATOR.SCREENED_COULOMB && beta == 0.0) {
-            logger.warning("Tried beta of zero for screened coulomb tensor.");
+            // logger.warning("Tried beta of zero for screened coulomb tensor.");
             // Switch to the Coulomb operator.
             operator = OPERATOR.COULOMB;
         }
@@ -307,7 +307,7 @@ public class MultipoleTensor {
 
         OPERATOR op = operator;
         if (operator == OPERATOR.SCREENED_COULOMB && beta == 0.0) {
-            logger.warning("Tried beta of zero for screened coulomb tensor.");
+            // logger.warning("Tried beta of zero for screened coulomb tensor.");
             // Switch to the Coulomb operator.
             op = OPERATOR.COULOMB;
         }
@@ -384,38 +384,53 @@ public class MultipoleTensor {
         return false;
     }
 
-    public void setR(double r[]) {
-        switch (coordinates) {
-            case QI:
-                x = 0.0;
-                y = 0.0;
-                z = r(r);
-                setQIRotationMatrix(r);
-                break;
-            case GLOBAL:
-                x = r[0];
-                y = r[1];
-                z = r[2];
-                break;
-        }
-        r2 = (x * x + y * y + z * z);
-        if (r2 == 0.0) {
-            throw new ArithmeticException();
-        }
-        R = sqrt(r2);
+    public void setR_GB(double r[]) {
+        x = r[0];
+        y = r[1];
+        z = r[2];
+        R = sqrt(x*x + y*y + z*z);
     }
 
-    public void setR_QI(double r[], double buffer) {
-        x = 0.0;
-        y = 0.0;
-        z = r(r) + buffer;
+    public enum RMode {
+        Z_SUBSTITUTION, INDEPENDENT;
+    }
+    
+    public void setR(double r[]) {
+        switch (coordinates) {
+            default:
+            case GLOBAL:
+                setR_GB(r);
+                break;
+            case QI:
+                setR_QI(r);
+                break;
+        }
+    }
+    
+    public void setR_QI(double r[], double buffer, RMode Rmode) {
         setQIRotationMatrix(r);
-        r2 = (x * x + y * y + z * z);
-        R = sqrt(r2);
+        double rx = r[0], ry = r[1], rz = r[2];
+        switch (Rmode) {
+            case Z_SUBSTITUTION:
+                double[] rBuff = new double[]{rx, ry, rz + buffer};
+                R = sqrt(rx*rx + ry*ry + (rz+buffer)*(rz+buffer));
+                x = 0.0; y = 0.0; z = R;
+            default:
+            case INDEPENDENT:
+                R = sqrt((rx*rx + ry*ry + rz*rz) + buffer);
+                x = 0.0; y = 0.0; z = R;
+                break;
+        }
+//        logger.fine(format(" mt-Rmode(%s) > orig,buff,R: [%3g,%3g,%3g] [%3g,%3g,%3g] %g",
+//                Rmode.toString(), r[0], r[1], r[2], x, y, z, R));
+    }
+    
+    public double[] getR() {
+        return new double[]{x, y, z, R, R*R};
     }
     
     public void setR_QI(double[] r) {
-        setR_QI(r, 0.0);
+        setR_QI(r, 0.0, RMode.INDEPENDENT);
     }
 
     public double multipoleEnergy(double Fi[], double Ti[], double Tk[]) {
@@ -504,10 +519,14 @@ public class MultipoleTensor {
                 // == (1/r) * (1/r^3) * (1/r^5) * (1/r^7) * ...
                 ir = 1.0 / R;
                 ir2 = ir * ir;
+                StringBuilder sb = new StringBuilder();
+                sb.append(format("Coulomb shit for R,ir = %g,%g: 000(j),001(j),...\n", R, ir));
                 for (int n = 0; n < o1; n++) {
                     T000[n] = T000j[n] * ir;
+                    sb.append(format("     %g (%g)\n", T000[n], T000j[n]));
                     ir *= ir2;
                 }
+//                logger.info(sb.toString());
         }
     }
     private static final double threeFifths = 3.0 / 5.0;
@@ -672,7 +691,7 @@ public class MultipoleTensor {
      * @param tensor double[] length must be at least binomial(order + 3, 3).
      */
     public void noStorageRecursion(double r[], double tensor[]) {
-        setR(r);
+        setR_GB(r);
         source(T000);
         // 1/r
         tensor[0] = T000[0];
@@ -709,7 +728,7 @@ public class MultipoleTensor {
      */
     public void noStorageRecursionQI(double r[], double tensor[]) {
         assert (r[0] == 0.0 && r[1] == 0.0);
-        setR(r);
+        setR_QI(r);
         source(T000);
         // 1/r
         tensor[0] = T000[0];
@@ -849,7 +868,7 @@ public class MultipoleTensor {
      * @since 1.0
      */
     public void recursion(final double r[], final double tensor[]) {
-        setR(r);
+        setR_GB(r);
         source(work);
         tensor[0] = work[0];
         // Find (d/dx)^l for l = 1..order (m = 0, n = 0)
@@ -971,7 +990,7 @@ public class MultipoleTensor {
      * @since 1.0
      */
     public void recursionQI(final double r[], final double tensor[]) {
-        setR(r);
+        setR_QI(r);
         assert (x == 0.0 && y == 0.0);
         source(work);
         tensor[0] = work[0];
@@ -1091,7 +1110,7 @@ public class MultipoleTensor {
      * @since 1.0
      */
     public String codeTensorRecursion(final double r[], final double tensor[]) {
-        setR(r);
+        setR_GB(r);
         source(work);
         StringBuilder sb = new StringBuilder();
         tensor[0] = work[0];
@@ -1270,7 +1289,7 @@ public class MultipoleTensor {
      * @since 1.0
      */
     public String codeTensorRecursionQI(final double r[], final double tensor[]) {
-        setR(r);
+        setR_QI(r);
         assert (x == 0.0 && y == 0.0);
         source(work);
         StringBuilder sb = new StringBuilder();
@@ -2397,34 +2416,27 @@ public class MultipoleTensor {
         return energy;
     }
     
-    private final MultipoleTensor.COORDINATES dzOut = (System.getProperty("mt-dzOut") != null) ?
-            COORDINATES.valueOf(System.getProperty("mt-dzOut")) : COORDINATES.QI;
+    private final MultipoleTensor.COORDINATES dzOut = (System.getProperty("pme-bufferCoords") != null)
+            ? COORDINATES.valueOf(System.getProperty("pme-bufferCoords")) : COORDINATES.QI;
     private double dEdZ, d2EdZ2, dEdZrot, d2EdZrot2;
-    private double offset = 0.0;
-    public void setOffset(double offset) {
-        this.offset = offset;
-    }
-    
-    static {
-        if (System.getProperty("mt-dzOut") != null) {
-            System.out.println("mt-dzOut: " + COORDINATES.valueOf(System.getProperty("mt-dzOut")).toString());
-        } else {
-            System.out.println("mt-dzOut: defaulting to COORDINATES.QI");
-        }
-    }
     
     public double getdEdZ() {
-        if (dzOut == COORDINATES.QI) {
-            return dEdZ;
-        } else {
-            return dEdZrot;
+        switch (dzOut) {
+            case QI:
+                return dEdZ;
+            default:
+            case GLOBAL:
+                return dEdZrot;
         }
     }
+    
     public double getd2EdZ2() {
-        if (dzOut == COORDINATES.QI) {
-            return d2EdZ2;
-        } else {
-            return d2EdZrot2;
+        switch (dzOut) {
+            case QI:
+                return d2EdZ2;
+            default:
+            case GLOBAL:
+                return d2EdZrot2;
         }
     }
 
@@ -4178,7 +4190,7 @@ public class MultipoleTensor {
                 r[0] = Math.random();
                 r[1] = Math.random();
                 r[2] = Math.random();
-                multipoleTensor.setR(r);
+                multipoleTensor.setR_GB(r);
                 multipoleTensor.order6();
             }
             timeGlobalT += System.nanoTime();
@@ -4188,7 +4200,7 @@ public class MultipoleTensor {
                 r[0] = Math.random();
                 r[1] = Math.random();
                 r[2] = Math.random();
-                multipoleTensor.setR(r);
+                multipoleTensor.setR_GB(r);
                 multipoleTensor.setMultipoles(Qi, Qk);
                 double e = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
                 if (Double.isNaN(e) || Double.isInfinite(e)) {
@@ -4203,7 +4215,7 @@ public class MultipoleTensor {
                 r[0] = Math.random();
                 r[1] = Math.random();
                 r[2] = Math.random();
-                multipoleTensor.setR(r);
+                multipoleTensor.setR_QI(r);
                 multipoleTensor.order6QI();
             }
             timeQIT += System.nanoTime();
@@ -4213,7 +4225,7 @@ public class MultipoleTensor {
                 r[0] = 0.0;
                 r[1] = 0.0;
                 r[2] = Math.random();
-                multipoleTensor.setR(r);
+                multipoleTensor.setR_QI(r);
                 multipoleTensor.setMultipoles(Qi, Qk);
                 double e = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
                 if (Double.isNaN(e) || Double.isInfinite(e)) {
@@ -4450,14 +4462,14 @@ public class MultipoleTensor {
         R212 = T[t212];
         R122 = T[t122];
     }
-
+    
     private void setQIRotationMatrix(double r[]) {
-        double zAxis[] = {r[0], r[1], r[2]};
+        double zAxis[] = new double[]{r[0], r[1], r[2]};
         double xAxis[] = new double[3];
         xAxis[0] = r[0] + 1.0;
         xAxis[1] = r[1];
         xAxis[2] = r[2];
-
+    
         norm(zAxis, zAxis);
         ir02 = zAxis[0];
         ir12 = zAxis[1];
@@ -4490,7 +4502,10 @@ public class MultipoleTensor {
         r12 = ir21;
         r20 = ir02;
         r21 = ir12;
-
+//        logger.fine(format("rotation matrix: %g %g %g\n"
+//                         + "                 %g %g %g\n"
+//                         + "                 %g %g %g",
+//                r00, r01, r02, r10, r11, r12, r20, r21, r22));
     }
 
     private static final double ONE_THIRD = 1.0 / 3.0;
