@@ -121,6 +121,7 @@ import static ffx.potential.parameters.MultipoleType.t200;
 import static ffx.potential.parameters.MultipoleType.t201;
 import static ffx.potential.parameters.MultipoleType.t210;
 import static ffx.potential.parameters.MultipoleType.t300;
+import ffx.potential.utils.EnergyException;
 
 /**
  * This Particle Mesh Ewald class implements PME for the AMOEBA polarizable
@@ -2046,7 +2047,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                     logger.warning(sb.toString());
                 }
                 String message = format("Fatal SCF convergence failure: (%10.5f > %10.5f)\n", eps, previousEps);
-                throw new ArithmeticException(message);
+                throw new EnergyException(message);
             }
             /**
              * The SCF should converge well before the max iteration check.
@@ -2057,7 +2058,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                     logger.warning(sb.toString());
                 }
                 String message = format("Maximum SCF iterations reached: (%d)\n", completedSCFCycles);
-                throw new ArithmeticException(message);
+                throw new EnergyException(message);
             }
             /**
              * Check if the convergence criteria has been achieved.
@@ -3573,12 +3574,14 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
             for (int i = 0; i < maxThreads; i++) {
                 double e = realSpaceEnergyLoop[i].permanentEnergy;
                 if (Double.isNaN(e)) {
-                    logger.severe(String.format(" The permanent multipole energy of thread %d is %16.8f", i, e));
+                    //logger.severe(String.format(" The permanent multipole energy of thread %d is %16.8f", i, e));
+                    throw new EnergyException(String.format(" The permanent multipole energy of thread %d is %16.8f", i, e));
                 }
                 permanentEnergy += e;
                 double ei = realSpaceEnergyLoop[i].inducedEnergy;
                 if (Double.isNaN(ei)) {
-                    logger.severe(String.format(" The polarization energy of thread %d is %16.8f", i, ei));
+                    //logger.severe(String.format(" The polarization energy of thread %d is %16.8f", i, ei));
+                    throw new EnergyException(String.format(" The polarization energy of thread %d is %16.8f", i, ei));
                 }
                 polarizationEnergy += ei;
             }
@@ -4396,7 +4399,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
             }
 
             private void logPolarizationError(double ei, int i, int k, double indI[], double indK[]) {
-                logger.info(crystal.getUnitCell().toString());
+                /*logger.info(crystal.getUnitCell().toString());
                 logger.info(atoms[i].toString());
                 logger.info(format(" with induced dipole: %8.3f %8.3f %8.3f",
                         indI[0], indI[1], indI[2]));
@@ -4405,16 +4408,27 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                         indK[0], indK[1], indK[2]));
                 logger.severe(
                         format(" The pol. energy for atoms %d and %d (%d) is %10.6f at %10.6f A.",
-                                i + 1, k + 1, iSymm, ei, sqrt(r2)));
+                                i + 1, k + 1, iSymm, ei, sqrt(r2)));*/
+                String message = String.format(" %s\n "
+                        + "%s\n with induced dipole: %8.3f %8.3f %8.3f\n "
+                        + "%s\n with induced dipole: %8.3f %8.3f %8.3f\n"
+                        + " The pol. energy for atoms %d and %d (%d) is %10.6f at %10.6f A.",
+                        crystal.getUnitCell(), atoms[i], indI[0], indI[1], indI[2],
+                        atoms[k], indK[0], indK[1], indK[2], i+1, k+1, iSymm, ei, sqrt(r2));
+                throw new EnergyException(message);
             }
 
             private void logPermanentError(double ei, int i, int k) {
-                logger.info(crystal.getUnitCell().toString());
+                /*logger.info(crystal.getUnitCell().toString());
                 logger.info(atoms[i].toString());
                 logger.info(atoms[k].toString());
                 logger.severe(
                         format(" The permanent multipole energy between atoms %d and %d (%d) is %16.8f at %16.8f A.",
-                                i, k, iSymm, ei, sqrt(r2)));
+                                i, k, iSymm, ei, sqrt(r2)));*/
+                String message = String.format(" %s\n %s\n %s\n The permanent "
+                        + "multipole energy between atoms %d and %d (%d) is "
+                        + "%16.8f at %16.8f A.", crystal.getUnitCell(), atoms[i],
+                        atoms[k], i, k, iSymm, ei, sqrt(r2));
             }
 
         }
@@ -6664,7 +6678,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                     logger.warning(sb.toString());
                 }
                 String message = format("Fatal SCF convergence failure: (%10.5f > %10.5f)\n", eps, previousEps);
-                throw new ArithmeticException(message);
+                throw new EnergyException(message);
             }
             /**
              * The SCF should converge well before the max iteration check.
@@ -6675,7 +6689,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                     logger.warning(sb.toString());
                 }
                 String message = format("Maximum SCF iterations reached: (%d)\n", completedSCFCycles);
-                throw new ArithmeticException(message);
+                throw new EnergyException(message);
             }
             /**
              * Check if the convergence criteria has been achieved.
