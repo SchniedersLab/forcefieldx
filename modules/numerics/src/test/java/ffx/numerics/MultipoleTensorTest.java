@@ -40,6 +40,8 @@ package ffx.numerics;
 import java.util.Arrays;
 import java.util.Collection;
 
+import static java.util.Arrays.fill;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -47,11 +49,8 @@ import org.junit.runners.Parameterized.Parameters;
 
 import static org.junit.Assert.assertEquals;
 
-import ffx.numerics.MultipoleTensor.OPERATOR;
-
-import static java.util.Arrays.fill;
-
 import ffx.numerics.MultipoleTensor.COORDINATES;
+import ffx.numerics.MultipoleTensor.OPERATOR;
 
 /**
  * Parameterized Test of the MultipoleTensor class.
@@ -62,13 +61,14 @@ import ffx.numerics.MultipoleTensor.COORDINATES;
 @RunWith(Parameterized.class)
 public class MultipoleTensorTest {
 
-    private static final double xyz[] = {1.1, 1.2, 1.3};
+    private static final double xyz[] = {1.1, 1.2, 1.3, 0.5};
 
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-            {"Order 5 Coulomb", xyz[0], xyz[1], xyz[2], 5, 56, OPERATOR.COULOMB, 0.0, 0.0, 0.0},
-            {"Order 5 Screened Coulomb", xyz[0], xyz[1], xyz[2], 5, 56, OPERATOR.SCREENED_COULOMB, 0.45, 0.0, 0.0}, // {"Order 4 Thole Field", xyz[0], xyz[1], xyz[2], 4, 35, OPERATOR.THOLE_FIELD, 0.0, 1.0, 1.0}
+            {"Order 5 Coulomb", xyz[0], xyz[1], xyz[2], xyz[3], 5, 56, OPERATOR.COULOMB, 0.0, 0.0, 0.0},
+            {"Order 5 Screened Coulomb", xyz[0], xyz[1], xyz[2], xyz[3], 5, 56, OPERATOR.SCREENED_COULOMB, 0.45, 0.0, 0.0},
+            {"Order 4 Thole Field", xyz[0], xyz[1], xyz[2], xyz[3], 4, 35, OPERATOR.THOLE_FIELD, 0.0, 1.0, 1.0}
         });
     }
     private final double tolerance = 1.0e-14;
@@ -84,6 +84,7 @@ public class MultipoleTensorTest {
     private final double beta;
     private final double damp;
     private final double aiak;
+    private double lambdaFunction;
 
     private final double Qi[] = {0.11,
         0.21, 0.31, 0.41,
@@ -92,14 +93,15 @@ public class MultipoleTensorTest {
         0.21, 0.31, 0.41,
         -0.51, -0.61, 1.12, 0.71, 0.81, 0.91};
 
-    public MultipoleTensorTest(String info, double x, double y, double z, int order,
-            int tensorCount, OPERATOR operator,
+    public MultipoleTensorTest(String info, double x, double y, double z, double lambdaFunction,
+            int order, int tensorCount, OPERATOR operator,
             double beta, double damp, double aiak) {
         this.info = info;
         this.order = order;
         r[0] = x;
         r[1] = y;
         r[2] = z;
+        this.lambdaFunction = lambdaFunction;
         this.tensorCount = tensorCount;
         tensor = new double[tensorCount];
         noStorageTensor = new double[tensorCount];
@@ -286,7 +288,7 @@ public class MultipoleTensorTest {
             multipoleTensor.order5QI();
             multipoleTensor.getTensor(tensor);
             tensorFiniteDifferenceQI(multipoleTensor, delta2, tensorsPz, tensorsNz);
-        } else if (order == 5) {
+        } else if (order == 4) {
             multipoleTensor.order4QI();
             multipoleTensor.getTensor(tensor);
             tensorFiniteDifferenceQI(multipoleTensor, delta2, tensorsPz, tensorsNz);
@@ -295,6 +297,11 @@ public class MultipoleTensorTest {
 
     @Test
     public void energyAndForceTest() {
+
+        if (operator == OPERATOR.THOLE_FIELD) {
+            return;
+        }
+
         MultipoleTensor multipoleTensor = new MultipoleTensor(
                 operator, COORDINATES.GLOBAL, order, beta);
         r[0] = 1.1;
@@ -305,7 +312,7 @@ public class MultipoleTensorTest {
         double Fi[] = new double[3];
         double Ti[] = new double[3];
         double Tk[] = new double[3];
-        multipoleTensor.setR(r);
+        multipoleTensor.setR(r, lambdaFunction);
         multipoleTensor.setMultipoles(Qi, Qk);
         multipoleTensor.generateTensor();
 
@@ -315,36 +322,53 @@ public class MultipoleTensorTest {
         double aY = -Fi[1];
         double aZ = -Fi[2];
 
+        double analyticdEdF = multipoleTensor.getdEdF();
+
         r[0] += delta;
-        multipoleTensor.setR(r);
+        multipoleTensor.setR(r, lambdaFunction);
         multipoleTensor.generateTensor();
         double posX = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
         r[0] -= delta2;
-        multipoleTensor.setR(r);
+        multipoleTensor.setR(r, lambdaFunction);
         multipoleTensor.generateTensor();
         double negX = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
         r[0] += delta;
         r[1] += delta;
-        multipoleTensor.setR(r);
+        multipoleTensor.setR(r, lambdaFunction);
         multipoleTensor.generateTensor();
         double posY = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
         r[1] -= delta2;
-        multipoleTensor.setR(r);
+        multipoleTensor.setR(r, lambdaFunction);
         multipoleTensor.generateTensor();
         double negY = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
         r[1] += delta;
         r[2] += delta;
-        multipoleTensor.setR(r);
+        multipoleTensor.setR(r, lambdaFunction);
         multipoleTensor.generateTensor();
         double posZ = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
         r[2] -= delta2;
-        multipoleTensor.setR(r);
+        multipoleTensor.setR(r, lambdaFunction);
         multipoleTensor.generateTensor();
         double negZ = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
         r[2] += delta;
 
-        double expect = aX;
-        double actual = (posX - negX) / delta2;
+        lambdaFunction += delta;
+        multipoleTensor.setR(r, lambdaFunction);
+        multipoleTensor.setMultipoles(Qi, Qk);
+        multipoleTensor.generateTensor();
+        double posF = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
+        lambdaFunction -= delta2;
+        multipoleTensor.setR(r, lambdaFunction);
+        multipoleTensor.setMultipoles(Qi, Qk);
+        multipoleTensor.generateTensor();
+        double negF = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
+        lambdaFunction += delta;
+
+        double expect = analyticdEdF;
+        double actual = (posF - negF) / delta2;
+        assertEquals(info + " Global dE/dF", expect, actual, fdTolerance);
+        expect = aX;
+        actual = (posX - negX) / delta2;
         assertEquals(info + " Force X", expect, actual, fdTolerance);
         expect = aY;
         actual = (posY - negY) / delta2;
@@ -356,6 +380,11 @@ public class MultipoleTensorTest {
 
     @Test
     public void energyAndForceQITest() {
+
+        if (operator == OPERATOR.THOLE_FIELD) {
+            return;
+        }
+
         MultipoleTensor multipoleTensor = new MultipoleTensor(
                 operator, COORDINATES.QI, order, beta);
         double delta = 1.0e-5;
@@ -364,7 +393,7 @@ public class MultipoleTensorTest {
         double Ti[] = new double[3];
         double Tk[] = new double[3];
 
-        multipoleTensor.setR(r);
+        multipoleTensor.setR(r, lambdaFunction);
         multipoleTensor.setMultipoles(Qi, Qk);
         multipoleTensor.generateTensor();
         double energy = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
@@ -373,44 +402,62 @@ public class MultipoleTensorTest {
         double aY = -Fi[1];
         double aZ = -Fi[2];
 
+        double analyticdEdF = multipoleTensor.getdEdF();
+
         r[0] += delta;
-        multipoleTensor.setR(r);
+        multipoleTensor.setR_QI(r, lambdaFunction);
         multipoleTensor.setMultipoles(Qi, Qk);
         multipoleTensor.generateTensor();
         double posX = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
         r[0] -= delta2;
-        multipoleTensor.setR(r);
+        multipoleTensor.setR_QI(r, lambdaFunction);
         multipoleTensor.setMultipoles(Qi, Qk);
         multipoleTensor.generateTensor();
         double negX = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
         r[0] += delta;
 
         r[1] += delta;
-        multipoleTensor.setR(r);
+        multipoleTensor.setR_QI(r, lambdaFunction);
         multipoleTensor.setMultipoles(Qi, Qk);
         multipoleTensor.generateTensor();
         double posY = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
         r[1] -= delta2;
-        multipoleTensor.setR(r);
+        multipoleTensor.setR_QI(r, lambdaFunction);
         multipoleTensor.setMultipoles(Qi, Qk);
         multipoleTensor.generateTensor();
         double negY = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
         r[1] += delta;
 
         r[2] += delta;
-        multipoleTensor.setR(r);
+        multipoleTensor.setR_QI(r, lambdaFunction);
         multipoleTensor.setMultipoles(Qi, Qk);
         multipoleTensor.generateTensor();
         double posZ = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
         r[2] -= delta2;
-        multipoleTensor.setR(r);
+        multipoleTensor.setR_QI(r, lambdaFunction);
         multipoleTensor.setMultipoles(Qi, Qk);
         multipoleTensor.generateTensor();
         double negZ = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
         r[2] += delta;
 
-        double expect = aX;
-        double actual = (posX - negX) / delta2;
+        lambdaFunction += delta;
+        multipoleTensor.setR_QI(r, lambdaFunction);
+        multipoleTensor.setMultipoles(Qi, Qk);
+        multipoleTensor.generateTensor();
+        double posF = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
+        lambdaFunction -= delta2;
+        multipoleTensor.setR_QI(r, lambdaFunction);
+        multipoleTensor.setMultipoles(Qi, Qk);
+        multipoleTensor.generateTensor();
+        double negF = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
+        lambdaFunction += delta;
+
+        double expect = analyticdEdF;
+        double actual = (posF - negF) / delta2;
+        assertEquals(info + " QI dE/dF", expect, actual, fdTolerance);
+
+        expect = aX;
+        actual = (posX - negX) / delta2;
         assertEquals(info + " QI Force X", expect, actual, fdTolerance);
 
         expect = aY;

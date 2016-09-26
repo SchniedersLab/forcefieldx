@@ -56,6 +56,39 @@ import static ffx.numerics.VectorMath.norm;
 import static ffx.numerics.VectorMath.r;
 import static ffx.numerics.VectorMath.scalar;
 
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.norm;
+import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.scalar;
+
 /**
  * The MultipoleTensor class computes derivatives of 1/|<b>r</b>| via recursion
  * to arbitrary order for Cartesian multipoles in either a global frame or a
@@ -154,6 +187,7 @@ public class MultipoleTensor {
      * approximately 50% slower than the linear work array.
      */
     private final double work[];
+    private double dEdF, d2EdF2;
 
     /**
      * <p>
@@ -384,53 +418,67 @@ public class MultipoleTensor {
         return false;
     }
 
-    public void setR_GB(double r[]) {
-        x = r[0];
-        y = r[1];
-        z = r[2];
-        R = sqrt(x*x + y*y + z*z);
-    }
-
-    public enum RMode {
-        Z_SUBSTITUTION, INDEPENDENT;
-    }
-    
     public void setR(double r[]) {
         switch (coordinates) {
+            case QI:
+                x = 0.0;
+                y = 0.0;
+                z = r(r);
+                setQIRotationMatrix(r[0], r[1], r[2]);
+                break;
             default:
             case GLOBAL:
-                setR_GB(r);
-                break;
+                x = r[0];
+                y = r[1];
+                z = r[2];
+                r2 = (x * x + y * y + z * z);
+                if (r2 == 0.0) {
+                    throw new ArithmeticException();
+                }
+                R = sqrt(r2);
+        }
+    }
+
+    public void setR(double r[], double lambdaFunction) {
+        switch (coordinates) {
             case QI:
-                setR_QI(r);
+                setR_QI(r, lambdaFunction);
                 break;
+            case GLOBAL:
+                x = r[0];
+                y = r[1];
+                z = r[2] + lambdaFunction;
+                r2 = (x * x + y * y + z * z);
+                if (r2 == 0.0) {
+                    throw new ArithmeticException();
+                }
+                R = sqrt(r2);
         }
     }
-    
-    public void setR_QI(double r[], double buffer, RMode Rmode) {
-        setQIRotationMatrix(r);
-        double rx = r[0], ry = r[1], rz = r[2];
-        switch (Rmode) {
-            case Z_SUBSTITUTION:
-                double[] rBuff = new double[]{rx, ry, rz + buffer};
-                R = sqrt(rx*rx + ry*ry + (rz+buffer)*(rz+buffer));
-                x = 0.0; y = 0.0; z = R;
-            default:
-            case INDEPENDENT:
-                R = sqrt((rx*rx + ry*ry + rz*rz) + buffer);
-                x = 0.0; y = 0.0; z = R;
-                break;
+
+    public void setR_QI(double r[]) {
+        x = 0.0;
+        y = 0.0;
+        r2 = r[0] * r[0] + r[1] * r[1] + r[2] * r[2];
+        if (r2 == 0.0) {
+            throw new ArithmeticException();
         }
-//        logger.fine(format(" mt-Rmode(%s) > orig,buff,R: [%3g,%3g,%3g] [%3g,%3g,%3g] %g",
-//                Rmode.toString(), r[0], r[1], r[2], x, y, z, R));
+        z = sqrt(r2);
+        R = z;
+        setQIRotationMatrix(r[0], r[1], r[2]);
     }
-    
-    public double[] getR() {
-        return new double[]{x, y, z, R, R*R};
-    }
-    
-    public void setR_QI(double[] r) {
-        setR_QI(r, 0.0, RMode.INDEPENDENT);
+
+    public void setR_QI(double r[], double lambdaFunction) {
+        x = 0.0;
+        y = 0.0;
+        double zl = r[2] + lambdaFunction;
+        r2 = r[0] * r[0] + r[1] * r[1] + zl * zl;
+        if (r2 == 0.0) {
+            throw new ArithmeticException();
+        }
+        z = sqrt(r2);
+        R = z;
+        setQIRotationMatrix(r[0], r[1], r[2] + lambdaFunction);
     }
 
     public double multipoleEnergy(double Fi[], double Ti[], double Tk[]) {
@@ -691,7 +739,7 @@ public class MultipoleTensor {
      * @param tensor double[] length must be at least binomial(order + 3, 3).
      */
     public void noStorageRecursion(double r[], double tensor[]) {
-        setR_GB(r);
+        setR(r);
         source(T000);
         // 1/r
         tensor[0] = T000[0];
@@ -868,7 +916,7 @@ public class MultipoleTensor {
      * @since 1.0
      */
     public void recursion(final double r[], final double tensor[]) {
-        setR_GB(r);
+        setR(r);
         source(work);
         tensor[0] = work[0];
         // Find (d/dx)^l for l = 1..order (m = 0, n = 0)
@@ -1110,7 +1158,7 @@ public class MultipoleTensor {
      * @since 1.0
      */
     public String codeTensorRecursion(final double r[], final double tensor[]) {
-        setR_GB(r);
+        setR(r);
         source(work);
         StringBuilder sb = new StringBuilder();
         tensor[0] = work[0];
@@ -2341,7 +2389,6 @@ public class MultipoleTensor {
      * @return the energy.
      */
     private double multipoleEnergyGlobal(double Fi[], double Ti[], double Tk[]) {
-        //order5();
         multipoleIField();
         double energy = dotMultipoleK();
         // Torques
@@ -2355,6 +2402,12 @@ public class MultipoleTensor {
         Fi[1] = -dotMultipoleK();
         multipoleIdZ();
         Fi[2] = -dotMultipoleK();
+
+        dEdF = -Fi[2];
+
+        /**
+         * if (order > 5) { // multipoleIdZ2(); // d2EdF2 = dotMultipoleK(); }
+         */
         return energy;
     }
 
@@ -2368,12 +2421,6 @@ public class MultipoleTensor {
      * @return the energy.
      */
     public double multipoleEnergyQI(double Fi[], double Ti[], double Tk[]) {
-        if (order > 5) {
-            order6QI();
-        } else {
-            order5QI();
-        }
-
         // Compute the potential due to site I at site K.
         multipoleIFieldQI();
 
@@ -2395,55 +2442,30 @@ public class MultipoleTensor {
         Fi[1] = -dotMultipoleK();
         multipoleIdZQI();
         Fi[2] = -dotMultipoleK();
-        
-        // Fi[2] == dEdZ == dEdL
-        dEdZ = Fi[2];
-        if (order > 5) {
-            // Now get d2EdL2 == d2EdZ2:
-            multipoleIdZ2QI();
-            d2EdZ2 = -dotMultipoleK();
-        }
 
         // Rotate the force and torques from the QI frame into the Global frame.
         qiToGlobal(Fi, Ti, Tk);
-        
-        dEdZrot = Fi[2];
+
+        // dEdL = dEdF = -Fi[2]
+        dEdF = -Fi[2];
         if (order > 5) {
             multipoleIdZ2QI();
-            d2EdZrot2 = -dotMultipoleK();
+            d2EdF2 = dotMultipoleK();
         }
-        
+
         return energy;
     }
-    
-    private final MultipoleTensor.COORDINATES dzOut = (System.getProperty("pme-bufferCoords") != null)
-            ? COORDINATES.valueOf(System.getProperty("pme-bufferCoords")) : COORDINATES.QI;
-    private double dEdZ, d2EdZ2, dEdZrot, d2EdZrot2;
-    
-    public double getdEdZ() {
-        switch (dzOut) {
-            case QI:
-                return dEdZ;
-            default:
-            case GLOBAL:
-                return dEdZrot;
-        }
+
+    public double getdEdF() {
+        return dEdF;
     }
-    
+
     public double getd2EdZ2() {
-        switch (dzOut) {
-            case QI:
-                return d2EdZ2;
-            default:
-            case GLOBAL:
-                return d2EdZrot2;
-        }
+        return d2EdF2;
     }
 
     private double polarizationEnergyGlobal(double scaleField, double scaleEnergy, double scaleMutual,
             double Fi[], double Ti[], double Tk[]) {
-        // Generate tensors.
-        //order4();
 
         // Find the potential, field, etc at k due to the induced dipole i.
         inducedIField();
@@ -2507,8 +2529,6 @@ public class MultipoleTensor {
     public double polarizationEnergyQI(double scaleField, double scaleEnergy, double scaleMutual,
             double Fi[], double Ti[], double Tk[]) {
 
-        // Generate tensors.
-        //order4QI();
         // Find the potential, field, etc at k due to the induced dipole i.
         inducedIFieldQI();
         // Energy of multipole k in the field of induced dipole i.
@@ -3390,7 +3410,7 @@ public class MultipoleTensor {
         term012 += qyzi * R023;
         E011 = term012;
     }
-    
+
     private void multipoleIdZ2QI() {
         if (order < 6) {
             logger.severe("Use higher order tensor for lambda derivatives.");
@@ -4190,7 +4210,7 @@ public class MultipoleTensor {
                 r[0] = Math.random();
                 r[1] = Math.random();
                 r[2] = Math.random();
-                multipoleTensor.setR_GB(r);
+                multipoleTensor.setR(r);
                 multipoleTensor.order6();
             }
             timeGlobalT += System.nanoTime();
@@ -4200,7 +4220,7 @@ public class MultipoleTensor {
                 r[0] = Math.random();
                 r[1] = Math.random();
                 r[2] = Math.random();
-                multipoleTensor.setR_GB(r);
+                multipoleTensor.setR(r);
                 multipoleTensor.setMultipoles(Qi, Qk);
                 double e = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
                 if (Double.isNaN(e) || Double.isInfinite(e)) {
@@ -4239,12 +4259,12 @@ public class MultipoleTensor {
         }
 
         /**
-        double tensors[] = new double[MultipoleTensor.tensorCount(order)];
-        String string = multipoleTensor.codeTensorRecursion(r, tensors);
-        logger.info(" Java Code:\n" + string);
-        string = multipoleTensor.codeTensorRecursionQI(r, tensors);
-        logger.info(" Java Code:\n" + string);
-        */
+         * double tensors[] = new double[MultipoleTensor.tensorCount(order)];
+         * String string = multipoleTensor.codeTensorRecursion(r, tensors);
+         * logger.info(" Java Code:\n" + string); string =
+         * multipoleTensor.codeTensorRecursionQI(r, tensors); logger.info(" Java
+         * Code:\n" + string);
+         */
     }
 
     /**
@@ -4462,14 +4482,11 @@ public class MultipoleTensor {
         R212 = T[t212];
         R122 = T[t122];
     }
-    
-    private void setQIRotationMatrix(double r[]) {
-        double zAxis[] = new double[]{r[0], r[1], r[2]};
-        double xAxis[] = new double[3];
-        xAxis[0] = r[0] + 1.0;
-        xAxis[1] = r[1];
-        xAxis[2] = r[2];
-    
+
+    private void setQIRotationMatrix(double dx, double dy, double dz) {
+
+        double zAxis[] = {dx, dy, dz};
+        double xAxis[] = {dx + 1.0, dy, dz};
         norm(zAxis, zAxis);
         ir02 = zAxis[0];
         ir12 = zAxis[1];
@@ -4479,11 +4496,6 @@ public class MultipoleTensor {
         scalar(zAxis, dot, zAxis);
         diff(xAxis, zAxis, xAxis);
         norm(xAxis, xAxis);
-        /* This handles the diabolical case of r = (1.0,0.0,0.0), which yields x-x.z*z = 0.0 -> norm NaN.
-           Commented to avoid branching in inner loops; activate as necessary.      */
-//        if (Double.isNaN(xAxis[0])) {
-//            xAxis = new double[]{0.0, 0.0, 0.0};
-//        }
 
         ir00 = xAxis[0];
         ir10 = xAxis[1];
@@ -4502,10 +4514,6 @@ public class MultipoleTensor {
         r12 = ir21;
         r20 = ir02;
         r21 = ir12;
-//        logger.fine(format("rotation matrix: %g %g %g\n"
-//                         + "                 %g %g %g\n"
-//                         + "                 %g %g %g",
-//                r00, r01, r02, r10, r11, r12, r20, r21, r22));
     }
 
     private static final double ONE_THIRD = 1.0 / 3.0;
@@ -4996,9 +5004,14 @@ public class MultipoleTensor {
     private double R212;
     private double R122;
     // l + m + n = 6 (28) 84
+    private double R006;
+    private double R402;
+    private double R042;
+    private double R204;
+    private double R024;
+    private double R222;
     private double R600;
     private double R060;
-    private double R006;
     private double R510;
     private double R501;
     private double R150;
@@ -5006,11 +5019,7 @@ public class MultipoleTensor {
     private double R105;
     private double R015;
     private double R420;
-    private double R402;
     private double R240;
-    private double R042;
-    private double R204;
-    private double R024;
     private double R411;
     private double R141;
     private double R114;
@@ -5023,7 +5032,6 @@ public class MultipoleTensor {
     private double R312;
     private double R132;
     private double R123;
-    private double R222;
 
     // l + m + n = 0 (1)
     public final int t000;

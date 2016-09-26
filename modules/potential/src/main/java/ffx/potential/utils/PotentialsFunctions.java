@@ -112,4 +112,40 @@ public interface PotentialsFunctions {
      public FileOpener open(String[] files);
      public FileOpener open(File file, String commandDescription);
      public FileOpener open(File[] files, String commandDescription);*/
+    
+    /**
+     * Versions a file, attempting to find an unused filename in the set filename,
+     * and filename_1 to filename_999.
+     * 
+     * @param filename To version
+     * @return Versioned filename.
+     */
+    default public String versionFile(String filename) {
+        if (filename == null) {
+            throw new IllegalArgumentException("Filename must not be null!");
+        }
+        return versionFile(new File(filename)).getName();
+    }
+    
+    /**
+     * Versions a file, attempting to find an unused filename in the set filename,
+     * and filename_1 to filename_999.
+     * 
+     * @param file To version
+     * @return Versioned file
+     */
+    default public File versionFile(File file) {
+        if (file == null) {
+            throw new IllegalArgumentException("File must not be null!");
+        }
+        int counter = 1;
+        String filename = file.getName();
+        while (file.exists() && counter < 1000) {
+            file = new File(String.format("%s_%d", filename, counter++));
+        }
+        if (file.exists()) {
+            throw new IllegalArgumentException(String.format("Could not version file %s", filename));
+        }
+        return file;
+    }
 }

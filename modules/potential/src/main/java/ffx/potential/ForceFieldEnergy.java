@@ -39,19 +39,22 @@ package ffx.potential;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.OptionalDouble;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.io.File;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.sqrt;
+import org.apache.commons.io.FilenameUtils;
 
 import edu.rit.pj.ParallelTeam;
 
@@ -94,6 +97,9 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldBoolean;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldString;
+import ffx.potential.utils.EnergyException;
+import ffx.potential.utils.PotentialsFunctions;
+import ffx.potential.utils.PotentialsUtils;
 
 /**
  * Compute the potential energy and derivatives of an AMOEBA system.
@@ -217,7 +223,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private VARIABLE_TYPE[] variableTypes = null;
     private double xyz[] = null;
     private boolean printOverride = false;
-    private Level printSDLlevel = Level.FINE;
+    private final boolean printOnFailure;
     /****************************************/
     /*      Extended System Variables       */
     private int numESVs;
@@ -310,6 +316,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         comTerm = forceField.getBoolean(ForceFieldBoolean.COMRESTRAINTERM, false);
         lambdaTorsions = forceField.getBoolean(ForceFieldBoolean.LAMBDA_TORSIONS, false);
         esvTerm = forceField.getBoolean(ForceFieldBoolean.ESVTERM, false);
+        printOnFailure = forceField.getBoolean(ForceFieldBoolean.PRINT_ON_FAILURE, true);
 
         // For RESPA
         bondTermOrig = bondTerm;
@@ -1052,378 +1059,396 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
      * @return a double.
      */
     public double energy(boolean gradient, boolean print) {
-        bondTime = 0;
-        angleTime = 0;
-        stretchBendTime = 0;
-        ureyBradleyTime = 0;
-        outOfPlaneBendTime = 0;
-        torsionTime = 0;
-        piOrbitalTorsionTime = 0;
-        torsionTorsionTime = 0;
-        improperTorsionTime = 0;
-        vanDerWaalsTime = 0;
-        electrostaticTime = 0;
-        restraintBondTime = 0;
-        ncsTime = 0;
-        coordRestraintTime = 0;
-        totalTime = System.nanoTime();
+        try {
+            bondTime = 0;
+            angleTime = 0;
+            stretchBendTime = 0;
+            ureyBradleyTime = 0;
+            outOfPlaneBendTime = 0;
+            torsionTime = 0;
+            piOrbitalTorsionTime = 0;
+            torsionTorsionTime = 0;
+            improperTorsionTime = 0;
+            vanDerWaalsTime = 0;
+            electrostaticTime = 0;
+            restraintBondTime = 0;
+            ncsTime = 0;
+            coordRestraintTime = 0;
+            totalTime = System.nanoTime();
 
-        // Zero out the potential energy of each bonded term.
-        bondEnergy = 0.0;
-        angleEnergy = 0.0;
-        stretchBendEnergy = 0.0;
-        ureyBradleyEnergy = 0.0;
-        outOfPlaneBendEnergy = 0.0;
-        torsionEnergy = 0.0;
-        piOrbitalTorsionEnergy = 0.0;
-        torsionTorsionEnergy = 0.0;
-        improperTorsionEnergy = 0.0;
-        totalBondedEnergy = 0.0;
+            // Zero out the potential energy of each bonded term.
+            bondEnergy = 0.0;
+            angleEnergy = 0.0;
+            stretchBendEnergy = 0.0;
+            ureyBradleyEnergy = 0.0;
+            outOfPlaneBendEnergy = 0.0;
+            torsionEnergy = 0.0;
+            piOrbitalTorsionEnergy = 0.0;
+            torsionTorsionEnergy = 0.0;
+            improperTorsionEnergy = 0.0;
+            totalBondedEnergy = 0.0;
 
-        // Zero out potential energy of restraint terms
-        restraintBondEnergy = 0.0;
-        ncsEnergy = 0.0;
-        restrainEnergy = 0.0;
+            // Zero out potential energy of restraint terms
+            restraintBondEnergy = 0.0;
+            ncsEnergy = 0.0;
+            restrainEnergy = 0.0;
 
-        // Zero out bond and angle RMSDs.
-        bondRMSD = 0.0;
-        angleRMSD = 0.0;
+            // Zero out bond and angle RMSDs.
+            bondRMSD = 0.0;
+            angleRMSD = 0.0;
 
-        // Zero out the potential energy of each non-bonded term.
-        vanDerWaalsEnergy = 0.0;
-        permanentMultipoleEnergy = 0.0;
-        polarizationEnergy = 0.0;
-        totalElectrostaticEnergy = 0.0;
-        totalNonBondedEnergy = 0.0;
+            // Zero out the potential energy of each non-bonded term.
+            vanDerWaalsEnergy = 0.0;
+            permanentMultipoleEnergy = 0.0;
+            polarizationEnergy = 0.0;
+            totalElectrostaticEnergy = 0.0;
+            totalNonBondedEnergy = 0.0;
 
-        // Zero out the solvation energy.
-        solvationEnergy = 0.0;
+            // Zero out the solvation energy.
+            solvationEnergy = 0.0;
 
-        // Zero out the relative solvation energy (sequence optimization)
-        relativeSolvationEnergy = 0.0;
-        nRelativeSolvations = 0;
+            // Zero out the relative solvation energy (sequence optimization)
+            relativeSolvationEnergy = 0.0;
+            nRelativeSolvations = 0;
 
-        // Zero out the total potential energy.
-        totalEnergy = 0.0;
+            // Zero out the total potential energy.
+            totalEnergy = 0.0;
 
-        // Zero out the Cartesian coordinate gradient for each atom.
-        if (gradient) {
-            for (int i = 0; i < nAtoms; i++) {
-                atoms[i].setXYZGradient(0.0, 0.0, 0.0);
-                atoms[i].setLambdaXYZGradient(0.0, 0.0, 0.0);
-            }
-        }
-
-        if (pmeOnly) {
-            totalElectrostaticEnergy = particleMeshEwald.energy(gradient, print);
-            permanentMultipoleEnergy = particleMeshEwald.getPermanentEnergy();
-            if (totalElectrostaticEnergy != permanentMultipoleEnergy) {
-                logger.warning("FFE detected incorrect debug code path.");
-            }
-            totalEnergy = permanentMultipoleEnergy;
-            logger.fine(this.toString());
-            return totalEnergy;
-        }
-//        if (esvBiasOnly) {
-//            esvBiasEnergy = 0.0;
-//            for (ExtendedVariable esv : esvList) {
-//                esvBiasEnergy += esv.getBiasEnergy();
-//                esvLogger.append(format("    ESV[%d] with lamedh %.4f contributed bias: %.4f", 
-//                        esv.index, esv.getLamedh(), esv.getBiasEnergy()));
-//            }
-//            totalEnergy = esvBiasEnergy;
-//            return totalEnergy;
-//        }
-        
-        if (bondTerm) {
-            bondTime = System.nanoTime();
-            for (int i = 0; i < nBonds; i++) {
-                Bond b = bonds[i];
-                if (lambdaBondedTerms && !b.applyLambda()) {
-                    continue;
-                }
-                if (!esvTerm) {
-                    bondEnergy += b.energy(gradient);
-                } else {
-                    double be = b.energy(gradient);
-                    bondEnergy += (be * lamedhScaling(b));
-                    esvBondedEnergy += (1.0 - lamedhScaling(b)) * be;
-                }
-                double value = b.getValue();
-                bondRMSD += value * value;
-            }
-            bondRMSD = sqrt(bondRMSD / bonds.length);
-            bondTime = System.nanoTime() - bondTime;
-        }
-
-        if (angleTerm) {
-            angleTime = System.nanoTime();
-            for (int i = 0; i < nAngles; i++) {
-                Angle a = angles[i];
-                if (lambdaBondedTerms && !a.applyLambda()) {
-                    continue;
-                }
-                if (!esvTerm) {
-                    angleEnergy += a.energy(gradient);
-                } else {
-                    double ae = a.energy(gradient);
-                    angleEnergy += (ae * lamedhScaling(a));
-                    esvBondedEnergy += (1.0 - lamedhScaling(a)) * ae;
-                }
-                double value = a.getValue();
-                angleRMSD += value * value;
-            }
-            angleRMSD = sqrt(angleRMSD / angles.length);
-            angleTime = System.nanoTime() - angleTime;
-        }
-
-        if (stretchBendTerm) {
-            stretchBendTime = System.nanoTime();
-            for (int i = 0; i < nStretchBends; i++) {
-                StretchBend stretchBend = stretchBends[i];
-                if (lambdaBondedTerms && !stretchBend.applyLambda()) {
-                    continue;
-                }
-                if (!esvTerm) {
-                    stretchBendEnergy += stretchBend.energy(gradient);
-                } else {
-                    double sbe = stretchBend.energy(gradient);
-                    stretchBendEnergy += (sbe * lamedhScaling(stretchBend));
-                    esvBondedEnergy += (1.0 - lamedhScaling(stretchBend)) * sbe;
+            // Zero out the Cartesian coordinate gradient for each atom.
+            if (gradient) {
+                for (int i = 0; i < nAtoms; i++) {
+                    atoms[i].setXYZGradient(0.0, 0.0, 0.0);
+                    atoms[i].setLambdaXYZGradient(0.0, 0.0, 0.0);
                 }
             }
-            stretchBendTime = System.nanoTime() - stretchBendTime;
-        }
 
-        if (ureyBradleyTerm) {
-            ureyBradleyTime = System.nanoTime();
-            for (int i = 0; i < nUreyBradleys; i++) {
-                UreyBradley ureyBradley = ureyBradleys[i];
-                if (lambdaBondedTerms && !ureyBradley.applyLambda()) {
-                    continue;
-                }
-                if (!esvTerm) {
-                    ureyBradleyEnergy += ureyBradley.energy(gradient);
-                } else {
-                    double ube = ureyBradley.energy(gradient);
-                    ureyBradleyEnergy += (ube * lamedhScaling(ureyBradley));
-                    esvBondedEnergy += (1.0 - lamedhScaling(ureyBradley)) * ube;
-                }
-            }
-            ureyBradleyTime = System.nanoTime() - ureyBradleyTime;
-        }
-
-        if (outOfPlaneBendTerm) {
-            outOfPlaneBendTime = System.nanoTime();
-            for (int i = 0; i < nOutOfPlaneBends; i++) {
-                OutOfPlaneBend outOfPlaneBend = outOfPlaneBends[i];
-                if (lambdaBondedTerms && !outOfPlaneBend.applyLambda()) {
-                    continue;
-                }
-                if (!esvTerm) {
-                    outOfPlaneBendEnergy += outOfPlaneBend.energy(gradient);
-                } else {
-                    double oope = outOfPlaneBend.energy(gradient);
-                    outOfPlaneBendEnergy += (outOfPlaneBend.energy(gradient) * lamedhScaling(outOfPlaneBend));
-                    esvBondedEnergy += (1.0 - lamedhScaling(outOfPlaneBend)) * oope;
-                }
-            }
-            outOfPlaneBendTime = System.nanoTime() - outOfPlaneBendTime;
-        }
-
-        if (torsionTerm) {
-            torsionTime = System.nanoTime();
-            for (int i = 0; i < nTorsions; i++) {
-                Torsion torsion = torsions[i];
-                if (lambdaBondedTerms && !torsion.applyLambda()) {
-                    continue;
-                }
-                if (!esvTerm) {
-                    torsionEnergy += torsion.energy(gradient);
-                } else {
-                    double te = torsion.energy(gradient);
-                    torsionEnergy += (torsion.energy(gradient) * lamedhScaling(torsion));
-                    esvBondedEnergy += (1.0 - lamedhScaling(torsion)) * te;
-                }
-            }
-            torsionTime = System.nanoTime() - torsionTime;
-        }
-
-        if (piOrbitalTorsionTerm) {
-            piOrbitalTorsionTime = System.nanoTime();
-            for (int i = 0; i < nPiOrbitalTorsions; i++) {
-                PiOrbitalTorsion piOrbitalTorsion = piOrbitalTorsions[i];
-                if (lambdaBondedTerms && !piOrbitalTorsion.applyLambda()) {
-                    continue;
-                }
-                if (!esvTerm) {
-                    piOrbitalTorsionEnergy += piOrbitalTorsion.energy(gradient);
-                } else {
-                    double pote = piOrbitalTorsion.energy(gradient);
-                    piOrbitalTorsionEnergy += (piOrbitalTorsion.energy(gradient) * lamedhScaling(piOrbitalTorsion));
-                    esvBondedEnergy += (1.0 - lamedhScaling(piOrbitalTorsion)) * pote;
-                }
-            }
-            piOrbitalTorsionTime = System.nanoTime() - piOrbitalTorsionTime;
-        }
-
-        if (torsionTorsionTerm) {
-            torsionTorsionTime = System.nanoTime();
-            for (int i = 0; i < nTorsionTorsions; i++) {
-                TorsionTorsion torsionTorsion = torsionTorsions[i];
-                if (lambdaBondedTerms && !torsionTorsion.applyLambda()) {
-                    continue;
-                }
-                if (!esvTerm) {
-                    torsionTorsionEnergy += torsionTorsion.energy(gradient);
-                } else {
-                    double tte = torsionTorsion.energy(gradient);
-                    torsionTorsionEnergy += (torsionTorsion.energy(gradient) * lamedhScaling(torsionTorsion));
-                    esvBondedEnergy += (1.0 - lamedhScaling(torsionTorsion)) * tte;
-                }
-            }
-            torsionTorsionTime = System.nanoTime() - torsionTorsionTime;
-        }
-
-        if (improperTorsionTerm) {
-            improperTorsionTime = System.nanoTime();
-            for (int i = 0; i < nImproperTorsions; i++) {
-                ImproperTorsion improperTorsion = improperTorsions[i];
-                if (lambdaBondedTerms && !improperTorsion.applyLambda()) {
-                    continue;
-                }
-                if (!esvTerm) {
-                    improperTorsionEnergy += improperTorsion.energy(gradient);
-                } else {
-                    double ite = improperTorsion.energy(gradient);
-                    improperTorsionEnergy += (ite * lamedhScaling(improperTorsion));
-                    esvBondedEnergy += (1.0 - lamedhScaling(improperTorsion)) * ite;
-                }
-            }
-            improperTorsionTime = System.nanoTime() - improperTorsionTime;
-        }
-
-        if (restraintBondTerm) {
-            restraintBondTime = System.nanoTime();
-            for (int i = 0; i < nRestraintBonds; i++) {
-                RestraintBond rb = restraintBonds[i];
-                if (lambdaBondedTerms && !rb.applyLambda()) {
-                    continue;
-                }
-                if (!esvTerm) {
-                    restraintBondEnergy += rb.energy(gradient);
-                } else {
-                    double rbe = rb.energy(gradient);
-                    restraintBondEnergy += (rbe * lamedhScaling(rb));
-                    esvBondedEnergy += (1.0 - lamedhScaling(rb)) * rbe;
-                }
-            }
-            restraintBondTime = System.nanoTime() - restraintBondTime;
-        }
-        
-        if (!lambdaBondedTerms) {
-
-            if (ncsTerm) {
-                ncsTime = -System.nanoTime();
-                ncsEnergy = ncsRestraint.residual(gradient, print);
-                ncsTime += System.nanoTime();
-            }
-
-            /*if (restrainTerm) {
-                coordRestraintTime = -System.nanoTime();
-                restrainEnergy = autoCoordRestraint.residual(gradient, print);
-                coordRestraintTime += System.nanoTime();
-            }*/
-            if (restrainTerm && !coordRestraints.isEmpty()) {
-                coordRestraintTime = -System.nanoTime();
-                for (CoordRestraint restraint : coordRestraints) {
-                    restrainEnergy += restraint.residual(gradient, print);
-                }
-                coordRestraintTime += System.nanoTime();
-            }
-
-            if (comTerm) {
-                comRestraintTime = -System.nanoTime();
-                comRestraintEnergy = comRestraint.residual(gradient, print);
-                comRestraintTime += System.nanoTime();
-            }
-
-            if (vanderWaalsTerm) {
-                vanDerWaalsTime = System.nanoTime();
-                vanDerWaalsEnergy = vanderWaals.energy(gradient, print);
-                nVanDerWaalInteractions = this.vanderWaals.getInteractions();
-                vanDerWaalsTime = System.nanoTime() - vanDerWaalsTime;
-            }
-
-            if (multipoleTerm) {
-                electrostaticTime = System.nanoTime();
+            if (pmeOnly) {
                 totalElectrostaticEnergy = particleMeshEwald.energy(gradient, print);
                 permanentMultipoleEnergy = particleMeshEwald.getPermanentEnergy();
-                polarizationEnergy = particleMeshEwald.getPolarizationEnergy();
-                nPermanentInteractions = particleMeshEwald.getInteractions();
-
-                solvationEnergy = particleMeshEwald.getGKEnergy();
-                nGKInteractions = particleMeshEwald.getGKInteractions();
-
-                electrostaticTime = System.nanoTime() - electrostaticTime;
+                if (totalElectrostaticEnergy != permanentMultipoleEnergy) {
+                    logger.warning("FFE detected incorrect debug code path.");
+                }
+                totalEnergy = permanentMultipoleEnergy;
+                logger.fine(this.toString());
+                return totalEnergy;
             }
-        }
+    //        if (esvBiasOnly) {
+    //            esvBiasEnergy = 0.0;
+    //            for (ExtendedVariable esv : esvList) {
+    //                esvBiasEnergy += esv.getBiasEnergy();
+    //                esvLogger.append(format("    ESV[%d] with lamedh %.4f contributed bias: %.4f", 
+    //                        esv.index, esv.getLamedh(), esv.getBiasEnergy()));
+    //            }
+    //            totalEnergy = esvBiasEnergy;
+    //            return totalEnergy;
+    //        }
 
-        if (relativeSolvationTerm) {
-            List<Residue> residuesList = molecularAssembly.getResidueList();
-            for (Residue residue : residuesList) {
-                if (residue instanceof MultiResidue) {
-                    Atom refAtom = residue.getSideChainAtoms().get(0);
-                    if (refAtom != null && refAtom.getUse()) {
-                        /**
-                         * Reasonably confident that it should be -=, as we are
-                         * trying to penalize residues with strong solvation
-                         * energy.
-                         */
-                        double thisSolvation = relativeSolvation.getSolvationEnergy(residue, false);
-                        relativeSolvationEnergy -= thisSolvation;
-                        if (thisSolvation != 0) {
-                            nRelativeSolvations++;
+            if (bondTerm) {
+                bondTime = System.nanoTime();
+                for (int i = 0; i < nBonds; i++) {
+                    Bond b = bonds[i];
+                    if (lambdaBondedTerms && !b.applyLambda()) {
+                        continue;
+                    }
+                    if (!esvTerm) {
+                        bondEnergy += b.energy(gradient);
+                    } else {
+                        double be = b.energy(gradient);
+                        bondEnergy += (be * lamedhScaling(b));
+                        esvBondedEnergy += (1.0 - lamedhScaling(b)) * be;
+                    }
+                    double value = b.getValue();
+                    bondRMSD += value * value;
+                }
+                bondRMSD = sqrt(bondRMSD / bonds.length);
+                bondTime = System.nanoTime() - bondTime;
+            }
+
+            if (angleTerm) {
+                angleTime = System.nanoTime();
+                for (int i = 0; i < nAngles; i++) {
+                    Angle a = angles[i];
+                    if (lambdaBondedTerms && !a.applyLambda()) {
+                        continue;
+                    }
+                    if (!esvTerm) {
+                        angleEnergy += a.energy(gradient);
+                    } else {
+                        double ae = a.energy(gradient);
+                        angleEnergy += (ae * lamedhScaling(a));
+                        esvBondedEnergy += (1.0 - lamedhScaling(a)) * ae;
+                    }
+                    double value = a.getValue();
+                    angleRMSD += value * value;
+                }
+                angleRMSD = sqrt(angleRMSD / angles.length);
+                angleTime = System.nanoTime() - angleTime;
+            }
+
+            if (stretchBendTerm) {
+                stretchBendTime = System.nanoTime();
+                for (int i = 0; i < nStretchBends; i++) {
+                    StretchBend stretchBend = stretchBends[i];
+                    if (lambdaBondedTerms && !stretchBend.applyLambda()) {
+                        continue;
+                    }
+                    if (!esvTerm) {
+                        stretchBendEnergy += stretchBend.energy(gradient);
+                    } else {
+                        double sbe = stretchBend.energy(gradient);
+                        stretchBendEnergy += (sbe * lamedhScaling(stretchBend));
+                        esvBondedEnergy += (1.0 - lamedhScaling(stretchBend)) * sbe;
+                    }
+                }
+                stretchBendTime = System.nanoTime() - stretchBendTime;
+            }
+
+            if (ureyBradleyTerm) {
+                ureyBradleyTime = System.nanoTime();
+                for (int i = 0; i < nUreyBradleys; i++) {
+                    UreyBradley ureyBradley = ureyBradleys[i];
+                    if (lambdaBondedTerms && !ureyBradley.applyLambda()) {
+                        continue;
+                    }
+                    if (!esvTerm) {
+                        ureyBradleyEnergy += ureyBradley.energy(gradient);
+                    } else {
+                        double ube = ureyBradley.energy(gradient);
+                        ureyBradleyEnergy += (ube * lamedhScaling(ureyBradley));
+                        esvBondedEnergy += (1.0 - lamedhScaling(ureyBradley)) * ube;
+                    }
+                }
+                ureyBradleyTime = System.nanoTime() - ureyBradleyTime;
+            }
+
+            if (outOfPlaneBendTerm) {
+                outOfPlaneBendTime = System.nanoTime();
+                for (int i = 0; i < nOutOfPlaneBends; i++) {
+                    OutOfPlaneBend outOfPlaneBend = outOfPlaneBends[i];
+                    if (lambdaBondedTerms && !outOfPlaneBend.applyLambda()) {
+                        continue;
+                    }
+                    if (!esvTerm) {
+                        outOfPlaneBendEnergy += outOfPlaneBend.energy(gradient);
+                    } else {
+                        double oope = outOfPlaneBend.energy(gradient);
+                        outOfPlaneBendEnergy += (outOfPlaneBend.energy(gradient) * lamedhScaling(outOfPlaneBend));
+                        esvBondedEnergy += (1.0 - lamedhScaling(outOfPlaneBend)) * oope;
+                    }
+                }
+                outOfPlaneBendTime = System.nanoTime() - outOfPlaneBendTime;
+            }
+
+            if (torsionTerm) {
+                torsionTime = System.nanoTime();
+                for (int i = 0; i < nTorsions; i++) {
+                    Torsion torsion = torsions[i];
+                    if (lambdaBondedTerms && !torsion.applyLambda()) {
+                        continue;
+                    }
+                    if (!esvTerm) {
+                        torsionEnergy += torsion.energy(gradient);
+                    } else {
+                        double te = torsion.energy(gradient);
+                        torsionEnergy += (torsion.energy(gradient) * lamedhScaling(torsion));
+                        esvBondedEnergy += (1.0 - lamedhScaling(torsion)) * te;
+                    }
+                }
+                torsionTime = System.nanoTime() - torsionTime;
+            }
+
+            if (piOrbitalTorsionTerm) {
+                piOrbitalTorsionTime = System.nanoTime();
+                for (int i = 0; i < nPiOrbitalTorsions; i++) {
+                    PiOrbitalTorsion piOrbitalTorsion = piOrbitalTorsions[i];
+                    if (lambdaBondedTerms && !piOrbitalTorsion.applyLambda()) {
+                        continue;
+                    }
+                    if (!esvTerm) {
+                        piOrbitalTorsionEnergy += piOrbitalTorsion.energy(gradient);
+                    } else {
+                        double pote = piOrbitalTorsion.energy(gradient);
+                        piOrbitalTorsionEnergy += (piOrbitalTorsion.energy(gradient) * lamedhScaling(piOrbitalTorsion));
+                        esvBondedEnergy += (1.0 - lamedhScaling(piOrbitalTorsion)) * pote;
+                    }
+                }
+                piOrbitalTorsionTime = System.nanoTime() - piOrbitalTorsionTime;
+            }
+
+            if (torsionTorsionTerm) {
+                torsionTorsionTime = System.nanoTime();
+                for (int i = 0; i < nTorsionTorsions; i++) {
+                    TorsionTorsion torsionTorsion = torsionTorsions[i];
+                    if (lambdaBondedTerms && !torsionTorsion.applyLambda()) {
+                        continue;
+                    }
+                    if (!esvTerm) {
+                        torsionTorsionEnergy += torsionTorsion.energy(gradient);
+                    } else {
+                        double tte = torsionTorsion.energy(gradient);
+                        torsionTorsionEnergy += (torsionTorsion.energy(gradient) * lamedhScaling(torsionTorsion));
+                        esvBondedEnergy += (1.0 - lamedhScaling(torsionTorsion)) * tte;
+                    }
+                }
+                torsionTorsionTime = System.nanoTime() - torsionTorsionTime;
+            }
+
+            if (improperTorsionTerm) {
+                improperTorsionTime = System.nanoTime();
+                for (int i = 0; i < nImproperTorsions; i++) {
+                    ImproperTorsion improperTorsion = improperTorsions[i];
+                    if (lambdaBondedTerms && !improperTorsion.applyLambda()) {
+                        continue;
+                    }
+                    if (!esvTerm) {
+                        improperTorsionEnergy += improperTorsion.energy(gradient);
+                    } else {
+                        double ite = improperTorsion.energy(gradient);
+                        improperTorsionEnergy += (ite * lamedhScaling(improperTorsion));
+                        esvBondedEnergy += (1.0 - lamedhScaling(improperTorsion)) * ite;
+                    }
+                }
+                improperTorsionTime = System.nanoTime() - improperTorsionTime;
+            }
+
+            if (restraintBondTerm) {
+                restraintBondTime = System.nanoTime();
+                for (int i = 0; i < nRestraintBonds; i++) {
+                    RestraintBond rb = restraintBonds[i];
+                    if (lambdaBondedTerms && !rb.applyLambda()) {
+                        continue;
+                    }
+                    if (!esvTerm) {
+                        restraintBondEnergy += rb.energy(gradient);
+                    } else {
+                        double rbe = rb.energy(gradient);
+                        restraintBondEnergy += (rbe * lamedhScaling(rb));
+                        esvBondedEnergy += (1.0 - lamedhScaling(rb)) * rbe;
+                    }
+                }
+                restraintBondTime = System.nanoTime() - restraintBondTime;
+            }
+
+            if (!lambdaBondedTerms) {
+
+                if (ncsTerm) {
+                    ncsTime = -System.nanoTime();
+                    ncsEnergy = ncsRestraint.residual(gradient, print);
+                    ncsTime += System.nanoTime();
+                }
+
+                /*if (restrainTerm) {
+                    coordRestraintTime = -System.nanoTime();
+                    restrainEnergy = autoCoordRestraint.residual(gradient, print);
+                    coordRestraintTime += System.nanoTime();
+                }*/
+                if (restrainTerm && !coordRestraints.isEmpty()) {
+                    coordRestraintTime = -System.nanoTime();
+                    for (CoordRestraint restraint : coordRestraints) {
+                        restrainEnergy += restraint.residual(gradient, print);
+                    }
+                    coordRestraintTime += System.nanoTime();
+                }
+
+                if (comTerm) {
+                    comRestraintTime = -System.nanoTime();
+                    comRestraintEnergy = comRestraint.residual(gradient, print);
+                    comRestraintTime += System.nanoTime();
+                }
+
+                if (vanderWaalsTerm) {
+                    vanDerWaalsTime = System.nanoTime();
+                    vanDerWaalsEnergy = vanderWaals.energy(gradient, print);
+                    nVanDerWaalInteractions = this.vanderWaals.getInteractions();
+                    vanDerWaalsTime = System.nanoTime() - vanDerWaalsTime;
+                }
+
+                if (multipoleTerm) {
+                    electrostaticTime = System.nanoTime();
+                    totalElectrostaticEnergy = particleMeshEwald.energy(gradient, print);
+                    permanentMultipoleEnergy = particleMeshEwald.getPermanentEnergy();
+                    polarizationEnergy = particleMeshEwald.getPolarizationEnergy();
+                    nPermanentInteractions = particleMeshEwald.getInteractions();
+
+                    solvationEnergy = particleMeshEwald.getGKEnergy();
+                    nGKInteractions = particleMeshEwald.getGKInteractions();
+
+                    electrostaticTime = System.nanoTime() - electrostaticTime;
+                }
+            }
+
+            if (relativeSolvationTerm) {
+                List<Residue> residuesList = molecularAssembly.getResidueList();
+                for (Residue residue : residuesList) {
+                    if (residue instanceof MultiResidue) {
+                        Atom refAtom = residue.getSideChainAtoms().get(0);
+                        if (refAtom != null && refAtom.getUse()) {
+                            /**
+                             * Reasonably confident that it should be -=, as we are
+                             * trying to penalize residues with strong solvation
+                             * energy.
+                             */
+                            double thisSolvation = relativeSolvation.getSolvationEnergy(residue, false);
+                            relativeSolvationEnergy -= thisSolvation;
+                            if (thisSolvation != 0) {
+                                nRelativeSolvations++;
+                            }
                         }
                     }
                 }
             }
-        }
-        
-        if (esvTerm) {
-            esvBiasEnergy = 0.0;
-            for (ExtendedVariable esv : esvList) {
-                esvBiasEnergy += esv.getBiasEnergy();
-                esvLogger.append(format("    ESV[%d] with lamedh %.4f contributed bias: %.4f", 
-                        esv.index, esv.getLamedh(), esv.getBiasEnergy()));
+
+            if (esvTerm) {
+                esvBiasEnergy = 0.0;
+                for (ExtendedVariable esv : esvList) {
+                    esvBiasEnergy += esv.getBiasEnergy();
+                    esvLogger.append(format("    ESV[%d] with lamedh %.4f contributed bias: %.4f", 
+                            esv.index, esv.getLamedh(), esv.getBiasEnergy()));
+                }
             }
-        }
 
-        totalTime = System.nanoTime() - totalTime;
+            totalTime = System.nanoTime() - totalTime;
 
-        totalBondedEnergy = bondEnergy + restraintBondEnergy + angleEnergy
-                + stretchBendEnergy + ureyBradleyEnergy + outOfPlaneBendEnergy
-                + torsionEnergy + piOrbitalTorsionEnergy + improperTorsionEnergy
-                + torsionTorsionEnergy + ncsEnergy + restrainEnergy + esvBiasEnergy;
-        totalNonBondedEnergy = vanDerWaalsEnergy + totalElectrostaticEnergy + relativeSolvationEnergy;
-        totalEnergy = totalBondedEnergy + totalNonBondedEnergy + solvationEnergy;
+            totalBondedEnergy = bondEnergy + restraintBondEnergy + angleEnergy
+                    + stretchBendEnergy + ureyBradleyEnergy + outOfPlaneBendEnergy
+                    + torsionEnergy + piOrbitalTorsionEnergy + improperTorsionEnergy
+                    + torsionTorsionEnergy + ncsEnergy + restrainEnergy + esvBiasEnergy;
+            totalNonBondedEnergy = vanDerWaalsEnergy + totalElectrostaticEnergy + relativeSolvationEnergy;
+            totalEnergy = totalBondedEnergy + totalNonBondedEnergy + solvationEnergy;
 
-        if (ESV_DEBUG && numESVs > 0) {
-            esvLogger.append(format(" Total ESV bias energy: %12.8", esvBiasEnergy));
-            logger.info(esvLogger.toString());
-            esvLogger = new StringBuilder(String.format(" Lamedh Scaling: "));
-        }
-        if (print || printOverride) {
-            StringBuilder sb = new StringBuilder("\n");
-            if (gradient) {
-                sb.append(" Computed Potential Energy and Atomic Coordinate Gradients\n");
-            } else {
-                sb.append(" Computed Potential Energy\n");
+            if (ESV_DEBUG && numESVs > 0) {
+                esvLogger.append(format(" Total ESV bias energy: %12.8", esvBiasEnergy));
+                logger.info(esvLogger.toString());
+                esvLogger = new StringBuilder(String.format(" Lamedh Scaling: "));
             }
-            sb.append(this);
-            logger.info(sb.toString());
+            if (print || printOverride) {
+                StringBuilder sb = new StringBuilder("\n");
+                if (gradient) {
+                    sb.append(" Computed Potential Energy and Atomic Coordinate Gradients\n");
+                } else {
+                    sb.append(" Computed Potential Energy\n");
+                }
+                sb.append(this);
+                logger.info(sb.toString());
+            }
+            return totalEnergy;
+        } catch (EnergyException ex) {
+            if (printOnFailure) {
+                String timeString = LocalDateTime.now().format(DateTimeFormatter.
+                        ofPattern("yyyy_MM_dd-HH_mm_ss"));
+                
+                String filename = String.format("%s-ERROR-%s.pdb", 
+                        FilenameUtils.removeExtension(molecularAssembly.getFile().getName()),
+                        timeString);
+                
+                PotentialsFunctions ef = new PotentialsUtils();
+                filename = ef.versionFile(filename);
+                logger.info(String.format(" Writing on-error snapshot to file %s", filename));
+                ef.saveAsPDB(molecularAssembly, new File(filename));
+            }
+            logger.log(Level.SEVERE, " Error in calculating energies or gradients", ex);
+            return 0; // Should ordinarily be unreachable.
         }
-        return totalEnergy;
     }
 
     /**
@@ -1840,18 +1865,39 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
         setCoordinates(x);
         double e = energy(true, false);
-        getGradients(g);
-        /**
-         * Scale the coordinates and gradients.
-         */
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] *= optimizationScaling[i];
-                g[i] /= optimizationScaling[i];
+        
+        // Try block already exists inside energy(boolean, boolean), so only
+        // need to try-catch getGradients.
+        try {
+            getGradients(g);
+            /**
+             * Scale the coordinates and gradients.
+             */
+            if (optimizationScaling != null) {
+                int len = x.length;
+                for (int i = 0; i < len; i++) {
+                    x[i] *= optimizationScaling[i];
+                    g[i] /= optimizationScaling[i];
+                }
             }
+            return e;
+        } catch (EnergyException ex) {
+            if (printOnFailure) {
+                String timeString = LocalDateTime.now().format(DateTimeFormatter.
+                        ofPattern("yyyy_MM_dd-HH_mm_ss"));
+                
+                String filename = String.format("%s-ERROR-%s.pdb", 
+                        FilenameUtils.removeExtension(molecularAssembly.getFile().getName()),
+                        timeString);
+                
+                PotentialsFunctions ef = new PotentialsUtils();
+                filename = ef.versionFile(filename);
+                logger.info(String.format(" Writing on-error snapshot to file %s", filename));
+                ef.saveAsPDB(molecularAssembly, new File(filename));
+            }
+            logger.log(Level.SEVERE, " Error in calculating energies or gradients", ex);
+            return 0; // Should ordinarily be unreachable.
         }
-        return e;
     }
 
     /**
@@ -1880,7 +1926,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                         || Double.isNaN(gz) || Double.isInfinite(gz)) {
                     String message = format("The gradient of atom %s is (%8.3f,%8.3f,%8.3f).",
                             a.toString(), gx, gy, gz);
-                    logger.severe(message);
+                    //logger.severe(message);
+                    throw new EnergyException(message);
                 }
                 g[index++] = gx;
                 g[index++] = gy;
