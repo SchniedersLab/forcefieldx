@@ -189,7 +189,6 @@ public class Fragmenter {
     String[] rhArray = new String[]{"For removed-hydrogen SMILES"};
     int numSubstructures = 0;
     List<String> toRemove = new ArrayList<>();
-    List<String> finalList = new ArrayList<>();
     List<IAtomContainer> rhList = new ArrayList<>();
     List<Integer> indicelist = new ArrayList<>();
     List<String> finallist = new ArrayList<>();
@@ -430,8 +429,8 @@ public class Fragmenter {
 
         for (int j = 0; j < iAtomContainer.getAtomCount(); j++) {
             IAtom test2 = iAtomContainer.getAtom(j);
-            //System.out.println("atomType in writeSDF: " + test2.getAtomTypeName());
-            //System.out.println("test2ID in writeSDF: " + test2.getID());
+            System.out.println("atomType in writeSDF: " + test2.getAtomTypeName());
+            System.out.println("test2ID in writeSDF: " + test2.getID());
         }
 
         String fragName = dirName.concat(File.separator).concat(dirName.concat(".sdf"));

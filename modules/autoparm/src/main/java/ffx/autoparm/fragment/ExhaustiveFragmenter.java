@@ -48,26 +48,25 @@ import java.util.Map;
  * changed by the user. Side chains are retained.
  *
  * @author Rajarshi Guha
- * @cdk.module  fragment
+ * @cdk.module fragment
  * @cdk.githash
  * @cdk.keyword fragment
  */
-
 /**
  * Potential edits made to fit FFX specifications
+ *
  * @author rcorrigan
  */
-
 public class ExhaustiveFragmenter implements IFragmenter {
 
-    private static final int    DEFAULT_MIN_FRAG_SIZE = 6;
+    private static final int DEFAULT_MIN_FRAG_SIZE = 6;
 
     Map<String, IAtomContainer> fragMap;
-    SmilesGenerator             smilesGenerator;
-    String[]                    fragments             = null;
-    int                         minFragSize           = 6;
-    private static ILoggingTool logger                = LoggingToolFactory
-                                                              .createLoggingTool(ExhaustiveFragmenter.class);
+    SmilesGenerator smilesGenerator;
+    String[] fragments = null;
+    int minFragSize = 6;
+    private static ILoggingTool logger = LoggingToolFactory
+            .createLoggingTool(ExhaustiveFragmenter.class);
 
     /**
      * Instantiate fragmenter with default minimum fragment size.
@@ -111,39 +110,45 @@ public class ExhaustiveFragmenter implements IFragmenter {
 
         ArrayList<IAtomContainer> fragments = new ArrayList<IAtomContainer>();
 
-        if (atomContainer.getBondCount() < 3) return fragments;
+        if (atomContainer.getBondCount() < 3) {
+            return fragments;
+        }
         List<IBond> splitableBonds = getSplitableBonds(atomContainer);
-        if (splitableBonds.size() == 0) return fragments;
+        if (splitableBonds.size() == 0) {
+            return fragments;
+        }
         logger.debug("Got " + splitableBonds.size() + " splittable bonds");
 
         String tmpSmiles;
         String[] uniqueAtomNames;
+        String[] uniqueAtomNames2;
         for (IBond bond : splitableBonds) {
             List<IAtomContainer> parts = FragmentUtils.splitMolecule(atomContainer, bond);
             // make sure we don't add the same fragment twice
             //try using regular for loop to ensure atoms/fragments are in correct order
             //for (IAtomContainer partContainer : parts) {
-            for(int i = 0; i < parts.size(); i++){
+            for (int i = 0; i < parts.size(); i++) {
                 IAtomContainer partContainer = parts.get(i);
                 uniqueAtomNames = new String[partContainer.getAtomCount()];
                 //go thru partContainer, get all atoms, record and store atom IDs for later reassignment
-                for(int j = 0; j < partContainer.getAtomCount(); j++){
+                for (int j = 0; j < partContainer.getAtomCount(); j++) {
                     //atoms names recorded successfully
                     uniqueAtomNames[j] = partContainer.getAtom(j).getID();
-                    System.out.println("UniqueAtomName: "+uniqueAtomNames[j]);
+                    System.out.println("UniqueAtomName: " + uniqueAtomNames[j]);
                 }
                 AtomContainerManipulator.clearAtomConfigurations(partContainer);
-                for (IAtom atom : partContainer.atoms())
+                for (IAtom atom : partContainer.atoms()) {
                     atom.setImplicitHydrogenCount(null);
+                }
                 AtomContainerManipulator.percieveAtomTypesAndConfigureAtoms(partContainer);
                 CDKHydrogenAdder.getInstance(partContainer.getBuilder()).addImplicitHydrogens(partContainer);
                 Aromaticity.cdkLegacy().apply(partContainer);
                 tmpSmiles = smilesGenerator.create(partContainer);
                 //re-assign uniqueAtomNames before if stmt
-                for(int k = 0; k < partContainer.getAtomCount(); k++){
+                for (int k = 0; k < partContainer.getAtomCount(); k++) {
                     IAtom test = partContainer.getAtom(k);
                     test.setID(uniqueAtomNames[k]);
-                    System.out.println("Within ExhFrag: "+test.getID());
+                    System.out.println("Within ExhFrag: " + test.getID());
                 }
                 if (partContainer.getAtomCount() >= minFragSize && !fragMap.containsKey(tmpSmiles)) {
                     fragments.add(partContainer);
@@ -155,21 +160,42 @@ public class ExhaustiveFragmenter implements IFragmenter {
         // try and partition the fragments
         List<IAtomContainer> tmp = new ArrayList<IAtomContainer>(fragments);
         for (IAtomContainer fragment : fragments) {
-            if (fragment.getBondCount() < 3 || fragment.getAtomCount() < minFragSize) continue;
-            if (getSplitableBonds(fragment).size() == 0) continue;
+            if (fragment.getBondCount() < 3 || fragment.getAtomCount() < minFragSize) {
+                continue;
+            }
+            if (getSplitableBonds(fragment).size() == 0) {
+                continue;
+            }
 
             List<IAtomContainer> frags = run(fragment);
-            if (frags.size() == 0) continue;
+            if (frags.size() == 0) {
+                continue;
+            }
 
-            for (IAtomContainer frag : frags) {
-                if (frag.getBondCount() < 3) continue;
+            //for (IAtomContainer frag : frags) {
+            for (int x = 0; x < frags.size(); x++) {
+                IAtomContainer frag = frags.get(x);
+                uniqueAtomNames2 = new String[frag.getAtomCount()];
+                for (int y = 0; y < frag.getAtomCount(); y++) {
+                    uniqueAtomNames2[y] = frag.getAtom(y).getID();
+                    System.out.println("UniqueAtomNames2: " + uniqueAtomNames2[y]);
+                }
+                if (frag.getBondCount() < 3) {
+                    continue;
+                }
                 AtomContainerManipulator.clearAtomConfigurations(frag);
-                for (IAtom atom : frag.atoms())
+                for (IAtom atom : frag.atoms()) {
                     atom.setImplicitHydrogenCount(null);
+                }
                 AtomContainerManipulator.percieveAtomTypesAndConfigureAtoms(frag);
                 CDKHydrogenAdder.getInstance(frag.getBuilder()).addImplicitHydrogens(frag);
                 Aromaticity.cdkLegacy().apply(frag);
                 tmpSmiles = smilesGenerator.create(frag);
+                for (int z = 0; z < frag.getAtomCount(); z++) {
+                    IAtom test = frag.getAtom(z);
+                    test.setID(uniqueAtomNames2[z]);
+                    System.out.println("After second reassignment: " + test.getID());
+                }
                 if (frag.getAtomCount() >= minFragSize && !fragMap.containsKey(tmpSmiles)) {
                     tmp.add(frag);
                     fragMap.put(tmpSmiles, frag);
@@ -194,7 +220,9 @@ public class ExhaustiveFragmenter implements IFragmenter {
 
             // lets see if it's in a ring
             IRingSet rings = allRings.getRings(bond);
-            if (rings.getAtomContainerCount() != 0) isInRing = true;
+            if (rings.getAtomContainerCount() != 0) {
+                isInRing = true;
+            }
 
             // lets see if it is a terminal bond
             for (IAtom atom : bond.atoms()) {
@@ -204,7 +232,9 @@ public class ExhaustiveFragmenter implements IFragmenter {
                 }
             }
 
-            if (!(isInRing || isTerminal)) splitableBonds.add(bond);
+            if (!(isInRing || isTerminal)) {
+                splitableBonds.add(bond);
+            }
         }
         return splitableBonds;
     }
