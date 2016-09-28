@@ -40,16 +40,32 @@ package ffx.potential.utils;
 /**
  * This Exception class indicates an error in calculating energy or gradients. 
  * Expected behavior is that it will be caught by Potential.energy(), resulting
- * in any necessary cleanup and logging followed by an exit via logger.severe().
+ * in any necessary cleanup. Then, if the causeSevere flag is set true, FFE will
+ * issue a logger.severe (resulting in exit); else, FFE will simply rethrow the
+ * exception. The default is to rethrow the exception.
  * 
  * @author Jacob Litman
  * @author Michael J. Schnieders
  */
 public class EnergyException extends ArithmeticException {
+    private final boolean causeSevere;
     public EnergyException() {
         super();
+        causeSevere = false;
     }
     public EnergyException(String str) {
         super(str);
+        causeSevere = false;
+    }
+    public EnergyException(boolean causeSevere) {
+        super();
+        this.causeSevere = causeSevere;
+    }
+    public EnergyException(String str, boolean causeSevere) {
+        super(str);
+        this.causeSevere = causeSevere;
+    }
+    public boolean doCauseSevere() {
+        return causeSevere;
     }
 }

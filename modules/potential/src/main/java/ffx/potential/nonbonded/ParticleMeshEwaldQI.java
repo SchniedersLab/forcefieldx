@@ -2047,7 +2047,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                     logger.warning(sb.toString());
                 }
                 String message = format("Fatal SCF convergence failure: (%10.5f > %10.5f)\n", eps, previousEps);
-                throw new EnergyException(message);
+                throw new EnergyException(message, false);
             }
             /**
              * The SCF should converge well before the max iteration check.
@@ -2058,7 +2058,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                     logger.warning(sb.toString());
                 }
                 String message = format("Maximum SCF iterations reached: (%d)\n", completedSCFCycles);
-                throw new EnergyException(message);
+                throw new EnergyException(message, false);
             }
             /**
              * Check if the convergence criteria has been achieved.
@@ -3575,13 +3575,13 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                 double e = realSpaceEnergyLoop[i].permanentEnergy;
                 if (Double.isNaN(e)) {
                     //logger.severe(String.format(" The permanent multipole energy of thread %d is %16.8f", i, e));
-                    throw new EnergyException(String.format(" The permanent multipole energy of thread %d is %16.8f", i, e));
+                    throw new EnergyException(String.format(" The permanent multipole energy of thread %d is %16.8f", i, e), true);
                 }
                 permanentEnergy += e;
                 double ei = realSpaceEnergyLoop[i].inducedEnergy;
                 if (Double.isNaN(ei)) {
                     //logger.severe(String.format(" The polarization energy of thread %d is %16.8f", i, ei));
-                    throw new EnergyException(String.format(" The polarization energy of thread %d is %16.8f", i, ei));
+                    throw new EnergyException(String.format(" The polarization energy of thread %d is %16.8f", i, ei), true);
                 }
                 polarizationEnergy += ei;
             }
@@ -4415,7 +4415,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                         + " The pol. energy for atoms %d and %d (%d) is %10.6f at %10.6f A.",
                         crystal.getUnitCell(), atoms[i], indI[0], indI[1], indI[2],
                         atoms[k], indK[0], indK[1], indK[2], i+1, k+1, iSymm, ei, sqrt(r2));
-                throw new EnergyException(message);
+                throw new EnergyException(message, true);
             }
 
             private void logPermanentError(double ei, int i, int k) {
@@ -4429,6 +4429,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                         + "multipole energy between atoms %d and %d (%d) is "
                         + "%16.8f at %16.8f A.", crystal.getUnitCell(), atoms[i],
                         atoms[k], i, k, iSymm, ei, sqrt(r2));
+                throw new EnergyException(message, true);
             }
 
         }
@@ -6678,7 +6679,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                     logger.warning(sb.toString());
                 }
                 String message = format("Fatal SCF convergence failure: (%10.5f > %10.5f)\n", eps, previousEps);
-                throw new EnergyException(message);
+                throw new EnergyException(message, false);
             }
             /**
              * The SCF should converge well before the max iteration check.
@@ -6689,7 +6690,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                     logger.warning(sb.toString());
                 }
                 String message = format("Maximum SCF iterations reached: (%d)\n", completedSCFCycles);
-                throw new EnergyException(message);
+                throw new EnergyException(message, false);
             }
             /**
              * Check if the convergence criteria has been achieved.

@@ -1446,7 +1446,11 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 logger.info(String.format(" Writing on-error snapshot to file %s", filename));
                 ef.saveAsPDB(molecularAssembly, new File(filename));
             }
-            logger.log(Level.SEVERE, " Error in calculating energies or gradients", ex);
+            if (ex.doCauseSevere()) {
+                logger.log(Level.SEVERE, " Error in calculating energies or gradients", ex);
+            } else {
+                throw ex; // Rethrow exception
+            }
             return 0; // Should ordinarily be unreachable.
         }
     }
@@ -1895,7 +1899,12 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 logger.info(String.format(" Writing on-error snapshot to file %s", filename));
                 ef.saveAsPDB(molecularAssembly, new File(filename));
             }
-            logger.log(Level.SEVERE, " Error in calculating energies or gradients", ex);
+            if (ex.doCauseSevere()) {
+                logger.log(Level.SEVERE, " Error in calculating energies or gradients", ex);
+            } else {
+                throw ex; // Rethrow exception
+            }
+
             return 0; // Should ordinarily be unreachable.
         }
     }
