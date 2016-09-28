@@ -44,6 +44,7 @@ import groovy.lang.MissingPropertyException
 
 // FFX Imports
 import ffx.autoparm.Fragmenter
+import ffx.autoparm.Unstitch
 import ffx.autoparm.Wizard
 
 /**
@@ -81,7 +82,11 @@ String smi = new String();
 logger.info(String.format("\n Fragmenting %s\n", sdffile));
 
 //System.out.println("\nFinished Wizard, calling Fragmenter\n");
-Fragmenter fr = new Fragmenter(sdffile, ciffile, smiles);
+/*Fragmenter fr = new Fragmenter(sdffile, ciffile, smiles);
 fr.readCIF();
-fr.readSDF();
+fr.readSDF();*/
+
+Unstitch us = new Unstitch(sdffile, ciffile, smiles);
+us.readCIF();
+us.readSDF();
 
