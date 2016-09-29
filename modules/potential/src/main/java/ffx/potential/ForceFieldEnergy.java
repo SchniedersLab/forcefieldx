@@ -223,7 +223,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private VARIABLE_TYPE[] variableTypes = null;
     private double xyz[] = null;
     private boolean printOverride = false;
-    private final boolean printOnFailure;
+    private boolean printOnFailure;
     /****************************************/
     /*      Extended System Variables       */
     private int numESVs;
@@ -2438,6 +2438,37 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             return new double[numESVs]; // zeroes
         }
         return eleSum1DArrays(terms, numESVs);
+    }
+    /**
+     * Sets the printOnFailure flag; if override is true, over-rides any existing
+     * property. Essentially sets the default value of printOnFailure for an
+     * algorithm. For example, rotamer optimization will generally run into force
+     * field issues in the normal course of execution as it tries unphysical
+     * self and pair configurations, so the algorithm should not print out a 
+     * large number of error PDBs.
+     * 
+     * @param onFail To set
+     * @param override Override properties
+     */
+    public void setPrintOnFailure(boolean onFail, boolean override) {
+        if (override) {
+            // Ignore any pre-existing value
+            printOnFailure = onFail;
+        } else {
+            try {
+                molecularAssembly.getForceField().getBoolean(ForceFieldBoolean.PRINT_ON_FAILURE);
+                /*
+                 * If the call was successful, the property was explicitly set
+                 * somewhere and should be kept. If an exception was thrown, the
+                 * property was never set explicitly, so over-write.
+                */
+            } catch (Exception ex) {
+                printOnFailure = onFail;
+            }
+        }
+    }
+    public boolean getPrintOnFailure() {
+        return printOnFailure;
     }
 
     /**

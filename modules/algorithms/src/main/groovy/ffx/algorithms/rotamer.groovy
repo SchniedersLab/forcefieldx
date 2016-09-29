@@ -532,6 +532,7 @@ singletonNAPruningFactor = 1.5;
  */
 
 open(filename);
+active.getPotentialEnergy().setPrintOnFailure(false, false);
 
 RotamerOptimization rotamerOptimization = new RotamerOptimization(active, active.getPotentialEnergy(), sh);
 rotamerOptimization.setThreeBodyEnergy(threeBodyTerm);

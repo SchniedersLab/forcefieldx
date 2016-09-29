@@ -369,6 +369,7 @@ if(options.s && options.f){
 
 // Get a reference to the first system's ForceFieldEnergy.
 ForceFieldEnergy forceFieldEnergy = active.getPotentialEnergy();
+forcefieldEnergy.setPrintOnFailure(false, false);
 
 for (int i = 0; i <= atoms.length; i++) {
     Atom ai = atoms[i - 1];
@@ -477,6 +478,7 @@ if(runOSRW){
     }
 
     forceFieldEnergy = new ForceFieldEnergy(active);
+    forcefieldEnergy.setPrintOnFailure(false, false);
     forceFieldEnergy.setLambda(lambda);
     realSpaceData = new RealSpaceData(active, active.getProperties(), mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
     RefinementEnergy refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMode.COORDINATES, null);
@@ -537,6 +539,7 @@ if (runSimulatedAnnealing) {
     System.setProperty("mpoleterm", "false");
 
     energy = new ForceFieldEnergy(active);
+    energy.setPrintOnFailure(false, false);
     realSpaceData = new RealSpaceData(active, active.getProperties(),
         mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
     refinementMinimize = new RefinementMinimize(realSpaceData, RefinementMode.COORDINATES);
@@ -581,6 +584,7 @@ if(!loopBuildError){
     System.setProperty("lambda-torsions", "false");
 
     forceFieldEnergy = new ForceFieldEnergy(active);
+    forcefieldEnergy.setPrintOnFailure(false, false);
     realSpaceData = new RealSpaceData(active, active.getProperties(),
         mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
     refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMode.COORDINATES, null);
@@ -640,6 +644,7 @@ if (runRotamer){
     }
 
     forceFieldEnergy = new ForceFieldEnergy(active);
+    forcefieldEnergy.setPrintOnFailure(false, false);
     realSpaceData = new RealSpaceData(active, active.getProperties(),
         mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
     refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMode.COORDINATES, null);
@@ -705,6 +710,7 @@ if (runRotamer){
     }
 
     forceFieldEnergy = new ForceFieldEnergy(active);
+    forcefieldEnergy.setPrintOnFailure(false, false);
     realSpaceData = new RealSpaceData(active, active.getProperties(),
         mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
     refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMode.COORDINATES, null);

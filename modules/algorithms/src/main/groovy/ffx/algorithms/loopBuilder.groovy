@@ -325,6 +325,7 @@ if (size > 1) {
 
 // Get a reference to the first system's ForceFieldEnergy.
 ForceFieldEnergy forceFieldEnergy = active.getPotentialEnergy();
+forcefieldEnergy.setPrintOnFailure(false, false);
 // Set built atoms active/use flags to true (false for other atoms).
 Atom[] atoms = active.getAtomArray();
 
@@ -416,6 +417,7 @@ if(runOSRW){
     }
 
     forceFieldEnergy= new ForceFieldEnergy(active);
+    forcefieldEnergy.setPrintOnFailure(false, false);
     forceFieldEnergy.setLambda(lambda);
     energy();
 
@@ -489,6 +491,7 @@ if (runSimulatedAnnealing) {
     System.setProperty("vdwterm", "true");
     System.setProperty("mpoleterm", "false");
     forceFieldEnergy = new ForceFieldEnergy(active);
+    forcefieldEnergy.setPrintOnFailure(false, false);
     e = minimize(eps);
 
     // SA with vdW.
@@ -531,6 +534,7 @@ if(!loopBuildError){
     System.setProperty("lambda-torsions", "false");
 
     forceFieldEnergy = new ForceFieldEnergy(active);
+    forcefieldEnergy.setPrintOnFailure(false, false);
     e = minimize(eps);
     energy();
     if (size > 1){
@@ -585,6 +589,7 @@ if (runRotamer){
     }
 
     forceFieldEnergy = new ForceFieldEnergy(active);
+    forcefieldEnergy.setPrintOnFailure(false, false);
     Polymer[] polymers = active.getChains();
     ArrayList<Residue> fullResidueList = polymers[0].getResidues();
     ArrayList<Residue> residuesToRO = new ArrayList<>();
@@ -646,6 +651,7 @@ if (runRotamer){
     }
 
     forceFieldEnergy = new ForceFieldEnergy(active);
+    forcefieldEnergy.setPrintOnFailure(false, false);
     boolean threeBodyTerm = false;
     RotamerOptimization rotamerOptimization;
 

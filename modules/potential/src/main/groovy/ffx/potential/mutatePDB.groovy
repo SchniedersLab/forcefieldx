@@ -152,6 +152,7 @@ molecularAssembly.finalize(true, forceField);
 if (repack) {
     logger.info("\n Repacking... \n");
     ForceFieldEnergy forceFieldEnergy = new ForceFieldEnergy(molecularAssembly);
+    forcefieldEnergy.setPrintOnFailure(false, false);
     molecularAssembly.setPotential(forceFieldEnergy);
     
     // Do a sliding-window rotamer optimization on a single one-residue window with a radius-inclusion criterion.
