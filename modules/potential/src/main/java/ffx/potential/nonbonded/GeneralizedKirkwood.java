@@ -4982,7 +4982,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     count[i]++;
                     if (count[i] >= maxarc) {
                         //logger.severe(String.format(" Increase the value of MAXARC to (%d).", count[i]));
-                        throw new EnergyException(String.format(" Increase the value of MAXARC to (%d).", count[i]), true);
+                        throw new EnergyException(String.format(" Increase the value of MAXARC to (%d).", count[i]), false);
                     }
                 }
             }
@@ -5349,7 +5349,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             if (narc > maxarc) {
                                 /*logger.severe(String.
                                         format(" Increase value of MAXARC %d.", narc));*/
-                                throw new EnergyException(String.format(" Increase value of MAXARC %d.", narc), true);
+                                throw new EnergyException(String.format(" Increase value of MAXARC %d.", narc), false);
                             }
                             int narc1 = narc - 1;
                             if (tf <= ti) {
@@ -5417,7 +5417,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             if (jb >= maxarc) {
                                 /*logger.severe(String.
                                         format("Increase the value of MAXARC (%d).", jb));*/
-                                throw new EnergyException(String.format("Increase the value of MAXARC (%d).", jb), true);
+                                throw new EnergyException(String.format("Increase the value of MAXARC (%d).", jb), false);
                             }
                             int l = lt[ni];
                             ider[l] += 1;
@@ -6307,10 +6307,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         cubeCoordinates[k][i] = (int) ((a[k][i] - minAtomicCoordinates[k]) / width) + 1;
                         if (cubeCoordinates[k][i] < 0) {
                             //logger.severe("Cube Coordinate Too Small");
-                            throw new EnergyException("Cube Coordinate Too Small", true);
+                            throw new EnergyException("Cube Coordinate Too Small", false);
                         } else if (cubeCoordinates[k][i] > MAXCUBE) {
                             //logger.severe("Cube Coordinate Too Large");
-                            throw new EnergyException("Cube Coordinate Too Large", true);
+                            throw new EnergyException("Cube Coordinate Too Large", false);
                         }
                     }
                 }
@@ -6479,7 +6479,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                     nclsa++;
                                     if (nclsa > maxclsa) {
                                         //logger.severe("Too many Neighbors for Atom");
-                                        throw new EnergyException("Too many Neighbors for Atom", true);
+                                        throw new EnergyException("Too many Neighbors for Atom", false);
                                     }
                                     tempNeighborList[nclsa] = j;
 
@@ -6527,7 +6527,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                     ncls++;
                                     if (ncls > maxcls) {
                                         //logger.severe("Too many Neighboring Atom Pairs");
-                                        throw new EnergyException("Too many Neighboring Atom Pairs", true);
+                                        throw new EnergyException("Too many Neighboring Atom Pairs", false);
                                     }
                                     cls[ncls] = clsa[m];
                                 }
@@ -6598,7 +6598,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                     ntt++;
                                     if (ntt > maxtt) {
                                         //logger.severe("Too many Temporary Tori");
-                                        throw new EnergyException("Too many Temporary Tori", true);
+                                        throw new EnergyException("Too many Temporary Tori", false);
                                     }
                                     /**
                                      * Mark both atoms not free.
@@ -6719,7 +6719,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         nmnb++;
                         if (nmnb > MAXMNB) {
                             //logger.severe("Too many Mutual Neighbors");
-                            throw new EnergyException("Too many Mutual Neighbors", true);
+                            throw new EnergyException("Too many Mutual Neighbors", false);
                         }
                         mnb[nmnb] = cls[iptr];
                         /**
@@ -6949,7 +6949,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             np++;
                             if (np > maxp) {
                                 //logger.severe("Too many Probe Positions");
-                                throw new EnergyException("Too many Probe Positions", true);
+                                throw new EnergyException("Too many Probe Positions", false);
                             }
                             /**
                              * Mark three tori not buried.
@@ -6968,7 +6968,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                              */
                             if (nv + 3 > maxv) {
                                 //logger.severe("Too many Vertices");
-                                throw new EnergyException("Too many Vertices", true);
+                                throw new EnergyException("Too many Vertices", false);
                             }
                             for (int k = 0; k < 3; k++) {
                                 v[k][nv + 1] = a[k][ia] - p[k][np];
@@ -7052,7 +7052,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                              */
                             if (nen + 3 > maxen) {
                                 //logger.severe("Too many Concave Edges");
-                                throw new EnergyException("Too many Concave Edges", true);
+                                throw new EnergyException("Too many Concave Edges", false);
                             }
                             /**
                              * Edges point to vertices.
@@ -7065,7 +7065,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             env[1][nen + 3] = nv + 1;
                             if (nfn + 1 > maxfn) {
                                 //logger.severe("Too many Concave Faces");
-                                throw new EnergyException("Too many Concave Faces", true);
+                                throw new EnergyException("Too many Concave Faces", false);
                             }
                             /**
                              * Face points to edges.
@@ -7095,11 +7095,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
                  */
                 if (edgeNumber <= 0) {
                     //logger.severe("Bad Edge Number in INEDGE");
-                    throw new EnergyException("Bad Edge Number in INEDGE", true);
+                    throw new EnergyException("Bad Edge Number in INEDGE", false);
                 }
                 if (torusNumber <= 0) {
                     //logger.severe("Bad Torus Number in INEDGE");
-                    throw new EnergyException("Bad Torus Number in INEDGE", true);
+                    throw new EnergyException("Bad Torus Number in INEDGE", false);
                 }
                 /**
                  * Set beginning of list or add to end.
@@ -7143,7 +7143,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         nt++;
                         if (nt > maxt) {
                             //logger.severe("Too many non-buried tori.");
-                            throw new EnergyException("Too many non-buried tori.", true);
+                            throw new EnergyException("Too many non-buried tori.", false);
                         }
                         int ia = tta[0][itt];
                         int ja = tta[1][itt];
@@ -7252,7 +7252,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                 nc++;
                                 if (nc > maxc) {
                                     //logger.severe("Too many Circles");
-                                    throw new EnergyException("Too many Circles", true);
+                                    throw new EnergyException("Too many Circles", false);
                                 }
                                 /**
                                  * Circle center.
@@ -7302,7 +7302,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                     nent++;
                                     if (nent > maxent) {
                                         //logger.severe("Too many Edges for Torus");
-                                        throw new EnergyException("Too many Edges for Torus", true);
+                                        throw new EnergyException("Too many Edges for Torus", false);
                                     }
                                     /**
                                      * First vertex of edge.
@@ -7321,7 +7321,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                     }
                                     if (dtev <= 0.0) {
                                         //logger.severe("Probe on Torus Axis");
-                                        throw new EnergyException("Probe on Torus Axis", true);
+                                        throw new EnergyException("Probe on Torus Axis", false);
                                     }
                                     dtev = sqrt(dtev);
                                     for (k = 0; k < 3; k++) {
@@ -7382,7 +7382,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                 itwo = 2;
                                 if ((nent % itwo) != 0) {
                                     //logger.severe("Odd Number of Edges for Toruss");
-                                    throw new EnergyException("Odd Number of Edges for Toruss", true);
+                                    throw new EnergyException("Odd Number of Edges for Torus", false);
                                 }
                                 /**
                                  * Set up linked list of concave edges in order
@@ -7447,7 +7447,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                         nfs++;
                                         if (nfs > maxfs) {
                                             //logger.severe("Too many Saddle Faces");
-                                            throw new EnergyException("Too many Saddle Faces", true);
+                                            throw new EnergyException("Too many Saddle Faces", false);
                                         }
                                         /**
                                          * Get edge number.
@@ -7463,7 +7463,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                         nep++;
                                         if (nep > maxep) {
                                             //logger.severe("Too many Convex Edges");
-                                            throw new EnergyException("Too many Convex Edges", true);
+                                            throw new EnergyException("Too many Convex Edges", false);
                                         }
                                         /**
                                          * Second convex edge points to fist
@@ -7497,7 +7497,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                             }
                                             if (sdstrt[m1]) {
                                                 //logger.severe("Three Starts in a Row");
-                                                throw new EnergyException("Three Starts in a Row", true);
+                                                throw new EnergyException("Three Starts in a Row", false);
                                             }
                                             n1 = nxtang[m1];
 
@@ -7541,7 +7541,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                 nfs++;
                                 if (nfs > maxfs) {
                                     //logger.severe("Too many Saddle Faces");
-                                    throw new EnergyException("Too many Saddle Faces", true);
+                                    throw new EnergyException("Too many Saddle Faces", false);
                                 }
                                 /**
                                  * No concave edge for saddle.
@@ -7713,7 +7713,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             nepa++;
                             if (nepa > maxepa) {
                                 //logger.severe("Too many Convex Edges for Atom");
-                                throw new EnergyException("Too many Convex Edges for Atom", true);
+                                throw new EnergyException("Too many Convex Edges for Atom", false);
                             }
                             /**
                              * Store vertices of edge.
@@ -7757,7 +7757,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         }
                         if (nepa <= 0) {
                             //logger.severe("No Edges for Non-buried, Non-free Atom");
-                            throw new EnergyException("No Edges for Non-buried, Non-free Atom", true);
+                            throw new EnergyException("No Edges for Non-buried, Non-free Atom", false);
                         }
                         /**
                          * Form cycles; initialize all the convex edges as not
@@ -7799,7 +7799,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                 ncypa++;
                                 if (ncypa > maxcypa) {
                                     //logger.severe("Too many Cycles per Atom");
-                                    throw new EnergyException("Too many Cycles per Atom", true);
+                                    throw new EnergyException("Too many Cycles per Atom", false);
                                 }
                                 /**
                                  * Mark edge used in cycle.
@@ -7812,7 +7812,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                 ncy++;
                                 if (ncy > maxcy) {
                                     //logger.severe("Too many Cycles");
-                                    throw new EnergyException("Too many Cycles", true);
+                                    throw new EnergyException("Too many Cycles", false);
                                 }
                                 /**
                                  * Index of edge in atom cycle array.
@@ -7853,7 +7853,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                         ncyep++;
                                         if (ncyep > MAXCYEP) {
                                             //logger.severe("Too many Edges per Cycle");
-                                            throw new EnergyException("Too many Edges per Cycle", true);
+                                            throw new EnergyException("Too many Edges per Cycle", false);
                                         }
                                         epused[jepa] = true;
                                         nused++;
@@ -8024,7 +8024,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             nfp++;
                             if (nfp > maxfp) {
                                 //logger.severe("Too many Convex Faces");
-                                throw new EnergyException("Too many Convex Faces", true);
+                                throw new EnergyException("Too many Convex Faces", false);
                             }
                             /**
                              * Clear number of cycles for face.
@@ -8056,7 +8056,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                     fpncy[nfp]++;
                                     if (fpncy[nfp] > MAXFPCY) {
                                         //logger.severe("Too many Cycles bounding Convex Face");
-                                        throw new EnergyException("Too many Cycles bounding Convex Face", true);
+                                        throw new EnergyException("Too many Cycles bounding Convex Face", false);
                                     }
                                     int i = fpncy[nfp];
                                     /**
@@ -8092,7 +8092,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     nfp++;
                     if (nfp > maxfp) {
                         //logger.severe("Too many Convex Faces");
-                        throw new EnergyException("Too many Convex Faces", true);
+                        throw new EnergyException("Too many Convex Faces", false);
                     }
                     fpa[nfp] = ia;
                     fpncy[nfp] = 0;
@@ -9075,7 +9075,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                         nop++;
                                         if (nop > maxop) {
                                             //logger.severe("NOP Overflow in VAM");
-                                            throw new EnergyException("NOP Overflow in VAM", true);
+                                            throw new EnergyException("NOP Overflow in VAM", false);
                                         }
                                         ifnop[nop] = jfn;
                                         for (int k = 0; k < 3; k++) {
@@ -9356,7 +9356,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 nz = (int) ((zmax - zmin) / edge);
                 if (max(max(nx, ny), nz) > mxcube) {
                     //logger.severe(" VOLUME1  --  Increase the Value of MAXCUBE");
-                    throw new EnergyException(" VOLUME1  --  Increase the Value of MAXCUBE", true);
+                    throw new EnergyException(" VOLUME1  --  Increase the Value of MAXCUBE", false);
                 }
                 /**
                  * Initialize the coarse lattice of cubes.
