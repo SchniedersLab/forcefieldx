@@ -48,6 +48,9 @@ import groovy.util.CliBuilder;
 // Paralle Java Imports
 import edu.rit.pj.Comm;
 
+// Java Imports
+import java.util.regex.Pattern;
+
 // Force Field X Imports
 //import ffx.algorithms.Barostat;
 import ffx.algorithms.MolecularDynamics;
@@ -73,6 +76,12 @@ int ligandStart2 = 1;
 
 // Last atom of the ligand for the 2nd topology.
 int ligandStop2 = -1;
+
+// Additional ligand atoms; intended for creating disjoint sets.
+List<Atom> ligandAtoms1 = new ArrayList<>();
+List<Atom> ligandAtoms2 = new ArrayList<>();
+def ranges1 = []; // Groovy mechanism for creating an untyped ArrayList.
+def ranges2 = [];
 
 // First atom for no electrostatics.
 int noElecStart = 1;
@@ -171,6 +180,8 @@ cli.s(longOpt:'start', args:1, argName:'1', 'Starting ligand atom.');
 cli.s2(longOpt:'start2', args:1, argName:'1', 'Starting ligand atom for the 2nd topology.');
 cli.f(longOpt:'final', args:1, argName:'-1', 'Final ligand atom.');
 cli.f2(longOpt:'final2', args:1, argName:'-1', 'Final ligand atom for the 2nd topology.');
+cli.la1(longOpt:'ligAtoms1', args:1, argName:'None', 'Period-separated ranges of 1st topology ligand atoms (e.g. 40-50.72-83)');
+cli.la2(longOpt:'ligAtoms2', args:1, argName:'None', 'Period-separated ranges of 2nd topology ligand atoms (e.g. 40-50.72-83)');
 cli.es1(longOpt:'noElecStart1', args:1, argName:'1', 'No Electrostatics Starting Atom.');
 cli.es2(longOpt:'noElecStart2', args:1, argName:'1', 'No Electrostatics Starting Atom for the 2nd Topology.');
 cli.ef1(longOpt:'noElecFinal1', args:1, argName:'-1', 'No Electrostatics Final Atom.');
@@ -366,6 +377,13 @@ if (options.rn) {
     }
 }
 
+if (options.la1) {
+    ranges1 = options.la1.split(".");
+}
+if (options.la2) {
+    ranges2 = options.la2.split(".");
+}
+
 println("\n Running Transition-Tempered Orthogonal Space Random Walk on " + filename);
 
 File structureFile = new File(FilenameUtils.normalize(filename));
@@ -442,6 +460,35 @@ for (int i = ligandStart; i <= ligandStop; i++) {
     ai.print();
 }
 
+Pattern rangeregex = Pattern.compile("([0-9]+)-?([0-9]+)?");
+if (ranges1) {
+    for (range in ranges1) {
+        def m = rangeregex.search(range);
+        if (m) {
+            if (m.groupCount() > 1) {
+                int rangeStart = Integer.parseInt(m.group(1));
+                int rangeEnd = Integer.parseInt(m.group(2));
+                if (start > end) {
+                    logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
+                }
+                // Don't need to worry about negative numbers; rangeregex just won't match.
+                for (int i = rangeStart; i <= rangeEnd; i++) {
+                    Atom ai = atoms[i-1];
+                    ai.setApplyLambda(true);
+                    ai.print();
+                }
+            } else {
+                int i = Integer.parseInt(m.group(1));
+                Atom ai = atoms[i-1];
+                ai.setApplyLambda(true);
+                ai.print();
+            }
+        } else {
+            logger.warning(" Could not recognize ${range} as a valid range; skipping");
+        }
+    }
+}
+
 // Apply the no electrostatics atom selection
 if (noElecStart < 1) {
     noElecStart = 1;
@@ -505,6 +552,34 @@ if (arguments.size() == 1) {
         Atom ai = atoms[i - 1];
         ai.setApplyLambda(true);
         ai.print();
+    }
+    
+    if (ranges2) {
+        for (range in ranges2) {
+            def m = rangeregex.search(range);
+            if (m) {
+                if (m.groupCount() > 1) {
+                    int rangeStart = Integer.parseInt(m.group(1));
+                    int rangeEnd = Integer.parseInt(m.group(2));
+                    if (start > end) {
+                        logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
+                    }
+                    // Don't need to worry about negative numbers; rangeregex just won't match.
+                    for (int i = rangeStart; i <= rangeEnd; i++) {
+                        Atom ai = atoms[i-1];
+                        ai.setApplyLambda(true);
+                        ai.print();
+                    }
+                } else {
+                    int i = Integer.parseInt(m.group(1));
+                    Atom ai = atoms[i-1];
+                    ai.setApplyLambda(true);
+                    ai.print();
+                }
+            } else {
+                logger.warning(" Could not recognize ${range} as a valid range; skipping");
+            }
+        }
     }
 
     // Apply the no electrostatics atom selection
