@@ -359,10 +359,10 @@ if (options.W) {
 }
 
 if (options.la1) {
-    ranges1 = options.la1.split(".");
+    ranges1 = options.la1.tokenize(".");
 }
 if (options.la2) {
-    ranges2 = options.la2.split(".");
+    ranges2 = options.la2.tokenize(".");
 }
 
 println("\n Running Orthogonal Space Random Walk on " + filename);
@@ -444,12 +444,12 @@ for (int i = ligandStart; i <= ligandStop; i++) {
 Pattern rangeregex = Pattern.compile("([0-9]+)-?([0-9]+)?");
 if (ranges1) {
     for (range in ranges1) {
-        def m = rangeregex.search(range);
-        if (m) {
+        def m = rangeregex.matcher(range);
+        if (m.find()) {
             if (m.groupCount() > 1) {
                 int rangeStart = Integer.parseInt(m.group(1));
                 int rangeEnd = Integer.parseInt(m.group(2));
-                if (start > end) {
+                if (rangeStart > rangeEnd) {
                     logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
                 }
                 // Don't need to worry about negative numbers; rangeregex just won't match.
@@ -537,12 +537,12 @@ if (arguments.size() == 1) {
     
     if (ranges2) {
         for (range in ranges2) {
-            def m = rangeregex.search(range);
-            if (m) {
+            def m = rangeregex.matcher(range);
+            if (m.find()) {
                 if (m.groupCount() > 1) {
                     int rangeStart = Integer.parseInt(m.group(1));
                     int rangeEnd = Integer.parseInt(m.group(2));
-                    if (start > end) {
+                    if (rangeStart > rangeEnd) {
                         logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
                     }
                     // Don't need to worry about negative numbers; rangeregex just won't match.
