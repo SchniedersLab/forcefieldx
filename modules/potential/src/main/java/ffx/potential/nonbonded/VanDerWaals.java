@@ -68,6 +68,7 @@ import ffx.potential.bonded.Atom.Resolution;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.Torsion;
+import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.extended.ExtendedVariable;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
@@ -213,13 +214,10 @@ public class VanDerWaals implements MaskingInterface,
     private double d2sc1dL2 = 0.0;
     private double d2sc2dL2 = 0.0;
     /**
-     * Number of generalized extended system (lamedh) variables.
-     */
-    private int numESVs = 0;
-    /**
      * Generalized extended system (lamedh) variables.
      */
-    private List<ExtendedVariable> esvList = new ArrayList<>();
+    private ExtendedSystem esvSystem;
+    private int numESVs = 0;
     /**
      * *************************************************************************
      * Coordinate arrays.
@@ -1096,17 +1094,34 @@ public class VanDerWaals implements MaskingInterface,
         }
     }
 
-    public void setESVList(List<ExtendedVariable> esvList) {
+    public void attachExtendedSystem(ExtendedSystem system) {
         if (!esvTerm) {
-            logger.severe("Lamedh invoked on improperly constructed VanDerWaals object.");
+            logger.warning("Extended system attached to VdW will not function until esvTerm enabled.");
         }
-        this.esvList = esvList;
-        this.numESVs = esvList.size();
+        if (esvSystem != null) {
+            logger.severe("Multiple ESV systems is untested.");
+        }
+        esvSystem = system;
+        numESVs = esvSystem.num();
         shareddEdLdh = new SharedDouble[numESVs];
         sharedd2EdLdh2 = new SharedDouble[numESVs];
         lamedhGradX = new double[threadCount][numESVs][nAtoms];
         lamedhGradY = new double[threadCount][numESVs][nAtoms];
         lamedhGradZ = new double[threadCount][numESVs][nAtoms];
+    }
+    
+    public void detachExtendedSystem() {
+        esvSystem = null;
+        numESVs = 0;
+        shareddEdLdh = null;
+        sharedd2EdLdh2 = null;
+        lamedhGradX = null;
+        lamedhGradY = null;
+        lamedhGradZ = null;
+    }
+    
+    public boolean hasExtendedSystem() {
+        return (esvSystem != null);
     }
 
     public void setIntermolecularSoftcore(boolean intermolecularSoftcore) {
@@ -1141,7 +1156,7 @@ public class VanDerWaals implements MaskingInterface,
             return null;
         }
         double dEdLdh[] = new double[numESVs];
-        for (ExtendedVariable esv : esvList) {
+        for (ExtendedVariable esv : esvSystem.getESVList()) {
             dEdLdh[esv.index] = shareddEdLdh[esv.index].get();
         }
         return dEdLdh;
@@ -1182,7 +1197,7 @@ public class VanDerWaals implements MaskingInterface,
             int ii = i * 3;
             Atom ai = atoms[i];
             if (ai.isActive()) {
-                for (ExtendedVariable esv : esvList) {
+                for (ExtendedVariable esv : esvSystem.getESVList()) {
                     dEdXdLdh[esv.index][ii] += ldhgx[esv.index][i];
                     dEdXdLdh[esv.index][ii + 1] += ldhgy[esv.index][i];
                     dEdXdLdh[esv.index][ii + 2] += ldhgz[esv.index][i];
@@ -1208,7 +1223,7 @@ public class VanDerWaals implements MaskingInterface,
             return null;
         }
         double d2EdLdh2[] = new double[numESVs];
-        for (ExtendedVariable esv : esvList) {
+        for (ExtendedVariable esv : esvSystem.getESVList()) {
             d2EdLdh2[esv.index] = sharedd2EdLdh2[esv.index].get();
         }
         return d2EdLdh2;
@@ -1306,10 +1321,10 @@ public class VanDerWaals implements MaskingInterface,
                 shareddEdL.set(0.0);
                 sharedd2EdL2.set(0.0);
             }
-            if (esvTerm) {
+            if (esvTerm && hasExtendedSystem()) {
                 shareddEdLdh = new SharedDouble[numESVs];
                 sharedd2EdLdh2 = new SharedDouble[numESVs];
-                for (ExtendedVariable esv : esvList) {
+                for (ExtendedVariable esv : esvSystem.getESVList()) {
                     shareddEdLdh[esv.index] = new SharedDouble();
                     sharedd2EdLdh2[esv.index] = new SharedDouble();
                 }
@@ -1511,11 +1526,11 @@ public class VanDerWaals implements MaskingInterface,
                         fill(lambdaGradZ[threadIndex], 0.0);
                     }
                 }
-                if (esvTerm) {
+                if (esvTerm && hasExtendedSystem()) {
                     lamedhGradX[threadIndex] = new double[numESVs][nAtoms];
                     lamedhGradY[threadIndex] = new double[numESVs][nAtoms];
                     lamedhGradZ[threadIndex] = new double[numESVs][nAtoms];
-                    for (ExtendedVariable esv : esvList) {
+                    for (ExtendedVariable esv : esvSystem.getESVList()) {
                         fill(lamedhGradX[threadIndex][esv.index], 0.0);
                         fill(lamedhGradY[threadIndex][esv.index], 0.0);
                         fill(lamedhGradZ[threadIndex][esv.index], 0.0);
@@ -1710,8 +1725,8 @@ public class VanDerWaals implements MaskingInterface,
                     shareddEdL.addAndGet(dEdL);
                     sharedd2EdL2.addAndGet(d2EdL2);
                 }
-                if (esvTerm) {
-                    for (ExtendedVariable esv : esvList) {
+                if (esvTerm && hasExtendedSystem()) {
+                    for (ExtendedVariable esv : esvSystem.getESVList()) {
                         shareddEdLdh[esv.index].addAndGet(dEdLdh[esv.index]);
                         sharedd2EdLdh2[esv.index].addAndGet(d2EdLdh2[esv.index]);
                     }
@@ -1786,33 +1801,52 @@ public class VanDerWaals implements MaskingInterface,
                             boolean soft = softCorei[k]
                                     || (intermolecularSoftcore && !sameMolecule)
                                     || (intramolecularSoftcore && sameMolecule);
-                            boolean hasLamedh = esvList.parallelStream().anyMatch(esv -> esv.containsAtom(atomk));
-                            if (esvTerm && hasLamedh) {
-                                double lamedh = 1.0;
-                                int esvCount = 0;
-                                for (ExtendedVariable esv : esvList) {
+                            boolean hasLamedh = false;
+                            if (esvTerm) {
+                                for (ExtendedVariable esv : esvSystem.getESVList()) {
                                     if (esv.containsAtom(atomk)) {
-                                        lamedh *= esv.getLamedh();
-                                        esvCount++;
+                                        hasLamedh = true;
                                     }
                                 }
-                                if (esvCount > 1) {
-                                    logger.info(format(" Multiple ESVs attached to atom %d; using product %.2f", lamedh));
+                                if (hasLamedh) {
+                                    double lamedh = 1.0;
+                                    int esvCount = 0;
+                                    List<ExtendedVariable> DEBUG = new ArrayList<>();   // TODO REMOVE
+                                    for (ExtendedVariable esv : esvSystem.getESVList()) {
+                                        if (esv.containsAtom(atomk)) {
+                                            DEBUG.add(esv);
+                                            lamedh *= esv.getLamedh();
+                                            esvCount++;
+                                        }
+                                    }
+                                    if (esvCount > 1) {
+                                        StringBuilder err = new StringBuilder();
+                                        err.append(format(" Multiple ESVs attached to atom %s: \n"
+                                                +          "   esvSystem.getESVList().size,lamedhProduct: %d %.2f \n"
+                                                +          "   List of attached ESVs: \n", 
+                                                atomk, esvSystem.getESVList().size(), lamedh));
+                                        for (ExtendedVariable esv : DEBUG) {
+                                            err.append(format("     %s\n", esv.toString()));
+                                        }
+                                        err.append(format("   END"));
+                                        logger.warning(err.toString());
+                                        throw new UnsupportedOperationException();
+                                    }
+                                    final double lambdaL = (lambdaTerm) ? lambda : 1.0;
+                                    sc1 = vdwLambdaAlpha * (1.0 - lambdaL * lamedh) * (1.0 - lambdaL * lamedh);
+                                    sc2 = lamedh * pow(lambdaL, vdwLambdaExponent);
+                                    /*  Since lambda statistics are collected only at fixed lamedh,
+                                        the following derivative definitions are dual-purpose:
+                                            (1) At intermediate lamedh, they are derivatives w.r.t. lamedh.
+                                            (2) At zero or unity lamedh, they reduce to the derivates w.r.t. lambda.
+                                     */
+                                    dsc1dL = -2.0 * vdwLambdaAlpha * lambdaL * (1.0 - lambdaL * lamedh);
+                                    d2sc1dL2 = 2.0 * vdwLambdaAlpha * lambdaL * lambdaL;
+                                    dsc2dL = lambdaL * vdwLambdaExponent * pow(lambdaL * lamedh, vdwLambdaExponent - 1.0);
+                                    d2sc2dL2 = lambdaL * lambdaL * vdwLambdaExponent * (vdwLambdaExponent - 1.0) * pow(lambdaL * lamedh, vdwLambdaExponent - 2.0);
+                                    alpha = sc1;
+                                    lambda5 = sc2;
                                 }
-                                final double lambdaL = (lambdaTerm) ? lambda : 1.0;
-                                sc1 = vdwLambdaAlpha * (1.0 - lambdaL * lamedh) * (1.0 - lambdaL * lamedh);
-                                sc2 = lamedh * pow(lambdaL, vdwLambdaExponent);
-                                /*  Since lambda statistics are collected only at fixed lamedh,
-                                    the following derivative definitions are dual-purpose:
-                                        (1) At intermediate lamedh, they are derivatives w.r.t. lamedh.
-                                        (2) At zero or unity lamedh, they reduce to the derivates w.r.t. lambda.
-                                 */
-                                dsc1dL = -2.0 * vdwLambdaAlpha * lambdaL * (1.0 - lambdaL * lamedh);
-                                d2sc1dL2 = 2.0 * vdwLambdaAlpha * lambdaL * lambdaL;
-                                dsc2dL = lambdaL * vdwLambdaExponent * pow(lambdaL * lamedh, vdwLambdaExponent - 1.0);
-                                d2sc2dL2 = lambdaL * lambdaL * vdwLambdaExponent * (vdwLambdaExponent - 1.0) * pow(lambdaL * lamedh, vdwLambdaExponent - 2.0);
-                                alpha = sc1;
-                                lambda5 = sc2;
                             }
                             if (soft) {
                                 alpha = sc1;
@@ -1898,9 +1932,14 @@ public class VanDerWaals implements MaskingInterface,
                                 final double f3 = sc2 * t1 * dt2;
                                 final double dedl = ev * (f1 + f2 + f3);
                                 dEdL += dedl * taper;
-                                // This multimap allows one atom affected by multiple ESVs to contribute its gradient to each.
-                                esvList.stream().filter(esv -> esv.containsAtom(atoms[k]))
-                                        .forEach(esv -> dEdLdh[esv.index] += (dedl * taper));
+                                if (esvTerm) {  // Copy this gradient to attached ESVs.
+                                    // This multimap allows one atom affected by multiple ESVs to contribute its gradient to each.
+                                    for (ExtendedVariable esv : esvSystem.getESVList()) {
+                                        if (esv.containsAtom(atoms[k])) {
+                                            dEdLdh[esv.index] += dedl * taper;
+                                        }
+                                    }
+                                }
                                 final double t1d2 = -dsc1dL * t1d * t1d;
                                 final double t2d2 = -dsc1dL * t2d * t2d;
                                 final double d2t1 = -dt1 * t1d * dsc1dL - t1 * t1d * d2sc1dL2 - t1 * t1d2 * dsc1dL;
@@ -1910,8 +1949,13 @@ public class VanDerWaals implements MaskingInterface,
                                 final double df3 = dsc2dL * t1 * dt2 + sc2 * dt1 * dt2 + sc2 * t1 * d2t2;
                                 final double de2dl2 = ev * (df1 + df2 + df3);
                                 d2EdL2 += de2dl2 * taper;
-                                esvList.stream().filter(esv -> esv.containsAtom(atomk))
-                                        .forEach(esv -> d2EdLdh2[esv.index] += (de2dl2 * taper));
+                                if (esvTerm) {  // Copy this second gradient to attached ESVs.
+                                    for (ExtendedVariable esv : esvSystem.getESVList()) {
+                                        if (esv.containsAtom(atomk)) {
+                                            d2EdLdh2[esv.index] += de2dl2 * taper;
+                                        }
+                                    }
+                                }
                                 final double t11 = -dsc2dL * t2 * dt1_dr;
                                 final double t21 = -dsc2dL * t1 * dt2_dr;
                                 final double t13 = 2.0 * sc2 * t2 * dt1_dr * dsc1dL * t1d;
@@ -1938,14 +1982,14 @@ public class VanDerWaals implements MaskingInterface,
                                     lzi_local[redk] -= redkv * dedldz;
                                 }
                                 if (esvTerm) {
-                                    esvList.stream().forEach(esv -> {
+                                    for (ExtendedVariable esv : esvSystem.getESVList()) {
                                         ldh_xi_local[esv.index][k] -= (red * dedldx);
                                         ldh_yi_local[esv.index][k] -= (red * dedldy);
                                         ldh_zi_local[esv.index][k] -= (red * dedldz);
                                         ldh_xi_local[esv.index][redk] -= (redkv * dedldx);
                                         ldh_yi_local[esv.index][redk] -= (redkv * dedldy);
                                         ldh_zi_local[esv.index][redk] -= (redkv * dedldz);
-                                    });
+                                    }
                                 }
                             }
                         }
@@ -1967,7 +2011,7 @@ public class VanDerWaals implements MaskingInterface,
                         lzi_local[redi] += lzredi;
                     }
                     if (esvTerm) {
-                        for (ExtendedVariable esv : esvList) {
+                        for (ExtendedVariable esv : esvSystem.getESVList()) {
                             ldh_xi_local[esv.index][i] += lxi;
                             ldh_yi_local[esv.index][i] += lyi;
                             ldh_zi_local[esv.index][i] += lzi;
@@ -2048,37 +2092,44 @@ public class VanDerWaals implements MaskingInterface,
                                 double alpha = 0.0;
                                 double lambda5 = 1.0;
                                 boolean soft = (isSoft[i] || softCorei[k]);
-                                boolean eitherLamedh = esvList.stream().anyMatch(esv -> esv.containsAtom(atomi) || esv.containsAtom(atomk));
-                                if (esvTerm && eitherLamedh) {
-                                    // TODO Decide on combining rules for interaction between two different lamedhs.
-                                    double lamedhi = 1.0;
-                                    double lamedhk = 1.0;
-                                    for (ExtendedVariable esv : esvList) {
-                                        if (esv.containsAtom(atomi)) {
-                                            lamedhi *= esv.getLamedh();
-                                        }
-                                        if (esv.containsAtom(atomk)) {
-                                            lamedhk *= esv.getLamedh();
+                                boolean eitherLamedh = false;
+                                if (esvTerm) {
+                                    for (ExtendedVariable esv : esvSystem.getESVList()) {
+                                        if (esv.containsAtom(atomi) || esv.containsAtom(atomk)) {
+                                            eitherLamedh = true;
                                         }
                                     }
-//                                    double lamedh = (lamedhi < lamedhk) ? lamedhi : lamedhk;
-                                    double lamedh = lamedhi * lamedhk;
-                                    if (lamedhi != lamedhk) {
-                                        logger.info(format(" (vdW) Found different lamedh on atoms %d,%d (%4.2f,%4.2f); using %4.2f",
-                                                i, k, lamedhi, lamedhk, lamedh));
-                                    } else {
-                                        logger.info(format(" (vdW) Found same lamedh on atoms %d,%d (%4.2f); using %4.2f",
-                                                i, k, lamedhi, lamedh));
+                                    if (eitherLamedh) {
+                                        // TODO Decide on combining rules for interaction between two different lamedhs.
+                                        double lamedhi = 1.0;
+                                        double lamedhk = 1.0;
+                                        for (ExtendedVariable esv : esvSystem.getESVList()) {
+                                            if (esv.containsAtom(atomi)) {
+                                                lamedhi *= esv.getLamedh();
+                                            }
+                                            if (esv.containsAtom(atomk)) {
+                                                lamedhk *= esv.getLamedh();
+                                            }
+                                        }
+    //                                    double lamedh = (lamedhi < lamedhk) ? lamedhi : lamedhk;
+                                        double lamedh = lamedhi * lamedhk;
+                                        if (lamedhi != lamedhk) {
+                                            logger.info(format(" (vdW) Found different lamedh on atoms %d,%d (%4.2f,%4.2f); using %4.2f",
+                                                    i, k, lamedhi, lamedhk, lamedh));
+                                        } else {
+                                            logger.info(format(" (vdW) Found same lamedh on atoms %d,%d (%4.2f); using %4.2f",
+                                                    i, k, lamedhi, lamedh));
+                                        }
+                                        final double lambdaL = (lambdaTerm) ? lambda : 1.0;
+                                        sc1 = vdwLambdaAlpha * (1.0 - lambdaL * lamedh) * (1.0 - lambdaL * lamedh);
+                                        sc2 = lamedh * pow(lambdaL, vdwLambdaExponent);
+                                        dsc1dL = -2.0 * vdwLambdaAlpha * lambdaL * (1.0 - lambdaL * lamedh);
+                                        d2sc1dL2 = 2.0 * vdwLambdaAlpha * lambdaL * lambdaL;
+                                        dsc2dL = lambdaL * vdwLambdaExponent * pow(lambdaL * lamedh, vdwLambdaExponent - 1.0);
+                                        d2sc2dL2 = lambdaL * lambdaL * vdwLambdaExponent * (vdwLambdaExponent - 1.0) * pow(lambdaL * lamedh, vdwLambdaExponent - 2.0);
+                                        alpha = sc1;
+                                        lambda5 = sc2;
                                     }
-                                    final double lambdaL = (lambdaTerm) ? lambda : 1.0;
-                                    sc1 = vdwLambdaAlpha * (1.0 - lambdaL * lamedh) * (1.0 - lambdaL * lamedh);
-                                    sc2 = lamedh * pow(lambdaL, vdwLambdaExponent);
-                                    dsc1dL = -2.0 * vdwLambdaAlpha * lambdaL * (1.0 - lambdaL * lamedh);
-                                    d2sc1dL2 = 2.0 * vdwLambdaAlpha * lambdaL * lambdaL;
-                                    dsc2dL = lambdaL * vdwLambdaExponent * pow(lambdaL * lamedh, vdwLambdaExponent - 1.0);
-                                    d2sc2dL2 = lambdaL * lambdaL * vdwLambdaExponent * (vdwLambdaExponent - 1.0) * pow(lambdaL * lamedh, vdwLambdaExponent - 2.0);
-                                    alpha = sc1;
-                                    lambda5 = sc2;
                                 }
                                 if (soft) {
                                     alpha = sc1;
@@ -2170,8 +2221,13 @@ public class VanDerWaals implements MaskingInterface,
                                     double f3 = sc2 * t1 * dt2;
                                     final double dedl = ev * (f1 + f2 + f3);
                                     dEdL += selfScale * dedl * taper;
-                                    esvList.stream().filter(esv -> esv.containsAtom(atomk))
-                                            .forEach(esv -> dEdLdh[esv.index] += (selfScale * dedl * taper));
+                                    if (esvTerm) {
+                                        for (ExtendedVariable esv : esvSystem.getESVList()) {
+                                            if (esv.containsAtom(atomk)) {
+                                                dEdLdh[esv.index] += selfScale * dedl * taper;
+                                            }
+                                        }
+                                    }
                                     double t1d2 = -dsc1dL * t1d * t1d;
                                     double t2d2 = -dsc1dL * t2d * t2d;
                                     double d2t1 = -dt1 * t1d * dsc1dL - t1 * t1d * d2sc1dL2 - t1 * t1d2 * dsc1dL;
@@ -2181,8 +2237,13 @@ public class VanDerWaals implements MaskingInterface,
                                     double df3 = dsc2dL * t1 * dt2 + sc2 * dt1 * dt2 + sc2 * t1 * d2t2;
                                     double de2dl2 = ev * (df1 + df2 + df3);
                                     d2EdL2 += selfScale * de2dl2 * taper;
-                                    esvList.stream().filter(esv -> esv.containsAtom(atomk))
-                                            .forEach(esv -> d2EdLdh2[esv.index] += (selfScale * de2dl2 * taper));
+                                    if (esvTerm) {
+                                        for (ExtendedVariable esv : esvSystem.getESVList()) {
+                                            if (esv.containsAtom(atomk)) {
+                                                d2EdLdh2[esv.index] += selfScale * de2dl2 * taper;
+                                            }
+                                        }
+                                    }
                                     double t11 = -dsc2dL * t2 * dt1_dr;
                                     double t12 = -sc2 * dt2 * dt1_dr;
                                     double t13 = 2.0 * sc2 * t2 * dt1_dr * dsc1dL * t1d;
@@ -2216,14 +2277,14 @@ public class VanDerWaals implements MaskingInterface,
                                         lzi_local[redk] -= redkv * dedldzk;
                                     }
                                     if (esvTerm) {
-                                        esvList.stream().forEach(esv -> {
+                                        for (ExtendedVariable esv : esvSystem.getESVList()) {
                                             ldh_xi_local[esv.index][k] -= (red * dedldxk);
                                             ldh_yi_local[esv.index][k] -= (red * dedldyk);
                                             ldh_zi_local[esv.index][k] -= (red * dedldzk);
                                             ldh_xi_local[esv.index][redk] -= (redkv * dedldxk);
                                             ldh_yi_local[esv.index][redk] -= (redkv * dedldyk);
                                             ldh_zi_local[esv.index][redk] -= (redkv * dedldzk);
-                                        });
+                                        }
                                     }
                                 }
                             }
@@ -2245,7 +2306,7 @@ public class VanDerWaals implements MaskingInterface,
                             lzi_local[redi] += lzredi;
                         }
                         if (esvTerm) {
-                            for (ExtendedVariable esv : esvList) {
+                            for (ExtendedVariable esv : esvSystem.getESVList()) {
                                 ldh_xi_local[esv.index][i] += lxi;
                                 ldh_yi_local[esv.index][i] += lyi;
                                 ldh_zi_local[esv.index][i] += lzi;
@@ -2321,7 +2382,7 @@ public class VanDerWaals implements MaskingInterface,
                         double ldhyt[][] = lamedhGradY[t];
                         double ldhzt[][] = lamedhGradZ[t];
                         for (int i = lb; i <= ub; i++) {
-                            for (ExtendedVariable esv : esvList) {
+                            for (ExtendedVariable esv : esvSystem.getESVList()) {
                                 ldhx[esv.index][i] += ldhxt[esv.index][i];
                                 ldhy[esv.index][i] += ldhyt[esv.index][i];
                                 ldhz[esv.index][i] += ldhzt[esv.index][i];

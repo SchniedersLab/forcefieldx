@@ -188,16 +188,24 @@ public class Protonate implements MonteCarloListener {
     /**
      * Construct a Monte-Carlo protonation state switching mechanism.
      *
-     * @param molAss the molecular assembly
+     * @param mola the molecular assembly
      * @param mcStepFrequency number of MD steps between switch attempts
      * @param pH the simulation pH
      * @param thermostat the MD thermostat
      */
-    Protonate(MolecularAssembly molAss, int mcStepFrequency, int rotamerStepFrequency, double pH, Thermostat thermostat) {
+    Protonate(MolecularAssembly mola, int mcStepFrequency, int rotamerStepFrequency, double pH, Thermostat thermostat) {
         // process system flags
         if (refOverride) {
             logger.info(" (CpHMD) Reference_Override: " + refOverrideValue);
         }
+        
+        // List of flags that need (perhaps) to be set to do a single-topology delG.
+//        System.setProperty("polarization", "NONE");             // BONUS FLAG
+//        "polarization-lambda-start","0.0"
+//        "polarization-lambda-exponent","0.0"
+//        "ligand-vapor-elec","false"
+//        "no-ligand-condensed-scf","false"
+        
         String zeroReferenceEnergies = System.getProperty("cphmd-zeroReferences");
         if (zeroReferenceEnergies != null) {
             if (refOverride) {
@@ -249,9 +257,9 @@ public class Protonate implements MonteCarloListener {
         RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
         RotamerLibrary.setUseOrigCoordsRotamer(false);
 
-        this.mola = molAss;
-        this.forceField = molAss.getForceField();
-        this.forceFieldEnergy = molAss.getPotentialEnergy();
+        this.mola = mola;
+        this.forceField = mola.getForceField();
+        this.forceFieldEnergy = mola.getPotentialEnergy();
         this.mcStepFrequency = (mcStepFrequency == 0) ? Integer.MAX_VALUE : mcStepFrequency;
         this.rotamerStepFrequency = (rotamerStepFrequency == 0) ? Integer.MAX_VALUE : rotamerStepFrequency;
         this.pH = pH;

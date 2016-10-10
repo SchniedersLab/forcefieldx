@@ -30,15 +30,26 @@ public class ThermoConstants {
     private static final Random random = ThreadLocalRandom.current();
     
     private static final double roomTemperature = 298.15;
+    
     /**
-     * Return *ROOM TEMPERATURE* velocities from a Maxwell-Boltzmann distribution of momenta.
-     * The variance of each independent momentum component is kT * mass.
-     * TODO Generalize to any temperature (while avoid static-context clashes).
+     * Return room-temperature velocities from a Maxwell-Boltzmann distribution of momenta.
      */
-    public static double[] maxwellIndividual(double mass) {
+    public static double[] singleRoomtempMaxwell(double mass) {
         double vv[] = new double[3];
         for (int i = 0; i < 3; i++) {
             vv[i] = random.nextGaussian() * sqrt(kB * roomTemperature / mass);
+        }
+        return vv;
+    }
+    
+    /**
+     * Return velocities from a Maxwell-Boltzmann distribution of momenta.
+     * The variance of each independent momentum component is kT * mass.
+     */
+    public double[] singleMaxwell(double mass, double temperature) {
+        double vv[] = new double[3];
+        for (int i = 0; i < 3; i++) {
+            vv[i] = random.nextGaussian() * sqrt(kB * temperature / mass);
         }
         return vv;
     }
