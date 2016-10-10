@@ -595,11 +595,11 @@ public class VanDerWaals implements MaskingInterface,
         /**
          * Define radius type.
          */
-        value = forceField.getString(ARRAY_REDUCTION, "PJ");
+        value = forceField.getString(ARRAY_REDUCTION, "ADDER");
         try {
             atomicDoubleArrayImpl = AtomicDoubleArrayImpl.valueOf(toEnumForm(value));
         } catch (Exception e) {
-            logger.info(format(" Unrecognized ARRAY-REDUCTION %s; defaulting to PJ", value));
+            logger.info(format(" Unrecognized ARRAY-REDUCTION %s; defaulting to ADDER", value));
         }
 
         /**
@@ -1522,14 +1522,14 @@ public class VanDerWaals implements MaskingInterface,
                 }
                 int threadIndex = getThreadIndex();
                 if (gradient) {
-                    gradX.init(threadIndex, nAtoms, lb, ub, 0.0);
-                    gradY.init(threadIndex, nAtoms, lb, ub, 0.0);
-                    gradZ.init(threadIndex, nAtoms, lb, ub, 0.0);
+                    gradX.reset(threadIndex, lb, ub);
+                    gradY.reset(threadIndex, lb, ub);
+                    gradZ.reset(threadIndex, lb, ub);
                 }
                 if (lambdaTerm) {
-                    lambdaGradX.init(threadIndex, nAtoms, lb, ub, 0.0);
-                    lambdaGradY.init(threadIndex, nAtoms, lb, ub, 0.0);
-                    lambdaGradZ.init(threadIndex, nAtoms, lb, ub, 0.0);
+                    lambdaGradX.reset(threadIndex, lb, ub);
+                    lambdaGradY.reset(threadIndex, lb, ub);
+                    lambdaGradZ.reset(threadIndex, lb, ub);
                 }
                 /**
                  * if (esvTerm) { lamedhGradX[threadIndex] = new

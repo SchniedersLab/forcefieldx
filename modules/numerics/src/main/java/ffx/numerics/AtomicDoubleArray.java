@@ -48,7 +48,7 @@ package ffx.numerics;
 public interface AtomicDoubleArray {
 
     public enum AtomicDoubleArrayImpl {
-        PJ, THREADED
+        ADDER, PJ, THREADED
     };
 
     /**
@@ -59,24 +59,13 @@ public interface AtomicDoubleArray {
     public void alloc(int size);
 
     /**
-     * Re-initialize the double array to value.
+     * Reset the double array to Zero.
      *
      * @param threadID
-     * @param size
      * @param lb
      * @param ub
-     * @param value
      */
-    public void init(int threadID, int size, int lb, int ub, double value);
-
-    /**
-     * Set the double array to value at the specified index.
-     *
-     * @param threadID
-     * @param index
-     * @param value
-     */
-    public void set(int threadID, int index, double value);
+    public void reset(int threadID, int lb, int ub);
 
     /**
      * Add value to the double array at the specified index.

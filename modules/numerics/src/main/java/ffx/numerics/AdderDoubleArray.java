@@ -37,84 +37,62 @@
  */
 package ffx.numerics;
 
-import java.util.Arrays;
+import java.util.concurrent.atomic.DoubleAdder;
 
 /**
- * The ThreadedDoubleArray avoids the need for Atomic variables, but at the cost
- * of storing a full size double array for each thread.
+ * AdderDoubleArray implements the AtomicDoubleArray interface using an array of
+ * <code>java.util.concurrent.atomic.DoubleAdder</code>.
  *
  * @author Michael J. Schnieders
  *
  * @since 1.0
  */
-public class ThreadedDoubleArray implements AtomicDoubleArray {
+public class AdderDoubleArray implements AtomicDoubleArray {
 
-    private final int threadCount;
-    private final double array[][];
+    private DoubleAdder array[];
 
-    public ThreadedDoubleArray(int nThreads, int size) {
-        array = new double[nThreads][size];
-        threadCount = nThreads;
+    public AdderDoubleArray(int nThreads, int size) {
+        array = new DoubleAdder[size];
+        for (int i = 0; i < size; i++) {
+            array[i] = new DoubleAdder();
+        }
     }
 
     @Override
     public void alloc(int size) {
-        for (int i = 0; i < threadCount; i++) {
-            if (array[i].length < size) {
-                array[i] = new double[size];
+        if (array.length < size) {
+            array = new DoubleAdder[size];
+            for (int i = 0; i < size; i++) {
+                array[i] = new DoubleAdder();
             }
         }
     }
 
-    /**
-     * Initialize the storage space for the specified thread, to given value,
-     * after assuring adequate storage size.
-     *
-     * @param threadID
-     * @param lb
-     * @param ub
-     */
     @Override
     public void reset(int threadID, int lb, int ub) {
-        Arrays.fill(array[threadID], 0.0);
+        for (int i=lb; i<=ub; i++) {
+            array[i].reset();
+        }
     }
 
     @Override
     public void add(int threadID, int index, double value) {
-        array[threadID][index] += value;
+        array[index].add(value);
     }
 
     @Override
     public void sub(int threadID, int index, double value) {
-        array[threadID][index] -= value;
+        array[index].add(-value);
     }
 
-    /**
-     * Reduce the contributions from each thread into array[0];
-     *
-     * @param lb The lower array bound of the reduction.
-     * @param ub The upper array bound of the reduction.
-     */
     @Override
     public void reduce(int lb, int ub) {
-        double gx[] = array[0];
-        for (int t = 1; t < threadCount; t++) {
-            double gxt[] = array[t];
-            for (int i = lb; i <= ub; i++) {
-                gx[i] += gxt[i];
-            }
-        }
+        // Nothing to do.
     }
 
-    /**
-     * Return a reduced value at the given index.
-     *
-     * @param index
-     * @return a double value.
-     */
     @Override
     public double get(int index) {
-        return array[0][index];
+        return array[index].sum();
     }
 
 }
