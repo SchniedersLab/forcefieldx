@@ -351,7 +351,7 @@ public class ForceField {
         for (VDWType vanderWaalsType : vanderWaalsTypes.values()) {
             vanderWaalsType.incrementClass(classOffset);
         }
-        
+
         for (ISolvRadType iSolvRadType : iSolvRadTypes.values()) {
             iSolvRadType.incrementType(typeOffset);
         }
@@ -434,12 +434,12 @@ public class ForceField {
         for (VDWType vdwType : patch.vanderWaalsTypes.values()) {
             vanderWaalsTypes.put(vdwType.getKey(), vdwType);
         }
-        
+
         for (ISolvRadType iSolvRadType : patch.iSolvRadTypes.values()) {
             iSolvRadTypes.put(iSolvRadType.getKey(), iSolvRadType);
 //            logger.info(" Adding iSolvRadType to map: " + iSolvRadType.getKey() + "/" + iSolvRadType);
         }
-        
+
         for (RelativeSolvationType rsType : patch.relativeSolvationTypes.values()) {
             relativeSolvationTypes.put(rsType.getKey(), rsType);
         }
@@ -1125,11 +1125,11 @@ public class ForceField {
     public Map<String, VDWType> getVDWTypes() {
         return vanderWaalsTypes;
     }
-    
+
     public ISolvRadType getISolvRadType(String key) {
         return iSolvRadTypes.get(key);
     }
-    
+
     public Map<String, ISolvRadType> getISolvRadTypes() {
         return iSolvRadTypes;
     }
@@ -1249,7 +1249,7 @@ public class ForceField {
         }
         logger.info(sb.toString());
     }
-    
+
     public void printAtomTypes() {
         StringBuilder sb = new StringBuilder();
         sb.append(String.format(" Loaded atom types: \n"));
@@ -1258,7 +1258,7 @@ public class ForceField {
         }
         logger.info(sb.toString());
     }
-    
+
     /**
      * Return a String for any Force Field keyword.
      *
@@ -1372,7 +1372,6 @@ public class ForceField {
          * torsionTorsionTypes.remove(currentKey);
          * addForceFieldType(torsionTorsionType); } }
          */
-
         for (TorsionType torsionType : torsionTypes.values().toArray(new TorsionType[0])) {
             TorsionType newType = torsionType.patchClasses(typeMap);
             if (newType != null) {
@@ -1399,7 +1398,6 @@ public class ForceField {
                 addForceFieldType(ureyBradleyType);
             }
         } */
-
         for (MultipoleType multipoleType : multipoleTypes.values().toArray(new MultipoleType[0])) {
             MultipoleType newType = multipoleType.patchTypes(typeMap);
             if (newType != null) {
@@ -1443,6 +1441,7 @@ public class ForceField {
     public enum ForceFieldString {
 
         CAVMODEL,
+        ARRAY_REDUCTION,
         EPSILONRULE,
         FFT_METHOD,
         FORCEFIELD,
