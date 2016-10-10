@@ -62,6 +62,10 @@ import edu.rit.pj.reduction.SharedInteger;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
+import ffx.numerics.AtomicDoubleArray;
+import ffx.numerics.AtomicDoubleArray.AtomicDoubleArrayImpl;
+import ffx.numerics.PJDoubleArray;
+import ffx.numerics.ThreadedDoubleArray;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Atom.Resolution;
@@ -75,6 +79,8 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.VDWType;
 
+import static ffx.numerics.AtomicDoubleArray.AtomicDoubleArrayImpl.PJ;
+import static ffx.potential.parameters.ForceField.ForceFieldString.ARRAY_REDUCTION;
 import static ffx.potential.parameters.ForceField.ForceFieldString.EPSILONRULE;
 import static ffx.potential.parameters.ForceField.ForceFieldString.RADIUSRULE;
 import static ffx.potential.parameters.ForceField.ForceFieldString.RADIUSSIZE;
@@ -281,42 +287,45 @@ public class VanDerWaals implements MaskingInterface,
     private SharedDouble[] shareddEdLdh;
     private SharedDouble[] sharedd2EdLdh2;
     private boolean gradient;
+
+    private AtomicDoubleArrayImpl atomicDoubleArrayImpl = PJ;
     /**
      * X-component of the Cartesian coordinate gradient. Size:
      * [threadCount][nAtoms]
      */
-    private double gradX[][];
+    private AtomicDoubleArray gradX;
     /**
      * Y-component of the Cartesian coordinate gradient. Size:
      * [threadCount][nAtoms]
      */
-    private double gradY[][];
+    private AtomicDoubleArray gradY;
     /**
      * Z-component of the Cartesian coordinate gradient. Size:
      * [threadCount][nAtoms]
      */
-    private double gradZ[][];
+    private AtomicDoubleArray gradZ;
     /**
      * X-component of the lambda derivative of the Cartesian coordinate
      * gradient. Size: [threadCount][nAtoms]
      */
-    private double lambdaGradX[][];
+    private AtomicDoubleArray lambdaGradX;
     /**
      * Y-component of the lambda derivative of the Cartesian coordinate
      * gradient. Size: [threadCount][nAtoms]
      */
-    private double lambdaGradY[][];
+    private AtomicDoubleArray lambdaGradY;
     /**
      * Z-component of the lambda derivative of the Cartesian coordinate
      * gradient. Size: [threadCount][nAtoms]
      */
-    private double lambdaGradZ[][];
+    private AtomicDoubleArray lambdaGradZ;
     /**
      * [threadCount][numESVs][nAtoms] X-component of each lamedh derivative.
      */
     private double lamedhGradX[][][];
     private double lamedhGradY[][][];
     private double lamedhGradZ[][][];
+
     /**
      * The neighbor-list includes 1-2 and 1-3 interactions, which are masked out
      * in the van der Waals energy code. The AMOEBA force field includes 1-4
@@ -582,6 +591,16 @@ public class VanDerWaals implements MaskingInterface,
         reductionTime = new long[threadCount];
 
         /**
+         * Define radius type.
+         */
+        value = forceField.getString(ARRAY_REDUCTION, "PJ");
+        try {
+            atomicDoubleArrayImpl = AtomicDoubleArrayImpl.valueOf(toEnumForm(value));
+        } catch (Exception e) {
+            logger.info(format(" Unrecognized ARRAY-REDUCTION %s; defaulting to PJ", value));
+        }
+
+        /**
          * Allocate coordinate arrays and set up reduction indices and values.
          */
         initAtomArrays();
@@ -669,23 +688,34 @@ public class VanDerWaals implements MaskingInterface,
             use = new boolean[nAtoms];
             isSoft = new boolean[nAtoms];
             softCore = new boolean[2][nAtoms];
-            gradX = new double[threadCount][];
-            gradY = new double[threadCount][];
-            gradZ = new double[threadCount][];
-            if (lambdaTerm) {
-                lambdaGradX = new double[threadCount][];
-                lambdaGradY = new double[threadCount][];
-                lambdaGradZ = new double[threadCount][];
+            if (atomicDoubleArrayImpl == AtomicDoubleArrayImpl.THREADED) {
+                gradX = new ThreadedDoubleArray(threadCount, nAtoms);
+                gradY = new ThreadedDoubleArray(threadCount, nAtoms);
+                gradZ = new ThreadedDoubleArray(threadCount, nAtoms);
+                if (lambdaTerm) {
+                    lambdaGradX = new ThreadedDoubleArray(threadCount, nAtoms);
+                    lambdaGradY = new ThreadedDoubleArray(threadCount, nAtoms);
+                    lambdaGradZ = new ThreadedDoubleArray(threadCount, nAtoms);
+                } else {
+                    lambdaGradX = null;
+                    lambdaGradY = null;
+                    lambdaGradZ = null;
+                }
             } else {
-                lambdaGradX = null;
-                lambdaGradY = null;
-                lambdaGradZ = null;
+                gradX = new PJDoubleArray(threadCount, nAtoms);
+                gradY = new PJDoubleArray(threadCount, nAtoms);
+                gradZ = new PJDoubleArray(threadCount, nAtoms);
+                if (lambdaTerm) {
+                    lambdaGradX = new PJDoubleArray(threadCount, nAtoms);
+                    lambdaGradY = new PJDoubleArray(threadCount, nAtoms);
+                    lambdaGradZ = new PJDoubleArray(threadCount, nAtoms);
+                } else {
+                    lambdaGradX = null;
+                    lambdaGradY = null;
+                    lambdaGradZ = null;
+                }
             }
-            if (esvTerm) {
-                lamedhGradX = new double[threadCount][numESVs][nAtoms];
-                lamedhGradY = new double[threadCount][numESVs][nAtoms];
-                lamedhGradZ = new double[threadCount][numESVs][nAtoms];
-            }
+
         }
 
         /**
@@ -1173,14 +1203,17 @@ public class VanDerWaals implements MaskingInterface,
             return;
         }
         int index = 0;
-        double lgx[] = lambdaGradX[0];
-        double lgy[] = lambdaGradY[0];
-        double lgz[] = lambdaGradZ[0];
+        // double lgx[] = lambdaGradX[0];
+        // double lgy[] = lambdaGradY[0];
+        // double lgz[] = lambdaGradZ[0];
         for (int i = 0; i < nAtoms; i++) {
             if (atoms[i].isActive()) {
-                lambdaGradient[index++] += lgx[i];
-                lambdaGradient[index++] += lgy[i];
-                lambdaGradient[index++] += lgz[i];
+                lambdaGradient[index++] += lambdaGradX.get(i);
+                lambdaGradient[index++] += lambdaGradY.get(i);
+                lambdaGradient[index++] += lambdaGradZ.get(i);
+                // lambdaGradient[index++] += lgx[i];
+                // lambdaGradient[index++] += lgy[i];
+                // lambdaGradient[index++] += lgz[i];
             }
         }
     }
@@ -1321,7 +1354,17 @@ public class VanDerWaals implements MaskingInterface,
                 shareddEdL.set(0.0);
                 sharedd2EdL2.set(0.0);
             }
-            if (esvTerm && hasExtendedSystem()) {
+
+            gradX.alloc(nAtoms);
+            gradY.alloc(nAtoms);
+            gradZ.alloc(nAtoms);
+            if (lambdaTerm) {
+                lambdaGradX.alloc(nAtoms);
+                lambdaGradY.alloc(nAtoms);
+                lambdaGradZ.alloc(nAtoms);
+            }
+
+            if (esvTerm) {
                 shareddEdLdh = new SharedDouble[numESVs];
                 sharedd2EdLdh2 = new SharedDouble[numESVs];
                 for (ExtendedVariable esv : esvSystem.getESVList()) {
@@ -1492,7 +1535,6 @@ public class VanDerWaals implements MaskingInterface,
 
             @Override
             public void run(int lb, int ub) {
-
                 for (int i = lb, i3 = 3 * lb; i <= ub; i++, i3 += 3) {
                     Atom atom = atoms[i];
                     coordinates[i3 + XX] = atom.getX();
@@ -1500,31 +1542,16 @@ public class VanDerWaals implements MaskingInterface,
                     coordinates[i3 + ZZ] = atom.getZ();
                     use[i] = atom.getUse();
                 }
-
                 int threadIndex = getThreadIndex();
-
                 if (gradient) {
-                    if (gradX[threadIndex] == null || gradX[threadIndex].length < nAtoms) {
-                        gradX[threadIndex] = new double[nAtoms];
-                        gradY[threadIndex] = new double[nAtoms];
-                        gradZ[threadIndex] = new double[nAtoms];
-                    } else {
-                        fill(gradX[threadIndex], 0.0);
-                        fill(gradY[threadIndex], 0.0);
-                        fill(gradZ[threadIndex], 0.0);
-                    }
+                    gradX.init(threadIndex, nAtoms, lb, ub, 0.0);
+                    gradY.init(threadIndex, nAtoms, lb, ub, 0.0);
+                    gradZ.init(threadIndex, nAtoms, lb, ub, 0.0);
                 }
-
                 if (lambdaTerm) {
-                    if (lambdaGradX[threadIndex] == null || lambdaGradX[threadIndex].length < nAtoms) {
-                        lambdaGradX[threadIndex] = new double[nAtoms];
-                        lambdaGradY[threadIndex] = new double[nAtoms];
-                        lambdaGradZ[threadIndex] = new double[nAtoms];
-                    } else {
-                        fill(lambdaGradX[threadIndex], 0.0);
-                        fill(lambdaGradY[threadIndex], 0.0);
-                        fill(lambdaGradZ[threadIndex], 0.0);
-                    }
+                    lambdaGradX.init(threadIndex, nAtoms, lb, ub, 0.0);
+                    lambdaGradY.init(threadIndex, nAtoms, lb, ub, 0.0);
+                    lambdaGradZ.init(threadIndex, nAtoms, lb, ub, 0.0);
                 }
                 if (esvTerm && hasExtendedSystem()) {
                     lamedhGradX[threadIndex] = new double[numESVs][nAtoms];
@@ -1643,19 +1670,20 @@ public class VanDerWaals implements MaskingInterface,
 
             private int count;
             private double energy;
-            private double gxi_local[];
-            private double gyi_local[];
-            private double gzi_local[];
+            private int threadID;
+            // private double gxi_local[];
+            // private double gyi_local[];
+            // private double gzi_local[];
             private double dEdL;
             private double d2EdL2;
             private double dEdLdh[];
             private double d2EdLdh2[];
-            private double lxi_local[];
-            private double lyi_local[];
-            private double lzi_local[];
-            private double ldh_xi_local[][];
-            private double ldh_yi_local[][];
-            private double ldh_zi_local[][];
+            // private double lxi_local[];
+            // private double lyi_local[];
+            // private double lzi_local[];
+             private double ldh_xi_local[][];
+             private double ldh_yi_local[][];
+             private double ldh_zi_local[][];
             private double mask[];
             private final double dx_local[];
             private final double transOp[][];
@@ -1680,33 +1708,30 @@ public class VanDerWaals implements MaskingInterface,
 
             @Override
             public void start() {
-                int threadId = getThreadIndex();
-                gxi_local = gradX[threadId];
-                gyi_local = gradY[threadId];
-                gzi_local = gradZ[threadId];
+                threadID = getThreadIndex();
+                //gxi_local = gradX[threadId];
+                //gyi_local = gradY[threadId];
+                //gzi_local = gradZ[threadId];
                 energy = 0.0;
                 count = 0;
                 if (lambdaTerm) {
                     dEdL = 0.0;
                     d2EdL2 = 0.0;
-                    lxi_local = lambdaGradX[threadId];
-                    lyi_local = lambdaGradY[threadId];
-                    lzi_local = lambdaGradZ[threadId];
-                } else {
-                    lxi_local = null;
-                    lyi_local = null;
-                    lzi_local = null;
+                    // lxi_local = lambdaGradX[threadID];
+                    // lyi_local = lambdaGradY[threadID];
+                    // lzi_local = lambdaGradZ[threadID];
                 }
+
                 if (esvTerm) {
                     dEdLdh = new double[numESVs];
                     d2EdLdh2 = new double[numESVs];
                     fill(dEdLdh, 0.0);
                     fill(d2EdLdh2, 0.0);
-                    ldh_xi_local = lamedhGradX[threadId];
-                    ldh_yi_local = lamedhGradY[threadId];
-                    ldh_zi_local = lamedhGradZ[threadId];
+                    ldh_xi_local = lamedhGradX[threadID];
+                    ldh_yi_local = lamedhGradY[threadID];
+                    ldh_zi_local = lamedhGradZ[threadID];
                 }
-                vdwTime[threadId] = -System.nanoTime();
+                vdwTime[threadID] = -System.nanoTime();
                 if (mask == null || mask.length < nAtoms) {
                     mask = new double[nAtoms];
                     fill(mask, 1.0);
@@ -1872,22 +1897,15 @@ public class VanDerWaals implements MaskingInterface,
                              * distance is greater than the beginning of the
                              * taper.
                              */
-//                            double taper = 1.0;
-//                            double dtaper = 0.0;
-//                            if (r2 > cut2) {
-//                                final double r3 = r2 * r;
-//                                final double r4 = r2 * r2;
-//                                final double r5 = r2 * r3;
-//                                taper = multiplicativeSwitch.taper(r, r2, r3, r4, r5);
-//                                dtaper = multiplicativeSwitch.dtaper(r, r2, r3, r4);
-//                            }
-                            final double r3 = r2 * r;
-                            final double r4 = r2 * r2;
-                            final double r5 = r2 * r3;
-                            final double taper = (r2 <= cut2) ? 1.0
-                                    : multiplicativeSwitch.taper(r, r2, r3, r4, r5);
-                            final double dtaper = (r2 <= cut2) ? 0.0
-                                    : multiplicativeSwitch.dtaper(r, r2, r3, r4);
+                            double taper = 1.0;
+                            double dtaper = 0.0;
+                            if (r2 > cut2) {
+                                final double r3 = r2 * r;
+                                final double r4 = r2 * r2;
+                                final double r5 = r2 * r3;
+                                taper = multiplicativeSwitch.taper(r, r2, r3, r4, r5);
+                                dtaper = multiplicativeSwitch.dtaper(r, r2, r3, r4);
+                            }
                             e += eij * taper;
 //                            log(i,k,r,e);
                             count++;
@@ -1917,12 +1935,18 @@ public class VanDerWaals implements MaskingInterface,
                                 gxredi += dedx * rediv;
                                 gyredi += dedy * rediv;
                                 gzredi += dedz * rediv;
-                                gxi_local[k] -= red * dedx;
-                                gyi_local[k] -= red * dedy;
-                                gzi_local[k] -= red * dedz;
-                                gxi_local[redk] -= redkv * dedx;
-                                gyi_local[redk] -= redkv * dedy;
-                                gzi_local[redk] -= redkv * dedz;
+                                gradX.sub(threadID, k, red * dedx);
+                                gradY.sub(threadID, k, red * dedy);
+                                gradZ.sub(threadID, k, red * dedz);
+                                // gxi_local[k] -= red * dedx;
+                                // gyi_local[k] -= red * dedy;
+                                // gzi_local[k] -= red * dedz;
+                                gradX.sub(threadID, redk, redkv * dedx);
+                                gradY.sub(threadID, redk, redkv * dedy);
+                                gradZ.sub(threadID, redk, redkv * dedz);
+                                // gxi_local[redk] -= redkv * dedx;
+                                // gyi_local[redk] -= redkv * dedy;
+                                // gzi_local[redk] -= redkv * dedz;
                             }
                             if ((lambdaTerm && soft) || (esvTerm && hasLamedh)) {
                                 final double dt1 = -t1 * t1d * dsc1dL;
@@ -1974,12 +1998,19 @@ public class VanDerWaals implements MaskingInterface,
                                 lyredi += dedldy * rediv;
                                 lzredi += dedldz * rediv;
                                 if (lambdaTerm) {
-                                    lxi_local[k] -= red * dedldx;
-                                    lyi_local[k] -= red * dedldy;
-                                    lzi_local[k] -= red * dedldz;
-                                    lxi_local[redk] -= redkv * dedldx;
-                                    lyi_local[redk] -= redkv * dedldy;
-                                    lzi_local[redk] -= redkv * dedldz;
+                                    lambdaGradX.sub(threadID, k, red * dedldx);
+                                    lambdaGradY.sub(threadID, k, red * dedldy);
+                                    lambdaGradZ.sub(threadID, k, red * dedldz);
+                                    // lxi_local[k] -= red * dedldx;
+                                    // lyi_local[k] -= red * dedldy;
+                                    // lzi_local[k] -= red * dedldz;
+
+                                    lambdaGradX.sub(threadID, redk, redkv * dedldx);
+                                    lambdaGradY.sub(threadID, redk, redkv * dedldy);
+                                    lambdaGradZ.sub(threadID, redk, redkv * dedldz);
+                                    // lxi_local[redk] -= redkv * dedldx;
+                                    // lyi_local[redk] -= redkv * dedldy;
+                                    // lzi_local[redk] -= redkv * dedldz;
                                 }
                                 if (esvTerm) {
                                     for (ExtendedVariable esv : esvSystem.getESVList()) {
@@ -1995,20 +2026,34 @@ public class VanDerWaals implements MaskingInterface,
                         }
                     }
                     if (gradient) {
-                        gxi_local[i] += gxi;
-                        gyi_local[i] += gyi;
-                        gzi_local[i] += gzi;
-                        gxi_local[redi] += gxredi;
-                        gyi_local[redi] += gyredi;
-                        gzi_local[redi] += gzredi;
+                        gradX.add(threadID, i, gxi);
+                        gradY.add(threadID, i, gyi);
+                        gradZ.add(threadID, i, gzi);
+                        // gxi_local[i] += gxi;
+                        // gyi_local[i] += gyi;
+                        // gzi_local[i] += gzi;
+
+                        gradX.add(threadID, redi, gxredi);
+                        gradY.add(threadID, redi, gyredi);
+                        gradZ.add(threadID, redi, gzredi);
+                        //gxi_local[redi] += gxredi;
+                        //gyi_local[redi] += gyredi;
+                        //gzi_local[redi] += gzredi;
                     }
                     if (lambdaTerm) {
-                        lxi_local[i] += lxi;
-                        lyi_local[i] += lyi;
-                        lzi_local[i] += lzi;
-                        lxi_local[redi] += lxredi;
-                        lyi_local[redi] += lyredi;
-                        lzi_local[redi] += lzredi;
+                        lambdaGradX.add(threadID, i, lxi);
+                        lambdaGradY.add(threadID, i, lyi);
+                        lambdaGradZ.add(threadID, i, lzi);
+                        // lxi_local[i] += lxi;
+                        // lyi_local[i] += lyi;
+                        // lzi_local[i] += lzi;
+
+                        lambdaGradX.add(threadID, redi, lxredi);
+                        lambdaGradY.add(threadID, redi, lyredi);
+                        lambdaGradZ.add(threadID, redi, lzredi);
+                        // lxi_local[redi] += lxredi;
+                        // lyi_local[redi] += lyredi;
+                        // lzi_local[redi] += lzredi;
                     }
                     if (esvTerm) {
                         for (ExtendedVariable esv : esvSystem.getESVList()) {
@@ -2020,6 +2065,7 @@ public class VanDerWaals implements MaskingInterface,
                             ldh_zi_local[esv.index][redi] += lzredi;
                         }
                     }
+
                     removeMask(mask, i);
                 }
                 energy += e;
@@ -2155,22 +2201,15 @@ public class VanDerWaals implements MaskingInterface,
                                  * interaction distance is greater than the
                                  * beginning of the taper.
                                  */
-//                                double taper = 1.0;
-//                                double dtaper = 0.0;
-//                                if (r2 > cut2) {
-//                                    final double r3 = r2 * r;
-//                                    final double r4 = r2 * r2;
-//                                    final double r5 = r2 * r3;
-//                                    taper = multiplicativeSwitch.taper(r, r2, r3, r4, r5);
-//                                    dtaper = multiplicativeSwitch.dtaper(r, r2, r3, r4);
-//                                }
-                                final double r3 = r2 * r;
-                                final double r4 = r2 * r2;
-                                final double r5 = r2 * r3;
-                                final double taper = (r2 <= cut2) ? 1.0
-                                        : multiplicativeSwitch.taper(r, r2, r3, r4, r5);
-                                final double dtaper = (r2 <= cut2) ? 0.0
-                                        : multiplicativeSwitch.dtaper(r, r2, r3, r4);
+                                double taper = 1.0;
+                                double dtaper = 0.0;
+                                if (r2 > cut2) {
+                                    final double r3 = r2 * r;
+                                    final double r4 = r2 * r2;
+                                    final double r5 = r2 * r3;
+                                    taper = multiplicativeSwitch.taper(r, r2, r3, r4, r5);
+                                    dtaper = multiplicativeSwitch.dtaper(r, r2, r3, r4);
+                                }
                                 e += selfScale * eij * taper;
                                 count++;
                                 if (!(gradient || (lambdaTerm && soft) || (esvTerm && eitherLamedh))) {
@@ -2206,12 +2245,20 @@ public class VanDerWaals implements MaskingInterface,
                                     final double dedxk = dedx * transOp[0][0] + dedy * transOp[1][0] + dedz * transOp[2][0];
                                     final double dedyk = dedx * transOp[0][1] + dedy * transOp[1][1] + dedz * transOp[2][1];
                                     final double dedzk = dedx * transOp[0][2] + dedy * transOp[1][2] + dedz * transOp[2][2];
-                                    gxi_local[k] -= red * dedxk;
-                                    gyi_local[k] -= red * dedyk;
-                                    gzi_local[k] -= red * dedzk;
-                                    gxi_local[redk] -= redkv * dedxk;
-                                    gyi_local[redk] -= redkv * dedyk;
-                                    gzi_local[redk] -= redkv * dedzk;
+
+                                    gradX.sub(threadID, k, red * dedxk);
+                                    gradY.sub(threadID, k, red * dedyk);
+                                    gradZ.sub(threadID, k, red * dedzk);
+                                    // gxi_local[k] -= red * dedxk;
+                                    // gyi_local[k] -= red * dedyk;
+                                    // gzi_local[k] -= red * dedzk;
+
+                                    gradX.sub(threadID, redk, redkv * dedxk);
+                                    gradY.sub(threadID, redk, redkv * dedyk);
+                                    gradZ.sub(threadID, redk, redkv * dedzk);
+                                    // gxi_local[redk] -= redkv * dedxk;
+                                    // gyi_local[redk] -= redkv * dedyk;
+                                    // gzi_local[redk] -= redkv * dedzk;
                                 }
                                 if ((lambdaTerm && soft) || (esvTerm && eitherLamedh)) {
                                     double dt1 = -t1 * t1d * dsc1dL;
@@ -2265,45 +2312,58 @@ public class VanDerWaals implements MaskingInterface,
                                      * Apply the transpose of the transformation
                                      * operator.
                                      */
-                                    final double dedldxk = dedldx * transOp[0][0] + dedldy * transOp[1][0] + dedldz * transOp[2][0];
-                                    final double dedldyk = dedldx * transOp[0][1] + dedldy * transOp[1][1] + dedldz * transOp[2][1];
-                                    final double dedldzk = dedldx * transOp[0][2] + dedldy * transOp[1][2] + dedldz * transOp[2][2];
+                                    /**
+                                     * final double dedldxk = dedldx *
+                                     * transOp[0][0] + dedldy * transOp[1][0] +
+                                     * dedldz * transOp[2][0]; final double
+                                     * dedldyk = dedldx * transOp[0][1] + dedldy
+                                     * * transOp[1][1] + dedldz * transOp[2][1];
+                                     * final double dedldzk = dedldx *
+                                     * transOp[0][2] + dedldy * transOp[1][2] +
+                                     * dedldz * transOp[2][2];
+                                     */
                                     if (lambdaTerm) {
-                                        lxi_local[k] -= red * dedldxk;
-                                        lyi_local[k] -= red * dedldyk;
-                                        lzi_local[k] -= red * dedldzk;
-                                        lxi_local[redk] -= redkv * dedldxk;
-                                        lyi_local[redk] -= redkv * dedldyk;
-                                        lzi_local[redk] -= redkv * dedldzk;
+                                        lambdaGradX.sub(threadID, k, red * dedldx);
+                                        lambdaGradY.sub(threadID, k, red * dedldy);
+                                        lambdaGradZ.sub(threadID, k, red * dedldz);
+                                        // lxi_local[k] -= red * dedldxk;
+                                        // lyi_local[k] -= red * dedldyk;
+                                        // lzi_local[k] -= red * dedldzk;
+
+                                        lambdaGradX.sub(threadID, redk, redkv * dedldx);
+                                        lambdaGradY.sub(threadID, redk, redkv * dedldy);
+                                        lambdaGradZ.sub(threadID, redk, redkv * dedldz);
+                                        // lxi_local[redk] -= redkv * dedldxk;
+                                        // lyi_local[redk] -= redkv * dedldyk;
+                                        // lzi_local[redk] -= redkv * dedldzk;
                                     }
                                     if (esvTerm) {
                                         for (ExtendedVariable esv : esvSystem.getESVList()) {
-                                            ldh_xi_local[esv.index][k] -= (red * dedldxk);
-                                            ldh_yi_local[esv.index][k] -= (red * dedldyk);
-                                            ldh_zi_local[esv.index][k] -= (red * dedldzk);
-                                            ldh_xi_local[esv.index][redk] -= (redkv * dedldxk);
-                                            ldh_yi_local[esv.index][redk] -= (redkv * dedldyk);
-                                            ldh_zi_local[esv.index][redk] -= (redkv * dedldzk);
+                                            ldh_xi_local[esv.index][k] -= (red * dedldx);
+                                            ldh_yi_local[esv.index][k] -= (red * dedldy);
+                                            ldh_zi_local[esv.index][k] -= (red * dedldz);
+                                            ldh_xi_local[esv.index][redk] -= (redkv * dedldx);
+                                            ldh_yi_local[esv.index][redk] -= (redkv * dedldy);
+                                            ldh_zi_local[esv.index][redk] -= (redkv * dedldz);
                                         }
                                     }
                                 }
                             }
                         }
                         if (gradient) {
-                            gxi_local[i] += gxi;
-                            gyi_local[i] += gyi;
-                            gzi_local[i] += gzi;
-                            gxi_local[redi] += gxredi;
-                            gyi_local[redi] += gyredi;
-                            gzi_local[redi] += gzredi;
-                        }
-                        if (lambdaTerm) {
-                            lxi_local[i] += lxi;
-                            lyi_local[i] += lyi;
-                            lzi_local[i] += lzi;
-                            lxi_local[redi] += lxredi;
-                            lyi_local[redi] += lyredi;
-                            lzi_local[redi] += lzredi;
+                            gradX.add(threadID, i, gxi);
+                            gradY.add(threadID, i, gyi);
+                            gradZ.add(threadID, i, gzi);
+                            // gxi_local[i] += gxi;
+                            // gyi_local[i] += gyi;
+                            // gzi_local[i] += gzi;
+
+                            gradX.add(threadID, redi, gxredi);
+                            gradY.add(threadID, redi, gyredi);
+                            gradZ.add(threadID, redi, gzredi);
+                            // gxi_local[redi] += gxredi;
+                            // gyi_local[redi] += gyredi;
+                            // gzi_local[redi] += gzredi;
                         }
                         if (esvTerm) {
                             for (ExtendedVariable esv : esvSystem.getESVList()) {
@@ -2314,6 +2374,19 @@ public class VanDerWaals implements MaskingInterface,
                                 ldh_yi_local[esv.index][i] += lyredi;
                                 ldh_zi_local[esv.index][i] += lzredi;
                             }
+                            lambdaGradX.add(threadID, i, lxi);
+                            lambdaGradY.add(threadID, i, lyi);
+                            lambdaGradZ.add(threadID, i, lzi);
+                            // lxi_local[i] += lxi;
+                            // lyi_local[i] += lyi;
+                            // lzi_local[i] += lzi;
+
+                            lambdaGradX.add(threadID, redi, lxredi);
+                            lambdaGradY.add(threadID, redi, lyredi);
+                            lambdaGradZ.add(threadID, redi, lzredi);
+                            // lxi_local[redi] += lxredi;
+                            // lyi_local[redi] += lyredi;
+                            // lzi_local[redi] += lzredi;
                         }
                     }
                     energy += e;
@@ -2339,39 +2412,19 @@ public class VanDerWaals implements MaskingInterface,
             @Override
             public void run(int lb, int ub) {
                 if (gradient) {
-                    double gx[] = gradX[0];
-                    double gy[] = gradY[0];
-                    double gz[] = gradZ[0];
-                    for (int t = 1; t < threadCount; t++) {
-                        double gxt[] = gradX[t];
-                        double gyt[] = gradY[t];
-                        double gzt[] = gradZ[t];
-                        for (int i = lb; i <= ub; i++) {
-                            gx[i] += gxt[i];
-                            gy[i] += gyt[i];
-                            gz[i] += gzt[i];
-                        }
-                    }
-
+                    gradX.reduce(lb, ub);
+                    gradY.reduce(lb, ub);
+                    gradZ.reduce(lb, ub);
                     for (int i = lb; i <= ub; i++) {
                         Atom ai = atoms[i];
-                        ai.addToXYZGradient(gradX[0][i], gradY[0][i], gradZ[0][i]);
+                        ai.addToXYZGradient(gradX.get(i), gradY.get(i), gradZ.get(i));
+                        // ai.addToXYZGradient(gradX[0][i], gradY[0][i], gradZ[0][i]);
                     }
                 }
                 if (lambdaTerm) {
-                    double lx[] = lambdaGradX[0];
-                    double ly[] = lambdaGradY[0];
-                    double lz[] = lambdaGradZ[0];
-                    for (int t = 1; t < threadCount; t++) {
-                        double lxt[] = lambdaGradX[t];
-                        double lyt[] = lambdaGradY[t];
-                        double lzt[] = lambdaGradZ[t];
-                        for (int i = lb; i <= ub; i++) {
-                            lx[i] += lxt[i];
-                            ly[i] += lyt[i];
-                            lz[i] += lzt[i];
-                        }
-                    }
+                    lambdaGradX.reduce(lb, ub);
+                    lambdaGradY.reduce(lb, ub);
+                    lambdaGradZ.reduce(lb, ub);
                 }
                 if (esvTerm) {
                     double ldhx[][] = lamedhGradX[0];

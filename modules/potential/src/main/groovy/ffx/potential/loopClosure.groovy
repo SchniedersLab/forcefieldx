@@ -102,6 +102,7 @@ if (arguments != null && arguments.size() > 0) {
 logger.info("\n Running loopClosure on " + modelFilename);
 boolean writeFile = true;
 ForceFieldEnergy forceFieldEnergy = active.getPotentialEnergy();
+forcefieldEnergy.setPrintOnFailure(false, false);
 //Loop loop = new Loop(active, stt_res, end_res, writeFile);
 
 Loop loop = new Loop(active);

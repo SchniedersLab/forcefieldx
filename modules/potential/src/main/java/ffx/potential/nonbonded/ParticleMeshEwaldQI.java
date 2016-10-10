@@ -37,6 +37,8 @@
  */
 package ffx.potential.nonbonded;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.IntConsumer;
 import java.util.logging.Level;
@@ -82,8 +84,10 @@ import ffx.potential.bonded.Atom.Resolution;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.Torsion;
+import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.extended.ExtendedVariable;
 import ffx.potential.nonbonded.ReciprocalSpace.FFTMethod;
+import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldBoolean;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
@@ -124,25 +128,19 @@ import static ffx.potential.parameters.MultipoleType.t200;
 import static ffx.potential.parameters.MultipoleType.t201;
 import static ffx.potential.parameters.MultipoleType.t210;
 import static ffx.potential.parameters.MultipoleType.t300;
-import static ffx.potential.parameters.PolarizeType.assignPolarizationGroups;
 
-import static java.lang.String.format;
-import static java.util.Arrays.copyOf;
-import static java.util.Arrays.fill;
+import ffx.potential.utils.EnergyException;
 
-import static org.apache.commons.math3.util.FastMath.exp;
-import static org.apache.commons.math3.util.FastMath.max;
-import static org.apache.commons.math3.util.FastMath.min;
-import static org.apache.commons.math3.util.FastMath.pow;
-
-import ffx.potential.extended.ExtendedSystem;
-
-import static ffx.numerics.VectorMath.cross;
-import static ffx.numerics.VectorMath.diff;
-import static ffx.numerics.VectorMath.dot;
-import static ffx.numerics.VectorMath.r;
-import static ffx.numerics.VectorMath.scalar;
-import static ffx.numerics.VectorMath.sum;
+import static ffx.potential.parameters.MultipoleType.t000;
+import static ffx.potential.parameters.MultipoleType.t001;
+import static ffx.potential.parameters.MultipoleType.t002;
+import static ffx.potential.parameters.MultipoleType.t010;
+import static ffx.potential.parameters.MultipoleType.t011;
+import static ffx.potential.parameters.MultipoleType.t020;
+import static ffx.potential.parameters.MultipoleType.t100;
+import static ffx.potential.parameters.MultipoleType.t101;
+import static ffx.potential.parameters.MultipoleType.t110;
+import static ffx.potential.parameters.MultipoleType.t200;
 
 /**
  * This Particle Mesh Ewald class implements PME for the AMOEBA polarizable
@@ -1222,7 +1220,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
         /**
          * Assign polarization groups.
          */
-        assignPolarizationGroups(atoms, ip11, ip12, ip13);
+        assignPolarizationGroups();
         /**
          * Fill the thole, inverse polarization damping and polarizability
          * arrays.
@@ -2234,7 +2232,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                     logger.warning(sb.toString());
                 }
                 String message = format("Fatal SCF convergence failure: (%10.5f > %10.5f)\n", eps, previousEps);
-                throw new ArithmeticException(message);
+                throw new EnergyException(message, false);
             }
             /**
              * The SCF should converge well before the max iteration check.
@@ -2245,7 +2243,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                     logger.warning(sb.toString());
                 }
                 String message = format("Maximum SCF iterations reached: (%d)\n", completedSCFCycles);
-                throw new ArithmeticException(message);
+                throw new EnergyException(message, false);
             }
             /**
              * Check if the convergence criteria has been achieved.
@@ -3810,12 +3808,14 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                 }
                 double e = realSpaceEnergyLoops[i].permanentEnergy;
                 if (Double.isNaN(e)) {
-                    logger.severe(String.format(" The permanent multipole energy of thread %d is %16.8f", i, e));
+                    //logger.severe(String.format(" The permanent multipole energy of thread %d is %16.8f", i, e));
+                    throw new EnergyException(String.format(" The permanent multipole energy of thread %d is %16.8f", i, e), true);
                 }
                 permanentEnergy += e;
                 double ei = realSpaceEnergyLoops[i].inducedEnergy;
                 if (Double.isNaN(ei)) {
-                    logger.severe(String.format(" The polarization energy of thread %d is %16.8f", i, ei));
+                    //logger.severe(String.format(" The polarization energy of thread %d is %16.8f", i, ei));
+                    throw new EnergyException(String.format(" The polarization energy of thread %d is %16.8f", i, ei), true);
                 }
                 polarizationEnergy += ei;
             }
@@ -5166,6 +5166,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
             }
 
             private void logPolarizationError(double ei, int i, int k, double indI[], double indK[]) {
+                double r2 = 0.0;
                 logger.info(crystal.getUnitCell().toString());
                 logger.info(atoms[i].toString());
                 logger.info(format(" with induced dipole: %8.3f %8.3f %8.3f",
@@ -5173,22 +5174,25 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                 logger.info(atoms[k].toString());
                 logger.info(format(" with induced dipole: %8.3f %8.3f %8.3f",
                         indK[0], indK[1], indK[2]));
-                logger.severe(
-                        format(" The pol. energy for atoms %d and %d (%d) is %10.6f at %10.6f A.",
-                                i + 1, k + 1, iSymm, ei, sqrt(r2B)));
+                String message = String.format(" %s\n "
+                        + "%s\n with induced dipole: %8.3f %8.3f %8.3f\n "
+                        + "%s\n with induced dipole: %8.3f %8.3f %8.3f\n"
+                        + " The pol. energy for atoms %d and %d (%d) is %10.6f at %10.6f A.",
+                        crystal.getUnitCell(), atoms[i], indI[0], indI[1], indI[2],
+                        atoms[k], indK[0], indK[1], indK[2], i+1, k+1, iSymm, ei, sqrt(r2));
+                throw new EnergyException(message, true);
             }
 
-            private void logPermanentError(double ei, int i, int k, double mpoleI[], double mpoleK[]) {
+            private void logPermanentError(double ei, int i, int k) {
+                double r2 = 0.0;
                 logger.info(crystal.getUnitCell().toString());
                 logger.info(atoms[i].toString());
                 logger.info(atoms[k].toString());
-                logger.severe(
-                        format(" The permanent multipole energy between atoms %d and %d (%d) is %16.8f at %16.8f A."
-                                + "\n (QuasiInternal) dx,Qi,Qk: %s %s %s", i, k, iSymm, ei,
-                                sqrt(r2B),
-                                formatArray(dx_local),
-                                formatArray(mpoleI),
-                                formatArray(mpoleK)));
+                String message = String.format(" %s\n %s\n %s\n The permanent "
+                        + "multipole energy between atoms %d and %d (%d) is "
+                        + "%16.8f at %16.8f A.", crystal.getUnitCell(), atoms[i],
+                        atoms[k], i, k, iSymm, ei, sqrt(r2));
+                throw new EnergyException(message, true);
             }
 
         }
@@ -6528,6 +6532,411 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
             System.exit(-1);
         }
     }
+    
+    private boolean assignMultipole(int i) {
+        Atom atom = atoms[i];
+        AtomType atomType = atoms[i].getAtomType();
+        if (atomType == null) {
+            String message = " Multipoles can only be assigned to atoms that have been typed.";
+            logger.severe(message);
+            return false;
+        }
+
+        PolarizeType polarizeType = forceField.getPolarizeType(atomType.getKey());
+        if (polarizeType != null) {
+            atom.setPolarizeType(polarizeType);
+        } else {
+            String message = " No polarization type was found for " + atom.toString();
+            logger.fine(message);
+            double polarizability = 0.0;
+            double thole = 0.0;
+            int polarizationGroup[] = null;
+            polarizeType = new PolarizeType(atomType.type,
+                    polarizability, thole, polarizationGroup);
+            forceField.addForceFieldType(polarizeType);
+            atom.setPolarizeType(polarizeType);
+        }
+
+        String key;
+        // No reference atoms.
+        key = atomType.getKey() + " 0 0";
+        MultipoleType multipoleType = forceField.getMultipoleType(key);
+        if (multipoleType != null) {
+            atom.setMultipoleType(multipoleType, null);
+            localMultipole[i][t000] = multipoleType.charge;
+            localMultipole[i][t100] = multipoleType.dipole[0];
+            localMultipole[i][t010] = multipoleType.dipole[1];
+            localMultipole[i][t001] = multipoleType.dipole[2];
+            localMultipole[i][t200] = multipoleType.quadrupole[0][0];
+            localMultipole[i][t020] = multipoleType.quadrupole[1][1];
+            localMultipole[i][t002] = multipoleType.quadrupole[2][2];
+            localMultipole[i][t110] = multipoleType.quadrupole[0][1];
+            localMultipole[i][t101] = multipoleType.quadrupole[0][2];
+            localMultipole[i][t011] = multipoleType.quadrupole[1][2];
+            axisAtom[i] = null;
+            frame[i] = multipoleType.frameDefinition;
+            return true;
+        }
+
+        // No bonds.
+        List<Bond> bonds = atom.getBonds();
+        if (bonds == null || bonds.size() < 1) {
+            String message = "Multipoles can only be assigned after bonded relationships are defined.\n";
+            logger.severe(message);
+        }
+
+        // 1 reference atom.
+        for (Bond b : bonds) {
+            Atom atom2 = b.get1_2(atom);
+            key = atomType.getKey() + " " + atom2.getAtomType().getKey() + " 0";
+            multipoleType = multipoleType = forceField.getMultipoleType(key);
+            if (multipoleType != null) {
+                int multipoleReferenceAtoms[] = new int[1];
+                multipoleReferenceAtoms[0] = atom2.xyzIndex - 1;
+                atom.setMultipoleType(multipoleType, null);
+                localMultipole[i][0] = multipoleType.charge;
+                localMultipole[i][1] = multipoleType.dipole[0];
+                localMultipole[i][2] = multipoleType.dipole[1];
+                localMultipole[i][3] = multipoleType.dipole[2];
+                localMultipole[i][4] = multipoleType.quadrupole[0][0];
+                localMultipole[i][5] = multipoleType.quadrupole[1][1];
+                localMultipole[i][6] = multipoleType.quadrupole[2][2];
+                localMultipole[i][7] = multipoleType.quadrupole[0][1];
+                localMultipole[i][8] = multipoleType.quadrupole[0][2];
+                localMultipole[i][9] = multipoleType.quadrupole[1][2];
+                axisAtom[i] = multipoleReferenceAtoms;
+                frame[i] = multipoleType.frameDefinition;
+                return true;
+            }
+        }
+
+        // 2 reference atoms.
+        for (Bond b : bonds) {
+            Atom atom2 = b.get1_2(atom);
+            String key2 = atom2.getAtomType().getKey();
+            for (Bond b2 : bonds) {
+                if (b == b2) {
+                    continue;
+                }
+                Atom atom3 = b2.get1_2(atom);
+                String key3 = atom3.getAtomType().getKey();
+                key = atomType.getKey() + " " + key2 + " " + key3;
+                multipoleType = forceField.getMultipoleType(key);
+                if (multipoleType != null) {
+                    int multipoleReferenceAtoms[] = new int[2];
+                    multipoleReferenceAtoms[0] = atom2.xyzIndex - 1;
+                    multipoleReferenceAtoms[1] = atom3.xyzIndex - 1;
+                    atom.setMultipoleType(multipoleType, null);
+                    localMultipole[i][0] = multipoleType.charge;
+                    localMultipole[i][1] = multipoleType.dipole[0];
+                    localMultipole[i][2] = multipoleType.dipole[1];
+                    localMultipole[i][3] = multipoleType.dipole[2];
+                    localMultipole[i][4] = multipoleType.quadrupole[0][0];
+                    localMultipole[i][5] = multipoleType.quadrupole[1][1];
+                    localMultipole[i][6] = multipoleType.quadrupole[2][2];
+                    localMultipole[i][7] = multipoleType.quadrupole[0][1];
+                    localMultipole[i][8] = multipoleType.quadrupole[0][2];
+                    localMultipole[i][9] = multipoleType.quadrupole[1][2];
+                    axisAtom[i] = multipoleReferenceAtoms;
+                    frame[i] = multipoleType.frameDefinition;
+                    return true;
+                }
+            }
+        }
+
+        /**
+         * 3 reference atoms.
+         */
+        for (Bond b : bonds) {
+            Atom atom2 = b.get1_2(atom);
+            String key2 = atom2.getAtomType().getKey();
+            for (Bond b2 : bonds) {
+                if (b == b2) {
+                    continue;
+                }
+                Atom atom3 = b2.get1_2(atom);
+                String key3 = atom3.getAtomType().getKey();
+                for (Bond b3 : bonds) {
+                    if (b == b3 || b2 == b3) {
+                        continue;
+                    }
+                    Atom atom4 = b3.get1_2(atom);
+                    String key4 = atom4.getAtomType().getKey();
+                    key = atomType.getKey() + " " + key2 + " " + key3 + " " + key4;
+                    multipoleType = forceField.getMultipoleType(key);
+                    if (multipoleType != null) {
+                        int multipoleReferenceAtoms[] = new int[3];
+                        multipoleReferenceAtoms[0] = atom2.xyzIndex - 1;
+                        multipoleReferenceAtoms[1] = atom3.xyzIndex - 1;
+                        multipoleReferenceAtoms[2] = atom4.xyzIndex - 1;
+                        atom.setMultipoleType(multipoleType, null);
+                        localMultipole[i][0] = multipoleType.charge;
+                        localMultipole[i][1] = multipoleType.dipole[0];
+                        localMultipole[i][2] = multipoleType.dipole[1];
+                        localMultipole[i][3] = multipoleType.dipole[2];
+                        localMultipole[i][4] = multipoleType.quadrupole[0][0];
+                        localMultipole[i][5] = multipoleType.quadrupole[1][1];
+                        localMultipole[i][6] = multipoleType.quadrupole[2][2];
+                        localMultipole[i][7] = multipoleType.quadrupole[0][1];
+                        localMultipole[i][8] = multipoleType.quadrupole[0][2];
+                        localMultipole[i][9] = multipoleType.quadrupole[1][2];
+                        axisAtom[i] = multipoleReferenceAtoms;
+                        frame[i] = multipoleType.frameDefinition;
+                        return true;
+                    }
+                }
+                List<Angle> angles = atom.getAngles();
+                for (Angle angle : angles) {
+                    Atom atom4 = angle.get1_3(atom);
+                    if (atom4 != null) {
+                        String key4 = atom4.getAtomType().getKey();
+                        key = atomType.getKey() + " " + key2 + " " + key3 + " " + key4;
+                        multipoleType = forceField.getMultipoleType(key);
+                        if (multipoleType != null) {
+                            int multipoleReferenceAtoms[] = new int[3];
+                            multipoleReferenceAtoms[0] = atom2.xyzIndex - 1;
+                            multipoleReferenceAtoms[1] = atom3.xyzIndex - 1;
+                            multipoleReferenceAtoms[2] = atom4.xyzIndex - 1;
+                            atom.setMultipoleType(multipoleType, null);
+                            localMultipole[i][0] = multipoleType.charge;
+                            localMultipole[i][1] = multipoleType.dipole[0];
+                            localMultipole[i][2] = multipoleType.dipole[1];
+                            localMultipole[i][3] = multipoleType.dipole[2];
+                            localMultipole[i][4] = multipoleType.quadrupole[0][0];
+                            localMultipole[i][5] = multipoleType.quadrupole[1][1];
+                            localMultipole[i][6] = multipoleType.quadrupole[2][2];
+                            localMultipole[i][7] = multipoleType.quadrupole[0][1];
+                            localMultipole[i][8] = multipoleType.quadrupole[0][2];
+                            localMultipole[i][9] = multipoleType.quadrupole[1][2];
+                            axisAtom[i] = multipoleReferenceAtoms;
+                            frame[i] = multipoleType.frameDefinition;
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+
+        /**
+         * Revert to a 2 reference atom definition that may include a 1-3 site.
+         * For example a hydrogen on water.
+         */
+        for (Bond b : bonds) {
+            Atom atom2 = b.get1_2(atom);
+            String key2 = atom2.getAtomType().getKey();
+            List<Angle> angles = atom.getAngles();
+            for (Angle angle : angles) {
+                Atom atom3 = angle.get1_3(atom);
+                if (atom3 != null) {
+                    String key3 = atom3.getAtomType().getKey();
+                    key = atomType.getKey() + " " + key2 + " " + key3;
+                    multipoleType = forceField.getMultipoleType(key);
+                    if (multipoleType != null) {
+                        int multipoleReferenceAtoms[] = new int[2];
+                        multipoleReferenceAtoms[0] = atom2.xyzIndex - 1;
+                        multipoleReferenceAtoms[1] = atom3.xyzIndex - 1;
+                        atom.setMultipoleType(multipoleType, null);
+                        localMultipole[i][0] = multipoleType.charge;
+                        localMultipole[i][1] = multipoleType.dipole[0];
+                        localMultipole[i][2] = multipoleType.dipole[1];
+                        localMultipole[i][3] = multipoleType.dipole[2];
+                        localMultipole[i][4] = multipoleType.quadrupole[0][0];
+                        localMultipole[i][5] = multipoleType.quadrupole[1][1];
+                        localMultipole[i][6] = multipoleType.quadrupole[2][2];
+                        localMultipole[i][7] = multipoleType.quadrupole[0][1];
+                        localMultipole[i][8] = multipoleType.quadrupole[0][2];
+                        localMultipole[i][9] = multipoleType.quadrupole[1][2];
+                        axisAtom[i] = multipoleReferenceAtoms;
+                        frame[i] = multipoleType.frameDefinition;
+                        return true;
+                    }
+                    for (Angle angle2 : angles) {
+                        Atom atom4 = angle2.get1_3(atom);
+                        if (atom4 != null && atom4 != atom3) {
+                            String key4 = atom4.getAtomType().getKey();
+                            key = atomType.getKey() + " " + key2 + " " + key3 + " " + key4;
+                            multipoleType = forceField.getMultipoleType(key);
+                            if (multipoleType != null) {
+                                int multipoleReferenceAtoms[] = new int[3];
+                                multipoleReferenceAtoms[0] = atom2.xyzIndex - 1;
+                                multipoleReferenceAtoms[1] = atom3.xyzIndex - 1;
+                                multipoleReferenceAtoms[2] = atom4.xyzIndex - 1;
+                                atom.setMultipoleType(multipoleType, null);
+                                localMultipole[i][0] = multipoleType.charge;
+                                localMultipole[i][1] = multipoleType.dipole[0];
+                                localMultipole[i][2] = multipoleType.dipole[1];
+                                localMultipole[i][3] = multipoleType.dipole[2];
+                                localMultipole[i][4] = multipoleType.quadrupole[0][0];
+                                localMultipole[i][5] = multipoleType.quadrupole[1][1];
+                                localMultipole[i][6] = multipoleType.quadrupole[2][2];
+                                localMultipole[i][7] = multipoleType.quadrupole[0][1];
+                                localMultipole[i][8] = multipoleType.quadrupole[0][2];
+                                localMultipole[i][9] = multipoleType.quadrupole[1][2];
+                                axisAtom[i] = multipoleReferenceAtoms;
+                                frame[i] = multipoleType.frameDefinition;
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private void assignPolarizationGroups() {
+        /**
+         * Find directly connected group members for each atom.
+         */
+        List<Integer> group = new ArrayList<>();
+        List<Integer> polarizationGroup = new ArrayList<>();
+        //int g11 = 0;
+        for (Atom ai : atoms) {
+            group.clear();
+            polarizationGroup.clear();
+            Integer index = ai.getXYZIndex() - 1;
+            group.add(index);
+            polarizationGroup.add(ai.getType());
+            PolarizeType polarizeType = ai.getPolarizeType();
+            if (polarizeType != null) {
+                if (polarizeType.polarizationGroup != null) {
+                    for (int i : polarizeType.polarizationGroup) {
+                        if (!polarizationGroup.contains(i)) {
+                            polarizationGroup.add(i);
+                        }
+                    }
+                    growGroup(polarizationGroup, group, ai);
+                    Collections.sort(group);
+                    ip11[index] = new int[group.size()];
+                    int j = 0;
+                    for (int k : group) {
+                        ip11[index][j++] = k;
+                    }
+                } else {
+                    ip11[index] = new int[group.size()];
+                    int j = 0;
+                    for (int k : group) {
+                        ip11[index][j++] = k;
+                    }
+                }
+                //g11 += ip11[index].length;
+                //System.out.println(format("%d %d", index + 1, g11));
+            } else {
+                String message = "The polarize keyword was not found for atom "
+                        + (index + 1) + " with type " + ai.getType();
+                logger.severe(message);
+            }
+        }
+        /**
+         * Find 1-2 group relationships.
+         */
+        int mask[] = new int[nAtoms];
+        List<Integer> list = new ArrayList<>();
+        List<Integer> keep = new ArrayList<>();
+        for (int i = 0; i < nAtoms; i++) {
+            mask[i] = -1;
+        }
+        for (int i = 0; i < nAtoms; i++) {
+            list.clear();
+            for (int j : ip11[i]) {
+                list.add(j);
+                mask[j] = i;
+            }
+            keep.clear();
+            for (int j : list) {
+                Atom aj = atoms[j];
+                ArrayList<Bond> bonds = aj.getBonds();
+                for (Bond b : bonds) {
+                    Atom ak = b.get1_2(aj);
+                    int k = ak.getXYZIndex() - 1;
+                    if (mask[k] != i) {
+                        keep.add(k);
+                    }
+                }
+            }
+            list.clear();
+            for (int j : keep) {
+                for (int k : ip11[j]) {
+                    list.add(k);
+                }
+            }
+            Collections.sort(list);
+            ip12[i] = new int[list.size()];
+            int j = 0;
+            for (int k : list) {
+                ip12[i][j++] = k;
+            }
+        }
+        /**
+         * Find 1-3 group relationships.
+         */
+        for (int i = 0; i < nAtoms; i++) {
+            mask[i] = -1;
+        }
+        for (int i = 0; i < nAtoms; i++) {
+            for (int j : ip11[i]) {
+                mask[j] = i;
+            }
+            for (int j : ip12[i]) {
+                mask[j] = i;
+            }
+            list.clear();
+            for (int j : ip12[i]) {
+                for (int k : ip12[j]) {
+                    if (mask[k] != i) {
+                        if (!list.contains(k)) {
+                            list.add(k);
+                        }
+                    }
+                }
+            }
+            ip13[i] = new int[list.size()];
+            Collections.sort(list);
+            int j = 0;
+            for (int k : list) {
+                ip13[i][j++] = k;
+            }
+        }
+    }
+
+    /**
+     * A recursive method that checks all atoms bonded to the seed atom for
+     * inclusion in the polarization group. The method is called on each newly
+     * found group member.
+     *
+     * @param polarizationGroup Atom types that should be included in the group.
+     * @param group XYZ indeces of current group members.
+     * @param seed The bonds of the seed atom are queried for inclusion in the
+     * group.
+     */
+    private void growGroup(List<Integer> polarizationGroup,
+            List<Integer> group, Atom seed) {
+        List<Bond> bonds = seed.getBonds();
+        for (Bond bi : bonds) {
+            Atom aj = bi.get1_2(seed);
+            int tj = aj.getType();
+            boolean added = false;
+            for (int g : polarizationGroup) {
+                if (g == tj) {
+                    Integer index = aj.getXYZIndex() - 1;
+                    if (!group.contains(index)) {
+                        group.add(index);
+                        added = true;
+                        break;
+                    }
+                }
+            }
+            if (added) {
+                PolarizeType polarizeType = aj.getPolarizeType();
+                for (int i : polarizeType.polarizationGroup) {
+                    if (!polarizationGroup.contains(i)) {
+                        polarizationGroup.add(i);
+                    }
+                }
+                growGroup(polarizationGroup, group, aj);
+            }
+        }
+    }
 
     private void torque(int iSymm,
             double tx[], double ty[], double tz[],
@@ -7192,7 +7601,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                     logger.warning(sb.toString());
                 }
                 String message = format("Fatal SCF convergence failure: (%10.5f > %10.5f)\n", eps, previousEps);
-                throw new ArithmeticException(message);
+                throw new EnergyException(message, false);
             }
             /**
              * The SCF should converge well before the max iteration check.
@@ -7203,7 +7612,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                     logger.warning(sb.toString());
                 }
                 String message = format("Maximum SCF iterations reached: (%d)\n", completedSCFCycles);
-                throw new ArithmeticException(message);
+                throw new EnergyException(message, false);
             }
             /**
              * Check if the convergence criteria has been achieved.

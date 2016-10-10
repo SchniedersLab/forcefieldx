@@ -1,4 +1,3 @@
-
 /**
  * Title: Force Field X.
  *
@@ -36,57 +35,76 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
+package ffx.numerics;
 
-
-// Groovy Imports
-import groovy.util.CliBuilder
-import groovy.lang.MissingPropertyException
-
-// FFX Imports
-import ffx.autoparm.Fragmenter
-import ffx.autoparm.Unstitch
-import ffx.autoparm.Wizard
+import edu.rit.pj.reduction.SharedDoubleArray;
 
 /**
- * SDF to SMILES Converter
- * Auto-fragmenting algorithm
+ * PJDoubleArray implements the AtomicDoubleArray interface using the Parallel
+ * Java class SharedDoubleArray.
  *
- * @author Rae Ann Corrigan
+ * SharedDoubleArray is multiple thread safe and uses lock-free atomic
+ * compare-and-set.
+ *
+ * Note: Class SharedDoubleArray is implemented using class
+ * java.util.concurrent.atomic.AtomicLongArray. Each double array element is
+ * stored as a long whose bit pattern is the same as the double value.
+ *
+ * @author Michael J. Schnieders
+ *
+ * @since 1.0
  */
+public class PJDoubleArray implements AtomicDoubleArray {
 
-// Things below this line normally do not need to be changed.
-// ===============================================================================================
+    private SharedDoubleArray array;
 
-// Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc fragment [options] <filename>');
-cli.h(longOpt:'help', 'Print this help message.');
-def options = cli.parse(args);
+    public PJDoubleArray(int nThreads, int size) {
+        array = new SharedDoubleArray(size);
+    }
 
-List<String> arguments = options.arguments();
-//if (options.h || arguments == null || arguments.size() != 1){ original code
-if (options.h || arguments == null) {
-    return cli.usage();
+    @Override
+    public void alloc(int size) {
+        if (array.length() < size) {
+            array = new SharedDoubleArray(size);
+        }
+    }
+
+    @Override
+    public void init(int threadID, int size, int lb, int ub, double value) {
+        for (int i = lb; i <= ub; i++) {
+            array.set(i, value);
+        }
+    }
+
+    @Override
+    public void set(int threadID, int index, double value) {
+        array.set(index, value);
+    }
+
+    @Override
+    public void add(int threadID, int index, double value) {
+        array.getAndAdd(index, value);
+    }
+
+    @Override
+    public void sub(int threadID, int index, double value) {
+        array.getAndAdd(index, -value);
+    }
+
+    /**
+     * Reduction is handled atomically by the PJ SharedDoubleArray.
+     *
+     * @param lb
+     * @param ub
+     */
+    @Override
+    public void reduce(int lb, int ub) {
+        // Nothing to do.
+    }
+
+    @Override
+    public double get(int index) {
+        return array.get(index);
+    }
+
 }
-
-// Read in command line argument.
-String filename = arguments.get(0);
-String smiles = new String();
-Wizard wi = new Wizard(filename);
-smiles = wi.readSDF();
-
-// Read in command line.
-String sdffile = arguments.get(0);
-String ciffile = arguments.get(1);
-String smi = new String();
-
-logger.info(String.format("\n Fragmenting %s\n", sdffile));
-
-//System.out.println("\nFinished Wizard, calling Fragmenter\n");
-/*Fragmenter fr = new Fragmenter(sdffile, ciffile, smiles);
-fr.readCIF();
-fr.readSDF();*/
-
-Unstitch us = new Unstitch(sdffile, ciffile, smiles);
-us.readCIF();
-us.readSDF();
-

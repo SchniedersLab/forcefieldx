@@ -1,4 +1,3 @@
-
 /**
  * Title: Force Field X.
  *
@@ -36,57 +35,37 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-
-
-// Groovy Imports
-import groovy.util.CliBuilder
-import groovy.lang.MissingPropertyException
-
-// FFX Imports
-import ffx.autoparm.Fragmenter
-import ffx.autoparm.Unstitch
-import ffx.autoparm.Wizard
+package ffx.potential.utils;
 
 /**
- * SDF to SMILES Converter
- * Auto-fragmenting algorithm
- *
- * @author Rae Ann Corrigan
+ * This Exception class indicates an error in calculating energy or gradients. 
+ * Expected behavior is that it will be caught by Potential.energy(), resulting
+ * in any necessary cleanup. Then, if the causeSevere flag is set true, FFE will
+ * issue a logger.severe (resulting in exit); else, FFE will simply rethrow the
+ * exception. The default is to rethrow the exception.
+ * 
+ * @author Jacob Litman
+ * @author Michael J. Schnieders
  */
-
-// Things below this line normally do not need to be changed.
-// ===============================================================================================
-
-// Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc fragment [options] <filename>');
-cli.h(longOpt:'help', 'Print this help message.');
-def options = cli.parse(args);
-
-List<String> arguments = options.arguments();
-//if (options.h || arguments == null || arguments.size() != 1){ original code
-if (options.h || arguments == null) {
-    return cli.usage();
+public class EnergyException extends ArithmeticException {
+    private final boolean causeSevere;
+    public EnergyException() {
+        super();
+        causeSevere = false;
+    }
+    public EnergyException(String str) {
+        super(str);
+        causeSevere = false;
+    }
+    public EnergyException(boolean causeSevere) {
+        super();
+        this.causeSevere = causeSevere;
+    }
+    public EnergyException(String str, boolean causeSevere) {
+        super(str);
+        this.causeSevere = causeSevere;
+    }
+    public boolean doCauseSevere() {
+        return causeSevere;
+    }
 }
-
-// Read in command line argument.
-String filename = arguments.get(0);
-String smiles = new String();
-Wizard wi = new Wizard(filename);
-smiles = wi.readSDF();
-
-// Read in command line.
-String sdffile = arguments.get(0);
-String ciffile = arguments.get(1);
-String smi = new String();
-
-logger.info(String.format("\n Fragmenting %s\n", sdffile));
-
-//System.out.println("\nFinished Wizard, calling Fragmenter\n");
-/*Fragmenter fr = new Fragmenter(sdffile, ciffile, smiles);
-fr.readCIF();
-fr.readSDF();*/
-
-Unstitch us = new Unstitch(sdffile, ciffile, smiles);
-us.readCIF();
-us.readSDF();
-

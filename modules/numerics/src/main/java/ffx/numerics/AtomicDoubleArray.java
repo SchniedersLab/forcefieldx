@@ -1,4 +1,3 @@
-
 /**
  * Title: Force Field X.
  *
@@ -36,57 +35,83 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-
-
-// Groovy Imports
-import groovy.util.CliBuilder
-import groovy.lang.MissingPropertyException
-
-// FFX Imports
-import ffx.autoparm.Fragmenter
-import ffx.autoparm.Unstitch
-import ffx.autoparm.Wizard
+package ffx.numerics;
 
 /**
- * SDF to SMILES Converter
- * Auto-fragmenting algorithm
+ * This interface abstracts away the implementation of maintaining a 1D double
+ * array that is operated on by multiple threads..
  *
- * @author Rae Ann Corrigan
+ * @author Michael J. Schnieders
+ *
+ * @since 1.0
  */
+public interface AtomicDoubleArray {
 
-// Things below this line normally do not need to be changed.
-// ===============================================================================================
+    public enum AtomicDoubleArrayImpl {
+        PJ, THREADED
+    };
 
-// Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc fragment [options] <filename>');
-cli.h(longOpt:'help', 'Print this help message.');
-def options = cli.parse(args);
+    /**
+     * Ensure the AtomicDoubleArray instance is greater than or equal to size.
+     *
+     * @param size
+     */
+    public void alloc(int size);
 
-List<String> arguments = options.arguments();
-//if (options.h || arguments == null || arguments.size() != 1){ original code
-if (options.h || arguments == null) {
-    return cli.usage();
+    /**
+     * Re-initialize the double array to value.
+     *
+     * @param threadID
+     * @param size
+     * @param lb
+     * @param ub
+     * @param value
+     */
+    public void init(int threadID, int size, int lb, int ub, double value);
+
+    /**
+     * Set the double array to value at the specified index.
+     *
+     * @param threadID
+     * @param index
+     * @param value
+     */
+    public void set(int threadID, int index, double value);
+
+    /**
+     * Add value to the double array at the specified index.
+     *
+     * @param threadID
+     * @param index
+     * @param value
+     */
+    public void add(int threadID, int index, double value);
+
+    /**
+     * Subtract value to the double array at the specified index.
+     *
+     * @param threadID
+     * @param index
+     * @param value
+     */
+    public void sub(int threadID, int index, double value);
+
+    /**
+     * Perform reduction between the given lower bound (lb) and upper bound (up)
+     * if necessary.
+     *
+     * @param lb
+     * @param ub
+     */
+    public void reduce(int lb, int ub);
+
+    /**
+     * Get the value of the array at the specified index (usually subsequent to
+     * calling the <code>reduce</code> method.
+     *
+     * @param index
+     * @return
+     */
+    public double get(int index);
+
 }
-
-// Read in command line argument.
-String filename = arguments.get(0);
-String smiles = new String();
-Wizard wi = new Wizard(filename);
-smiles = wi.readSDF();
-
-// Read in command line.
-String sdffile = arguments.get(0);
-String ciffile = arguments.get(1);
-String smi = new String();
-
-logger.info(String.format("\n Fragmenting %s\n", sdffile));
-
-//System.out.println("\nFinished Wizard, calling Fragmenter\n");
-/*Fragmenter fr = new Fragmenter(sdffile, ciffile, smiles);
-fr.readCIF();
-fr.readSDF();*/
-
-Unstitch us = new Unstitch(sdffile, ciffile, smiles);
-us.readCIF();
-us.readSDF();
-
