@@ -38,6 +38,7 @@
 package ffx.algorithms;
 
 import java.io.File;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -52,6 +53,8 @@ import ffx.algorithms.Thermostat.Thermostats;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.extended.ExtendedSystem;
+import ffx.potential.extended.ExtendedVariable;
 import ffx.potential.parsers.DYNFilter;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.XYZFilter;
@@ -105,6 +108,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private int saveRestartFileFrequency = 1000;
     private String fileType = "PDB";
     private double restartFrequency = 0.1;
+    private ExtendedSystem extendedSystem;
 
     /**
      * <p>
@@ -218,6 +222,18 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
         done = true;
     }
+    
+    public MolecularDynamics(MolecularAssembly assembly,
+            Potential potentialEnergy,
+            CompositeConfiguration properties,
+            AlgorithmListener listener,
+            Thermostats requestedThermostat,
+            Integrators requestedIntegrator,
+            ExtendedSystem esvSystem) {
+        this(assembly, potentialEnergy, properties, listener,
+                requestedThermostat, requestedIntegrator);
+        this.extendedSystem = esvSystem;
+    }
 
     /**
      * Reinitialize the MD engine after a chemical change.
@@ -300,6 +316,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
     public void addMCListener(MonteCarloListener monteCarloListener) {
         this.monteCarloListener = monteCarloListener;
+    }
+    
+    public void attachExtendedSystem(ExtendedSystem system) {
+        this.extendedSystem = system;
     }
 
     /**
@@ -713,6 +733,13 @@ public class MolecularDynamics implements Runnable, Terminatable {
             potential.setVelocity(v);
             potential.setAcceleration(a);
             potential.setPreviousAcceleration(aPrevious);
+            
+            /**
+             * Update extended system variables if present.
+             */
+            if (extendedSystem != null) {
+                extendedSystem.propagateESVs(currentTemperature, dt, step*dt);
+            }
 
             /**
              * Log the current state every printFrequency steps.

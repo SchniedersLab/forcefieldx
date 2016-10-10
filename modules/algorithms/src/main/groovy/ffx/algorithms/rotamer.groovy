@@ -741,7 +741,9 @@ RotamerLibrary.measureRotamers(residueList, false);
 if (decomposeOriginal) {
     RotamerLibrary.setUseOrigCoordsRotamer(true);
     boolean doQuadsInParallel = true;
-    if (!doQuadsInParallel) {
+    if (options.lR) {
+        rotamerOptimization.decomposeOriginal(residueList.toArray(new Residue[0]));
+    } else if (!doQuadsInParallel) {
         String quadsProp = System.getProperty("evalQuad");
         if (quadsProp != null && quadsProp.equalsIgnoreCase("true")) {
             Residue[] residueArray = residueList.toArray(new Residue[residueList.size()]);
