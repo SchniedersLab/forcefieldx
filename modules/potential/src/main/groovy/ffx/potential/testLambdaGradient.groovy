@@ -43,12 +43,14 @@ import org.apache.commons.io.FilenameUtils;
 
 // Groovy Imports
 import groovy.util.CliBuilder;
+import groovy.transform.Field;
 
 // FFX Imports
 import ffx.numerics.Potential;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.QuadTopologyEnergy
 import ffx.potential.DualTopologyEnergy;
 import ffx.potential.ForceFieldEnergy;
 //import edu.rit.pj.ParallelTeam;
@@ -65,23 +67,26 @@ int activeStart = 1;
 // Last active atom.
 int activeStop = -1;
 
+// Field annotation gives the variables private script scope, thus allowing the 
+// openFile method to see these.
+
 // First ligand atom of the 2nd topology.
-int ligandStart2 = 1;
+@Field int ligandStart2 = 1;
 
 // Last ligand atom of the 2nd topology.
-int ligandStop2 = -1;
+@Field int ligandStop2 = -1;
 
 // First atom for no electrostatics.
-int noElecStart = 1;
+@Field int noElecStart = 1;
 
 // Last atom for no electrostatics.
-int noElecStop = -1;
+@Field int noElecStop = -1;
 
 // First atom of the 2nd topology for no electrostatics.
-int noElecStart2 = 1;
+@Field int noElecStart2 = 1;
 
 // Last atom of the 2nd topology for no electrostatics.
-int noElecStop2 = -1;
+@Field int noElecStop2 = -1;
 
 // Initial lambda value.
 double initialLambda = 0.5;
@@ -90,11 +95,15 @@ double initialLambda = 0.5;
 boolean print = false;
 boolean qi = false;
 
+@Field List<String> filenames = new ArrayList<>();
+@Field def topologies = [];
+@Field def energies = [];
+
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc testLambdaGradient [options] <XYZ|PDB> [Topology 2 XYZ|PDB]');
+def cli = new CliBuilder(usage:' ffxc testLambdaGradient [options] <XYZ|PDB> [Topology 2 XYZ|PDB] [Topology 3 XYZ|PDB] [Topology 4 XYZ|PDB]');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.s(longOpt:'start', args:1, argName:'1', 'Starting ligand atom.');
 cli.s2(longOpt:'start2', args:1, argName:'1', 'Starting ligand atom for the 2nd topology.');
@@ -117,7 +126,10 @@ if (options.h || arguments == null || arguments.size() < 1) {
 }
 
 // Read in command line file.
-String filename = arguments.get(0);
+//filenames[0] = arguments.get(0);
+for (int i = 0; i < arguments.size(); i++) {
+    filenames[i] = arguments.get(i);
+}
 
 // Starting ligand atom.
 if (options.s) {
@@ -191,13 +203,34 @@ boolean debug = (System.getProperty("debug") != null);
 /*int nThreads = ParallelTeam.getDefaultThreadCount() / 2;
 System.setProperty("FF_THREADS", String.valueOf(nThreads));*/
 
-if (arguments.size() == 1) {
-    logger.info("\n Testing lambda derivatives for " + filename);
-} else {
-    String filename2 = arguments.get(1);
-    logger.info("\n Testing lambda derivatives for [" + filename + "," + filename2 + "] dual topology\n");
+/*if (arguments.size() == 1) {
+    logger.info("\n Testing lambda derivatives for " + filenames[0]);
+} else if (arguments.size() >= 2) {
+    //filenames[1] = arguments.get(1);
+    if (arguments.size == 4) {
+        //logger.info("\n Testing lambda derivatives for [" + filenames[0] + "," + filenames[1] + "] dual topology\n");
+        logger.info("\n Testing lambda derivatives for %s quad topology", filenames);
+        
+    } else {
+        logger.info("\n Testing lambda derivatives for [" + filenames[0] + "," + filenames[1] + "] dual topology\n");
+    }
     logger.info(" Initializing Topology 1\n");
+}*/
+int nargs = arguments.size();
+if (nargs == 1) {
+    logger.info("\n Testing lambda derivatives for " + filenames[0]);
+} else if (nargs == 2) {
+    logger.info("\n Testing lambda derivatives for [" + filenames[0] + "," + filenames[1] + "] dual topology\n");
+} else if (nargs == 4) {
+    //logger.info("\n Testing lambda derivatives for %s quad topology", filenames);
+    StringBuilder sb = new StringBuilder("\n Testing lambda derivatives for [");
+    for (int i = 0; i < 4; i++) {
+        sb.append(filenames[i] + ",");
+    }
+    sb.append(filenames[3]).append("] quad topology");
+    logger.info(sb.toString());
 }
+logger.info(" Initializing topologies...");
 
 // Turn on computation of lambda derivatives
 System.setProperty("lambdaterm","true");
@@ -217,6 +250,49 @@ if (arguments.size() > 1) {
     System.setProperty("no-ligand-condensed-scf","false");
 }
 
+void openFile(int topNum) {
+    String filename = filenames.get(topNum);
+    //String filename = 'xDx_a.pdb';
+    open(filename);
+    Atom[] atoms = active.getAtomArray();
+    ForceFieldEnergy forceFieldEnergy = active.getPotentialEnergy();
+    int n = atoms.length;
+    remainder = (topNum % 2) + 1;
+    if (remainder == 1) {
+        // Apply the no electrostatics atom selection
+        if (noElecStart < 1) {
+            noElecStart = 1;
+        }
+        if (noElecStop > atoms.length) {
+            noElecStop = atoms.length;
+        }
+        for (int i = noElecStart; i <= noElecStop; i++) {
+            Atom ai = atoms[i - 1];
+            ai.setElectrostatics(false);
+            ai.print();
+        }
+    } else if (remainder == 2) {
+        // Apply the no electrostatics atom selection
+        if (noElecStart2 < 1) {
+            noElecStart2 = 1;
+        }
+        if (noElecStop2 > atoms.length) {
+            noElecStop2 = atoms.length;
+        }
+        for (int i = noElecStart2; i <= noElecStop2; i++) {
+            Atom ai = atoms[i - 1];
+            ai.setElectrostatics(false);
+            ai.print();
+        }
+    } else {
+        logger.severe(" This branch should never be reached; topology number ${topNum} % 2 + 1 should be 1 or 2, not ${remainder}");
+    }
+    forceFieldEnergy.getCrystal().setSpecialPositionCutoff(0.0);
+    topologies[topNum] = active;
+    energies[topNum] = forceFieldEnergy;
+}
+
+/*
 // Open the first topology.
 open(filename);
 
@@ -230,25 +306,13 @@ for (int i = ligandStart; i <= ligandStop; i++) {
     ai.setApplyLambda(true);
     ai.print();
 }
-
+*/
+openFile(0);
+Potential potential;
+LambdaInterface lambdaInterface;
 // Only support active atoms for single topology
-if (arguments.size() == 1) {
-// Apply active atom selection
-if (activeStop > activeStart && activeStart > 0 && activeStop <= n) {
-    // Make all atoms inactive.
-    for (int i = 0; i <= n; i++) {
-        Atom ai = atoms[i - 1];
-        ai.setActive(false);
-    }
-    // Make requested atoms active.
-    for (int i = activeStart; i <= activeStop; i++) {
-        Atom ai = atoms[i - 1];
-        ai.setActive(true);
-    }
-}
-}
 
-
+/*
 // Apply the no electrostatics atom selection
 if (noElecStart < 1) {
     noElecStart = 1;
@@ -261,13 +325,14 @@ for (int i = noElecStart; i <= noElecStop; i++) {
     ai.setElectrostatics(false);
     ai.print();
 }
+*/
 
-potential = active.getPotentialEnergy();
+/*potential = active.getPotentialEnergy();
 ForceFieldEnergy forceFieldEnergy = active.getPotentialEnergy();
 // Turn off checks for overlapping atoms, which is expected for lambda=0.
 forceFieldEnergy.getCrystal().setSpecialPositionCutoff(0.0);
 
-LambdaInterface lambdaInterface = active.getPotentialEnergy();
+LambdaInterface lambdaInterface = active.getPotentialEnergy();*/
 
 /*if (nThreads % 2 == 1) {
     // Second topology gets the leftover thread.
@@ -280,11 +345,29 @@ LambdaInterface lambdaInterface = active.getPotentialEnergy();
 // Apply PME to the water dimer test case (ie. disappearing one molecule therefrom).
 
 // Check for a 2nd topology.
-if (arguments.size() > 1) {
-    topology1 = active;
+
+if (arguments.size() == 1) {
+    potential = energies[0];
+    lambdaInterface = energies[0];
+    // Apply active atom selection
+    if (activeStop > activeStart && activeStart > 0 && activeStop <= n) {
+        // Make all atoms inactive.
+        for (int i = 0; i <= n; i++) {
+            Atom ai = atoms[i - 1];
+            ai.setActive(false);
+        }
+        // Make requested atoms active.
+        for (int i = activeStart; i <= activeStop; i++) {
+            Atom ai = atoms[i - 1];
+            ai.setActive(true);
+        }
+    }
+} else if (arguments.size() == 2) {
+    openFile(1);
+    /*topology1 = active;
 
     // Read in the 2nd command line file.
-    filename = arguments.get(1);
+    filenames[0] = arguments.get(1);
     logger.info("\n Initializing Topology 2\n");
     open(filename);
 
@@ -312,11 +395,20 @@ if (arguments.size() > 1) {
 
     forceFieldEnergy = active.getPotentialEnergy();
     // Turn off checks for overlapping atoms, which is expected for lambda=0.
-    forceFieldEnergy.getCrystal().setSpecialPositionCutoff(0.0);
+    forceFieldEnergy.getCrystal().setSpecialPositionCutoff(0.0);*/
 
-    DualTopologyEnergy dualTopologyEnergy = new DualTopologyEnergy(topology1, active);
+    DualTopologyEnergy dualTopologyEnergy = new DualTopologyEnergy(topologies[0], topologies[1]);
     potential = dualTopologyEnergy;
     lambdaInterface = dualTopologyEnergy;
+} else if (arguments.size() == 4) {
+    openFile(1);
+    openFile(2);
+    openFile(3);
+    DualTopologyEnergy dtA = new DualTopologyEnergy(topologies[0], topologies[1]);
+    DualTopologyEnergy dtB = new DualTopologyEnergy(topologies[3], topologies[2]);
+    QuadTopologyEnergy qte = new QuadTopologyEnergy(dtA, dtB);
+    potential = qte;
+    lambdaInterface = qte;
 }
 
 // Reset the number of variables for the case of dual topology.

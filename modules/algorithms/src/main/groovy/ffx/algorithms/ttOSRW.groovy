@@ -44,6 +44,7 @@ import org.apache.commons.io.FileUtils;
 
 // Groovy Imports
 import groovy.util.CliBuilder;
+import groovy.transform.Field;
 
 // Paralle Java Imports
 import edu.rit.pj.Comm;
@@ -57,6 +58,7 @@ import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.TransitionTemperedOSRW;
 import ffx.algorithms.Integrator.Integrators;
 import ffx.algorithms.Thermostat.Thermostats;
+import ffx.potential.QuadTopologyEnergy;
 import ffx.potential.DualTopologyEnergy;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
@@ -65,35 +67,47 @@ import ffx.potential.MolecularAssembly;
 // Asychronous communication between walkers.
 boolean asynchronous = false;
 
+/* 
+ * The @Field annotations are ncessary for variables to be used by the readFile
+ * method. Without @Field, variables with explicit declaration are local to the
+ * implied main method of the script, whereas @Field transforms them to a private
+ * script variable... though Groovy kind of ignores the "private" access modifier.
+ */
+
+// List of topologies (MolecularAssemblies).
+@Field def topologies = [];
+// List of ForceFieldEnergies.
+@Field def energies = [];
+
 // First atom of the ligand.
-int ligandStart = 1;
+@Field int ligandStart = 1;
 
 // Last atom of the ligand.
-int ligandStop = -1;
+@Field int ligandStop = -1;
 
 // First atom of the ligand for the 2nd topology.
-int ligandStart2 = 1;
+@Field int ligandStart2 = 1;
 
 // Last atom of the ligand for the 2nd topology.
-int ligandStop2 = -1;
+@Field int ligandStop2 = -1;
 
 // Additional ligand atoms; intended for creating disjoint sets.
-List<Atom> ligandAtoms1 = new ArrayList<>();
-List<Atom> ligandAtoms2 = new ArrayList<>();
-def ranges1 = []; // Groovy mechanism for creating an untyped ArrayList.
-def ranges2 = [];
+@Field List<Atom> ligandAtoms1 = new ArrayList<>();
+@Field List<Atom> ligandAtoms2 = new ArrayList<>();
+@Field def ranges1 = []; // Groovy mechanism for creating an untyped ArrayList.
+@Field def ranges2 = [];
 
 // First atom for no electrostatics.
-int noElecStart = 1;
+@Field int noElecStart = 1;
 
 // Last atom for no electrostatics.
-int noElecStop = -1;
+@Field int noElecStop = -1;
 
 // First atom of the 2nd topology for no electrostatics.
-int noElecStart2 = 1;
+@Field int noElecStart2 = 1;
 
 // Last atom of the 2nd topology for no electrostatics.
-int noElecStop2 = -1;
+@Field int noElecStop2 = -1;
 
 // Initial lambda value (0 is ligand in vacuum; 1 is ligand in PBC).
 double lambda = 0.0;
@@ -165,7 +179,7 @@ boolean writeTraversals = false;
 // ===============================================================================================
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc ttOSRW [options] <filename> [filename]');
+def cli = new CliBuilder(usage:' ffxc ttOSRW [options] <filename> [filename] [filename] [filename]');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.a(longOpt:'async', args:0, 'Walker communication is asynchronous.');
 cli.n(longOpt:'steps', args:1, argName:'10000000', 'Number of molecular dynamics steps.');
@@ -204,7 +218,7 @@ cli.rn(longOpt:'resetNumSteps', args:1, argName:'true', 'Ignore prior steps logg
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
-if (options.h || arguments == null || arguments.size() > 2) {
+if (options.h || arguments == null || arguments.size() < 1) {
     return cli.usage();
 }
 
@@ -386,17 +400,17 @@ if (options.la2) {
 
 println("\n Running Transition-Tempered Orthogonal Space Random Walk on " + filename);
 
-File structureFile = new File(FilenameUtils.normalize(filename));
+@Field File structureFile = new File(FilenameUtils.normalize(filename));
 structureFile = new File(structureFile.getAbsolutePath());
-String baseFilename = FilenameUtils.removeExtension(structureFile.getName());
-File histogramRestart = new File(baseFilename + ".his");
-File lambdaOneFile = null;
-File lambdaZeroFile = null;
-File lambdaRestart = null;
-File dyn = null;
+@Field String baseFilename = FilenameUtils.removeExtension(structureFile.getName());
+@Field File histogramRestart = new File(baseFilename + ".his");
+@Field File lambdaOneFile = null;
+@Field File lambdaZeroFile = null;
+@Field File lambdaRestart = null;
+@Field File dyn = null;
 
-Comm world = Comm.world();
-int size = world.size();
+@Field Comm world = Comm.world();
+@Field int size = world.size();
 int rank = 0;
 
 // For a multi-process job, try to get the restart files from rank sub-directories.
@@ -429,7 +443,7 @@ System.setProperty("lambdaterm", "true");
 
 // Relative free energies via the DualTopologyEnergy class require different
 // default OSRW parameters than absolute free energies.
-if (arguments.size() == 2) {
+if (arguments.size() >= 2) {
     // Condensed phase polarization is evaluated over the entire range.
     System.setProperty("polarization-lambda-start","0.0");
     // Polarization energy is not scaled individually by lambda, but
@@ -442,6 +456,112 @@ if (arguments.size() == 2) {
     System.setProperty("no-ligand-condensed-scf","false");
 }
 
+@Field Pattern rangeregex = Pattern.compile("([0-9]+)-?([0-9]+)?");
+
+/**
+ * Handles opening a file (filenmae), with 0-indexed number topNum.
+ */
+private void openFile(String filename, int topNum) {
+    open(filename);
+    if (size > 1) {
+        active.setFile(structureFile);
+    }
+    ForceFieldEnergy energy = active.getPotentialEnergy();
+    Atom[] atoms = active.getAtomArray();
+    int remainder = (topNum % 2) + 1;
+    switch(remainder) {
+        case 1:
+            for (int i = ligandStart; i <= ligandStop; i++) {
+                Atom ai = atoms[i-1];
+                ai.setApplyLambda(true);
+                ai.print();
+            }
+            if (ranges1) {
+                for (range in ranges1) {
+                    def m = rangeregex.matcher(range);
+                    if (m.find()) {
+                        int rangeStart = Integer.parseInt(m.group(1));
+                        int rangeEnd = (m.groupCount > 1) ? Integer.parseInt(m.group(2)) : rangeStart;
+                        if (rangeStart > rangeEnd) {
+                            logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
+                        }
+                        // Don't need to worry about negative numbers; rangeregex just won't match.
+                        for (int i = rangeStart; i <= rangeEnd; i++) {
+                            Atom ai = atoms[i-1];
+                            ai.setApplyLambda(true);
+                            ai.print();
+                        }
+                    } else {
+                        logger.warning(" Could not recognize ${range} as a valid range; skipping");
+                    }
+                }
+            }
+
+            // Apply the no electrostatics atom selection
+            if (noElecStart < 1) {
+                noElecStart = 1;
+            }
+            if (noElecStop > atoms.length) {
+                noElecStop = atoms.length;
+            }
+            for (int i = noElecStart; i <= noElecStop; i++) {
+                Atom ai = atoms[i - 1];
+                ai.setElectrostatics(false);
+                ai.print();
+            }
+            break;
+        case 2:
+            for (int i = ligandStart2; i <= ligandStop2; i++) {
+                Atom ai = atoms[i-1];
+                ai.setApplyLambda(true);
+                ai.print();
+            }
+            if (ranges2) {
+                for (range in ranges2) {
+                    def m = rangeregex.matcher(range);
+                    if (m.find()) {
+                        int rangeStart = Integer.parseInt(m.group(1));
+                        int rangeEnd = (m.groupCount > 1) ? Integer.parseInt(m.group(2)) : rangeStart;
+                        if (rangeStart > rangeEnd) {
+                            logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
+                        }
+                        // Don't need to worry about negative numbers; rangeregex just won't match.
+                        for (int i = rangeStart; i <= rangeEnd; i++) {
+                            Atom ai = atoms[i-1];
+                            ai.setApplyLambda(true);
+                            ai.print();
+                        }
+                    } else {
+                        logger.warning(" Could not recognize ${range} as a valid range; skipping");
+                    }
+                }
+            }
+
+            // Apply the no electrostatics atom selection
+            if (noElecStart2 < 1) {
+                noElecStart2 = 1;
+            }
+            if (noElecStop2 > atoms.length) {
+                noElecStop2 = atoms.length;
+            }
+            for (int i = noElecStart2; i <= noElecStop2; i++) {
+                Atom ai = atoms[i - 1];
+                ai.setElectrostatics(false);
+                ai.print();
+            }
+            break;
+    }
+    
+    // Turn off checks for overlapping atoms, which is expected for lambda=0.
+    energy.getCrystal().setSpecialPositionCutoff(0.0);
+    // Save a reference to the topology.
+    topologies[topNum] = active;
+    energies[topNum] = energy;
+}
+
+openFile(filename, 0);
+
+/*
 // Open the first system
 open(filename);
 // If this is a multi-process job, set the structure file to come from the subdirectory.
@@ -460,7 +580,6 @@ for (int i = ligandStart; i <= ligandStop; i++) {
     ai.print();
 }
 
-Pattern rangeregex = Pattern.compile("([0-9]+)-?([0-9]+)?");
 if (ranges1) {
     for (range in ranges1) {
         def m = rangeregex.matcher(range);
@@ -504,10 +623,12 @@ for (int i = noElecStart; i <= noElecStop; i++) {
 
 // Turn off checks for overlapping atoms, which is expected for lambda=0.
 energy.getCrystal().setSpecialPositionCutoff(0.0);
-// OSRW will be configured for either single or dual topology.
+*/
+
+// OSRW will be configured for the appropriate number of topologies.
 TransitionTemperedOSRW osrw = null;
 // Save a reference to the first topology.
-topology1 = active;
+//topologies[0] = active;
 
 if (arguments.size() == 1) {
     // Check for constant pressure
@@ -526,21 +647,23 @@ if (arguments.size() == 1) {
         //            temperature, timeStep, printInterval, saveInterval, asynchronous, sh);
         //        osrw.setResetStatistics(resetStatistics);
         if (writeTraversals) {
-            osrw.setTraversalOutput(lambdaOneFile, topology1, lambdaZeroFile, topology1);
+            osrw.setTraversalOutput(lambdaOneFile, topologies[0], lambdaZeroFile, topologies[0]);
         }
     } else {
         // Wrap the single topology ForceFieldEnergy inside an OSRW instance.
-        osrw = new TransitionTemperedOSRW(energy, energy, lambdaRestart, histogramRestart, active.getProperties(),
+        osrw = new TransitionTemperedOSRW(energies[0], energies[0], lambdaRestart, histogramRestart, active.getProperties(),
             temperature, timeStep, printInterval, saveInterval, asynchronous, resetNumSteps, sh);
         osrw.setResetStatistics(resetStatistics);
         if (writeTraversals) {
-            osrw.setTraversalOutput(lambdaOneFile, topology1, lambdaZeroFile, topology1);
+            osrw.setTraversalOutput(lambdaOneFile, topologies[0], lambdaZeroFile, topologies[0]);
         }
     }
-} else {
+} else if (arguments.size() == 2) {
     // Open the 2nd topology.
     filename = arguments.get(1);
-    open(filename);
+    openFile(filename, 1);
+    
+    /*
     // If this is a multi-process job, set the structure file to come from the subdirectory.
     if (size > 1) {
         active.setFile(structureFile);
@@ -596,21 +719,39 @@ if (arguments.size() == 1) {
     }
 
     // Save a reference to the second topology.
-    topology2 = active;
+    topologies[1] = active;
     // Turn off checks for overlapping atoms, which is expected for lambda=0.
     energy.getCrystal().setSpecialPositionCutoff(0.0);
+    */
+   
     // Create the DualTopology potential energy.
-    DualTopologyEnergy dualTopologyEnergy = new DualTopologyEnergy(topology1, active);
+    DualTopologyEnergy dualTopologyEnergy = new DualTopologyEnergy(topologies[0], topologies[1]);
     // Wrap the DualTopology potential energy inside an OSRW instance.
     osrw = new TransitionTemperedOSRW(dualTopologyEnergy, dualTopologyEnergy, lambdaRestart,
         histogramRestart, active.getProperties(), temperature, timeStep, printInterval,
         saveInterval, asynchronous, resetNumSteps, sh);
     osrw.setResetStatistics(resetStatistics);
     if (writeTraversals) {
-        osrw.setTraversalOutput(lambdaOneFile, topology1, lambdaZeroFile, topology2);
+        osrw.setTraversalOutput(lambdaOneFile, topologies[0], lambdaZeroFile, topologies[1]);
     }
-    osrw.setDeltaT(temperingParam);
+} else if (arguments.size() == 4) {
+    logger.info(" For quad-topology calculations, systems should be set up as follows:");
+    logger.info(" The first two define the first dual topology, the second two should define the second dual topology in the same order.");
+    logger.info(" For example, for a dual force field correction on decharging sodium, topologies should be in this order:");
+    logger.info(" Sodium-AMOEBA, sodium-AMBER, decharged Na-AMOEBA, decharged Na-AMBER");
+    
+    openFile(arguments.get(1), 1);
+    openFile(arguments.get(2), 2);
+    openFile(arguments.get(3), 3);
+    DualTopologyEnergy dtA = new DualTopologyEnergy(topologies[0], topologies[1]);
+    // Intentionally reversed order.
+    DualTopologyEnergy dtB = new DualTopologyEnergy(topologies[3], topologies[2]);
+    QuadTopologyEnergy qte = new QuadTopologyEnergy(dtA, dtB);
+    osrw = new TransitionTemperedOSRW(qte, qte, lambdaRestart, histogramRestart, 
+        active.getProperties(), temperature, timeStep, printInterval, 
+        saveInterval, asynchronous, resetNumSteps, sh);
 }
+osrw.setDeltaT(temperingParam);
 
 // Apply the command line lambda value if a lambda restart file does not exist.
 if (!lambdaRestart.exists()) {
@@ -646,7 +787,7 @@ if (!histogramRestart.exists()) {
 }
 
 // Create the MolecularDynamics instance.
-MolecularDynamics molDyn = new MolecularDynamics(topology1, osrw, topology1.getProperties(), null, thermostat, integrator);
+MolecularDynamics molDyn = new MolecularDynamics(topologies[0], osrw, topologies[0].getProperties(), null, thermostat, integrator);
 
 // Start sampling.
 if (eSteps > 0) {
