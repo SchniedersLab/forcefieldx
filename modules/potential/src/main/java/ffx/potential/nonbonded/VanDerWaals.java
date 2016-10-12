@@ -558,6 +558,12 @@ public class VanDerWaals implements MaskingInterface,
          */
         lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
         esvTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.ESVTERM, false);
+        if (esvTerm) {
+            logger.info("vdW: ESV Term Enabled!");
+            if (esvSystem == null) {
+                logger.warning("vdw: ESV Term Enabled with null system.");
+            }
+        }
         if (lambdaTerm || esvTerm) {
             shareddEdL = new SharedDouble();
             sharedd2EdL2 = new SharedDouble();
@@ -1128,8 +1134,8 @@ public class VanDerWaals implements MaskingInterface,
         if (!esvTerm) {
             logger.warning("Extended system attached to VdW will not function until esvTerm enabled.");
         }
-        if (esvSystem != null) {
-            logger.severe("Multiple ESV systems is untested.");
+        if (system == null) {
+            logger.severe("Tried to attach null extended system.");
         }
         esvSystem = system;
         numESVs = esvSystem.num();
@@ -1367,9 +1373,11 @@ public class VanDerWaals implements MaskingInterface,
             if (esvTerm) {
                 shareddEdLdh = new SharedDouble[numESVs];
                 sharedd2EdLdh2 = new SharedDouble[numESVs];
-                for (ExtendedVariable esv : esvSystem.getESVList()) {
-                    shareddEdLdh[esv.index] = new SharedDouble();
-                    sharedd2EdLdh2[esv.index] = new SharedDouble();
+                if (esvSystem != null) {
+                    for (ExtendedVariable esv : esvSystem.getESVList()) {
+                        shareddEdLdh[esv.index] = new SharedDouble();
+                        sharedd2EdLdh2[esv.index] = new SharedDouble();
+                    }
                 }
             }
         }
@@ -2365,15 +2373,7 @@ public class VanDerWaals implements MaskingInterface,
                             // gyi_local[redi] += gyredi;
                             // gzi_local[redi] += gzredi;
                         }
-                        if (esvTerm) {
-                            for (ExtendedVariable esv : esvSystem.getESVList()) {
-                                ldh_xi_local[esv.index][i] += lxi;
-                                ldh_yi_local[esv.index][i] += lyi;
-                                ldh_zi_local[esv.index][i] += lzi;
-                                ldh_xi_local[esv.index][i] += lxredi;
-                                ldh_yi_local[esv.index][i] += lyredi;
-                                ldh_zi_local[esv.index][i] += lzredi;
-                            }
+                        if (lambdaTerm) {
                             lambdaGradX.add(threadID, i, lxi);
                             lambdaGradY.add(threadID, i, lyi);
                             lambdaGradZ.add(threadID, i, lzi);
@@ -2387,6 +2387,17 @@ public class VanDerWaals implements MaskingInterface,
                             // lxi_local[redi] += lxredi;
                             // lyi_local[redi] += lyredi;
                             // lzi_local[redi] += lzredi;
+                        }
+                        if (esvTerm) {
+                            for (ExtendedVariable esv : esvSystem.getESVList()) {
+                                ldh_xi_local[esv.index][i] += lxi;
+                                ldh_yi_local[esv.index][i] += lyi;
+                                ldh_zi_local[esv.index][i] += lzi;
+                                ldh_xi_local[esv.index][i] += lxredi;
+                                ldh_yi_local[esv.index][i] += lyredi;
+                                ldh_zi_local[esv.index][i] += lzredi;
+                            }
+
                         }
                     }
                     energy += e;

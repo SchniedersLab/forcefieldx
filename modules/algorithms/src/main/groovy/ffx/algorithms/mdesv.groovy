@@ -183,10 +183,10 @@ System.setProperty("opbendterm", "false");
 System.setProperty("torsionterm", "false");
 System.setProperty("tortorterm", "false");
 System.setProperty("pitorsterm", "false");
-System.setProperty("mpoleterm", "false");               // !! TODO
+System.setProperty("mpoleterm", "false");
 
 // Polarization keys
-System.setProperty("polarization", "NONE");             // !! TODO
+System.setProperty("polarization", "NONE");
 System.setProperty("polarization-lambda-start","0.0");      // polarize on the whole range [0,1]
 System.setProperty("polarization-lambda-exponent","0.0");   // polarization not softcored, only prefactored
 System.setProperty("ligand-vapor-elec", "false");           // cancels when reference is solution phase
@@ -244,8 +244,6 @@ ForceFieldEnergy ffe = (ForceFieldEnergy) active.getPotentialEnergy();
 logger.info("wtf is this mola?  " + mola.class.toString());
 ExtendedSystem esvSystem = new ExtendedSystem(mola, constPh);
 ffe.attachExtendedSystem(esvSystem);
-ffe.getPmeNode().attachExtendedSystem(esvSystem);
-ffe.getVdwNode().attachExtendedSystem(esvSystem);
 
 List<ExtendedVariable> esvList = new ArrayList<>();
 Polymer[] polymers = active.getChains();
