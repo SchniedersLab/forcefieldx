@@ -54,7 +54,6 @@ public class PairwiseSchedule extends IntegerSchedule {
     private static final Logger logger = Logger.getLogger(PairwiseSchedule.class.getName());
     private int nAtoms;
     private final int nThreads;
-    private int offset = 0;
     private final Range ranges[];
     private final boolean threadDone[];
 
@@ -122,7 +121,7 @@ public class PairwiseSchedule extends IntegerSchedule {
      */
     public void updateRanges(int totalInteractions, int listCount[]) {
         int id = 0;
-        int goal = totalInteractions / (nThreads + offset);
+        int goal = totalInteractions / nThreads;
         int num = 0;
         int start = 0;
         for (int i = 0; i < nAtoms; i++) {
@@ -146,29 +145,23 @@ public class PairwiseSchedule extends IntegerSchedule {
                 start = i + 1;
 
                 /**
-                 * Out of atoms; Remaining threads would get a null range.
+                 * Out of atoms. Threads remaining get a null range.
                  */
                 if (start == nAtoms) {
-                    offset++;
-                    updateRanges(totalInteractions, listCount);
+                    for (int j = id; j < nThreads; j++) {
+                        ranges[j] = null;
+                    }
                     break;
                 }
             } else if (i == nAtoms - 1) {
-                if (id == nThreads - 1) {
-                    ranges[id] = new Range(start, nAtoms - 1);
-                    break;
-                }
                 /**
-                 * There are threads left with no work.
+                 * Last atom without reaching goal for current thread.
                  */
-                offset++;
-                updateRanges(totalInteractions, listCount);
-                break;
+                ranges[id] = new Range(start, nAtoms - 1);
+                for (int j = id + 1; j < nThreads; j++) {
+                    ranges[j] = null;
+                }
             }
         }
-        /**
-         * Reset the offset to zero.
-         */
-        offset = 0;
     }
 }
