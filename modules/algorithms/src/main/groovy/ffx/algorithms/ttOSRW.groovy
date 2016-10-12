@@ -400,14 +400,14 @@ if (options.la2) {
 
 println("\n Running Transition-Tempered Orthogonal Space Random Walk on " + filename);
 
-File structureFile = new File(FilenameUtils.normalize(filename));
+@Field File structureFile = new File(FilenameUtils.normalize(filename));
 structureFile = new File(structureFile.getAbsolutePath());
-String baseFilename = FilenameUtils.removeExtension(structureFile.getName());
-File histogramRestart = new File(baseFilename + ".his");
-File lambdaOneFile = null;
-File lambdaZeroFile = null;
-File lambdaRestart = null;
-File dyn = null;
+@Field String baseFilename = FilenameUtils.removeExtension(structureFile.getName());
+@Field File histogramRestart = new File(baseFilename + ".his");
+@Field File lambdaOneFile = null;
+@Field File lambdaZeroFile = null;
+@Field File lambdaRestart = null;
+@Field File dyn = null;
 
 @Field Comm world = Comm.world();
 @Field int size = world.size();
