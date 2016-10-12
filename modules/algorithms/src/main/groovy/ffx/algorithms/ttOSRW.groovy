@@ -400,14 +400,14 @@ if (options.la2) {
 
 println("\n Running Transition-Tempered Orthogonal Space Random Walk on " + filename);
 
-@Field File structureFile = new File(FilenameUtils.normalize(filename));
+File structureFile = new File(FilenameUtils.normalize(filename));
 structureFile = new File(structureFile.getAbsolutePath());
-@Field String baseFilename = FilenameUtils.removeExtension(structureFile.getName());
-@Field File histogramRestart = new File(baseFilename + ".his");
-@Field File lambdaOneFile = null;
-@Field File lambdaZeroFile = null;
-@Field File lambdaRestart = null;
-@Field File dyn = null;
+String baseFilename = FilenameUtils.removeExtension(structureFile.getName());
+File histogramRestart = new File(baseFilename + ".his");
+File lambdaOneFile = null;
+File lambdaZeroFile = null;
+File lambdaRestart = null;
+File dyn = null;
 
 @Field Comm world = Comm.world();
 @Field int size = world.size();
@@ -461,10 +461,10 @@ if (arguments.size() >= 2) {
 /**
  * Handles opening a file (filenmae), with 0-indexed number topNum.
  */
-private void openFile(String filename, int topNum) {
-    open(filename);
+private void openFile(String toOpen, File structFile, int topNum) {
+    open(toOpen);
     if (size > 1) {
-        active.setFile(structureFile);
+        active.setFile(structFile);
     }
     ForceFieldEnergy energy = active.getPotentialEnergy();
     Atom[] atoms = active.getAtomArray();
@@ -559,7 +559,7 @@ private void openFile(String filename, int topNum) {
     energies[topNum] = energy;
 }
 
-openFile(filename, 0);
+openFile(filename, structureFile, 0);
 
 /*
 // Open the first system
@@ -661,7 +661,7 @@ if (arguments.size() == 1) {
 } else if (arguments.size() == 2) {
     // Open the 2nd topology.
     filename = arguments.get(1);
-    openFile(filename, 1);
+    openFile(filename, structureFile, 1);
     
     /*
     // If this is a multi-process job, set the structure file to come from the subdirectory.
@@ -740,9 +740,9 @@ if (arguments.size() == 1) {
     logger.info(" For example, for a dual force field correction on decharging sodium, topologies should be in this order:");
     logger.info(" Sodium-AMOEBA, sodium-AMBER, decharged Na-AMOEBA, decharged Na-AMBER");
     
-    openFile(arguments.get(1), 1);
-    openFile(arguments.get(2), 2);
-    openFile(arguments.get(3), 3);
+    openFile(arguments.get(1), structureFile, 1);
+    openFile(arguments.get(2), structureFile, 2);
+    openFile(arguments.get(3), structureFile, 3);
     DualTopologyEnergy dtA = new DualTopologyEnergy(topologies[0], topologies[1]);
     // Intentionally reversed order.
     DualTopologyEnergy dtB = new DualTopologyEnergy(topologies[3], topologies[2]);
