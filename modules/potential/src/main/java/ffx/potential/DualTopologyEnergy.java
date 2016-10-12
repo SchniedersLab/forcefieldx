@@ -539,7 +539,7 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
             assert (a1.getX() == a2.getX());
             assert (a1.getY() == a2.getY());
             assert (a1.getZ() == a2.getZ());
-            reconcileAtoms(a1, a2, Level.INFO);
+            //reconcileAtoms(a1, a2, Level.INFO);
         }
 
         /**
