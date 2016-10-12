@@ -484,6 +484,7 @@ public abstract class Thermostat {
             yz += yi * zi * m;
         }
 
+        /**
         RealMatrix inertia = new Array2DRowRealMatrix(3, 3);
         inertia.setEntry(0, 0, yy + zz);
         inertia.setEntry(1, 0, -xy);
@@ -504,6 +505,8 @@ public abstract class Thermostat {
         double ox = angularMomentum[0] * xx + angularMomentum[1] * xy + angularMomentum[2] * xz;
         double oy = angularMomentum[0] * xy + angularMomentum[1] * yy + angularMomentum[2] * yz;
         double oz = angularMomentum[0] * xz + angularMomentum[1] * yz + angularMomentum[2] * zz;
+        */
+
         /**
          * Remove center of mass translational momentum.
          */
@@ -522,6 +525,7 @@ public abstract class Thermostat {
          * Only remove center of mass rotational momentum for non-periodic
          * systems.
          */
+        /**
         if (false) {
             index = 0;
             while (index < nVariables) {
@@ -537,7 +541,8 @@ public abstract class Thermostat {
                 v[index++] += (-oz * xi + ox * zi);
                 v[index++] += (-ox * yi + oy * xi);
             }
-        }
+        } */
+        
         if (print) {
             logger.info(" Center of mass motion removed.");
         }
