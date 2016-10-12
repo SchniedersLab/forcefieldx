@@ -22,6 +22,8 @@ import java.util.stream.IntStream;
 import static java.lang.String.format;
 import java.util.Arrays;
 
+import ffx.numerics.Potential;
+
 /**
  * An extended system variable that allows continuous fractional protonation of an amino acid.
  * All atomic charges and bonded terms scale linearly between prot and deprot states.
@@ -31,7 +33,6 @@ public final class TitrationESV extends ExtendedVariable {
     
     // System handles
     private static final Logger logger = Logger.getLogger(TitrationESV.class.getName());
-    private final ForceFieldEnergy ffe;
     private final MultiResidue titrating;
     
     // Handles on scaled terms
@@ -40,17 +41,13 @@ public final class TitrationESV extends ExtendedVariable {
     private List<ROLS> rolsOne, rolsZero;
     private static final List<String> backboneNames = Arrays.asList("N","CA","C","O","HA","H");
     
-    public TitrationESV(Residue res, MolecularAssembly mola, double temperature, double dt, double biasMag) {
-        super(mola.getPotentialEnergy(), temperature, dt, 1.0, biasMag);
-        ffe = (potential instanceof ForceFieldEnergy) ? (ForceFieldEnergy) potential : null;
-        if (ffe == null) {
-            throw new UnsupportedOperationException("Lamedh ESVs not yet implemented for non-forcefield or hybrid potentials.");
-        }
-        AminoAcid3 aa = res.getAminoAcid3();
-        if (aa == AminoAcid3.HIE) {
-            throw new UnsupportedOperationException("3-way HIS Ldh under construction.");
-        }
-        titrating = TitrationUtils.titrationFactory(mola, mola.getForceField(), ffe, res);
+    // Options
+    private static final boolean HIEmode = false;
+    
+    public TitrationESV(MultiResidue titrating, 
+            double temperature, double dt, double biasMag) {
+        super(biasMag, 1.0);
+        this.titrating = titrating;
         
         residueOne = titrating.getActive();
         residueZero = titrating.getInactive().get(0);
@@ -66,8 +63,8 @@ public final class TitrationESV extends ExtendedVariable {
         describe();
     }
     
-    public TitrationESV(Residue res, MolecularAssembly mola, double temperature, double dt) {
-        this(res, mola, temperature, dt, 1.0);
+    public TitrationESV(MultiResidue titrating, double temperature, double dt) {
+        this(titrating, temperature, dt, 1.0);
     }
     
     @Override
@@ -85,21 +82,21 @@ public final class TitrationESV extends ExtendedVariable {
         atoms.parallelStream().forEach(a -> a.setApplyLamedh(true));
     }
     
-    /**
-     * Query FFE for derivative terms, add bias.
-     */
-    @Override
-    public double getdEdLdh() {
-        return (ffe.getdEdLdh()[index] + getdBiasdLdh());
-    }
-    
-    /**
-     * Query FFE for derivative terms, add bias.
-     */
-    @Override
-    public double getd2EdLdh2() {
-        return (ffe.getd2EdLdh2()[index] + getd2BiasdLdh2());
-    }
+//    /**
+//     * Query FFE for derivative terms, add bias.
+//     */
+//    @Override
+//    public double getdEdLdh() {
+//        return (ffe.getdEdLdh()[index] + getdBiasdLdh());
+//    }
+//    
+//    /**
+//     * Query FFE for derivative terms, add bias.
+//     */
+//    @Override
+//    public double getd2EdLdh2() {
+//        return (ffe.getd2EdLdh2()[index] + getd2BiasdLdh2());
+//    }
     
     @Override
     public OptionalDouble getROLSScaling(ROLS rols) {
@@ -119,6 +116,22 @@ public final class TitrationESV extends ExtendedVariable {
 //            return OptionalDouble.of(1.0 - lamedh);
 //        }
         return OptionalDouble.empty();
+    }
+    
+    /**
+     * Eqs 5,6 from Wallace+Shen 2011 "Continuous constant pH M.D. in explicit..."
+     * U_pH(ldh) = log(10)*kb*T*(pKa_model - pH)*ldh
+     * U_mod(ldh) = potential of mean force for protonation (or -deprot) of model compound
+     * U_star = sum(ldh) { U_pH(ldh) + U_mod_prot(ldh) + U_barr(ldh)
+     * This method returns U_pH + U_mod_prot.
+     */
+    public double getPhEnergy(double pH, double temperature) {
+        Titr titration = TitrationUtils.titrationLookup(this.titrating.getActive());
+        double pKaModel = titration.pKa;
+        double uph = Math.log(10)*ThermoConstants.kB*temperature*(pKaModel - pH)*lamedh;
+        double umod = 0.0;  // TODO PRIO find PMFs for monomers/trimers/pentapeptides
+        umod = titration.refEnergy * lamedh;
+        return uph + umod;
     }
     
     /**
@@ -173,10 +186,15 @@ public final class TitrationESV extends ExtendedVariable {
      */
     public static class TitrationUtils {
 
-        public static MultiResidue titrationFactory(MolecularAssembly mola, 
-                ForceField ff, ForceFieldEnergy ffe, Residue res) {
+        public static MultiResidue titrationFactory(MolecularAssembly mola, Residue res) {
+            ForceField ff = mola.getForceField();
+            Potential potential = mola.getPotentialEnergy();
+            if (!(potential instanceof ForceFieldEnergy)) {
+                logger.severe("TitrationFactory only supported by ForceFieldEnergy potentials.");
+            }
+            ForceFieldEnergy ffe = (ForceFieldEnergy) potential;
             // Create new titration state.
-            Titr t = TitrationUtils.titrationLookup(res, false);
+            Titr t = TitrationUtils.titrationLookup(res);
             String targetName = (t.target != res.getAminoAcid3()) ? t.target.toString() : t.source.toString();
             int resNumber = res.getResidueNumber();
             Residue.ResidueType resType = res.getResidueType();
@@ -193,17 +211,17 @@ public final class TitrationESV extends ExtendedVariable {
             return multiRes;
         }
         
-        public static Titr titrationLookup(Residue res, boolean HIE) {
+        public static Titr titrationLookup(Residue res) {
             AminoAcid3 source = AminoAcid3.valueOf(res.getName());
             if (source == AminoAcid3.HIS || source == AminoAcid3.HID || source == AminoAcid3.HIE) {
-                return (HIE ? Titr.ZtoH : Titr.UtoH);
+                return (HIEmode ? Titr.ZtoH : Titr.UtoH);
             }
             for (Titr titr : Titr.values()) {
                 if (titr.source == source || titr.target == source) {
                     return titr;
                 }
             }
-            logger.log(Level.SEVERE, "No titraiton lookup found for residue {0}", res);
+            logger.log(Level.SEVERE, "No titration lookup found for residue {0}", res);
             return null;
         }
 
@@ -359,7 +377,7 @@ public final class TitrationESV extends ExtendedVariable {
                 }
                 for (Atom a : resetMe) {
                     a.setXYZGradient(0, 0, 0);
-                    a.setVelocity(ThermoConstants.maxwellIndividual(a.getMass()));
+                    a.setVelocity(ThermoConstants.singleRoomtempMaxwell(a.getMass()));
                     a.setAcceleration(new double[]{0, 0, 0});
                     a.setPreviousAcceleration(new double[]{0, 0, 0});
                 }
@@ -369,7 +387,7 @@ public final class TitrationESV extends ExtendedVariable {
         /**
          * All described as protonation reactions.
          */
-        public enum Titr {            
+        public enum Titr {
             ctoC( 8.18, +60.168, AminoAcid3.CYD, AminoAcid3.CYS),
             Dtod( 3.90, +53.188, AminoAcid3.ASP, AminoAcid3.ASH),
             Etoe( 4.25, +59.390, AminoAcid3.GLU, AminoAcid3.GLH),

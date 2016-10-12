@@ -567,8 +567,10 @@ public class NeighborList extends ParallelRegion {
     }
 
     /**
-     * Assign asymmetric and symmetry mate atoms to cells. This is very fast;
-     * there is little to be gained from parallelizing it at this point.
+     * Assign asymmetric and symmetry mate atoms to cells.
+     *
+     * This is very fast; there is little to be gained from
+     * parallelizing it at this point.
      *
      * @since 1.0
      */

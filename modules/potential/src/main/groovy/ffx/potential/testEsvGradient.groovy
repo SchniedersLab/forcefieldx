@@ -1,4 +1,4 @@
-
+    
 /**
  * Title: Force Field X.
  *
@@ -49,13 +49,16 @@ import groovy.util.CliBuilder;
 import ffx.numerics.Potential;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
+import ffx.potential.bonded.MultiResidue;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.DualTopologyEnergy;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue
+import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.extended.ExtendedVariable;
 import ffx.potential.extended.TitrationESV;
+import ffx.potential.extended.TitrationESV.TitrationUtils;
 //import edu.rit.pj.ParallelTeam;
 
 // First ligand atom.
@@ -88,102 +91,70 @@ int noElecStart2 = 1;
 // Last atom of the 2nd topology for no electrostatics.
 int noElecStop2 = -1;
 
-// Initial lambda value.
-double initialLambda = 0.5;
+// Lambda value.
+double lambda = 1.0;
 
 // Print out the energy for each step.
 boolean print = false;
 
-// Fix lambda at 1.0 and do not treat it.
-boolean fixedLambda = true;
+// FD step size.
+double lbdStep = 0.0;
+double ldhStep = 0.0001;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc testLamedhGradient [options] <XYZ|PDB> [Topology 2 XYZ|PDB]');
+def cli = new CliBuilder(usage:' ffxc testEsvGradient [options] <XYZ|PDB>');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.s(longOpt:'start', args:1, argName:'1', '(Lbd) Starting ligand atom.');
-cli.s2(longOpt:'start2', args:1, argName:'1', '(Lbd) Starting ligand atom for the 2nd topology.');
 cli.f(longOpt:'final', args:1, argName:'n', '(Lbd) Final ligand atom.');
-cli.f2(longOpt:'final2', args:1, argName:'n', '(Lbd) Final ligand atom for the 2nd topology.');
-cli.as(longOpt:'activeStart', args:1, argName:'1', '(Lbd) Starting active atom.');
-cli.af(longOpt:'activeFinal', args:1, argName:'n', '(Lbd) Final active atom.');
 cli.es(longOpt:'noElecStart', args:1, argName:'1', '(Lbd) No Electrostatics Starting Atom.');
-cli.es2(longOpt:'noElecStart2', args:1, argName:'1', '(Lbd) No Electrostatics Starting Atom for the 2nd Topology.');
 cli.ef(longOpt:'noElecFinal', args:1, argName:'-1', '(Lbd) No Electrostatics Final Atom.');
-cli.ef2(longOpt:'noElecfinal2', args:1, argName:'-1', '(Lbd) No Electrostatics Final Atom for the 2nd topology.');
+cli.lbd(longOpt:'lambda', args:1, argName:'1.0', 'Lambda (Lbd) value; multiplicative* with ldh.');
 cli.ldh(longOpt:'lamedh', args:1, 'Array of lamedh (Ldh) values to test.');
-cli.lbd(longOpt:'lambda', args:1, argName:'1.0', 'Initial lambda (Lbd) scaling, if present.');
-cli.rl(longOpt:'resList', args:1, '(Ldh) Titrate a list of residues (eg A4.A8.B2.B34)');
+cli.rl(longOpt:'resList', required:true, args:1, '(Ldh) Titrate a list of residues (eg A4.A8.B2.B34)');
+cli.dx(longOpt:'stepSize', args:1, argName:'0.0001', 'Finite difference step size.');
 cli.v(longOpt:'verbose', 'Print out the energy for each step.');
-cli.fl(longOpt:'fixedLambda', args:1, argName:true, 'Fix lambda at 1.0 and do not treat it.')
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
-if (options.h || arguments == null || arguments.size() < 1) {
+if (options.s) {
     return cli.usage();
-}
-if (!options.ldh || !options.rl) {
-    return cli.usage("Requires both --resList and --lamedh.")
+} else if (arguments == null || arguments.size() != 1) {
+    logger.info("Requires exactly one filename argument.");
+    return cli.usage();
+} else if (!options.rl) {
+    logger.info(" Specify titratable residues with --resList\n"
+              + "     e.g. to titrate chainA res4 and chainB res6: -rl A4.B6");
+    return cli.usage();
+} else if (options.lbd && options.fl) {
+    logger.info("Contradictory: --lambda and --fixLambda.");
+    return cli.usage();
 }
 
 // Read in command line file.
 String filename = arguments.get(0);
 
-// Starting ligand atom.
+// Ligand definition.
 if (options.s) {
     ligandStart = Integer.parseInt(options.s);
 }
-
-// Final ligand atom.
 if (options.f) {
     ligandStop = Integer.parseInt(options.f);
 }
 
-// Starting ligand atom.
-if (options.s2) {
-    ligandStart2 = Integer.parseInt(options.s2);
-}
-
-// Final ligand atom.
-if (options.f2) {
-    ligandStop2 = Integer.parseInt(options.f2);
-}
-
-// Starting ligand atom.
-if (options.as) {
-    activeStart = Integer.parseInt(options.as);
-}
-
-// Final ligand atom.
-if (options.af) {
-    activeStop = Integer.parseInt(options.af);
-}
-
-// No electrostatics on Topology 1.
+// No-ES definition.
 if (options.es) {
     noElecStart = Integer.parseInt(options.es);
 }
-
-// First atom from Topology 1 with no electrostatics.
 if (options.ef) {
     noElecStop = Integer.parseInt(options.ef);
 }
 
-// No electrostatics on Topology 2.
-if (options.es2) {
-    noElecStart2 = Integer.parseInt(options.es2);
-}
-
-// First atom from Topology 2 with no electrostatics.
-if (options.ef2) {
-    noElecStop2 = Integer.parseInt(options.ef2);
-}
-
 // Fixed lambda value.
 if (options.lbd) {
-    initialLambda = Double.parseDouble(options.lbd);
+    lambda = Double.parseDouble(options.lbd);
 }
 
 // Print the energy for each step.
@@ -191,72 +162,76 @@ if (options.v) {
     print = true;
 }
 
-if (options.fl) {
-    fixedLambda = Boolean.parseBoolean(options.fl);
+if (options.dx) {
+    ldhStep = Double.parseDouble(options.dx);
 }
 
 if (arguments.size() == 1) {
     logger.info("\n Testing lamedh derivatives for " + filename);
 } else {
-    String filename2 = arguments.get(1);
-    logger.info("\n Testing lamedh derivatives for [" + filename + "," + filename2 + "] dual topology\n");
-    logger.info(" Initializing Topology 1\n");
+    return cli.usage();
 }
 
-// Turn on computation of ESV derivatives
-System.setProperty("lamedhterm","true");
-if (!fixedLambda) {
-    System.setProperty("lambdaterm","true");
-} else {
-    System.setProperty("lambdaterm","false");
-}
-
-// Relative free energies via the DualTopologyEnergy class require different
-// default OSRW parameters than absolute free energies.
-if (arguments.size() > 1) {
-    // Condensed phase polarization is evaluated over the entire range.
-    System.setProperty("polarization-lambda-start","0.0");
-    // Polarization energy is not scaled individually by lambda, but
-    // along with the overall potential energy of a topology.
-    System.setProperty("polarization-lambda-exponent","0.0");
-    // Ligand vapor electrostatics are not calculated. This cancels when the
-    // difference between protein and water environments is considered.
-    System.setProperty("ligand-vapor-elec","false");
-    // Condensed phase polarization, without the ligand present, is unecessary.
-    System.setProperty("no-ligand-condensed-scf","false");
-}
-
-System.setProperty("bondterm", "false");
-System.setProperty("angleterm", "false");
+// Stuff that's OFF
 System.setProperty("strbndterm", "false");
 System.setProperty("opbendterm", "false");
 System.setProperty("torsionterm", "false");
 System.setProperty("tortorterm", "false");
 System.setProperty("pitorsterm", "false");
-System.setProperty("mpoleterm", "false");
+System.setProperty("mpoleterm", "false");               // !! TODO
+
+// Polarization keys
+System.setProperty("polarization", "NONE");             // !! TODO
+System.setProperty("polarization-lambda-start","0.0");      // polarize on the whole range [0,1]
+System.setProperty("polarization-lambda-exponent","0.0");   // polarization not softcored, only prefactored
+System.setProperty("ligand-vapor-elec", "false");           // cancels when reference is solution phase
+System.setProperty("no-ligand-condensed-scf", "false");     // don't need condensed phase polarization
+
+// Stuff that's ON
+System.setProperty("esvterm", "true");
+System.setProperty("lambdaterm", "true");
+System.setProperty("bondterm", "true");
+System.setProperty("angleterm", "true");
+System.setProperty("vdwterm", "true");
+
+// Test parameters
 System.setProperty("vdw-cutoff", "1000");
 
 // Open the first topology.
 open(filename);
+MolecularAssembly mola = active;
 
 // Parse the required lamedh arguments and create TitrationESV objects.
-def String[] ldhTokens = (options.ldh).tokenize(',');
-def String[] rlTokens = (options.rl).tokenize(',');
-if (ldhTokens.length != rlTokens.length) {
-    logger.severe("Dimension mismatch: --resList and --lamedh.");
+String[] rlTokens = (options.rl).tokenize(',');
+final int numESVs = rlTokens.length;
+String[] ldhTokens;
+if (options.ldh) {
+    ldhTokens = (options.ldh).tokenize(',');
+    if (ldhTokens.length != numLdh) {
+        logger.warning("Number of --lamedh inputs must match --resList.");
+    }
+} else {
+    ldhTokens = new String[numESVs];
+    for (int i = 0; i < numESVs; i++) {
+        ldhTokens[i] = 0.5;
+    }
 }
-int numLdh = ldhTokens.length;
-for (int i = 0; i < numLdh; i++) {
+
+for (int i = 0; i < numESVs; i++) {
     logger.info(" (Groovy) Ldh: " + rlTokens[i] + ", " + ldhTokens[i]);
 }
 
 List<ExtendedVariable> esvList = new ArrayList<>();
 Polymer[] polymers = active.getChains();
-double[] initialLamedh = new double[numLdh];
+double[] lamedh = new double[numESVs];
 double temperature = 298.15;
 double dt = 1.0;
-for (int i = 0; i < numLdh; i++) {
-    initialLamedh[i] = Double.parseDouble(ldhTokens[i]);
+for (int i = 0; i < numESVs; i++) {
+    if (ldhTokens != null) {
+        lamedh[i] = Double.parseDouble(ldhTokens[i]);
+    } else {
+        lamedh[i] = 0.5;
+    }
     
     Character chainID = rlTokens[i].charAt(0);
     int resNum = Integer.parseInt(rlTokens[i].substring(1));
@@ -273,7 +248,15 @@ for (int i = 0; i < numLdh; i++) {
         logger.severe("Couldn't find target residue " + rlTokens[i]);
     }
     
-    TitrationESV esv = new TitrationESV(target.get(), active, temperature, dt);
+    
+    
+//        AminoAcid3 aa = res.getAminoAcid3();
+//        if (aa == AminoAcid3.HIE) {
+//            throw new UnsupportedOperationException("3-way HIS Ldh under construction.");
+//        }
+//        MultiResidue titrating = TitrationUtils.titrationFactory(mola, mola.getForceField(), ffe, res);
+    MultiResidue titrating = TitrationUtils.titrationFactory(mola, target.get());
+    TitrationESV esv = new TitrationESV(titrating, temperature, dt);
     active.getPotentialEnergy().addExtendedVariable(esv);
     esvList.add(esv);
 }
@@ -289,23 +272,6 @@ for (int i = ligandStart; i <= ligandStop; i++) {
     ai.print();
 }
 
-// Only support active atoms for single topology
-if (arguments.size() == 1) {
-    // Apply active atom selection
-    if (activeStop > activeStart && activeStart > 0 && activeStop <= n) {
-        // Make all atoms inactive.
-        for (int i = 0; i <= n; i++) {
-            Atom ai = atoms[i - 1];
-            ai.setActive(false);
-        }
-        // Make requested atoms active.
-        for (int i = activeStart; i <= activeStop; i++) {
-            Atom ai = atoms[i - 1];
-            ai.setActive(true);
-        }
-    }
-}
-
 // Apply the no electrostatics atom selection
 if (noElecStart < 1) {
     noElecStart = 1;
@@ -319,100 +285,85 @@ for (int i = noElecStart; i <= noElecStop; i++) {
     ai.print();
 }
 
-potential = active.getPotentialEnergy();
-ForceFieldEnergy forceFieldEnergy = active.getPotentialEnergy();
+ForceFieldEnergy ffe = active.getPotentialEnergy();
 // Turn off checks for overlapping atoms, which is expected for lambda=0.
-forceFieldEnergy.getCrystal().setSpecialPositionCutoff(0.0);
-LambdaInterface lambdaInterface = active.getPotentialEnergy();
-
-// Check for a 2nd topology.
-if (arguments.size() > 1) {
-    topology1 = active;
-
-    // Read in the 2nd command line file.
-    filename = arguments.get(1);
-    logger.info("\n Initializing Topology 2\n");
-    open(filename);
-
-    // Select ligand atoms
-    atoms = active.getAtomArray();
-    n = atoms.length;
-    // Apply ligand atom selection
-    for (int i = ligandStart2; i <= ligandStop2; i++) {
-        Atom ai = atoms[i - 1];
-        ai.setApplyLambda(true);
-    }
-
-    // Apply the no electrostatics atom selection
-    if (noElecStart2 < 1) {
-        noElecStart2 = 1;
-    }
-    if (noElecStop2 > atoms.length) {
-        noElecStop2 = atoms.length;
-    }
-    for (int i = noElecStart2; i <= noElecStop2; i++) {
-        Atom ai = atoms[i - 1];
-        ai.setElectrostatics(false);
-        ai.print();
-    }
-
-    forceFieldEnergy = active.getPotentialEnergy();
-    // Turn off checks for overlapping atoms, which is expected for lambda=0.
-    forceFieldEnergy.getCrystal().setSpecialPositionCutoff(0.0);
-
-    DualTopologyEnergy dualTopologyEnergy = new DualTopologyEnergy(topology1, active);
-    potential = dualTopologyEnergy;
-    lambdaInterface = dualTopologyEnergy;
-}
+ffe.getCrystal().setSpecialPositionCutoff(0.0);
 
 // Reset the number of variables for the case of dual topology.
-n = potential.getNumberOfVariables();
+n = ffe.getNumberOfVariables();
 double[] x = new double[n];
 double[] gradient = new double[n];
 double[] lambdaGrad = new double[n];
+double[][] lamedhGrad = new double[numESVs][n];
 double[][] lambdaGradFD = new double[2][n];
-// Container for numeric dEdXdLdh
-double[][] lamedhGradFD = new double[2][n];
+double[][][] lamedhGradFD = new double[2][numESVs][n];
 
 // Number of independent atoms.
 assert(n % 3 == 0);
 int nAtoms = n / 3;
 
-// Compute the Lambda = 0.0 energy.
-if (!fixedLambda) {
-    double lambda = 0.0;
-    lambdaInterface.setLambda(lambda);
-}
+ffe.setLambda(lambda);
+
+// Compute the L = 0.0 energy.
 for (ExtendedVariable esv : esvList) {
     esv.setLamedh(0.0);
 }
-potential.getCoordinates(x);
-double e0 = potential.energyAndGradient(x,gradient);
+ffe.getCoordinates(x);
+double e0 = ffe.energyAndGradient(x,gradient);
 
-// Compute the Lambda = 1.0 energy.
-if (!fixedLambda) {
-    lambda = 1.0;
-    lambdaInterface.setLambda(lambda);
-}
+// Compute the L = 1.0 energy.
 for (ExtendedVariable esv : esvList) {
     esv.setLamedh(1.0);
 }
-double e1 = potential.energyAndGradient(x,gradient);
+double e1 = ffe.energyAndGradient(x,gradient);
 
 logger.info(String.format(" E(0):      %20.8f.", e0));
 logger.info(String.format(" E(1):      %20.8f.", e1));
 logger.info(String.format(" E(1)-E(0): %20.8f.\n", e1-e0));
 
 // Finite-difference step size.
-double lbdStep = 1.0e-5;
-double lbdWidth = 2.0 * lbdStep;
-double ldhStep = 1.0e-5;
+double lbdWidth = 2.0 * lbdStep;    // default lbdStep = 0.0
 double ldhWidth = 2.0 * ldhStep;
 
 // Error tolerence
 double errTol = 1.0e-3;
 // Upper bound for typical gradient sizes (expected gradient)
 double expGrad = 1000.0;
+
+/******************************************************************************/
+// Finite Difference tests of each ESV individually.
+/******************************************************************************/
+for (int iESV = 0; iESV < numESVs; iESV++) {
+    esvList.get(iESV).setLamedh(lamedh[iESV] - ldhStep);
+    double lower = ffe.energyAndGradient(x,lamedhGradFD[1][iESV]);
+
+    esvList.get(iESV).setLamedh(lamedh[iESV] + ldhStep);
+    double upper = ffe.energyAndGradient(x,lamedhGradFD[0][iESV]);
+
+    esvList.get(iESV).setLamedh(lamedh[iESV]);
+    double center = ffe.energyAndGradient(x,lamedhGrad[iESV]);
+    double[] esvAnalytics = ffe.getdEdLdh();
+    double alytic1 = esvAnalytics[iESV];
+
+    double fd1 = (upper - lower) / ldhWidth;
+    double err1 = Math.abs(fd1 - alytic1);
+
+    StringBuilder sb = new StringBuilder();
+    sb.append(String.format(" (ESV%d) Numeric FD @ LdhPlus,LdhMinus,width,dEdLdh: %+9.6g %+9.6g %4.2g  >  %+9.6g\n", iESV, upper, lower, ldhWidth, fd1));
+    sb.append(String.format(" (ESV%d) Analytic Derivative @ Ldh %4.2f  >  dEdLdh: %+9.6g\n\n", iESV, lamedh[iESV], alytic1));
+    String passFail1 = (err1 < errTol) ? "passed" : "failed";
+    sb.append(String.format(" (ESV%d) dE/dL %6s:   %+10.6f\n", iESV, passFail1, err1));
+    sb.append(String.format(" (ESV%d) Numeric:        %+10.6f\n", iESV, fd1));
+    sb.append(String.format(" (ESV%d) Analytic:       %+10.6f\n", iESV, alytic1));
+    logger.info(sb.toString());
+}
+
+/******************************************************************************/
+// Skip the loop?
+return;
+/******************************************************************************/
+
+/*
 
 // Test Lambda gradient in the neighborhood of the lambda variable.
 for (int j=0; j<3; j++) {
@@ -473,9 +424,9 @@ for (int j=0; j<3; j++) {
     }
 
     // Analytic dEdLdh, d2E/dLdh2 and dE/dX/dLdh
-    double[] dEdLdh = forceFieldEnergy.getdEdLdh();
-    double[] d2EdLdh2 = forceFieldEnergy.getd2EdLdh2();
-    double[][] dEdXdLdh = forceFieldEnergy.getdEdXdLdh();
+    double[] dEdLdh = ffe.getdEdLdh();
+    double[] d2EdLdh2 = ffe.getd2EdLdh2();
+    double[][] dEdXdLdh = ffe.getdEdXdLdh();
 
     // Calculate the finite-difference dEdLambda, d2EdLambda2 and dEdLambdadX
     // Plus step
@@ -735,3 +686,5 @@ if (avGrad > expGrad) {
 } else {
     logger.info(String.format(" RMS gradient: %10.6f", avGrad));
 }
+
+*/
