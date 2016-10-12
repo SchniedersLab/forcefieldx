@@ -1,15 +1,12 @@
 package ffx.potential.extended;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.OptionalDouble;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
-
-import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
@@ -26,7 +23,6 @@ import ffx.potential.bonded.StretchBend;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.bonded.TorsionTorsion;
 import ffx.potential.bonded.UreyBradley;
-import ffx.potential.nonbonded.CoordRestraint;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwaldCart;
 import ffx.potential.nonbonded.ParticleMeshEwaldQI;
@@ -34,12 +30,13 @@ import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.parameters.ForceField;
 
 /**
- * 
+ *
  * @author slucore
  */
 public class ExtendedSystem {
+
     private static final Logger logger = Logger.getLogger(ExtendedSystem.class.getName());
-    
+
     // ESV variables
     private int numESVs;
     private int nAtoms;
@@ -54,7 +51,7 @@ public class ExtendedSystem {
     private final ParticleMeshEwaldQI pme;  // must not be global frame
     // Application-specific variables
     private final double pHconst;
-    
+
     public ExtendedSystem() {
         logger.warning("Invoked ExtendedSystem null/temporary constuctor.");
         mola = null;
@@ -69,11 +66,11 @@ public class ExtendedSystem {
         mpoleTerm = false;
         esvList = new ArrayList<>();
     }
-    
+
     public ExtendedSystem(MolecularAssembly mola) {
         this(mola, 7.4);
     }
-    
+
     public ExtendedSystem(MolecularAssembly mola, double pH) {
         this.mola = mola;
         if (mola == null) {
@@ -90,64 +87,64 @@ public class ExtendedSystem {
             logger.severe("ExtendedSystem currently supported only for ForceFieldEnergy potentials.");
         }
         this.ff = mola.getForceField();
-        
+
         ForceFieldEnergy ffe = null;
         if (potential instanceof ForceFieldEnergy) {
             ffe = (ForceFieldEnergy) potential;
         } else {
             logger.severe("Extended system only suppoted by force field potentials.");
         }
-        
+
         this.vdw = ffe.getVdwNode();
         ParticleMeshEwald pmeNode = ffe.getPmeNode();
         if (pmeNode instanceof ParticleMeshEwaldQI) {
-            this.pme = (ParticleMeshEwaldQI) pmeNode; 
-       } else if (pmeNode instanceof ParticleMeshEwaldCart) {
+            this.pme = (ParticleMeshEwaldQI) pmeNode;
+        } else if (pmeNode instanceof ParticleMeshEwaldCart) {
             logger.severe("Extended system cannot operate with global-frame ParticleMeshEwald.");
             this.pme = null;
         } else {
-           logger.severe(format("Extended system constructed with null or invalid PME: %s", pmeNode.toString()));
-           this.pme = null;
-       }
-        
+            logger.severe(format("Extended system constructed with null or invalid PME: %s", pmeNode.toString()));
+            this.pme = null;
+        }
+
         this.pHconst = pH;
         esvTerm = ff.getBoolean(ForceField.ForceFieldBoolean.ESVTERM, false);
         phTerm = ff.getBoolean(ForceField.ForceFieldBoolean.PHTERM, false);
         vdwTerm = ff.getBoolean(ForceField.ForceFieldBoolean.VDWTERM, true);
         mpoleTerm = ff.getBoolean(ForceField.ForceFieldBoolean.MPOLETERM, true);
-        
+
         esvList = new ArrayList<>();
         if (!esvTerm) {
             logger.severe("Extended system created while esvTerm set to false.");
         }
     }
-    
+
     /**
-     * Read-only; modifying the returned list has no effect.
-     * TODO LOW modify remaining calls to this function to instead 
-     *      use the improved and naturally parallelizable stream().
+     * Read-only; modifying the returned list has no effect. TODO LOW modify
+     * remaining calls to this function to instead use the improved and
+     * naturally parallelizable stream().
      */
     public List<ExtendedVariable> getESVList() {
         return new ArrayList<>(esvList);
     }
-    
+
     /**
      * Stream the extended variable list.
      */
     public Stream<ExtendedVariable> stream() {
         return esvList.stream();
     }
-     
+
     public int num() {
         if (numESVs != esvList.size()) {
             logger.severe("Programming error: ExtendedSystem.num()");
         }
         return numESVs;
     }
-    
+
     /**
-     * Get the zero/unity bias and the pH energy term.
-     * PME and vdW not included here as their ESV dependence isn't decomposable.
+     * Get the zero/unity bias and the pH energy term. PME and vdW not included
+     * here as their ESV dependence isn't decomposable.
      */
     public double nonbonded(double temperature) {
         if (!esvTerm) {
@@ -158,20 +155,20 @@ public class ExtendedSystem {
         }
         double biasEnergySum = 0.0;
         double phEnergySum = 0.0;
-        
+
         for (ExtendedVariable esv : esvList) {
             biasEnergySum += esv.getBiasEnergy();
             if (phTerm && esv instanceof TitrationESV) {
                 phEnergySum += ((TitrationESV) esv).getPhEnergy(pHconst, temperature);
             }
         }
-        
+
         logger.info(esvLogger.toString());
         esvLogger = new StringBuilder();
-        
+
         return biasEnergySum + phEnergySum;
     }
-    
+
     /**
      * Update the position of all ESV particles.
      */
@@ -192,40 +189,39 @@ public class ExtendedSystem {
             pme.sourceLamedh();
         }
     }
-    
+
     /**
-     * Returns *the difference* between full bonded energy and lamedh-scaled bonded energy.
-     * Lamedh_Bonded = esvBondedEnergy() = FFE.totalBondedEnergy - esvBondedCorrection();
+     * Returns *the difference* between full bonded energy and lamedh-scaled
+     * bonded energy. Lamedh_Bonded = esvBondedEnergy() = FFE.totalBondedEnergy
+     * - esvBondedCorrection();
      */
-    public double bonded(boolean[] termFlags, BondedTerm[][] termArrays, 
+    public double bonded(boolean[] termFlags, BondedTerm[][] termArrays,
             boolean gradient, boolean lambdaBondedTerms) {
         return calcBondedTerms(true, termFlags, termArrays, gradient, lambdaBondedTerms);
     }
-    
+
     /**
-     * Returns the lamedh-scaled bonded energy.
-     * Lamedh_Bonded = esvBondedEnergy() = FFE.totalBondedEnergy - esvBondedCorrection();
+     * Returns the lamedh-scaled bonded energy. Lamedh_Bonded =
+     * esvBondedEnergy() = FFE.totalBondedEnergy - esvBondedCorrection();
      */
-    public double totalBonded(boolean[] termFlags, BondedTerm[][] termArrays, 
+    public double totalBonded(boolean[] termFlags, BondedTerm[][] termArrays,
             boolean gradient, boolean lambdaBondedTerms) {
         return calcBondedTerms(false, termFlags, termArrays, gradient, lambdaBondedTerms);
     }
-    
+
     /**
-     *  FFE passes in:
-     *      List<Object[]> termArrays = new ArrayList<>(Arrays.asList(
-     *          bonds, angles, stretchBends, ureyBradleys, 
-     *          outOfPlaneBends, torsions, piOrbitalTorsions, torsionTorsions, 
-     *          improperTorsions, restraintBonds));     
+     * FFE passes in: List<Object[]> termArrays = new ArrayList<>(Arrays.asList(
+     * bonds, angles, stretchBends, ureyBradleys, outOfPlaneBends, torsions,
+     * piOrbitalTorsions, torsionTorsions, improperTorsions, restraintBonds));
      */
-    private double calcBondedTerms(boolean correctionOnly, 
-            boolean[] termFlags, BondedTerm[][] termArrays, 
+    private double calcBondedTerms(boolean correctionOnly,
+            boolean[] termFlags, BondedTerm[][] termArrays,
             boolean gradient, boolean lambdaBondedTerms) {
         double bondEnergy = 0.0, angleEnergy = 0.0, stretchBendEnergy = 0.0,
                 ureyBradleyEnergy = 0.0, outOfPlaneBendEnergy = 0.0, torsionEnergy = 0.0,
                 piOrbitalTorsionEnergy = 0.0, torsionTorsionEnergy = 0.0,
                 improperTorsionEnergy = 0.0, restraintBondEnergy = 0.0;
-        
+
         if (termFlags[0]) {
             Bond[] bonds = (Bond[]) termArrays[0];
             for (int i = 0; i < bonds.length; i++) {
@@ -234,8 +230,8 @@ public class ExtendedSystem {
                     continue;
                 }
                 double be = b.energy(gradient);
-                bondEnergy += (correctionOnly) 
-                        ? (1.0 - lamedhScaling(b)) * be 
+                bondEnergy += (correctionOnly)
+                        ? (1.0 - lamedhScaling(b)) * be
                         : (be * lamedhScaling(b));
             }
         }
@@ -248,7 +244,7 @@ public class ExtendedSystem {
                     continue;
                 }
                 double ae = a.energy(gradient);
-                angleEnergy += (correctionOnly) 
+                angleEnergy += (correctionOnly)
                         ? (1.0 - lamedhScaling(a)) * ae
                         : (ae * lamedhScaling(a));
             }
@@ -262,7 +258,7 @@ public class ExtendedSystem {
                     continue;
                 }
                 double sbe = stretchBend.energy(gradient);
-                stretchBendEnergy += (correctionOnly) 
+                stretchBendEnergy += (correctionOnly)
                         ? (1.0 - lamedhScaling(stretchBend)) * sbe
                         : (sbe * lamedhScaling(stretchBend));
             }
@@ -276,7 +272,7 @@ public class ExtendedSystem {
                     continue;
                 }
                 double ube = ureyBradley.energy(gradient);
-                ureyBradleyEnergy += (correctionOnly) 
+                ureyBradleyEnergy += (correctionOnly)
                         ? (1.0 - lamedhScaling(ureyBradley)) * ube
                         : (ube * lamedhScaling(ureyBradley));
             }
@@ -290,7 +286,7 @@ public class ExtendedSystem {
                     continue;
                 }
                 double oope = outOfPlaneBend.energy(gradient);
-                outOfPlaneBendEnergy += (correctionOnly) 
+                outOfPlaneBendEnergy += (correctionOnly)
                         ? (1.0 - lamedhScaling(outOfPlaneBend)) * oope
                         : (outOfPlaneBend.energy(gradient) * lamedhScaling(outOfPlaneBend));
             }
@@ -365,7 +361,7 @@ public class ExtendedSystem {
                         : (rbe * lamedhScaling(rb));
             }
         }
-        
+
         double esvBonded = bondEnergy + angleEnergy + stretchBendEnergy
                 + ureyBradleyEnergy + outOfPlaneBendEnergy + torsionEnergy
                 + piOrbitalTorsionEnergy + torsionTorsionEnergy
@@ -375,9 +371,10 @@ public class ExtendedSystem {
         }
         return esvBonded;
     }
-    
+
     /**
      * Get amount by which this term should be scaled d/t any ESVs.
+     *
      * @param rols
      * @return
      */
@@ -395,10 +392,10 @@ public class ExtendedSystem {
         }
         return totalScale;
     }
-    
+
     /**
-     * 
-     * @param esv 
+     *
+     * @param esv
      */
     public void addVariable(ExtendedVariable esv) {
         if (esvList == null) {
@@ -407,11 +404,11 @@ public class ExtendedSystem {
         esvList.add(esv);
         numESVs = esvList.size();
         esvTerm = true;
-        
+
         if (esv instanceof TitrationESV) {
             phTerm = true;
         }
-        
+
         // Connect to terms which handle Ldh explicity: vdW and PME.
         if (!vdw.hasExtendedSystem()) {
             vdw.attachExtendedSystem(this);
@@ -437,14 +434,14 @@ public class ExtendedSystem {
         if (comTerm && comRestraint != null) {
             // TODO comRestraint.setLamedh(esvList);
         }
-        */
-        
+         */
+
         logger.info(String.format(" ExtendedSystem acquired ESV: %s\n", esv));
         if (esvLogger == null) {
             esvLogger = new StringBuilder(String.format(" ESV Scaling: \n"));
         }
     }
-    
+
     /**
      * @return [numESVs] gradient w.r.t. each lamedh
      */
@@ -502,7 +499,7 @@ public class ExtendedSystem {
     public double[][] getdEdXdLdh() {
         List<double[][]> terms = new ArrayList<>();
         if (vdwTerm) {
-            terms.add(vdw.getdEdXdLdh());
+            //terms.add(vdw.getdEdXdLdh());
         }
         if (mpoleTerm) {
             // TODO terms.add(particleMeshEwald.getdEdXdLdh());
@@ -528,7 +525,7 @@ public class ExtendedSystem {
         }
         return eleSum2DArrays(terms, numESVs, 3 * nAtoms);
     }
-    
+
     public double[] getd2EdLdh2(boolean lambdaBondedTerms) {
         List<double[]> terms = new ArrayList<>();
         double[] bias = new double[numESVs];
@@ -538,7 +535,7 @@ public class ExtendedSystem {
         terms.add(bias);
         if (!lambdaBondedTerms) {
             if (vdwTerm) {
-                terms.add(vdw.getd2EdLdh2());
+                // terms.add(vdw.getd2EdLdh2());
             }
             if (mpoleTerm) {
 //                 TODO terms.add(particleMeshEwald.getd2EdLdh2());
@@ -565,10 +562,10 @@ public class ExtendedSystem {
         }
         return eleSum1DArrays(terms, numESVs);
     }
-    
+
     /**
-     * Element-wise sum over a list of 1D double arrays.
-     * Benchmarks faster than Java8's stream API.
+     * Element-wise sum over a list of 1D double arrays. Benchmarks faster than
+     * Java8's stream API.
      */
     private static double[] eleSum1DArrays(List<double[]> terms, int numESVs) {
         double[] termSum = new double[terms.size()];

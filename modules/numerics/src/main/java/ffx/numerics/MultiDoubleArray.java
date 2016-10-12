@@ -40,19 +40,19 @@ package ffx.numerics;
 import java.util.Arrays;
 
 /**
- * The ThreadedDoubleArray avoids the need for Atomic variables, but at the cost
+ * The MultiDoubleArray avoids the need for Atomic variables, but at the cost
  * of storing a full size double array for each thread.
  *
  * @author Michael J. Schnieders
  *
  * @since 1.0
  */
-public class ThreadedDoubleArray implements AtomicDoubleArray {
+public class MultiDoubleArray implements AtomicDoubleArray {
 
     private final int threadCount;
     private final double array[][];
 
-    public ThreadedDoubleArray(int nThreads, int size) {
+    public MultiDoubleArray(int nThreads, int size) {
         array = new double[nThreads][size];
         threadCount = nThreads;
     }

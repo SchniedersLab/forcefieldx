@@ -65,8 +65,8 @@ import ffx.crystal.SymOp;
 import ffx.numerics.AdderDoubleArray;
 import ffx.numerics.AtomicDoubleArray;
 import ffx.numerics.AtomicDoubleArray.AtomicDoubleArrayImpl;
+import ffx.numerics.MultiDoubleArray;
 import ffx.numerics.PJDoubleArray;
-import ffx.numerics.ThreadedDoubleArray;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Atom.Resolution;
@@ -81,6 +81,8 @@ import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.VDWType;
 
 import static ffx.numerics.AtomicDoubleArray.AtomicDoubleArrayImpl.PJ;
+import static ffx.potential.nonbonded.VanDerWaalsForm.EPS;
+import static ffx.potential.nonbonded.VanDerWaalsForm.RADMIN;
 import static ffx.potential.parameters.ForceField.ForceFieldString.ARRAY_REDUCTION;
 import static ffx.potential.parameters.ForceField.ForceFieldString.EPSILONRULE;
 import static ffx.potential.parameters.ForceField.ForceFieldString.RADIUSRULE;
@@ -104,40 +106,6 @@ public class VanDerWaals implements MaskingInterface,
         LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(VanDerWaals.class.getName());
-
-    public enum VDW_TYPE {
-
-        BUFFERED_14_7, LENNARD_JONES
-    }
-
-    public enum RADIUS_RULE {
-        ARITHMETIC, CUBIC_MEAN, GEOMETRIC
-    }
-
-    public enum RADIUS_SIZE {
-        DIAMETER, RADIUS
-    }
-
-    public enum RADIUS_TYPE {
-        R_MIN, SIGMA
-    }
-
-    public enum EPSILON_RULE {
-        GEOMETRIC, HHG
-    }
-
-    /**
-     * Configure default vdW parameters based on the AMOEBA force field.
-     */
-    private VDW_TYPE vdwType = VDW_TYPE.BUFFERED_14_7;
-    private EPSILON_RULE epsilonRule = EPSILON_RULE.HHG;
-    private RADIUS_RULE radiusRule = RADIUS_RULE.CUBIC_MEAN;
-    private RADIUS_SIZE radiusSize = RADIUS_SIZE.DIAMETER;
-    private RADIUS_TYPE radiusType = RADIUS_TYPE.R_MIN;
-    private double scale12 = 0.0;
-    private double scale13 = 0.0;
-    private double scale14 = 1.0;
-    private double scale15 = 1.0;
 
     /**
      * This field specifies resolution for multi-scale modeling.
@@ -174,6 +142,7 @@ public class VanDerWaals implements MaskingInterface,
      * *************************************************************************
      * Lambda variables.
      */
+    private boolean gradient;
     private boolean lambdaTerm;
     private boolean esvTerm;
     private boolean isSoft[];
@@ -268,12 +237,9 @@ public class VanDerWaals implements MaskingInterface,
      * atom nucleus to the hydrogen nucleus (~0.9).
      */
     private double reductionValue[];
-    private final double radEps[][];
     private double longRangeCorrection;
     private final boolean doLongRangeCorrection;
     private int maxClass;
-    private static final byte RADMIN = 0;
-    private static final byte EPS = 1;
     /**
      * *************************************************************************
      * Parallel variables.
@@ -286,8 +252,6 @@ public class VanDerWaals implements MaskingInterface,
     private final SharedDouble shareddEdL;
     private final SharedDouble sharedd2EdL2;
     private SharedDouble[] shareddEdLdh;
-    private SharedDouble[] sharedd2EdLdh2;
-    private boolean gradient;
 
     private AtomicDoubleArrayImpl atomicDoubleArrayImpl = PJ;
     /**
@@ -320,12 +284,6 @@ public class VanDerWaals implements MaskingInterface,
      * gradient. Size: [threadCount][nAtoms]
      */
     private AtomicDoubleArray lambdaGradZ;
-    /**
-     * [threadCount][numESVs][nAtoms] X-component of each lamedh derivative.
-     */
-    private double lamedhGradX[][][];
-    private double lamedhGradY[][][];
-    private double lamedhGradZ[][][];
 
     /**
      * The neighbor-list includes 1-2 and 1-3 interactions, which are masked out
@@ -343,6 +301,8 @@ public class VanDerWaals implements MaskingInterface,
     private final long vdwTime[];
     private final long reductionTime[];
     private long initializationTotal, vdwTotal, reductionTotal;
+    private final VanDerWaalsForm vdwForm;
+    private final NonbondedCutoff nonbondedCutoff;
     private final MultiplicativeSwitch multiplicativeSwitch;
 
     /**
@@ -366,193 +326,7 @@ public class VanDerWaals implements MaskingInterface,
         nAtoms = atoms.length;
         nSymm = crystal.spaceGroup.getNumberOfSymOps();
 
-        /**
-         * Define functional form.
-         */
-        String value = forceField.getString(VDWTYPE, "Buffered-14-7");
-        try {
-            vdwType = VDW_TYPE.valueOf(toEnumForm(value));
-        } catch (Exception e) {
-            logger.info(format(" Unrecognized VDWTYPE %s; defaulting to Buffered-14-7", value));
-        }
-
-        /**
-         * Define epsilon combining rule.
-         */
-        value = forceField.getString(EPSILONRULE, "HHG");
-        try {
-            epsilonRule = EPSILON_RULE.valueOf(toEnumForm(value));
-        } catch (Exception e) {
-            logger.info(format(" Unrecognized EPSILONRULE %s; defaulting to HHG", value));
-        }
-
-        /**
-         * Define radius combining rule.
-         */
-        value = forceField.getString(RADIUSRULE, "Cubic-Mean");
-        try {
-            radiusRule = RADIUS_RULE.valueOf(toEnumForm(value));
-        } catch (Exception e) {
-            logger.info(format(" Unrecognized RADIUSRULE %s; defaulting to Cubic-Mean", value));
-        }
-
-        /**
-         * Define radius size.
-         */
-        value = forceField.getString(RADIUSSIZE, "Diameter");
-        try {
-            radiusSize = RADIUS_SIZE.valueOf(toEnumForm(value));
-        } catch (Exception e) {
-            logger.info(format(" Unrecognized RADIUSSIZE %s; defaulting to Diameter", value));
-        }
-
-        /**
-         * Define radius type.
-         */
-        value = forceField.getString(RADIUSTYPE, "R-Min");
-        try {
-            radiusType = RADIUS_TYPE.valueOf(toEnumForm(value));
-        } catch (Exception e) {
-            logger.info(format(" Unrecognized RADIUSTYPE %s; defaulting to R-Min", value));
-        }
-
-        /**
-         * Define masking rules.
-         */
-        scale12 = forceField.getDouble(ForceFieldDouble.VDW_12_SCALE, 0.0);
-        scale13 = forceField.getDouble(ForceFieldDouble.VDW_13_SCALE, 0.0);
-        scale14 = forceField.getDouble(ForceFieldDouble.VDW_14_SCALE, 1.0);
-        scale15 = forceField.getDouble(ForceFieldDouble.VDW_15_SCALE, 1.0);
-        /**
-         * The convention in TINKER is a vdw-14-scale factor of 2.0 means to
-         * scale by 0.5.
-         */
-        if (scale12 > 1.0) {
-            scale12 = 1.0 / scale12;
-        }
-        if (scale13 > 1.0) {
-            scale13 = 1.0 / scale13;
-        }
-        if (scale14 > 1.0) {
-            scale14 = 1.0 / scale14;
-        }
-        if (scale15 != 1.0) {
-            logger.severe(" Van Der Waals 1-5 masking rules are not supported.");
-        }
-
-        /**
-         * Configure van der Waals well shape parameters.
-         */
-        switch (vdwType) {
-            case LENNARD_JONES:
-                repulsivePower = 12;
-                dispersivePower = 6;
-                delta = 0.0;
-                gamma = 0.0;
-                break;
-            case BUFFERED_14_7:
-            default:
-                repulsivePower = 14;
-                dispersivePower = 7;
-                delta = 0.07;
-                gamma = 0.12;
-                break;
-        }
-
-        repDispPower = repulsivePower - dispersivePower;
-        dispersivePower1 = dispersivePower - 1;
-        repDispPower1 = repDispPower - 1;
-        delta1 = 1.0 + delta;
-        t1n = pow(delta1, dispersivePower);
-        gamma1 = 1.0 + gamma;
-
-        Map<String, VDWType> map = forceField.getVDWTypes();
-        TreeMap<String, VDWType> vdwTypes = new TreeMap<>(map);
-        maxClass = 0;
-        for (VDWType vdwType : vdwTypes.values()) {
-            if (vdwType.atomClass > maxClass) {
-                maxClass = vdwType.atomClass;
-            }
-        }
-        radEps = new double[maxClass + 1][2 * (maxClass + 1)];
-
-        /**
-         * Scale factor to convert to vdW size to Rmin.
-         */
-        double radScale;
-        switch (radiusSize) {
-            case DIAMETER:
-                radScale = 0.5;
-                break;
-            case RADIUS:
-            default:
-                radScale = 1.0;
-                break;
-        }
-        switch (radiusType) {
-            case SIGMA:
-                radScale *= 1.122462048309372981;
-                break;
-            case R_MIN:
-            default:
-                break;
-
-        }
-
-        /**
-         * Atom Class numbering starts at 1.
-         */
-        for (VDWType vdwi : vdwTypes.values()) {
-            int i = vdwi.atomClass;
-            double ri = radScale * vdwi.radius;
-            double ri2 = ri * ri;
-            double ri3 = ri * ri2;
-            double e1 = vdwi.wellDepth;
-            double se1 = sqrt(e1);
-            for (VDWType vdwj : vdwTypes.tailMap(vdwi.getKey()).values()) {
-                int j = vdwj.atomClass;
-                double rj = radScale * vdwj.radius;
-                double rj2 = rj * rj;
-                double rj3 = rj * rj2;
-                double e2 = vdwj.wellDepth;
-                double se2 = sqrt(e2);
-                double radmin;
-                double eps;
-                switch (radiusRule) {
-                    case ARITHMETIC:
-                        radmin = ri + rj;
-                        break;
-                    case GEOMETRIC:
-                        radmin = 2.0 * sqrt(ri) * sqrt(rj);
-                        break;
-                    default:
-                    case CUBIC_MEAN:
-                        radmin = 2.0 * (ri3 + rj3) / (ri2 + rj2);
-                }
-                switch (epsilonRule) {
-                    case GEOMETRIC:
-                        eps = se1 * se2;
-                        break;
-                    default:
-                    case HHG:
-                        eps = 4.0 * (e1 * e2) / ((se1 + se2) * (se1 + se2));
-                        break;
-                }
-                if (radmin > 0) {
-                    radEps[i][j * 2 + RADMIN] = 1.0 / radmin;
-                } else {
-                    radEps[i][j * 2 + RADMIN] = 0.0;
-                }
-
-                radEps[i][j * 2 + EPS] = eps;
-                if (radmin > 0) {
-                    radEps[j][i * 2 + RADMIN] = 1.0 / radmin;
-                } else {
-                    radEps[j][i * 2 + RADMIN] = 0.0;
-                }
-                radEps[j][i * 2 + EPS] = eps;
-            }
-        }
+        vdwForm = new VanDerWaalsForm(forceField);
 
         /**
          * Lambda parameters.
@@ -592,14 +366,15 @@ public class VanDerWaals implements MaskingInterface,
         reductionTime = new long[threadCount];
 
         /**
-         * Define radius type.
+         * Define how force arrays will be accumulated.
          */
-        value = forceField.getString(ARRAY_REDUCTION, "ADDER");
+        String value = forceField.getString(ARRAY_REDUCTION, "ADDER");
         try {
             atomicDoubleArrayImpl = AtomicDoubleArrayImpl.valueOf(toEnumForm(value));
         } catch (Exception e) {
             logger.info(format(" Unrecognized ARRAY-REDUCTION %s; defaulting to ADDER", value));
         }
+        logger.info(format(" Using %s arrays.", atomicDoubleArrayImpl.toString()));
 
         /**
          * Allocate coordinate arrays and set up reduction indices and values.
@@ -609,7 +384,7 @@ public class VanDerWaals implements MaskingInterface,
         /**
          * Set up the cutoff and polynomial switch.
          */
-        buff = 2.0;
+        double buff = 2.0;
         double vdwcut;
         if (!crystal.aperiodic()) {
             vdwcut = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 9.0);
@@ -632,10 +407,9 @@ public class VanDerWaals implements MaskingInterface,
          * distance.
          */
         double vdwtaper = 0.9 * vdwcut;
-        cut = vdwtaper;
-        off = vdwcut;
-        cut2 = cut * cut;
-        off2 = off * off;
+        double cut = vdwtaper;
+        double off = vdwcut;
+        nonbondedCutoff = new NonbondedCutoff(off, cut, buff);
         multiplicativeSwitch = new MultiplicativeSwitch(off, cut);
 
         /**
@@ -681,7 +455,7 @@ public class VanDerWaals implements MaskingInterface,
             reductionValue = new double[nAtoms];
             bondMask = new int[nAtoms][];
             angleMask = new int[nAtoms][];
-            if (vdwType == VDW_TYPE.LENNARD_JONES) {
+            if (vdwForm.vdwType == VanDerWaalsForm.VDW_TYPE.LENNARD_JONES) {
                 torsionMask = new int[nAtoms][];
             } else {
                 torsionMask = null;
@@ -689,20 +463,19 @@ public class VanDerWaals implements MaskingInterface,
             use = new boolean[nAtoms];
             isSoft = new boolean[nAtoms];
             softCore = new boolean[2][nAtoms];
+            lambdaGradX = null;
+            lambdaGradY = null;
+            lambdaGradZ = null;
 
             switch (atomicDoubleArrayImpl) {
-                case THREADED:
-                    gradX = new ThreadedDoubleArray(threadCount, nAtoms);
-                    gradY = new ThreadedDoubleArray(threadCount, nAtoms);
-                    gradZ = new ThreadedDoubleArray(threadCount, nAtoms);
+                case MULTI:
+                    gradX = new MultiDoubleArray(threadCount, nAtoms);
+                    gradY = new MultiDoubleArray(threadCount, nAtoms);
+                    gradZ = new MultiDoubleArray(threadCount, nAtoms);
                     if (lambdaTerm) {
-                        lambdaGradX = new ThreadedDoubleArray(threadCount, nAtoms);
-                        lambdaGradY = new ThreadedDoubleArray(threadCount, nAtoms);
-                        lambdaGradZ = new ThreadedDoubleArray(threadCount, nAtoms);
-                    } else {
-                        lambdaGradX = null;
-                        lambdaGradY = null;
-                        lambdaGradZ = null;
+                        lambdaGradX = new MultiDoubleArray(threadCount, nAtoms);
+                        lambdaGradY = new MultiDoubleArray(threadCount, nAtoms);
+                        lambdaGradZ = new MultiDoubleArray(threadCount, nAtoms);
                     }
                     break;
                 case PJ:
@@ -713,10 +486,6 @@ public class VanDerWaals implements MaskingInterface,
                         lambdaGradX = new PJDoubleArray(threadCount, nAtoms);
                         lambdaGradY = new PJDoubleArray(threadCount, nAtoms);
                         lambdaGradZ = new PJDoubleArray(threadCount, nAtoms);
-                    } else {
-                        lambdaGradX = null;
-                        lambdaGradY = null;
-                        lambdaGradZ = null;
                     }
                     break;
                 case ADDER:
@@ -728,10 +497,6 @@ public class VanDerWaals implements MaskingInterface,
                         lambdaGradX = new AdderDoubleArray(threadCount, nAtoms);
                         lambdaGradY = new AdderDoubleArray(threadCount, nAtoms);
                         lambdaGradZ = new AdderDoubleArray(threadCount, nAtoms);
-                    } else {
-                        lambdaGradX = null;
-                        lambdaGradY = null;
-                        lambdaGradZ = null;
                     }
                     break;
             }
@@ -804,7 +569,7 @@ public class VanDerWaals implements MaskingInterface,
                     angleMask[i][j++] = ak.xyzIndex - 1;
                 }
             }
-            if (scale14 != 1.0) {
+            if (vdwForm.scale14 != 1.0) {
                 ArrayList<Torsion> torsions = ai.getTorsions();
                 int numTorsions = 0;
                 for (Torsion torsion : torsions) {
@@ -895,8 +660,8 @@ public class VanDerWaals implements MaskingInterface,
          * of delR to be 0.01 Angstroms.
          */
         double maxR = 60.0;
-        int n = (int) (100.0 * (maxR - cut));
-        double delR = (maxR - cut) / n;
+        int n = (int) (100.0 * (maxR - nonbondedCutoff.cut));
+        double delR = (maxR - nonbondedCutoff.cut) / n;
         double total = 0.0;
         /*
          * logger.info(String.format(" Long range correction integral: Steps %d,
@@ -908,20 +673,20 @@ public class VanDerWaals implements MaskingInterface,
         for (int i = 0; i < maxClass; i++) {
             for (int j = 0; j < maxClass; j++) {
                 int j2 = j * 2;
-                double irv = radEps[i][j2 + RADMIN];
-                double ev = radEps[i][j2 + EPS];
+                double irv = vdwForm.radEps[i][j2 + vdwForm.RADMIN];
+                double ev = vdwForm.radEps[i][j2 + vdwForm.EPS];
                 double sume = 0.0;
                 for (int k = 0; k <= n; k++) {
-                    double r = cut + k * delR;
+                    double r = nonbondedCutoff.cut + k * delR;
                     double r2 = r * r;
                     final double rho = r * irv;
                     final double rho3 = rho * rho * rho;
                     final double rho7 = rho3 * rho3 * rho;
-                    final double rhod = rho + delta;
+                    final double rhod = rho + vdwForm.delta;
                     final double rhod3 = rhod * rhod * rhod;
                     final double rhod7 = rhod3 * rhod3 * rhod;
-                    final double t1 = t1n / rhod7;
-                    final double t2 = gamma1 / rho7 + gamma;
+                    final double t1 = vdwForm.t1n / rhod7;
+                    final double t2 = vdwForm.gamma1 / rho7 + vdwForm.gamma;
                     final double eij = ev * t1 * (t2 - 2.0);
                     /**
                      * Apply one minus the multiplicative switch if the
@@ -929,7 +694,7 @@ public class VanDerWaals implements MaskingInterface,
                      * switching window.
                      */
                     double taper = 1.0;
-                    if (r2 < off2) {
+                    if (r2 < nonbondedCutoff.off2) {
                         double r3 = r * r2;
                         double r4 = r2 * r2;
                         double r5 = r2 * r3;
@@ -988,7 +753,7 @@ public class VanDerWaals implements MaskingInterface,
      * @since 1.0
      */
     public double getBuffer() {
-        return buff;
+        return nonbondedCutoff.buff;
     }
 
     /**
@@ -1021,22 +786,22 @@ public class VanDerWaals implements MaskingInterface,
      */
     @Override
     public void applyMask(final double mask[], final int i) {
-        if (scale14 != 1.0) {
+        if (vdwForm.scale14 != 1.0) {
             final int[] torsionMaski = torsionMask[i];
             final int n14 = torsionMaski.length;
             for (int m = 0; m < n14; m++) {
-                mask[torsionMaski[m]] = scale14;
+                mask[torsionMaski[m]] = vdwForm.scale14;
             }
         }
         final int[] angleMaski = angleMask[i];
         final int n13 = angleMaski.length;
         for (int m = 0; m < n13; m++) {
-            mask[angleMaski[m]] = scale13;
+            mask[angleMaski[m]] = vdwForm.scale13;
         }
         final int[] bondMaski = bondMask[i];
         final int n12 = bondMaski.length;
         for (int m = 0; m < n12; m++) {
-            mask[bondMaski[m]] = scale12;
+            mask[bondMaski[m]] = vdwForm.scale12;
         }
     }
 
@@ -1047,7 +812,7 @@ public class VanDerWaals implements MaskingInterface,
      */
     @Override
     public void removeMask(final double mask[], final int i) {
-        if (vdwType == VDW_TYPE.LENNARD_JONES) {
+        if (vdwForm.scale14 != 1.0) {
             final int[] torsionMaski = torsionMask[i];
             final int n14 = torsionMaski.length;
             for (int m = 0; m < n14; m++) {
@@ -1091,7 +856,7 @@ public class VanDerWaals implements MaskingInterface,
         logger.info(String.format("%s %6d-%s %6d-%s %10.4f  %10.4f  %10.4f",
                 "VDW", atoms[i].xyzIndex, atoms[i].getAtomType().name,
                 atoms[k].xyzIndex, atoms[k].getAtomType().name,
-                1.0 / radEps[classi][classk * 2 + RADMIN], r, eij));
+                1.0 / vdwForm.radEps[classi][classk * 2 + vdwForm.RADMIN], r, eij));
     }
 
     /**
@@ -1153,20 +918,12 @@ public class VanDerWaals implements MaskingInterface,
         esvSystem = system;
         numESVs = esvSystem.num();
         shareddEdLdh = new SharedDouble[numESVs];
-        sharedd2EdLdh2 = new SharedDouble[numESVs];
-        lamedhGradX = new double[threadCount][numESVs][nAtoms];
-        lamedhGradY = new double[threadCount][numESVs][nAtoms];
-        lamedhGradZ = new double[threadCount][numESVs][nAtoms];
     }
 
     public void detachExtendedSystem() {
         esvSystem = null;
         numESVs = 0;
         shareddEdLdh = null;
-        sharedd2EdLdh2 = null;
-        lamedhGradX = null;
-        lamedhGradY = null;
-        lamedhGradZ = null;
     }
 
     public boolean hasExtendedSystem() {
@@ -1237,28 +994,6 @@ public class VanDerWaals implements MaskingInterface,
         }
     }
 
-    public double[][] getdEdXdLdh() {
-        if (lamedhGradX == null || !esvTerm) {
-            return null;
-        }
-        double dEdXdLdh[][] = new double[numESVs][nAtoms * 3];
-        double ldhgx[][] = lamedhGradX[0];
-        double ldhgy[][] = lamedhGradY[0];
-        double ldhgz[][] = lamedhGradZ[0];
-        for (int i = 0; i < nAtoms; i++) {
-            int ii = i * 3;
-            Atom ai = atoms[i];
-            if (ai.isActive()) {
-                for (ExtendedVariable esv : esvSystem.getESVList()) {
-                    dEdXdLdh[esv.index][ii] += ldhgx[esv.index][i];
-                    dEdXdLdh[esv.index][ii + 1] += ldhgy[esv.index][i];
-                    dEdXdLdh[esv.index][ii + 2] += ldhgz[esv.index][i];
-                }
-            }
-        }
-        return dEdXdLdh;
-    }
-
     /**
      * {@inheritDoc}
      */
@@ -1268,17 +1003,6 @@ public class VanDerWaals implements MaskingInterface,
             return 0.0;
         }
         return sharedd2EdL2.get();
-    }
-
-    public double[] getd2EdLdh2() {
-        if (sharedd2EdLdh2 == null || !esvTerm) {
-            return null;
-        }
-        double d2EdLdh2[] = new double[numESVs];
-        for (ExtendedVariable esv : esvSystem.getESVList()) {
-            d2EdLdh2[esv.index] = sharedd2EdLdh2[esv.index].get();
-        }
-        return d2EdLdh2;
     }
 
     /**
@@ -1385,10 +1109,8 @@ public class VanDerWaals implements MaskingInterface,
 
             if (esvTerm) {
                 shareddEdLdh = new SharedDouble[numESVs];
-                sharedd2EdLdh2 = new SharedDouble[numESVs];
                 for (ExtendedVariable esv : esvSystem.getESVList()) {
                     shareddEdLdh[esv.index] = new SharedDouble();
-                    sharedd2EdLdh2[esv.index] = new SharedDouble();
                 }
             }
         }
@@ -1424,12 +1146,6 @@ public class VanDerWaals implements MaskingInterface,
                 if (threadIndex == 0) {
                     initializationTotal += System.nanoTime();
                 }
-//                if (testStreamProcessing) {
-//                    initStreamTotal = -System.nanoTime();
-//                    IntConsumer cons = new InitStreamConsumer();
-//                    IntStream.range(0, nAtoms).parallel().forEach(cons);
-//                    initStreamTotal += System.nanoTime();
-//                }
             } catch (Exception e) {
                 String message = "Fatal exception expanding coordinates in thread: " + threadIndex + "\n";
                 logger.log(Level.SEVERE, message, e);
@@ -1490,11 +1206,9 @@ public class VanDerWaals implements MaskingInterface,
              * Log timings.
              */
             if (threadIndex == 0 && logger.isLoggable(Level.FINE)) {
-
                 double total = (initializationTotal + vdwTotal + reductionTotal) * 1e-9;
-
-                logger.info(String.format("\n van der Waals: %7.4f (sec)", total));
-                logger.info(" Thread    Init    Energy  Reduce  Total     Counts");
+                logger.fine(format("\n van der Waals: %7.4f (sec)", total));
+                logger.fine(" Thread    Init    Energy  Reduce  Total     Counts");
                 long initMax = 0;
                 long vdwMax = 0;
                 long reductionMax = 0;
@@ -1506,7 +1220,7 @@ public class VanDerWaals implements MaskingInterface,
                 for (int i = 0; i < threadCount; i++) {
                     int count = vanDerWaalsLoop[i].getCount();
                     long totalTime = initializationTime[i] + vdwTime[i] + reductionTime[i];
-                    logger.info(String.format("    %3d   %7.4f %7.4f %7.4f %7.4f %10d",
+                    logger.fine(format("    %3d   %7.4f %7.4f %7.4f %7.4f %10d",
                             i, initializationTime[i] * 1e-9, vdwTime[i] * 1e-9,
                             reductionTime[i] * 1e-9, totalTime * 1e-9, count));
                     initMax = max(initializationTime[i], initMax);
@@ -1521,17 +1235,17 @@ public class VanDerWaals implements MaskingInterface,
                 long totalMin = initMin + vdwMin + reductionMin;
                 long totalMax = initMax + vdwMax + reductionMax;
                 long totalActual = initializationTotal + vdwTotal + reductionTotal;
-                logger.info(String.format(" Min      %7.4f %7.4f %7.4f %7.4f %10d",
+                logger.fine(format(" Min      %7.4f %7.4f %7.4f %7.4f %10d",
                         initMin * 1e-9, vdwMin * 1e-9,
                         reductionMin * 1e-9, totalMin * 1e-9, countMin));
-                logger.info(String.format(" Max      %7.4f %7.4f %7.4f %7.4f %10d",
+                logger.fine(format(" Max      %7.4f %7.4f %7.4f %7.4f %10d",
                         initMax * 1e-9, vdwMax * 1e-9,
                         reductionMax * 1e-9, totalMax * 1e-9, countMax));
-                logger.info(String.format(" Delta    %7.4f %7.4f %7.4f %7.4f %10d",
+                logger.fine(format(" Delta    %7.4f %7.4f %7.4f %7.4f %10d",
                         (initMax - initMin) * 1e-9, (vdwMax - vdwMin) * 1e-9,
                         (reductionMax - reductionMin) * 1e-9, (totalMax - totalMin) * 1e-9,
                         (countMax - countMin)));
-                logger.info(String.format(" Actual   %7.4f %7.4f %7.4f %7.4f %10d\n",
+                logger.fine(format(" Actual   %7.4f %7.4f %7.4f %7.4f %10d\n",
                         initializationTotal * 1e-9, vdwTotal * 1e-9,
                         reductionTotal * 1e-9, totalActual * 1e-9, sharedInteractions.get()));
             }
@@ -1542,6 +1256,8 @@ public class VanDerWaals implements MaskingInterface,
          */
         private class InitializationLoop extends IntegerForLoop {
 
+            private int threadID;
+
             @Override
             public IntegerSchedule schedule() {
                 return IntegerSchedule.fixed();
@@ -1549,7 +1265,8 @@ public class VanDerWaals implements MaskingInterface,
 
             @Override
             public void start() {
-                initializationTime[getThreadIndex()] = -System.nanoTime();
+                threadID = getThreadIndex();
+                initializationTime[threadID] = -System.nanoTime();
             }
 
             @Override
@@ -1572,21 +1289,12 @@ public class VanDerWaals implements MaskingInterface,
                     lambdaGradY.reset(threadIndex, lb, ub);
                     lambdaGradZ.reset(threadIndex, lb, ub);
                 }
-                if (esvTerm && hasExtendedSystem()) {
-                    lamedhGradX[threadIndex] = new double[numESVs][nAtoms];
-                    lamedhGradY[threadIndex] = new double[numESVs][nAtoms];
-                    lamedhGradZ[threadIndex] = new double[numESVs][nAtoms];
-                    for (ExtendedVariable esv : esvSystem.getESVList()) {
-                        fill(lamedhGradX[threadIndex][esv.index], 0.0);
-                        fill(lamedhGradY[threadIndex][esv.index], 0.0);
-                        fill(lamedhGradZ[threadIndex][esv.index], 0.0);
-                    }
-                }
             }
         }
 
         private class ExpandLoop extends IntegerForLoop {
 
+            private int threadID;
             private final double in[] = new double[3];
             private final double out[] = new double[3];
             // Extra padding to avert cache interference.
@@ -1599,8 +1307,13 @@ public class VanDerWaals implements MaskingInterface,
             }
 
             @Override
+            public void start() {
+                threadID = getThreadIndex();
+            }
+
+            @Override
             public void finish() {
-                initializationTime[getThreadIndex()] += System.nanoTime();
+                initializationTime[threadID] += System.nanoTime();
             }
 
             @Override
@@ -1690,19 +1403,9 @@ public class VanDerWaals implements MaskingInterface,
             private int count;
             private double energy;
             private int threadID;
-            // private double gxi_local[];
-            // private double gyi_local[];
-            // private double gzi_local[];
             private double dEdL;
             private double d2EdL2;
             private double dEdLdh[];
-            private double d2EdLdh2[];
-            // private double lxi_local[];
-            // private double lyi_local[];
-            // private double lzi_local[];
-            private double ldh_xi_local[][];
-            private double ldh_yi_local[][];
-            private double ldh_zi_local[][];
             private double mask[];
             private final double dx_local[];
             private final double transOp[][];
@@ -1728,29 +1431,20 @@ public class VanDerWaals implements MaskingInterface,
             @Override
             public void start() {
                 threadID = getThreadIndex();
-                //gxi_local = gradX[threadId];
-                //gyi_local = gradY[threadId];
-                //gzi_local = gradZ[threadId];
+                vdwTime[threadID] = -System.nanoTime();
                 energy = 0.0;
                 count = 0;
                 if (lambdaTerm) {
                     dEdL = 0.0;
                     d2EdL2 = 0.0;
-                    // lxi_local = lambdaGradX[threadID];
-                    // lyi_local = lambdaGradY[threadID];
-                    // lzi_local = lambdaGradZ[threadID];
+                }
+                if (esvTerm) {
+                    if (dEdLdh == null || dEdLdh.length < numESVs) {
+                        dEdLdh = new double[numESVs];
+                    }
+                    fill(dEdLdh, 0.0);
                 }
 
-                if (esvTerm) {
-                    dEdLdh = new double[numESVs];
-                    d2EdLdh2 = new double[numESVs];
-                    fill(dEdLdh, 0.0);
-                    fill(d2EdLdh2, 0.0);
-                    ldh_xi_local = lamedhGradX[threadID];
-                    ldh_yi_local = lamedhGradY[threadID];
-                    ldh_zi_local = lamedhGradZ[threadID];
-                }
-                vdwTime[threadID] = -System.nanoTime();
                 if (mask == null || mask.length < nAtoms) {
                     mask = new double[nAtoms];
                     fill(mask, 1.0);
@@ -1772,10 +1466,9 @@ public class VanDerWaals implements MaskingInterface,
                 if (esvTerm && hasExtendedSystem()) {
                     for (ExtendedVariable esv : esvSystem.getESVList()) {
                         shareddEdLdh[esv.index].addAndGet(dEdLdh[esv.index]);
-                        sharedd2EdLdh2[esv.index].addAndGet(d2EdLdh2[esv.index]);
                     }
                 }
-                vdwTime[getThreadIndex()] += System.nanoTime();
+                vdwTime[threadID] += System.nanoTime();
             }
 
             @Override
@@ -1796,7 +1489,7 @@ public class VanDerWaals implements MaskingInterface,
                     final double redv = reductionValue[i];
                     final double rediv = 1.0 - redv;
                     final int classi = atomClass[i];
-                    final double radEpsi[] = radEps[classi];
+                    final double radEpsi[] = vdwForm.radEps[classi];
                     final int moleculei = molecule[i];
                     double gxi = 0.0;
                     double gyi = 0.0;
@@ -1837,7 +1530,7 @@ public class VanDerWaals implements MaskingInterface,
                         final double r2 = crystal.image(dx_local);
                         int a2 = atomClass[k] * 2;
                         final double irv = radEpsi[a2 + RADMIN];
-                        if (r2 <= off2 && mask[k] > 0 && irv > 0) {
+                        if (r2 <= nonbondedCutoff.off2 && mask[k] > 0 && irv > 0) {
                             final double r = sqrt(r2);
                             double alpha = 0.0;
                             double lambda5 = 1.0;
@@ -1899,16 +1592,16 @@ public class VanDerWaals implements MaskingInterface,
                             final double ev = mask[k] * radEpsi[a2 + EPS];
                             final double eps_lambda = ev * lambda5;
                             final double rho = r * irv;
-                            final double rhoDisp1 = pow(rho, dispersivePower1);
+                            final double rhoDisp1 = pow(rho, vdwForm.dispersivePower1);
                             final double rhoDisp = rhoDisp1 * rho;
-                            final double rhoDelta1 = pow(rho + delta, repDispPower1);
-                            final double rhoDelta = rhoDelta1 * (rho + delta);
+                            final double rhoDelta1 = pow(rho + vdwForm.delta, vdwForm.repDispPower1);
+                            final double rhoDelta = rhoDelta1 * (rho + vdwForm.delta);
                             final double alphaRhoDelta = alpha + rhoDelta;
-                            final double alphaRhoDispGamma = alpha + rhoDisp + gamma;
+                            final double alphaRhoDispGamma = alpha + rhoDisp + vdwForm.gamma;
                             final double t1d = 1.0 / alphaRhoDelta;
                             final double t2d = 1.0 / alphaRhoDispGamma;
-                            final double t1 = t1n * t1d;
-                            final double t2a = gamma1 * t2d;
+                            final double t1 = vdwForm.t1n * t1d;
+                            final double t2a = vdwForm.gamma1 * t2d;
                             final double t2 = t2a - 2.0;
                             final double eij = eps_lambda * t1 * t2;
                             /**
@@ -1918,7 +1611,7 @@ public class VanDerWaals implements MaskingInterface,
                              */
                             double taper = 1.0;
                             double dtaper = 0.0;
-                            if (r2 > cut2) {
+                            if (r2 > nonbondedCutoff.cut2) {
                                 final double r3 = r2 * r;
                                 final double r4 = r2 * r2;
                                 final double r5 = r2 * r3;
@@ -1934,8 +1627,8 @@ public class VanDerWaals implements MaskingInterface,
                             final int redk = reductionIndex[k];
                             final double red = reductionValue[k];
                             final double redkv = 1.0 - red;
-                            final double dt1d_dr = repDispPower * rhoDelta1 * irv;
-                            final double dt2d_dr = dispersivePower * rhoDisp1 * irv;
+                            final double dt1d_dr = vdwForm.repDispPower * rhoDelta1 * irv;
+                            final double dt2d_dr = vdwForm.dispersivePower * rhoDisp1 * irv;
                             final double dt1_dr = t1 * dt1d_dr * t1d;
                             final double dt2_dr = t2a * dt2d_dr * t2d;
                             final double dedr = -eps_lambda * (dt1_dr * t2 + t1 * dt2_dr);
@@ -1957,15 +1650,9 @@ public class VanDerWaals implements MaskingInterface,
                                 gradX.sub(threadID, k, red * dedx);
                                 gradY.sub(threadID, k, red * dedy);
                                 gradZ.sub(threadID, k, red * dedz);
-                                // gxi_local[k] -= red * dedx;
-                                // gyi_local[k] -= red * dedy;
-                                // gzi_local[k] -= red * dedz;
                                 gradX.sub(threadID, redk, redkv * dedx);
                                 gradY.sub(threadID, redk, redkv * dedy);
                                 gradZ.sub(threadID, redk, redkv * dedz);
-                                // gxi_local[redk] -= redkv * dedx;
-                                // gyi_local[redk] -= redkv * dedy;
-                                // gzi_local[redk] -= redkv * dedz;
                             }
                             if ((lambdaTerm && soft) || (esvTerm && hasLamedh)) {
                                 final double dt1 = -t1 * t1d * dsc1dL;
@@ -1992,13 +1679,6 @@ public class VanDerWaals implements MaskingInterface,
                                 final double df3 = dsc2dL * t1 * dt2 + sc2 * dt1 * dt2 + sc2 * t1 * d2t2;
                                 final double de2dl2 = ev * (df1 + df2 + df3);
                                 d2EdL2 += de2dl2 * taper;
-                                if (esvTerm) {  // Copy this second gradient to attached ESVs.
-                                    for (ExtendedVariable esv : esvSystem.getESVList()) {
-                                        if (esv.containsAtom(atomk)) {
-                                            d2EdLdh2[esv.index] += de2dl2 * taper;
-                                        }
-                                    }
-                                }
                                 final double t11 = -dsc2dL * t2 * dt1_dr;
                                 final double t21 = -dsc2dL * t1 * dt2_dr;
                                 final double t13 = 2.0 * sc2 * t2 * dt1_dr * dsc1dL * t1d;
@@ -2020,26 +1700,9 @@ public class VanDerWaals implements MaskingInterface,
                                     lambdaGradX.sub(threadID, k, red * dedldx);
                                     lambdaGradY.sub(threadID, k, red * dedldy);
                                     lambdaGradZ.sub(threadID, k, red * dedldz);
-                                    // lxi_local[k] -= red * dedldx;
-                                    // lyi_local[k] -= red * dedldy;
-                                    // lzi_local[k] -= red * dedldz;
-
                                     lambdaGradX.sub(threadID, redk, redkv * dedldx);
                                     lambdaGradY.sub(threadID, redk, redkv * dedldy);
                                     lambdaGradZ.sub(threadID, redk, redkv * dedldz);
-                                    // lxi_local[redk] -= redkv * dedldx;
-                                    // lyi_local[redk] -= redkv * dedldy;
-                                    // lzi_local[redk] -= redkv * dedldz;
-                                }
-                                if (esvTerm) {
-                                    for (ExtendedVariable esv : esvSystem.getESVList()) {
-                                        ldh_xi_local[esv.index][k] -= (red * dedldx);
-                                        ldh_yi_local[esv.index][k] -= (red * dedldy);
-                                        ldh_zi_local[esv.index][k] -= (red * dedldz);
-                                        ldh_xi_local[esv.index][redk] -= (redkv * dedldx);
-                                        ldh_yi_local[esv.index][redk] -= (redkv * dedldy);
-                                        ldh_zi_local[esv.index][redk] -= (redkv * dedldz);
-                                    }
                                 }
                             }
                         }
@@ -2048,43 +1711,18 @@ public class VanDerWaals implements MaskingInterface,
                         gradX.add(threadID, i, gxi);
                         gradY.add(threadID, i, gyi);
                         gradZ.add(threadID, i, gzi);
-                        // gxi_local[i] += gxi;
-                        // gyi_local[i] += gyi;
-                        // gzi_local[i] += gzi;
-
                         gradX.add(threadID, redi, gxredi);
                         gradY.add(threadID, redi, gyredi);
                         gradZ.add(threadID, redi, gzredi);
-                        //gxi_local[redi] += gxredi;
-                        //gyi_local[redi] += gyredi;
-                        //gzi_local[redi] += gzredi;
                     }
                     if (lambdaTerm) {
                         lambdaGradX.add(threadID, i, lxi);
                         lambdaGradY.add(threadID, i, lyi);
                         lambdaGradZ.add(threadID, i, lzi);
-                        // lxi_local[i] += lxi;
-                        // lyi_local[i] += lyi;
-                        // lzi_local[i] += lzi;
-
                         lambdaGradX.add(threadID, redi, lxredi);
                         lambdaGradY.add(threadID, redi, lyredi);
                         lambdaGradZ.add(threadID, redi, lzredi);
-                        // lxi_local[redi] += lxredi;
-                        // lyi_local[redi] += lyredi;
-                        // lzi_local[redi] += lzredi;
                     }
-                    if (esvTerm) {
-                        for (ExtendedVariable esv : esvSystem.getESVList()) {
-                            ldh_xi_local[esv.index][i] += lxi;
-                            ldh_yi_local[esv.index][i] += lyi;
-                            ldh_zi_local[esv.index][i] += lzi;
-                            ldh_xi_local[esv.index][redi] += lxredi;
-                            ldh_yi_local[esv.index][redi] += lyredi;
-                            ldh_zi_local[esv.index][redi] += lzredi;
-                        }
-                    }
-
                     removeMask(mask, i);
                 }
                 energy += e;
@@ -2112,7 +1750,7 @@ public class VanDerWaals implements MaskingInterface,
                         final double redv = reductionValue[i];
                         final double rediv = 1.0 - redv;
                         final int classi = atomClass[i];
-                        final double radEpsi[] = radEps[classi];
+                        final double radEpsi[] = vdwForm.radEps[classi];
                         double gxi = 0.0;
                         double gyi = 0.0;
                         double gzi = 0.0;
@@ -2151,7 +1789,7 @@ public class VanDerWaals implements MaskingInterface,
                             final double r2 = crystal.image(dx_local);
                             int a2 = atomClass[k] * 2;
                             final double irv = radEpsi[a2 + RADMIN];
-                            if (r2 <= off2 && irv > 0) {
+                            if (r2 <= nonbondedCutoff.off2 && irv > 0) {
                                 final double selfScale = (i == k) ? 0.5 : 1.0;
                                 final double r = sqrt(r2);
                                 double alpha = 0.0;
@@ -2203,16 +1841,16 @@ public class VanDerWaals implements MaskingInterface,
                                 final double ev = radEpsi[a2 + EPS];
                                 final double eps_lambda = ev * lambda5;
                                 final double rho = r * irv;
-                                final double rhoDisp1 = pow(rho, dispersivePower1);
+                                final double rhoDisp1 = pow(rho, vdwForm.dispersivePower1);
                                 final double rhoDisp = rhoDisp1 * rho;
-                                final double rhoDelta1 = pow(rho + delta, repDispPower1);
-                                final double rhoDelta = rhoDelta1 * (rho + delta);
+                                final double rhoDelta1 = pow(rho + vdwForm.delta, vdwForm.repDispPower1);
+                                final double rhoDelta = rhoDelta1 * (rho + vdwForm.delta);
                                 final double alphaRhoDelta = alpha + rhoDelta;
-                                final double alphaRhoDispGamma = alpha + rhoDisp + gamma;
+                                final double alphaRhoDispGamma = alpha + rhoDisp + vdwForm.gamma;
                                 final double t1d = 1.0 / alphaRhoDelta;
                                 final double t2d = 1.0 / alphaRhoDispGamma;
-                                final double t1 = t1n * t1d;
-                                final double t2a = gamma1 * t2d;
+                                final double t1 = vdwForm.t1n * t1d;
+                                final double t2a = vdwForm.gamma1 * t2d;
                                 final double t2 = t2a - 2.0;
                                 double eij = eps_lambda * t1 * t2;
                                 /**
@@ -2222,7 +1860,7 @@ public class VanDerWaals implements MaskingInterface,
                                  */
                                 double taper = 1.0;
                                 double dtaper = 0.0;
-                                if (r2 > cut2) {
+                                if (r2 > nonbondedCutoff.cut2) {
                                     final double r3 = r2 * r;
                                     final double r4 = r2 * r2;
                                     final double r5 = r2 * r3;
@@ -2237,8 +1875,8 @@ public class VanDerWaals implements MaskingInterface,
                                 final int redk = reductionIndex[k];
                                 final double red = reductionValue[k];
                                 final double redkv = 1.0 - red;
-                                final double dt1d_dr = repDispPower * rhoDelta1 * irv;
-                                final double dt2d_dr = dispersivePower * rhoDisp1 * irv;
+                                final double dt1d_dr = vdwForm.repDispPower * rhoDelta1 * irv;
+                                final double dt2d_dr = vdwForm.dispersivePower * rhoDisp1 * irv;
                                 final double dt1_dr = t1 * dt1d_dr * t1d;
                                 final double dt2_dr = t2a * dt2d_dr * t2d;
                                 double dedr = -eps_lambda * (dt1_dr * t2 + t1 * dt2_dr);
@@ -2264,20 +1902,12 @@ public class VanDerWaals implements MaskingInterface,
                                     final double dedxk = dedx * transOp[0][0] + dedy * transOp[1][0] + dedz * transOp[2][0];
                                     final double dedyk = dedx * transOp[0][1] + dedy * transOp[1][1] + dedz * transOp[2][1];
                                     final double dedzk = dedx * transOp[0][2] + dedy * transOp[1][2] + dedz * transOp[2][2];
-
                                     gradX.sub(threadID, k, red * dedxk);
                                     gradY.sub(threadID, k, red * dedyk);
                                     gradZ.sub(threadID, k, red * dedzk);
-                                    // gxi_local[k] -= red * dedxk;
-                                    // gyi_local[k] -= red * dedyk;
-                                    // gzi_local[k] -= red * dedzk;
-
                                     gradX.sub(threadID, redk, redkv * dedxk);
                                     gradY.sub(threadID, redk, redkv * dedyk);
                                     gradZ.sub(threadID, redk, redkv * dedzk);
-                                    // gxi_local[redk] -= redkv * dedxk;
-                                    // gyi_local[redk] -= redkv * dedyk;
-                                    // gzi_local[redk] -= redkv * dedzk;
                                 }
                                 if ((lambdaTerm && soft) || (esvTerm && eitherLamedh)) {
                                     double dt1 = -t1 * t1d * dsc1dL;
@@ -2303,13 +1933,6 @@ public class VanDerWaals implements MaskingInterface,
                                     double df3 = dsc2dL * t1 * dt2 + sc2 * dt1 * dt2 + sc2 * t1 * d2t2;
                                     double de2dl2 = ev * (df1 + df2 + df3);
                                     d2EdL2 += selfScale * de2dl2 * taper;
-                                    if (esvTerm) {
-                                        for (ExtendedVariable esv : esvSystem.getESVList()) {
-                                            if (esv.containsAtom(atomk)) {
-                                                d2EdLdh2[esv.index] += selfScale * de2dl2 * taper;
-                                            }
-                                        }
-                                    }
                                     double t11 = -dsc2dL * t2 * dt1_dr;
                                     double t12 = -sc2 * dt2 * dt1_dr;
                                     double t13 = 2.0 * sc2 * t2 * dt1_dr * dsc1dL * t1d;
@@ -2331,41 +1954,15 @@ public class VanDerWaals implements MaskingInterface,
                                      * Apply the transpose of the transformation
                                      * operator.
                                      */
-                                    /**
-                                     * final double dedldxk = dedldx *
-                                     * transOp[0][0] + dedldy * transOp[1][0] +
-                                     * dedldz * transOp[2][0]; final double
-                                     * dedldyk = dedldx * transOp[0][1] + dedldy
-                                     * * transOp[1][1] + dedldz * transOp[2][1];
-                                     * final double dedldzk = dedldx *
-                                     * transOp[0][2] + dedldy * transOp[1][2] +
-                                     * dedldz * transOp[2][2];
-                                     */
-                                    if (lambdaTerm) {
-                                        lambdaGradX.sub(threadID, k, red * dedldx);
-                                        lambdaGradY.sub(threadID, k, red * dedldy);
-                                        lambdaGradZ.sub(threadID, k, red * dedldz);
-                                        // lxi_local[k] -= red * dedldxk;
-                                        // lyi_local[k] -= red * dedldyk;
-                                        // lzi_local[k] -= red * dedldzk;
-
-                                        lambdaGradX.sub(threadID, redk, redkv * dedldx);
-                                        lambdaGradY.sub(threadID, redk, redkv * dedldy);
-                                        lambdaGradZ.sub(threadID, redk, redkv * dedldz);
-                                        // lxi_local[redk] -= redkv * dedldxk;
-                                        // lyi_local[redk] -= redkv * dedldyk;
-                                        // lzi_local[redk] -= redkv * dedldzk;
-                                    }
-                                    if (esvTerm) {
-                                        for (ExtendedVariable esv : esvSystem.getESVList()) {
-                                            ldh_xi_local[esv.index][k] -= (red * dedldx);
-                                            ldh_yi_local[esv.index][k] -= (red * dedldy);
-                                            ldh_zi_local[esv.index][k] -= (red * dedldz);
-                                            ldh_xi_local[esv.index][redk] -= (redkv * dedldx);
-                                            ldh_yi_local[esv.index][redk] -= (redkv * dedldy);
-                                            ldh_zi_local[esv.index][redk] -= (redkv * dedldz);
-                                        }
-                                    }
+                                    final double dedldxk = dedldx * transOp[0][0] + dedldy * transOp[1][0] + dedldz * transOp[2][0];
+                                    final double dedldyk = dedldx * transOp[0][1] + dedldy * transOp[1][1] + dedldz * transOp[2][1];
+                                    final double dedldzk = dedldx * transOp[0][2] + dedldy * transOp[1][2] + dedldz * transOp[2][2];
+                                    lambdaGradX.sub(threadID, k, red * dedldxk);
+                                    lambdaGradY.sub(threadID, k, red * dedldyk);
+                                    lambdaGradZ.sub(threadID, k, red * dedldzk);
+                                    lambdaGradX.sub(threadID, redk, redkv * dedldxk);
+                                    lambdaGradY.sub(threadID, redk, redkv * dedldyk);
+                                    lambdaGradZ.sub(threadID, redk, redkv * dedldzk);
                                 }
                             }
                         }
@@ -2373,39 +1970,17 @@ public class VanDerWaals implements MaskingInterface,
                             gradX.add(threadID, i, gxi);
                             gradY.add(threadID, i, gyi);
                             gradZ.add(threadID, i, gzi);
-                            // gxi_local[i] += gxi;
-                            // gyi_local[i] += gyi;
-                            // gzi_local[i] += gzi;
-
                             gradX.add(threadID, redi, gxredi);
                             gradY.add(threadID, redi, gyredi);
                             gradZ.add(threadID, redi, gzredi);
-                            // gxi_local[redi] += gxredi;
-                            // gyi_local[redi] += gyredi;
-                            // gzi_local[redi] += gzredi;
                         }
-                        if (esvTerm) {
-                            for (ExtendedVariable esv : esvSystem.getESVList()) {
-                                ldh_xi_local[esv.index][i] += lxi;
-                                ldh_yi_local[esv.index][i] += lyi;
-                                ldh_zi_local[esv.index][i] += lzi;
-                                ldh_xi_local[esv.index][i] += lxredi;
-                                ldh_yi_local[esv.index][i] += lyredi;
-                                ldh_zi_local[esv.index][i] += lzredi;
-                            }
+                        if (lambdaTerm) {
                             lambdaGradX.add(threadID, i, lxi);
                             lambdaGradY.add(threadID, i, lyi);
                             lambdaGradZ.add(threadID, i, lzi);
-                            // lxi_local[i] += lxi;
-                            // lyi_local[i] += lyi;
-                            // lzi_local[i] += lzi;
-
                             lambdaGradX.add(threadID, redi, lxredi);
                             lambdaGradY.add(threadID, redi, lyredi);
                             lambdaGradZ.add(threadID, redi, lzredi);
-                            // lxi_local[redi] += lxredi;
-                            // lyi_local[redi] += lyredi;
-                            // lzi_local[redi] += lzredi;
                         }
                     }
                     energy += e;
@@ -2418,14 +1993,16 @@ public class VanDerWaals implements MaskingInterface,
          */
         private class ReductionLoop extends IntegerForLoop {
 
+            int threadID;
             @Override
             public void start() {
-                reductionTime[getThreadIndex()] = -System.nanoTime();
+                threadID = getThreadIndex();
+                reductionTime[threadID] = -System.nanoTime();
             }
 
             @Override
             public void finish() {
-                reductionTime[getThreadIndex()] += System.nanoTime();
+                reductionTime[threadID] += System.nanoTime();
             }
 
             @Override
@@ -2437,7 +2014,6 @@ public class VanDerWaals implements MaskingInterface,
                     for (int i = lb; i <= ub; i++) {
                         Atom ai = atoms[i];
                         ai.addToXYZGradient(gradX.get(i), gradY.get(i), gradZ.get(i));
-                        // ai.addToXYZGradient(gradX[0][i], gradY[0][i], gradZ[0][i]);
                     }
                 }
                 if (lambdaTerm) {
@@ -2445,125 +2021,8 @@ public class VanDerWaals implements MaskingInterface,
                     lambdaGradY.reduce(lb, ub);
                     lambdaGradZ.reduce(lb, ub);
                 }
-                if (esvTerm) {
-                    double ldhx[][] = lamedhGradX[0];
-                    double ldhy[][] = lamedhGradY[0];
-                    double ldhz[][] = lamedhGradZ[0];
-                    for (int t = 1; t < threadCount; t++) {
-                        double ldhxt[][] = lamedhGradX[t];
-                        double ldhyt[][] = lamedhGradY[t];
-                        double ldhzt[][] = lamedhGradZ[t];
-                        for (int i = lb; i <= ub; i++) {
-                            for (ExtendedVariable esv : esvSystem.getESVList()) {
-                                ldhx[esv.index][i] += ldhxt[esv.index][i];
-                                ldhy[esv.index][i] += ldhyt[esv.index][i];
-                                ldhz[esv.index][i] += ldhzt[esv.index][i];
-                            }
-                        }
-                    }
-                }
             }
         }
-    }
-    /**
-     * *************************************************************************
-     * Cutoff and switching constants.
-     */
-    /**
-     * At the distance "cut", a multiplicative switch begins to be applied.
-     */
-    private final double cut;
-    /**
-     * The distance cut squared.
-     */
-    private final double cut2;
-    /**
-     * All vdW interactions are 0 at the distance "off".
-     */
-    private final double off;
-    /**
-     * The distance off squared.
-     */
-    private final double off2;
-    private final double buff;
-
-    /**
-     * *************************************************************************
-     * Buffered-14-7 constants.
-     */
-    /**
-     * First constant suggested by Halgren for the Buffered-14-7 potential.
-     */
-    private final double gamma;
-    private final double gamma1;
-    /**
-     * Second constant suggested by Halgren for the Buffered-14-7 potential.
-     */
-    private final double delta;
-    private final double delta1;
-    private final double t1n;
-    private final int repulsivePower;
-    private final int dispersivePower;
-    private final int dispersivePower1;
-    private final int repDispPower;
-    private final int repDispPower1;
-
-    /**
-     * The 6 coefficients of the multiplicative polynomial switch are unique
-     * given the distances "off" and "cut". They are found by solving a system
-     * of 6 equations, which define the boundary conditions of the switch.
-     * <br>
-     * f(cut) = 1
-     * <br>
-     * f'(cut) = f"(cut) = 0
-     * <br>
-     * f(off) = f'(off) = f"(off) = 0
-     */
-    private class MultiplicativeSwitch {
-
-        protected final double off;
-        protected final double off2;
-        protected final double cut;
-        protected final double cut2;
-
-        protected final double c0;
-        protected final double c1;
-        protected final double c2;
-        protected final double c3;
-        protected final double c4;
-        protected final double c5;
-        protected final double twoC2;
-        protected final double threeC3;
-        protected final double fourC4;
-        protected final double fiveC5;
-
-        public MultiplicativeSwitch(double off, double cut) {
-            this.off = off;
-            this.off2 = off * off;
-            this.cut = cut;
-            this.cut2 = cut * cut;
-
-            double denom = pow(off - cut, 5.0);
-            c0 = off * off2 * (off2 - 5.0 * off * cut + 10.0 * cut2) / denom;
-            c1 = -30.0 * off2 * cut2 / denom;
-            c2 = 30.0 * (off2 * cut + off * cut2) / denom;
-            c3 = -10.0 * (off2 + 4.0 * off * cut + cut2) / denom;
-            c4 = 15.0 * (off + cut) / denom;
-            c5 = -6.0 / denom;
-            twoC2 = 2.0 * c2;
-            threeC3 = 3.0 * c3;
-            fourC4 = 4.0 * c4;
-            fiveC5 = 5.0 * c5;
-        }
-
-        public double taper(double r, double r2, double r3, double r4, double r5) {
-            return c5 * r5 + c4 * r4 + c3 * r3 + c2 * r2 + c1 * r + c0;
-        }
-
-        public double dtaper(double r, double r2, double r3, double r4) {
-            return fiveC5 * r4 + fourC4 * r3 + threeC3 * r2 + twoC2 * r + c1;
-        }
-
     }
 
 }

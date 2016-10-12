@@ -35,72 +35,53 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.numerics;
+package ffx.potential.nonbonded;
 
 /**
- * This interface abstracts away the implementation of maintaining a 1D double
- * array that is operated on by multiple threads..
+ * This class contains fields and methods for maintaining details of non-bonded
+ * cutoffs.
  *
  * @author Michael J. Schnieders
- *
- * @since 1.0
  */
-public interface AtomicDoubleArray {
-
-    public enum AtomicDoubleArrayImpl {
-        ADDER, MULTI, PJ
-    };
+public class NonbondedCutoff {
 
     /**
-     * Ensure the AtomicDoubleArray instance is greater than or equal to size.
+     * Non-bonded Cutoff constructor.
      *
-     * @param size
+     * @param off All vdW interactions are 0 at the distance <code>off</code>.
+     * @param cut At the distance <code>cut</code>, a multiplicative switch
+     * begins to be applied.
+     * @param buff A buffer added to the cut-off distance <code>off</code> to
+     * define neighbors included when collecting Verlet lists.
      */
-    public void alloc(int size);
+    public NonbondedCutoff(double off, double cut, double buff) {
+        this.cut = cut;
+        this.cut2 = cut * cut;
+        this.off = off;
+        this.off2 = off * off;
+        this.buff = buff;
+    }
 
     /**
-     * Reset the double array to Zero.
-     *
-     * @param threadID
-     * @param lb
-     * @param ub
+     * At the distance "cut", a multiplicative switch begins to be applied.
      */
-    public void reset(int threadID, int lb, int ub);
-
+    protected final double cut;
     /**
-     * Add value to the double array at the specified index.
-     *
-     * @param threadID
-     * @param index
-     * @param value
+     * The distance cut squared.
      */
-    public void add(int threadID, int index, double value);
-
+    protected final double cut2;
     /**
-     * Subtract value to the double array at the specified index.
-     *
-     * @param threadID
-     * @param index
-     * @param value
+     * All vdW interactions are 0 at the distance "off".
      */
-    public void sub(int threadID, int index, double value);
-
+    protected final double off;
     /**
-     * Perform reduction between the given lower bound (lb) and upper bound (up)
-     * if necessary.
-     *
-     * @param lb
-     * @param ub
+     * The distance off squared.
      */
-    public void reduce(int lb, int ub);
-
+    protected final double off2;
     /**
-     * Get the value of the array at the specified index (usually subsequent to
-     * calling the <code>reduce</code> method.
-     *
-     * @param index
-     * @return
+     * A buffer added to the cut-off distance <code>off</code> to define
+     * neighbors included when collecting Verlet lists.
      */
-    public double get(int index);
+    protected final double buff;
 
 }

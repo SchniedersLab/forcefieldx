@@ -35,72 +35,60 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.numerics;
+package ffx.potential.nonbonded;
+
+import static org.apache.commons.math3.util.FastMath.pow;
 
 /**
- * This interface abstracts away the implementation of maintaining a 1D double
- * array that is operated on by multiple threads..
+ * The 6 coefficients of the multiplicative polynomial switch are unique given
+ * the distances "off" and "cut". They are found by solving a system of 6
+ * equations, which define the boundary conditions of the switch.
+ * <br>
+ * f(cut) = 1
+ * <br>
+ * f'(cut) = f"(cut) = 0
+ * <br>
+ * f(off) = f'(off) = f"(off) = 0
  *
  * @author Michael J. Schnieders
- *
- * @since 1.0
  */
-public interface AtomicDoubleArray {
+public class MultiplicativeSwitch {
 
-    public enum AtomicDoubleArrayImpl {
-        ADDER, MULTI, PJ
-    };
+    private final double c0;
+    private final double c1;
+    private final double c2;
+    private final double c3;
+    private final double c4;
+    private final double c5;
+    private final double twoC2;
+    private final double threeC3;
+    private final double fourC4;
+    private final double fiveC5;
 
-    /**
-     * Ensure the AtomicDoubleArray instance is greater than or equal to size.
-     *
-     * @param size
-     */
-    public void alloc(int size);
+    public MultiplicativeSwitch(double off, double cut) {
 
-    /**
-     * Reset the double array to Zero.
-     *
-     * @param threadID
-     * @param lb
-     * @param ub
-     */
-    public void reset(int threadID, int lb, int ub);
+        double off2 = off * off;
+        double cut2 = cut * cut;
 
-    /**
-     * Add value to the double array at the specified index.
-     *
-     * @param threadID
-     * @param index
-     * @param value
-     */
-    public void add(int threadID, int index, double value);
+        double denom = pow(off - cut, 5.0);
+        c0 = off * off2 * (off2 - 5.0 * off * cut + 10.0 * cut2) / denom;
+        c1 = -30.0 * off2 * cut2 / denom;
+        c2 = 30.0 * (off2 * cut + off * cut2) / denom;
+        c3 = -10.0 * (off2 + 4.0 * off * cut + cut2) / denom;
+        c4 = 15.0 * (off + cut) / denom;
+        c5 = -6.0 / denom;
+        twoC2 = 2.0 * c2;
+        threeC3 = 3.0 * c3;
+        fourC4 = 4.0 * c4;
+        fiveC5 = 5.0 * c5;
+    }
 
-    /**
-     * Subtract value to the double array at the specified index.
-     *
-     * @param threadID
-     * @param index
-     * @param value
-     */
-    public void sub(int threadID, int index, double value);
+    public double taper(double r, double r2, double r3, double r4, double r5) {
+        return c5 * r5 + c4 * r4 + c3 * r3 + c2 * r2 + c1 * r + c0;
+    }
 
-    /**
-     * Perform reduction between the given lower bound (lb) and upper bound (up)
-     * if necessary.
-     *
-     * @param lb
-     * @param ub
-     */
-    public void reduce(int lb, int ub);
-
-    /**
-     * Get the value of the array at the specified index (usually subsequent to
-     * calling the <code>reduce</code> method.
-     *
-     * @param index
-     * @return
-     */
-    public double get(int index);
+    public double dtaper(double r, double r2, double r3, double r4) {
+        return fiveC5 * r4 + fourC4 * r3 + threeC3 * r2 + twoC2 * r + c1;
+    }
 
 }
