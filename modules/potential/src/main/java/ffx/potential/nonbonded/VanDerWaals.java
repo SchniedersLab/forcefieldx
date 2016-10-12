@@ -62,6 +62,7 @@ import edu.rit.pj.reduction.SharedInteger;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
+import ffx.numerics.AdderDoubleArray;
 import ffx.numerics.AtomicDoubleArray;
 import ffx.numerics.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.PJDoubleArray;
@@ -599,11 +600,11 @@ public class VanDerWaals implements MaskingInterface,
         /**
          * Define radius type.
          */
-        value = forceField.getString(ARRAY_REDUCTION, "PJ");
+        value = forceField.getString(ARRAY_REDUCTION, "ADDER");
         try {
             atomicDoubleArrayImpl = AtomicDoubleArrayImpl.valueOf(toEnumForm(value));
         } catch (Exception e) {
-            logger.info(format(" Unrecognized ARRAY-REDUCTION %s; defaulting to PJ", value));
+            logger.info(format(" Unrecognized ARRAY-REDUCTION %s; defaulting to ADDER", value));
         }
 
         /**
@@ -694,34 +695,52 @@ public class VanDerWaals implements MaskingInterface,
             use = new boolean[nAtoms];
             isSoft = new boolean[nAtoms];
             softCore = new boolean[2][nAtoms];
-            if (atomicDoubleArrayImpl == AtomicDoubleArrayImpl.THREADED) {
-                gradX = new ThreadedDoubleArray(threadCount, nAtoms);
-                gradY = new ThreadedDoubleArray(threadCount, nAtoms);
-                gradZ = new ThreadedDoubleArray(threadCount, nAtoms);
-                if (lambdaTerm) {
-                    lambdaGradX = new ThreadedDoubleArray(threadCount, nAtoms);
-                    lambdaGradY = new ThreadedDoubleArray(threadCount, nAtoms);
-                    lambdaGradZ = new ThreadedDoubleArray(threadCount, nAtoms);
-                } else {
-                    lambdaGradX = null;
-                    lambdaGradY = null;
-                    lambdaGradZ = null;
-                }
-            } else {
-                gradX = new PJDoubleArray(threadCount, nAtoms);
-                gradY = new PJDoubleArray(threadCount, nAtoms);
-                gradZ = new PJDoubleArray(threadCount, nAtoms);
-                if (lambdaTerm) {
-                    lambdaGradX = new PJDoubleArray(threadCount, nAtoms);
-                    lambdaGradY = new PJDoubleArray(threadCount, nAtoms);
-                    lambdaGradZ = new PJDoubleArray(threadCount, nAtoms);
-                } else {
-                    lambdaGradX = null;
-                    lambdaGradY = null;
-                    lambdaGradZ = null;
-                }
-            }
 
+            switch (atomicDoubleArrayImpl) {
+                case THREADED:
+                    gradX = new ThreadedDoubleArray(threadCount, nAtoms);
+                    gradY = new ThreadedDoubleArray(threadCount, nAtoms);
+                    gradZ = new ThreadedDoubleArray(threadCount, nAtoms);
+                    if (lambdaTerm) {
+                        lambdaGradX = new ThreadedDoubleArray(threadCount, nAtoms);
+                        lambdaGradY = new ThreadedDoubleArray(threadCount, nAtoms);
+                        lambdaGradZ = new ThreadedDoubleArray(threadCount, nAtoms);
+                    } else {
+                        lambdaGradX = null;
+                        lambdaGradY = null;
+                        lambdaGradZ = null;
+                    }
+                    break;
+                case PJ:
+                    gradX = new PJDoubleArray(threadCount, nAtoms);
+                    gradY = new PJDoubleArray(threadCount, nAtoms);
+                    gradZ = new PJDoubleArray(threadCount, nAtoms);
+                    if (lambdaTerm) {
+                        lambdaGradX = new PJDoubleArray(threadCount, nAtoms);
+                        lambdaGradY = new PJDoubleArray(threadCount, nAtoms);
+                        lambdaGradZ = new PJDoubleArray(threadCount, nAtoms);
+                    } else {
+                        lambdaGradX = null;
+                        lambdaGradY = null;
+                        lambdaGradZ = null;
+                    }
+                    break;
+                case ADDER:
+                default:
+                    gradX = new AdderDoubleArray(threadCount, nAtoms);
+                    gradY = new AdderDoubleArray(threadCount, nAtoms);
+                    gradZ = new AdderDoubleArray(threadCount, nAtoms);
+                    if (lambdaTerm) {
+                        lambdaGradX = new AdderDoubleArray(threadCount, nAtoms);
+                        lambdaGradY = new AdderDoubleArray(threadCount, nAtoms);
+                        lambdaGradZ = new AdderDoubleArray(threadCount, nAtoms);
+                    } else {
+                        lambdaGradX = null;
+                        lambdaGradY = null;
+                        lambdaGradZ = null;
+                    }
+                    break;
+            }
         }
 
         /**
@@ -1145,7 +1164,7 @@ public class VanDerWaals implements MaskingInterface,
         lamedhGradY = new double[threadCount][numESVs][nAtoms];
         lamedhGradZ = new double[threadCount][numESVs][nAtoms];
     }
-    
+
     public void detachExtendedSystem() {
         esvSystem = null;
         numESVs = 0;
@@ -1155,7 +1174,7 @@ public class VanDerWaals implements MaskingInterface,
         lamedhGradY = null;
         lamedhGradZ = null;
     }
-    
+
     public boolean hasExtendedSystem() {
         return (esvSystem != null);
     }
@@ -1552,14 +1571,14 @@ public class VanDerWaals implements MaskingInterface,
                 }
                 int threadIndex = getThreadIndex();
                 if (gradient) {
-                    gradX.init(threadIndex, nAtoms, lb, ub, 0.0);
-                    gradY.init(threadIndex, nAtoms, lb, ub, 0.0);
-                    gradZ.init(threadIndex, nAtoms, lb, ub, 0.0);
+                    gradX.reset(threadIndex, lb, ub);
+                    gradY.reset(threadIndex, lb, ub);
+                    gradZ.reset(threadIndex, lb, ub);
                 }
                 if (lambdaTerm) {
-                    lambdaGradX.init(threadIndex, nAtoms, lb, ub, 0.0);
-                    lambdaGradY.init(threadIndex, nAtoms, lb, ub, 0.0);
-                    lambdaGradZ.init(threadIndex, nAtoms, lb, ub, 0.0);
+                    lambdaGradX.reset(threadIndex, lb, ub);
+                    lambdaGradY.reset(threadIndex, lb, ub);
+                    lambdaGradZ.reset(threadIndex, lb, ub);
                 }
                 if (esvTerm && hasExtendedSystem()) {
                     lamedhGradX[threadIndex] = new double[numESVs][nAtoms];
@@ -1689,9 +1708,9 @@ public class VanDerWaals implements MaskingInterface,
             // private double lxi_local[];
             // private double lyi_local[];
             // private double lzi_local[];
-             private double ldh_xi_local[][];
-             private double ldh_yi_local[][];
-             private double ldh_zi_local[][];
+            private double ldh_xi_local[][];
+            private double ldh_yi_local[][];
+            private double ldh_zi_local[][];
             private double mask[];
             private final double dx_local[];
             private final double transOp[][];
@@ -1855,8 +1874,8 @@ public class VanDerWaals implements MaskingInterface,
                                     if (esvCount > 1) {
                                         StringBuilder err = new StringBuilder();
                                         err.append(format(" Multiple ESVs attached to atom %s: \n"
-                                                +          "   esvSystem.getESVList().size,lamedhProduct: %d %.2f \n"
-                                                +          "   List of attached ESVs: \n", 
+                                                + "   esvSystem.getESVList().size,lamedhProduct: %d %.2f \n"
+                                                + "   List of attached ESVs: \n",
                                                 atomk, esvSystem.getESVList().size(), lamedh));
                                         for (ExtendedVariable esv : DEBUG) {
                                             err.append(format("     %s\n", esv.toString()));
@@ -2165,7 +2184,7 @@ public class VanDerWaals implements MaskingInterface,
                                                 lamedhk *= esv.getLamedh();
                                             }
                                         }
-    //                                    double lamedh = (lamedhi < lamedhk) ? lamedhi : lamedhk;
+                                        //                                    double lamedh = (lamedhi < lamedhk) ? lamedhi : lamedhk;
                                         double lamedh = lamedhi * lamedhk;
                                         if (lamedhi != lamedhk) {
                                             logger.info(format(" (vdW) Found different lamedh on atoms %d,%d (%4.2f,%4.2f); using %4.2f",

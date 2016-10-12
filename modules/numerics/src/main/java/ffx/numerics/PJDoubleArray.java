@@ -70,15 +70,10 @@ public class PJDoubleArray implements AtomicDoubleArray {
     }
 
     @Override
-    public void init(int threadID, int size, int lb, int ub, double value) {
+    public void reset(int threadID, int lb, int ub) {
         for (int i = lb; i <= ub; i++) {
-            array.set(i, value);
+            array.set(i, 0.0);
         }
-    }
-
-    @Override
-    public void set(int threadID, int index, double value) {
-        array.set(index, value);
     }
 
     @Override
