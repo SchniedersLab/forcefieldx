@@ -49,6 +49,8 @@ public class ExtendedSystem {
     private final ForceField ff;
     private final VanDerWaals vdw;
     private final ParticleMeshEwaldQI pme;  // must not be global frame
+    private boolean usePME = false;
+    private boolean useVDW = true;
     // Application-specific variables
     private final double pHconst;
 
@@ -108,6 +110,7 @@ public class ExtendedSystem {
         }
 
         this.pHconst = pH;
+
         esvTerm = ff.getBoolean(ForceField.ForceFieldBoolean.ESVTERM, false);
         phTerm = ff.getBoolean(ForceField.ForceFieldBoolean.PHTERM, false);
         vdwTerm = ff.getBoolean(ForceField.ForceFieldBoolean.VDWTERM, true);
@@ -125,7 +128,7 @@ public class ExtendedSystem {
      * naturally parallelizable stream().
      */
     public List<ExtendedVariable> getESVList() {
-        return new ArrayList<>(esvList);
+        return esvList;
     }
 
     /**
@@ -186,7 +189,9 @@ public class ExtendedSystem {
                             esv.index, was, esv.getLamedh(), temperature));
                 }
             }
-            pme.sourceLamedh();
+            if (usePME) {
+                pme.sourceLamedh();
+            }
         }
     }
 
@@ -410,10 +415,10 @@ public class ExtendedSystem {
         }
 
         // Connect to terms which handle Ldh explicity: vdW and PME.
-        if (!vdw.hasExtendedSystem()) {
+        if (useVDW && !vdw.hasExtendedSystem()) {
             vdw.attachExtendedSystem(this);
         }
-        if (!pme.hasExtendedSystem()) {
+        if (usePME && !pme.hasExtendedSystem()) {
             pme.attachExtendedSystem(this);
         }
         /*  TODO awaiting implementation
@@ -456,11 +461,11 @@ public class ExtendedSystem {
         }
         terms.add(biasGrad);
         if (!lambdaBondedTerms) {
-            if (vdwTerm) {
+            if (useVDW) {
                 vdwGrad = vdw.getdEdLdh();
                 terms.add(vdwGrad);
             }
-            if (mpoleTerm) {
+            if (usePME) {
                 pmeGrad = pme.getdEdLdh();
                 terms.add(pmeGrad);
             }
@@ -483,8 +488,12 @@ public class ExtendedSystem {
         }
         for (int i = 0; i < numESVs; i++) {
             sb.append(format("  Bias %d: %g\n", i, biasGrad[i]));
-            sb.append(format("  vdW  %d: %g\n", i, vdwGrad[i]));
-            sb.append(format("  PME  %d: %g\n", i, pmeGrad[i]));
+            if (useVDW) {
+                sb.append(format("  vdW  %d: %g\n", i, vdwGrad[i]));
+            }
+            if (usePME) {
+                sb.append(format("  PME  %d: %g\n", i, pmeGrad[i]));
+            }
         }
         logger.config(sb.toString());
         if (terms.isEmpty()) {

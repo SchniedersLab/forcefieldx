@@ -230,8 +230,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     /****************************************/
     /*      Extended System Variables       */
     private ExtendedSystem extendedSystem;
-    private int numESVs;
-    private List<ExtendedVariable> esvList;
     private StringBuilder esvLogger;
     private final boolean ESV_DEBUG = false;
     private final boolean pmeQI = (System.getProperty("pme-qi") != null);
@@ -694,11 +692,23 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     public void attachExtendedSystem(ExtendedSystem system) {
+        if (extendedSystem != null) {
+            logger.warning("Multiple esvSystems is untested; overwriting instead.");
+        }
         if (!esvTerm) {
             logger.warning("ExtendedSystem attached to FFE with not operate until esvTerm is set.");
         }
         extendedSystem = system;
-        esvList = extendedSystem.getESVList();
+        if (vanderWaals != null) {
+            vanderWaals.attachExtendedSystem(system);
+        } else {
+            logger.warning("Couldn't attach extended system to vdW.");
+        }
+        if (particleMeshEwald != null && particleMeshEwald instanceof ParticleMeshEwaldQI) {
+            ((ParticleMeshEwaldQI) particleMeshEwald).attachExtendedSystem(system);
+        } else {
+            logger.warning("Couldn't attach extended system to PME.");
+        }
         esvLogger = new StringBuilder();
     }
 
@@ -1740,7 +1750,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
      */
     private double lamedhScaling(ROLS rols) {
         double totalScale = 1.0;
-        for (ExtendedVariable esv : esvList) {
+        for (ExtendedVariable esv : extendedSystem.getESVList()) {
             OptionalDouble scale = esv.getROLSScaling(rols);
             if (scale.isPresent()) {
                 totalScale *= esv.getROLSScaling(rols).getAsDouble();
@@ -1948,7 +1958,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     sb.append("   Grad:  " + grad[0] + ", " + grad[1] + ", " + grad[2] + "\n");
                     sb.append("   Mass:  " + a.getMass() + "\n");
                     if (atoms[i].applyLamedh()) {
-                        for (ExtendedVariable esv : esvList) {
+                        for (ExtendedVariable esv : extendedSystem.getESVList()) {
                             if (esv.containsAtom(atoms[i])) {
                                 sb.append("   ESV:   " + "idx " + esv.index + ", ldh " + esv.getLamedh() + "\n");
                             }

@@ -333,6 +333,12 @@ public class VanDerWaals implements MaskingInterface,
          */
         lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
         esvTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.ESVTERM, false);
+        if (esvTerm) {
+            logger.info("vdW: ESV Term Enabled!");
+            if (esvSystem == null) {
+                logger.warning("vdw: ESV Term Enabled with null system.");
+            }
+        }
         if (lambdaTerm || esvTerm) {
             shareddEdL = new SharedDouble();
             sharedd2EdL2 = new SharedDouble();
@@ -912,8 +918,8 @@ public class VanDerWaals implements MaskingInterface,
         if (!esvTerm) {
             logger.warning("Extended system attached to VdW will not function until esvTerm enabled.");
         }
-        if (esvSystem != null) {
-            logger.severe("Multiple ESV systems is untested.");
+        if (system == null) {
+            logger.severe("Tried to attach null extended system.");
         }
         esvSystem = system;
         numESVs = esvSystem.num();
