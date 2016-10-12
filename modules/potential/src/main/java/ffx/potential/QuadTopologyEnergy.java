@@ -61,17 +61,10 @@ public class QuadTopologyEnergy implements Potential, LambdaInterface {
     private final int nVarB;
     private final int nVarTot;
     private final double[] mass;
-    private STATE state = STATE.BOTH;
-    private double lambda;
-    private double totalEnergy;
-    private double energyA;
-    private double energyB;
-    private double dEdL, dEdL_A, dEdL_B;
-    private double d2EdL2, d2EdL2_A, d2EdL2_B;
-    private double[] xA;
-    private double[] xB;
-    private double[] gA;
-    private double[] gB;
+    private final double[] xA;
+    private final double[] xB;
+    private final double[] gA;
+    private final double[] gB;
     /**
      * tempA and B arrays are used to hold the result of get methods applied
      * on dual topologies A and B; this saves the time of initializing new arrays
@@ -81,6 +74,14 @@ public class QuadTopologyEnergy implements Potential, LambdaInterface {
      */
     private final double[] tempA;
     private final double[] tempB;
+    
+    private STATE state = STATE.BOTH;
+    private double lambda;
+    private double totalEnergy;
+    private double energyA;
+    private double energyB;
+    private double dEdL, dEdL_A, dEdL_B;
+    private double d2EdL2, d2EdL2_A, d2EdL2_B;
     /**
      * Scaling and de-scaling will be applied inside DualTopologyEnergy. This
      * array will just be a concatenation of the two scaling arrays.
@@ -232,9 +233,16 @@ public class QuadTopologyEnergy implements Potential, LambdaInterface {
     @Override
     public VARIABLE_TYPE[] getVariableTypes() {
         if (types == null) {
-            types = new VARIABLE_TYPE[nVarTot];
-            System.arraycopy(dualTopA.getVariableTypes(), 0, types, 0, nVarA);
-            System.arraycopy(dualTopB.getVariableTypes(), 0, types, nVarA, nVarB);
+            VARIABLE_TYPE[] typesA = dualTopA.getVariableTypes();
+            VARIABLE_TYPE[] typesB = dualTopB.getVariableTypes();
+            if (typesA != null && typesB != null) {
+                types = new VARIABLE_TYPE[nVarTot];
+                System.arraycopy(dualTopA.getVariableTypes(), 0, types, 0, nVarA);
+                System.arraycopy(dualTopB.getVariableTypes(), 0, types, nVarA, nVarB);
+            } else {
+                logger.fine(" Variable types array remaining null due to null "
+                        + "variable types in either A or B dual topology");
+            }
         }
         return types;
     }
