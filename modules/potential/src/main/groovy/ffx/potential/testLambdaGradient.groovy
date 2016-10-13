@@ -56,16 +56,16 @@ import ffx.potential.ForceFieldEnergy;
 //import edu.rit.pj.ParallelTeam;
 
 // First ligand atom.
-int ligandStart = 1;
+@Field int ligandStart = 1;
 
 // Last ligand atom.
-int ligandStop = -1;
+@Field int ligandStop = -1;
 
 // First active atom.
-int activeStart = 1;
+@Field int activeStart = 1;
 
 // Last active atom.
-int activeStop = -1;
+@Field int activeStop = -1;
 
 // Field annotation gives the variables private script scope, thus allowing the 
 // openFile method to see these.
@@ -259,6 +259,11 @@ void openFile(int topNum) {
     int n = atoms.length;
     remainder = (topNum % 2) + 1;
     if (remainder == 1) {
+        for (int i = ligandStart; i <= ligandStop; i++) {
+            Atom ai = atoms[i-1];
+            ai.setApplyLambda(true);
+            ai.print();
+        }
         // Apply the no electrostatics atom selection
         if (noElecStart < 1) {
             noElecStart = 1;
@@ -272,6 +277,11 @@ void openFile(int topNum) {
             ai.print();
         }
     } else if (remainder == 2) {
+        for (int i = ligandStart2; i <= ligandStop2; i++) {
+            Atom ai = atoms[i-1];
+            ai.setApplyLambda(true);
+            ai.print();
+        }
         // Apply the no electrostatics atom selection
         if (noElecStart2 < 1) {
             noElecStart2 = 1;
@@ -409,6 +419,8 @@ if (arguments.size() == 1) {
     QuadTopologyEnergy qte = new QuadTopologyEnergy(dtA, dtB);
     potential = qte;
     lambdaInterface = qte;
+} else {
+    logger.severe(" Must have 1, 2, or 4 topologies to test.");
 }
 
 // Reset the number of variables for the case of dual topology.
