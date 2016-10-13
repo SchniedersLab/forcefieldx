@@ -38,22 +38,17 @@
 
 // TEST LAMBDA GRADIENT
 
-// Apache Imports
-import org.apache.commons.io.FilenameUtils;
-
 // Groovy Imports
-import groovy.util.CliBuilder;
-import groovy.transform.Field;
+import groovy.transform.Field
+import groovy.util.CliBuilder
 
 // FFX Imports
-import ffx.numerics.Potential;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.LambdaInterface;
-import ffx.potential.MolecularAssembly;
+import ffx.numerics.Potential
+import ffx.potential.DualTopologyEnergy
+import ffx.potential.ForceFieldEnergy
 import ffx.potential.QuadTopologyEnergy
-import ffx.potential.DualTopologyEnergy;
-import ffx.potential.ForceFieldEnergy;
-//import edu.rit.pj.ParallelTeam;
+import ffx.potential.bonded.Atom
+import ffx.potential.bonded.LambdaInterface
 
 // First ligand atom.
 @Field int ligandStart = 1;
