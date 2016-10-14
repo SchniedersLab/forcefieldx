@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -53,6 +53,7 @@ public class PairwiseSchedule extends IntegerSchedule {
 
     private static final Logger logger = Logger.getLogger(PairwiseSchedule.class.getName());
     private int nAtoms;
+    private int threadOffset;
     private final int nThreads;
     private final Range ranges[];
     private final boolean threadDone[];
@@ -68,6 +69,7 @@ public class PairwiseSchedule extends IntegerSchedule {
     public PairwiseSchedule(int nThreads, int nAtoms, Range ranges[]) {
         this.nAtoms = nAtoms;
         this.nThreads = nThreads;
+        threadOffset = 0;
         this.ranges = ranges;
         threadDone = new boolean[nThreads];
     }
@@ -117,11 +119,12 @@ public class PairwiseSchedule extends IntegerSchedule {
      * updateRanges</p>
      *
      * @param totalInteractions a int.
+     * @param atomsWithInteractions the number of chunks of interactions.
      * @param listCount an array of int.
      */
-    public void updateRanges(int totalInteractions, int listCount[]) {
+    public void updateRanges(int totalInteractions, int atomsWithInteractions, int listCount[]) {
         int id = 0;
-        int goal = totalInteractions / nThreads;
+        int goal = totalInteractions / (nThreads + threadOffset);
         int num = 0;
         int start = 0;
         for (int i = 0; i < nAtoms; i++) {
@@ -148,6 +151,11 @@ public class PairwiseSchedule extends IntegerSchedule {
                  * Out of atoms. Threads remaining get a null range.
                  */
                 if (start == nAtoms) {
+                    if (atomsWithInteractions > nThreads + threadOffset + 1) {
+                        threadOffset++;
+                        updateRanges(totalInteractions, atomsWithInteractions, listCount);
+                        break;
+                    }
                     for (int j = id; j < nThreads; j++) {
                         ranges[j] = null;
                     }
@@ -157,11 +165,17 @@ public class PairwiseSchedule extends IntegerSchedule {
                 /**
                  * Last atom without reaching goal for current thread.
                  */
+                if (id < nThreads - 1 && atomsWithInteractions > nThreads + threadOffset + 1) {
+                    threadOffset++;
+                    updateRanges(totalInteractions, atomsWithInteractions, listCount);
+                    break;
+                }
                 ranges[id] = new Range(start, nAtoms - 1);
                 for (int j = id + 1; j < nThreads; j++) {
                     ranges[j] = null;
                 }
             }
         }
+        threadOffset = 0;
     }
 }

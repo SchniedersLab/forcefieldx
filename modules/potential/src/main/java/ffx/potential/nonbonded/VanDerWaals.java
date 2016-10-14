@@ -39,8 +39,6 @@ package ffx.potential.nonbonded;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -80,15 +78,10 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.VDWType;
 
-import static ffx.numerics.AtomicDoubleArray.AtomicDoubleArrayImpl.PJ;
+import static ffx.numerics.AtomicDoubleArray.AtomicDoubleArrayImpl.MULTI;
 import static ffx.potential.nonbonded.VanDerWaalsForm.EPS;
 import static ffx.potential.nonbonded.VanDerWaalsForm.RADMIN;
 import static ffx.potential.parameters.ForceField.ForceFieldString.ARRAY_REDUCTION;
-import static ffx.potential.parameters.ForceField.ForceFieldString.EPSILONRULE;
-import static ffx.potential.parameters.ForceField.ForceFieldString.RADIUSRULE;
-import static ffx.potential.parameters.ForceField.ForceFieldString.RADIUSSIZE;
-import static ffx.potential.parameters.ForceField.ForceFieldString.RADIUSTYPE;
-import static ffx.potential.parameters.ForceField.ForceFieldString.VDWTYPE;
 import static ffx.potential.parameters.ForceField.toEnumForm;
 
 /**
@@ -239,7 +232,6 @@ public class VanDerWaals implements MaskingInterface,
     private double reductionValue[];
     private double longRangeCorrection;
     private final boolean doLongRangeCorrection;
-    private int maxClass;
     /**
      * *************************************************************************
      * Parallel variables.
@@ -253,35 +245,32 @@ public class VanDerWaals implements MaskingInterface,
     private final SharedDouble sharedd2EdL2;
     private SharedDouble[] shareddEdLdh;
 
-    private AtomicDoubleArrayImpl atomicDoubleArrayImpl = PJ;
+    private AtomicDoubleArrayImpl atomicDoubleArrayImpl = MULTI;
     /**
-     * X-component of the Cartesian coordinate gradient. Size:
-     * [threadCount][nAtoms]
+     * X-component of the Cartesian coordinate gradient.
      */
     private AtomicDoubleArray gradX;
     /**
-     * Y-component of the Cartesian coordinate gradient. Size:
-     * [threadCount][nAtoms]
+     * Y-component of the Cartesian coordinate gradient.
      */
     private AtomicDoubleArray gradY;
     /**
-     * Z-component of the Cartesian coordinate gradient. Size:
-     * [threadCount][nAtoms]
+     * Z-component of the Cartesian coordinate gradient.
      */
     private AtomicDoubleArray gradZ;
     /**
      * X-component of the lambda derivative of the Cartesian coordinate
-     * gradient. Size: [threadCount][nAtoms]
+     * gradient.
      */
     private AtomicDoubleArray lambdaGradX;
     /**
      * Y-component of the lambda derivative of the Cartesian coordinate
-     * gradient. Size: [threadCount][nAtoms]
+     * gradient.
      */
     private AtomicDoubleArray lambdaGradY;
     /**
      * Z-component of the lambda derivative of the Cartesian coordinate
-     * gradient. Size: [threadCount][nAtoms]
+     * gradient.
      */
     private AtomicDoubleArray lambdaGradZ;
 
@@ -644,6 +633,9 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     private double getLongRangeCorrection() {
+
+        int maxClass = vdwForm.maxClass;
+
         /**
          * Long range correction.
          */
@@ -1284,16 +1276,15 @@ public class VanDerWaals implements MaskingInterface,
                     coordinates[i3 + ZZ] = atom.getZ();
                     use[i] = atom.getUse();
                 }
-                int threadIndex = getThreadIndex();
                 if (gradient) {
-                    gradX.reset(threadIndex, lb, ub);
-                    gradY.reset(threadIndex, lb, ub);
-                    gradZ.reset(threadIndex, lb, ub);
+                    gradX.reset(threadID, lb, ub);
+                    gradY.reset(threadID, lb, ub);
+                    gradZ.reset(threadID, lb, ub);
                 }
                 if (lambdaTerm) {
-                    lambdaGradX.reset(threadIndex, lb, ub);
-                    lambdaGradY.reset(threadIndex, lb, ub);
-                    lambdaGradZ.reset(threadIndex, lb, ub);
+                    lambdaGradX.reset(threadID, lb, ub);
+                    lambdaGradY.reset(threadID, lb, ub);
+                    lambdaGradZ.reset(threadID, lb, ub);
                 }
             }
         }

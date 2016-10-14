@@ -5970,9 +5970,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     /**
      * Given an array of atoms (with atom types), assign multipole types and
      * reference sites.
-     *
-     * @param atoms List
-     * @param forceField ForceField
      */
     private void assignMultipoles() {
         if (forceField == null) {
@@ -6757,16 +6754,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
     @Override
     public double[] getdEdLdh() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public double[] getd2EdLdh2() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public double[][] getdEdXdLdh() {
         throw new UnsupportedOperationException();
     }
 
