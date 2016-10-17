@@ -750,6 +750,8 @@ if (arguments.size() == 1) {
     osrw = new TransitionTemperedOSRW(qte, qte, lambdaRestart, histogramRestart, 
         active.getProperties(), temperature, timeStep, printInterval, 
         saveInterval, asynchronous, resetNumSteps, sh);
+} else {
+    logger.severe(" Must have 1, 2, or 4 topologies to test.");
 }
 osrw.setDeltaT(temperingParam);
 

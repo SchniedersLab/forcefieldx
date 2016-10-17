@@ -143,10 +143,6 @@ public abstract class ParticleMeshEwald {
     
     public abstract double[] getdEdLdh();
 
-    public abstract double[] getd2EdLdh2();
-
-    public abstract double[][] getdEdXdLdh();
-
     public abstract void destroy() throws Exception;
 
     public abstract void setCrystal(Crystal crystal);
