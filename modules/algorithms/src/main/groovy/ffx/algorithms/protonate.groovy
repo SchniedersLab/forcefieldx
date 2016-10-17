@@ -230,6 +230,17 @@ if (options.i) {
 }
 
 System.setProperty("forcefield","AMOEBA_PROTEIN_2013");
+// Add flag handling for switching between discrete and continuous protonation regimes.
+// TODO PRIO: refactor this and Protonate to utilize the new TitrationUtils and ExtendedSystem machinery
+// TODO: add flag which sets up the runs necessary to fit a model compound reference
+
+/*
+    String zeroReferenceEnergies = System.getProperty("cphmd-zeroReferences");  // [no-arg]
+    String overrideFlag = System.getProperty("cphmd-override"); // MCOverride.ACCEPT|REJECT|ONCE
+    String beforeAfter = System.getProperty("cphmd-snapshots"); // SnapshotsType.SEPARATE|INTERLEAVED|NONE
+    String histidineMode = System.getProperty("cphmd-histidineMode");
+*/
+
 
 List<String> arguments = options.arguments();
 String modelfilename = null;
@@ -282,5 +293,10 @@ if (!dynamics) {
     return;
 }
 
-// and away we go!
-molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
+if (discreteOnly) {
+    molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
+} else {
+//    Object[] molDynLauncher = new Object[]{mcStepFrequency, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn};
+//    mcProt.setMolDynLauncher = molDynLauncher;
+    molDyn.dynamic(Integer.MAX_VALUE, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
+}

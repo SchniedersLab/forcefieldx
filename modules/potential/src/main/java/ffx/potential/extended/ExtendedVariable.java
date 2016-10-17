@@ -45,7 +45,7 @@ public abstract class ExtendedVariable {
     protected List<Atom> atoms = new ArrayList<>();
     
     // Lamedh variables
-    protected double lamedh;                        // ESVs travel on {0,1}
+    protected double lambda;                        // ESVs travel on {0,1}
     private double theta;                           // Propagates lamedh particle via "lamedh=sin(theta)^2"
     private double halfThetaVelocity = 0.0;         // from OSRW, start theta with zero velocity
     private final double thetaMass = prop("esv-thetaMass", 1.0e-18);            // from OSRW, reasonably 100 a.m.u.
@@ -56,8 +56,8 @@ public abstract class ExtendedVariable {
     public ExtendedVariable(double biasMag, double initialLamedh) {
         this.index = esvIndexer++;
         this.biasMag = biasMag;
-        this.lamedh = initialLamedh;
-        theta = Math.asin(Math.sqrt(lamedh));
+        this.lambda = initialLamedh;
+        theta = Math.asin(Math.sqrt(lambda));
     }
     
     public ExtendedVariable(double biasMag) {
@@ -105,15 +105,15 @@ public abstract class ExtendedVariable {
         }
 
         double sinTheta = sin(theta);
-        lamedh = sinTheta * sinTheta;
+        lambda = sinTheta * sinTheta;
     }
     
-    public final void setLamedh(double lamedh) {
-        this.lamedh = lamedh;
-        theta = Math.asin(Math.sqrt(lamedh));
+    public final void setLambda(double lambda) {
+        this.lambda = lambda;
+        theta = Math.asin(Math.sqrt(lambda));
     }
-    public final double getLamedh() {
-        return lamedh;
+    public final double getLambda() {
+        return lambda;
     }
     public final int getIndex() {
         return index;

@@ -1610,14 +1610,14 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
         
         if (esvTerm) {
             double minimumLdh = extendedSystem.getESVList().stream()
-                    .mapToDouble((esv) -> esv.getLamedh())
+                    .mapToDouble((esv) -> esv.getLambda())
                     .min().orElse(1.0);
             if (minimumLdh < polLambdaStart) {
                 // leave scale at whatever is needed for lambda
             } else {
                 doPolarization = true;
                 extendedSystem.getESVList().stream().forEach((esv) -> {
-                    if (esv.getLamedh() <= polLambdaEnd) {
+                    if (esv.getLambda() <= polLambdaEnd) {
                         // Lambda-Lamedh interaction is multiplicative.
                         polarizationScaleLdh[esv.index] = polarizationScale * ldhPowPol[esv.index];
                     } else {
@@ -4221,7 +4221,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                             // Find the product of all applicable ESV lamedhs.
                             double lamedh = extendedSystem.getESVList().stream()
                                     .filter((esv) -> esv.containsAtom(ai) || esv.containsAtom(atoms[k]))
-                                    .mapToDouble((esv) -> esv.getLamedh())
+                                    .mapToDouble((esv) -> esv.getLambda())
                                     .reduce(1.0, (a,b) -> a*b);
                             double lambdaLoc = (lambdaTerm) ? lambda : 1.0;
                             // Total lambda = lambda * product(lamedhs).
@@ -7262,7 +7262,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
     public void sourceLamedh() {
         for (ExtendedVariable esv : extendedSystem.getESVList()) {
             final int i = esv.index;
-            final double lamedh = esv.getLamedh();
+            final double lamedh = esv.getLambda();
             final double L = (lambdaTerm) ? lambda*lamedh : lamedh;
             
             // Set permanent electrostatics scaling.
