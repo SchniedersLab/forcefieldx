@@ -56,39 +56,6 @@ import static ffx.numerics.VectorMath.norm;
 import static ffx.numerics.VectorMath.r;
 import static ffx.numerics.VectorMath.scalar;
 
-import static java.lang.String.format;
-
-import static org.apache.commons.math3.util.FastMath.exp;
-import static org.apache.commons.math3.util.FastMath.pow;
-
-import static ffx.numerics.VectorMath.diff;
-import static ffx.numerics.VectorMath.dot;
-import static ffx.numerics.VectorMath.norm;
-import static ffx.numerics.VectorMath.r;
-import static ffx.numerics.VectorMath.scalar;
-
-import static java.lang.String.format;
-
-import static org.apache.commons.math3.util.FastMath.exp;
-import static org.apache.commons.math3.util.FastMath.pow;
-
-import static ffx.numerics.VectorMath.diff;
-import static ffx.numerics.VectorMath.dot;
-import static ffx.numerics.VectorMath.norm;
-import static ffx.numerics.VectorMath.r;
-import static ffx.numerics.VectorMath.scalar;
-
-import static java.lang.String.format;
-
-import static org.apache.commons.math3.util.FastMath.exp;
-import static org.apache.commons.math3.util.FastMath.pow;
-
-import static ffx.numerics.VectorMath.diff;
-import static ffx.numerics.VectorMath.dot;
-import static ffx.numerics.VectorMath.norm;
-import static ffx.numerics.VectorMath.r;
-import static ffx.numerics.VectorMath.scalar;
-
 /**
  * The MultipoleTensor class computes derivatives of 1/|<b>r</b>| via recursion
  * to arbitrary order for Cartesian multipoles in either a global frame or a
@@ -127,6 +94,7 @@ public class MultipoleTensor {
 
     private OPERATOR operator;
     private COORDINATES coordinates;
+    private COORDINATES bufferCoordinates = COORDINATES.GLOBAL;
 
     private final int order;
     /**
@@ -2442,25 +2410,43 @@ public class MultipoleTensor {
         Fi[1] = -dotMultipoleK();
         multipoleIdZQI();
         Fi[2] = -dotMultipoleK();
-
+        
+        if (bufferCoordinates == COORDINATES.QI) {
+            dEdF = -Fi[2];
+            if (order > 5) {
+                multipoleIdZ2QI();
+                d2EdF2 = dotMultipoleK();
+            }
+        }
+        
         // Rotate the force and torques from the QI frame into the Global frame.
         qiToGlobal(Fi, Ti, Tk);
 
-        // dEdL = dEdF = -Fi[2]
-        dEdF = -Fi[2];
-        if (order > 5) {
-            multipoleIdZ2QI();
-            d2EdF2 = dotMultipoleK();
+        if (bufferCoordinates == COORDINATES.GLOBAL) {
+            // dEdL = dEdF = -Fi[2]
+            dEdF = -Fi[2];
+            if (order > 5) {
+                multipoleIdZ2QI();
+                d2EdF2 = dotMultipoleK();
+            }
         }
 
         return energy;
     }
+    
+    public void setBufferCoordinates(COORDINATES coord) {
+        this.bufferCoordinates = coord;
+    }
 
+    public double[] getR() {
+        return new double[]{x, y, z, R, R*R};
+    }
+    
     public double getdEdF() {
         return dEdF;
     }
 
-    public double getd2EdZ2() {
+    public double getd2EdF2() {
         return d2EdF2;
     }
 

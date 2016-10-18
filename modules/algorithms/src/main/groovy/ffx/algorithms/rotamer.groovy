@@ -532,6 +532,7 @@ singletonNAPruningFactor = 1.5;
  */
 
 open(filename);
+active.getPotentialEnergy().setPrintOnFailure(false, false);
 
 RotamerOptimization rotamerOptimization = new RotamerOptimization(active, active.getPotentialEnergy(), sh);
 rotamerOptimization.setThreeBodyEnergy(threeBodyTerm);
@@ -740,7 +741,9 @@ RotamerLibrary.measureRotamers(residueList, false);
 if (decomposeOriginal) {
     RotamerLibrary.setUseOrigCoordsRotamer(true);
     boolean doQuadsInParallel = true;
-    if (!doQuadsInParallel) {
+    if (options.lR) {
+        rotamerOptimization.decomposeOriginal(residueList.toArray(new Residue[0]));
+    } else if (!doQuadsInParallel) {
         String quadsProp = System.getProperty("evalQuad");
         if (quadsProp != null && quadsProp.equalsIgnoreCase("true")) {
             Residue[] residueArray = residueList.toArray(new Residue[residueList.size()]);

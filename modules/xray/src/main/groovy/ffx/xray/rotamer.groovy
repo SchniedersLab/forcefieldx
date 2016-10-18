@@ -574,6 +574,7 @@ if (singletonNAPruningFactor < 0) {
 */
 
 systems = open(filename);
+systems[0].getPotentialEnergy().setPrintOnFailure(false, false);
 
 if (diffractionfiles.size() == 0) {
     DiffractionFile diffractionfile = new DiffractionFile(systems[0], 1.0, false);

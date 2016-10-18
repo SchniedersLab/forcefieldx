@@ -345,6 +345,7 @@ if (options.p) {
 String filename = arguments.get(0);
 
 systems = open(filename);
+systems[0].getPotentialEnergy().setPrintOnFailure(false, false);
 
 // set up real space map data (can be multiple files)
 List mapFiles = new ArrayList();

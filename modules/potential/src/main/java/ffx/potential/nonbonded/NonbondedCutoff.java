@@ -35,37 +35,53 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.potential.utils;
+package ffx.potential.nonbonded;
 
 /**
- * This Exception class indicates an error in calculating energy or gradients. 
- * Expected behavior is that it will be caught by Potential.energy(), resulting
- * in any necessary cleanup. Then, if the causeSevere flag is set true, FFE will
- * issue a logger.severe (resulting in exit); else, FFE will simply rethrow the
- * exception. The default is to rethrow the exception.
- * 
- * @author Jacob Litman
+ * This class contains fields and methods for maintaining details of non-bonded
+ * cutoffs.
+ *
  * @author Michael J. Schnieders
  */
-public class EnergyException extends ArithmeticException {
-    private final boolean causeSevere;
-    public EnergyException() {
-        super();
-        causeSevere = false;
+public class NonbondedCutoff {
+
+    /**
+     * Non-bonded Cutoff constructor.
+     *
+     * @param off All vdW interactions are 0 at the distance <code>off</code>.
+     * @param cut At the distance <code>cut</code>, a multiplicative switch
+     * begins to be applied.
+     * @param buff A buffer added to the cut-off distance <code>off</code> to
+     * define neighbors included when collecting Verlet lists.
+     */
+    public NonbondedCutoff(double off, double cut, double buff) {
+        this.cut = cut;
+        this.cut2 = cut * cut;
+        this.off = off;
+        this.off2 = off * off;
+        this.buff = buff;
     }
-    public EnergyException(String str) {
-        super(str);
-        causeSevere = false;
-    }
-    public EnergyException(boolean causeSevere) {
-        super();
-        this.causeSevere = causeSevere;
-    }
-    public EnergyException(String str, boolean causeSevere) {
-        super(str);
-        this.causeSevere = causeSevere;
-    }
-    public boolean doCauseSevere() {
-        return causeSevere;
-    }
+
+    /**
+     * At the distance "cut", a multiplicative switch begins to be applied.
+     */
+    protected final double cut;
+    /**
+     * The distance cut squared.
+     */
+    protected final double cut2;
+    /**
+     * All vdW interactions are 0 at the distance "off".
+     */
+    protected final double off;
+    /**
+     * The distance off squared.
+     */
+    protected final double off2;
+    /**
+     * A buffer added to the cut-off distance <code>off</code> to define
+     * neighbors included when collecting Verlet lists.
+     */
+    protected final double buff;
+
 }

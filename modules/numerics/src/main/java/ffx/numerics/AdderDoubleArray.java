@@ -35,37 +35,64 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.potential.utils;
+package ffx.numerics;
+
+import java.util.concurrent.atomic.DoubleAdder;
 
 /**
- * This Exception class indicates an error in calculating energy or gradients. 
- * Expected behavior is that it will be caught by Potential.energy(), resulting
- * in any necessary cleanup. Then, if the causeSevere flag is set true, FFE will
- * issue a logger.severe (resulting in exit); else, FFE will simply rethrow the
- * exception. The default is to rethrow the exception.
- * 
- * @author Jacob Litman
+ * AdderDoubleArray implements the AtomicDoubleArray interface using an array of
+ * <code>java.util.concurrent.atomic.DoubleAdder</code>.
+ *
  * @author Michael J. Schnieders
+ *
+ * @since 1.0
  */
-public class EnergyException extends ArithmeticException {
-    private final boolean causeSevere;
-    public EnergyException() {
-        super();
-        causeSevere = false;
+public class AdderDoubleArray implements AtomicDoubleArray {
+
+    private DoubleAdder array[];
+
+    public AdderDoubleArray(int nThreads, int size) {
+        array = new DoubleAdder[size];
+        for (int i = 0; i < size; i++) {
+            array[i] = new DoubleAdder();
+        }
     }
-    public EnergyException(String str) {
-        super(str);
-        causeSevere = false;
+
+    @Override
+    public void alloc(int size) {
+        if (array.length < size) {
+            array = new DoubleAdder[size];
+            for (int i = 0; i < size; i++) {
+                array[i] = new DoubleAdder();
+            }
+        }
     }
-    public EnergyException(boolean causeSevere) {
-        super();
-        this.causeSevere = causeSevere;
+
+    @Override
+    public void reset(int threadID, int lb, int ub) {
+        for (int i=lb; i<=ub; i++) {
+            array[i].reset();
+        }
     }
-    public EnergyException(String str, boolean causeSevere) {
-        super(str);
-        this.causeSevere = causeSevere;
+
+    @Override
+    public void add(int threadID, int index, double value) {
+        array[index].add(value);
     }
-    public boolean doCauseSevere() {
-        return causeSevere;
+
+    @Override
+    public void sub(int threadID, int index, double value) {
+        array[index].add(-value);
     }
+
+    @Override
+    public void reduce(int lb, int ub) {
+        // Nothing to do.
+    }
+
+    @Override
+    public double get(int index) {
+        return array[index].sum();
+    }
+
 }

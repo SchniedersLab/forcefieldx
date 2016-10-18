@@ -35,37 +35,71 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.potential.utils;
+package ffx.numerics;
+
+import edu.rit.pj.reduction.SharedDoubleArray;
 
 /**
- * This Exception class indicates an error in calculating energy or gradients. 
- * Expected behavior is that it will be caught by Potential.energy(), resulting
- * in any necessary cleanup. Then, if the causeSevere flag is set true, FFE will
- * issue a logger.severe (resulting in exit); else, FFE will simply rethrow the
- * exception. The default is to rethrow the exception.
- * 
- * @author Jacob Litman
+ * PJDoubleArray implements the AtomicDoubleArray interface using the Parallel
+ * Java class SharedDoubleArray.
+ *
+ * SharedDoubleArray is multiple thread safe and uses lock-free atomic
+ * compare-and-set.
+ *
+ * Note: Class SharedDoubleArray is implemented using class
+ * java.util.concurrent.atomic.AtomicLongArray. Each double array element is
+ * stored as a long whose bit pattern is the same as the double value.
+ *
  * @author Michael J. Schnieders
+ *
+ * @since 1.0
  */
-public class EnergyException extends ArithmeticException {
-    private final boolean causeSevere;
-    public EnergyException() {
-        super();
-        causeSevere = false;
+public class PJDoubleArray implements AtomicDoubleArray {
+
+    private SharedDoubleArray array;
+
+    public PJDoubleArray(int nThreads, int size) {
+        array = new SharedDoubleArray(size);
     }
-    public EnergyException(String str) {
-        super(str);
-        causeSevere = false;
+
+    @Override
+    public void alloc(int size) {
+        if (array.length() < size) {
+            array = new SharedDoubleArray(size);
+        }
     }
-    public EnergyException(boolean causeSevere) {
-        super();
-        this.causeSevere = causeSevere;
+
+    @Override
+    public void reset(int threadID, int lb, int ub) {
+        for (int i = lb; i <= ub; i++) {
+            array.set(i, 0.0);
+        }
     }
-    public EnergyException(String str, boolean causeSevere) {
-        super(str);
-        this.causeSevere = causeSevere;
+
+    @Override
+    public void add(int threadID, int index, double value) {
+        array.getAndAdd(index, value);
     }
-    public boolean doCauseSevere() {
-        return causeSevere;
+
+    @Override
+    public void sub(int threadID, int index, double value) {
+        array.getAndAdd(index, -value);
     }
+
+    /**
+     * Reduction is handled atomically by the PJ SharedDoubleArray.
+     *
+     * @param lb
+     * @param ub
+     */
+    @Override
+    public void reduce(int lb, int ub) {
+        // Nothing to do.
+    }
+
+    @Override
+    public double get(int index) {
+        return array.get(index);
+    }
+
 }

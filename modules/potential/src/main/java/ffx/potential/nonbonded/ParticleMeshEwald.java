@@ -135,19 +135,13 @@ public abstract class ParticleMeshEwald {
 
     public abstract void setLambda(double lambda);
 
-    public abstract double getdEdL();
+     public abstract double getdEdL();
 
     public abstract void getdEdXdL(double[] gradients);
 
     public abstract double getd2EdL2();
-
+    
     public abstract double[] getdEdLdh();
-
-    public abstract double[] getd2EdLdh2();
-
-    public abstract double[][] getdEdXdLdh();
-
-    public abstract void setESVList(List<ExtendedVariable> esvList);
 
     public abstract void destroy() throws Exception;
 

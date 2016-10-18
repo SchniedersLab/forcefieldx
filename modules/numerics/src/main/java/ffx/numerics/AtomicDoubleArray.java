@@ -35,37 +35,72 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.potential.utils;
+package ffx.numerics;
 
 /**
- * This Exception class indicates an error in calculating energy or gradients. 
- * Expected behavior is that it will be caught by Potential.energy(), resulting
- * in any necessary cleanup. Then, if the causeSevere flag is set true, FFE will
- * issue a logger.severe (resulting in exit); else, FFE will simply rethrow the
- * exception. The default is to rethrow the exception.
- * 
- * @author Jacob Litman
+ * This interface abstracts away the implementation of maintaining a 1D double
+ * array that is operated on by multiple threads..
+ *
  * @author Michael J. Schnieders
+ *
+ * @since 1.0
  */
-public class EnergyException extends ArithmeticException {
-    private final boolean causeSevere;
-    public EnergyException() {
-        super();
-        causeSevere = false;
-    }
-    public EnergyException(String str) {
-        super(str);
-        causeSevere = false;
-    }
-    public EnergyException(boolean causeSevere) {
-        super();
-        this.causeSevere = causeSevere;
-    }
-    public EnergyException(String str, boolean causeSevere) {
-        super(str);
-        this.causeSevere = causeSevere;
-    }
-    public boolean doCauseSevere() {
-        return causeSevere;
-    }
+public interface AtomicDoubleArray {
+
+    public enum AtomicDoubleArrayImpl {
+        ADDER, MULTI, PJ
+    };
+
+    /**
+     * Ensure the AtomicDoubleArray instance is greater than or equal to size.
+     *
+     * @param size
+     */
+    public void alloc(int size);
+
+    /**
+     * Reset the double array to Zero.
+     *
+     * @param threadID
+     * @param lb
+     * @param ub
+     */
+    public void reset(int threadID, int lb, int ub);
+
+    /**
+     * Add value to the double array at the specified index.
+     *
+     * @param threadID
+     * @param index
+     * @param value
+     */
+    public void add(int threadID, int index, double value);
+
+    /**
+     * Subtract value to the double array at the specified index.
+     *
+     * @param threadID
+     * @param index
+     * @param value
+     */
+    public void sub(int threadID, int index, double value);
+
+    /**
+     * Perform reduction between the given lower bound (lb) and upper bound (up)
+     * if necessary.
+     *
+     * @param lb
+     * @param ub
+     */
+    public void reduce(int lb, int ub);
+
+    /**
+     * Get the value of the array at the specified index (usually subsequent to
+     * calling the <code>reduce</code> method.
+     *
+     * @param index
+     * @return
+     */
+    public double get(int index);
+
 }

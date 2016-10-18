@@ -35,37 +35,35 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.potential.utils;
 
-/**
- * This Exception class indicates an error in calculating energy or gradients. 
- * Expected behavior is that it will be caught by Potential.energy(), resulting
- * in any necessary cleanup. Then, if the causeSevere flag is set true, FFE will
- * issue a logger.severe (resulting in exit); else, FFE will simply rethrow the
- * exception. The default is to rethrow the exception.
- * 
- * @author Jacob Litman
- * @author Michael J. Schnieders
- */
-public class EnergyException extends ArithmeticException {
-    private final boolean causeSevere;
-    public EnergyException() {
-        super();
-        causeSevere = false;
-    }
-    public EnergyException(String str) {
-        super(str);
-        causeSevere = false;
-    }
-    public EnergyException(boolean causeSevere) {
-        super();
-        this.causeSevere = causeSevere;
-    }
-    public EnergyException(String str, boolean causeSevere) {
-        super(str);
-        this.causeSevere = causeSevere;
-    }
-    public boolean doCauseSevere() {
-        return causeSevere;
-    }
+// SAVE AS PDB
+
+// Apache Imports
+import org.apache.commons.io.FilenameUtils;
+
+// Groovy Imports
+import groovy.util.CliBuilder;
+
+// Things below this line normally do not need to be changed.
+// ===============================================================================================
+
+// Create the command line parser.
+def cli = new CliBuilder(usage:' ffxc saveAsPDB [options] <filename>');
+cli.h(longOpt:'help', 'Print this help message.');
+def options = cli.parse(args);
+
+List<String> arguments = options.arguments();
+if (options.h || arguments == null || arguments.size() != 1) {
+    return cli.usage();
 }
+
+// Read in command line.
+String filename = arguments.get(0);
+
+logger.info("\n Writing out PDB for " + filename);
+
+systems = open(filename);
+
+filename = FilenameUtils.removeExtension(filename) + ".pdb";
+saveAsPDB(systems, new File(filename));
+

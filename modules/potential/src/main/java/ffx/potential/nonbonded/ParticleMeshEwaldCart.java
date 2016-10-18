@@ -2047,7 +2047,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                     logger.warning(sb.toString());
                 }
                 String message = format("Fatal SCF convergence failure: (%10.5f > %10.5f)\n", eps, previousEps);
-                throw new EnergyException(message);
+                throw new EnergyException(message, false);
             }
             /**
              * The SCF should converge well before the max iteration check.
@@ -2058,7 +2058,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                     logger.warning(sb.toString());
                 }
                 String message = format("Maximum SCF iterations reached: (%d)\n", completedSCFCycles);
-                throw new EnergyException(message);
+                throw new EnergyException(message, false);
             }
             /**
              * Check if the convergence criteria has been achieved.
@@ -3570,13 +3570,13 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 double e = realSpaceEnergyLoop[i].permanentEnergy;
                 if (Double.isNaN(e)) {
                     //logger.severe(String.format(" The permanent multipole energy of thread %d is %16.8f", i, e));
-                    throw new EnergyException(String.format(" The permanent multipole energy of thread %d is %16.8f", i, e));
+                    throw new EnergyException(String.format(" The permanent multipole energy of thread %d is %16.8f", i, e), true);
                 }
                 permanentEnergy += e;
                 double ei = realSpaceEnergyLoop[i].inducedEnergy;
                 if (Double.isNaN(ei)) {
                     //logger.severe(String.format(" The polarization energy of thread %d is %16.8f", i, ei));
-                    throw new EnergyException(String.format(" The permanent multipole energy of thread %d is %16.8f", i, e));
+                    throw new EnergyException(String.format(" The permanent multipole energy of thread %d is %16.8f", i, e), true);
                 }
                 polarizationEnergy += ei;
             }
@@ -3984,7 +3984,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                                         + "%16.8f A.", crystal.getUnitCell().toString(), 
                                         atoms[i].toString(), atoms[k].toString(), 
                                         i, k, iSymm, ei, r);
-                                throw new EnergyException(message);
+                                throw new EnergyException(message, false);
                             }
                             permanentEnergy += ei;
                             count++;
@@ -4063,7 +4063,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                                         + "%d and %d (%d) is %10.6f at %10.6f A.", 
                                         crystal.getUnitCell(), atoms[i], uix, uiy, uiz,
                                         atoms[k], ukx, uky, ukz, i + 1, k + 1, iSymm, ei, r);
-                                throw new EnergyException(message);
+                                throw new EnergyException(message, false);
                             }
                             inducedEnergy += ei;
                         }
@@ -5970,9 +5970,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     /**
      * Given an array of atoms (with atom types), assign multipole types and
      * reference sites.
-     *
-     * @param atoms List
-     * @param forceField ForceField
      */
     private void assignMultipoles() {
         if (forceField == null) {
@@ -6760,16 +6757,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         throw new UnsupportedOperationException();
     }
 
-    @Override
-    public double[] getd2EdLdh2() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public double[][] getdEdXdLdh() {
-        throw new UnsupportedOperationException();
-    }
-
     private void computeInduceDipoleField() {
         try {
             if (nSymm > 1) {
@@ -6934,7 +6921,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                     logger.warning(sb.toString());
                 }
                 String message = format("Fatal SCF convergence failure: (%10.5f > %10.5f)\n", eps, previousEps);
-                throw new EnergyException(message);
+                throw new EnergyException(message, false);
             }
             /**
              * The SCF should converge well before the max iteration check.
@@ -6945,7 +6932,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                     logger.warning(sb.toString());
                 }
                 String message = format("Maximum SCF iterations reached: (%d)\n", completedSCFCycles);
-                throw new EnergyException(message);
+                throw new EnergyException(message, false);
             }
             /**
              * Check if the convergence criteria has been achieved.

@@ -42,6 +42,7 @@ import java.util.logging.Logger;
 
 import static java.util.Arrays.fill;
 
+import org.apache.commons.math3.util.FastMath;
 import static org.apache.commons.math3.util.FastMath.pow;
 
 import ffx.numerics.Potential;
@@ -254,6 +255,15 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
      * for end state bonded terms
      */
     private final double rgl2[];
+    /**
+     * Square of the maximum distance permissible between two shared atoms.
+     */
+    private final double maxDisc2 = 0.09;
+    /**
+     * Square of the minimum distance between shared atoms which will cause a 
+     * warning. Intended to cover anything larger than a rounding error.
+     */
+    private final double minDiscWarn2 = 0.00001;
     /**
      * Topology 1 Potential.
      */
@@ -529,6 +539,7 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
             assert (a1.getX() == a2.getX());
             assert (a1.getY() == a2.getY());
             assert (a1.getZ() == a2.getZ());
+            //reconcileAtoms(a1, a2, Level.INFO);
         }
 
         /**
@@ -572,6 +583,40 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
             }
         }
     }
+    
+    /**
+     * Moves two shared atoms together if there is a small discrepancy (such as
+     * that caused by the mutator script).
+     * @param a1 Atom from topology 1
+     * @param a2 Atom from topology 2
+     * @param warnlev Logging level to use when warning about small movements
+     */
+    private void reconcileAtoms(Atom a1, Atom a2, Level warnlev) {
+        double dist =0;
+        double[] xyz1 = a1.getXYZ(null);
+        double[] xyz2 = a2.getXYZ(null);
+        double[] xyzAv = new double[3];
+        for (int i = 0; i < 3; i++) {
+            double dx = xyz1[i] - xyz2[i];
+            dist += (dx * dx);
+            xyzAv[i] = xyz1[i] + (0.5 * dx);
+        }
+        if (dist > maxDisc2) {
+            logger.log(Level.SEVERE, String.format(" Distance between atoms %s "
+                    + "and %s is %7.4f >> maximum allowed %7.4f", a1, a2, 
+                    FastMath.sqrt(dist), FastMath.sqrt(maxDisc2)));
+        } else if (dist > minDiscWarn2) {
+            logger.log(warnlev, String.format(" Distance between atoms %s "
+                    + "and %s is %7.4f; moving atoms together.", a1, a2, 
+                    FastMath.sqrt(dist)));
+            a1.setXYZ(xyzAv);
+            a2.setXYZ(xyzAv);
+        } else if (dist > 0) {
+            // Silently move them together; probably just a rounding error.
+            a1.setXYZ(xyzAv);
+            a2.setXYZ(xyzAv);
+        }
+    }
 
     @Override
     public double energy(double[] x) {
@@ -584,6 +629,12 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
          * Compute the energy of topology 1.
          */
         energy1 = potential1.energy(x1);
+        /**
+         * The if branch here shuts off most energy terms, and then recalculates
+         * those (primarily bonded) terms which are unaffected by lambda. This
+         * is then added back to the original energy, so you have lambda * (most)
+         * plus (lambda + 1-lambda) * (special bonded terms).
+         */
         if (doValenceRestraint1 && potential1 instanceof ForceFieldEnergy) {
             ForceFieldEnergy ffE1 = (ForceFieldEnergy) potential1;
             ffE1.setLambdaBondedTerms(true);

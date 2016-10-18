@@ -156,6 +156,10 @@ public class NeighborList extends ParallelRegion {
      */
     private int symmetryMateCount;
     /**
+     * Number of atoms in the asymmetry unit with interactions lists greater than 0.
+     */
+    private int atomsWithIteractions;
+    /**
      * The number of subcells that must be searched along the a-axis to find all
      * neighbors within the cutoff + buffer distance.
      *
@@ -529,8 +533,7 @@ public class NeighborList extends ParallelRegion {
                 print();
             }
 
-            pairwiseSchedule.updateRanges(sharedCount.get(), listCount);
-
+            pairwiseSchedule.updateRanges(sharedCount.get(), atomsWithIteractions, listCount);
         }
     }
 
@@ -567,8 +570,10 @@ public class NeighborList extends ParallelRegion {
     }
 
     /**
-     * Assign asymmetric and symmetry mate atoms to cells. This is very fast;
-     * there is little to be gained from parallelizing it at this point.
+     * Assign asymmetric and symmetry mate atoms to cells.
+     *
+     * This is very fast; there is little to be gained from
+     * parallelizing it at this point.
      *
      * @since 1.0
      */
@@ -680,8 +685,12 @@ public class NeighborList extends ParallelRegion {
             logger.log(Level.SEVERE, message, e);
         }
         int list[][] = lists[0];
+        atomsWithIteractions = 0;
         for (int i = 0; i < nAtoms; i++) {
             asymmetricUnitCount += list[i].length;
+            if (listCount[i] > 0) {
+                atomsWithIteractions++;
+            }
         }
         for (int iSymm = 1; iSymm < nSymm; iSymm++) {
             list = lists[iSymm];

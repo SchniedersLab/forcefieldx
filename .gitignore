@@ -16,6 +16,7 @@ catalog.xml
 .classpath
 .project
 .settings/
+.idea/
 release/
 /.netbeans/
 nb-configuration.xml
