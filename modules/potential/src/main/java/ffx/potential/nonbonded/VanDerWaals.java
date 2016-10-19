@@ -363,11 +363,12 @@ public class VanDerWaals implements MaskingInterface,
         /**
          * Define how force arrays will be accumulated.
          */
-        String value = forceField.getString(ARRAY_REDUCTION, "ADDER");
+        atomicDoubleArrayImpl = AtomicDoubleArrayImpl.MULTI;
+        String value = forceField.getString(ARRAY_REDUCTION, "MULTI");
         try {
             atomicDoubleArrayImpl = AtomicDoubleArrayImpl.valueOf(toEnumForm(value));
         } catch (Exception e) {
-            logger.info(format(" Unrecognized ARRAY-REDUCTION %s; defaulting to ADDER", value));
+            logger.info(format(" Unrecognized ARRAY-REDUCTION %s; defaulting to %s", value, atomicDoubleArrayImpl));
         }
         logger.info(format(" Using %s arrays.", atomicDoubleArrayImpl.toString()));
 

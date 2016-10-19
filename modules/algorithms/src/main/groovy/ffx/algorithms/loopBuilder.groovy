@@ -325,7 +325,7 @@ if (size > 1) {
 
 // Get a reference to the first system's ForceFieldEnergy.
 ForceFieldEnergy forceFieldEnergy = active.getPotentialEnergy();
-forcefieldEnergy.setPrintOnFailure(false, false);
+forceFieldEnergy.setPrintOnFailure(false, false);
 // Set built atoms active/use flags to true (false for other atoms).
 Atom[] atoms = active.getAtomArray();
 
@@ -417,7 +417,7 @@ if(runOSRW){
     }
 
     forceFieldEnergy= new ForceFieldEnergy(active);
-    forcefieldEnergy.setPrintOnFailure(false, false);
+    forceFieldEnergy.setPrintOnFailure(false, false);
     forceFieldEnergy.setLambda(lambda);
     energy();
 

@@ -37,38 +37,42 @@
  */
 package ffx.potential;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
+import java.io.File;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.OptionalDouble;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.io.File;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
-import static org.apache.commons.math3.util.FastMath.max;
-import static org.apache.commons.math3.util.FastMath.sqrt;
 import org.apache.commons.io.FilenameUtils;
 
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.sqrt;
+
+import edu.rit.pj.IntegerForLoop;
+import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
+import edu.rit.pj.reduction.SharedDouble;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.ReplicatesCrystal;
+import ffx.numerics.AdderDoubleArray;
+import ffx.numerics.AtomicDoubleArray;
+import ffx.numerics.AtomicDoubleArray.AtomicDoubleArrayImpl;
+import ffx.numerics.MultiDoubleArray;
+import ffx.numerics.PJDoubleArray;
 import ffx.numerics.Potential;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Atom.Resolution;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.BondedTerm;
-import ffx.potential.extended.ExtendedVariable;
 import ffx.potential.bonded.ImproperTorsion;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.MSNode;
@@ -87,7 +91,6 @@ import ffx.potential.bonded.TorsionTorsion;
 import ffx.potential.bonded.UreyBradley;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.extended.ExtendedVariable;
-import ffx.potential.extended.TitrationESV;
 import ffx.potential.nonbonded.COMRestraint;
 import ffx.potential.nonbonded.CoordRestraint;
 import ffx.potential.nonbonded.NCSRestraint;
@@ -105,6 +108,10 @@ import ffx.potential.utils.EnergyException;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
 
+import static ffx.numerics.AtomicDoubleArray.AtomicDoubleArrayImpl.MULTI;
+import static ffx.potential.parameters.ForceField.ForceFieldString.ARRAY_REDUCTION;
+import static ffx.potential.parameters.ForceField.toEnumForm;
+
 /**
  * Compute the potential energy and derivatives of an AMOEBA system.
  *
@@ -115,11 +122,14 @@ import ffx.potential.utils.PotentialsUtils;
 public class ForceFieldEnergy implements Potential, LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(ForceFieldEnergy.class.getName());
+
     private static final double toSeconds = 0.000000001;
+
     private final MolecularAssembly molecularAssembly;
     private Atom[] atoms;
     private Crystal crystal;
     private final ParallelTeam parallelTeam;
+    private final BondedRegion bondedRegion;
     private STATE state = STATE.BOTH;
     private Bond bonds[];
     private Angle angles[];
@@ -171,6 +181,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private boolean restrainTerm;
     private boolean comTerm;
     private boolean esvTerm;
+    private boolean lambdaTerm;
     private boolean lambdaBondedTerms = false;
     private boolean relativeSolvationTerm;
     private boolean rigidHydrogens = false;
@@ -227,14 +238,18 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private double xyz[] = null;
     private boolean printOverride = false;
     private boolean printOnFailure;
-    /****************************************/
+    /**
+     * *************************************
+     */
     /*      Extended System Variables       */
     private ExtendedSystem extendedSystem;
     private StringBuilder esvLogger;
     private final boolean ESV_DEBUG = false;
     private final boolean pmeQI = (System.getProperty("pme-qi") != null);
     private final boolean pmeOnly = (System.getProperty("ffe-pmeOnly") != null);
-    /****************************************/
+    /**
+     * *************************************
+     */
 
     private Resolution resolution = Resolution.AMOEBA;
 
@@ -314,6 +329,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             generalizedKirkwoodTerm = false;
         }
         restraintBondTerm = false;
+        lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
         restrainTerm = forceField.getBoolean(ForceFieldBoolean.RESTRAINTERM, false);
         comTerm = forceField.getBoolean(ForceFieldBoolean.COMRESTRAINTERM, false);
         lambdaTorsions = forceField.getBoolean(ForceFieldBoolean.LAMBDA_TORSIONS, false);
@@ -653,7 +669,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         } else {
             particleMeshEwald = null;
         }
-        
+
         if (ncsTerm) {
             String sg = forceField.getString(ForceFieldString.NCSGROUP, "P 1");
             Crystal ncsCrystal = new Crystal(a, b, c, alpha, beta, gamma, sg);
@@ -687,7 +703,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         } else {
             comRestraint = null;
         }
-        
+
+        bondedRegion = new BondedRegion();
+
         molecularAssembly.setPotential(this);
     }
 
@@ -1158,145 +1176,25 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 return totalEnergy;
             }
 
-            if (bondTerm) {
-                bondTime = System.nanoTime();
-                for (int i = 0; i < nBonds; i++) {
-                    Bond b = bonds[i];
-                    if (lambdaBondedTerms && !b.applyLambda()) {
-                        continue;
-                    }
-                    bondEnergy += b.energy(gradient);
-                    double value = b.getValue();
-                    bondRMSD += value * value;
-                }
-                bondRMSD = sqrt(bondRMSD / bonds.length);
-                bondTime = System.nanoTime() - bondTime;
-            }
-
-            if (angleTerm) {
-                angleTime = System.nanoTime();
-                for (int i = 0; i < nAngles; i++) {
-                    Angle a = angles[i];
-                    if (lambdaBondedTerms && !a.applyLambda()) {
-                        continue;
-                    }
-                    angleEnergy += a.energy(gradient);
-                    double value = a.getValue();
-                    angleRMSD += value * value;
-                }
-                angleRMSD = sqrt(angleRMSD / angles.length);
-                angleTime = System.nanoTime() - angleTime;
-            }
-
-            if (stretchBendTerm) {
-                stretchBendTime = System.nanoTime();
-                for (int i = 0; i < nStretchBends; i++) {
-                    StretchBend stretchBend = stretchBends[i];
-                    if (lambdaBondedTerms && !stretchBend.applyLambda()) {
-                        continue;
-                    }
-                    stretchBendEnergy += stretchBend.energy(gradient);
-                }
-                stretchBendTime = System.nanoTime() - stretchBendTime;
-            }
-
-            if (ureyBradleyTerm) {
-                ureyBradleyTime = System.nanoTime();
-                for (int i = 0; i < nUreyBradleys; i++) {
-                    UreyBradley ureyBradley = ureyBradleys[i];
-                    if (lambdaBondedTerms && !ureyBradley.applyLambda()) {
-                        continue;
-                    }
-                    ureyBradleyEnergy += ureyBradley.energy(gradient);
-                }
-                ureyBradleyTime = System.nanoTime() - ureyBradleyTime;
-            }
-
-            if (outOfPlaneBendTerm) {
-                outOfPlaneBendTime = System.nanoTime();
-                for (int i = 0; i < nOutOfPlaneBends; i++) {
-                    OutOfPlaneBend outOfPlaneBend = outOfPlaneBends[i];
-                    if (lambdaBondedTerms && !outOfPlaneBend.applyLambda()) {
-                        continue;
-                    }
-                    outOfPlaneBendEnergy += outOfPlaneBend.energy(gradient);
-                }
-                outOfPlaneBendTime = System.nanoTime() - outOfPlaneBendTime;
-            }
-
-            if (torsionTerm) {
-                torsionTime = System.nanoTime();
-                for (int i = 0; i < nTorsions; i++) {
-                    Torsion torsion = torsions[i];
-                    if (lambdaBondedTerms && !torsion.applyLambda()) {
-                        continue;
-                    }
-                    torsionEnergy += torsion.energy(gradient);
-                }
-                torsionTime = System.nanoTime() - torsionTime;
-            }
-
-            if (piOrbitalTorsionTerm) {
-                piOrbitalTorsionTime = System.nanoTime();
-                for (int i = 0; i < nPiOrbitalTorsions; i++) {
-                    PiOrbitalTorsion piOrbitalTorsion = piOrbitalTorsions[i];
-                    if (lambdaBondedTerms && !piOrbitalTorsion.applyLambda()) {
-                        continue;
-                    }
-                    piOrbitalTorsionEnergy += piOrbitalTorsion.energy(gradient);
-                }
-                piOrbitalTorsionTime = System.nanoTime() - piOrbitalTorsionTime;
-            }
-
-            if (torsionTorsionTerm) {
-                torsionTorsionTime = System.nanoTime();
-                for (int i = 0; i < nTorsionTorsions; i++) {
-                    TorsionTorsion torsionTorsion = torsionTorsions[i];
-                    if (lambdaBondedTerms && !torsionTorsion.applyLambda()) {
-                        continue;
-                    }
-                    torsionTorsionEnergy += torsionTorsion.energy(gradient);
-                }
-                torsionTorsionTime = System.nanoTime() - torsionTorsionTime;
-            }
-
-            if (improperTorsionTerm) {
-                improperTorsionTime = System.nanoTime();
-                for (int i = 0; i < nImproperTorsions; i++) {
-                    ImproperTorsion improperTorsion = improperTorsions[i];
-                    if (lambdaBondedTerms && !improperTorsion.applyLambda()) {
-                        continue;
-                    }
-                    improperTorsionEnergy += improperTorsion.energy(gradient);
-                }
-                improperTorsionTime = System.nanoTime() - improperTorsionTime;
-            }
-
-            if (restraintBondTerm) {
-                restraintBondTime = System.nanoTime();
-                for (int i = 0; i < nRestraintBonds; i++) {
-                    RestraintBond rb = restraintBonds[i];
-                    if (lambdaBondedTerms && !rb.applyLambda()) {
-                        continue;
-                    }
-                    restraintBondEnergy += rb.energy(gradient);
-                }
-                restraintBondTime = System.nanoTime() - restraintBondTime;
+            /**
+             * Computed the bonded energy terms in parallel.
+             */
+            try {
+                bondedRegion.setGradient(gradient);
+                parallelTeam.execute(bondedRegion);
+            } catch (Exception e) {
+                logger.severe(e.toString());
             }
 
             if (!lambdaBondedTerms) {
-
+                /**
+                 * Compute restraint terms.
+                 */
                 if (ncsTerm) {
                     ncsTime = -System.nanoTime();
                     ncsEnergy = ncsRestraint.residual(gradient, print);
                     ncsTime += System.nanoTime();
                 }
-
-                /*if (restrainTerm) {
-                    coordRestraintTime = -System.nanoTime();
-                    restrainEnergy = autoCoordRestraint.residual(gradient, print);
-                    coordRestraintTime += System.nanoTime();
-                }*/
                 if (restrainTerm && !coordRestraints.isEmpty()) {
                     coordRestraintTime = -System.nanoTime();
                     for (CoordRestraint restraint : coordRestraints) {
@@ -1304,31 +1202,29 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     }
                     coordRestraintTime += System.nanoTime();
                 }
-
                 if (comTerm) {
                     comRestraintTime = -System.nanoTime();
                     comRestraintEnergy = comRestraint.residual(gradient, print);
                     comRestraintTime += System.nanoTime();
                 }
-
+                /**
+                 * Compute non-bonded terms.
+                 */
                 if (vanderWaalsTerm) {
-                    vanDerWaalsTime = System.nanoTime();
+                    vanDerWaalsTime = -System.nanoTime();
                     vanDerWaalsEnergy = vanderWaals.energy(gradient, print);
                     nVanDerWaalInteractions = this.vanderWaals.getInteractions();
-                    vanDerWaalsTime = System.nanoTime() - vanDerWaalsTime;
+                    vanDerWaalsTime += System.nanoTime();
                 }
-
                 if (multipoleTerm) {
-                    electrostaticTime = System.nanoTime();
+                    electrostaticTime = -System.nanoTime();
                     totalElectrostaticEnergy = particleMeshEwald.energy(gradient, print);
                     permanentMultipoleEnergy = particleMeshEwald.getPermanentEnergy();
                     polarizationEnergy = particleMeshEwald.getPolarizationEnergy();
                     nPermanentInteractions = particleMeshEwald.getInteractions();
-
                     solvationEnergy = particleMeshEwald.getGKEnergy();
                     nGKInteractions = particleMeshEwald.getGKInteractions();
-
-                    electrostaticTime = System.nanoTime() - electrostaticTime;
+                    electrostaticTime += System.nanoTime();
                 }
             }
 
@@ -1339,9 +1235,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                         Atom refAtom = residue.getSideChainAtoms().get(0);
                         if (refAtom != null && refAtom.getUse()) {
                             /**
-                             * Reasonably confident that it should be -=, as we are
-                             * trying to penalize residues with strong solvation
-                             * energy.
+                             * Reasonably confident that it should be -=, as we
+                             * are trying to penalize residues with strong
+                             * solvation energy.
                              */
                             double thisSolvation = relativeSolvation.getSolvationEnergy(residue, false);
                             relativeSolvationEnergy -= thisSolvation;
@@ -1359,12 +1255,12 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 }
                 // Calculate contribution to bonded terms.
                 boolean[] termFlags = new boolean[]{
-                        bondTerm, angleTerm, stretchBendTerm, ureyBradleyTerm, 
-                        outOfPlaneBendTerm, torsionTerm, piOrbitalTorsionTerm, torsionTorsionTerm, 
-                        improperTorsionTerm, restraintBondTerm};
+                    bondTerm, angleTerm, stretchBendTerm, ureyBradleyTerm,
+                    outOfPlaneBendTerm, torsionTerm, piOrbitalTorsionTerm, torsionTorsionTerm,
+                    improperTorsionTerm, restraintBondTerm};
                 BondedTerm[][] termArrays = new BondedTerm[][]{
-                    bonds, angles, stretchBends, ureyBradleys, 
-                    outOfPlaneBends, torsions, piOrbitalTorsions, torsionTorsions, 
+                    bonds, angles, stretchBends, ureyBradleys,
+                    outOfPlaneBends, torsions, piOrbitalTorsions, torsionTorsions,
                     improperTorsions, restraintBonds
                 };
                 // Portion that should be *subtracted* from bondEnergy due to ESVs.
@@ -1373,7 +1269,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 final double esvNonbondEnergy = extendedSystem.nonbonded(298.15);   // TODO PRIO generalize
                 esvEnergy = esvNonbondEnergy - esvBondedEnergy;
 
-                esvLogger.append(format("  Total ESV Energy (bonded,nonbond,PME+vdW,sum):  %g  %g  %s  %g\n", 
+                esvLogger.append(format("  Total ESV Energy (bonded,nonbond,PME+vdW,sum):  %g  %g  %s  %g\n",
                         esvBondedEnergy, esvNonbondEnergy, "no_decomp", esvBondedEnergy + esvNonbondEnergy));
                 logger.info(esvLogger.toString());
                 esvLogger = new StringBuilder();
@@ -1394,11 +1290,11 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             if (printOnFailure) {
                 String timeString = LocalDateTime.now().format(DateTimeFormatter.
                         ofPattern("yyyy_MM_dd-HH_mm_ss"));
-                
-                String filename = String.format("%s-ERROR-%s.pdb", 
+
+                String filename = String.format("%s-ERROR-%s.pdb",
                         FilenameUtils.removeExtension(molecularAssembly.getFile().getName()),
                         timeString);
-                
+
                 PotentialsFunctions ef = new PotentialsUtils();
                 filename = ef.versionFile(filename);
                 logger.info(String.format(" Writing on-error snapshot to file %s", filename));
@@ -1411,8 +1307,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             }
             return 0;
         }
-        
-        
+
         if (print || printOverride) {
             StringBuilder sb = new StringBuilder("\n");
             if (gradient) {
@@ -1745,6 +1640,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
     /**
      * Get amount by which this term should be scaled d/t any ESVs.
+     *
      * @param rols
      * @return
      */
@@ -1840,7 +1736,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
         setCoordinates(x);
         double e = energy(true, false);
-        
+
         // Try block already exists inside energy(boolean, boolean), so only
         // need to try-catch getGradients.
         try {
@@ -1860,11 +1756,11 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             if (printOnFailure) {
                 String timeString = LocalDateTime.now().format(DateTimeFormatter.
                         ofPattern("yyyy_MM_dd-HH_mm_ss"));
-                
-                String filename = String.format("%s-ERROR-%s.pdb", 
+
+                String filename = String.format("%s-ERROR-%s.pdb",
                         FilenameUtils.removeExtension(molecularAssembly.getFile().getName()),
                         timeString);
-                
+
                 PotentialsFunctions ef = new PotentialsUtils();
                 filename = ef.versionFile(filename);
                 logger.info(String.format(" Writing on-error snapshot to file %s", filename));
@@ -1937,7 +1833,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             }
         }
     }
-    
+
     public void checkAtoms() {
         double vel[] = new double[3];
         double accel[] = new double[3];
@@ -2027,7 +1923,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
         return nActive * 3;
     }
-    
+
     /**
      * {@inheritDoc}
      */
@@ -2178,15 +2074,15 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
         return d2EdLambda2;
     }
-    
+
     /**
-     * Sets the printOnFailure flag; if override is true, over-rides any existing
-     * property. Essentially sets the default value of printOnFailure for an
-     * algorithm. For example, rotamer optimization will generally run into force
-     * field issues in the normal course of execution as it tries unphysical
-     * self and pair configurations, so the algorithm should not print out a 
-     * large number of error PDBs.
-     * 
+     * Sets the printOnFailure flag; if override is true, over-rides any
+     * existing property. Essentially sets the default value of printOnFailure
+     * for an algorithm. For example, rotamer optimization will generally run
+     * into force field issues in the normal course of execution as it tries
+     * unphysical self and pair configurations, so the algorithm should not
+     * print out a large number of error PDBs.
+     *
      * @param onFail To set
      * @param override Override properties
      */
@@ -2201,12 +2097,13 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                  * If the call was successful, the property was explicitly set
                  * somewhere and should be kept. If an exception was thrown, the
                  * property was never set explicitly, so over-write.
-                */
+                 */
             } catch (Exception ex) {
                 printOnFailure = onFail;
             }
         }
     }
+
     public boolean getPrintOnFailure() {
         return printOnFailure;
     }
@@ -2472,26 +2369,30 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     public double getDispersionEnergy() {
         return particleMeshEwald.getDispersionEnergy(false);
     }
-    
+
     public double getEsvEnergy() {
         return esvEnergy;
     }
-    
+
     public ExtendedSystem getExtendedSystem() {
         return extendedSystem;
     }
-    
+
     /**
      * Exposes the VdW object to ExtendedSystem; should otherwise not be used.
      * Enables VdW to contain explicit ESV handling.
+     *
+     * @return
      */
     public VanDerWaals getVdwNode() {
         return vanderWaals;
     }
-    
+
     /**
      * Exposes the PME object to ExtendedSystem; should otherwise not be used.
      * Enables PME to contain explicit ESV handling.
+     *
+     * @return
      */
     public ParticleMeshEwald getPmeNode() {
         return particleMeshEwald;
@@ -2653,6 +2554,803 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
     public Bond[] getBonds() {
         return bonds;
+    }
+
+    private class BondedRegion extends ParallelRegion {
+
+        // Flag to indicate gradient computation.
+        private boolean gradient = false;
+
+        private AtomicDoubleArrayImpl atomicDoubleArrayImpl;
+        /**
+         * X-component of the Cartesian coordinate gradient.
+         */
+        private final AtomicDoubleArray gradX;
+        /**
+         * Y-component of the Cartesian coordinate gradient.
+         */
+        private final AtomicDoubleArray gradY;
+        /**
+         * Z-component of the Cartesian coordinate gradient.
+         */
+        private final AtomicDoubleArray gradZ;
+        /**
+         * X-component of the dU/dX/dL coordinate gradient.
+         */
+        private final AtomicDoubleArray lambdaGradX;
+        /**
+         * Y-component of the dU/dX/dL coordinate gradient.
+         */
+        private final AtomicDoubleArray lambdaGradY;
+        /**
+         * Z-component of the dU/dX/dL coordinate gradient.
+         */
+        private final AtomicDoubleArray lambdaGradZ;
+
+        // Shared RMSD variables.
+        private final SharedDouble sharedBondRMSD;
+        private final SharedDouble sharedAngleRMSD;
+
+        // Shared force field bonded energy accumulation variables.
+        private final SharedDouble sharedBondEnergy;
+        private final SharedDouble sharedAngleEnergy;
+        private final SharedDouble sharedOutOfPlaneBendEnergy;
+        private final SharedDouble sharedPiOrbitalTorsionEnergy;
+        private final SharedDouble sharedStretchBendEnergy;
+        private final SharedDouble sharedUreyBradleyEnergy;
+        private final SharedDouble sharedImproperTorsionEnergy;
+        private final SharedDouble sharedTorsionEnergy;
+        private final SharedDouble sharedTorsionTorsionEnergy;
+        // Shared restraint terms.
+        private final SharedDouble sharedRestraintBondEnergy;
+
+        // Number of threads.
+        private final int nThreads;
+
+        // Gradient loops.
+        private final GradInitLoop gradInitLoops[];
+        private final GradReduceLoop gradReduceLoops[];
+
+        // Force field bonded energy parallel loops.
+        private final BondLoop bondLoops[];
+        private final AngleLoop angleLoops[];
+        private final OutOfPlaneBendLoop outOfPlaneBendLoops[];
+        private final ImproperTorsionLoop improperTorsionLoops[];
+        private final PiOrbitalTorsionLoop piOrbitalTorsionLoops[];
+        private final StretchBendLoop stretchBendLoops[];
+        private final TorsionLoop torsionLoops[];
+        private final TorsionTorsionLoop torsionTorsionLoops[];
+        private final UreyBradleyLoop ureyBradleyLoops[];
+
+        // Retraint energy parallel loops.
+        private final RestraintBondLoop restraintBondLoops[];
+
+        public BondedRegion() {
+
+            // Allocate shared RMSD variables.
+            sharedAngleRMSD = new SharedDouble();
+            sharedBondRMSD = new SharedDouble();
+
+            // Allocate shared force field bonded energy variables.
+            sharedBondEnergy = new SharedDouble();
+            sharedAngleEnergy = new SharedDouble();
+            sharedImproperTorsionEnergy = new SharedDouble();
+            sharedOutOfPlaneBendEnergy = new SharedDouble();
+            sharedPiOrbitalTorsionEnergy = new SharedDouble();
+            sharedStretchBendEnergy = new SharedDouble();
+            sharedTorsionEnergy = new SharedDouble();
+            sharedTorsionTorsionEnergy = new SharedDouble();
+            sharedUreyBradleyEnergy = new SharedDouble();
+
+            // Allocate shared restraint variables.
+            sharedRestraintBondEnergy = new SharedDouble();
+
+            nThreads = parallelTeam.getThreadCount();
+
+            // Gradient initialization loops.
+            gradInitLoops = new GradInitLoop[nThreads];
+            gradReduceLoops = new GradReduceLoop[nThreads];
+
+            // Allocate memory for force field bonded energy loop arrays.
+            angleLoops = new AngleLoop[nThreads];
+            bondLoops = new BondLoop[nThreads];
+            improperTorsionLoops = new ImproperTorsionLoop[nThreads];
+            outOfPlaneBendLoops = new OutOfPlaneBendLoop[nThreads];
+            piOrbitalTorsionLoops = new PiOrbitalTorsionLoop[nThreads];
+            stretchBendLoops = new StretchBendLoop[nThreads];
+            torsionLoops = new TorsionLoop[nThreads];
+            torsionTorsionLoops = new TorsionTorsionLoop[nThreads];
+            ureyBradleyLoops = new UreyBradleyLoop[nThreads];
+
+            // Allocate memory for restrain energy terms.
+            restraintBondLoops = new RestraintBondLoop[nThreads];
+
+            /**
+             * Define how the gradient will be accumulated.
+             */
+            atomicDoubleArrayImpl = AtomicDoubleArrayImpl.MULTI;
+            ForceField forceField = molecularAssembly.getForceField();
+            String value = forceField.getString(ARRAY_REDUCTION, "MULTI");
+            try {
+                atomicDoubleArrayImpl = AtomicDoubleArrayImpl.valueOf(toEnumForm(value));
+            } catch (Exception e) {
+                logger.info(format(" Unrecognized ARRAY-REDUCTION %s; defaulting to %s", value, atomicDoubleArrayImpl));
+            }
+            switch (atomicDoubleArrayImpl) {
+                case MULTI:
+                default:
+                    gradX = new MultiDoubleArray(nThreads, nAtoms);
+                    gradY = new MultiDoubleArray(nThreads, nAtoms);
+                    gradZ = new MultiDoubleArray(nThreads, nAtoms);
+                    if (lambdaTerm) {
+                        lambdaGradX = new MultiDoubleArray(nThreads, nAtoms);
+                        lambdaGradY = new MultiDoubleArray(nThreads, nAtoms);
+                        lambdaGradZ = new MultiDoubleArray(nThreads, nAtoms);
+                    } else {
+                        lambdaGradX = null;
+                        lambdaGradY = null;
+                        lambdaGradZ = null;
+                    }
+                    break;
+                case PJ:
+                    gradX = new PJDoubleArray(nThreads, nAtoms);
+                    gradY = new PJDoubleArray(nThreads, nAtoms);
+                    gradZ = new PJDoubleArray(nThreads, nAtoms);
+                    if (lambdaTerm) {
+                        lambdaGradX = new PJDoubleArray(nThreads, nAtoms);
+                        lambdaGradY = new PJDoubleArray(nThreads, nAtoms);
+                        lambdaGradZ = new PJDoubleArray(nThreads, nAtoms);
+                    } else {
+                        lambdaGradX = null;
+                        lambdaGradY = null;
+                        lambdaGradZ = null;
+                    }
+                    break;
+                case ADDER:
+                    gradX = new AdderDoubleArray(nThreads, nAtoms);
+                    gradY = new AdderDoubleArray(nThreads, nAtoms);
+                    gradZ = new AdderDoubleArray(nThreads, nAtoms);
+                    if (lambdaTerm) {
+                        lambdaGradX = new AdderDoubleArray(nThreads, nAtoms);
+                        lambdaGradY = new AdderDoubleArray(nThreads, nAtoms);
+                        lambdaGradZ = new AdderDoubleArray(nThreads, nAtoms);
+                    } else {
+                        lambdaGradX = null;
+                        lambdaGradY = null;
+                        lambdaGradZ = null;
+                    }
+                    break;
+            }
+        }
+
+        public void setGradient(boolean gradient) {
+            this.gradient = gradient;
+        }
+
+        @Override
+        public void start() {
+            // Zero out shared RMSD values.
+            sharedAngleRMSD.set(0.0);
+            sharedBondRMSD.set(0.0);
+
+            // Zero out shared energy values.
+            sharedAngleEnergy.set(0.0);
+            sharedBondEnergy.set(0.0);
+            sharedImproperTorsionEnergy.set(0.0);
+            sharedOutOfPlaneBendEnergy.set(0.0);
+            sharedPiOrbitalTorsionEnergy.set(0.0);
+            sharedStretchBendEnergy.set(0.0);
+            sharedTorsionEnergy.set(0.0);
+            sharedTorsionTorsionEnergy.set(0.0);
+            sharedUreyBradleyEnergy.set(0.0);
+
+            // Zero out shared restraint energy values.
+            sharedRestraintBondEnergy.set(0.0);
+
+            // Assure capacity of the gradient arrays.
+            if (gradient) {
+                gradX.alloc(nAtoms);
+                gradY.alloc(nAtoms);
+                gradZ.alloc(nAtoms);
+            }
+            if (lambdaTerm) {
+                lambdaGradX.alloc(nAtoms);
+                lambdaGradY.alloc(nAtoms);
+                lambdaGradZ.alloc(nAtoms);
+            }
+        }
+
+        @Override
+        public void finish() {
+            // Finalize bond and angle RMSD values.
+            bondRMSD = sqrt(sharedBondRMSD.get() / bonds.length);
+            angleRMSD = sqrt(sharedAngleRMSD.get() / angles.length);
+
+            // Load shared energy values into their respective fields.
+            angleEnergy = sharedAngleEnergy.get();
+            bondEnergy = sharedBondEnergy.get();
+            improperTorsionEnergy = sharedImproperTorsionEnergy.get();
+            outOfPlaneBendEnergy = sharedOutOfPlaneBendEnergy.get();
+            piOrbitalTorsionEnergy = sharedPiOrbitalTorsionEnergy.get();
+            stretchBendEnergy = sharedStretchBendEnergy.get();
+            ureyBradleyEnergy = sharedUreyBradleyEnergy.get();
+            torsionEnergy = sharedTorsionEnergy.get();
+            torsionTorsionEnergy = sharedTorsionTorsionEnergy.get();
+            ureyBradleyEnergy = sharedUreyBradleyEnergy.get();
+
+            // Load shared restraint energy values.
+            restraintBondEnergy = sharedRestraintBondEnergy.get();
+        }
+
+        @Override
+        public void run() throws Exception {
+            int threadID = getThreadIndex();
+
+            // Initialize the Gradient to zero.
+            if (gradient && threadID < nAtoms) {
+                if (gradInitLoops[threadID] == null) {
+                    gradInitLoops[threadID] = new GradInitLoop();
+                }
+                execute(0, nAtoms - 1, gradInitLoops[threadID]);
+            }
+
+            // Evaluate force field bonded energy terms in parallel.
+            if (angleTerm && threadID < nAngles) {
+                if (angleLoops[threadID] == null) {
+                    angleLoops[threadID] = new AngleLoop();
+                }
+                if (threadID == 0) {
+                    angleTime = -System.nanoTime();
+                }
+                execute(0, nAngles - 1, angleLoops[threadID]);
+                if (threadID == 0) {
+                    angleTime += System.nanoTime();
+                }
+            }
+
+            if (bondTerm && threadID < nBonds) {
+                if (bondLoops[threadID] == null) {
+                    bondLoops[threadID] = new BondLoop();
+                }
+                if (threadID == 0) {
+                    bondTime = -System.nanoTime();
+                }
+                execute(0, nBonds - 1, bondLoops[threadID]);
+                if (threadID == 0) {
+                    bondTime += System.nanoTime();
+                }
+            }
+
+            if (improperTorsionTerm && threadID < nImproperTorsions) {
+                if (improperTorsionLoops[threadID] == null) {
+                    improperTorsionLoops[threadID] = new ImproperTorsionLoop();
+                }
+                if (threadID == 0) {
+                    improperTorsionTime = -System.nanoTime();
+                }
+                execute(0, nImproperTorsions - 1, improperTorsionLoops[threadID]);
+                if (threadID == 0) {
+                    improperTorsionTime += System.nanoTime();
+                }
+            }
+
+            if (outOfPlaneBendTerm && threadID < nOutOfPlaneBends) {
+                if (outOfPlaneBendLoops[threadID] == null) {
+                    outOfPlaneBendLoops[threadID] = new OutOfPlaneBendLoop();
+                }
+                if (threadID == 0) {
+                    outOfPlaneBendTime = -System.nanoTime();
+                }
+                execute(0, nOutOfPlaneBends - 1, outOfPlaneBendLoops[threadID]);
+                if (threadID == 0) {
+                    outOfPlaneBendTime += System.nanoTime();
+                }
+            }
+
+            if (piOrbitalTorsionTerm && threadID < nPiOrbitalTorsions) {
+                if (piOrbitalTorsionLoops[threadID] == null) {
+                    piOrbitalTorsionLoops[threadID] = new PiOrbitalTorsionLoop();
+                }
+                if (threadID == 0) {
+                    piOrbitalTorsionTime = -System.nanoTime();
+                }
+                execute(0, nPiOrbitalTorsions - 1, piOrbitalTorsionLoops[threadID]);
+                if (threadID == 0) {
+                    piOrbitalTorsionTime += System.nanoTime();
+                }
+            }
+
+            if (stretchBendTerm && threadID < nStretchBends) {
+                if (stretchBendLoops[threadID] == null) {
+                    stretchBendLoops[threadID] = new StretchBendLoop();
+                }
+                if (threadID == 0) {
+                    stretchBendTime = -System.nanoTime();
+                }
+                execute(0, nStretchBends - 1, stretchBendLoops[threadID]);
+                if (threadID == 0) {
+                    stretchBendTime += System.nanoTime();
+                }
+            }
+
+            if (torsionTerm && threadID < nTorsions) {
+                if (torsionLoops[threadID] == null) {
+                    torsionLoops[threadID] = new TorsionLoop();
+                }
+                if (threadID == 0) {
+                    torsionTime = -System.nanoTime();
+                }
+                execute(0, nTorsions - 1, torsionLoops[threadID]);
+                if (threadID == 0) {
+                    torsionTime += System.nanoTime();
+                }
+            }
+
+            if (torsionTorsionTerm && threadID < nTorsionTorsions) {
+                if (torsionTorsionLoops[threadID] == null) {
+                    torsionTorsionLoops[threadID] = new TorsionTorsionLoop();
+                }
+                if (threadID == 0) {
+                    torsionTorsionTime = -System.nanoTime();
+                }
+                execute(0, nTorsionTorsions - 1, torsionTorsionLoops[threadID]);
+                if (threadID == 0) {
+                    torsionTorsionTime += System.nanoTime();
+                }
+            }
+
+            if (ureyBradleyTerm && threadID < nUreyBradleys) {
+                if (ureyBradleyLoops[threadID] == null) {
+                    ureyBradleyLoops[threadID] = new UreyBradleyLoop();
+                }
+                if (threadID == 0) {
+                    ureyBradleyTime = -System.nanoTime();
+                }
+                execute(0, nUreyBradleys - 1, ureyBradleyLoops[threadID]);
+                if (threadID == 0) {
+                    ureyBradleyTime += System.nanoTime();
+                }
+            }
+
+            // Evaluate restraint terms in parallel.
+            if (restraintBondTerm && threadID < nRestraintBonds) {
+                if (restraintBondLoops[threadID] == null) {
+                    restraintBondLoops[threadID] = new RestraintBondLoop();
+                }
+                if (threadID == 0) {
+                    restraintBondTime = -System.nanoTime();
+                }
+                execute(0, nRestraintBonds - 1, restraintBondLoops[threadID]);
+                if (threadID == 0) {
+                    restraintBondTime += System.nanoTime();
+                }
+            }
+
+            // Reduce the Gradient and load it into Atom instances.
+            if (gradient && threadID < nAtoms) {
+                if (gradReduceLoops[threadID] == null) {
+                    gradReduceLoops[threadID] = new GradReduceLoop();
+                }
+                execute(0, nAtoms - 1, gradReduceLoops[threadID]);
+            }
+        }
+
+        private class GradInitLoop extends IntegerForLoop {
+
+            @Override
+            public void run(int first, int last) throws Exception {
+                int threadID = getThreadIndex();
+                if (gradient) {
+                    gradX.reset(threadID, first, last);
+                    gradY.reset(threadID, first, last);
+                    gradZ.reset(threadID, first, last);
+                }
+                if (lambdaTerm) {
+                    lambdaGradX.reset(threadID, first, last);
+                    lambdaGradY.reset(threadID, first, last);
+                    lambdaGradZ.reset(threadID, first, last);
+                }
+
+            }
+
+        }
+
+        private class GradReduceLoop extends IntegerForLoop {
+
+            @Override
+            public void run(int first, int last) throws Exception {
+                if (gradient) {
+                    gradX.reduce(first, last);
+                    gradY.reduce(first, last);
+                    gradZ.reduce(first, last);
+                    for (int i = first; i <= last; i++) {
+                        Atom a = atoms[i];
+                        a.setXYZGradient(gradX.get(i), gradY.get(i), gradZ.get(i));
+                    }
+                }
+                if (lambdaTerm) {
+                    lambdaGradX.reduce(first, last);
+                    lambdaGradY.reduce(first, last);
+                    lambdaGradZ.reduce(first, last);
+                    for (int i = first; i <= last; i++) {
+                        Atom a = atoms[i];
+                        a.setLambdaXYZGradient(lambdaGradX.get(i),
+                                lambdaGradY.get(i), lambdaGradZ.get(i));
+                    }
+                }
+            }
+
+        }
+
+        private class AngleLoop extends IntegerForLoop {
+
+            private double localEnergy;
+            private double localRMSD;
+            private int threadID;
+
+            @Override
+            public void start() {
+                localEnergy = 0.0;
+                localRMSD = 0.0;
+                threadID = getThreadIndex();
+            }
+
+            @Override
+            public void finish() {
+                sharedAngleEnergy.addAndGet(localEnergy);
+                sharedAngleRMSD.addAndGet(localRMSD);
+            }
+
+            @Override
+            public void run(int first, int last) throws Exception {
+                if (!lambdaBondedTerms) {
+                    for (int i = first; i <= last; i++) {
+                        Angle angle = angles[i];
+                        localEnergy += angle.energy(gradient, threadID, gradX, gradY, gradZ);
+                        double value = angle.getValue();
+                        localRMSD += value * value;
+                    }
+                } else {
+                    for (int i = first; i <= last; i++) {
+                        Angle angle = angles[i];
+                        if (angle.applyLambda()) {
+                            localEnergy += angle.energy(gradient, threadID, gradX, gradY, gradZ);
+                            double value = angle.getValue();
+                            localRMSD += value * value;
+                        }
+                    }
+                }
+            }
+        }
+
+        private class BondLoop extends IntegerForLoop {
+
+            private double localEnergy;
+            private double localRMSD;
+            private int threadID;
+
+            @Override
+            public void start() {
+                localEnergy = 0.0;
+                localRMSD = 0.0;
+                threadID = getThreadIndex();
+            }
+
+            @Override
+            public void finish() {
+                sharedBondEnergy.addAndGet(localEnergy);
+                sharedBondRMSD.addAndGet(localRMSD);
+            }
+
+            @Override
+            public void run(int first, int last) throws Exception {
+                if (!lambdaBondedTerms) {
+                    for (int i = first; i <= last; i++) {
+                        Bond bond = bonds[i];
+                        localEnergy += bond.energy(gradient, threadID, gradX, gradY, gradZ);
+                        double value = bond.getValue();
+                        localRMSD += value * value;
+                    }
+                } else {
+                    for (int i = first; i <= last; i++) {
+                        Bond bond = bonds[i];
+                        if (bond.applyLambda()) {
+                            localEnergy += bond.energy(gradient, threadID, gradX, gradY, gradZ);
+                            double value = bond.getValue();
+                            localRMSD += value * value;
+                        }
+                    }
+                }
+            }
+        }
+
+        private class ImproperTorsionLoop extends IntegerForLoop {
+
+            private double improperTorsionEnergy;
+            private int threadID;
+
+            @Override
+            public void start() {
+                improperTorsionEnergy = 0.0;
+                threadID = getThreadIndex();
+            }
+
+            @Override
+            public void finish() {
+                sharedImproperTorsionEnergy.addAndGet(improperTorsionEnergy);
+            }
+
+            @Override
+            public void run(int first, int last) throws Exception {
+                if (!lambdaBondedTerms) {
+                    for (int i = first; i <= last; i++) {
+                        ImproperTorsion improperTorsion = improperTorsions[i];
+                        improperTorsionEnergy += improperTorsion.energy(gradient, threadID, gradX, gradY, gradZ);
+                    }
+                } else {
+                    for (int i = first; i <= last; i++) {
+                        ImproperTorsion improperTorsion = improperTorsions[i];
+                        if (improperTorsion.applyLambda()) {
+                            improperTorsionEnergy += improperTorsion.energy(gradient, threadID, gradX, gradY, gradZ);
+                        }
+
+                    }
+                }
+            }
+        }
+
+        private class OutOfPlaneBendLoop extends IntegerForLoop {
+
+            private double outOfPlaneBendEnergy;
+            private int threadID;
+
+            @Override
+            public void start() {
+                outOfPlaneBendEnergy = 0.0;
+                threadID = getThreadIndex();
+            }
+
+            @Override
+            public void finish() {
+                sharedOutOfPlaneBendEnergy.addAndGet(outOfPlaneBendEnergy);
+            }
+
+            @Override
+            public void run(int first, int last) throws Exception {
+                if (!lambdaBondedTerms) {
+                    for (int i = first; i <= last; i++) {
+                        OutOfPlaneBend outOfPlaneBend = outOfPlaneBends[i];
+                        outOfPlaneBendEnergy += outOfPlaneBend.energy(gradient, threadID, gradX, gradY, gradZ);
+                    }
+                } else {
+                    for (int i = first; i <= last; i++) {
+                        OutOfPlaneBend outOfPlaneBend = outOfPlaneBends[i];
+                        if (outOfPlaneBend.applyLambda()) {
+                            outOfPlaneBendEnergy += outOfPlaneBend.energy(gradient, threadID, gradX, gradY, gradZ);
+                        }
+                    }
+                }
+            }
+        }
+
+        private class PiOrbitalTorsionLoop extends IntegerForLoop {
+
+            private double piOrbitalTorsionEnergy;
+            private int threadID;
+
+            @Override
+            public void start() {
+                piOrbitalTorsionEnergy = 0.0;
+                threadID = getThreadIndex();
+            }
+
+            @Override
+            public void finish() {
+                sharedPiOrbitalTorsionEnergy.addAndGet(piOrbitalTorsionEnergy);
+            }
+
+            @Override
+            public void run(int first, int last) throws Exception {
+                if (!lambdaBondedTerms) {
+                    for (int i = first; i <= last; i++) {
+                        PiOrbitalTorsion piOrbitalTorsion = piOrbitalTorsions[i];
+                        piOrbitalTorsionEnergy += piOrbitalTorsion.energy(gradient,
+                                threadID, gradX, gradY, gradZ,
+                                lambdaGradX, lambdaGradY, lambdaGradZ);
+                    }
+                } else {
+                    for (int i = first; i <= last; i++) {
+                        PiOrbitalTorsion piOrbitalTorsion = piOrbitalTorsions[i];
+                        if (piOrbitalTorsion.applyLambda()) {
+                            piOrbitalTorsionEnergy += piOrbitalTorsion.energy(gradient,
+                                    threadID, gradX, gradY, gradZ,
+                                    lambdaGradX, lambdaGradY, lambdaGradZ);
+                        }
+                    }
+                }
+            }
+        }
+
+        private class RestraintBondLoop extends IntegerForLoop {
+
+            private double restraintBondEnergy;
+            private int threadID;
+
+            @Override
+            public void start() {
+                restraintBondEnergy = 0.0;
+                threadID = getThreadIndex();
+            }
+
+            @Override
+            public void finish() {
+                sharedRestraintBondEnergy.addAndGet(restraintBondEnergy);
+            }
+
+            @Override
+            public void run(int first, int last) throws Exception {
+                if (!lambdaBondedTerms) {
+                    for (int i = first; i <= last; i++) {
+                        RestraintBond restrainBond = restraintBonds[i];
+                        restraintBondEnergy += restrainBond.energy(gradient, threadID, gradX, gradY, gradZ);
+                    }
+                } else {
+                    for (int i = first; i <= last; i++) {
+                        RestraintBond restraintBond = restraintBonds[i];
+                        if (restraintBond.applyLambda()) {
+                            restraintBondEnergy += restraintBond.energy(gradient, threadID, gradX, gradY, gradZ);
+                        }
+                    }
+                }
+            }
+        }
+
+        private class StretchBendLoop extends IntegerForLoop {
+
+            private double stretchBendEnergy;
+            private int threadID;
+
+            @Override
+            public void start() {
+                stretchBendEnergy = 0.0;
+                threadID = getThreadIndex();
+            }
+
+            @Override
+            public void finish() {
+                sharedStretchBendEnergy.addAndGet(stretchBendEnergy);
+            }
+
+            @Override
+            public void run(int first, int last) throws Exception {
+                if (!lambdaBondedTerms) {
+                    for (int i = first; i <= last; i++) {
+                        StretchBend stretchBend = stretchBends[i];
+                        stretchBendEnergy += stretchBend.energy(gradient, threadID, gradX, gradY, gradZ);
+                    }
+                } else {
+                    for (int i = first; i <= last; i++) {
+                        StretchBend stretchBend = stretchBends[i];
+                        if (stretchBend.applyLambda()) {
+                            stretchBendEnergy += stretchBend.energy(gradient, threadID, gradX, gradY, gradZ);
+                        }
+                    }
+                }
+            }
+        }
+
+        private class TorsionLoop extends IntegerForLoop {
+
+            private double torsionEnergy;
+            private int threadID;
+
+            @Override
+            public void start() {
+                torsionEnergy = 0.0;
+                threadID = getThreadIndex();
+            }
+
+            @Override
+            public void finish() {
+                sharedTorsionEnergy.addAndGet(torsionEnergy);
+            }
+
+            @Override
+            public void run(int first, int last) throws Exception {
+                if (!lambdaBondedTerms) {
+                    for (int i = first; i <= last; i++) {
+                        Torsion torsion = torsions[i];
+                        torsionEnergy += torsion.energy(gradient,
+                                threadID, gradX, gradY, gradZ,
+                                lambdaGradX, lambdaGradY, lambdaGradZ);
+                    }
+                } else {
+                    for (int i = first; i <= last; i++) {
+                        Torsion torsion = torsions[i];
+                        if (torsion.applyLambda()) {
+                            torsionEnergy += torsion.energy(gradient,
+                                    threadID, gradX, gradY, gradZ,
+                                    lambdaGradX, lambdaGradY, lambdaGradZ);
+                        }
+
+                    }
+                }
+            }
+        }
+
+        private class TorsionTorsionLoop extends IntegerForLoop {
+
+            private double torsionTorsionEnergy;
+            private int threadID;
+
+            @Override
+            public void start() {
+                torsionTorsionEnergy = 0.0;
+                threadID = getThreadIndex();
+            }
+
+            @Override
+            public void finish() {
+                sharedTorsionTorsionEnergy.addAndGet(torsionTorsionEnergy);
+            }
+
+            @Override
+            public void run(int first, int last) throws Exception {
+                if (!lambdaBondedTerms) {
+                    for (int i = first; i <= last; i++) {
+                        TorsionTorsion torsionTorsion = torsionTorsions[i];
+                        torsionTorsionEnergy += torsionTorsion.energy(gradient,
+                                threadID, gradX, gradY, gradZ,
+                                lambdaGradX, lambdaGradY, lambdaGradZ);
+                    }
+                } else {
+                    for (int i = first; i <= last; i++) {
+                        TorsionTorsion torsionTorsion = torsionTorsions[i];
+                        if (torsionTorsion.applyLambda()) {
+                            torsionTorsionEnergy += torsionTorsion.energy(gradient,
+                                    threadID, gradX, gradY, gradZ,
+                                    lambdaGradX, lambdaGradY, lambdaGradZ);
+                        }
+                    }
+                }
+            }
+        }
+
+        private class UreyBradleyLoop extends IntegerForLoop {
+
+            private double ureyBradleyEnergy;
+            private int threadID;
+
+            @Override
+            public void start() {
+                ureyBradleyEnergy = 0.0;
+                threadID = getThreadIndex();
+            }
+
+            @Override
+            public void finish() {
+                sharedUreyBradleyEnergy.addAndGet(ureyBradleyEnergy);
+            }
+
+            @Override
+            public void run(int first, int last) throws Exception {
+                if (!lambdaBondedTerms) {
+                    for (int i = first; i <= last; i++) {
+                        UreyBradley ureyBradley = ureyBradleys[i];
+                        ureyBradleyEnergy += ureyBradley.energy(gradient, threadID, gradX, gradY, gradZ);
+                    }
+                } else {
+                    for (int i = first; i <= last; i++) {
+                        UreyBradley ureyBradley = ureyBradleys[i];
+                        if (ureyBradley.applyLambda()) {
+                            ureyBradleyEnergy += ureyBradley.energy(gradient, threadID, gradX, gradY, gradZ);
+                        }
+
+                    }
+                }
+            }
+        }
+
     }
 
 }
