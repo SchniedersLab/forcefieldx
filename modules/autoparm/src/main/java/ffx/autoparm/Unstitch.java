@@ -52,6 +52,7 @@ import org.openscience.cdk.atomtype.CDKAtomTypeMatcher;
 import org.openscience.cdk.exception.CDKException;
 import org.openscience.cdk.exception.InvalidSmilesException;
 import ffx.autoparm.fragment.ExhaustiveFragmenter;
+import org.openscience.cdk.aromaticity.Aromaticity;
 import org.openscience.cdk.interfaces.IAtom;
 import org.openscience.cdk.interfaces.IAtomContainer;
 import org.openscience.cdk.interfaces.IAtomType;
@@ -89,6 +90,7 @@ public class Unstitch {
     }
 
     private static final int SIZE = 30;
+    private static final int MINSIZE = 20;
     ArrayList<String> uniqueAtomNames = new ArrayList<>();
 
     //reads in full molecule CIF
@@ -162,8 +164,8 @@ public class Unstitch {
                     //test to see if setID worked
                     for (int j = 0; j < molecule.getAtomCount(); j++) {
                         IAtom test2 = molecule.getAtom(j);
-                       // System.out.println("atomType: " + test2.getAtomTypeName());
-                       // System.out.println("test2ID: " + test2.getID());
+                        // System.out.println("atomType: " + test2.getAtomTypeName());
+                        // System.out.println("test2ID: " + test2.getID());
                     }
 
                     //Fragmentation call
@@ -184,16 +186,14 @@ public class Unstitch {
         }
     } // end "readSDF" sdf reader
 
-    String[] eArray = new String[]{"For Exh Fragments"};
-    String[] eatArray = new String[]{"For testing for eaten fragments"};
-    String[] rhArray = new String[]{"For removed-hydrogen SMILES"};
+    String[] originalFragmentStructureArray = new String[]{"For testing for eaten fragments"};
+    String[] removedHydrogensStructureArray = new String[]{"For removed-hydrogen SMILES"};
+    IAtomContainer[] iAtomContainerArray = new IAtomContainer[]{};
     int numSubstructures = 0;
-    List<String> toRemove = new ArrayList<>();
-    List<IAtomContainer> rhList = new ArrayList<>();
-    List<Integer> indicelist = new ArrayList<>();
-    List<String> finallist = new ArrayList<>();
-    int[][] map = null;
-    int[][] mapfinal = null;
+    List<IAtomContainer> removedHydrogensStructureList = new ArrayList<>();
+    List<Integer> indicesToBeRemovedList = new ArrayList<>();
+    List<String> finalFragmentStructuresList = new ArrayList<>();
+    List<IAtomContainer> iAtomContainerList = new ArrayList<>();
 
     //fragments full molecule according to exhaustive fragmentation algorithm
     //exhaustive fragments used in further functions
@@ -201,24 +201,24 @@ public class Unstitch {
 
         //ExhaustiveFragmenter implimentation
         ExhaustiveFragmenter exh = new ExhaustiveFragmenter();
-        exh.setMinimumFragmentSize(20);
+        exh.setMinimumFragmentSize(MINSIZE);
         exh.generateFragments(molecule);
         System.out.println("\nEXHAUSTIVE FRAGMENTS");
-        eArray = exh.getFragments();
-        eatArray = exh.getFragments();
-        rhArray = exh.getFragments();
-        int orig = eatArray.length;
+        originalFragmentStructureArray = exh.getFragments();
+        removedHydrogensStructureArray = exh.getFragments();
+        iAtomContainerArray = exh.getFragmentsAsContainers();
+        int orig = originalFragmentStructureArray.length;
 
-        System.out.println(Arrays.toString(eArray) + "\n");
+        System.out.println(Arrays.toString(originalFragmentStructureArray) + "\n");
 
         //checking for "eaten" fragments
         //remove hydrogens for more accurate substructure checking
-        for (String rhArray1 : rhArray) {
+        for (String removedHydrogensStructureArray1 : removedHydrogensStructureArray) {
             //convert each array entry (SMILES) to IAtomContainer
             IAtomContainer molec = null;
             try {
                 SmilesParser smp = new SmilesParser(SilentChemObjectBuilder.getInstance());
-                molec = smp.parseSmiles(rhArray1);
+                molec = smp.parseSmiles(removedHydrogensStructureArray1);
             } catch (InvalidSmilesException ise) {
                 System.out.println(ise.toString());
             }
@@ -228,88 +228,75 @@ public class Unstitch {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            rhList.add(molec);
+            removedHydrogensStructureList.add(molec);
         }
 
         //check for substructures and collect indicies to take out entires from full-H array
-        for (int t = 0; t < rhList.size(); t++) {
-            IAtomContainer query = rhList.get(t);
+        for (int t = 0; t < removedHydrogensStructureList.size(); t++) {
+            IAtomContainer query = removedHydrogensStructureList.get(t);
             Pattern pattern = VentoFoggia.findSubstructure(query);
 
-            for (int u = 0; u < rhList.size(); u++) {
-                IAtomContainer tester = rhList.get(u);
+            for (int u = 0; u < removedHydrogensStructureList.size(); u++) {
+                IAtomContainer tester = removedHydrogensStructureList.get(u);
 
                 //is "Query" is a substructure of "Tester"
                 //makes sure query and tester aren't the same molecule and that
                 //     query is smaller than tester (substructures have to be
                 //     smaller than the main structure)
-                if (pattern.matches(tester) && (tester != query) && (tester.getAtomCount() > query.getAtomCount()) && (tester.getAtomCount() < SIZE)) {
-                    indicelist.add(t);
+                if (pattern.matches(tester) && (tester != query) && (tester.getAtomCount() > query.getAtomCount())
+                        && (tester.getAtomCount() < SIZE)) {
+                    indicesToBeRemovedList.add(t); //indices of substructures to be removed
                 }
             }
         }
 
-        for (int v = 0; v < rhList.size(); v++) {
-            if (!indicelist.contains(v)) {
-                finallist.add(eatArray[v]);
+        for (int v = 0; v < removedHydrogensStructureList.size(); v++) {
+            if (!indicesToBeRemovedList.contains(v)) {
+                finalFragmentStructuresList.add(originalFragmentStructureArray[v]);
+                iAtomContainerList.add(iAtomContainerArray[v]);
             } else {
                 numSubstructures++;
             }
         }
 
         //Make final list of non-substructures into an array to pass on
-        String[] finalArray = new String[finallist.size()];
+        String[] finalArray = new String[finalFragmentStructuresList.size()];
+        IAtomContainer[] finalIAtomContainerArray = new IAtomContainer[iAtomContainerList.size()];
 
-        for (int n = 0; n < finallist.size(); n++) {
-            finalArray[n] = finallist.get(n);
+        for (int n = 0; n < finalFragmentStructuresList.size(); n++) {
+            finalArray[n] = finalFragmentStructuresList.get(n);
+        }
+
+        //make final list of non-substructure IAtomContainers into an array to pass on
+        for (int n = 0; n < iAtomContainerList.size(); n++) {
+            finalIAtomContainerArray[n] = iAtomContainerList.get(n);
         }
 
         System.out.print("Substructures removed: ");
         System.out.println(numSubstructures);
-
         System.out.println("Orig length: " + orig);
         System.out.println("Final length: " + finalArray.length + "\n");
-
         String full = smi;
         System.out.println("fullSmiles: " + full + "\n");
 
-        //write SMILES file
-        //pass eArray to smilesToObject to convert Exhaustive fragments to SDF
-        //pass finalArray to smilesToObject to convert non-substructure fragments to SDF
-        smilesToObject(finalArray, full);
-
-    } //end "fragment" fragmenter
-
-    //Convert SMILES strings to an object to be passed on to converter
-    protected void smilesToObject(String[] smilesArr, String fullsmi) throws Exception {
-
-        String fullsm = fullsmi;
-        for (int i = 0; i < smilesArr.length; i++) {
-            String content = smilesArr[i];
+        for (int i = 0; i < finalArray.length; i++) {
+            String content = finalArray[i];
+            IAtomContainer container = finalIAtomContainerArray[i];
             //entry number in SMILES array to be used later in SDF writing
             int num = i;
-            iAtomContainerTo3DModel(content, num, fullsm);
+            iAtomContainerTo3DModel(content, container, num);
         }
 
-    } //end "smilesToObject" converter
+    } //end fragment method
 
     int fragcounter = 1;
 
-    protected void iAtomContainerTo3DModel(String smi, int num, String fullsmi) throws Exception {
+    protected void iAtomContainerTo3DModel(String smi, IAtomContainer fragContainer, int num) throws Exception {
         IAtomContainer mol = null;
-        IAtomContainer full = null;
         List<IAtom> toFullTest = new ArrayList<>();
         List<IAtom> toFragTest = new ArrayList<>();
         //entry number in SMILES array to be used later in SDF writing
         int number = num;
-
-        //Parse SMILES for full drug molecule
-        try {
-            SmilesParser fullp = new SmilesParser(SilentChemObjectBuilder.getInstance());
-            full = fullp.parseSmiles(fullsmi);
-        } catch (InvalidSmilesException ise) {
-            System.out.println(ise.toString());
-        }
 
         //Parse SMILES for fragment
         try {
@@ -318,19 +305,7 @@ public class Unstitch {
         } catch (InvalidSmilesException ise) {
             System.out.println(ise.toString());
         }
-
-        //AtomTypeMatcher for full drug molecule
-        try {
-            CDKAtomTypeMatcher match = CDKAtomTypeMatcher.getInstance(full.getBuilder());
-            for (IAtom fatom : full.atoms()) {
-                IAtomType ftype = match.findMatchingAtomType(full, fatom);
-                AtomTypeManipulator.configure(fatom, ftype);
-            }
-        } catch (Exception e) {
-            System.out.println(e);
-        }
-
-        //AtomTypeMatcher for frag
+        //AtomTypeMatcher
         try {
             CDKAtomTypeMatcher matcher = CDKAtomTypeMatcher.getInstance(mol.getBuilder());
             for (IAtom atom : mol.atoms()) {
@@ -340,17 +315,7 @@ public class Unstitch {
         } catch (Exception e) {
             System.out.println(e);
         }
-
-        //CDKHydrogenAdder for full drug molecule
-        try {
-            CDKHydrogenAdder fha = CDKHydrogenAdder.getInstance(full.getBuilder());
-            fha.addImplicitHydrogens(full);
-            AtomContainerManipulator.convertImplicitToExplicitHydrogens(full);
-        } catch (CDKException e) {
-            System.out.println(e);
-        }
-
-        //CDKHydrogenAdder for fragment
+        //CDKHydrogenAdder
         try {
             CDKHydrogenAdder ha = CDKHydrogenAdder.getInstance(mol.getBuilder());
             ha.addImplicitHydrogens(mol);
@@ -358,23 +323,38 @@ public class Unstitch {
         } catch (CDKException e) {
             System.out.println(e);
         }
+        
+        //use "partition fragment" code
+        AtomContainerManipulator.clearAtomConfigurations(mol);
+        for(IAtom atom : mol.atoms()){
+            atom.setImplicitHydrogenCount(null);
+        }
+        AtomContainerManipulator.percieveAtomTypesAndConfigureAtoms(mol);
+        CDKHydrogenAdder.getInstance(mol.getBuilder()).addImplicitHydrogens(mol);
+        Aromaticity.cdkLegacy().apply(mol);
 
-        //Builds 3D model of fragment molecule
-        ModelBuilder3D mb3d;
-        mb3d = ModelBuilder3D.getInstance(SilentChemObjectBuilder.getInstance());
-        IAtomContainer molecule = null;
-        molecule = mb3d.generate3DCoordinates(mol, false);
+        //unique atom name transfer loop
+        //transfer from IAtomContainers made directly by ExhaustiveFragmenter to locally made
+        //IAtomContainer (mol) because mb3d only likes the locally made IAtomContainers
+        for (int i = 0; i < fragContainer.getAtomCount(); i++) {
+            mol.getAtom(i).setID(fragContainer.getAtom(i).getID());
+        }
 
-        //Fragmenting checks
-        //30 atoms or less
-        if (molecule.getAtomCount() < SIZE) {
+        if (mol.getAtomCount() < SIZE) {
+            //Builds 3D model of fragment molecule
+            //System.out.println("\nBuilding 3D Model\n");
+            ModelBuilder3D mb3d;
+            mb3d = ModelBuilder3D.getInstance(SilentChemObjectBuilder.getInstance());
+            //System.out.println("\nModelBuilder created\n");
+            IAtomContainer molecule = null;
+            molecule = mb3d.generate3DCoordinates(mol, false);
 
+            //Fragmenting checks
+            //30 atoms or less
+            //if (molecule.getAtomCount() < SIZE) {
             //"eaten" fragments checked for already
-            //writeSDF
+            //write output to SDF
             File fragsdf = writeSDF(molecule, number);
-            //writeXYZ(molecule, number);
-            int fraglen = mol.getAtomCount();
-            int fulllen = full.getAtomCount();
 
             fragcounter++;
         }
@@ -383,6 +363,7 @@ public class Unstitch {
 
     protected File writeSDF(IAtomContainer iAtomContainer, int n) throws Exception {
 
+        System.out.println("\nFragment number: " + n + "\n");
         String fileBegin = "fragment";
         String fileEnd = Integer.toString(n);
         String dirName = fileBegin.concat(fileEnd);
@@ -396,7 +377,7 @@ public class Unstitch {
         for (int j = 0; j < iAtomContainer.getAtomCount(); j++) {
             IAtom test2 = iAtomContainer.getAtom(j);
             System.out.println("atomType in writeSDF: " + test2.getAtomTypeName());
-            System.out.println("test2ID in writeSDF: " + test2.getID());
+            System.out.println("test2ID in writeSDF: " + test2.getID() + "\n-------");
         }
 
         String fragName = dirName.concat(File.separator).concat(dirName.concat(".sdf"));
@@ -415,6 +396,7 @@ public class Unstitch {
             sdfWriter.write(iAtomContainer);
             bufferedWriter.close();
         } catch (IOException e) {
+            System.out.println("Exception caught for fragment number " + n);
             logger.warning(e.toString());
         } finally {
             if (fileWriter != null) {

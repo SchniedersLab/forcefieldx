@@ -1266,7 +1266,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 // Portion that should be *subtracted* from bondEnergy due to ESVs.
                 final double esvBondedEnergy = extendedSystem.bonded(termFlags, termArrays, gradient, lambdaBondedTerms);
                 // Energy due to eg. pH and zero/unity bias.
-                final double esvNonbondEnergy = extendedSystem.nonbonded(298.15);   // TODO PRIO generalize
+                final double esvNonbondEnergy = extendedSystem.nonbonded();
                 esvEnergy = esvNonbondEnergy - esvBondedEnergy;
 
                 esvLogger.append(format("  Total ESV Energy (bonded,nonbond,PME+vdW,sum):  %g  %g  %s  %g\n",
@@ -1856,7 +1856,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     if (atoms[i].applyLamedh()) {
                         for (ExtendedVariable esv : extendedSystem.getESVList()) {
                             if (esv.containsAtom(atoms[i])) {
-                                sb.append("   ESV:   " + "idx " + esv.index + ", ldh " + esv.getLamedh() + "\n");
+                                sb.append("   ESV:   " + "idx " + esv.index + ", ldh " + esv.getLambda() + "\n");
                             }
                         }
                     }

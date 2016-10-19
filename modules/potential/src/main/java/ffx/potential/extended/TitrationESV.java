@@ -102,12 +102,12 @@ public final class TitrationESV extends ExtendedVariable {
     public OptionalDouble getROLSScaling(ROLS rols) {
         for (ROLS termNode : rolsOne) {
             if (((MSNode) termNode).getChildList().contains(rols)) {
-                return OptionalDouble.of(lamedh);
+                return OptionalDouble.of(lambda);
             }
         }
         for (ROLS termNode : rolsZero) {
             if (((MSNode) termNode).getChildList().contains(rols)) {
-                return OptionalDouble.of(1.0 - lamedh);
+                return OptionalDouble.of(1.0 - lambda);
             }
         }
 //        if (rolsOne.contains(rols)) {
@@ -128,9 +128,9 @@ public final class TitrationESV extends ExtendedVariable {
     public double getPhEnergy(double pH, double temperature) {
         Titr titration = TitrationUtils.titrationLookup(this.titrating.getActive());
         double pKaModel = titration.pKa;
-        double uph = Math.log(10)*ThermoConstants.kB*temperature*(pKaModel - pH)*lamedh;
+        double uph = Math.log(10)*ThermoConstants.kB*temperature*(pKaModel - pH)*lambda;
         double umod = 0.0;  // TODO PRIO find PMFs for monomers/trimers/pentapeptides
-        umod = titration.refEnergy * lamedh;
+        umod = titration.refEnergy * lambda;
         return uph + umod;
     }
     
@@ -140,7 +140,7 @@ public final class TitrationESV extends ExtendedVariable {
      */
     @Override
     public double getBiasEnergy() {
-        return (biasMag - 4*biasMag*(lamedh - 0.5)*(lamedh - 0.5));
+        return (biasMag - 4*biasMag*(lambda - 0.5)*(lambda - 0.5));
     }
     
     /**
@@ -148,7 +148,7 @@ public final class TitrationESV extends ExtendedVariable {
      */
     @Override
     public double getdBiasdLdh() {
-        return (-8*biasMag*(lamedh - 0.5));
+        return (-8*biasMag*(lambda - 0.5));
     }
     
     /**
