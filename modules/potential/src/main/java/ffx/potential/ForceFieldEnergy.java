@@ -793,7 +793,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 }
             }
             Arrays.sort(bonds, 0, nBonds);
-            if (nBonds > 0 && logger.isLoggable(Level.FINE)) {
+            if (nBonds > 0 && logger.isLoggable(Level.FINEST)) {
                 logger.finest(format("  Bonds:                             %10d", nBonds));
             }
         } else {
@@ -822,7 +822,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             }
 
             Arrays.sort(angles, 0, nAngles);
-            if (nAngles > 0 && logger.isLoggable(Level.FINE)) {
+            if (nAngles > 0 && logger.isLoggable(Level.FINEST)) {
                 logger.finest(format("  Angles:                            %10d", nAngles));
             }
         } else {
@@ -850,7 +850,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 }
             }
             Arrays.sort(stretchBends, 0, nStretchBends);
-            if (nStretchBends > 0 && logger.isLoggable(Level.FINE)) {
+            if (nStretchBends > 0 && logger.isLoggable(Level.FINEST)) {
                 logger.finest(format("  Stretch-Bends:                     %10d", nStretchBends));
             }
         } else {
@@ -878,7 +878,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 }
             }
             Arrays.sort(ureyBradleys, 0, nUreyBradleys);
-            if (nUreyBradleys > 0 && logger.isLoggable(Level.FINE)) {
+            if (nUreyBradleys > 0 && logger.isLoggable(Level.FINEST)) {
                 logger.finest(format("  Urey-Bradleys:                     %10d", nUreyBradleys));
             }
         } else {
@@ -941,7 +941,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 }
             }
             Arrays.sort(outOfPlaneBends, 0, nOutOfPlaneBends);
-            if (nOutOfPlaneBends > 0 && logger.isLoggable(Level.FINE)) {
+            if (nOutOfPlaneBends > 0 && logger.isLoggable(Level.FINEST)) {
                 logger.finest(format("  Out-of-Plane Bends:                %10d", nOutOfPlaneBends));
             }
         } else {
@@ -969,7 +969,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 }
             }
             // Arrays.sort(torsions);
-            if (nTorsions > 0 && logger.isLoggable(Level.FINE)) {
+            if (nTorsions > 0 && logger.isLoggable(Level.FINEST)) {
                 logger.finest(format("  Torsions:                          %10d", nTorsions));
             }
         } else {
@@ -996,7 +996,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     piOrbitalTorsions[nPiOrbitalTorsions++] = (PiOrbitalTorsion) r;
                 }
             }
-            if (nPiOrbitalTorsions > 0 && logger.isLoggable(Level.FINE)) {
+            if (nPiOrbitalTorsions > 0 && logger.isLoggable(Level.FINEST)) {
                 logger.finest(format("  Pi-Orbital Torsions:               %10d", nPiOrbitalTorsions));
             }
         } else {
@@ -1023,7 +1023,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     torsionTorsions[nTorsionTorsions++] = (TorsionTorsion) r;
                 }
             }
-            if (nTorsionTorsions > 0 && logger.isLoggable(Level.FINE)) {
+            if (nTorsionTorsions > 0 && logger.isLoggable(Level.FINEST)) {
                 logger.finest(format("  Torsion-Torsions:                  %10d", nTorsionTorsions));
             }
         } else {
@@ -1050,7 +1050,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     improperTorsions[nImproperTorsions++] = (ImproperTorsion) r;
                 }
             }
-            if (nImproperTorsions > 0 && logger.isLoggable(Level.FINE)) {
+            if (nImproperTorsions > 0 && logger.isLoggable(Level.FINEST)) {
                 logger.finest(format("  Improper Torsions:                 %10d", nImproperTorsions));
             }
         } else {
@@ -2787,7 +2787,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             int threadID = getThreadIndex();
 
             // Initialize the Gradient to zero.
-            if (gradient && threadID < nAtoms) {
+            if (gradient) {
                 if (gradInitLoops[threadID] == null) {
                     gradInitLoops[threadID] = new GradInitLoop();
                 }
@@ -2795,7 +2795,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             }
 
             // Evaluate force field bonded energy terms in parallel.
-            if (angleTerm && threadID < nAngles) {
+            if (angleTerm) {
                 if (angleLoops[threadID] == null) {
                     angleLoops[threadID] = new AngleLoop();
                 }
@@ -2808,7 +2808,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 }
             }
 
-            if (bondTerm && threadID < nBonds) {
+            if (bondTerm) {
                 if (bondLoops[threadID] == null) {
                     bondLoops[threadID] = new BondLoop();
                 }
@@ -2821,7 +2821,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 }
             }
 
-            if (improperTorsionTerm && threadID < nImproperTorsions) {
+            if (improperTorsionTerm) {
                 if (improperTorsionLoops[threadID] == null) {
                     improperTorsionLoops[threadID] = new ImproperTorsionLoop();
                 }
@@ -2834,7 +2834,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 }
             }
 
-            if (outOfPlaneBendTerm && threadID < nOutOfPlaneBends) {
+            if (outOfPlaneBendTerm) {
                 if (outOfPlaneBendLoops[threadID] == null) {
                     outOfPlaneBendLoops[threadID] = new OutOfPlaneBendLoop();
                 }
@@ -2847,7 +2847,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 }
             }
 
-            if (piOrbitalTorsionTerm && threadID < nPiOrbitalTorsions) {
+            if (piOrbitalTorsionTerm) {
                 if (piOrbitalTorsionLoops[threadID] == null) {
                     piOrbitalTorsionLoops[threadID] = new PiOrbitalTorsionLoop();
                 }
@@ -2860,7 +2860,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 }
             }
 
-            if (stretchBendTerm && threadID < nStretchBends) {
+            if (stretchBendTerm) {
                 if (stretchBendLoops[threadID] == null) {
                     stretchBendLoops[threadID] = new StretchBendLoop();
                 }
@@ -2873,7 +2873,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 }
             }
 
-            if (torsionTerm && threadID < nTorsions) {
+            if (torsionTerm) {
                 if (torsionLoops[threadID] == null) {
                     torsionLoops[threadID] = new TorsionLoop();
                 }
@@ -2886,7 +2886,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 }
             }
 
-            if (torsionTorsionTerm && threadID < nTorsionTorsions) {
+            if (torsionTorsionTerm) {
                 if (torsionTorsionLoops[threadID] == null) {
                     torsionTorsionLoops[threadID] = new TorsionTorsionLoop();
                 }
@@ -2899,7 +2899,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 }
             }
 
-            if (ureyBradleyTerm && threadID < nUreyBradleys) {
+            if (ureyBradleyTerm) {
                 if (ureyBradleyLoops[threadID] == null) {
                     ureyBradleyLoops[threadID] = new UreyBradleyLoop();
                 }
@@ -2913,7 +2913,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             }
 
             // Evaluate restraint terms in parallel.
-            if (restraintBondTerm && threadID < nRestraintBonds) {
+            if (restraintBondTerm) {
                 if (restraintBondLoops[threadID] == null) {
                     restraintBondLoops[threadID] = new RestraintBondLoop();
                 }
@@ -2927,7 +2927,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             }
 
             // Reduce the Gradient and load it into Atom instances.
-            if (gradient && threadID < nAtoms) {
+            if (gradient) {
                 if (gradReduceLoops[threadID] == null) {
                     gradReduceLoops[threadID] = new GradReduceLoop();
                 }
@@ -2950,9 +2950,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     lambdaGradY.reset(threadID, first, last);
                     lambdaGradZ.reset(threadID, first, last);
                 }
-
             }
-
         }
 
         private class GradReduceLoop extends IntegerForLoop {
@@ -2979,7 +2977,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     }
                 }
             }
-
         }
 
         private class AngleLoop extends IntegerForLoop {

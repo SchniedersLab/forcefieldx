@@ -67,6 +67,7 @@ import static ffx.numerics.VectorMath.sum;
 public class Torsion extends BondedTerm implements LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(Torsion.class.getName());
+
     private static final long serialVersionUID = 1L;
     private double lambda = 1.0;
     private double dEdL = 0.0;
@@ -380,13 +381,11 @@ public class Torsion extends BondedTerm implements LambdaInterface {
                 double sinn = sine * cosprev + cosine * sinprev;
                 double phi = 1.0 + cosn * tcos[i] + sinn * tsin[i];
                 double dphi = (1.0 + i) * (cosn * tsin[i] - sinn * tcos[i]);
-//                logger.info(String.format(" For loop Amplitude %10.4f", amp[i]));
                 energy = energy + amp[i] * phi;
                 dedphi = dedphi + amp[i] * dphi;
                 cosprev = cosn;
                 sinprev = sinn;
             }
-//            logger.info(String.format(" Amplitude %10.4f %10.4f", amp[0], n));
             energy = units * energy;
             dEdL = energy;
             energy = lambda * energy;
