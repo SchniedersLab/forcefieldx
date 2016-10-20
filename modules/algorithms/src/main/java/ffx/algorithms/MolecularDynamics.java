@@ -59,6 +59,8 @@ import ffx.potential.parsers.DYNFilter;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.XYZFilter;
 
+import javax.swing.undo.CannotUndoException;
+
 /**
  * Run NVE or NVT molecular dynamics.
  *
@@ -108,7 +110,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private int saveRestartFileFrequency = 1000;
     private String fileType = "PDB";
     private double restartFrequency = 0.1;
+    private boolean updateMonteCarloListener = true;
     private ExtendedSystem extendedSystem;
+    private DynamicsState dynamicsState;
 
     /**
      * <p>
@@ -313,6 +317,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
     public File getArchiveFile() {
         return archiveFile;
     }
+    
+    public void setMcUpdate(boolean set) {
+        updateMonteCarloListener = set;
+    }
 
     public void addMCListener(MonteCarloListener monteCarloListener) {
         this.monteCarloListener = monteCarloListener;
@@ -320,6 +328,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
     
     public void attachExtendedSystem(ExtendedSystem system) {
         this.extendedSystem = system;
+    }
+    
+    public void detachExtendedSystem() {
+        this.extendedSystem = null;
     }
 
     /**
@@ -442,6 +454,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
         init(nSteps, timeStep, printInterval, saveInterval, "PDB", 0.1, temperature, initVelocities, dyn);
     }
 
+    public void dynamic() {
+        
+    }
+    
     /**
      * Blocking molecular dynamics. When this method returns, the MD run is
      * done.
@@ -661,7 +677,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
          */
         long time = System.nanoTime();
         for (int step = 1; step <= nSteps; step++) {
-            if (monteCarloListener != null) {
+            if (updateMonteCarloListener && monteCarloListener != null) {
                 long startTime = System.nanoTime();
                 monteCarloListener.mcUpdate(molecularAssembly);
                 x = potential.getCoordinates(x);
@@ -834,6 +850,48 @@ public class MolecularDynamics implements Runnable, Terminatable {
                     logger.log(Level.WARNING, " Exception terminating dynamics.\n", e);
                 }
             }
+        }
+    }
+    
+    public void storeState() {
+        dynamicsState = new DynamicsState();
+    }
+
+    public void revertState() {
+        if (dynamicsState == null) {
+            throw new CannotUndoException();
+        }
+        dynamicsState.restore();
+    }
+    
+    public class DynamicsState {
+        double[] xBak, vBak, aBak;
+        double[] aPreviousBak, massBak, gradBak;
+        double currentKineticEnergyBak, currentPotentialEnergyBak, currentTotalEnergyBak;
+        double currentTemperatureBak;
+        public DynamicsState() {
+            xBak = x.clone();
+            vBak = v.clone();
+            aBak = a.clone();
+            aPreviousBak = aPrevious.clone();
+            massBak = mass.clone();
+            gradBak = grad.clone();
+            currentKineticEnergyBak = currentKineticEnergy;
+            currentPotentialEnergyBak = currentPotentialEnergy;
+            currentTotalEnergyBak = currentTotalEnergy;
+            currentTemperatureBak = currentTemperature;
+        }
+        public void restore() {
+            x = xBak;
+            v = vBak;
+            a = aBak;
+            aPrevious = aPreviousBak;
+            mass = massBak;
+            grad = gradBak;
+            currentKineticEnergy = currentKineticEnergyBak;
+            currentPotentialEnergy = currentPotentialEnergyBak;
+            currentTotalEnergy = currentTotalEnergyBak;
+            currentTemperature = currentTemperatureBak;
         }
     }
 }

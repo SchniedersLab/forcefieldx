@@ -45,6 +45,7 @@ import static org.apache.commons.math3.util.FastMath.acos;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
 
+import ffx.numerics.AtomicDoubleArray;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TorsionType;
 
@@ -66,6 +67,7 @@ import static ffx.numerics.VectorMath.sum;
 public class Torsion extends BondedTerm implements LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(Torsion.class.getName());
+
     private static final long serialVersionUID = 1L;
     private double lambda = 1.0;
     private double dEdL = 0.0;
@@ -262,75 +264,84 @@ public class Torsion extends BondedTerm implements LambdaInterface {
         energy(false);
     }
 
-    protected static final double a0[] = new double[3];
-    protected static final double a1[] = new double[3];
-    protected static final double a2[] = new double[3];
-    protected static final double a3[] = new double[3];
-
-    /**
-     * Vector from Atom 0 to Atom 1.
-     */
-    protected static final double v01[] = new double[3];
-    /**
-     * Vector from Atom 0 to Atom 2.
-     */
-    protected static final double v02[] = new double[3];
-    /**
-     * Vector from Atom 1 to Atom 2.
-     */
-    protected static final double v12[] = new double[3];
-    /**
-     * Vector from Atom 1 to Atom 3.
-     */
-    protected static final double v13[] = new double[3];
-    /**
-     * Vector from Atom 2 to Atom 3.
-     */
-    protected static final double v23[] = new double[3];
-    /**
-     * Vector v01 cross v12.
-     */
-    protected static final double x0112[] = new double[3];
-    /**
-     * Vector v12 cross v23.
-     */
-    protected static final double x1223[] = new double[3];
-    /**
-     * Vector x0112 cross x12_32.
-     */
-    protected static final double x[] = new double[3];
-    /**
-     * Gradient on atom 0.
-     */
-    protected static final double g0[] = new double[3];
-    /**
-     * Gradient on Atom 1.
-     */
-    protected static final double g1[] = new double[3];
-    /**
-     * Gradient on Atom 2.
-     */
-    protected static final double g2[] = new double[3];
-    /**
-     * Gradient on Atom 3.
-     */
-    protected static final double g3[] = new double[3];
-    /**
-     * Work array.
-     */
-    protected static final double x1[] = new double[3];
-    /**
-     * Work array.
-     */
-    protected static final double x2[] = new double[3];
+    public double energy(boolean gradient) {
+        return energy(gradient, 0,
+                null, null, null,
+                null, null, null);
+    }
 
     /**
      * Evaluate the Torsional Angle energy.
      *
      * @param gradient Evaluate the gradient.
+     * @param threadID
+     * @param gradX
+     * @param gradY
+     * @param gradZ
+     * @param lambdaGradX
+     * @param lambdaGradY
+     * @param lambdaGradZ
      * @return Returns the energy.
      */
-    public double energy(boolean gradient) {
+    public double energy(boolean gradient,
+            int threadID,
+            AtomicDoubleArray gradX,
+            AtomicDoubleArray gradY,
+            AtomicDoubleArray gradZ,
+            AtomicDoubleArray lambdaGradX,
+            AtomicDoubleArray lambdaGradY,
+            AtomicDoubleArray lambdaGradZ) {
+
+        double a0[] = new double[3];
+        double a1[] = new double[3];
+        double a2[] = new double[3];
+        double a3[] = new double[3];
+
+        /**
+         * Vector from Atom 0 to Atom 1.
+         */
+        double v01[] = new double[3];
+        /**
+         * Vector from Atom 0 to Atom 2.
+         */
+        double v02[] = new double[3];
+        /**
+         * Vector from Atom 1 to Atom 2.
+         */
+        double v12[] = new double[3];
+        /**
+         * Vector from Atom 1 to Atom 3.
+         */
+        double v13[] = new double[3];
+        /**
+         * Vector from Atom 2 to Atom 3.
+         */
+        double v23[] = new double[3];
+        /**
+         * Vector v01 cross v12.
+         */
+        double x0112[] = new double[3];
+        /**
+         * Vector v12 cross v23.
+         */
+        double x1223[] = new double[3];
+        /**
+         * Vector x0112 cross x12_32.
+         */
+        double x[] = new double[3];
+        /**
+         * Gradient on atoms 0, 1, 2 & 3.
+         */
+        double g0[] = new double[3];
+        double g1[] = new double[3];
+        double g2[] = new double[3];
+        double g3[] = new double[3];
+        /**
+         * Work vectors.
+         */
+        double x1[] = new double[3];
+        double x2[] = new double[3];
+
         energy = 0.0;
         value = 0.0;
         dEdL = 0.0;
@@ -370,13 +381,11 @@ public class Torsion extends BondedTerm implements LambdaInterface {
                 double sinn = sine * cosprev + cosine * sinprev;
                 double phi = 1.0 + cosn * tcos[i] + sinn * tsin[i];
                 double dphi = (1.0 + i) * (cosn * tsin[i] - sinn * tcos[i]);
-//                logger.info(String.format(" For loop Amplitude %10.4f", amp[i]));
                 energy = energy + amp[i] * phi;
                 dedphi = dedphi + amp[i] * dphi;
                 cosprev = cosn;
                 sinprev = sinn;
             }
-//            logger.info(String.format(" Amplitude %10.4f %10.4f", amp[0], n));
             energy = units * energy;
             dEdL = energy;
             energy = lambda * energy;
@@ -398,16 +407,52 @@ public class Torsion extends BondedTerm implements LambdaInterface {
                 sum(g2, g3, g2);
                 cross(x2, v12, g3);
                 if (lambdaTerm) {
-                    atoms[0].addToLambdaXYZGradient(g0[0], g0[1], g0[2]);
-                    atoms[1].addToLambdaXYZGradient(g1[0], g1[1], g1[2]);
-                    atoms[2].addToLambdaXYZGradient(g2[0], g2[1], g2[2]);
-                    atoms[3].addToLambdaXYZGradient(g3[0], g3[1], g3[2]);
+                    // atoms[0].addToLambdaXYZGradient(g0[0], g0[1], g0[2]);
+                    // atoms[1].addToLambdaXYZGradient(g1[0], g1[1], g1[2]);
+                    // atoms[2].addToLambdaXYZGradient(g2[0], g2[1], g2[2]);
+                    // atoms[3].addToLambdaXYZGradient(g3[0], g3[1], g3[2]);
+                    int i0 = atoms[0].getXYZIndex() - 1;
+                    lambdaGradX.add(threadID, i0, g0[0]);
+                    lambdaGradY.add(threadID, i0, g0[1]);
+                    lambdaGradZ.add(threadID, i0, g0[2]);
+                    int i1 = atoms[1].getXYZIndex() - 1;
+                    lambdaGradX.add(threadID, i1, g1[0]);
+                    lambdaGradY.add(threadID, i1, g1[1]);
+                    lambdaGradZ.add(threadID, i1, g1[2]);
+                    int i2 = atoms[2].getXYZIndex() - 1;
+                    lambdaGradX.add(threadID, i2, g2[0]);
+                    lambdaGradY.add(threadID, i2, g2[1]);
+                    lambdaGradZ.add(threadID, i2, g2[2]);
+                    int i3 = atoms[3].getXYZIndex() - 1;
+                    lambdaGradX.add(threadID, i3, g3[0]);
+                    lambdaGradY.add(threadID, i3, g3[1]);
+                    lambdaGradZ.add(threadID, i3, g3[2]);
                 }
                 if (gradient) {
-                    atoms[0].addToXYZGradient(lambda * g0[0], lambda * g0[1], lambda * g0[2]);
-                    atoms[1].addToXYZGradient(lambda * g1[0], lambda * g1[1], lambda * g1[2]);
-                    atoms[2].addToXYZGradient(lambda * g2[0], lambda * g2[1], lambda * g2[2]);
-                    atoms[3].addToXYZGradient(lambda * g3[0], lambda * g3[1], lambda * g3[2]);
+                    // atoms[0].addToXYZGradient(lambda * g0[0], lambda * g0[1], lambda * g0[2]);
+                    // atoms[1].addToXYZGradient(lambda * g1[0], lambda * g1[1], lambda * g1[2]);
+                    // atoms[2].addToXYZGradient(lambda * g2[0], lambda * g2[1], lambda * g2[2]);
+                    // atoms[3].addToXYZGradient(lambda * g3[0], lambda * g3[1], lambda * g3[2]);
+                    scalar(g0, lambda, g0);
+                    scalar(g1, lambda, g1);
+                    scalar(g2, lambda, g2);
+                    scalar(g3, lambda, g3);
+                    int i0 = atoms[0].getXYZIndex() - 1;
+                    gradX.add(threadID, i0, g0[0]);
+                    gradY.add(threadID, i0, g0[1]);
+                    gradZ.add(threadID, i0, g0[2]);
+                    int i1 = atoms[1].getXYZIndex() - 1;
+                    gradX.add(threadID, i1, g1[0]);
+                    gradY.add(threadID, i1, g1[1]);
+                    gradZ.add(threadID, i1, g1[2]);
+                    int i2 = atoms[2].getXYZIndex() - 1;
+                    gradX.add(threadID, i2, g2[0]);
+                    gradY.add(threadID, i2, g2[1]);
+                    gradZ.add(threadID, i2, g2[2]);
+                    int i3 = atoms[3].getXYZIndex() - 1;
+                    gradX.add(threadID, i3, g3[0]);
+                    gradY.add(threadID, i3, g3[1]);
+                    gradZ.add(threadID, i3, g3[2]);
                 }
             }
         }

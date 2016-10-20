@@ -39,6 +39,7 @@ package ffx.potential.bonded;
 
 import java.util.logging.Logger;
 
+import ffx.numerics.AtomicDoubleArray;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.UreyBradleyType;
 
@@ -59,6 +60,7 @@ import static ffx.potential.parameters.UreyBradleyType.units;
 public class UreyBradley extends BondedTerm implements Comparable<UreyBradley> {
 
     private static final Logger logger = Logger.getLogger(UreyBradley.class.getName());
+
     private static final long serialVersionUID = 1L;
     /**
      * Force field parameters to compute the Stretch-Bend energy.
@@ -132,28 +134,39 @@ public class UreyBradley extends BondedTerm implements Comparable<UreyBradley> {
     public void update() {
         energy(false);
     }
-    protected static final double a0[] = new double[3];
-    protected static final double a2[] = new double[3];
-    /**
-     * The vector from Atom 2 to Atom 0.
-     */
-    protected static final double v20[] = new double[3];
-    /**
-     * Gradient on Atom 0.
-     */
-    protected static final double g0[] = new double[3];
-    /**
-     * Gradient on Atom 2.
-     */
-    protected static final double g2[] = new double[3];
+
+    public double energy(boolean gradient) {
+        return energy(gradient, 0, null, null, null);
+    }
 
     /**
      * Evaluate the Urey-Bradley energy.
      *
      * @param gradient Evaluate the gradient.
+     * @param threadID
+     * @param gradX
+     * @param gradY
+     * @param gradZ
      * @return Returns the energy.
      */
-    public double energy(boolean gradient) {
+    public double energy(boolean gradient,
+            int threadID,
+            AtomicDoubleArray gradX,
+            AtomicDoubleArray gradY,
+            AtomicDoubleArray gradZ) {
+
+        double a0[] = new double[3];
+        double a2[] = new double[3];
+        /**
+         * The vector from Atom 2 to Atom 0.
+         */
+        double v20[] = new double[3];
+        /**
+         * Gradient on Atoms 0 & 2.
+         */
+        double g0[] = new double[3];
+        double g2[] = new double[3];
+
         atoms[0].getXYZ(a0);
         atoms[2].getXYZ(a2);
         diff(a0, a2, v20);
@@ -169,8 +182,16 @@ public class UreyBradley extends BondedTerm implements Comparable<UreyBradley> {
             }
             scalar(v20, de, g0);
             scalar(v20, -de, g2);
-            atoms[0].addToXYZGradient(g0[0], g0[1], g0[2]);
-            atoms[2].addToXYZGradient(g2[0], g2[1], g2[2]);
+            // atoms[0].addToXYZGradient(g0[0], g0[1], g0[2]);
+            // atoms[2].addToXYZGradient(g2[0], g2[1], g2[2]);
+            int i0 = atoms[0].getXYZIndex() - 1;
+            gradX.add(threadID, i0, g0[0]);
+            gradY.add(threadID, i0, g0[1]);
+            gradZ.add(threadID, i0, g0[2]);
+            int i2 = atoms[2].getXYZIndex() - 1;
+            gradX.add(threadID, i2, g2[0]);
+            gradY.add(threadID, i2, g2[1]);
+            gradZ.add(threadID, i2, g2[2]);
         }
         return energy;
     }

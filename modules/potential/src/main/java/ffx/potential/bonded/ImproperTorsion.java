@@ -43,6 +43,7 @@ import java.util.logging.Logger;
 
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
+import ffx.numerics.AtomicDoubleArray;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ImproperTorsionType;
 
@@ -57,8 +58,8 @@ import static ffx.numerics.VectorMath.sum;
  * The ImproperTorsion class represents an Improper Torsion.
  *
  * @author Michael J. Schnieders
- * @since 1.0
  *
+ * @since 1.0
  */
 public class ImproperTorsion extends BondedTerm implements
         Comparable<ImproperTorsion> {
@@ -251,13 +252,68 @@ public class ImproperTorsion extends BondedTerm implements
         energy(false);
     }
 
+    public double energy(boolean gradient) {
+        return energy(gradient, 0, null, null, null);
+    }
+
     /**
      * Evaluate this Improper Torsion energy.
      *
      * @param gradient Evaluate the gradient.
+     * @param threadID
+     * @param gradX
+     * @param gradY
+     * @param gradZ
      * @return Returns the energy.
      */
-    public double energy(boolean gradient) {
+    public double energy(boolean gradient,
+            int threadID,
+            AtomicDoubleArray gradX,
+            AtomicDoubleArray gradY,
+            AtomicDoubleArray gradZ) {
+
+        double a0[] = new double[3];
+        double a1[] = new double[3];
+        double a2[] = new double[3];
+        double a3[] = new double[3];
+        /**
+         * Vector from Atom 1 to Atom 0.
+         */
+        double v10[] = new double[3];
+        /**
+         * Vector from Atom 2 to Atom 1.
+         */
+        double v21[] = new double[3];
+        /**
+         * Vector from Atom 3 to Atom 2.
+         */
+        double v32[] = new double[3];
+        /**
+         * Vector from Atom 3 to Atom 1.
+         */
+        double v31[] = new double[3];
+        /**
+         * Vector from Atom 2 to Atom 0.
+         */
+        double v20[] = new double[3];
+        double t[] = new double[3];
+        double u[] = new double[3];
+        double tu[] = new double[3];
+        double dedu[] = new double[3];
+        double dedt[] = new double[3];
+        /**
+         * Gradient on atoms 0, 1, 2 & 3.
+         */
+        double g0[] = new double[3];
+        double g1[] = new double[3];
+        double g2[] = new double[3];
+        double g3[] = new double[3];
+        /**
+         * Work arrays.
+         */
+        double g1a[] = new double[3];
+        double g2a[] = new double[3];
+
         energy = 0.0;
         value = 0.0;
         atoms[0].getXYZ(a0);
@@ -334,10 +390,26 @@ public class ImproperTorsion extends BondedTerm implements
                 /**
                  * Accumulate derivatives.
                  */
-                atoms[0].addToXYZGradient(g0[0], g0[1], g0[2]);
-                atoms[1].addToXYZGradient(g1[0], g1[1], g1[2]);
-                atoms[2].addToXYZGradient(g2[0], g2[1], g2[2]);
-                atoms[3].addToXYZGradient(g3[0], g3[1], g3[2]);
+                // atoms[0].addToXYZGradient(g0[0], g0[1], g0[2]);
+                // atoms[1].addToXYZGradient(g1[0], g1[1], g1[2]);
+                // atoms[2].addToXYZGradient(g2[0], g2[1], g2[2]);
+                // atoms[3].addToXYZGradient(g3[0], g3[1], g3[2]);
+                int i0 = atoms[0].getXYZIndex() - 1;
+                gradX.add(threadID, i0, g0[0]);
+                gradY.add(threadID, i0, g0[1]);
+                gradZ.add(threadID, i0, g0[2]);
+                int i1 = atoms[1].getXYZIndex() - 1;
+                gradX.add(threadID, i1, g1[0]);
+                gradY.add(threadID, i1, g1[1]);
+                gradZ.add(threadID, i1, g1[2]);
+                int i2 = atoms[2].getXYZIndex() - 1;
+                gradX.add(threadID, i2, g2[0]);
+                gradY.add(threadID, i2, g2[1]);
+                gradZ.add(threadID, i2, g2[2]);
+                int i3 = atoms[3].getXYZIndex() - 1;
+                gradX.add(threadID, i3, g3[0]);
+                gradY.add(threadID, i3, g3[1]);
+                gradZ.add(threadID, i3, g3[2]);
             }
         }
 
@@ -393,57 +465,5 @@ public class ImproperTorsion extends BondedTerm implements
         }
         return 0;
     }
-    protected static final double a0[] = new double[3];
-    protected static final double a1[] = new double[3];
-    protected static final double a2[] = new double[3];
-    protected static final double a3[] = new double[3];
-    /**
-     * Vector from Atom 1 to Atom 0.
-     */
-    protected static final double v10[] = new double[3];
-    /**
-     * Vector from Atom 2 to Atom 1.
-     */
-    protected static final double v21[] = new double[3];
-    /**
-     * Vector from Atom 3 to Atom 2.
-     */
-    protected static final double v32[] = new double[3];
-    /**
-     * Vector from Atom 3 to Atom 1.
-     */
-    protected static final double v31[] = new double[3];
-    /**
-     * Vector from Atom 2 to Atom 0.
-     */
-    protected static final double v20[] = new double[3];
-    protected static final double t[] = new double[3];
-    protected static final double u[] = new double[3];
-    protected static final double tu[] = new double[3];
-    protected static final double dedu[] = new double[3];
-    protected static final double dedt[] = new double[3];
-    /**
-     * Gradient on atom 0.
-     */
-    protected static final double g0[] = new double[3];
-    /**
-     * Gradient on Atom 1.
-     */
-    protected static final double g1[] = new double[3];
-    /**
-     * Gradient on Atom 2.
-     */
-    protected static final double g2[] = new double[3];
-    /**
-     * Gradient on Atom 3.
-     */
-    protected static final double g3[] = new double[3];
-    /**
-     * Work array.
-     */
-    protected static final double g1a[] = new double[3];
-    /**
-     * Work array.
-     */
-    protected static final double g2a[] = new double[3];
+
 }

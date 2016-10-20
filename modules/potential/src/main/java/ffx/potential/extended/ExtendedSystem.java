@@ -51,8 +51,10 @@ public class ExtendedSystem {
     private final ParticleMeshEwaldQI pme;  // must not be global frame
     private boolean usePME = false;
     private boolean useVDW = true;
+    private double[] esvDeriv;
     // Application-specific variables
     private final double pHconst;
+    private double currentTemperature = 298.15;
 
     public ExtendedSystem() {
         logger.warning("Invoked ExtendedSystem null/temporary constuctor.");
@@ -86,40 +88,52 @@ public class ExtendedSystem {
         }
         Potential potential = mola.getPotentialEnergy();
         if (!(potential instanceof ForceFieldEnergy)) {
-            logger.severe("ExtendedSystem currently supported only for ForceFieldEnergy potentials.");
+            logger.warning("ExtendedSystem currently supported only for ForceFieldEnergy potentials.");
         }
         this.ff = mola.getForceField();
-
+        
+        esvTerm = ff.getBoolean(ForceField.ForceFieldBoolean.ESVTERM, false);
+        phTerm = ff.getBoolean(ForceField.ForceFieldBoolean.PHTERM, false);
+        vdwTerm = ff.getBoolean(ForceField.ForceFieldBoolean.VDWTERM, true);
+        mpoleTerm = ff.getBoolean(ForceField.ForceFieldBoolean.MPOLETERM, false);
+        
+        if (!esvTerm) {
+            logger.severe("Extended system created while !esvTerm.");
+        }
+        
         ForceFieldEnergy ffe = null;
         if (potential instanceof ForceFieldEnergy) {
             ffe = (ForceFieldEnergy) potential;
         } else {
-            logger.severe("Extended system only suppoted by force field potentials.");
+            logger.warning("Extended system only suppoted by force field potentials.");
         }
 
-        this.vdw = ffe.getVdwNode();
-        ParticleMeshEwald pmeNode = ffe.getPmeNode();
-        if (pmeNode instanceof ParticleMeshEwaldQI) {
-            this.pme = (ParticleMeshEwaldQI) pmeNode;
-        } else if (pmeNode instanceof ParticleMeshEwaldCart) {
-            logger.severe("Extended system cannot operate with global-frame ParticleMeshEwald.");
-            this.pme = null;
+        if (!vdwTerm) {
+            vdw = null;
         } else {
-            logger.severe(format("Extended system constructed with null or invalid PME: %s", pmeNode.toString()));
-            this.pme = null;
+            vdw = ffe.getVdwNode();
+            if (vdw == null) {
+                logger.warning("Extended system found null vanderWaals object.");
+            }
+        }
+        
+        if (!mpoleTerm) {
+            pme = null;
+        } else {
+            ParticleMeshEwald pmeNode = ffe.getPmeNode();
+            if (pmeNode instanceof ParticleMeshEwaldQI) {
+                this.pme = (ParticleMeshEwaldQI) pmeNode;
+            } else if (pmeNode instanceof ParticleMeshEwaldCart) {
+                logger.warning("Extended system cannot operate with global-frame ParticleMeshEwald.");
+                this.pme = null;
+            } else {
+                logger.warning(format("Extended system constructed with null or invalid PME: %s", pmeNode.toString()));
+                this.pme = null;
+            }
         }
 
         this.pHconst = pH;
-
-        esvTerm = ff.getBoolean(ForceField.ForceFieldBoolean.ESVTERM, false);
-        phTerm = ff.getBoolean(ForceField.ForceFieldBoolean.PHTERM, false);
-        vdwTerm = ff.getBoolean(ForceField.ForceFieldBoolean.VDWTERM, true);
-        mpoleTerm = ff.getBoolean(ForceField.ForceFieldBoolean.MPOLETERM, true);
-
         esvList = new ArrayList<>();
-        if (!esvTerm) {
-            logger.severe("Extended system created while esvTerm set to false.");
-        }
     }
 
     /**
@@ -129,6 +143,10 @@ public class ExtendedSystem {
      */
     public List<ExtendedVariable> getESVList() {
         return esvList;
+    }
+    
+    public void setTemperature(double temp) {
+        currentTemperature = temp;
     }
 
     /**
@@ -140,7 +158,7 @@ public class ExtendedSystem {
 
     public int num() {
         if (numESVs != esvList.size()) {
-            logger.severe("Programming error: ExtendedSystem.num()");
+            logger.warning("Programming error: ExtendedSystem.num()");
         }
         return numESVs;
     }
@@ -149,12 +167,12 @@ public class ExtendedSystem {
      * Get the zero/unity bias and the pH energy term. PME and vdW not included
      * here as their ESV dependence isn't decomposable.
      */
-    public double nonbonded(double temperature) {
+    public double nonbonded() {
         if (!esvTerm) {
-            logger.severe("Called ExtendedSystem energy while esvTerm was false.");
+            logger.warning("Called ExtendedSystem energy while esvTerm was false.");
         }
         if (esvList == null || esvList.isEmpty()) {
-            logger.severe("Called for extended energy with null/empty esvList.");
+            logger.warning("Called for extended energy with null/empty esvList.");
         }
         double biasEnergySum = 0.0;
         double phEnergySum = 0.0;
@@ -162,10 +180,11 @@ public class ExtendedSystem {
         for (ExtendedVariable esv : esvList) {
             biasEnergySum += esv.getBiasEnergy();
             if (phTerm && esv instanceof TitrationESV) {
-                phEnergySum += ((TitrationESV) esv).getPhEnergy(pHconst, temperature);
+                phEnergySum += ((TitrationESV) esv).getPhEnergy(pHconst, currentTemperature);
             }
         }
 
+        esvLogger.append(format(" [bias: %g, pH: %g] ", biasEnergySum, phEnergySum));
         logger.info(esvLogger.toString());
         esvLogger = new StringBuilder();
 
@@ -176,17 +195,18 @@ public class ExtendedSystem {
      * Update the position of all ESV particles.
      */
     public void propagateESVs(double temperature, double dt, Double currentTimePs) {
+        currentTemperature = temperature;
         double[] dEdLdh = getdEdLdh(false);
         if (esvList != null && !esvList.isEmpty()) {
             for (ExtendedVariable esv : esvList) {
-                double was = esv.getLamedh();
+                double was = esv.getLambda();
                 esv.propagateLamedh(dEdLdh[esv.index], temperature, dt);
                 if (currentTimePs != null) {
                     logger.info(format(" Propagating ESV[%d]: %g --> %g @ temp,psec: %g %g",
-                            esv.index, was, esv.getLamedh(), temperature, currentTimePs));
+                            esv.index, was, esv.getLambda(), temperature, currentTimePs));
                 } else {
                     logger.info(format(" Propagating ESV[%d]: %g --> %g @ temp: %g",
-                            esv.index, was, esv.getLamedh(), temperature));
+                            esv.index, was, esv.getLambda(), temperature));
                 }
             }
             if (usePME) {
@@ -409,37 +429,11 @@ public class ExtendedSystem {
         esvList.add(esv);
         numESVs = esvList.size();
         esvTerm = true;
-
+        esvDeriv = new double[numESVs];
+        
         if (esv instanceof TitrationESV) {
             phTerm = true;
         }
-
-        // Connect to terms which handle Ldh explicity: vdW and PME.
-        if (useVDW && !vdw.hasExtendedSystem()) {
-            vdw.attachExtendedSystem(this);
-        }
-        if (usePME && !pme.hasExtendedSystem()) {
-            pme.attachExtendedSystem(this);
-        }
-        /*  TODO awaiting implementation
-        *******************************************************
-        if (restraintBondTerm && restraintBonds != null) {
-            for (int i = 0; i < restraintBonds.length; i++) {
-                // TODO restraintBonds[i].setLamedh(esvList);
-            }
-        }
-        if (ncsTerm && ncsRestraint != null) {
-            // TODO ncsRestraint.setLamedh(esvList);
-        }
-        if (restrainTerm && !coordRestraints.isEmpty()) {
-            for (CoordRestraint restraint : coordRestraints) {
-                // TODO restraint.setLamedh(esvList);
-            }
-        }
-        if (comTerm && comRestraint != null) {
-            // TODO comRestraint.setLamedh(esvList);
-        }
-         */
 
         logger.info(String.format(" ExtendedSystem acquired ESV: %s\n", esv));
         if (esvLogger == null) {
@@ -462,7 +456,7 @@ public class ExtendedSystem {
         terms.add(biasGrad);
         if (!lambdaBondedTerms) {
             if (useVDW) {
-                vdwGrad = vdw.getdEdLdh();
+                vdw.getdEdLdh(esvDeriv);
                 terms.add(vdwGrad);
             }
             if (usePME) {

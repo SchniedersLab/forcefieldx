@@ -82,7 +82,7 @@ public class ExhaustiveFragmenter implements IFragmenter {
      */
     public ExhaustiveFragmenter(int minFragSize) {
         this.minFragSize = minFragSize;
-        fragMap = new HashMap<String, IAtomContainer>();
+        fragMap = new HashMap<>();
         smilesGenerator = SmilesGenerator.unique().aromatic();
     }
 
@@ -102,19 +102,20 @@ public class ExhaustiveFragmenter implements IFragmenter {
      */
     @Override
     public void generateFragments(IAtomContainer atomContainer) throws CDKException {
+        System.out.println("\nIn generateFragments\n");
         fragMap.clear();
         run(atomContainer);
     }
 
     private List<IAtomContainer> run(IAtomContainer atomContainer) throws CDKException {
 
-        ArrayList<IAtomContainer> fragments = new ArrayList<IAtomContainer>();
+        ArrayList<IAtomContainer> fragments = new ArrayList<>();
 
         if (atomContainer.getBondCount() < 3) {
             return fragments;
         }
         List<IBond> splitableBonds = getSplitableBonds(atomContainer);
-        if (splitableBonds.size() == 0) {
+        if (splitableBonds.isEmpty()) {
             return fragments;
         }
         logger.debug("Got " + splitableBonds.size() + " splittable bonds");
@@ -132,9 +133,9 @@ public class ExhaustiveFragmenter implements IFragmenter {
                 uniqueAtomNames = new String[partContainer.getAtomCount()];
                 //go thru partContainer, get all atoms, record and store atom IDs for later reassignment
                 for (int j = 0; j < partContainer.getAtomCount(); j++) {
-                    //atoms names recorded successfully
+                    //atoms names recorded
                     uniqueAtomNames[j] = partContainer.getAtom(j).getID();
-                    System.out.println("UniqueAtomName: " + uniqueAtomNames[j]);
+                    //System.out.println("UniqueAtomName: " + uniqueAtomNames[j]);
                 }
                 AtomContainerManipulator.clearAtomConfigurations(partContainer);
                 for (IAtom atom : partContainer.atoms()) {
@@ -144,11 +145,11 @@ public class ExhaustiveFragmenter implements IFragmenter {
                 CDKHydrogenAdder.getInstance(partContainer.getBuilder()).addImplicitHydrogens(partContainer);
                 Aromaticity.cdkLegacy().apply(partContainer);
                 tmpSmiles = smilesGenerator.create(partContainer);
-                //re-assign uniqueAtomNames before if stmt
+                //re-assign uniqueAtomNames
                 for (int k = 0; k < partContainer.getAtomCount(); k++) {
                     IAtom test = partContainer.getAtom(k);
                     test.setID(uniqueAtomNames[k]);
-                    System.out.println("Within ExhFrag: " + test.getID());
+                    //System.out.println("Within ExhFrag: " + test.getID());
                 }
                 if (partContainer.getAtomCount() >= minFragSize && !fragMap.containsKey(tmpSmiles)) {
                     fragments.add(partContainer);
@@ -158,17 +159,17 @@ public class ExhaustiveFragmenter implements IFragmenter {
         }
 
         // try and partition the fragments
-        List<IAtomContainer> tmp = new ArrayList<IAtomContainer>(fragments);
+        List<IAtomContainer> tmp = new ArrayList<>(fragments);
         for (IAtomContainer fragment : fragments) {
             if (fragment.getBondCount() < 3 || fragment.getAtomCount() < minFragSize) {
                 continue;
             }
-            if (getSplitableBonds(fragment).size() == 0) {
+            if (getSplitableBonds(fragment).isEmpty()) {
                 continue;
             }
 
             List<IAtomContainer> frags = run(fragment);
-            if (frags.size() == 0) {
+            if (frags.isEmpty()) {
                 continue;
             }
 
@@ -178,7 +179,7 @@ public class ExhaustiveFragmenter implements IFragmenter {
                 uniqueAtomNames2 = new String[frag.getAtomCount()];
                 for (int y = 0; y < frag.getAtomCount(); y++) {
                     uniqueAtomNames2[y] = frag.getAtom(y).getID();
-                    System.out.println("UniqueAtomNames2: " + uniqueAtomNames2[y]);
+                    //System.out.println("UniqueAtomNames2: " + uniqueAtomNames2[y]);
                 }
                 if (frag.getBondCount() < 3) {
                     continue;
@@ -194,7 +195,7 @@ public class ExhaustiveFragmenter implements IFragmenter {
                 for (int z = 0; z < frag.getAtomCount(); z++) {
                     IAtom test = frag.getAtom(z);
                     test.setID(uniqueAtomNames2[z]);
-                    System.out.println("After second reassignment: " + test.getID());
+                    //System.out.println("After second reassignment: " + test.getID());
                 }
                 if (frag.getAtomCount() >= minFragSize && !fragMap.containsKey(tmpSmiles)) {
                     tmp.add(frag);
@@ -202,7 +203,7 @@ public class ExhaustiveFragmenter implements IFragmenter {
                 }
             }
         }
-        fragments = new ArrayList<IAtomContainer>(tmp);
+        fragments = new ArrayList<>(tmp);
         return fragments;
     }
 
@@ -212,7 +213,7 @@ public class ExhaustiveFragmenter implements IFragmenter {
         IRingSet allRings = spanningTree.getAllRings();
 
         // find the splitable bonds
-        ArrayList<IBond> splitableBonds = new ArrayList<IBond>();
+        ArrayList<IBond> splitableBonds = new ArrayList<>();
 
         for (IBond bond : atomContainer.bonds()) {
             boolean isInRing = false;
@@ -246,7 +247,7 @@ public class ExhaustiveFragmenter implements IFragmenter {
      */
     @Override
     public String[] getFragments() {
-        return (new ArrayList<String>(fragMap.keySet())).toArray(new String[0]);
+        return (new ArrayList<>(fragMap.keySet())).toArray(new String[0]);
     }
 
     /**
@@ -256,7 +257,7 @@ public class ExhaustiveFragmenter implements IFragmenter {
      */
     @Override
     public IAtomContainer[] getFragmentsAsContainers() {
-        return (new ArrayList<IAtomContainer>(fragMap.values())).toArray(new IAtomContainer[0]);
+        return (new ArrayList<>(fragMap.values())).toArray(new IAtomContainer[0]);
     }
 
 }
