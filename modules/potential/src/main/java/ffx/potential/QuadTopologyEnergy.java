@@ -45,7 +45,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
-import java.util.stream.IntStream;
 
 /**
  * Implements an error-canceling quad topology, where two large dual-topology 
@@ -103,8 +102,7 @@ public class QuadTopologyEnergy implements Potential, LambdaInterface {
     private double dEdL, dEdL_A, dEdL_B;
     private double d2EdL2, d2EdL2_A, d2EdL2_B;
     /**
-     * Scaling and de-scaling will be applied inside DualTopologyEnergy. This
-     * array will just be a concatenation of the two scaling arrays.
+     * Scaling and de-scaling will be applied inside DualTopologyEnergy.
      */
     private double[] scaling;
     private VARIABLE_TYPE[] types = null;
