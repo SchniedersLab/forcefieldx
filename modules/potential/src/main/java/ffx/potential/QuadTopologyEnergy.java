@@ -39,6 +39,7 @@ package ffx.potential;
 
 import ffx.numerics.Potential;
 import ffx.potential.bonded.LambdaInterface;
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 /**
@@ -57,9 +58,23 @@ public class QuadTopologyEnergy implements Potential, LambdaInterface {
     private final DualTopologyEnergy dualTopB;
     private final LambdaInterface linterA;
     private final LambdaInterface linterB;
+    
     private final int nVarA;
     private final int nVarB;
+    private final int nShared;
+    private final int uniqueA;
+    private final int uniqueB;
     private final int nVarTot;
+    
+    /**
+     * Following arrays keep track of which index in the child DualTopology is 
+     * linked to which index in the QuadTopology variable array.
+     */
+    private final int[] indexAToGlobal;
+    private final int[] indexBToGlobal;
+    private final int[] indexGlobalToA;
+    private final int[] indexGlobalToB;
+    
     private final double[] mass;
     private final double[] xA;
     private final double[] xB;
@@ -89,6 +104,28 @@ public class QuadTopologyEnergy implements Potential, LambdaInterface {
     private double[] scaling;
     private VARIABLE_TYPE[] types = null;
     
+     /**
+     * General structure: first layer will be the "A/B" layer, consisting of the
+     * two dual topologies. The second layer will be the "1/2" layer, consisting
+     * of the assemblies/ForceFieldEnergies associated with each dual topology.
+     * Arrays will be addressed as [A/B=0/1][1/2=0/1].
+     * 
+     * For example, if running a dual-force-field calculation, A might be the
+     * original molecule, going from AMOEBA to a fixed-charge force field, while
+     * B is a modified molecule going from fixed-charge to AMOEBA. Within those,
+     * A1 would be AMOEBA-original, A2 would be AMBER-original, B1 would be 
+     * AMBER-modified, B2 would be AMOEBA-modified.
+     * 
+     * This constructor assumes there are no unique atoms in either topology, 
+     * and pins everything.
+     * 
+     * @param dualTopologyA A DualTopologyEnergy
+     * @param dualTopologyB A DualTopologyEnergy
+     */      
+    public QuadTopologyEnergy(DualTopologyEnergy dualTopologyA, DualTopologyEnergy dualTopologyB) {
+        this(dualTopologyA, dualTopologyB, null, null);
+    }
+    
     /**
      * General structure: first layer will be the "A/B" layer, consisting of the
      * two dual topologies. The second layer will be the "1/2" layer, consisting
@@ -100,42 +137,235 @@ public class QuadTopologyEnergy implements Potential, LambdaInterface {
      * B is a modified molecule going from fixed-charge to AMOEBA. Within those,
      * A1 would be AMOEBA-original, A2 would be AMBER-original, B1 would be 
      * AMBER-modified, B2 would be AMOEBA-modified.
+     * 
      * @param dualTopologyA A DualTopologyEnergy
      * @param dualTopologyB A DualTopologyEnergy
-     */    
-    public QuadTopologyEnergy(DualTopologyEnergy dualTopologyA, DualTopologyEnergy dualTopologyB) {
+     * @param uniquesA Variables unique to A
+     * @param uniquesB Variables unique to B
+     */        
+    public QuadTopologyEnergy(DualTopologyEnergy dualTopologyA, DualTopologyEnergy dualTopologyB, int[] uniquesA, int[] uniquesB) {
         this.dualTopA = dualTopologyA;
         this.dualTopB = dualTopologyB;
+        dualTopB.reloadCommonMasses(true);
         linterA = (LambdaInterface) dualTopologyA;
         linterB = (LambdaInterface) dualTopologyB;
         nVarA = dualTopA.getNumberOfVariables();
         nVarB = dualTopB.getNumberOfVariables();
-        nVarTot = nVarA + nVarB;
-        mass = new double[nVarTot];
-        System.arraycopy(dualTopA.getMass(), 0, mass, 0, nVarA);
-        System.arraycopy(dualTopB.getMass(), 0, mass, nVarA, nVarB);
+        
+        uniqueA = (uniquesA == null) ? 0 : uniquesA.length;
+        uniqueB = (uniquesB == null) ? 0 : uniquesB.length;
+        nShared = nVarA - uniqueA;
+        assert (nShared == nVarB - uniqueB);
+        nVarTot = nShared + uniqueA + uniqueB;
+        
+        indexAToGlobal = new int[nVarA];
+        indexBToGlobal = new int[nVarB];
+        indexGlobalToA = new int[nVarTot];
+        indexGlobalToB = new int[nVarTot];
+        // -1 indicates this index in the global array does not point to one in 
+        // the dual topology.
+        Arrays.fill(indexGlobalToA, -1);
+        Arrays.fill(indexGlobalToB, -1);
+        
+        if (uniquesA != null) {
+            int commonIndex = 0;
+            int uniqueIndex = 0;
+            for (int i = 0; i < nVarA; i++) {
+                if (uniqueIndex < uniqueA && i == uniquesA[uniqueIndex]) {
+                    int destIndex = nShared + uniqueIndex;
+                    indexAToGlobal[i] = destIndex;
+                    indexGlobalToA[destIndex] = i;
+                    logger.info(String.format("Unique A: i %d destIndex %d uniqueIndex %d", i, destIndex, uniqueIndex));
+                    ++uniqueIndex;
+                } else {
+                    indexAToGlobal[i] = commonIndex;
+                    indexGlobalToA[commonIndex++] = i;
+                    logger.info(String.format("Common A: i %d commonIndex %d", i, commonIndex-1));
+                }
+            }
+        } else {
+            for (int i = 0; i < nVarA; i++) {
+                indexAToGlobal[i] = i;
+                indexGlobalToA[i] = i;
+            }
+            /*IntStream.range(0, nVarA).parallel().forEach((i) -> { 
+                indexAToGlobal[i] = i;
+                indexGlobalToA[i] = i; 
+            });*/
+        }
+        
+        if (uniquesB != null) {
+            int commonIndex = 0;
+            int uniqueIndex = 0;
+            for (int i = 0; i < nVarB; i++) {
+                if (uniqueIndex < uniqueB && i == uniquesB[uniqueIndex]) {
+                    int destIndex = nVarA + uniqueIndex;
+                    indexBToGlobal[i] = destIndex;
+                    indexGlobalToB[destIndex] = i;
+                    ++uniqueIndex;
+                } else {
+                    indexBToGlobal[i] = commonIndex;
+                    indexGlobalToB[commonIndex++] = i;
+                }
+            }
+        } else {
+            System.out.println(String.format(" Lengths: Total: %5d Shared: %5d "
+                    + "Total A: %5d Unique A: %5d Total B: %5d "
+                    + "Unique B: %5d", nVarTot, nShared, nVarA, uniqueA, nVarB, uniqueB));
+            System.out.println(String.format(" Arrays:  GlobalToA: %5d "
+                    + "AToGlobal: %5d GlobalToB: %5d BToGlobal: %5d", 
+                    indexGlobalToA.length, indexAToGlobal.length, indexGlobalToB.length, indexBToGlobal.length));
+            for (int i = 0; i < nVarB; i++) {
+                indexBToGlobal[i] = i;
+                indexGlobalToB[i] = i;
+            }
+            /*IntStream.range(0, nVarB).parallel().forEach((i) -> {
+                indexBToGlobal[i] = i;
+                indexGlobalToB[i] = i;
+            });*/
+        }
+        
         xA = new double[nVarA];
         xB = new double[nVarB];
         gA = new double[nVarA];
         gB = new double[nVarB];
         tempA = new double[nVarA];
         tempB = new double[nVarB];
-        
+        mass = new double[nVarTot];
+        doublesFrom(mass, dualTopA.getMass(), dualTopB.getMass());
+    }
+    
+    /**
+     * Copies from an object array of length nVarTot to two object arrays of 
+     * length nVarA and nVarB.
+     * 
+     * @param <T> Type of object
+     * @param from Copy from
+     * @param toA Copy shared and A-specific to
+     * @param toB Copy shared and B-specific to
+     */
+    private <T> void copyTo(T[] from, T[] toA, T[] toB) {
+        if (toA == null) {
+            toA = Arrays.copyOf(from, nVarA);
+        }
+        if (toB == null) {
+            toB = Arrays.copyOf(from, nVarB);
+        }
+        for (int i = 0; i < nVarTot; i++) {
+            int index = indexGlobalToA[i];
+            if (index >= 0) {
+                toA[index] = from[i];
+            }
+            index = indexGlobalToB[i];
+            if (index >= 0) {
+                toB[index] = from[i];
+            }
+        }
+    }
+
+    /**
+     * Copies from object arrays of length nVarA and nVarB to an object array of
+     * length nVarTot; asserts objects in common indices are equal. Should not
+     * be used when the result of the common indices should be f(A,B)
+     * 
+     * @param <T> Type of object
+     * @param to Copy to
+     * @param fromA Copy shared and A-specific from
+     * @param fromB Copy B-specific from
+     */
+    private <T> void copyFrom(T[] to, T[] fromA, T[] fromB) {
+        if (to == null) {
+            to = Arrays.copyOf(fromA, nVarTot);
+        }
+        for (int i = 0; i < nVarA; i++) {
+            int index = indexAToGlobal[i];
+            to[index] = fromA[i];
+        }
+        for (int i = 0; i < nVarB; i++) {
+            int index = indexBToGlobal[i];
+            // Assert either a unique variable, or equals what was added from A.
+            assert (index >= nShared || to[index].equals(fromB[i]));
+            to[index] = fromB[i];
+        }
+    }
+    
+    /**
+     * Copies from an double array of length nVarTot to two double arrays of 
+     * length nVarA and nVarB.
+     * 
+     * @param <T> Type of object
+     * @param from Copy from
+     * @param toA Copy shared and A-specific to
+     * @param toB Copy shared and B-specific to
+     */
+    private void doublesTo(double[] from, double[] toA, double[] toB) {
+        toA = (toA == null) ? new double[nVarA] : toA;
+        toB = (toB == null) ? new double[nVarB] : toB;
+        for (int i = 0; i < nVarTot; i++) {
+            int index = indexGlobalToA[i];
+            if (index >= 0) {
+                toA[index] = from[i];
+            }
+            index = indexGlobalToB[i];
+            if (index >= 0) {
+                toB[index] = from[i];
+            }
+        }
+    }
+
+    /**
+     * Copies from double arrays of length nVarA and nVarB to an object array of
+     * length nVarTot; asserts common indices are equal. Should not be used when 
+     * the result of the common indices should be f(A,B)
+     * 
+     * @param to Copy to
+     * @param fromA Copy shared and A-specific from
+     * @param fromB Copy B-specific from
+     */
+    private void doublesFrom(double[] to, double[] fromA, double[] fromB) {
+        to = (to == null) ? new double[nVarTot] : to;
+        for (int i = 0; i < nVarA; i++) {
+            to[indexAToGlobal[i]] = fromA[i];
+        }
+        for (int i = 0; i < nVarB; i++) {
+            int index = indexBToGlobal[i];
+            // Assert this is either a unique from B or it's equal to what came from A.
+            assert (index >= nShared || to[index] == fromB[i]);
+            to[index] = fromB[i];
+        }
+    }
+
+    /**
+     * Assigns common indices of to to be sum of fromA and fromB, assigns unique
+     * elements to the non-unique indices thereof.
+     * 
+     * @param to Sum to
+     * @param fromA Add shared from and copy A-specific from.
+     * @param fromB Add shared from and copy B-specific from.
+     */
+    private void addDoublesFrom(double[] to, double[] fromA, double[] fromB) {
+        to = (to == null) ? new double[nVarTot] : to;
+        Arrays.fill(to, 0.0);
+        for (int i = 0; i < nVarA; i++) {
+            to[indexAToGlobal[i]] = fromA[i];
+        }
+        for (int i = 0; i < nVarB; i++) {
+            to[indexBToGlobal[i]] += fromB[i];
+        }
     }
 
     @Override
     public double energy(double[] x) {
-        splitCoordinates(x);
+        doublesTo(x, xA, xB);
         energyA = dualTopA.energy(xA);
         energyB = dualTopB.energy(xB);
         totalEnergy = energyA + energyB;
-        unsplitCoordinates(x);
         return totalEnergy;
     }
 
     @Override
     public double energyAndGradient(double[] x, double[] g) {
-        splitCoordinates(x);
+        doublesTo(x, xA, xB);
         
         energyA = dualTopA.energyAndGradient(xA, gA);
         dEdL_A = linterA.getdEdL();
@@ -145,7 +375,9 @@ public class QuadTopologyEnergy implements Potential, LambdaInterface {
         dEdL_B = linterB.getdEdL();
         d2EdL2_B = linterB.getd2EdL2();
         
-        unsplitGradient(x, g);
+        //doublesFrom(g, gA, gB);
+        addDoublesFrom(g, gA, gB);
+        
         dEdL = dEdL_A + dEdL_B;
         d2EdL2 = d2EdL2_A + d2EdL2_B;
         totalEnergy = energyA + energyB;
@@ -157,11 +389,9 @@ public class QuadTopologyEnergy implements Potential, LambdaInterface {
         this.scaling = scaling;
         if (scaling != null) {
             double[] scaleA = new double[nVarA];
-            System.arraycopy(scaling, 0, scaleA, 0, nVarA);
-            dualTopA.setScaling(scaleA);
-
             double[] scaleB = new double[nVarB];
-            System.arraycopy(scaling, nVarA, scaleB, 0, nVarB);
+            doublesTo(scaling, scaleA, scaleB);
+            dualTopA.setScaling(scaleA);
             dualTopB.setScaling(scaleB);
         }
     }
@@ -171,47 +401,11 @@ public class QuadTopologyEnergy implements Potential, LambdaInterface {
         return scaling;
     }
 
-    /**
-     * Reduce xA and xB into x.
-     * @param x 
-     */
-    private void unsplitCoordinates(double x[]) {
-        System.arraycopy(xA, 0, x, 0, nVarA);
-        System.arraycopy(xB, 0, x, nVarA, nVarB);
-    }
-
-    /**
-     * Reduce xA and xB into x, gA and gB into g.
-     * @param x
-     * @param g 
-     */
-    private void unsplitGradient(double x[], double g[]) {
-        unsplitCoordinates(x);
-        if (g == null) {
-            g = new double[nVarTot];
-        }
-        System.arraycopy(gA, 0, g, 0, nVarA);
-        System.arraycopy(gB, 0, g, nVarA, nVarB);
-    }
-
-    /**
-     * Split x into xA and xB.
-     * @param x 
-     */
-    private void splitCoordinates(double x[]) {
-        System.arraycopy(x, 0, xA, 0, nVarA);
-        System.arraycopy(x, nVarA, xB, 0, nVarB);
-    }
-
     @Override
     public double[] getCoordinates(double[] x) {
-        if (x == null) {
-            x = new double[nVarTot];
-        }
         dualTopA.getCoordinates(xA);
         dualTopB.getCoordinates(xB);
-        System.arraycopy(xA, 0, x, 0, nVarA);
-        System.arraycopy(xB, 0, x, nVarA, nVarB);
+        doublesFrom(x, xA, xB);
         return x;
     }
 
@@ -237,8 +431,7 @@ public class QuadTopologyEnergy implements Potential, LambdaInterface {
             VARIABLE_TYPE[] typesB = dualTopB.getVariableTypes();
             if (typesA != null && typesB != null) {
                 types = new VARIABLE_TYPE[nVarTot];
-                System.arraycopy(dualTopA.getVariableTypes(), 0, types, 0, nVarA);
-                System.arraycopy(dualTopB.getVariableTypes(), 0, types, nVarA, nVarB);
+                copyFrom(types, dualTopA.getVariableTypes(), dualTopB.getVariableTypes());
             } else {
                 logger.fine(" Variable types array remaining null due to null "
                         + "variable types in either A or B dual topology");
@@ -249,70 +442,48 @@ public class QuadTopologyEnergy implements Potential, LambdaInterface {
 
     @Override
     public void setVelocity(double[] velocity) {
-        double[] velSlice = new double[nVarA];
-        System.arraycopy(velocity, 0, velSlice, 0, nVarA);
-        dualTopA.setVelocity(velSlice);
-        
-        velSlice = new double[nVarB];
-        System.arraycopy(velocity, nVarA, velSlice, 0, nVarB);
-        dualTopB.setVelocity(velSlice);
+        doublesTo(velocity, tempA, tempB);
+        dualTopA.setVelocity(tempA);
+        dualTopB.setVelocity(tempB);
     }
 
     @Override
     public void setAcceleration(double[] acceleration) {
-        double[] accSlice = new double[nVarA];
-        System.arraycopy(acceleration, 0, accSlice, 0, nVarA);
-        dualTopA.setAcceleration(accSlice);
-        
-        accSlice = new double[nVarB];
-        System.arraycopy(acceleration, nVarA, accSlice, 0, nVarB);
-        dualTopB.setAcceleration(accSlice);
+        doublesTo(acceleration, tempA, tempB);
+        dualTopA.setVelocity(tempA);
+        dualTopB.setVelocity(tempB);
     }
 
     @Override
     public void setPreviousAcceleration(double[] previousAcceleration) {
-        double[] priorAccSlice = new double[nVarA];
-        System.arraycopy(previousAcceleration, 0, priorAccSlice, 0, nVarA);
-        dualTopA.setPreviousAcceleration(priorAccSlice);
-        
-        priorAccSlice = new double[nVarB];
-        System.arraycopy(previousAcceleration, nVarA, priorAccSlice, 0, nVarB);
-        dualTopB.setPreviousAcceleration(priorAccSlice);
+        doublesTo(previousAcceleration, tempA, tempB);
+        dualTopA.setPreviousAcceleration(tempA);
+        dualTopB.setPreviousAcceleration(tempB);
     }
 
     @Override
     public double[] getVelocity(double[] velocity) {
-        if (velocity == null) {
-            velocity = new double[nVarTot];
-        }
-        System.arraycopy(dualTopA.getVelocity(tempA), 0, velocity, 0, nVarA);
-        System.arraycopy(dualTopB.getVelocity(tempB), 0, velocity, nVarA, nVarB);
+        doublesFrom(velocity, dualTopA.getVelocity(tempA), dualTopB.getVelocity(tempB));
         return velocity;
     }
 
     @Override
     public double[] getAcceleration(double[] acceleration) {
-        if (acceleration == null) {
-            acceleration = new double[nVarTot];
-        }
-        System.arraycopy(dualTopA.getAcceleration(tempA), 0, acceleration, 0, nVarA);
-        System.arraycopy(dualTopB.getAcceleration(tempB), 0, acceleration, nVarA, nVarB);
+        doublesFrom(acceleration, dualTopA.getAcceleration(tempA), dualTopB.getAcceleration(tempB));
         return acceleration;
     }
 
     @Override
     public double[] getPreviousAcceleration(double[] previousAcceleration) {
-        if (previousAcceleration == null) {
-            previousAcceleration = new double[nVarTot];
-        }
-        System.arraycopy(dualTopA.getPreviousAcceleration(tempA), 0, previousAcceleration, 0, nVarA);
-        System.arraycopy(dualTopB.getPreviousAcceleration(tempB), 0, previousAcceleration, nVarA, nVarB);
+        doublesFrom(previousAcceleration, dualTopA.getPreviousAcceleration(tempA), dualTopB.getPreviousAcceleration(tempB));
         return previousAcceleration;
     }
 
     @Override
     public void setEnergyTermState(STATE state) {
         this.state = state;
+        dualTopA.setEnergyTermState(state);
+        dualTopB.setEnergyTermState(state);
     }
 
     @Override
@@ -346,10 +517,6 @@ public class QuadTopologyEnergy implements Potential, LambdaInterface {
     public void getdEdXdL(double[] g) {
         dualTopA.getdEdXdL(tempA);
         dualTopB.getdEdXdL(tempB);
-        if (g == null) {
-            g = new double[nVarTot];
-        }
-        System.arraycopy(tempA, 0, g, 0, nVarA);
-        System.arraycopy(tempB, 0, g, nVarA, nVarB);
+        addDoublesFrom(g, tempA, tempB);
     }
 }

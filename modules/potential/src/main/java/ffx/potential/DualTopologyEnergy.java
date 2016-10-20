@@ -918,6 +918,40 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
     public double[] getMass() {
         return mass;
     }
+    
+    /**
+     * Reload the common atomic masses. Intended for quad-topology dual force 
+     * field corrections, where common atoms may have slightly different masses;
+     * this was found to be the case between AMOEBA 2013 and AMBER99SB carbons.
+     * 
+     * @param secondTopology Load from second topology
+     */
+    public void reloadCommonMasses(boolean secondTopology) {
+        int commonIndex = 0;
+        if (secondTopology) {
+            for (int i = 0; i < nActive2; i++) {
+                Atom a = activeAtoms2[i];
+                double m = a.getMass();
+                if (!a.applyLambda()) {
+                    mass[commonIndex++] = m;
+                    mass[commonIndex++] = m;
+                    mass[commonIndex++] = m;
+                }
+
+            }
+        } else {
+            for (int i = 0; i < nActive1; i++) {
+                Atom a = activeAtoms1[i];
+                double m = a.getMass();
+                if (!a.applyLambda()) {
+                    mass[commonIndex++] = m;
+                    mass[commonIndex++] = m;
+                    mass[commonIndex++] = m;
+                }
+
+            }
+        }
+    }
 
     @Override
     public double getTotalEnergy() {
@@ -927,6 +961,14 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
     @Override
     public int getNumberOfVariables() {
         return nVariables;
+    }
+    
+    /**
+     * Returns the number of shared variables (3* number of shared atoms).
+     * @return An int
+     */
+    public int getNumSharedVariables() {
+        return 3*nShared;
     }
 
     @Override
