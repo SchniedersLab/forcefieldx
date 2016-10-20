@@ -39,8 +39,13 @@ package ffx.potential;
 
 import ffx.numerics.Potential;
 import ffx.potential.bonded.LambdaInterface;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.IntStream;
 
 /**
  * Implements an error-canceling quad topology, where two large dual-topology 
@@ -140,10 +145,10 @@ public class QuadTopologyEnergy implements Potential, LambdaInterface {
      * 
      * @param dualTopologyA A DualTopologyEnergy
      * @param dualTopologyB A DualTopologyEnergy
-     * @param uniquesA Variables unique to A
-     * @param uniquesB Variables unique to B
+     * @param uniqueAList Variables unique to A
+     * @param uniqueBList Variables unique to B
      */        
-    public QuadTopologyEnergy(DualTopologyEnergy dualTopologyA, DualTopologyEnergy dualTopologyB, int[] uniquesA, int[] uniquesB) {
+    public QuadTopologyEnergy(DualTopologyEnergy dualTopologyA, DualTopologyEnergy dualTopologyB, List<Integer> uniqueAList, List<Integer> uniqueBList) {
         this.dualTopA = dualTopologyA;
         this.dualTopB = dualTopologyB;
         dualTopB.reloadCommonMasses(true);
@@ -152,8 +157,54 @@ public class QuadTopologyEnergy implements Potential, LambdaInterface {
         nVarA = dualTopA.getNumberOfVariables();
         nVarB = dualTopB.getNumberOfVariables();
         
-        uniqueA = (uniquesA == null) ? 0 : uniquesA.length;
-        uniqueB = (uniquesB == null) ? 0 : uniquesB.length;
+        /**
+         * Following logic is to A, deal with Integer to int array
+         * conversion issues, and B, ensure the set of unique variables is a 
+         * unique set. Unique elements may come from either the provided list, or
+         * from the non-shared elements of the dual topologies.
+         */
+        Set<Integer> uniqueASet = new LinkedHashSet<>();
+        if (uniqueAList != null) {
+            uniqueASet.addAll(uniqueAList);
+        }
+        int nCommon = dualTopA.getNumSharedVariables();
+        for (int i = nCommon; i < nVarA; i++) {
+            uniqueASet.add(i);
+        }
+        uniqueAList = new ArrayList(uniqueASet);
+        uniqueA = uniqueAList.size();
+        int[] uniquesA = new int[uniqueA];
+        for (int i = 0; i < uniqueA; i++) {
+            uniquesA[i] = uniqueAList.get(i);
+        }
+        /*IntStream.range(0, uniqueA).parallel().forEach((i) -> {
+            uniquesA[i] = uniqueAList.get(i);
+        });*/
+        
+        /**
+         * Following logic is to A, deal with Integer to int array
+         * conversion issues, and B, ensure the set of unique variables is a 
+         * unique set. Unique elements may come from either the provided list, or
+         * from the non-shared elements of the dual topologies.
+         */
+        Set<Integer> uniqueBSet = new LinkedHashSet<>();
+        if (uniqueBList != null) {
+            uniqueBSet.addAll(uniqueBList);
+        }
+        nCommon = dualTopB.getNumSharedVariables();
+        for (int i = nCommon; i < nVarB; i++) {
+            uniqueBSet.add(i);
+        }
+        uniqueBList = new ArrayList(uniqueBSet);
+        uniqueB = uniqueBList.size();
+        int[] uniquesB = new int[uniqueB];
+        for (int i = 0; i < uniqueB; i++) {
+            uniquesB[i] = uniqueBList.get(i);
+        }
+        /*IntStream.range(0, uniqueA).parallel().forEach((i) -> {
+            uniquesA[i] = uniqueAList.get(i);
+        });*/
+        
         nShared = nVarA - uniqueA;
         assert (nShared == nVarB - uniqueB);
         nVarTot = nShared + uniqueA + uniqueB;
@@ -167,7 +218,7 @@ public class QuadTopologyEnergy implements Potential, LambdaInterface {
         Arrays.fill(indexGlobalToA, -1);
         Arrays.fill(indexGlobalToB, -1);
         
-        if (uniquesA != null) {
+        if (uniqueA > 0) {
             int commonIndex = 0;
             int uniqueIndex = 0;
             for (int i = 0; i < nVarA; i++) {
@@ -175,12 +226,12 @@ public class QuadTopologyEnergy implements Potential, LambdaInterface {
                     int destIndex = nShared + uniqueIndex;
                     indexAToGlobal[i] = destIndex;
                     indexGlobalToA[destIndex] = i;
-                    logger.info(String.format("Unique A: i %d destIndex %d uniqueIndex %d", i, destIndex, uniqueIndex));
+                    //logger.info(String.format("Unique A: i %d destIndex %d uniqueIndex %d", i, destIndex, uniqueIndex));
                     ++uniqueIndex;
                 } else {
                     indexAToGlobal[i] = commonIndex;
                     indexGlobalToA[commonIndex++] = i;
-                    logger.info(String.format("Common A: i %d commonIndex %d", i, commonIndex-1));
+                    //logger.info(String.format("Common A: i %d commonIndex %d", i, commonIndex-1));
                 }
             }
         } else {
@@ -194,7 +245,7 @@ public class QuadTopologyEnergy implements Potential, LambdaInterface {
             });*/
         }
         
-        if (uniquesB != null) {
+        if (uniquesB.length > 0) {
             int commonIndex = 0;
             int uniqueIndex = 0;
             for (int i = 0; i < nVarB; i++) {

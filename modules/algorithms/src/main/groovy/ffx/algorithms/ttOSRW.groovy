@@ -750,8 +750,8 @@ if (arguments.size() == 1) {
     DualTopologyEnergy dtA = new DualTopologyEnergy(topologies[0], topologies[1]);
     // Intentionally reversed order.
     DualTopologyEnergy dtB = new DualTopologyEnergy(topologies[3], topologies[2]);
-    int[] uniqueA = null;
-    int[] uniqueB = null;
+    List<Integer> uniqueA = new ArrayList<>();
+    List<Integer> uniqueB = new ArrayList<>();
     
     if (options.uaA) {
         rangesA = options.uaA.tokenize(".");
@@ -789,11 +789,7 @@ if (arguments.size() == 1) {
             }
         }
         if (raAdj) {
-            uniqueA = new int[raAdj.size()];
-            int i = 0;
-            for (Integer val in raAdj) {
-                uniqueA[i++] = val;
-            }
+            uniqueA.addAll(raAdj);
         }
     }
     if (options.uaB) {
@@ -832,11 +828,7 @@ if (arguments.size() == 1) {
             }
         }
         if (rbAdj) {
-            uniqueB = new int[rbAdj.size()];
-            int i = 0;
-            for (Integer val in rbAdj) {
-                uniqueB[i++] = val;
-            }
+            uniqueB.addAll(rbAdj);
         }
     }
     
