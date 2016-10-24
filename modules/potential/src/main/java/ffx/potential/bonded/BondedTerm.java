@@ -72,6 +72,7 @@ public abstract class BondedTerm extends MSNode {
     public Bond bonds[]; // Bonds that are used to form this term
     protected double value; // Value of the term
     protected double energy; // Energy of the term
+    protected double esvLambda = 1.0; // Lambda value of ESV, if present
 
     /**
      * Default Constructor
@@ -446,4 +447,8 @@ public abstract class BondedTerm extends MSNode {
      */
     @Override
     public abstract void update();
+    
+    public void setEsvLambda(double esvLambda) {
+        this.esvLambda = esvLambda;
+    }
 }

@@ -387,12 +387,12 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
             if (!gradient && !lambdaTerm) {
                 energy = units * bcuint(x1l, x1u, y1l, y1u, t1, t2, e, dx, dy, dxy);
                 dEdL = energy;
-                energy = lambda * energy;
+                energy = lambda * energy * esvLambda;
             } else {
                 double ansy[] = new double[2];
                 energy = units * bcuint1(x1l, x1u, y1l, y1u, t1, t2, e, dx, dy, dxy, ansy);
                 dEdL = energy;
-                energy = lambda * energy;
+                energy = lambda * energy * esvLambda;
                 double dedang1 = sign * units * toDegrees(ansy[0]);
                 double dedang2 = sign * units * toDegrees(ansy[1]);
                 /**

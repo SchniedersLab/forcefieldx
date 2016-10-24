@@ -351,7 +351,7 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
 
         energy = 0.0;
         value = 0.0;
-        double prefactor = units * rigidScale * angleType.forceConstant;
+        double prefactor = units * rigidScale * angleType.forceConstant * esvLambda;
 
         atoms[0].getXYZ(a0);
         atoms[1].getXYZ(a1);

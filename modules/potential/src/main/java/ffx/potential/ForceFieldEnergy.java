@@ -225,7 +225,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private double ncsEnergy;
     private double restrainEnergy;
     private double comRestraintEnergy;
-    private double esvEnergy;
+    private double esvBias;
     private double totalEnergy;
     private long bondTime, angleTime, stretchBendTime, ureyBradleyTime;
     private long outOfPlaneBendTime, torsionTime, piOrbitalTorsionTime, improperTorsionTime;
@@ -730,7 +730,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         if (particleMeshEwald != null && particleMeshEwald instanceof ParticleMeshEwaldQI) {
             ((ParticleMeshEwaldQI) particleMeshEwald).attachExtendedSystem(system);
         } else {
-            logger.warning("Couldn't attach extended system to PME.");
+            if (multipoleTerm) {
+                logger.warning("Couldn't attach extended system to PME.");
+            }
         }
         esvLogger = new StringBuilder();
     }
@@ -1157,7 +1159,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             relativeSolvationEnergy = 0.0;
             nRelativeSolvations = 0;
 
-            esvEnergy = 0.0;
+            esvBias = 0.0;
 
             // Zero out the total potential energy.
             totalEnergy = 0.0;
@@ -1268,14 +1270,12 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     outOfPlaneBends, torsions, piOrbitalTorsions, torsionTorsions,
                     improperTorsions, restraintBonds
                 };
-                // Portion that should be *subtracted* from bondEnergy due to ESVs.
-                final double esvBondedEnergy = extendedSystem.bonded(termFlags, termArrays, gradient, lambdaBondedTerms);
-                // Energy due to eg. pH and zero/unity bias.
-                final double esvNonbondEnergy = extendedSystem.nonbonded();
-                esvEnergy = esvNonbondEnergy - esvBondedEnergy;
+                // Bonded ESV energy is included at the term level.
+                // Nonbonded energy due to pH and zero/unity bias:
+                esvBias = extendedSystem.biases();
 
-                esvLogger.append(format("  Total ESV Energy (bonded,nonbond,PME+vdW,sum):  %g  %g  %s  %g\n",
-                        esvBondedEnergy, esvNonbondEnergy, "no_decomp", esvBondedEnergy + esvNonbondEnergy));
+//                esvLogger.append(format("  Total ESV Energy (bonded,nonbond,PME+vdW,sum):  %g  %g  %s  %g\n",
+//                        esvBondedEnergy, esvNonbondEnergy, "no_decomp", esvBondedEnergy + esvNonbondEnergy));
                 logger.info(esvLogger.toString());
                 esvLogger = new StringBuilder();
             }
@@ -1286,11 +1286,11 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     + stretchBendEnergy + ureyBradleyEnergy + outOfPlaneBendEnergy
                     + torsionEnergy + piOrbitalTorsionEnergy + improperTorsionEnergy
                     + torsionTorsionEnergy + ncsEnergy + restrainEnergy;
-            if (esvTerm) {
-                totalBondedEnergy += esvEnergy;
-            }
             totalNonBondedEnergy = vanDerWaalsEnergy + totalElectrostaticEnergy + relativeSolvationEnergy;
             totalEnergy = totalBondedEnergy + totalNonBondedEnergy + solvationEnergy;
+            if (esvTerm) {
+                totalEnergy += esvBias;
+            }
         } catch (EnergyException ex) {
             if (printOnFailure) {
                 String timeString = LocalDateTime.now().format(DateTimeFormatter.
@@ -1874,15 +1874,10 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     a.getXYZGradient(grad);
                     sb.append("   Grad:  " + grad[0] + ", " + grad[1] + ", " + grad[2] + "\n");
                     sb.append("   Mass:  " + a.getMass() + "\n");
-                    if (atoms[i].applyLamedh()) {
-                        for (ExtendedVariable esv : extendedSystem.getESVList()) {
-                            if (esv.containsAtom(atoms[i])) {
-                                sb.append("   ESV:   " + "idx " + esv.index + ", ldh " + esv.getLambda() + "\n");
-                            }
-                        }
+                    if (atoms[i].getESV() != null) {
+                        sb.append("   ESV:   " + "idx " + atoms[i].getESV().index + ", ldh " + atoms[i].getESV().getLambda() + "\n");
                     }
-                } catch (Exception e) {
-                }
+                } catch (Exception e) {}
                 logger.info(sb.toString());
             }
         }
@@ -2392,7 +2387,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     public double getEsvEnergy() {
-        return esvEnergy;
+        return esvBias;
     }
 
     public ExtendedSystem getExtendedSystem() {

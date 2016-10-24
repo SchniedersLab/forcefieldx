@@ -59,8 +59,6 @@ public final class TitrationESV extends ExtendedVariable {
         residueZero.getTerms().getChildList()
                 .parallelStream().filter(node -> node instanceof ROLS)
                 .forEachOrdered(node -> rolsZero.add((ROLS) node));
-        setAtoms();
-        describe();
     }
     
     public TitrationESV(MultiResidue titrating, double temperature, double dt) {
@@ -68,7 +66,7 @@ public final class TitrationESV extends ExtendedVariable {
     }
     
     @Override
-    protected void setAtoms() {
+    protected void finalize() {
         atomsOne = new ArrayList<>();
         atomsZero = new ArrayList<>();
         List<Atom> backboneAtoms = new ArrayList<>();
@@ -79,7 +77,8 @@ public final class TitrationESV extends ExtendedVariable {
         residueZero.getAtomList().parallelStream().filter(a -> !backboneAtoms.contains(a)).forEachOrdered(atomsZero::add);
         atoms.addAll(atomsOne);
         atoms.addAll(atomsZero);
-        atoms.parallelStream().forEach(a -> a.setApplyLamedh(true));
+        atoms.parallelStream().forEach(a -> a.setESV(this));
+        describe();
     }
     
 //    /**
@@ -110,11 +109,6 @@ public final class TitrationESV extends ExtendedVariable {
                 return OptionalDouble.of(1.0 - lambda);
             }
         }
-//        if (rolsOne.contains(rols)) {
-//            return OptionalDouble.of(lamedh);
-//        } else if (rolsZero.contains(rols)) {
-//            return OptionalDouble.of(1.0 - lamedh);
-//        }
         return OptionalDouble.empty();
     }
     
@@ -132,31 +126,6 @@ public final class TitrationESV extends ExtendedVariable {
         double umod = 0.0;  // TODO PRIO find PMFs for monomers/trimers/pentapeptides
         umod = titration.refEnergy * lambda;
         return uph + umod;
-    }
-    
-    /**
-     * Bias[Mag,Lambda] = Mag - 4*Mag*(Lambda - 0.5)^2;
-     * @return 
-     */
-    @Override
-    public double getBiasEnergy() {
-        return (biasMag - 4*biasMag*(lambda - 0.5)*(lambda - 0.5));
-    }
-    
-    /**
-     * dBiasdL = -8*Mag*(Lambda-0.5)
-     */
-    @Override
-    public double getdBiasdLdh() {
-        return (-8*biasMag*(lambda - 0.5));
-    }
-    
-    /**
-     * d2BiasdL2 = -8*Mag
-     */
-    @Override
-    public double getd2BiasdLdh2() {
-        return -8*biasMag;
     }
     
     @Override

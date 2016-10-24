@@ -51,12 +51,14 @@ public abstract class ExtendedVariable {
     private final double thetaMass = prop("esv-thetaMass", 1.0e-18);            // from OSRW, reasonably 100 a.m.u.
     private final double thetaFriction = prop("esv-thetaFriction", 1.0e-19);    // from OSRW, reasonably 60/ps
     private final Random stochasticRandom = ThreadLocalRandom.current();
-    public final double biasMag;                    // height at ldh=0.5 in kcal/mol (zero at each end)
+    
+    private final double betat;
     
     public ExtendedVariable(double biasMag, double initialLamedh) {
-        this.index = esvIndexer++;
-        this.biasMag = biasMag;
-        this.lambda = initialLamedh;
+        index = esvIndexer++;
+        betat = System.getProperty("esv-bias") == null ? biasMag : 
+                Double.parseDouble(System.getProperty("esv-bias"));
+        lambda = initialLamedh;
         theta = Math.asin(Math.sqrt(lambda));
     }
     
@@ -119,15 +121,32 @@ public abstract class ExtendedVariable {
         return index;
     }
     
-    // TODO: Add the harmonic barrier to drive lamedhs to zero/unity.
-    public abstract double getBiasEnergy();
-    public abstract double getdBiasdLdh();
-    public abstract double getd2BiasdLdh2();
+    /**
+     * From Shen&Huang 2016; drives ESVs to zero/unity.
+     * bias = 4B*(L-0.5)^2
+     */
+    public double getBiasEnergy() {
+        return (4*betat - (lambda-0.5)*(lambda-0.5));
+    }
+    
+    /**
+     * dBiasdL = -8B*(L-0.5)
+     */
+    public double getdBiasdLdh() {
+        return (-8*betat*(lambda-0.5));
+    }
+    
+    /**
+     * d2BiasdL2 = -8B
+     */
+    public double getd2BiasdLdh2() {
+        return -8*betat;
+    }
     
     /**
      * Declared abstract as a reminder to both fill local array and update Atom fields.
      */
-    protected abstract void setAtoms();
+    protected abstract void finalize();
     /**
      * Called by ForceFieldEnergy to apply ESVs to bonded terms.
      */
