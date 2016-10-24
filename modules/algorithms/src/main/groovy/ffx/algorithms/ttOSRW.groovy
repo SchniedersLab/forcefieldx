@@ -177,6 +177,10 @@ double temperingParam = 2.0;
 // Write traversal snapshots
 boolean writeTraversals = false;
 
+int numParallel = 1;
+@Field int threadsAvail = edu.rit.pj.ParallelTeam.getDefaultThreadCount();
+@Field int threadsPer = threadsAvail;
+
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
@@ -219,6 +223,7 @@ cli.tp(longOpt:'temperingParam', args:1, argName:'2', 'Tempering rate parameter 
 cli.rn(longOpt:'resetNumSteps', args:1, argName:'true', 'Ignore prior steps logged in .lam files');
 cli.uaA(longOpt:'unsharedAtomsA', args:1, argName:'None', 'Quad-Topology: Period-separated ranges of A dual-topology atoms not shared by B');
 cli.uaB(longOpt:'unsharedAtomsB', args:1, argName:'None', 'Quad-Topology: Period-separated ranges of B dual-topology atoms not shared by A');
+cli.np(longOpt:'numParallel', args:1, argName:'1', 'Number of topology energies to calculate in parallel');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -386,6 +391,19 @@ if (options.tp) {
     temperingParam = Double.parseDouble(options.tp);
 }
 
+if (options.np) {
+    numParallel = Integer.parseInt(options.np);
+    if (threadsAvail % numParallel != 0) {
+        logger.warning(String.format(" Number of threads available %d not evenly divisible by np %d; reverting to sequential", threadsAvail, numParallel));
+        numParallel = 1;
+    } else if (arguments.size() % numParallel != 0) {
+        logger.warning(String.format(" Number of topologies %d not evenly divisible by np %d; reverting to sequential", arguments.size(), numParallel));
+        numParallel = 1;
+    } else {
+        threadsPer = threadsAvail / numParallel;
+    }
+}
+
 if (options.rn) {
     if (eSteps > 0) {
         println("");
@@ -463,10 +481,10 @@ if (arguments.size() >= 2) {
 @Field Pattern rangeregex = Pattern.compile("([0-9]+)-?([0-9]+)?");
 
 /**
- * Handles opening a file (filenmae), with 0-indexed number topNum.
+ * Handles opening a file (filename), with 0-indexed number topNum.
  */
 private void openFile(String toOpen, File structFile, int topNum) {
-    open(toOpen);
+    open(toOpen, threadsPer);
     if (size > 1) {
         active.setFile(structFile);
     }
@@ -730,6 +748,9 @@ if (arguments.size() == 1) {
    
     // Create the DualTopology potential energy.
     DualTopologyEnergy dualTopologyEnergy = new DualTopologyEnergy(topologies[0], topologies[1]);
+    if (numParallel == 2) {
+        dualTopologyEnergy.setParallel(true);
+    }
     // Wrap the DualTopology potential energy inside an OSRW instance.
     osrw = new TransitionTemperedOSRW(dualTopologyEnergy, dualTopologyEnergy, lambdaRestart,
         histogramRestart, active.getProperties(), temperature, timeStep, printInterval,
@@ -833,6 +854,13 @@ if (arguments.size() == 1) {
     }
     
     QuadTopologyEnergy qte = new QuadTopologyEnergy(dtA, dtB, uniqueA, uniqueB);
+    if (numParallel >= 2) {
+        qte.setParallel(true);
+        if (numParallel == 2) {
+            dtA.setParallel(true);
+            dtB.setParallel(true);
+        }
+    }
     osrw = new TransitionTemperedOSRW(qte, qte, lambdaRestart, histogramRestart, 
         active.getProperties(), temperature, timeStep, printInterval, 
         saveInterval, asynchronous, resetNumSteps, sh);

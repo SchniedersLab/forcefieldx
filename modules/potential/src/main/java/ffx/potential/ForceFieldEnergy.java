@@ -274,6 +274,10 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
      * objects.
      */
     public ForceFieldEnergy(MolecularAssembly molecularAssembly, List<CoordRestraint> restraints) {
+        this(molecularAssembly, restraints, ParallelTeam.getDefaultThreadCount());
+    }
+    
+    public ForceFieldEnergy(MolecularAssembly molecularAssembly, List<CoordRestraint> restraints, int numThreads) {
         // Get a reference to the sorted atom array.
         this.molecularAssembly = molecularAssembly;
         atoms = molecularAssembly.getAtomArray();
@@ -287,8 +291,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
 
         // Enforce that the number of threads be less than or equal to the number of atoms.
-        int nThreads = ParallelTeam.getDefaultThreadCount();
-        nThreads = nAtoms < nThreads ? nAtoms : nThreads;
+        /*int nThreads = ParallelTeam.getDefaultThreadCount();
+        nThreads = nAtoms < nThreads ? nAtoms : nThreads;*/
+        int nThreads = nAtoms < numThreads ? nAtoms : numThreads;
         parallelTeam = new ParallelTeam(nThreads);
 
         ForceField forceField = molecularAssembly.getForceField();
@@ -1694,9 +1699,17 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
         return type;
     }
-
+    
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double energy(double[] x) {
+        return energy(x, false);
+    }
+
+    @Override
+    public double energy(double[] x, boolean verbose) {
         /**
          * Unscale the coordinates.
          */
@@ -1707,7 +1720,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             }
         }
         setCoordinates(x);
-        double e = energy(false, false);
+        double e = energy(false, verbose);
         /**
          * Rescale the coordinates.
          */
@@ -1719,12 +1732,20 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
         return e;
     }
-
+    
     /**
      * {@inheritDoc}
      */
     @Override
     public double energyAndGradient(double x[], double g[]) {
+        return energyAndGradient(x, g, false);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double energyAndGradient(double x[], double g[], boolean verbose) {
         /**
          * Un-scale the coordinates.
          */
@@ -1735,7 +1756,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             }
         }
         setCoordinates(x);
-        double e = energy(true, false);
+        double e = energy(true, verbose);
 
         // Try block already exists inside energy(boolean, boolean), so only
         // need to try-catch getGradients.

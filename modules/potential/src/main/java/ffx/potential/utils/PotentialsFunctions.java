@@ -63,6 +63,14 @@ public interface PotentialsFunctions {
 
     public MolecularAssembly[] open(String[] files);
     
+    default public MolecularAssembly[] open(String file, int nThreads) {
+        return open(file);
+    }
+    
+    default public MolecularAssembly[] open(String[] file, int nThreads) {
+        return open(file);
+    }
+    
     public MolecularAssembly[] convertDataStructure(Object data);
     
     public MolecularAssembly[] convertDataStructure(Object data, File file);
