@@ -51,7 +51,7 @@ public class ExtendedSystem {
     private final ParticleMeshEwaldQI pme;  // must not be global frame
     private boolean usePME = false;
     private boolean useVDW = true;
-    private double[] esvDeriv;
+    private double[] esvGrad;
     // Application-specific variables
     private final double pHconst;
     private double currentTemperature = 298.15;
@@ -158,7 +158,7 @@ public class ExtendedSystem {
 
     public int num() {
         if (numESVs != esvList.size()) {
-            logger.warning("Programming error: ExtendedSystem.num()");
+            logger.severe("Programming error: ExtendedSystem.num()");
         }
         return numESVs;
     }
@@ -167,9 +167,9 @@ public class ExtendedSystem {
      * Get the zero/unity bias and the pH energy term. PME and vdW not included
      * here as their ESV dependence isn't decomposable.
      */
-    public double nonbonded() {
+    public double biases() {
         if (!esvTerm) {
-            logger.warning("Called ExtendedSystem energy while esvTerm was false.");
+            logger.warning("Called ExtendedSystem energy while !esvTerm.");
         }
         if (esvList == null || esvList.isEmpty()) {
             logger.warning("Called for extended energy with null/empty esvList.");
@@ -177,14 +177,16 @@ public class ExtendedSystem {
         double biasEnergySum = 0.0;
         double phEnergySum = 0.0;
 
+        StringBuilder sb = new StringBuilder();
         for (ExtendedVariable esv : esvList) {
+            sb.append(format("%.2f ", esv.getLambda()));
             biasEnergySum += esv.getBiasEnergy();
             if (phTerm && esv instanceof TitrationESV) {
                 phEnergySum += ((TitrationESV) esv).getPhEnergy(pHconst, currentTemperature);
             }
         }
 
-        esvLogger.append(format(" [bias: %g, pH: %g] ", biasEnergySum, phEnergySum));
+        esvLogger.append(format(" [ldh: %s, bias: %g, pH: %g] ", sb.toString(), biasEnergySum, phEnergySum));
         logger.info(esvLogger.toString());
         esvLogger = new StringBuilder();
 
@@ -429,7 +431,7 @@ public class ExtendedSystem {
         esvList.add(esv);
         numESVs = esvList.size();
         esvTerm = true;
-        esvDeriv = new double[numESVs];
+        esvGrad = new double[numESVs];
         
         if (esv instanceof TitrationESV) {
             phTerm = true;
@@ -456,12 +458,10 @@ public class ExtendedSystem {
         terms.add(biasGrad);
         if (!lambdaBondedTerms) {
             if (useVDW) {
-                vdw.getdEdLdh(esvDeriv);
-                terms.add(vdwGrad);
+                vdw.getdEdLdh(esvGrad);
             }
             if (usePME) {
-                pmeGrad = pme.getdEdLdh();
-                terms.add(pmeGrad);
+//                pme.getdEdLdh(esvGrad);
             }
 //            if (restraintBondTerm) {
 //                for (int i = 0; i < nRestraintBonds; i++) {
@@ -493,7 +493,7 @@ public class ExtendedSystem {
         if (terms.isEmpty()) {
             return new double[numESVs]; // zeroes
         }
-        return eleSum1DArrays(terms, numESVs);
+        return esvGrad;
     }
 
     /**

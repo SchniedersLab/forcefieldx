@@ -657,7 +657,7 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
         value = r(v10);
         double dv = value - bondType.distance;
         double dv2 = dv * dv;
-        double prefactor = units * rigidScale * bondType.forceConstant;
+        double prefactor = units * rigidScale * bondType.forceConstant * esvLambda;
 
         switch (bondType.bondFunction) {
             case QUARTIC: {

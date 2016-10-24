@@ -173,9 +173,9 @@ public class UreyBradley extends BondedTerm implements Comparable<UreyBradley> {
         value = r(v20);
         double dv = value - ureyBradleyType.distance;
         double dv2 = dv * dv;
-        energy = units * rigidScale * ureyBradleyType.forceConstant * dv2 * (1.0 + cubic * dv + quartic * dv2);
+        energy = units * rigidScale * ureyBradleyType.forceConstant * dv2 * (1.0 + cubic * dv + quartic * dv2) * esvLambda;
         if (gradient) {
-            double deddt = 2.0 * units * rigidScale * ureyBradleyType.forceConstant * dv * (1.0 + 1.5 * cubic * dv + 2.0 * quartic * dv2);
+            double deddt = 2.0 * units * rigidScale * ureyBradleyType.forceConstant * dv * (1.0 + 1.5 * cubic * dv + 2.0 * quartic * dv2) * esvLambda;
             double de = 0.0;
             if (value > 0.0) {
                 de = deddt / value;

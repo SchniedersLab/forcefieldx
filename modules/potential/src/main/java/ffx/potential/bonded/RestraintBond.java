@@ -665,7 +665,7 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
         energy = rL3 * kx2;
         dEdL = rL2 * kx2;
         d2EdL2 = rL1 * kx2;
-        double deddt = 2.0 * units * bondType.forceConstant * dv;
+        double deddt = 2.0 * units * bondType.forceConstant * dv * esvLambda;
         double de = 0.0;
 
         if (value > 0.0) {

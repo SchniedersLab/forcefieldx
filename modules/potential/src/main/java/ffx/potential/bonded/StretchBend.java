@@ -218,7 +218,7 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
             double e1 = rcb - bond1Eq;
             double dt = value - angleEq;
             double dr = force0 * e0 + force1 * e1;
-            energy = rigidScale * dr * dt;
+            energy = rigidScale * dr * dt * esvLambda;
             if (gradient) {
                 // angle chain rule terms
                 double term1 = -rigidScale * dr * toDegrees(1.0 / (rab2 * rp));

@@ -137,7 +137,7 @@ public class VanDerWaals implements MaskingInterface,
      */
     private boolean gradient;
     private boolean lambdaTerm;
-    private boolean esvTerm;
+    private boolean esvTerm = false;
     private boolean isSoft[];
     // [nAtoms]: Stores precomputed lambda_total = lambda_metadyn * lambda_ESV
     private double esvLambda[];
@@ -326,14 +326,7 @@ public class VanDerWaals implements MaskingInterface,
          * Lambda parameters.
          */
         lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
-        esvTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.ESVTERM, false);
-        if (esvTerm) {
-            logger.info("vdW: ESV Term Enabled!");
-            if (esvSystem == null) {
-                logger.warning("vdw: ESV Term Enabled with null system.");
-            }
-        }
-        if (lambdaTerm || esvTerm) {
+        if (lambdaTerm) {
             shareddEdL = new SharedDouble();
             sharedd2EdL2 = new SharedDouble();
             vdwLambdaAlpha = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_ALPHA, 0.05);
@@ -352,8 +345,6 @@ public class VanDerWaals implements MaskingInterface,
             shareddEdL = null;
             sharedd2EdL2 = null;
         }
-        // Set esvTerm back to false until attachExtendedSystem() is called.
-        esvTerm = false;
 
         /**
          * Parallel constructs.
@@ -487,11 +478,6 @@ public class VanDerWaals implements MaskingInterface,
                     if (esvTerm) {
                         esvGrad = new MultiDoubleArray(threadCount, numESVs);
                     }
-//                    if (esvTerm) {
-//                        esvGradX = new MultiDoubleArray(threadCount, nAtoms * numESVs);
-//                        esvGradY = new MultiDoubleArray(threadCount, nAtoms * numESVs);
-//                        esvGradZ = new MultiDoubleArray(threadCount, nAtoms * numESVs);
-//                    }
                     break;
                 case PJ:
                     gradX = new PJDoubleArray(threadCount, nAtoms);
@@ -505,11 +491,6 @@ public class VanDerWaals implements MaskingInterface,
                     if (esvTerm) {
                         esvGrad = new PJDoubleArray(threadCount, numESVs);
                     }
-//                    if (esvTerm) {
-//                        esvGradX = new PJDoubleArray(threadCount, nAtoms * numESVs);
-//                        esvGradY = new PJDoubleArray(threadCount, nAtoms * numESVs);
-//                        esvGradZ = new PJDoubleArray(threadCount, nAtoms * numESVs);
-//                    }
                     break;
                 case ADDER:
                 default:
@@ -975,7 +956,24 @@ public class VanDerWaals implements MaskingInterface,
             logger.severe("Tried to attach null extended system.");
         }
         esvSystem = system;
-        numESVs = esvSystem.num();
+        numESVs = esvSystem.getESVList().size();
+        
+        // Launch shared lambda/esvLambda initializers if missed in constructor.
+        if (!lambdaTerm) {
+            vdwLambdaAlpha = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_ALPHA, 0.05);
+            vdwLambdaExponent = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_EXPONENT, 1.0);
+            if (vdwLambdaAlpha < 0.0) {
+                vdwLambdaAlpha = 0.05;
+            }
+            if (vdwLambdaExponent < 1.0) {
+                vdwLambdaExponent = 1.0;
+            }
+            intermolecularSoftcore = forceField.getBoolean(
+                    ForceField.ForceFieldBoolean.INTERMOLECULAR_SOFTCORE, false);
+            intramolecularSoftcore = forceField.getBoolean(
+                    ForceField.ForceFieldBoolean.INTRAMOLECULAR_SOFTCORE, false);
+        }
+        
         initAtomArrays();
     }
 
@@ -1013,15 +1011,13 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     public void getdEdLdh(double[] esvDerivative) {
-        if (shareddEdLdh == null || !esvTerm) {
-            logger.warning("Called for ESV derivative while !esvTerm.");
+        if (esvGrad == null || !esvTerm) {
+//            logger.warning("Called for ESV derivative while !esvTerm.");
             return;
         }
         int index = 0;
-        for (int iESV = 1; iESV <= numESVs; iESV++) {
-            for (int i = 0; i < nAtoms; i++) {
-                esvDerivative[iESV] = esvGrad.get(iESV*i);
-            }
+        for (int iESV = 0; iESV < numESVs; iESV++) {
+            esvDerivative[iESV] = esvGrad.get(iESV);
         }
     }
     
@@ -1599,7 +1595,7 @@ public class VanDerWaals implements MaskingInterface,
                             boolean soft = softCorei[k]
                                     || (intermolecularSoftcore && !sameMolecule)
                                     || (intramolecularSoftcore && sameMolecule)
-                                    || (esvTerm && (esvByAtom[i] != null || esvByAtom[k] != null));
+                                    || (esvTerm && esvByAtom != null && (esvByAtom[i] != null || esvByAtom[k] != null));
                             if (esvTerm && soft) {
                                 // Each member of the following is preloaded with lambda_metadyn * lambda_esv.
                                 final double esvLambdaProduct = esvLambda[i] * esvLambda[k];

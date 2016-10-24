@@ -277,7 +277,7 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
             }
             double cosine2 = cosine * cosine - sine * sine;
             double phi2 = 1.0 - cosine2;
-            energy = units * piTorsionType.forceConstant * phi2;
+            energy = units * piTorsionType.forceConstant * phi2 * esvLambda;
             dEdL = energy;
             energy = lambda * energy;
             if (gradient || lambdaTerm) {

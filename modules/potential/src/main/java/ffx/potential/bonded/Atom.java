@@ -63,6 +63,7 @@ import javax.vecmath.Vector3d;
 
 import ffx.potential.bonded.RendererCache.ColorModel;
 import ffx.potential.bonded.RendererCache.ViewModel;
+import ffx.potential.extended.ExtendedVariable;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.PolarizeType;
@@ -352,7 +353,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     private double globalDipole[] = null;
     private double globalQuadrupole[][] = null;
     private boolean applyState = false;
-    private boolean lamedhState = false;
+    private ExtendedVariable esv = null;
     // solvation
     private double bornRadius;
     // Connectivity information.
@@ -891,12 +892,17 @@ public class Atom extends MSNode implements Comparable<Atom> {
         this.applyState = applyState;
     }
     
-    public boolean applyLamedh() {
-        return lamedhState;
+    public ExtendedVariable getESV() {
+        return esv;
     }
     
-    public void setApplyLamedh(boolean applyState) {
-        this.lamedhState = applyState;
+    public void setESV(ExtendedVariable esv) {
+        if (esv != null && esv != this.esv) {
+            logger.severe(format("Mutiple ESVs for one atom is not currently supported.\n"
+                    + "    offending atom,ESVs: %s %s %s", 
+                    this.toString(), this.esv.toString(), esv.toString()));
+        }
+        this.esv = esv;
     }
 
     /**
