@@ -126,14 +126,14 @@ public abstract class ExtendedVariable {
      * bias = 4B*(L-0.5)^2
      */
     public double getBiasEnergy() {
-        return (4*betat - (lambda-0.5)*(lambda-0.5));
+        return -(4*betat - (lambda-0.5)*(lambda-0.5));
     }
     
     /**
      * dBiasdL = -8B*(L-0.5)
      */
     public double getdBiasdLdh() {
-        return (-8*betat*(lambda-0.5));
+        return -8*betat*(lambda-0.5);
     }
     
     /**
