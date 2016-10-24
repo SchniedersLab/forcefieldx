@@ -37,8 +37,12 @@
  */
 package ffx.potential;
 
+import edu.rit.pj.ParallelRegion;
+import edu.rit.pj.ParallelSection;
+import edu.rit.pj.ParallelTeam;
 import ffx.numerics.Potential;
 import ffx.potential.bonded.LambdaInterface;
+import ffx.potential.utils.EnergyException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
@@ -48,10 +52,12 @@ import java.util.logging.Logger;
 
 /**
  * Implements an error-canceling quad topology, where two large dual-topology 
- * simulation legs are run simultaneously to arrive at a small sum. This is a
- * simplistic implementation running both dual topologies linked only by a common
- * lambda; will be likely be refactored into one implementation of an interface
- * or abstract class when more sophisticated implementations are added.
+ * simulation legs are run simultaneously to arrive at a small sum. This 
+ * implementation permits sharing of coordinates between the dual topology; 
+ * results in energy function of E(A1, A2, B1, B2) = (1-l)A1 + l*A2 + l*B1 +
+ * (1-l)B2. When coordinates are shared, this can entail atoms feeling 
+ * approximately twice the force as an ordinary atom, possibly requiring a
+ * reduced inner timestep.
  * 
  * @author Jacob M. Litman
  * @author Michael J. Schnieders
@@ -101,6 +107,11 @@ public class QuadTopologyEnergy implements Potential, LambdaInterface {
     private double energyB;
     private double dEdL, dEdL_A, dEdL_B;
     private double d2EdL2, d2EdL2_A, d2EdL2_B;
+    
+    private boolean inParallel = false;
+    private ParallelTeam team;
+    private final EnergyRegion region;
+    
     /**
      * Scaling and de-scaling will be applied inside DualTopologyEnergy.
      */
@@ -282,6 +293,8 @@ public class QuadTopologyEnergy implements Potential, LambdaInterface {
         tempB = new double[nVarB];
         mass = new double[nVarTot];
         doublesFrom(mass, dualTopA.getMass(), dualTopB.getMass());
+        
+        region = new EnergyRegion();
     }
     
     /**
@@ -402,37 +415,73 @@ public class QuadTopologyEnergy implements Potential, LambdaInterface {
             to[indexBToGlobal[i]] += fromB[i];
         }
     }
-
+    
     @Override
     public double energy(double[] x) {
-        doublesTo(x, xA, xB);
-        energyA = dualTopA.energy(xA);
-        energyB = dualTopB.energy(xB);
-        totalEnergy = energyA + energyB;
-        return totalEnergy;
+        return energy(x, false);
     }
 
     @Override
-    public double energyAndGradient(double[] x, double[] g) {
-        doublesTo(x, xA, xB);
-        
-        energyA = dualTopA.energyAndGradient(xA, gA);
-        dEdL_A = linterA.getdEdL();
-        d2EdL2_A = linterA.getd2EdL2();
-
-        energyB = dualTopB.energyAndGradient(xB, gB);
-        dEdL_B = linterB.getdEdL();
-        d2EdL2_B = linterB.getd2EdL2();
-        
-        //doublesFrom(g, gA, gB);
-        addDoublesFrom(g, gA, gB);
-        
-        dEdL = dEdL_A + dEdL_B;
-        d2EdL2 = d2EdL2_A + d2EdL2_B;
-        totalEnergy = energyA + energyB;
+    public double energy(double[] x, boolean verbose) {
+        if (inParallel) {
+            region.setX(x);
+            region.setVerbose(verbose);
+            try {
+                team.execute(region);
+            } catch (Exception ex) {
+                throw new EnergyException(String.format(" Exception in calculating quad-topology energy: %s", ex.toString()), false);
+            }
+        } else {
+            doublesTo(x, xA, xB);
+            energyA = dualTopA.energy(xA, verbose);
+            energyB = dualTopB.energy(xB, verbose);
+            totalEnergy = energyA + energyB;
+        }
+        if (verbose) {
+            logger.info(String.format(" Total quad-topology energy: %12.4f", totalEnergy));
+        }
         return totalEnergy;
     }
+    
+    @Override
+    public double energyAndGradient(double[] x, double[] g) {
+        return energyAndGradient(x, g, false);
+    }
+    
+    @Override
+    public double energyAndGradient(double[] x, double[] g, boolean verbose) {
+        if (inParallel) {
+            region.setX(x);
+            region.setG(g);
+            region.setVerbose(verbose);
+            try {
+                team.execute(region);
+            } catch (Exception ex) {
+                throw new EnergyException(String.format(" Exception in calculating quad-topology energy: %s", ex.toString()), false);
+            }
+        } else {
+            doublesTo(x, xA, xB);
 
+            energyA = dualTopA.energyAndGradient(xA, gA, verbose);
+            dEdL_A = linterA.getdEdL();
+            d2EdL2_A = linterA.getd2EdL2();
+
+            energyB = dualTopB.energyAndGradient(xB, gB, verbose);
+            dEdL_B = linterB.getdEdL();
+            d2EdL2_B = linterB.getd2EdL2();
+
+            addDoublesFrom(g, gA, gB);
+
+            dEdL = dEdL_A + dEdL_B;
+            d2EdL2 = d2EdL2_A + d2EdL2_B;
+            totalEnergy = energyA + energyB;
+        }
+        if (verbose) {
+            logger.info(String.format(" Total quad-topology energy: %12.4f", totalEnergy));
+        }
+        return totalEnergy;
+    }
+    
     @Override
     public void setScaling(double[] scaling) {
         this.scaling = scaling;
@@ -568,4 +617,130 @@ public class QuadTopologyEnergy implements Potential, LambdaInterface {
         dualTopB.getdEdXdL(tempB);
         addDoublesFrom(g, tempA, tempB);
     }
+    
+    public void setParallel(boolean parallel) {
+        this.inParallel = parallel;
+        if (team != null) {
+            try {
+                team.shutdown();
+                team = null;
+            } catch (Exception e) {
+                logger.severe(String.format(" Exception in shutting down old ParallelTeam for DualTopologyEnergy: %s", e.toString()));
+            }
+        }
+        if (parallel) {
+            team = new ParallelTeam(2);
+        }
+    }
+    
+    private class EnergyRegion extends ParallelRegion {
+        
+        private double[] x;
+        private double[] g;
+        private boolean gradient = false;
+        
+        private final EnergyASection sectA;
+        private final EnergyBSection sectB;
+        
+        public EnergyRegion() {
+            sectA = new EnergyASection();
+            sectB = new EnergyBSection();
+        }
+        
+        public void setX(double[] x) {
+            this.x = x;
+        }
+        
+        public void setG(double[] g) {
+            this.g = g;
+            setGradient(true);
+        }
+        
+        public void setVerbose(boolean verbose) {
+            sectA.setVerbose(verbose);
+            sectB.setVerbose(verbose);
+        }
+        
+        public void setGradient(boolean gradient) {
+            this.gradient = gradient;
+            sectA.setGradient(gradient);
+            sectB.setGradient(gradient);
+        }
+
+        @Override
+        public void start() throws Exception {
+            doublesTo(x, xA, xB);
+        }
+        
+        @Override
+        public void run() throws Exception {
+            execute(sectA, sectB);
+        }
+        
+        @Override
+        public void finish() throws Exception {
+            totalEnergy = energyA + energyB;
+            if (gradient) {
+                addDoublesFrom(g, gA, gB);
+                dEdL = dEdL_A + dEdL_B;
+                d2EdL2 = d2EdL2_A + d2EdL2_B;
+            }
+            gradient = false;
+        }
+    }
+    
+    private class EnergyASection extends ParallelSection {
+
+        private boolean verbose = false;
+        private boolean gradient = false;
+        
+        @Override
+        public void run() throws Exception {
+            if (gradient) {
+                energyA = dualTopA.energyAndGradient(xA, gA, verbose);
+                dEdL_A = linterA.getdEdL();
+                d2EdL2_A = linterA.getd2EdL2();
+            } else {
+                energyA = dualTopA.energy(xA, verbose);
+            }
+            this.verbose = false;
+            this.gradient = false;
+        }
+        
+        public void setVerbose(boolean verbose) {
+            this.verbose = verbose;
+        }
+        
+        public void setGradient(boolean gradient) {
+            this.gradient = gradient;
+        }
+    }
+    
+    private class EnergyBSection extends ParallelSection {
+
+        private boolean verbose = false;
+        private boolean gradient = false;
+
+        @Override
+        public void run() throws Exception {
+            if (gradient) {
+                energyB = dualTopB.energyAndGradient(xB, gB, verbose);
+                dEdL_B = linterB.getdEdL();
+                d2EdL2_B = linterB.getd2EdL2();
+            } else {
+                energyB = dualTopB.energy(xB, verbose);
+            }
+            this.verbose = false;
+            this.gradient = false;
+        }
+        
+        public void setVerbose(boolean verbose) {
+            this.verbose = verbose;
+        }
+        
+        public void setGradient(boolean gradient) {
+            this.gradient = gradient;
+        }
+    }
 }
+

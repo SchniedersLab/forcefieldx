@@ -74,6 +74,32 @@ public interface Potential {
      * @since 1.0
      */
     public abstract double energyAndGradient(double x[], double g[]);
+    
+    /**
+     * This method is called repeatedly to compute the function energy. The 
+     * verbose flag may not be used by all implementations.
+     * 
+     * @param x Input parameters.
+     * @param verbose Display extra information.
+     * @return  Function value at <code>x</code>
+     */
+    default public double energy(double[] x, boolean verbose) {
+        return energy(x);
+    }
+    
+    /**
+     * This method is called repeatedly to compute the function energy and
+     * gradient. The verbose flag may not be used by all implementations.
+     *
+     * @param x Input parameters.
+     * @param g Output gradients with respect to each parameter.
+     * @param verbose Display extra information.
+     * @return Function value at <code>x</code>.
+     * @since 1.0
+     */
+    default public double energyAndGradient(double[] x, double[] g, boolean verbose) {
+        return energyAndGradient(x, g);
+    }
 
     /**
      * Scale the problem. A good choice for optimization is the square root of

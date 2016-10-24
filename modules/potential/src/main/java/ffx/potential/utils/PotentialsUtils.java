@@ -131,6 +131,39 @@ public class PotentialsUtils implements PotentialsFunctions {
     }
 
     /**
+     * Opens a file and returns all created MolecularAssembly objects.
+     *
+     * @param file Filename to open
+     * @param nThreads Use non-default num threads
+     * @return Array of MolecularAssembly.
+     */
+    @Override
+    public MolecularAssembly[] open(String file, int nThreads) {
+        PotentialsFileOpener opener = new PotentialsFileOpener(file);
+        opener.setNThreads(nThreads);
+        opener.run();
+        lastFilter = opener.getFilter();
+        return opener.getAllAssemblies();
+    }
+
+    /**
+     * Opens an array of files and returns the created MolecularAssembly
+     * objects.
+     *
+     * @param files Filenames to open.
+     * @param nThreads Use non-default num threads
+     * @return Array of MolecularAssembly.
+     */
+    @Override
+    public MolecularAssembly[] open(String[] files, int nThreads) {
+        PotentialsFileOpener opener = new PotentialsFileOpener(files);
+        opener.setNThreads(nThreads);
+        opener.run();
+        lastFilter = opener.getFilter();
+        return opener.getAllAssemblies();
+    }
+
+    /**
      * Converts a data structure (such as a Biojava Structure) into one or more
      * MolecularAssembly objects.
      *

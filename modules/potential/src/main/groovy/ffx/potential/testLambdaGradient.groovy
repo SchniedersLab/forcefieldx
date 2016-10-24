@@ -101,6 +101,10 @@ boolean qi = false;
 @Field def topologies = [];
 @Field def energies = [];
 
+@Field int threadsAvail = edu.rit.pj.ParallelTeam.getDefaultThreadCount();
+int numParallel = 1;
+@Field int threadsPer = threadsAvail;
+
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
@@ -124,6 +128,7 @@ cli.la1(longOpt:'ligAtoms1', args:1, argName:'None', 'Period-separated ranges of
 cli.la2(longOpt:'ligAtoms2', args:1, argName:'None', 'Period-separated ranges of 2nd topology ligand atoms (e.g. 40-50.72-83)');
 cli.uaA(longOpt:'unsharedAtomsA', args:1, argName:'None', 'Quad-Topology: Period-separated ranges of A dual-topology atoms not shared by B; define from topology A1');
 cli.uaB(longOpt:'unsharedAtomsB', args:1, argName:'None', 'Quad-Topology: Period-separated ranges of B dual-topology atoms not shared by A; define from topology B1');
+cli.np(longOpt:'numParallel', args:1, argName:'1', 'Number of topology energies to calculate in parallel');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -204,6 +209,19 @@ if (options.v) {
     print = true;
 }
 
+if (options.np) {
+    numParallel = Integer.parseInt(options.np);
+    if (threadsAvail % numParallel != 0) {
+        logger.warning(String.format(" Number of threads available %d not evenly divisible by np %d; reverting to sequential", threadsAvail, numParallel));
+        numParallel = 1;
+    } else if (arguments.size() % numParallel != 0) {
+        logger.warning(String.format(" Number of topologies %d not evenly divisible by np %d; reverting to sequential", arguments.size(), numParallel));
+        numParallel = 1;
+    } else {
+        threadsPer = threadsAvail / numParallel;
+    }
+}
+
 if (options.qi) {
     qi = true;
     System.setProperty("pme-qi","true");
@@ -268,7 +286,7 @@ if (arguments.size() > 1) {
 void openFile(int topNum) {
     String filename = filenames.get(topNum);
     //String filename = 'xDx_a.pdb';
-    open(filename);
+    open(filename, threadsPer);
     Atom[] atoms = active.getAtomArray();
     ForceFieldEnergy forceFieldEnergy = active.getPotentialEnergy();
     int n = atoms.length;
@@ -465,6 +483,9 @@ if (arguments.size() == 1) {
     forceFieldEnergy.getCrystal().setSpecialPositionCutoff(0.0);*/
 
     DualTopologyEnergy dualTopologyEnergy = new DualTopologyEnergy(topologies[0], topologies[1]);
+    if (numParallel == 2) {
+        dualTopologyEnergy.setParallel(true);
+    }
     potential = dualTopologyEnergy;
     lambdaInterface = dualTopologyEnergy;
 } else if (arguments.size() == 4) {
@@ -556,6 +577,13 @@ if (arguments.size() == 1) {
     }
     
     QuadTopologyEnergy qte = new QuadTopologyEnergy(dtA, dtB, uniqueA, uniqueB);
+    if (numParallel >= 2) {
+        qte.setParallel(true);
+        if (numParallel == 4) {
+            dtA.setParallel(true);
+            dtB.setParallel(true);
+        }
+    }
     potential = qte;
     lambdaInterface = qte;
 } else {

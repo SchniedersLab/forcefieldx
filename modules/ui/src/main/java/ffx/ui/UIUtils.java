@@ -99,6 +99,20 @@ public class UIUtils implements AlgorithmFunctions {
     }
 
     @Override
+    public FFXSystem[] open(String file, int nThreads) {
+        FFXSystem[] systems = mainPanel.openWait(file, nThreads);
+        lastFilter = mainPanel.getFilter();
+        return systems;
+    }
+
+    @Override
+    public FFXSystem[] open(String[] files, int nThreads) {
+        FFXSystem[] systems = mainPanel.openWait(files, nThreads);
+        lastFilter = mainPanel.getFilter();
+        return systems;
+    }
+
+    @Override
     public void close(MolecularAssembly assembly) {
         mainPanel.closeWait();
     }

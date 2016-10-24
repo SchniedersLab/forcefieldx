@@ -84,6 +84,7 @@ public class PotentialsFileOpener implements FileOpener {
     private final Path filepath;
     private final File[] allFiles;
     private final Path[] allPaths;
+    private int nThreads = -1;
     private List<MolecularAssembly> assemblies;
     private MolecularAssembly activeAssembly; // Presently, will just be the first element of assemblies.
     private List<CompositeConfiguration> propertyList;
@@ -213,6 +214,10 @@ public class PotentialsFileOpener implements FileOpener {
         assemblies = new ArrayList<>();
         propertyList = new ArrayList<>();
     }
+    
+    public void setNThreads(int nThreads) {
+        this.nThreads = nThreads;
+    }
 
     /**
      * At present, parses the PDB, XYZ, INT, or ARC file from the constructor
@@ -262,7 +267,13 @@ public class PotentialsFileOpener implements FileOpener {
                 }
                 filter.applyAtomProperties();
                 assembly.finalize(true, forceField);
-                ForceFieldEnergy energy = new ForceFieldEnergy(assembly, filter.getCoordRestraints());
+                //ForceFieldEnergy energy = new ForceFieldEnergy(assembly, filter.getCoordRestraints());
+                ForceFieldEnergy energy;
+                if (nThreads > 0) {
+                    energy = new ForceFieldEnergy(assembly, filter.getCoordRestraints(), nThreads);
+                } else {
+                    energy = new ForceFieldEnergy(assembly, filter.getCoordRestraints());
+                }
                 assembly.setPotential(energy);
                 assemblies.add(assembly);
                 propertyList.add(properties);
@@ -300,7 +311,12 @@ public class PotentialsFileOpener implements FileOpener {
                             newAssembly.setName(FilenameUtils.getBaseName(fileName) + " " + c);
                             filter.applyAtomProperties();
                             newAssembly.finalize(true, assembly.getForceField());
-                            energy = new ForceFieldEnergy(newAssembly, filter.getCoordRestraints());
+                            //energy = new ForceFieldEnergy(newAssembly, filter.getCoordRestraints());
+                            if (nThreads > 0) {
+                                energy = new ForceFieldEnergy(assembly, filter.getCoordRestraints(), nThreads);
+                            } else {
+                                energy = new ForceFieldEnergy(assembly, filter.getCoordRestraints());
+                            }
                             newAssembly.setPotential(energy);
                             assemblies.add(newAssembly);
                         }
