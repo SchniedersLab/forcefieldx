@@ -50,6 +50,7 @@ import javax.media.j3d.TransformGroup;
 import javax.vecmath.AxisAngle4d;
 import javax.vecmath.Vector3d;
 
+import ffx.numerics.AtomicDoubleArray;
 import ffx.potential.bonded.RendererCache.ViewModel;
 import ffx.potential.parameters.BondType;
 
@@ -617,31 +618,46 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
             cy2tg.setTransform(cy2t3d);
         }
     }
-    /**
-     * The vector from Atom 1 to Atom 0.
-     */
-    protected static final double a0[] = new double[3];
-    protected static final double a1[] = new double[3];
-    protected static final double v10[] = new double[3];
-    /**
-     * Atom 0 gradient.
-     */
-    protected static final double g0[] = new double[3];
+
+    public double energy(boolean gradient) {
+        return energy(gradient, 0, null, null, null);
+    }
 
     /**
      * Evaluate this Bond energy.
      *
      * @param gradient Evaluate the gradient.
+     * @param threadID
+     * @param gradX
+     * @param gradY
+     * @param gradZ
      * @return Returns the energy.
      */
-    public double energy(boolean gradient) {
+    public double energy(boolean gradient,
+            int threadID,
+            AtomicDoubleArray gradX,
+            AtomicDoubleArray gradY,
+            AtomicDoubleArray gradZ) {
+
+        /**
+         * The vector from Atom 1 to Atom 0.
+         */
+        double a0[] = new double[3];
+        double a1[] = new double[3];
+        double v10[] = new double[3];
+        /**
+         * Atom 0 gradient.
+         */
+        double g0[] = new double[3];
+
         Atom atom0 = atoms[0];
         Atom atom1 = atoms[1];
+
         diff(atom0.getXYZ(a0), atom1.getXYZ(a1), v10);
         value = r(v10);
         double dv = value - bondType.distance;
         double dv2 = dv * dv;
-        double prefactor = units * rigidScale * bondType.forceConstant;
+        double prefactor = units * rigidScale * bondType.forceConstant * esvLambda;
 
         switch (bondType.bondFunction) {
             case QUARTIC: {
@@ -653,8 +669,16 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
                         de = deddt / value;
                     }
                     scalar(v10, de, g0);
-                    atom0.addToXYZGradient(g0[0], g0[1], g0[2]);
-                    atom1.addToXYZGradient(-g0[0], -g0[1], -g0[2]);
+                    // atom0.addToXYZGradient(g0[0], g0[1], g0[2]);
+                    // atom1.addToXYZGradient(-g0[0], -g0[1], -g0[2]);
+                    int i0 = atom0.getXYZIndex() - 1;
+                    gradX.add(threadID, i0, g0[0]);
+                    gradY.add(threadID, i0, g0[1]);
+                    gradZ.add(threadID, i0, g0[2]);
+                    int i1 = atom1.getXYZIndex() - 1;
+                    gradX.sub(threadID, i1, g0[0]);
+                    gradY.sub(threadID, i1, g0[1]);
+                    gradZ.sub(threadID, i1, g0[2]);
                 }
                 break;
             }
@@ -668,8 +692,16 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
                         de = deddt / value;
                     }
                     scalar(v10, de, g0);
-                    atom0.addToXYZGradient(g0[0], g0[1], g0[2]);
-                    atom1.addToXYZGradient(-g0[0], -g0[1], -g0[2]);
+                    // atom0.addToXYZGradient(g0[0], g0[1], g0[2]);
+                    // atom1.addToXYZGradient(-g0[0], -g0[1], -g0[2]);
+                    int i0 = atom0.getXYZIndex() - 1;
+                    gradX.add(threadID, i0, g0[0]);
+                    gradY.add(threadID, i0, g0[1]);
+                    gradZ.add(threadID, i0, g0[2]);
+                    int i1 = atom1.getXYZIndex() - 1;
+                    gradX.sub(threadID, i1, g0[0]);
+                    gradY.sub(threadID, i1, g0[1]);
+                    gradZ.sub(threadID, i1, g0[2]);
                 }
                 break;
             }

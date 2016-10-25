@@ -241,7 +241,6 @@ if (!(active.getPotentialEnergy() instanceof ForceFieldEnergy)) {
     logger.severe("ESVs currently only supported by ForceFieldEnergy potentials.");
 }
 ForceFieldEnergy ffe = (ForceFieldEnergy) active.getPotentialEnergy();
-logger.info("wtf is this mola?  " + mola.class.toString());
 ExtendedSystem esvSystem = new ExtendedSystem(mola, constPh);
 ffe.attachExtendedSystem(esvSystem);
 
@@ -273,6 +272,7 @@ for (int i = 0; i < numESVs; i++) {
     }
     
     TitrationESV esv = new TitrationESV(TitrationUtils.titrationFactory(mola, target.get()), temperature, dt);
+    esv.finalize();
     esvSystem.addVariable(esv);
     esvList.add(esv);
 }
@@ -292,4 +292,5 @@ molDyn.attachExtendedSystem(esvSystem);
 
 molDyn.setFileType(fileType);
 molDyn.setRestartFrequency(restartFrequency);
+ffe.attachExtendedSystem(esvSystem);
 molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);

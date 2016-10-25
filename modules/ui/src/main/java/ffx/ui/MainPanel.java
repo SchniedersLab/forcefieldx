@@ -221,6 +221,7 @@ public final class MainPanel extends JPanel implements ActionListener,
      * Constant <code>ffxFileFilter</code>
      */
     public static final FFXFileFilter ffxFileFilter = new FFXFileFilter();
+    private int fileOpenerThreads = -1;
 
     static {
         try {
@@ -1308,6 +1309,9 @@ public final class MainPanel extends JPanel implements ActionListener,
         MergeFilter mergeFilter = new MergeFilter(system, mergedAtoms,
                 mergedBonds);
         UIFileOpener fileOpener = new UIFileOpener(mergeFilter, this);
+        if (fileOpenerThreads > 0) {
+            fileOpener.setNThreads(fileOpenerThreads);
+        }
         Thread thread = new Thread(fileOpener);
         thread.start();
     }
@@ -1461,7 +1465,12 @@ public final class MainPanel extends JPanel implements ActionListener,
 
         setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         activeFilter = systemFilter;
-        return new UIFileOpener(systemFilter, this);
+        UIFileOpener fileOpener = new UIFileOpener(systemFilter, this);
+        if (fileOpenerThreads > 0) {
+            fileOpener.setNThreads(fileOpenerThreads);
+        }
+        return fileOpener;
+        //return new UIFileOpener(systemFilter, this);
     }
 
     /**
@@ -1582,7 +1591,12 @@ public final class MainPanel extends JPanel implements ActionListener,
 
         setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         activeFilter = systemFilter;
-        return new UIFileOpener(systemFilter, this);
+        //return new UIFileOpener(systemFilter, this);
+        UIFileOpener fileOpener = new UIFileOpener(systemFilter, this);
+        if (fileOpenerThreads > 0) {
+            fileOpener.setNThreads(fileOpenerThreads);
+        }
+        return fileOpener;
     }
 
     public synchronized MolecularAssembly[] openWaitUtils(String file) {
@@ -1652,6 +1666,21 @@ public final class MainPanel extends JPanel implements ActionListener,
      * <p>
      * openWait</p>
      *
+     * @param file a {@link java.lang.String} object.
+     * @param nThreads
+     * @return an array of {@link ffx.ui.FFXSystem} objects.
+     */
+    public synchronized FFXSystem[] openWait(String file, int nThreads) {
+        fileOpenerThreads = nThreads;
+        FFXSystem[] systs = openWait(file);
+        fileOpenerThreads = -1;
+        return systs;
+    }
+
+    /**
+     * <p>
+     * openWait</p>
+     *
      * @param files an array of {@link java.lang.String} objects.
      * @return an array of {@link ffx.ui.FFXSystem} objects.
      */
@@ -1680,6 +1709,21 @@ public final class MainPanel extends JPanel implements ActionListener,
         } else {
             return null;
         }
+    }
+    
+    /**
+     * <p>
+     * openWait</p>
+     *
+     * @param files an array of {@link java.lang.String} objects.
+     * @param nThreads
+     * @return an array of {@link ffx.ui.FFXSystem} objects.
+     */
+    public synchronized FFXSystem[] openWait(String files[], int nThreads) {
+        fileOpenerThreads = nThreads;
+        FFXSystem[] systs = openWait(files);
+        fileOpenerThreads = -1;
+        return systs;
     }
 
     /**
@@ -1868,6 +1912,9 @@ public final class MainPanel extends JPanel implements ActionListener,
         PDBFilter pdbFilter = new PDBFilter(pdbFile, newSystem, forceField, properties);
         setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         UIFileOpener openFile = new UIFileOpener(pdbFilter, this);
+        if (fileOpenerThreads > 0) {
+            openFile.setNThreads(fileOpenerThreads);
+        }
         openThread = new Thread(openFile);
         openThread.start();
         setPanel(GRAPHICS);

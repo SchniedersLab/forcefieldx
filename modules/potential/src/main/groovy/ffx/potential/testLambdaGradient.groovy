@@ -1,3 +1,4 @@
+
 /**
  * Title: Force Field X.
  *
@@ -41,6 +42,7 @@
 // Groovy Imports
 import groovy.transform.Field
 import groovy.util.CliBuilder
+import java.util.regex.Pattern
 
 // FFX Imports
 import ffx.numerics.Potential
@@ -71,6 +73,11 @@ import ffx.potential.bonded.LambdaInterface
 // Last ligand atom of the 2nd topology.
 @Field int ligandStop2 = -1;
 
+@Field def ranges1 = []; // Groovy mechanism for creating an untyped ArrayList.
+@Field def ranges2 = [];
+@Field def rangesA = [];
+@Field def rangesB = [];
+
 // First atom for no electrostatics.
 @Field int noElecStart = 1;
 
@@ -94,11 +101,15 @@ boolean qi = false;
 @Field def topologies = [];
 @Field def energies = [];
 
+@Field int threadsAvail = edu.rit.pj.ParallelTeam.getDefaultThreadCount();
+int numParallel = 1;
+@Field int threadsPer = threadsAvail;
+
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc testLambdaGradient [options] <XYZ|PDB> [Topology 2 XYZ|PDB] [Topology 3 XYZ|PDB] [Topology 4 XYZ|PDB]');
+def cli = new CliBuilder(usage:' ffxc testLambdaGradient [options] <XYZ|PDB> [Topology 2 XYZ|PDB] [Topology B1 XYZ|PDB] [Topology B2 XYZ|PDB]');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.s(longOpt:'start', args:1, argName:'1', 'Starting ligand atom.');
 cli.s2(longOpt:'start2', args:1, argName:'1', 'Starting ligand atom for the 2nd topology.');
@@ -109,10 +120,15 @@ cli.af(longOpt:'activeFinal', args:1, argName:'n', 'Final active atom.');
 cli.es(longOpt:'noElecStart', args:1, argName:'1', 'No Electrostatics Starting Atom.');
 cli.es2(longOpt:'noElecStart2', args:1, argName:'1', 'No Electrostatics Starting Atom for the 2nd Topology.');
 cli.ef(longOpt:'noElecFinal', args:1, argName:'-1', 'No Electrostatics Final Atom.');
-cli.ef2(longOpt:'noElecfinal2', args:1, argName:'-1', 'No Electrostatics Final Atom for the 2nd topology.');
+cli.ef2(longOpt:'noElecFinal2', args:1, argName:'-1', 'No Electrostatics Final Atom for the 2nd topology.');
 cli.l(longOpt:'lambda', args:1, argName:'0.5', 'Lambda value to test.');
 cli.v(longOpt:'verbose', 'Print out the energy for each step.');
 cli.qi(longOpt:'quasi-internal', 'Use quasi-internal multipole tensors.');
+cli.la1(longOpt:'ligAtoms1', args:1, argName:'None', 'Period-separated ranges of 1st topology ligand atoms (e.g. 40-50.72-83)');
+cli.la2(longOpt:'ligAtoms2', args:1, argName:'None', 'Period-separated ranges of 2nd topology ligand atoms (e.g. 40-50.72-83)');
+cli.uaA(longOpt:'unsharedAtomsA', args:1, argName:'None', 'Quad-Topology: Period-separated ranges of A dual-topology atoms not shared by B; define from topology A1');
+cli.uaB(longOpt:'unsharedAtomsB', args:1, argName:'None', 'Quad-Topology: Period-separated ranges of B dual-topology atoms not shared by A; define from topology B1');
+cli.np(longOpt:'numParallel', args:1, argName:'1', 'Number of topology energies to calculate in parallel');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -176,6 +192,13 @@ if (options.ef2) {
     noElecStop2 = Integer.parseInt(options.ef2);
 }
 
+if (options.la1) {
+    ranges1 = options.la1.tokenize(".");
+}
+if (options.la2) {
+    ranges2 = options.la2.tokenize(".");
+}
+
 // Starting lambda value.
 if (options.l) {
     initialLambda = Double.parseDouble(options.l);
@@ -184,6 +207,19 @@ if (options.l) {
 // Print the energy for each step.
 if (options.v) {
     print = true;
+}
+
+if (options.np) {
+    numParallel = Integer.parseInt(options.np);
+    if (threadsAvail % numParallel != 0) {
+        logger.warning(String.format(" Number of threads available %d not evenly divisible by np %d; reverting to sequential", threadsAvail, numParallel));
+        numParallel = 1;
+    } else if (arguments.size() % numParallel != 0) {
+        logger.warning(String.format(" Number of topologies %d not evenly divisible by np %d; reverting to sequential", arguments.size(), numParallel));
+        numParallel = 1;
+    } else {
+        threadsPer = threadsAvail / numParallel;
+    }
 }
 
 if (options.qi) {
@@ -219,7 +255,7 @@ if (nargs == 1) {
 } else if (nargs == 4) {
     //logger.info("\n Testing lambda derivatives for %s quad topology", filenames);
     StringBuilder sb = new StringBuilder("\n Testing lambda derivatives for [");
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 3; i++) {
         sb.append(filenames[i] + ",");
     }
     sb.append(filenames[3]).append("] quad topology");
@@ -245,10 +281,12 @@ if (arguments.size() > 1) {
     System.setProperty("no-ligand-condensed-scf","false");
 }
 
+@Field Pattern rangeregex = Pattern.compile("([0-9]+)-?([0-9]+)?");
+
 void openFile(int topNum) {
     String filename = filenames.get(topNum);
     //String filename = 'xDx_a.pdb';
-    open(filename);
+    open(filename, threadsPer);
     Atom[] atoms = active.getAtomArray();
     ForceFieldEnergy forceFieldEnergy = active.getPotentialEnergy();
     int n = atoms.length;
@@ -259,6 +297,27 @@ void openFile(int topNum) {
             ai.setApplyLambda(true);
             ai.print();
         }
+        if (ranges1) {
+            for (range in ranges1) {
+                def m = rangeregex.matcher(range);
+                if (m.find()) {
+                    int rangeStart = Integer.parseInt(m.group(1));
+                    int rangeEnd = (m.groupCount() > 1) ? Integer.parseInt(m.group(2)) : rangeStart;
+                    if (rangeStart > rangeEnd) {
+                        logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
+                    }
+                    // Don't need to worry about negative numbers; rangeregex just won't match.
+                    for (int i = rangeStart; i <= rangeEnd; i++) {
+                        Atom ai = atoms[i-1];
+                        ai.setApplyLambda(true);
+                        ai.print();
+                    }
+                } else {
+                    logger.warning(" Could not recognize ${range} as a valid range; skipping");
+                }
+            }
+        }
+        
         // Apply the no electrostatics atom selection
         if (noElecStart < 1) {
             noElecStart = 1;
@@ -277,6 +336,27 @@ void openFile(int topNum) {
             ai.setApplyLambda(true);
             ai.print();
         }
+        if (ranges2) {
+            for (range in ranges2) {
+                def m = rangeregex.matcher(range);
+                if (m.find()) {
+                    int rangeStart = Integer.parseInt(m.group(1));
+                    int rangeEnd = (m.groupCount() > 1) ? Integer.parseInt(m.group(2)) : rangeStart;
+                    if (rangeStart > rangeEnd) {
+                        logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
+                    }
+                    // Don't need to worry about negative numbers; rangeregex just won't match.
+                    for (int i = rangeStart; i <= rangeEnd; i++) {
+                        Atom ai = atoms[i-1];
+                        ai.setApplyLambda(true);
+                        ai.print();
+                    }
+                } else {
+                    logger.warning(" Could not recognize ${range} as a valid range; skipping");
+                }
+            }
+        }
+        
         // Apply the no electrostatics atom selection
         if (noElecStart2 < 1) {
             noElecStart2 = 1;
@@ -403,6 +483,9 @@ if (arguments.size() == 1) {
     forceFieldEnergy.getCrystal().setSpecialPositionCutoff(0.0);*/
 
     DualTopologyEnergy dualTopologyEnergy = new DualTopologyEnergy(topologies[0], topologies[1]);
+    if (numParallel == 2) {
+        dualTopologyEnergy.setParallel(true);
+    }
     potential = dualTopologyEnergy;
     lambdaInterface = dualTopologyEnergy;
 } else if (arguments.size() == 4) {
@@ -411,7 +494,96 @@ if (arguments.size() == 1) {
     openFile(3);
     DualTopologyEnergy dtA = new DualTopologyEnergy(topologies[0], topologies[1]);
     DualTopologyEnergy dtB = new DualTopologyEnergy(topologies[3], topologies[2]);
-    QuadTopologyEnergy qte = new QuadTopologyEnergy(dtA, dtB);
+    List<Integer> uniqueA = new ArrayList<>();
+    List<Integer> uniqueB = new ArrayList<>();
+    
+    if (options.uaA) {
+        rangesA = options.uaA.tokenize(".");
+        def ra = [] as Set;
+        for (range in rangesA) {
+            def m = rangeregex.matcher(range);
+            if (m.find()) {
+                int rangeStart = Integer.parseInt(m.group(1));
+                int rangeEnd = (m.groupCount() > 1) ? Integer.parseInt(m.group(2)) : rangeStart;
+                if (rangeStart > rangeEnd) {
+                    logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
+                }
+                for (int i = rangeStart; i <= rangeEnd; i++) {
+                    ra.add(i-1);
+                }
+            }
+        }
+        Atom[] atA1 = topologies[0].getAtomArray();
+        int counter = 0;
+        def raAdj = [] as Set; // Indexed by common variables in dtA.
+        for (int i = 0; i < atA1.length; i++) {
+            Atom ai = atA1[i];
+            if (i in ra) {
+                if (ai.applyLambda()) {
+                    logger.warning(String.format(" Ranges defined in uaA should not overlap with ligand atoms; they are assumed to not be shared."));
+                } else {
+                    logger.info(String.format(" Unshared A: %d variables %d-%d", i, counter, counter+2));
+                    for (int j = 0; j < 3; j++) {
+                        raAdj.add(new Integer(counter + j));
+                    }
+                }
+            }
+            if (! ai.applyLambda()) {
+                counter += 3;
+            }
+        }
+        if (raAdj) {
+            uniqueA.addAll(raAdj);
+        }
+    }
+    if (options.uaB) {
+        rangesB = options.uaB.tokenize(".");
+        def rb = [] as Set;
+        for (range in rangesB) {
+            def m = rangeregex.matcher(range);
+            if (m.find()) {
+                int rangeStart = Integer.parseInt(m.group(1));
+                int rangeEnd = (m.groupCount() > 1) ? Integer.parseInt(m.group(2)) : rangeStart;
+                if (rangeStart > rangeEnd) {
+                    logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
+                }
+                for (int i = rangeStart; i <= rangeEnd; i++) {
+                    rb.add(i-1);
+                }
+            }
+        }
+        Atom[] atB1 = topologies[2].getAtomArray();
+        int counter = 0;
+        def rbAdj = [] as Set; // Indexed by common variables in dtA.
+        for (int i = 0; i < atB1.length; i++) {
+            Atom bi = atB1[i];
+            if (i in rb) {
+                if (bi.applyLambda()) {
+                    logger.warning(String.format(" Ranges defined in uaA should not overlap with ligand atoms; they are assumed to not be shared."));
+                } else {
+                    logger.info(String.format(" Unshared B: %d variables %d-%d", i, counter, counter+2));
+                    for (int j = 0; j < 3; j++) {
+                        rbAdj.add(counter + j);
+                    }
+                }
+            }
+            if (! bi.applyLambda()) {
+                counter += 3;
+            }
+        }
+        if (rbAdj) {
+            uniqueB.addAll(rbAdj);
+        }
+    }
+    
+    QuadTopologyEnergy qte = new QuadTopologyEnergy(dtA, dtB, uniqueA, uniqueB);
+    if (numParallel >= 2) {
+        qte.setParallel(true);
+        if (numParallel == 4) {
+            dtA.setParallel(true);
+            dtB.setParallel(true);
+        }
+    }
     potential = qte;
     lambdaInterface = qte;
 } else {

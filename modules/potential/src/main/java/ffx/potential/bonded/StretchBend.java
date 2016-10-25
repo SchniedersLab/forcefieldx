@@ -44,6 +44,7 @@ import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
 
+import ffx.numerics.AtomicDoubleArray;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.StretchBendType;
 
@@ -157,49 +158,44 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
         energy(false);
     }
 
-    protected static final double a0[] = new double[3];
-    protected static final double a1[] = new double[3];
-    protected static final double a2[] = new double[3];
-    /**
-     * Constant <code>v10=new double[3]</code>
-     */
-    protected static final double v10[] = new double[3];
-    /**
-     * Constant <code>v12=new double[3]</code>
-     */
-    protected static final double v12[] = new double[3];
-    /**
-     * Constant <code>p=new double[3]</code>
-     */
-    protected static final double p[] = new double[3];
-    /**
-     * Constant <code>dta=new double[3]</code>
-     */
-    protected static final double dta[] = new double[3];
-    /**
-     * Constant <code>dtc=new double[3]</code>
-     */
-    protected static final double dtc[] = new double[3];
-    /**
-     * Gradient on atom 0.
-     */
-    protected static final double g0[] = new double[3];
-    /**
-     * Gradient on Atom 1.
-     */
-    protected static final double g1[] = new double[3];
-    /**
-     * Gradient on Atom 2.
-     */
-    protected static final double g2[] = new double[3];
+    public double energy(boolean gradient) {
+        return energy(gradient, 0, null, null, null);
+    }
 
     /**
      * Evaluate the Stretch-Bend energy.
      *
      * @param gradient Evaluate the gradient.
+     * @param threadID
+     * @param gradX
+     * @param gradY
+     * @param gradZ
      * @return Returns the energy.
      */
-    public double energy(boolean gradient) {
+    public double energy(boolean gradient,
+            int threadID,
+            AtomicDoubleArray gradX,
+            AtomicDoubleArray gradY,
+            AtomicDoubleArray gradZ) {
+
+        double a0[] = new double[3];
+        double a1[] = new double[3];
+        double a2[] = new double[3];
+        /**
+         * Work vectors.
+         */
+        double v10[] = new double[3];
+        double v12[] = new double[3];
+        double p[] = new double[3];
+        double dta[] = new double[3];
+        double dtc[] = new double[3];
+        /**
+         * Gradient on atoms 0, 1 & 2.
+         */
+        double g0[] = new double[3];
+        double g1[] = new double[3];
+        double g2[] = new double[3];
+
         energy = 0.0;
         value = 0.0;
         atoms[0].getXYZ(a0);
@@ -222,7 +218,7 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
             double e1 = rcb - bond1Eq;
             double dt = value - angleEq;
             double dr = force0 * e0 + force1 * e1;
-            energy = rigidScale * dr * dt;
+            energy = rigidScale * dr * dt * esvLambda;
             if (gradient) {
                 // angle chain rule terms
                 double term1 = -rigidScale * dr * toDegrees(1.0 / (rab2 * rp));
@@ -242,9 +238,22 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
                 sum(dtc, v12, g2);
                 sum(g0, g2, g1);
                 scalar(g1, -1.0, g1);
-                atoms[0].addToXYZGradient(g0[0], g0[1], g0[2]);
-                atoms[1].addToXYZGradient(g1[0], g1[1], g1[2]);
-                atoms[2].addToXYZGradient(g2[0], g2[1], g2[2]);
+
+                // atoms[0].addToXYZGradient(g0[0], g0[1], g0[2]);
+                // atoms[1].addToXYZGradient(g1[0], g1[1], g1[2]);
+                // atoms[2].addToXYZGradient(g2[0], g2[1], g2[2]);
+                int i0 = atoms[0].getXYZIndex() - 1;
+                gradX.add(threadID, i0, g0[0]);
+                gradY.add(threadID, i0, g0[1]);
+                gradZ.add(threadID, i0, g0[2]);
+                int i1 = atoms[1].getXYZIndex() - 1;
+                gradX.add(threadID, i1, g1[0]);
+                gradY.add(threadID, i1, g1[1]);
+                gradZ.add(threadID, i1, g1[2]);
+                int i2 = atoms[2].getXYZIndex() - 1;
+                gradX.add(threadID, i2, g2[0]);
+                gradY.add(threadID, i2, g2[1]);
+                gradZ.add(threadID, i2, g2[2]);
             }
         }
         return energy;

@@ -388,6 +388,34 @@ public class OSRW implements Potential {
             double temperature, double dt, double printInterval,
             double saveInterval, boolean asynchronous,
             AlgorithmListener algorithmListener) {
+        this(lambdaInterface, potential, lambdaFile, histogramFile, properties,
+                temperature, dt, printInterval, saveInterval, asynchronous,
+                true, algorithmListener);
+    }
+
+    /**
+     * OSRW Asynchronous MultiWalker Constructor.
+     *
+     * @param lambdaInterface defines Lambda and dU/dL.
+     * @param potential defines the Potential energy.
+     * @param lambdaFile contains the current Lambda particle position and
+     * velocity.
+     * @param histogramFile contains the Lambda and dU/dL histogram.
+     * @param properties defines System properties.
+     * @param temperature the simulation temperature.
+     * @param dt the time step.
+     * @param printInterval number of steps between logging updates.
+     * @param saveInterval number of steps between restart file updates.
+     * @param asynchronous set to true if walkers run asynchronously.
+     * @param resetNumSteps whether to reset energy counts to 0
+     * @param algorithmListener the AlgorithmListener to be notified of
+     * progress.
+     */
+    public OSRW(LambdaInterface lambdaInterface, Potential potential,
+            File lambdaFile, File histogramFile, CompositeConfiguration properties,
+            double temperature, double dt, double printInterval,
+            double saveInterval, boolean asynchronous, boolean resetNumSteps,
+            AlgorithmListener algorithmListener) {
         this.lambdaInterface = lambdaInterface;
         this.potential = potential;
         this.lambdaFile = lambdaFile;
@@ -473,13 +501,15 @@ public class OSRW implements Potential {
             }
         }
 
+        energyCount = -1;
+
         /**
          * Load the OSRW lambda restart file if it exists.
          */
         if (lambdaFile != null && lambdaFile.exists()) {
             try {
                 OSRWLambdaReader osrwLambdaReader = new OSRWLambdaReader(new FileReader(lambdaFile));
-                osrwLambdaReader.readLambdaFile();
+                osrwLambdaReader.readLambdaFile(resetNumSteps);
                 logger.info(String.format("\n Continuing OSRW lambda from %s.", lambdaFile.getName()));
             } catch (FileNotFoundException ex) {
                 logger.info(" Lambda restart file could not be found and will be ignored.");
@@ -493,7 +523,6 @@ public class OSRW implements Potential {
         maxFLambda = minFLambda + FLambdaBins * dFL;
         FLambda = new double[lambdaBins];
         dUdXdL = new double[nVariables];
-        energyCount = -1;
         stochasticRandom = new Random(0);
 
         /**
@@ -603,7 +632,6 @@ public class OSRW implements Potential {
 
                 // Collect the minimum energy.
                 double minEnergy = potential.getTotalEnergy();
-
                 // If a new minimum has been found, save its coordinates.
                 if (minEnergy < osrwOptimum) {
                     osrwOptimum = minEnergy;
@@ -753,7 +781,6 @@ public class OSRW implements Potential {
                     logger.log(Level.INFO, message, ex);
                 }
             }
-
             /**
              * Write out snapshot upon each full lambda traversal.
              */
@@ -1338,10 +1365,9 @@ public class OSRW implements Potential {
         osrwOptimum = prevOSRWOptimum;
     }
 
-    public double getOSRWOptimum() {
+    public double getOSRWOptimum(){
         return osrwOptimum;
     }
-
     public double[] getLowEnergyLoop() {
         if (osrwOptimum < Double.MAX_VALUE) {
             return osrwOptimumCoords;
@@ -1395,6 +1421,16 @@ public class OSRW implements Potential {
     }
 
     @Override
+    public STATE getEnergyTermState() {
+        return state;
+    }
+
+    @Override
+    public double energy(double[] x) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
     public void setVelocity(double[] velocity) {
         potential.setVelocity(velocity);
     }
@@ -1424,14 +1460,13 @@ public class OSRW implements Potential {
         return potential.getPreviousAcceleration(previousAcceleration);
     }
 
-    @Override
-    public double energy(double[] x) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
-    public Potential.STATE getEnergyTermState() {
-        return state;
+    /**
+     * Returns the number of energy evaluations performed by this ttOSRW,
+     * including those picked up in the lambda file.
+     * @return Number of energy steps taken by this walker.
+     */
+    public int getEnergyCount() {
+        return energyCount;
     }
 
     private class OSRWHistogramWriter extends PrintWriter {
@@ -1470,6 +1505,7 @@ public class OSRW implements Potential {
         public void writeLambdaFile() {
             printf("Lambda          %15.8f\n", lambda);
             printf("Lambda-Velocity %15.8e\n", halfThetaVelocity);
+            printf("Steps-Taken     %15d\n", energyCount);
         }
     }
 
@@ -1513,6 +1549,10 @@ public class OSRW implements Potential {
         }
 
         public void readLambdaFile() {
+            readLambdaFile(true);
+        }
+
+        public void readLambdaFile(boolean resetEnergyCount) {
             try {
                 lambda = Double.parseDouble(readLine().split(" +")[1]);
                 halfThetaVelocity = Double.parseDouble(readLine().split(" +")[1]);
@@ -1520,6 +1560,13 @@ public class OSRW implements Potential {
             } catch (Exception e) {
                 String message = " Invalid OSRW Lambda file.";
                 logger.log(Level.SEVERE, message, e);
+            }
+            if (!resetEnergyCount) {
+                try {
+                    energyCount = Integer.parseUnsignedInt(readLine().split(" +")[1]);
+                } catch (Exception e) {
+                    logger.log(Level.FINE, String.format(" Could not find number of steps taken in OSRW Lambda file: %s", e.toString()));
+                }
             }
         }
     }

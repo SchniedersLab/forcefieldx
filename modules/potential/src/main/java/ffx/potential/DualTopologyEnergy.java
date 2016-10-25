@@ -37,18 +37,26 @@
  */
 package ffx.potential;
 
+// PJ Imports
+import edu.rit.pj.ParallelRegion;
+import edu.rit.pj.ParallelSection;
+import edu.rit.pj.ParallelTeam;
+
+// Java Imports
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import static java.util.Arrays.fill;
 
+// Apache Imports
 import org.apache.commons.math3.util.FastMath;
 import static org.apache.commons.math3.util.FastMath.pow;
 
+// FFX Imports
 import ffx.numerics.Potential;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.parameters.ForceField;
+import ffx.potential.utils.EnergyException;
 
 /**
  * Compute the potential energy and derivatives for a dual-topology system.
@@ -100,6 +108,18 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
      * Current potential energy of topology 2 (kcal/mol).
      */
     private double energy2 = 0;
+    /**
+     * Compute both topology energies in parallel instead of sequentially.
+     */
+    private boolean inParallel = false;
+    /**
+     * Region for computing energy/gradient in parallel.
+     */
+    private final EnergyRegion region;
+    /**
+     * ParallelTeam to execute the EnergyRegion.
+     */
+    private ParallelTeam team;
     /**
      * Include a valence restaint energy for atoms being "disappeared."
      */
@@ -435,6 +455,8 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
                 mass[softcoreIndex++] = m;
             }
         }
+        region = new EnergyRegion();
+        team = new ParallelTeam(1);
     }
 
     public DualTopologyEnergy(MolecularAssembly topology1, MolecularAssembly topology2) {
@@ -582,6 +604,8 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
                 mass[softcoreIndex++] = m;
             }
         }
+        region = new EnergyRegion();
+        team = new ParallelTeam(1);
     }
     
     /**
@@ -617,68 +641,94 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
             a2.setXYZ(xyzAv);
         }
     }
-
+    
     @Override
     public double energy(double[] x) {
-        /**
-         * Update the coordinates of both topologies.
-         */
-        unpackCoordinates(x);
-
-        /**
-         * Compute the energy of topology 1.
-         */
-        energy1 = potential1.energy(x1);
-        /**
-         * The if branch here shuts off most energy terms, and then recalculates
-         * those (primarily bonded) terms which are unaffected by lambda. This
-         * is then added back to the original energy, so you have lambda * (most)
-         * plus (lambda + 1-lambda) * (special bonded terms).
-         */
-        if (doValenceRestraint1 && potential1 instanceof ForceFieldEnergy) {
-            ForceFieldEnergy ffE1 = (ForceFieldEnergy) potential1;
-            ffE1.setLambdaBondedTerms(true);
-            restraintEnergy1 = potential1.energy(x1);
-            ffE1.setLambdaBondedTerms(false);
-        } else {
-            restraintEnergy1 = 0.0;
-        }
-        if (logger.isLoggable(Level.FINE)) {
-            logger.fine(String.format(" Topology 1 Energy & Restraints: %15.8f %15.8f\n",
-                    lambdaPow * energy1, oneMinusLambdaPow * restraintEnergy1));
-        }
-
-        /**
-         * Compute the energy of topology 2.
-         */
-        energy2 = potential2.energy(x2);
-        if (doValenceRestraint2 && potential2 instanceof ForceFieldEnergy) {
-            ForceFieldEnergy ffE2 = (ForceFieldEnergy) potential2;
-            ffE2.setLambdaBondedTerms(true);
-            restraintEnergy2 = potential2.energy(x2);
-            ffE2.setLambdaBondedTerms(false);
-        } else {
-            restraintEnergy2 = 0.0;
-        }
-        if (logger.isLoggable(Level.FINE)) {
-            logger.fine(String.format(" Topology 2 Energy & Restraints: %15.8f %15.8f\n",
-                    oneMinusLambdaPow * energy2, lambdaPow * restraintEnergy2));
-        }
-
-        /**
-         * Apply the dual-topology scaling for the total energy.
-         */
-        totalEnergy = lambdaPow * energy1 + oneMinusLambdaPow * restraintEnergy1
-                + oneMinusLambdaPow * energy2 + lambdaPow * restraintEnergy2;
-
-        /**
-         * Rescale the coordinates.
-         */
-        packCoordinates(x);
-
-        return totalEnergy;
+        return energy(x, false);
     }
 
+    @Override
+    public double energy(double[] x, boolean verbose) {
+        //if (inParallel) {
+        try {
+            region.setX(x);
+            region.setVerbose(verbose);
+            team.execute(region);
+        } catch (Exception ex) {
+            throw new EnergyException(String.format(" Exception in calculating dual-topology energy: %s", ex.toString()), false);
+        }
+        return totalEnergy;
+        /*} else {
+            /**
+             * Update the coordinates of both topologies.
+             *
+            unpackCoordinates(x);
+
+            /**
+             * Compute the energy of topology 1.
+             *
+            energy1 = potential1.energy(x1, verbose);
+            /**
+             * The if branch here shuts off most energy terms, and then recalculates
+             * those (primarily bonded) terms which are unaffected by lambda. This
+             * is then added back to the original energy, so you have lambda * (most)
+             * plus (lambda + 1-lambda) * (special bonded terms).
+             *
+            if (doValenceRestraint1 && potential1 instanceof ForceFieldEnergy) {
+                ForceFieldEnergy ffE1 = (ForceFieldEnergy) potential1;
+                ffE1.setLambdaBondedTerms(true);
+                if (verbose) {
+                    logger.info(" Calculating lambda bonded terms for topology 1");
+                }
+                restraintEnergy1 = potential1.energy(x1, verbose);
+                ffE1.setLambdaBondedTerms(false);
+            } else {
+                restraintEnergy1 = 0.0;
+            }
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine(String.format(" Topology 1 Energy & Restraints: %15.8f %15.8f\n",
+                        lambdaPow * energy1, oneMinusLambdaPow * restraintEnergy1));
+            }
+
+            /**
+             * Compute the energy of topology 2.
+             *
+            energy2 = potential2.energy(x2, verbose);
+            if (doValenceRestraint2 && potential2 instanceof ForceFieldEnergy) {
+                ForceFieldEnergy ffE2 = (ForceFieldEnergy) potential2;
+                ffE2.setLambdaBondedTerms(true);
+                if (verbose) {
+                    logger.info(" Calculating lambda bonded terms for topology 2");
+                }
+                restraintEnergy2 = potential2.energy(x2, verbose);
+                ffE2.setLambdaBondedTerms(false);
+            } else {
+                restraintEnergy2 = 0.0;
+            }
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine(String.format(" Topology 2 Energy & Restraints: %15.8f %15.8f\n",
+                        oneMinusLambdaPow * energy2, lambdaPow * restraintEnergy2));
+            }
+
+            /**
+             * Apply the dual-topology scaling for the total energy.
+             *
+            totalEnergy = lambdaPow * energy1 + oneMinusLambdaPow * restraintEnergy1
+                    + oneMinusLambdaPow * energy2 + lambdaPow * restraintEnergy2;
+
+            /**
+             * Rescale the coordinates.
+             *
+            packCoordinates(x);
+
+            if (verbose) {
+                logger.info(String.format(" Total dual-topology energy: %12.4f", totalEnergy));
+            }
+        }
+        return totalEnergy;
+            */
+    }
+   
     /**
      * The coordinate and gradient arrays are unpacked/packed based on the dual
      * topology.
@@ -689,85 +739,119 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
      */
     @Override
     public double energyAndGradient(double[] x, double[] g) {
+        return energyAndGradient(x, g, false);
+    }
 
-        /**
-         * Update the coordinates of both topologies.
-         */
-        unpackCoordinates(x);
-
-        /**
-         * Initialize dUdXdL arrays.
-         */
-        fill(gl1, 0.0);
-        fill(gl2, 0.0);
-        fill(rgl1, 0.0);
-        fill(rgl2, 0.0);
-        /**
-         * Compute the energy and gradient of topology 1.
-         */
-        energy1 = potential1.energyAndGradient(x1, g1);
-        dEdL_1 = lambdaInterface1.getdEdL();
-        d2EdL2_1 = lambdaInterface1.getd2EdL2();
-        lambdaInterface1.getdEdXdL(gl1);
-
-        if (doValenceRestraint1) {
-            forceFieldEnergy1.setLambdaBondedTerms(true);
-            restraintEnergy1 = forceFieldEnergy1.energyAndGradient(x1, rg1);
-            restraintdEdL_1 = forceFieldEnergy1.getdEdL();
-            restraintd2EdL2_1 = forceFieldEnergy1.getd2EdL2();
-            forceFieldEnergy1.getdEdXdL(rgl1);
-            forceFieldEnergy1.setLambdaBondedTerms(false);
-        } else {
-            restraintEnergy1 = 0.0;
-            restraintdEdL_1 = 0.0;
-            restraintd2EdL2_1 = 0.0;
+    /**
+     * The coordinate and gradient arrays are unpacked/packed based on the dual
+     * topology.
+     *
+     * @param x the coordinate array.
+     * @param g the gradient array.
+     * @param verbose
+     * @return the DualTopologyEnergy total energy.
+     */
+    @Override
+    public double energyAndGradient(double[] x, double[] g, boolean verbose) {
+        //if (inParallel) {
+        try {
+            region.setX(x);
+            region.setG(g);
+            region.setVerbose(verbose);
+            team.execute(region);
+        } catch (Exception ex) {
+            throw new EnergyException(String.format(" Exception in calculating dual-topology energy: %s", ex.toString()), false);
         }
-        if (logger.isLoggable(Level.FINE)) {
-            logger.fine(String.format(" Topology 1 Energy & Restraints: %15.8f %15.8f\n",
-                    lambdaPow * energy1, oneMinusLambdaPow * restraintEnergy1));
-            logger.fine(String.format(" Topology 1:    %15.8f * (%.2f)", energy1, lambdaPow));
-            logger.fine(String.format(" T1 Restraints: %15.8f * (%.2f)", restraintEnergy1, oneMinusLambdaPow));
-        }
-
-        /**
-         * Compute the energy and gradient of topology 2.
-         */
-        energy2 = potential2.energyAndGradient(x2, g2);
-        dEdL_2 = -lambdaInterface2.getdEdL();
-        d2EdL2_2 = lambdaInterface2.getd2EdL2();
-        lambdaInterface2.getdEdXdL(gl2);
-
-        if (doValenceRestraint2) {
-            forceFieldEnergy2.setLambdaBondedTerms(true);
-            restraintEnergy2 = forceFieldEnergy2.energyAndGradient(x2, rg2);
-            restraintdEdL_2 = -forceFieldEnergy2.getdEdL();
-            restraintd2EdL2_2 = forceFieldEnergy2.getd2EdL2();
-            forceFieldEnergy2.getdEdXdL(rgl2);
-            forceFieldEnergy2.setLambdaBondedTerms(false);
-        } else {
-            restraintEnergy2 = 0.0;
-            restraintdEdL_2 = 0.0;
-            restraintd2EdL2_2 = 0.0;
-        }
-        if (logger.isLoggable(Level.FINE)) {
-            logger.fine(String.format(" Topology 2 Energy & Restraints: %15.8f %15.8f\n",
-                    oneMinusLambdaPow * energy2, lambdaPow * restraintEnergy2));
-            logger.fine(String.format(" Topology 2:    %15.8f * (%.2f)", energy2, oneMinusLambdaPow));
-            logger.fine(String.format(" T2 Restraints: %15.8f * (%.2f)", restraintEnergy2, lambdaPow));
-        }
-
-        /**
-         * Apply the dual-topology scaling for the total energy.
-         */
-        totalEnergy = lambdaPow * energy1 + oneMinusLambdaPow * restraintEnergy1
-                + oneMinusLambdaPow * energy2 + lambdaPow * restraintEnergy2;
-
-        /**
-         * Scale and pack the gradient.
-         */
-        packGradient(x, g);
-
         return totalEnergy;
+        /*} else {
+            /**
+             * Update the coordinates of both topologies.
+             *
+            unpackCoordinates(x);
+
+            /**
+             * Initialize dUdXdL arrays.
+             *
+            fill(gl1, 0.0);
+            fill(gl2, 0.0);
+            fill(rgl1, 0.0);
+            fill(rgl2, 0.0);
+            /**
+             * Compute the energy and gradient of topology 1.
+             *
+            energy1 = potential1.energyAndGradient(x1, g1, verbose);
+            dEdL_1 = lambdaInterface1.getdEdL();
+            d2EdL2_1 = lambdaInterface1.getd2EdL2();
+            lambdaInterface1.getdEdXdL(gl1);
+
+            if (doValenceRestraint1) {
+                forceFieldEnergy1.setLambdaBondedTerms(true);
+                if (verbose) {
+                    logger.info(" Calculating lambda bonded terms for topology 1");
+                }
+                restraintEnergy1 = forceFieldEnergy1.energyAndGradient(x1, rg1, verbose);
+                restraintdEdL_1 = forceFieldEnergy1.getdEdL();
+                restraintd2EdL2_1 = forceFieldEnergy1.getd2EdL2();
+                forceFieldEnergy1.getdEdXdL(rgl1);
+                forceFieldEnergy1.setLambdaBondedTerms(false);
+            } else {
+                restraintEnergy1 = 0.0;
+                restraintdEdL_1 = 0.0;
+                restraintd2EdL2_1 = 0.0;
+            }
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine(String.format(" Topology 1 Energy & Restraints: %15.8f %15.8f\n",
+                        lambdaPow * energy1, oneMinusLambdaPow * restraintEnergy1));
+                logger.fine(String.format(" Topology 1:    %15.8f * (%.2f)", energy1, lambdaPow));
+                logger.fine(String.format(" T1 Restraints: %15.8f * (%.2f)", restraintEnergy1, oneMinusLambdaPow));
+            }
+
+            /**
+             * Compute the energy and gradient of topology 2.
+             *
+            energy2 = potential2.energyAndGradient(x2, g2, verbose);
+            dEdL_2 = -lambdaInterface2.getdEdL();
+            d2EdL2_2 = lambdaInterface2.getd2EdL2();
+            lambdaInterface2.getdEdXdL(gl2);
+
+            if (doValenceRestraint2) {
+                forceFieldEnergy2.setLambdaBondedTerms(true);
+                if (verbose) {
+                    logger.info(" Calculating lambda bonded terms for topology 2");
+                }
+                restraintEnergy2 = forceFieldEnergy2.energyAndGradient(x2, rg2, verbose);
+                restraintdEdL_2 = -forceFieldEnergy2.getdEdL();
+                restraintd2EdL2_2 = forceFieldEnergy2.getd2EdL2();
+                forceFieldEnergy2.getdEdXdL(rgl2);
+                forceFieldEnergy2.setLambdaBondedTerms(false);
+            } else {
+                restraintEnergy2 = 0.0;
+                restraintdEdL_2 = 0.0;
+                restraintd2EdL2_2 = 0.0;
+            }
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine(String.format(" Topology 2 Energy & Restraints: %15.8f %15.8f\n",
+                        oneMinusLambdaPow * energy2, lambdaPow * restraintEnergy2));
+                logger.fine(String.format(" Topology 2:    %15.8f * (%.2f)", energy2, oneMinusLambdaPow));
+                logger.fine(String.format(" T2 Restraints: %15.8f * (%.2f)", restraintEnergy2, lambdaPow));
+            }
+
+            /**
+             * Apply the dual-topology scaling for the total energy.
+             *
+            totalEnergy = lambdaPow * energy1 + oneMinusLambdaPow * restraintEnergy1
+                    + oneMinusLambdaPow * energy2 + lambdaPow * restraintEnergy2;
+
+            /**
+             * Scale and pack the gradient.
+             *
+            packGradient(x, g);
+
+            if (verbose) {
+                logger.info(String.format(" Total dual-topology energy: %12.4f", totalEnergy));
+            }
+        }
+        return totalEnergy;*/
     }
 
     @Override
@@ -918,6 +1002,52 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
     public double[] getMass() {
         return mass;
     }
+    
+    /**
+     * Reload the common atomic masses. Intended for quad-topology dual force 
+     * field corrections, where common atoms may have slightly different masses;
+     * this was found to be the case between AMOEBA 2013 and AMBER99SB carbons.
+     * 
+     * @param secondTopology Load from second topology
+     */
+    public void reloadCommonMasses(boolean secondTopology) {
+        int commonIndex = 0;
+        if (secondTopology) {
+            for (int i = 0; i < nActive2; i++) {
+                Atom a = activeAtoms2[i];
+                double m = a.getMass();
+                if (!a.applyLambda()) {
+                    mass[commonIndex++] = m;
+                    mass[commonIndex++] = m;
+                    mass[commonIndex++] = m;
+                }
+
+            }
+        } else {
+            for (int i = 0; i < nActive1; i++) {
+                Atom a = activeAtoms1[i];
+                double m = a.getMass();
+                if (!a.applyLambda()) {
+                    mass[commonIndex++] = m;
+                    mass[commonIndex++] = m;
+                    mass[commonIndex++] = m;
+                }
+
+            }
+        }
+    }
+    
+    public void setParallel(boolean parallel) {
+        this.inParallel = parallel;
+        if (team != null) {
+            try {
+                team.shutdown();
+            } catch (Exception e) {
+                logger.severe(String.format(" Exception in shutting down old ParallelTeam for DualTopologyEnergy: %s", e.toString()));
+            }
+        }
+        team = parallel ? new ParallelTeam(2) : new ParallelTeam(1);
+    }
 
     @Override
     public double getTotalEnergy() {
@@ -927,6 +1057,14 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
     @Override
     public int getNumberOfVariables() {
         return nVariables;
+    }
+    
+    /**
+     * Returns the number of shared variables (3* number of shared atoms).
+     * @return An int
+     */
+    public int getNumSharedVariables() {
+        return 3*nShared;
     }
 
     @Override
@@ -1264,5 +1402,215 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
         }
 
         return previousAcceleration;
+    }
+    
+    private class EnergyRegion extends ParallelRegion {
+        
+        private double[] x;
+        private double[] g;
+        private boolean gradient = false;
+        private boolean verbose = false;
+        
+        private final Energy1Section e1sect;
+        private final Energy2Section e2sect;
+        
+        public EnergyRegion() {
+            e1sect = new Energy1Section();
+            e2sect = new Energy2Section();
+        }
+        
+        public void setX(double[] x) {
+            this.x = x;
+        }
+        
+        public void setG(double[] g) {
+            this.g = g;
+            setGradient(true);
+        }
+        
+        public void setGradient(boolean grad) {
+            this.gradient = grad;
+            e1sect.setGradient(grad);
+            e2sect.setGradient(grad);
+        }
+        
+        public void setVerbose(boolean verb) {
+            this.verbose = verb;
+            e1sect.setVerbose(verb);
+            e2sect.setVerbose(verb);
+        }
+        
+        @Override
+        public void start() throws Exception {
+            unpackCoordinates(x);
+        }
+
+        @Override
+        public void run() throws Exception {
+            execute(e1sect, e2sect);
+        }
+        
+        @Override
+        public void finish() throws Exception {
+            /**
+             * Apply the dual-topology scaling for the total energy.
+             */
+            totalEnergy = lambdaPow * energy1 + oneMinusLambdaPow * restraintEnergy1
+                    + oneMinusLambdaPow * energy2 + lambdaPow * restraintEnergy2;
+
+            if (gradient) {
+                packGradient(x, g);
+            } else {
+                packCoordinates(x);
+            }
+
+            if (verbose) {
+                logger.info(String.format(" Total dual-topology energy: %12.4f", totalEnergy));
+            }
+            setVerbose(false);
+            setGradient(false);
+        }
+        
+    }
+    
+    private class Energy1Section extends ParallelSection {
+        
+        private boolean gradient = false;
+        private boolean verbose = false;
+        
+        public void setGradient(boolean grad) {
+            this.gradient = grad;
+        }
+        
+        public void setVerbose(boolean verb) {
+            this.verbose = verb;
+        }
+
+        @Override
+        public void run() throws Exception {
+            if (gradient) {
+                fill(gl1, 0.0);
+                fill(rgl1, 0.0);
+                energy1 = potential1.energyAndGradient(x1, g1, verbose);
+                dEdL_1 = lambdaInterface1.getdEdL();
+                d2EdL2_1 = lambdaInterface1.getd2EdL2();
+                lambdaInterface1.getdEdXdL(gl1);
+
+                if (doValenceRestraint1 && potential1 instanceof ForceFieldEnergy) {
+                    forceFieldEnergy1.setLambdaBondedTerms(true);
+                    if (verbose) {
+                        logger.info(" Calculating lambda bonded terms for topology 1");
+                    }
+                    restraintEnergy1 = forceFieldEnergy1.energyAndGradient(x1, rg1, verbose);
+                    restraintdEdL_1 = forceFieldEnergy1.getdEdL();
+                    restraintd2EdL2_1 = forceFieldEnergy1.getd2EdL2();
+                    forceFieldEnergy1.getdEdXdL(rgl1);
+                    forceFieldEnergy1.setLambdaBondedTerms(false);
+                } else {
+                    restraintEnergy1 = 0.0;
+                    restraintdEdL_1 = 0.0;
+                    restraintd2EdL2_1 = 0.0;
+                }
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.fine(String.format(" Topology 1 Energy & Restraints: %15.8f %15.8f\n",
+                            lambdaPow * energy1, oneMinusLambdaPow * restraintEnergy1));
+                    logger.fine(String.format(" Topology 1:    %15.8f * (%.2f)", energy1, lambdaPow));
+                    logger.fine(String.format(" T1 Restraints: %15.8f * (%.2f)", restraintEnergy1, oneMinusLambdaPow));
+                }
+            } else {
+                energy1 = potential1.energy(x1, verbose);
+                /**
+                 * The if branch here shuts off most energy terms, and then
+                 * recalculates those (primarily bonded) terms which are
+                 * unaffected by lambda. This is then added back to the original
+                 * energy, so you have lambda * (most) plus (lambda + 1-lambda)
+                 * * (special bonded terms).
+                 */
+                if (doValenceRestraint1 && potential1 instanceof ForceFieldEnergy) {
+                    ForceFieldEnergy ffE1 = (ForceFieldEnergy) potential1;
+                    ffE1.setLambdaBondedTerms(true);
+                    if (verbose) {
+                        logger.info(" Calculating lambda bonded terms for topology 1");
+                    }
+                    restraintEnergy1 = potential1.energy(x1, verbose);
+                    ffE1.setLambdaBondedTerms(false);
+                } else {
+                    restraintEnergy1 = 0.0;
+                }
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.fine(String.format(" Topology 1 Energy & Restraints: %15.8f %15.8f\n",
+                           lambdaPow * energy1, oneMinusLambdaPow * restraintEnergy1));
+                }
+            }
+        }
+    }
+    
+    private class Energy2Section extends ParallelSection {
+        
+        private boolean gradient = false;
+        private boolean verbose = false;
+        
+        public void setGradient(boolean grad) {
+            this.gradient = grad;
+        }
+        
+        public void setVerbose(boolean verb) {
+            this.verbose = verb;
+        }
+
+        @Override
+        public void run() throws Exception {
+            if (gradient) {
+                fill(gl2, 0.0);
+                fill(rgl2, 0.0);
+
+                /**
+                 * Compute the energy and gradient of topology 2.
+                 */
+                energy2 = potential2.energyAndGradient(x2, g2, verbose);
+                dEdL_2 = -lambdaInterface2.getdEdL();
+                d2EdL2_2 = lambdaInterface2.getd2EdL2();
+                lambdaInterface2.getdEdXdL(gl2);
+
+                if (doValenceRestraint2) {
+                    forceFieldEnergy2.setLambdaBondedTerms(true);
+                    if (verbose) {
+                        logger.info(" Calculating lambda bonded terms for topology 2");
+                    }
+                    restraintEnergy2 = forceFieldEnergy2.energyAndGradient(x2, rg2, verbose);
+                    restraintdEdL_2 = -forceFieldEnergy2.getdEdL();
+                    restraintd2EdL2_2 = forceFieldEnergy2.getd2EdL2();
+                    forceFieldEnergy2.getdEdXdL(rgl2);
+                    forceFieldEnergy2.setLambdaBondedTerms(false);
+                } else {
+                    restraintEnergy2 = 0.0;
+                    restraintdEdL_2 = 0.0;
+                    restraintd2EdL2_2 = 0.0;
+                }
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.fine(String.format(" Topology 2 Energy & Restraints: %15.8f %15.8f\n",
+                            oneMinusLambdaPow * energy2, lambdaPow * restraintEnergy2));
+                    logger.fine(String.format(" Topology 2:    %15.8f * (%.2f)", energy2, oneMinusLambdaPow));
+                    logger.fine(String.format(" T2 Restraints: %15.8f * (%.2f)", restraintEnergy2, lambdaPow));
+                }
+            } else {
+                energy2 = potential2.energy(x2, verbose);
+                if (doValenceRestraint2 && potential2 instanceof ForceFieldEnergy) {
+                    ForceFieldEnergy ffE2 = (ForceFieldEnergy) potential2;
+                    ffE2.setLambdaBondedTerms(true);
+                    if (verbose) {
+                        logger.info(" Calculating lambda bonded terms for topology 1");
+                    }
+                    restraintEnergy2 = potential2.energy(x2, verbose);
+                    ffE2.setLambdaBondedTerms(false);
+                } else {
+                    restraintEnergy2 = 0.0;
+                }
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.fine(String.format(" Topology 2 Energy & Restraints: %15.8f %15.8f\n",
+                            oneMinusLambdaPow * energy2, lambdaPow * restraintEnergy2));
+                }
+            }
+        }
     }
 }

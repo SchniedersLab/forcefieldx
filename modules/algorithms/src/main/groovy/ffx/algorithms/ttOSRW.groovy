@@ -96,6 +96,8 @@ boolean asynchronous = false;
 @Field List<Atom> ligandAtoms2 = new ArrayList<>();
 @Field def ranges1 = []; // Groovy mechanism for creating an untyped ArrayList.
 @Field def ranges2 = [];
+@Field def rangesA = [];
+@Field def rangesB = [];
 
 // First atom for no electrostatics.
 @Field int noElecStart = 1;
@@ -175,6 +177,10 @@ double temperingParam = 2.0;
 // Write traversal snapshots
 boolean writeTraversals = false;
 
+int numParallel = 1;
+@Field int threadsAvail = edu.rit.pj.ParallelTeam.getDefaultThreadCount();
+@Field int threadsPer = threadsAvail;
+
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
@@ -215,6 +221,9 @@ cli.W(longOpt:'traversals', args:0, 'Write out lambda-traversal snapshots.');
 cli.rt(longOpt:'reset', args:0, 'Reset OSRW histogram once, when lambda reaches 0.99.');
 cli.tp(longOpt:'temperingParam', args:1, argName:'2', 'Tempering rate parameter in multiples of kbT.');
 cli.rn(longOpt:'resetNumSteps', args:1, argName:'true', 'Ignore prior steps logged in .lam files');
+cli.uaA(longOpt:'unsharedAtomsA', args:1, argName:'None', 'Quad-Topology: Period-separated ranges of A dual-topology atoms not shared by B');
+cli.uaB(longOpt:'unsharedAtomsB', args:1, argName:'None', 'Quad-Topology: Period-separated ranges of B dual-topology atoms not shared by A');
+cli.np(longOpt:'numParallel', args:1, argName:'1', 'Number of topology energies to calculate in parallel');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -382,6 +391,19 @@ if (options.tp) {
     temperingParam = Double.parseDouble(options.tp);
 }
 
+if (options.np) {
+    numParallel = Integer.parseInt(options.np);
+    if (threadsAvail % numParallel != 0) {
+        logger.warning(String.format(" Number of threads available %d not evenly divisible by np %d; reverting to sequential", threadsAvail, numParallel));
+        numParallel = 1;
+    } else if (arguments.size() % numParallel != 0) {
+        logger.warning(String.format(" Number of topologies %d not evenly divisible by np %d; reverting to sequential", arguments.size(), numParallel));
+        numParallel = 1;
+    } else {
+        threadsPer = threadsAvail / numParallel;
+    }
+}
+
 if (options.rn) {
     if (eSteps > 0) {
         println("");
@@ -459,10 +481,10 @@ if (arguments.size() >= 2) {
 @Field Pattern rangeregex = Pattern.compile("([0-9]+)-?([0-9]+)?");
 
 /**
- * Handles opening a file (filenmae), with 0-indexed number topNum.
+ * Handles opening a file (filename), with 0-indexed number topNum.
  */
 private void openFile(String toOpen, File structFile, int topNum) {
-    open(toOpen);
+    open(toOpen, threadsPer);
     if (size > 1) {
         active.setFile(structFile);
     }
@@ -481,7 +503,7 @@ private void openFile(String toOpen, File structFile, int topNum) {
                     def m = rangeregex.matcher(range);
                     if (m.find()) {
                         int rangeStart = Integer.parseInt(m.group(1));
-                        int rangeEnd = (m.groupCount > 1) ? Integer.parseInt(m.group(2)) : rangeStart;
+                        int rangeEnd = (m.groupCount() > 1) ? Integer.parseInt(m.group(2)) : rangeStart;
                         if (rangeStart > rangeEnd) {
                             logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
                         }
@@ -521,7 +543,7 @@ private void openFile(String toOpen, File structFile, int topNum) {
                     def m = rangeregex.matcher(range);
                     if (m.find()) {
                         int rangeStart = Integer.parseInt(m.group(1));
-                        int rangeEnd = (m.groupCount > 1) ? Integer.parseInt(m.group(2)) : rangeStart;
+                        int rangeEnd = (m.groupCount() > 1) ? Integer.parseInt(m.group(2)) : rangeStart;
                         if (rangeStart > rangeEnd) {
                             logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
                         }
@@ -726,6 +748,9 @@ if (arguments.size() == 1) {
    
     // Create the DualTopology potential energy.
     DualTopologyEnergy dualTopologyEnergy = new DualTopologyEnergy(topologies[0], topologies[1]);
+    if (numParallel == 2) {
+        dualTopologyEnergy.setParallel(true);
+    }
     // Wrap the DualTopology potential energy inside an OSRW instance.
     osrw = new TransitionTemperedOSRW(dualTopologyEnergy, dualTopologyEnergy, lambdaRestart,
         histogramRestart, active.getProperties(), temperature, timeStep, printInterval,
@@ -746,7 +771,96 @@ if (arguments.size() == 1) {
     DualTopologyEnergy dtA = new DualTopologyEnergy(topologies[0], topologies[1]);
     // Intentionally reversed order.
     DualTopologyEnergy dtB = new DualTopologyEnergy(topologies[3], topologies[2]);
-    QuadTopologyEnergy qte = new QuadTopologyEnergy(dtA, dtB);
+    List<Integer> uniqueA = new ArrayList<>();
+    List<Integer> uniqueB = new ArrayList<>();
+    
+    if (options.uaA) {
+        rangesA = options.uaA.tokenize(".");
+        def ra = [] as Set;
+        for (range in rangesA) {
+            def m = rangeregex.matcher(range);
+            if (m.find()) {
+                int rangeStart = Integer.parseInt(m.group(1));
+                int rangeEnd = (m.groupCount() > 1) ? Integer.parseInt(m.group(2)) : rangeStart;
+                if (rangeStart > rangeEnd) {
+                    logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
+                }
+                for (int i = rangeStart; i <= rangeEnd; i++) {
+                    ra.add(i-1);
+                }
+            }
+        }
+        Atom[] atA1 = topologies[0].getAtomArray();
+        int counter = 0;
+        def raAdj = [] as Set; // Indexed by common variables in dtA.
+        for (int i = 0; i < atA1.length; i++) {
+            Atom ai = atA1[i];
+            if (i in ra) {
+                if (ai.applyLambda()) {
+                    logger.warning(String.format(" Ranges defined in uaA should not overlap with ligand atoms; they are assumed to not be shared."));
+                } else {
+                    logger.info(String.format(" Unshared A: %d variables %d-%d", i, counter, counter+2));
+                    for (int j = 0; j < 3; j++) {
+                        raAdj.add(new Integer(counter + j));
+                    }
+                }
+            }
+            if (! ai.applyLambda()) {
+                counter += 3;
+            }
+        }
+        if (raAdj) {
+            uniqueA.addAll(raAdj);
+        }
+    }
+    if (options.uaB) {
+        rangesB = options.uaB.tokenize(".");
+        def rb = [] as Set;
+        for (range in rangesB) {
+            def m = rangeregex.matcher(range);
+            if (m.find()) {
+                int rangeStart = Integer.parseInt(m.group(1));
+                int rangeEnd = (m.groupCount() > 1) ? Integer.parseInt(m.group(2)) : rangeStart;
+                if (rangeStart > rangeEnd) {
+                    logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
+                }
+                for (int i = rangeStart; i <= rangeEnd; i++) {
+                    rb.add(i-1);
+                }
+            }
+        }
+        Atom[] atB1 = topologies[2].getAtomArray();
+        int counter = 0;
+        def rbAdj = [] as Set; // Indexed by common variables in dtA.
+        for (int i = 0; i < atB1.length; i++) {
+            Atom bi = atB1[i];
+            if (i in rb) {
+                if (bi.applyLambda()) {
+                    logger.warning(String.format(" Ranges defined in uaA should not overlap with ligand atoms; they are assumed to not be shared."));
+                } else {
+                    logger.info(String.format(" Unshared B: %d variables %d-%d", i, counter, counter+2));
+                    for (int j = 0; j < 3; j++) {
+                        rbAdj.add(counter + j);
+                    }
+                }
+            }
+            if (! bi.applyLambda()) {
+                counter += 3;
+            }
+        }
+        if (rbAdj) {
+            uniqueB.addAll(rbAdj);
+        }
+    }
+    
+    QuadTopologyEnergy qte = new QuadTopologyEnergy(dtA, dtB, uniqueA, uniqueB);
+    if (numParallel >= 2) {
+        qte.setParallel(true);
+        if (numParallel == 2) {
+            dtA.setParallel(true);
+            dtB.setParallel(true);
+        }
+    }
     osrw = new TransitionTemperedOSRW(qte, qte, lambdaRestart, histogramRestart, 
         active.getProperties(), temperature, timeStep, printInterval, 
         saveInterval, asynchronous, resetNumSteps, sh);

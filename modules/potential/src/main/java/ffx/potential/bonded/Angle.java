@@ -46,6 +46,7 @@ import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
 
+import ffx.numerics.AtomicDoubleArray;
 import ffx.potential.parameters.AngleType;
 import ffx.potential.parameters.ForceField;
 
@@ -290,19 +291,72 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
         energy(false);
     }
 
+    public double energy(boolean gradient) {
+        return energy(gradient, 0, null, null, null);
+    }
+
     /**
      * Evaluate this Angle energy.
      *
      * @param gradient Evaluate the gradient.
+     * @param threadID
+     * @param gradX
+     * @param gradY
+     * @param gradZ
      * @return Returns the energy.
      */
-    public double energy(boolean gradient) {
+    public double energy(boolean gradient,
+            int threadID,
+            AtomicDoubleArray gradX,
+            AtomicDoubleArray gradY,
+            AtomicDoubleArray gradZ) {
+
+        double a0[] = new double[3];
+        double a1[] = new double[3];
+        double a2[] = new double[3];
+        /**
+         * Vector from Atom 1 to Atom 0.
+         */
+        double v10[] = new double[3];
+        /**
+         * Vector from Atom 1 to Atom 2.
+         */
+        double v12[] = new double[3];
+        /**
+         * Vector from Atom 3 to Atom 0.
+         */
+        double v30[] = new double[3];
+        /**
+         * Vector from Atom 2 to Atom 0.
+         */
+        double v20[] = new double[3];
+        /**
+         * Vector v10 cross v30.
+         */
+        double p[] = new double[3];
+        /**
+         * Work vectors for in-plane angles.
+         */
+        double ip[] = new double[3];
+        double jp[] = new double[3];
+        double kp[] = new double[3];
+        double lp[] = new double[3];
+        /**
+         * Gradient on atoms 0, 1, 2 & 3.
+         */
+        double g0[] = new double[3];
+        double g1[] = new double[3];
+        double g2[] = new double[3];
+        double g3[] = new double[3];
+
         energy = 0.0;
         value = 0.0;
-        double prefactor = units * rigidScale * angleType.forceConstant;
+        double prefactor = units * rigidScale * angleType.forceConstant * esvLambda;
+
         atoms[0].getXYZ(a0);
         atoms[1].getXYZ(a1);
         atoms[2].getXYZ(a2);
+
         switch (angleType.angleFunction) {
             case SEXTIC:
                 switch (angleMode) {
@@ -320,9 +374,12 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
                             double dv2 = dv * dv;
                             double dv3 = dv2 * dv;
                             double dv4 = dv2 * dv2;
-                            energy = prefactor * dv2 * (1.0 + cubic * dv + quartic * dv2 + quintic * dv3 + sextic * dv4);
+                            energy = prefactor * dv2 * (1.0
+                                    + cubic * dv + quartic * dv2
+                                    + quintic * dv3 + sextic * dv4);
                             if (gradient) {
-                                double deddt = prefactor * dv * toDegrees(2.0 + 3.0 * cubic * dv + 4.0 * quartic * dv2
+                                double deddt = prefactor * dv * toDegrees(2.0
+                                        + 3.0 * cubic * dv + 4.0 * quartic * dv2
                                         + 5.0 * quintic * dv3 + 6.0 * sextic * dv4);
                                 double rp = r(p);
                                 rp = max(rp, 0.000001);
@@ -334,14 +391,27 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
                                 scalar(g2, termc, g2);
                                 sum(g0, g2, g1);
                                 scalar(g1, -1.0, g1);
-                                atoms[0].addToXYZGradient(g0[0], g0[1], g0[2]);
-                                atoms[1].addToXYZGradient(g1[0], g1[1], g1[2]);
-                                atoms[2].addToXYZGradient(g2[0], g2[1], g2[2]);
+                                //atoms[0].addToXYZGradient(g0[0], g0[1], g0[2]);
+                                //atoms[1].addToXYZGradient(g1[0], g1[1], g1[2]);
+                                //atoms[2].addToXYZGradient(g2[0], g2[1], g2[2]);
+                                int i0 = atoms[0].getXYZIndex() - 1;
+                                gradX.add(threadID, i0, g0[0]);
+                                gradY.add(threadID, i0, g0[1]);
+                                gradZ.add(threadID, i0, g0[2]);
+                                int i1 = atoms[1].getXYZIndex() - 1;
+                                gradX.add(threadID, i1, g1[0]);
+                                gradY.add(threadID, i1, g1[1]);
+                                gradZ.add(threadID, i1, g1[2]);
+                                int i2 = atoms[2].getXYZIndex() - 1;
+                                gradX.add(threadID, i2, g2[0]);
+                                gradY.add(threadID, i2, g2[1]);
+                                gradZ.add(threadID, i2, g2[2]);
                             }
                             value = dv;
                         }
                         break;
                     case IN_PLANE:
+                        double a4[] = new double[3];
                         atom4.getXYZ(a4);
                         diff(a0, a4, v10);
                         diff(a1, a4, v20);
@@ -367,11 +437,24 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
                             double dv2 = dv * dv;
                             double dv3 = dv2 * dv;
                             double dv4 = dv2 * dv2;
-                            energy = prefactor * dv2 * (1.0 + cubic * dv + quartic * dv2 + quintic * dv3 + sextic * dv4);
+                            energy = prefactor * dv2 * (1.0
+                                    + cubic * dv + quartic * dv2
+                                    + quintic * dv3 + sextic * dv4);
                             if (gradient) {
-                                double deddt = prefactor * dv * toDegrees(2.0 + 3.0 * cubic * dv + 4.0 * quartic * dv2 + 5.0 * quintic * dv3 + 6.0 * sextic * dv4);
+                                double deddt = prefactor * dv * toDegrees(2.0
+                                        + 3.0 * cubic * dv + 4.0 * quartic * dv2
+                                        + 5.0 * quintic * dv3 + 6.0 * sextic * dv4);
                                 double term0 = -deddt / (jp2 * lpr);
                                 double term2 = deddt / (kp2 * lpr);
+                                double ded0[] = new double[3];
+                                double ded2[] = new double[3];
+                                double dedp[] = new double[3];
+                                double x21[] = new double[3];
+                                double x01[] = new double[3];
+                                double xp2[] = new double[3];
+                                double xd2[] = new double[3];
+                                double dpd0[] = new double[3];
+                                double dpd2[] = new double[3];
                                 cross(jp, lp, ded0);
                                 scalar(ded0, term0, ded0);
                                 cross(kp, lp, ded2);
@@ -401,10 +484,26 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
                                 sum(g0, g1, g3);
                                 sum(g2, g3, g3);
                                 scalar(g3, -1.0, g3);
-                                atoms[0].addToXYZGradient(g0[0], g0[1], g0[2]);
-                                atoms[1].addToXYZGradient(g1[0], g1[1], g1[2]);
-                                atoms[2].addToXYZGradient(g2[0], g2[1], g2[2]);
-                                atom4.addToXYZGradient(g3[0], g3[1], g3[2]);
+                                // atoms[0].addToXYZGradient(g0[0], g0[1], g0[2]);
+                                // atoms[1].addToXYZGradient(g1[0], g1[1], g1[2]);
+                                // atoms[2].addToXYZGradient(g2[0], g2[1], g2[2]);
+                                // atom4.addToXYZGradient(g3[0], g3[1], g3[2]);
+                                int i0 = atoms[0].getXYZIndex() - 1;
+                                gradX.add(threadID, i0, g0[0]);
+                                gradY.add(threadID, i0, g0[1]);
+                                gradZ.add(threadID, i0, g0[2]);
+                                int i1 = atoms[1].getXYZIndex() - 1;
+                                gradX.add(threadID, i1, g1[0]);
+                                gradY.add(threadID, i1, g1[1]);
+                                gradZ.add(threadID, i1, g1[2]);
+                                int i2 = atoms[2].getXYZIndex() - 1;
+                                gradX.add(threadID, i2, g2[0]);
+                                gradY.add(threadID, i2, g2[1]);
+                                gradZ.add(threadID, i2, g2[2]);
+                                int i3 = atom4.getXYZIndex() - 1;
+                                gradX.add(threadID, i3, g3[0]);
+                                gradY.add(threadID, i3, g3[1]);
+                                gradZ.add(threadID, i3, g3[2]);
                             }
                             value = dv;
                         }
@@ -439,14 +538,27 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
                                 scalar(g2, termc, g2);
                                 sum(g0, g2, g1);
                                 scalar(g1, -1.0, g1);
-                                atoms[0].addToXYZGradient(g0[0], g0[1], g0[2]);
-                                atoms[1].addToXYZGradient(g1[0], g1[1], g1[2]);
-                                atoms[2].addToXYZGradient(g2[0], g2[1], g2[2]);
+                                // atoms[0].addToXYZGradient(g0[0], g0[1], g0[2]);
+                                // atoms[1].addToXYZGradient(g1[0], g1[1], g1[2]);
+                                // atoms[2].addToXYZGradient(g2[0], g2[1], g2[2]);
+                                int i0 = atoms[0].getXYZIndex() - 1;
+                                gradX.add(threadID, i0, g0[0]);
+                                gradY.add(threadID, i0, g0[1]);
+                                gradZ.add(threadID, i0, g0[2]);
+                                int i1 = atoms[1].getXYZIndex() - 1;
+                                gradX.add(threadID, i1, g1[0]);
+                                gradY.add(threadID, i1, g1[1]);
+                                gradZ.add(threadID, i1, g1[2]);
+                                int i2 = atoms[2].getXYZIndex() - 1;
+                                gradX.add(threadID, i2, g2[0]);
+                                gradY.add(threadID, i2, g2[1]);
+                                gradZ.add(threadID, i2, g2[2]);
                             }
                             value = dv;
                         }
                         break;
                     case IN_PLANE:
+                        double a4[] = new double[3];
                         atom4.getXYZ(a4);
                         diff(a0, a4, v10);
                         diff(a1, a4, v20);
@@ -475,6 +587,15 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
                                 double deddt = prefactor * dv * toDegrees(2.0);
                                 double term0 = -deddt / (jp2 * lpr);
                                 double term2 = deddt / (kp2 * lpr);
+                                double ded0[] = new double[3];
+                                double ded2[] = new double[3];
+                                double dedp[] = new double[3];
+                                double x21[] = new double[3];
+                                double x01[] = new double[3];
+                                double xp2[] = new double[3];
+                                double xd2[] = new double[3];
+                                double dpd0[] = new double[3];
+                                double dpd2[] = new double[3];
                                 cross(jp, lp, ded0);
                                 scalar(ded0, term0, ded0);
                                 cross(kp, lp, ded2);
@@ -504,10 +625,26 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
                                 sum(g0, g1, g3);
                                 sum(g2, g3, g3);
                                 scalar(g3, -1.0, g3);
-                                atoms[0].addToXYZGradient(g0[0], g0[1], g0[2]);
-                                atoms[1].addToXYZGradient(g1[0], g1[1], g1[2]);
-                                atoms[2].addToXYZGradient(g2[0], g2[1], g2[2]);
-                                atom4.addToXYZGradient(g3[0], g3[1], g3[2]);
+                                // atoms[0].addToXYZGradient(g0[0], g0[1], g0[2]);
+                                // atoms[1].addToXYZGradient(g1[0], g1[1], g1[2]);
+                                // atoms[2].addToXYZGradient(g2[0], g2[1], g2[2]);
+                                // atom4.addToXYZGradient(g3[0], g3[1], g3[2]);
+                                int i0 = atoms[0].getXYZIndex()  - 1;
+                                gradX.add(threadID, i0, g0[0]);
+                                gradY.add(threadID, i0, g0[1]);
+                                gradZ.add(threadID, i0, g0[2]);
+                                int i1 = atoms[1].getXYZIndex() - 1;
+                                gradX.add(threadID, i1, g1[0]);
+                                gradY.add(threadID, i1, g1[1]);
+                                gradZ.add(threadID, i1, g1[2]);
+                                int i2 = atoms[2].getXYZIndex() - 1;
+                                gradX.add(threadID, i2, g2[0]);
+                                gradY.add(threadID, i2, g2[1]);
+                                gradZ.add(threadID, i2, g2[2]);
+                                int i3 = atom4.getXYZIndex() - 1;
+                                gradX.add(threadID, i3, g3[0]);
+                                gradY.add(threadID, i3, g3[1]);
+                                gradZ.add(threadID, i3, g3[2]);
                             }
                             value = dv;
                         }
@@ -591,69 +728,4 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
         assert (!(this0 == a0 && this1 == a1 && this2 == a2));
         return 0;
     }
-    protected static final double a0[] = new double[3];
-    protected static final double a1[] = new double[3];
-    protected static final double a2[] = new double[3];
-    protected static final double a4[] = new double[3];
-    /**
-     * Vector from Atom 1 to Atom 0.
-     */
-    protected static final double v10[] = new double[3];
-    /**
-     * Vector from Atom 1 to Atom 2.
-     */
-    protected static final double v12[] = new double[3];
-    /**
-     * Vector from Atom 3 to Atom 0.
-     */
-    protected static final double v30[] = new double[3];
-    /**
-     * Vector from Atom 2 to Atom 0.
-     */
-    protected static final double v20[] = new double[3];
-    /**
-     * Vector v10 cross v30.
-     */
-    protected static final double p[] = new double[3];
-    /**
-     * Constant <code>ip=new double[3]</code>
-     */
-    protected static final double ip[] = new double[3];
-    /**
-     * Constant <code>jp=new double[3]</code>
-     */
-    protected static final double jp[] = new double[3];
-    /**
-     * Constant <code>kp=new double[3]</code>
-     */
-    protected static final double kp[] = new double[3];
-    /**
-     * Constant <code>lp=new double[3]</code>
-     */
-    protected static final double lp[] = new double[3];
-    /**
-     * Gradient on atom 0.
-     */
-    protected static final double g0[] = new double[3];
-    /**
-     * Gradient on Atom 1.
-     */
-    protected static final double g1[] = new double[3];
-    /**
-     * Gradient on Atom 2.
-     */
-    protected static final double g2[] = new double[3];
-    /**
-     * Constant <code>g3=new double[3]</code>
-     */
-    protected static final double g3[] = new double[3];
-    private static final double ded0[] = new double[3];
-    private static final double ded2[] = new double[3];
-    private static final double dedp[] = new double[3];
-    private static final double x21[] = new double[3];
-    private static final double x01[] = new double[3];
-    private static final double xp2[] = new double[3];
-    private static final double xd2[] = new double[3];
-    private static final double dpd0[] = new double[3];
-    private static final double dpd2[] = new double[3];
 }

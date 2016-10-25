@@ -44,6 +44,7 @@ import org.apache.commons.io.FileUtils;
 
 // Groovy Imports
 import groovy.util.CliBuilder;
+import groovy.transform.Field;
 
 // Paralle Java Imports
 import edu.rit.pj.Comm;
@@ -57,6 +58,7 @@ import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.OSRW;
 import ffx.algorithms.Integrator.Integrators;
 import ffx.algorithms.Thermostat.Thermostats;
+import ffx.potential.QuadTopologyEnergy;
 import ffx.potential.DualTopologyEnergy;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
@@ -65,35 +67,49 @@ import ffx.potential.MolecularAssembly;
 // Asychronous communication between walkers.
 boolean asynchronous = false;
 
+/* 
+ * The @Field annotations are ncessary for variables to be used by the readFile
+ * method. Without @Field, variables with explicit declaration are local to the
+ * implied main method of the script, whereas @Field transforms them to a private
+ * script variable... though Groovy kind of ignores the "private" access modifier.
+ */
+
+// List of topologies (MolecularAssemblies).
+@Field def topologies = [];
+// List of ForceFieldEnergies.
+@Field def energies = [];
+
 // First atom of the ligand.
-int ligandStart = 1;
+@Field int ligandStart = 1;
 
 // Last atom of the ligand.
-int ligandStop = -1;
+@Field int ligandStop = -1;
 
 // First atom of the ligand for the 2nd topology.
-int ligandStart2 = 1;
+@Field int ligandStart2 = 1;
 
 // Last atom of the ligand for the 2nd topology.
-int ligandStop2 = -1;
+@Field int ligandStop2 = -1;
 
 // Additional ligand atoms; intended for creating disjoint sets.
-List<Atom> ligandAtoms1 = new ArrayList<>();
-List<Atom> ligandAtoms2 = new ArrayList<>();
-def ranges1 = []; // Groovy mechanism for creating an untyped ArrayList.
-def ranges2 = [];
+@Field List<Atom> ligandAtoms1 = new ArrayList<>();
+@Field List<Atom> ligandAtoms2 = new ArrayList<>();
+@Field def ranges1 = []; // Groovy mechanism for creating an untyped ArrayList.
+@Field def ranges2 = [];
+@Field def rangesA = [];
+@Field def rangesB = [];
 
 // First atom for no electrostatics.
-int noElecStart = 1;
+@Field int noElecStart = 1;
 
 // Last atom for no electrostatics.
-int noElecStop = -1;
+@Field int noElecStop = -1;
 
 // First atom of the 2nd topology for no electrostatics.
-int noElecStart2 = 1;
+@Field int noElecStart2 = 1;
 
 // Last atom of the 2nd topology for no electrostatics.
-int noElecStop2 = -1;
+@Field int noElecStop2 = -1;
 
 // Initial lambda value (0 is ligand in vacuum; 1 is ligand in PBC).
 double lambda = 0.0;
@@ -146,6 +162,9 @@ boolean initVelocities = true;
 // Reset OSRW statistics
 boolean resetStatistics = false;
 
+// Reset number of steps taken, ignoring any record in .lam file
+boolean resetNumSteps = true;
+
 // Constant pressure
 boolean NPT = false;
 int meanInterval = 10;
@@ -157,11 +176,15 @@ double maxAngleMove = 1.0;
 // Write traversal snapshots
 boolean writeTraversals = false;
 
+int numParallel = 1;
+@Field int threadsAvail = edu.rit.pj.ParallelTeam.getDefaultThreadCount();
+@Field int threadsPer = threadsAvail;
+
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc osrw [options] <filename> [filename]');
+def cli = new CliBuilder(usage:' ffxc osrw [options] <filename> [filename] [filename] [filename]');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.a(longOpt:'async', args:0, 'Walker communication is asynchronous.');
 cli.n(longOpt:'steps', args:1, argName:'10000000', 'Number of molecular dynamics steps.');
@@ -180,7 +203,7 @@ cli.la1(longOpt:'ligAtoms1', args:1, argName:'None', 'Period-separated ranges of
 cli.la2(longOpt:'ligAtoms2', args:1, argName:'None', 'Period-separated ranges of 2nd topology ligand atoms (e.g. 40-50.72-83)');
 cli.es1(longOpt:'noElecStart1', args:1, argName:'1', 'No Electrostatics Starting Atom.');
 cli.es2(longOpt:'noElecStart2', args:1, argName:'1', 'No Electrostatics Starting Atom for the 2nd Topology.');
-cli.ef1(longOpt:'noElecFinal', args:1, argName:'-1', 'No Electrostatics Final Atom.');
+cli.ef1(longOpt:'noElecFinal1', args:1, argName:'-1', 'No Electrostatics Final Atom.');
 cli.ef2(longOpt:'noElecfinal2', args:1, argName:'-1', 'No Electrostatics Final Atom for the 2nd topology.');
 cli.l(longOpt:'lambda', args:1, argName:'0.0', 'Initial lambda value (> 1.0 distributes lambda across walkers)');
 cli.c(longOpt:'count', args:1, argName:'10', 'Time steps between OSRW counts.');
@@ -195,10 +218,14 @@ cli.W(longOpt:'traversals', args:0, 'Write out lambda-traversal snapshots.');
 //cli.am(longOpt:'maxAngleMove', args:1, argName:'1.0', 'Maximum angle move allowed by the barostat.');
 //cli.mi(longOpt:'meanInterval', args:1, argName:'10', 'Mean number of MD steps between applications of the barostat.');
 cli.rt(longOpt:'reset', args:0, 'Reset OSRW histogram once, when lambda reaches 0.99.');
+cli.rn(longOpt:'resetNumSteps', args:1, argName:'true', 'Ignore prior steps logged in .lam files');
+cli.uaA(longOpt:'unsharedAtomsA', args:1, argName:'None', 'Quad-Topology: Period-separated ranges of A dual-topology atoms not shared by B');
+cli.uaB(longOpt:'unsharedAtomsB', args:1, argName:'None', 'Quad-Topology: Period-separated ranges of B dual-topology atoms not shared by A');
+cli.np(longOpt:'numParallel', args:1, argName:'1', 'Number of topology energies to calculate in parallel');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
-if (options.h || arguments == null || arguments.size() > 2) {
+if (options.h || arguments == null || arguments.size() < 1) {
     return cli.usage();
 }
 
@@ -358,6 +385,28 @@ if (options.W) {
     writeTraversals = true;
 }
 
+if (options.np) {
+    numParallel = Integer.parseInt(options.np);
+    if (threadsAvail % numParallel != 0) {
+        logger.warning(String.format(" Number of threads available %d not evenly divisible by np %d; reverting to sequential", threadsAvail, numParallel));
+        numParallel = 1;
+    } else if (arguments.size() % numParallel != 0) {
+        logger.warning(String.format(" Number of topologies %d not evenly divisible by np %d; reverting to sequential", arguments.size(), numParallel));
+        numParallel = 1;
+    } else {
+        threadsPer = threadsAvail / numParallel;
+    }
+}
+
+if (options.rn) {
+    if (eSteps > 0) {
+        println("");
+        logger.warning(" Ignoring resetNumSteps input due to equilibration");
+    } else if (options.rn.equalsIgnoreCase("false")) {
+        resetNumSteps = false;
+    }
+}
+
 if (options.la1) {
     ranges1 = options.la1.tokenize(".");
 }
@@ -376,8 +425,8 @@ File lambdaZeroFile = null;
 File lambdaRestart = null;
 File dyn = null;
 
-Comm world = Comm.world();
-int size = world.size();
+@Field Comm world = Comm.world();
+@Field int size = world.size();
 int rank = 0;
 
 // For a multi-process job, try to get the restart files from rank sub-directories.
@@ -410,7 +459,7 @@ System.setProperty("lambdaterm", "true");
 
 // Relative free energies via the DualTopologyEnergy class require different
 // default OSRW parameters than absolute free energies.
-if (arguments.size() == 2) {
+if (arguments.size() >= 2) {
     // Condensed phase polarization is evaluated over the entire range.
     System.setProperty("polarization-lambda-start","0.0");
     // Polarization energy is not scaled individually by lambda, but
@@ -423,6 +472,112 @@ if (arguments.size() == 2) {
     System.setProperty("no-ligand-condensed-scf","false");
 }
 
+@Field Pattern rangeregex = Pattern.compile("([0-9]+)-?([0-9]+)?");
+
+/**
+ * Handles opening a file (filename), with 0-indexed number topNum.
+ */
+private void openFile(String toOpen, File structFile, int topNum) {
+    open(toOpen, threadsPer);
+    if (size > 1) {
+        active.setFile(structFile);
+    }
+    ForceFieldEnergy energy = active.getPotentialEnergy();
+    Atom[] atoms = active.getAtomArray();
+    int remainder = (topNum % 2) + 1;
+    switch(remainder) {
+        case 1:
+            for (int i = ligandStart; i <= ligandStop; i++) {
+                Atom ai = atoms[i-1];
+                ai.setApplyLambda(true);
+                ai.print();
+            }
+            if (ranges1) {
+                for (range in ranges1) {
+                    def m = rangeregex.matcher(range);
+                    if (m.find()) {
+                        int rangeStart = Integer.parseInt(m.group(1));
+                        int rangeEnd = (m.groupCount() > 1) ? Integer.parseInt(m.group(2)) : rangeStart;
+                        if (rangeStart > rangeEnd) {
+                            logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
+                        }
+                        // Don't need to worry about negative numbers; rangeregex just won't match.
+                        for (int i = rangeStart; i <= rangeEnd; i++) {
+                            Atom ai = atoms[i-1];
+                            ai.setApplyLambda(true);
+                            ai.print();
+                        }
+                    } else {
+                        logger.warning(" Could not recognize ${range} as a valid range; skipping");
+                    }
+                }
+            }
+
+            // Apply the no electrostatics atom selection
+            if (noElecStart < 1) {
+                noElecStart = 1;
+            }
+            if (noElecStop > atoms.length) {
+                noElecStop = atoms.length;
+            }
+            for (int i = noElecStart; i <= noElecStop; i++) {
+                Atom ai = atoms[i - 1];
+                ai.setElectrostatics(false);
+                ai.print();
+            }
+            break;
+        case 2:
+            for (int i = ligandStart2; i <= ligandStop2; i++) {
+                Atom ai = atoms[i-1];
+                ai.setApplyLambda(true);
+                ai.print();
+            }
+            if (ranges2) {
+                for (range in ranges2) {
+                    def m = rangeregex.matcher(range);
+                    if (m.find()) {
+                        int rangeStart = Integer.parseInt(m.group(1));
+                        int rangeEnd = (m.groupCount() > 1) ? Integer.parseInt(m.group(2)) : rangeStart;
+                        if (rangeStart > rangeEnd) {
+                            logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
+                        }
+                        // Don't need to worry about negative numbers; rangeregex just won't match.
+                        for (int i = rangeStart; i <= rangeEnd; i++) {
+                            Atom ai = atoms[i-1];
+                            ai.setApplyLambda(true);
+                            ai.print();
+                        }
+                    } else {
+                        logger.warning(" Could not recognize ${range} as a valid range; skipping");
+                    }
+                }
+            }
+
+            // Apply the no electrostatics atom selection
+            if (noElecStart2 < 1) {
+                noElecStart2 = 1;
+            }
+            if (noElecStop2 > atoms.length) {
+                noElecStop2 = atoms.length;
+            }
+            for (int i = noElecStart2; i <= noElecStop2; i++) {
+                Atom ai = atoms[i - 1];
+                ai.setElectrostatics(false);
+                ai.print();
+            }
+            break;
+    }
+    
+    // Turn off checks for overlapping atoms, which is expected for lambda=0.
+    energy.getCrystal().setSpecialPositionCutoff(0.0);
+    // Save a reference to the topology.
+    topologies[topNum] = active;
+    energies[topNum] = energy;
+}
+
+openFile(filename, structureFile, 0);
+
+/*
 // Open the first system
 open(filename);
 // If this is a multi-process job, set the structure file to come from the subdirectory.
@@ -441,7 +596,6 @@ for (int i = ligandStart; i <= ligandStop; i++) {
     ai.print();
 }
 
-Pattern rangeregex = Pattern.compile("([0-9]+)-?([0-9]+)?");
 if (ranges1) {
     for (range in ranges1) {
         def m = rangeregex.matcher(range);
@@ -485,10 +639,12 @@ for (int i = noElecStart; i <= noElecStop; i++) {
 
 // Turn off checks for overlapping atoms, which is expected for lambda=0.
 energy.getCrystal().setSpecialPositionCutoff(0.0);
-// OSRW will be configured for either single or dual topology.
+*/
+
+// OSRW will be configured for the appropriate number of topologies.
 OSRW osrw = null;
 // Save a reference to the first topology.
-topology1 = active;
+//topologies[0] = active;
 
 if (arguments.size() == 1) {
     // Check for constant pressure
@@ -507,21 +663,23 @@ if (arguments.size() == 1) {
         //            temperature, timeStep, printInterval, saveInterval, asynchronous, sh);
         //        osrw.setResetStatistics(resetStatistics);
         if (writeTraversals) {
-            osrw.setTraversalOutput(lambdaOneFile, topology1, lambdaZeroFile, topology1);
+            osrw.setTraversalOutput(lambdaOneFile, topologies[0], lambdaZeroFile, topologies[0]);
         }
     } else {
         // Wrap the single topology ForceFieldEnergy inside an OSRW instance.
-        osrw = new OSRW(energy, energy, lambdaRestart, histogramRestart, active.getProperties(),
-            temperature, timeStep, printInterval, saveInterval, asynchronous, sh);
+        osrw = new OSRW(energies[0], energies[0], lambdaRestart, histogramRestart, active.getProperties(),
+            temperature, timeStep, printInterval, saveInterval, asynchronous, resetNumSteps, sh);
         osrw.setResetStatistics(resetStatistics);
         if (writeTraversals) {
-            osrw.setTraversalOutput(lambdaOneFile, topology1, lambdaZeroFile, topology1);
+            osrw.setTraversalOutput(lambdaOneFile, topologies[0], lambdaZeroFile, topologies[0]);
         }
     }
-} else {
+} else if (arguments.size() == 2) {
     // Open the 2nd topology.
     filename = arguments.get(1);
-    open(filename);
+    openFile(filename, structureFile, 1);
+    
+    /*
     // If this is a multi-process job, set the structure file to come from the subdirectory.
     if (size > 1) {
         active.setFile(structureFile);
@@ -577,18 +735,131 @@ if (arguments.size() == 1) {
     }
 
     // Save a reference to the second topology.
-    topology2 = active;
+    topologies[1] = active;
     // Turn off checks for overlapping atoms, which is expected for lambda=0.
     energy.getCrystal().setSpecialPositionCutoff(0.0);
+    */
+   
     // Create the DualTopology potential energy.
-    DualTopologyEnergy dualTopologyEnergy = new DualTopologyEnergy(topology1, active);
+    DualTopologyEnergy dualTopologyEnergy = new DualTopologyEnergy(topologies[0], topologies[1]);
+    if (numParallel == 2) {
+        dualTopologyEnergy.setParallel(true);
+    }
     // Wrap the DualTopology potential energy inside an OSRW instance.
-    osrw = new OSRW(dualTopologyEnergy, dualTopologyEnergy, lambdaRestart, histogramRestart, active.getProperties(),
-        temperature, timeStep, printInterval, saveInterval, asynchronous, sh);
+    osrw = new OSRW(dualTopologyEnergy, dualTopologyEnergy, lambdaRestart,
+        histogramRestart, active.getProperties(), temperature, timeStep, printInterval,
+        saveInterval, asynchronous, resetNumSteps, sh);
     osrw.setResetStatistics(resetStatistics);
     if (writeTraversals) {
-        osrw.setTraversalOutput(lambdaOneFile, topology1, lambdaZeroFile, topology2);
+        osrw.setTraversalOutput(lambdaOneFile, topologies[0], lambdaZeroFile, topologies[1]);
     }
+} else if (arguments.size() == 4) {
+    logger.info(" For quad-topology calculations, systems should be set up as follows:");
+    logger.info(" The first two define the first dual topology, the second two should define the second dual topology in the same order.");
+    logger.info(" For example, for a dual force field correction on decharging sodium, topologies should be in this order:");
+    logger.info(" Sodium-AMOEBA, sodium-AMBER, decharged Na-AMOEBA, decharged Na-AMBER");
+    
+    openFile(arguments.get(1), structureFile, 1);
+    openFile(arguments.get(2), structureFile, 2);
+    openFile(arguments.get(3), structureFile, 3);
+    DualTopologyEnergy dtA = new DualTopologyEnergy(topologies[0], topologies[1]);
+    // Intentionally reversed order.
+    DualTopologyEnergy dtB = new DualTopologyEnergy(topologies[3], topologies[2]);
+    List<Integer> uniqueA = new ArrayList<>();
+    List<Integer> uniqueB = new ArrayList<>();
+    
+    if (options.uaA) {
+        rangesA = options.uaA.tokenize(".");
+        def ra = [] as Set;
+        for (range in rangesA) {
+            def m = rangeregex.matcher(range);
+            if (m.find()) {
+                int rangeStart = Integer.parseInt(m.group(1));
+                int rangeEnd = (m.groupCount() > 1) ? Integer.parseInt(m.group(2)) : rangeStart;
+                if (rangeStart > rangeEnd) {
+                    logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
+}
+                for (int i = rangeStart; i <= rangeEnd; i++) {
+                    ra.add(i-1);
+                }
+            }
+        }
+        Atom[] atA1 = topologies[0].getAtomArray();
+        int counter = 0;
+        def raAdj = [] as Set; // Indexed by common variables in dtA.
+        for (int i = 0; i < atA1.length; i++) {
+            Atom ai = atA1[i];
+            if (i in ra) {
+                if (ai.applyLambda()) {
+                    logger.warning(String.format(" Ranges defined in uaA should not overlap with ligand atoms; they are assumed to not be shared."));
+                } else {
+                    logger.info(String.format(" Unshared A: %d variables %d-%d", i, counter, counter+2));
+                    for (int j = 0; j < 3; j++) {
+                        raAdj.add(new Integer(counter + j));
+                    }
+                }
+            }
+            if (! ai.applyLambda()) {
+                counter += 3;
+            }
+        }
+        if (raAdj) {
+            uniqueA.addAll(raAdj);
+        }
+    }
+    if (options.uaB) {
+        rangesB = options.uaB.tokenize(".");
+        def rb = [] as Set;
+        for (range in rangesB) {
+            def m = rangeregex.matcher(range);
+            if (m.find()) {
+                int rangeStart = Integer.parseInt(m.group(1));
+                int rangeEnd = (m.groupCount() > 1) ? Integer.parseInt(m.group(2)) : rangeStart;
+                if (rangeStart > rangeEnd) {
+                    logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
+                }
+                for (int i = rangeStart; i <= rangeEnd; i++) {
+                    rb.add(i-1);
+                }
+            }
+        }
+        Atom[] atB1 = topologies[2].getAtomArray();
+        int counter = 0;
+        def rbAdj = [] as Set; // Indexed by common variables in dtA.
+        for (int i = 0; i < atB1.length; i++) {
+            Atom bi = atB1[i];
+            if (i in rb) {
+                if (bi.applyLambda()) {
+                    logger.warning(String.format(" Ranges defined in uaA should not overlap with ligand atoms; they are assumed to not be shared."));
+                } else {
+                    logger.info(String.format(" Unshared B: %d variables %d-%d", i, counter, counter+2));
+                    for (int j = 0; j < 3; j++) {
+                        rbAdj.add(counter + j);
+                    }
+                }
+            }
+            if (! bi.applyLambda()) {
+                counter += 3;
+            }
+        }
+        if (rbAdj) {
+            uniqueB.addAll(rbAdj);
+        }
+    }
+
+    QuadTopologyEnergy qte = new QuadTopologyEnergy(dtA, dtB, uniqueA, uniqueB);
+    if (numParallel >= 2) {
+        qte.setParallel(true);
+        if (numParallel == 2) {
+            dtA.setParallel(true);
+            dtB.setParallel(true);
+        }
+    }
+    osrw = new OSRW(qte, qte, lambdaRestart, histogramRestart, 
+        active.getProperties(), temperature, timeStep, printInterval, 
+        saveInterval, asynchronous, resetNumSteps, sh);
+} else {
+    logger.severe(" Must have 1, 2, or 4 topologies to test.");
 }
 
 // Apply the command line lambda value if a lambda restart file does not exist.
@@ -625,7 +896,7 @@ if (!histogramRestart.exists()) {
 }
 
 // Create the MolecularDynamics instance.
-MolecularDynamics molDyn = new MolecularDynamics(topology1, osrw, topology1.getProperties(), null, thermostat, integrator);
+MolecularDynamics molDyn = new MolecularDynamics(topologies[0], osrw, topologies[0].getProperties(), null, thermostat, integrator);
 
 // Start sampling.
 if (eSteps > 0) {
@@ -638,7 +909,18 @@ if (eSteps > 0) {
         fileType, restartInterval, dyn);
 } else {
     logger.info(" Beginning OSRW sampling without equilibration");
+    if (!resetNumSteps) {
+        int nEnergyCount = osrw.getEnergyCount();
+        if (nEnergyCount > 0) {
+            nSteps -= nEnergyCount;
+            logger.info(String.format(" Lambda file: %12d steps picked up, now sampling %12d steps", nEnergyCount, nSteps));
+        }
+    }
+    if (nSteps > 0) {
     molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities,
         fileType, restartInterval, dyn);
+    } else {
+        logger.info(" No steps remaining for this process!");
+    }
 }
 

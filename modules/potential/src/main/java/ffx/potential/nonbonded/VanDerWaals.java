@@ -137,7 +137,7 @@ public class VanDerWaals implements MaskingInterface,
      */
     private boolean gradient;
     private boolean lambdaTerm;
-    private boolean esvTerm;
+    private boolean esvTerm = false;
     private boolean isSoft[];
     // [nAtoms]: Stores precomputed lambda_total = lambda_metadyn * lambda_ESV
     private double esvLambda[];
@@ -278,7 +278,7 @@ public class VanDerWaals implements MaskingInterface,
      * gradient.
      */
     private AtomicDoubleArray lambdaGradZ;
-    
+
     /**
      * The neighbor-list includes 1-2 and 1-3 interactions, which are masked out
      * in the van der Waals energy code. The AMOEBA force field includes 1-4
@@ -326,14 +326,7 @@ public class VanDerWaals implements MaskingInterface,
          * Lambda parameters.
          */
         lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
-        esvTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.ESVTERM, false);
-        if (esvTerm) {
-            logger.info("vdW: ESV Term Enabled!");
-            if (esvSystem == null) {
-                logger.warning("vdw: ESV Term Enabled with null system.");
-            }
-        }
-        if (lambdaTerm || esvTerm) {
+        if (lambdaTerm) {
             shareddEdL = new SharedDouble();
             sharedd2EdL2 = new SharedDouble();
             vdwLambdaAlpha = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_ALPHA, 0.05);
@@ -352,8 +345,6 @@ public class VanDerWaals implements MaskingInterface,
             shareddEdL = null;
             sharedd2EdL2 = null;
         }
-        // Set esvTerm back to false until attachExtendedSystem() is called.
-        esvTerm = false;
 
         /**
          * Parallel constructs.
@@ -370,11 +361,12 @@ public class VanDerWaals implements MaskingInterface,
         /**
          * Define how force arrays will be accumulated.
          */
-        String value = forceField.getString(ARRAY_REDUCTION, "ADDER");
+        atomicDoubleArrayImpl = AtomicDoubleArrayImpl.MULTI;
+        String value = forceField.getString(ARRAY_REDUCTION, "MULTI");
         try {
             atomicDoubleArrayImpl = AtomicDoubleArrayImpl.valueOf(toEnumForm(value));
         } catch (Exception e) {
-            logger.info(format(" Unrecognized ARRAY-REDUCTION %s; defaulting to ADDER", value));
+            logger.info(format(" Unrecognized ARRAY-REDUCTION %s; defaulting to %s", value, atomicDoubleArrayImpl));
         }
         logger.info(format(" Using %s arrays.", atomicDoubleArrayImpl.toString()));
 
@@ -486,11 +478,6 @@ public class VanDerWaals implements MaskingInterface,
                     if (esvTerm) {
                         esvGrad = new MultiDoubleArray(threadCount, numESVs);
                     }
-//                    if (esvTerm) {
-//                        esvGradX = new MultiDoubleArray(threadCount, nAtoms * numESVs);
-//                        esvGradY = new MultiDoubleArray(threadCount, nAtoms * numESVs);
-//                        esvGradZ = new MultiDoubleArray(threadCount, nAtoms * numESVs);
-//                    }
                     break;
                 case PJ:
                     gradX = new PJDoubleArray(threadCount, nAtoms);
@@ -504,11 +491,6 @@ public class VanDerWaals implements MaskingInterface,
                     if (esvTerm) {
                         esvGrad = new PJDoubleArray(threadCount, numESVs);
                     }
-//                    if (esvTerm) {
-//                        esvGradX = new PJDoubleArray(threadCount, nAtoms * numESVs);
-//                        esvGradY = new PJDoubleArray(threadCount, nAtoms * numESVs);
-//                        esvGradZ = new PJDoubleArray(threadCount, nAtoms * numESVs);
-//                    }
                     break;
                 case ADDER:
                 default:
@@ -904,7 +886,7 @@ public class VanDerWaals implements MaskingInterface,
         } else {
             d2sc2dL2 = 0.0;
         }
-        
+
         if (esvTerm) {
             // Fill the atom2esv indexer; allow only one ESV per atom.
             for (int i = 0; i < nAtoms; i++) {
@@ -942,7 +924,7 @@ public class VanDerWaals implements MaskingInterface,
             }
             softCoreInit = true;
         }
-        
+
         if (esvTerm) {
             // Compute all the lambda_total = lambda_metadyn * lambda_esv values.
             for (int i = 0; i < nAtoms; i++) {
@@ -974,7 +956,24 @@ public class VanDerWaals implements MaskingInterface,
             logger.severe("Tried to attach null extended system.");
         }
         esvSystem = system;
-        numESVs = esvSystem.num();
+        numESVs = esvSystem.getESVList().size();
+
+        // Launch shared lambda/esvLambda initializers if missed in constructor.
+        if (!lambdaTerm) {
+            vdwLambdaAlpha = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_ALPHA, 0.05);
+            vdwLambdaExponent = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_EXPONENT, 1.0);
+            if (vdwLambdaAlpha < 0.0) {
+                vdwLambdaAlpha = 0.05;
+            }
+            if (vdwLambdaExponent < 1.0) {
+                vdwLambdaExponent = 1.0;
+            }
+            intermolecularSoftcore = forceField.getBoolean(
+                    ForceField.ForceFieldBoolean.INTERMOLECULAR_SOFTCORE, false);
+            intramolecularSoftcore = forceField.getBoolean(
+                    ForceField.ForceFieldBoolean.INTRAMOLECULAR_SOFTCORE, false);
+        }
+
         initAtomArrays();
     }
 
@@ -1012,20 +1011,15 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     public void getdEdLdh(double[] esvDerivative) {
-        if (shareddEdLdh == null || !esvTerm) {
-            logger.warning("Called for ESV derivative while !esvTerm.");
+        if (esvGrad == null || !esvTerm) {
+//            logger.warning("Called for ESV derivative while !esvTerm.");
             return;
         }
         int index = 0;
-        for (int iESV = 1; iESV <= numESVs; iESV++) {
-            for (int i = 0; i < nAtoms; i++) {
-                esvDerivative[iESV] = esvGrad.get(iESV*i);
-            }
+        for (int iESV = 0; iESV < numESVs; iESV++) {
+            esvDerivative[iESV] = esvGrad.get(iESV);
         }
     }
-    
-//    public void getdEdXdLdh(double[][] esvGradient) {}
-//    public void getd2EdLdh2(double[][] esvGradient) {}
 
     /**
      * {@inheritDoc}
@@ -1598,7 +1592,7 @@ public class VanDerWaals implements MaskingInterface,
                             boolean soft = softCorei[k]
                                     || (intermolecularSoftcore && !sameMolecule)
                                     || (intramolecularSoftcore && sameMolecule)
-                                    || (esvTerm && (esvByAtom[i] != null || esvByAtom[k] != null));
+                                    || (esvTerm && esvByAtom != null && (esvByAtom[i] != null || esvByAtom[k] != null));
                             if (esvTerm && soft) {
                                 // Each member of the following is preloaded with lambda_metadyn * lambda_esv.
                                 final double esvLambdaProduct = esvLambda[i] * esvLambda[k];
@@ -1625,9 +1619,11 @@ public class VanDerWaals implements MaskingInterface,
                             final double ev = mask[k] * radEpsi[a2 + EPS];
                             final double eps_lambda = ev * lambda5;
                             final double rho = r * irv;
-                            final double rhoDisp1 = pow(rho, vdwForm.dispersivePower1);
+                            //final double rhoDisp1 = pow(rho, vdwForm.dispersivePower1);
+                            final double rhoDisp1 = vdwForm.rhoDisp1(rho);
                             final double rhoDisp = rhoDisp1 * rho;
-                            final double rhoDelta1 = pow(rho + vdwForm.delta, vdwForm.repDispPower1);
+                            //final double rhoDelta1 = pow(rho + vdwForm.delta, vdwForm.repDispPower1);
+                            final double rhoDelta1 = vdwForm.rhoDelta1(rho + vdwForm.delta);
                             final double rhoDelta = rhoDelta1 * (rho + vdwForm.delta);
                             final double alphaRhoDelta = alpha + rhoDelta;
                             final double alphaRhoDispGamma = alpha + rhoDisp + vdwForm.gamma;
@@ -1654,7 +1650,7 @@ public class VanDerWaals implements MaskingInterface,
                             e += eij * taper;
 //                            log(i,k,r,e);
                             count++;
-                            if (!(gradient || lambdaTerm || esvTerm )) {
+                            if (!(gradient || lambdaTerm || esvTerm)) {
                                 continue;
                             }
                             final int redk = reductionIndex[k];
@@ -1836,7 +1832,7 @@ public class VanDerWaals implements MaskingInterface,
                                     if (esvTerm) {
                                         double esvLambdaProduct = lambda * esvLambda[i] * esvLambda[k];
                                         double chain = lambda * esvLambda[k];
-                                        // Assuming that vdwLambdaExponent == 1, 
+                                        // Assuming that vdwLambdaExponent == 1,
                                         sc1 = vdwLambdaAlpha * (1.0 - esvLambdaProduct) * (1.0 - esvLambdaProduct);
                                         dsc1dL = -2.0 * chain * vdwLambdaAlpha * (1.0 - esvLambdaProduct);
                                         d2sc1dL2 = 2.0 * chain * chain * vdwLambdaAlpha;
@@ -1850,9 +1846,11 @@ public class VanDerWaals implements MaskingInterface,
                                 final double ev = radEpsi[a2 + EPS];
                                 final double eps_lambda = ev * lambda5;
                                 final double rho = r * irv;
-                                final double rhoDisp1 = pow(rho, vdwForm.dispersivePower1);
+                                // final double rhoDisp1 = pow(rho, vdwForm.dispersivePower1);
+                                final double rhoDisp1 = vdwForm.rhoDisp1(rho);
                                 final double rhoDisp = rhoDisp1 * rho;
-                                final double rhoDelta1 = pow(rho + vdwForm.delta, vdwForm.repDispPower1);
+                                // final double rhoDelta1 = pow(rho + vdwForm.delta, vdwForm.repDispPower1);
+                                final double rhoDelta1 = vdwForm.rhoDelta1(rho + vdwForm.delta);
                                 final double rhoDelta = rhoDelta1 * (rho + vdwForm.delta);
                                 final double alphaRhoDelta = alpha + rhoDelta;
                                 final double alphaRhoDispGamma = alpha + rhoDisp + vdwForm.gamma;
@@ -1999,6 +1997,7 @@ public class VanDerWaals implements MaskingInterface,
         private class ReductionLoop extends IntegerForLoop {
 
             int threadID;
+
             @Override
             public void start() {
                 threadID = getThreadIndex();
