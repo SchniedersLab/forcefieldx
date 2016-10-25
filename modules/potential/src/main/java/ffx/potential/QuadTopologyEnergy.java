@@ -295,6 +295,7 @@ public class QuadTopologyEnergy implements Potential, LambdaInterface {
         doublesFrom(mass, dualTopA.getMass(), dualTopB.getMass());
         
         region = new EnergyRegion();
+        team = new ParallelTeam(1);
     }
     
     /**
@@ -423,20 +424,20 @@ public class QuadTopologyEnergy implements Potential, LambdaInterface {
 
     @Override
     public double energy(double[] x, boolean verbose) {
-        if (inParallel) {
-            region.setX(x);
-            region.setVerbose(verbose);
-            try {
-                team.execute(region);
-            } catch (Exception ex) {
-                throw new EnergyException(String.format(" Exception in calculating quad-topology energy: %s", ex.toString()), false);
-            }
-        } else {
+        //if (inParallel) {
+        region.setX(x);
+        region.setVerbose(verbose);
+        try {
+            team.execute(region);
+        } catch (Exception ex) {
+            throw new EnergyException(String.format(" Exception in calculating quad-topology energy: %s", ex.toString()), false);
+        }
+        /*} else {
             doublesTo(x, xA, xB);
             energyA = dualTopA.energy(xA, verbose);
             energyB = dualTopB.energy(xB, verbose);
             totalEnergy = energyA + energyB;
-        }
+        }*/
         if (verbose) {
             logger.info(String.format(" Total quad-topology energy: %12.4f", totalEnergy));
         }
@@ -450,16 +451,16 @@ public class QuadTopologyEnergy implements Potential, LambdaInterface {
     
     @Override
     public double energyAndGradient(double[] x, double[] g, boolean verbose) {
-        if (inParallel) {
-            region.setX(x);
-            region.setG(g);
-            region.setVerbose(verbose);
-            try {
-                team.execute(region);
-            } catch (Exception ex) {
-                throw new EnergyException(String.format(" Exception in calculating quad-topology energy: %s", ex.toString()), false);
-            }
-        } else {
+        //if (inParallel) {
+        region.setX(x);
+        region.setG(g);
+        region.setVerbose(verbose);
+        try {
+            team.execute(region);
+        } catch (Exception ex) {
+            throw new EnergyException(String.format(" Exception in calculating quad-topology energy: %s", ex.toString()), false);
+        }
+        /*} else {
             doublesTo(x, xA, xB);
 
             energyA = dualTopA.energyAndGradient(xA, gA, verbose);
@@ -475,7 +476,7 @@ public class QuadTopologyEnergy implements Potential, LambdaInterface {
             dEdL = dEdL_A + dEdL_B;
             d2EdL2 = d2EdL2_A + d2EdL2_B;
             totalEnergy = energyA + energyB;
-        }
+        }*/
         if (verbose) {
             logger.info(String.format(" Total quad-topology energy: %12.4f", totalEnergy));
         }
@@ -623,14 +624,11 @@ public class QuadTopologyEnergy implements Potential, LambdaInterface {
         if (team != null) {
             try {
                 team.shutdown();
-                team = null;
             } catch (Exception e) {
                 logger.severe(String.format(" Exception in shutting down old ParallelTeam for DualTopologyEnergy: %s", e.toString()));
             }
         }
-        if (parallel) {
-            team = new ParallelTeam(2);
-        }
+        team = parallel ? new ParallelTeam(2) : new ParallelTeam(1);
     }
     
     private class EnergyRegion extends ParallelRegion {
