@@ -43,7 +43,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.OptionalDouble;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -90,7 +89,6 @@ import ffx.potential.bonded.Torsion;
 import ffx.potential.bonded.TorsionTorsion;
 import ffx.potential.bonded.UreyBradley;
 import ffx.potential.extended.ExtendedSystem;
-import ffx.potential.extended.ExtendedVariable;
 import ffx.potential.nonbonded.COMRestraint;
 import ffx.potential.nonbonded.CoordRestraint;
 import ffx.potential.nonbonded.NCSRestraint;
@@ -242,8 +240,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
      * *************************************
      */
     /*      Extended System Variables       */
-    private ExtendedSystem extendedSystem;
-    private StringBuilder esvLogger;
+    private ExtendedSystem esvSystem;
     private final boolean ESV_DEBUG = false;
     private final boolean pmeQI = (System.getProperty("pme-qi") != null);
     private final boolean pmeOnly = (System.getProperty("ffe-pmeOnly") != null);
@@ -715,26 +712,34 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     public void attachExtendedSystem(ExtendedSystem system) {
-        if (extendedSystem != null) {
+        if (esvSystem != null) {
             logger.warning("Multiple esvSystems is untested; overwriting instead.");
         }
-        if (!esvTerm) {
-            logger.warning("ExtendedSystem attached to FFE with not operate until esvTerm is set.");
-        }
-        extendedSystem = system;
+        esvTerm = true;
+        esvSystem = system;
         if (vanderWaals != null) {
             vanderWaals.attachExtendedSystem(system);
         } else {
             logger.warning("Couldn't attach extended system to vdW.");
         }
-        if (particleMeshEwald != null && particleMeshEwald instanceof ParticleMeshEwaldQI) {
-            ((ParticleMeshEwaldQI) particleMeshEwald).attachExtendedSystem(system);
-        } else {
-            if (multipoleTerm) {
-                logger.warning("Couldn't attach extended system to PME.");
-            }
+//        if (particleMeshEwald != null && particleMeshEwald instanceof ParticleMeshEwaldQI) {
+//            ((ParticleMeshEwaldQI) particleMeshEwald).attachExtendedSystem(system);
+//        } else {
+//            if (multipoleTerm) {
+//                logger.warning("Couldn't attach extended system to PME.");
+//            }
+//        }
+    }
+    
+    public void detachExtendedSystem() {
+        esvTerm = false;
+        esvSystem = null;
+        if (vanderWaals != null) {
+            vanderWaals.detachExtendedSystem();
         }
-        esvLogger = new StringBuilder();
+//        if (particleMeshEwald != null && particleMeshEwald instanceof ParticleMeshEwaldQI) {
+//            ((ParticleMeshEwaldQI) particleMeshEwald).detachExtendedSystem();
+//        }
     }
 
     public void setResolution(Resolution resolution) {
@@ -1257,7 +1262,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             }
 
             if (esvTerm) {
-                if (extendedSystem == null) {
+                if (esvSystem == null) {
                     logger.severe("Extended system not properly initialized.");
                 }
                 // Calculate contribution to bonded terms.
@@ -1272,12 +1277,10 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 };
                 // Bonded ESV energy is included at the term level.
                 // Nonbonded energy due to pH and zero/unity bias:
-                esvBias = extendedSystem.biases();
+                esvBias = esvSystem.biases();
 
 //                esvLogger.append(format("  Total ESV Energy (bonded,nonbond,PME+vdW,sum):  %g  %g  %s  %g\n",
 //                        esvBondedEnergy, esvNonbondEnergy, "no_decomp", esvBondedEnergy + esvNonbondEnergy));
-                logger.info(esvLogger.toString());
-                esvLogger = new StringBuilder();
             }
 
             totalTime = System.nanoTime() - totalTime;
@@ -1641,27 +1644,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
     public void setPrintOverride(boolean set) {
         this.printOverride = set;
-    }
-
-    /**
-     * Get amount by which this term should be scaled d/t any ESVs.
-     *
-     * @param rols
-     * @return
-     */
-    private double lamedhScaling(ROLS rols) {
-        double totalScale = 1.0;
-        for (ExtendedVariable esv : extendedSystem.getESVList()) {
-            OptionalDouble scale = esv.getROLSScaling(rols);
-            if (scale.isPresent()) {
-                totalScale *= esv.getROLSScaling(rols).getAsDouble();
-                if (ESV_DEBUG) {
-                    esvLogger.append(String.format(" Scaling by ESV[%d] (%4.2f) : ROLS %s (%4.2f)\n",
-                            esv.index, scale.getAsDouble(), rols.toString(), totalScale));
-                }
-            }
-        }
-        return totalScale;
     }
 
     /**
@@ -2391,7 +2373,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     public ExtendedSystem getExtendedSystem() {
-        return extendedSystem;
+        return esvSystem;
     }
 
     /**

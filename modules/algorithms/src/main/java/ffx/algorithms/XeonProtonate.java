@@ -121,7 +121,7 @@ public class XeonProtonate {
         // set residues to be titrated
         mcProt.chooseResID(resList);
         // finalize the Multi-Residue machinery
-        mcProt.readyUp();
+        mcProt.readyup();
         // and away we go!
         molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, null);
     }

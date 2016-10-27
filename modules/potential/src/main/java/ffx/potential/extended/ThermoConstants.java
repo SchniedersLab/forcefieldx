@@ -2,6 +2,7 @@ package ffx.potential.extended;
 
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
+
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
@@ -30,6 +31,8 @@ public class ThermoConstants {
     private static final Random random = ThreadLocalRandom.current();
     
     private static final double roomTemperature = 298.15;
+    
+    public static final double log10 = Math.log(10);
     
     /**
      * Return room-temperature velocities from a Maxwell-Boltzmann distribution of momenta.

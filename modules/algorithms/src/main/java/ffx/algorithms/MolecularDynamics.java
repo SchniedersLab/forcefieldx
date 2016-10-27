@@ -38,12 +38,13 @@
 package ffx.algorithms;
 
 import java.io.File;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
+
+import javax.swing.undo.CannotUndoException;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
@@ -54,12 +55,9 @@ import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.extended.ExtendedSystem;
-import ffx.potential.extended.ExtendedVariable;
 import ffx.potential.parsers.DYNFilter;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.XYZFilter;
-
-import javax.swing.undo.CannotUndoException;
 
 /**
  * Run NVE or NVT molecular dynamics.
@@ -819,12 +817,20 @@ public class MolecularDynamics implements Runnable, Terminatable {
         if (!terminate) {
             logger.info(String.format(" Completed %8d time steps\n", nSteps));
         }
-
+        
         /**
          * Reset the done and terminate flags.
          */
         done = true;
         terminate = false;
+        
+        if (monteCarloListener != null) {
+            long startTime = System.nanoTime();
+            monteCarloListener.mcUpdate(molecularAssembly);
+            x = potential.getCoordinates(x);
+            long took = (long) ((System.nanoTime() - startTime) * 1e-6);
+            // logger.info(String.format(" mcUpdate() took: %d ms", took));
+        }
     }
 
     /**

@@ -47,8 +47,15 @@ import groovy.util.CliBuilder;
 // Force Field X Imports
 import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.Protonate;
+import ffx.algorithms.Protonate.Mode;
+import ffx.algorithms.Protonate.DynamicsLauncher;
 import ffx.algorithms.Integrator.Integrators;
 import ffx.algorithms.Thermostat.Thermostats;
+import ffx.potential.bonded.Polymer;
+import ffx.potential.bonded.Residue;
+import ffx.potential.extended.ExtendedSystem;
+import ffx.potential.extended.ExtendedVariable;
+import ffx.potential.extended.TitrationESV;
 
 // Number of molecular dynamics steps
 int nSteps = 1000000;
@@ -83,6 +90,7 @@ String fileType = "PDB";
 // Monte-Carlo step frequencies for titration and rotamer moves.
 int mcStepFrequency = 10;
 int rotamerStepFrequency = 0;
+int mcRunTime = 1000;
 
 // Simulation pH
 double pH = 7.4;
@@ -92,18 +100,18 @@ Character chainID = ' ';
 int resID = -1;
 List<String> resList = new ArrayList<>();
 double window = 2.0;
-boolean dynamics = true;
 boolean titrateTermini = false;
+Mode mode = Protonate.Mode.USE_CURRENT;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc protonate [options] <filename>');
+def cli = new CliBuilder(usage:' ffxc discount [options] <filename>');
 cli.h(longOpt:'help', 'Print this message.');
-cli.b(longOpt:'thermostat', args:1, argName:'Berendsen', 'Thermostat: [Adiabatic / Berendsen / Bussi]');
+//cli.b(longOpt:'thermostat', args:1, argName:'Berendsen', 'Thermostat: [Adiabatic / Berendsen / Bussi]');
 cli.d(longOpt:'dt', args:1, argName:'1.0', 'Time discretization (fsec).');
-cli.i(longOpt:'integrate', args:1, argName:'Beeman', 'Integrator: [Beeman / RESPA / Stochastic / VELOCITYVERLET]');
+//cli.i(longOpt:'integrate', args:1, argName:'Beeman', 'Integrator: [Beeman / RESPA / Stochastic / VELOCITYVERLET]');
 cli.l(longOpt:'log', args:1, argName:'0.01', 'Interval to log thermodyanamics (psec).');
 cli.n(longOpt:'steps', args:1, argName:'1000000', 'Number of molecular dynamics steps.');
 cli.p(longOpt:'polarization', args:1, argName:'Mutual', 'Polarization: [None / Direct / Mutual]');
@@ -111,15 +119,16 @@ cli.t(longOpt:'temperature', args:1, argName:'298.15', 'Temperature in degrees K
 cli.w(longOpt:'save', args:1, argName:'0.1', 'Interval to write out coordinates (psec).');
 cli.s(longOpt:'restart', args:1, argName:'0.1', 'Interval to write out restart file (psec).');
 cli.f(longOpt:'file', args:1, argName:'PDB', 'Choose file type to write to [PDB/XYZ]');
-cli.ra(longOpt:'resAll', 'Titrate all residues.');
+//cli.ra(longOpt:'resAll', 'Titrate all residues.');
 cli.rl(longOpt:'resList', args:1, 'Titrate a list of residues (eg A4.A8.B2.B34)');
-cli.rn(longOpt:'resName', args:1, 'Titrate a list of residue names (eg "LYS,TYR,HIS")');
-cli.rw(longOpt:'resWindow', args:1, 'Titrate all residues with intrinsic pKa within [arg] units of simulation pH.');
+//cli.rn(longOpt:'resName', args:1, 'Titrate a list of residue names (eg "LYS,TYR,HIS")');
+//cli.rw(longOpt:'resWindow', args:1, 'Titrate all residues with intrinsic pKa within [arg] units of simulation pH.');
 cli.pH(longOpt:'pH', args:1, argName:'7.4', 'Constant simulation pH.');
-cli.mc(longOpt:'mcStepFreq', args:1, argName:'10', 'Number of MD steps between Monte-Carlo protonation changes.')
-cli.mcr(longOpt:'rotamerStepFreq', args:1, argName:'0', 'Number of MD steps between Monte-Carlo rotamer changes.')
-cli.mcD(longOpt:'dynamics', args:1, argName:'true', 'Include dynamics.');
-cli.tt(longOpt:'titrateTermini', args:1, argName:'false', 'Titrate amino acid chain ends.');
+cli.mc(longOpt:'mcStepFreq', args:1, argName:'10', 'Number of steps between Monte-Carlo proton attempts.')
+cli.mcr(longOpt:'rotamerStepFreq', args:1, argName:'0', 'Number of steps between Monte-Carlo rotamer attempts.')
+cli.mcmd(longOpt:'mcRunTime', args:1, argName:'1000', 'Number of steps for which to run continuous proton dynamics during MC move.');
+cli.a(longOpt:'mode', args:1, argName:'useCurrent', 'Controls starting ESV lambda values: [random, halfLambda, useCurrent]');
+//cli.tt(longOpt:'titrateTermini', args:1, argName:'false', 'Titrate amino acid chain ends.');
 def options = cli.parse(args);
 
 if (options.h) {
@@ -134,6 +143,16 @@ if ((options.rw && (options.ra || options.rl)) || (options.ra && options.rl)) {
 if (!options.ra && !options.rl && !options.rw && !options.rn) {
     return cli.usage();
     logger.info(" Must specify one of the following: -ra, -rl, -rn, or -rw.");
+}
+
+if (options.a) {
+    if ((options.a).equalsIgnoreCase("halfLambda")) {
+        mode = Protonate.Mode.HALF_LAMBDA;
+    } else if ((options.a).equalsIgnoreCase("useCurrent")) {
+        mode = Protonate.Mode.USE_CURRENT;
+    } else {
+        mode = Protonate.Mode.valueOf(options.a);
+    }
 }
 
 if (!options.pH) {
@@ -211,6 +230,8 @@ if (options.p) {
     System.setProperty("polarization", options.p);
 }
 
+
+
 // Thermostat.
 if (options.b) {
     try {
@@ -218,6 +239,10 @@ if (options.b) {
     } catch (Exception e) {
         thermostat = null;
     }
+}
+
+if (options.mcmd) {
+    mcRunTime = Integer.parseInt(options.mcmd);
 }
 
 // Integrator.
@@ -230,17 +255,18 @@ if (options.i) {
 }
 
 System.setProperty("forcefield","AMOEBA_PROTEIN_2013");
-// Add flag handling for switching between discrete and continuous protonation regimes.
-// TODO PRIO: refactor this and Protonate to utilize the new TitrationUtils and ExtendedSystem machinery
+System.setProperty("mpoleterm","false");
+System.setProperty("pme-qi","true");
+System.setProperty("cphmd-mode","USE_CURRENT");
 // TODO: add flag which sets up the runs necessary to fit a model compound reference
+
 
 /*
     String zeroReferenceEnergies = System.getProperty("cphmd-zeroReferences");  // [no-arg]
-    String overrideFlag = System.getProperty("cphmd-override"); // MCOverride.ACCEPT|REJECT|ONCE
-    String beforeAfter = System.getProperty("cphmd-snapshots"); // SnapshotsType.SEPARATE|INTERLEAVED|NONE
+    String overrideFlag = System.getProperty("cphmd-override");                 // MCOverride.ACCEPT|REJECT|ONCE
+    String beforeAfter = System.getProperty("cphmd-snapshots");                 // SnapshotsType.SEPARATE|INTERLEAVED|NONE
     String histidineMode = System.getProperty("cphmd-histidineMode");
 */
-
 
 List<String> arguments = options.arguments();
 String modelfilename = null;
@@ -283,20 +309,35 @@ if (options.ra) {
     mcProt.chooseByName(options.rn);
 }
 
-// finalize the Multi-Residue machinery
+int numESVs = resList.size();
+List<ExtendedVariable> esvList = new ArrayList<>();
+Polymer[] polymers = active.getChains();
+double[] lamedh = new double[numESVs];
+temperature = 298.15;
+double dt = 1.0;
+mcProt.chooseResID(resList);
+
+// finalize the ESV machinery and ready the MD (re-)launcher
+//        public DynamicsLauncher(MolecularDynamics md,
+//                int nSteps, double timeStep, 
+//                double print, double save, 
+//                double temperature, boolean initVelocities,
+//                String fileType, double restart,
+//                File dynFile) {
+
+//Object[] opt = new Object[9];
+//opt[0] = new Integer(mcRunTime);    opt[1] = new Double(1.0);           opt[2] = new Double(1.0);
+//opt[3] = new Double(0.0);           opt[4] = new Double(temperature);   opt[5] = new Boolean(false);
+//opt[6] = "PDB";                     opt[7] = new Double(0.0);           opt[8] = new File("contDyn.pdb");
+//mcProt.setDynamicsLauncher(opt);
+//DynamicsLauncher launcher = new DynamicsLauncher(molDyn, opt);
+//DynamicsLauncher launcher = new DynamicsLauncher((MolecularDynamics) molDyn, (int) mcRunTime, (double) 1.0, (double) 1.0, (double) 0.0, 
+//    (double) temperature, (boolean) false, (String) "PDB", (double) 0.0, (File) contDyn);
+//mcProt.setDynamicsLauncher(launcher);
 mcProt.readyup();
+molDyn.setMcUpdate(false);
 
-if (!dynamics) {
-    for (int i = 0; i < nSteps; i++) {
-        mcProt.mcUpdate();
-    }
-    return;
-}
-
-if (discreteOnly) {
-    molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
-} else {
-//    Object[] molDynLauncher = new Object[]{mcStepFrequency, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn};
-//    mcProt.setMolDynLauncher = molDynLauncher;
-    molDyn.dynamic(Integer.MAX_VALUE, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
-}
+// launch
+//molDyn.dynamic(mcStepFrequency, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
+mcProt.launch((MolecularDynamics) molDyn, (int) mcStepFrequency, (double) timeStep, (double) printInterval, (double) saveInterval, 
+    (double) temperature, (boolean) initVelocities, (String) fileType, (double) restartFrequency);
