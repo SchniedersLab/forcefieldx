@@ -111,6 +111,18 @@ public class VanDerWaalsForm {
             logger.info(format(" Unrecognized VDWTYPE %s; defaulting to %s.", value, vdwType));
         }
 
+        switch (vdwType) {
+            case BUFFERED_14_7:
+                vdwPowers = new Buffered_14_7();
+                break;
+            case LENNARD_JONES:
+                vdwPowers = new LJ_6_12();
+                break;
+            default:
+                vdwPowers = new VDWPowers();
+                break;
+        }
+
         /**
          * Define epsilon combining rule.
          */
@@ -289,6 +301,14 @@ public class VanDerWaalsForm {
 
     }
 
+    public double rhoDisp1(double rho) {
+        return vdwPowers.rhoDisp1(rho);
+    }
+
+    public double rhoDelta1(double rhoDelta) {
+        return vdwPowers.rhoDisp1(rhoDelta);
+    }
+
     /**
      * van der Waals functional form.
      */
@@ -297,6 +317,8 @@ public class VanDerWaalsForm {
     private RADIUS_RULE radiusRule = RADIUS_RULE.CUBIC_MEAN;
     private RADIUS_SIZE radiusSize = RADIUS_SIZE.DIAMETER;
     private RADIUS_TYPE radiusType = RADIUS_TYPE.R_MIN;
+
+    private final VDWPowers vdwPowers;
 
     /**
      * vdW Repulsive Power (e.g. 12).
@@ -346,4 +368,44 @@ public class VanDerWaalsForm {
     protected static final byte RADMIN = 0;
     protected static final byte EPS = 1;
 
+    private class VDWPowers {
+
+        public double rhoDisp1(double rho) {
+            return pow(rho, dispersivePower1);
+        }
+
+        public double rhoDelta1(double rhoDelta) {
+            return pow(rhoDelta, repDispPower1);
+        }
+    }
+
+    private class LJ_6_12 extends VDWPowers {
+
+        @Override
+        public double rhoDisp1(double rho) {
+            double rho2 = rho * rho;
+            return rho2 * rho2 * rho;
+        }
+
+        @Override
+        public double rhoDelta1(double rhoDelta) {
+            double rhoDelta2 = rhoDelta * rhoDelta;
+            return rhoDelta2 * rhoDelta2 * rhoDelta;
+        }
+    }
+
+    private class Buffered_14_7 extends VDWPowers {
+
+        @Override
+        public double rhoDisp1(double rho) {
+            double rho2 = rho * rho;
+            return rho2 * rho2 * rho2;
+        }
+
+        @Override
+        public double rhoDelta1(double rhoDelta) {
+            double rhoDelta2 = rhoDelta * rhoDelta;
+            return rhoDelta2 * rhoDelta2 * rhoDelta2;
+        }
+    }
 }

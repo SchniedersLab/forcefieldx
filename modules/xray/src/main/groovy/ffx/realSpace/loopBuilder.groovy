@@ -64,6 +64,7 @@ import ffx.algorithms.RotamerOptimization.Direction;
 import ffx.algorithms.SimulatedAnnealing;
 import ffx.algorithms.Thermostat.Thermostats;
 import ffx.algorithms.MCLoop;
+import ffx.numerics.Potential;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MultiResidue;
@@ -76,18 +77,15 @@ import ffx.potential.bonded.ResidueEnumerations.CommonAminoAcid3;
 import ffx.potential.bonded.Residue.ResidueType;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.ForceFieldEnergy;
-import ffx.numerics.Potential;
-
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.DiffractionData;
 import ffx.xray.DiffractionFile;
+import ffx.xray.Looptimizer;
 import ffx.xray.RealSpaceData;
 import ffx.xray.RealSpaceFile;
 import ffx.xray.RefinementEnergy;
 import ffx.xray.RefinementMinimize;
 import ffx.xray.RefinementMinimize.RefinementMode;
-import ffx.xray.Looptimizer;
 
 // Default convergence criteria.
 double eps = 0.1;
@@ -111,10 +109,10 @@ double restartInterval = 1.0;
 int nSteps = 50000;
 
 // Thermostats [ ADIABATIC, BERENDSEN, BUSSI ]
-Thermostats thermostat = Thermostats.ADIABATIC;
+Thermostats thermostat = Thermostats.BERENDSEN;
 
 // Integrators [ BEEMAN, RESPA, STOCHASTIC ]
-Integrators integrator = Integrators.STOCHASTIC;
+Integrators integrator = Integrators.RESPA;
 
 // Reset velocities (ignored if a restart file is given)
 boolean initVelocities = true;
@@ -159,7 +157,7 @@ def cli = new CliBuilder(usage:' ffxc loopBuilder [options] <pdbFile> <realSpace
 cli.h(longOpt:'help', 'Print this help message.');
 cli.e(longOpt:'eps', args:1, argName:'1.0', 'RMS gradient convergence criteria');
 cli.n(longOpt:'steps', args:1, argName:'10000', 'Number of molecular dynamics steps.');
-cli.d(longOpt:'dt', args:1, argName:'2.5', 'Time discretization step (fsec).');
+cli.d(longOpt:'dt', args:1, argName:'1.0', 'Time discretization step (fsec).');
 cli.m(longOpt:'minimize','Local minimization of loop residues (need -s and -f flags).');
 cli.r(longOpt:'report', args:1, argName:'0.01', 'Interval to report thermodyanamics (psec).');
 cli.w(longOpt:'write', args:1, argName:'100.0', 'Interval to write out coordinates (psec).');
@@ -171,7 +169,7 @@ cli.sa(longOpt:'simulated annealing', 'Run simulated annealing.');
 cli.rot(longOpt:'rotamer', 'Run rotamer optimization.');
 cli.mc(longOpt:'MC Loop','Run Monte Carlo KIC');
 cli.a(longOpt:'all', 'Run optimal pipeline of algorithms.');
-cli.x(longOpt:'X-ray Minimize', 'Run x-ray based quenching during OSRW.');
+cli.x(longOpt:'X-ray Minimize', 'Run X-ray based quenching during OSRW.');
 cli.s(longOpt:'start', args:1, argName:'1', 'Starting residue of existing loop.');
 cli.f(longOpt:'final', args:1, argName:'-1', 'Final residue of an existing loop.');
 cli.mcn(longOpt:'mcStepFreq', args:1, argName:'10', 'Number of MD steps between Monte-Carlo protonation changes.')
@@ -285,6 +283,7 @@ if(!(options.s && options.f)){
 // Using property to build xray radii.
 // TODO: Fix dependence on vdw in xray refinement
 System.setProperty("vdwterm", "true");
+System.setProperty("mpoleterm", "false");
 
 List<String> arguments = options.arguments();
 String filename = null;
@@ -326,7 +325,7 @@ if (!dyn.exists()) {
     dyn = null;
 }
 
-open(filename);
+systems = open(filename);
 
 // Set built atoms active/use flags to true (false for other atoms).
 Atom[] atoms = active.getAtomArray();
@@ -369,7 +368,7 @@ if(options.s && options.f){
 
 // Get a reference to the first system's ForceFieldEnergy.
 ForceFieldEnergy forceFieldEnergy = active.getPotentialEnergy();
-forcefieldEnergy.setPrintOnFailure(false, false);
+forceFieldEnergy.setPrintOnFailure(false, false);
 
 for (int i = 0; i <= atoms.length; i++) {
     Atom ai = atoms[i - 1];
@@ -419,13 +418,12 @@ logger.info("\n Running minimize on built atoms of " + active.getName());
 logger.info(" RMS gradient convergence criteria: " + eps);
 
 //Reset force field energy without vdw term
-System.setProperty("vdwterm", "false");
 forceFieldEnergy = active.getPotentialEnergy();
 
 RealSpaceData realSpaceData = new RealSpaceData(active, active.getProperties(),
     mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
 RefinementMinimize refinementMinimize = new RefinementMinimize(realSpaceData, RefinementMode.COORDINATES);
-    
+
 if (localMin){
     runOSRW = false;
 } else {
@@ -437,6 +435,7 @@ if (localMin){
 if(runOSRW){
     // Run OSRW.
     System.setProperty("vdwterm", "true");
+    System.setProperty("vdw-cutoff", "7.0");
     System.setProperty("mpoleterm", "true");
     System.setProperty("polarization", "none");
     System.setProperty("intramolecular-softcore", "true");
@@ -444,7 +443,6 @@ if(runOSRW){
     System.setProperty("lambdaterm", "true");
     System.setProperty("lambda-torsions", "true");
     System.setProperty("ligand-vapor-elec","false");
-    System.setProperty("vdw-cutoff", "9.0");
     System.setProperty("lambda-bias-cutoff", "3");
     if (options.g) {
         System.setProperty("bias-gaussian-mag",String.format("%f",biasMag));
@@ -453,6 +451,7 @@ if(runOSRW){
     }
     System.setProperty("lambda-bin-width", "0.01");
     System.setProperty("tau-temperature","0.05");
+    System.setProperty("integrate", "respa");
 
     for (int i = 0; i <= atoms.length; i++) {
         Atom ai = atoms[i - 1];
@@ -478,19 +477,18 @@ if(runOSRW){
     }
 
     forceFieldEnergy = new ForceFieldEnergy(active);
-    forcefieldEnergy.setPrintOnFailure(false, false);
+    forceFieldEnergy.setPrintOnFailure(false, false);
     forceFieldEnergy.setLambda(lambda);
+    // Turn off checks for overlapping atoms, which is expected for lambda=0.
+    forceFieldEnergy.getCrystal().setSpecialPositionCutoff(0.0);
+
     realSpaceData = new RealSpaceData(active, active.getProperties(), mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
     RefinementEnergy refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMode.COORDINATES, null);
     refinementEnergy.setLambda(lambda);
 
     energy();
 
-    // Turn off checks for overlapping atoms, which is expected for lambda=0.
-    forceFieldEnergy.getCrystal().setSpecialPositionCutoff(0.0);
-
     boolean asynchronous = true;
-
     Potential osrw;
     if(runTTOSRW){
         osrw = new TransitionTemperedOSRW(refinementEnergy, refinementEnergy,
@@ -500,7 +498,6 @@ if(runOSRW){
         osrw =  new Looptimizer(refinementEnergy, refinementEnergy, lambdaRestart, histogramRestart, active.getProperties(),
             (temperature), timeStep, printInterval, saveInterval, asynchronous, sh);
     }
-
     osrw.setLambda(lambda);
     osrw.setThetaMass(1.0e-19);
     osrw.setOptimization(true, active);
@@ -508,7 +505,7 @@ if(runOSRW){
     MolecularDynamics molDyn = new MolecularDynamics(active, osrw, active.getProperties(),
         null, thermostat, integrator);
 
-    if(runMCLoop){
+    if (runMCLoop){
         mcLoop = new MCLoop(active, mcStepFrequency, molDyn.getThermostat(),loopStart,loopStop);
         molDyn.addMCListener(mcLoop);
         mcLoop.addMolDyn(molDyn);
@@ -516,9 +513,10 @@ if(runOSRW){
         mcLoop.setIterations(20);
     }
 
-    if(runXRayMinimizer){
+    if (runXRayMinimizer){
         osrw.setData(diffractionData);
     }
+
     molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities,
         fileType, restartInterval, dyn);
 
@@ -584,7 +582,7 @@ if(!loopBuildError){
     System.setProperty("lambda-torsions", "false");
 
     forceFieldEnergy = new ForceFieldEnergy(active);
-    forcefieldEnergy.setPrintOnFailure(false, false);
+    forceFieldEnergy.setPrintOnFailure(false, false);
     realSpaceData = new RealSpaceData(active, active.getProperties(),
         mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
     refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMode.COORDINATES, null);
@@ -644,7 +642,7 @@ if (runRotamer){
     }
 
     forceFieldEnergy = new ForceFieldEnergy(active);
-    forcefieldEnergy.setPrintOnFailure(false, false);
+    forceFieldEnergy.setPrintOnFailure(false, false);
     realSpaceData = new RealSpaceData(active, active.getProperties(),
         mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
     refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMode.COORDINATES, null);
@@ -710,7 +708,7 @@ if (runRotamer){
     }
 
     forceFieldEnergy = new ForceFieldEnergy(active);
-    forcefieldEnergy.setPrintOnFailure(false, false);
+    forceFieldEnergy.setPrintOnFailure(false, false);
     realSpaceData = new RealSpaceData(active, active.getProperties(),
         mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
     refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMode.COORDINATES, null);

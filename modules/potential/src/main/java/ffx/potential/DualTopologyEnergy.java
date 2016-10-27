@@ -456,6 +456,7 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
             }
         }
         region = new EnergyRegion();
+        team = new ParallelTeam(1);
     }
 
     public DualTopologyEnergy(MolecularAssembly topology1, MolecularAssembly topology2) {
@@ -604,6 +605,7 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
             }
         }
         region = new EnergyRegion();
+        team = new ParallelTeam(1);
     }
     
     /**
@@ -647,30 +649,31 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
 
     @Override
     public double energy(double[] x, boolean verbose) {
-        if (inParallel) {
-            try {
-                region.setX(x);
-                region.setVerbose(verbose);
-                team.execute(region);
-            } catch (Exception ex) {
-                throw new EnergyException(String.format(" Exception in calculating dual-topology energy: %s", ex.toString()), false);
-            }
-        } else {
+        //if (inParallel) {
+        try {
+            region.setX(x);
+            region.setVerbose(verbose);
+            team.execute(region);
+        } catch (Exception ex) {
+            throw new EnergyException(String.format(" Exception in calculating dual-topology energy: %s", ex.toString()), false);
+        }
+        return totalEnergy;
+        /*} else {
             /**
              * Update the coordinates of both topologies.
-             */
+             *
             unpackCoordinates(x);
 
             /**
              * Compute the energy of topology 1.
-             */
+             *
             energy1 = potential1.energy(x1, verbose);
             /**
              * The if branch here shuts off most energy terms, and then recalculates
              * those (primarily bonded) terms which are unaffected by lambda. This
              * is then added back to the original energy, so you have lambda * (most)
              * plus (lambda + 1-lambda) * (special bonded terms).
-             */
+             *
             if (doValenceRestraint1 && potential1 instanceof ForceFieldEnergy) {
                 ForceFieldEnergy ffE1 = (ForceFieldEnergy) potential1;
                 ffE1.setLambdaBondedTerms(true);
@@ -689,7 +692,7 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
 
             /**
              * Compute the energy of topology 2.
-             */
+             *
             energy2 = potential2.energy(x2, verbose);
             if (doValenceRestraint2 && potential2 instanceof ForceFieldEnergy) {
                 ForceFieldEnergy ffE2 = (ForceFieldEnergy) potential2;
@@ -709,13 +712,13 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
 
             /**
              * Apply the dual-topology scaling for the total energy.
-             */
+             *
             totalEnergy = lambdaPow * energy1 + oneMinusLambdaPow * restraintEnergy1
                     + oneMinusLambdaPow * energy2 + lambdaPow * restraintEnergy2;
 
             /**
              * Rescale the coordinates.
-             */
+             *
             packCoordinates(x);
 
             if (verbose) {
@@ -723,6 +726,7 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
             }
         }
         return totalEnergy;
+            */
     }
    
     /**
@@ -749,31 +753,32 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
      */
     @Override
     public double energyAndGradient(double[] x, double[] g, boolean verbose) {
-        if (inParallel) {
-            try {
-                region.setX(x);
-                region.setG(g);
-                region.setVerbose(verbose);
-                team.execute(region);
-            } catch (Exception ex) {
-                throw new EnergyException(String.format(" Exception in calculating dual-topology energy: %s", ex.toString()), false);
-            }
-        } else {
+        //if (inParallel) {
+        try {
+            region.setX(x);
+            region.setG(g);
+            region.setVerbose(verbose);
+            team.execute(region);
+        } catch (Exception ex) {
+            throw new EnergyException(String.format(" Exception in calculating dual-topology energy: %s", ex.toString()), false);
+        }
+        return totalEnergy;
+        /*} else {
             /**
              * Update the coordinates of both topologies.
-             */
+             *
             unpackCoordinates(x);
 
             /**
              * Initialize dUdXdL arrays.
-             */
+             *
             fill(gl1, 0.0);
             fill(gl2, 0.0);
             fill(rgl1, 0.0);
             fill(rgl2, 0.0);
             /**
              * Compute the energy and gradient of topology 1.
-             */
+             *
             energy1 = potential1.energyAndGradient(x1, g1, verbose);
             dEdL_1 = lambdaInterface1.getdEdL();
             d2EdL2_1 = lambdaInterface1.getd2EdL2();
@@ -803,7 +808,7 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
 
             /**
              * Compute the energy and gradient of topology 2.
-             */
+             *
             energy2 = potential2.energyAndGradient(x2, g2, verbose);
             dEdL_2 = -lambdaInterface2.getdEdL();
             d2EdL2_2 = lambdaInterface2.getd2EdL2();
@@ -833,20 +838,20 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
 
             /**
              * Apply the dual-topology scaling for the total energy.
-             */
+             *
             totalEnergy = lambdaPow * energy1 + oneMinusLambdaPow * restraintEnergy1
                     + oneMinusLambdaPow * energy2 + lambdaPow * restraintEnergy2;
 
             /**
              * Scale and pack the gradient.
-             */
+             *
             packGradient(x, g);
 
             if (verbose) {
                 logger.info(String.format(" Total dual-topology energy: %12.4f", totalEnergy));
             }
         }
-        return totalEnergy;
+        return totalEnergy;*/
     }
 
     @Override
@@ -1037,16 +1042,11 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
         if (team != null) {
             try {
                 team.shutdown();
-                team = null;
             } catch (Exception e) {
                 logger.severe(String.format(" Exception in shutting down old ParallelTeam for DualTopologyEnergy: %s", e.toString()));
             }
         }
-        if (parallel) {
-            team = new ParallelTeam(2);
-        } /* else {
-            team = new ParallelTeam(1);
-        } */
+        team = parallel ? new ParallelTeam(2) : new ParallelTeam(1);
     }
 
     @Override

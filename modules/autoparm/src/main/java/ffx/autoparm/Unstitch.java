@@ -282,6 +282,7 @@ public class Unstitch {
         for (int i = 0; i < finalArray.length; i++) {
             String content = finalArray[i];
             IAtomContainer container = finalIAtomContainerArray[i];
+            //IAtomContainer container = finalArray
             //entry number in SMILES array to be used later in SDF writing
             int num = i;
             iAtomContainerTo3DModel(content, container, num);
@@ -289,11 +290,11 @@ public class Unstitch {
 
     } //end fragment method
 
-    int fragcounter = 1;
+    //int fragcounter = 1;
 
     protected void iAtomContainerTo3DModel(String smi, IAtomContainer fragContainer, int num) throws Exception {
         IAtomContainer mol = null;
-        List<IAtom> toFullTest = new ArrayList<>();
+        //List<IAtom> toFullTest = new ArrayList<>();
         List<IAtom> toFragTest = new ArrayList<>();
         //entry number in SMILES array to be used later in SDF writing
         int number = num;
@@ -339,24 +340,24 @@ public class Unstitch {
         for (int i = 0; i < fragContainer.getAtomCount(); i++) {
             mol.getAtom(i).setID(fragContainer.getAtom(i).getID());
         }
-
+        
+        //Fragmenting checks
+        //30 atoms or less
         if (mol.getAtomCount() < SIZE) {
+        //if(fragContainer.getAtomCount() < SIZE){
             //Builds 3D model of fragment molecule
-            //System.out.println("\nBuilding 3D Model\n");
+            System.out.println("mb3d for fragment"+number);
             ModelBuilder3D mb3d;
             mb3d = ModelBuilder3D.getInstance(SilentChemObjectBuilder.getInstance());
-            //System.out.println("\nModelBuilder created\n");
             IAtomContainer molecule = null;
             molecule = mb3d.generate3DCoordinates(mol, false);
+            //molecule = mb3d.generate3DCoordinates(fragContainer, false);
 
-            //Fragmenting checks
-            //30 atoms or less
-            //if (molecule.getAtomCount() < SIZE) {
             //"eaten" fragments checked for already
             //write output to SDF
             File fragsdf = writeSDF(molecule, number);
 
-            fragcounter++;
+            //fragcounter++;
         }
 
     } //end "iAtomContainerTo3DModel" IAtomContainer to 3D model converter
