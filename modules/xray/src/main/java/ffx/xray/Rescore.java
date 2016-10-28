@@ -67,7 +67,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -76,14 +75,16 @@ import java.util.logging.Logger;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
+import edu.rit.pj.ParallelTeam;
+
 import ffx.algorithms.AlgorithmFunctions;
-import static ffx.algorithms.ClusterStructures.generatePath;
 import ffx.potential.MolecularAssembly;
 import ffx.utilities.DoubleIndexPair;
 import ffx.utilities.Keyword;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
+import static ffx.algorithms.ClusterStructures.generatePath;
 import static ffx.xray.Rescore.RescoreStrategy.ENERGY_EVAL;
 import static ffx.xray.Rescore.RescoreStrategy.MINIMIZE;
 import static ffx.xray.Rescore.RescoreStrategy.NO_RESCORE;
@@ -91,9 +92,9 @@ import static ffx.xray.Rescore.RescoreStrategy.RS_MIN;
 import static ffx.xray.Rescore.RescoreStrategy.XRAY_MIN;
 
 /**
- * This class performs rescoring on a provided list of structure files. Rescoring 
- * can be based on energy evaluations, minimization, x-ray minimization, or 
- * real-space minimization.
+ * This class performs rescoring on a provided list of structure files.
+ * Rescoring can be based on energy evaluations, minimization, x-ray
+ * minimization, or real-space minimization.
  *
  * @author Michael J. Schnieders
  * @since 1.0
@@ -192,9 +193,9 @@ public class Rescore {
     }
 
     /**
-     * Launch the rescoring algorithm on provided files. Assumes it has been given 
-     * valid files to be run on; use CoordinateFileFilter.acceptDeep(File file) 
-     * before sending files to this method.
+     * Launch the rescoring algorithm on provided files. Assumes it has been
+     * given valid files to be run on; use CoordinateFileFilter.acceptDeep(File
+     * file) before sending files to this method.
      *
      * @param modelFiles Files to rescore.
      */
@@ -302,7 +303,9 @@ public class Rescore {
                         mapFiles.add(realspaceFile);
                     }
                     properties = Keyword.loadProperties(modelFile);
-                    RealSpaceData realspaceData = new RealSpaceData(assembly, properties, mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
+                    RealSpaceData realspaceData = new RealSpaceData(assembly,
+                            properties, new ParallelTeam(),
+                            mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
                     utils.energy(assembly);
 
                     refinementMinimize = new RefinementMinimize(realspaceData, refinementMode);
@@ -481,34 +484,34 @@ public class Rescore {
     public enum RescoreStrategy {
 
         NO_RESCORE {
-                    @Override
-                    public String toString() {
-                        return "none";
-                    }
-                },
+            @Override
+            public String toString() {
+                return "none";
+            }
+        },
         ENERGY_EVAL {
-                    @Override
-                    public String toString() {
-                        return "potential energy";
-                    }
-                },
+            @Override
+            public String toString() {
+                return "potential energy";
+            }
+        },
         MINIMIZE {
-                    @Override
-                    public String toString() {
-                        return "force field minimization";
-                    }
-                },
+            @Override
+            public String toString() {
+                return "force field minimization";
+            }
+        },
         XRAY_MIN {
-                    @Override
-                    public String toString() {
-                        return "x-ray hybrid target minimization";
-                    }
-                },
+            @Override
+            public String toString() {
+                return "x-ray hybrid target minimization";
+            }
+        },
         RS_MIN {
-                    @Override
-                    public String toString() {
-                        return "real-space hybrid target minimization";
-                    }
-                };
+            @Override
+            public String toString() {
+                return "real-space hybrid target minimization";
+            }
+        };
     }
 }

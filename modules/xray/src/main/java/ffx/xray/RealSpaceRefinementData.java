@@ -50,7 +50,7 @@ public class RealSpaceRefinementData {
     protected final int ni[];
     protected boolean periodic;
     protected double data[];
-    protected double densityscore;
+    protected double densityScore;
 
     /**
      * <p>

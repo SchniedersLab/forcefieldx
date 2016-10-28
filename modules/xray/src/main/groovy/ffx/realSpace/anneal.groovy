@@ -139,7 +139,9 @@ if (mapfiles.size() == 0) {
     mapfiles.add(realspacefile);
 }
 
-RealSpaceData realspacedata = new RealSpaceData(active, active.getProperties(), mapfiles.toArray(new RealSpaceFile[mapfiles.size()]));
+RealSpaceData realspacedata = new RealSpaceData(active,
+    active.getProperties(), active.getParallelTeam(),
+    mapfiles.toArray(new RealSpaceFile[mapfiles.size()]));
 
 energy();
 

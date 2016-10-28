@@ -317,7 +317,7 @@ public class DiffractionData implements DataContainer {
 
         if (logger.isLoggable(Level.INFO)) {
             StringBuilder sb = new StringBuilder();
-            sb.append(" Refinement Settings\n\n");
+            sb.append(" X-ray Refinement Settings\n\n");
             sb.append("  Target Function\n");
             sb.append("  X-ray refinement weight (xweight): ").append(xWeight).append("\n");
             sb.append("  Use cctbx 3 Gaussians (use_3g): ").append(use_3g).append("\n");
@@ -660,7 +660,7 @@ public class DiffractionData implements DataContainer {
     public double getRCrystalStat(){
         return crystalStats[0].getR();
     }
-    
+
     /**
      * print scale and R statistics for all datasets associated with the model
      */
