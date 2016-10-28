@@ -368,7 +368,7 @@ public class VanDerWaals implements MaskingInterface,
         } catch (Exception e) {
             logger.info(format(" Unrecognized ARRAY-REDUCTION %s; defaulting to %s", value, atomicDoubleArrayImpl));
         }
-        logger.info(format(" Using %s arrays.", atomicDoubleArrayImpl.toString()));
+        logger.info(format("  Using %s arrays.", atomicDoubleArrayImpl.toString()));
 
         /**
          * Allocate coordinate arrays and set up reduction indices and values.

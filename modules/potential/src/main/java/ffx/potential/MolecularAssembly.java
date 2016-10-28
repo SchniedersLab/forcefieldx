@@ -75,6 +75,8 @@ import com.sun.j3d.utils.picking.PickTool;
 import org.jdesktop.j3d.loaders.vrml97.VrmlLoader;
 import org.jdesktop.j3d.loaders.vrml97.VrmlScene;
 
+import edu.rit.pj.ParallelTeam;
+
 import ffx.crystal.Crystal;
 import ffx.numerics.VectorMath;
 import ffx.potential.bonded.Atom;
@@ -205,6 +207,14 @@ public class MolecularAssembly extends MSGroup {
         return potentialEnergy;
     }
 
+    public ParallelTeam getParallelTeam() {
+        if (potentialEnergy != null) {
+            return potentialEnergy.getParallelTeam();
+        } else {
+            return null;
+        }
+    }
+
     public ResiduePosition getResiduePosition(int residueNumber) {
         ResiduePosition position;
         int numberOfResidues = 0;
@@ -224,17 +234,21 @@ public class MolecularAssembly extends MSGroup {
         }
         return position;
     }
-    
+
     /**
-     * Adds a header line to this MolecularAssembly (particularly for PDB formats)
+     * Adds a header line to this MolecularAssembly (particularly for PDB
+     * formats)
+     *
      * @param line Line to add.
      */
     public void addHeaderLine(String line) {
         headerLines.add(line);
     }
-    
+
     /**
-     * Gets the header lines associated with this MolecularAssembly (particularly for PDB)
+     * Gets the header lines associated with this MolecularAssembly
+     * (particularly for PDB)
+     *
      * @return Header lines.
      */
     public String[] getHeaderLines() {
@@ -799,7 +813,6 @@ public class MolecularAssembly extends MSGroup {
         return atomArray;
     }
 
-
     /**
      * <p>
      * getBackBoneAtoms</p>
@@ -1023,7 +1036,7 @@ public class MolecularAssembly extends MSGroup {
     private Atom getResidue(Atom atom, boolean create) {
         return getResidue(atom, create, Residue.ResidueType.UNK);
     }
-    
+
     private Atom getResidue(Atom atom, boolean create, Residue.ResidueType defaultRT) {
         Character chainID = atom.getChainID();
         String resName = atom.getResidueName();
@@ -1232,10 +1245,11 @@ public class MolecularAssembly extends MSGroup {
         }
         return residues;
     }
-    
+
     /**
-     * Sums up charge of the system, checking nonstandard residues for 
+     * Sums up charge of the system, checking nonstandard residues for
      * non-unitary charges.
+     *
      * @param alwaysLog Log non-unitary charge warnings for all nodes
      * @return System charge
      */
