@@ -453,7 +453,9 @@ if(runOSRW){
         System.setProperty("bias-gaussian-mag", "0.002");
     }
     System.setProperty("lambda-bin-width", "0.01");
-    System.setProperty("tau-temperature","0.05");
+
+    // Set the thermostat time constant (in psec) to the the time step (i.e. to give velocity rescaling).
+    System.setProperty("tau-temperature", String.format("%f", timeStep * 1.0e-3));
     System.setProperty("integrate", "respa");
 
     for (int i = 0; i <= atoms.length; i++) {
