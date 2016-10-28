@@ -2,7 +2,6 @@ package ffx.potential.extended;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.OptionalDouble;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
@@ -11,18 +10,6 @@ import static java.lang.String.format;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.Angle;
-import ffx.potential.bonded.Bond;
-import ffx.potential.bonded.BondedTerm;
-import ffx.potential.bonded.ImproperTorsion;
-import ffx.potential.bonded.OutOfPlaneBend;
-import ffx.potential.bonded.PiOrbitalTorsion;
-import ffx.potential.bonded.ROLS;
-import ffx.potential.bonded.RestraintBond;
-import ffx.potential.bonded.StretchBend;
-import ffx.potential.bonded.Torsion;
-import ffx.potential.bonded.TorsionTorsion;
-import ffx.potential.bonded.UreyBradley;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwaldCart;
 import ffx.potential.nonbonded.ParticleMeshEwaldQI;
@@ -46,7 +33,7 @@ public class ExtendedSystem {
     private boolean esvTerm, phTerm, vdwTerm, mpoleTerm;
     // Potential Objects
     private final MolecularAssembly mola;
-    private final ForceField ff;
+    private final ForceFieldEnergy ffe;
     private final VanDerWaals vdw;
     private final ParticleMeshEwaldQI pme;  // must not be global frame
     private boolean usePME = false;
@@ -60,7 +47,7 @@ public class ExtendedSystem {
         logger.warning("Invoked ExtendedSystem null/temporary constuctor.");
         mola = null;
         nAtoms = 0;
-        ff = null;
+        ffe = null;
         vdw = null;
         pme = null;
         pHconst = 7.4;
@@ -80,8 +67,6 @@ public class ExtendedSystem {
         if (mola == null) {
             logger.warning("Null mola in ESV...");
             throw new IllegalArgumentException();
-        } else {
-            logger.info("What mola looks like to ES: " + mola.toString());
         }
         if (mola.getAtomArray() != null) {
             nAtoms = mola.getAtomArray().length;
@@ -90,16 +75,13 @@ public class ExtendedSystem {
         if (!(potential instanceof ForceFieldEnergy)) {
             logger.warning("ExtendedSystem currently supported only for ForceFieldEnergy potentials.");
         }
-        this.ff = mola.getForceField();
+        ffe = (ForceFieldEnergy) potential;
+        ForceField ff = mola.getForceField();
         
         esvTerm = ff.getBoolean(ForceField.ForceFieldBoolean.ESVTERM, false);
         phTerm = ff.getBoolean(ForceField.ForceFieldBoolean.PHTERM, false);
         vdwTerm = ff.getBoolean(ForceField.ForceFieldBoolean.VDWTERM, true);
         mpoleTerm = ff.getBoolean(ForceField.ForceFieldBoolean.MPOLETERM, false);
-        
-        if (!esvTerm) {
-            logger.severe("Extended system created while !esvTerm.");
-        }
         
         ForceFieldEnergy ffe = null;
         if (potential instanceof ForceFieldEnergy) {
@@ -169,10 +151,12 @@ public class ExtendedSystem {
      */
     public double biases() {
         if (!esvTerm) {
-            logger.warning("Called ExtendedSystem energy while !esvTerm.");
+//            logger.warning("Called ExtendedSystem energy while !esvTerm.");
+            return 0.0;
         }
         if (esvList == null || esvList.isEmpty()) {
-            logger.warning("Called for extended energy with null/empty esvList.");
+//            logger.warning("Called for extended energy with null/empty esvList.");
+            return 0.0;
         }
         double biasEnergySum = 0.0;
         double phEnergySum = 0.0;
@@ -180,15 +164,14 @@ public class ExtendedSystem {
         StringBuilder sb = new StringBuilder();
         for (ExtendedVariable esv : esvList) {
             sb.append(format("%.2f ", esv.getLambda()));
-            biasEnergySum += esv.getBiasEnergy();
+            biasEnergySum += esv.getDiscretizationBiasEnergy();
             if (phTerm && esv instanceof TitrationESV) {
-                phEnergySum += ((TitrationESV) esv).getPhEnergy(pHconst, currentTemperature);
+                phEnergySum += ((TitrationESV) esv).getPhBiasEnergy(currentTemperature);
             }
         }
 
-        esvLogger.append(format(" [ldh: %s, bias: %g, pH: %g] ", sb.toString(), biasEnergySum, phEnergySum));
-        logger.info(esvLogger.toString());
-        esvLogger = new StringBuilder();
+//        logger.info(esvLogger.toString());
+//        esvLogger = new StringBuilder();
 
         return biasEnergySum + phEnergySum;
     }
@@ -196,19 +179,22 @@ public class ExtendedSystem {
     /**
      * Update the position of all ESV particles.
      */
-    public void propagateESVs(double temperature, double dt, Double currentTimePs) {
+    public void propagateESVs(double temperature, double dt, double currentTimePs) {
         currentTemperature = temperature;
-        double[] dEdLdh = getdEdLdh(false);
+        double[] dEdLdh = getdEdL(false);
         if (esvList != null && !esvList.isEmpty()) {
             for (ExtendedVariable esv : esvList) {
                 double was = esv.getLambda();
-                esv.propagateLamedh(dEdLdh[esv.index], temperature, dt);
-                if (currentTimePs != null) {
-                    logger.info(format(" Propagating ESV[%d]: %g --> %g @ temp,psec: %g %g",
-                            esv.index, was, esv.getLambda(), temperature, currentTimePs));
+                esv.propagate(dEdLdh[esv.index], temperature, dt);
+                if (esv instanceof TitrationESV) {
+                    logger.info(format(" Propagating ESV[%d]: %g --> %g @ psec,temp,lbd,zuBias,phBias: %g %g %.2f %.2f %.2f",
+                            esv.index, was, esv.getLambda(), currentTimePs, temperature, 
+                            esv.getLambda(), esv.getDiscretizationBiasEnergy(),
+                            ((TitrationESV) esv).getPhBiasEnergy(temperature)));
                 } else {
-                    logger.info(format(" Propagating ESV[%d]: %g --> %g @ temp: %g",
-                            esv.index, was, esv.getLambda(), temperature));
+                    logger.info(format(" Propagating ESV[%d]: %g --> %g @ psec,temp,lbd,zuBias: %g %g %.2f %.2f",
+                            esv.index, was, esv.getLambda(), currentTimePs, temperature, 
+                            esv.getLambda(), esv.getDiscretizationBiasEnergy()));
                 }
             }
             if (usePME) {
@@ -216,210 +202,7 @@ public class ExtendedSystem {
             }
         }
     }
-
-    /**
-     * Returns *the difference* between full bonded energy and lamedh-scaled
-     * bonded energy. Lamedh_Bonded = esvBondedEnergy() = FFE.totalBondedEnergy
-     * - esvBondedCorrection();
-     */
-    public double bonded(boolean[] termFlags, BondedTerm[][] termArrays,
-            boolean gradient, boolean lambdaBondedTerms) {
-        return calcBondedTerms(true, termFlags, termArrays, gradient, lambdaBondedTerms);
-    }
-
-    /**
-     * Returns the lamedh-scaled bonded energy. Lamedh_Bonded =
-     * esvBondedEnergy() = FFE.totalBondedEnergy - esvBondedCorrection();
-     */
-    public double totalBonded(boolean[] termFlags, BondedTerm[][] termArrays,
-            boolean gradient, boolean lambdaBondedTerms) {
-        return calcBondedTerms(false, termFlags, termArrays, gradient, lambdaBondedTerms);
-    }
-
-    /**
-     * FFE passes in: List<Object[]> termArrays = new ArrayList<>(Arrays.asList(
-     * bonds, angles, stretchBends, ureyBradleys, outOfPlaneBends, torsions,
-     * piOrbitalTorsions, torsionTorsions, improperTorsions, restraintBonds));
-     */
-    private double calcBondedTerms(boolean correctionOnly,
-            boolean[] termFlags, BondedTerm[][] termArrays,
-            boolean gradient, boolean lambdaBondedTerms) {
-        double bondEnergy = 0.0, angleEnergy = 0.0, stretchBendEnergy = 0.0,
-                ureyBradleyEnergy = 0.0, outOfPlaneBendEnergy = 0.0, torsionEnergy = 0.0,
-                piOrbitalTorsionEnergy = 0.0, torsionTorsionEnergy = 0.0,
-                improperTorsionEnergy = 0.0, restraintBondEnergy = 0.0;
-
-        if (termFlags[0]) {
-            Bond[] bonds = (Bond[]) termArrays[0];
-            for (int i = 0; i < bonds.length; i++) {
-                Bond b = bonds[i];
-                if (lambdaBondedTerms && !b.applyLambda()) {
-                    continue;
-                }
-                double be = b.energy(gradient);
-                bondEnergy += (correctionOnly)
-                        ? (1.0 - lamedhScaling(b)) * be
-                        : (be * lamedhScaling(b));
-            }
-        }
-
-        if (termFlags[1]) {
-            Angle[] angles = (Angle[]) termArrays[1];
-            for (int i = 0; i < angles.length; i++) {
-                Angle a = angles[i];
-                if (lambdaBondedTerms && !a.applyLambda()) {
-                    continue;
-                }
-                double ae = a.energy(gradient);
-                angleEnergy += (correctionOnly)
-                        ? (1.0 - lamedhScaling(a)) * ae
-                        : (ae * lamedhScaling(a));
-            }
-        }
-
-        if (termFlags[2]) {
-            StretchBend[] stretchBends = (StretchBend[]) termArrays[2];
-            for (int i = 0; i < stretchBends.length; i++) {
-                StretchBend stretchBend = stretchBends[i];
-                if (lambdaBondedTerms && !stretchBend.applyLambda()) {
-                    continue;
-                }
-                double sbe = stretchBend.energy(gradient);
-                stretchBendEnergy += (correctionOnly)
-                        ? (1.0 - lamedhScaling(stretchBend)) * sbe
-                        : (sbe * lamedhScaling(stretchBend));
-            }
-        }
-
-        if (termFlags[3]) {
-            UreyBradley[] ureyBradleys = (UreyBradley[]) termArrays[3];
-            for (int i = 0; i < ureyBradleys.length; i++) {
-                UreyBradley ureyBradley = ureyBradleys[i];
-                if (lambdaBondedTerms && !ureyBradley.applyLambda()) {
-                    continue;
-                }
-                double ube = ureyBradley.energy(gradient);
-                ureyBradleyEnergy += (correctionOnly)
-                        ? (1.0 - lamedhScaling(ureyBradley)) * ube
-                        : (ube * lamedhScaling(ureyBradley));
-            }
-        }
-
-        if (termFlags[4]) {
-            OutOfPlaneBend[] outOfPlaneBends = (OutOfPlaneBend[]) termArrays[4];
-            for (int i = 0; i < outOfPlaneBends.length; i++) {
-                OutOfPlaneBend outOfPlaneBend = outOfPlaneBends[i];
-                if (lambdaBondedTerms && !outOfPlaneBend.applyLambda()) {
-                    continue;
-                }
-                double oope = outOfPlaneBend.energy(gradient);
-                outOfPlaneBendEnergy += (correctionOnly)
-                        ? (1.0 - lamedhScaling(outOfPlaneBend)) * oope
-                        : (outOfPlaneBend.energy(gradient) * lamedhScaling(outOfPlaneBend));
-            }
-        }
-
-        if (termFlags[5]) {
-            Torsion[] torsions = (Torsion[]) termArrays[5];
-            for (int i = 0; i < torsions.length; i++) {
-                Torsion torsion = torsions[i];
-                if (lambdaBondedTerms && !torsion.applyLambda()) {
-                    continue;
-                }
-                double te = torsion.energy(gradient);
-                torsionEnergy += (correctionOnly)
-                        ? (1.0 - lamedhScaling(torsion)) * te
-                        : (torsion.energy(gradient) * lamedhScaling(torsion));
-            }
-        }
-
-        if (termFlags[6]) {
-            PiOrbitalTorsion[] piOrbitalTorsions = (PiOrbitalTorsion[]) termArrays[6];
-            for (int i = 0; i < piOrbitalTorsions.length; i++) {
-                PiOrbitalTorsion piOrbitalTorsion = piOrbitalTorsions[i];
-                if (lambdaBondedTerms && !piOrbitalTorsion.applyLambda()) {
-                    continue;
-                }
-                double pote = piOrbitalTorsion.energy(gradient);
-                piOrbitalTorsionEnergy += (correctionOnly)
-                        ? (1.0 - lamedhScaling(piOrbitalTorsion)) * pote
-                        : (piOrbitalTorsion.energy(gradient) * lamedhScaling(piOrbitalTorsion));
-            }
-        }
-
-        if (termFlags[7]) {
-            TorsionTorsion[] torsionTorsions = (TorsionTorsion[]) termArrays[7];
-            for (int i = 0; i < torsionTorsions.length; i++) {
-                TorsionTorsion torsionTorsion = torsionTorsions[i];
-                if (lambdaBondedTerms && !torsionTorsion.applyLambda()) {
-                    continue;
-                }
-                double tte = torsionTorsion.energy(gradient);
-                torsionTorsionEnergy += (correctionOnly)
-                        ? (1.0 - lamedhScaling(torsionTorsion)) * tte
-                        : (torsionTorsion.energy(gradient) * lamedhScaling(torsionTorsion));
-            }
-        }
-
-        if (termFlags[8]) {
-            ImproperTorsion[] improperTorsions = (ImproperTorsion[]) termArrays[8];
-            for (int i = 0; i < improperTorsions.length; i++) {
-                ImproperTorsion improperTorsion = improperTorsions[i];
-                if (lambdaBondedTerms && !improperTorsion.applyLambda()) {
-                    continue;
-                }
-                double ite = improperTorsion.energy(gradient);
-                improperTorsionEnergy += (correctionOnly)
-                        ? (1.0 - lamedhScaling(improperTorsion)) * ite
-                        : (ite * lamedhScaling(improperTorsion));
-            }
-        }
-
-        if (termFlags[9]) {
-            RestraintBond[] restraintBonds = (RestraintBond[]) termArrays[9];
-            for (int i = 0; i < restraintBonds.length; i++) {
-                RestraintBond rb = restraintBonds[i];
-                if (lambdaBondedTerms && !rb.applyLambda()) {
-                    continue;
-                }
-                double rbe = rb.energy(gradient);
-                restraintBondEnergy += (correctionOnly)
-                        ? (1.0 - lamedhScaling(rb)) * rbe
-                        : (rbe * lamedhScaling(rb));
-            }
-        }
-
-        double esvBonded = bondEnergy + angleEnergy + stretchBendEnergy
-                + ureyBradleyEnergy + outOfPlaneBendEnergy + torsionEnergy
-                + piOrbitalTorsionEnergy + torsionTorsionEnergy
-                + improperTorsionEnergy + restraintBondEnergy;
-        if (correctionOnly) {
-            esvBonded = -esvBonded;     // Such that E_corrected = E_normal `+` esvBonded.
-        }
-        return esvBonded;
-    }
-
-    /**
-     * Get amount by which this term should be scaled d/t any ESVs.
-     *
-     * @param rols
-     * @return
-     */
-    private double lamedhScaling(ROLS rols) {
-        double totalScale = 1.0;
-        for (ExtendedVariable esv : esvList) {
-            OptionalDouble scale = esv.getROLSScaling(rols);
-            if (scale.isPresent()) {
-                totalScale *= esv.getROLSScaling(rols).getAsDouble();
-                if (ESV_DEBUG) {
-                    esvLogger.append(String.format(" Scaling by ESV[%d] (%4.2f) : ROLS %s (%4.2f)\n",
-                            esv.index, scale.getAsDouble(), rols.toString(), totalScale));
-                }
-            }
-        }
-        return totalScale;
-    }
-
+    
     /**
      *
      * @param esv
@@ -446,14 +229,14 @@ public class ExtendedSystem {
     /**
      * @return [numESVs] gradient w.r.t. each lamedh
      */
-    public double[] getdEdLdh(boolean lambdaBondedTerms) {
+    public double[] getdEdL(boolean lambdaBondedTerms) {
         StringBuilder sb = new StringBuilder(format(" ESV derivative components: \n"));
         List<double[]> terms = new ArrayList<>();
         double[] vdwGrad = new double[numESVs];
         double[] pmeGrad = new double[numESVs];
         double[] biasGrad = new double[numESVs];
         for (int i = 0; i < numESVs; i++) {
-            biasGrad[i] = esvList.get(i).getdBiasdLdh();
+            biasGrad[i] = esvList.get(i).getdDiscretizationBiasdL();
         }
         terms.add(biasGrad);
         if (!lambdaBondedTerms) {
@@ -533,7 +316,7 @@ public class ExtendedSystem {
         List<double[]> terms = new ArrayList<>();
         double[] bias = new double[numESVs];
         for (int i = 0; i < numESVs; i++) {
-            bias[i] = esvList.get(i).getBiasEnergy();
+            bias[i] = esvList.get(i).getDiscretizationBiasEnergy();
         }
         terms.add(bias);
         if (!lambdaBondedTerms) {

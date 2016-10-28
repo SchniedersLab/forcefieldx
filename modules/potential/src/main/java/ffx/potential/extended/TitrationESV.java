@@ -1,10 +1,21 @@
 package ffx.potential.extended;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.IntStream;
+
+import static java.lang.String.format;
+
+import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.BondedTerm;
 import ffx.potential.bonded.BondedUtils;
-import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.ROLS;
@@ -12,17 +23,6 @@ import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.extended.TitrationESV.TitrationUtils.Titr;
 import ffx.potential.parameters.ForceField;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.OptionalDouble;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.stream.IntStream;
-import static java.lang.String.format;
-import java.util.Arrays;
-
-import ffx.numerics.Potential;
 
 /**
  * An extended system variable that allows continuous fractional protonation of an amino acid.
@@ -39,15 +39,20 @@ public final class TitrationESV extends ExtendedVariable {
     private Residue residueOne, residueZero;    // One*lamedh + Zero*(1-lamedh)
     private List<Atom> atomsOne, atomsZero;     // just those that are changing with lamedh
     private List<ROLS> rolsOne, rolsZero;
+    private List<BondedTerm> bondedTerms = new ArrayList<>();
     private static final List<String> backboneNames = Arrays.asList("N","CA","C","O","HA","H");
     
-    // Options
     private static final boolean HIEmode = false;
+    private final double constPh;
+    private final double pKaModel;
     
-    public TitrationESV(MultiResidue titrating, 
-            double temperature, double dt, double biasMag) {
+    public TitrationESV(double constPh, MultiResidue titrating, 
+            double dt, double biasMag) {
         super(biasMag, 1.0);
+        this.constPh = constPh;
         this.titrating = titrating;
+        Titr titration = TitrationUtils.titrationLookup(titrating.getActive());
+        this.pKaModel = titration.pKa;
         
         residueOne = titrating.getActive();
         residueZero = titrating.getInactive().get(0);
@@ -61,55 +66,40 @@ public final class TitrationESV extends ExtendedVariable {
                 .forEachOrdered(node -> rolsZero.add((ROLS) node));
     }
     
-    public TitrationESV(MultiResidue titrating, double temperature, double dt) {
-        this(titrating, temperature, dt, 1.0);
+    public TitrationESV(double constPh, MultiResidue titrating, double dt) {
+        this(constPh, titrating, dt, 1.0);
     }
     
+    public MultiResidue getMultiRes() {
+        return titrating;
+    }
+    
+    /**
+     * Fill the atoms array; set esvLambda in all bonded terms.
+     */
     @Override
-    protected void finalize() {
+    public void readyup() {
         atomsOne = new ArrayList<>();
         atomsZero = new ArrayList<>();
+        // Fill the backbone list.
         List<Atom> backboneAtoms = new ArrayList<>();
         backboneNames.parallelStream().forEach(name -> {
             backboneAtoms.add((Atom) residueOne.getAtomNode(name));
         });
+        // Fill the atom lists.
         residueOne.getAtomList().parallelStream().filter(a -> !backboneAtoms.contains(a)).forEachOrdered(atomsOne::add);
         residueZero.getAtomList().parallelStream().filter(a -> !backboneAtoms.contains(a)).forEachOrdered(atomsZero::add);
         atoms.addAll(atomsOne);
         atoms.addAll(atomsZero);
         atoms.parallelStream().forEach(a -> a.setESV(this));
+        // Fill bonded term list and set all esvLambda values.
+        bondedTerms = new ArrayList<>();
+        residueOne.getChildList(BondedTerm.class, bondedTerms);
+        residueZero.getChildList(BondedTerm.class, bondedTerms);
+        for (BondedTerm term : bondedTerms) {
+            term.setEsvLambda(lambda);
+        }
         describe();
-    }
-    
-//    /**
-//     * Query FFE for derivative terms, add bias.
-//     */
-//    @Override
-//    public double getdEdLdh() {
-//        return (ffe.getdEdLdh()[index] + getdBiasdLdh());
-//    }
-//    
-//    /**
-//     * Query FFE for derivative terms, add bias.
-//     */
-//    @Override
-//    public double getd2EdLdh2() {
-//        return (ffe.getd2EdLdh2()[index] + getd2BiasdLdh2());
-//    }
-    
-    @Override
-    public OptionalDouble getROLSScaling(ROLS rols) {
-        for (ROLS termNode : rolsOne) {
-            if (((MSNode) termNode).getChildList().contains(rols)) {
-                return OptionalDouble.of(lambda);
-            }
-        }
-        for (ROLS termNode : rolsZero) {
-            if (((MSNode) termNode).getChildList().contains(rols)) {
-                return OptionalDouble.of(1.0 - lambda);
-            }
-        }
-        return OptionalDouble.empty();
     }
     
     /**
@@ -119,18 +109,32 @@ public final class TitrationESV extends ExtendedVariable {
      * U_star = sum(ldh) { U_pH(ldh) + U_mod_prot(ldh) + U_barr(ldh)
      * This method returns U_pH + U_mod_prot.
      */
-    public double getPhEnergy(double pH, double temperature) {
+    public double getPhBiasEnergy(double temperature) {
         Titr titration = TitrationUtils.titrationLookup(this.titrating.getActive());
         double pKaModel = titration.pKa;
-        double uph = Math.log(10)*ThermoConstants.kB*temperature*(pKaModel - pH)*lambda;
+        double uph = ThermoConstants.log10*ThermoConstants.R*temperature*(pKaModel - constPh)*lambda;
+        logger.log(Level.CONFIG, format(" U(pH): 2.303kT*(pKa-pH)*L = %.4g * (%.2f - %.2f) * %.2f = %.4g", 
+                ThermoConstants.log10*ThermoConstants.kB*temperature, 
+                pKaModel, constPh, lambda, 
+                ThermoConstants.log10*ThermoConstants.kB*temperature*(pKaModel-constPh)*lambda));
         double umod = 0.0;  // TODO PRIO find PMFs for monomers/trimers/pentapeptides
         umod = titration.refEnergy * lambda;
         return uph + umod;
     }
     
+    /**
+     * TODO update this to also suppress intermediate values of triple-state systems.
+     * eg. histidine with 0.5 proton on each N. more examples arise when tautomerism is treated.
+     */
+    public double getdPhBiasdL(double temperature) {
+        double duphdl = ThermoConstants.log10*ThermoConstants.R*temperature*(pKaModel - constPh);
+        double dumoddl = 0.0;   // see above
+        return duphdl + dumoddl;
+    }
+    
     @Override
     public String toString() {
-        return format("Titration ESV %d: %s", index, titrating);
+        return format("ESV%d-Titr", index);
     }
     
     /**
@@ -149,7 +153,7 @@ public final class TitrationESV extends ExtendedVariable {
         rolsZero.stream().forEachOrdered(r -> sb.append( format("      %s\n", r)));
         logger.info(sb.toString());
     }
-    
+
     /**
      * Helper methods to define titration-specific phenomena.
      */

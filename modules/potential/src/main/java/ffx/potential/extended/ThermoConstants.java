@@ -2,6 +2,7 @@ package ffx.potential.extended;
 
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
+
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
@@ -10,6 +11,10 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  */
 public class ThermoConstants {
 
+    /**
+     * Boltzmann's constant is kcal/mol/Kelvin.
+     */
+    public static final double BOLTZMANN = 0.0019872041;
     /**
      * Boltzmann constant in units of g*Ang**2/ps**2/mole/K
      */
@@ -23,6 +28,10 @@ public class ThermoConstants {
      */
     public static final double R = 1.9872066e-3;
     /**
+     * One over kbT.
+     */
+    public static final double beta = 1 / R;
+    /**
      * Random force conversion to kcal/mol/A;
      */
     public static final double randomConvert = sqrt(4.184) / 10e9;
@@ -30,6 +39,8 @@ public class ThermoConstants {
     private static final Random random = ThreadLocalRandom.current();
     
     private static final double roomTemperature = 298.15;
+    
+    public static final double log10 = Math.log(10);
     
     /**
      * Return room-temperature velocities from a Maxwell-Boltzmann distribution of momenta.
