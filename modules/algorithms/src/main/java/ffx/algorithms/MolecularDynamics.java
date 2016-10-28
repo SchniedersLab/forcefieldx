@@ -108,7 +108,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private int saveRestartFileFrequency = 1000;
     private String fileType = "PDB";
     private double restartFrequency = 0.1;
-    private boolean updateMonteCarloListener = true;
+    private boolean notifyMonteCarlo = true;
     private ExtendedSystem extendedSystem;
     private DynamicsState dynamicsState;
 
@@ -316,20 +316,23 @@ public class MolecularDynamics implements Runnable, Terminatable {
         return archiveFile;
     }
     
-    public void setMcUpdate(boolean set) {
-        updateMonteCarloListener = set;
+    public void setNotifyMonteCarlo(boolean set) {
+        notifyMonteCarlo = set;
     }
 
-    public void addMCListener(MonteCarloListener monteCarloListener) {
-        this.monteCarloListener = monteCarloListener;
+    public void setMonteCarloListener(MonteCarloListener listener) {
+        monteCarloListener = listener;
     }
     
     public void attachExtendedSystem(ExtendedSystem system) {
-        this.extendedSystem = system;
+        if (system != null && extendedSystem != null) {
+//            logger.warning("ExtendedSystem already attached to MD.");
+        }
+        extendedSystem = system;
     }
     
     public void detachExtendedSystem() {
-        this.extendedSystem = null;
+        extendedSystem = null;
     }
 
     /**
@@ -452,8 +455,31 @@ public class MolecularDynamics implements Runnable, Terminatable {
         init(nSteps, timeStep, printInterval, saveInterval, "PDB", 0.1, temperature, initVelocities, dyn);
     }
 
-    public void dynamic() {
+    private boolean skipIntro = false;
+    public void redynamic(final int nSteps, final double timeStep, final double printInterval,
+            final double saveInterval, final double temperature, final boolean initVelocities,
+            String fileType, double restartFrequency, final File dyn) {
+        skipIntro = true;
         
+        MonteCarloListener temp = monteCarloListener;
+        monteCarloListener = null;
+        notifyMonteCarlo = false;
+        
+        Thread dynamicThread = new Thread(this);
+        dynamicThread.start();
+        synchronized (this) {
+            try {
+                while (dynamicThread.isAlive()) {
+                    wait(100);
+                }
+            } catch (InterruptedException e) {
+                String message = " Molecular dynamics interrupted.";
+                logger.log(Level.WARNING, message, e);
+            }
+        }
+        // Hook up MC
+        monteCarloListener = temp;
+        notifyMonteCarlo = true;
     }
     
     /**
@@ -494,8 +520,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     public void dynamic(final int nSteps, final double timeStep, final double printInterval,
             final double saveInterval, final double temperature, final boolean initVelocities,
             final File dyn) {
-
-        /**
+       /**
          * Return if already running; Could happen if two threads call dynamic
          * on the same MolecularDynamics instance.
          */
@@ -539,6 +564,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 logger.log(Level.WARNING, message, e);
             }
         }
+        logger.info("Done with an MD round.");
     }
 
     /**
@@ -600,6 +626,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
          */
         integrator.setTimeStep(dt);
 
+        if (!skipIntro) {
         if (!initialized) {
             /**
              * Initialize from a restart file.
@@ -668,14 +695,15 @@ public class MolecularDynamics implements Runnable, Terminatable {
         logger.info(String.format("\n      Time      Kinetic    Potential        Total     Temp      CPU"));
         logger.info(String.format("      psec     kcal/mol     kcal/mol     kcal/mol        K      sec\n"));
         logger.info(String.format("          %13.4f%13.4f%13.4f %8.2f ", currentKineticEnergy, currentPotentialEnergy, currentTotalEnergy, currentTemperature));
-
+        }
+        
         /**
          * Integrate Newton's equations of motion for the requested number of
          * steps, unless early termination is requested.
          */
         long time = System.nanoTime();
         for (int step = 1; step <= nSteps; step++) {
-            if (updateMonteCarloListener && monteCarloListener != null) {
+            if (notifyMonteCarlo && monteCarloListener != null) {
                 long startTime = System.nanoTime();
                 monteCarloListener.mcUpdate(molecularAssembly);
                 x = potential.getCoordinates(x);

@@ -713,7 +713,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
     public void attachExtendedSystem(ExtendedSystem system) {
         if (esvSystem != null) {
-            logger.warning("Multiple esvSystems is untested; overwriting instead.");
+//            logger.warning("Multiple esvSystems is untested; overwriting instead.");
         }
         esvTerm = true;
         esvSystem = system;

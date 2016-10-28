@@ -811,7 +811,7 @@ public class Protonate implements MonteCarloListener {
             discountLogger.append(format("    initial potential: %g\n", initialPotential));
             ffe.attachExtendedSystem(esvSystem);
             molDyn.attachExtendedSystem(esvSystem);
-            molDyn.setMcUpdate(false);
+            molDyn.setNotifyMonteCarlo(false);
             if (mdLauncher != null) {
                 mdLauncher.launch();
             } else {
@@ -824,7 +824,7 @@ public class Protonate implements MonteCarloListener {
                         (double) mdOptions[3], (double) mdOptions[4], (boolean) mdOptions[5], 
                         (String) mdOptions[6], (double) mdOptions[7], (File) mdOptions[8]);
             }
-            molDyn.setMcUpdate(true);
+            molDyn.setNotifyMonteCarlo(true);
             molDyn.detachExtendedSystem();
             ffe.detachExtendedSystem();
             double finalPotential = currentTotalEnergy();

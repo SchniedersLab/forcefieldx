@@ -12,6 +12,10 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 public class ThermoConstants {
 
     /**
+     * Boltzmann's constant is kcal/mol/Kelvin.
+     */
+    public static final double BOLTZMANN = 0.0019872041;
+    /**
      * Boltzmann constant in units of g*Ang**2/ps**2/mole/K
      */
     public static final double kB = 0.83144725;
@@ -23,6 +27,10 @@ public class ThermoConstants {
      * Gas constant (in Kcal/mole/Kelvin).
      */
     public static final double R = 1.9872066e-3;
+    /**
+     * One over kbT.
+     */
+    public static final double beta = 1 / R;
     /**
      * Random force conversion to kcal/mol/A;
      */

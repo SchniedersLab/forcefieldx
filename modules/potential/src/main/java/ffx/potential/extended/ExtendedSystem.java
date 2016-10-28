@@ -151,10 +151,12 @@ public class ExtendedSystem {
      */
     public double biases() {
         if (!esvTerm) {
-            logger.warning("Called ExtendedSystem energy while !esvTerm.");
+//            logger.warning("Called ExtendedSystem energy while !esvTerm.");
+            return 0.0;
         }
         if (esvList == null || esvList.isEmpty()) {
-            logger.warning("Called for extended energy with null/empty esvList.");
+//            logger.warning("Called for extended energy with null/empty esvList.");
+            return 0.0;
         }
         double biasEnergySum = 0.0;
         double phEnergySum = 0.0;
