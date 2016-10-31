@@ -89,7 +89,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
      */
     private double totalEnergy;
     /**
-     * The energy terms to compute.
+     * The RealSpaceEnergy is updated with FAST varying energy terms.
      */
     private STATE state = STATE.BOTH;
 
@@ -158,6 +158,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
      */
     @Override
     public double energy(double[] x) {
+
         double e = 0.0;
         /**
          * Unscale the coordinates.
@@ -170,10 +171,18 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         }
 
         if (refineXYZ) {
+            int index = 0;
+            double xyz[] = new double[3];
             for (Atom a : refinementModel.totalAtomArray) {
                 if (a.isActive()) {
+                    int i = index * 3;
+                    xyz[0] = x[i];
+                    xyz[1] = x[i + 1];
+                    xyz[2] = x[i + 2];
+                    a.setXYZ(xyz);
                     a.setXYZGradient(0.0, 0.0, 0.0);
                     a.setLambdaXYZGradient(0.0, 0.0, 0.0);
+                    index++;
                 }
             }
         }
@@ -214,10 +223,18 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         }
 
         if (refineXYZ) {
+            int index = 0;
+            double xyz[] = new double[3];
             for (Atom a : refinementModel.totalAtomArray) {
                 if (a.isActive()) {
+                    int i = index * 3;
+                    xyz[0] = x[i];
+                    xyz[1] = x[i + 1];
+                    xyz[2] = x[i + 2];
+                    a.setXYZ(xyz);
                     a.setXYZGradient(0.0, 0.0, 0.0);
                     a.setLambdaXYZGradient(0.0, 0.0, 0.0);
+                    index++;
                 }
             }
         }

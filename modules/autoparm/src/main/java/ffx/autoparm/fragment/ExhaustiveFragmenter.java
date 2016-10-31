@@ -102,14 +102,12 @@ public class ExhaustiveFragmenter implements IFragmenter {
      */
     @Override
     public void generateFragments(IAtomContainer atomContainer) throws CDKException {
-        System.out.println("\nIn generateFragments\n");
         fragMap.clear();
         run(atomContainer);
     }
 
     private List<IAtomContainer> run(IAtomContainer atomContainer) throws CDKException {
 
-        System.out.println("In run method\n");
         ArrayList<IAtomContainer> fragments = new ArrayList<>();
 
         if (atomContainer.getBondCount() < 3) {
@@ -140,10 +138,6 @@ public class ExhaustiveFragmenter implements IFragmenter {
                     IAtom atom = partContainer.getAtom(j);
                     String name = atom.getID();
                     uniqueAtomNames[j] = atom.getID();
-                    // hashMap.put(atom, name);
-                    // if (i == 0 && j < 5 && flag)
-                    // System.out.println(String.format("Atom: %s Name: %s", atom, name));
-                    //System.out.println("UniqueAtomName: " + uniqueAtomNames[j]);
                 }
                 AtomContainerManipulator.clearAtomConfigurations(partContainer);
                 for (IAtom atom : partContainer.atoms()) {
@@ -153,19 +147,6 @@ public class ExhaustiveFragmenter implements IFragmenter {
                 CDKHydrogenAdder.getInstance(partContainer.getBuilder()).addImplicitHydrogens(partContainer);
                 Aromaticity.cdkLegacy().apply(partContainer);
                 tmpSmiles = smilesGenerator.create(partContainer);
-                //re-assign uniqueAtomNames
-                /** 
-                for (int k = 0; k < partContainer.getAtomCount(); k++) {
-                    IAtom test = partContainer.getAtom(k);
-                    // if (i==0 && k < 5 && flag)
-                    //System.out.println(String.format("\nAtom: %s Name: %s", test, test.getID()));
-                    //String name = hashMap.getOrDefault(test, "???");
-                    // test.setID(name);
-                    // if (i==0 && k < 5 && flag)
-                    // System.out.println(String.format("Atom: %s Name: %s", test, name));
-                    // test.setID(uniqueAtomNames[k]);
-                    // System.out.println("Within ExhFrag: " + test.getID());
-                } */
                 if (partContainer.getAtomCount() >= minFragSize && !fragMap.containsKey(tmpSmiles)) {
                     fragments.add(partContainer);
                     fragMap.put(tmpSmiles, partContainer);
@@ -211,10 +192,6 @@ public class ExhaustiveFragmenter implements IFragmenter {
                 tmpSmiles = smilesGenerator.create(frag);
                 for (int z = 0; z < frag.getAtomCount(); z++) {
                     IAtom test = frag.getAtom(z);
-                    System.out.println("\nBefore reassignment: " + test.getID());
-                    System.out.println("Atom Type: "+test.getAtomTypeName());
-                    //test.setID(uniqueAtomNames2[z]);
-                    //System.out.println("After reassignment: " + test.getID());
                 }
                 //***Atom Types and unique names/ID's match here!***
                 
