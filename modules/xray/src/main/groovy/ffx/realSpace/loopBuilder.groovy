@@ -505,7 +505,7 @@ if(runOSRW){
             (temperature), timeStep, printInterval, saveInterval, asynchronous, sh);
     }
     osrw.setLambda(lambda);
-    osrw.setThetaMass(1.0e-19);
+    osrw.setThetaMass(5.0e-19);
     osrw.setOptimization(true, active);
     // Create the MolecularDynamics instance.
     MolecularDynamics molDyn = new MolecularDynamics(active, osrw, active.getProperties(),

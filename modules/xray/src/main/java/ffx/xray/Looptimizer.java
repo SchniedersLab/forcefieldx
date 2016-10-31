@@ -587,7 +587,7 @@ public class Looptimizer implements Potential {
         /**
          * OSRW is propagated with the slowly varying terms.
          */
-        if (state == Potential.STATE.FAST) {
+        if (state == STATE.FAST) {
             return e;
         }
 
@@ -597,8 +597,7 @@ public class Looptimizer implements Potential {
 
                 // Set Lambda value to 1.0.
                 lambdaInterface.setLambda(1.0);
-
-                potential.setEnergyTermState(Potential.STATE.BOTH);
+                potential.setEnergyTermState(STATE.BOTH);
 
                 RefinementMinimize refinementMinimize = null;
                 Minimize minimize = null;
@@ -608,25 +607,21 @@ public class Looptimizer implements Potential {
                 // Optimize the system.
                 if (useXRayMinimizer) {
                     refinementMinimize = new RefinementMinimize(diffractionData);
-                    xStart = new double[refinementMinimize.refinementEnergy.getNumberOfVariables()];
+                    int n = refinementMinimize.refinementEnergy.getNumberOfVariables();
+                    xStart = new double[n];
                     xStart = refinementMinimize.refinementEnergy.getCoordinates(xStart);
                     refinementMinimize.minimize(osrwOptimizationEps);
-                    xFinal = new double[refinementMinimize.refinementEnergy.getNumberOfVariables()];
+                    xFinal = new double[n];
                     xFinal = refinementMinimize.refinementEnergy.getCoordinates(xFinal);
                 } else {
                     minimize = new Minimize(null, potential, null);
-                    xStart = new double[potential.getNumberOfVariables()];
+                    int n = potential.getNumberOfVariables();
+                    xStart = new double[n];
                     xStart = potential.getCoordinates(xStart);
                     minimize.minimize(osrwOptimizationEps);
-                    xFinal = new double[potential.getNumberOfVariables()];
+                    xFinal = new double[n];
                     xFinal = potential.getCoordinates(xFinal);
                 }
-
-                // Remove the scaling of coordinates & gradient set by the minimizer.
-                potential.setScaling(null);
-
-                // Reset lambda value.
-                lambdaInterface.setLambda(lambda);
 
                 double minValue;
                 if (useXRayMinimizer) {
@@ -659,7 +654,13 @@ public class Looptimizer implements Potential {
                     refinementMinimize.refinementEnergy.energy(xStart);
                 }
 
-                // Revert to the coordinates and gradient prior to optimization.
+                /**
+                 * Revert to the coordinates, gradient lambda, and RESPA State prior to optimization.
+                 */
+                potential.setScaling(null);
+                lambdaInterface.setLambda(lambda);
+                potential.setEnergyTermState(state);
+
                 double eCheck = potential.energyAndGradient(x, gradient);
 
                 if (abs(eCheck - e) > osrwOptimizationTolerance) {
