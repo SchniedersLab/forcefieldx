@@ -76,7 +76,6 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.parsers.PDBFilter;
 
-
 /**
  * An implementation of the Orthogonal Space Random Walk algorithm.
  *
@@ -303,7 +302,7 @@ public class Looptimizer implements Potential {
 
     /*
     * Holds x-ray data for RefinementMinimize
-    */
+     */
     private DiffractionData diffractionData;
     private boolean useXRayMinimizer = false;
 
@@ -588,7 +587,7 @@ public class Looptimizer implements Potential {
         /**
          * OSRW is propagated with the slowly varying terms.
          */
-        if (state == Potential.STATE.FAST) {
+        if (state == STATE.FAST) {
             return e;
         }
 
@@ -598,26 +597,34 @@ public class Looptimizer implements Potential {
 
                 // Set Lambda value to 1.0.
                 lambdaInterface.setLambda(1.0);
+                potential.setEnergyTermState(STATE.BOTH);
 
-                potential.setEnergyTermState(Potential.STATE.BOTH);
+                RefinementMinimize refinementMinimize = null;
+                Minimize minimize = null;
+                double xStart[] = null;
+                double xFinal[] = null;
 
                 // Optimize the system.
-                if(useXRayMinimizer){
-                    RefinementMinimize refinementMinimize = new RefinementMinimize(diffractionData);
+                if (useXRayMinimizer) {
+                    refinementMinimize = new RefinementMinimize(diffractionData);
+                    int n = refinementMinimize.refinementEnergy.getNumberOfVariables();
+                    xStart = new double[n];
+                    xStart = refinementMinimize.refinementEnergy.getCoordinates(xStart);
                     refinementMinimize.minimize(osrwOptimizationEps);
+                    xFinal = new double[n];
+                    xFinal = refinementMinimize.refinementEnergy.getCoordinates(xFinal);
                 } else {
-                    Minimize minimize = new Minimize(null, potential, null);
+                    minimize = new Minimize(null, potential, null);
+                    int n = potential.getNumberOfVariables();
+                    xStart = new double[n];
+                    xStart = potential.getCoordinates(xStart);
                     minimize.minimize(osrwOptimizationEps);
+                    xFinal = new double[n];
+                    xFinal = potential.getCoordinates(xFinal);
                 }
 
-                // Remove the scaling of coordinates & gradient set by the minimizer.
-                potential.setScaling(null);
-
-                // Reset lambda value.
-                lambdaInterface.setLambda(lambda);
-
                 double minValue;
-                if(useXRayMinimizer){
+                if (useXRayMinimizer) {
                     // Collect the minimum R value.
                     minValue = diffractionData.getRCrystalStat();
                 } else {
@@ -628,18 +635,32 @@ public class Looptimizer implements Potential {
                 // If a new minimum has been found, save its coordinates.
                 if (minValue < osrwOptimum) {
                     osrwOptimum = minValue;
-                    if(useXRayMinimizer){
+                    if (useXRayMinimizer) {
                         logger.info(String.format(" New minimum R found: %16.8f (Step %d).", osrwOptimum, energyCount));
                     } else {
                         logger.info(String.format(" New minimum energy found: %16.8f (Step %d).", osrwOptimum, energyCount));
                     }
-                    osrwOptimumCoords = potential.getCoordinates(osrwOptimumCoords);
+                    osrwOptimumCoords = xFinal;
                     if (pdbFilter.writeFile(pdbFile, false)) {
                         logger.info(String.format(" Wrote PDB file to " + pdbFile.getName()));
                     }
                 }
 
-                // Revert to the coordinates and gradient prior to optimization.
+                /**
+                 * Reset coordinates for X-ray minimization (parameters may
+                 * include B-Factors).
+                 */
+                if (useXRayMinimizer) {
+                    refinementMinimize.refinementEnergy.energy(xStart);
+                }
+
+                /**
+                 * Revert to the coordinates, gradient lambda, and RESPA State prior to optimization.
+                 */
+                potential.setScaling(null);
+                lambdaInterface.setLambda(lambda);
+                potential.setEnergyTermState(state);
+
                 double eCheck = potential.energyAndGradient(x, gradient);
 
                 if (abs(eCheck - e) > osrwOptimizationTolerance) {
@@ -1459,7 +1480,7 @@ public class Looptimizer implements Potential {
         return state;
     }
 
-    public void setData(DiffractionData diffractionData){
+    public void setData(DiffractionData diffractionData) {
         this.diffractionData = diffractionData;
         this.useXRayMinimizer = true;
     }

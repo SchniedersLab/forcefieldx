@@ -362,7 +362,7 @@ switch (arguments.size()) {
         break;
     case 2:
         energy = new DualTopologyEnergy(topologies[0], topologies[1]);
-        energy.setLamda(lambda);
+        energy.setLambda(lambda);
         if (numParallel == 2) {
             energy.setParallel(true);
         }

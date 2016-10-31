@@ -198,9 +198,13 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
 
         // Fill an active atom array.
         int count = 0;
+        int nUse = 0;
         for (Atom a : atomArray) {
             if (a.isActive()) {
                 count++;
+            }
+            if (a.getUse()) {
+                nUse++;
             }
         }
         nActive = count;
@@ -297,9 +301,13 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
                 break;
         }
 
+        logger.info(String.format("  Number of atoms:\t\t%d\n  Atoms being used:  \t\t%d\n  Active atoms: \t\t%d",
+                nAtoms, nUse, nActive));
+
         n = nXYZ + nBFactor + nOccupancy;
-        logger.info(String.format(" RefinementEnergy variables %d (nXYZ %d, nB %d, nOcc %d)",
+        logger.info(String.format("  Number of variables:\t\t%d (nXYZ %d, nB %d, nOcc %d)\n",
                 n, nXYZ, nBFactor, nOccupancy));
+
 
         // initialize force field and Xray energies
         for (MolecularAssembly molecularAssembly : molecularAssemblies) {
@@ -331,7 +339,6 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         gChemical = new double[assemblySize][];
         for (int i = 0; i < assemblySize; i++) {
             int len = molecularAssemblies[i].getActiveAtomArray().length * 3;
-            logger.info(" RefinementEnergy: MolecularAssembly nXYZ: " + len);
             xChemical[i] = new double[len];
             gChemical[i] = new double[len];
         }

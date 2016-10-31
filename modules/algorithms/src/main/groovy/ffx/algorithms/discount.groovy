@@ -46,19 +46,16 @@ import groovy.util.CliBuilder;
 
 // Force Field X Imports
 import ffx.algorithms.MolecularDynamics;
+import ffx.algorithms.DiscountPh;
+import ffx.algorithms.DiscountPh.Mode;
+import ffx.algorithms.Protonate.DynamicsLauncher;
 import ffx.algorithms.Integrator.Integrators;
 import ffx.algorithms.Thermostat.Thermostats;
-import ffx.numerics.Potential;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.LambdaInterface;
-import ffx.potential.MolecularAssembly;
-import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.extended.ExtendedVariable;
 import ffx.potential.extended.TitrationESV;
-import ffx.potential.extended.TitrationESV.TitrationUtils;
 
 // Number of molecular dynamics steps
 int nSteps = 1000000;
@@ -90,17 +87,31 @@ double restartFrequency = 1000;
 // File type of snapshots.
 String fileType = "PDB";
 
-double constPh = 7.4;
+// Monte-Carlo step frequencies for titration and rotamer moves.
+int titrationFrequency = 10;
+int titrationDuration = 1000;
+int rotamerFrequencyRatio = 2;
+
+// Simulation pH
+double pH = 7.4;
+
+// Single-residue titration option.
+Character chainID = ' ';
+int resID = -1;
+List<String> resList = new ArrayList<>();
+double window = 2.0;
+boolean titrateTermini = false;
+Mode mode = DiscountPh.Mode.USE_CURRENT;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc md [options] <filename>');
+def cli = new CliBuilder(usage:' ffxc discount [options] <filename>');
 cli.h(longOpt:'help', 'Print this message.');
-cli.b(longOpt:'thermostat', args:1, argName:'Berendsen', 'Thermostat: [Adiabatic / Berendsen / Bussi]');
+//cli.b(longOpt:'thermostat', args:1, argName:'Berendsen', 'Thermostat: [Adiabatic / Berendsen / Bussi]');
 cli.d(longOpt:'dt', args:1, argName:'1.0', 'Time discretization (fsec).');
-cli.i(longOpt:'integrate', args:1, argName:'Beeman', 'Integrator: [Beeman / RESPA / Stochastic / VELOCITYVERLET]');
+//cli.i(longOpt:'integrate', args:1, argName:'Beeman', 'Integrator: [Beeman / RESPA / Stochastic / VELOCITYVERLET]');
 cli.l(longOpt:'log', args:1, argName:'0.01', 'Interval to log thermodyanamics (psec).');
 cli.n(longOpt:'steps', args:1, argName:'1000000', 'Number of molecular dynamics steps.');
 cli.p(longOpt:'polarization', args:1, argName:'Mutual', 'Polarization: [None / Direct / Mutual]');
@@ -108,12 +119,77 @@ cli.t(longOpt:'temperature', args:1, argName:'298.15', 'Temperature in degrees K
 cli.w(longOpt:'save', args:1, argName:'0.1', 'Interval to write out coordinates (psec).');
 cli.s(longOpt:'restart', args:1, argName:'0.1', 'Interval to write out restart file (psec).');
 cli.f(longOpt:'file', args:1, argName:'PDB', 'Choose file type to write to [PDB/XYZ]');
-cli.rl(longOpt:'resList', args:1, '(Ldh) Titrate a list of residues (eg A4.A8.B2.B34)');
-cli.pH(args:1, argName:'7.4', 'Set a constant pH for use with Titration extended variables.');
+//cli.ra(longOpt:'resAll', 'Titrate all residues.');
+cli.rl(longOpt:'resList', args:1, 'Titrate a list of residues (eg A4.A8.B2.B34)');
+//cli.rn(longOpt:'resName', args:1, 'Titrate a list of residue names (eg "LYS,TYR,HIS")');
+//cli.rw(longOpt:'resWindow', args:1, 'Titrate all residues with intrinsic pKa within [arg] units of simulation pH.');
+cli.pH(longOpt:'pH', args:1, argName:'7.4', 'Constant simulation pH.');
+cli.mc(longOpt:'mcStepFreq', args:1, argName:'10', 'Number of steps between Monte-Carlo proton attempts.')
+cli.mcr(longOpt:'rotamerStepFreq', args:1, argName:'0', 'Number of steps between Monte-Carlo rotamer attempts.')
+cli.mcmd(longOpt:'mcRunTime', args:1, argName:'1000', 'Number of steps for which to run continuous proton dynamics during MC move.');
+cli.a(longOpt:'mode', args:1, argName:'useCurrent', 'Controls starting ESV lambda values: [random, halfLambda, useCurrent]');
+//cli.tt(longOpt:'titrateTermini', args:1, argName:'false', 'Titrate amino acid chain ends.');
 def options = cli.parse(args);
 
-if (options.h || !options.rl) {
+if (options.h) {
     return cli.usage();
+}
+
+if ((options.rw && (options.ra || options.rl)) || (options.ra && options.rl)) {
+    return cli.usage();
+    logger.info(" Must specify one of the following: -ra, -rl, or -rw.");
+}
+
+if (!options.ra && !options.rl && !options.rw && !options.rn) {
+    return cli.usage();
+    logger.info(" Must specify one of the following: -ra, -rl, -rn, or -rw.");
+}
+
+if (options.a) {
+    if ((options.a).equalsIgnoreCase("halfLambda")) {
+        mode = DiscountPh.Mode.HALF_LAMBDA;
+    } else if ((options.a).equalsIgnoreCase("useCurrent")) {
+        mode = DiscountPh.Mode.USE_CURRENT;
+    } else {
+        mode = DiscountPh.Mode.valueOf(options.a);
+    }
+}
+
+if (!options.pH) {
+    return cli.usage();
+    logger.info(" Must specify a solution pH.");
+}
+
+if (options.rl) {
+    def tok = (options.rl).tokenize('.');
+    for (String t : tok) {
+        resList.add(t);
+    }
+}
+
+if (options.tt) {
+    titrateTermini = true;
+    System.setProperty("cphmd-termini","true");
+}
+
+if (options.mcD) {
+    dynamics = Boolean.parseBoolean(options.mcD);
+}
+
+if (options.rw) {
+    window = Double.parseDouble(options.rw);
+}
+
+if (options.mc) {
+    mcStepFrequency = Integer.parseInt(options.mc);
+}
+
+if (options.mcr) {
+    rotamerStepFrequency = Integer.parseInt(options.mcr);
+}
+
+if (options.pH) {
+    pH = Double.parseDouble(options.pH);
 }
 
 // Load the number of molecular dynamics steps.
@@ -154,6 +230,8 @@ if (options.p) {
     System.setProperty("polarization", options.p);
 }
 
+
+
 // Thermostat.
 if (options.b) {
     try {
@@ -163,9 +241,8 @@ if (options.b) {
     }
 }
 
-if (options.pH) {
-    constPh = Double.parseDouble(options.pH);
-    usePh = true;
+if (options.mcmd) {
+    mcRunTime = Integer.parseInt(options.mcmd);
 }
 
 // Integrator.
@@ -177,30 +254,19 @@ if (options.i) {
     }
 }
 
-// Stuff that's OFF
-System.setProperty("strbndterm", "false");
-System.setProperty("opbendterm", "false");
-System.setProperty("torsionterm", "false");
-System.setProperty("tortorterm", "false");
-System.setProperty("pitorsterm", "false");
-System.setProperty("mpoleterm", "false");
+System.setProperty("forcefield","AMOEBA_PROTEIN_2013");
+System.setProperty("mpoleterm","false");
+System.setProperty("pme-qi","true");
+System.setProperty("cphmd-mode","USE_CURRENT");
+// TODO: add flag which sets up the runs necessary to fit a model compound reference
 
-// Polarization keys
-System.setProperty("polarization", "NONE");
-System.setProperty("polarization-lambda-start","0.0");      // polarize on the whole range [0,1]
-System.setProperty("polarization-lambda-exponent","0.0");   // polarization not softcored, only prefactored
-System.setProperty("ligand-vapor-elec", "false");           // cancels when reference is solution phase
-System.setProperty("no-ligand-condensed-scf", "false");     // don't need condensed phase polarization
 
-// Stuff that's ON
-System.setProperty("esvterm", "true");
-System.setProperty("lambdaterm", "true");
-System.setProperty("bondterm", "true");
-System.setProperty("angleterm", "true");
-System.setProperty("vdwterm", "true");
-
-// Test parameters
-System.setProperty("vdw-cutoff", "1000");
+/*
+    String zeroReferenceEnergies = System.getProperty("cphmd-zeroReferences");  // [no-arg]
+    String overrideFlag = System.getProperty("cphmd-override");                 // MCOverride.ACCEPT|REJECT|ONCE
+    String beforeAfter = System.getProperty("cphmd-snapshots");                 // SnapshotsType.SEPARATE|INTERLEAVED|NONE
+    String histidineMode = System.getProperty("cphmd-histidineMode");
+*/
 
 List<String> arguments = options.arguments();
 String modelfilename = null;
@@ -214,70 +280,7 @@ if (arguments != null && arguments.size() > 0) {
     modelfilename = active.getFile();
 }
 
-// Parse the ESV argument.
-String[] rlTokens = (options.rl).tokenize(',');
-final int numESVs = rlTokens.length;
-String[] ldhTokens;
-if (options.ldh) {
-    ldhTokens = (options.ldh).tokenize(',');
-    if (ldhTokens.length != numLdh) {
-        logger.warning("Number of --lamedh inputs must match --resList.");
-    }
-} else {
-    ldhTokens = new String[numESVs];
-    for (int i = 0; i < numESVs; i++) {
-        ldhTokens[i] = 0.5;
-    }
-}
-for (int i = 0; i < numESVs; i++) {
-    logger.info(" (Groovy) Ldh: " + rlTokens[i] + ", " + ldhTokens[i]);
-}
-
-// Create TitrationESV objects.
-MolecularAssembly mola = (MolecularAssembly) active;
-if (!(active.getPotentialEnergy() instanceof ForceFieldEnergy)) {
-    logger.info(String.format("  active,mola: %s %s", active, mola));
-    logger.info(String.format("  potential: %s", active.getPotentialEnergy()));
-    logger.severe("ESVs currently only supported by ForceFieldEnergy potentials.");
-}
-ForceFieldEnergy ffe = (ForceFieldEnergy) active.getPotentialEnergy();
-ExtendedSystem esvSystem = new ExtendedSystem(mola, constPh);
-ffe.attachExtendedSystem(esvSystem);
-
-List<ExtendedVariable> esvList = new ArrayList<>();
-Polymer[] polymers = active.getChains();
-double[] lamedh = new double[numESVs];
-temperature = 298.15;
-double dt = 1.0;
-for (int i = 0; i < numESVs; i++) {
-    if (ldhTokens != null) {
-        lamedh[i] = Double.parseDouble(ldhTokens[i]);
-    } else {
-        lamedh[i] = 0.5;
-    }
-    
-    Character chainID = rlTokens[i].charAt(0);
-    int resNum = Integer.parseInt(rlTokens[i].substring(1));
-    Optional<Residue> target = new Optional<>();
-    for (Polymer p : polymers) {
-        if (p.getChainID().equals(chainID)) {
-            target = p.getResidues().parallelStream()
-                .filter {res -> res.getResidueNumber() == resNum}
-                .findFirst();
-            break;
-        }
-    }
-    if (!target.isPresent()) {
-        logger.severe("Couldn't find target residue " + rlTokens[i]);
-    }
-    
-    TitrationESV esv = new TitrationESV(constPh, TitrationUtils.titrationFactory(mola, target.get()), temperature, dt);
-    esv.readyup();
-    esvSystem.addVariable(esv);
-    esvList.add(esv);
-}
-
-logger.info("\n Running molecular dynmaics on " + modelfilename);
+logger.info("\n Running molecular dynamics on " + modelfilename);
 
 // Restart File
 File dyn = new File(FilenameUtils.removeExtension(modelfilename) + ".dyn");
@@ -285,12 +288,32 @@ if (!dyn.exists()) {
     dyn = null;
 }
 
+// create the MD object
 MolecularDynamics molDyn = new MolecularDynamics(active, active.getPotentialEnergy(), active.getProperties(), sh, thermostat, integrator);
-
-ffe.attachExtendedSystem(esvSystem);
-molDyn.attachExtendedSystem(esvSystem);
-
 molDyn.setFileType(fileType);
 molDyn.setRestartFrequency(restartFrequency);
-ffe.attachExtendedSystem(esvSystem);
-molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
+
+// create the Monte-Carlo listener and connect it to the MD
+DiscountPh cphmd = new DiscountPh(active, molDyn, pH, temperature, dyn);
+
+// set residues to be titrated
+if (options.ra) {
+    cphmd.findTitrations();
+} else if (options.rl) {
+    cphmd.findTitrations(resList);
+} else if (options.rw) {
+    cphmd.findTitrations(pH, window);
+} else if (options.rn) {
+    cphmd.findTitrations(options.rn);
+}
+
+// finalize the ESV machinery and ready the MD (re-)launcher
+//Object[] opt = new Object[9];
+//opt[0] = new Integer(mcRunTime);    opt[1] = new Double(1.0);           opt[2] = new Double(1.0);
+//opt[3] = new Double(0.0);           opt[4] = new Double(temperature);   opt[5] = new Boolean(false);
+//opt[6] = fileType;                  opt[7] = new Double(0.0);           opt[8] = dyn;
+
+// launch
+cphmd.readyup();
+//mcProt.launch(molDyn, nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, fileType, restartFrequency);
+cphmd.dynamic(nSteps, titrationFrequency, titrationDuration, timeStep, printInterval, saveInterval, temperature, initVelocities, fileType, restartFrequency);

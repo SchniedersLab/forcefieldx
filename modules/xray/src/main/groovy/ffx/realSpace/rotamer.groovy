@@ -603,7 +603,8 @@ if (mapFiles.size() == 0) {
 }
 
 Atom[] atoms = systems[0].getAtomArray();
-RealSpaceData realSpaceData = new RealSpaceData(systems, systems[0].getProperties(),
+RealSpaceData realSpaceData = new RealSpaceData(systems,
+    systems[0].getProperties(), systems[0],getParallelTeam(),
     mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
 RefinementEnergy refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMode.COORDINATES, null);
 

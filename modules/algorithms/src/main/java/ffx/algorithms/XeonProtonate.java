@@ -116,12 +116,12 @@ public class XeonProtonate {
         molDyn.setRestartFrequency(restartFrequency);
         // create the Monte-Carlo listener and connect it to the MD
         Protonate mcProt = new Protonate(molecularAssembly, mcStepFrequency, rotamerStepFrequency, pH, molDyn.getThermostat());
-        molDyn.addMCListener(mcProt);
+        molDyn.setMonteCarloListener(mcProt);
         mcProt.addMolDyn(molDyn);
         // set residues to be titrated
         mcProt.chooseResID(resList);
         // finalize the Multi-Residue machinery
-        mcProt.readyUp();
+        mcProt.readyup();
         // and away we go!
         molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, null);
     }

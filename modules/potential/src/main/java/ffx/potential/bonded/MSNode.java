@@ -403,6 +403,23 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
         }
         return nodes;
     }
+    
+    /**
+     * A generalized, casted form of getList(class,nodes).
+     */
+    public <T> List<T> getChildList(Class c, List<T> nodes) {
+        if (c.isInstance(this)) {
+            nodes.add((T) this);
+        }
+        if (isLeaf() || !canBeChild(c)) {
+            return nodes;
+        }
+        for (Enumeration e = children(); e.hasMoreElements();) {
+            MSNode node = (MSNode) e.nextElement();
+            node.getChildList(c, nodes);
+        }
+        return nodes;
+    }
 
     /**
      * {@inheritDoc}

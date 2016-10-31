@@ -284,7 +284,7 @@ if (options.ra) {
 }
 
 // finalize the Multi-Residue machinery
-mcProt.readyUp();
+mcProt.readyup();
 
 if (!dynamics) {
     for (int i = 0; i < nSteps; i++) {

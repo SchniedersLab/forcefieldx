@@ -1,18 +1,15 @@
 package ffx.potential.extended;
 
-import ffx.numerics.Potential;
-import ffx.potential.ForceFieldEnergy;
-import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.ROLS;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.OptionalDouble;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
+
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.sqrt;
+
+import ffx.potential.bonded.Atom;
 
 /**
  * A generalized extended system variable.
@@ -53,6 +50,7 @@ public abstract class ExtendedVariable {
     private final Random stochasticRandom = ThreadLocalRandom.current();
     
     private final double betat;
+    private double discrBias, dDiscrBiasdL;
     
     public ExtendedVariable(double biasMag, double initialLamedh) {
         index = esvIndexer++;
@@ -87,14 +85,13 @@ public abstract class ExtendedVariable {
     }
     
     /**
-     * Propagate lamedh using Langevin dynamics.
+     * Propagate lambda using Langevin dynamics.
      * Check that temperature goes to the value used below (when set as a constant) even when sim is decoupled.
      */
-    public void propagateLamedh(double dEdLamedh, double currentTemperature, double dt) {
+    public void propagate(double dEdLdh, double currentTemperature, double dt) {
         double rt2 = 2.0 * ThermoConstants.R * currentTemperature * thetaFriction / dt;
         double randomForce = sqrt(rt2) * stochasticRandom.nextGaussian() / ThermoConstants.randomConvert;
-//        double dEdLamedh = getdEdLdh();   // TODO ASSESS architecture that assigns getdEdLdh() to Potential
-        double dEdL = -dEdLamedh * sin(2.0 * theta);
+        double dEdL = -dEdLdh * sin(2.0 * theta);
         halfThetaVelocity = (halfThetaVelocity * (2.0 * thetaMass - thetaFriction * dt)
                 + ThermoConstants.randomConvert2 * 2.0 * dt * (dEdL + randomForce))
                 / (2.0 * thetaMass + thetaFriction * dt);
@@ -108,11 +105,15 @@ public abstract class ExtendedVariable {
 
         double sinTheta = sin(theta);
         lambda = sinTheta * sinTheta;
+        discrBias = -(4*betat - (lambda-0.5)*(lambda-0.5)) + betat;
+        dDiscrBiasdL = -8*betat*(lambda-0.5);
     }
     
     public final void setLambda(double lambda) {
         this.lambda = lambda;
         theta = Math.asin(Math.sqrt(lambda));
+        discrBias = -(4*betat - (lambda-0.5)*(lambda-0.5)) + betat;
+        dDiscrBiasdL = -8*betat*(lambda-0.5);
     }
     public final double getLambda() {
         return lambda;
@@ -121,35 +122,30 @@ public abstract class ExtendedVariable {
         return index;
     }
     
+    @Override
+    public String toString() {
+        return String.format("ESV%d", index);
+    }
+    
     /**
      * From Shen&Huang 2016; drives ESVs to zero/unity.
      * bias = 4B*(L-0.5)^2
      */
-    public double getBiasEnergy() {
-        return (4*betat - (lambda-0.5)*(lambda-0.5));
+    public double getDiscretizationBiasEnergy() {
+        return discrBias;
     }
     
     /**
      * dBiasdL = -8B*(L-0.5)
      */
-    public double getdBiasdLdh() {
-        return (-8*betat*(lambda-0.5));
+    public double getdDiscretizationBiasdL() {
+        return dDiscrBiasdL;
     }
     
     /**
-     * d2BiasdL2 = -8B
+     * Implementations should fill the protected atoms[] array and set the 
+     * esvLambda value of any affected bonded terms.
      */
-    public double getd2BiasdLdh2() {
-        return -8*betat;
-    }
-    
-    /**
-     * Declared abstract as a reminder to both fill local array and update Atom fields.
-     */
-    protected abstract void finalize();
-    /**
-     * Called by ForceFieldEnergy to apply ESVs to bonded terms.
-     */
-    public abstract OptionalDouble getROLSScaling(ROLS rols);
+    public abstract void readyup();
     
 }

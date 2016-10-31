@@ -370,12 +370,14 @@ if(options.s && options.f){
 ForceFieldEnergy forceFieldEnergy = active.getPotentialEnergy();
 forceFieldEnergy.setPrintOnFailure(false, false);
 
+// Configure built atoms.
+logger.info("\n Built Atoms:");
 for (int i = 0; i <= atoms.length; i++) {
     Atom ai = atoms[i - 1];
     if (ai.getBuilt()) {
         ai.setActive(true);
         ai.setUse(true);
-        logger.info(String.format(ai.getAtomType().toString() + " %d",ai.getResidueNumber()));
+        logger.info(String.format(" %d %s", ai.getResidueNumber(), ai.getAtomType().toString()));
     } else {
         ai.setActive(false);
         ai.setUse(true);
@@ -420,7 +422,8 @@ logger.info(" RMS gradient convergence criteria: " + eps);
 //Reset force field energy without vdw term
 forceFieldEnergy = active.getPotentialEnergy();
 
-RealSpaceData realSpaceData = new RealSpaceData(active, active.getProperties(),
+RealSpaceData realSpaceData = new RealSpaceData(active,
+    active.getProperties(), active.getParallelTeam(),
     mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
 RefinementMinimize refinementMinimize = new RefinementMinimize(realSpaceData, RefinementMode.COORDINATES);
 
@@ -450,7 +453,9 @@ if(runOSRW){
         System.setProperty("bias-gaussian-mag", "0.002");
     }
     System.setProperty("lambda-bin-width", "0.01");
-    System.setProperty("tau-temperature","0.05");
+
+    // Set the thermostat time constant (in psec) to the the time step (i.e. to give velocity rescaling).
+    System.setProperty("tau-temperature", String.format("%f", timeStep * 1.0e-3));
     System.setProperty("integrate", "respa");
 
     for (int i = 0; i <= atoms.length; i++) {
@@ -482,7 +487,8 @@ if(runOSRW){
     // Turn off checks for overlapping atoms, which is expected for lambda=0.
     forceFieldEnergy.getCrystal().setSpecialPositionCutoff(0.0);
 
-    realSpaceData = new RealSpaceData(active, active.getProperties(), mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
+    realSpaceData = new RealSpaceData(active, active.getProperties(),
+        active.getParallelTeam(), mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
     RefinementEnergy refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMode.COORDINATES, null);
     refinementEnergy.setLambda(lambda);
 
@@ -499,7 +505,7 @@ if(runOSRW){
             (temperature), timeStep, printInterval, saveInterval, asynchronous, sh);
     }
     osrw.setLambda(lambda);
-    osrw.setThetaMass(1.0e-19);
+    osrw.setThetaMass(5.0e-19);
     osrw.setOptimization(true, active);
     // Create the MolecularDynamics instance.
     MolecularDynamics molDyn = new MolecularDynamics(active, osrw, active.getProperties(),
@@ -538,7 +544,8 @@ if (runSimulatedAnnealing) {
 
     energy = new ForceFieldEnergy(active);
     energy.setPrintOnFailure(false, false);
-    realSpaceData = new RealSpaceData(active, active.getProperties(),
+    realSpaceData = new RealSpaceData(active,
+        active.getProperties(), active.getParallelTeam(),
         mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
     refinementMinimize = new RefinementMinimize(realSpaceData, RefinementMode.COORDINATES);
     refinementMinimize.minimize(eps);
@@ -583,7 +590,8 @@ if(!loopBuildError){
 
     forceFieldEnergy = new ForceFieldEnergy(active);
     forceFieldEnergy.setPrintOnFailure(false, false);
-    realSpaceData = new RealSpaceData(active, active.getProperties(),
+    realSpaceData = new RealSpaceData(active,
+        active.getProperties(), active.getParallelTeam(),
         mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
     refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMode.COORDINATES, null);
     refinementMinimize = new RefinementMinimize(realSpaceData, RefinementMode.COORDINATES);
@@ -643,7 +651,8 @@ if (runRotamer){
 
     forceFieldEnergy = new ForceFieldEnergy(active);
     forceFieldEnergy.setPrintOnFailure(false, false);
-    realSpaceData = new RealSpaceData(active, active.getProperties(),
+    realSpaceData = new RealSpaceData(active,
+        active.getProperties(), active.getParallelTeam(),
         mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
     refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMode.COORDINATES, null);
 
@@ -709,7 +718,8 @@ if (runRotamer){
 
     forceFieldEnergy = new ForceFieldEnergy(active);
     forceFieldEnergy.setPrintOnFailure(false, false);
-    realSpaceData = new RealSpaceData(active, active.getProperties(),
+    realSpaceData = new RealSpaceData(active,
+        active.getProperties(), active.getParallelTeam(),
         mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
     refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMode.COORDINATES, null);
 

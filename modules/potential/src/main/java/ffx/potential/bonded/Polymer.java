@@ -301,8 +301,13 @@ public class Polymer extends MSGroup {
         Residue residue = multiResidue.getActive();
         MSNode residueNode = getAtomNode();
         int index = residueNode.getIndex(residue);
-        residueNode.remove(index);
-        residueNode.insert(multiResidue, index);
+        if (index < 0) {
+            System.err.println("WARNING!  Polymer::addMultiResidue did not find a corresponding Residue on Polymer.");
+            residueNode.add(multiResidue);
+        } else { 
+            residueNode.remove(index);
+            residueNode.insert(multiResidue, index);
+        }
         multiResidue.add(residue);
     }
     

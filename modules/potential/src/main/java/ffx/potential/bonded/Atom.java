@@ -897,8 +897,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
     
     public void setESV(ExtendedVariable esv) {
-        if (esv != null && esv != this.esv) {
-            logger.severe(format("Mutiple ESVs for one atom is not currently supported.\n"
+        if (this.esv != null && esv != this.esv) {
+            logger.warning(format("Mutiple ESVs for one atom is not currently supported.\n"
                     + "    offending atom,ESVs: %s %s %s", 
                     this.toString(), this.esv.toString(), esv.toString()));
         }

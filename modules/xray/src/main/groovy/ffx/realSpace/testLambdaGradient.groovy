@@ -216,7 +216,8 @@ for (int i = noElecStart; i <= noElecStop; i++) {
     ai.print();
 }
 
-RealSpaceData realSpaceData = new RealSpaceData(systems, systems[0].getProperties(),
+RealSpaceData realSpaceData = new RealSpaceData(systems,
+    systems[0].getProperties(), systems[0].getParallelTeam(),
     mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
 RefinementEnergy refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMode.COORDINATES, null);
 Potential potential = refinementEnergy;

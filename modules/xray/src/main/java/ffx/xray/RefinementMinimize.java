@@ -166,7 +166,8 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         nB = refinementEnergy.nBFactor;
         nOcc = refinementEnergy.nOccupancy;
         n = refinementEnergy.getNumberOfVariables();
-        logger.info(String.format(" RefinementMinimize varianbles %d (nXYZ %d, nB %d, nOcc %d)", n, nXYZ, nB, nOcc));
+
+        // logger.info(String.format(" RefinementMinimize varianbles %d (nXYZ %d, nB %d, nOcc %d)", n, nXYZ, nB, nOcc));
 
         // Fill an active atom array.
         int count = 0;
