@@ -53,6 +53,7 @@ import org.openscience.cdk.exception.CDKException;
 import org.openscience.cdk.exception.InvalidSmilesException;
 import ffx.autoparm.fragment.ExhaustiveFragmenter;
 import org.openscience.cdk.aromaticity.Aromaticity;
+import org.openscience.cdk.exception.NoSuchAtomTypeException;
 import org.openscience.cdk.interfaces.IAtom;
 import org.openscience.cdk.interfaces.IAtomContainer;
 import org.openscience.cdk.interfaces.IAtomType;
@@ -291,7 +292,6 @@ public class Unstitch {
     } //end fragment method
 
     //int fragcounter = 1;
-
     protected void iAtomContainerTo3DModel(String smi, IAtomContainer fragContainer, int num) throws Exception {
         IAtomContainer mol = null;
         //List<IAtom> toFullTest = new ArrayList<>();
@@ -324,10 +324,10 @@ public class Unstitch {
         } catch (CDKException e) {
             System.out.println(e);
         }
-        
+
         //use "partition fragment" code
         AtomContainerManipulator.clearAtomConfigurations(mol);
-        for(IAtom atom : mol.atoms()){
+        for (IAtom atom : mol.atoms()) {
             atom.setImplicitHydrogenCount(null);
         }
         AtomContainerManipulator.percieveAtomTypesAndConfigureAtoms(mol);
@@ -340,22 +340,28 @@ public class Unstitch {
         for (int i = 0; i < fragContainer.getAtomCount(); i++) {
             mol.getAtom(i).setID(fragContainer.getAtom(i).getID());
         }
-        
+
         //Fragmenting checks
         //30 atoms or less
-        if (mol.getAtomCount() < SIZE) {
-        //if(fragContainer.getAtomCount() < SIZE){
+        //if (mol.getAtomCount() < SIZE) {
+        if (fragContainer.getAtomCount() < SIZE) {
             //Builds 3D model of fragment molecule
-            System.out.println("mb3d for fragment"+number);
+            /*System.out.println("mb3d for fragment" + number);
             ModelBuilder3D mb3d;
             mb3d = ModelBuilder3D.getInstance(SilentChemObjectBuilder.getInstance());
             IAtomContainer molecule = null;
-            molecule = mb3d.generate3DCoordinates(mol, false);
-            //molecule = mb3d.generate3DCoordinates(fragContainer, false);
 
+            String[] originalAtomTypeNames = new String[fragContainer.getAtomCount()];
+            for (int i = 0; i < originalAtomTypeNames.length; i++) {
+                originalAtomTypeNames[i] = fragContainer.getAtom(i).getAtomTypeName();
+                System.out.println("Atom "+(i+1)+" type: "+originalAtomTypeNames[i]);
+            }*/
+
+            //molecule = mb3d.generate3DCoordinates(mol, false);
+            //molecule = mb3d.generate3DCoordinates(fragContainer, false);
             //"eaten" fragments checked for already
             //write output to SDF
-            File fragsdf = writeSDF(molecule, number);
+            File fragsdf = writeSDF(fragContainer, number);
 
             //fragcounter++;
         }
