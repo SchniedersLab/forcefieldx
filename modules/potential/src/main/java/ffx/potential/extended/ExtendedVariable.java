@@ -67,13 +67,6 @@ public abstract class ExtendedVariable {
         this(0.0, 1.0);
     }
     
-    public static int prop(String key, int def) {
-        return (System.getProperty(key) != null) ? Integer.parseInt(System.getProperty(key)) : def;
-    }
-    public static double prop(String key, double def) {
-        return (System.getProperty(key) != null) ? Double.parseDouble(System.getProperty(key)) : def;
-    }
-    
     public List<Atom> getAtoms() {
         List<Atom> ret = new ArrayList<>();
         ret.addAll(atoms);
@@ -140,6 +133,13 @@ public abstract class ExtendedVariable {
      */
     public double getdDiscretizationBiasdL() {
         return dDiscrBiasdL;
+    }
+
+    public static int prop(String key, int defaultVal) {
+        return (System.getProperty(key) != null) ? Integer.parseInt(System.getProperty(key)) : defaultVal;
+    }
+    public static double prop(String key, double defaultVal) {
+        return (System.getProperty(key) != null) ? Double.parseDouble(System.getProperty(key)) : defaultVal;
     }
     
     /**

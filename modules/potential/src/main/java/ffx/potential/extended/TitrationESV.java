@@ -93,11 +93,13 @@ public final class TitrationESV extends ExtendedVariable {
         atoms.addAll(atomsZero);
         atoms.parallelStream().forEach(a -> a.setESV(this));
         // Fill bonded term list and set all esvLambda values.
-        bondedTerms = new ArrayList<>();
-        residueOne.getChildList(BondedTerm.class, bondedTerms);
-        residueZero.getChildList(BondedTerm.class, bondedTerms);
-        for (BondedTerm term : bondedTerms) {
-            term.setEsvLambda(lambda);
+        if (!(System.getProperty("cphmd-bonded") != null && System.getProperty("cphmd-bonded").equalsIgnoreCase("false"))) { 
+            bondedTerms = new ArrayList<>();
+            residueOne.getChildList(BondedTerm.class, bondedTerms);
+            residueZero.getChildList(BondedTerm.class, bondedTerms);
+            for (BondedTerm term : bondedTerms) {
+                term.setEsvLambda(lambda);
+            }
         }
         describe();
     }

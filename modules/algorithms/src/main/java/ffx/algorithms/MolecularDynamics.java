@@ -38,6 +38,7 @@
 package ffx.algorithms;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -427,8 +428,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
         }
 
         if (pdbFilter == null) {
-            pdbFile = new File(filename + "_dyn.pdb");
-            pdbFilter = new PDBFilter(new File(filename + "_dyn.pdb"), molecularAssembly, null, null);
+            if (!filename.contains("_dyn")) {
+                pdbFile = new File(filename + "_dyn.pdb");
+            }
+            pdbFilter = new PDBFilter(pdbFile, molecularAssembly, null, null);
         }
 
         this.targetTemperature = temperature;
@@ -456,14 +459,28 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     private boolean skipIntro = false;
-    public void redynamic(final int nSteps, final double timeStep, final double printInterval,
-            final double saveInterval, final double temperature, final boolean initVelocities,
-            String fileType, double restartFrequency, final File dyn) {
+    public void redynamic(final int nSteps, final double temperature) {
         skipIntro = true;
         
-        MonteCarloListener temp = monteCarloListener;
-        monteCarloListener = null;
-        notifyMonteCarlo = false;
+        this.nSteps = nSteps;
+//        this.dt = timeStep * 1.0e-3;
+//        printFrequency = (int) (printInterval / this.dt);
+//        saveSnapshotFrequency = (int) (saveInterval / this.dt);
+//        saveSnapshotAsPDB = true;
+//        if (fileType.equals("XYZ")) {
+//            saveSnapshotAsPDB = false;
+//        }
+//        saveRestartFileFrequency = (int) (restartFrequency / this.dt);
+//        if (pdbFilter == null) {
+//            logger.warning("pdbf");
+//        }
+        this.targetTemperature = temperature;
+        thermostat.setTargetTemperature(temperature);
+        this.initVelocities = false;
+        
+        done = false;
+        terminate = false;
+        initialized = true;
         
         Thread dynamicThread = new Thread(this);
         dynamicThread.start();
@@ -477,9 +494,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 logger.log(Level.WARNING, message, e);
             }
         }
-        // Hook up MC
-        monteCarloListener = temp;
-        notifyMonteCarlo = true;
     }
     
     /**
@@ -626,7 +640,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
          */
         integrator.setTimeStep(dt);
 
-        if (!skipIntro) {
         if (!initialized) {
             /**
              * Initialize from a restart file.
@@ -691,10 +704,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
             }
             initialized = true;
         }
-
-        logger.info(String.format("\n      Time      Kinetic    Potential        Total     Temp      CPU"));
-        logger.info(String.format("      psec     kcal/mol     kcal/mol     kcal/mol        K      sec\n"));
-        logger.info(String.format("          %13.4f%13.4f%13.4f %8.2f ", currentKineticEnergy, currentPotentialEnergy, currentTotalEnergy, currentTemperature));
+        
+        if (!skipIntro) {
+            logger.info(String.format("\n      Time      Kinetic    Potential        Total     Temp      CPU"));
+            logger.info(String.format("      psec     kcal/mol     kcal/mol     kcal/mol        K      sec\n"));
+            logger.info(String.format("          %13.4f%13.4f%13.4f %8.2f ", currentKineticEnergy, currentPotentialEnergy, currentTotalEnergy, currentTemperature));
         }
         
         /**
@@ -869,7 +883,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     public double getTotalEnergy() {
         return currentTotalEnergy;
     }
-
+    
     /**
      * {@inheritDoc}
      */
@@ -898,6 +912,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         dynamicsState.restore();
     }
     
+    private final boolean verboseDynamicsState = System.getProperty("md-verbose") != null;
     public class DynamicsState {
         double[] xBak, vBak, aBak;
         double[] aPreviousBak, massBak, gradBak;
@@ -914,8 +929,34 @@ public class MolecularDynamics implements Runnable, Terminatable {
             currentPotentialEnergyBak = currentPotentialEnergy;
             currentTotalEnergyBak = currentTotalEnergy;
             currentTemperatureBak = currentTemperature;
+            if (verboseDynamicsState) {
+                describe(" Storing State:");
+            }
+        }
+        public void describe(String title) {
+                StringBuilder sb = new StringBuilder();
+                sb.append(format(title));
+                sb.append(format("\nx: "));
+                Arrays.stream(x).forEach(val -> sb.append(format("%.2g, ", val)));
+                sb.append(format("\nv: "));
+                Arrays.stream(v).forEach(val -> sb.append(format("%.2g, ", val)));
+                sb.append(format("\na: "));
+                Arrays.stream(a).forEach(val -> sb.append(format("%.2g, ", val)));
+                sb.append(format("\naP: "));
+                Arrays.stream(aPrevious).forEach(val -> sb.append(format("%.2g, ", val)));
+                sb.append(format("\nm: "));
+                Arrays.stream(mass).forEach(val -> sb.append(format("%.2g, ", val)));
+                sb.append(format("\ng: "));
+                Arrays.stream(grad).forEach(val -> sb.append(format("%.2g, ", val)));
+                sb.append(format("\nK,U,E,T: %g %g %g %g\n", 
+                        currentKineticEnergy, currentPotentialEnergy,
+                        currentTotalEnergy, currentTemperature));
+                logger.info(sb.toString());
         }
         public void restore() {
+            if (verboseDynamicsState) {
+                describe(" Reverting State (From):");
+            }
             x = xBak;
             v = vBak;
             a = aBak;
@@ -926,6 +967,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
             currentPotentialEnergy = currentPotentialEnergyBak;
             currentTotalEnergy = currentTotalEnergyBak;
             currentTemperature = currentTemperatureBak;
+            if (verboseDynamicsState) {
+                describe(" Reverting State (To):");
+            }
         }
     }
 }

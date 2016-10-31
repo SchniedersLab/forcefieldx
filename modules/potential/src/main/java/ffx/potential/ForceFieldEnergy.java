@@ -729,6 +729,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 //                logger.warning("Couldn't attach extended system to PME.");
 //            }
 //        }
+        reInit();
     }
     
     public void detachExtendedSystem() {
@@ -740,6 +741,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 //        if (particleMeshEwald != null && particleMeshEwald instanceof ParticleMeshEwaldQI) {
 //            ((ParticleMeshEwaldQI) particleMeshEwald).detachExtendedSystem();
 //        }
+        reInit();
     }
 
     public void setResolution(Resolution resolution) {
