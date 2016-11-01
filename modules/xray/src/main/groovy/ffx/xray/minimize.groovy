@@ -157,7 +157,8 @@ if (diffractionfiles.size() == 0) {
     diffractionfiles.add(diffractionfile);
 }
 
-DiffractionData diffractiondata = new DiffractionData(systems, systems[0].getProperties(), SolventModel.POLYNOMIAL, diffractionfiles.toArray(new DiffractionFile[diffractionfiles.size()]));
+DiffractionData diffractiondata = new DiffractionData(systems, systems[0].getProperties(),
+    SolventModel.POLYNOMIAL, diffractionfiles.toArray(new DiffractionFile[diffractionfiles.size()]));
 
 diffractiondata.scaleBulkFit();
 diffractiondata.printStats();

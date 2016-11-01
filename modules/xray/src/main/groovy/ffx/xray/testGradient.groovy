@@ -116,14 +116,13 @@ if (diffractionfiles.size() == 0) {
     diffractionfiles.add(diffractionfile);
 }
 
-DiffractionData diffractiondata = new DiffractionData(systems, systems[0].getProperties(), SolventModel.POLYNOMIAL, diffractionfiles.toArray(new DiffractionFile[diffractionfiles.size()]));
+DiffractionData diffractiondata = new DiffractionData(systems, systems[0].getProperties(),
+    SolventModel.POLYNOMIAL, diffractionfiles.toArray(new DiffractionFile[diffractionfiles.size()]));
 
 diffractiondata.scaleBulkFit();
 diffractiondata.printStats();
-// energy();
-
-
 diffractiondata.computeAtomicGradients(RefinementMode.COORDINATES_AND_BFACTORS);
+
 
 double llk0 = diffractiondata.computeLikelihood();
 double llk1, llk2, fdb;
@@ -142,11 +141,11 @@ if (atomID >= natoms) {
     atomID = 0;
 }
 
-logger.info("atom list:");
+logger.info("\n Atom list:");
 for (int i = atomID; i < natoms; i++) {
     Atom atom = atoms[i];
 
-    logger.info("atom " + i + ": (" + atom.getXYZIndex() + ") " + atom.toString());
+    logger.info(" Atom " + i + ": (" + atom.getXYZIndex() + ") " + atom.toString());
 }
 
 for (int i = atomID; i < natoms; i++) {
@@ -209,10 +208,10 @@ for (int i = atomID; i < natoms; i++) {
     diffractiondata.crs_fs[0].deltaZ(i, 0.0);
 
     double len = Math.sqrt(dx * dx + dy * dy + dz * dz);
-    logger.info("atom " + i + ": (" + atom.getXYZIndex() + ") " + atom.toString()
+    logger.info(" Atom " + i + ": (" + atom.getXYZIndex() + ") " + atom.toString()
         + String.format(" %s: %10.6f.", len > gradientTolerance ? "FAILED" : "passed", len)
-        + String.format("\n Analytic XYZ: (%12.4f, %12.4f, %12.4f)", gxyz[0], gxyz[1], gxyz[2])
-        + String.format("\n  Numeric XYZ: (%12.4f, %12.4f, %12.4f)", fd[0], fd[1], fd[2]));
+        + String.format("\n  Analytic XYZ: (%12.4f, %12.4f, %12.4f)", gxyz[0], gxyz[1], gxyz[2])
+        + String.format("\n   Numeric XYZ: (%12.4f, %12.4f, %12.4f)", fd[0], fd[1], fd[2]));
 
     // B
     if (atom.getAnisou() == null) {
@@ -229,10 +228,10 @@ for (int i = atomID; i < natoms; i++) {
 	atom.setTempFactor(b);
 
 	double lenb = Math.sqrt(db * db);
-	logger.info("atom " + i + ": (" + atom.getXYZIndex() + ") " + atom.toString()
+	logger.info(" Atom " + i + ": (" + atom.getXYZIndex() + ") " + atom.toString()
             + String.format(" %s: %10.6f.", lenb > gradientTolerance ? "FAILED" : "passed", lenb)
-            + String.format("\n Analytic B: (%12.4f)", bg)
-            + String.format("\n  Numeric B: (%12.4f)\n", fdb));
+            + String.format("\n  Analytic B: (%12.4f)", bg)
+            + String.format("\n   Numeric B: (%12.4f)\n", fdb));
     } else {
 	double[] anisou = atom.getAnisou();
 	for (int j = 0; j < 6; j++) {
@@ -252,11 +251,11 @@ for (int i = atomID; i < natoms; i++) {
 	double lenb = Math.sqrt(danisou[0] * danisou[0] + danisou[1] * danisou[1]
             + danisou[2] * danisou[2] + danisou[3] * danisou[3]
             + danisou[4] * danisou[4] + danisou[5] * danisou[5]);
-	logger.info("atom " + i + ": (" + atom.getXYZIndex() + ") " + atom.toString()
+	logger.info(" Atom " + i + ": (" + atom.getXYZIndex() + ") " + atom.toString()
             + String.format(" %s: %10.6f.", lenb > gradientTolerance ? "FAILED" : "passed", lenb)
-            + String.format("\n Analytic B(anis): (%12.4f, %12.4f, %12.4f, %12.4f, %12.4f, %12.4f)",
+            + String.format("\n  Analytic B(anis): (%12.4f, %12.4f, %12.4f, %12.4f, %12.4f, %12.4f)",
                 ganisou[0], ganisou[1], ganisou[2], ganisou[3], ganisou[4], ganisou[5])
-            + String.format("\n  Numeric B(anis): (%12.4f, %12.4f, %12.4f, %12.4f, %12.4f, %12.4f)\n",
+            + String.format("\n   Numeric B(anis): (%12.4f, %12.4f, %12.4f, %12.4f, %12.4f, %12.4f)\n",
                 fdanisou[0], fdanisou[1], fdanisou[2], fdanisou[3], fdanisou[4], fdanisou[5]));
     }
 }

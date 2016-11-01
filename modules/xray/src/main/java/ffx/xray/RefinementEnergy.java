@@ -308,7 +308,6 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         logger.info(String.format("  Number of variables:\t\t%d (nXYZ %d, nB %d, nOcc %d)\n",
                 n, nXYZ, nBFactor, nOccupancy));
 
-
         // initialize force field and Xray energies
         for (MolecularAssembly molecularAssembly : molecularAssemblies) {
             ForceFieldEnergy forceFieldEnergy = molecularAssembly.getPotentialEnergy();

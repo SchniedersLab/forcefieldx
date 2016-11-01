@@ -149,7 +149,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
         }
 
         logger.info(String.format(" RefinementEnergy variables %d (nXYZ %d, nB %d, nOcc %d)",
-                nXYZ+nB+nOCC, nXYZ, nB, nOCC));
+                nXYZ + nB + nOCC, nXYZ, nB, nOCC));
     }
 
     /**
@@ -522,9 +522,9 @@ public class XRayEnergy implements LambdaInterface, Potential {
     }
 
     /**
-     * fill gradient array with xyz gradients
+     * Fill gradient array with atomic coordinate partial derivatives.
      *
-     * @param g array to add gradients to
+     * @param g gradient array
      */
     public void getXYZGradients(double g[]) {
         assert (g != null);
@@ -675,7 +675,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
                     nneg++;
                     a.setTempFactor(0.01);
                     if (nneg < 5) {
-                        logger.info("isotropic atom: " + a.toString() + " negative B factor");
+                        logger.info(" Isotropic atom: " + a.toString() + " negative B factor");
                     }
                 }
             } else {
@@ -699,14 +699,14 @@ public class XRayEnergy implements LambdaInterface, Potential {
                     anisou[3] = anisou[4] = anisou[5] = 0.0;
                     a.setAnisou(anisou);
                     if (nneg < 5) {
-                        logger.info("anisotropic atom: " + a.toString() + " negative ANISOU");
+                        logger.info(" Anisotropic atom: " + a.toString() + " negative ANISOU");
                     }
                 }
             }
         }
 
         if (nneg > 0) {
-            logger.info(nneg + " of " + nAtoms
+            logger.info(" " + nneg + " of " + nAtoms
                     + " atoms with negative B factors! Attempting to correct.\n  (If this problem persists, increase bsimweight)");
             /*
              * if (nneg > 50){ kTbsim *= 2.0; logger.info("excessive number of
