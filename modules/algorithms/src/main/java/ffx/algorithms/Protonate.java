@@ -185,9 +185,9 @@ public class Protonate implements MonteCarloListener {
      */
     private boolean zeroReferenceEnergies = false;
     private static final double DEFAULT_TEMPERATURE_CRISIS = 6000.0;
-    
+
     private boolean refOverride = System.getProperty("cphmd-refOverride") != null ? true : false;
-    private final double refOverrideValue = System.getProperty("cphmd-refOverride") != null ? 
+    private final double refOverrideValue = System.getProperty("cphmd-refOverride") != null ?
             Double.parseDouble(System.getProperty("cphmd-refOverride")) : 0.0;
     private final double temperatureMonitor = System.getProperty("cphmd-tempMonitor") != null ?
             Double.parseDouble(System.getProperty("cphmd-tempMonitor")) : DEFAULT_TEMPERATURE_CRISIS;
@@ -196,12 +196,12 @@ public class Protonate implements MonteCarloListener {
             Integer.parseInt(System.getProperty("cphmd-terminiOnly")) : 0;
     private ExtendedSystem esvSystem;
     private Object[] mdOptions;
-    
+
     private double discountLength = System.getProperty("cphmd-discountLength") == null ?
             10 : Double.parseDouble(System.getProperty("cphmd-discountLength"));
     private double parameterTwo = 0.0;
     private DynamicsLauncher mdLauncher;
-    
+
     private final Mode mode = (System.getProperty("cphmd-mode") == null) ? Mode.DISCRETE
             : Mode.valueOf(System.getProperty("cphmd-mode"));
     /**
@@ -212,7 +212,7 @@ public class Protonate implements MonteCarloListener {
     public enum Mode {
         DISCRETE, HALF_LAMBDA, RANDOM, USE_CURRENT;
     }
-    
+
     /**
      * Construct a Monte-Carlo protonation state switching mechanism.
      *
@@ -226,14 +226,14 @@ public class Protonate implements MonteCarloListener {
         if (refOverride) {
             logger.info(" (CpHMD) Reference_Override: " + refOverrideValue);
         }
-        
+
         // List of flags that need (perhaps) to be set to do a single-topology delG.
 //        System.setProperty("polarization", "NONE");             // BONUS FLAG
 //        "polarization-lambda-start","0.0"
 //        "polarization-lambda-exponent","0.0"
 //        "ligand-vapor-elec","false"
 //        "no-ligand-condensed-scf","false"
-        
+
         String zeroReferenceEnergies = System.getProperty("cphmd-zeroReferences");
         if (zeroReferenceEnergies != null) {
             if (refOverride) {
@@ -346,10 +346,10 @@ public class Protonate implements MonteCarloListener {
             }
         }
     }
-    
+
     /**
      * Selecting titrating residues by a list of names, i.e. "LYS,TYR,HIS" will get all K/k/Y/y/H/U/D.
-     * @param names 
+     * @param names
      */
     public void chooseByName(String names) {
         chosenResidues = new ArrayList<>();
@@ -368,7 +368,7 @@ public class Protonate implements MonteCarloListener {
                         AminoAcid3 to = titration.target;
                         if (aa3 == from || aa3 == to) {
                             chosenResidues.add(res);
-                        }                        
+                        }
                     }
                 }
             }
@@ -469,7 +469,7 @@ public class Protonate implements MonteCarloListener {
                 logger.info(String.format(" Titrating: %s", multiRes));
             } else {
                 // Then some form of DISCOUNT.
-                double dt = (System.getProperty("cphmd-dt") == null) ? 1.0 
+                double dt = (System.getProperty("cphmd-dt") == null) ? 1.0
                         : Double.parseDouble(System.getProperty("cphmd-dt"));
                 TitrationESV esv = new TitrationESV(pH, TitrationUtils.titrationFactory(mola, res), dt);
                 esv.readyup();
@@ -477,14 +477,15 @@ public class Protonate implements MonteCarloListener {
                 titratingMultis.add(esv.getMultiRes());
             }
         }
-        
+
         // If DISCOUNT, create the ExtendedSystem and hook everything up.
         if (mode != Mode.DISCRETE) {
-            esvSystem = new ExtendedSystem(mola, pH);
+            // MJS: removed pH from constructor
+            esvSystem = new ExtendedSystem(mola);
             titratingESVs.forEach(esvSystem::addVariable);
             mola.getPotentialEnergy().attachExtendedSystem(esvSystem);
         }
-        
+
         finalized = true;
     }
 
@@ -563,7 +564,7 @@ public class Protonate implements MonteCarloListener {
         }
         return avail;
     }
-    
+
     /**
      * Provides titration info as a utility.
      */
@@ -577,7 +578,7 @@ public class Protonate implements MonteCarloListener {
         }
         return avail;
     }
-    
+
     private void meltdown() {
         writeSnapshot(".meltdown-");
         ffe.energy(false, true);
@@ -609,21 +610,21 @@ public class Protonate implements MonteCarloListener {
         }
         logger.severe(String.format("Temperature above critical threshold: %f", thermostat.getCurrentTemperature()));
     }
-    
+
     public void setDynamicsLauncher(DynamicsLauncher launcher) {
         this.mdLauncher = launcher;
     }
     public void setDynamicsLauncher(Object[] opt) {
         this.mdOptions = opt;
     }
-    
+
     public void launch(MolecularDynamics md, int mcStepFrequency, double timeStep,
             double printInterval, double saveInterval,
             double temperature, boolean initVelocities, File dyn) {
         this.molDyn = md;
         this.mcStepFrequency = mcStepFrequency;
     }
-    
+
     /**
      * The primary driver. Called by the MD engine at each dynamics step.
      */
@@ -659,7 +660,7 @@ public class Protonate implements MonteCarloListener {
 
             // Randomly choose a target titratable residue to attempt protonation switch.
             int random = rng.nextInt(titratingMultis.size() + titratingTermini.size());
-            
+
             switch (terminiOnly) {
                 case 0:
                     random = rng.nextInt(titratingTermini.size()) + titratingMultis.size();
@@ -740,7 +741,7 @@ public class Protonate implements MonteCarloListener {
                     return accepted;
                 }
                 MultiResidue targetMulti = titratingMultis.get(random);
-                
+
                 // Check whether rotamer moves are possible for the selected residue.
                 Residue targetMultiActive = targetMulti.getActive();
                 Rotamer[] targetMultiRotamers = targetMultiActive.getRotamers();
@@ -755,7 +756,7 @@ public class Protonate implements MonteCarloListener {
                 }
             }   // end of rotamer step
 
-            
+
             // Decide on the type of step to be taken.
             StepType stepType;
             if (stepCount % mcStepFrequency == 0) {
@@ -768,10 +769,10 @@ public class Protonate implements MonteCarloListener {
                 }
                 return false;
             }
-            
+
             discountLogger = new StringBuilder();
             discountLogger.append(format(" Discount step (%.3fps): \n", discountLength));
-            
+
             // Save the current state of the molecularAssembly. Specifically,
             //      Atom coordinates and MultiResidue states : AssemblyState
             //      Position, Velocity, Acceleration, etc    : DynamicsState
@@ -794,20 +795,20 @@ public class Protonate implements MonteCarloListener {
                 // Intentionally empty.
                 // This is the preferred strategy: use existing values for lambda.
             }
-            
+
             /*
              * (1) Take current energy for criterion.
              * (2) Hook the ExtendedSystem up to MolecularDynamics.
              * (3) Terminate the thread currently running MolDyn... if possible.
              *          (if this execution dies, try chopping up nSteps from the setup)
-             * (3) Run these (now continuous-titration) dynamics for discountSteps steps, 
+             * (3) Run these (now continuous-titration) dynamics for discountSteps steps,
              *          WITHOUT callbacks to mcUpdate().
              * (4) Round continuous titratables to zero/unity.
              * (5) Take energy and test criterion.
              */
-            
+
             double initialPotential = currentTotalEnergy();
-            discountLogger.append(format("    Attaching extended system to molecular dynamics.\n"));    
+            discountLogger.append(format("    Attaching extended system to molecular dynamics.\n"));
             discountLogger.append(format("    initial potential: %g\n", initialPotential));
             ffe.attachExtendedSystem(esvSystem);
             molDyn.attachExtendedSystem(esvSystem);
@@ -816,12 +817,12 @@ public class Protonate implements MonteCarloListener {
                 mdLauncher.launch();
             } else {
                 discountLogger.append(format("    dynamic launcher parameters: %d %g %g %g %g %b %s %g %s\n",
-                        mdOptions[0], mdOptions[1], mdOptions[2], mdOptions[3], 
+                        mdOptions[0], mdOptions[1], mdOptions[2], mdOptions[3],
                         mdOptions[4], mdOptions[5], mdOptions[6], mdOptions[7], mdOptions[8].toString()));
                 discountLogger.append(format("    launching new md process...\n"));
                 log();
-                molDyn.dynamic((int) mdOptions[0], (double) mdOptions[1], (double) mdOptions[2], 
-                        (double) mdOptions[3], (double) mdOptions[4], (boolean) mdOptions[5], 
+                molDyn.dynamic((int) mdOptions[0], (double) mdOptions[1], (double) mdOptions[2],
+                        (double) mdOptions[3], (double) mdOptions[4], (boolean) mdOptions[5],
                         (String) mdOptions[6], (double) mdOptions[7], (File) mdOptions[8]);
             }
             molDyn.setNotifyMonteCarlo(true);
@@ -830,7 +831,7 @@ public class Protonate implements MonteCarloListener {
             double finalPotential = currentTotalEnergy();
             discountLogger.append(format("    final potential: %g\n", finalPotential));
             final double dG_MC = finalPotential - initialPotential;
-            
+
             discountLogger.append(format(" Testing DISCOUNT step:  %s  -->  %s\n", "start", "end"));
             // Test Monte-Carlo criterion.
             if (dG_MC < 0 && mcTitrationOverride != MCOverride.REJECT) {
@@ -839,13 +840,13 @@ public class Protonate implements MonteCarloListener {
                 numMovesAccepted++;
                 return true;
             }
-            
+
             double temperature = thermostat.getCurrentTemperature();
             double kT = BOLTZMANN * temperature;
             double criterion = exp(-dG_MC / kT);
             double metropolis = random();
             discountLogger.append(format("    dg_MC: %g\n", dG_MC));
-            
+
             discountLogger.append(String.format("     crit:    %9.4f              rng:       %10.4f\n", criterion, metropolis));
             if ((metropolis < criterion && mcTitrationOverride != MCOverride.REJECT) || mcTitrationOverride == MCOverride.ACCEPT) {
                 // Move is accepted! Log and relaunch.
@@ -864,7 +865,7 @@ public class Protonate implements MonteCarloListener {
             }
         }
     }
-    
+
     private void log() {
         logger.info(discountLogger.toString());
         discountLogger = new StringBuilder();
@@ -901,7 +902,7 @@ public class Protonate implements MonteCarloListener {
         double dG_ref = 0;
         Titration titration = null;
         TitrationType type = null;
-        
+
         if (terminus) {
             if (targetTerm.end == MultiTerminus.END.NTERM) {
                 pKaref = 10.0;
@@ -926,7 +927,7 @@ public class Protonate implements MonteCarloListener {
         }
         // Write the post-titration change snapshot.
         writeSnapshot(true, StepType.TITRATE, snapshotsType);
-        
+
         double temperature = thermostat.getCurrentTemperature();
         double kT = BOLTZMANN * temperature;
         double dG_elec = currentElectrostaticEnergy() - previousElectrostaticEnergy;
@@ -991,7 +992,7 @@ public class Protonate implements MonteCarloListener {
 
         // Move was rejected, undo the titration state change.
         if (terminus) {
-            
+
         } else {
             Titration reverse = inverseReactions.get(titration);
             performTitration(targetMulti, reverse);
@@ -1001,7 +1002,7 @@ public class Protonate implements MonteCarloListener {
         logger.info(sb.toString());
         return false;
     }
-    
+
     /**
      * Perform a titration MC move.
      *
@@ -1021,7 +1022,7 @@ public class Protonate implements MonteCarloListener {
         double dG_ref = 0;
         Titration titration = null;
         TitrationType type = null;
-        
+
         if (target.end == MultiTerminus.END.NTERM) {
             pKaref = 8.23;
             dG_ref = 85.4929;
@@ -1035,7 +1036,7 @@ public class Protonate implements MonteCarloListener {
         target.titrateTerminus_v1(thermostat.getCurrentTemperature());
         // Write the post-titration change snapshot.
         writeSnapshot(true, StepType.TITRATE, snapshotsType);
-        
+
         double temperature = thermostat.getCurrentTemperature();
         double kT = BOLTZMANN * temperature;
         double dG_elec = currentElectrostaticEnergy() - previousElectrostaticEnergy;
@@ -1114,7 +1115,7 @@ public class Protonate implements MonteCarloListener {
         logger.info(sb.toString());
         return false;
     }
-    
+
     private boolean tryCBMCStep(MultiResidue targetMulti) {
         List<Residue> targets = new ArrayList<>();
         targets.add(targetMulti.getActive());
@@ -1687,7 +1688,7 @@ public class Protonate implements MonteCarloListener {
         PDBFilter writer = new PDBFilter(file, mola, null, null);
         writer.writeFile(file, false);
     }
-    
+
     private void writeSnapshot(boolean beforeChange, StepType stepType, SnapshotsType snapshotsType) {
         // Write the after-step snapshot.
         if (snapshotsType != SnapshotsType.NONE) {
@@ -1720,7 +1721,7 @@ public class Protonate implements MonteCarloListener {
     public void addMolDyn(MolecularDynamics molDyn) {
         this.molDyn = molDyn;
     }
-    
+
     public class DynamicsLauncher {
         private final int nSteps;
         private final boolean initVelocities;
@@ -1729,14 +1730,14 @@ public class Protonate implements MonteCarloListener {
         private final File dynFile;
         public DynamicsLauncher(MolecularDynamics md, Object[] opt) {
             molDyn = md;
-            nSteps = (int) opt[0]; 
-            timeStep = (double) opt[1]; print = (double) opt[2]; 
+            nSteps = (int) opt[0];
+            timeStep = (double) opt[1]; print = (double) opt[2];
             save = (double) opt[3]; restart = (double) opt[4]; initVelocities = (boolean) opt[5];
             fileType = (String) opt[6]; temperature = (double) opt[7];  dynFile = (File) opt[8];
         }
         public DynamicsLauncher(MolecularDynamics md,
-                int nSteps, double timeStep, 
-                double print, double save, 
+                int nSteps, double timeStep,
+                double print, double save,
                 double temperature, boolean initVelocities,
                 String fileType, double restart,
                 File dynFile) {
@@ -1746,8 +1747,8 @@ public class Protonate implements MonteCarloListener {
             this.temperature = temperature; this.fileType = fileType; this.dynFile = dynFile;
         }
         public DynamicsLauncher(MolecularDynamics md,
-                int nSteps, double timeStep, 
-                double print, double save, 
+                int nSteps, double timeStep,
+                double print, double save,
                 double temperature, boolean initVelocities,
                 File dynFile) {
             molDyn = md;
@@ -1761,12 +1762,12 @@ public class Protonate implements MonteCarloListener {
         public void launch(int nSteps) {
             /* For reference:
             molDyn.init(nSteps, timeStep, printInterval, saveInterval, fileType, restartFrequency, temperature, initVelocities, dyn);
-            molDyn.dynamic(nSteps, timeStep, 
-                  printInterval, saveInterval, 
-                  temperature, initVelocities, 
+            molDyn.dynamic(nSteps, timeStep,
+                  printInterval, saveInterval,
+                  temperature, initVelocities,
                   fileType, restartFrequency, dyn);   */
             discountLogger.append(format("    dynamic launcher parameters: %d %g %g %g %g %s %g\n",
-                    mdOptions[0], mdOptions[1], mdOptions[2], mdOptions[3], 
+                    mdOptions[0], mdOptions[1], mdOptions[2], mdOptions[3],
                     mdOptions[4], mdOptions[5], mdOptions[7]));
 //            discountLogger.append(format("    terminating current md...\n"));
 //            log();
@@ -1832,7 +1833,7 @@ public class Protonate implements MonteCarloListener {
         UtoH(6.00, -42.923, TitrationType.PROT, AminoAcid3.HID, AminoAcid3.HIS),
         HtoZ(6.00, +00.000, TitrationType.DEP, AminoAcid3.HIS, AminoAcid3.HIE),
         ZtoH(6.00, +00.000, TitrationType.PROT, AminoAcid3.HIE, AminoAcid3.HIS),
-        
+
         TerminusNH3toNH2 (8.23, +00.00, TitrationType.DEP, AminoAcid3.UNK, AminoAcid3.UNK),
         TerminusCOOtoCOOH(3.55, +00.00, TitrationType.PROT, AminoAcid3.UNK, AminoAcid3.UNK);
 

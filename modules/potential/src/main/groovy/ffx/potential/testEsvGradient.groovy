@@ -101,6 +101,9 @@ boolean print = false;
 double lbdStep = 0.0;
 double ldhStep = 0.0001;
 
+// ESV discretization bias height
+double biasMag = 1.0;
+
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
@@ -116,6 +119,7 @@ cli.ldh(longOpt:'lamedh', args:1, 'Array of lamedh (Ldh) values to test.');
 cli.rl(longOpt:'resList', required:true, args:1, '(Ldh) Titrate a list of residues (eg A4.A8.B2.B34)');
 cli.dx(longOpt:'stepSize', args:1, argName:'0.0001', 'Finite difference step size.');
 cli.v(longOpt:'verbose', 'Print out the energy for each step.');
+cli.bm(longOpt:'biasMag', args:1, argName:'1.0', 'ESV discretization bias height.');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -166,19 +170,59 @@ if (options.dx) {
     ldhStep = Double.parseDouble(options.dx);
 }
 
+if (options.bm) {
+    biasMag = Double.parseDouble(options.bm);
+}
+
 if (arguments.size() == 1) {
     logger.info("\n Testing lamedh derivatives for " + filename);
 } else {
     return cli.usage();
 }
 
-// Stuff that's OFF
-System.setProperty("strbndterm", "false");
-System.setProperty("opbendterm", "false");
-System.setProperty("torsionterm", "false");
-System.setProperty("tortorterm", "false");
-System.setProperty("pitorsterm", "false");
-System.setProperty("mpoleterm", "false");               // !! TODO
+/*
+        bondTerm = forceField.getBoolean(               ForceFieldBoolean.BONDTERM, true);
+        angleTerm = forceField.getBoolean(              ForceFieldBoolean.ANGLETERM, true);
+        stretchBendTerm = forceField.getBoolean(        ForceFieldBoolean.STRBNDTERM, true);
+        ureyBradleyTerm = forceField.getBoolean(        ForceFieldBoolean.UREYTERM, true);
+        outOfPlaneBendTerm = forceField.getBoolean(     ForceFieldBoolean.OPBENDTERM, true);
+        torsionTerm = forceField.getBoolean(            ForceFieldBoolean.TORSIONTERM, true);
+        piOrbitalTorsionTerm = forceField.getBoolean(   ForceFieldBoolean.PITORSTERM, true);
+        torsionTorsionTerm = forceField.getBoolean(     ForceFieldBoolean.TORTORTERM, true);
+        improperTorsionTerm = forceField.getBoolean(    ForceFieldBoolean.IMPROPERTERM, true);
+        vanderWaalsTerm = forceField.getBoolean(        ForceFieldBoolean.VDWTERM, true);
+        multipoleTerm = forceField.getBoolean(          ForceFieldBoolean.MPOLETERM, true);
+        polarizationTerm = forceField.getBoolean(       ForceFieldBoolean.POLARIZETERM, true);
+        generalizedKirkwoodTerm = forceField.getBoolean(ForceFieldBoolean.GKTERM, false);
+        lambdaTerm = forceField.getBoolean(             ForceField.ForceFieldBoolean.LAMBDATERM, false);
+        restrainTerm = forceField.getBoolean(           ForceFieldBoolean.RESTRAINTERM, false);
+        comTerm = forceField.getBoolean(                ForceFieldBoolean.COMRESTRAINTERM, false);
+        lambdaTorsions = forceField.getBoolean(         ForceFieldBoolean.LAMBDA_TORSIONS, false);
+        esvTerm = forceField.getBoolean(                ForceFieldBoolean.ESVTERM, false);
+        printOnFailure = forceField.getBoolean(         ForceFieldBoolean.PRINT_ON_FAILURE, true);
+*/
+
+// Stuff that's ON
+System.setProperty("ESVTERM", "true");
+System.setProperty("LAMBDATERM", "true");
+System.setProperty("VDWTERM", "true");
+
+// Everything else
+System.setProperty("BONDTERM", "false");
+System.setProperty("ANGLETERM", "false");
+System.setProperty("STRBNDTERM", "false");
+System.setProperty("UREYTERM", "false");
+System.setProperty("OPBENDTERM", "false");
+System.setProperty("TORSIONTERM", "false");
+System.setProperty("PITORSTERM", "false");
+System.setProperty("TORTORTERM", "false");
+System.setProperty("IMPROPERTERM", "false");
+System.setProperty("MPOLETERM", "false");
+System.setProperty("POLARIZETERM", "false");
+System.setProperty("GKTERM", "false");
+System.setProperty("RESTRAINTERM", "false");
+System.setProperty("COMRESTRAINTERM", "false");
+System.setProperty("LAMBDA_TORSIONS", "false");
 
 // Polarization keys
 System.setProperty("polarization", "NONE");             // !! TODO
@@ -187,19 +231,11 @@ System.setProperty("polarization-lambda-exponent","0.0");   // polarization not 
 System.setProperty("ligand-vapor-elec", "false");           // cancels when reference is solution phase
 System.setProperty("no-ligand-condensed-scf", "false");     // don't need condensed phase polarization
 
-// Stuff that's ON
-System.setProperty("esvterm", "true");
-System.setProperty("lambdaterm", "true");
-System.setProperty("bondterm", "true");
-System.setProperty("angleterm", "true");
-System.setProperty("vdwterm", "true");
-
 // Test parameters
 System.setProperty("vdw-cutoff", "1000");
 
 // Open the first topology.
 open(filename);
-MolecularAssembly mola = active;
 
 // Parse the required lamedh arguments and create TitrationESV objects.
 String[] rlTokens = (options.rl).tokenize(',');
@@ -221,11 +257,15 @@ for (int i = 0; i < numESVs; i++) {
     logger.info(" (Groovy) Ldh: " + rlTokens[i] + ", " + ldhTokens[i]);
 }
 
+MolecularAssembly mola = (MolecularAssembly) active;
+ForceFieldEnergy ffe = mola.getPotentialEnergy();
+ExtendedSystem esvSystem = new ExtendedSystem(mola);
+ffe.setPrintOverride(true);
+
 List<ExtendedVariable> esvList = new ArrayList<>();
 Polymer[] polymers = active.getChains();
 double[] lamedh = new double[numESVs];
 double temperature = 298.15;
-double dt = 1.0;
 for (int i = 0; i < numESVs; i++) {
     if (ldhTokens != null) {
         lamedh[i] = Double.parseDouble(ldhTokens[i]);
@@ -248,19 +288,16 @@ for (int i = 0; i < numESVs; i++) {
         logger.severe("Couldn't find target residue " + rlTokens[i]);
     }
     
-    
-    
-//        AminoAcid3 aa = res.getAminoAcid3();
-//        if (aa == AminoAcid3.HIE) {
-//            throw new UnsupportedOperationException("3-way HIS Ldh under construction.");
-//        }
-//        MultiResidue titrating = TitrationUtils.titrationFactory(mola, mola.getForceField(), ffe, res);
     MultiResidue titrating = TitrationUtils.titrationFactory(mola, target.get());
-    TitrationESV esv = new TitrationESV(titrating, temperature, dt);
-    active.getPotentialEnergy().addExtendedVariable(esv);
+    titrating.finalize();
+    TitrationESV esv = new TitrationESV(7.4, titrating, biasMag);
+    esv.readyup();
+    esvSystem.addVariable(esv);
     esvList.add(esv);
 }
 
+ffe.attachExtendedSystem(esvSystem);
+    
 // Select ligand atoms
 Atom[] atoms = active.getAtomArray();
 int n = atoms.length;
@@ -285,7 +322,6 @@ for (int i = noElecStart; i <= noElecStop; i++) {
     ai.print();
 }
 
-ForceFieldEnergy ffe = active.getPotentialEnergy();
 // Turn off checks for overlapping atoms, which is expected for lambda=0.
 ffe.getCrystal().setSpecialPositionCutoff(0.0);
 
@@ -302,19 +338,13 @@ double[][][] lamedhGradFD = new double[2][numESVs][n];
 assert(n % 3 == 0);
 int nAtoms = n / 3;
 
-ffe.setLambda(lambda);
-
 // Compute the L = 0.0 energy.
-for (ExtendedVariable esv : esvList) {
-    esv.setLamedh(0.0);
-}
+esvSystem.setAllLambdas(0.0);
 ffe.getCoordinates(x);
 double e0 = ffe.energyAndGradient(x,gradient);
 
 // Compute the L = 1.0 energy.
-for (ExtendedVariable esv : esvList) {
-    esv.setLamedh(1.0);
-}
+esvSystem.setAllLambdas(1.0);
 double e1 = ffe.energyAndGradient(x,gradient);
 
 logger.info(String.format(" E(0):      %20.8f.", e0));
@@ -329,20 +359,22 @@ double ldhWidth = 2.0 * ldhStep;
 double errTol = 1.0e-3;
 // Upper bound for typical gradient sizes (expected gradient)
 double expGrad = 1000.0;
-
+    
 /******************************************************************************/
 // Finite Difference tests of each ESV individually.
 /******************************************************************************/
 for (int iESV = 0; iESV < numESVs; iESV++) {
-    esvList.get(iESV).setLamedh(lamedh[iESV] - ldhStep);
+    esvSystem.setAllLambdas(lamedh[iESV] - ldhStep);
+    ffe.setPrintOverride(true);
     double lower = ffe.energyAndGradient(x,lamedhGradFD[1][iESV]);
 
-    esvList.get(iESV).setLamedh(lamedh[iESV] + ldhStep);
+    esvSystem.setAllLambdas(lamedh[iESV] + ldhStep);
     double upper = ffe.energyAndGradient(x,lamedhGradFD[0][iESV]);
+    ffe.setPrintOverride(false);
 
-    esvList.get(iESV).setLamedh(lamedh[iESV]);
+    esvSystem.setAllLambdas(lamedh[iESV]);
     double center = ffe.energyAndGradient(x,lamedhGrad[iESV]);
-    double[] esvAnalytics = ffe.getdEdLdh();
+    double[] esvAnalytics = esvSystem.getdEdL(false);
     double alytic1 = esvAnalytics[iESV];
 
     double fd1 = (upper - lower) / ldhWidth;

@@ -122,7 +122,7 @@ public class DiscountPh {
     private final Mode mode = prop(Mode.class, "cphmd-mode", Mode.USE_CURRENT);
     private final MCOverride mcOverride = prop(MCOverride.class, "cphmd-override", MCOverride.NONE);
     private final Snapshots snapshotType = prop(Snapshots.class, "cphmd-snapshotType", Snapshots.NONE);
-    private final Histidine histidineMode = prop(Histidine.class, "cphmd-histidineMode", Histidine.HIE_ONLY);
+    private final Histidine histidineMode = prop(Histidine.class, "cphmd-histidineMode", Histidine.SINGLE_HIE);
     private static int debugLogLevel = prop("cphmd-debugLog", 0);
     private final OptionalDouble referenceOverride = prop("cphmd-referenceOverride", null);
     private final double tempMonitor = prop("cphmd-tempMonitor", 6000.0);
@@ -157,7 +157,7 @@ public class DiscountPh {
         
         this.ff = mola.getForceField();
         this.ffe = mola.getPotentialEnergy();
-        this.esvSystem = new ExtendedSystem(mola, pH);
+        this.esvSystem = new ExtendedSystem(mola);
         this.originalFilename = FilenameUtils.removeExtension(mola.getFile().getAbsolutePath()) + "_dyn.pdb";
         SystemFilter.setVersioning(SystemFilter.Versioning.PREFIX_ABSOLUTE);
         
@@ -235,8 +235,8 @@ public class DiscountPh {
     private List<Residue> findTitrations(double pH, double window) {
         List<Residue> chosen = new ArrayList<>();
         parallelResidueStream(mola)
-            .filter(res -> mapTitrations(res).parallelStream()
-                .anyMatch(titr -> (titr.pKa >= pH - window && titr.pKa <= pH + window)))
+            .filter((Residue res) -> mapTitrations(res).parallelStream()
+                .anyMatch((Titration titr) -> (titr.pKa >= pH - window && titr.pKa <= pH + window)))
                 .forEach(chosen::add);
         return chosen;
     }
@@ -244,7 +244,7 @@ public class DiscountPh {
     private List<ExtendedVariable> createESVs(List<Residue> chosen) {
         for (Residue res : chosen) {
             MultiResidue titr = TitrationUtils.titrationFactory(mola, res);
-            TitrationESV esv = new TitrationESV(pH, titr, targetTemperature, 1.0);
+            TitrationESV esv = new TitrationESV(pH, titr, 1.0);
             esv.readyup();
             esvSystem.addVariable(esv);
             titratingESVs.add(esv);
@@ -259,25 +259,16 @@ public class DiscountPh {
     public List<Residue> findTitrations(String names) {
         List<Residue> chosen = new ArrayList<>();
         String tok[] = names.split(",");
-        for (int k = 0; k < tok.length; k++) {
-            String name = tok[k];
-            AminoAcid3 aa3 = AminoAcid3.valueOf(name);
-            Polymer polymers[] = mola.getChains();
-            for (int i = 0; i < polymers.length; i++) {
-                ArrayList<Residue> residues = polymers[i].getResidues();
-                for (int j = 0; j < residues.size(); j++) {
-                    Residue res = residues.get(j);
-                    List<Titration> avail = mapTitrations(res);
-                    for (Titration titration : avail) {
-                        AminoAcid3 from = titration.source;
-                        AminoAcid3 to = titration.target;
-                        if (aa3 == from || aa3 == to) {
-                            chosen.add(res);
-                        }                        
-                    }
-                }
-            }
-        }
+        parallelResidueStream(mola)
+            .filter((Residue res) -> mapTitrations(res).parallelStream()
+                .anyMatch((Titration titr) -> {
+                    return Arrays.stream(tok).anyMatch((String name) -> {
+                        return AminoAcid3.valueOf(name) == titr.source
+                                || AminoAcid3.valueOf(name) == titr.target;
+                    });
+                })
+            )
+            .forEach(chosen::add);
         return chosen;
     }
 
@@ -286,22 +277,16 @@ public class DiscountPh {
      */
     public List<Residue> findTitrations(ArrayList<String> crIDs) {
         List<Residue> chosen = new ArrayList<>();
-        Polymer[] polymers = mola.getChains();
-        int n = 0;
-        for (String s : crIDs) {
-            Character chainID = s.charAt(0);
-            int i = Integer.parseInt(s.substring(1));
-            for (Polymer p : polymers) {
-                if (p.getChainID() == chainID) {
-                    List<Residue> rs = p.getResidues();
-                    for (Residue r : rs) {
-                        if (r.getResidueNumber() == i) {
-                            chosen.add(r);
-                        }
-                    }
-                }
-            }
-        }
+        parallelResidueStream(mola)
+            .filter((Residue res) -> {
+                    return crIDs.stream().anyMatch((String crID) -> {
+                        Polymer p = findResiduePolymer(res,mola);
+                        return p.getChainID() == crID.charAt(0)
+                            && p.getResidues().stream().anyMatch((Residue or) -> 
+                                or.getResidueNumber() == Integer.parseInt(crID.substring(1)));
+                    });
+            })
+            .forEach(chosen::add);
         return chosen;
     }
 
@@ -377,8 +362,8 @@ public class DiscountPh {
         // For each titration, check whether it needs added as a MultiResidue option.
         for (Titration titr : titrs) {
             // Allow manual override of Histidine treatment.
-            if ((titr.target == AminoAcid3.HID && histidineMode == Histidine.HIE_ONLY)
-                    || (titr.target == AminoAcid3.HIE && histidineMode == Histidine.HID_ONLY)) {
+            if ((titr.target == AminoAcid3.HID && histidineMode == Histidine.SINGLE_HIE)
+                    || (titr.target == AminoAcid3.HIE && histidineMode == Histidine.SINGLE_HID)) {
                 continue;
             }
             // Find all the choices currently available to this MultiResidue.
@@ -415,8 +400,8 @@ public class DiscountPh {
         List<Titration> avail = new ArrayList<>();
         for (Titration titr : Titration.values()) {
             // Allow manual override of Histidine treatment.
-            if ((titr.target == AminoAcid3.HID && histidineMode == Histidine.HIE_ONLY)
-                    || (titr.target == AminoAcid3.HIE && histidineMode == Histidine.HID_ONLY)) {
+            if ((titr.target == AminoAcid3.HID && histidineMode == Histidine.SINGLE_HIE)
+                    || (titr.target == AminoAcid3.HIE && histidineMode == Histidine.SINGLE_HID)) {
                 continue;
             }
             if (titr.source == source) {
@@ -595,8 +580,8 @@ public class DiscountPh {
             logger.info(" Move denied; reverting state.");
             writeSnapshot(".post-deny");
             assemblyState.revertState();
-            molDyn.revertState();
             ffe.reInit();
+            molDyn.revertState();
             writeSnapshot(".post-revert");
             return false;
         }
@@ -987,11 +972,6 @@ public class DiscountPh {
 
     /**
      * Locate to which Polymer in the MolecularAssembly a given Residue belongs.
-     *
-     * @param residue
-     *
-     * @param molecularAssembly
-     *
      * @return the Polymer where the passed Residue is located.
      */
     private Polymer findResiduePolymer(Residue residue,
@@ -1012,11 +992,6 @@ public class DiscountPh {
         return location;
     }
 
-    /**
-     * Calculates the electrostatic energy at the current state.
-     *
-     * @return Energy of the current state.
-     */
     private double currentElectrostaticEnergy() {
         double x[] = new double[ffe.getNumberOfVariables() * 3];
         ffe.getCoordinates(x);
@@ -1024,18 +999,13 @@ public class DiscountPh {
         return ffe.getTotalElectrostaticEnergy();
     }
 
-    /**
-     * Calculates the total energy at the current state.
-     *
-     * @return Energy of the current state.
-     */
     private double currentTotalEnergy() {
         double x[] = new double[ffe.getNumberOfVariables() * 3];
         ffe.getCoordinates(x);
         ffe.energy(x);
         return ffe.getTotalEnergy();
     }
-
+    
     private void writeSnapshot(String extension) {
         String filename = FilenameUtils.removeExtension(originalFilename);
         if (snapshotType == Snapshots.INTERLEAVED) {
@@ -1055,7 +1025,7 @@ public class DiscountPh {
         PDBFilter writer = new PDBFilter(file, mola, null, null);
         writer.writeFile(file, false);
     }
-
+    
     /**
      * Enumerated titration reactions for source/target amino acid pairs.
      */
@@ -1094,11 +1064,11 @@ public class DiscountPh {
     }
     
     private enum MCOverride {
-        ACCEPT, REJECT, NONE;
+        NONE, ACCEPT, REJECT;
     }
 
     private enum Snapshots {
-        NONE, SEPARATE, INTERLEAVED;
+        INTERLEAVED, SEPARATE, NONE;
     }
 
     private enum TitrationType {
@@ -1106,14 +1076,14 @@ public class DiscountPh {
     }
 
     public enum Histidine {
-        HID_ONLY, HIE_ONLY, SINGLE, DOUBLE;
+        SINGLE_HIE, SINGLE_HID, SINGLE, DOUBLE;
     }
     
     /**
      * Discount flavors differ in the way that they seed titration lambdas at the start of a move.
      */
     public enum Mode {
-        HALF_LAMBDA, RANDOM, USE_CURRENT;
+        USE_CURRENT, HALF_LAMBDA, RANDOM;
     }
     
     public boolean prop(String key) {
