@@ -40,7 +40,6 @@ public class ExtendedSystem {
     private boolean useVDW = true;
     private double[] esvGrad;
     // Application-specific variables
-    private final double pHconst;
     private double currentTemperature = 298.15;
 
     public ExtendedSystem() {
@@ -50,7 +49,6 @@ public class ExtendedSystem {
         ffe = null;
         vdw = null;
         pme = null;
-        pHconst = 7.4;
         esvTerm = false;
         phTerm = false;
         vdwTerm = false;
@@ -59,10 +57,6 @@ public class ExtendedSystem {
     }
 
     public ExtendedSystem(MolecularAssembly mola) {
-        this(mola, 7.4);
-    }
-
-    public ExtendedSystem(MolecularAssembly mola, double pH) {
         this.mola = mola;
         if (mola == null) {
             logger.warning("Null mola in ESV...");
@@ -93,6 +87,7 @@ public class ExtendedSystem {
         if (!vdwTerm) {
             vdw = null;
         } else {
+            useVDW = true;
             vdw = ffe.getVdwNode();
             if (vdw == null) {
                 logger.warning("Extended system found null vanderWaals object.");
@@ -114,7 +109,6 @@ public class ExtendedSystem {
             }
         }
 
-        this.pHconst = pH;
         esvList = new ArrayList<>();
     }
 
@@ -130,10 +124,15 @@ public class ExtendedSystem {
     public void setTemperature(double temp) {
         currentTemperature = temp;
     }
-
+    
     /**
-     * Stream the extended variable list.
+     * For testing and debugging.
      */
+    public void setAllLambdas(double lambda) {
+        esvList.stream().forEach((ExtendedVariable esv) -> esv.setLambda(lambda));
+        vdw.setLambda(1.0);
+    }
+
     public Stream<ExtendedVariable> stream() {
         return esvList.stream();
     }
@@ -230,18 +229,21 @@ public class ExtendedSystem {
      * @return [numESVs] gradient w.r.t. each lamedh
      */
     public double[] getdEdL(boolean lambdaBondedTerms) {
-        StringBuilder sb = new StringBuilder(format(" ESV derivative components: \n"));
-        List<double[]> terms = new ArrayList<>();
         double[] vdwGrad = new double[numESVs];
         double[] pmeGrad = new double[numESVs];
-        double[] biasGrad = new double[numESVs];
+        double[] discrBiasGrad = new double[numESVs];
+        double[] phBiasGrad = new double[numESVs];
+        double[] totalGrad = new double[numESVs];
         for (int i = 0; i < numESVs; i++) {
-            biasGrad[i] = esvList.get(i).getdDiscretizationBiasdL();
+            ExtendedVariable esv = esvList.get(i);
+            discrBiasGrad[i] = esv.getdDiscretizationBiasdL();
+            if (esv instanceof TitrationESV) {
+                phBiasGrad[i] += ((TitrationESV) esv).getdPhBiasdL(currentTemperature);
+            }
         }
-        terms.add(biasGrad);
         if (!lambdaBondedTerms) {
             if (useVDW) {
-                vdw.getdEdLdh(esvGrad);
+                vdwGrad = vdw.getdEdLdh();
             }
             if (usePME) {
 //                pme.getdEdLdh(esvGrad);
@@ -263,19 +265,28 @@ public class ExtendedSystem {
 //                // TODO terms.add(comRestraint.getdEdLdh());
 //            }
         }
+        esvGrad = new double[numESVs];
+        StringBuilder sb = new StringBuilder(format(" ESV derivative components: \n"));
         for (int i = 0; i < numESVs; i++) {
-            sb.append(format("  Bias %d: %g\n", i, biasGrad[i]));
+            sb.append(format("  Bias %d: %g\n", i, discrBiasGrad[i]));
+            esvGrad[i] += discrBiasGrad[i];
+            if (esvList.get(i) instanceof TitrationESV) {
+                sb.append(format("  pH   %d: %g\n", i, phBiasGrad[i]));
+                esvGrad[i] += phBiasGrad[i];
+            }
             if (useVDW) {
                 sb.append(format("  vdW  %d: %g\n", i, vdwGrad[i]));
+                esvGrad[i] += vdwGrad[i];
             }
             if (usePME) {
                 sb.append(format("  PME  %d: %g\n", i, pmeGrad[i]));
+                esvGrad[i] += pmeGrad[i];
             }
         }
         logger.config(sb.toString());
-        if (terms.isEmpty()) {
-            return new double[numESVs]; // zeroes
-        }
+//        if (terms.isEmpty()) {
+//            return new double[numESVs]; // zeroes
+//        }
         return esvGrad;
     }
 
