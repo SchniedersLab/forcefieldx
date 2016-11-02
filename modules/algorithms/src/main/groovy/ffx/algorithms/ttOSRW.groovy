@@ -778,7 +778,10 @@ void optStructure(MolecularAssembly mola, Potential pot) {
 }
 
 if (arguments.size() == 1) {
-    energies[0].setLambda(lambda);
+    if (!lambdaRestart.exists() && distResidues) {
+        energies[0].setLambda(lambda);
+        optStructure(topologies[0], energies[0]);
+    }
     // Check for constant pressure
     if (NPT) {
         //        // Create a barostat.
@@ -805,9 +808,6 @@ if (arguments.size() == 1) {
         if (writeTraversals) {
             osrw.setTraversalOutput(lambdaOneFile, topologies[0], lambdaZeroFile, topologies[0]);
         }
-    }
-    if (distResidues) {
-        optStructure(topologies[0], energies[0]);
     }
 } else if (arguments.size() == 2) {
     // Open the 2nd topology.
@@ -880,8 +880,8 @@ if (arguments.size() == 1) {
     if (numParallel == 2) {
         dualTopologyEnergy.setParallel(true);
     }
-    dualTopologyEnergy.setLambda(lambda);
-    if (distResidues) {
+    if (!lambdaRestart.exists() && distResidues) {
+        dualTopologyEnergy.setLambda(lambda);
         if (dualTopologyEnergy.getNumberSharedVariables() == dualTopologyEnergy.getNumberOfVariables()) {
             logger.info(" Generating starting structure based on dual-topology:");
             optStructure(topologies[0], dualTopologyEnergy);
@@ -911,10 +911,10 @@ if (arguments.size() == 1) {
     DualTopologyEnergy dtA = new DualTopologyEnergy(topologies[0], topologies[1]);
     // Intentionally reversed order.
     DualTopologyEnergy dtB = new DualTopologyEnergy(topologies[3], topologies[2]);
-    dtA.setLambda(lambda);
-    dtB.setLambda(lambda);
     
-    if (distResidues) {
+    if (distResidues && !lambdaRestart.exists()) {
+        dtA.setLambda(lambda);
+        dtB.setLambda(lambda);
         logger.info(" Generating starting structures for each dual-topology of the quad topology:");
         optStructure(topologies[0], dtA);
         optStructure(topologies[3], dtB);
