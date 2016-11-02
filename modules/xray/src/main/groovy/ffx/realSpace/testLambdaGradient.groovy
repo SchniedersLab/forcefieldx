@@ -168,7 +168,8 @@ if (arguments.size() > 1) {
         mapFiles.add(realspacefile);
     } else {
         DiffractionFile diffractionFile = new DiffractionFile(dataFileName, 1.0, false);
-        DiffractionData diffractionData = new DiffractionData(systems, systems[0].getProperties(), SolventModel.POLYNOMIAL, diffractionFile);
+        DiffractionData diffractionData = new DiffractionData(systems, systems[0].getProperties(),
+            SolventModel.POLYNOMIAL, diffractionFile);
         diffractionData.scaleBulkFit();
         diffractionData.printStats();
         String mapFileName = String.format("%s_ffx_%d", FilenameUtils.removeExtension(dataFileName), ++nDiffractionData);
@@ -183,10 +184,10 @@ int n = atoms.length;
 
 // Apply ligand atom selection
 if (ligandStop > ligandStart && ligandStart > 0 && ligandStop <= n) {
-for (int i = ligandStart; i <= ligandStop; i++) {
-    Atom ai = atoms[i - 1];
-    ai.setApplyLambda(true);
-}
+    for (int i = ligandStart; i <= ligandStop; i++) {
+        Atom ai = atoms[i - 1];
+        ai.setApplyLambda(true);
+    }
 }
 
 // Apply active atom selection

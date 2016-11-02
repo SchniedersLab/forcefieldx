@@ -143,12 +143,12 @@ public class XRayEnergy implements LambdaInterface, Potential {
 
         if (refineB) {
             logger.info(" B-Factor Refinement Parameters");
-            logger.info(" Temperature:                 " + temp);
-            logger.info(" Non-zero restraint weight:   " + diffractionData.bnonzeroweight);
-            logger.info(" Similarity restraint weight: " + diffractionData.bsimweight);
+            logger.info("  Temperature:                 " + temp);
+            logger.info("  Non-zero restraint weight:   " + diffractionData.bnonzeroweight);
+            logger.info("  Similarity restraint weight: " + diffractionData.bsimweight);
         }
 
-        logger.info(String.format(" RefinementEnergy variables %d (nXYZ %d, nB %d, nOcc %d)",
+        logger.info(String.format(" XRayEnergy variables:  %d (nXYZ %d, nB %d, nOcc %d)\n",
                 nXYZ + nB + nOCC, nXYZ, nB, nOCC));
     }
 

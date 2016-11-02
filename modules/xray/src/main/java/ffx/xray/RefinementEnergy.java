@@ -301,7 +301,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
                 break;
         }
 
-        logger.info(String.format("  Number of atoms:\t\t%d\n  Atoms being used:  \t\t%d\n  Active atoms: \t\t%d",
+        logger.info(String.format("\n RefinementEnergy\n  Number of atoms:\t\t%d\n  Atoms being used:  \t\t%d\n  Active atoms: \t\t%d",
                 nAtoms, nUse, nActive));
 
         n = nXYZ + nBFactor + nOccupancy;
@@ -347,6 +347,10 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         return dataEnergy;
     }
 
+    public Atom[] getActiveAtoms() {
+        return activeAtomArray;
+    }
+
     @Override
     public double energy(double[] x) {
         double weight = data.getWeight();
@@ -355,8 +359,6 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         if (thermostat != null) {
             kTScale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
         }
-
-        logger.info(" RefinementEnergy.energy: Number of Parameters: " + x.length);
 
         if (optimizationScaling != null) {
             int len = x.length;

@@ -71,8 +71,6 @@ import ffx.xray.RefinementMinimize.RefinementMode;
 
 import static ffx.xray.CrystalReciprocalSpace.SolventModel.POLYNOMIAL;
 
-import static java.util.Arrays.fill;
-
 /**
  * <p>
  * DiffractionData class.</p>
@@ -656,8 +654,8 @@ public class DiffractionData implements DataContainer {
 
     /*
     * Return R value for OSRW x-ray minimization
-    */
-    public double getRCrystalStat(){
+     */
+    public double getRCrystalStat() {
         return crystalStats[0].getR();
     }
 
