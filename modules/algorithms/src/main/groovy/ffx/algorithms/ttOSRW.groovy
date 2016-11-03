@@ -40,13 +40,12 @@
 
 // Apache Imports
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.FileUtils;
 
 // Groovy Imports
 import groovy.util.CliBuilder;
 import groovy.transform.Field;
 
-// Paralle Java Imports
+// Parallel Java Imports
 import edu.rit.pj.Comm;
 
 // Java Imports
@@ -59,14 +58,18 @@ import ffx.algorithms.TransitionTemperedOSRW;
 import ffx.algorithms.Integrator.Integrators;
 import ffx.algorithms.Thermostat.Thermostats;
 import ffx.algorithms.RotamerOptimization;
-import ffx.potential.QuadTopologyEnergy;
+
 import ffx.potential.DualTopologyEnergy;
 import ffx.potential.ForceFieldEnergy;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.Polymer;
-import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.QuadTopologyEnergy;
+
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.LambdaInterface;
+import ffx.potential.bonded.Polymer;
+import ffx.potential.bonded.Residue;
+import ffx.potential.bonded.RotamerLibrary;
+
 import ffx.numerics.Potential;
 
 // Asychronous communication between walkers.
@@ -704,6 +707,11 @@ void optStructure(MolecularAssembly mola, Potential pot) {
     if (!distResidues) {
         throw new IllegalArgumentException(" Programming error: Must have list of residues to split on!");
     }
+
+    LambdaInterface linter = (pot instanceof LambdaInterface) ? (LambdaInterface) pot : null;
+    double initialLambda = linter ? linter.getLambda() : -1.0;
+    linter?.setLambda(0.5);
+    // Safe navigation operator ?. operates only if LHS is non-null.
     
     def resList = [];
     Polymer[] polymers = mola.getChains();
@@ -770,6 +778,8 @@ void optStructure(MolecularAssembly mola, Potential pot) {
     logger.info(" Final Optimized Energy:");
     pot.energy(xyz, true);
     
+    linter?.setLambda(initialLambda);
+    
     if (oldLazyMat) {
         System.setProperty("ro-lazyMatrix", oldLazyMat);
     } else {
@@ -778,8 +788,7 @@ void optStructure(MolecularAssembly mola, Potential pot) {
 }
 
 if (arguments.size() == 1) {
-    if (!lambdaRestart.exists() && distResidues) {
-        energies[0].setLambda(lambda);
+    if (distResidues) {
         optStructure(topologies[0], energies[0]);
     }
     // Check for constant pressure
@@ -880,8 +889,7 @@ if (arguments.size() == 1) {
     if (numParallel == 2) {
         dualTopologyEnergy.setParallel(true);
     }
-    if (!lambdaRestart.exists() && distResidues) {
-        dualTopologyEnergy.setLambda(lambda);
+    if (distResidues) {
         if (dualTopologyEnergy.getNumberSharedVariables() == dualTopologyEnergy.getNumberOfVariables()) {
             logger.info(" Generating starting structure based on dual-topology:");
             optStructure(topologies[0], dualTopologyEnergy);
@@ -912,9 +920,7 @@ if (arguments.size() == 1) {
     // Intentionally reversed order.
     DualTopologyEnergy dtB = new DualTopologyEnergy(topologies[3], topologies[2]);
     
-    if (distResidues && !lambdaRestart.exists()) {
-        dtA.setLambda(lambda);
-        dtB.setLambda(lambda);
+    if (distResidues) {
         logger.info(" Generating starting structures for each dual-topology of the quad topology:");
         optStructure(topologies[0], dtA);
         optStructure(topologies[3], dtB);
