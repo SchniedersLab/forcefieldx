@@ -752,7 +752,10 @@ void optStructure(MolecularAssembly mola, Potential pot) {
     
     ropt.setThreeBodyEnergy(false);
     ropt.setVerboseEnergies(true);
-    ropt.setEnsemble(size);
+    if (System.getProperty("ro-ensembleNumber") == null && System.getProperty("ro-ensembleEnergy") == null) {
+        logger.info(String.format(" Setting ensemble to default of number of walkers %d", size));
+        ropt.setEnsemble(size);
+    }
     ropt.setPrintFiles(false);
     def addedResList = ropt.setResiduesIgnoreNull(resList);
     
