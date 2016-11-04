@@ -72,6 +72,7 @@ import edu.rit.pj.WorkerIteration;
 import edu.rit.pj.WorkerRegion;
 import edu.rit.pj.WorkerTeam;
 
+import ffx.utilities.ObjectPair;
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.numerics.Potential;
@@ -409,6 +410,17 @@ public class RotamerOptimization implements Terminatable {
     private boolean mcUseAll = false;
     // Skips brute force enumeration in favor of pure Monte Carlo. Recommended only for testing.
     private boolean mcNoEnum = false;
+    
+    /**
+     * Sets whether files should be printed; true for standalone applications, 
+     * false for some applications which use rotamer optimization as part of a
+     * larger process.
+     */
+    private boolean printFiles = true;
+    /**
+     * Stores states of each ensemble if printFiles is false.
+     */
+    private List<ObjectPair<ResidueState[], Double>> ensembleStates;
 
     /**
      * RotamerOptimization constructor.
@@ -1013,6 +1025,10 @@ public class RotamerOptimization implements Terminatable {
                 }
             }
         } else {
+            if (ensembleStates == null) {
+                ensembleStates = new ArrayList<>();
+            }
+            
             /**
              * At the end of the recursion, compute the potential energy for
              * each rotamer of the final residue. If a lower potential energy is
@@ -1074,26 +1090,30 @@ public class RotamerOptimization implements Terminatable {
                     algorithmListener.algorithmUpdate(molecularAssembly);
                 }
 
-                if (master && ensembleNumber > 1) {
-                    try {
-                        FileWriter fw = new FileWriter(ensembleFile, true);
-                        BufferedWriter bw = new BufferedWriter(fw);
-                        bw.write(String.format("MODEL        %d", evaluatedPermutations));
-                        for (int j = 0; j < 75; j++) {
-                            bw.write(" ");
+                if (ensembleNumber > 1) {
+                    if (master && printFiles) {
+                        try {
+                            FileWriter fw = new FileWriter(ensembleFile, true);
+                            BufferedWriter bw = new BufferedWriter(fw);
+                            bw.write(String.format("MODEL        %d", evaluatedPermutations));
+                            for (int j = 0; j < 75; j++) {
+                                bw.write(" ");
+                            }
+                            bw.newLine();
+                            bw.flush();
+                            ensembleFilter.writeFile(ensembleFile, true);
+                            bw.write(String.format("ENDMDL"));
+                            for (int j = 0; j < 64; j++) {
+                                bw.write(" ");
+                            }
+                            bw.newLine();
+                            bw.close();
+                        } catch (IOException e) {
+                            logger.warning(String.format("Exception writing to file: %s", ensembleFile.getName()));
                         }
-                        bw.newLine();
-                        bw.flush();
-                        ensembleFilter.writeFile(ensembleFile, true);
-                        bw.write(String.format("ENDMDL"));
-                        for (int j = 0; j < 64; j++) {
-                            bw.write(" ");
-                        }
-                        bw.newLine();
-                        bw.close();
-                    } catch (IOException e) {
-                        logger.warning(String.format("Exception writing to file: %s", ensembleFile.getName()));
                     }
+                    ResidueState[] states = ResidueState.storeAllCoordinates(residues);
+                    ensembleStates.add(new ObjectPair<>(states, comparisonEnergy));
                 }
 
                 if (comparisonEnergy < currentEnergy) {
@@ -1105,6 +1125,8 @@ public class RotamerOptimization implements Terminatable {
                     optimum[i] = ri;
                 }
             }
+            
+            ensembleStates.sort(null);
         }
         return currentEnergy;
     }
@@ -2069,14 +2091,37 @@ public class RotamerOptimization implements Terminatable {
     public void setResidues(ArrayList<Residue> residueList) {
         this.residueList = residueList;
     }
+    
+    public void setCoordinatesToEnsemble(int ensnum) {
+        if (ensembleStates != null && !ensembleStates.isEmpty()) {
+            ensnum %= ensembleStates.size();
+            ResidueState.revertAllCoordinates(residueList, ensembleStates.get(ensnum).getVal());
+            //ResidueState.revertAllCoordinates(residueList, ensembleStates.get(ensnum));
+        } else {
+            throw new IllegalArgumentException(" Ensemble states not initialized!");
+        }
+    }
+    
+    public List<ResidueState[]> getEnsemble() {
+        if (ensembleStates == null) {
+            return null;
+        } else {
+            List<ResidueState[]> states = new ArrayList<>(ensembleStates.size());
+            ensembleStates.forEach((es) -> {
+                states.add(es.getVal());
+            });
+            return states;
+        }
+    }
 
     /**
      * Accepts a list of residues but throws out null residues. Used by the -lR 
      * flag.
      *
      * @param residueList
+     * @return Added residues.
      */
-    public void setResiduesIgnoreNull(ArrayList<Residue> residueList) {
+    public List<Residue> setResiduesIgnoreNull(ArrayList<Residue> residueList) {
         this.residueList = new ArrayList<>();
         logger.info(" Optimizing these residues: ");
         for (Residue r : residueList) {
@@ -2087,6 +2132,7 @@ public class RotamerOptimization implements Terminatable {
                 logger.info(String.format(" not \t%s", r.toString()));
             }
         }
+        return new ArrayList<>(residueList);
     }
 
     /**
@@ -2629,6 +2675,15 @@ public class RotamerOptimization implements Terminatable {
     public void setVerboseEnergies(Boolean verboseEnergies) {
         this.verboseEnergies = verboseEnergies;
     }
+    
+    /**
+     * Sets whether rotamer optimization should print out any files, or act solely
+     * to optimize a structure in memory.
+     * @param printFiles
+     */
+    public void setPrintFiles(boolean printFiles) {
+        this.printFiles = printFiles;
+    }
 
     /**
      * Sets the use of forced residues; an endForced value of -1 indicates not
@@ -2814,7 +2869,7 @@ public class RotamerOptimization implements Terminatable {
             if (evaluatedPermutations == 0) {
                 logger.severe("No valid path through rotamer space found; try recomputing without pruning or using ensemble.");
             }
-            if (master && ensembleFile == null) {
+            if (master && printFiles && ensembleFile == null) {
                 File file = molecularAssembly.getFile();
                 String filename = FilenameUtils.removeExtension(file.getAbsolutePath());
                 //ensembleFile = SystemFilter.version(new File(filename + ".ens"));
@@ -2850,6 +2905,8 @@ public class RotamerOptimization implements Terminatable {
                  */
             } else {
                 double[] permutationEnergies = new double[evaluatedPermutations];
+                ensembleStates = new ArrayList<>();
+                
                 e = rotamerOptimizationDEE(molecularAssembly, residues, 0, currentRotamers,
                         Double.MAX_VALUE, optimum, permutationEnergies);
                 int[][] acceptedPermutations = new int[evaluatedPermutations][];
@@ -2859,6 +2916,7 @@ public class RotamerOptimization implements Terminatable {
                 logIfMaster(String.format("\n Checking permutations for distance < %5.3f kcal/mol from GMEC energy %10.8f kcal/mol", ensembleEnergy, e));
                 dryRunForEnsemble(residues, 0, currentRotamers, e, permutationEnergies, acceptedPermutations);
                 int numAcceptedPermutations = 0;
+                
                 for (int i = 0; i < acceptedPermutations.length; i++) {
                     if (acceptedPermutations[i] != null) {
                         ++numAcceptedPermutations;
@@ -2868,29 +2926,36 @@ public class RotamerOptimization implements Terminatable {
                             Rotamer[] rotamersj = residuej.getRotamers();
                             RotamerLibrary.applyRotamer(residuej, rotamersj[acceptedPermutations[i][j]]);
                         }
-                        try {
-                            FileWriter fw = new FileWriter(ensembleFile, true);
-                            BufferedWriter bw = new BufferedWriter(fw);
-                            bw.write(String.format("MODEL        %d", numAcceptedPermutations));
-                            for (int j = 0; j < 75; j++) {
-                                bw.write(" ");
+                        
+                        ResidueState[] states = ResidueState.storeAllCoordinates(residues);
+                        ensembleStates.add(new ObjectPair<>(states, permutationEnergies[i]));
+                        
+                        if (printFiles && master) {
+                            try {
+                                FileWriter fw = new FileWriter(ensembleFile, true);
+                                BufferedWriter bw = new BufferedWriter(fw);
+                                bw.write(String.format("MODEL        %d", numAcceptedPermutations));
+                                for (int j = 0; j < 75; j++) {
+                                    bw.write(" ");
+                                }
+                                bw.newLine();
+                                bw.flush();
+                                ensembleFilter.writeFile(ensembleFile, true);
+                                bw.write(String.format("ENDMDL"));
+                                for (int j = 0; j < 64; j++) {
+                                    bw.write(" ");
+                                }
+                                bw.newLine();
+                                bw.close();
+                            } catch (IOException ex) {
+                                logger.warning(String.format(" Exception writing to file: %s", ensembleFile.getName()));
                             }
-                            bw.newLine();
-                            bw.flush();
-                            ensembleFilter.writeFile(ensembleFile, true);
-                            bw.write(String.format("ENDMDL"));
-                            for (int j = 0; j < 64; j++) {
-                                bw.write(" ");
-                            }
-                            bw.newLine();
-                            bw.close();
-                        } catch (IOException ex) {
-                            logger.warning(String.format(" Exception writing to file: %s", ensembleFile.getName()));
                         }
                     }
                 }
                 logIfMaster(String.format(" Number of permutations within %5.3f kcal/mol of GMEC energy: %6.4e",
                         ensembleEnergy, (double) numAcceptedPermutations));
+                ensembleStates.sort(null);
             }
 
             logIfMaster("\n Final rotamers:");
@@ -2945,6 +3010,28 @@ public class RotamerOptimization implements Terminatable {
             }
             logIfMaster(String.format(" Approximate Energy:     %16.8f", approximateEnergy));
             return e;
+        }
+        
+        /**
+         * Permutations used only to set maximum bound on ensembleNumber, thus
+         * it is safe here to put that value in a 32-bit int.
+         */
+        int nPerms = 1;
+        for (int i = 0; i < nResidues; i++) {
+            Residue residue = residues[i];
+            Rotamer[] rotamers = residue.getRotamers();
+            int nr = rotamers.length;
+            if (nr > 1) {
+                nPerms *= rotamers.length;
+            }
+            if (nPerms > ensembleNumber) {
+                break;
+            }
+        }
+        
+        if (nPerms < ensembleNumber) {
+            logger.info(String.format(" Requested an ensemble of %d, but only %d permutations exist; returning full ensemble", ensembleNumber, nPerms));
+            ensembleNumber = nPerms;
         }
 
         while (currentEnsemble != ensembleNumber) {
@@ -3007,7 +3094,7 @@ public class RotamerOptimization implements Terminatable {
                  */
             }
             if (ensembleNumber > 1) {
-                if (master && ensembleFile == null) {
+                if (master && printFiles && ensembleFile == null) {
                     File file = molecularAssembly.getFile();
                     String filename = FilenameUtils.removeExtension(file.getAbsolutePath());
                     ensembleFile = new File(filename + ".ens");
@@ -3541,7 +3628,7 @@ public class RotamerOptimization implements Terminatable {
                         }
                     }
 
-                    if (master) {
+                    if (master && printFiles) {
                         File file = molecularAssembly.getFile();
                         if (firstWindowSaved) {
                             file.delete();
@@ -3716,7 +3803,7 @@ public class RotamerOptimization implements Terminatable {
                 energiesToWrite = Collections.synchronizedList(new ArrayList<String>());
                 receiveThread = new ReceiveThread(residuesList.toArray(new Residue[1]));
                 receiveThread.start();
-                if (master && writeEnergyRestart) {
+                if (master && writeEnergyRestart && printFiles) {
                     if (energyWriterThread != null) {
                         int waiting = 0;
                         while (energyWriterThread.getState() != java.lang.Thread.State.TERMINATED) {
@@ -3779,7 +3866,7 @@ public class RotamerOptimization implements Terminatable {
                     logIfMaster(String.format(" Time elapsed for this iteration: %11.3f sec", boxTime * 1.0E-9));
                     logIfMaster(String.format(" Overall time elapsed: %11.3f sec", (currentTime + beginTime) * 1.0E-9));
                 }
-                if (master) {
+                if (master && printFiles) {
                     String filename = FilenameUtils.removeExtension(molecularAssembly.getFile().getAbsolutePath()) + ".partial";
                     File file = new File(filename);
                     if (firstCellSaved) {
@@ -4326,7 +4413,7 @@ public class RotamerOptimization implements Terminatable {
                 energiesToWrite = Collections.synchronizedList(new ArrayList<String>());
                 receiveThread = new ReceiveThread(residues);
                 receiveThread.start();
-                if (master && writeEnergyRestart) {
+                if (master && writeEnergyRestart && printFiles) {
                     energyWriterThread = new EnergyWriterThread(receiveThread);
                     energyWriterThread.start();
                 }
@@ -7366,7 +7453,7 @@ public class RotamerOptimization implements Terminatable {
                             procsDone++;
                         } else {
                             selfEnergy[resi][roti] = energy;
-                            if (writeEnergyRestart) {
+                            if (writeEnergyRestart && printFiles) {
                                 energiesToWrite.add(String.format("Self %d %d: %16.8f", resi, roti, energy));
                             }
                         }
@@ -7414,7 +7501,7 @@ public class RotamerOptimization implements Terminatable {
                             procsDone++;
                         } else {
                             twoBodyEnergy[resi][roti][resj][rotj] = energy;
-                            if (writeEnergyRestart) {
+                            if (writeEnergyRestart && printFiles) {
                                 energiesToWrite.add(String.format("Pair %d %d, %d %d: %16.8f", resi, roti, resj, rotj, energy));
                             }
                         }
@@ -7466,7 +7553,7 @@ public class RotamerOptimization implements Terminatable {
                                 procsDone++;
                             } else {
                                 threeBodyEnergy[resi][roti][resj][rotj][resk][rotk] = energy;
-                                if (writeEnergyRestart) {
+                                if (writeEnergyRestart && printFiles) {
                                     energiesToWrite.add(String.format("Triple %d %d, %d %d, %d %d: %16.8f", resi, roti, resj, rotj, resk, rotk, energy));
                                 }
                             }

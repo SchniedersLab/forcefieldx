@@ -92,6 +92,7 @@ import ffx.potential.bonded.LambdaInterface
 
 // Initial lambda value.
 double initialLambda = 0.5;
+double step = 1.0e-5;
 
 // Print out the energy for each step.
 boolean print = false;
@@ -129,6 +130,7 @@ cli.la2(longOpt:'ligAtoms2', args:1, argName:'None', 'Period-separated ranges of
 cli.uaA(longOpt:'unsharedAtomsA', args:1, argName:'None', 'Quad-Topology: Period-separated ranges of A dual-topology atoms not shared by B; define from topology A1');
 cli.uaB(longOpt:'unsharedAtomsB', args:1, argName:'None', 'Quad-Topology: Period-separated ranges of B dual-topology atoms not shared by A; define from topology B1');
 cli.np(longOpt:'numParallel', args:1, argName:'1', 'Number of topology energies to calculate in parallel');
+cli.d(longOpt:'dx', args:1, argName:'1.0e-5', 'Finite-difference step size (Angstroms)');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -202,6 +204,11 @@ if (options.la2) {
 // Starting lambda value.
 if (options.l) {
     initialLambda = Double.parseDouble(options.l);
+}
+
+// Load the finite-difference step size in Angstroms.
+if (options.d) {
+    step = Double.parseDouble(options.d);
 }
 
 // Print the energy for each step.
@@ -617,7 +624,6 @@ logger.info(String.format(" E(1):      %20.8f.", e1));
 logger.info(String.format(" E(1)-E(0): %20.8f.\n", e1-e0));
 
 // Finite-difference step size.
-double step = 1.0e-5;
 double width = 2.0 * step;
 
 // Error tolerence
@@ -721,7 +727,7 @@ for (int j=0; j<3; j++) {
 
 lambdaInterface.setLambda(initialLambda);
 potential.getCoordinates(x);
-potential.energyAndGradient(x,gradient);
+potential.energyAndGradient(x,gradient, print);
 
 logger.info(String.format(" Checking Cartesian coordinate gradient"));
 
@@ -738,27 +744,27 @@ for (int i=0; i<nAtoms; i++) {
     // Find numeric dX
     double orig = x[i0];
     x[i0] = x[i0] + step;
-    double e = potential.energyAndGradient(x,lambdaGradFD[0]);
+    double e = potential.energyAndGradient(x,lambdaGradFD[0], print);
     x[i0] = orig - step;
-    e -= potential.energyAndGradient(x,lambdaGradFD[1]);
+    e -= potential.energyAndGradient(x,lambdaGradFD[1], print);
     x[i0] = orig;
     numeric[0] = e / width;
 
     // Find numeric dY
     orig = x[i1];
     x[i1] = x[i1] + step;
-    e = potential.energyAndGradient(x,lambdaGradFD[0]);
+    e = potential.energyAndGradient(x,lambdaGradFD[0], print);
     x[i1] = orig - step;
-    e -= potential.energyAndGradient(x,lambdaGradFD[1]);
+    e -= potential.energyAndGradient(x,lambdaGradFD[1], print);
     x[i1] = orig;
     numeric[1] = e / width;
 
     // Find numeric dZ
     orig = x[i2];
     x[i2] = x[i2] + step;
-    e = potential.energyAndGradient(x,lambdaGradFD[0]);
+    e = potential.energyAndGradient(x,lambdaGradFD[0], print);
     x[i2] = orig - step;
-    e -= potential.energyAndGradient(x,lambdaGradFD[1]);
+    e -= potential.energyAndGradient(x,lambdaGradFD[1], print);
     x[i2] = orig;
     numeric[2] = e / width;
 
