@@ -37,6 +37,9 @@
  */
 package ffx.utilities;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Implements a comparable pair, where a non-comparable T can be compared via
  * a comparable S.
@@ -65,5 +68,14 @@ public class ObjectPair<T, S extends Comparable<S>> implements Comparable<Object
     @Override
     public int compareTo(ObjectPair<T, S> o) {
         return key.compareTo(o.getKey());
+    }
+    
+    public static <U, V extends Comparable<V>> List<U> sortAndReturn(List<ObjectPair<U,V>> theList) {
+        theList.sort(null);
+        List<U> retList = new ArrayList<>(theList.size());
+        theList.forEach((e) -> {
+            retList.add(e.getVal());
+        });
+        return retList;
     }
 }

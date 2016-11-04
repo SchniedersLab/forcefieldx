@@ -893,7 +893,7 @@ if (arguments.size() == 1) {
         dualTopologyEnergy.setParallel(true);
     }
     if (distResidues) {
-        if (dualTopologyEnergy.getNumberSharedVariables() == dualTopologyEnergy.getNumberOfVariables()) {
+        if (dualTopologyEnergy.getNumSharedVariables() == dualTopologyEnergy.getNumberOfVariables()) {
             logger.info(" Generating starting structure based on dual-topology:");
             optStructure(topologies[0], dualTopologyEnergy);
         } else {
