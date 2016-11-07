@@ -44,7 +44,11 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.lang.String.format;
+
 import org.apache.commons.configuration.CompositeConfiguration;
+
+import static org.apache.commons.math3.util.FastMath.min;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
@@ -61,12 +65,15 @@ import ffx.crystal.SpaceGroup;
 public class CIFFilter implements DiffractionFileFilter {
 
     private static final Logger logger = Logger.getLogger(CIFFilter.class.getName());
-    private double cell[] = {-1.0, -1.0, -1.0, -1.0, -1.0, -1.0};
-    private double reshigh = -1.0;
-    private String sgname = null;
-    private int sgnum = -1;
-    private int h = -1, k = -1, l = -1, fo = -1, sigfo = -1, io = -1, sigio = -1, rfree = -1;
-    private int nall, nobs;
+    private final double cell[] = {-1.0, -1.0, -1.0, -1.0, -1.0, -1.0};
+    private double resHigh = -1.0;
+    private String spacegroupName = null;
+    private int spacegroupNum = -1;
+    private int h = -1, k = -1, l = -1;
+    private int fo = -1, sigFo = -1;
+    private int io = -1, sigIo = -1;
+    private int rFree = -1;
+    private int nAll, nObs;
 
     private static enum Header {
 
@@ -106,75 +113,72 @@ public class CIFFilter implements DiffractionFileFilter {
     public ReflectionList getReflectionList(File cifFile, CompositeConfiguration properties) {
         try {
             BufferedReader br = new BufferedReader(new FileReader(cifFile));
+            String string;
+            while ((string = br.readLine()) != null) {
 
-            String str;
-            while ((str = br.readLine()) != null) {
-                // reached reflections, break
-                if (str.startsWith("_refln.")) {
+                // Reached reflections, break.
+                if (string.startsWith("_refln.")) {
                     break;
                 }
-
-                String strarray[] = str.split("\\s+");
-
-                if (strarray[0].startsWith("_reflns")
-                        || strarray[0].startsWith("_cell")
-                        || strarray[0].startsWith("_symmetry")) {
-                    String cifarray[] = strarray[0].split("\\.+");
-
-                    switch (Header.toHeader(cifarray[1])) {
+                String strArray[] = string.split("\\s+");
+                if (strArray[0].startsWith("_reflns")
+                        || strArray[0].startsWith("_cell")
+                        || strArray[0].startsWith("_symmetry")) {
+                    String cifArray[] = strArray[0].split("\\.+");
+                    switch (Header.toHeader(cifArray[1])) {
                         case d_resolution_high:
-                            reshigh = Double.parseDouble(strarray[1]);
+                            resHigh = Double.parseDouble(strArray[1]);
                             break;
                         case number_all:
-                            nall = Integer.parseInt(strarray[1]);
+                            nAll = Integer.parseInt(strArray[1]);
                             break;
                         case number_obs:
-                            nobs = Integer.parseInt(strarray[1]);
+                            nObs = Integer.parseInt(strArray[1]);
                             break;
                         case length_a:
-                            cell[0] = Double.parseDouble(strarray[1]);
+                            cell[0] = Double.parseDouble(strArray[1]);
                             break;
                         case length_b:
-                            cell[1] = Double.parseDouble(strarray[1]);
+                            cell[1] = Double.parseDouble(strArray[1]);
                             break;
                         case length_c:
-                            cell[2] = Double.parseDouble(strarray[1]);
+                            cell[2] = Double.parseDouble(strArray[1]);
                             break;
                         case angle_alpha:
-                            cell[3] = Double.parseDouble(strarray[1]);
+                            cell[3] = Double.parseDouble(strArray[1]);
                             break;
                         case angle_beta:
-                            cell[4] = Double.parseDouble(strarray[1]);
+                            cell[4] = Double.parseDouble(strArray[1]);
                             break;
                         case angle_gamma:
-                            cell[5] = Double.parseDouble(strarray[1]);
+                            cell[5] = Double.parseDouble(strArray[1]);
                             break;
                         case Int_Tables_number:
-                            sgnum = Integer.parseInt(strarray[1]);
+                            spacegroupNum = Integer.parseInt(strArray[1]);
                             break;
                         case space_group_name_H_M:
-                            String sgnamearray[] = str.split("'+");
-                            if (sgnamearray.length > 1) {
-                                sgname = sgnamearray[1];
-                            } else if (strarray.length > 1) {
-                                sgname = strarray[1];
+                            String spacegroupNameArray[] = string.split("'+");
+                            if (spacegroupNameArray.length > 1) {
+                                spacegroupName = spacegroupNameArray[1];
+                            } else if (strArray.length > 1) {
+                                spacegroupName = strArray[1];
                             }
                             break;
                     }
                 }
             }
-
             br.close();
-        } catch (IOException ioe) {
-            System.out.println("IO Exception: " + ioe.getMessage());
+        } catch (IOException e) {
+            String message = " CIF IO Exception.";
+            logger.log(Level.WARNING, message, e);
             return null;
         }
 
-        if (sgnum < 0 && sgname != null) {
-            sgnum = SpaceGroup.spaceGroupNumber(SpaceGroup.pdb2ShortName(sgname));
+        if (spacegroupNum < 0 && spacegroupName != null) {
+            spacegroupNum = SpaceGroup.spaceGroupNumber(SpaceGroup.pdb2ShortName(spacegroupName));
         }
 
-        if (sgnum < 0 || reshigh < 0 || cell[0] < 0) {
+        if (spacegroupNum < 0 || resHigh < 0 || cell[0] < 0) {
             logger.info(" The CIF header contains insufficient information to generate the reflection list.");
             return null;
         }
@@ -184,25 +188,24 @@ public class CIFFilter implements DiffractionFileFilter {
             sb.append(String.format("\nOpening %s\n", cifFile.getName()));
             sb.append(String.format("setting up Reflection List based on CIF:\n"));
             sb.append(String.format("  spacegroup #: %d (name: %s)\n",
-                    sgnum, SpaceGroup.spaceGroupNames[sgnum - 1]));
-            sb.append(String.format("  resolution: %8.3f\n", 0.999999 * reshigh));
+                    spacegroupNum, SpaceGroup.spaceGroupNames[spacegroupNum - 1]));
+            sb.append(String.format("  resolution: %8.3f\n", 0.999999 * resHigh));
             sb.append(String.format("  cell: %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n",
                     cell[0], cell[1], cell[2], cell[3], cell[4], cell[5]));
-            sb.append(String.format("\n  CIF # HKL (observed): %d\n", nobs));
-            sb.append(String.format("  CIF # HKL (all):      %d\n", nall));
+            sb.append(String.format("\n  CIF # HKL (observed): %d\n", nObs));
+            sb.append(String.format("  CIF # HKL (all):      %d\n", nAll));
             logger.info(sb.toString());
         }
 
         Crystal crystal = new Crystal(cell[0], cell[1], cell[2],
-                cell[3], cell[4], cell[5], SpaceGroup.spaceGroupNames[sgnum - 1]);
+                cell[3], cell[4], cell[5], SpaceGroup.spaceGroupNames[spacegroupNum - 1]);
         double sampling = 1.0 / 1.5;
         if (properties != null) {
             sampling = properties.getDouble("sampling", 1.0 / 1.5);
         }
-        Resolution resolution = new Resolution(0.999999 * reshigh, sampling);
-
-        ReflectionList reflectionlist = new ReflectionList(crystal, resolution,
-                properties);
+        Resolution resolution = new Resolution(0.999999 * resHigh, sampling);
+        ReflectionList reflectionlist = new ReflectionList(crystal,
+                resolution, properties);
         return reflectionlist;
     }
 
@@ -211,37 +214,35 @@ public class CIFFilter implements DiffractionFileFilter {
      */
     @Override
     public double getResolution(File cifFile, Crystal crystal) {
-        double res = Double.POSITIVE_INFINITY;
+
+        double resolution = Double.POSITIVE_INFINITY;
 
         try {
             BufferedReader br = new BufferedReader(new FileReader(cifFile));
-
-            String str;
-            int ncol = 0;
-            boolean inhkl = false;
-            while ((str = br.readLine()) != null) {
-                String strarray[] = str.split("\\s+");
-
-                if (strarray[0].startsWith("_refln.")) {
-                    inhkl = true;
+            String string;
+            int nCol = 0;
+            boolean inHKL = false;
+            while ((string = br.readLine()) != null) {
+                String strArray[] = string.split("\\s+");
+                if (strArray[0].startsWith("_refln.")) {
+                    inHKL = true;
                     br.mark(0);
-                    String cifarray[] = strarray[0].split("\\.+");
-                    switch (Header.toHeader(cifarray[1])) {
+                    String cifArray[] = strArray[0].split("\\.+");
+                    switch (Header.toHeader(cifArray[1])) {
                         case index_h:
-                            h = ncol;
+                            h = nCol;
                             break;
                         case index_k:
-                            k = ncol;
+                            k = nCol;
                             break;
                         case index_l:
-                            l = ncol;
+                            l = nCol;
                             break;
                     }
-
-                    ncol++;
-                } else if (inhkl) {
+                    nCol++;
+                } else if (inHKL) {
                     if (h < 0 || k < 0 || l < 0) {
-                        String message = "Fatal error in CIF file - no H K L indexes?\n";
+                        String message = " Fatal error in CIF file - no H K L indexes?\n";
                         logger.log(Level.SEVERE, message);
                         return -1.0;
                     }
@@ -249,106 +250,108 @@ public class CIFFilter implements DiffractionFileFilter {
                 }
             }
 
-            // go back to where the reflections start
+            // Go back to where the reflections start.
             br.reset();
             HKL hkl = new HKL();
-            while ((str = br.readLine()) != null) {
-                // reached end, break
-                if (str.trim().startsWith("#END")) {
+            while ((string = br.readLine()) != null) {
+
+                // Reached end, break.
+                if (string.trim().startsWith("#END")) {
                     break;
-                } else if (str.trim().startsWith("data")) {
+                } else if (string.trim().startsWith("data")) {
                     break;
-                } else if (str.trim().startsWith("#")) {
+                } else if (string.trim().startsWith("#")) {
                     continue;
                 }
 
-                String strarray[] = str.trim().split("\\s+");
-                // some files split data on to multiple lines
-                while (strarray.length < ncol) {
-                    str = str + " " + br.readLine();
-                    strarray = str.trim().split("\\s+");
+                // Some files split data on to multiple lines.
+                String strArray[] = string.trim().split("\\s+");
+                while (strArray.length < nCol) {
+                    string = string + " " + br.readLine();
+                    strArray = string.trim().split("\\s+");
                 }
 
-                int ih = Integer.parseInt(strarray[h]);
-                int ik = Integer.parseInt(strarray[k]);
-                int il = Integer.parseInt(strarray[l]);
+                int ih = Integer.parseInt(strArray[h]);
+                int ik = Integer.parseInt(strArray[k]);
+                int il = Integer.parseInt(strArray[l]);
 
                 hkl.h(ih);
                 hkl.k(ik);
                 hkl.l(il);
-                res = Math.min(res, Crystal.res(crystal, hkl));
+                resolution = min(resolution, Crystal.res(crystal, hkl));
             }
-        } catch (IOException ioe) {
-            System.out.println("IO Exception: " + ioe.getMessage());
+        } catch (IOException e) {
+            String message = " CIF IO Exception.";
+            logger.log(Level.WARNING, message, e);
             return -1.0;
         }
-
-        return res;
+        return resolution;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public boolean readFile(File cifFile, ReflectionList reflectionlist,
-            DiffractionRefinementData refinementdata, CompositeConfiguration properties) {
-        int nread, nnan, nres, nignore, ncifignore, nfriedel, ncut;
+    public boolean readFile(File cifFile, ReflectionList reflectionList,
+            DiffractionRefinementData refinementData, CompositeConfiguration properties) {
+
+        int nRead, nNAN, nRes;
+        int nIgnore, nCIFIgnore;
+        int nFriedel, nCut;
         boolean transpose = false;
         boolean intensitiesToAmplitudes = false;
 
         StringBuilder sb = new StringBuilder();
         sb.append(String.format(" Opening %s\n", cifFile.getName()));
-        if (refinementdata.rfreeflag < 0) {
-            refinementdata.setFreeRFlag(1);
-            sb.append(String.format(" Setting R free flag to CIF default: %d\n", refinementdata.rfreeflag));
+        if (refinementData.rfreeflag < 0) {
+            refinementData.setFreeRFlag(1);
+            sb.append(format(" Setting R free flag to CIF default: %d\n", refinementData.rfreeflag));
         }
 
         try {
             BufferedReader br = new BufferedReader(new FileReader(cifFile));
 
-            String str;
-            int ncol = 0;
-            boolean inhkl = false;
-            while ((str = br.readLine()) != null) {
-                String strarray[] = str.split("\\s+");
-
-                if (strarray[0].startsWith("_refln.")) {
-                    inhkl = true;
+            String string;
+            int nCol = 0;
+            boolean inHKL = false;
+            while ((string = br.readLine()) != null) {
+                String stringArray[] = string.split("\\s+");
+                if (stringArray[0].startsWith("_refln.")) {
+                    inHKL = true;
                     br.mark(0);
-                    String cifarray[] = strarray[0].split("\\.+");
-                    switch (Header.toHeader(cifarray[1])) {
+                    String cifArray[] = stringArray[0].split("\\.+");
+                    switch (Header.toHeader(cifArray[1])) {
                         case index_h:
-                            h = ncol;
+                            h = nCol;
                             break;
                         case index_k:
-                            k = ncol;
+                            k = nCol;
                             break;
                         case index_l:
-                            l = ncol;
+                            l = nCol;
                             break;
                         case F_meas:
                         case F_meas_au:
-                            fo = ncol;
+                            fo = nCol;
                             break;
                         case F_meas_sigma:
                         case F_meas_sigma_au:
-                            sigfo = ncol;
+                            sigFo = nCol;
                             break;
                         case intensity_meas:
-                            io = ncol;
+                            io = nCol;
                             break;
                         case intensity_sigma:
-                            sigio = ncol;
+                            sigIo = nCol;
                             break;
                         case status:
-                            rfree = ncol;
+                            rFree = nCol;
                             break;
                     }
-
-                    ncol++;
-                } else if (inhkl) {
+                    nCol++;
+                } else if (inHKL) {
                     if (h < 0 || k < 0 || l < 0) {
-                        String message = "Fatal error in CIF file - no H K L indexes?\n";
+                        String message = " Fatal error in CIF file - no H K L indexes?\n";
                         logger.log(Level.SEVERE, message);
                         return false;
                     }
@@ -356,199 +359,200 @@ public class CIFFilter implements DiffractionFileFilter {
                 }
             }
 
-            if (fo < 0 && sigfo < 0 && io > 0 && sigio > 0) {
+            if (fo < 0 && sigFo < 0 && io > 0 && sigIo > 0) {
                 intensitiesToAmplitudes = true;
             }
 
             if (fo < 0 && io < 0) {
-                logger.severe("Reflection data (I/F) not found in CIF file!");
+                logger.severe(" Reflection data (I/F) not found in CIF file!");
             }
 
-            // go back to where the reflections start
+            // Go back to where the reflections start.
             br.reset();
 
-            // check if HKLs need to be transposed or not
+            // Check if HKLs need to be transposed or not.
             HKL mate = new HKL();
-            int nposignore = 0;
-            int ntransignore = 0;
-            while ((str = br.readLine()) != null) {
-                // reached end, break
-                if (str.trim().startsWith("#END")) {
+            int nPosIgnore = 0;
+            int nTransIgnore = 0;
+            while ((string = br.readLine()) != null) {
+
+                if (string.trim().startsWith("#END")) {
+                    // Reached end, break.
                     break;
-                } else if (str.trim().startsWith("data")) {
+                } else if (string.trim().startsWith("data")) {
                     break;
-                } else if (str.trim().startsWith("#")) {
+                } else if (string.trim().startsWith("#")) {
                     continue;
                 }
 
-                String strarray[] = str.trim().split("\\s+");
-                // some files split data on to multiple lines
-                while (strarray.length < ncol) {
-                    str = str + " " + br.readLine();
-                    strarray = str.trim().split("\\s+");
+                // Some files split data on to multiple lines.
+                String strArray[] = string.trim().split("\\s+");
+                while (strArray.length < nCol) {
+                    string = string + " " + br.readLine();
+                    strArray = string.trim().split("\\s+");
                 }
 
-                if (rfree > 0) {
-                    // ignored cases
-                    if (strarray[rfree].charAt(0) == 'x'
-                            || strarray[rfree].charAt(0) == '<'
-                            || strarray[rfree].charAt(0) == '-'
-                            || strarray[rfree].charAt(0) == 'h'
-                            || strarray[rfree].charAt(0) == 'l') {
+                if (rFree > 0) {
+                    // Ignored cases.
+                    if (strArray[rFree].charAt(0) == 'x'
+                            || strArray[rFree].charAt(0) == '<'
+                            || strArray[rFree].charAt(0) == '-'
+                            || strArray[rFree].charAt(0) == 'h'
+                            || strArray[rFree].charAt(0) == 'l') {
                         continue;
                     }
                 }
-                int ih = Integer.parseInt(strarray[h]);
-                int ik = Integer.parseInt(strarray[k]);
-                int il = Integer.parseInt(strarray[l]);
-                boolean friedel = reflectionlist.findSymHKL(ih, ik, il, mate, false);
-                HKL hklpos = reflectionlist.getHKL(mate);
-                if (hklpos == null) {
-                    nposignore++;
+
+                int ih = Integer.parseInt(strArray[h]);
+                int ik = Integer.parseInt(strArray[k]);
+                int il = Integer.parseInt(strArray[l]);
+
+                boolean friedel = reflectionList.findSymHKL(ih, ik, il, mate, false);
+                HKL hklPos = reflectionList.getHKL(mate);
+                if (hklPos == null) {
+                    nPosIgnore++;
                 }
 
-                friedel = reflectionlist.findSymHKL(ih, ik, il, mate, true);
-                HKL hkltrans = reflectionlist.getHKL(mate);
-                if (hkltrans == null) {
-                    ntransignore++;
+                friedel = reflectionList.findSymHKL(ih, ik, il, mate, true);
+                HKL hklTrans = reflectionList.getHKL(mate);
+                if (hklTrans == null) {
+                    nTransIgnore++;
                 }
             }
-            if (nposignore > ntransignore) {
+            if (nPosIgnore > nTransIgnore) {
                 transpose = true;
             }
 
-            // reopen to start at beginning
+            // Re-open to start at beginning.
             br = new BufferedReader(new FileReader(cifFile));
-            inhkl = false;
-            while ((str = br.readLine()) != null) {
-                String strarray[] = str.split("\\s+");
-
-                if (strarray[0].startsWith("_refln.")) {
+            inHKL = false;
+            while ((string = br.readLine()) != null) {
+                String strArray[] = string.split("\\s+");
+                if (strArray[0].startsWith("_refln.")) {
                     br.mark(0);
-                    inhkl = true;
-                } else if (inhkl) {
+                    inHKL = true;
+                } else if (inHKL) {
                     break;
                 }
             }
 
-            // go back to where the reflections start
+            // Go back to where the reflections start.
             br.reset();
 
-            // read in data
-            double anofsigf[][] = new double[refinementdata.n][4];
-            for (int i = 0; i < refinementdata.n; i++) {
-                anofsigf[i][0] = anofsigf[i][1] = anofsigf[i][2] = anofsigf[i][3] = Double.NaN;
+            // Read in data.
+            double anofSigF[][] = new double[refinementData.n][4];
+            for (int i = 0; i < refinementData.n; i++) {
+                anofSigF[i][0] = anofSigF[i][1] = anofSigF[i][2] = anofSigF[i][3] = Double.NaN;
             }
-            nread = nnan = nres = nignore = ncifignore = nfriedel = ncut = 0;
-            while ((str = br.readLine()) != null) {
-                // reached end, break
-                if (str.trim().startsWith("#END")) {
+            nRead = nNAN = nRes = nIgnore = nCIFIgnore = nFriedel = nCut = 0;
+            while ((string = br.readLine()) != null) {
+
+                // Reached end, break.
+                if (string.trim().startsWith("#END")) {
                     break;
-                } else if (str.trim().startsWith("data")) {
+                } else if (string.trim().startsWith("data")) {
                     break;
-                } else if (str.trim().startsWith("#")) {
+                } else if (string.trim().startsWith("#")) {
                     continue;
                 }
 
-                String strarray[] = str.trim().split("\\s+");
-                // some files split data on to multiple lines
-                while (strarray.length < ncol) {
-                    str = str + " " + br.readLine();
-                    strarray = str.trim().split("\\s+");
+                // Some files split data on to multiple lines.
+                String strArray[] = string.trim().split("\\s+");
+                while (strArray.length < nCol) {
+                    string = string + " " + br.readLine();
+                    strArray = string.trim().split("\\s+");
                 }
 
-                int ih = Integer.parseInt(strarray[h]);
-                int ik = Integer.parseInt(strarray[k]);
-                int il = Integer.parseInt(strarray[l]);
-                boolean friedel = reflectionlist.findSymHKL(ih, ik, il, mate, transpose);
-                HKL hkl = reflectionlist.getHKL(mate);
+                int ih = Integer.parseInt(strArray[h]);
+                int ik = Integer.parseInt(strArray[k]);
+                int il = Integer.parseInt(strArray[l]);
 
+                boolean friedel = reflectionList.findSymHKL(ih, ik, il, mate, transpose);
+                HKL hkl = reflectionList.getHKL(mate);
                 if (hkl != null) {
                     boolean isnull = false;
-
-                    if (rfree > 0) {
-                        if (strarray[rfree].charAt(0) == 'o') {
-                            refinementdata.setFreeR(hkl.index(), 0);
-                        } else if (strarray[rfree].charAt(0) == 'f') {
-                            refinementdata.setFreeR(hkl.index(), 1);
-                        } else if (strarray[rfree].charAt(0) == 'x') {
+                    if (rFree > 0) {
+                        if (strArray[rFree].charAt(0) == 'o') {
+                            refinementData.setFreeR(hkl.index(), 0);
+                        } else if (strArray[rFree].charAt(0) == 'f') {
+                            refinementData.setFreeR(hkl.index(), 1);
+                        } else if (strArray[rFree].charAt(0) == 'x') {
                             isnull = true;
-                            nnan++;
-                        } else if (strarray[rfree].charAt(0) == '<'
-                                || strarray[rfree].charAt(0) == '-'
-                                || strarray[rfree].charAt(0) == 'h'
-                                || strarray[rfree].charAt(0) == 'l') {
+                            nNAN++;
+                        } else if (strArray[rFree].charAt(0) == '<'
+                                || strArray[rFree].charAt(0) == '-'
+                                || strArray[rFree].charAt(0) == 'h'
+                                || strArray[rFree].charAt(0) == 'l') {
                             isnull = true;
-                            ncifignore++;
+                            nCIFIgnore++;
                         } else {
-                            refinementdata.setFreeR(hkl.index(),
-                                    Integer.parseInt(strarray[rfree]));
+                            refinementData.setFreeR(hkl.index(),
+                                    Integer.parseInt(strArray[rFree]));
                         }
                     }
 
                     if (!intensitiesToAmplitudes && !isnull) {
-                        if (strarray[fo].charAt(0) == '?'
-                                || strarray[sigfo].charAt(0) == '?') {
+                        if (strArray[fo].charAt(0) == '?'
+                                || strArray[sigFo].charAt(0) == '?') {
                             isnull = true;
-                            nnan++;
+                            nNAN++;
                             continue;
                         }
 
-                        if (refinementdata.fsigfcutoff > 0.0) {
-                            double f1 = Double.parseDouble(strarray[fo]);
-                            double sigf1 = Double.parseDouble(strarray[sigfo]);
-                            if ((f1 / sigf1) < refinementdata.fsigfcutoff) {
-                                ncut++;
+                        if (refinementData.fsigfcutoff > 0.0) {
+                            double f1 = Double.parseDouble(strArray[fo]);
+                            double sigf1 = Double.parseDouble(strArray[sigFo]);
+                            if ((f1 / sigf1) < refinementData.fsigfcutoff) {
+                                nCut++;
                                 continue;
                             }
                         }
 
                         if (friedel) {
-                            anofsigf[hkl.index()][2] = Double.parseDouble(strarray[fo]);
-                            anofsigf[hkl.index()][3] = Double.parseDouble(strarray[sigfo]);
-                            nfriedel++;
+                            anofSigF[hkl.index()][2] = Double.parseDouble(strArray[fo]);
+                            anofSigF[hkl.index()][3] = Double.parseDouble(strArray[sigFo]);
+                            nFriedel++;
                         } else {
-                            anofsigf[hkl.index()][0] = Double.parseDouble(strarray[fo]);
-                            anofsigf[hkl.index()][1] = Double.parseDouble(strarray[sigfo]);
+                            anofSigF[hkl.index()][0] = Double.parseDouble(strArray[fo]);
+                            anofSigF[hkl.index()][1] = Double.parseDouble(strArray[sigFo]);
                         }
                     }
 
                     if (intensitiesToAmplitudes && !isnull) {
-                        if (strarray[io].charAt(0) == '?'
-                                || strarray[sigio].charAt(0) == '?') {
+                        if (strArray[io].charAt(0) == '?'
+                                || strArray[sigIo].charAt(0) == '?') {
                             isnull = true;
-                            nnan++;
+                            nNAN++;
                             continue;
                         }
 
                         if (friedel) {
-                            anofsigf[hkl.index()][2] = Double.parseDouble(strarray[io]);
-                            anofsigf[hkl.index()][3] = Double.parseDouble(strarray[sigio]);
-                            nfriedel++;
+                            anofSigF[hkl.index()][2] = Double.parseDouble(strArray[io]);
+                            anofSigF[hkl.index()][3] = Double.parseDouble(strArray[sigIo]);
+                            nFriedel++;
                         } else {
-                            anofsigf[hkl.index()][0] = Double.parseDouble(strarray[io]);
-                            anofsigf[hkl.index()][1] = Double.parseDouble(strarray[sigio]);
+                            anofSigF[hkl.index()][0] = Double.parseDouble(strArray[io]);
+                            anofSigF[hkl.index()][1] = Double.parseDouble(strArray[sigIo]);
                         }
                     }
 
-                    nread++;
+                    nRead++;
                 } else {
                     HKL tmp = new HKL(ih, ik, il);
-                    if (!reflectionlist.resolution.inInverseResSqRange(Crystal.invressq(reflectionlist.crystal, tmp))) {
-                        nres++;
+                    if (!reflectionList.resolution.inInverseResSqRange(
+                            Crystal.invressq(reflectionList.crystal, tmp))) {
+                        nRes++;
                     } else {
-                        nignore++;
+                        nIgnore++;
                     }
                 }
             }
-
             br.close();
 
-            // set up fsigf from F+ and F-
-            refinementdata.generate_fsigf_from_anofsigf(anofsigf);
-
+            // Set up fsigf from F+ and F-.
+            refinementData.generate_fsigf_from_anofsigf(anofSigF);
             if (intensitiesToAmplitudes) {
-                refinementdata.intensities_to_amplitudes();
+                refinementData.intensities_to_amplitudes();
             }
         } catch (IOException ioe) {
             System.out.println("IO Exception: " + ioe.getMessage());
@@ -558,29 +562,29 @@ public class CIFFilter implements DiffractionFileFilter {
         sb.append(String.format(" HKL data is %s\n",
                 transpose ? "transposed" : "not transposed"));
         sb.append(String.format(" HKL read in:                             %d\n",
-                nread));
+                nRead));
         sb.append(String.format(" HKL read as friedel mates:               %d\n",
-                nfriedel));
+                nFriedel));
         sb.append(String.format(" HKL with NaN (ignored):                  %d\n",
-                nnan));
+                nNAN));
         sb.append(String.format(" HKL NOT read in (status <, -, h or l):   %d\n",
-                ncifignore));
+                nCIFIgnore));
         sb.append(String.format(" HKL NOT read in (too high resolution):   %d\n",
-                nres));
+                nRes));
         sb.append(String.format(" HKL NOT read in (not in internal list?): %d\n",
-                nignore));
+                nIgnore));
         sb.append(String.format(" HKL NOT read in (F/sigF cutoff):         %d\n",
-                ncut));
+                nCut));
         sb.append(String.format(" HKL in internal list:                    %d\n",
-                reflectionlist.hkllist.size()));
+                reflectionList.hkllist.size()));
+
         if (logger.isLoggable(Level.INFO)) {
             logger.info(sb.toString());
         }
 
-        if (rfree < 0) {
-            refinementdata.generateRFree();
+        if (rFree < 0) {
+            refinementData.generateRFree();
         }
-
         return true;
     }
 }

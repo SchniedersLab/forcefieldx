@@ -44,7 +44,13 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
+import static java.lang.String.format;
+
 import org.apache.commons.configuration.CompositeConfiguration;
+
+import static org.apache.commons.math3.util.FastMath.min;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
@@ -57,18 +63,16 @@ import ffx.crystal.SpaceGroup;
  * CNSFilter class.</p>
  *
  * @author Timothy D. Fenn
- *
  */
 public class CNSFilter implements DiffractionFileFilter {
 
     private static final Logger logger = Logger.getLogger(CNSFilter.class.getName());
     private double cell[] = {-1.0, -1.0, -1.0, -1.0, -1.0, -1.0};
-    private double reshigh = -1.0;
-    private String fostring, sigfostring, rfreestring;
-    private String sgname = null;
-    private int sgnum = -1;
+    private double resHigh = -1.0;
+    private String foString, sigFoString, rFreeString;
+    private String spaceGroupName = null;
+    private int spaceGroupNum = -1;
 
-    // null constructor
     /**
      * <p>
      * Constructor for CNSFilter.</p>
@@ -91,69 +95,67 @@ public class CNSFilter implements DiffractionFileFilter {
     public ReflectionList getReflectionList(File cnsFile, CompositeConfiguration properties) {
         try {
             BufferedReader br = new BufferedReader(new FileReader(cnsFile));
-
-            String str;
-            while ((str = br.readLine()) != null) {
-                String strarray[] = str.split("\\s+");
-
-                if (strarray[0].equalsIgnoreCase("{")) {
-                    if (strarray[1].toLowerCase().startsWith("sg=")) {
-                        sgname = strarray[1].substring(3);
-                        cell[0] = Double.parseDouble(strarray[2].substring(2));
-                        cell[1] = Double.parseDouble(strarray[3].substring(2));
-                        cell[2] = Double.parseDouble(strarray[4].substring(2));
-                        cell[3] = Double.parseDouble(strarray[5].substring(6));
-                        cell[4] = Double.parseDouble(strarray[6].substring(5));
-                        cell[5] = Double.parseDouble(strarray[7].substring(6));
+            String string;
+            while ((string = br.readLine()) != null) {
+                String strArray[] = string.split("\\s+");
+                if (strArray[0].equalsIgnoreCase("{")) {
+                    if (strArray[1].toLowerCase().startsWith("sg=")) {
+                        spaceGroupName = strArray[1].substring(3);
+                        cell[0] = parseDouble(strArray[2].substring(2));
+                        cell[1] = parseDouble(strArray[3].substring(2));
+                        cell[2] = parseDouble(strArray[4].substring(2));
+                        cell[3] = parseDouble(strArray[5].substring(6));
+                        cell[4] = parseDouble(strArray[6].substring(5));
+                        cell[5] = parseDouble(strArray[7].substring(6));
                     }
-                } else if (strarray[0].equalsIgnoreCase("CRYST1")) {
-                    cell[0] = Double.parseDouble(strarray[1]);
-                    cell[1] = Double.parseDouble(strarray[2]);
-                    cell[2] = Double.parseDouble(strarray[3]);
-                    cell[3] = Double.parseDouble(strarray[4]);
-                    cell[4] = Double.parseDouble(strarray[5]);
-                    cell[5] = Double.parseDouble(strarray[6]);
-                    sgname = SpaceGroup.pdb2ShortName(str.substring(55, 65));
-                } else if (strarray[0].toLowerCase().startsWith("inde")) {
+                } else if (strArray[0].equalsIgnoreCase("CRYST1")) {
+                    cell[0] = parseDouble(strArray[1]);
+                    cell[1] = parseDouble(strArray[2]);
+                    cell[2] = parseDouble(strArray[3]);
+                    cell[3] = parseDouble(strArray[4]);
+                    cell[4] = parseDouble(strArray[5]);
+                    cell[5] = parseDouble(strArray[6]);
+                    spaceGroupName = SpaceGroup.pdb2ShortName(string.substring(55, 65));
+                } else if (strArray[0].toLowerCase().startsWith("inde")) {
                     break;
                 }
             }
-
             br.close();
-        } catch (IOException ioe) {
-            System.out.println("IO Exception: " + ioe.getMessage());
+        } catch (IOException e) {
+            String message = " CNS IO Exception.";
+            logger.log(Level.WARNING, message, e);
             return null;
         }
 
         Resolution resolution = null;
         if (properties != null) {
             resolution = Resolution.checkProperties(properties);
-            reshigh = resolution.resolution;
+            resHigh = resolution.resolution;
         }
 
-        if (sgname != null) {
-            sgnum = SpaceGroup.spaceGroupNumber(sgname);
+        if (spaceGroupName != null) {
+            spaceGroupNum = SpaceGroup.spaceGroupNumber(spaceGroupName);
         }
 
-        if (sgnum < 0 || cell[0] < 0 || resolution == null) {
+        if (spaceGroupNum < 0 || cell[0] < 0 || resolution == null) {
             logger.info(" The CNS file contains insufficient information to generate the reflection list.");
             return null;
         }
 
         if (logger.isLoggable(Level.INFO)) {
             StringBuilder sb = new StringBuilder();
-            sb.append(String.format("\nOpening %s\n", cnsFile.getName()));
-            sb.append(String.format("setting up Reflection List based on CNS:\n"));
-            sb.append(String.format("  spacegroup #: %d (name: %s)\n",
-                    sgnum, SpaceGroup.spaceGroupNames[sgnum - 1]));
-            sb.append(String.format("  resolution: %8.3f\n", reshigh));
-            sb.append(String.format("  cell: %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n",
+            sb.append(format("\n Opening %s\n", cnsFile.getName()));
+            sb.append(format(" Setting up Reflection List based on CNS:\n"));
+            sb.append(format("  Spacegroup #: %d (name: %s)\n",
+                    spaceGroupNum, SpaceGroup.spaceGroupNames[spaceGroupNum - 1]));
+            sb.append(format("  Resolution:   %8.3f\n", resHigh));
+            sb.append(format("  Cell:         %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n",
                     cell[0], cell[1], cell[2], cell[3], cell[4], cell[5]));
             logger.info(sb.toString());
         }
 
         Crystal crystal = new Crystal(cell[0], cell[1], cell[2],
-                cell[3], cell[4], cell[5], SpaceGroup.spaceGroupNames[sgnum - 1]);
+                cell[3], cell[4], cell[5], SpaceGroup.spaceGroupNames[spaceGroupNum - 1]);
 
         ReflectionList reflectionlist = new ReflectionList(crystal, resolution,
                 properties);
@@ -169,33 +171,27 @@ public class CNSFilter implements DiffractionFileFilter {
 
         try {
             BufferedReader br = new BufferedReader(new FileReader(cnsFile));
-
-            String str;
-            boolean hashkl, hasfo, hassigfo, hasfree;
-            int ih, ik, il;
             HKL hkl = new HKL();
-
-            ih = ik = il = -1;
-
-            while ((str = br.readLine()) != null) {
-                String strarray[] = str.split("\\s+");
-
-                for (int i = 0; i < strarray.length; i++) {
-                    if (strarray[i].toLowerCase().startsWith("inde")) {
-                        if (i < strarray.length - 3) {
-                            ih = Integer.parseInt(strarray[i + 1]);
-                            ik = Integer.parseInt(strarray[i + 2]);
-                            il = Integer.parseInt(strarray[i + 3]);
+            String string;
+            while ((string = br.readLine()) != null) {
+                String strArray[] = string.split("\\s+");
+                for (int i = 0; i < strArray.length; i++) {
+                    if (strArray[i].toLowerCase().startsWith("inde")) {
+                        if (i < strArray.length - 3) {
+                            int ih = parseInt(strArray[i + 1]);
+                            int ik = parseInt(strArray[i + 2]);
+                            int il = parseInt(strArray[i + 3]);
                             hkl.h(ih);
                             hkl.k(ik);
                             hkl.l(il);
-                            res = Math.min(res, Crystal.res(crystal, hkl));
+                            res = min(res, Crystal.res(crystal, hkl));
                         }
                     }
                 }
             }
-        } catch (IOException ioe) {
-            System.out.println("IO Exception: " + ioe.getMessage());
+        } catch (IOException e) {
+            String message = " CNS IO Exception.";
+            logger.log(Level.WARNING, message, e);
             return -1.0;
         }
 
@@ -206,161 +202,160 @@ public class CNSFilter implements DiffractionFileFilter {
      * {@inheritDoc}
      */
     @Override
-    public boolean readFile(File cnsFile, ReflectionList reflectionlist,
-            DiffractionRefinementData refinementdata, CompositeConfiguration properties) {
-        int nread, nres, nignore, nfriedel, ncut;
+    public boolean readFile(File cnsFile, ReflectionList reflectionList,
+            DiffractionRefinementData refinementData, CompositeConfiguration properties) {
+
+        int nRead, nRes, nIgnore, nFriedel, nCut;
         boolean transpose = false;
 
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("\n Opening %s\n", cnsFile.getName()));
-        if (refinementdata.rfreeflag < 0) {
-            refinementdata.setFreeRFlag(1);
-            sb.append(String.format(" Setting R free flag to CNS default: %d\n", refinementdata.rfreeflag));
+        sb.append(format("\n Opening %s\n", cnsFile.getName()));
+
+        if (refinementData.rfreeflag < 0) {
+            refinementData.setFreeRFlag(1);
+            sb.append(format(" Setting R free flag to CNS default: %d\n", refinementData.rfreeflag));
         }
 
         try {
             BufferedReader br = new BufferedReader(new FileReader(cnsFile));
 
-            String str;
-            boolean hashkl, hasfo, hassigfo, hasfree;
+            boolean hasHKL, hasFo, hasSigFo, hasFree;
             int ih, ik, il, free;
-            double fo, sigfo;
+            double fo, sigFo;
 
-            hashkl = hasfo = hassigfo = hasfree = false;
+            hasHKL = hasFo = hasSigFo = hasFree = false;
             ih = ik = il = free = -1;
-            fo = sigfo = -1.0;
+            fo = sigFo = -1.0;
 
-            // check if HKLs need to be transposed or not
+            // Check if HKLs need to be transposed or not.
             HKL mate = new HKL();
-            int nposignore = 0;
-            int ntransignore = 0;
-            while ((str = br.readLine()) != null) {
-                String strarray[] = str.split("\\s+");
+            int nPosIgnore = 0;
+            int nTransIgnore = 0;
 
-                for (int i = 0; i < strarray.length; i++) {
-                    if (strarray[i].toLowerCase().startsWith("inde")) {
-                        if (i < strarray.length - 3) {
-                            ih = Integer.parseInt(strarray[i + 1]);
-                            ik = Integer.parseInt(strarray[i + 2]);
-                            il = Integer.parseInt(strarray[i + 3]);
-                            boolean friedel = reflectionlist.findSymHKL(ih, ik, il, mate, false);
-                            HKL hklpos = reflectionlist.getHKL(mate);
+            String string;
+            while ((string = br.readLine()) != null) {
+                String strArray[] = string.split("\\s+");
+
+                for (int i = 0; i < strArray.length; i++) {
+                    if (strArray[i].toLowerCase().startsWith("inde")) {
+                        if (i < strArray.length - 3) {
+                            ih = Integer.parseInt(strArray[i + 1]);
+                            ik = Integer.parseInt(strArray[i + 2]);
+                            il = Integer.parseInt(strArray[i + 3]);
+                            boolean friedel = reflectionList.findSymHKL(ih, ik, il, mate, false);
+                            HKL hklpos = reflectionList.getHKL(mate);
                             if (hklpos == null) {
-                                nposignore++;
+                                nPosIgnore++;
                             }
 
-                            friedel = reflectionlist.findSymHKL(ih, ik, il, mate, true);
-                            HKL hkltrans = reflectionlist.getHKL(mate);
+                            friedel = reflectionList.findSymHKL(ih, ik, il, mate, true);
+                            HKL hkltrans = reflectionList.getHKL(mate);
                             if (hkltrans == null) {
-                                ntransignore++;
+                                nTransIgnore++;
                             }
                         }
                     }
                 }
             }
-            if (nposignore > ntransignore) {
+            if (nPosIgnore > nTransIgnore) {
                 transpose = true;
             }
 
             // column identifiers
-            fostring = sigfostring = rfreestring = null;
+            foString = sigFoString = rFreeString = null;
             if (properties != null) {
-                fostring = properties.getString("fostring", null);
-                sigfostring = properties.getString("sigfostring", null);
-                rfreestring = properties.getString("rfreestring", null);
+                foString = properties.getString("fostring", null);
+                sigFoString = properties.getString("sigfostring", null);
+                rFreeString = properties.getString("rfreestring", null);
             }
 
             // reopen to start at beginning
             br = new BufferedReader(new FileReader(cnsFile));
 
             // read in data
-            double anofsigf[][] = new double[refinementdata.n][4];
-            for (int i = 0; i < refinementdata.n; i++) {
-                anofsigf[i][0] = anofsigf[i][1] = anofsigf[i][2] = anofsigf[i][3] = Double.NaN;
+            double anofSigF[][] = new double[refinementData.n][4];
+            for (int i = 0; i < refinementData.n; i++) {
+                anofSigF[i][0] = anofSigF[i][1] = anofSigF[i][2] = anofSigF[i][3] = Double.NaN;
             }
-            nread = nres = nignore = nfriedel = ncut = 0;
-            while ((str = br.readLine()) != null) {
-                String strarray[] = str.split("\\s+");
+            nRead = nRes = nIgnore = nFriedel = nCut = 0;
 
-                for (int i = 0; i < strarray.length; i++) {
-                    if (strarray[i].toLowerCase().startsWith("inde")) {
-                        if (hashkl && hasfo && hassigfo && hasfree) {
-                            boolean friedel = reflectionlist.findSymHKL(ih, ik, il, mate, transpose);
-                            HKL hkl = reflectionlist.getHKL(mate);
+            while ((string = br.readLine()) != null) {
+                String strArray[] = string.split("\\s+");
+                for (int i = 0; i < strArray.length; i++) {
+                    if (strArray[i].toLowerCase().startsWith("inde")) {
+                        if (hasHKL && hasFo && hasSigFo && hasFree) {
+                            boolean friedel = reflectionList.findSymHKL(ih, ik, il, mate, transpose);
+                            HKL hkl = reflectionList.getHKL(mate);
                             if (hkl != null) {
-                                if (refinementdata.fsigfcutoff > 0.0
-                                        && (fo / sigfo) < refinementdata.fsigfcutoff) {
-                                    ncut++;
+                                if (refinementData.fsigfcutoff > 0.0
+                                        && (fo / sigFo) < refinementData.fsigfcutoff) {
+                                    nCut++;
                                 } else if (friedel) {
-                                    anofsigf[hkl.index()][2] = fo;
-                                    anofsigf[hkl.index()][3] = sigfo;
-                                    nfriedel++;
+                                    anofSigF[hkl.index()][2] = fo;
+                                    anofSigF[hkl.index()][3] = sigFo;
+                                    nFriedel++;
                                 } else if (!friedel) {
-                                    anofsigf[hkl.index()][0] = fo;
-                                    anofsigf[hkl.index()][1] = sigfo;
+                                    anofSigF[hkl.index()][0] = fo;
+                                    anofSigF[hkl.index()][1] = sigFo;
                                 }
-                                refinementdata.setFreeR(hkl.index(), free);
-                                nread++;
+                                refinementData.setFreeR(hkl.index(), free);
+                                nRead++;
                             } else {
                                 HKL tmp = new HKL(ih, ik, il);
-                                if (!reflectionlist.resolution.inInverseResSqRange(Crystal.invressq(reflectionlist.crystal, tmp))) {
-                                    nres++;
+                                if (!reflectionList.resolution.inInverseResSqRange(
+                                        Crystal.invressq(reflectionList.crystal, tmp))) {
+                                    nRes++;
                                 } else {
-                                    nignore++;
+                                    nIgnore++;
                                 }
                             }
                         }
-                        hashkl = false;
-                        hasfo = false;
-                        hassigfo = false;
-                        hasfree = false;
-                        if (i < strarray.length - 3) {
-                            ih = Integer.parseInt(strarray[i + 1]);
-                            ik = Integer.parseInt(strarray[i + 2]);
-                            il = Integer.parseInt(strarray[i + 3]);
-                            hashkl = true;
+                        hasHKL = false;
+                        hasFo = false;
+                        hasSigFo = false;
+                        hasFree = false;
+                        if (i < strArray.length - 3) {
+                            ih = parseInt(strArray[i + 1]);
+                            ik = parseInt(strArray[i + 2]);
+                            il = parseInt(strArray[i + 3]);
+                            hasHKL = true;
                         }
                     }
-                    if (strarray[i].toLowerCase().startsWith("fobs=")
-                            || strarray[i].equalsIgnoreCase(fostring + "=")) {
-                        fo = Double.parseDouble(strarray[i + 1]);
-                        hasfo = true;
+                    if (strArray[i].toLowerCase().startsWith("fobs=")
+                            || strArray[i].equalsIgnoreCase(foString + "=")) {
+                        fo = parseDouble(strArray[i + 1]);
+                        hasFo = true;
                     }
-                    if (strarray[i].toLowerCase().startsWith("sigma=")
-                            || strarray[i].equalsIgnoreCase(sigfostring + "=")) {
-                        sigfo = Double.parseDouble(strarray[i + 1]);
-                        hassigfo = true;
+                    if (strArray[i].toLowerCase().startsWith("sigma=")
+                            || strArray[i].equalsIgnoreCase(sigFoString + "=")) {
+                        sigFo = parseDouble(strArray[i + 1]);
+                        hasSigFo = true;
                     }
-                    if (strarray[i].toLowerCase().startsWith("test=")
-                            || strarray[i].equalsIgnoreCase(rfreestring + "=")) {
-                        free = Integer.parseInt(strarray[i + 1]);
-                        hasfree = true;
+                    if (strArray[i].toLowerCase().startsWith("test=")
+                            || strArray[i].equalsIgnoreCase(rFreeString + "=")) {
+                        free = parseInt(strArray[i + 1]);
+                        hasFree = true;
                     }
                 }
             }
-
             br.close();
 
-            // set up fsigf from F+ and F-
-            refinementdata.generate_fsigf_from_anofsigf(anofsigf);
-        } catch (IOException ioe) {
-            System.out.println("IO Exception: " + ioe.getMessage());
+            // Set up fsigf from F+ and F-.
+            refinementData.generate_fsigf_from_anofsigf(anofSigF);
+        } catch (IOException e) {
+            String message = "CNS IO Exception.";
+            logger.log(Level.WARNING, message, e);
             return false;
         }
 
-        sb.append(String.format("# HKL read in:                             %d\n",
-                nread));
-        sb.append(String.format("# HKL read as friedel mates:               %d\n",
-                nfriedel));
-        sb.append(String.format("# HKL NOT read in (too high resolution):   %d\n",
-                nres));
-        sb.append(String.format("# HKL NOT read in (not in internal list?): %d\n",
-                nignore));
-        sb.append(String.format("# HKL NOT read in (F/sigF cutoff):         %d\n",
-                ncut));
-        sb.append(String.format("# HKL in internal list:                    %d\n",
-                reflectionlist.hkllist.size()));
         if (logger.isLoggable(Level.INFO)) {
+            sb.append(format(" HKL read in:                             %d\n", nRead));
+            sb.append(format(" HKL read as friedel mates:               %d\n", nFriedel));
+            sb.append(format(" HKL not read in (too high resolution):   %d\n", nRes));
+            sb.append(format(" HKL not read in (not in internal list?): %d\n", nIgnore));
+            sb.append(format(" HKL not read in (F/sigF cutoff):         %d\n", nCut));
+            sb.append(format(" HKL in internal list:                    %d\n",
+                    reflectionList.hkllist.size()));
             logger.info(sb.toString());
         }
 
