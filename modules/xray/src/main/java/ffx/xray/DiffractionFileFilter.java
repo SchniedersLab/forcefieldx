@@ -49,82 +49,46 @@ import ffx.crystal.ReflectionList;
  * DiffractionFileFilter interface.</p>
  *
  * @author Timothy D. Fenn
- *
  */
 public interface DiffractionFileFilter {
 
-    /*
-     * get reflection information from a reflection file
-     *
-     * @param file file to read in
-     * @return the {@link ReflectionList}, or null if not enough
-     *         information present in the reflection file
-     */
     /**
-     * <p>
-     * getReflectionList</p>
+     * Get reflection information from a reflection file.
      *
-     * @param file a {@link java.io.File} object.
-     * @return a {@link ffx.crystal.ReflectionList} object.
+     * @param file File to read in.
+     * @return The {@link ReflectionList}, or null if not enough information
+     * present in the reflection file.
      */
     ReflectionList getReflectionList(File file);
 
-    /*
-     * get reflection information from a reflection file
-     *
-     * @param file file to read in
-     * @param properties system properties
-     * @return the {@link ReflectionList}, or null if not enough
-     *         information present in the reflection file
-     */
     /**
-     * <p>
-     * getReflectionList</p>
+     * Get reflection information from a reflection file.
      *
-     * @param file a {@link java.io.File} object.
-     * @param properties a
-     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
-     * @return a {@link ffx.crystal.ReflectionList} object.
+     * @param file File to read in.
+     * @param properties System properties.
+     * @return The {@link ReflectionList}, or null if not enough information
+     * present in the reflection file.
      */
     ReflectionList getReflectionList(File file, CompositeConfiguration properties);
 
-    /*
-     * read in reflection file
-     *
-     * @param file file to read in
-     * @param reflectionlist the {@link ReflectionList} to find data indices
-     * @param refinementdata the {@link RefinementData} object to fill in
-     * @param properties system properties
-     * @return true if read in properly
-     */
     /**
-     * <p>
-     * readFile</p>
+     * Read in reflection file.
      *
-     * @param file a {@link java.io.File} object.
-     * @param reflectionlist a {@link ffx.crystal.ReflectionList} object.
-     * @param refinementdata a {@link ffx.xray.DiffractionRefinementData}
-     * object.
-     * @param properties a
-     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
-     * @return a boolean.
+     * @param file File to read in.
+     * @param reflectionlist The {@link ReflectionList} to find data indices.
+     * @param refinementdata The {@link RefinementData} object to fill in.
+     * @param properties System properties.
+     * @return True if read in properly.
      */
     boolean readFile(File file, ReflectionList reflectionlist,
             DiffractionRefinementData refinementdata, CompositeConfiguration properties);
 
-    /*
-     * attempt to determine resolution of reflection file
-     *
-     * @param file file to read in
-     * @param crystal crystal system to determine resolution information from
-     */
     /**
-     * <p>
-     * getResolution</p>
+     * Attempt to determine resolution of reflection file.
      *
-     * @param file a {@link java.io.File} object.
-     * @param crystal a {@link ffx.crystal.Crystal} object.
-     * @return a double.
+     * @param file File to read in.
+     * @param crystal Crystal system to determine resolution information from.
+     * @return The resolution.
      */
     double getResolution(File file, Crystal crystal);
 }

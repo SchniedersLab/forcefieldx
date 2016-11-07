@@ -51,7 +51,7 @@ import ffx.xray.RefinementMinimize.RefinementMode;
 // First atom to test.
 int atomID = 0;
 
-// atomic number to test
+// Atomic number to test
 int atomicNum = -1;
 
 // Finite-difference step size in Angstroms.
@@ -96,6 +96,9 @@ if (options.p) {
     System.setProperty("polarization", options.p);
 }
 
+// Turn on computation of lambda derivatives
+System.setProperty("lambdaterm","true");
+
 // First atom to test. Subtract 1 for Java array indexing.
 if (options.a) {
     atomID = Integer.parseInt(options.a) - 1;
@@ -133,6 +136,11 @@ int n = refinementEnergy.getNumberOfVariables();
 Atom[] atoms = refinementEnergy.getActiveAtoms();
 int nAtoms = atoms.length;
 
+for (int i=0; i<nAtoms; i++) {
+    atoms[i].setApplyLambda(true);
+}
+
+
 double[] x = new double[n];
 double[] gradient = new double[n];
 
@@ -142,9 +150,6 @@ double width = 2.0 * step;
 double errTol = 1.0e-3;
 // Upper bound for typical gradient sizes (expected gradient)
 double expGrad = 1000.0;
-
-
-/**
 
 potential = refinementEnergy;
 lambdaInterface = refinementEnergy;
@@ -254,7 +259,6 @@ for (int j=0; j<3; j++) {
 
     logger.info("");
 }
- */
 
 refinementEnergy.getCoordinates(x);
 double energy = refinementEnergy.energyAndGradient(x, gradient);
@@ -342,7 +346,6 @@ if (avGrad > expGrad) {
 } else {
     logger.info(String.format(" RMS gradient: %10.6f", avGrad));
 }
-
 
 refinementEnergy = new RefinementEnergy(diffractionData, RefinementMode.BFACTORS);
 n = refinementEnergy.getNumberOfVariables();

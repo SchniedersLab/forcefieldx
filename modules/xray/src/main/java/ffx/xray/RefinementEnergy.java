@@ -54,6 +54,8 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Residue;
+import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.ForceField.ForceFieldBoolean;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
 import static ffx.numerics.VectorMath.b2u;
@@ -165,6 +167,10 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
      * Optimization scale factors.
      */
     protected double[] optimizationScaling = null;
+    /**
+     * If true, collect lambda derivatives.
+     */
+    protected boolean lambdaTerm;
 
     /**
      * RefinementEnergy Constructor.
@@ -195,6 +201,10 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         refinementModel = data.getRefinementModel();
         atomArray = data.getAtomArray();
         nAtoms = atomArray.length;
+
+        // Determine if lambda derivatives are needed.
+        ForceField forceField = molecularAssemblies[0].getForceField();
+        lambdaTerm = forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false);
 
         // Fill an active atom array.
         int count = 0;
@@ -721,7 +731,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
      */
     @Override
     public double getdEdL() {
-        double e = 0.0;
+        double dEdL = 0.0;
         if (thermostat != null) {
             kTScale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
         }
@@ -731,18 +741,19 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
          */
         for (int i = 0; i < assemblysize; i++) {
             ForceFieldEnergy forceFieldEnergy = molecularAssemblies[i].getPotentialEnergy();
-            double curE = forceFieldEnergy.getdEdL();
-            e += (curE - e) / (i + 1);
+            double curdEdL = forceFieldEnergy.getdEdL();
+            dEdL += (curdEdL - dEdL) / (i + 1);
         }
-        e *= kTScale;
+        dEdL *= kTScale;
+        double weight = data.getWeight();
         if (data instanceof DiffractionData) {
             XRayEnergy xRayEnergy = (XRayEnergy) dataEnergy;
-            e += xRayEnergy.getdEdL();
+            dEdL += weight * xRayEnergy.getdEdL();
         } else if (data instanceof RealSpaceData) {
             RealSpaceEnergy realSpaceEnergy = (RealSpaceEnergy) dataEnergy;
-            e += realSpaceEnergy.getdEdL();
+            dEdL += weight * realSpaceEnergy.getdEdL();
         }
-        return e;
+        return dEdL;
     }
 
     /**
@@ -750,7 +761,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
      */
     @Override
     public double getd2EdL2() {
-        double e = 0.0;
+        double d2EdL2 = 0.0;
         if (thermostat != null) {
             kTScale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
         }
@@ -761,10 +772,14 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         for (int i = 0; i < assemblysize; i++) {
             ForceFieldEnergy forceFieldEnergy = molecularAssemblies[i].getPotentialEnergy();
             double curE = forceFieldEnergy.getd2EdL2();
-            e += (curE - e) / (i + 1);
+            d2EdL2 += (curE - d2EdL2) / (i + 1);
         }
-        e *= kTScale;
-        return e;
+        d2EdL2 *= kTScale;
+
+        /**
+         * No 2nd derivative for scattering term.
+         */
+        return d2EdL2;
     }
 
     /**

@@ -52,7 +52,7 @@ import javax.swing.filechooser.FileFilter;
 public final class MTZFileFilter extends FileFilter {
 
     /**
-     * Default Constructor
+     * Default Constructor.
      */
     public MTZFileFilter() {
     }
@@ -60,17 +60,16 @@ public final class MTZFileFilter extends FileFilter {
     /**
      * {@inheritDoc}
      *
-     * This method determines whether or not the parm File parameter is a Tinker
-     * *.xyz or not, returning true if it is. (Also returns true for any
-     * directory)
+     * This method determines whether or not the file parameter is an *.mtz file
+     * or not, returning true if it is (true is also returned for any directory)
      */
     @Override
-    public boolean accept(File parm) {
-        if (parm.isDirectory()) {
+    public boolean accept(File file) {
+        if (file.isDirectory()) {
             return true;
         }
-        String filename = parm.getName().toLowerCase();
-        return filename.endsWith(".mtz");
+        String fileName = file.getName().toLowerCase();
+        return fileName.endsWith(".mtz");
     }
 
     /**
@@ -85,14 +84,14 @@ public final class MTZFileFilter extends FileFilter {
             if (file == null || file.isDirectory() || !file.canRead()) {
                 return false;
             }
-            FileInputStream fis = new FileInputStream(file);
-            DataInputStream dis = new DataInputStream(fis);
+            FileInputStream fileInputStream = new FileInputStream(file);
+            DataInputStream dataInputStream = new DataInputStream(fileInputStream);
 
             byte bytes[] = new byte[80];
             int offset = 0;
 
-            // is it an MTZ file?
-            dis.read(bytes, offset, 4);
+            // Is this an MTZ file?
+            dataInputStream.read(bytes, offset, 4);
             String mtzstr = new String(bytes);
             if (!mtzstr.trim().equals("MTZ")) {
                 return false;
@@ -107,7 +106,7 @@ public final class MTZFileFilter extends FileFilter {
     /**
      * {@inheritDoc}
      *
-     * Provides a description of this FileFilter
+     * Provides a description of this FileFilter.
      */
     @Override
     public String getDescription() {
