@@ -35,7 +35,7 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.xray;
+package ffx.xray.parsers;
 
 import java.io.DataInputStream;
 import java.io.EOFException;
@@ -70,7 +70,8 @@ import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
 import ffx.crystal.SpaceGroup;
 import ffx.numerics.ComplexNumber;
-import ffx.xray.MTZWriter.MTZType;
+import ffx.xray.DiffractionRefinementData;
+import ffx.xray.parsers.MTZWriter.MTZType;
 
 /**
  * This class parses CCP4 MTZ files.<br>
@@ -128,17 +129,19 @@ public class MTZFilter implements DiffractionFileFilter {
     private boolean headerParsed = false;
     private String title;
     private String foString, sigFoString, rFreeString;
+
     private int h, k, l, fo, sigFo, rFree;
     private int fPlus, sigFPlus, fMinus, sigFMinus, rFreePlus, rFreeMinus;
     private int fc, phiC, fs, phiS;
     private int dsetOffset = 1;
-    public int nColumns;
-    public int nReflections;
-    public int nBatches;
-    public int sgnum;
-    public String spaceGroupName;
-    public double resLow;
-    public double resHigh;
+
+    private int nColumns;
+    private int nReflections;
+    private int nBatches;
+    private int spaceGroupNum;
+    private String spaceGroupName;
+    private double resLow;
+    private double resHigh;
 
     /**
      * <p>
@@ -252,7 +255,7 @@ public class MTZFilter implements DiffractionFileFilter {
             sb.append(format("\n Reading %s\n\n", mtzFile.getName()));
             sb.append(format(" Setting up reflection list based on MTZ file.\n"));
             sb.append(format("  Space group number: %d (name: %s)\n",
-                    sgnum, SpaceGroup.spaceGroupNames[sgnum - 1]));
+                    spaceGroupNum, SpaceGroup.spaceGroupNames[spaceGroupNum - 1]));
             sb.append(format("  Resolution:         %8.3f\n", 0.999999 * resHigh));
             sb.append(format("  Cell:               %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n",
                     dataSet.cell[0], dataSet.cell[1], dataSet.cell[2],
@@ -261,7 +264,7 @@ public class MTZFilter implements DiffractionFileFilter {
         }
 
         Crystal crystal = new Crystal(dataSet.cell[0], dataSet.cell[1], dataSet.cell[2],
-                dataSet.cell[3], dataSet.cell[4], dataSet.cell[5], SpaceGroup.spaceGroupNames[sgnum - 1]);
+                dataSet.cell[3], dataSet.cell[4], dataSet.cell[5], SpaceGroup.spaceGroupNames[spaceGroupNum - 1]);
 
         double sampling = 0.6;
         if (properties != null) {
@@ -757,7 +760,7 @@ public class MTZFilter implements DiffractionFileFilter {
                 break;
             case SYMINF:
                 String[] tmp = str.split("\'+");
-                sgnum = parseInt(strArray[4]);
+                spaceGroupNum = parseInt(strArray[4]);
                 if (tmp.length > 1) {
                     spaceGroupName = tmp[1];
                 }
@@ -1033,8 +1036,8 @@ public class MTZFilter implements DiffractionFileFilter {
             StringBuilder sb = new StringBuilder();
             sb.append(" MTZ title: ").append(title).append("\n");
             sb.append(" MTZ space group: ").append(spaceGroupName).
-                    append(" space group number: ").append(sgnum).append(" (").
-                    append(SpaceGroup.spaceGroupNames[sgnum - 1]).append(")\n");
+                    append(" space group number: ").append(spaceGroupNum).append(" (").
+                    append(SpaceGroup.spaceGroupNames[spaceGroupNum - 1]).append(")\n");
             sb.append(" MTZ resolution: ").append(resLow).append(" - ").
                     append(resHigh).append("\n");
             sb.append(" Number of reflections: ").append(nReflections).append("\n");
@@ -1064,4 +1067,26 @@ public class MTZFilter implements DiffractionFileFilter {
             logger.info(sb.toString());
         }
     }
+
+    /**
+     * @return the nColumns
+     */
+    public int getnColumns() {
+        return nColumns;
+    }
+
+    /**
+     * @return the nReflections
+     */
+    public int getnReflections() {
+        return nReflections;
+    }
+
+    /**
+     * @return the spaceGroupNum
+     */
+    public int getSpaceGroupNum() {
+        return spaceGroupNum;
+    }
+
 }

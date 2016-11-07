@@ -35,40 +35,81 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.xray;
+package ffx.xray.parsers;
 
-import org.apache.commons.configuration.CompositeConfiguration;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 
-import ffx.crystal.Crystal;
+import javax.swing.filechooser.FileFilter;
 
 /**
- * <p>
- * RealSpaceFileFilter interface.</p>
+ * The MTZFileFilter class is used to choose CCP4 MTZ files
  *
- * @author Timothy D. Fenn
+ * @author Michael J. Schnieders
+ *
  */
-public interface RealSpaceFileFilter {
+public final class MTZFileFilter extends FileFilter {
+
+    /**
+     * Default Constructor.
+     */
+    public MTZFileFilter() {
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * This method determines whether or not the file parameter is an *.mtz file
+     * or not, returning true if it is (true is also returned for any directory)
+     */
+    @Override
+    public boolean accept(File file) {
+        if (file.isDirectory()) {
+            return true;
+        }
+        String fileName = file.getName().toLowerCase();
+        return fileName.endsWith(".mtz");
+    }
 
     /**
      * <p>
-     * getCrystal</p>
+     * acceptDeep</p>
      *
-     * @param filename a {@link java.lang.String} object.
-     * @param properties a
-     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
-     * @return a {@link ffx.crystal.Crystal} object.
+     * @param file a {@link java.io.File} object.
+     * @return a boolean.
      */
-    Crystal getCrystal(String filename, CompositeConfiguration properties);
+    public boolean acceptDeep(File file) {
+        try {
+            if (file == null || file.isDirectory() || !file.canRead()) {
+                return false;
+            }
+            FileInputStream fileInputStream = new FileInputStream(file);
+            DataInputStream dataInputStream = new DataInputStream(fileInputStream);
+
+            byte bytes[] = new byte[80];
+            int offset = 0;
+
+            // Is this an MTZ file?
+            dataInputStream.read(bytes, offset, 4);
+            String mtzstr = new String(bytes);
+            if (!mtzstr.trim().equals("MTZ")) {
+                return false;
+            }
+
+            return true;
+        } catch (Exception e) {
+            return true;
+        }
+    }
 
     /**
-     * read in Real Space file
+     * {@inheritDoc}
      *
-     * @param filename file to read in
-     * @param refinementData the {@link RealSpaceRefinementData} object to fill
-     * in
-     * @param properties system properties
-     * @return true if read in properly
+     * Provides a description of this FileFilter.
      */
-    boolean readFile(String filename, RealSpaceRefinementData refinementData,
-            CompositeConfiguration properties);
+    @Override
+    public String getDescription() {
+        return new String("CCP4 MTZ Reflection Files: *.mtz");
+    }
 }

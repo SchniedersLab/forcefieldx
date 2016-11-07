@@ -35,7 +35,7 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.xray;
+package ffx.xray.parsers;
 
 import java.io.DataInputStream;
 import java.io.FileInputStream;
@@ -48,6 +48,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.SpaceGroup;
+import ffx.xray.RealSpaceRefinementData;
 
 /**
  * <p>
@@ -322,21 +323,15 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
 
             byteBuffer.rewind();
             dataInputStream.read(bytes, 0, 2048);
-            refinementdata.data = new double[ext[0] * ext[1] * ext[2]];
+            refinementdata.setData(new double[ext[0] * ext[1] * ext[2]]);
             int ijk[] = new int[3];
             int index, x, y, z;
-            refinementdata.ori[0] = ori[axisi[0]];
-            refinementdata.ori[1] = ori[axisi[1]];
-            refinementdata.ori[2] = ori[axisi[2]];
+            refinementdata.setOrigin(ori[axisi[0]], ori[axisi[1]], ori[axisi[2]]);
             int nx = ext[axisi[0]];
             int ny = ext[axisi[1]];
             int nz = ext[axisi[2]];
-            refinementdata.ext[0] = nx;
-            refinementdata.ext[1] = ny;
-            refinementdata.ext[2] = nz;
-            refinementdata.ni[0] = ni[0];
-            refinementdata.ni[1] = ni[1];
-            refinementdata.ni[2] = ni[2];
+            refinementdata.setExtent(nx, ny, nz);
+            refinementdata.setNI(ni[0], ni[1], ni[2]);
             for (ijk[2] = 0; ijk[2] < ext[2]; ijk[2]++) {
                 for (ijk[1] = 0; ijk[1] < ext[1]; ijk[1]++) {
                     for (ijk[0] = 0; ijk[0] < ext[0]; ijk[0]++) {
@@ -344,7 +339,7 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
                         y = ijk[axisi[1]];
                         z = ijk[axisi[2]];
                         index = x + nx * (y + ny * z);
-                        refinementdata.data[index] = byteBuffer.order(byteOrder).getFloat();
+                        refinementdata.getData()[index] = byteBuffer.order(byteOrder).getFloat();
                         if (!byteBuffer.hasRemaining()) {
                             byteBuffer.rewind();
                             dataInputStream.read(bytes, 0, 2048);

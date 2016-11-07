@@ -35,7 +35,7 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.xray;
+package ffx.xray.parsers;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -55,6 +55,7 @@ import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
 import ffx.crystal.SpaceGroup;
+import ffx.xray.DiffractionRefinementData;
 
 /**
  * CIF file reader

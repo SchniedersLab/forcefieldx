@@ -37,6 +37,8 @@
  */
 package ffx.xray;
 
+import ffx.xray.parsers.CIFFilter;
+
 import java.io.File;
 
 import org.apache.commons.configuration.CompositeConfiguration;

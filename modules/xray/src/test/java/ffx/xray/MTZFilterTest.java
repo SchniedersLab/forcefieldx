@@ -37,6 +37,8 @@
  */
 package ffx.xray;
 
+import ffx.xray.parsers.MTZFilter;
+
 import java.io.File;
 
 import org.apache.commons.configuration.CompositeConfiguration;
@@ -82,11 +84,11 @@ public class MTZFilterTest {
         assertTrue("mtz file should be read in without errors",
                 mtzFilter.readFile(mtzFile, reflectionList, refinementData, null));
         assertEquals("mtz file number of columns",
-                6, mtzFilter.nColumns);
+                6, mtzFilter.getnColumns());
         assertEquals("mtz file number of reflections",
-                48115, mtzFilter.nReflections);
+                48115, mtzFilter.getnReflections());
         assertEquals("mtz file space group number",
-                1, mtzFilter.sgnum);
+                1, mtzFilter.getSpaceGroupNum());
     }
 
     @Test

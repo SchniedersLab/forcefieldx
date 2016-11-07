@@ -37,6 +37,8 @@
  */
 package ffx.xray;
 
+import ffx.xray.parsers.MTZWriter;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -66,7 +68,7 @@ import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Residue;
 import ffx.potential.parsers.PDBFilter;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
-import ffx.xray.MTZWriter.MTZType;
+import ffx.xray.parsers.MTZWriter.MTZType;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
 import static ffx.xray.CrystalReciprocalSpace.SolventModel.POLYNOMIAL;

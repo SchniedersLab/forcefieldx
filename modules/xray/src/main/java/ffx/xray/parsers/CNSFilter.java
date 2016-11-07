@@ -35,7 +35,7 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.xray;
+package ffx.xray.parsers;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -57,6 +57,7 @@ import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
 import ffx.crystal.SpaceGroup;
+import ffx.xray.DiffractionRefinementData;
 
 /**
  * <p>
@@ -67,7 +68,8 @@ import ffx.crystal.SpaceGroup;
 public class CNSFilter implements DiffractionFileFilter {
 
     private static final Logger logger = Logger.getLogger(CNSFilter.class.getName());
-    private double cell[] = {-1.0, -1.0, -1.0, -1.0, -1.0, -1.0};
+
+    private final double cell[] = {-1.0, -1.0, -1.0, -1.0, -1.0, -1.0};
     private double resHigh = -1.0;
     private String foString, sigFoString, rFreeString;
     private String spaceGroupName = null;

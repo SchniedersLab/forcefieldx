@@ -35,60 +35,41 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.xray;
-
-import java.io.File;
+package ffx.xray.parsers;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 
 import ffx.crystal.Crystal;
-import ffx.crystal.ReflectionList;
+import ffx.xray.RealSpaceRefinementData;
 
 /**
  * <p>
- * DiffractionFileFilter interface.</p>
+ * RealSpaceFileFilter interface.</p>
  *
  * @author Timothy D. Fenn
  */
-public interface DiffractionFileFilter {
+public interface RealSpaceFileFilter {
 
     /**
-     * Get reflection information from a reflection file.
+     * <p>
+     * getCrystal</p>
      *
-     * @param file File to read in.
-     * @return The {@link ReflectionList}, or null if not enough information
-     * present in the reflection file.
+     * @param filename A {@link java.lang.String} object.
+     * @param properties A
+     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * @return A {@link ffx.crystal.Crystal} object.
      */
-    ReflectionList getReflectionList(File file);
+    Crystal getCrystal(String filename, CompositeConfiguration properties);
 
     /**
-     * Get reflection information from a reflection file.
+     * Read in a Real Space file.
      *
-     * @param file File to read in.
-     * @param properties System properties.
-     * @return The {@link ReflectionList}, or null if not enough information
-     * present in the reflection file.
-     */
-    ReflectionList getReflectionList(File file, CompositeConfiguration properties);
-
-    /**
-     * Read in reflection file.
-     *
-     * @param file File to read in.
-     * @param reflectionlist The {@link ReflectionList} to find data indices.
-     * @param refinementdata The {@link RefinementData} object to fill in.
+     * @param filename File to read in.
+     * @param refinementData The {@link RealSpaceRefinementData} object to fill
+     * in.
      * @param properties System properties.
      * @return True if read in properly.
      */
-    boolean readFile(File file, ReflectionList reflectionlist,
-            DiffractionRefinementData refinementdata, CompositeConfiguration properties);
-
-    /**
-     * Attempt to determine resolution of reflection file.
-     *
-     * @param file File to read in.
-     * @param crystal Crystal system to determine resolution information from.
-     * @return The resolution.
-     */
-    double getResolution(File file, Crystal crystal);
+    boolean readFile(String filename, RealSpaceRefinementData refinementData,
+            CompositeConfiguration properties);
 }

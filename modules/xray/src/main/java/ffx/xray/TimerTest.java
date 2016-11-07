@@ -37,6 +37,9 @@
  */
 package ffx.xray;
 
+import ffx.xray.parsers.MTZFilter;
+import ffx.xray.parsers.CIFFilter;
+
 import java.io.File;
 import java.util.List;
 import java.util.logging.Logger;

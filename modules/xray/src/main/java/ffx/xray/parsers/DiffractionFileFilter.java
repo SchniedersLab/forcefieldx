@@ -35,81 +35,61 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.xray;
+package ffx.xray.parsers;
 
-import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 
-import javax.swing.filechooser.FileFilter;
+import org.apache.commons.configuration.CompositeConfiguration;
+
+import ffx.crystal.Crystal;
+import ffx.crystal.ReflectionList;
+import ffx.xray.DiffractionRefinementData;
 
 /**
- * The MTZFileFilter class is used to choose CCP4 MTZ files
+ * <p>
+ * DiffractionFileFilter interface.</p>
  *
- * @author Michael J. Schnieders
- *
+ * @author Timothy D. Fenn
  */
-public final class MTZFileFilter extends FileFilter {
+public interface DiffractionFileFilter {
 
     /**
-     * Default Constructor.
-     */
-    public MTZFileFilter() {
-    }
-
-    /**
-     * {@inheritDoc}
+     * Get reflection information from a reflection file.
      *
-     * This method determines whether or not the file parameter is an *.mtz file
-     * or not, returning true if it is (true is also returned for any directory)
+     * @param file File to read in.
+     * @return The {@link ReflectionList}, or null if not enough information
+     * present in the reflection file.
      */
-    @Override
-    public boolean accept(File file) {
-        if (file.isDirectory()) {
-            return true;
-        }
-        String fileName = file.getName().toLowerCase();
-        return fileName.endsWith(".mtz");
-    }
+    ReflectionList getReflectionList(File file);
 
     /**
-     * <p>
-     * acceptDeep</p>
+     * Get reflection information from a reflection file.
      *
-     * @param file a {@link java.io.File} object.
-     * @return a boolean.
+     * @param file File to read in.
+     * @param properties System properties.
+     * @return The {@link ReflectionList}, or null if not enough information
+     * present in the reflection file.
      */
-    public boolean acceptDeep(File file) {
-        try {
-            if (file == null || file.isDirectory() || !file.canRead()) {
-                return false;
-            }
-            FileInputStream fileInputStream = new FileInputStream(file);
-            DataInputStream dataInputStream = new DataInputStream(fileInputStream);
-
-            byte bytes[] = new byte[80];
-            int offset = 0;
-
-            // Is this an MTZ file?
-            dataInputStream.read(bytes, offset, 4);
-            String mtzstr = new String(bytes);
-            if (!mtzstr.trim().equals("MTZ")) {
-                return false;
-            }
-
-            return true;
-        } catch (Exception e) {
-            return true;
-        }
-    }
+    ReflectionList getReflectionList(File file, CompositeConfiguration properties);
 
     /**
-     * {@inheritDoc}
+     * Read in reflection file.
      *
-     * Provides a description of this FileFilter.
+     * @param file File to read in.
+     * @param reflectionlist The {@link ReflectionList} to find data indices.
+     * @param refinementdata The {@link RefinementData} object to fill in.
+     * @param properties System properties.
+     * @return True if read in properly.
      */
-    @Override
-    public String getDescription() {
-        return new String("CCP4 MTZ Reflection Files: *.mtz");
-    }
+    boolean readFile(File file, ReflectionList reflectionlist,
+            DiffractionRefinementData refinementdata, CompositeConfiguration properties);
+
+    /**
+     * Attempt to determine resolution of reflection file.
+     *
+     * @param file File to read in.
+     * @param crystal Crystal system to determine resolution information from.
+     * @return The resolution.
+     */
+    double getResolution(File file, Crystal crystal);
 }

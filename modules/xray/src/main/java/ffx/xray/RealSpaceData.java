@@ -62,6 +62,7 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Residue;
 import ffx.xray.RefinementMinimize.RefinementMode;
+import ffx.xray.parsers.RealSpaceFile;
 
 import static ffx.crystal.Crystal.mod;
 
@@ -80,32 +81,32 @@ public class RealSpaceData implements DataContainer {
      * The collection of MolecularAssembly instances that model the real space
      * data.
      */
-    protected final MolecularAssembly[] molecularAssemblies;
+    private MolecularAssembly[] molecularAssemblies;
     /**
      * The real space data files.
      */
-    protected final RealSpaceFile[] realSpaceFile;
+    private RealSpaceFile[] realSpaceFile;
     /**
      * The name of the model.
      */
-    protected final String modelName;
+    private String modelName;
     /**
      * The number of real space data sources to consider.
      */
-    protected final int nRealSpaceData;
+    private int nRealSpaceData;
     /**
      * The collection of crystals that describe the PBC and symmetry of each
      * data source.
      */
-    protected final Crystal crystal[];
+    private Crystal crystal[];
     /**
      * The real space refinement data for each data source.
      */
-    protected final RealSpaceRefinementData[] refinementData;
+    private RealSpaceRefinementData[] refinementData;
     /**
      * The refinement model.
      */
-    protected final RefinementModel refinementModel;
+    private RefinementModel refinementModel;
     /**
      * The total real space energy.
      */
@@ -125,11 +126,11 @@ public class RealSpaceData implements DataContainer {
     /**
      * The weight of the data relative to the weight of the force field.
      */
-    public double xweight;
+    private double xweight;
     /**
      * The current value of the state variable lambda.
      */
-    protected double lambda = 1.0;
+    private double lambda = 1.0;
     /**
      * A flag to indicate if the lambda term is active.
      */
@@ -182,7 +183,7 @@ public class RealSpaceData implements DataContainer {
         crystal[0] = diffractionData.crystal[0];
         refinementData = new RealSpaceRefinementData[nRealSpaceData];
         refinementData[0] = new RealSpaceRefinementData();
-        refinementData[0].periodic = true;
+        refinementData[0].setPeriodic(true);
 
         xweight = properties.getDouble("xweight", 1.0);
         lambdaTerm = properties.getBoolean("lambdaterm", false);
@@ -205,25 +206,19 @@ public class RealSpaceData implements DataContainer {
                 diffractionData.refinementData[0].rfreeflag,
                 RefinementMode.COORDINATES);
 
-        refinementData[0].ori[0] = 0;
-        refinementData[0].ori[1] = 0;
-        refinementData[0].ori[2] = 0;
+        refinementData[0].setOrigin(0, 0, 0);
         int extx = (int) diffractionData.crs_fc[0].getXDim();
         int exty = (int) diffractionData.crs_fc[0].getYDim();
         int extz = (int) diffractionData.crs_fc[0].getZDim();
-        refinementData[0].ext[0] = extx;
-        refinementData[0].ext[1] = exty;
-        refinementData[0].ext[2] = extz;
-        refinementData[0].ni[0] = extx;
-        refinementData[0].ni[1] = exty;
-        refinementData[0].ni[2] = extz;
-        refinementData[0].data = new double[extx * exty * extz];
+        refinementData[0].setExtent(extx, exty, extz);
+        refinementData[0].setNI(extx, exty, extz);
+        refinementData[0].setData(new double[extx * exty * extz]);
         for (int k = 0; k < extz; k++) {
             for (int j = 0; j < exty; j++) {
                 for (int i = 0; i < extx; i++) {
                     int index1 = (i + extx * (j + exty * k));
                     int index2 = 2 * (i + extx * (j + exty * k));
-                    refinementData[0].data[index1] = diffractionData.crs_fc[0].densityGrid[index2];
+                    refinementData[0].getData()[index1] = diffractionData.crs_fc[0].densityGrid[index2];
                 }
             }
         }
@@ -305,7 +300,7 @@ public class RealSpaceData implements DataContainer {
         lambdaTerm = properties.getBoolean("lambdaterm", false);
 
         for (int i = 0; i < nRealSpaceData; i++) {
-            crystal[i] = dataFile[i].realSpaceFileFilter.getCrystal(dataFile[i].filename, properties);
+            crystal[i] = dataFile[i].getRealSpaceFileFilter().getCrystal(dataFile[i].getFilename(), properties);
 
             if (crystal[i] == null) {
                 logger.severe("CCP4 map file does not contain full crystal information!");
@@ -314,16 +309,16 @@ public class RealSpaceData implements DataContainer {
 
         for (int i = 0; i < nRealSpaceData; i++) {
             refinementData[i] = new RealSpaceRefinementData();
-            dataFile[i].realSpaceFileFilter.readFile(dataFile[i].filename,
+            dataFile[i].getRealSpaceFileFilter().readFile(dataFile[i].getFilename(),
                     refinementData[i], properties);
 
-            if (refinementData[i].ori[0] == 0
-                    && refinementData[i].ori[1] == 0
-                    && refinementData[i].ori[2] == 0
-                    && refinementData[i].ext[0] == refinementData[i].ni[0]
-                    && refinementData[i].ext[1] == refinementData[i].ni[1]
-                    && refinementData[i].ext[2] == refinementData[i].ni[2]) {
-                refinementData[i].periodic = true;
+            if (refinementData[i].getOrigin()[0] == 0
+                    && refinementData[i].getOrigin()[1] == 0
+                    && refinementData[i].getOrigin()[2] == 0
+                    && refinementData[i].getExtent()[0] == refinementData[i].getNi()[0]
+                    && refinementData[i].getExtent()[1] == refinementData[i].getNi()[1]
+                    && refinementData[i].getExtent()[2] == refinementData[i].getNi()[2]) {
+                refinementData[i].setPeriodic(true);
             }
         }
 
@@ -531,7 +526,7 @@ public class RealSpaceData implements DataContainer {
     public String printOptimizationUpdate() {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < nRealSpaceData; i++) {
-            sb.append(String.format("%6.2f ", refinementData[i].densityScore));
+            sb.append(String.format("%6.2f ", refinementData[i].getDensityScore()));
         }
         return sb.toString();
     }
@@ -544,10 +539,9 @@ public class RealSpaceData implements DataContainer {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < nRealSpaceData; i++) {
             sb.append(String.format("     dataset %d (weight: %5.1f): chemical energy: %8.2f density score: %8.2f\n",
-                    i + 1,
-                    realSpaceFile[i].weight,
+                    i + 1, realSpaceFile[i].getWeight(),
                     molecularAssemblies[0].getPotentialEnergy().getTotalEnergy(),
-                    realSpaceFile[i].weight * refinementData[i].densityScore));
+                    realSpaceFile[i].getWeight() * refinementData[i].getDensityScore()));
         }
         return sb.toString();
     }
@@ -608,8 +602,8 @@ public class RealSpaceData implements DataContainer {
             // Load final values.
             realSpaceEnergy = 0;
             for (int i = 0; i < nData; i++) {
-                refinementData[i].densityScore = sharedTarget[i].get();
-                realSpaceEnergy += refinementData[i].densityScore;
+                refinementData[i].setDensityScore(sharedTarget[i].get());
+                realSpaceEnergy += getRefinementData()[i].getDensityScore();
             }
             realSpacedUdL = shareddUdL.get();
             int index = 0;
@@ -667,7 +661,7 @@ public class RealSpaceData implements DataContainer {
                 lambdaGradY.reset(threadID, lb, ub);
                 lambdaGradZ.reset(threadID, lb, ub);
 
-                for (int i=lb; i<=ub; i++) {
+                for (int i = lb; i <= ub; i++) {
                     Atom a = refinementModel.totalAtomArray[i];
                     a.setXYZGradient(0.0, 0.0, 0.0);
                     a.setLambdaXYZGradient(0.0, 0.0, 0.0);
@@ -706,18 +700,18 @@ public class RealSpaceData implements DataContainer {
                 double scalar[][][] = new double[4][4][4];
                 TriCubicSpline spline = new TriCubicSpline();
 
-                for (int i = 0; i < nRealSpaceData; i++) {
+                for (int i = 0; i < getnRealSpaceData(); i++) {
 
                     // Define the extent of this real space data sources.
-                    int extX = refinementData[i].ext[0];
-                    int extY = refinementData[i].ext[1];
-                    int extZ = refinementData[i].ext[2];
-                    int nX = refinementData[i].ni[0];
-                    int nY = refinementData[i].ni[1];
-                    int nZ = refinementData[i].ni[2];
-                    int originX = refinementData[i].ori[0];
-                    int originY = refinementData[i].ori[1];
-                    int originZ = refinementData[i].ori[2];
+                    int extX = getRefinementData()[i].getExtent()[0];
+                    int extY = getRefinementData()[i].getExtent()[1];
+                    int extZ = getRefinementData()[i].getExtent()[2];
+                    int nX = getRefinementData()[i].getNi()[0];
+                    int nY = getRefinementData()[i].getNi()[1];
+                    int nZ = getRefinementData()[i].getNi()[2];
+                    int originX = getRefinementData()[i].getOrigin()[0];
+                    int originY = getRefinementData()[i].getOrigin()[1];
+                    int originZ = getRefinementData()[i].getOrigin()[2];
 
                     for (int ia = first; ia <= last; ia++) {
                         Atom a = refinementModel.totalAtomArray[ia];
@@ -732,11 +726,11 @@ public class RealSpaceData implements DataContainer {
                         double lambdai = 1.0;
                         double dUdL = 0.0;
                         if (lambdaTerm && a.applyLambda()) {
-                            lambdai = lambda;
+                            lambdai = getLambda();
                             dUdL = 1.0;
                         }
                         a.getXYZ(xyz);
-                        crystal[i].toFractionalCoordinates(xyz, uvw);
+                        getCrystal()[i].toFractionalCoordinates(xyz, uvw);
 
                         /**
                          * Logic to find atom in 3d scalar field box.
@@ -753,7 +747,7 @@ public class RealSpaceData implements DataContainer {
                         final int ifrz = ((int) floor(frz)) - originZ;
                         final double dfrz = frz - floor(frz);
 
-                        if (!refinementData[i].periodic) {
+                        if (!refinementData[i].isPeriodic()) {
                             if (ifrx - 1 < 0 || ifrx + 2 > extX
                                     || ifry - 1 < 0 || ifry + 2 > extY
                                     || ifrz - 1 < 0 || ifrz + 2 > extZ) {
@@ -766,7 +760,7 @@ public class RealSpaceData implements DataContainer {
                         /**
                          * Fill in scalar 4x4 array for interpolation.
                          */
-                        if (refinementData[i].periodic) {
+                        if (getRefinementData()[i].isPeriodic()) {
                             for (int ui = ifrx - 1; ui < ifrx + 3; ui++) {
                                 int uii = ui - (ifrx - 1);
                                 int pui = mod(ui, extX);
@@ -776,7 +770,7 @@ public class RealSpaceData implements DataContainer {
                                     for (int wi = ifrz - 1; wi < ifrz + 3; wi++) {
                                         int wii = wi - (ifrz - 1);
                                         int pwi = mod(wi, extZ);
-                                        scalar[uii][vii][wii] = refinementData[i].getDataIndex(pui, pvi, pwi);
+                                        scalar[uii][vii][wii] = getRefinementData()[i].getDataIndex(pui, pvi, pwi);
                                     }
                                 }
                             }
@@ -787,7 +781,7 @@ public class RealSpaceData implements DataContainer {
                                     int vii = vi - (ifry - 1);
                                     for (int wi = ifrz - 1; wi < ifrz + 3; wi++) {
                                         int wii = wi - (ifrz - 1);
-                                        scalar[uii][vii][wii] = refinementData[i].getDataIndex(ui, vi, wi);
+                                        scalar[uii][vii][wii] = getRefinementData()[i].getDataIndex(ui, vi, wi);
                                     }
                                 }
                             }
@@ -799,8 +793,8 @@ public class RealSpaceData implements DataContainer {
                         double scale;
                         double scaledUdL;
                         double atomicWeight = a.getAtomType().atomicWeight;
-                        if (realSpaceFile != null) {
-                            atomicWeight *= realSpaceFile[i].weight;
+                        if (getRealSpaceFile() != null) {
+                            atomicWeight *= getRealSpaceFile()[i].getWeight();
                         }
                         scale = -1.0 * lambdai * atomicWeight;
                         scaledUdL = -1.0 * dUdL * atomicWeight;
@@ -814,9 +808,9 @@ public class RealSpaceData implements DataContainer {
                             grad[1] = grad[1] * nY;
                             grad[2] = grad[2] * nZ;
                             // transpose of toFractional
-                            xyz[0] = grad[0] * crystal[i].A00 + grad[1] * crystal[i].A01 + grad[2] * crystal[i].A02;
-                            xyz[1] = grad[0] * crystal[i].A10 + grad[1] * crystal[i].A11 + grad[2] * crystal[i].A12;
-                            xyz[2] = grad[0] * crystal[i].A20 + grad[1] * crystal[i].A21 + grad[2] * crystal[i].A22;
+                            xyz[0] = grad[0] * getCrystal()[i].A00 + grad[1] * getCrystal()[i].A01 + grad[2] * getCrystal()[i].A02;
+                            xyz[1] = grad[0] * getCrystal()[i].A10 + grad[1] * getCrystal()[i].A11 + grad[2] * getCrystal()[i].A12;
+                            xyz[2] = grad[0] * getCrystal()[i].A20 + grad[1] * getCrystal()[i].A21 + grad[2] * getCrystal()[i].A22;
                             gradX.add(threadID, ia, scale * xyz[0]);
                             gradY.add(threadID, ia, scale * xyz[1]);
                             gradZ.add(threadID, ia, scale * xyz[2]);
@@ -836,6 +830,97 @@ public class RealSpaceData implements DataContainer {
 
         }
 
+    }
+
+    /**
+     * @param molecularAssemblies the molecularAssemblies to set
+     */
+    public void setMolecularAssemblies(MolecularAssembly[] molecularAssemblies) {
+        this.molecularAssemblies = molecularAssemblies;
+    }
+
+    /**
+     * @return the realSpaceFile
+     */
+    public RealSpaceFile[] getRealSpaceFile() {
+        return realSpaceFile;
+    }
+
+    /**
+     * @param realSpaceFile the realSpaceFile to set
+     */
+    public void setRealSpaceFile(RealSpaceFile[] realSpaceFile) {
+        this.realSpaceFile = realSpaceFile;
+    }
+
+    /**
+     * @return the modelName
+     */
+    public String getModelName() {
+        return modelName;
+    }
+
+    /**
+     * @param modelName the modelName to set
+     */
+    public void setModelName(String modelName) {
+        this.modelName = modelName;
+    }
+
+    /**
+     * @return the nRealSpaceData
+     */
+    public int getnRealSpaceData() {
+        return nRealSpaceData;
+    }
+
+    /**
+     * @param nRealSpaceData the nRealSpaceData to set
+     */
+    public void setnRealSpaceData(int nRealSpaceData) {
+        this.nRealSpaceData = nRealSpaceData;
+    }
+
+    /**
+     * @return the crystal
+     */
+    public Crystal[] getCrystal() {
+        return crystal;
+    }
+
+    /**
+     * @param crystal the crystal to set
+     */
+    public void setCrystal(Crystal[] crystal) {
+        this.crystal = crystal;
+    }
+
+    /**
+     * @return the refinementData
+     */
+    public RealSpaceRefinementData[] getRefinementData() {
+        return refinementData;
+    }
+
+    /**
+     * @param refinementData the refinementData to set
+     */
+    public void setRefinementData(RealSpaceRefinementData[] refinementData) {
+        this.refinementData = refinementData;
+    }
+
+    /**
+     * @param refinementModel the refinementModel to set
+     */
+    public void setRefinementModel(RefinementModel refinementModel) {
+        this.refinementModel = refinementModel;
+    }
+
+    /**
+     * @return the lambda
+     */
+    public double getLambda() {
+        return lambda;
     }
 
 }
