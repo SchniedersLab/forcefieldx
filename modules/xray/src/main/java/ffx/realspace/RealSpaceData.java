@@ -35,7 +35,7 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.xray;
+package ffx.realspace;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -61,8 +61,10 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Residue;
+import ffx.xray.DataContainer;
+import ffx.xray.DiffractionData;
 import ffx.xray.RefinementMinimize.RefinementMode;
-import ffx.xray.parsers.RealSpaceFile;
+import ffx.xray.RefinementModel;
 
 import static ffx.crystal.Crystal.mod;
 
@@ -180,7 +182,7 @@ public class RealSpaceData implements DataContainer {
         this.realSpaceFile = null;
         this.nRealSpaceData = 1;
         crystal = new Crystal[nRealSpaceData];
-        crystal[0] = diffractionData.crystal[0];
+        crystal[0] = diffractionData.getCrystal()[0];
         refinementData = new RealSpaceRefinementData[nRealSpaceData];
         refinementData[0] = new RealSpaceRefinementData();
         refinementData[0].setPeriodic(true);
@@ -195,21 +197,21 @@ public class RealSpaceData implements DataContainer {
             logger.info(sb.toString());
         }
 
-        if (!diffractionData.scaled[0]) {
+        if (!diffractionData.getScaled()[0]) {
             diffractionData.scaleBulkFit();
             diffractionData.printStats();
         }
 
         // get Fo-Fc difference density
-        diffractionData.crs_fc[0].computeAtomicGradients(diffractionData.refinementData[0].fofc1,
-                diffractionData.refinementData[0].freer,
-                diffractionData.refinementData[0].rfreeflag,
+        diffractionData.getCrs_fc()[0].computeAtomicGradients(diffractionData.getRefinementData()[0].fofc1,
+                diffractionData.getRefinementData()[0].freer,
+                diffractionData.getRefinementData()[0].rfreeflag,
                 RefinementMode.COORDINATES);
 
         refinementData[0].setOrigin(0, 0, 0);
-        int extx = (int) diffractionData.crs_fc[0].getXDim();
-        int exty = (int) diffractionData.crs_fc[0].getYDim();
-        int extz = (int) diffractionData.crs_fc[0].getZDim();
+        int extx = (int) diffractionData.getCrs_fc()[0].getXDim();
+        int exty = (int) diffractionData.getCrs_fc()[0].getYDim();
+        int extz = (int) diffractionData.getCrs_fc()[0].getZDim();
         refinementData[0].setExtent(extx, exty, extz);
         refinementData[0].setNI(extx, exty, extz);
         refinementData[0].setData(new double[extx * exty * extz]);
@@ -218,7 +220,7 @@ public class RealSpaceData implements DataContainer {
                 for (int i = 0; i < extx; i++) {
                     int index1 = (i + extx * (j + exty * k));
                     int index2 = 2 * (i + extx * (j + exty * k));
-                    refinementData[0].getData()[index1] = diffractionData.crs_fc[0].densityGrid[index2];
+                    refinementData[0].getData()[index1] = diffractionData.getCrs_fc()[0].getDensityGrid()[index2];
                 }
             }
         }
@@ -231,7 +233,7 @@ public class RealSpaceData implements DataContainer {
         /**
          * Initialize the RealSpaceRegion.
          */
-        int nAtoms = refinementModel.totalAtomArray.length;
+        int nAtoms = refinementModel.getTotalAtomArray().length;
         realSpaceRegion = new RealSpaceRegion(parallelTeam.getThreadCount(),
                 nAtoms, refinementData.length);
 
@@ -335,7 +337,7 @@ public class RealSpaceData implements DataContainer {
         /**
          * Initialize the RealSpaceRegion.
          */
-        int nAtoms = refinementModel.totalAtomArray.length;
+        int nAtoms = refinementModel.getTotalAtomArray().length;
         realSpaceRegion = new RealSpaceRegion(parallelTeam.getThreadCount(),
                 nAtoms, refinementData.length);
 
@@ -355,9 +357,9 @@ public class RealSpaceData implements DataContainer {
         realSpacedUdL = 0.0;
         // Initialize gradient to zero; allocate space if necessary.
         int nActive = 0;
-        int nAtoms = refinementModel.totalAtomArray.length;
+        int nAtoms = refinementModel.getTotalAtomArray().length;
         for (int i = 0; i < nAtoms; i++) {
-            if (refinementModel.totalAtomArray[i].isActive()) {
+            if (refinementModel.getTotalAtomArray()[i].isActive()) {
                 nActive++;
             }
         }
@@ -402,10 +404,10 @@ public class RealSpaceData implements DataContainer {
     }
 
     public double[] getRealSpaceGradient(double gradient[]) {
-        int nAtoms = refinementModel.totalAtomArray.length;
+        int nAtoms = refinementModel.getTotalAtomArray().length;
         int nActiveAtoms = 0;
         for (int i = 0; i < nAtoms; i++) {
-            if (refinementModel.totalAtomArray[i].isActive()) {
+            if (refinementModel.getTotalAtomArray()[i].isActive()) {
                 nActiveAtoms++;
             }
         }
@@ -420,10 +422,10 @@ public class RealSpaceData implements DataContainer {
     }
 
     public double[] getdEdXdL(double gradient[]) {
-        int nAtoms = refinementModel.totalAtomArray.length;
+        int nAtoms = refinementModel.getTotalAtomArray().length;
         int nActiveAtoms = 0;
         for (int i = 0; i < nAtoms; i++) {
-            if (refinementModel.totalAtomArray[i].isActive()) {
+            if (refinementModel.getTotalAtomArray()[i].isActive()) {
                 nActiveAtoms++;
             }
         }
@@ -443,7 +445,7 @@ public class RealSpaceData implements DataContainer {
      *
      * @param lambda a double.
      */
-    protected void setLambda(double lambda) {
+    public void setLambda(double lambda) {
         this.lambda = lambda;
     }
 
@@ -452,7 +454,7 @@ public class RealSpaceData implements DataContainer {
      */
     @Override
     public Atom[] getAtomArray() {
-        return refinementModel.totalAtomArray;
+        return refinementModel.getTotalAtomArray();
     }
 
     /**
@@ -460,7 +462,7 @@ public class RealSpaceData implements DataContainer {
      */
     @Override
     public Atom[] getActiveAtomArray() {
-        return refinementModel.activeAtomArray;
+        return refinementModel.getActiveAtomArray();
     }
 
     /**
@@ -468,7 +470,7 @@ public class RealSpaceData implements DataContainer {
      */
     @Override
     public ArrayList<ArrayList<Residue>> getAltResidues() {
-        return refinementModel.altResidues;
+        return refinementModel.getAltResidues();
     }
 
     /**
@@ -476,7 +478,7 @@ public class RealSpaceData implements DataContainer {
      */
     @Override
     public ArrayList<ArrayList<Molecule>> getAltMolecules() {
-        return refinementModel.altMolecules;
+        return refinementModel.getAltMolecules();
     }
 
     /**
@@ -608,7 +610,7 @@ public class RealSpaceData implements DataContainer {
             realSpacedUdL = shareddUdL.get();
             int index = 0;
             for (int i = 0; i < nAtoms; i++) {
-                Atom atom = refinementModel.totalAtomArray[i];
+                Atom atom = refinementModel.getTotalAtomArray()[i];
                 if (atom.isActive()) {
                     int ii = index * 3;
                     double gx = gradX.get(i);
@@ -662,7 +664,7 @@ public class RealSpaceData implements DataContainer {
                 lambdaGradZ.reset(threadID, lb, ub);
 
                 for (int i = lb; i <= ub; i++) {
-                    Atom a = refinementModel.totalAtomArray[i];
+                    Atom a = refinementModel.getTotalAtomArray()[i];
                     a.setXYZGradient(0.0, 0.0, 0.0);
                     a.setLambdaXYZGradient(0.0, 0.0, 0.0);
                 }
@@ -714,7 +716,7 @@ public class RealSpaceData implements DataContainer {
                     int originZ = getRefinementData()[i].getOrigin()[2];
 
                     for (int ia = first; ia <= last; ia++) {
-                        Atom a = refinementModel.totalAtomArray[ia];
+                        Atom a = refinementModel.getTotalAtomArray()[ia];
                         /**
                          * Only include atoms in the target function that have
                          * their use flag set to true and are Active.

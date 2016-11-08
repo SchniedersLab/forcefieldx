@@ -48,12 +48,11 @@ import groovy.util.CliBuilder;
 // Parallel Java Imports
 import edu.rit.pj.Comm
 
-
-
 // FFX Imports
 import ffx.algorithms.RotamerOptimization;
 import ffx.algorithms.RotamerOptimization.Direction;
-
+import ffx.potential.ForceFieldEnergy;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
@@ -63,15 +62,13 @@ import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.ResidueEnumerations;
 import ffx.potential.bonded.ResidueEnumerations.CommonAminoAcid3;
 import ffx.potential.bonded.Residue.ResidueType;
-import ffx.potential.ForceFieldEnergy;
-import ffx.potential.MolecularAssembly;
-
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.DiffractionData;
-import ffx.xray.DiffractionFile;
 import ffx.xray.RefinementEnergy;
 import ffx.xray.RefinementMinimize;
 import ffx.xray.RefinementMinimize.RefinementMode;
+import ffx.xray.parsers.DiffractionFile;
+
 
 int library = 2;
 int startResID = -1;
@@ -561,7 +558,7 @@ if (minimumNumberAcceptedNARotamers < 1) {
 }
 /**
  * Now handled by system keys.
- * 
+ *
 if (pruningFactor < 0) {
     logger.warning("\n Pruning factor must be >= 0.  Setting to default of 1.0.\n");
     pruningFactor = 1;

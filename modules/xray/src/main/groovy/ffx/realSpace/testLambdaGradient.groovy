@@ -52,13 +52,13 @@ import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.DualTopologyEnergy;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
+import ffx.realspace.RealSpaceData;
+import ffx.realspace.RealSpaceFile;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.DiffractionData;
-import ffx.xray.DiffractionFile;
-import ffx.xray.RealSpaceData;
-import ffx.xray.RealSpaceFile;
 import ffx.xray.RefinementEnergy;
 import ffx.xray.RefinementMinimize.RefinementMode;
+import ffx.xray.parsers.DiffractionFile;
 
 // First ligand atom.
 int ligandStart = 1;

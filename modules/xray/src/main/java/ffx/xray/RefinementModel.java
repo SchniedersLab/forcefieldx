@@ -61,27 +61,27 @@ public class RefinementModel {
     /**
      * Map between atom in different molecular assemblies.
      */
-    protected List<Integer>[] xIndex;
-    protected ArrayList<ArrayList<Residue>> altResidues;
-    protected ArrayList<ArrayList<Molecule>> altMolecules;
+    private List<Integer>[] xIndex;
+    private ArrayList<ArrayList<Residue>> altResidues;
+    private ArrayList<ArrayList<Molecule>> altMolecules;
 
     /**
      * An atom list.
      */
-    protected final List<Atom> totalAtomList;
+    private final List<Atom> totalAtomList;
     /**
      * An atom array.
      */
-    protected final Atom[] totalAtomArray;
+    private final Atom[] totalAtomArray;
 
     /**
      * An atom list.
      */
-    protected final List<Atom> activeAtomList;
+    private final List<Atom> activeAtomList;
     /**
      * An atom array.
      */
-    protected final Atom[] activeAtomArray;
+    private final Atom[] activeAtomArray;
 
     /**
      * <p>
@@ -238,7 +238,7 @@ public class RefinementModel {
 
         totalAtomArray = totalAtomList.toArray(new Atom[totalAtomList.size()]);
         activeAtomArray = activeAtomList.toArray(new Atom[activeAtomList.size()]);
-        
+
         for (ArrayList<Residue> list : altResidues) {
             if (list.size() == 1) {
                 Residue r = list.get(0);
@@ -252,5 +252,54 @@ public class RefinementModel {
                 logger.log(Level.INFO, " Molecule {0} is a single conformer with non-unity occupancy.\n Occupancy will be refined independently!", m.toString());
             }
         }
+    }
+
+    /**
+     * @return the xIndex
+     */
+    public List<Integer>[] getxIndex() {
+        return xIndex;
+    }
+
+    /**
+     * @return the altResidues
+     */
+    public ArrayList<ArrayList<Residue>> getAltResidues() {
+        return altResidues;
+    }
+
+    /**
+     * @return the altMolecules
+     */
+    public ArrayList<ArrayList<Molecule>> getAltMolecules() {
+        return altMolecules;
+    }
+
+    /**
+     * @return the totalAtomList
+     */
+    public List<Atom> getTotalAtomList() {
+        return totalAtomList;
+    }
+
+    /**
+     * @return the totalAtomArray
+     */
+    public Atom[] getTotalAtomArray() {
+        return totalAtomArray;
+    }
+
+    /**
+     * @return the activeAtomList
+     */
+    public List<Atom> getActiveAtomList() {
+        return activeAtomList;
+    }
+
+    /**
+     * @return the activeAtomArray
+     */
+    public Atom[] getActiveAtomArray() {
+        return activeAtomArray;
     }
 }

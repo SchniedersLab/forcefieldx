@@ -61,14 +61,14 @@ import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.ForceFieldEnergy;
+import ffx.realspace.RealSpaceData;
+import ffx.realspace.RealSpaceFile;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.DiffractionData;
-import ffx.xray.DiffractionFile;
-import ffx.xray.RealSpaceData;
-import ffx.xray.RealSpaceFile;
 import ffx.xray.RefinementEnergy;
 import ffx.xray.RefinementMinimize;
 import ffx.xray.RefinementMinimize.RefinementMode;
+import ffx.xray.parsers.DiffractionFile;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================

@@ -44,11 +44,11 @@ import groovy.util.CliBuilder;
 
 // Force Field X Imports
 import ffx.xray.DiffractionData;
-import ffx.xray.DiffractionFile;
-import ffx.xray.CrystalReciprocalSpace.SolventModel;
-import ffx.xray.MTZWriter;
-import ffx.xray.MTZWriter.MTZType;
 
+import ffx.xray.CrystalReciprocalSpace.SolventModel;
+import ffx.xray.parsers.DiffractionFile;
+import ffx.xray.parsers.MTZWriter;
+import ffx.xray.parsers.MTZWriter.MTZType;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================

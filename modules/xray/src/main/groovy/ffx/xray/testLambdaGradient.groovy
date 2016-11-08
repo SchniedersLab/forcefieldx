@@ -43,10 +43,10 @@ import groovy.util.CliBuilder;
 import ffx.numerics.VectorMath;
 import ffx.potential.bonded.Atom;
 import ffx.xray.DiffractionData;
-import ffx.xray.DiffractionFile;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.RefinementEnergy;
 import ffx.xray.RefinementMinimize.RefinementMode;
+import ffx.xray.parsers.DiffractionFile;
 
 // First atom to test.
 int atomID = 0;
