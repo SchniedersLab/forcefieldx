@@ -269,12 +269,12 @@ public class QuadTopologyEnergy implements Potential, LambdaInterface {
                 }
             }
         } else {
-            System.out.println(String.format(" Lengths: Total: %5d Shared: %5d "
+            /*System.out.println(String.format(" Lengths: Total: %5d Shared: %5d "
                     + "Total A: %5d Unique A: %5d Total B: %5d "
                     + "Unique B: %5d", nVarTot, nShared, nVarA, uniqueA, nVarB, uniqueB));
             System.out.println(String.format(" Arrays:  GlobalToA: %5d "
                     + "AToGlobal: %5d GlobalToB: %5d BToGlobal: %5d", 
-                    indexGlobalToA.length, indexAToGlobal.length, indexGlobalToB.length, indexBToGlobal.length));
+                    indexGlobalToA.length, indexAToGlobal.length, indexGlobalToB.length, indexBToGlobal.length));*/
             for (int i = 0; i < nVarB; i++) {
                 indexBToGlobal[i] = i;
                 indexGlobalToB[i] = i;

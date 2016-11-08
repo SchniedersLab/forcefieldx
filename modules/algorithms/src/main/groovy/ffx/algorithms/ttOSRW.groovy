@@ -86,6 +86,7 @@ boolean asynchronous = false;
 @Field def topologies = [];
 // List of ForceFieldEnergies.
 @Field def energies = [];
+@Field def properties = [];
 
 // First atom of the ligand.
 @Field int ligandStart = 1;
@@ -628,6 +629,7 @@ private void openFile(String toOpen, File structFile, int topNum) {
     // Turn off checks for overlapping atoms, which is expected for lambda=0.
     energy.getCrystal().setSpecialPositionCutoff(0.0);
     // Save a reference to the topology.
+    properties[topNum] = active.getProperties();
     topologies[topNum] = active;
     energies[topNum] = energy;
 }
@@ -1042,6 +1044,9 @@ if (!histogramRestart.exists()) {
 
 // Create the MolecularDynamics instance.
 MolecularDynamics molDyn = new MolecularDynamics(topologies[0], osrw, topologies[0].getProperties(), null, thermostat, integrator);
+for (int i = 1; i < topologies.size(); i++) {
+    molDyn.addAssembly(topologies.get(i), properties.get(i));
+}
 
 // Start sampling.
 if (eSteps > 0) {
