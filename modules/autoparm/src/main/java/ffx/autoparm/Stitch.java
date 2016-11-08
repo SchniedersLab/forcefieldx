@@ -1,4 +1,3 @@
-
 /**
  * Title: Force Field X.
  *
@@ -37,56 +36,39 @@
  * exception statement from your version.
  */
 
+package ffx.autoparm;
 
-// Groovy Imports
-import groovy.util.CliBuilder
-import groovy.lang.MissingPropertyException
-
-// FFX Imports
-import ffx.autoparm.Fragmenter
-import ffx.autoparm.Unstitch
-import ffx.autoparm.Wizard
+import ffx.potential.parameters.ForceField;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.logging.Logger;
 
 /**
- * SDF to SMILES Converter
- * Auto-fragmenting algorithm
  *
  * @author Rae Ann Corrigan
  */
+public class Stitch {
+    
+    private ArrayList<File> sdfFiles = null;
+    private ArrayList<File> uniqueAtomNamesTextFiles = null;
+    
+    private final static Logger logger = Logger.getLogger(Stitch.class.getName());
+    
+    //constructor
+    public Stitch(ArrayList<File> sdfFiles, ArrayList<File> uniqueAtomNamesTextFiles){
+        this.sdfFiles = sdfFiles;
+        this.uniqueAtomNamesTextFiles = uniqueAtomNamesTextFiles;
+    }
 
-// Things below this line normally do not need to be changed.
-// ===============================================================================================
-
-// Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc fragment [options] <filename>');
-cli.h(longOpt:'help', 'Print this help message.');
-def options = cli.parse(args);
-
-List<String> arguments = options.arguments();
-//if (options.h || arguments == null || arguments.size() != 1){ original code
-if (options.h || arguments == null) {
-    return cli.usage();
+    //ForceField parent = new ForceField();
+    
+    //create array of forcefields
+    ForceField[] forcefield = new ForceField[sdfFiles.size()];
+    
+    //molecular assembiles
+    
+    
+    // Bonds
+    //Bond bonds[] = [ffename].getBonds();
+    
 }
-
-// Read in command line argument.
-String filename = arguments.get(0);
-String smiles = new String();
-Wizard wi = new Wizard(filename);
-smiles = wi.readSDF();
-
-// Read in command line.
-String sdffile = arguments.get(0);
-String ciffile = arguments.get(1);
-String smi = new String();
-
-logger.info(String.format("\nExhaustively Fragmenting %s\n", sdffile));
-
-//System.out.println("\nFinished Wizard, calling Fragmenter\n");
-/*Fragmenter fr = new Fragmenter(sdffile, ciffile, smiles);
-fr.readCIF();
-fr.readSDF();*/
-
-Unstitch us = new Unstitch(sdffile, ciffile, smiles);
-us.readCIF();
-us.readSDF();
-
