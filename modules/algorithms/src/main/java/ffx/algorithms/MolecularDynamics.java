@@ -38,7 +38,9 @@
 package ffx.algorithms;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -59,6 +61,7 @@ import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.parsers.DYNFilter;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.XYZFilter;
+import java.util.stream.Collectors;
 
 /**
  * Run NVE or NVT molecular dynamics.
@@ -71,18 +74,18 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
     private static final Logger logger = Logger.getLogger(MolecularDynamics.class.getName());
     private final MolecularAssembly molecularAssembly;
+    private final List<AssemblyInfo> assemblies;
     private final Potential potential;
-    private final CompositeConfiguration properties;
     private AlgorithmListener algorithmListener;
     private MonteCarloListener monteCarloListener;
     private Thermostat thermostat;
     private Integrator integrator;
-    private File archiveFile = null;
+    //private File archiveFile = null;
     private File restartFile = null;
-    private File pdbFile = null;
-    private XYZFilter xyzFilter = null;
+    //private File pdbFile = null;
+    //private XYZFilter xyzFilter = null;
     private DYNFilter dynFilter = null;
-    private PDBFilter pdbFilter = null;
+    //private PDBFilter pdbFilter = null;
     private int printFrequency = 100;
     private int saveSnapshotFrequency = 1000;
     private int removeCOMMotionFrequency = 100;
@@ -134,10 +137,12 @@ public class MolecularDynamics implements Runnable, Terminatable {
             Thermostats requestedThermostat,
             Integrators requestedIntegrator) {
         this.molecularAssembly = assembly;
+        assemblies = new ArrayList<>();
+        assemblies.add(new AssemblyInfo(assembly));
         this.algorithmListener = listener;
         this.potential = potentialEnergy;
 
-        this.properties = properties;
+        assemblies.get(0).props = properties;
         mass = potentialEnergy.getMass();
         numberOfVariables = potentialEnergy.getNumberOfVariables();
         x = new double[numberOfVariables];
@@ -157,7 +162,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
             } catch (Exception e) {
                 requestedIntegrator = Integrators.BEEMAN;
             }
-
         }
         switch (requestedIntegrator) {
             case RESPA:
@@ -299,12 +303,17 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
     /**
      * <p>
-     * Setter for the field <code>archiveFile</code>.</p>
+     * Setter for the first archive file.
      *
      * @param archive a {@link java.io.File} object.
      */
     public void setArchiveFile(File archive) {
-        this.archiveFile = archive;
+        //this.archiveFile = archive;
+        assemblies.get(0).archiveFile = archive;
+    }
+    
+    public void setArchiveFile(File archive, int pos) {
+        assemblies.get(pos).archiveFile = archive;
     }
 
     /**
@@ -314,7 +323,41 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * @return a {@link java.io.File} object.
      */
     public File getArchiveFile() {
-        return archiveFile;
+        //return archiveFile;
+        return assemblies.get(0).archiveFile;
+    }
+    
+    public List<File> getArchiveFiles() {
+        ArrayList<File> aFiles = new ArrayList<>();
+        assemblies.forEach((ai) -> { aFiles.add(ai.archiveFile); });
+        return aFiles;
+    }
+    
+    public void addAssembly(MolecularAssembly mola) {
+        addAssembly(mola, null);
+    }
+    
+    public void addAssembly(MolecularAssembly mola, CompositeConfiguration props) {
+        AssemblyInfo mi = new AssemblyInfo(mola);
+        mi.props = props;
+        assemblies.add(mi);
+    }
+    
+    /**
+     * Finds and removes an assembly, searching by equality. Removes all instances
+     * @param mola Assembly to remove.
+     * @return Number of times found and removed.
+     */
+    public int removeAssembly(MolecularAssembly mola) {
+        if (mola == null) {
+            return 0;
+        }
+        List<AssemblyInfo> toRemove = assemblies.stream().filter((AssemblyInfo ai) -> {
+            return mola == ai.getAssembly();
+        }).collect(Collectors.toList());
+        //int nRemoved = assemblies.size() - newList.size();
+        assemblies.removeAll(toRemove);
+        return toRemove.size();
     }
     
     public void setNotifyMonteCarlo(boolean set) {
@@ -402,37 +445,60 @@ public class MolecularDynamics implements Runnable, Terminatable {
         if (restartFrequency >= this.dt) {
             saveRestartFileFrequency = (int) (restartFrequency / this.dt);
         }
+        
+        assemblies.stream().parallel().forEach((ainfo) -> {
+            MolecularAssembly mola = ainfo.getAssembly();
+            CompositeConfiguration aprops = ainfo.props;
+            File file = mola.getFile();
+            String filename = FilenameUtils.removeExtension(file.getAbsolutePath());
+            File archFile = ainfo.archiveFile;
+            if (archFile == null) {
+                archFile = new File(filename + ".arc");
+                ainfo.archiveFile = XYZFilter.version(archFile);
+            }
+            if (ainfo.xyzFilter == null) {
+                ainfo.xyzFilter = new XYZFilter(file, mola, mola.getForceField(), aprops);
+            }
+            if (ainfo.pdbFilter == null) {
+                if (!filename.contains("_dyn")) {
+                    ainfo.pdbFile = new File(filename + "_dyn.pdb");
+                }
+                ainfo.pdbFilter = new PDBFilter(ainfo.pdbFile, mola, mola.getForceField(), aprops);
+            }
+        });
 
-        File file = molecularAssembly.getFile();
+        /*File file = molecularAssembly.getFile();
         String filename = FilenameUtils.removeExtension(file.getAbsolutePath());
         if (archiveFile == null) {
             archiveFile = new File(filename + ".arc");
             archiveFile = XYZFilter.version(archiveFile);
-        }
+        }*/
+        
+        String firstFileName = FilenameUtils.removeExtension(molecularAssembly.getFile().getAbsolutePath());
 
         if (dyn == null) {
-            this.restartFile = new File(filename + ".dyn");
+            this.restartFile = new File(firstFileName + ".dyn");
             loadRestart = false;
         } else {
             this.restartFile = dyn;
             loadRestart = true;
         }
 
-        if (xyzFilter == null) {
+        /*if (xyzFilter == null) {
             xyzFilter = new XYZFilter(file, molecularAssembly,
                     molecularAssembly.getForceField(), properties);
-        }
+        }*/
 
         if (dynFilter == null) {
             dynFilter = new DYNFilter(molecularAssembly.getName());
         }
 
-        if (pdbFilter == null) {
+        /*if (pdbFilter == null) {
             if (!filename.contains("_dyn")) {
                 pdbFile = new File(filename + "_dyn.pdb");
             }
             pdbFilter = new PDBFilter(pdbFile, molecularAssembly, null, null);
-        }
+        }*/
 
         this.targetTemperature = temperature;
         this.initVelocities = initVelocities;
@@ -559,12 +625,16 @@ public class MolecularDynamics implements Runnable, Terminatable {
         if (dyn != null) {
             logger.info(format(" Continuing from " + dyn.getAbsolutePath()));
         }
-        logger.info(String.format(" Number of steps: %8d", nSteps));
-        logger.info(String.format(" Time step:       %8.3f (fsec)", timeStep));
-        logger.info(String.format(" Print interval:  %8.3f (psec)", printInterval));
-        logger.info(String.format(" Save interval:   %8.3f (psec)", saveInterval));
-        logger.info(String.format(" Archive file: %s", archiveFile.getName()));
-        logger.info(String.format(" Restart file: %s", restartFile.getName()));
+        logger.info(String.format(" Number of steps:     %8d", nSteps));
+        logger.info(String.format(" Time step:           %8.3f (fsec)", timeStep));
+        logger.info(String.format(" Print interval:      %8.3f (psec)", printInterval));
+        logger.info(String.format(" Save interval:       %8.3f (psec)", saveInterval));
+        //logger.info(String.format(" Archive file: %s", archiveFile.getName()));
+        for (int i = 0; i < assemblies.size(); i++) {
+            AssemblyInfo ai = assemblies.get(i);
+            logger.info(String.format(" Archive file %3d: %s", i, ai.archiveFile.getName()));
+        }
+        logger.info(String.format(" Restart file:     %s", restartFile.getName()));
 
         Thread dynamicThread = new Thread(this);
         dynamicThread.start();
@@ -813,7 +883,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
              * saveSnapshotFrequency steps.
              */
             if (saveSnapshotFrequency > 0 && step % saveSnapshotFrequency == 0) {
-                if (archiveFile != null && saveSnapshotAsPDB == false) {
+                /*if (archiveFile != null && saveSnapshotAsPDB == false) {
                     if (xyzFilter.writeFile(archiveFile, true)) {
                         logger.info(String.format(" Appended snap shot to " + archiveFile.getName()));
                     } else {
@@ -822,6 +892,21 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 } else if (saveSnapshotAsPDB == true) {
                     if (pdbFilter.writeFile(pdbFile, false)) {
                         logger.info(String.format(" Wrote PDB file to " + pdbFile.getName()));
+                    }
+                }*/
+                for (AssemblyInfo ai : assemblies) {
+                    if (ai.archiveFile != null && !saveSnapshotAsPDB) {
+                        if (ai.xyzFilter.writeFile(ai.archiveFile, true)) {
+                            logger.info(String.format(" Appended snap shot to %s", ai.archiveFile.getName()));
+                        } else {
+                            logger.warning(String.format(" Appending snap shot to %s failed", ai.archiveFile.getName()));
+                        }
+                    } else if (saveSnapshotAsPDB) {
+                        if (ai.pdbFilter.writeFile(ai.pdbFile, false)) {
+                            logger.info(String.format(" Wrote PDB file to %s", ai.pdbFile.getName()));
+                        } else {
+                            logger.warning(String.format(" Writing PDB file to %s failed.", ai.pdbFile.getName()));
+                        }
                     }
                 }
             }
@@ -898,6 +983,30 @@ public class MolecularDynamics implements Runnable, Terminatable {
                     logger.log(Level.WARNING, " Exception terminating dynamics.\n", e);
                 }
             }
+        }
+    }
+    
+    /**
+     * A simple container class to hold all the infrastructure associated with
+     * a MolecularAssembly for MolecularDynamics; assembly, properties, archive
+     * and PDB files, PDB and XYZ filters. Direct access to package-private 
+     * members breaks encapsulation a bit, but the private inner class shouldn't
+     * be used externally anyways.
+     */
+    private class AssemblyInfo {
+        private final MolecularAssembly mola;
+        CompositeConfiguration props = null;
+        File archiveFile = null;
+        File pdbFile = null;
+        PDBFilter pdbFilter = null;
+        XYZFilter xyzFilter = null;
+        
+        public AssemblyInfo(MolecularAssembly assembly) {
+            this.mola = assembly;
+        }
+        
+        public MolecularAssembly getAssembly() {
+            return mola;
         }
     }
     
