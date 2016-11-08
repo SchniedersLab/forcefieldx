@@ -35,6 +35,7 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
+
 package ffx.autoparm;
 
 import java.io.BufferedReader;
@@ -52,6 +53,7 @@ import org.openscience.cdk.atomtype.CDKAtomTypeMatcher;
 import org.openscience.cdk.exception.CDKException;
 import org.openscience.cdk.exception.InvalidSmilesException;
 import ffx.autoparm.fragment.ExhaustiveFragmenter;
+import java.io.PrintWriter;
 import org.openscience.cdk.aromaticity.Aromaticity;
 import org.openscience.cdk.exception.NoSuchAtomTypeException;
 import org.openscience.cdk.interfaces.IAtom;
@@ -118,7 +120,7 @@ public class Unstitch {
                         atomName = atomName.concat(str7);
                     }
 
-                    System.out.println("Atom Name: " + atomName);
+                    //System.out.println("Atom Name: " + atomName);
                     uniqueAtomNames.add(atomName);
                 }
 
@@ -204,14 +206,13 @@ public class Unstitch {
         ExhaustiveFragmenter exh = new ExhaustiveFragmenter();
         exh.setMinimumFragmentSize(MINSIZE);
         exh.generateFragments(molecule);
-        System.out.println("\nEXHAUSTIVE FRAGMENTS");
+        //System.out.println("\nEXHAUSTIVE FRAGMENTS");
         originalFragmentStructureArray = exh.getFragments();
         removedHydrogensStructureArray = exh.getFragments();
         iAtomContainerArray = exh.getFragmentsAsContainers();
         int orig = originalFragmentStructureArray.length;
 
-        System.out.println(Arrays.toString(originalFragmentStructureArray) + "\n");
-
+        //System.out.println(Arrays.toString(originalFragmentStructureArray) + "\n");
         //checking for "eaten" fragments
         //remove hydrogens for more accurate substructure checking
         for (String removedHydrogensStructureArray1 : removedHydrogensStructureArray) {
@@ -278,7 +279,7 @@ public class Unstitch {
         System.out.println("Orig length: " + orig);
         System.out.println("Final length: " + finalArray.length + "\n");
         String full = smi;
-        System.out.println("fullSmiles: " + full + "\n");
+        //System.out.println("fullSmiles: " + full + "\n");
 
         for (int i = 0; i < finalArray.length; i++) {
             String content = finalArray[i];
@@ -347,15 +348,15 @@ public class Unstitch {
         if (fragContainer.getAtomCount() < SIZE) {
             //Builds 3D model of fragment molecule
             /*System.out.println("mb3d for fragment" + number);
-            ModelBuilder3D mb3d;
-            mb3d = ModelBuilder3D.getInstance(SilentChemObjectBuilder.getInstance());
-            IAtomContainer molecule = null;
+             ModelBuilder3D mb3d;
+             mb3d = ModelBuilder3D.getInstance(SilentChemObjectBuilder.getInstance());
+             IAtomContainer molecule = null;
 
-            String[] originalAtomTypeNames = new String[fragContainer.getAtomCount()];
-            for (int i = 0; i < originalAtomTypeNames.length; i++) {
-                originalAtomTypeNames[i] = fragContainer.getAtom(i).getAtomTypeName();
-                System.out.println("Atom "+(i+1)+" type: "+originalAtomTypeNames[i]);
-            }*/
+             String[] originalAtomTypeNames = new String[fragContainer.getAtomCount()];
+             for (int i = 0; i < originalAtomTypeNames.length; i++) {
+             originalAtomTypeNames[i] = fragContainer.getAtom(i).getAtomTypeName();
+             System.out.println("Atom "+(i+1)+" type: "+originalAtomTypeNames[i]);
+             }*/
 
             //molecule = mb3d.generate3DCoordinates(mol, false);
             //molecule = mb3d.generate3DCoordinates(fragContainer, false);
@@ -370,7 +371,7 @@ public class Unstitch {
 
     protected File writeSDF(IAtomContainer iAtomContainer, int n) throws Exception {
 
-        System.out.println("\nFragment number: " + n + "\n");
+        //System.out.println("\nFragment number: " + n + "\n");
         String fileBegin = "fragment";
         String fileEnd = Integer.toString(n);
         String dirName = fileBegin.concat(fileEnd);
@@ -388,13 +389,16 @@ public class Unstitch {
         }
 
         String fragName = dirName.concat(File.separator).concat(dirName.concat(".sdf"));
-        logger.info(String.format(" Writing %s", fragName));
+        String textName = dirName.concat(File.separator).concat(dirName.concat(".txt"));
+        logger.info(String.format("Writing %s", fragName));
+        logger.info(String.format("Writing %s", textName));
 
         BufferedWriter bufferedWriter = null;
         FileWriter fileWriter = null;
         SDFWriter sdfWriter = null;
         File sdfFromSMILES = new File(fragName);
 
+        //write SDF
         try {
             fileWriter = new FileWriter(sdfFromSMILES.getAbsoluteFile());
             bufferedWriter = new BufferedWriter(fileWriter);
@@ -403,7 +407,6 @@ public class Unstitch {
             sdfWriter.write(iAtomContainer);
             bufferedWriter.close();
         } catch (IOException e) {
-            System.out.println("Exception caught for fragment number " + n);
             logger.warning(e.toString());
         } finally {
             if (fileWriter != null) {
@@ -414,6 +417,23 @@ public class Unstitch {
             }
             if (sdfWriter != null) {
                 sdfWriter.close();
+            }
+        }
+
+        //write text file
+        PrintWriter printWriter = null;
+        File textFile = new File(textName);
+        try {
+            printWriter = new PrintWriter(textFile.getAbsoluteFile());
+            for (int k = 0; k < iAtomContainer.getAtomCount(); k++) {
+                IAtom test2 = iAtomContainer.getAtom(k);
+                printWriter.println(test2.getID());
+            }
+        } catch(IOException e){
+            logger.warning(e.toString());
+        } finally{
+            if(printWriter != null){
+                printWriter.close();
             }
         }
 
