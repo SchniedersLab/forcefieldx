@@ -45,12 +45,12 @@ package ffx.xray;
  */
 public class RealSpaceRefinementData {
 
-    protected final int ori[];
-    protected final int ext[];
-    protected final int ni[];
-    protected boolean periodic;
-    protected double data[];
-    protected double densityScore;
+    private final int[] origin;
+    private final int[] extent;
+    private final int[] ni;
+    private double[] data;
+    private double densityScore;
+    private boolean periodic;
 
     /**
      * <p>
@@ -58,8 +58,8 @@ public class RealSpaceRefinementData {
      *
      */
     public RealSpaceRefinementData() {
-        ori = new int[3];
-        ext = new int[3];
+        origin = new int[3];
+        extent = new int[3];
         ni = new int[3];
         periodic = false;
     }
@@ -74,7 +74,88 @@ public class RealSpaceRefinementData {
      * @return a double.
      */
     public double getDataIndex(int x, int y, int z) {
-        int index = x + ext[0] * (y + ext[1] * z);
+        int index = x + extent[0] * (y + extent[1] * z);
         return data[index];
+    }
+
+    /**
+     * @return the origin
+     */
+    public int[] getOrigin() {
+        return origin;
+    }
+
+    /**
+     * @return the extent
+     */
+    public int[] getExtent() {
+        return extent;
+    }
+
+    /**
+     * @return the ni
+     */
+    public int[] getNi() {
+        return ni;
+    }
+
+    /**
+     * @return the data
+     */
+    public double[] getData() {
+        return data;
+    }
+
+    /**
+     * @param data the data to set
+     */
+    public void setData(double[] data) {
+        this.data = data;
+    }
+
+    /**
+     * @return the densityScore
+     */
+    public double getDensityScore() {
+        return densityScore;
+    }
+
+    /**
+     * @param densityScore the densityScore to set
+     */
+    public void setDensityScore(double densityScore) {
+        this.densityScore = densityScore;
+    }
+
+    /**
+     * @return the periodic
+     */
+    public boolean isPeriodic() {
+        return periodic;
+    }
+
+    /**
+     * @param periodic the periodic to set
+     */
+    public void setPeriodic(boolean periodic) {
+        this.periodic = periodic;
+    }
+
+    public void setOrigin(int x, int y, int z) {
+        origin[0] = x;
+        origin[1] = y;
+        origin[2] = z;
+    }
+
+    public void setExtent(int x, int y, int z) {
+        extent[0] = x;
+        extent[1] = y;
+        extent[2] = z;
+    }
+
+    public void setNI(int x, int y, int z) {
+        ni[0] = x;
+        ni[1] = y;
+        ni[2] = z;
     }
 }

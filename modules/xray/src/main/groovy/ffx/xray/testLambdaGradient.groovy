@@ -1,4 +1,3 @@
-
 /**
  * Title: Force Field X.
  *
@@ -37,207 +36,127 @@
  * exception statement from your version.
  */
 
-// TEST LAMBDA GRADIENT
-
-// Apache Imports
-import org.apache.commons.io.FilenameUtils;
-
 // Groovy Imports
 import groovy.util.CliBuilder;
 
-// FFX Imports
-import ffx.numerics.Potential;
+// Force Field X Imports
+import ffx.numerics.VectorMath;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.LambdaInterface;
-import ffx.potential.DualTopologyEnergy;
-import ffx.potential.ForceFieldEnergy;
-import ffx.potential.MolecularAssembly;
-import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.DiffractionData;
 import ffx.xray.DiffractionFile;
-import ffx.xray.RealSpaceData;
-import ffx.xray.RealSpaceFile;
+import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.RefinementEnergy;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
-// First ligand atom.
-int ligandStart = 1;
+// First atom to test.
+int atomID = 0;
 
-// Last ligand atom.
-int ligandStop = -1;
+// Atomic number to test
+int atomicNum = -1;
 
-// First active atom.
-int activeStart = 1;
-
-// Last active atom.
-int activeStop = -1;
-
-// First atom for no electrostatics.
-int noElecStart = 1;
-
-// Last atom for no electrostatics.
-int noElecStop = -1;
-
-// Initial lambda value.
-double initialLambda = 0.5;
+// Finite-difference step size in Angstroms.
+double step = 1.0e-4;
 
 // Print out the energy for each step.
 boolean print = false;
 
-// Things below this line normally do not need to be changed.
-// ===============================================================================================
-
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc realSpace.testLambdaGradient [options] <XYZ|PDB> [Diffraction | Map]');
+def cli = new CliBuilder(usage:' ffxc xray.testGradient [options] <pdbfilename> [datafilename]');
 cli.h(longOpt:'help', 'Print this help message.');
-cli.s(longOpt:'start', args:1, argName:'1', 'Starting ligand atom.');
-cli.f(longOpt:'final', args:1, argName:'n', 'Final ligand atom.');
-cli.as(longOpt:'activeStart', args:1, argName:'1', 'Starting active atom.');
-cli.af(longOpt:'activeFinal', args:1, argName:'n', 'Final active atom.');
-cli.es(longOpt:'noElecStart', args:1, argName:'1', 'No Electrostatics Starting Atom.');
-cli.ef(longOpt:'noElecFinal', args:1, argName:'-1', 'No Electrostatics Final Atom.');
-cli.l(longOpt:'lambda', args:1, argName:'0.5', 'Lambda value to test.');
-cli.v(longOpt:'verbose', 'Print out the energy for each step.');
-
+cli.a(longOpt:'atomID', args:1, argName:'1', 'Number of the first atom to test');
+cli.n(longOpt:'num', args:1, argName:'-1', 'only test gradient on a given atomic number');
+cli.s(longOpt:'dx', args:1, argName:'1.0e-4', 'Finite-difference step size (Angstroms)');
+cli.d(longOpt:'data', args:3, valueSeparator:',', argName:'data.mtz,1.0,false', 'specify input data filename (or simply provide the datafilename argument after the PDB file), weight applied to the data (wA) and if the data is from a neutron experiment');
+cli.p(longOpt:'polarization', args:1, argName:'mutual', 'polarization model: [none / direct / mutual ]');
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
 if (options.h || arguments == null || arguments.size() < 1) {
     return cli.usage();
 }
 
-// Read in command line file.
-String filename = arguments.get(0);
+// Name of the file (PDB or XYZ).
+String modelFilename = arguments.get(0);
 
-// Starting ligand atom.
-if (options.s) {
-    ligandStart = Integer.parseInt(options.s);
+// set up diffraction data (can be multiple files)
+List diffractionFiles = new ArrayList();
+if (arguments.size() > 1) {
+    DiffractionFile diffractionFile = new DiffractionFile(arguments.get(1), 1.0, false);
+    diffractionFiles.add(diffractionFile);
+}
+if (options.d) {
+    for (int i=0; i<options.ds.size(); i+=3) {
+        double wA = Double.parseDouble(options.ds[i+1]);
+        boolean neutron = Boolean.parseBoolean(options.ds[i+2]);
+        DiffractionFile diffractionFile = new DiffractionFile(options.ds[i], wA, neutron);
+        diffractionFiles.add(diffractionFile);
+    }
 }
 
-// Final ligand atom.
-if (options.f) {
-    ligandStop = Integer.parseInt(options.f);
-}
-
-// Starting ligand atom.
-if (options.as) {
-    activeStart = Integer.parseInt(options.as);
-}
-
-// Final ligand atom.
-if (options.af) {
-    activeStop = Integer.parseInt(options.af);
-}
-
-// No electrostatics final atom.
-if (options.es) {
-    noElecStart = Integer.parseInt(options.es);
-}
-
-// No electrostatics first atom.
-if (options.ef) {
-    noElecStop = Integer.parseInt(options.ef);
-}
-
-// Starting lambda value.
-if (options.l) {
-    initialLambda = Double.parseDouble(options.l);
-}
-
-// Print the energy for each step.
-if (options.v) {
-    print = true;
-}
-
-if (arguments.size() == 1) {
-    logger.info("\n Testing lambda derivatives for " + filename);
+if (options.p) {
+    System.setProperty("polarization", options.p);
 }
 
 // Turn on computation of lambda derivatives
 System.setProperty("lambdaterm","true");
 
-// Open the first topology.
-systems = open(filename);
-
-// Set up real space map data (can be multiple files)
-List mapFiles = new ArrayList();
-int nDiffractionData = 0;
-if (arguments.size() > 1) {
-    String dataFileName = arguments.get(1);
-    if (FilenameUtils.isExtension(dataFileName, "map")) {
-        RealSpaceFile realspacefile = new RealSpaceFile(dataFileName, 1.0);
-        mapFiles.add(realspacefile);
-    } else {
-        DiffractionFile diffractionFile = new DiffractionFile(dataFileName, 1.0, false);
-        DiffractionData diffractionData = new DiffractionData(systems, systems[0].getProperties(),
-            SolventModel.POLYNOMIAL, diffractionFile);
-        diffractionData.scaleBulkFit();
-        diffractionData.printStats();
-        String mapFileName = String.format("%s_ffx_%d", FilenameUtils.removeExtension(dataFileName), ++nDiffractionData);
-        diffractionData.writeMaps(mapFileName);
-        mapFiles.add(new RealSpaceFile(mapFileName + "_2fofc.map", 1.0));
+// First atom to test. Subtract 1 for Java array indexing.
+if (options.a) {
+    atomID = Integer.parseInt(options.a) - 1;
+    if (atomID < 0) {
+        atomID = 0;
     }
 }
 
-// Select ligand atoms
-Atom[] atoms = active.getAtomArray();
-int n = atoms.length;
-
-// Apply ligand atom selection
-if (ligandStop > ligandStart && ligandStart > 0 && ligandStop <= n) {
-    for (int i = ligandStart; i <= ligandStop; i++) {
-        Atom ai = atoms[i - 1];
-        ai.setApplyLambda(true);
-    }
+// Atomic number to test on.
+if (options.n) {
+    atomicNum = Integer.parseInt(options.n);
 }
 
-// Apply active atom selection
-if (activeStop > activeStart && activeStart > 0 && activeStop <= n) {
-    // Make all atoms inactive.
-    for (int i = 0; i <= n; i++) {
-        Atom ai = atoms[i - 1];
-        ai.setActive(false);
-    }
-    // Make requested atoms active.
-    for (int i = activeStart; i <= activeStop; i++) {
-        Atom ai = atoms[i - 1];
-        ai.setActive(true);
-    }
+// Load the finite-difference step size in Angstroms.
+if (options.s) {
+    step = Double.parseDouble(options.s);
 }
 
-// Apply the no electrostatics atom selection
-if (noElecStart < 1) {
-    noElecStart = 1;
+// Open the input coordinate file.
+systems = open(modelFilename);
+
+// Load diffraction data.
+if (diffractionFiles.size() == 0) {
+    DiffractionFile diffractionFile = new DiffractionFile(systems, 1.0, false);
+    diffractionFiles.add(diffractionFile);
 }
-if (noElecStop > atoms.length) {
-    noElecStop = atoms.length;
-}
-for (int i = noElecStart; i <= noElecStop; i++) {
-    Atom ai = atoms[i - 1];
-    ai.setElectrostatics(false);
-    ai.print();
+DiffractionData diffractionData = new DiffractionData(systems, systems[0].getProperties(),
+    SolventModel.POLYNOMIAL, diffractionFiles.toArray(new DiffractionFile[diffractionFiles.size()]));
+diffractionData.scaleBulkFit();
+diffractionData.printStats();
+
+RefinementEnergy refinementEnergy = new RefinementEnergy(diffractionData, RefinementMode.COORDINATES);
+int n = refinementEnergy.getNumberOfVariables();
+
+Atom[] atoms = refinementEnergy.getActiveAtoms();
+int nAtoms = atoms.length;
+
+for (int i=0; i<nAtoms; i++) {
+    atoms[i].setApplyLambda(true);
 }
 
-RealSpaceData realSpaceData = new RealSpaceData(systems,
-    systems[0].getProperties(), systems[0].getParallelTeam(),
-    mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
-RefinementEnergy refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMode.COORDINATES, null);
-Potential potential = refinementEnergy;
-LambdaInterface lambdaInterface = refinementEnergy;
 
-// Turn off checks for overlapping atoms, which is expected for lambda=0.
-ForceFieldEnergy forceFieldEnergy = active.getPotentialEnergy();
-forceFieldEnergy.getCrystal().setSpecialPositionCutoff(0.0);
-
-// Reset the number of variables for the case of dual topology.
-n = potential.getNumberOfVariables();
 double[] x = new double[n];
 double[] gradient = new double[n];
+
+// Finite-difference step size.
+double width = 2.0 * step;
+// Error tolerence
+double errTol = 1.0e-3;
+// Upper bound for typical gradient sizes (expected gradient)
+double expGrad = 1000.0;
+
+potential = refinementEnergy;
+lambdaInterface = refinementEnergy;
 double[] lambdaGrad = new double[n];
 double[][] lambdaGradFD = new double[2][n];
 
-// Number of independent atoms.
-assert(n % 3 == 0);
-int nAtoms = n / 3;
+double initialLambda = 0.5;
 
 // Compute the Lambda = 0.0 energy.
 lambda = 0.0;
@@ -253,15 +172,6 @@ double e1 = potential.energyAndGradient(x,gradient);
 logger.info(String.format(" E(0):      %20.8f.", e0));
 logger.info(String.format(" E(1):      %20.8f.", e1));
 logger.info(String.format(" E(1)-E(0): %20.8f.\n", e1-e0));
-
-// Finite-difference step size.
-double step = 1.0e-5;
-double width = 2.0 * step;
-
-// Error tolerence
-double errTol = 1.0e-3;
-// Upper bound for typical gradient sizes (expected gradient)
-double expGrad = 1000.0;
 
 // Test Lambda gradient in the neighborhood of the lambda variable.
 for (int j=0; j<3; j++) {
@@ -350,17 +260,15 @@ for (int j=0; j<3; j++) {
     logger.info("");
 }
 
-lambdaInterface.setLambda(initialLambda);
-potential.getCoordinates(x);
-potential.energyAndGradient(x,gradient);
-
-logger.info(String.format(" Checking Cartesian coordinate gradient"));
+refinementEnergy.getCoordinates(x);
+double energy = refinementEnergy.energyAndGradient(x, gradient);
 
 double[] numeric = new double[3];
 double avLen = 0.0;
 int nFailures = 0;
 double avGrad = 0.0;
-for (int i=0; i<nAtoms; i++) {
+
+for (int i=atomID; i<nAtoms; i++) {
     int i3 = i*3;
     int i0 = i3 + 0;
     int i1 = i3 + 1;
@@ -369,27 +277,27 @@ for (int i=0; i<nAtoms; i++) {
     // Find numeric dX
     double orig = x[i0];
     x[i0] = x[i0] + step;
-    double e = potential.energyAndGradient(x,lambdaGradFD[0]);
+    double e = refinementEnergy.energy(x);
     x[i0] = orig - step;
-    e -= potential.energyAndGradient(x,lambdaGradFD[1]);
+    e -= refinementEnergy.energy(x);
     x[i0] = orig;
     numeric[0] = e / width;
 
     // Find numeric dY
     orig = x[i1];
     x[i1] = x[i1] + step;
-    e = potential.energyAndGradient(x,lambdaGradFD[0]);
+    e = refinementEnergy.energy(x);
     x[i1] = orig - step;
-    e -= potential.energyAndGradient(x,lambdaGradFD[1]);
+    e -= refinementEnergy.energy(x);
     x[i1] = orig;
     numeric[1] = e / width;
 
     // Find numeric dZ
     orig = x[i2];
     x[i2] = x[i2] + step;
-    e = potential.energyAndGradient(x,lambdaGradFD[0]);
+    e = refinementEnergy.energy(x);
     x[i2] = orig - step;
-    e -= potential.energyAndGradient(x,lambdaGradFD[1]);
+    e -= refinementEnergy.energy(x);
     x[i2] = orig;
     numeric[2] = e / width;
 
@@ -406,14 +314,14 @@ for (int i=0; i<nAtoms; i++) {
 
     if (len > errTol) {
         logger.info(String.format(" Atom %d failed: %10.6f.",i+1,len)
-            + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", gradient[i0], gradient[i1], gradient[i2])
-            + String.format(" Numeric:  (%12.4f, %12.4f, %12.4f)\n", numeric[0], numeric[1], numeric[2]));
+            + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)", gradient[i0], gradient[i1], gradient[i2])
+            + String.format("\n Numeric:  (%12.4f, %12.4f, %12.4f)", numeric[0], numeric[1], numeric[2]));
         ++nFailures;
         //return;
     } else {
         logger.info(String.format(" Atom %d passed: %10.6f.",i+1,len)
-            + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", gradient[i0], gradient[i1], gradient[i2])
-            + String.format(" Numeric:  (%12.4f, %12.4f, %12.4f)", numeric[0], numeric[1], numeric[2]));
+            + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)", gradient[i0], gradient[i1], gradient[i2])
+            + String.format("\n Numeric:  (%12.4f, %12.4f, %12.4f)", numeric[0], numeric[1], numeric[2]));
     }
 
     if (grad2 > expGrad) {
@@ -438,3 +346,79 @@ if (avGrad > expGrad) {
 } else {
     logger.info(String.format(" RMS gradient: %10.6f", avGrad));
 }
+
+refinementEnergy = new RefinementEnergy(diffractionData, RefinementMode.BFACTORS);
+n = refinementEnergy.getNumberOfVariables();
+
+atoms = refinementEnergy.getActiveAtoms();
+nAtoms = atoms.length;
+
+gradient = new double[n];
+x = new double[n];
+
+refinementEnergy.getCoordinates(x);
+energy = refinementEnergy.energyAndGradient(x, gradient);
+
+avLen = 0.0;
+nFailures = 0;
+avGrad = 0.0;
+width = 2.0 * step;
+errTol = 1.0e-3;
+expGrad = 1000.0;
+
+for (int i=0; i<n; i++) {
+
+    // Find numeric dB
+    double orig = x[i];
+    x[i] = x[i] + step;
+    double e = refinementEnergy.energy(x);
+    x[i] = orig - step;
+    e -= refinementEnergy.energy(x);
+    x[i] = orig;
+    double fd = e / width;
+
+    double dB = gradient[i] - fd;
+    double len = dB * dB;
+    avLen += len;
+    len = Math.sqrt(len);
+
+    double grad2 = dB*dB;
+    avGrad += grad2;
+    grad2 = Math.sqrt(grad2);
+
+    if (len > errTol) {
+        logger.info(String.format(" B-Factor %d failed: %10.6f.",i+1,len)
+            + String.format("\n Analytic: %12.4f", gradient[i])
+            + String.format("\n Numeric:  %12.4f", fd));
+        ++nFailures;
+        //return;
+    } else {
+        logger.info(String.format(" B-Factor %d passed: %10.6f.",i+1,len)
+            + String.format("\n Analytic: %12.4f", gradient[i])
+            + String.format("\n Numeric:  %12.4f", fd));
+    }
+
+    if (grad2 > expGrad) {
+        logger.info(String.format(" B-Factor %d has an unusually large gradient: %10.6f", i+1, grad2));
+    }
+    logger.info("\n");
+}
+
+avLen = avLen / n;
+avLen = Math.sqrt(avLen);
+if (avLen > errTol) {
+    logger.info(String.format(" Test failure: RMSD from analytic solution is %10.6f > %10.6f", avLen, errTol));
+} else {
+    logger.info(String.format(" Test success: RMSD from analytic solution is %10.6f < %10.6f", avLen, errTol));
+}
+logger.info(String.format(" Number of B-Factors failing gradient test: %d", nFailures));
+
+avGrad = avGrad / n;
+avGrad = Math.sqrt(avGrad);
+if (avGrad > expGrad) {
+    logger.info(String.format(" Unusually large RMS gradient: %10.6f > %10.6f", avGrad, expGrad));
+} else {
+    logger.info(String.format(" RMS gradient: %10.6f", avGrad));
+}
+
+

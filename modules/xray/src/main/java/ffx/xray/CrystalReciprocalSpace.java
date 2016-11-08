@@ -133,7 +133,8 @@ public class CrystalReciprocalSpace {
          */
         GAUSSIAN,
         /**
-         * Smooth the boundar of the classic model using a cubic polynomial switch (default).
+         * Smooth the boundar of the classic model using a cubic polynomial
+         * switch (default).
          */
         POLYNOMIAL
     }
@@ -148,7 +149,6 @@ public class CrystalReciprocalSpace {
     private final boolean neutron;
     private boolean useThreeGaussians = true;
     protected boolean lambdaTerm = false;
-    protected double lambda = 1.0;
     // not final for purposes of finite differences
     private double coordinates[][][];
     private final double bAdd;
@@ -753,13 +753,8 @@ public class CrystalReciprocalSpace {
         complexFFT3D = new Complex3DParallel(fftX, fftY, fftZ, fftTeam);
     }
 
-    /**
-     * Set the current value of the state variable.
-     *
-     * @param lambda a double.
-     */
-    protected void setLambda(double lambda) {
-        this.lambda = lambda;
+    public void setLambdaTerm(boolean lambdaTerm) {
+        this.lambdaTerm = lambdaTerm;
     }
 
     /**
@@ -1758,7 +1753,10 @@ public class CrystalReciprocalSpace {
                 return;
             }
 
-            final double lambdai = atoms[n].applyLambda() ? lambda : 1.0;
+            if (lambdaTerm && atoms[n].applyLambda()) {
+                return;
+            }
+
             xyz[0] = coordinates[iSymm][0][n];
             xyz[1] = coordinates[iSymm][1][n];
             xyz[2] = coordinates[iSymm][2][n];
@@ -1791,7 +1789,7 @@ public class CrystalReciprocalSpace {
                         xf[0] = ix * ifftX;
                         crystal.toCartesianCoordinates(xf, xc);
                         final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
-                        grid[ii] = atomff.rho(grid[ii], lambdai, xc);
+                        grid[ii] = atomff.rho(grid[ii], 1.0, xc);
                     }
                 }
             }
@@ -1816,7 +1814,11 @@ public class CrystalReciprocalSpace {
             if (!atoms[n].getUse()) {
                 return;
             }
-            final double lambdai = atoms[n].applyLambda() ? lambda : 1.0;
+
+            if (lambdaTerm && atoms[n].applyLambda()) {
+                return;
+            }
+
             xyz[0] = coordinates[iSymm][0][n];
             xyz[1] = coordinates[iSymm][1][n];
             xyz[2] = coordinates[iSymm][2][n];
@@ -1866,7 +1868,7 @@ public class CrystalReciprocalSpace {
                         xf[0] = ix * ifftX;
                         crystal.toCartesianCoordinates(xf, xc);
                         final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
-                        grid[ii] = solventff.rho(grid[ii], lambdai, xc);
+                        grid[ii] = solventff.rho(grid[ii], 1.0, xc);
                     }
                 }
             }
@@ -2054,10 +2056,12 @@ public class CrystalReciprocalSpace {
                 return;
             }
 
+            if (lambdaTerm && atoms[iAtom].applyLambda()) {
+                return;
+            }
+
             int lbZ = rowRegion.zFromRowIndex(lb);
             int ubZ = rowRegion.zFromRowIndex(ub);
-
-            final double lambdai = atoms[iAtom].applyLambda() ? lambda : 1.0;
 
             xyz[0] = coordinates[iSymm][0][iAtom];
             xyz[1] = coordinates[iSymm][1][iAtom];
@@ -2099,7 +2103,7 @@ public class CrystalReciprocalSpace {
                         optLocal[rowIndex]++;
                         actualWeight++;
                         final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
-                        grid[ii] = atomff.rho(grid[ii], lambdai, xc);
+                        grid[ii] = atomff.rho(grid[ii], 1.0, xc);
                     }
                 }
             }
@@ -2287,7 +2291,10 @@ public class CrystalReciprocalSpace {
                 return;
             }
 
-            final double lambdai = atoms[iAtom].applyLambda() ? lambda : 1.0;
+            if (lambdaTerm && atoms[iAtom].applyLambda()) {
+                return;
+            }
+
             xyz[0] = coordinates[iSymm][0][iAtom];
             xyz[1] = coordinates[iSymm][1][iAtom];
             xyz[2] = coordinates[iSymm][2][iAtom];
@@ -2346,7 +2353,7 @@ public class CrystalReciprocalSpace {
                         optLocal[rowIndex]++;
                         actualWeight++;
                         final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
-                        grid[ii] = formFactor.rho(grid[ii], lambdai, xc);
+                        grid[ii] = formFactor.rho(grid[ii], 1.0, xc);
                     }
                 }
             }
@@ -2412,7 +2419,11 @@ public class CrystalReciprocalSpace {
             if (!atoms[iAtom].getUse()) {
                 return;
             }
-            final double lambdai = atoms[iAtom].applyLambda() ? lambda : 1.0;
+
+            if (lambdaTerm && atoms[iAtom].applyLambda()) {
+                return;
+            }
+
             xyz[0] = coordinates[iSymm][0][iAtom];
             xyz[1] = coordinates[iSymm][1][iAtom];
             xyz[2] = coordinates[iSymm][2][iAtom];
@@ -2470,7 +2481,7 @@ public class CrystalReciprocalSpace {
                         crystal.toCartesianCoordinates(xf, xc);
                         optLocal[rowIndex]++;
                         final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
-                        grid[ii] = formFactor.rho(grid[ii], lambdai, xc);
+                        grid[ii] = formFactor.rho(grid[ii], 1.0, xc);
                     }
                 }
             }
@@ -2631,7 +2642,11 @@ public class CrystalReciprocalSpace {
             if (!atoms[iAtom].getUse()) {
                 return;
             }
-            final double lambdai = atoms[iAtom].applyLambda() ? lambda : 1.0;
+
+            if (lambdaTerm && atoms[iAtom].applyLambda()) {
+                return;
+            }
+
             xyz[0] = coordinates[iSymm][0][iAtom];
             xyz[1] = coordinates[iSymm][1][iAtom];
             xyz[2] = coordinates[iSymm][2][iAtom];
@@ -2668,7 +2683,7 @@ public class CrystalReciprocalSpace {
                         optLocal[giz]++;
                         actualWeight++;
                         final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
-                        grid[ii] = atomff.rho(grid[ii], lambdai, xc);
+                        grid[ii] = atomff.rho(grid[ii], 1.0, xc);
                     }
                 }
             }
@@ -2829,7 +2844,11 @@ public class CrystalReciprocalSpace {
             if (!atoms[iAtom].getUse()) {
                 return;
             }
-            final double lambdai = atoms[iAtom].applyLambda() ? lambda : 1.0;
+
+            if (lambdaTerm && atoms[iAtom].applyLambda()) {
+                return;
+            }
+
             xyz[0] = coordinates[iSymm][0][iAtom];
             xyz[1] = coordinates[iSymm][1][iAtom];
             xyz[2] = coordinates[iSymm][2][iAtom];
@@ -2881,7 +2900,7 @@ public class CrystalReciprocalSpace {
                         optLocal[giz]++;
                         actualWeight++;
                         final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
-                        grid[ii] = formFactor.rho(grid[ii], lambdai, xc);
+                        grid[ii] = formFactor.rho(grid[ii], 1.0, xc);
                     }
                 }
             }
@@ -2947,7 +2966,11 @@ public class CrystalReciprocalSpace {
             if (!atoms[iAtom].getUse()) {
                 return;
             }
-            final double lambdai = atoms[iAtom].applyLambda() ? lambda : 1.0;
+
+            if (lambdaTerm && atoms[iAtom].applyLambda()) {
+                return;
+            }
+
             xyz[0] = coordinates[iSymm][0][iAtom];
             xyz[1] = coordinates[iSymm][1][iAtom];
             xyz[2] = coordinates[iSymm][2][iAtom];
@@ -2998,7 +3021,7 @@ public class CrystalReciprocalSpace {
                         crystal.toCartesianCoordinates(xf, xc);
                         optLocal[giz]++;
                         final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
-                        grid[ii] = formFactor.rho(grid[ii], lambdai, xc);
+                        grid[ii] = formFactor.rho(grid[ii], 1.0, xc);
                     }
                 }
             }
@@ -3074,11 +3097,10 @@ public class CrystalReciprocalSpace {
                     if (!atoms[n].getUse()) {
                         continue;
                     }
-                    if (lambdaTerm) {
-                        if (!atoms[n].applyLambda()) {
-                            continue;
-                        }
+                    if (lambdaTerm && atoms[n].applyLambda()) {
+                        continue;
                     }
+
                     xyz[0] = coordinates[0][0][n];
                     xyz[1] = coordinates[0][1][n];
                     xyz[2] = coordinates[0][2][n];
@@ -3111,7 +3133,6 @@ public class CrystalReciprocalSpace {
                                 optLocal[n]++;
                                 final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
                                 atomff.rhoGrad(xc, weight * densityGrid[ii], refinementmode);
-
                             }
                         }
                     }
@@ -3166,10 +3187,8 @@ public class CrystalReciprocalSpace {
                     if (!atoms[n].getUse()) {
                         continue;
                     }
-                    if (lambdaTerm) {
-                        if (!atoms[n].applyLambda()) {
-                            continue;
-                        }
+                    if (lambdaTerm && atoms[n].applyLambda()) {
+                        continue;
                     }
                     xyz[0] = coordinates[0][0][n];
                     xyz[1] = coordinates[0][1][n];

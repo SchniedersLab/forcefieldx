@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.logging.Logger;
 
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.sin;
@@ -37,6 +38,7 @@ import ffx.potential.bonded.Atom;
 public abstract class ExtendedVariable {
     
     // System handles
+    private static final Logger logger = Logger.getLogger(ExtendedVariable.class.getName());
     private static int esvIndexer = 0;
     public final int index;
     protected List<Atom> atoms = new ArrayList<>();
@@ -67,13 +69,6 @@ public abstract class ExtendedVariable {
         this(0.0, 1.0);
     }
     
-    public static int prop(String key, int def) {
-        return (System.getProperty(key) != null) ? Integer.parseInt(System.getProperty(key)) : def;
-    }
-    public static double prop(String key, double def) {
-        return (System.getProperty(key) != null) ? Double.parseDouble(System.getProperty(key)) : def;
-    }
-    
     public List<Atom> getAtoms() {
         List<Atom> ret = new ArrayList<>();
         ret.addAll(atoms);
@@ -85,11 +80,17 @@ public abstract class ExtendedVariable {
     }
     
     /**
+     * Implementations should start by calling langevin(), then set the new lambda value everywhere 
+     * it needs to go (eg bonded terms).
+     */
+    public abstract void propagate(double dEdLdh, double currentTemp, double dt);
+    
+    /**
      * Propagate lambda using Langevin dynamics.
      * Check that temperature goes to the value used below (when set as a constant) even when sim is decoupled.
      */
-    public void propagate(double dEdLdh, double currentTemperature, double dt) {
-        double rt2 = 2.0 * ThermoConstants.R * currentTemperature * thetaFriction / dt;
+    protected void langevin(double dEdLdh, double currentTemperature, double dt) {
+        double rt2 = 2.0 * ThermoConstants.BOLTZMANN * currentTemperature * thetaFriction / dt;
         double randomForce = sqrt(rt2) * stochasticRandom.nextGaussian() / ThermoConstants.randomConvert;
         double dEdL = -dEdLdh * sin(2.0 * theta);
         halfThetaVelocity = (halfThetaVelocity * (2.0 * thetaMass - thetaFriction * dt)
@@ -104,9 +105,7 @@ public abstract class ExtendedVariable {
         }
 
         double sinTheta = sin(theta);
-        lambda = sinTheta * sinTheta;
-        discrBias = -(4*betat - (lambda-0.5)*(lambda-0.5)) + betat;
-        dDiscrBiasdL = -8*betat*(lambda-0.5);
+        setLambda(sinTheta * sinTheta);
     }
     
     public final void setLambda(double lambda) {
@@ -128,6 +127,12 @@ public abstract class ExtendedVariable {
     }
     
     /**
+     * Should include at least the discretization bias; add any type-specific biases (eg pH).
+     */
+    public abstract double getTotalBiasEnergy(double temperature);
+    public abstract double getTotaldBiasdL(double temperature);
+    
+    /**
      * From Shen&Huang 2016; drives ESVs to zero/unity.
      * bias = 4B*(L-0.5)^2
      */
@@ -140,6 +145,13 @@ public abstract class ExtendedVariable {
      */
     public double getdDiscretizationBiasdL() {
         return dDiscrBiasdL;
+    }
+
+    public static int prop(String key, int defaultVal) {
+        return (System.getProperty(key) != null) ? Integer.parseInt(System.getProperty(key)) : defaultVal;
+    }
+    public static double prop(String key, double defaultVal) {
+        return (System.getProperty(key) != null) ? Double.parseDouble(System.getProperty(key)) : defaultVal;
     }
     
     /**

@@ -38,6 +38,7 @@
 package ffx.xray;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 import static java.util.Arrays.fill;
@@ -50,6 +51,8 @@ import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Residue;
+import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.ForceField.ForceFieldBoolean;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
 import static ffx.algorithms.Thermostat.convert;
@@ -71,6 +74,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
     private static final double kBkcal = kB / convert;
     private static final double eightPI2 = 8.0 * PI * PI;
     private static final double eightPI23 = eightPI2 * eightPI2 * eightPI2;
+
     private final DiffractionData diffractionData;
     private final RefinementModel refinementModel;
     private final Atom atomArray[];
@@ -80,6 +84,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
     private int nXYZ;
     private int nB;
     private int nOCC;
+
     private RefinementMode refinementMode;
     private boolean refineXYZ = false;
     private boolean refineOCC = false;
@@ -87,13 +92,20 @@ public class XRayEnergy implements LambdaInterface, Potential {
     private boolean xrayTerms = true;
     private boolean restraintTerms = true;
     protected double[] optimizationScaling = null;
-    private double bmass;
-    private double kTbnonzero;
-    private double kTbsim;
-    private double occmass;
-    private double temp = 50.0;
+
+    private final double bMass;
+    private final double kTbNonzero;
+    private final double kTbSimWeight;
+    private final double occMass;
+    private final double temperature = 50.0;
+
     protected double lambda = 1.0;
+    private boolean lambdaTerm = false;
     private double totalEnergy;
+    private double dEdL;
+    private double d2UdL2 = 0.0;
+    private double g2[];
+    private double dUdXdL[];
     private STATE state = STATE.BOTH;
 
     /**
@@ -118,10 +130,13 @@ public class XRayEnergy implements LambdaInterface, Potential {
         this.nB = nB;
         this.nOCC = nOCC;
 
-        bmass = diffractionData.bmass;
-        kTbnonzero = 0.5 * kBkcal * temp * diffractionData.bnonzeroweight;
-        kTbsim = kBkcal * temp * diffractionData.bsimweight;
-        occmass = diffractionData.occmass;
+        bMass = diffractionData.bMass;
+        kTbNonzero = 0.5 * kBkcal * temperature * diffractionData.bNonZeroWeight;
+        kTbSimWeight = kBkcal * temperature * diffractionData.bSimWeight;
+        occMass = diffractionData.occMass;
+
+        ForceField forceField = diffractionData.assembly[0].getForceField();
+        lambdaTerm = forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false);
 
         // Fill an active atom array.
         int count = 0;
@@ -139,17 +154,20 @@ public class XRayEnergy implements LambdaInterface, Potential {
             }
         }
 
+        dUdXdL = new double[count * 3];
+        g2 = new double[count * 3];
+
         setRefinementBooleans();
 
         if (refineB) {
             logger.info(" B-Factor Refinement Parameters");
-            logger.info(" Temperature:                 " + temp);
-            logger.info(" Non-zero restraint weight:   " + diffractionData.bnonzeroweight);
-            logger.info(" Similarity restraint weight: " + diffractionData.bsimweight);
+            logger.info("  Temperature:                 " + temperature);
+            logger.info("  Non-zero restraint weight:   " + diffractionData.bNonZeroWeight);
+            logger.info("  Similarity restraint weight: " + diffractionData.bSimWeight);
         }
 
-        logger.info(String.format(" RefinementEnergy variables %d (nXYZ %d, nB %d, nOcc %d)",
-                nXYZ+nB+nOCC, nXYZ, nB, nOCC));
+        logger.info(String.format(" XRayEnergy variables:  %d (nXYZ %d, nB %d, nOcc %d)\n",
+                nXYZ + nB + nOCC, nXYZ, nB, nOCC));
     }
 
     /**
@@ -182,11 +200,34 @@ public class XRayEnergy implements LambdaInterface, Potential {
         }
 
         if (xrayTerms) {
-            // compute new structure factors
-            diffractionData.computeAtomicDensity();
 
-            // compute crystal likelihood
+            if (lambdaTerm) {
+                diffractionData.setLambdaTerm(false);
+            }
+
+            // Compute new structure factors.
+            diffractionData.computeAtomicDensity();
+            // Compute crystal likelihood.
             e = diffractionData.computeLikelihood();
+
+            if (lambdaTerm) {
+
+                // Turn off all atoms scaled by lambda.
+                diffractionData.setLambdaTerm(true);
+
+                // Compute new structure factors.
+                diffractionData.computeAtomicDensity();
+
+                // Compute crystal likelihood.
+                double e2 = diffractionData.computeLikelihood();
+
+                dEdL = e - e2;
+
+                e = lambda * e + (1.0 - lambda) * e2;
+
+                diffractionData.setLambdaTerm(false);
+            }
+
         }
 
         if (restraintTerms) {
@@ -205,6 +246,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
                 x[i] *= optimizationScaling[i];
             }
         }
+
         totalEnergy = e;
         return e;
     }
@@ -265,6 +307,11 @@ public class XRayEnergy implements LambdaInterface, Potential {
         }
 
         if (xrayTerms) {
+
+            if (lambdaTerm) {
+                diffractionData.setLambdaTerm(false);
+            }
+
             // compute new structure factors
             diffractionData.computeAtomicDensity();
 
@@ -278,6 +325,40 @@ public class XRayEnergy implements LambdaInterface, Potential {
                 // pack gradients into gradient array
                 getXYZGradients(g);
             }
+
+            if (lambdaTerm) {
+
+                int n = dUdXdL.length;
+                System.arraycopy(g, 0, dUdXdL, 0, n);
+
+                for (Atom a : activeAtomArray) {
+                    a.setXYZGradient(0.0, 0.0, 0.0);
+                    a.setLambdaXYZGradient(0.0, 0.0, 0.0);
+                }
+
+                // Turn off all atoms scaled by lambda.
+                diffractionData.setLambdaTerm(true);
+
+                // Compute new structure factors.
+                diffractionData.computeAtomicDensity();
+
+                // Compute crystal likelihood.
+                double e2 = diffractionData.computeLikelihood();
+
+                // compute the crystal gradients
+                diffractionData.computeAtomicGradients(refinementMode);
+
+                dEdL = e - e2;
+                e = lambda * e + (1.0 - lambda) * e2;
+                getXYZGradients(g2);
+                for (int i = 0; i < g.length; i++) {
+                    dUdXdL[i] -= g2[i];
+                    g[i] = lambda * g[i] + (1.0 - lambda) * g2[i];
+                }
+
+                diffractionData.setLambdaTerm(false);
+            }
+
         }
 
         if (restraintTerms) {
@@ -522,9 +603,9 @@ public class XRayEnergy implements LambdaInterface, Potential {
     }
 
     /**
-     * fill gradient array with xyz gradients
+     * Fill gradient array with atomic coordinate partial derivatives.
      *
-     * @param g array to add gradients to
+     * @param g gradient array
      */
     public void getXYZGradients(double g[]) {
         assert (g != null);
@@ -675,7 +756,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
                     nneg++;
                     a.setTempFactor(0.01);
                     if (nneg < 5) {
-                        logger.info("isotropic atom: " + a.toString() + " negative B factor");
+                        logger.info(" Isotropic atom: " + a.toString() + " negative B factor");
                     }
                 }
             } else {
@@ -699,14 +780,14 @@ public class XRayEnergy implements LambdaInterface, Potential {
                     anisou[3] = anisou[4] = anisou[5] = 0.0;
                     a.setAnisou(anisou);
                     if (nneg < 5) {
-                        logger.info("anisotropic atom: " + a.toString() + " negative ANISOU");
+                        logger.info(" Anisotropic atom: " + a.toString() + " negative ANISOU");
                     }
                 }
             }
         }
 
         if (nneg > 0) {
-            logger.info(nneg + " of " + nAtoms
+            logger.info(" " + nneg + " of " + nAtoms
                     + " atoms with negative B factors! Attempting to correct.\n  (If this problem persists, increase bsimweight)");
             /*
              * if (nneg > 50){ kTbsim *= 2.0; logger.info("excessive number of
@@ -797,8 +878,8 @@ public class XRayEnergy implements LambdaInterface, Potential {
                 // isotropic B restraint
 
                 // non-zero restraint: -kTln[Z], Z is ADP partition function
-                e += -3.0 * kTbnonzero * Math.log(biso / (4.0 * Math.PI));
-                gradb = -3.0 * kTbnonzero / biso;
+                e += -3.0 * kTbNonzero * Math.log(biso / (4.0 * Math.PI));
+                gradb = -3.0 * kTbNonzero / biso;
                 a.addToTempFactorGradient(gradb);
 
                 // similarity harmonic restraint
@@ -827,8 +908,8 @@ public class XRayEnergy implements LambdaInterface, Potential {
                     b2 = a2.getTempFactor();
                     // transform B similarity restraints to U scale
                     bdiff = b2u(b1 - b2);
-                    e += kTbsim * Math.pow(bdiff, 2.0);
-                    gradb = 2.0 * kTbsim * bdiff;
+                    e += kTbSimWeight * Math.pow(bdiff, 2.0);
+                    gradb = 2.0 * kTbSimWeight * bdiff;
                     a1.addToTempFactorGradient(gradb);
                     a2.addToTempFactorGradient(-gradb);
                 }
@@ -838,13 +919,13 @@ public class XRayEnergy implements LambdaInterface, Potential {
                 det1 = determinant3(anisou1);
 
                 // non-zero restraint: -kTln[Z], Z is ADP partition function
-                e += u2b(-kTbnonzero * Math.log(det1 * eightPI2 * Math.PI));
-                gradu[0] = u2b(-kTbnonzero * ((anisou1[1] * anisou1[2] - anisou1[5] * anisou1[5]) / det1));
-                gradu[1] = u2b(-kTbnonzero * ((anisou1[0] * anisou1[2] - anisou1[4] * anisou1[4]) / det1));
-                gradu[2] = u2b(-kTbnonzero * ((anisou1[0] * anisou1[1] - anisou1[3] * anisou1[3]) / det1));
-                gradu[3] = u2b(-kTbnonzero * ((2.0 * (anisou1[4] * anisou1[5] - anisou1[3] * anisou1[2])) / det1));
-                gradu[4] = u2b(-kTbnonzero * ((2.0 * (anisou1[3] * anisou1[5] - anisou1[4] * anisou1[1])) / det1));
-                gradu[5] = u2b(-kTbnonzero * ((2.0 * (anisou1[3] * anisou1[4] - anisou1[5] * anisou1[0])) / det1));
+                e += u2b(-kTbNonzero * Math.log(det1 * eightPI2 * Math.PI));
+                gradu[0] = u2b(-kTbNonzero * ((anisou1[1] * anisou1[2] - anisou1[5] * anisou1[5]) / det1));
+                gradu[1] = u2b(-kTbNonzero * ((anisou1[0] * anisou1[2] - anisou1[4] * anisou1[4]) / det1));
+                gradu[2] = u2b(-kTbNonzero * ((anisou1[0] * anisou1[1] - anisou1[3] * anisou1[3]) / det1));
+                gradu[3] = u2b(-kTbNonzero * ((2.0 * (anisou1[4] * anisou1[5] - anisou1[3] * anisou1[2])) / det1));
+                gradu[4] = u2b(-kTbNonzero * ((2.0 * (anisou1[3] * anisou1[5] - anisou1[4] * anisou1[1])) / det1));
+                gradu[5] = u2b(-kTbNonzero * ((2.0 * (anisou1[3] * anisou1[4] - anisou1[5] * anisou1[0])) / det1));
                 a.addToAnisouGradient(gradu);
 
                 // similarity harmonic restraint based on determinants
@@ -875,8 +956,8 @@ public class XRayEnergy implements LambdaInterface, Potential {
                     anisou2 = a2.getAnisou(anisou2);
                     det2 = determinant3(anisou2);
                     bdiff = det1 - det2;
-                    e += eightPI23 * kTbsim * Math.pow(bdiff, 2.0);
-                    gradb = eightPI23 * 2.0 * kTbsim * bdiff;
+                    e += eightPI23 * kTbSimWeight * Math.pow(bdiff, 2.0);
+                    gradb = eightPI23 * 2.0 * kTbSimWeight * bdiff;
 
                     // parent atom
                     gradu[0] = gradb * (anisou1[1] * anisou1[2] - anisou1[5] * anisou1[5]);
@@ -935,13 +1016,13 @@ public class XRayEnergy implements LambdaInterface, Potential {
 
         if (refineB) {
             for (int j = i; j < nXYZ + nB; i++, j++) {
-                mass[j] = bmass;
+                mass[j] = bMass;
             }
         }
 
         if (refineOCC) {
             for (int j = i; j < nXYZ + nB + nOCC; i++, j++) {
-                mass[j] = occmass;
+                mass[j] = occMass;
             }
         }
         return mass;
@@ -970,7 +1051,6 @@ public class XRayEnergy implements LambdaInterface, Potential {
     public void setLambda(double lambda) {
         if (lambda <= 1.0 && lambda >= 0.0) {
             this.lambda = lambda;
-            diffractionData.setLambda(lambda);
         } else {
             String message = String.format("Lambda value %8.3f is not in the range [0..1].", lambda);
             logger.warning(message);
@@ -990,15 +1070,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
      */
     @Override
     public double getdEdL() {
-        diffractionData.setLambda(1.0);
-        // compute new structure factors
-        diffractionData.computeAtomicDensity();
-
-        // compute crystal likelihood
-        double e = diffractionData.computeLikelihood();
-        diffractionData.setLambda(lambda);
-
-        return e;
+        return dEdL;
     }
 
     /**
@@ -1014,11 +1086,8 @@ public class XRayEnergy implements LambdaInterface, Potential {
      */
     @Override
     public void getdEdXdL(double[] gradient) {
-        // compute the crystal gradients
-        diffractionData.computeAtomicGradients(refinementMode);
-
-        // pack gradients into gradient array
-        getXYZGradients(gradient);
+        int n = dUdXdL.length;
+        System.arraycopy(dUdXdL, 0, gradient, 0, n);
     }
 
     /**

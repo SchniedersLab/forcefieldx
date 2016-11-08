@@ -729,6 +729,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 //                logger.warning("Couldn't attach extended system to PME.");
 //            }
 //        }
+        reInit();
     }
     
     public void detachExtendedSystem() {
@@ -740,6 +741,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 //        if (particleMeshEwald != null && particleMeshEwald instanceof ParticleMeshEwaldQI) {
 //            ((ParticleMeshEwaldQI) particleMeshEwald).detachExtendedSystem();
 //        }
+        reInit();
     }
 
     public void setResolution(Resolution resolution) {
@@ -1756,6 +1758,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             }
             return e;
         } catch (EnergyException ex) {
+            ex.printStackTrace();
             if (printOnFailure) {
                 String timeString = LocalDateTime.now().format(DateTimeFormatter.
                         ofPattern("yyyy_MM_dd-HH_mm_ss"));
@@ -1770,8 +1773,10 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 ef.saveAsPDB(molecularAssembly, new File(filename));
             }
             if (ex.doCauseSevere()) {
+                ex.printStackTrace();
                 logger.log(Level.SEVERE, " Error in calculating energies or gradients", ex);
             } else {
+                ex.printStackTrace();
                 throw ex; // Rethrow exception
             }
 
@@ -2761,8 +2766,12 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         @Override
         public void finish() {
             // Finalize bond and angle RMSD values.
-            bondRMSD = sqrt(sharedBondRMSD.get() / bonds.length);
-            angleRMSD = sqrt(sharedAngleRMSD.get() / angles.length);
+            if (bondTerm) {
+                bondRMSD = sqrt(sharedBondRMSD.get() / bonds.length);
+            }
+            if (angleTerm) {
+                angleRMSD = sqrt(sharedAngleRMSD.get() / angles.length);
+            }
 
             // Load shared energy values into their respective fields.
             angleEnergy = sharedAngleEnergy.get();

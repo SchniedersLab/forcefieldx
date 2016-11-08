@@ -37,6 +37,11 @@
  */
 package ffx.xray;
 
+import ffx.xray.parsers.MTZFilter;
+import ffx.xray.parsers.CNSFilter;
+import ffx.xray.parsers.CIFFilter;
+import ffx.xray.parsers.DiffractionFileFilter;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;

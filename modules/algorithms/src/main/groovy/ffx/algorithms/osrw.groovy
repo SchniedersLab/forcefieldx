@@ -46,7 +46,7 @@ import org.apache.commons.io.FileUtils;
 import groovy.util.CliBuilder;
 import groovy.transform.Field;
 
-// Paralle Java Imports
+// Parallel Java Imports
 import edu.rit.pj.Comm;
 
 // Java Imports
@@ -58,11 +58,20 @@ import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.OSRW;
 import ffx.algorithms.Integrator.Integrators;
 import ffx.algorithms.Thermostat.Thermostats;
-import ffx.potential.QuadTopologyEnergy;
+import ffx.algorithms.RotamerOptimization;
+
 import ffx.potential.DualTopologyEnergy;
 import ffx.potential.ForceFieldEnergy;
-import ffx.potential.bonded.Atom;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.QuadTopologyEnergy;
+
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.LambdaInterface;
+import ffx.potential.bonded.Polymer;
+import ffx.potential.bonded.Residue;
+import ffx.potential.bonded.RotamerLibrary;
+
+import ffx.numerics.Potential;
 
 // Asychronous communication between walkers.
 boolean asynchronous = false;
@@ -78,6 +87,7 @@ boolean asynchronous = false;
 @Field def topologies = [];
 // List of ForceFieldEnergies.
 @Field def energies = [];
+@Field def properties = [];
 
 // First atom of the ligand.
 @Field int ligandStart = 1;
@@ -176,6 +186,10 @@ double maxAngleMove = 1.0;
 // Write traversal snapshots
 boolean writeTraversals = false;
 
+//@Field String distributeWalkers = "";
+@Field def distResidues = [];
+@Field boolean autoDist = false;
+
 int numParallel = 1;
 @Field int threadsAvail = edu.rit.pj.ParallelTeam.getDefaultThreadCount();
 @Field int threadsPer = threadsAvail;
@@ -222,6 +236,7 @@ cli.rn(longOpt:'resetNumSteps', args:1, argName:'true', 'Ignore prior steps logg
 cli.uaA(longOpt:'unsharedAtomsA', args:1, argName:'None', 'Quad-Topology: Period-separated ranges of A dual-topology atoms not shared by B');
 cli.uaB(longOpt:'unsharedAtomsB', args:1, argName:'None', 'Quad-Topology: Period-separated ranges of B dual-topology atoms not shared by A');
 cli.np(longOpt:'numParallel', args:1, argName:'1', 'Number of topology energies to calculate in parallel');
+cli.dw(longOpt:'distributeWalkers', args:1, argName:'false', 'AUTO: Pick up per-walker configurations as [filename.pdb]_[num], or specify a residue to distribute on.');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -385,6 +400,14 @@ if (options.W) {
     writeTraversals = true;
 }
 
+if (options.dw) {
+    if (options.dw.equalsIgnoreCase("AUTO")) {
+        autoDist = true;
+    } else {
+        distResidues = options.dw.split("\\.");
+    }
+}
+
 if (options.np) {
     numParallel = Integer.parseInt(options.np);
     if (threadsAvail % numParallel != 0) {
@@ -474,10 +497,40 @@ if (arguments.size() >= 2) {
 
 @Field Pattern rangeregex = Pattern.compile("([0-9]+)-?([0-9]+)?");
 
+// Apply the command line lambda value if a lambda restart file does not exist.
+if (!lambdaRestart.exists()) {
+    if (lambda < 0.0 || lambda > 1.0) {
+        if (size > 1) {
+            dL = 1.0 / (size - 1.0);
+            lambda = rank * dL;
+            if (lambda > 1.0) {
+                lambda = 1.0;
+            }
+            if (lambda < 0.0) {
+                lambda = 0.0;
+            }
+            logger.info(String.format(" Setting lambda to %5.3f.", lambda));
+        } else {
+            lambda = 0.5;
+            logger.info(String.format(" Setting lambda to %5.3f", lambda));
+        }
+    }
+}
+
 /**
  * Handles opening a file (filename), with 0-indexed number topNum.
  */
 private void openFile(String toOpen, File structFile, int topNum) {
+    if (autoDist) {
+        int rank = world.rank();
+        String openName = String.format("%s_%d", toOpen, rank+1);
+        File testFile = new File(openName);
+        if (testFile.exists()) {
+            toOpen = openName;
+        } else {
+            logger.warning(String.format(" File %s does not exist; using default %s", openName, toOpen));
+        }
+    }
     open(toOpen, threadsPer);
     if (size > 1) {
         active.setFile(structFile);
@@ -571,6 +624,7 @@ private void openFile(String toOpen, File structFile, int topNum) {
     // Turn off checks for overlapping atoms, which is expected for lambda=0.
     energy.getCrystal().setSpecialPositionCutoff(0.0);
     // Save a reference to the topology.
+    properties[topNum] = active.getProperties();
     topologies[topNum] = active;
     energies[topNum] = energy;
 }
@@ -646,7 +700,97 @@ OSRW osrw = null;
 // Save a reference to the first topology.
 //topologies[0] = active;
 
+void optStructure(MolecularAssembly mola, Potential pot) {
+    if (!distResidues) {
+        throw new IllegalArgumentException(" Programming error: Must have list of residues to split on!");
+    }
+
+    LambdaInterface linter = (pot instanceof LambdaInterface) ? (LambdaInterface) pot : null;
+    double initialLambda = linter ? linter.getLambda() : -1.0;
+    linter?.setLambda(0.5);
+    // Safe navigation operator ?. operates only if LHS is non-null.
+    
+    def resList = [];
+    Polymer[] polymers = mola.getChains();
+    
+    def nochainMatcher = ~/^\ ?([0-9]+)$/;
+    def chainMatcher = ~/^([a-zA-Z])([0-9]+)$/;
+    
+    for (String ts : distResidues) {
+        Character chainID = 'A';
+        def m = chainMatcher.matcher(ts);
+        int resNum = -1;
+        if (m.find()) {
+            chainID = m.group(1);
+            resNum = Integer.parseInt(m.group(2));
+        } else {
+            m = nochainMatcher.matcher(ts);
+            if (m.find()) {
+                resNum = Integer.parseInt(m.group(1));
+            } else {
+                logger.warning(String.format(" Could not parse %s as a valid residue!", ts));
+                continue;
+            }
+        }
+        
+        logger.info(String.format(" Looking for chain %c residue %d", chainID, resNum));
+        
+        for (Polymer p : mola.getChains()) {
+            if (p.getChainID() == chainID) {
+                for (Residue r : p.getResidues()) {
+                    if (r.getResidueNumber() == resNum && r.getRotamers() != null) {
+                        resList.add(r);
+                    }
+                }
+            }
+        }
+    }
+    
+    if (!resList) {
+        throw new IllegalArgumentException(" No valid entries for distWalkers!");
+    }
+    
+    RotamerOptimization ropt = new RotamerOptimization(mola, pot, sh);
+    
+    ropt.setThreeBodyEnergy(false);
+    ropt.setVerboseEnergies(true);
+    if (System.getProperty("ro-ensembleNumber") == null && System.getProperty("ro-ensembleEnergy") == null) {
+        logger.info(String.format(" Setting ensemble to default of number of walkers %d", size));
+        ropt.setEnsemble(size);
+    }
+    ropt.setPrintFiles(false);
+    def addedResList = ropt.setResiduesIgnoreNull(resList);
+    
+    RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
+    RotamerLibrary.setUseOrigCoordsRotamer(false);
+    RotamerLibrary.measureRotamers(resList, false);
+    
+    String oldLazyMat = System.getProperty("ro-lazyMatrix");
+    System.setProperty("ro-lazyMatrix", "true");
+    
+    ropt.optimize(RotamerOptimization.Algorithm.GLOBAL_DEE);
+    ropt.setCoordinatesToEnsemble(world.rank());
+    
+    // One final energy call to ensure the coordinates are properly set at the
+    // end of rotamer optimization.
+    double[] xyz = new double[pot.getNumberOfVariables()];
+    pot.getCoordinates(xyz);
+    logger.info(" Final Optimized Energy:");
+    pot.energy(xyz, true);
+    
+    linter?.setLambda(initialLambda);
+    
+    if (oldLazyMat) {
+        System.setProperty("ro-lazyMatrix", oldLazyMat);
+    } else {
+        System.clearProperty("ro-lazyMatrix");
+    }
+}
+
 if (arguments.size() == 1) {
+    if (distResidues) {
+        optStructure(topologies[0], energies[0]);
+    }
     // Check for constant pressure
     if (NPT) {
         //        // Create a barostat.
@@ -745,6 +889,16 @@ if (arguments.size() == 1) {
     if (numParallel == 2) {
         dualTopologyEnergy.setParallel(true);
     }
+    if (distResidues) {
+        if (dualTopologyEnergy.getNumberSharedVariables() == dualTopologyEnergy.getNumberOfVariables()) {
+            logger.info(" Generating starting structure based on dual-topology:");
+            optStructure(topologies[0], dualTopologyEnergy);
+        } else {
+            logger.info(" Generating separate starting structures for each topology of the dual toplogy:");
+            optStructure(topologies[0], energies[0]);
+            optStructure(topologies[1], energies[1]);
+        }
+    }
     // Wrap the DualTopology potential energy inside an OSRW instance.
     osrw = new OSRW(dualTopologyEnergy, dualTopologyEnergy, lambdaRestart,
         histogramRestart, active.getProperties(), temperature, timeStep, printInterval,
@@ -754,10 +908,10 @@ if (arguments.size() == 1) {
         osrw.setTraversalOutput(lambdaOneFile, topologies[0], lambdaZeroFile, topologies[1]);
     }
 } else if (arguments.size() == 4) {
-    logger.info(" For quad-topology calculations, systems should be set up as follows:");
+    /*logger.info(" For quad-topology calculations, systems should be set up as follows:");
     logger.info(" The first two define the first dual topology, the second two should define the second dual topology in the same order.");
     logger.info(" For example, for a dual force field correction on decharging sodium, topologies should be in this order:");
-    logger.info(" Sodium-AMOEBA, sodium-AMBER, decharged Na-AMOEBA, decharged Na-AMBER");
+    logger.info(" Sodium-AMOEBA, sodium-AMBER, decharged Na-AMOEBA, decharged Na-AMBER");*/
     
     openFile(arguments.get(1), structureFile, 1);
     openFile(arguments.get(2), structureFile, 2);
@@ -765,6 +919,13 @@ if (arguments.size() == 1) {
     DualTopologyEnergy dtA = new DualTopologyEnergy(topologies[0], topologies[1]);
     // Intentionally reversed order.
     DualTopologyEnergy dtB = new DualTopologyEnergy(topologies[3], topologies[2]);
+    
+    if (distResidues) {
+        logger.info(" Generating starting structures for each dual-topology of the quad topology:");
+        optStructure(topologies[0], dtA);
+        optStructure(topologies[3], dtB);
+    }
+    
     List<Integer> uniqueA = new ArrayList<>();
     List<Integer> uniqueB = new ArrayList<>();
     
@@ -862,29 +1023,9 @@ if (arguments.size() == 1) {
     logger.severe(" Must have 1, 2, or 4 topologies to test.");
 }
 
-// Apply the command line lambda value if a lambda restart file does not exist.
 if (!lambdaRestart.exists()) {
-    if (lambda >= 0.0 && lambda <= 1.0) {
-        osrw.setLambda(lambda);
-        logger.info(String.format(" Setting lambda to %5.3f.", lambda));
-    } else {
-        if (size > 1) {
-            dL = 1.0 / (size - 1.0);
-            lambda = rank * dL;
-            if (lambda > 1.0) {
-                lambda = 1.0;
-            }
-            if (lambda < 0.0) {
-                lambda = 0.0;
-            }
-            logger.info(String.format(" Setting lambda to %5.3f.", lambda));
-            osrw.setLambda(lambda);
-        } else {
-            lambda = 0.5;
-            logger.info(String.format(" Setting lambda to %5.3f", lambda));
-            osrw.setLambda(lambda);
-        }
-    }
+    logger.info(String.format(" Setting lambda to %5.3f", lambda));
+    osrw.setLambda(lambda);
 }
 
 // Apply the command line OSRW values if a histogram restart file does not exist.
@@ -897,6 +1038,9 @@ if (!histogramRestart.exists()) {
 
 // Create the MolecularDynamics instance.
 MolecularDynamics molDyn = new MolecularDynamics(topologies[0], osrw, topologies[0].getProperties(), null, thermostat, integrator);
+for (int i = 1; i < topologies.size(); i++) {
+    molDyn.addAssembly(topologies.get(i), properties.get(i));
+}
 
 // Start sampling.
 if (eSteps > 0) {

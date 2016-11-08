@@ -79,6 +79,7 @@ import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
 import ffx.utilities.Hybrid36;
+import ffx.utilities.StringUtils;
 
 import static ffx.numerics.VectorMath.diff;
 import static ffx.numerics.VectorMath.r;
@@ -99,10 +100,8 @@ import static ffx.potential.bonded.ResidueEnumerations.getAminoAcid;
 import static ffx.potential.bonded.ResidueEnumerations.nucleicAcidList;
 import static ffx.potential.parsers.PDBFilter.PDBFileStandard.VERSION3_2;
 import static ffx.potential.parsers.PDBFilter.PDBFileStandard.VERSION3_3;
-import ffx.utilities.StringUtils;
 import static ffx.utilities.StringUtils.padLeft;
 import static ffx.utilities.StringUtils.padRight;
-import static java.lang.String.format;
 
 /**
  * The PDBFilter class parses data from a Protein DataBank (*.PDB) file. The
@@ -227,6 +226,7 @@ public final class PDBFilter extends SystemFilter {
      * Tracks output MODEL numbers. Unused if below zero.
      */
     private int modelsWritten = -1;
+    private boolean noVersioning = false;
     
     /**
      * <p>
@@ -335,6 +335,10 @@ public final class PDBFilter extends SystemFilter {
     
     public void setModelNumbering(boolean set) {
         modelsWritten = 0;
+    }
+    
+    public void setNoVersioning(boolean set) {
+        noVersioning = set;
     }
     
     public ArrayList<String> getListOutput() {
@@ -1223,7 +1227,9 @@ public final class PDBFilter extends SystemFilter {
         try {
             File newFile = saveFile;
             if (!append) {
-                newFile = version(saveFile);
+                if (!noVersioning) {
+                    newFile = version(saveFile);
+                }
             } else if (modelsWritten >= 0) {
                 model = new StringBuilder(String.format("MODEL     %-4d", ++modelsWritten));
                 for (int i = 15; i < 80; i++) {
@@ -1617,7 +1623,7 @@ public final class PDBFilter extends SystemFilter {
         BufferedWriter bw;
         try {
             File newFile = saveFile;
-            if (!append) {
+            if (!append && !noVersioning) {
                 newFile = version(saveFile);
             }
             activeMolecularAssembly.setFile(newFile);

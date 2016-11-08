@@ -35,11 +35,12 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.xray;
+package ffx.xray.parsers;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 
 import ffx.crystal.Crystal;
+import ffx.xray.RealSpaceRefinementData;
 
 /**
  * <p>
@@ -53,21 +54,21 @@ public interface RealSpaceFileFilter {
      * <p>
      * getCrystal</p>
      *
-     * @param filename a {@link java.lang.String} object.
-     * @param properties a
+     * @param filename A {@link java.lang.String} object.
+     * @param properties A
      * {@link org.apache.commons.configuration.CompositeConfiguration} object.
-     * @return a {@link ffx.crystal.Crystal} object.
+     * @return A {@link ffx.crystal.Crystal} object.
      */
     Crystal getCrystal(String filename, CompositeConfiguration properties);
 
     /**
-     * read in Real Space file
+     * Read in a Real Space file.
      *
-     * @param filename file to read in
-     * @param refinementData the {@link RealSpaceRefinementData} object to fill
-     * in
-     * @param properties system properties
-     * @return true if read in properly
+     * @param filename File to read in.
+     * @param refinementData The {@link RealSpaceRefinementData} object to fill
+     * in.
+     * @param properties System properties.
+     * @return True if read in properly.
      */
     boolean readFile(String filename, RealSpaceRefinementData refinementData,
             CompositeConfiguration properties);

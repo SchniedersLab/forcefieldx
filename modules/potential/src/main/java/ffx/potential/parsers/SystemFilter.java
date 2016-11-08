@@ -39,7 +39,9 @@ package ffx.potential.parsers;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -54,8 +56,6 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.nonbonded.CoordRestraint;
 import ffx.potential.parameters.ForceField;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * The SystemFilter class is the base class for most Force Field X file parsers.
@@ -72,7 +72,7 @@ public abstract class SystemFilter {
      * @param file File to find a version for.
      * @return File Versioned File.
      */
-    public static File version(File file) {
+    public static File versionTinker(File file) {
         if (file == null) {
             return null;
         }
@@ -112,6 +112,121 @@ public abstract class SystemFilter {
         return newFile;
     }
 
+    public enum Versioning {
+        TINKER, PREFIX, POSTFIX, PREFIX_ABSOLUTE, POSTFIX_ABSOLUTE, NONE;
+    }
+
+    private static Versioning vers = Versioning.TINKER;
+    private static int absoluteCounter = 0;
+
+    /**
+     * Use setVersioning() to choose between prefix/postfix.
+     */
+    public static File version(File file) {
+        if (vers == Versioning.TINKER) {
+            return versionTinker(file);
+        } else {
+            if (vers == Versioning.PREFIX_ABSOLUTE || vers == Versioning.POSTFIX_ABSOLUTE) {
+                return versionAbsolute(file, (vers == Versioning.PREFIX_ABSOLUTE));
+            } else {
+                return version(file, (vers == Versioning.PREFIX_ABSOLUTE));
+            }
+        }
+    }
+
+    /**
+     * Negative: prefix a version number; Positive: postfix; Zero: TINKER-style.
+     */
+    public static void setVersioning(Versioning vers) {
+        SystemFilter.vers = vers;
+    }
+
+    private static File version(File file, boolean prefix) {
+        if (file == null || !(file.exists())) {
+            return file;
+        }
+        String fn = file.getAbsolutePath();
+        int dot = fn.lastIndexOf(".");
+        int under = fn.lastIndexOf("_");
+        if (dot < 0) {
+            fn += ".unk";
+            dot = fn.lastIndexOf(".");
+        }
+        if (under < 0) {
+            under = dot;
+        }
+        String name = (prefix) ? fn.substring(0, under) : fn.substring(0, dot);
+        String extension = (prefix) ? fn.substring(dot + 1) : fn.substring(dot + 1, under);
+        int number = 0;
+        String newFn = (prefix)
+                ? String.format("%s_%d.%s", name, number, extension)
+                : String.format("%s.%s_%d", name, extension, number);
+        if (prefix && under < dot) {
+            try {
+                number = Integer.parseInt(fn.substring(under + 1, dot));
+            } catch (NumberFormatException ex) {
+                // Then we have something like "AKA_dyn.pdb"
+                name = fn.substring(0, dot);
+                number++;
+                newFn = String.format("%s_%d.%s", name, number, extension);
+            }
+        } else if (!prefix && under > dot) {
+            try {
+                number = Integer.parseInt(fn.substring(under + 1));
+                number++;
+            } catch (NumberFormatException ex) {
+            }
+        }
+        File newFile = new File(newFn);
+        while (newFile.exists()) {
+            ++number;
+            newFn = (prefix)
+                    ? String.format("%s_%d.%s", name, number, extension)
+                    : String.format("%s.%s_%d", name, extension, number);
+            newFile = new File(newFn);
+        }
+        return newFile;
+    }
+
+    private synchronized static File versionAbsolute(File file, boolean prefix) {
+        if (file == null || !(file.exists())) {
+            return file;
+        }
+        String fn = file.getAbsolutePath();
+        int dot = fn.lastIndexOf(".");
+        int under = fn.lastIndexOf("_");
+        if (dot < 0) {
+            fn += ".unk";
+            dot = fn.lastIndexOf(".");
+        }
+        if (under < 0) {
+            under = dot;
+        }
+        String name = (prefix) ? fn.substring(0, under) : fn.substring(0, dot);
+        String extension = (prefix) ? fn.substring(dot + 1) : fn.substring(dot + 1, under);
+        String newFn = (prefix)
+                ? String.format("%s_%d.%s", name, absoluteCounter, extension)
+                : String.format("%s.%s_%d", name, extension, absoluteCounter);
+        File newFile = new File(newFn);
+        while (newFile.exists()) {
+            absoluteCounter++;
+            newFn = (prefix)
+                    ? String.format("%s_%d.%s", name, absoluteCounter, extension)
+                    : String.format("%s.%s_%d", name, extension, absoluteCounter);
+            newFile = new File(newFn);
+        }
+        return newFile;
+    }
+
+    /*
+            if (absolute) {
+            File nf = new File(newFn);
+            if (nf.exists()) {
+                logger.severe("Absolute versioning encountered a filename conflict.");
+            }
+            return nf;
+        }
+     */
     /**
      * <p>
      * previousVersion</p>
@@ -157,11 +272,12 @@ public abstract class SystemFilter {
         }
         return previousFile;
     }
-    
+
     private static final Pattern intrangePattern = Pattern.compile("(\\d+)-(\\d+)");
-    
+
     private static final Logger logger = Logger.getLogger(SystemFilter.class.getName());
     protected static final boolean dieOnMissingAtom; // Defaults to false.
+
     static {
         String dieOn = System.getProperty("trajectory-dieOnMissing");
         if (dieOn == null) {
@@ -243,7 +359,7 @@ public abstract class SystemFilter {
         this.activeMolecularAssembly = molecularAssembly;
         this.forceField = forceField;
         this.properties = properties;
-        
+
         if (properties != null) {
             vdwH = properties.getBoolean("vdwHydrogens", false);
         } else {
@@ -272,7 +388,7 @@ public abstract class SystemFilter {
         this.activeMolecularAssembly = molecularAssembly;
         this.forceField = forceField;
         this.properties = properties;
-        
+
         if (properties != null) {
             vdwH = properties.getBoolean("vdwHydrogens", false);
         } else {
@@ -301,7 +417,7 @@ public abstract class SystemFilter {
         this.activeMolecularAssembly = systems.firstElement();
         this.forceField = forceField;
         this.properties = properties;
-        
+
         if (properties != null) {
             vdwH = properties.getBoolean("vdwHydrogens", false);
         } else {
@@ -317,20 +433,22 @@ public abstract class SystemFilter {
     public boolean fileRead() {
         return fileRead;
     }
-    
+
     /**
      * Reads the next model if applicable (currently, ARC files only).
+     *
      * @return If next model read.
      */
     public abstract boolean readNext();
-    
+
     /**
      * Reads the next model if applicable (currently, ARC files only).
+     *
      * @param resetPosition Resets to first frame.
      * @return If next model read.
      */
     public abstract boolean readNext(boolean resetPosition);
-    
+
     /**
      * Attempts to close any open resources associated with the underlying file;
      * primarily to be used when finished reading a trajectory.
@@ -515,19 +633,19 @@ public abstract class SystemFilter {
             this.currentFile = null;
         }
     }
-    
+
     /**
-     * Automatically sets atom-specific flags, particularly nouse and inactive, 
-     * and apply harmonic restraints. Intended to be called at the end of 
+     * Automatically sets atom-specific flags, particularly nouse and inactive,
+     * and apply harmonic restraints. Intended to be called at the end of
      * readFile() implementations.
      */
     public void applyAtomProperties() {
         /**
-         * What may be a more elegant implementation is to make readFile() a 
-         * public concrete, but skeletal method, and then have readFile()
-         * call a protected abstract readFile method for each implementation.
+         * What may be a more elegant implementation is to make readFile() a
+         * public concrete, but skeletal method, and then have readFile() call a
+         * protected abstract readFile method for each implementation.
          */
-        
+
         Atom[] molaAtoms = activeMolecularAssembly.getAtomArray();
         int nmolaAtoms = molaAtoms.length;
         String[] nouseKeys = properties.getStringArray("nouse");
@@ -535,7 +653,7 @@ public abstract class SystemFilter {
             try {
                 int[] nouseRange = parseAtNumArg("nouse", nouseKey, nmolaAtoms);
                 logger.log(Level.INFO, String.format(" Atoms %d-%d set to be not "
-                        + "used", nouseRange[0]+1, nouseRange[1]+1));
+                        + "used", nouseRange[0] + 1, nouseRange[1] + 1));
                 for (int i = nouseRange[0]; i <= nouseRange[1]; i++) {
                     molaAtoms[i].setUse(false);
                 }
@@ -563,7 +681,7 @@ public abstract class SystemFilter {
                             break;
                         }
                         molaAtoms[i].setUse(false);
-                    }                    
+                    }
                 }
             } else {
                 try {
@@ -593,7 +711,7 @@ public abstract class SystemFilter {
             try {
                 int[] inactiveRange = parseAtNumArg("inactive", inactiveKey, nmolaAtoms);
                 logger.log(Level.INFO, String.format(" Atoms %d-%d set to be not "
-                        + "used", inactiveRange[0]+1, inactiveRange[1]+1));
+                        + "used", inactiveRange[0] + 1, inactiveRange[1] + 1));
                 for (int i = inactiveRange[0]; i <= inactiveRange[1]; i++) {
                     molaAtoms[i].setActive(false);
                 }
@@ -621,7 +739,7 @@ public abstract class SystemFilter {
                             break;
                         }
                         molaAtoms[i].setActive(false);
-                    }                    
+                    }
                 }
             } else {
                 try {
@@ -645,7 +763,7 @@ public abstract class SystemFilter {
                 }
             }*/
         }
-        
+
         coordRestraints = new ArrayList<>();
         String[] cRestraintStrings = properties.getStringArray("restraint");
         for (String coordRestraint : cRestraintStrings) {
@@ -664,12 +782,12 @@ public abstract class SystemFilter {
             logger.info(String.format(" Adding lambda-disabled coordinate restraint "
                     + "with force constant %10.4f kcal/mol/A", forceconst));
             Set<Atom> restraintAtoms = new HashSet<>();
-            
+
             for (int i = 1; i < toks.length; i++) {
                 try {
                     int[] nouseRange = parseAtNumArg("restraint", toks[i], nmolaAtoms);
-                    logger.info(String.format(" Adding atoms %d-%d to restraint", 
-                            nouseRange[0]+1, nouseRange[1]+1));
+                    logger.info(String.format(" Adding atoms %d-%d to restraint",
+                            nouseRange[0] + 1, nouseRange[1] + 1));
                     for (int j = nouseRange[0]; j <= nouseRange[1]; j++) {
                         restraintAtoms.add(molaAtoms[j]);
                     }
@@ -695,8 +813,7 @@ public abstract class SystemFilter {
                 logger.warning(String.format(" Empty or unparseable restraint argument %s", coordRestraint));
             }
         }
-        
-        
+
         String[] lamRestraintStrings = properties.getStringArray("lamrestraint");
         for (String coordRestraint : lamRestraintStrings) {
             String[] toks = coordRestraint.split("\\s+");
@@ -704,12 +821,12 @@ public abstract class SystemFilter {
             logger.info(String.format(" Adding lambda-enabled coordinate restraint "
                     + "with force constant %10.4f kcal/mol/A", forceconst));
             Set<Atom> restraintAtoms = new HashSet<>();
-            
+
             for (int i = 1; i < toks.length; i++) {
                 try {
                     int[] nouseRange = parseAtNumArg("restraint", toks[i], nmolaAtoms);
-                    logger.info(String.format(" Adding atoms %d-%d to restraint", 
-                            nouseRange[0]+1, nouseRange[1]+1));
+                    logger.info(String.format(" Adding atoms %d-%d to restraint",
+                            nouseRange[0] + 1, nouseRange[1] + 1));
                     for (int j = nouseRange[0]; j <= nouseRange[1]; j++) {
                         restraintAtoms.add(molaAtoms[j]);
                     }
@@ -737,7 +854,7 @@ public abstract class SystemFilter {
                 logger.warning(String.format(" Empty or unparseable restraint argument %s", coordRestraint));
             }
         }
-        
+
         String[] noElStrings = properties.getStringArray("noElectro");
         for (String noE : noElStrings) {
             String[] toks = noE.split("\\s+");
@@ -748,7 +865,7 @@ public abstract class SystemFilter {
                         molaAtoms[i].setElectrostatics(false);
                     }
                     logger.log(Level.INFO, String.format(" Disabled electrostatics "
-                            + "for atoms %d-%d", noERange[0]+1, noERange[1]+1));
+                            + "for atoms %d-%d", noERange[0] + 1, noERange[1] + 1));
                 } catch (IllegalArgumentException ex) {
                     boolean atomFound = false;
                     for (Atom atom : molaAtoms) {
@@ -768,9 +885,10 @@ public abstract class SystemFilter {
             }
         }
     }
-    
+
     /**
      * Gets the coordinate restraints parsed by this Filter.
+     *
      * @return Coordinate restraints.
      */
     public List<CoordRestraint> getCoordRestraints() {
@@ -780,12 +898,13 @@ public abstract class SystemFilter {
             return null;
         }
     }
-    
+
     /**
      * Parses a numerical argument for an atom-specific flag. Intended to reduce
-     * the amount of repetitive code in applyAtomProperties by parsing and 
+     * the amount of repetitive code in applyAtomProperties by parsing and
      * checking for validity, and then returning the appropriate range. Input
      * should be 1-indexed (user end), output 0-indexed.
+     *
      * @param keyType Type of key
      * @param st Input string
      * @param nAtoms Number of atoms in the MolecularAssembly
@@ -821,7 +940,7 @@ public abstract class SystemFilter {
                             + "to end of valid range %d", st, nAtoms));
                     end = nAtoms - 1;
                 }
-                int[] indices = { start, end };
+                int[] indices = {start, end};
                 return indices;
             }
         } else {
@@ -829,10 +948,10 @@ public abstract class SystemFilter {
                 int atNum = Integer.parseUnsignedInt(st) - 1;
                 if (atNum < 0 || atNum >= nAtoms) {
                     throw new IllegalArgumentException(String.format(" %s numerical "
-                            + "argument %s out-of-bounds for range 1 to %d", keyType, 
+                            + "argument %s out-of-bounds for range 1 to %d", keyType,
                             st, nAtoms));
                 }
-                int[] indices = { atNum, atNum };
+                int[] indices = {atNum, atNum};
                 return indices;
             } catch (NumberFormatException ex) {
                 throw new IllegalArgumentException(String.format(" %s input %s "

@@ -35,7 +35,7 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.xray;
+package ffx.xray.parsers;
 
 import java.io.DataInputStream;
 import java.io.FileInputStream;
@@ -48,6 +48,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.SpaceGroup;
+import ffx.xray.RealSpaceRefinementData;
 
 /**
  * <p>
@@ -75,9 +76,9 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
      * {@inheritDoc}
      */
     @Override
-    public Crystal getCrystal(String filename, CompositeConfiguration properties) {
+    public Crystal getCrystal(String fileName, CompositeConfiguration properties) {
         int imapData;
-        int sg = -1;
+        int spaceGroup = -1;
         double cellA = -1.0;
         double cellB = -1.0;
         double cellC = -1.0;
@@ -86,13 +87,12 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
         double cellGamma = -1.0;
 
         ByteOrder byteOrder = ByteOrder.nativeOrder();
-
         FileInputStream fileInputStream;
         DataInputStream dataInputStream;
 
         // first determine byte order of file versus system
         try {
-            fileInputStream = new FileInputStream(filename);
+            fileInputStream = new FileInputStream(fileName);
             dataInputStream = new DataInputStream(fileInputStream);
 
             dataInputStream.skipBytes(212);
@@ -102,7 +102,7 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
 
             imapData = byteBuffer.order(ByteOrder.BIG_ENDIAN).getInt();
             String stampString = Integer.toHexString(imapData);
-            // System.out.println("stamp: " + stampstr);
+
             switch (stampString.charAt(0)) {
                 case '1':
                 case '3':
@@ -118,12 +118,12 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
             }
             fileInputStream.close();
         } catch (Exception e) {
-            String message = "Fatal exception reading CCP4 map.\n";
+            String message = " Fatal exception reading CCP4 map.\n";
             logger.log(Level.SEVERE, message, e);
         }
 
         try {
-            fileInputStream = new FileInputStream(filename);
+            fileInputStream = new FileInputStream(fileName);
             dataInputStream = new DataInputStream(fileInputStream);
 
             dataInputStream.skipBytes(40);
@@ -145,16 +145,16 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
                 byteBuffer.order(byteOrder).getFloat();
             }
 
-            sg = byteBuffer.order(byteOrder).getInt();
+            spaceGroup = byteBuffer.order(byteOrder).getInt();
             fileInputStream.close();
         } catch (Exception e) {
-            String message = "Fatal exception reading CCP4 map.\n";
+            String message = " Fatal exception reading CCP4 map.\n";
             logger.log(Level.SEVERE, message, e);
         }
 
         return new Crystal(cellA, cellB, cellC,
                 cellAlpha, cellBeta, cellGamma,
-                SpaceGroup.spaceGroupNames[sg - 1]);
+                SpaceGroup.spaceGroupNames[spaceGroup - 1]);
     }
 
     /**
@@ -164,7 +164,7 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
     public boolean readFile(String filename, RealSpaceRefinementData refinementdata,
             CompositeConfiguration properties) {
 
-        int imapdata;
+        int imapData;
         double cellA, cellB, cellC, cellAlpha, cellBeta, cellGamma;
         String stampString;
 
@@ -188,8 +188,8 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
             dataInputStream.read(bytes, 0, 4);
             ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
 
-            imapdata = byteBuffer.order(ByteOrder.BIG_ENDIAN).getInt();
-            stampString = Integer.toHexString(imapdata);
+            imapData = byteBuffer.order(ByteOrder.BIG_ENDIAN).getInt();
+            stampString = Integer.toHexString(imapData);
             switch (stampString.charAt(0)) {
                 case '1':
                 case '3':
@@ -212,7 +212,7 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
 
             fileInputStream.close();
         } catch (Exception e) {
-            String message = "Fatal exception reading CCP4 map.\n";
+            String message = " Fatal exception reading CCP4 map.\n";
             logger.log(Level.SEVERE, message, e);
         }
 
@@ -323,21 +323,15 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
 
             byteBuffer.rewind();
             dataInputStream.read(bytes, 0, 2048);
-            refinementdata.data = new double[ext[0] * ext[1] * ext[2]];
+            refinementdata.setData(new double[ext[0] * ext[1] * ext[2]]);
             int ijk[] = new int[3];
             int index, x, y, z;
-            refinementdata.ori[0] = ori[axisi[0]];
-            refinementdata.ori[1] = ori[axisi[1]];
-            refinementdata.ori[2] = ori[axisi[2]];
+            refinementdata.setOrigin(ori[axisi[0]], ori[axisi[1]], ori[axisi[2]]);
             int nx = ext[axisi[0]];
             int ny = ext[axisi[1]];
             int nz = ext[axisi[2]];
-            refinementdata.ext[0] = nx;
-            refinementdata.ext[1] = ny;
-            refinementdata.ext[2] = nz;
-            refinementdata.ni[0] = ni[0];
-            refinementdata.ni[1] = ni[1];
-            refinementdata.ni[2] = ni[2];
+            refinementdata.setExtent(nx, ny, nz);
+            refinementdata.setNI(ni[0], ni[1], ni[2]);
             for (ijk[2] = 0; ijk[2] < ext[2]; ijk[2]++) {
                 for (ijk[1] = 0; ijk[1] < ext[1]; ijk[1]++) {
                     for (ijk[0] = 0; ijk[0] < ext[0]; ijk[0]++) {
@@ -345,7 +339,7 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
                         y = ijk[axisi[1]];
                         z = ijk[axisi[2]];
                         index = x + nx * (y + ny * z);
-                        refinementdata.data[index] = byteBuffer.order(byteOrder).getFloat();
+                        refinementdata.getData()[index] = byteBuffer.order(byteOrder).getFloat();
                         if (!byteBuffer.hasRemaining()) {
                             byteBuffer.rewind();
                             dataInputStream.read(bytes, 0, 2048);
@@ -355,7 +349,7 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
             }
             fileInputStream.close();
         } catch (Exception e) {
-            String message = "Fatal exception reading CCP4 map.\n";
+            String message = " Fatal exception reading CCP4 map.\n";
             logger.log(Level.SEVERE, message, e);
         }
 

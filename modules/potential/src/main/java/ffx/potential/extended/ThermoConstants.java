@@ -30,7 +30,7 @@ public class ThermoConstants {
     /**
      * One over kbT.
      */
-    public static final double beta = 1 / R;
+    public static final double beta = 1 / BOLTZMANN;
     /**
      * Random force conversion to kcal/mol/A;
      */

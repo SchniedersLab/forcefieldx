@@ -40,7 +40,6 @@ package ffx.algorithms;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.OptionalDouble;
 import java.util.Random;
@@ -77,156 +76,100 @@ import ffx.potential.extended.TitrationESV;
 import ffx.potential.extended.TitrationESV.TitrationUtils;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.PDBFilter;
+import ffx.potential.parsers.SystemFilter;
 
 /**
  * @author S. LuCore
  */
 public class DiscountPh {
-
+    
+    // System handles
     private static final Logger logger = Logger.getLogger(DiscountPh.class.getName());
-    private static int debugLogLevel = (System.getProperty("cphmd-debugLog") == null) 
-            ? 0
-            : Integer.parseInt(System.getProperty("cphmd-debugLog"));
-    private StringBuilder discountLogger;
-
-    private final boolean logTimings = (System.getProperty("cphmd-logTimings") != null);
     private static final double NS_TO_SEC = 0.000000001;
+    private StringBuilder discountLogger;
+    private final MolecularAssembly mola;
+    private final ForceField ff;
+    private final ForceFieldEnergy ffe;
+    private final MolecularDynamics molDyn;
+    private final String originalFilename;
     private long startTime;
     
-    /**
-     * The MolecularAssembly.
-     */
-    private final MolecularAssembly mola;
-    /**
-     * The MolecularDynamics object controlling the simulation.
-     */
-    private final MolecularDynamics molDyn;
-    /**
-     * Simulation pH.
-     */
-    private final double pH;
-    /**
-     * Residues selected by user.
-     */
+    // Titrating
     private List<Residue> chosenResidues = new ArrayList<>();
-    /**
-     * MultiResidues for titrating groups at zero/unity.
-     */
-    private List<MultiResidue> titratingMultis = new ArrayList<>();
-    /**
-     * MultiResidues for titrating termini.
-     */
+    private List<MultiResidue> titratingMultiResidues = new ArrayList<>();
     private List<MultiTerminus> titratingTermini = new ArrayList<>();
-    /**
-     * ESVs for titrating groups in continuous mode.
-     */
     private List<ExtendedVariable> titratingESVs = new ArrayList<>();
-    /**
-     * Maps Residue objects to their available Titration enumerations. Filled by
-     * the readyup() method during MultiResidue creation.
-     */
-    private HashMap<Residue, List<Titration>> titrationMap = new HashMap<>();
-    /**
-     * Everyone's favorite.
-     */
-    private final Random rng = new Random();
-    /**
-     * The forcefield being used. Needed by MultiResidue constructor.
-     */
-    private final ForceField ff;
-    /**
-     * Only force field potentials are supported. Hook up ExtendedSystem to this.
-     */
-    private final ForceFieldEnergy ffe;
-    /**
-     * Snapshot index for the [num] portion of filename above.
-     */
-    private int snapshotIndex = 0;
-    /**
-     * True once the titrating lists are ready.
-     */
     private boolean finalized = false;
-    /**
-     * Target for NVT dynamics.
-     */
-    private double setTemperature;
     
-    /**************************************************************************/
-    /** Option and debugging flags. *******************************************/
-    /**************************************************************************/
-    /**
-     * Zero all titration references.
-     */
-    private final boolean zeroReferenceEnergies = System.getProperty("cphmd-zeroRefs") != null;
-    /**
-     * Enum type to specify global override of MC acceptance criteria.
-     */
-    private final MCOverride mcTitrationOverride = System.getProperty("cphmd-override") == null
-            ? MCOverride.NONE 
-            : MCOverride.valueOf(System.getProperty("cphmd-override").toUpperCase());
-    /**
-     * Writes .s-[num] and .f-[num] representing structures before/after MC move.
-     * Note: The 'after' snapshot represents the proposed change regardless of acceptance.
-     */
-    private final Snapshots snapshotsType = System.getProperty("cphmd-snapshots") == null 
-            ? Snapshots.NONE 
-            : Snapshots.valueOf(System.getProperty("cphmd-snapshots").toUpperCase());
-    /**
-     * Model histidine titration as two/three states with one/two protons (four states).
-     */
-    private final Histidine histidineMode = System.getProperty("cphmd-histidine") == null
-            ? Histidine.HIE_ONLY 
-            : Histidine.valueOf(System.getProperty("cphmd-histidine").toUpperCase());
-    private final OptionalDouble refOverride = System.getProperty("cphmd-refOverride") != null
-            ? OptionalDouble.of(Double.parseDouble(System.getProperty("cphmd-refOverride"))) 
-            : OptionalDouble.empty();
-    private final double temperatureMonitor = System.getProperty("cphmd-tempMonitor") != null
-            ? Double.parseDouble(System.getProperty("cphmd-tempMonitor")) 
-            : 6000.0;
-    private final boolean titrateTermini = System.getProperty("cphmd-termini") != null;
-    private final int terminiOnly = System.getProperty("cphmd-terminiOnly") != null 
-            ? Integer.parseInt(System.getProperty("cphmd-terminiOnly")) 
-            : 0;
-    private final Mode mode = (System.getProperty("cphmd-mode") != null)
-            ? Mode.valueOf(System.getProperty("cphmd-mode"))
-            : Mode.USE_CURRENT;
-    
+    // Extended System and Monte Carlo
+    private double pH;
     private final ExtendedSystem esvSystem;
+    private double targetTemperature = 298.15;
+    private final Random rng = new Random();
     private int movesAccepted;
-    private final File dyn;
+    private int snapshotIndex = 0;
+    
+    // Molecular Dynamics parameters
+    private final double dt;
+    private final double printInterval;
+    private final double saveInterval;
+    private final boolean initVelocities;
+    private final String fileType;
+    private final double writeRestartInterval;
+    private final File dynLoader;
+    
+    // Advanced Options
+    private final Mode mode = prop(Mode.class, "cphmd-mode", Mode.USE_CURRENT);
+    private final MCOverride mcOverride = prop(MCOverride.class, "cphmd-override", MCOverride.NONE);
+    private final Snapshots snapshotType = prop(Snapshots.class, "cphmd-snapshotType", Snapshots.NONE);
+    private final Histidine histidineMode = prop(Histidine.class, "cphmd-histidineMode", Histidine.SINGLE_HIE);
+    private static int debugLogLevel = prop("cphmd-debugLog", 0);
+    private final OptionalDouble referenceOverride = prop("cphmd-referenceOverride", null);
+    private final double tempMonitor = prop("cphmd-tempMonitor", 6000.0);
+    private final boolean logTimings = prop("cphmd-logTimings");
+    private final boolean titrateTermini = prop("cphmd-termini");
+    private final boolean zeroReferences = prop("cphmd-zeroReferences");
+    private final int snapshotVersioning = prop("cphmd-snapshotVers", 0);
     
     /**
      * Construct a "Discrete-Continuous" Monte-Carlo titration engine.
      * For traditional discrete titration, use Protonate.
-     * For traditional continuous titration, run mdesv and take populations.
+     * For traditional continuous titration, run mdesv for populations.
      * 
      * @param mola the molecular assembly
      * @param mcStepFrequency number of MD steps between switch attempts
      * @param pH the simulation pH
      * @param thermostat the MD thermostat
      */
-    DiscountPh(MolecularAssembly mola, MolecularDynamics molDyn, double pH, 
-            double setTemperature, File dyn) {
+    // java.lang.Double, java.lang.Integer, java.lang.Integer, java.lang.Boolean, java.lang.String, java.lang.Integer, null)
+    DiscountPh(MolecularAssembly mola, MolecularDynamics molDyn, Mode mode, 
+            double timeStep, double printInterval, double saveInterval, 
+            boolean initVelocities, String fileType, double writeRestartInterval, File dyn) {
         this.mola = mola;
         this.molDyn = molDyn;
+        this.dt = timeStep;
+        this.printInterval = printInterval;
+        this.saveInterval = saveInterval;
+        this.initVelocities = initVelocities;
+        this.fileType = fileType;
+        this.writeRestartInterval = writeRestartInterval;
+        this.dynLoader = dyn;
+        
         this.ff = mola.getForceField();
         this.ffe = mola.getPotentialEnergy();
-        this.pH = pH;
-        this.setTemperature = setTemperature;
-        this.esvSystem = new ExtendedSystem(mola, pH);
-        this.dyn = dyn;
+        this.esvSystem = new ExtendedSystem(mola);
+        this.originalFilename = FilenameUtils.removeExtension(mola.getFile().getAbsolutePath()) + "_dyn.pdb";
+        SystemFilter.setVersioning(SystemFilter.Versioning.PREFIX_ABSOLUTE);
         
-        // Print options.
-        if (refOverride.isPresent()) {
-            logger.info(" (CpHMD) Reference_Override: " + refOverride.toString());
-        }
-        
-        // Flags for single-topology delG.
-        System.setProperty("polarization", "NONE");
-        System.setProperty("polarization-lambda-start","0.0");
-        System.setProperty("polarization-lambda-exponent","0.0");
-        System.setProperty("ligand-vapor-elec","false");
-        System.setProperty("no-ligand-condensed-scf","false");
+        // Print system props.
+        logger.info(" Advanced option flags:");
+        System.getProperties().keySet().stream()
+                .filter(k -> {
+                    String key = k.toString().toLowerCase();
+                    return key.startsWith("cphmd") || key.startsWith("md");
+                })
+                .forEach(key -> logger.info(format(" #%s=%s\n", 
+                        key.toString(), System.getProperty(key.toString()))));
         
         // Set the rotamer library in case we do rotamer MC moves.
         RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
@@ -238,7 +181,35 @@ public class DiscountPh {
 
         ffe.reInit();
     }
-
+    
+    /**dynamic(totalSteps, pH, temperature, titrationFrequency, titrationDuration, rotamerMoveRatio);
+     * Prepend an MD object and totalSteps to the arguments for MD's dynamic().
+     * (java.lang.Integer, java.lang.Integer, java.lang.Double, java.lang.Double, java.lang.Double, java.lang.Double, java.lang.Boolean, java.lang.String, java.lang.Double)
+     */
+    public void dynamic(int totalSteps, double pH, double temperature, 
+            int titrationFrequency, int titrationDuration, int rotamerMoveRatio) {
+        movesAccepted = 0;
+        molDyn.dynamic(titrationFrequency, dt, printInterval, saveInterval, 
+                temperature, initVelocities, fileType, writeRestartInterval, dynLoader);
+        int stepsTaken = titrationFrequency;
+        
+        while (stepsTaken < totalSteps) {
+            tryContinuousTitrationMove(titrationDuration, temperature);
+            if (stepsTaken + titrationFrequency < totalSteps) {
+                logger.info(format(" Re-launching DISCOuNT-pH MD for %d steps.", titrationFrequency));
+                molDyn.redynamic(titrationFrequency, temperature);
+                stepsTaken += titrationFrequency;
+            } else {
+                logger.info(format(" Launching final run of DISCOuNT-pH MD for %d steps.", totalSteps - stepsTaken));
+                molDyn.redynamic(totalSteps - stepsTaken, temperature);
+                stepsTaken = totalSteps;
+                break;
+            }
+        }
+        logger.info(format(" DISCOuNT-pH completed %d steps and %d moves, of which %d were accepted.", 
+                totalSteps, totalSteps / titrationFrequency, movesAccepted));
+    }
+    
     private Stream<Residue> parallelResidueStream(MolecularAssembly mola) {
         return Arrays.asList(mola.getChains()).parallelStream()
                 .flatMap(poly -> ((Polymer) poly).getResidues().parallelStream());
@@ -250,7 +221,7 @@ public class DiscountPh {
     private List<Residue> findTitrations() {
         List<Residue> chosen = new ArrayList<>();
         parallelResidueStream(mola)
-                .filter(res -> mapTitrations(res,false).size() > 0)
+                .filter(res -> mapTitrations(res).size() > 0)
                 .forEach(chosen::add);
         return chosen;
     }
@@ -264,8 +235,8 @@ public class DiscountPh {
     private List<Residue> findTitrations(double pH, double window) {
         List<Residue> chosen = new ArrayList<>();
         parallelResidueStream(mola)
-            .filter(res -> mapTitrations(res,false).parallelStream()
-                .anyMatch(titr -> (titr.pKa >= pH - window && titr.pKa <= pH + window)))
+            .filter((Residue res) -> mapTitrations(res).parallelStream()
+                .anyMatch((Titration titr) -> (titr.pKa >= pH - window && titr.pKa <= pH + window)))
                 .forEach(chosen::add);
         return chosen;
     }
@@ -273,7 +244,7 @@ public class DiscountPh {
     private List<ExtendedVariable> createESVs(List<Residue> chosen) {
         for (Residue res : chosen) {
             MultiResidue titr = TitrationUtils.titrationFactory(mola, res);
-            TitrationESV esv = new TitrationESV(pH, titr, setTemperature, 1.0);
+            TitrationESV esv = new TitrationESV(pH, titr, 1.0);
             esv.readyup();
             esvSystem.addVariable(esv);
             titratingESVs.add(esv);
@@ -288,25 +259,16 @@ public class DiscountPh {
     public List<Residue> findTitrations(String names) {
         List<Residue> chosen = new ArrayList<>();
         String tok[] = names.split(",");
-        for (int k = 0; k < tok.length; k++) {
-            String name = tok[k];
-            AminoAcid3 aa3 = AminoAcid3.valueOf(name);
-            Polymer polymers[] = mola.getChains();
-            for (int i = 0; i < polymers.length; i++) {
-                ArrayList<Residue> residues = polymers[i].getResidues();
-                for (int j = 0; j < residues.size(); j++) {
-                    Residue res = residues.get(j);
-                    List<Titration> avail = mapTitrations(res, false);
-                    for (Titration titration : avail) {
-                        AminoAcid3 from = titration.source;
-                        AminoAcid3 to = titration.target;
-                        if (aa3 == from || aa3 == to) {
-                            chosen.add(res);
-                        }                        
-                    }
-                }
-            }
-        }
+        parallelResidueStream(mola)
+            .filter((Residue res) -> mapTitrations(res).parallelStream()
+                .anyMatch((Titration titr) -> {
+                    return Arrays.stream(tok).anyMatch((String name) -> {
+                        return AminoAcid3.valueOf(name) == titr.source
+                                || AminoAcid3.valueOf(name) == titr.target;
+                    });
+                })
+            )
+            .forEach(chosen::add);
         return chosen;
     }
 
@@ -315,22 +277,16 @@ public class DiscountPh {
      */
     public List<Residue> findTitrations(ArrayList<String> crIDs) {
         List<Residue> chosen = new ArrayList<>();
-        Polymer[] polymers = mola.getChains();
-        int n = 0;
-        for (String s : crIDs) {
-            Character chainID = s.charAt(0);
-            int i = Integer.parseInt(s.substring(1));
-            for (Polymer p : polymers) {
-                if (p.getChainID() == chainID) {
-                    List<Residue> rs = p.getResidues();
-                    for (Residue r : rs) {
-                        if (r.getResidueNumber() == i) {
-                            chosen.add(r);
-                        }
-                    }
-                }
-            }
-        }
+        parallelResidueStream(mola)
+            .filter((Residue res) -> {
+                    return crIDs.stream().anyMatch((String crID) -> {
+                        Polymer p = findResiduePolymer(res,mola);
+                        return p.getChainID() == crID.charAt(0)
+                            && p.getResidues().stream().anyMatch((Residue or) -> 
+                                or.getResidueNumber() == Integer.parseInt(crID.substring(1)));
+                    });
+            })
+            .forEach(chosen::add);
         return chosen;
     }
 
@@ -379,7 +335,7 @@ public class DiscountPh {
             TitrationESV esv = new TitrationESV(pH, TitrationUtils.titrationFactory(mola, res), dt);
             esv.readyup();
             titratingESVs.add(esv);
-            titratingMultis.add(esv.getMultiRes());
+            titratingMultiResidues.add(esv.getMultiRes());
         }
         
         // Hook everything up to the ExtendedSystem.
@@ -401,13 +357,13 @@ public class DiscountPh {
             logger.severe("Programming error: improper function call.");
         }
         // Map titrations for this member.
-        List<Titration> titrs = mapTitrations(member, true);
+        List<Titration> titrs = mapTitrations(member);
 
         // For each titration, check whether it needs added as a MultiResidue option.
         for (Titration titr : titrs) {
             // Allow manual override of Histidine treatment.
-            if ((titr.target == AminoAcid3.HID && histidineMode == Histidine.HIE_ONLY)
-                    || (titr.target == AminoAcid3.HIE && histidineMode == Histidine.HID_ONLY)) {
+            if ((titr.target == AminoAcid3.HID && histidineMode == Histidine.SINGLE_HIE)
+                    || (titr.target == AminoAcid3.HIE && histidineMode == Histidine.SINGLE_HID)) {
                 continue;
             }
             // Find all the choices currently available to this MultiResidue.
@@ -436,31 +392,21 @@ public class DiscountPh {
      * @param store add identified Titrations to the HashMap
      * @return list of Titrations available for the given residue
      */
-    private List<Titration> mapTitrations(Residue res, boolean store) {
+    private List<Titration> mapTitrations(Residue res) {
         if (finalized) {
             logger.severe("Programming error: improper function call.");
-        }
-        if (store && titrationMap.containsKey(res)) {
-            logger.warning(String.format("Titration map already contained key for residue: %s", res));
-            return new ArrayList<>();
         }
         AminoAcid3 source = AminoAcid3.valueOf(res.getName());
         List<Titration> avail = new ArrayList<>();
         for (Titration titr : Titration.values()) {
             // Allow manual override of Histidine treatment.
-            if ((titr.target == AminoAcid3.HID && histidineMode == Histidine.HIE_ONLY)
-                    || (titr.target == AminoAcid3.HIE && histidineMode == Histidine.HID_ONLY)) {
+            if ((titr.target == AminoAcid3.HID && histidineMode == Histidine.SINGLE_HIE)
+                    || (titr.target == AminoAcid3.HIE && histidineMode == Histidine.SINGLE_HID)) {
                 continue;
             }
             if (titr.source == source) {
                 avail.add(titr);
             }
-        }
-        if (store) {
-            if (avail.size() == 0) {
-                logger.severe(String.format("Chosen residue couldn't map to any Titration object: %s", res));
-            }
-            titrationMap.put(res, avail);
         }
         return avail;
     }
@@ -530,40 +476,6 @@ public class DiscountPh {
         logger.severe(String.format("Temperature above critical threshold: %f", thermostat.getCurrentTemperature()));
     }   */
     
-    /**
-     * Prepend an MD object and totalSteps to the arguments for MD's dynamic().
-     * (java.lang.Integer, java.lang.Integer, java.lang.Double, java.lang.Double, java.lang.Double, java.lang.Double, java.lang.Boolean, java.lang.String, java.lang.Double)
-     */
-    public void dynamic(int totalSteps, int titrationFrequency, 
-            int titrationDuration, double timeStep,
-            double printInterval, double saveInterval,
-            double temperature, Boolean initVelocities, 
-            String fileType, Double writeRestartFreq) {
-        movesAccepted = 0;
-        molDyn.dynamic(titrationFrequency, timeStep, printInterval, saveInterval, 
-                temperature, initVelocities, fileType, writeRestartFreq, dyn);
-        int stepsTaken = titrationFrequency;
-        
-        while (stepsTaken < totalSteps) {
-            tryContinuousTitrationMove(titrationDuration, timeStep, printInterval, saveInterval, 
-                temperature, initVelocities, fileType, writeRestartFreq, null);
-            if (stepsTaken + titrationFrequency < totalSteps) {
-                logger.info(format(" Re-launching DISCOuNT-pH MD for %d steps.", titrationFrequency));
-                molDyn.dynamic(titrationFrequency, timeStep, printInterval, saveInterval,
-                        temperature, initVelocities, fileType, writeRestartFreq, null);
-                stepsTaken += titrationFrequency;
-            } else {
-                logger.info(format(" Launching final run of DISCOuNT-pH MD for %d steps.", totalSteps - stepsTaken));
-                molDyn.dynamic(totalSteps - stepsTaken, timeStep, printInterval, saveInterval,
-                        temperature, initVelocities, fileType, writeRestartFreq, null);
-                stepsTaken = totalSteps;
-                break;
-            }
-        }
-        logger.info(format(" DISCOuNT-pH completed %d steps and %d moves, of which %d were accepted.", 
-                totalSteps, totalSteps / titrationFrequency, movesAccepted));
-    }
-    
     private double currentTemp() {
         return molDyn.getThermostat().getCurrentTemperature();
     }
@@ -571,26 +483,21 @@ public class DiscountPh {
     /**
      * Run continuous titration MD in implicit solvent as a Monte Carlo move.
      */
-    private boolean tryContinuousTitrationMove(int titrationDuration, double timeStep, 
-            double printInterval, double saveInterval, double setTemperature, 
-            boolean initVelocities, String fileType, double writeRestartFreq, File contdyn) {
-        if (contdyn == null) {
-            contdyn = new File("contdyn.pdb");
-        }
+    private boolean tryContinuousTitrationMove(int titrationDuration, double targetTemperature) {
         startTime = System.nanoTime();
         if (!finalized) {
             logger.severe("Monte-Carlo protonation engine was not finalized!");
         }
-        if (currentTemp() > temperatureMonitor) {
-            throw new ArithmeticException();
+        if (currentTemp() > tempMonitor) {
+            throw new SystemTemperatureException();
 //            meltdown();
         }
-        propagateInactiveResidues(titratingMultis);
+        propagateInactiveResidues(titratingMultiResidues);
 
         // If rotamer moves have been requested, do that first (separately).
         if (mode == Mode.RANDOM) {  // TODO Mode.RANDOM -> Two Modes
-            int random = rng.nextInt(titratingMultis.size());
-            MultiResidue targetMulti = titratingMultis.get(random);
+            int random = rng.nextInt(titratingMultiResidues.size());
+            MultiResidue targetMulti = titratingMultiResidues.get(random);
 
             // Check whether rotamer moves are possible for the selected residue.
             Residue targetMultiActive = targetMulti.getActive();
@@ -609,10 +516,11 @@ public class DiscountPh {
         // Save the current state of the molecularAssembly. Specifically,
         //      Atom coordinates and MultiResidue states : AssemblyState
         //      Position, Velocity, Acceleration, etc    : DynamicsState
-        AssemblyState multiAndCoordState = new AssemblyState(mola);
+        AssemblyState assemblyState = new AssemblyState(mola);
 //            DynamicsState dynamicsState = new DynamicsState();
         molDyn.storeState();
-
+        writeSnapshot(".pre-store");
+        
         // Assign starting titration lambdas.
         if (mode == Mode.HALF_LAMBDA) {
             discountLogger.append(format("   Setting all ESVs to one-half...\n"));
@@ -649,8 +557,7 @@ public class DiscountPh {
         
         logger.info(format(" Trying continuous titration move:"));
         logger.info(format("   Starting energy: %10.4g", eo));        
-        molDyn.redynamic(titrationDuration, timeStep, printInterval, saveInterval, 
-                setTemperature, initVelocities, fileType, writeRestartFreq, null);
+        molDyn.redynamic(titrationDuration, targetTemperature);
         logger.info(" Move finished; detaching extended system.");
         molDyn.detachExtendedSystem();
         ffe.detachExtendedSystem();
@@ -666,11 +573,16 @@ public class DiscountPh {
         long took = System.nanoTime() - startTime;
         if (dGmc <= crit) {
             logger.info(" Move accepted!");
+            writeSnapshot(".post-acc");
             movesAccepted++;
             return true;
         } else {
             logger.info(" Move denied; reverting state.");
+            writeSnapshot(".post-deny");
+            assemblyState.revertState();
+            ffe.reInit();
             molDyn.revertState();
+            writeSnapshot(".post-revert");
             return false;
         }
     }
@@ -745,7 +657,7 @@ public class DiscountPh {
         if (dG_tot < 0) {
             sb.append(String.format("     Accepted!"));
             logger.info(sb.toString());
-            propagateInactiveResidues(titratingMultis);
+            propagateInactiveResidues(titratingMultiResidues);
             return true;
         } else {
             // Conditional acceptance if energy change is positive.
@@ -755,7 +667,7 @@ public class DiscountPh {
             if (metropolis < criterion) {
                 sb.append(String.format("     Accepted!"));
                 logger.info(sb.toString());
-                propagateInactiveResidues(titratingMultis);
+                propagateInactiveResidues(titratingMultiResidues);
                 return true;
             } else {
                 // Move was denied.
@@ -1060,11 +972,6 @@ public class DiscountPh {
 
     /**
      * Locate to which Polymer in the MolecularAssembly a given Residue belongs.
-     *
-     * @param residue
-     *
-     * @param molecularAssembly
-     *
      * @return the Polymer where the passed Residue is located.
      */
     private Polymer findResiduePolymer(Residue residue,
@@ -1085,11 +992,6 @@ public class DiscountPh {
         return location;
     }
 
-    /**
-     * Calculates the electrostatic energy at the current state.
-     *
-     * @return Energy of the current state.
-     */
     private double currentElectrostaticEnergy() {
         double x[] = new double[ffe.getNumberOfVariables() * 3];
         ffe.getCoordinates(x);
@@ -1097,122 +999,33 @@ public class DiscountPh {
         return ffe.getTotalElectrostaticEnergy();
     }
 
-    /**
-     * Calculates the total energy at the current state.
-     *
-     * @return Energy of the current state.
-     */
     private double currentTotalEnergy() {
         double x[] = new double[ffe.getNumberOfVariables() * 3];
         ffe.getCoordinates(x);
         ffe.energy(x);
         return ffe.getTotalEnergy();
     }
-
+    
     private void writeSnapshot(String extension) {
-        String filename = FilenameUtils.removeExtension(mola.getFile().toString()) + extension + snapshotIndex;
-        if (snapshotsType == Snapshots.INTERLEAVED) {
-            filename = mola.getFile().getAbsolutePath();
-            if (!filename.contains("dyn")) {
-                filename = FilenameUtils.removeExtension(filename) + "_dyn.pdb";
+        String filename = FilenameUtils.removeExtension(originalFilename);
+        if (snapshotType == Snapshots.INTERLEAVED) {
+            if (filename.contains("_dyn")) {
+                filename = filename.replace("_dyn",format("_dyn_%d.pdb",++snapshotIndex));
+            } else {
+                filename = FilenameUtils.removeExtension(filename) 
+                        + format("_dyn_%d.pdb",++snapshotIndex);
             }
+        } else {
+            if (!extension.startsWith(".")) {
+                extension = "." + extension;
+            }
+            filename = filename + format("_%d",++snapshotIndex) + extension;
         }
         File file = new File(filename);
         PDBFilter writer = new PDBFilter(file, mola, null, null);
         writer.writeFile(file, false);
     }
     
-    private void writeSnapshot(boolean beforeChange, Snapshots snapshotsType) {
-        // Write the after-step snapshot.
-        if (snapshotsType != Snapshots.NONE) {
-            String postfixA = ".pka";
-//            switch (stepType) {
-//                case TITRATE:
-//                    postfixA = ".pro";
-//                    break;
-//                case ROTAMER:
-//                    postfixA = ".rot";
-//                    break;
-//                case COMBO:
-//                    postfixA = ".cbo";
-//                    break;
-//            }
-            String postfixB = (beforeChange) ? "S-" : "F-";
-            String filename = FilenameUtils.removeExtension(mola.getFile().toString()) + postfixA + postfixB + snapshotIndex;
-            if (snapshotsType == Snapshots.INTERLEAVED) {
-                filename = mola.getFile().getAbsolutePath();
-                if (!filename.contains("dyn")) {
-                    filename = FilenameUtils.removeExtension(filename) + "_dyn.pdb";
-                }
-            }
-            File afterFile = new File(filename);
-            PDBFilter afterWriter = new PDBFilter(afterFile, mola, null, null);
-            afterWriter.writeFile(afterFile, false);
-        }
-    }
-    
-    /**
-     * One potential architecture for iterative MD.
-     */
-    @Deprecated
-    public class DynamicsLauncher {
-        private final MolecularDynamics molDyn;
-        private final int nSteps;
-        private final boolean initVelocities;
-        private final double timeStep, print, save, restart, temperature;
-        private final String fileType;
-        private final File dynFile;
-        public DynamicsLauncher(MolecularDynamics md, Object[] opt) {
-            molDyn = md;
-            nSteps = (int) opt[0]; 
-            timeStep = (double) opt[1];
-            print = (double) opt[2];
-            save = (double) opt[3]; 
-            temperature = (double) opt[4];
-            initVelocities = (boolean) opt[5];
-            fileType = (String) opt[6];
-            restart = (double) opt[7];
-            dynFile = (File) opt[8];
-        }
-        public DynamicsLauncher(MolecularDynamics md,
-                int nSteps, double timeStep, 
-                double print, double save, 
-                double temperature, boolean initVelocities,
-                String fileType, double restart,
-                File dynFile) {
-            this.molDyn = md;
-            this.nSteps = nSteps; this.initVelocities = initVelocities;
-            this.timeStep = timeStep; this.print = print; this.save = save; this.restart = restart;
-            this.temperature = temperature; this.fileType = fileType; this.dynFile = dynFile;
-        }
-        public DynamicsLauncher(MolecularDynamics md,
-                int nSteps, double timeStep, 
-                double print, double save, 
-                double temperature, boolean initVelocities,
-                File dynFile) {
-            this.molDyn = md;
-            this.nSteps = nSteps; this.initVelocities = initVelocities;
-            this.timeStep = timeStep; this.print = print; this.save = save; this.restart = 0.1;
-            this.temperature = temperature; this.fileType = "PDB"; this.dynFile = dynFile;
-        }
-        public void launch() {
-            launch(nSteps);
-        }
-        public void launch(int nSteps) {
-            /* For reference:
-            molDyn.init(nSteps, timeStep, printInterval, saveInterval, fileType, restartFrequency, temperature, initVelocities, dyn);
-            molDyn.dynamic(nSteps, timeStep, 
-                  printInterval, saveInterval, 
-                  temperature, initVelocities, 
-                  fileType, restartFrequency, dyn);   */
-//            discountLogger.append(format("    Launching new MD process with parameters: %d %g %g %g %g %b %s %g %s\n",
-//                    mdOptions[0], mdOptions[1], mdOptions[2], mdOptions[3], 
-//                    mdOptions[4], mdOptions[5], mdOptions[6], mdOptions[7], mdOptions[8].toString()));
-//            log();
-            molDyn.dynamic(nSteps, timeStep, print, save, temperature, initVelocities, fileType, restart, dynFile);
-        }
-    }
-
     /**
      * Enumerated titration reactions for source/target amino acid pairs.
      */
@@ -1251,11 +1064,11 @@ public class DiscountPh {
     }
     
     private enum MCOverride {
-        ACCEPT, REJECT, NONE;
+        NONE, ACCEPT, REJECT;
     }
 
     private enum Snapshots {
-        NONE, SEPARATE, INTERLEAVED;
+        INTERLEAVED, SEPARATE, NONE;
     }
 
     private enum TitrationType {
@@ -1263,19 +1076,42 @@ public class DiscountPh {
     }
 
     public enum Histidine {
-        HID_ONLY, HIE_ONLY, SINGLE, DOUBLE;
+        SINGLE_HIE, SINGLE_HID, SINGLE, DOUBLE;
     }
     
     /**
      * Discount flavors differ in the way that they seed titration lambdas at the start of a move.
      */
     public enum Mode {
-        HALF_LAMBDA, RANDOM, USE_CURRENT;
+        USE_CURRENT, HALF_LAMBDA, RANDOM;
     }
-
+    
+    public boolean prop(String key) {
+        return (System.getProperty(key) != null);
+    }
+    public static <T> T prop(String key, T defaultVal) {
+        if (defaultVal instanceof Integer) {
+            return (System.getProperty(key) != null) 
+                    ? (T) Integer.valueOf(System.getProperty(key)) : defaultVal;
+        } else if (defaultVal instanceof Double) {
+            return (System.getProperty(key) != null) 
+                    ? (T) Double.valueOf(System.getProperty(key)) : defaultVal;
+        } else {
+            return (System.getProperty(key) != null) 
+                    ? (T) OptionalDouble.of(Double.valueOf(System.getProperty(key))) : (T) OptionalDouble.empty();
+        }
+    }
+    public <T extends Enum<T>> T prop(Class<T> type, String key, T def) {
+        return (System.getProperty(key) != null) ? T.valueOf(type, System.getProperty(key)) : def;
+    }
+    
     private static void debug(int level, String message) {
         if (debugLogLevel >= level) {
             logger.info(message);
         }
+    }
+    
+    public class SystemTemperatureException extends RuntimeException {
+        // It's getting hot in here.
     }
 }

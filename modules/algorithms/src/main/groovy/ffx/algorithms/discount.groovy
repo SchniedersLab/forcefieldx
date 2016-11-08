@@ -51,6 +51,7 @@ import ffx.algorithms.DiscountPh.Mode;
 import ffx.algorithms.Protonate.DynamicsLauncher;
 import ffx.algorithms.Integrator.Integrators;
 import ffx.algorithms.Thermostat.Thermostats;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
 import ffx.potential.extended.ExtendedSystem;
@@ -61,7 +62,7 @@ import ffx.potential.extended.TitrationESV;
 int nSteps = 1000000;
 
 // Time step in femtoseconds.
-double timeStep = 1.0;
+double dt = 1.0;
 
 // Frequency to print out thermodynamics information in picoseconds.
 double printInterval = 0.01;
@@ -90,7 +91,7 @@ String fileType = "PDB";
 // Monte-Carlo step frequencies for titration and rotamer moves.
 int titrationFrequency = 10;
 int titrationDuration = 1000;
-int rotamerFrequencyRatio = 2;
+int rotamerMoveRatio = 0;
 
 // Simulation pH
 double pH = 7.4;
@@ -124,25 +125,15 @@ cli.rl(longOpt:'resList', args:1, 'Titrate a list of residues (eg A4.A8.B2.B34)'
 //cli.rn(longOpt:'resName', args:1, 'Titrate a list of residue names (eg "LYS,TYR,HIS")');
 //cli.rw(longOpt:'resWindow', args:1, 'Titrate all residues with intrinsic pKa within [arg] units of simulation pH.');
 cli.pH(longOpt:'pH', args:1, argName:'7.4', 'Constant simulation pH.');
-cli.mc(longOpt:'mcStepFreq', args:1, argName:'10', 'Number of steps between Monte-Carlo proton attempts.')
-cli.mcr(longOpt:'rotamerStepFreq', args:1, argName:'0', 'Number of steps between Monte-Carlo rotamer attempts.')
-cli.mcmd(longOpt:'mcRunTime', args:1, argName:'1000', 'Number of steps for which to run continuous proton dynamics during MC move.');
+cli.mc(longOpt:'titrationFrequency', args:1, argName:'100', 'Number of steps between Monte-Carlo proton attempts.')
+cli.mcd(longOpt:'titrationDuration', args:1, argName:'100', 'Number of steps for which to run continuous proton dynamics during MC move.');
+cli.mcr(longOpt:'rotamerMoveRatio', args:1, argName:'0', 'Number of steps between Monte-Carlo rotamer attempts.')
 cli.a(longOpt:'mode', args:1, argName:'useCurrent', 'Controls starting ESV lambda values: [random, halfLambda, useCurrent]');
 //cli.tt(longOpt:'titrateTermini', args:1, argName:'false', 'Titrate amino acid chain ends.');
 def options = cli.parse(args);
 
 if (options.h) {
     return cli.usage();
-}
-
-if ((options.rw && (options.ra || options.rl)) || (options.ra && options.rl)) {
-    return cli.usage();
-    logger.info(" Must specify one of the following: -ra, -rl, or -rw.");
-}
-
-if (!options.ra && !options.rl && !options.rw && !options.rn) {
-    return cli.usage();
-    logger.info(" Must specify one of the following: -ra, -rl, -rn, or -rw.");
 }
 
 if (options.a) {
@@ -156,8 +147,7 @@ if (options.a) {
 }
 
 if (!options.pH) {
-    return cli.usage();
-    logger.info(" Must specify a solution pH.");
+    return cli.usage(" Must specify a solution pH.");
 }
 
 if (options.rl) {
@@ -165,6 +155,8 @@ if (options.rl) {
     for (String t : tok) {
         resList.add(t);
     }
+} else {
+    return cli.usage(" Must specify residues, -rl.");
 }
 
 if (options.tt) {
@@ -172,20 +164,20 @@ if (options.tt) {
     System.setProperty("cphmd-termini","true");
 }
 
-if (options.mcD) {
-    dynamics = Boolean.parseBoolean(options.mcD);
-}
-
 if (options.rw) {
     window = Double.parseDouble(options.rw);
 }
 
 if (options.mc) {
-    mcStepFrequency = Integer.parseInt(options.mc);
+    titrationFrequency = Integer.parseInt(options.mc);
+}
+
+if (options.mcd) {
+    titrationDuration = Integer.parseInt(options.mcd);
 }
 
 if (options.mcr) {
-    rotamerStepFrequency = Integer.parseInt(options.mcr);
+    rotamerMoveRatio = Integer.parseInt(options.mcr);
 }
 
 if (options.pH) {
@@ -208,7 +200,7 @@ if (options.f) {
 }
 // Load the time steps in femtoseconds.
 if (options.d) {
-    timeStep = Double.parseDouble(options.d);
+    dt = Double.parseDouble(options.d);
 }
 
 // Report interval in picoseconds.
@@ -255,17 +247,24 @@ if (options.i) {
 }
 
 System.setProperty("forcefield","AMOEBA_PROTEIN_2013");
-System.setProperty("mpoleterm","false");
 System.setProperty("pme-qi","true");
-System.setProperty("cphmd-mode","USE_CURRENT");
-// TODO: add flag which sets up the runs necessary to fit a model compound reference
+System.setProperty("polarization", "NONE");
+System.setProperty("ligand-vapor-elec","false");
+System.setProperty("no-ligand-condensed-scf","false");
 
+System.setProperty("mpoleterm","false");
 
-/*
-    String zeroReferenceEnergies = System.getProperty("cphmd-zeroReferences");  // [no-arg]
-    String overrideFlag = System.getProperty("cphmd-override");                 // MCOverride.ACCEPT|REJECT|ONCE
-    String beforeAfter = System.getProperty("cphmd-snapshots");                 // SnapshotsType.SEPARATE|INTERLEAVED|NONE
-    String histidineMode = System.getProperty("cphmd-histidineMode");
+/*  Available options:  Key                         Values (default first)
+    System.getProperty("cphmd-mode")                USE_CURRENT|RANDOM|HALF_LAMBDA
+    System.getProperty("cphmd-override")            NONE|ACCEPT|REJECT
+    System.getProperty("cphmd-snapshotsType")       SEPARATE|INTERLEAVED|NONE
+    System.getProperty("cphmd-histidineMode")       HIE_ONLY|HID_ONLY|SINGLE|DOUBLE
+    System.getProperty("cphmd-debugLog")            int     ()
+    System.getProperty("cphmd-referenceOverride")   double  ()
+    System.getProperty("cphmd-tempMonitor")         double  (6000.0)
+    System.getProperty("cphmd-logTimings")          boolean
+    System.getProperty("cphmd-termini")             boolean
+    System.getProperty("cphmd-zeroReferences")      boolean
 */
 
 List<String> arguments = options.arguments();
@@ -288,13 +287,15 @@ if (!dyn.exists()) {
     dyn = null;
 }
 
-// create the MD object
+MolecularAssembly mola = (MolecularAssembly) active;
 MolecularDynamics molDyn = new MolecularDynamics(active, active.getPotentialEnergy(), active.getProperties(), sh, thermostat, integrator);
 molDyn.setFileType(fileType);
 molDyn.setRestartFrequency(restartFrequency);
 
 // create the Monte-Carlo listener and connect it to the MD
-DiscountPh cphmd = new DiscountPh(active, molDyn, pH, temperature, dyn);
+DiscountPh cphmd = new DiscountPh(mola, molDyn, mode, dt, 
+    printInterval, saveInterval, initVelocities, 
+    fileType, restartFrequency, dyn);
 
 // set residues to be titrated
 if (options.ra) {
@@ -316,4 +317,4 @@ if (options.ra) {
 // launch
 cphmd.readyup();
 //mcProt.launch(molDyn, nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, fileType, restartFrequency);
-cphmd.dynamic(nSteps, titrationFrequency, titrationDuration, timeStep, printInterval, saveInterval, temperature, initVelocities, fileType, restartFrequency);
+cphmd.dynamic(nSteps, pH, temperature, titrationFrequency, titrationDuration, rotamerMoveRatio);

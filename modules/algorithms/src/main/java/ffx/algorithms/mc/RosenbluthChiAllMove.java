@@ -37,6 +37,20 @@
  */
 package ffx.algorithms.mc;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.logging.Logger;
+
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.math3.util.FastMath;
+
+import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Angle;
@@ -49,21 +63,10 @@ import ffx.potential.bonded.ResidueState;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.bonded.Torsion;
-import ffx.potential.parsers.PDBFilter;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.logging.Logger;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.math3.util.FastMath;
-import static ffx.algorithms.mc.BoltzmannMC.BOLTZMANN;
-import ffx.numerics.Potential;
 import ffx.potential.parameters.AtomType;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
+import ffx.potential.parsers.PDBFilter;
+
+import static ffx.algorithms.mc.BoltzmannMC.BOLTZMANN;
 
 /**
  * Represents a Boltzmann-drawn spin of all residue torsions.
@@ -192,6 +195,14 @@ public class RosenbluthChiAllMove implements MCMove {
         }
     }
 
+    /**
+     * So named, yet inadequate. Final stats on the ctrl vs bias algorithm for chis2,3 of LYS monomer are:
+     *          calc "4.23846e+07 / 22422"  for the biased run
+                calc "4.21623e+06 / 10000"  for the control run, where numerator = total timer; demon = accepted
+     * Possible accelerations are predicated on the fact that the test above was performed using unbinned
+     * ie fully-continuous rotamers and sampling was done with replacement. Rectifying either of these 
+     * breaks balance, however, when used with MD...
+     */
     private boolean engage_cheap() {
         report.append(String.format(" Rosenbluth CBMC Move: %4d  (%s)\n", moveNumber, target));
         

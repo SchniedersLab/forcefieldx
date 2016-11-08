@@ -60,6 +60,8 @@
  */
 package ffx.xray;
 
+import ffx.xray.parsers.RealSpaceFile;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;

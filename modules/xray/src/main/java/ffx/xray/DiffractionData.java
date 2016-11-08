@@ -37,6 +37,8 @@
  */
 package ffx.xray;
 
+import ffx.xray.parsers.MTZWriter;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -66,12 +68,10 @@ import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Residue;
 import ffx.potential.parsers.PDBFilter;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
-import ffx.xray.MTZWriter.MTZType;
+import ffx.xray.parsers.MTZWriter.MTZType;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
 import static ffx.xray.CrystalReciprocalSpace.SolventModel.POLYNOMIAL;
-
-import static java.util.Arrays.fill;
 
 /**
  * <p>
@@ -109,23 +109,24 @@ public class DiffractionData implements DataContainer {
     public final double xrayScaleTol;
     public final double sigmaATol;
     public double xWeight;
-    public final double bsimweight;
-    public final double bnonzeroweight;
-    public final double bmass;
+    public final double bSimWeight;
+    public final double bNonZeroWeight;
+    public final double bMass;
     public final boolean residueBFactor;
     public final int nResidueBFactor;
     public final boolean addAnisou;
-    public final boolean refinemolocc;
-    public final double occmass;
-    public final boolean lambdaTerm;
+    public final boolean refineMolOcc;
+    public final double occMass;
+    // public boolean lambdaTerm;
+
     /**
-     * if true, grid search bulk solvent params
+     * If true, perform a grid search for bulk solvent parameters.
      */
-    public boolean gridsearch;
+    public boolean gridSearch;
     /**
-     * fit a scaling spline between Fo and Fc?
+     * If true, fit a scaling spline between Fo and Fc.
      */
-    public boolean splinefit;
+    public boolean splineFit;
 
     /**
      * construct a diffraction data assembly, assumes an X-ray data set with a
@@ -247,23 +248,22 @@ public class DiffractionData implements DataContainer {
 
         int rflag = properties.getInt("rfreeflag", -1);
         fsigfCutoff = properties.getDouble("fsigfcutoff", -1.0);
-        gridsearch = properties.getBoolean("gridsearch", false);
-        splinefit = properties.getBoolean("splinefit", true);
+        gridSearch = properties.getBoolean("gridsearch", false);
+        splineFit = properties.getBoolean("splinefit", true);
         use_3g = properties.getBoolean("use_3g", true);
         aRadBuff = properties.getDouble("aradbuff", 0.75);
         double sampling = properties.getDouble("sampling", 0.6);
         xrayScaleTol = properties.getDouble("xrayscaletol", 1e-4);
         sigmaATol = properties.getDouble("sigmaatol", 0.05);
         xWeight = properties.getDouble("xweight", 1.0);
-        bsimweight = properties.getDouble("bsimweight", 1.0);
-        bnonzeroweight = properties.getDouble("bnonzeroweight", 1.0);
-        bmass = properties.getDouble("bmass", 5.0);
+        bSimWeight = properties.getDouble("bsimweight", 1.0);
+        bNonZeroWeight = properties.getDouble("bnonzeroweight", 1.0);
+        bMass = properties.getDouble("bmass", 5.0);
         residueBFactor = properties.getBoolean("residuebfactor", false);
         nResidueBFactor = properties.getInt("nresiduebfactor", 1);
         addAnisou = properties.getBoolean("addanisou", false);
-        refinemolocc = properties.getBoolean("refinemolocc", false);
-        occmass = properties.getDouble("occmass", 10.0);
-        lambdaTerm = properties.getBoolean("lambdaterm", false);
+        refineMolOcc = properties.getBoolean("refinemolocc", false);
+        occMass = properties.getDouble("occmass", 10.0);
 
         crystal = new Crystal[n];
         resolution = new Resolution[n];
@@ -323,8 +323,8 @@ public class DiffractionData implements DataContainer {
             sb.append("  Use cctbx 3 Gaussians (use_3g): ").append(use_3g).append("\n");
             sb.append("  Atomic form factor radius buffer (aradbuff): ").append(aRadBuff).append("\n");
             sb.append("  Reciprocal space sampling rate (sampling): ").append(sampling).append("\n");
-            sb.append("  Resolution dependent spline scale (splinefit): ").append(splinefit).append("\n");
-            sb.append("  Solvent grid search (gridsearch): ").append(gridsearch).append("\n");
+            sb.append("  Resolution dependent spline scale (splinefit): ").append(splineFit).append("\n");
+            sb.append("  Solvent grid search (gridsearch): ").append(gridSearch).append("\n");
             sb.append("  X-ray scale fit tolerance (xrayscaletol): ").append(xrayScaleTol).append("\n");
             sb.append("  Sigma A fit tolerance (sigmaatol): ").append(sigmaATol).append("\n\n");
             sb.append("  Reflections\n");
@@ -333,21 +333,21 @@ public class DiffractionData implements DataContainer {
                     append(rflag).append("\n");
             sb.append("  Number of bins (nbins): ").append(reflectionList[0].nbins).append("\n\n");
             sb.append("  B-Factors\n");
-            sb.append("  Similarity weight (bsimweight): ").append(bsimweight).append("\n");
-            sb.append("  Non-zero weight (bnonzeroweight): ").append(bnonzeroweight).append("\n");
-            sb.append("  Lagrangian mass (bmass): ").append(bmass).append("\n");
+            sb.append("  Similarity weight (bsimweight): ").append(bSimWeight).append("\n");
+            sb.append("  Non-zero weight (bnonzeroweight): ").append(bNonZeroWeight).append("\n");
+            sb.append("  Lagrangian mass (bmass): ").append(bMass).append("\n");
             sb.append("  Refined by residue (residuebfactor): ").append(residueBFactor).append("\n");
             sb.append("    (if true, num. residues per B (nresiduebfactor): ").append(nResidueBFactor).append(")\n");
             sb.append("  Add ANISOU for refinement (addanisou): ").append(addAnisou).append("\n\n");
             sb.append("  Occupancies\n");
-            sb.append("  Refine on molecules (HETATMs - refinemolocc): ").append(refinemolocc).append("\n");
-            sb.append("  Lagrangian mass (occmass): ").append(occmass).append("\n");
+            sb.append("  Refine on molecules (HETATMs - refinemolocc): ").append(refineMolOcc).append("\n");
+            sb.append("  Lagrangian mass (occmass): ").append(occMass).append("\n");
 
             logger.info(sb.toString());
         }
 
         // now set up the refinement model
-        refinementModel = new RefinementModel(assembly, refinemolocc);
+        refinementModel = new RefinementModel(assembly, refineMolOcc);
 
         // initialize atomic form factors
         for (Atom a : refinementModel.totalAtomArray) {
@@ -387,14 +387,14 @@ public class DiffractionData implements DataContainer {
             refinementData[i].setCrystalReciprocalSpace_fc(crs_fc[i]);
             crs_fc[i].setUse3G(use_3g);
             crs_fc[i].setWeight(dataFiles[i].weight);
-            crs_fc[i].lambdaTerm = lambdaTerm;
+            crs_fc[i].lambdaTerm = false;
             crs_fs[i] = new CrystalReciprocalSpace(reflectionList[i],
                     refinementModel.totalAtomArray, parallelTeam, parallelTeam,
                     true, dataFiles[i].neutron, solventmodel);
             refinementData[i].setCrystalReciprocalSpace_fs(crs_fs[i]);
             crs_fs[i].setUse3G(use_3g);
             crs_fs[i].setWeight(dataFiles[i].weight);
-            crs_fs[i].lambdaTerm = lambdaTerm;
+            crs_fs[i].lambdaTerm = false;
 
             crystalStats[i] = new CrystalStats(reflectionList[i],
                     refinementData[i]);
@@ -414,7 +414,7 @@ public class DiffractionData implements DataContainer {
      * @param index the current data index (for cumulative average purposes)
      */
     public void AverageFc(MolecularAssembly assembly[], int index) {
-        RefinementModel tmprefinementmodel = new RefinementModel(assembly, refinemolocc);
+        RefinementModel tmprefinementmodel = new RefinementModel(assembly, refineMolOcc);
 
         // initialize atomic form factors
         for (Atom a : tmprefinementmodel.totalAtomArray) {
@@ -500,6 +500,21 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * parallelized call to compute atomic density on a grid, followed by FFT to
+     * compute structure factors.
+     *
+     * @see CrystalReciprocalSpace#computeDensity(double[][], boolean)
+     */
+    public void computeAtomicDensity() {
+        for (int i = 0; i < n; i++) {
+            crs_fc[i].computeDensity(refinementData[i].fc);
+            if (solventModel != SolventModel.NONE) {
+                crs_fs[i].computeDensity(refinementData[i].fs);
+            }
+        }
+    }
+
+    /**
      * determine the total atomic gradients due to the diffraction data -
      * performs an inverse FFT
      *
@@ -517,21 +532,6 @@ public class DiffractionData implements DataContainer {
             crs_fs[i].computeAtomicGradients(refinementData[i].dfs,
                     refinementData[i].freer, refinementData[i].rfreeflag,
                     refinementMode);
-        }
-    }
-
-    /**
-     * parallelized call to compute atomic density on a grid, followed by FFT to
-     * compute structure factors.
-     *
-     * @see CrystalReciprocalSpace#computeDensity(double[][], boolean)
-     */
-    public void computeAtomicDensity() {
-        for (int i = 0; i < n; i++) {
-            crs_fc[i].computeDensity(refinementData[i].fc);
-            if (solventModel != SolventModel.NONE) {
-                crs_fs[i].computeDensity(refinementData[i].fs);
-            }
         }
     }
 
@@ -656,8 +656,8 @@ public class DiffractionData implements DataContainer {
 
     /*
     * Return R value for OSRW x-ray minimization
-    */
-    public double getRCrystalStat(){
+     */
+    public double getRCrystalStat() {
         return crystalStats[0].getR();
     }
 
@@ -759,7 +759,7 @@ public class DiffractionData implements DataContainer {
                 SplineEnergy.Type.FOFC);
 
         // minimize
-        if (solventModel != SolventModel.NONE && gridsearch) {
+        if (solventModel != SolventModel.NONE && gridSearch) {
             scaleBulkMinimize[i].minimize(6, xrayScaleTol);
             scaleBulkMinimize[i].GridOptimize();
         }
@@ -769,22 +769,17 @@ public class DiffractionData implements DataContainer {
         sigmaAMinimize[i] = new SigmaAMinimize(reflectionList[i], refinementData[i], parallelTeam);
         sigmaAMinimize[i].minimize(7, sigmaATol);
 
-        if (splinefit) {
+        if (splineFit) {
             splineMinimize[i].minimize(7, 1e-5);
         }
 
         scaled[i] = true;
     }
 
-    /**
-     * Set the current value of the state variable.
-     *
-     * @param lambda a double.
-     */
-    protected void setLambda(double lambda) {
-        for (int i = 0; i < n; i++) {
-            crs_fc[i].setLambda(lambda);
-            crs_fs[i].setLambda(lambda);
+    protected void setLambdaTerm(boolean lambdaTerm) {
+        for (int i=0; i<n; i++) {
+            crs_fc[i].setLambdaTerm(lambdaTerm);
+            crs_fs[i].setLambdaTerm(lambdaTerm);
         }
     }
 

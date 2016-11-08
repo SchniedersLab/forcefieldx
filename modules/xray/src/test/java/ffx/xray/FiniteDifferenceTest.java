@@ -37,6 +37,8 @@
  */
 package ffx.xray;
 
+import ffx.xray.parsers.MTZFilter;
+
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;

@@ -46,8 +46,7 @@ public final class TitrationESV extends ExtendedVariable {
     private final double constPh;
     private final double pKaModel;
     
-    public TitrationESV(double constPh, MultiResidue titrating, 
-            double dt, double biasMag) {
+    public TitrationESV(double constPh, MultiResidue titrating, double biasMag) {
         super(biasMag, 1.0);
         this.constPh = constPh;
         this.titrating = titrating;
@@ -66,8 +65,8 @@ public final class TitrationESV extends ExtendedVariable {
                 .forEachOrdered(node -> rolsZero.add((ROLS) node));
     }
     
-    public TitrationESV(double constPh, MultiResidue titrating, double dt) {
-        this(constPh, titrating, dt, 1.0);
+    public TitrationESV(double constPh, MultiResidue titrating) {
+        this(constPh, titrating, 1.0);
     }
     
     public MultiResidue getMultiRes() {
@@ -93,13 +92,31 @@ public final class TitrationESV extends ExtendedVariable {
         atoms.addAll(atomsZero);
         atoms.parallelStream().forEach(a -> a.setESV(this));
         // Fill bonded term list and set all esvLambda values.
-        bondedTerms = new ArrayList<>();
-        residueOne.getChildList(BondedTerm.class, bondedTerms);
-        residueZero.getChildList(BondedTerm.class, bondedTerms);
-        for (BondedTerm term : bondedTerms) {
-            term.setEsvLambda(lambda);
+        if (!(System.getProperty("cphmd-bonded") != null && System.getProperty("cphmd-bonded").equalsIgnoreCase("false"))) { 
+            bondedTerms = new ArrayList<>();
+            residueOne.getChildList(BondedTerm.class, bondedTerms);
+            residueZero.getChildList(BondedTerm.class, bondedTerms);
+            for (BondedTerm term : bondedTerms) {
+                term.setEsvLambda(lambda);
+            }
         }
         describe();
+    }
+    
+    @Override
+    public void propagate(double dEdLdh, double currentTemp, double dt) {
+        langevin(dEdLdh, currentTemp, dt);
+        bondedTerms.stream().forEach((BondedTerm bt) -> bt.setEsvLambda(lambda));
+    }
+    
+    @Override
+    public double getTotalBiasEnergy(double temperature) {
+        return (getDiscretizationBiasEnergy() + getPhBiasEnergy(temperature));
+    }
+    
+    @Override
+    public double getTotaldBiasdL(double temperature) {
+        return (getdDiscretizationBiasdL() + getdPhBiasdL(temperature));
     }
     
     /**
@@ -112,11 +129,11 @@ public final class TitrationESV extends ExtendedVariable {
     public double getPhBiasEnergy(double temperature) {
         Titr titration = TitrationUtils.titrationLookup(this.titrating.getActive());
         double pKaModel = titration.pKa;
-        double uph = ThermoConstants.log10*ThermoConstants.R*temperature*(pKaModel - constPh)*lambda;
+        double uph = ThermoConstants.log10*ThermoConstants.BOLTZMANN*temperature*(pKaModel - constPh)*lambda;
         logger.log(Level.CONFIG, format(" U(pH): 2.303kT*(pKa-pH)*L = %.4g * (%.2f - %.2f) * %.2f = %.4g", 
-                ThermoConstants.log10*ThermoConstants.kB*temperature, 
+                ThermoConstants.log10*ThermoConstants.BOLTZMANN*temperature, 
                 pKaModel, constPh, lambda, 
-                ThermoConstants.log10*ThermoConstants.kB*temperature*(pKaModel-constPh)*lambda));
+                ThermoConstants.log10*ThermoConstants.BOLTZMANN*temperature*(pKaModel-constPh)*lambda));
         double umod = 0.0;  // TODO PRIO find PMFs for monomers/trimers/pentapeptides
         umod = titration.refEnergy * lambda;
         return uph + umod;
@@ -127,7 +144,11 @@ public final class TitrationESV extends ExtendedVariable {
      * eg. histidine with 0.5 proton on each N. more examples arise when tautomerism is treated.
      */
     public double getdPhBiasdL(double temperature) {
-        double duphdl = ThermoConstants.log10*ThermoConstants.R*temperature*(pKaModel - constPh);
+        double duphdl = ThermoConstants.log10*ThermoConstants.BOLTZMANN*temperature*(pKaModel - constPh);
+        logger.log(Level.CONFIG, format(" dU(pH)dL: 2.303kT*(pKa-pH) = %.4g * (%.2f - %.2f) = %.4g", 
+                ThermoConstants.log10*ThermoConstants.BOLTZMANN*temperature, 
+                pKaModel, constPh,
+                ThermoConstants.log10*ThermoConstants.BOLTZMANN*temperature*(pKaModel-constPh)));
         double dumoddl = 0.0;   // see above
         return duphdl + dumoddl;
     }
