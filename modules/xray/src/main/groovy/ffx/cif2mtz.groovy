@@ -46,10 +46,10 @@ import groovy.util.CliBuilder;
 import ffx.crystal.Crystal;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
-import ffx.xray.CIFFilter;
 import ffx.xray.DiffractionRefinementData;
-import ffx.xray.MTZWriter;
-import ffx.xray.MTZWriter.MTZType;
+import ffx.xray.parsers.CIFFilter;
+import ffx.xray.parsers.MTZWriter;
+import ffx.xray.parsers.MTZWriter.MTZType;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================

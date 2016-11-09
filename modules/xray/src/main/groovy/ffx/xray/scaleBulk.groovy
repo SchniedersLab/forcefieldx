@@ -38,14 +38,12 @@
 
 // Apache Imports
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.configuration.CompositeConfiguration;
 
 // Groovy Imports
 import groovy.util.CliBuilder;
 
 // Force Field X Imports
-import ffx.xray.DiffractionData;
-import ffx.xray.DiffractionFile;
-import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Polymer
 import ffx.potential.bonded.Residue
@@ -54,7 +52,9 @@ import ffx.potential.bonded.RotamerLibrary
 import ffx.potential.parameters.ForceField
 import ffx.potential.parsers.ForceFieldFilter
 import ffx.potential.parsers.PDBFilter
-import org.apache.commons.configuration.CompositeConfiguration
+import ffx.xray.DiffractionData;
+import ffx.xray.parsers.DiffractionFile;
+import ffx.xray.CrystalReciprocalSpace.SolventModel;
 
 boolean writemaps = false;
 

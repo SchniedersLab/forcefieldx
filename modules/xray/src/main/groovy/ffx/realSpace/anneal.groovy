@@ -46,9 +46,9 @@ import groovy.util.CliBuilder;
 
 // Force Field X Imports
 import ffx.algorithms.SimulatedAnnealing;
+import ffx.realspace.RealSpaceFile;
+import ffx.realspace.RealSpaceData;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
-import ffx.xray.RealSpaceData;
-import ffx.xray.RealSpaceFile;
 import ffx.xray.RefinementEnergy;
 import ffx.xray.RefinementMinimize.RefinementMode;
 

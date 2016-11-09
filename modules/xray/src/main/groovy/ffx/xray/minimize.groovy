@@ -47,9 +47,9 @@ import groovy.util.CliBuilder;
 // Force Field X Imports
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.DiffractionData;
-import ffx.xray.DiffractionFile;
 import ffx.xray.RefinementMinimize;
 import ffx.xray.RefinementMinimize.RefinementMode;
+import ffx.xray.parsers.DiffractionFile;
 
 // RMS gradient per atom convergence criteria
 double eps = -1.0;

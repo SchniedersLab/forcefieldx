@@ -35,41 +35,40 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.xray.parsers;
 
-import org.apache.commons.configuration.CompositeConfiguration;
+package ffx.autoparm;
 
-import ffx.crystal.Crystal;
-import ffx.xray.RealSpaceRefinementData;
+import ffx.potential.parameters.ForceField;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.logging.Logger;
 
 /**
- * <p>
- * RealSpaceFileFilter interface.</p>
  *
- * @author Timothy D. Fenn
+ * @author Rae Ann Corrigan
  */
-public interface RealSpaceFileFilter {
+public class Stitch {
+    
+    private ArrayList<File> sdfFiles = null;
+    private ArrayList<File> uniqueAtomNamesTextFiles = null;
+    
+    private final static Logger logger = Logger.getLogger(Stitch.class.getName());
+    
+    //constructor
+    public Stitch(ArrayList<File> sdfFiles, ArrayList<File> uniqueAtomNamesTextFiles){
+        this.sdfFiles = sdfFiles;
+        this.uniqueAtomNamesTextFiles = uniqueAtomNamesTextFiles;
+    }
 
-    /**
-     * <p>
-     * getCrystal</p>
-     *
-     * @param filename A {@link java.lang.String} object.
-     * @param properties A
-     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
-     * @return A {@link ffx.crystal.Crystal} object.
-     */
-    Crystal getCrystal(String filename, CompositeConfiguration properties);
-
-    /**
-     * Read in a Real Space file.
-     *
-     * @param filename File to read in.
-     * @param refinementData The {@link RealSpaceRefinementData} object to fill
-     * in.
-     * @param properties System properties.
-     * @return True if read in properly.
-     */
-    boolean readFile(String filename, RealSpaceRefinementData refinementData,
-            CompositeConfiguration properties);
+    //ForceField parent = new ForceField();
+    
+    //create array of forcefields
+    ForceField[] forcefield = new ForceField[sdfFiles.size()];
+    
+    //molecular assembiles
+    
+    
+    // Bonds
+    //Bond bonds[] = [ffename].getBonds();
+    
 }

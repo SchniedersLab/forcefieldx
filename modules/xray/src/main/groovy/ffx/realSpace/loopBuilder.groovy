@@ -77,15 +77,16 @@ import ffx.potential.bonded.ResidueEnumerations.CommonAminoAcid3;
 import ffx.potential.bonded.Residue.ResidueType;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
+
+import ffx.realspace.RealSpaceData;
+import ffx.realspace.RealSpaceFile;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.DiffractionData;
-import ffx.xray.DiffractionFile;
 import ffx.xray.Looptimizer;
-import ffx.xray.RealSpaceData;
-import ffx.xray.RealSpaceFile;
 import ffx.xray.RefinementEnergy;
 import ffx.xray.RefinementMinimize;
 import ffx.xray.RefinementMinimize.RefinementMode;
+import ffx.xray.parsers.DiffractionFile;
 
 // Default convergence criteria.
 double eps = 0.1;

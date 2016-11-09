@@ -45,10 +45,10 @@ import groovy.util.CliBuilder;
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
-import ffx.xray.DiffractionData
-import ffx.xray.DiffractionFile
-import ffx.xray.RefinementEnergy
-import ffx.xray.RefinementMinimize.RefinementMode
+import ffx.xray.DiffractionData;
+import ffx.xray.RefinementEnergy;
+import ffx.xray.RefinementMinimize.RefinementMode;
+import ffx.xray.parsers.DiffractionFile;
 
 // The number of iterations.
 int nEvals = 5;

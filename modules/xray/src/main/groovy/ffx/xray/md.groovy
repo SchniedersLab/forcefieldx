@@ -50,10 +50,9 @@ import ffx.algorithms.Integrator.Integrators;
 import ffx.algorithms.Thermostat.Thermostats;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.DiffractionData;
-import ffx.xray.DiffractionFile;
 import ffx.xray.RefinementEnergy;
 import ffx.xray.RefinementMinimize.RefinementMode;
-
+import ffx.xray.parsers.DiffractionFile;
 
 // type of refinement
 RefinementMode refinementmode = RefinementMode.COORDINATES;

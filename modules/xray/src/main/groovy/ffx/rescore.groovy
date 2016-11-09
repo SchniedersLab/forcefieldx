@@ -49,33 +49,25 @@ import groovy.util.CliBuilder;
 import java.nio.file.Paths;
 import java.nio.file.Path;
 
-// Force Field X X-ray Imports
-import ffx.xray.CrystalReciprocalSpace.SolventModel;
-import ffx.xray.DiffractionData;
-import ffx.xray.DiffractionFile;
-import ffx.xray.RefinementMinimize;
-import ffx.xray.RefinementMinimize.RefinementMode;
-import ffx.xray.RescoreAndCluster.RescoreStrategy;
-
-// Force Field X Minimize imports
+// FFX Imports
+import ffx.algorithms.AlgorithmFunctions;
+import ffx.algorithms.AlgorithmUtils;
 import ffx.algorithms.Minimize;
 import ffx.potential.DualTopologyEnergy;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.parsers.CoordinateFileFilter;
-import ffx.algorithms.AlgorithmFunctions;
-import ffx.algorithms.AlgorithmUtils;
-
-// Force Field X Real-Space Imports
-import ffx.xray.RealSpaceData;
-import ffx.xray.RealSpaceFile;
+import ffx.realspace.RealSpaceData;
+import ffx.realspace.RealSpaceFile;
+import ffx.utilities.DoubleIndexPair;
+import ffx.xray.CrystalReciprocalSpace.SolventModel;
+import ffx.xray.DiffractionData;
 import ffx.xray.RefinementMinimize;
 import ffx.xray.RefinementMinimize.RefinementMode;
-import ffx.xray.RescoreAndCluster
-
-// Other Force Field X imports.
-import ffx.utilities.DoubleIndexPair;
+import ffx.xray.Rescore
+import ffx.xray.Rescore.RescoreStrategy;
+import ffx.xray.parsers.DiffractionFile;
 
 // RMS gradient per atom convergence criteria
 double eps = -1.0;

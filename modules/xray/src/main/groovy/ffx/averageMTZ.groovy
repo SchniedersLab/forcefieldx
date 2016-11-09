@@ -41,7 +41,7 @@ import groovy.util.CliBuilder;
 
 import java.io.File;
 
-import ffx.xray.MTZFilter;
+import ffx.xray.parsers.MTZFilter;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================

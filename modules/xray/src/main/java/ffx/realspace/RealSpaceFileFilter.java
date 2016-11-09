@@ -35,34 +35,40 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
+package ffx.realspace;
 
-// Groovy Imports
-import groovy.util.CliBuilder;
+import org.apache.commons.configuration.CompositeConfiguration;
 
-import java.io.File;
+import ffx.crystal.Crystal;
 
-import ffx.xray.parsers.MTZFilter;
+/**
+ * <p>
+ * RealSpaceFileFilter interface.</p>
+ *
+ * @author Timothy D. Fenn
+ */
+public interface RealSpaceFileFilter {
 
-// Things below this line normally do not need to be changed.
-// ===============================================================================================
+    /**
+     * <p>
+     * getCrystal</p>
+     *
+     * @param filename A {@link java.lang.String} object.
+     * @param properties A
+     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * @return A {@link ffx.crystal.Crystal} object.
+     */
+    Crystal getCrystal(String filename, CompositeConfiguration properties);
 
-// Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc mtzInfo [options] <mtzfilename>');
-cli.h(longOpt:'help', 'Print this help message.');
-def options = cli.parse(args);
-List<String> arguments = options.arguments();
-if (options.h || arguments == null || arguments.size() != 1) {
-    return cli.usage();
+    /**
+     * Read in a Real Space file.
+     *
+     * @param filename File to read in.
+     * @param refinementData The {@link RealSpaceRefinementData} object to fill
+     * in.
+     * @param properties System properties.
+     * @return True if read in properly.
+     */
+    boolean readFile(String filename, RealSpaceRefinementData refinementData,
+            CompositeConfiguration properties);
 }
-
-String mtzfile = arguments.get(0);
-
-File file = new File(mtzfile);
-if (!file.exists()){
-    println("File: " + mtzfile + " not found!");
-    return;
-}
-
-MTZFilter mtzfilter = new MTZFilter();
-mtzfilter.getReflectionList(file);
-mtzfilter.printHeader();

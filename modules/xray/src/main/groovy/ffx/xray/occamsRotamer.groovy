@@ -36,12 +36,23 @@
  * exception statement from your version.
  */
 
+// Java Imports
+import java.util.Scanner;
+
+// Groovy Imports
+import groovy.util.CliBuilder;
+
 // Apache Commons Imports
 import org.apache.commons.io.FilenameUtils;
 
-// ENERGY
-import ffx.potential.MolecularAssembly;
+// PJ Imports
+import edu.rit.pj.Comm
+
+// FFX Imports
+import ffx.algorithms.RotamerOptimization
+import ffx.algorithms.RotamerOptimization.Direction;
 import ffx.potential.ForceFieldEnergy;
+import ffx.potential.MolecularAssembly;
 
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
@@ -54,19 +65,11 @@ import ffx.potential.bonded.Residue.ResidueType;
 
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.DiffractionData;
-import ffx.xray.DiffractionFile;
 import ffx.xray.RefinementEnergy;
 import ffx.xray.RefinementMinimize;
 import ffx.xray.RefinementMinimize.RefinementMode;
+import ffx.xray.parsers.DiffractionFile;
 
-// Groovy Imports
-import groovy.util.CliBuilder;
-
-// FFX Imports
-import ffx.algorithms.RotamerOptimization
-import ffx.algorithms.RotamerOptimization.Direction;
-import edu.rit.pj.Comm
-import java.util.Scanner;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
