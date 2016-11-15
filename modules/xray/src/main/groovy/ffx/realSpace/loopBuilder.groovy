@@ -82,7 +82,6 @@ import ffx.realspace.RealSpaceData;
 import ffx.realspace.RealSpaceFile;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.DiffractionData;
-import ffx.xray.Looptimizer;
 import ffx.xray.RefinementEnergy;
 import ffx.xray.RefinementMinimize;
 import ffx.xray.RefinementMinimize.RefinementMode;
@@ -502,7 +501,8 @@ if(runOSRW){
             lambdaRestart, histogramRestart, active.getProperties(),
             (temperature), timeStep, printInterval, saveInterval, asynchronous, sh);
     } else {
-        osrw =  new Looptimizer(refinementEnergy, refinementEnergy, lambdaRestart, histogramRestart, active.getProperties(),
+        osrw =  new Looptimizer(refinementEnergy, refinementEnergy,
+            lambdaRestart, histogramRestart, active.getProperties(),
             (temperature), timeStep, printInterval, saveInterval, asynchronous, sh);
     }
     osrw.setLambda(lambda);
