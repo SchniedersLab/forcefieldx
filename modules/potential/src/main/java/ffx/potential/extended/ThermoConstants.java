@@ -1,5 +1,6 @@
 package ffx.potential.extended;
 
+import java.util.OptionalDouble;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -11,6 +12,8 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  */
 public class ThermoConstants {
 
+    public static final boolean DEBUG = prop("debug", false);
+    public static final boolean VERBOSE = prop("verbose", false);
     /**
      * Boltzmann's constant is kcal/mol/Kelvin.
      */
@@ -38,9 +41,38 @@ public class ThermoConstants {
     public static final double randomConvert2 = randomConvert * randomConvert;
     private static final Random random = ThreadLocalRandom.current();
     
-    private static final double roomTemperature = 298.15;
+    public static final double roomTemperature = 298.15;
     
     public static final double log10 = Math.log(10);
+    
+    public static boolean prop(String key) {
+        return (System.getProperty(key) != null);
+    }
+    public static <T> T prop(String key, T defaultVal) {
+        if (defaultVal instanceof Integer) {
+            return (System.getProperty(key) != null) 
+                    ? (T) Integer.valueOf(System.getProperty(key)) : defaultVal;
+        } else if (defaultVal instanceof Double) {
+            return (System.getProperty(key) != null) 
+                    ? (T) Double.valueOf(System.getProperty(key)) : defaultVal;
+        } else if (defaultVal instanceof Boolean) {
+            Boolean def = (Boolean) defaultVal;
+            if (System.getProperty(key) != null) {
+                if (System.getProperty(key).equals("")) {
+                    System.setProperty(key,"true");
+                }
+                return (T) Boolean.valueOf(System.getProperty(key));
+            } else {
+                return defaultVal;
+            }
+        } else {
+            return (System.getProperty(key) != null) 
+                    ? (T) OptionalDouble.of(Double.valueOf(System.getProperty(key))) : (T) OptionalDouble.empty();
+        }
+    }
+    public static <T extends Enum<T>> T prop(Class<T> type, String key, T def) {
+        return (System.getProperty(key) != null) ? T.valueOf(type, System.getProperty(key)) : def;
+    }
     
     /**
      * Return room-temperature velocities from a Maxwell-Boltzmann distribution of momenta.

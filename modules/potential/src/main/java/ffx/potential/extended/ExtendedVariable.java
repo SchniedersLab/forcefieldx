@@ -2,6 +2,7 @@ package ffx.potential.extended;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalDouble;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Logger;
@@ -11,6 +12,9 @@ import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.potential.bonded.Atom;
+
+import static ffx.potential.extended.ThermoConstants.DEBUG;
+import static ffx.potential.extended.ThermoConstants.prop;
 
 /**
  * A generalized extended system variable.
@@ -41,7 +45,9 @@ public abstract class ExtendedVariable {
     private static final Logger logger = Logger.getLogger(ExtendedVariable.class.getName());
     private static int esvIndexer = 0;
     public final int index;
-    protected List<Atom> atoms = new ArrayList<>();
+    protected final List<Atom> atoms = new ArrayList<>();
+    protected final List<Atom> backbone = new ArrayList<>();
+    boolean ready = false;
     
     // Lamedh variables
     protected double lambda;                        // ESVs travel on {0,1}
@@ -49,6 +55,7 @@ public abstract class ExtendedVariable {
     private double halfThetaVelocity = 0.0;         // from OSRW, start theta with zero velocity
     private final double thetaMass = prop("esv-thetaMass", 1.0e-18);            // from OSRW, reasonably 100 a.m.u.
     private final double thetaFriction = prop("esv-thetaFriction", 1.0e-19);    // from OSRW, reasonably 60/ps
+    private final OptionalDouble biasOverride = prop("esv-bias", OptionalDouble.of(1.0));
     private final Random stochasticRandom = ThreadLocalRandom.current();
     
     private final double betat;
@@ -56,8 +63,7 @@ public abstract class ExtendedVariable {
     
     public ExtendedVariable(double biasMag, double initialLamedh) {
         index = esvIndexer++;
-        betat = System.getProperty("esv-bias") == null ? biasMag : 
-                Double.parseDouble(System.getProperty("esv-bias"));
+        betat = biasOverride.isPresent() ? biasOverride.getAsDouble() : biasMag;
         lambda = initialLamedh;
         theta = Math.asin(Math.sqrt(lambda));
     }
@@ -69,27 +75,28 @@ public abstract class ExtendedVariable {
         this(0.0, 1.0);
     }
     
-    public List<Atom> getAtoms() {
-        List<Atom> ret = new ArrayList<>();
-        ret.addAll(atoms);
-        return ret;
-    }
-    
     public boolean containsAtom(Atom atom) {
         return atoms.contains(atom);
+    }
+    
+    public boolean containsBackboneAtom(Atom atom) {
+        return backbone.contains(atom);
     }
     
     /**
      * Implementations should start by calling langevin(), then set the new lambda value everywhere 
      * it needs to go (eg bonded terms).
      */
-    public abstract void propagate(double dEdLdh, double currentTemp, double dt);
+    protected abstract void propagate(double dEdLdh, double dt, Double temperature);
     
     /**
      * Propagate lambda using Langevin dynamics.
      * Check that temperature goes to the value used below (when set as a constant) even when sim is decoupled.
      */
-    protected void langevin(double dEdLdh, double currentTemperature, double dt) {
+    protected void langevin(double dEdLdh, double dt, double currentTemperature) {
+        if (DEBUG) {
+            return;
+        }
         double rt2 = 2.0 * ThermoConstants.BOLTZMANN * currentTemperature * thetaFriction / dt;
         double randomForce = sqrt(rt2) * stochasticRandom.nextGaussian() / ThermoConstants.randomConvert;
         double dEdL = -dEdLdh * sin(2.0 * theta);
@@ -129,8 +136,8 @@ public abstract class ExtendedVariable {
     /**
      * Should include at least the discretization bias; add any type-specific biases (eg pH).
      */
-    public abstract double getTotalBiasEnergy(double temperature);
-    public abstract double getTotaldBiasdL(double temperature);
+    public abstract double totalBiasEnergy(double temperature);
+    public abstract double totalBiasDeriv(double temperature);
     
     /**
      * From Shen&Huang 2016; drives ESVs to zero/unity.
@@ -143,21 +150,18 @@ public abstract class ExtendedVariable {
     /**
      * dBiasdL = -8B*(L-0.5)
      */
-    public double getdDiscretizationBiasdL() {
+    public double discretizationBiasDeriv() {
         return dDiscrBiasdL;
-    }
-
-    public static int prop(String key, int defaultVal) {
-        return (System.getProperty(key) != null) ? Integer.parseInt(System.getProperty(key)) : defaultVal;
-    }
-    public static double prop(String key, double defaultVal) {
-        return (System.getProperty(key) != null) ? Double.parseDouble(System.getProperty(key)) : defaultVal;
     }
     
     /**
-     * Implementations should fill the protected atoms[] array and set the 
-     * esvLambda value of any affected bonded terms.
+     * Implementations should fill the protected atoms[] array, set the 
+     * esvLambda value of any affected bonded terms, and set the ready flag.
      */
     public abstract void readyup();
+    
+    public boolean isReady() {
+        return ready;
+    }
     
 }

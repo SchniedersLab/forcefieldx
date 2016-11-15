@@ -783,12 +783,12 @@ public class Protonate implements MonteCarloListener {
             // Assign starting titration lambdas.
             if (mode == Mode.HALF_LAMBDA) {
                 discountLogger.append(format("   Setting all ESVs to one-half...\n"));
-                for (ExtendedVariable esv : esvSystem.getESVList()) {
+                for (ExtendedVariable esv : esvSystem) {
                     esv.setLambda(0.5);
                 }
             } else if (mode == Mode.RANDOM) {
                 discountLogger.append(format("   Setting all ESVs to [random]...\n"));
-                for (ExtendedVariable esv : esvSystem.getESVList()) {
+                for (ExtendedVariable esv : esvSystem) {
                     esv.setLambda(rng.nextDouble());
                 }
             } else {

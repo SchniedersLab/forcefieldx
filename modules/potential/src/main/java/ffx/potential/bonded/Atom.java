@@ -202,11 +202,16 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * Contiguous atom index ranging from 0..nAtoms - 1.
+     * Contiguous atom index ranging from 1..nAtoms.
      *
      * @since 1.0
      */
     public int xyzIndex = -1;
+    /**
+     * Persistent index separate from xyzIndex for validation and array ops; 0..nAtoms-1.
+     */
+    public final int immutableIndex = indexer++;
+    private static int indexer = 0;
     /**
      * PDB "resname" record.
      *

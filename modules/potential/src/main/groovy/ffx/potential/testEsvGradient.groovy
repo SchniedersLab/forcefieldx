@@ -98,8 +98,7 @@ double lambda = 1.0;
 boolean print = false;
 
 // FD step size.
-double lbdStep = 0.0;
-double ldhStep = 0.0001;
+double step = 0.0001;
 
 // ESV discretization bias height
 double biasMag = 1.0;
@@ -167,7 +166,7 @@ if (options.v) {
 }
 
 if (options.dx) {
-    ldhStep = Double.parseDouble(options.dx);
+    step = Double.parseDouble(options.dx);
 }
 
 if (options.bm) {
@@ -208,6 +207,7 @@ System.setProperty("LAMBDATERM", "true");
 System.setProperty("VDWTERM", "true");
 
 // Everything else
+System.setProperty("mpoleterm", "false");
 System.setProperty("BONDTERM", "false");
 System.setProperty("ANGLETERM", "false");
 System.setProperty("STRBNDTERM", "false");
@@ -217,7 +217,6 @@ System.setProperty("TORSIONTERM", "false");
 System.setProperty("PITORSTERM", "false");
 System.setProperty("TORTORTERM", "false");
 System.setProperty("IMPROPERTERM", "false");
-System.setProperty("MPOLETERM", "false");
 System.setProperty("POLARIZETERM", "false");
 System.setProperty("GKTERM", "false");
 System.setProperty("RESTRAINTERM", "false");
@@ -230,6 +229,8 @@ System.setProperty("polarization-lambda-start","0.0");      // polarize on the w
 System.setProperty("polarization-lambda-exponent","0.0");   // polarization not softcored, only prefactored
 System.setProperty("ligand-vapor-elec", "false");           // cancels when reference is solution phase
 System.setProperty("no-ligand-condensed-scf", "false");     // don't need condensed phase polarization
+System.setProperty("cphmd-bonded", "false");
+//System.setProperty("pj.nt","1");
 
 // Test parameters
 System.setProperty("vdw-cutoff", "1000");
@@ -278,7 +279,7 @@ for (int i = 0; i < numESVs; i++) {
     Optional<Residue> target = new Optional<>();
     for (Polymer p : polymers) {
         if (p.getChainID().equals(chainID)) {
-            target = p.getResidues().parallelStream()
+            target = p.getResidues().stream()
                 .filter {res -> res.getResidueNumber() == resNum}
                 .findFirst();
             break;
@@ -333,6 +334,7 @@ double[] lambdaGrad = new double[n];
 double[][] lamedhGrad = new double[numESVs][n];
 double[][] lambdaGradFD = new double[2][n];
 double[][][] lamedhGradFD = new double[2][numESVs][n];
+double ldh = lamedh[0];
 
 // Number of independent atoms.
 assert(n % 3 == 0);
@@ -352,41 +354,71 @@ logger.info(String.format(" E(1):      %20.8f.", e1));
 logger.info(String.format(" E(1)-E(0): %20.8f.\n", e1-e0));
 
 // Finite-difference step size.
-double lbdWidth = 2.0 * lbdStep;    // default lbdStep = 0.0
-double ldhWidth = 2.0 * ldhStep;
+double lbdWidth = 2.0 * step;    // default step = 0.0
+double ldhWidth = 2.0 * step;
 
 // Error tolerence
 double errTol = 1.0e-3;
 // Upper bound for typical gradient sizes (expected gradient)
 double expGrad = 1000.0;
-    
+
+double[] xyz = new double[n];
+double[] xyzPrevious = new double[n];
+double[] xyzOriginal = new double[n];
+ffe.getCoordinates(xyz);
+ffe.getCoordinates(xyzPrevious);
+ffe.getCoordinates(xyzOriginal);
 /******************************************************************************/
 // Finite Difference tests of each ESV individually.
 /******************************************************************************/
 for (int iESV = 0; iESV < numESVs; iESV++) {
-    esvSystem.setAllLambdas(lamedh[iESV] - ldhStep);
+    ffe.getCoordinates(xyz);
+    for (int i = 0; i < n; i++) {
+        if (xyz[i] != xyzOriginal[i]) {
+            logger.warning(String.format(" Variable %d unequal before lower: prior %g current %g", i, xyz[i], xyzPrevious[i]));
+        }
+    }
+    ffe.getCoordinates(xyzPrevious);
+    esvSystem.setAllLambdas(ldh - step);
     ffe.setPrintOverride(true);
-    double lower = ffe.energyAndGradient(x,lamedhGradFD[1][iESV]);
+    ffe.reInit();
+    double lower = ffe.energyAndGradient(xyz,lamedhGradFD[1][iESV]);
 
-    esvSystem.setAllLambdas(lamedh[iESV] + ldhStep);
-    double upper = ffe.energyAndGradient(x,lamedhGradFD[0][iESV]);
+    esvSystem.setAllLambdas(ldh + step);
+    ffe.getCoordinates(xyzPrevious);
+    for (int i = 0; i < n; i++) {
+        if (xyz[i] != xyzOriginal[i]) {
+            logger.warning(String.format(" Variable %d unequal before upper: prior %g current %g", i, xyz[i], xyzPrevious[i]));
+        }
+    }
+    ffe.getCoordinates(xyz);
+    ffe.reInit();
+    double upper = ffe.energyAndGradient(xyz,lamedhGradFD[0][iESV]);
     ffe.setPrintOverride(false);
 
-    esvSystem.setAllLambdas(lamedh[iESV]);
-    double center = ffe.energyAndGradient(x,lamedhGrad[iESV]);
-    double[] esvAnalytics = esvSystem.getdEdL(false);
+    esvSystem.setAllLambdas(ldh);
+    ffe.getCoordinates(xyz);
+    for (int i = 0; i < n; i++) {
+        if (xyz[i] != xyzOriginal[i]) {
+            logger.warning(String.format(" Variable %d unequal before center: prior %g current %g", i, xyz[i], xyzPrevious[i]));
+        }
+    }
+    ffe.getCoordinates(xyzPrevious);
+    ffe.reInit();
+    double center = ffe.energyAndGradient(xyz,lamedhGrad[iESV]);
+    double[] esvAnalytics = esvSystem.getdEdL(false, null);
     double alytic1 = esvAnalytics[iESV];
 
     double fd1 = (upper - lower) / ldhWidth;
     double err1 = Math.abs(fd1 - alytic1);
 
     StringBuilder sb = new StringBuilder();
-    sb.append(String.format(" (ESV%d) Numeric FD @ LdhPlus,LdhMinus,width,dEdLdh: %+9.6g %+9.6g %4.2g  >  %+9.6g\n", iESV, upper, lower, ldhWidth, fd1));
-    sb.append(String.format(" (ESV%d) Analytic Derivative @ Ldh %4.2f  >  dEdLdh: %+9.6g\n\n", iESV, lamedh[iESV], alytic1));
+    sb.append(String.format(" (ESV%d) Numeric FD @ LdhPlus,LdhMinus,width,dEdLdh: %+9.6g %+9.6g %4.2g  >  %+9.6g\n", 0, upper, lower, ldhWidth, fd1));
+    sb.append(String.format(" (ESV%d) Analytic Derivative @ Ldh %4.2f  >  dEdLdh: %+9.6g\n\n", 0, ldh, alytic1));
     String passFail1 = (err1 < errTol) ? "passed" : "failed";
-    sb.append(String.format(" (ESV%d) dE/dL %6s:   %+10.6f\n", iESV, passFail1, err1));
-    sb.append(String.format(" (ESV%d) Numeric:        %+10.6f\n", iESV, fd1));
-    sb.append(String.format(" (ESV%d) Analytic:       %+10.6f\n", iESV, alytic1));
+    sb.append(String.format(" (ESV%d) dE/dL %6s:   %+10.6f\n", 0, passFail1, err1));
+    sb.append(String.format(" (ESV%d) Numeric:        %+10.6f\n", 0, fd1));
+    sb.append(String.format(" (ESV%d) Analytic:       %+10.6f\n", 0, alytic1));
     logger.info(sb.toString());
 }
 
@@ -401,15 +433,15 @@ return;
 for (int j=0; j<3; j++) {
     if (!fixedLambda) {
         lambda = initialLambda - 0.01 + 0.01 * j;
-        if (lambda - lbdStep < 0.0) {
+        if (lambda - step < 0.0) {
             continue;
         }
-        if (lambda + lbdStep > 1.0) {
+        if (lambda + step > 1.0) {
             continue;
         }
     } else {
         lambda = 1.0;
-        lbdStep = 0.0;
+        step = 0.0;
         lbdWidth = 0.0;
     }
     
@@ -420,7 +452,7 @@ for (int j=0; j<3; j++) {
     boolean oob = false;
     for (int i = 0; i < numLdh; i++) {
         lamedh[i] = initialLamedh[i] - 0.01 + 0.01 * j;
-        if (lamedh[i] - lbdStep < 0.0 || lamedh[i] + lbdStep > 1.0) {
+        if (lamedh[i] - step < 0.0 || lamedh[i] + step > 1.0) {
             oob = true;
             break;
         }
@@ -429,8 +461,8 @@ for (int j=0; j<3; j++) {
         continue;
     }
     for (int i = 0; i < numLdh; i++) {
-        lamedhPlus[i] = lamedh[i] + ldhStep;
-        lamedhMinus[i] = lamedh[i] - ldhStep;
+        lamedhPlus[i] = lamedh[i] + step;
+        lamedhMinus[i] = lamedh[i] - step;
     }
 
     logger.info(String.format(" Current lambda value:  %6.4f", lambda));
@@ -463,7 +495,7 @@ for (int j=0; j<3; j++) {
     // Calculate the finite-difference dEdLambda, d2EdLambda2 and dEdLambdadX
     // Plus step
     if (!fixedLambda) {
-        lambdaInterface.setLambda(lambda + lbdStep);
+        lambdaInterface.setLambda(lambda + step);
     }
     for (ExtendedVariable esv : esvList) {
         esv.setLamedh(lamedhPlus[esv.index]);
@@ -481,7 +513,7 @@ for (int j=0; j<3; j++) {
     
     // Minus step
     if (!fixedLambda) {
-        lambdaInterface.setLambda(lambda - lbdStep);
+        lambdaInterface.setLambda(lambda - step);
     }
     for (ExtendedVariable esv : esvList) {
         esv.setLamedh(lamedhMinus[esv.index]);
@@ -649,27 +681,27 @@ for (int i = 0; i < nAtoms; i++) {
 
     // Find numeric dX
     double orig = x[i0];
-    x[i0] = x[i0] + ldhStep;
+    x[i0] = x[i0] + step;
     double e = potential.energyAndGradient(x,lamedhGradFD[0]);
-    x[i0] = orig - ldhStep;
+    x[i0] = orig - step;
     e -= potential.energyAndGradient(x,lamedhGradFD[1]);
     x[i0] = orig;
     numeric[0] = e / ldhWidth;
 
     // Find numeric dY
     orig = x[i1];
-    x[i1] = x[i1] + ldhStep;
+    x[i1] = x[i1] + step;
     e = potential.energyAndGradient(x,lamedhGradFD[0]);
-    x[i1] = orig - ldhStep;
+    x[i1] = orig - step;
     e -= potential.energyAndGradient(x,lamedhGradFD[1]);
     x[i1] = orig;
     numeric[1] = e / ldhWidth;
 
     // Find numeric dZ
     orig = x[i2];
-    x[i2] = x[i2] + ldhStep;
+    x[i2] = x[i2] + step;
     e = potential.energyAndGradient(x,lamedhGradFD[0]);
-    x[i2] = orig - ldhStep;
+    x[i2] = orig - step;
     e -= potential.energyAndGradient(x,lamedhGradFD[1]);
     x[i2] = orig;
     numeric[2] = e / ldhWidth;
