@@ -115,6 +115,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private boolean notifyMonteCarlo = true;
     private ExtendedSystem extendedSystem;
     private DynamicsState dynamicsState;
+    private double totalSimTime = 0.0;
 
     /**
      * <p>
@@ -407,6 +408,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         }
 
         this.nSteps = nSteps;
+        totalSimTime = 0.0;
         /**
          * Convert the time step from femtoseconds to picoseconds.
          */
@@ -529,6 +531,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         skipIntro = true;
         
         this.nSteps = nSteps;
+        totalSimTime = 0.0;
 //        this.dt = timeStep * 1.0e-3;
 //        printFrequency = (int) (printInterval / this.dt);
 //        saveSnapshotFrequency = (int) (saveInterval / this.dt);
@@ -870,10 +873,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
             /**
              * Log the current state every printFrequency steps.
              */
+            totalSimTime += dt;
             if (step % printFrequency == 0) {
-                double simTime = step * dt;
                 time = System.nanoTime() - time;
-                logger.info(String.format(" %7.3e%13.4f%13.4f%13.4f%9.2f%9.3f", simTime, currentKineticEnergy, currentPotentialEnergy,
+                logger.info(String.format(" %7.3e%13.4f%13.4f%13.4f%9.2f%9.3f", totalSimTime, currentKineticEnergy, currentPotentialEnergy,
                         currentTotalEnergy, currentTemperature, time * 1.0e-9));
                 time = System.nanoTime();
             }

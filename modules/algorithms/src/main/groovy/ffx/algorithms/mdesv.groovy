@@ -261,7 +261,7 @@ for (int i = 0; i < numESVs; i++) {
     Optional<Residue> target = new Optional<>();
     for (Polymer p : polymers) {
         if (p.getChainID().equals(chainID)) {
-            target = p.getResidues().parallelStream()
+            target = p.getResidues().stream()
                 .filter {res -> res.getResidueNumber() == resNum}
                 .findFirst();
             break;

@@ -77,6 +77,9 @@ import ffx.potential.extended.TitrationESV.TitrationUtils;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.SystemFilter;
+import ffx.potential.utils.SystemTemperatureException;
+
+import static ffx.potential.extended.ThermoConstants.prop;
 
 /**
  * @author S. LuCore
@@ -123,7 +126,7 @@ public class DiscountPh {
     private final MCOverride mcOverride = prop(MCOverride.class, "cphmd-override", MCOverride.NONE);
     private final Snapshots snapshotType = prop(Snapshots.class, "cphmd-snapshotType", Snapshots.NONE);
     private final Histidine histidineMode = prop(Histidine.class, "cphmd-histidineMode", Histidine.SINGLE_HIE);
-    private static int debugLogLevel = prop("cphmd-debugLog", 0);
+    private final static int debugLogLevel = prop("cphmd-debugLog", 0);
     private final OptionalDouble referenceOverride = prop("cphmd-referenceOverride", null);
     private final double tempMonitor = prop("cphmd-tempMonitor", 6000.0);
     private final boolean logTimings = prop("cphmd-logTimings");
@@ -211,8 +214,8 @@ public class DiscountPh {
     }
     
     private Stream<Residue> parallelResidueStream(MolecularAssembly mola) {
-        return Arrays.asList(mola.getChains()).parallelStream()
-                .flatMap(poly -> ((Polymer) poly).getResidues().parallelStream());
+        return Arrays.asList(mola.getChains()).stream()
+                .flatMap(poly -> ((Polymer) poly).getResidues().stream());
     }
     
     /**
@@ -235,7 +238,7 @@ public class DiscountPh {
     private List<Residue> findTitrations(double pH, double window) {
         List<Residue> chosen = new ArrayList<>();
         parallelResidueStream(mola)
-            .filter((Residue res) -> mapTitrations(res).parallelStream()
+            .filter((Residue res) -> mapTitrations(res).stream()
                 .anyMatch((Titration titr) -> (titr.pKa >= pH - window && titr.pKa <= pH + window)))
                 .forEach(chosen::add);
         return chosen;
@@ -260,7 +263,7 @@ public class DiscountPh {
         List<Residue> chosen = new ArrayList<>();
         String tok[] = names.split(",");
         parallelResidueStream(mola)
-            .filter((Residue res) -> mapTitrations(res).parallelStream()
+            .filter((Residue res) -> mapTitrations(res).stream()
                 .anyMatch((Titration titr) -> {
                     return Arrays.stream(tok).anyMatch((String name) -> {
                         return AminoAcid3.valueOf(name) == titr.source
@@ -430,16 +433,16 @@ public class DiscountPh {
         writeSnapshot(".meltdown-");
         ffe.energy(false, true);
         List<BondedTerm> problems = new ArrayList<>();
-        esvSystem.getESVList().parallelStream().forEach(esv -> {
-            esv.getAtoms().parallelStream()
+        esvSystem.stream().forEach(esv -> {
+            esv.getAtoms().stream()
                 .flatMap(atom -> {
                     true
                 });
         });
-        mola.getChildList(BondedTerm.class,problems).parallelStream()
+        mola.getChildList(BondedTerm.class,problems).stream()
                 .filter(term -> {
-                    ((BondedTerm) term).getAtomList().parallelStream().anyMatch(atom -> {
-                        esvSystem.getESVList().parallelStream().filter(esv -> {
+                    ((BondedTerm) term).getAtomList().stream().anyMatch(atom -> {
+                        esvSystem.stream().filter(esv -> {
                             if (esv.containsAtom((Atom) atom)) {
                                 return true;
                             } else {
@@ -454,9 +457,9 @@ public class DiscountPh {
                     try { ((Torsion) term).log(); } catch (Exception ex) {}
                 });
         if (ffe.getVanDerWaalsEnergy() > 1000) {
-            for (ExtendedVariable esv1 : esvSystem.getESVList()) {
+            for (ExtendedVariable esv1 : esvSystem) {
                 for (Atom a1 : esv1.getAtoms()) {
-                    for (ExtendedVariable esv2 : esvSystem.getESVList()) {
+                    for (ExtendedVariable esv2 : esvSystem) {
                         for (Atom a2 : esv2.getAtoms()) {
                         if (a1 == a2 || a1.getBond(a2) != null) {
                             continue;
@@ -489,7 +492,7 @@ public class DiscountPh {
             logger.severe("Monte-Carlo protonation engine was not finalized!");
         }
         if (currentTemp() > tempMonitor) {
-            throw new SystemTemperatureException();
+            throw new SystemTemperatureException(currentTemp());
 //            meltdown();
         }
         propagateInactiveResidues(titratingMultiResidues);
@@ -524,12 +527,12 @@ public class DiscountPh {
         // Assign starting titration lambdas.
         if (mode == Mode.HALF_LAMBDA) {
             discountLogger.append(format("   Setting all ESVs to one-half...\n"));
-            for (ExtendedVariable esv : esvSystem.getESVList()) {
+            for (ExtendedVariable esv : esvSystem) {
                 esv.setLambda(0.5);
             }
         } else if (mode == Mode.RANDOM) {
             discountLogger.append(format("   Setting all ESVs to [random]...\n"));
-            for (ExtendedVariable esv : esvSystem.getESVList()) {
+            for (ExtendedVariable esv : esvSystem) {
                 esv.setLambda(rng.nextDouble());
             }
         } else {
@@ -1086,32 +1089,9 @@ public class DiscountPh {
         USE_CURRENT, HALF_LAMBDA, RANDOM;
     }
     
-    public boolean prop(String key) {
-        return (System.getProperty(key) != null);
-    }
-    public static <T> T prop(String key, T defaultVal) {
-        if (defaultVal instanceof Integer) {
-            return (System.getProperty(key) != null) 
-                    ? (T) Integer.valueOf(System.getProperty(key)) : defaultVal;
-        } else if (defaultVal instanceof Double) {
-            return (System.getProperty(key) != null) 
-                    ? (T) Double.valueOf(System.getProperty(key)) : defaultVal;
-        } else {
-            return (System.getProperty(key) != null) 
-                    ? (T) OptionalDouble.of(Double.valueOf(System.getProperty(key))) : (T) OptionalDouble.empty();
-        }
-    }
-    public <T extends Enum<T>> T prop(Class<T> type, String key, T def) {
-        return (System.getProperty(key) != null) ? T.valueOf(type, System.getProperty(key)) : def;
-    }
-    
     private static void debug(int level, String message) {
         if (debugLogLevel >= level) {
             logger.info(message);
         }
-    }
-    
-    public class SystemTemperatureException extends RuntimeException {
-        // It's getting hot in here.
     }
 }

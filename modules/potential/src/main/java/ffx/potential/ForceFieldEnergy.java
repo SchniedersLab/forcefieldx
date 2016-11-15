@@ -774,6 +774,12 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
         atoms = molecularAssembly.getAtomArray();
         nAtoms = atoms.length;
+        
+        if (System.getProperty("sys-immutableIndexes") != null) {
+            for (Atom a : atoms) {
+                a.xyzIndex = a.immutableIndex;
+            }
+        }
 
         if (xyz.length < 3 * nAtoms) {
             xyz = new double[nAtoms * 3];
@@ -1279,7 +1285,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 };
                 // Bonded ESV energy is included at the term level.
                 // Nonbonded energy due to pH and zero/unity bias:
-                esvBias = esvSystem.biases();
+                esvBias = esvSystem.biasEnergy(null);
 
 //                esvLogger.append(format("  Total ESV Energy (bonded,nonbond,PME+vdW,sum):  %g  %g  %s  %g\n",
 //                        esvBondedEnergy, esvNonbondEnergy, "no_decomp", esvBondedEnergy + esvNonbondEnergy));
