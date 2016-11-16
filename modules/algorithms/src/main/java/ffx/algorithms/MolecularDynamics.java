@@ -331,6 +331,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
         ArrayList<File> aFiles = new ArrayList<>();
         assemblies.forEach((ai) -> { aFiles.add(ai.archiveFile); });
         return aFiles;
+        // Below may be more thread-safe and less prone to side effects.
+        // Would definitely be safer than stream().forEach(add to external list).
+        //return assemblies.stream().map((AssemblyInfo ai) -> {return ai.archiveFile;}).collect(Collectors.toList());
     }
     
     public void addAssembly(MolecularAssembly mola) {
@@ -344,7 +347,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
     
     /**
-     * Finds and removes an assembly, searching by equality. Removes all instances
+     * Finds and removes an assembly, searching by reference equality. 
+     * Removes all instances of the assembly.
      * @param mola Assembly to remove.
      * @return Number of times found and removed.
      */
@@ -355,7 +359,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
         List<AssemblyInfo> toRemove = assemblies.stream().filter((AssemblyInfo ai) -> {
             return mola == ai.getAssembly();
         }).collect(Collectors.toList());
-        //int nRemoved = assemblies.size() - newList.size();
         assemblies.removeAll(toRemove);
         return toRemove.size();
     }

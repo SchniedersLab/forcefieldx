@@ -77,5 +77,6 @@ public class ObjectPair<T, S extends Comparable<S>> implements Comparable<Object
             retList.add(e.getVal());
         });
         return retList;
+        //return theList.stream().sorted().map(ObjectPair::getVal).collect(Collectors.toList());
     }
 }
