@@ -35,7 +35,7 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.xray;
+package ffx.realspace;
 
 import java.util.logging.Logger;
 
@@ -43,6 +43,7 @@ import ffx.numerics.Potential;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.xray.RefinementMinimize.RefinementMode;
+import ffx.xray.RefinementModel;
 
 /**
  * Combine the Real Space target and chemical potential energy.
@@ -173,7 +174,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         if (refineXYZ) {
             int index = 0;
             double xyz[] = new double[3];
-            for (Atom a : refinementModel.totalAtomArray) {
+            for (Atom a : refinementModel.getTotalAtomArray()) {
                 if (a.isActive()) {
                     int i = index * 3;
                     xyz[0] = x[i];
@@ -225,7 +226,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         if (refineXYZ) {
             int index = 0;
             double xyz[] = new double[3];
-            for (Atom a : refinementModel.totalAtomArray) {
+            for (Atom a : refinementModel.getTotalAtomArray()) {
                 if (a.isActive()) {
                     int i = index * 3;
                     xyz[0] = x[i];
@@ -291,7 +292,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         assert (g != null);
         double grad[] = new double[3];
         int index = 0;
-        for (Atom a : refinementModel.totalAtomArray) {
+        for (Atom a : refinementModel.getTotalAtomArray()) {
             if (a.isActive()) {
                 a.getXYZGradient(grad);
                 g[index++] = grad[0];
@@ -311,7 +312,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
             x = new double[n];
         }
         int index = 0;
-        for (Atom a : refinementModel.totalAtomArray) {
+        for (Atom a : refinementModel.getTotalAtomArray()) {
             if (a.isActive()) {
                 x[index++] = a.getX();
                 x[index++] = a.getY();
@@ -330,7 +331,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         assert (x != null);
         double xyz[] = new double[3];
         int index = 0;
-        for (Atom a : refinementModel.totalAtomArray) {
+        for (Atom a : refinementModel.getTotalAtomArray()) {
             if (a.isActive()) {
                 xyz[0] = x[index++];
                 xyz[1] = x[index++];
@@ -365,7 +366,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         double mass[] = new double[nXYZ];
         int i = 0;
         if (refineXYZ) {
-            for (Atom a : refinementModel.totalAtomArray) {
+            for (Atom a : refinementModel.getTotalAtomArray()) {
                 if (a.isActive()) {
                     double m = a.getMass();
                     mass[i++] = m;
@@ -450,7 +451,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
     public VARIABLE_TYPE[] getVariableTypes() {
 
         int nActive = 0;
-        for (Atom a : refinementModel.totalAtomArray) {
+        for (Atom a : refinementModel.getTotalAtomArray()) {
             if (a.isActive()) {
                 nActive++;
             }
@@ -486,7 +487,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         }
         int index = 0;
         double vel[] = new double[3];
-        for (Atom a : refinementModel.totalAtomArray) {
+        for (Atom a : refinementModel.getTotalAtomArray()) {
             if (a.isActive()) {
                 vel[0] = velocity[index++];
                 vel[1] = velocity[index++];
@@ -504,7 +505,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         }
         int index = 0;
         double accel[] = new double[3];
-        for (Atom a : refinementModel.totalAtomArray) {
+        for (Atom a : refinementModel.getTotalAtomArray()) {
             if (a.isActive()) {
                 accel[0] = acceleration[index++];
                 accel[1] = acceleration[index++];
@@ -522,7 +523,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         }
         int index = 0;
         double prev[] = new double[3];
-        for (Atom a : refinementModel.totalAtomArray) {
+        for (Atom a : refinementModel.getTotalAtomArray()) {
             if (a.isActive()) {
                 prev[0] = previousAcceleration[index++];
                 prev[1] = previousAcceleration[index++];
@@ -541,7 +542,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         }
         int index = 0;
         double v[] = new double[3];
-        for (Atom a : refinementModel.totalAtomArray) {
+        for (Atom a : refinementModel.getTotalAtomArray()) {
             if (a.isActive()) {
                 a.getVelocity(v);
                 velocity[index++] = v[0];
@@ -561,7 +562,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         }
         int index = 0;
         double acc[] = new double[3];
-        for (Atom a : refinementModel.totalAtomArray) {
+        for (Atom a : refinementModel.getTotalAtomArray()) {
             if (a.isActive()) {
                 a.getAcceleration(acc);
                 acceleration[index++] = acc[0];
@@ -581,7 +582,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         }
         int index = 0;
         double prev[] = new double[3];
-        for (Atom a : refinementModel.totalAtomArray) {
+        for (Atom a : refinementModel.getTotalAtomArray()) {
             if (a.isActive()) {
                 a.getPreviousAcceleration(prev);
                 previousAcceleration[index++] = prev[0];

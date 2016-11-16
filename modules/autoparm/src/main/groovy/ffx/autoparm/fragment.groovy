@@ -79,7 +79,7 @@ String sdffile = arguments.get(0);
 String ciffile = arguments.get(1);
 String smi = new String();
 
-logger.info(String.format("\n Fragmenting %s\n", sdffile));
+logger.info(String.format("\nExhaustively Fragmenting %s\n", sdffile));
 
 //System.out.println("\nFinished Wizard, calling Fragmenter\n");
 /*Fragmenter fr = new Fragmenter(sdffile, ciffile, smiles);

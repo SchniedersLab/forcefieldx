@@ -37,6 +37,9 @@
  */
 package ffx.xray;
 
+import ffx.realspace.RealSpaceData;
+import ffx.realspace.RealSpaceEnergy;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -226,7 +229,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
             }
         }
 
-        xIndex = refinementModel.xIndex;
+        xIndex = refinementModel.getxIndex();
         thermostat = null;
         kTScale = 1.0;
 
@@ -252,23 +255,23 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
                             || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS
                             || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
                         int resnum = -1;
-                        int nres = diffractionData.nResidueBFactor + 1;
+                        int nres = diffractionData.getnResidueBFactor() + 1;
                         for (Atom a : atomArray) {
                             // Ignore hydrogens and atoms that are not active.
                             if (a.getAtomicNumber() == 1 || !a.isActive()) {
                                 continue;
                             }
                             if (a.getAnisou(null) == null) {
-                                if (diffractionData.addAnisou) {
+                                if (diffractionData.isAddAnisou()) {
                                     double anisou[] = new double[6];
                                     double u = b2u(a.getTempFactor());
                                     anisou[0] = anisou[1] = anisou[2] = u;
                                     anisou[3] = anisou[4] = anisou[5] = 0.0;
                                     a.setAnisou(anisou);
                                     nBFactor += 6;
-                                } else if (diffractionData.residueBFactor) {
+                                } else if (diffractionData.isResidueBFactor()) {
                                     if (resnum != a.getResidueNumber()) {
-                                        if (nres >= diffractionData.nResidueBFactor) {
+                                        if (nres >= diffractionData.getnResidueBFactor()) {
                                             nBFactor++;
                                             nres = 1;
                                         } else {
@@ -283,8 +286,8 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
                                 nBFactor += 6;
                             }
                         }
-                        if (diffractionData.residueBFactor) {
-                            if (nres < diffractionData.nResidueBFactor) {
+                        if (diffractionData.isResidueBFactor()) {
+                            if (nres < diffractionData.getnResidueBFactor()) {
                                 nBFactor--;
                             }
                         }
@@ -295,10 +298,10 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
                             || refinementMode == RefinementMode.BFACTORS_AND_OCCUPANCIES
                             || refinementMode == RefinementMode.COORDINATES_AND_OCCUPANCIES
                             || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-                        for (ArrayList<Residue> list : refinementModel.altResidues) {
+                        for (ArrayList<Residue> list : refinementModel.getAltResidues()) {
                             nOccupancy += list.size();
                         }
-                        for (ArrayList<Molecule> list : refinementModel.altMolecules) {
+                        for (ArrayList<Molecule> list : refinementModel.getAltMolecules()) {
                             nOccupancy += list.size();
                         }
                         if (nActive != nAtoms) {
@@ -330,7 +333,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
 
         if (data instanceof DiffractionData) {
             DiffractionData diffractionData = (DiffractionData) data;
-            if (!diffractionData.scaled[0]) {
+            if (!diffractionData.getScaled()[0]) {
                 diffractionData.printStats();
             }
             dataEnergy = new XRayEnergy(diffractionData, nXYZ, nBFactor, nOccupancy,

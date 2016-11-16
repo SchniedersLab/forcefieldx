@@ -195,7 +195,7 @@ public class ExhaustiveFragmenter implements IFragmenter {
                 }
                 //***Atom Types and unique names/ID's match here!***
                 
-                System.out.println("\nFinished with fragment x = "+x);
+                //System.out.println("\nFinished with fragment x = "+x);
                 if (frag.getAtomCount() >= minFragSize && !fragMap.containsKey(tmpSmiles)) {
                     tmp.add(frag);
                     fragMap.put(tmpSmiles, frag);

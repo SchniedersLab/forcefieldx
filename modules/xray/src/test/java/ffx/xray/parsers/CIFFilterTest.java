@@ -35,9 +35,7 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.xray;
-
-import ffx.xray.parsers.CIFFilter;
+package ffx.xray.parsers;
 
 import java.io.File;
 
@@ -54,6 +52,7 @@ import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
 import ffx.utilities.Keyword;
+import ffx.xray.DiffractionRefinementData;
 
 /**
  *

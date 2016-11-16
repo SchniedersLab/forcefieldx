@@ -45,8 +45,8 @@ import org.apache.commons.io.FilenameUtils;
 import groovy.util.CliBuilder;
 
 // Force Field X Imports
-import ffx.xray.RealSpaceData;
-import ffx.xray.RealSpaceFile;
+import ffx.realspace.RealSpaceData;
+import ffx.realspace.RealSpaceFile;
 import ffx.xray.RefinementMinimize;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
