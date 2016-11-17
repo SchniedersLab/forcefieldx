@@ -1776,48 +1776,56 @@ public class VanDerWaals implements MaskingInterface,
                                 }
                                 if (esvTerm && (esvi || esvk)) {
                                     final double dedlp = dedl * taper;
-                                    if (esvi) {
-                                        // Copy this gradient to attached ESVs.
-                                        final double dlpdli = esvLambda[k] * lambda;
+                                    final int idxi = esvSystem.atomEsvId(i);
+                                    final int idxk = esvSystem.atomEsvId(k);
+                                    
+                                    if (esvi && esvk) {
+                                        final double dlpdli = (idxi == idxk) 
+                                                ? 2 * esvLambda[i] * lambda
+                                                : esvLambda[k] * lambda;
                                         final double dEsvPartI = dedlp * dlpdli;
-//                                        esvGradSA[esvSystem.atomEsvId(i)].getAndAdd(dEsvPartI);
-//                                        dEsvTotalI += dEsvPartI * redv;
-//                                        dEsvTotalRedI += dEsvPartI * rediv;
-                                        final double previous = esvGradSA[esvSystem.atomEsvId(i)].get();
-                                        final double running = esvGradSA[esvSystem.atomEsvId(i)].addAndGet(dEsvPartI);
-                                        if (esvi && esvSystem.atomEsvId(i) != esvSystem.atomEsvId(redi)) {
-                                            logger.warning(format(" ** WHOA ** assumption false: %d %d not on same ESV (%d %d).", 
-                                                    i, redi, esvSystem.atomEsvId(i), esvSystem.atomEsvId(redi)));
-                                        }
+                                        final double previous = esvGradSA[idxi].get();
+                                        final double running = esvGradSA[idxi].addAndGet(dEsvPartI);
                                         if (VERBOSE) {
-                                            if (dEsvPartI > 1e-7) {
-                                                logger.info(format(" [%d] (PartI)  i,k,ei,eredi: %d %d %+10.6f $ run: %+10.6f -> %+10.6f",
+                                            if (Math.abs(dEsvPartI) > 1e-7) {
+                                                logger.info(format(" [%d] (Both)   i,k,dedli: %d %d %+10.6f $ run: %+10.6f -> %+10.6f",
                                                         runIDNumber, i, k, dEsvPartI, previous, running));
                                             }
                                         }
-                                    }
-                                    if (esvk) {
-//                                        if (!(esvi && esvSystem.atomEsvId(i) == esvSystem.atomEsvId(k))) {
-                                            final double dlpdlk = esvLambda[i] * lambda;
-                                            final double dEsvPartK = dedlp * dlpdlk;
-    //                                        esvGradPJ.sub(threadID, esvSystem.atomEsvId(k), red * dEsvPartK);
-    //                                        esvGradPJ.sub(threadID, esvSystem.atomEsvId(redk), redkv * dEsvPartK);
-    //                                        esvGradSA[esvSystem.atomEsvId(k)].addAndGet(red * -dEsvPartK);
-    //                                        esvGradSA[esvSystem.atomEsvId(redk)].addAndGet(redkv * -dEsvPartK);
-                                            final double previous = esvGradSA[esvSystem.atomEsvId(k)].get();
-                                            final double running = esvGradSA[esvSystem.atomEsvId(k)].addAndGet(-dEsvPartK);
-                                            if (esvk && esvSystem.atomEsvId(k) != esvSystem.atomEsvId(redk)) {
-                                                logger.warning(format(" ** WHOA ** assumption false: %d %d not on same ESV (%d %d).", 
-                                                        k, redk, esvSystem.atomEsvId(k), esvSystem.atomEsvId(redk)));
+                                    } else if (esvi) {
+                                        // Copy this gradient to attached ESVs.
+                                        final double dlpdli = esvLambda[k] * lambda;
+                                        final double dEsvPartI = dedlp * dlpdli;
+//                                        dEsvTotalI += dEsvPartI * redv;
+//                                        dEsvTotalRedI += dEsvPartI * rediv;
+                                        final double previous = esvGradSA[idxi].get();
+                                        final double running = esvGradSA[idxi].addAndGet(dEsvPartI);
+                                        if (VERBOSE) {
+                                            if (Math.abs(dEsvPartI) > 1e-7) {
+                                                logger.info(format(" [%d] (PartI)  i,k,dedli: %d %d %+10.6f $ run: %+10.6f -> %+10.6f",
+                                                        runIDNumber, i, k, dEsvPartI, previous, running));
                                             }
-                                            if (VERBOSE) {
-                                                if (dEsvPartK > 1e-7) {
-                                                    logger.info(format(" [%d] (PartK)  i,k,dedlk: %d %d %+10.6f $ run: %+10.6f -> %+10.6f",
-                                                            runIDNumber, i, k, -dEsvPartK, previous, running));
+                                        }
+                                    } else if (esvk) {
+                                        final double dlpdlk = esvLambda[i] * lambda;
+                                        final double dEsvPartK = dedlp * dlpdlk;
+                                        // try1: AtomicDoubleArray is poor choice since we don't need reduction.
+//                                        esvGradPJ.sub(threadID, esvSystem.atomEsvId(k), red * dEsvPartK);
+//                                        esvGradPJ.sub(threadID, esvSystem.atomEsvId(redk), redkv * dEsvPartK);
+                                        // try 2: Reduced hydrogen distances (red,redkv,redv,rediv) effect sum to zero.
+                                        //        This affects only the dEdLdX second derivative.
+//                                        esvGradSA[esvSystem.atomEsvId(k)].addAndGet(red * -dEsvPartK);
+//                                        esvGradSA[esvSystem.atomEsvId(redk)].addAndGet(redkv * -dEsvPartK);
 
-                                                }
+                                        final double previous = esvGradSA[idxk].get();
+                                        final double running = esvGradSA[idxk].addAndGet(dEsvPartK);
+                                        if (VERBOSE) {
+                                            if (Math.abs(dEsvPartK) > 1e-7) {
+                                                logger.info(format(" [%d] (PartK)  i,k,dedlk: %d %d %+10.6f $ run: %+10.6f -> %+10.6f",
+                                                        runIDNumber, i, k, dEsvPartK, previous, running));
                                             }
-//                                        }
+                                        }
+                                        
                                     }
                                 }
                             }
