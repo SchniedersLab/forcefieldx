@@ -107,6 +107,7 @@ import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
 
 import static ffx.numerics.AtomicDoubleArray.AtomicDoubleArrayImpl.MULTI;
+import static ffx.potential.extended.ThermoConstants.prop;
 import static ffx.potential.parameters.ForceField.ForceFieldString.ARRAY_REDUCTION;
 import static ffx.potential.parameters.ForceField.toEnumForm;
 
@@ -241,9 +242,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
      */
     /*      Extended System Variables       */
     private ExtendedSystem esvSystem;
-    private final boolean ESV_DEBUG = false;
-    private final boolean pmeQI = (System.getProperty("pme-qi") != null);
-    private final boolean pmeOnly = (System.getProperty("ffe-pmeOnly") != null);
+    private final boolean pmeQI = prop("pme-qi");
+    private final boolean pmeOnly = prop("ffe-pmeOnly");
     /**
      * *************************************
      */
@@ -774,12 +774,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
         atoms = molecularAssembly.getAtomArray();
         nAtoms = atoms.length;
-        
-        if (System.getProperty("sys-immutableIndexes") != null) {
-            for (Atom a : atoms) {
-                a.xyzIndex = a.immutableIndex;
-            }
-        }
 
         if (xyz.length < 3 * nAtoms) {
             xyz = new double[nAtoms * 3];
@@ -1570,6 +1564,15 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         if (relativeSolvationTerm) {
             sb.append(String.format("  %s %16.8f %12d\n",
                     "Relative Solvation", relativeSolvationEnergy, nRelativeSolvations));
+        }
+        
+        if (esvTerm) {
+            sb.append(String.format("  %s %16.8f %12d    %s\n",
+                    "ExtendedSystemBias", esvBias, esvSystem.num(), esvSystem.getLambdaList()));
+            sb.append(String.format("      %s %16.8f\n", 
+                    "Discretization", esvSystem.getLatestDiscrBias()));
+            sb.append(String.format("      %s %16.8f\n", 
+                    "pH Electrostat", esvSystem.getLatestPhBias()));
         }
 
         sb.append(String.format("  %s %16.8f  %s %12.3f (sec)\n",

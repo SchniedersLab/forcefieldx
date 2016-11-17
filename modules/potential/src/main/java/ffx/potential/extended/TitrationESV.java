@@ -24,8 +24,6 @@ import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.extended.TitrationESV.TitrationUtils.Titr;
 import ffx.potential.parameters.ForceField;
 
-import static ffx.potential.extended.ThermoConstants.DEBUG;
-
 /**
  * An extended system variable that allows continuous fractional protonation of an amino acid.
  * All atomic charges and bonded terms scale linearly between prot and deprot states.
@@ -37,6 +35,7 @@ public final class TitrationESV extends ExtendedVariable {
     private static final Logger logger = Logger.getLogger(TitrationESV.class.getName());
     private final MultiResidue titrating;
     private final Titr titr;
+    private final double referenceEnergy;
     
     // Handles on scaled terms
     private Residue residueOne, residueZero;    // One*lamedh + Zero*(1-lamedh)
@@ -54,7 +53,11 @@ public final class TitrationESV extends ExtendedVariable {
         super(biasMag, 1.0);
         this.constPh = constPh;
         this.titrating = titrating;
+//        if (!titrating.isFinalized()) {
+//            logger.severe("Must finalize MultiResidues before creating of TitrationESVs.");
+//        }
         this.titr = TitrationUtils.titrationLookup(titrating.getActive());
+        this.referenceEnergy = titr.refEnergy;
         this.pKaModel = titr.pKa;
         
         residueOne = titrating.getActive();
@@ -100,47 +103,70 @@ public final class TitrationESV extends ExtendedVariable {
         atoms.stream().forEach((Atom a) -> a.setESV(this));
         
         // Map xyzIndices from matching atoms.
-        titrating.getAtomList().stream().filter((Atom a) -> a.getXYZIndex() == 0)
-                .forEach((Atom a) -> {
-                    a.xyzIndex = titrating.getAtomList().stream().filter((Atom b) -> 
-                            b.getXYZIndex() != 0 && a.getName().equals(b.getName())
-                                    && a.getX() == b.getX() && a.getY() == b.getY() && a.getZ() == b.getZ())
-                            .findAny().orElseGet(() -> a).xyzIndex;
-                });
+//        List<Atom> temp = new ArrayList<>();
+//        titrating.getChildList(Atom.class, temp);
+//        stream().filter((Atom a) -> a.getXYZIndex() == 0)
+//                .forEach((Atom a) -> {
+//                    int newIndex = temp.stream().filter((Atom b) -> 
+//                            b.getXYZIndex() != 0 && a.getName().equals(b.getName())
+//                                    && a.getX() == b.getX() && a.getY() == b.getY() && a.getZ() == b.getZ())
+//                            .findAny().orElseGet(() -> a).xyzIndex;
+//                    if (newIndex != a.xyzIndex) {
+//                        logger.warning(format("Setting xyzIndex via mapping: %d -> %d for %s", a.xyzIndex, newIndex, a));
+//                        a.setXYZIndex(newIndex);
+//                    }
+//                });
         
         // Fill bonded term list and set all esvLambda values.
-        if (!DEBUG && !(System.getProperty("cphmd-bonded") != null && System.getProperty("cphmd-bonded").equalsIgnoreCase("false"))) { 
-            bondedTerms.clear();
-            residueOne.getChildList(BondedTerm.class, bondedTerms);
-            residueZero.getChildList(BondedTerm.class, bondedTerms);
-            for (BondedTerm term : bondedTerms) {
-                term.setEsvLambda(lambda);
+        bondedTerms.clear();
+        residueOne.getChildList(BondedTerm.class, bondedTerms);
+        residueZero.getChildList(BondedTerm.class, bondedTerms);
+        updateBondedTerms();
+        ready = true;
+        describe();
+        
+        List<Atom> newAtomsOne = new ArrayList<>();
+        for (Atom atom : atomsOne) {
+            boolean bb = false;
+            for (String name : backboneNames) {
+                if (atom.getName().equalsIgnoreCase(name)) {
+                    bb = true;
+                    break;
+                }
+            }
+            if (!bb) {
+                newAtomsOne.add(atom);
             }
         }
+        atomsOne = newAtomsOne;
+        List<Atom> newAtomsZero = new ArrayList<>();
+        for (Atom atom : atomsZero) {
+            boolean bb = false;
+            for (String name : backboneNames) {
+                if (atom.getName().equalsIgnoreCase(name)) {
+                    bb = true;
+                    break;
+                }
+            }
+            if (!bb) {
+                newAtomsZero.add(atom);
+            }
+        }
+        atomsOne = newAtomsZero;
         describe();
-        ready = true;
     }
-    
-    /**
-     * Call langevin dynamics from parent to propagate particle, then update
-     * bonded terms with new lambda value.
-     */
+        
     @Override
-    public void propagate(double dEdLdh, double dt, Double temperature) {
-        if (DEBUG) {
+    public void updateBondedTerms() {
+        if (!scaleBondedTerms) {
             return;
         }
-        if (temperature == null) {
-            logger.warning("Titration ESV encountered null temperature.");
-            temperature = ThermoConstants.roomTemperature;
-        }
-        langevin(dEdLdh, dt, temperature);
-        bondedTerms.stream().forEach((BondedTerm bt) -> bt.setEsvLambda(lambda));
+        bondedTerms.stream().forEach((BondedTerm bt) -> bt.setEsvLambda(getLambda()));
     }
     
     @Override
     public double totalBiasEnergy(double temperature) {
-        return (getDiscretizationBiasEnergy() + phBiasEnergy(temperature));
+        return (discretizationBiasEnergy() + phBiasEnergy(temperature));
     }
     
     @Override
@@ -156,17 +182,15 @@ public final class TitrationESV extends ExtendedVariable {
      * This method returns U_pH + U_mod_prot.
      */
     public double phBiasEnergy(double temperature) {
-        if (DEBUG) {
-            return 0.0;
-        }
         double pKaModel = titr.pKa;
+        double lambda = getLambda();
         double uph = ThermoConstants.log10*ThermoConstants.BOLTZMANN*temperature*(pKaModel - constPh)*lambda;
         logger.log(Level.CONFIG, format(" U(pH): 2.303kT*(pKa-pH)*L = %.4g * (%.2f - %.2f) * %.2f = %.4g", 
                 ThermoConstants.log10*ThermoConstants.BOLTZMANN*temperature, 
                 pKaModel, constPh, lambda, 
                 ThermoConstants.log10*ThermoConstants.BOLTZMANN*temperature*(pKaModel-constPh)*lambda));
-        double umod = 0.0;  // TODO PRIO find PMFs for monomers/trimers/pentapeptides
-        umod = titr.refEnergy * lambda;
+        double umod = 0.0;
+//        umod = referenceEnergy * lambda;     // TODO PRIO find PMFs for monomers/trimers/pentapeptides
         return uph + umod;
     }
     
@@ -174,20 +198,14 @@ public final class TitrationESV extends ExtendedVariable {
      * TODO update this to also suppress intermediate values of triple-state systems.
      * eg. histidine with 0.5 proton on each N. more examples arise when tautomerism is treated.
      */
-    public double phBiasDeriv(Double temperature) {
-        if (DEBUG) {
-            return 0.0;
-        }
-        if (temperature == null) {
-            logger.warning("Accurate pH-bias information requires temperature.");
-            temperature = ThermoConstants.roomTemperature;
-        }
+    public double phBiasDeriv(double temperature) {
         double duphdl = ThermoConstants.log10*ThermoConstants.BOLTZMANN*temperature*(pKaModel - constPh);
         logger.log(Level.CONFIG, format(" dU(pH)dL: 2.303kT*(pKa-pH) = %.4g * (%.2f - %.2f) = %.4g", 
                 ThermoConstants.log10*ThermoConstants.BOLTZMANN*temperature, 
                 pKaModel, constPh,
                 ThermoConstants.log10*ThermoConstants.BOLTZMANN*temperature*(pKaModel-constPh)));
-        double dumoddl = titr.refEnergy;   // see above
+        double dumoddl = 0.0;
+//        dumoddl = referenceEnergy;           // see above
         return duphdl + dumoddl;
     }
     
@@ -231,62 +249,24 @@ public final class TitrationESV extends ExtendedVariable {
             int resNumber = res.getResidueNumber();
             Residue.ResidueType resType = res.getResidueType();
             Residue newRes = new Residue(targetName, resNumber, resType);
-            Residue prot, deprot;
-            boolean protMissing;
-            if (targetName.equals(t.protForm.toString())) {
-                prot = newRes;
-                deprot = res;
-                protMissing = true;
-            } else if (targetName.equals(t.deprotForm.toString())) {
-                prot = res;
-                deprot = newRes;
-                protMissing = false;
-            } else {
-                logger.severe("Programming error: TitrationUtils.");
-            }
             // Wrap both states in a MultiResidue.
             MultiResidue multiRes = new MultiResidue(res, ff, ffe);
             Polymer polymer = findResiduePolymer(res, mola);
             polymer.addMultiResidue(multiRes);
             multiRes.addResidue(newRes);
             multiRes.setActiveResidue(res);
+            setMultiResXYZIndices(mola, multiRes);
             propagateInactiveResidues(multiRes);
-            // Remedied instead by immutableIndex.
-//            renumberXYZ(prot, deprot, protMissing, mola);
             ffe.reInit();
             logger.info(String.format(" Added Ldh-coupled titrating group: %s", res));
             return multiRes;
         }
         
-        private void renumberXYZ(Residue protRes, Residue deprotRes, boolean protMissing, MolecularAssembly mola) {
-            if (!protMissing) {
-                for (Atom sourceAtom : protRes.getAtomList()) {
-                    Atom targetAtom = (Atom) deprotRes.getAtomNode(sourceAtom.getName());
-                    if (targetAtom != null) {
-                        logger.config(format(" <&> Mapping xyzIndex: %d -> %d; %s -> %s", 
-                                sourceAtom.xyzIndex, targetAtom.xyzIndex, 
-                                sourceAtom.toString(), targetAtom.toString()));
-                        targetAtom.xyzIndex = sourceAtom.xyzIndex;
-                    } else {
-                        logger.config(format(" <&> Created dummy atom to occupy xyzIndex for: %s", sourceAtom.toString()));
-                        Atom dummy = new Atom("dummy");
-                        dummy.xyzIndex = sourceAtom.xyzIndex;
-                        deprotRes.add(dummy);
-                    }
-                }
-            } else {
-                int mostRecentIndex;
-                for (Atom sourceAtom : deprotRes.getAtomList()) {
-                    Atom targetAtom = (Atom) protRes.getAtomNode(sourceAtom.getName());
-                    if (targetAtom != null) {
-                        logger.config(format(" <&> Mapping xyzIndex: %d -> %d; %s -> %s", 
-                                sourceAtom.xyzIndex, targetAtom.xyzIndex, 
-                                sourceAtom.toString(), targetAtom.toString()));
-                        targetAtom.xyzIndex = sourceAtom.xyzIndex;
-                    } else {
-                        logger.config(format(" <&> Inserted new xyzIndex during Titration generation for atom: %s", sourceAtom.toString()));
-                        Atom[] atoms = mola.getAtomArray();
-                        // TODO: push downstream atoms up.
+        private static void setMultiResXYZIndices(MolecularAssembly mola, MultiResidue multi) {
+            for (Residue res : multi.getConsideredResidues()) {
+                for (Atom atom : res.getAtomList()) {
+                    if (atom.xyzIndex < 1) {
+                        atom.setXYZIndex(Atom.indexer++);
                     }
                 }
             }

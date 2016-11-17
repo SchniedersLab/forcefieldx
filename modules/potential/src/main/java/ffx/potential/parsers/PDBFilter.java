@@ -2264,7 +2264,7 @@ public final class PDBFilter extends SystemFilter {
     private void numberAtoms() {
         int index = 1;
         for (Atom a : activeMolecularAssembly.getAtomArray()) {
-            a.xyzIndex = index++;
+            a.setXYZIndex(index++);
         }
         index--;
         if (logger.isLoggable(Level.INFO)) {

@@ -17,7 +17,8 @@ import ffx.potential.nonbonded.ParticleMeshEwaldQI;
 import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.parameters.ForceField;
 
-import static ffx.potential.extended.ThermoConstants.DEBUG;
+import static ffx.potential.extended.ThermoConstants.FAIL_SEVERE;
+import static ffx.potential.extended.ThermoConstants.prop;
 
 /**
  *
@@ -26,6 +27,10 @@ import static ffx.potential.extended.ThermoConstants.DEBUG;
 public class ExtendedSystem implements Iterable<ExtendedVariable> {
 
     private static final Logger logger = Logger.getLogger(ExtendedSystem.class.getName());
+    
+    // Properties
+    private static final boolean esvBiasTerm = prop("esv-biasTerm", true);
+    private static final boolean esvTempOverride = prop("esv-tempOverride", false);
 
     // ESV variables
     private int numESVs;
@@ -44,6 +49,7 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
     private Double propagationTemperature = ThermoConstants.roomTemperature;
     private boolean usePME = false;
     private boolean useVDW = true;
+    private double latestDiscrBias, latestPhBias;
 
     public ExtendedSystem(MolecularAssembly mola) {
         this.mola = mola;
@@ -101,30 +107,36 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         esvList = new ArrayList<>();
     }
     
-    public boolean hasAtom (int i) {
+    public synchronized boolean hasAtom (int i) {
         return esvByAtom[i] != null;
     }
     
-    public ExtendedVariable atomEsv(int i) {
+    public synchronized ExtendedVariable atomEsv(int i) {
         return esvByAtom[i];
     }
     
-    public int atomEsvId(int i) {
+    public synchronized int atomEsvId(int i) {
+        if (esvByAtom[i] != null && esvByAtom[i].index != 0) {
+            logger.severe("Failure to index.");   // TODO REMOVE
+        }
         return (esvByAtom[i] != null) ? esvByAtom[i].index : -1;
     }
     
-    public double atomLambda(int i) {
-        return (esvByAtom[i] != null) ? esvByAtom[i].getLambda(): 1.0;
+    public synchronized double atomLambda(int i) {
+        return (esvByAtom[i] != null) ? esvByAtom[i].getLambda() : 1.0;
     }
     
     /**
      * For testing and debugging.
+     * The ExtendedSystem notifies VdW and PME of lambda changes.
+     * ExtendedVariables are responsible for updating their own bonded terms.
      */
     public void setAllLambdas(double lambda) {
         for (ExtendedVariable esv : this) {
             esv.setLambda(lambda);
         }
-        vdw.setLambda(1.0);
+        vdw.updateEsvLambda();
+        // pme.updateEsvLambda();
     }
 
     public int num() {
@@ -138,7 +150,7 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
      * Get the zero/unity bias and the pH energy term.
      */
     public double biasEnergy(Double temperature) {
-        if (DEBUG) {
+        if (!esvBiasTerm) {
             return 0.0;
         }
         if (!esvTerm) {
@@ -149,7 +161,9 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
             logger.warning("Called for extended energy with null/empty esvList.");
             return 0.0;
         }
-        if (temperature == null) {
+        if (esvTempOverride) {
+            temperature = ThermoConstants.roomTemperature;
+        } else if (temperature == null) {
 //            logger.warning("Called for extended bias energy without temperature.");
             temperature = propagationTemperature;
         }
@@ -159,45 +173,23 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         StringBuilder sb = new StringBuilder();
         for (ExtendedVariable esv : this) {
             sb.append(format("%.2f ", esv.getLambda()));
-            biasEnergySum += esv.getDiscretizationBiasEnergy();
+            biasEnergySum += esv.discretizationBiasEnergy();
+            latestDiscrBias = biasEnergySum;
             if (phTerm && esv instanceof TitrationESV) {
                 phEnergySum += ((TitrationESV) esv).phBiasEnergy(temperature);
+                latestPhBias = phEnergySum;
             }
         }
         return biasEnergySum + phEnergySum;
-    }
-    
-    public double biasDeriv(Double temperature) {
-        if (DEBUG) {
-            return 0.0;
-        }
-        if (!esvTerm) {
-            logger.warning("Called ExtendedSystem energy while !esvTerm.");
-            return 0.0;
-        }
-        if (esvList == null || esvList.isEmpty()) {
-            logger.warning("Called for extended energy with null/empty esvList.");
-            return 0.0;
-        }
-        if (temperature == null) {
-            logger.warning("null temp");
-            temperature = propagationTemperature;
-        }
-        double dBiasdL = 0.0;
-        for (ExtendedVariable esv : this) {
-            dBiasdL += esv.totalBiasDeriv(temperature);
-        }
-        return dBiasdL;
     }
 
     /**
      * Update the position of all ESV particles.
      */
     public void propagateESVs(Double temperature, double dt, double currentTimePs) {
-        if (DEBUG) {
-            return;
-        }
-        if (temperature == null) {
+        if (esvTempOverride) {
+            temperature = ThermoConstants.roomTemperature;
+        } else if (temperature == null) {
             temperature = propagationTemperature;
         } else {
             propagationTemperature = temperature;
@@ -210,12 +202,12 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
                 if (esv instanceof TitrationESV) {
                     logger.info(format(" Propagating ESV[%d]: %g --> %g @ psec,temp,lbd,zuBias,phBias: %g %g %.2f %.2f %.2f",
                             esv.index, was, esv.getLambda(), currentTimePs, temperature, 
-                            esv.getLambda(), esv.getDiscretizationBiasEnergy(),
+                            esv.getLambda(), esv.discretizationBiasEnergy(),
                             ((TitrationESV) esv).phBiasEnergy(temperature)));
                 } else {
                     logger.info(format(" Propagating ESV[%d]: %g --> %g @ psec,temp,lbd,zuBias: %g %g %.2f %.2f",
                             esv.index, was, esv.getLambda(), currentTimePs, temperature, 
-                            esv.getLambda(), esv.getDiscretizationBiasEnergy()));
+                            esv.getLambda(), esv.discretizationBiasEnergy()));
                 }
             }
             if (usePME) {
@@ -254,13 +246,24 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
             esvByAtom = new ExtendedVariable[nAtoms];
         }
         for (int i = 0; i < nAtoms; i++) {
-            esvByAtom[i] = null;
             final Atom ai = allAtoms[i];
-            if (esv.containsAtom(ai)) {
-                esvByAtom[i] = esv;
-                if (i != ai.xyzIndex - 1) {
-                    logger.warning(format("mismatch i,xyzIndexLessOne: %d %d", i, ai.xyzIndex - 1));
+            for (ExtendedVariable var : this) {
+                if (var.containsAtom(ai)) {
+                    esvByAtom[i] = var;
+                    if (i != ai.xyzIndex - 1) {
+                        logger.warning(format("mismatch i,xyzIndexLessOne: %d %d", i, ai.xyzIndex - 1));
+                    }
                 }
+            }
+        }
+        for (int i = 0; i < nAtoms; i++) {
+            final Atom ai = allAtoms[i];
+            ExtendedVariable varA = esvByAtom[i];
+            ExtendedVariable varB = ai.getESV();
+            if ((varA == null && varB != null) || (varA != null && varB == null)) {
+                FAIL_SEVERE("What1.");
+            } else if (varA != varB) {
+                FAIL_SEVERE("What2.");
             }
         }
     }
@@ -269,25 +272,28 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
      * @return [numESVs] gradient w.r.t. each lamedh
      */
     public double[] getdEdL(boolean lambdaBondedTerms, Double temperature) {
-        if (DEBUG) {
-            return vdw.getdEdEsv();
-        }
-        if (temperature == null) {
+        if (esvTempOverride) {
+            temperature = ThermoConstants.roomTemperature;
+        } else if (temperature == null) {
 //            logger.warning("Accurate pH bias requires temperature information.");
             temperature = propagationTemperature;
         }
         double[] vdwGrad = null, pmeGrad = null;
         double[] discrBiasGrad = new double[numESVs];
         double[] phBiasGrad = new double[numESVs];
-        double[] esvGrad = new double[numESVs];
         for (int i = 0; i < numESVs; i++) {
+            if (!esvBiasTerm) {
+                discrBiasGrad[i] = 0.0;
+                phBiasGrad[i] = 0.0;
+                continue;
+            }
             ExtendedVariable esv = esvList.get(i);
             discrBiasGrad[i] = esv.discretizationBiasDeriv();
             if (esv instanceof TitrationESV) {
                 phBiasGrad[i] += ((TitrationESV) esv).phBiasDeriv(temperature);
             }
         }
-        if (!lambdaBondedTerms) {
+//        if (!lambdaBondedTerms) {
             if (useVDW) {
                 vdwGrad = vdw.getdEdEsv();
             }
@@ -310,21 +316,23 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
 //            if (comTerm && comRestraint != null) {
 //                // TODO terms.add(comRestraint.getdEdLdh());
 //            }
-        }
+//        }
         StringBuilder sb = new StringBuilder(format(" ESV derivative components: \n"));
+        double esvGrad[] = new double[numESVs];
         for (int i = 0; i < numESVs; i++) {
-            sb.append(format("  Bias %d: %g\n", i, discrBiasGrad[i]));
+            esvGrad[i] = 0.0;
+            sb.append(format("  Discr %d: %g\n", i, discrBiasGrad[i]));
             esvGrad[i] += discrBiasGrad[i];
             if (esvList.get(i) instanceof TitrationESV) {
-                sb.append(format("  pH   %d: %g\n", i, phBiasGrad[i]));
+                sb.append(format("  pH    %d: %g\n", i, phBiasGrad[i]));
                 esvGrad[i] += phBiasGrad[i];
             }
             if (useVDW) {
-                sb.append(format("  vdW  %d: %g\n", i, vdwGrad[i]));
+                sb.append(format("  vdW   %d: %g\n", i, vdwGrad[i]));
                 esvGrad[i] += vdwGrad[i];
             }
             if (usePME) {
-                sb.append(format("  PME  %d: %g\n", i, pmeGrad[i]));
+                sb.append(format("  PME   %d: %g\n", i, pmeGrad[i]));
                 esvGrad[i] += pmeGrad[i];
             }
         }
@@ -332,6 +340,13 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         return esvGrad;
     }
 
+    public double getLatestDiscrBias() {
+        return latestDiscrBias;
+    }
+    public double getLatestPhBias() {
+        return latestPhBias;
+    }
+    
     /**
      * @deprecated Until second derivatives w.r.t. esvLambda become tractable.
      */
@@ -358,7 +373,7 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         List<double[]> terms = new ArrayList<>();
         double[] bias = new double[numESVs];
         for (ExtendedVariable esv : esvList) {
-            bias[esv.index] = esvList.get(esv.index).getDiscretizationBiasEnergy();
+            bias[esv.index] = esvList.get(esv.index).discretizationBiasEnergy();
         }
         terms.add(bias);
         if (!lambdaBondedTerms) {
@@ -375,6 +390,15 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         return eleSum1DArrays(terms, numESVs);
     }
 
+    public String getLambdaList() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("L: ");
+        for (int i = 0; i < numESVs; i++) {
+            sb.append(format(" %5.2f", esvList.get(i).getLambda()));
+        }
+        return sb.toString();
+    }
+    
     /**
      * Element-wise sum over a list of 1D double arrays. 
      * This implementation benchmarks faster than the equivalent Java8 stream() API.
