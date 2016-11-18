@@ -410,7 +410,7 @@ if (localMin){
 }
 
 if(runOSRW){
-    
+
     // Run OSRW.
     System.setProperty("vdwterm", "true");
     System.setProperty("vdw-cutoff", "7.0");
@@ -482,7 +482,9 @@ if(runOSRW){
             lambdaRestart, histogramRestart, active.getProperties(),
             (temperature), timeStep, printInterval, saveInterval, asynchronous, sh);
     }
-    osrw.setLambda(lambda);
+    //osrw.setLambda(lambda);
+    
+    osrw.setLambda(0.6);
     osrw.setThetaMass(5.0e-19);
     osrw.setOptimization(true, active);
     // Create the MolecularDynamics instance.

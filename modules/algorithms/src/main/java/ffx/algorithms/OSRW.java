@@ -358,7 +358,7 @@ public class OSRW implements Potential {
     private int window = 1000;
 
     private boolean osrwOptimization = false;
-    private int osrwOptimizationFrequency = 10000;
+    private int osrwOptimizationFrequency = 1000;
     private double osrwOptimizationLambdaCutoff = 0.5;
     private double osrwOptimizationEps = 0.1;
     private double osrwOptimizationTolerance = 1.0e-8;
@@ -624,23 +624,28 @@ public class OSRW implements Potential {
                 Minimize minimize = new Minimize(null, potential, null);
                 minimize.minimize(osrwOptimizationEps);
 
-                // Remove the scaling of coordinates & gradient set by the minimizer.
-                potential.setScaling(null);
-
-                // Reset lambda value.
-                lambdaInterface.setLambda(lambda);
-
                 // Collect the minimum energy.
                 double minEnergy = potential.getTotalEnergy();
                 // If a new minimum has been found, save its coordinates.
                 if (minEnergy < osrwOptimum) {
                     osrwOptimum = minEnergy;
                     logger.info(String.format(" New minimum energy found: %16.8f (Step %d).", osrwOptimum, energyCount));
+                    int n = potential.getNumberOfVariables();
+                    osrwOptimumCoords = new double[n];
                     osrwOptimumCoords = potential.getCoordinates(osrwOptimumCoords);
                     if (pdbFilter.writeFile(pdbFile, false)) {
                         logger.info(String.format(" Wrote PDB file to " + pdbFile.getName()));
                     }
                 }
+
+                // Reset lambda value.
+                lambdaInterface.setLambda(lambda);
+
+                // Remove the scaling of coordinates & gradient set by the minimizer.
+                potential.setScaling(null);
+
+                // Reset the Potential State
+                potential.setEnergyTermState(state);
 
                 // Revert to the coordinates and gradient prior to optimization.
                 double eCheck = potential.energyAndGradient(x, gradient);
@@ -1365,9 +1370,10 @@ public class OSRW implements Potential {
         osrwOptimum = prevOSRWOptimum;
     }
 
-    public double getOSRWOptimum(){
+    public double getOSRWOptimum() {
         return osrwOptimum;
     }
+
     public double[] getLowEnergyLoop() {
         if (osrwOptimum < Double.MAX_VALUE) {
             return osrwOptimumCoords;
@@ -1463,6 +1469,7 @@ public class OSRW implements Potential {
     /**
      * Returns the number of energy evaluations performed by this ttOSRW,
      * including those picked up in the lambda file.
+     *
      * @return Number of energy steps taken by this walker.
      */
     public int getEnergyCount() {
