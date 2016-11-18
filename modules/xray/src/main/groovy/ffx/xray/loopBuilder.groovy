@@ -482,9 +482,7 @@ if(runOSRW){
             lambdaRestart, histogramRestart, active.getProperties(),
             (temperature), timeStep, printInterval, saveInterval, asynchronous, sh);
     }
-    //osrw.setLambda(lambda);
-    
-    osrw.setLambda(0.6);
+    osrw.setLambda(lambda);
     osrw.setThetaMass(5.0e-19);
     osrw.setOptimization(true, active);
     // Create the MolecularDynamics instance.

@@ -358,7 +358,7 @@ public class OSRW implements Potential {
     private int window = 1000;
 
     private boolean osrwOptimization = false;
-    private int osrwOptimizationFrequency = 1000;
+    private int osrwOptimizationFrequency = 10000;
     private double osrwOptimizationLambdaCutoff = 0.5;
     private double osrwOptimizationEps = 0.1;
     private double osrwOptimizationTolerance = 1.0e-8;
