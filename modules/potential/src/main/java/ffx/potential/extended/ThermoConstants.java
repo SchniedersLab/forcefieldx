@@ -3,17 +3,22 @@ package ffx.potential.extended;
 import java.util.OptionalDouble;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.logging.Logger;
 
 import static org.apache.commons.math3.util.FastMath.sqrt;
+
+import ffx.potential.utils.DebuggingException;
 
 /**
  * 
  * @author slucore
  */
 public class ThermoConstants {
-
+    
     public static final boolean DEBUG = prop("debug", false);
     public static final boolean VERBOSE = prop("verbose", false);
+    private static final Logger logger = Logger.getLogger(ThermoConstants.class.getName());
+    
     /**
      * Boltzmann's constant is kcal/mol/Kelvin.
      */
@@ -45,6 +50,10 @@ public class ThermoConstants {
     
     public static final double log10 = Math.log(10);
     
+    public static void FAIL_SEVERE(String location) {
+        throw new DebuggingException(location);
+    }
+    
     public static boolean prop(String key) {
         return (System.getProperty(key) != null);
     }
@@ -65,9 +74,15 @@ public class ThermoConstants {
             } else {
                 return defaultVal;
             }
-        } else {
-            return (System.getProperty(key) != null) 
-                    ? (T) OptionalDouble.of(Double.valueOf(System.getProperty(key))) : (T) OptionalDouble.empty();
+        } else {    // else assume OptionalDouble
+            try {
+                T opt = (System.getProperty(key) != null) 
+                        ? (T) OptionalDouble.of(Double.valueOf(System.getProperty(key))) : (T) OptionalDouble.empty();
+                return opt;
+            } catch (Exception ex) {
+                logger.warning("Unknown property requested: " + key);
+                return null;
+            }
         }
     }
     public static <T extends Enum<T>> T prop(Class<T> type, String key, T def) {
