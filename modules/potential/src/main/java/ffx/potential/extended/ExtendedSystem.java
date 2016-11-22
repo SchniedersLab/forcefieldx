@@ -417,7 +417,7 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         }
         return termSum;
     }
-
+    
     /**
      * Element-wise sum over a list of 2D double arrays.
      */

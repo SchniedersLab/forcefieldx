@@ -38,7 +38,6 @@
 package ffx.xray;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.logging.Logger;
 
 import static java.util.Arrays.fill;

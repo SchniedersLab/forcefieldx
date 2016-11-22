@@ -101,7 +101,7 @@ public class VanDerWaals implements MaskingInterface,
         LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(VanDerWaals.class.getName());
-    
+
     private static int runIDNumber = 0;
 
     /**
@@ -596,7 +596,7 @@ public class VanDerWaals implements MaskingInterface,
     public void setResolution(Resolution resolution) {
         this.resolution = resolution;
     }
-    
+
     public final void buildNeighborList(Atom[] atoms) {
         neighborList.setAtoms(atoms);
         neighborListOnly = true;
@@ -889,7 +889,7 @@ public class VanDerWaals implements MaskingInterface,
         final double d2sc2dL2 = 0.0;
         return new double[]{sc1, dsc1dL, d2sc1dL2, sc2, dsc2dL, d2sc2dL2};
     }
-    
+
     /**
      * {@inheritDoc}
      */
@@ -907,7 +907,7 @@ public class VanDerWaals implements MaskingInterface,
         } else {
             d2sc2dL2 = 0.0;
         }
-        
+
         /**
          * Initialize the softcore atom masks.
          */
@@ -928,7 +928,7 @@ public class VanDerWaals implements MaskingInterface,
             }
             softCoreInit = true;
         }
-        
+
         if (esvTerm) {
             updateEsvLambda();
         }
@@ -942,7 +942,7 @@ public class VanDerWaals implements MaskingInterface,
             longRangeCorrection = 0.0;
         }
     }
-    
+
     public void updateEsvLambda() {
         if (!esvTerm) {
             return;
@@ -959,7 +959,7 @@ public class VanDerWaals implements MaskingInterface,
             longRangeCorrection = getLongRangeCorrection();
         }
     }
-    
+
     public void attachExtendedSystem(ExtendedSystem system) {
         if (system == null) {
             logger.severe("Tried to attach null extended system.");
@@ -1487,7 +1487,7 @@ public class VanDerWaals implements MaskingInterface,
             private final double dx_local[];
             private final double transOp[][];
             private double running;
-            
+
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
@@ -1639,6 +1639,7 @@ public class VanDerWaals implements MaskingInterface,
                                     sc2 = VanDerWaals.this.sc2;
                                     dsc2dL = VanDerWaals.this.dsc2dL;
                                     d2sc2dL2 = VanDerWaals.this.d2sc2dL2;
+                                    /**
                                     final double esvLambdaProduct = esvLambda[i] * esvLambda[k] * lambda;
                                     if ((sc1 != vdwLambdaAlpha * (1.0 - esvLambdaProduct) * (1.0 - esvLambdaProduct))
                                             || (dsc1dL != -2.0 * vdwLambdaAlpha * (1.0 - esvLambdaProduct))
@@ -1647,7 +1648,7 @@ public class VanDerWaals implements MaskingInterface,
                                     }
                                     if ((sc2 != esvLambdaProduct) || (dsc2dL != 1.0) || (d2sc2dL2 != 0.0)) {
                                         FAIL_SEVERE("Error recovering original sc2 terms.");
-                                    }
+                                    } */
                                 }
                             } else {
                                 sc1 = 0.0;
@@ -1776,48 +1777,56 @@ public class VanDerWaals implements MaskingInterface,
                                 }
                                 if (esvTerm && (esvi || esvk)) {
                                     final double dedlp = dedl * taper;
-                                    if (esvi) {
-                                        // Copy this gradient to attached ESVs.
-                                        final double dlpdli = esvLambda[k] * lambda;
+                                    final int idxi = esvSystem.atomEsvId(i);
+                                    final int idxk = esvSystem.atomEsvId(k);
+
+                                    if (esvi && esvk) {
+                                        final double dlpdli = (idxi == idxk)
+                                                ? 2 * esvLambda[i] * lambda
+                                                : esvLambda[k] * lambda;
                                         final double dEsvPartI = dedlp * dlpdli;
-//                                        esvGradSA[esvSystem.atomEsvId(i)].getAndAdd(dEsvPartI);
-//                                        dEsvTotalI += dEsvPartI * redv;
-//                                        dEsvTotalRedI += dEsvPartI * rediv;
-                                        final double previous = esvGradSA[esvSystem.atomEsvId(i)].get();
-                                        final double running = esvGradSA[esvSystem.atomEsvId(i)].addAndGet(dEsvPartI);
-                                        if (esvi && esvSystem.atomEsvId(i) != esvSystem.atomEsvId(redi)) {
-                                            logger.warning(format(" ** WHOA ** assumption false: %d %d not on same ESV (%d %d).", 
-                                                    i, redi, esvSystem.atomEsvId(i), esvSystem.atomEsvId(redi)));
-                                        }
+                                        final double previous = esvGradSA[idxi].get();
+                                        final double running = esvGradSA[idxi].addAndGet(dEsvPartI);
                                         if (VERBOSE) {
-                                            if (dEsvPartI > 1e-7) {
-                                                logger.info(format(" [%d] (PartI)  i,k,ei,eredi: %d %d %+10.6f $ run: %+10.6f -> %+10.6f",
+                                            if (Math.abs(dEsvPartI) > 1e-7) {
+                                                logger.info(format(" [%d] (Both)   i,k,dedli: %d %d %+10.6f $ run: %+10.6f -> %+10.6f",
                                                         runIDNumber, i, k, dEsvPartI, previous, running));
                                             }
                                         }
-                                    }
-                                    if (esvk) {
-//                                        if (!(esvi && esvSystem.atomEsvId(i) == esvSystem.atomEsvId(k))) {
-                                            final double dlpdlk = esvLambda[i] * lambda;
-                                            final double dEsvPartK = dedlp * dlpdlk;
-    //                                        esvGradPJ.sub(threadID, esvSystem.atomEsvId(k), red * dEsvPartK);
-    //                                        esvGradPJ.sub(threadID, esvSystem.atomEsvId(redk), redkv * dEsvPartK);
-    //                                        esvGradSA[esvSystem.atomEsvId(k)].addAndGet(red * -dEsvPartK);
-    //                                        esvGradSA[esvSystem.atomEsvId(redk)].addAndGet(redkv * -dEsvPartK);
-                                            final double previous = esvGradSA[esvSystem.atomEsvId(k)].get();
-                                            final double running = esvGradSA[esvSystem.atomEsvId(k)].addAndGet(-dEsvPartK);
-                                            if (esvk && esvSystem.atomEsvId(k) != esvSystem.atomEsvId(redk)) {
-                                                logger.warning(format(" ** WHOA ** assumption false: %d %d not on same ESV (%d %d).", 
-                                                        k, redk, esvSystem.atomEsvId(k), esvSystem.atomEsvId(redk)));
+                                    } else if (esvi) {
+                                        // Copy this gradient to attached ESVs.
+                                        final double dlpdli = esvLambda[k] * lambda;
+                                        final double dEsvPartI = dedlp * dlpdli;
+//                                        dEsvTotalI += dEsvPartI * redv;
+//                                        dEsvTotalRedI += dEsvPartI * rediv;
+                                        final double previous = esvGradSA[idxi].get();
+                                        final double running = esvGradSA[idxi].addAndGet(dEsvPartI);
+                                        if (VERBOSE) {
+                                            if (Math.abs(dEsvPartI) > 1e-7) {
+                                                logger.info(format(" [%d] (PartI)  i,k,dedli: %d %d %+10.6f $ run: %+10.6f -> %+10.6f",
+                                                        runIDNumber, i, k, dEsvPartI, previous, running));
                                             }
-                                            if (VERBOSE) {
-                                                if (dEsvPartK > 1e-7) {
-                                                    logger.info(format(" [%d] (PartK)  i,k,dedlk: %d %d %+10.6f $ run: %+10.6f -> %+10.6f",
-                                                            runIDNumber, i, k, -dEsvPartK, previous, running));
+                                        }
+                                    } else if (esvk) {
+                                        final double dlpdlk = esvLambda[i] * lambda;
+                                        final double dEsvPartK = dedlp * dlpdlk;
+                                        // try1: AtomicDoubleArray is poor choice since we don't need reduction.
+//                                        esvGradPJ.sub(threadID, esvSystem.atomEsvId(k), red * dEsvPartK);
+//                                        esvGradPJ.sub(threadID, esvSystem.atomEsvId(redk), redkv * dEsvPartK);
+                                        // try 2: Reduced hydrogen distances (red,redkv,redv,rediv) effect sum to zero.
+                                        //        This affects only the dEdLdX second derivative.
+//                                        esvGradSA[esvSystem.atomEsvId(k)].addAndGet(red * -dEsvPartK);
+//                                        esvGradSA[esvSystem.atomEsvId(redk)].addAndGet(redkv * -dEsvPartK);
 
-                                                }
+                                        final double previous = esvGradSA[idxk].get();
+                                        final double running = esvGradSA[idxk].addAndGet(dEsvPartK);
+                                        if (VERBOSE) {
+                                            if (Math.abs(dEsvPartK) > 1e-7) {
+                                                logger.info(format(" [%d] (PartK)  i,k,dedlk: %d %d %+10.6f $ run: %+10.6f -> %+10.6f",
+                                                        runIDNumber, i, k, dEsvPartK, previous, running));
                                             }
-//                                        }
+                                        }
+
                                     }
                                 }
                             }
@@ -1847,7 +1856,7 @@ public class VanDerWaals implements MaskingInterface,
 //                            esvGradSA[esvSystem.atomEsvId(redi)].addAndGet(dEsvTotalRedI);
 //                        } catch (Exception ex) {
 //                            logger.warning(format("Exception during esvGrad operation (add_i).\n"
-//                                    + "    thread,ESV,vals: %d %d %g %d %g", threadID, 
+//                                    + "    thread,ESV,vals: %d %d %g %d %g", threadID,
 //                                    esvSystem.atomEsvId(i), dEsvTotalI,
 //                                    esvSystem.atomEsvId(redi), dEsvTotalRedI));
 //                            throw ex;
@@ -1856,7 +1865,7 @@ public class VanDerWaals implements MaskingInterface,
 //                            if (dEsvTotalI > 1e-6) {
 //                                double running = (usePJEsvGrad) ? esvGradPJ.get(0) : esvGradSA[0].get();
 //                                logger.info(format(" [%d] (TotalI) i,vals:   %d    %+10.6f r%+10.6f s%10.6f          running: %10.6f",
-//                                        runIDNumber, i, dEsvTotalI, dEsvTotalRedI, 
+//                                        runIDNumber, i, dEsvTotalI, dEsvTotalRedI,
 //                                        dEsvTotalI + dEsvTotalRedI, running));
 //                            }
 //                        }

@@ -246,23 +246,28 @@ public class OSRW extends AbstractOSRW {
                 Minimize minimize = new Minimize(null, potential, null);
                 minimize.minimize(osrwOptimizationEps);
 
-                // Remove the scaling of coordinates & gradient set by the minimizer.
-                potential.setScaling(null);
-
-                // Reset lambda value.
-                lambdaInterface.setLambda(lambda);
-
                 // Collect the minimum energy.
                 double minEnergy = potential.getTotalEnergy();
                 // If a new minimum has been found, save its coordinates.
                 if (minEnergy < osrwOptimum) {
                     osrwOptimum = minEnergy;
                     logger.info(String.format(" New minimum energy found: %16.8f (Step %d).", osrwOptimum, energyCount));
+                    int n = potential.getNumberOfVariables();
+                    osrwOptimumCoords = new double[n];
                     osrwOptimumCoords = potential.getCoordinates(osrwOptimumCoords);
                     if (pdbFilter.writeFile(pdbFile, false)) {
                         logger.info(String.format(" Wrote PDB file to " + pdbFile.getName()));
                     }
                 }
+
+                // Reset lambda value.
+                lambdaInterface.setLambda(lambda);
+
+                // Remove the scaling of coordinates & gradient set by the minimizer.
+                potential.setScaling(null);
+
+                // Reset the Potential State
+                potential.setEnergyTermState(state);
 
                 // Revert to the coordinates and gradient prior to optimization.
                 double eCheck = potential.energyAndGradient(x, gradient);
