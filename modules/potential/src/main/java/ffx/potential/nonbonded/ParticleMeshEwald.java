@@ -141,7 +141,7 @@ public abstract class ParticleMeshEwald {
 
     public abstract double getd2EdL2();
     
-    public abstract double[] getdEdLdh();
+    public abstract double[] getdEdEsv();
 
     public abstract void destroy() throws Exception;
 

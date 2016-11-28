@@ -227,9 +227,7 @@ public class CrystalEnergyTest {
         this.polarizationEnergy = polarizationEnergy;
         this.nPolar = nPolar;
 
-        String ffxCi = System.getProperty("ffx.ci", "false");
-        ci = ffxCi.equalsIgnoreCase("true");
-
+        ci = System.getProperty("ffx.ci","false").equalsIgnoreCase("true");
         if (!ci && ciOnly) {
             structure = null;
             molecularAssembly = null;
@@ -248,11 +246,10 @@ public class CrystalEnergyTest {
         forceFieldEnergy = molecularAssembly.getPotentialEnergy();
         mpoleTerm = molecularAssembly.getForceField().getBoolean(ForceField.ForceFieldBoolean.MPOLETERM, true);
 
-        /*
-         if (ci) {
-         testGradient();
-         testSoftCore();
-         } */
+        if (ci) {
+            testGradient();
+            testSoftCore();
+        }
     }
 
     /**

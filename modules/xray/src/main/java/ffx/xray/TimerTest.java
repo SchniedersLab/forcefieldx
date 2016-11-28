@@ -37,9 +37,6 @@
  */
 package ffx.xray;
 
-import ffx.xray.parsers.MTZFilter;
-import ffx.xray.parsers.CIFFilter;
-
 import java.io.File;
 import java.util.List;
 import java.util.logging.Logger;
@@ -59,6 +56,8 @@ import ffx.potential.parsers.ForceFieldFilter;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.utils.PotentialsFileOpener;
 import ffx.utilities.Keyword;
+import ffx.xray.parsers.CIFFilter;
+import ffx.xray.parsers.MTZFilter;
 
 /**
  * @author Timothy D. Fenn and Michael J. Schnieders
@@ -82,15 +81,8 @@ public class TimerTest {
         final double rfree = 21.555930987573;
         final double sigmaA = 0.9336853524690557;
         final double sigmaW = 0.13192537249786418;
-        boolean ci;
 
-        String ffxCi = System.getProperty("ffx.ci");
-        if (ffxCi != null && ffxCi.equalsIgnoreCase("true")) {
-            ci = true;
-        } else {
-            ci = false;
-        }
-
+        boolean ci = System.getProperty("ffx.ci","false").equalsIgnoreCase("true");
         if (!ci && ciOnly) {
             crystalStats = null;
             return;

@@ -78,9 +78,6 @@ import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.VDWType;
 
 import static ffx.numerics.AtomicDoubleArray.AtomicDoubleArrayImpl.MULTI;
-import static ffx.potential.extended.ThermoConstants.FAIL_SEVERE;
-import static ffx.potential.extended.ThermoConstants.VERBOSE;
-import static ffx.potential.extended.ThermoConstants.prop;
 import static ffx.potential.nonbonded.VanDerWaalsForm.EPS;
 import static ffx.potential.nonbonded.VanDerWaalsForm.RADMIN;
 import static ffx.potential.parameters.ForceField.ForceFieldString.ARRAY_REDUCTION;
@@ -145,6 +142,7 @@ public class VanDerWaals implements MaskingInterface,
     private boolean isSoft[];
     // [nAtoms]: Stores precomputed lambda_total = lambda_metadyn * lambda_ESV
     private double esvLambda[];
+    private boolean esvAtoms[];
     /**
      * There are 2 softCore arrays of length nAtoms.
      *
@@ -249,9 +247,7 @@ public class VanDerWaals implements MaskingInterface,
     private final SharedDouble sharedEnergy;
     private final SharedDouble shareddEdL;
     private final SharedDouble sharedd2EdL2;
-    private AtomicDoubleArray esvGradPJ;
-    private SharedDouble[] esvGradSA;
-    private final boolean usePJEsvGrad = prop("esv-usePJGrad", false);
+    private SharedDouble[] esvDeriv;
 
     private AtomicDoubleArrayImpl atomicDoubleArrayImpl = MULTI;
     /**
@@ -458,15 +454,19 @@ public class VanDerWaals implements MaskingInterface,
             lambdaGradX = null;
             lambdaGradY = null;
             lambdaGradZ = null;
+            esvAtoms = new boolean[nAtoms];
             if (esvTerm) {
                 if (esvSystem == null) {
-                    logger.warning("Null esvSystem during van der Waals init.");
+                    logger.severe("Null esvSystem during van der Waals init.");
                 }
                 esvLambda = new double[nAtoms];
-                esvGradPJ = new PJDoubleArray(threadCount, numESVs);
-                esvGradSA = new SharedDouble[numESVs];
+                for (int i = 0; i < nAtoms; i++) {
+                    esvAtoms[i] = esvSystem.hasAtom(i);
+                    esvLambda[i] = esvSystem.atomLambda(i);
+                }
+                esvDeriv = new SharedDouble[numESVs];
                 for (int i = 0; i < numESVs; i++) {
-                    esvGradSA[i] = new SharedDouble(0.0);
+                    esvDeriv[i] = new SharedDouble(0.0);
                 }
             }
 
@@ -721,6 +721,7 @@ public class VanDerWaals implements MaskingInterface,
                 // Normal correction
                 total += radCount[i] * radCount[j] * trapezoid;
                 // Correct for softCore vdW that are being turned off.
+                // TODO add accounting for esvLambda softcoring
                 if (lambda < 1.0) {
                     total -= (softRadCount[i] * radCount[j]
                             + (radCount[i] - softRadCount[i]) * softRadCount[j])
@@ -866,29 +867,6 @@ public class VanDerWaals implements MaskingInterface,
                 atoms[k].xyzIndex, atoms[k].getAtomType().name,
                 1.0 / vdwForm.radEps[classi][classk * 2 + vdwForm.RADMIN], r, eij));
     }
-
-    /**
-     * Obtain lambda term and its derivs for a given atom pair (matters only for ESVs).
-     * Lambda statistics are collected only at zero/unity esvLambda endpoints.
-     * Note that dsc2dL does NOT handle the following chain rule terms:
-     *      lambda_total = esvi * esvk * lambda
-     *      d(lambda_total)/d(esvi) = esvk * lambda
-     *      d(lambda_total)/d(esvk) = esvi * lambda
-     *      d(lambda_total)/d(lambda) = esvi * esvk
-     * @param i outer loop atom
-     * @param k inner loop atom
-     * @return double[6] containing (in order): sc1, sc1 1st&2nd derivs, sc2, sc2 1st&2nd derivs
-     */
-    private double[] getEsvLambdaTerms(int i, int k) {
-        final double esvLambdaProduct = esvLambda[i] * esvLambda[k] * lambda;
-        final double sc1 = vdwLambdaAlpha * (1.0 - esvLambdaProduct) * (1.0 - esvLambdaProduct);
-        final double dsc1dL = -2.0 * vdwLambdaAlpha * (1.0 - esvLambdaProduct);
-        final double d2sc1dL2 = 2.0 * vdwLambdaAlpha;
-        final double sc2 = esvLambdaProduct;
-        final double dsc2dL = 1.0;
-        final double d2sc2dL2 = 0.0;
-        return new double[]{sc1, dsc1dL, d2sc1dL2, sc2, dsc2dL, d2sc2dL2};
-    }
     
     /**
      * {@inheritDoc}
@@ -948,8 +926,9 @@ public class VanDerWaals implements MaskingInterface,
             return;
         }
         for (int i = 0; i < nAtoms; i++) {
+            esvAtoms[i] = esvSystem.hasAtom(i);
             esvLambda[i] = esvSystem.atomLambda(i);
-            if (esvSystem.hasAtom(i)) {
+            if (esvAtoms[i]) {
                 isSoft[i] = true;
                 softCore[HARD][i] = true;
                 softCore[SOFT][i] = false;
@@ -988,15 +967,15 @@ public class VanDerWaals implements MaskingInterface,
                 ForceField.ForceFieldBoolean.INTRAMOLECULAR_SOFTCORE, false);
 
         initAtomArrays();
-        setLambda(1.0);
+        updateEsvLambda();
     }
 
     public void detachExtendedSystem() {
         esvTerm = false;
         esvSystem = null;
+        esvLambda = null;
+        esvDeriv = null;
         numESVs = 0;
-        esvGradPJ = null;
-        esvGradSA = null;
     }
 
     public void setIntermolecularSoftcore(boolean intermolecularSoftcore) {
@@ -1027,18 +1006,12 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     public double[] getdEdEsv() {
-        logger.config("esvGrad.get0: " + esvGradPJ.get(0));
-        logger.config("esvGradSA[0]: " + esvGradSA[0].get());
-        if (!esvTerm) {
+        if (!esvTerm || esvSystem == null) {
             logger.warning("Called for ESV derivative while !esvTerm.");
         }
-        if (esvSystem == null) {
-            logger.warning("No ESV System attached!");
-        }
         double[] dEdEsv = new double[numESVs];
-        int index = 0;
         for (int i = 0; i < numESVs; i++) {
-            dEdEsv[i] = (usePJEsvGrad) ? esvGradPJ.get(i) : esvGradSA[i].get();
+            dEdEsv[i] = esvDeriv[i].get();
         }
         return dEdEsv;
     }
@@ -1172,6 +1145,12 @@ public class VanDerWaals implements MaskingInterface,
                 shareddEdL.set(0.0);
                 sharedd2EdL2.set(0.0);
             }
+            if (esvTerm) {
+                esvDeriv = new SharedDouble[numESVs];
+                for (int i = 0; i < numESVs; i++) {
+                    esvDeriv[i] = new SharedDouble(0.0);
+                }
+            }
 
             gradX.alloc(nAtoms);
             gradY.alloc(nAtoms);
@@ -1180,13 +1159,6 @@ public class VanDerWaals implements MaskingInterface,
                 lambdaGradX.alloc(nAtoms);
                 lambdaGradY.alloc(nAtoms);
                 lambdaGradZ.alloc(nAtoms);
-            }
-            if (esvTerm) {
-                esvGradPJ.alloc(numESVs);
-                esvGradSA = new SharedDouble[numESVs];
-                for (int i = 0; i < numESVs; i++) {
-                    esvGradSA[i] = new SharedDouble(0.0);
-                }
             }
         }
 
@@ -1517,14 +1489,6 @@ public class VanDerWaals implements MaskingInterface,
                     dEdL = 0.0;
                     d2EdL2 = 0.0;
                 }
-                if (esvTerm) {
-                    esvGradPJ = new PJDoubleArray(threadCount, numESVs);
-                    esvGradPJ.alloc(numESVs);
-                    esvGradSA = new SharedDouble[numESVs];
-                    for (int i = 0; i < numESVs; i++) {
-                        esvGradSA[i] = new SharedDouble(0.0);
-                    }
-                }
 
                 if (mask == null || mask.length < nAtoms) {
                     mask = new double[nAtoms];
@@ -1557,9 +1521,7 @@ public class VanDerWaals implements MaskingInterface,
                         continue;
                     }
                     Atom atomi = atoms[i];
-                    final boolean esvi = (esvTerm) ? esvSystem.hasAtom(i) : false;
-                    double dEsvTotalI = 0.0;
-                    double dEsvTotalRedI = 0.0;
+                    final boolean esvi = esvAtoms[i];
                     int i3 = i * 3;
                     final double xi = reducedXYZ[i3++];
                     final double yi = reducedXYZ[i3++];
@@ -1599,7 +1561,7 @@ public class VanDerWaals implements MaskingInterface,
                         if (!use[k] || !include(atomi, atomk)) {
                             continue;
                         }
-                        final boolean esvk = (esvTerm) ? esvSystem.hasAtom(k) : false;
+                        final boolean esvk = esvAtoms[k];
                         // Hide these global variable names for thread safety.
                         final double sc1, dsc1dL, d2sc1dL2;
                         final double sc2, dsc2dL, d2sc2dL2;
@@ -1639,15 +1601,6 @@ public class VanDerWaals implements MaskingInterface,
                                     sc2 = VanDerWaals.this.sc2;
                                     dsc2dL = VanDerWaals.this.dsc2dL;
                                     d2sc2dL2 = VanDerWaals.this.d2sc2dL2;
-                                    final double esvLambdaProduct = esvLambda[i] * esvLambda[k] * lambda;
-                                    if ((sc1 != vdwLambdaAlpha * (1.0 - esvLambdaProduct) * (1.0 - esvLambdaProduct))
-                                            || (dsc1dL != -2.0 * vdwLambdaAlpha * (1.0 - esvLambdaProduct))
-                                            || (d2sc1dL2 != 2.0 * vdwLambdaAlpha)) {
-                                        FAIL_SEVERE("Error recovering original sc1 terms.");
-                                    }
-                                    if ((sc2 != esvLambdaProduct) || (dsc2dL != 1.0) || (d2sc2dL2 != 0.0)) {
-                                        FAIL_SEVERE("Error recovering original sc2 terms.");
-                                    }
                                 }
                             } else {
                                 sc1 = 0.0;
@@ -1775,57 +1728,19 @@ public class VanDerWaals implements MaskingInterface,
                                     lambdaGradZ.sub(threadID, redk, redkv * dedldz);
                                 }
                                 if (esvTerm && (esvi || esvk)) {
+                                    // Assign this gradient to attached ESVs.
                                     final double dedlp = dedl * taper;
                                     final int idxi = esvSystem.atomEsvId(i);
                                     final int idxk = esvSystem.atomEsvId(k);
-                                    
-                                    if (esvi && esvk) {
-                                        final double dlpdli = (idxi == idxk) 
-                                                ? 2 * esvLambda[i] * lambda
-                                                : esvLambda[k] * lambda;
-                                        final double dEsvPartI = dedlp * dlpdli;
-                                        final double previous = esvGradSA[idxi].get();
-                                        final double running = esvGradSA[idxi].addAndGet(dEsvPartI);
-                                        if (VERBOSE) {
-                                            if (Math.abs(dEsvPartI) > 1e-7) {
-                                                logger.info(format(" [%d] (Both)   i,k,dedli: %d %d %+10.6f $ run: %+10.6f -> %+10.6f",
-                                                        runIDNumber, i, k, dEsvPartI, previous, running));
-                                            }
-                                        }
-                                    } else if (esvi) {
-                                        // Copy this gradient to attached ESVs.
+                                    if (esvi) {
                                         final double dlpdli = esvLambda[k] * lambda;
                                         final double dEsvPartI = dedlp * dlpdli;
-//                                        dEsvTotalI += dEsvPartI * redv;
-//                                        dEsvTotalRedI += dEsvPartI * rediv;
-                                        final double previous = esvGradSA[idxi].get();
-                                        final double running = esvGradSA[idxi].addAndGet(dEsvPartI);
-                                        if (VERBOSE) {
-                                            if (Math.abs(dEsvPartI) > 1e-7) {
-                                                logger.info(format(" [%d] (PartI)  i,k,dedli: %d %d %+10.6f $ run: %+10.6f -> %+10.6f",
-                                                        runIDNumber, i, k, dEsvPartI, previous, running));
-                                            }
-                                        }
-                                    } else if (esvk) {
+                                        esvDeriv[idxi].addAndGet(dEsvPartI);
+                                    }
+                                    if (esvk) {
                                         final double dlpdlk = esvLambda[i] * lambda;
                                         final double dEsvPartK = dedlp * dlpdlk;
-                                        // try1: AtomicDoubleArray is poor choice since we don't need reduction.
-//                                        esvGradPJ.sub(threadID, esvSystem.atomEsvId(k), red * dEsvPartK);
-//                                        esvGradPJ.sub(threadID, esvSystem.atomEsvId(redk), redkv * dEsvPartK);
-                                        // try 2: Reduced hydrogen distances (red,redkv,redv,rediv) effect sum to zero.
-                                        //        This affects only the dEdLdX second derivative.
-//                                        esvGradSA[esvSystem.atomEsvId(k)].addAndGet(red * -dEsvPartK);
-//                                        esvGradSA[esvSystem.atomEsvId(redk)].addAndGet(redkv * -dEsvPartK);
-
-                                        final double previous = esvGradSA[idxk].get();
-                                        final double running = esvGradSA[idxk].addAndGet(dEsvPartK);
-                                        if (VERBOSE) {
-                                            if (Math.abs(dEsvPartK) > 1e-7) {
-                                                logger.info(format(" [%d] (PartK)  i,k,dedlk: %d %d %+10.6f $ run: %+10.6f -> %+10.6f",
-                                                        runIDNumber, i, k, dEsvPartK, previous, running));
-                                            }
-                                        }
-                                        
+                                        esvDeriv[idxk].addAndGet(dEsvPartK);
                                     }
                                 }
                             }
@@ -1847,34 +1762,11 @@ public class VanDerWaals implements MaskingInterface,
                         lambdaGradY.add(threadID, redi, lyredi);
                         lambdaGradZ.add(threadID, redi, lzredi);
                     }
-//                    if (esvTerm && esvi) {
-//                        try {
-//                            esvGradPJ.add(threadID, esvSystem.atomEsvId(i), dEsvTotalI);
-//                            esvGradPJ.add(threadID, esvSystem.atomEsvId(redi), dEsvTotalRedI);
-//                            esvGradSA[esvSystem.atomEsvId(i)].addAndGet(dEsvTotalI);
-//                            esvGradSA[esvSystem.atomEsvId(redi)].addAndGet(dEsvTotalRedI);
-//                        } catch (Exception ex) {
-//                            logger.warning(format("Exception during esvGrad operation (add_i).\n"
-//                                    + "    thread,ESV,vals: %d %d %g %d %g", threadID, 
-//                                    esvSystem.atomEsvId(i), dEsvTotalI,
-//                                    esvSystem.atomEsvId(redi), dEsvTotalRedI));
-//                            throw ex;
-//                        }
-//                        if (VERBOSE) {
-//                            if (dEsvTotalI > 1e-6) {
-//                                double running = (usePJEsvGrad) ? esvGradPJ.get(0) : esvGradSA[0].get();
-//                                logger.info(format(" [%d] (TotalI) i,vals:   %d    %+10.6f r%+10.6f s%10.6f          running: %10.6f",
-//                                        runIDNumber, i, dEsvTotalI, dEsvTotalRedI, 
-//                                        dEsvTotalI + dEsvTotalRedI, running));
-//                            }
-//                        }
-//                    }
                     removeMask(mask, i);
                 }
                 energy += e;
                 List<SymOp> symOps = crystal.spaceGroup.symOps;
                 for (int iSymOp = 1; iSymOp < nSymm; iSymOp++) {
-//                    FAIL_SEVERE("vdw-symop");
                     e = 0.0;
                     SymOp symOp = symOps.get(iSymOp);
                     /**
@@ -1890,6 +1782,7 @@ public class VanDerWaals implements MaskingInterface,
                             continue;
                         }
                         Atom atomi = atoms[i];
+                        final boolean esvi = esvAtoms[i];
                         final double xi = reducedXYZ[i3++];
                         final double yi = reducedXYZ[i3++];
                         final double zi = reducedXYZ[i3];
@@ -1910,12 +1803,6 @@ public class VanDerWaals implements MaskingInterface,
                         double lxredi = 0.0;
                         double lyredi = 0.0;
                         double lzredi = 0.0;
-                        double dEsvPartI = 0.0;
-                        double dEsvPartK = 0.0;
-                        double dEsvTotalI = 0.0;
-                        double dEsvTotalRedI = 0.0;
-                        boolean esvi = false;
-                        boolean esvk = false;
                         // Default is that the outer loop atom is hard.
                         boolean softCorei[] = softCore[HARD];
                         if (isSoft[i]) {
@@ -1932,6 +1819,7 @@ public class VanDerWaals implements MaskingInterface,
                             if (!use[k] || !include(atomi, atomk)) {
                                 continue;
                             }
+                            final boolean esvk = esvAtoms[k];
                             // Hide these global variable names for thread safety.
                             final double sc1, dsc1dL, d2sc1dL2;
                             final double sc2, dsc2dL, d2sc2dL2;
@@ -1949,11 +1837,10 @@ public class VanDerWaals implements MaskingInterface,
                                 final double selfScale = (i == k) ? 0.5 : 1.0;
                                 final double r = sqrt(r2);
                                 boolean soft = isSoft[i] || softCorei[k]
-                                        || (esvTerm && (esvSystem.hasAtom(i) || esvSystem.hasAtom(k)));
+                                        || (esvTerm && (esvi || esvk));
                                 if (soft && esvTerm) {
-                                    // lambda -> lambda * esvi (if present) * esvk (if present)
-                                    esvi = esvSystem.hasAtom(i);
-                                    esvk = esvSystem.hasAtom(k);
+                                    // Load values to take derivative w.r.t. l_prod = lambda * l_i * l_k.
+                                    // Treat chain rule during reduction, e.g. d(l_prod)/d(l_i) = lambda*l_k.
                                     final double esvLambdaProduct = esvLambda[i] * esvLambda[k] * lambda;
                                     sc1 = vdwLambdaAlpha * (1.0 - esvLambdaProduct) * (1.0 - esvLambdaProduct);
                                     dsc1dL = -2.0 * vdwLambdaAlpha * (1.0 - esvLambdaProduct);
@@ -2100,26 +1987,19 @@ public class VanDerWaals implements MaskingInterface,
                                     lambdaGradY.sub(threadID, redk, redkv * dedldyk);
                                     lambdaGradZ.sub(threadID, redk, redkv * dedldzk);
                                     if (esvTerm && (esvi || esvk)) {
+                                        // Assign this gradient to attached ESVs.
+                                        final double dedlp = selfScale * dedl * taper;
+                                        final int idxi = esvSystem.atomEsvId(i);
+                                        final int idxk = esvSystem.atomEsvId(k);
                                         if (esvi) {
-                                            dEsvPartI = selfScale * dedl * taper * esvLambda[k] * lambda;
-                                            dEsvTotalI += dEsvPartI * redv;
-                                            dEsvTotalRedI += dEsvPartI * rediv;
+                                            final double dlpdli = esvLambda[k] * lambda;
+                                            final double dEsvPartI = dedlp * dlpdli;
+                                            esvDeriv[idxi].addAndGet(dEsvPartI);
                                         }
                                         if (esvk) {
-                                            dEsvPartK = selfScale * dedl * taper * esvLambda[i] * lambda;
-                                            esvGradPJ.sub(threadID, esvSystem.atomEsvId(k), red * dEsvPartK);
-                                            esvGradPJ.sub(threadID, esvSystem.atomEsvId(redk), redkv * dEsvPartK);
-                                        }
-                                        if (VERBOSE) {
-                                            String[] cols = new String[4];
-                                            String col1 = (esvi) ? format("%10g", dEsvPartI) : "      n/a ";
-                                            String col2 = (esvi) ? format("%10g", dEsvTotalI) : "      n/a ";
-                                            String col3 = (esvk) ? format("%10g", dEsvPartK) : "      n/a ";
-                                            String col4 = format("%10g", esvGradPJ.get(0));
-                                            if (dEsvPartI > 1e-6 || dEsvPartK > 1e-6) {
-                                                logger.info(format(" [%d] dVdw_dLdh i,k,dEsvPartI,dEsvTotalI,dEsvPartK,esvGrad0: %d %d %s %s %s %s",
-                                                        runIDNumber, i, k, col1, col2, col3, col4));
-                                            }
+                                            final double dlpdlk = esvLambda[i] * lambda;
+                                            final double dEsvPartK = dedlp * dlpdlk;
+                                            esvDeriv[idxk].addAndGet(dEsvPartK);
                                         }
                                     }
                                 }
@@ -2140,20 +2020,6 @@ public class VanDerWaals implements MaskingInterface,
                             lambdaGradX.add(threadID, redi, lxredi);
                             lambdaGradY.add(threadID, redi, lyredi);
                             lambdaGradZ.add(threadID, redi, lzredi);
-                        }
-                        if (esvTerm && esvi) {
-                            esvGradPJ.add(threadID, esvSystem.atomEsvId(i), dEsvTotalI);
-                            esvGradPJ.add(threadID, esvSystem.atomEsvId(redi), dEsvTotalRedI);
-                            if (VERBOSE) {
-                                String col1 = "      n/a ";
-                                String col2 = (esvi) ? format("%10g", dEsvTotalI) : "      n/a ";
-                                String col3 = "      n/a ";
-                                String col4 = format("%10g", esvGradPJ.get(0));
-                                if (dEsvPartI > 1e-6 || dEsvPartK > 1e-6) {
-                                    logger.info(format(" [%d] dVdw_dLdh i,k,dEsvPartI,dEsvTotalI,dEsvPartK,esvGrad0: %d %d %s %s %s %s",
-                                            runIDNumber, i, -1, col1, col2, col3, col4));
-                                }
-                            }
                         }
                     }
                     energy += e;

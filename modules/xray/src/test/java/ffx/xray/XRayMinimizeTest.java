@@ -147,13 +147,7 @@ public class XRayMinimizeTest {
         this.sigmaA = sigmaA;
         this.sigmaW = sigmaW;
 
-        String ffxCi = System.getProperty("ffx.ci");
-        if (ffxCi != null && ffxCi.equalsIgnoreCase("true")) {
-            ci = true;
-        } else {
-            ci = false;
-        }
-
+        ci = System.getProperty("ffx.ci","false").equalsIgnoreCase("true");
         if (!ci && ciOnly) {
             crystalStats = null;
             return;

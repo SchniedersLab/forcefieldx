@@ -16,33 +16,43 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.BondedTerm;
 import ffx.potential.bonded.BondedUtils;
+import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.Polymer;
-import ffx.potential.bonded.ROLS;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.extended.TitrationESV.TitrationUtils.Titr;
 import ffx.potential.parameters.ForceField;
 
+import static ffx.potential.extended.ExtUtils.printTreeFromNode;
+
 /**
  * An extended system variable that allows continuous fractional protonation of an amino acid.
  * All atomic charges and bonded terms scale linearly between prot and deprot states.
+ * 
+ * TODO List:
+ * TODO Assess need to finalize MultiResidues before adding and using them in TitrationESVs.
+ * 
+ * Possible expansions: 
+ *  (1) Add back the ability to interact with OSRW lambda and thereby combine with protein design (QuadTop).
+ *  (2) Allow triple-state systems such as histidine with 0.5 protons per nitrogen or tautomeric ASP/GLU.
+ *  (3) Assess bytecode-output implementation via eg. ASM.
+ * 
  * @author slucore
  */
 public final class TitrationESV extends ExtendedVariable {
     
     // System handles
     private static final Logger logger = Logger.getLogger(TitrationESV.class.getName());
-    private final MultiResidue titrating;
+    private final MultiResidue titrating;   // optimally, from TitrationUtils.titrationFactory()
     private final Titr titr;
-    private final double referenceEnergy;
+    private final double referenceEnergy;   // deprotonation free energy of a model tripeptide
+    private final MSNode termNode;          // modified to contain all applicable bonded terms
     
     // Handles on scaled terms
-    private Residue residueOne, residueZero;    // One*lamedh + Zero*(1-lamedh)
-    private List<Atom> atomsOne, atomsZero;     // just those that are changing with lamedh
-    private List<ROLS> rolsOne, rolsZero;
-    private final List<Atom> backbone = new ArrayList<>();
-    private final List<BondedTerm> bondedTerms = new ArrayList<>();
+    private Residue resOne, resZro;     // One*lamedh + Zero*(1-lamedh)
+    private List<Atom> atomsOne, atomsZro;     // just those that are changing with lamedh
+    private List<BondedTerm> bondedOne, bondedZro;
     private static final List<String> backboneNames = Arrays.asList("N","CA","C","O","HA","H");
     
     private static final boolean HIEmode = false;
@@ -60,16 +70,9 @@ public final class TitrationESV extends ExtendedVariable {
         this.referenceEnergy = titr.refEnergy;
         this.pKaModel = titr.pKa;
         
-        residueOne = titrating.getActive();
-        residueZero = titrating.getInactive().get(0);
-        rolsOne = new ArrayList<>();
-        residueOne.getTerms().getChildList()
-                .stream().filter(node -> node instanceof ROLS)
-                .forEachOrdered(node -> rolsOne.add((ROLS) node));
-        rolsZero = new ArrayList<>();
-        residueZero.getTerms().getChildList()
-                .stream().filter(node -> node instanceof ROLS)
-                .forEachOrdered(node -> rolsZero.add((ROLS) node));
+        resOne = titrating.getActive();
+        termNode = resOne.getTerms();
+        resZro = titrating.getInactive().get(0);
     }
     
     public TitrationESV(double constPh, MultiResidue titrating) {
@@ -86,92 +89,88 @@ public final class TitrationESV extends ExtendedVariable {
     @Override
     public void readyup() {
         atomsOne = new ArrayList<>();
-        atomsZero = new ArrayList<>();
+        atomsZro = new ArrayList<>();
         // Fill the backbone list.
         List<Atom> backboneAtoms = new ArrayList<>();
         backboneNames.stream().forEach(name -> {
-            backboneAtoms.add((Atom) residueOne.getAtomNode(name));
+            backboneAtoms.add((Atom) resOne.getAtomNode(name));
         });
         // Fill the atom lists.
-        residueOne.getAtomList().stream().filter(a -> !backboneAtoms.contains(a)).forEachOrdered(atomsOne::add);
-        residueZero.getAtomList().stream().filter(a -> !backboneAtoms.contains(a)).forEachOrdered(atomsZero::add);
-        residueOne.getAtomList().stream().filter((Atom a) -> backboneNames.contains(a.getName().toUpperCase()))
+        resOne.getAtomList().stream().filter((Atom a) -> !backboneAtoms.contains(a)).forEachOrdered(atomsOne::add);
+        resZro.getAtomList().stream().filter((Atom a) -> !backboneAtoms.contains(a)).forEachOrdered(atomsZro::add);
+        resOne.getAtomList().stream().filter((Atom a) -> backboneNames.contains(a.getName().toUpperCase()))
                 .forEach(backbone::add);
         
         atoms.addAll(atomsOne);
-        atoms.addAll(atomsZero);
+        atoms.addAll(atomsZro);
         atoms.stream().forEach((Atom a) -> a.setESV(this));
         
-        // Map xyzIndices from matching atoms.
-//        List<Atom> temp = new ArrayList<>();
-//        titrating.getChildList(Atom.class, temp);
-//        stream().filter((Atom a) -> a.getXYZIndex() == 0)
-//                .forEach((Atom a) -> {
-//                    int newIndex = temp.stream().filter((Atom b) -> 
-//                            b.getXYZIndex() != 0 && a.getName().equals(b.getName())
-//                                    && a.getX() == b.getX() && a.getY() == b.getY() && a.getZ() == b.getZ())
-//                            .findAny().orElseGet(() -> a).xyzIndex;
-//                    if (newIndex != a.xyzIndex) {
-//                        logger.warning(format("Setting xyzIndex via mapping: %d -> %d for %s", a.xyzIndex, newIndex, a));
-//                        a.setXYZIndex(newIndex);
-//                    }
-//                });
-        
         // Fill bonded term list and set all esvLambda values.
-        bondedTerms.clear();
-        residueOne.getChildList(BondedTerm.class, bondedTerms);
-        residueZero.getChildList(BondedTerm.class, bondedTerms);
-        updateBondedTerms();
+        bondedOne = resOne.getDescendants(BondedTerm.class);
+        bondedZro = resZro.getDescendants(BondedTerm.class);
+        
+        printTreeFromNode(resOne);
+        printTreeFromNode(resZro);     
+        
+//        List<BondedTerm> termNodeBonded = termNode.getDescendants(BondedTerm.class);
+//        for (BondedTerm term : bondedOne) {
+//            if (!termNodeBonded.contains(term)) {
+//                termNode.add(term);
+//            }
+//        }
+//        for (BondedTerm term : bondedZro) {
+//            if (!termNodeBonded.contains(term)) {
+//                termNode.add(term);
+//            }
+//        }
+        
+        MSNode esvBondedInactive = new MSNode("ESV Bonded (1-L)");
+        List<BondedTerm> activeBTs = titrating.getActive().getTerms().getDescendants(BondedTerm.class);
+        for (Residue inactive : titrating.getInactive()) {
+            List<BondedTerm> inactiveBTs = inactive.getTerms().getDescendants(BondedTerm.class);
+            for (BondedTerm term : inactiveBTs) {
+                if (!activeBTs.contains(term)) {
+                    esvBondedInactive.add(term);
+                }
+            }
+        }
+        termNode.add(esvBondedInactive);
+        updateBondedLambdas();
+        
         ready = true;
         describe();
-        
-        List<Atom> newAtomsOne = new ArrayList<>();
-        for (Atom atom : atomsOne) {
-            boolean bb = false;
-            for (String name : backboneNames) {
-                if (atom.getName().equalsIgnoreCase(name)) {
-                    bb = true;
-                    break;
-                }
-            }
-            if (!bb) {
-                newAtomsOne.add(atom);
-            }
-        }
-        atomsOne = newAtomsOne;
-        List<Atom> newAtomsZero = new ArrayList<>();
-        for (Atom atom : atomsZero) {
-            boolean bb = false;
-            for (String name : backboneNames) {
-                if (atom.getName().equalsIgnoreCase(name)) {
-                    bb = true;
-                    break;
-                }
-            }
-            if (!bb) {
-                newAtomsZero.add(atom);
-            }
-        }
-        atomsOne = newAtomsZero;
-        describe();
     }
-        
+
     @Override
-    public void updateBondedTerms() {
+    public void updateBondedLambdas() {
         if (!scaleBondedTerms) {
             return;
         }
-        bondedTerms.stream().forEach((BondedTerm bt) -> bt.setEsvLambda(getLambda()));
+        double lambda = getLambda();
+        bondedOne.stream().forEach((BondedTerm bt) -> bt.setEsvLambda(lambda));
+        bondedZro.stream().forEach((BondedTerm bt) -> bt.setEsvLambda(1.0 - lambda));
     }
     
     @Override
-    public double totalBiasEnergy(double temperature) {
-        return (discretizationBiasEnergy() + phBiasEnergy(temperature));
+    public double totalBiasEnergy(double temperature, StringBuilder sb) {
+        double eDiscr = discretizationBiasEnergy();
+        double ePh = phBiasEnergy(temperature);
+        if (sb != null) {
+            sb.append(format(" eDiscr %d: %g\n", index, eDiscr));
+            sb.append(format(" epH    %d: %g\n", index, ePh));
+        }
+        return (eDiscr + ePh);
     }
     
     @Override
-    public double totalBiasDeriv(double temperature) {
-        return (discretizationBiasDeriv() + phBiasDeriv(temperature));
+    public double totalBiasDeriv(double temperature, StringBuilder sb) {
+        double dDiscr = discretizationBiasDeriv();
+        double dPh = phBiasDeriv(temperature);
+        if (sb != null) {
+            sb.append(format("  Discr %d: %g\n", index, dDiscr));
+            sb.append(format("  pH    %d: %g\n", index, dPh));
+        }
+        return (dDiscr + dPh);
     }
     
     /**
@@ -182,31 +181,24 @@ public final class TitrationESV extends ExtendedVariable {
      * This method returns U_pH + U_mod_prot.
      */
     public double phBiasEnergy(double temperature) {
-        double pKaModel = titr.pKa;
         double lambda = getLambda();
-        double uph = ThermoConstants.log10*ThermoConstants.BOLTZMANN*temperature*(pKaModel - constPh)*lambda;
+        double uph = ExtConstants.log10*ExtConstants.BOLTZMANN*temperature*(pKaModel - constPh)*lambda;
         logger.log(Level.CONFIG, format(" U(pH): 2.303kT*(pKa-pH)*L = %.4g * (%.2f - %.2f) * %.2f = %.4g", 
-                ThermoConstants.log10*ThermoConstants.BOLTZMANN*temperature, 
-                pKaModel, constPh, lambda, 
-                ThermoConstants.log10*ThermoConstants.BOLTZMANN*temperature*(pKaModel-constPh)*lambda));
-        double umod = 0.0;
-//        umod = referenceEnergy * lambda;     // TODO PRIO find PMFs for monomers/trimers/pentapeptides
-        return uph + umod;
+                ExtConstants.log10*ExtConstants.BOLTZMANN*temperature, 
+                pKaModel, constPh, lambda, uph));
+        double umod = referenceEnergy * lambda;     // TODO PRIO find PMFs for monomers/trimers/pentapeptides
+//        return uph + umod;
+        return umod;
     }
     
-    /**
-     * TODO update this to also suppress intermediate values of triple-state systems.
-     * eg. histidine with 0.5 proton on each N. more examples arise when tautomerism is treated.
-     */
     public double phBiasDeriv(double temperature) {
-        double duphdl = ThermoConstants.log10*ThermoConstants.BOLTZMANN*temperature*(pKaModel - constPh);
+        double duphdl = ExtConstants.log10*ExtConstants.BOLTZMANN*temperature*(pKaModel - constPh);
         logger.log(Level.CONFIG, format(" dU(pH)dL: 2.303kT*(pKa-pH) = %.4g * (%.2f - %.2f) = %.4g", 
-                ThermoConstants.log10*ThermoConstants.BOLTZMANN*temperature, 
-                pKaModel, constPh,
-                ThermoConstants.log10*ThermoConstants.BOLTZMANN*temperature*(pKaModel-constPh)));
-        double dumoddl = 0.0;
-//        dumoddl = referenceEnergy;           // see above
-        return duphdl + dumoddl;
+                ExtConstants.log10*ExtConstants.BOLTZMANN*temperature, 
+                pKaModel, constPh, duphdl));
+        double dumoddl = referenceEnergy;
+//        return duphdl + dumoddl;
+        return dumoddl;
     }
     
     @Override
@@ -220,14 +212,17 @@ public final class TitrationESV extends ExtendedVariable {
     public void describe() {
         StringBuilder sb = new StringBuilder();
         sb.append(this.toString() + format("\n"));
-        sb.append(format("    Atoms (State 1): \n"));
+        sb.append(format("    State 1: Atoms\n"));
         atomsOne.stream().forEachOrdered(a -> sb.append(format("   %s\n", a)));
-        sb.append(format("    ROLS (State 1):  \n"));
-        rolsOne.stream().forEachOrdered(r -> sb.append( format("      %s\n", r)));
-        sb.append(format("    Atoms (State 0): \n"));
-        atomsZero.stream().forEachOrdered(a -> sb.append(format("   %s\n", a)));
-        sb.append(format("    ROLS (State 0):  \n"));
-        rolsZero.stream().forEachOrdered(r -> sb.append( format("      %s\n", r)));
+        sb.append(format("    State 1: Bonded Terms\n"));
+        sb.append(format("      %s\n", resOne.getTerms().toString()));
+        resOne.getTerms().getChildList().stream().filter(n -> !n.getName().startsWith("Valence Terms"))
+                .forEachOrdered(bt -> sb.append( format("      %s\n", bt)));
+        sb.append(format("    State 0: Atoms\n"));
+        atomsZro.stream().forEachOrdered(a -> sb.append(format("   %s\n", a)));
+        sb.append(format("    State 0: Bonded Terms\n"));
+        resZro.getTerms().getChildList().stream().filter(n -> !n.getName().startsWith("Valence Terms"))
+                .forEachOrdered(bt -> sb.append( format("      %s\n", bt)));
         logger.info(sb.toString());
     }
 
@@ -237,6 +232,7 @@ public final class TitrationESV extends ExtendedVariable {
     public static class TitrationUtils {
 
         public static MultiResidue titrationFactory(MolecularAssembly mola, Residue res) {
+            // Get reference to FFE.
             ForceField ff = mola.getForceField();
             Potential potential = mola.getPotentialEnergy();
             if (!(potential instanceof ForceFieldEnergy)) {
@@ -257,7 +253,9 @@ public final class TitrationESV extends ExtendedVariable {
             multiRes.setActiveResidue(res);
             setMultiResXYZIndices(mola, multiRes);
             propagateInactiveResidues(multiRes);
+            multiRes.finalize(false, ff);
             ffe.reInit();
+            multiRes.getActive().getBondList();
             logger.info(String.format(" Added Ldh-coupled titrating group: %s", res));
             return multiRes;
         }
@@ -438,7 +436,7 @@ public final class TitrationESV extends ExtendedVariable {
                 }
                 for (Atom a : resetMe) {
                     a.setXYZGradient(0, 0, 0);
-                    a.setVelocity(ThermoConstants.singleRoomtempMaxwell(a.getMass()));
+                    a.setVelocity(ExtUtils.singleRoomtempMaxwell(a.getMass()));
                     a.setAcceleration(new double[]{0, 0, 0});
                     a.setPreviousAcceleration(new double[]{0, 0, 0});
                 }
