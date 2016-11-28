@@ -151,7 +151,7 @@ boolean loopBuildError = false;
 // ===============================================================================================
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc loopBuilder [options] <pdbFile> <realSpaceMapFile | diffractionFile>');
+def cli = new CliBuilder(usage:' ffxc loopBuilder [options] <pdbFile> <diffractionDataFile>');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.e(longOpt:'eps', args:1, argName:'1.0', 'RMS gradient convergence criteria');
 cli.n(longOpt:'steps', args:1, argName:'10000', 'Number of molecular dynamics steps.');
@@ -335,7 +335,7 @@ if(options.s && options.f){
         }
     }
 } else {
-    // Create array of built residues
+    //create array of built residues
     ArrayList<Residue> loopResidues = new ArrayList<>();
     for (int i = 0; i < active.getChains().size(); i++){
         ArrayList<Residue> allResidues = active.getChains()[i].getResidues();
@@ -388,41 +388,29 @@ List mapFiles = new ArrayList();
 int nDiffractionData = 0;
 if (arguments.size() > 1) {
     String dataFileName = arguments.get(1);
-    if (FilenameUtils.isExtension(dataFileName, "map")) {
-        RealSpaceFile realspacefile = new RealSpaceFile(dataFileName, 1.0);
-        mapFiles.add(realspacefile);
-    } else {
-        diffractionFile = new DiffractionFile(dataFileName, 1.0, false);
-        diffractionData = new DiffractionData(systems, systems[0].getProperties(),
-            SolventModel.POLYNOMIAL, diffractionFile);
-        diffractionData.scaleBulkFit();
-        diffractionData.printStats();
-        String mapFileName = String.format("%s_ffx_%d", FilenameUtils.removeExtension(dataFileName), ++nDiffractionData);
-        diffractionData.writeMaps(mapFileName);
-        mapFiles.add(new RealSpaceFile(mapFileName + "_2fofc.map", 1.0));
-    }
+    diffractionFile = new DiffractionFile(dataFileName, 1.0, false);
+    diffractionData = new DiffractionData(systems, systems[0].getProperties(), SolventModel.POLYNOMIAL, diffractionFile);
+    diffractionData.scaleBulkFit();
+    diffractionData.printStats();
+} else {
+    logger.info(" Pleases specify diffraction data.");
+    return;
 }
 
 logger.info("\n Running minimize on built atoms of " + active.getName());
 logger.info(" RMS gradient convergence criteria: " + eps);
 
-// Reset force field energy without vdw term.
-forceFieldEnergy = active.getPotentialEnergy();
-
-RealSpaceData realSpaceData = new RealSpaceData(active,
-    active.getProperties(), active.getParallelTeam(),
-    mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
-RefinementMinimize refinementMinimize = new RefinementMinimize(realSpaceData, RefinementMode.COORDINATES);
-
+RefinementMinimize refinementMinimize = new RefinementMinimize(diffractionData, RefinementMode.COORDINATES);
 if (localMin){
     runOSRW = false;
 } else {
-    // Minimization without vdW.
+    // Initial minimization before OSRW.
     refinementMinimize.minimize(eps);
     energy();
 }
 
 if(runOSRW){
+
     // Run OSRW.
     System.setProperty("vdwterm", "true");
     System.setProperty("vdw-cutoff", "7.0");
@@ -474,9 +462,11 @@ if(runOSRW){
     // Turn off checks for overlapping atoms, which is expected for lambda=0.
     forceFieldEnergy.getCrystal().setSpecialPositionCutoff(0.0);
 
-    realSpaceData = new RealSpaceData(active, active.getProperties(),
-        active.getParallelTeam(), mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
-    RefinementEnergy refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMode.COORDINATES, null);
+    diffractionData = new DiffractionData(systems, systems[0].getProperties(), SolventModel.POLYNOMIAL, diffractionFile);
+    diffractionData.scaleBulkFit();
+    diffractionData.printStats();
+
+    RefinementEnergy refinementEnergy = new RefinementEnergy(diffractionData, RefinementMode.COORDINATES);
     refinementEnergy.setLambda(lambda);
 
     energy();
@@ -528,10 +518,12 @@ if (runSimulatedAnnealing) {
 
     energy = new ForceFieldEnergy(active);
     energy.setPrintOnFailure(false, false);
-    realSpaceData = new RealSpaceData(active,
-        active.getProperties(), active.getParallelTeam(),
-        mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
-    refinementMinimize = new RefinementMinimize(realSpaceData, RefinementMode.COORDINATES);
+
+    diffractionData = new DiffractionData(systems, systems[0].getProperties(), SolventModel.POLYNOMIAL, diffractionFile);
+    diffractionData.scaleBulkFit();
+    diffractionData.printStats();
+
+    refinementMinimize = new RefinementMinimize(diffractionData, RefinementMode.COORDINATES);
     refinementMinimize.minimize(eps);
 
     // SA with vdW.
@@ -574,11 +566,11 @@ if(!loopBuildError){
 
     forceFieldEnergy = new ForceFieldEnergy(active);
     forceFieldEnergy.setPrintOnFailure(false, false);
-    realSpaceData = new RealSpaceData(active,
-        active.getProperties(), active.getParallelTeam(),
-        mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
-    refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMode.COORDINATES, null);
-    refinementMinimize = new RefinementMinimize(realSpaceData, RefinementMode.COORDINATES);
+    diffractionData = new DiffractionData(systems, systems[0].getProperties(), SolventModel.POLYNOMIAL, diffractionFile);
+    diffractionData.scaleBulkFit();
+    diffractionData.printStats();
+
+    refinementMinimize = new RefinementMinimize(diffractionData, RefinementMode.COORDINATES);
     refinementMinimize.minimize(eps);
 
     energy();
@@ -623,117 +615,3 @@ if (runOSRW && size > 1){
     }
     saveAsPDB(structureFile);
 }
-
-if (runRotamer){
-
-    for (int i = 0; i <= atoms.length; i++) {
-        Atom ai = atoms[i - 1];
-        ai.setActive(true);
-        ai.setUse(true);
-    }
-
-    forceFieldEnergy = new ForceFieldEnergy(active);
-    forceFieldEnergy.setPrintOnFailure(false, false);
-    realSpaceData = new RealSpaceData(active,
-        active.getProperties(), active.getParallelTeam(),
-        mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
-    refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMode.COORDINATES, null);
-
-    Polymer[] polymers = active.getChains();
-    ArrayList<Residue> fullResidueList = polymers[0].getResidues();
-    ArrayList<Residue> residuesToRO = new ArrayList<>();
-
-    //Rotamer Optimization inclusion list building (grab built residues)
-    for (int i = 0; i < fullResidueList.size(); i++) {
-        Residue r = fullResidueList[i];
-        if (r.getBackboneAtoms().get(0).getBuilt()) {
-            residuesToRO.add(fullResidueList[i]);
-        }
-    }
-
-    int startResID = residuesToRO.get(0).getResidueNumber();
-    int finalResID = residuesToRO.get(residuesToRO.size() - 1).getResidueNumber();
-
-    //Find best loop generated by multiple walkers
-    if (runOSRW && size > 1){
-        world.barrier();
-        int bestRank;
-
-        if (world.rank() == 0){
-            int[] loopRanks = new int[size];
-            double[] loopEnergies = new double[size];
-
-            double lowestEnergy = Double.MAX_VALUE;
-            BufferedReader reader = new BufferedReader(new FileReader("Loop.txt"));
-            String line = null;
-            int i = 0;
-            while((line = reader.readLine()) != null){
-                String[] lineData;
-                lineData = line.split(":");
-                //lineData[0] contains rank information (see Loop.txt)
-                //lineData[1] contains energy information (see Loop.txt)
-                if(Double.parseDouble(lineData[1]) < lowestEnergy){
-                    bestRank = Integer.parseInt(lineData[0]);
-                    lowestEnergy = Double.parseDouble(lineData[1]);
-                }
-                i++;
-            }
-        }
-        world.barrier();
-        IntegerBuf broadcastBuf = IntegerBuf.buffer(bestRank);
-        world.broadcast(0,broadcastBuf);
-        bestRank = broadcastBuf.get(0);
-
-        if(world.rank()==bestRank){
-            energy();
-        }
-
-        active.destroy();
-        File bestRankDirectory = new File(structureFile.getParentFile().getParent() + File.separator + Integer.toString(bestRank));
-        File bestStructureFile = new File(bestRankDirectory.getPath() + File.separator + structureFile.getName());
-
-        //buildLoops=false needed to avoid error in PDBFilter because saved loops do not have dbref/seqres information
-        System.setProperty("buildLoops", "false");
-        logger.info(String.format("Path to best loop " + bestRankDirectory.getPath() + File.separator + bestStructureFile.getName()));
-        open(bestRankDirectory.getPath() + File.separator + bestStructureFile.getName());
-        structureFile = bestStructureFile;
-    }
-
-    forceFieldEnergy = new ForceFieldEnergy(active);
-    forceFieldEnergy.setPrintOnFailure(false, false);
-    realSpaceData = new RealSpaceData(active,
-        active.getProperties(), active.getParallelTeam(),
-        mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
-    refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMode.COORDINATES, null);
-
-    boolean threeBodyTerm = false;
-    RotamerOptimization rotamerOptimization;
-
-    energy();
-
-    logger.info(String.format("Rotamer Optimization"));
-    rotamerOptimization = new RotamerOptimization(active, refinementEnergy, null);
-
-    rotamerOptimization.setThreeBodyEnergy(threeBodyTerm);
-    RotamerLibrary.setUseOrigCoordsRotamer(true);
-    RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
-
-    //Rotamer Optimization inclusion list building (grab residues within 7A of the built loop)
-    boolean expandList = true
-    double expansionDistance = 7.0;
-    RotamerLibrary.setUseOrigCoordsRotamer(true);
-
-    if (expandList) {
-        // Do a sliding-window rotamer optimization on loop window with a radius-inclusion criterion.
-        rotamerOptimization.setForcedResidues(startResID,finalResID);
-        rotamerOptimization.setWindowSize(1);
-        rotamerOptimization.setDistanceCutoff(expansionDistance);
-    }
-    rotamerOptimization.setResidues(startResID, finalResID);
-    residuesToRO = rotamerOptimization.getResidues();
-
-    RotamerLibrary.measureRotamers(residuesToRO, false);
-    rotamerOptimization.optimize(RotamerOptimization.Algorithm.SLIDING_WINDOW);
-}
-
-saveAsPDB(structureFile);

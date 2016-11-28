@@ -379,6 +379,9 @@ public class DiffractionData implements DataContainer {
         // set up FFT and run it
         crs_fc = new CrystalReciprocalSpace[n];
         crs_fs = new CrystalReciprocalSpace[n];
+
+        parallelTeam = assembly[0].getParallelTeam();
+
         parallelTeam = new ParallelTeam();
         for (int i = 0; i < n; i++) {
             crs_fc[i] = new CrystalReciprocalSpace(reflectionList[i], refinementModel.getTotalAtomArray(), parallelTeam, parallelTeam,

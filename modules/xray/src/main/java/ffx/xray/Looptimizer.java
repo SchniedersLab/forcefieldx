@@ -67,10 +67,10 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 import edu.rit.mp.DoubleBuf;
 import edu.rit.pj.Comm;
 import edu.rit.pj.cluster.JobBackend;
+
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Minimize;
 import ffx.algorithms.Thermostat;
-
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.LambdaInterface;
@@ -655,7 +655,8 @@ public class Looptimizer implements Potential {
                 }
 
                 /**
-                 * Revert to the coordinates, gradient lambda, and RESPA State prior to optimization.
+                 * Revert to the coordinates, gradient lambda, and RESPA State
+                 * prior to optimization.
                  */
                 potential.setScaling(null);
                 lambdaInterface.setLambda(lambda);

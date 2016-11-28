@@ -98,7 +98,7 @@ public class VanDerWaals implements MaskingInterface,
         LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(VanDerWaals.class.getName());
-    
+
     private static int runIDNumber = 0;
 
     /**
@@ -596,7 +596,7 @@ public class VanDerWaals implements MaskingInterface,
     public void setResolution(Resolution resolution) {
         this.resolution = resolution;
     }
-    
+
     public final void buildNeighborList(Atom[] atoms) {
         neighborList.setAtoms(atoms);
         neighborListOnly = true;
@@ -885,7 +885,7 @@ public class VanDerWaals implements MaskingInterface,
         } else {
             d2sc2dL2 = 0.0;
         }
-        
+
         /**
          * Initialize the softcore atom masks.
          */
@@ -906,7 +906,7 @@ public class VanDerWaals implements MaskingInterface,
             }
             softCoreInit = true;
         }
-        
+
         if (esvTerm) {
             updateEsvLambda();
         }
@@ -920,7 +920,7 @@ public class VanDerWaals implements MaskingInterface,
             longRangeCorrection = 0.0;
         }
     }
-    
+
     public void updateEsvLambda() {
         if (!esvTerm) {
             return;
@@ -938,7 +938,7 @@ public class VanDerWaals implements MaskingInterface,
             longRangeCorrection = getLongRangeCorrection();
         }
     }
-    
+
     public void attachExtendedSystem(ExtendedSystem system) {
         if (system == null) {
             logger.severe("Tried to attach null extended system.");
@@ -1459,7 +1459,7 @@ public class VanDerWaals implements MaskingInterface,
             private final double dx_local[];
             private final double transOp[][];
             private double running;
-            
+
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
