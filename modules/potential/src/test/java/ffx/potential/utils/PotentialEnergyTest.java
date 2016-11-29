@@ -283,9 +283,7 @@ public class PotentialEnergyTest {
         this.solvationEnergy = solvationEnergy;
         this.nSolvation = nSolv;
 
-        String ffxCi = System.getProperty("ffx.ci", "false");
-        ci = ffxCi.equalsIgnoreCase("true");
-
+        ci = System.getProperty("ffx.ci","false").equalsIgnoreCase("true");
         if (!ci && ciOnly) {
             structure = null;
             molecularAssembly = null;
@@ -304,11 +302,10 @@ public class PotentialEnergyTest {
         mpoleTerm = molecularAssembly.getForceField().getBoolean(ForceField.ForceFieldBoolean.MPOLETERM, true);
         solvTerm = molecularAssembly.getForceField().getBoolean(ForceField.ForceFieldBoolean.GKTERM, false);
 
-        /*
          if (ci) {
-         testGradient();
-         testSoftCore();
-         } */
+            testGradient();
+            testSoftCore();
+         }
     }
 
     /**

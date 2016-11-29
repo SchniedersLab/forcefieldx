@@ -7,37 +7,21 @@ import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Logger;
 
-import static java.lang.String.format;
-
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.potential.bonded.Atom;
 
-import static ffx.potential.extended.ThermoConstants.prop;
+import static ffx.potential.extended.ExtUtils.prop;
 
 /**
  * A generalized extended system variable.
- * Notes:
- *  1. Bonded terms interpolate linearly between the two lamedh end states.
- *  2. VdW and PME use softcoring (nonlinear) as with lambda.
- *  3. Treatment of ESVs: 
- *      a. Bonded terms are handled at the level of ForceFieldEnergy (or, generically, at Potential).
- *      b. PME and vdW scaling and derivatives are handled inside these classes' inner loops.
- *  4. Interaction of lamedh with lambda:
- *      a. dU/dLambda/dLamedh is taken to be nil.
- *      b. Lambda (OSRW) statistics are to be collected only at zero or unity lamedh.
- *      c. Lambda-scaling on atoms and their potential terms stacks multiplicatively with lamedh scaling.
- *              e.g. An ASH-ALA transition is coupled to lambda, while lamedh couples ASH-ASP.
- *                   ASH-HD2 vdW interactions in this case are scaled by lambda*lamedh.
- *              TODO: Decide on the form of the softcore vdW denominator scaling.
- *      d. Bonded term potential interpolation along lambda is handled at the DualTopology level
- *              and thus naturally encapsulates lamedh.
- *      e. PME and vdW interaction is handled explicitly in these classes.
- *              Since there are no lambda derivs at intermediate lamedh and since these
- *              derivatives take the same form, the vdW code for dUdLambda is reused: 
- *              albeit with an extra dimension (for multiple lamedhs).
+ * Treatment of ESVs: 
+ *  a. Bonded terms interpolate linearly between end states.
+ *      ESVs based on MultiResidue (e.g. TitrationESV) place a multiplier in the term objects themselves.
+ *  b. PME and vdW scaling and derivatives are handled inside these classes' inner loops.
+ *      Softcoring follows the same form used by OSRW lambda.
  * @author slucore
  */
 public abstract class ExtendedVariable {
@@ -81,14 +65,6 @@ public abstract class ExtendedVariable {
     public ExtendedVariable() {
         this(0.0, 1.0);
     }
-    
-    public boolean containsAtom(Atom atom) {
-        return atoms.contains(atom);
-    }
-    
-    public boolean containsBackboneAtom(Atom atom) {
-        return backbone.contains(atom);
-    }
         
     /**
      * Propagate lambda using Langevin dynamics.
@@ -98,11 +74,11 @@ public abstract class ExtendedVariable {
         if (!esvPropagation) {
             return;
         }
-        double rt2 = 2.0 * ThermoConstants.BOLTZMANN * setTemperature * thetaFriction / dt;
-        double randomForce = sqrt(rt2) * stochasticRandom.nextGaussian() / ThermoConstants.randomConvert;
+        double rt2 = 2.0 * ExtConstants.BOLTZMANN * setTemperature * thetaFriction / dt;
+        double randomForce = sqrt(rt2) * stochasticRandom.nextGaussian() / ExtConstants.randomConvert;
         double dEdL = -dEdLdh * sin(2.0 * theta);
         halfThetaVelocity = (halfThetaVelocity * (2.0 * thetaMass - thetaFriction * dt)
-                + ThermoConstants.randomConvert2 * 2.0 * dt * (dEdL + randomForce))
+                + ExtConstants.randomConvert2 * 2.0 * dt * (dEdL + randomForce))
                 / (2.0 * thetaMass + thetaFriction * dt);
         theta = theta + dt * halfThetaVelocity;
 
@@ -116,19 +92,20 @@ public abstract class ExtendedVariable {
         setLambda(sinTheta * sinTheta);
     }
     
-    public abstract void updateBondedTerms();
+    public abstract void updateBondedLambdas();
     
     public void setLambda(double lambda) {
-        logger.info(format("ESV %d -> %5.2f", this.index, lambda));
         this.lambda = lambda;
         theta = Math.asin(Math.sqrt(lambda));
-        discrBias = -(4*betat - (lambda-0.5)*(lambda-0.5)) + betat;
+        discrBias = betat - 4*betat*(lambda-0.5)*(lambda-0.5);
         dDiscrBiasdL = -8*betat*(lambda-0.5);
-        updateBondedTerms();
+        updateBondedLambdas();
     }
+    
     public final double getLambda() {
         return lambda;
     }
+    
     public final int getIndex() {
         return index;
     }
@@ -141,8 +118,8 @@ public abstract class ExtendedVariable {
     /**
      * Should include at least the discretization bias; add any type-specific biases (eg pH).
      */
-    public abstract double totalBiasEnergy(double temperature);
-    public abstract double totalBiasDeriv(double temperature);
+    public abstract double totalBiasEnergy(double temperature, StringBuilder sb);
+    public abstract double totalBiasDeriv(double temperature, StringBuilder sb);
     
     /**
      * From Shen&Huang 2016; drives ESVs to zero/unity.

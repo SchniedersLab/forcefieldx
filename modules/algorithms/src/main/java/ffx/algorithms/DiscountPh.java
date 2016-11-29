@@ -69,9 +69,9 @@ import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.bonded.ResidueState;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
+import ffx.potential.extended.ExtConstants;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.extended.ExtendedVariable;
-import ffx.potential.extended.ThermoConstants;
 import ffx.potential.extended.TitrationESV;
 import ffx.potential.extended.TitrationESV.TitrationUtils;
 import ffx.potential.parameters.ForceField;
@@ -79,7 +79,7 @@ import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.SystemFilter;
 import ffx.potential.utils.SystemTemperatureException;
 
-import static ffx.potential.extended.ThermoConstants.prop;
+import static ffx.potential.extended.ExtUtils.prop;
 
 /**
  * @author S. LuCore
@@ -574,7 +574,7 @@ public class DiscountPh {
         final double dGmc = en - eo;
                 
         final double temperature = molDyn.getThermostat().getCurrentTemperature();
-        double kT = ThermoConstants.BOLTZMANN * temperature;
+        double kT = ExtConstants.BOLTZMANN * temperature;
         final double crit = exp(-dGmc / kT);
         final double rand = rng.nextDouble();
         logger.info(format("   Final energy:    %10.4g", en));
@@ -649,7 +649,7 @@ public class DiscountPh {
 
         // Check the MC criterion.
         double temperature = currentTemp();
-        double kT = ThermoConstants.BOLTZMANN * temperature;
+        double kT = ExtConstants.BOLTZMANN * temperature;
         double postTotalEnergy = currentTotalEnergy();
         double dG_tot = postTotalEnergy - previousTotalEnergy;
         double criterion = exp(-dG_tot / kT);

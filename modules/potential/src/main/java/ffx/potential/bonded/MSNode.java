@@ -404,21 +404,47 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
         return nodes;
     }
     
-    /**
-     * A generalized, casted form of getList(class,nodes).
-     */
-    public <T> List<T> getChildList(Class c, List<T> nodes) {
-        if (c.isInstance(this)) {
-            nodes.add((T) this);
+    public List<MSNode> getAncestors(List<MSNode> nodes) {
+        if (nodes == null) {
+            nodes = new ArrayList<>();
         }
-        if (isLeaf() || !canBeChild(c)) {
+        nodes.add(this);
+        if (this.getParent() != null) {
+            return ((MSNode) this.getParent()).getAncestors(nodes);
+        } else {
             return nodes;
+        }
+    }
+    
+    /**
+     * Request all descendants of the given type; returned list will automatically
+     * conform to any superclass thereof.
+     */
+    public <U, T extends U> List<U> getDescendants(Class<T> c) {
+        List<U> nodes = new ArrayList<>();
+        castDescendants(c, nodes);
+        return nodes;
+    }
+
+    private <U, T extends U> void castDescendants(Class<T> c, List<U> nodes) {
+        if (nodes == null) {
+            nodes = new ArrayList<>();
+        }
+        if (c.isInstance(this)) {
+            try {
+                nodes.add((T) this);
+            } catch (ClassCastException ex) {
+                // TODO remove and ignore
+                System.err.format(" ClassCastException: %s ?> %s", this.getName(), c.toString());
+            }
+        }
+        if (isLeaf()) {
+            return;
         }
         for (Enumeration e = children(); e.hasMoreElements();) {
             MSNode node = (MSNode) e.nextElement();
-            node.getChildList(c, nodes);
+            node.castDescendants(c, nodes);
         }
-        return nodes;
     }
 
     /**
